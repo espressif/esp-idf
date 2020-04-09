@@ -30,13 +30,14 @@ def format_case_id(chip, case_name):
     return "{}.{}".format(chip, case_name)
 
 
-def idf_example_test(app=Example, target="ESP32", module="examples", execution_time=1,
+def idf_example_test(app=Example, target="ESP32", ci_target=None, module="examples", execution_time=1,
                      level="example", erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
     :param app: test application class
-    :param target: target supported, string or iterable
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -47,8 +48,9 @@ def idf_example_test(app=Example, target="ESP32", module="examples", execution_t
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, module=module, execution_time=execution_time,
-                                             level=level, dut_dict=TARGET_DUT_CLS_DICT, erase_nvs=erase_nvs, **kwargs)
+        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
+                                             erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
@@ -56,13 +58,14 @@ def idf_example_test(app=Example, target="ESP32", module="examples", execution_t
     return test
 
 
-def idf_unit_test(app=UT, target="ESP32", module="unit-test", execution_time=1,
+def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", execution_time=1,
                   level="unit", erase_nvs=True, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 
     :param app: test application class
-    :param target: target supported, string or iterable
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -72,8 +75,9 @@ def idf_unit_test(app=UT, target="ESP32", module="unit-test", execution_time=1,
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, module=module, execution_time=execution_time,
-                                             level=level, dut_dict=TARGET_DUT_CLS_DICT, erase_nvs=erase_nvs, **kwargs)
+        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
+                                             erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
@@ -81,13 +85,14 @@ def idf_unit_test(app=UT, target="ESP32", module="unit-test", execution_time=1,
     return test
 
 
-def idf_custom_test(app=TestApp, target="ESP32", module="misc", execution_time=1,
+def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
                     level="integration", erase_nvs=True, config_name=None, group="test-apps", **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
     :param app: test application class
-    :param target: target supported, string or iterable
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -99,8 +104,9 @@ def idf_custom_test(app=TestApp, target="ESP32", module="misc", execution_time=1
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, module=module, execution_time=execution_time,
-                                             level=level, dut_dict=TARGET_DUT_CLS_DICT, erase_nvs=erase_nvs, **kwargs)
+        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
+                                             erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func

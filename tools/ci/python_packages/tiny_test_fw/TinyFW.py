@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """ Interface for test cases. """
+import json
+import logging
 import os
 import time
 import traceback
@@ -163,6 +165,22 @@ def test_method(**kwargs):
         case_info = MANDATORY_INFO.copy()
         case_info["name"] = case_info["ID"] = test_func.__name__
         case_info["junit_report_by_case"] = False
+
+        def _filter_ci_target(target, ci_target):
+            if not ci_target:
+                return target
+            if isinstance(target, str):
+                if isinstance(ci_target, str) and target == ci_target:
+                    return ci_target
+            else:
+                if isinstance(ci_target, str) and ci_target in target:
+                    return ci_target
+                elif isinstance(ci_target, list) and set(ci_target).issubset(set(target)):
+                    return ci_target
+            raise ValueError('ci_target must be a subset of target')
+
+        if os.getenv('CI_JOB_NAME') and 'ci_target' in kwargs:
+            kwargs['target'] = _filter_ci_target(kwargs['target'], kwargs['ci_target'])
         case_info.update(kwargs)
 
         @functools.wraps(test_func)
@@ -183,15 +201,32 @@ def test_method(**kwargs):
             # Runner.py should overwrite target with the current target.
             env_config.update(overwrite)
 
-            # This code block is used to run test script locally without
-            # Runner.py
+            # if target not in the default_config or the overwrite, then take it from kwargs passed from the decorator
             target = env_config['target'] if 'target' in env_config else kwargs['target']
-            if isinstance(target, list):
-                target = target[0]
-            elif isinstance(target, str):
-                target = target
-            else:
-                raise TypeError('keyword targets can only be list or str')
+
+            # This code block is used to do run local test script target set check
+            if not os.getenv('CI_JOB_NAME'):
+                idf_target = 'ESP32'  # default if sdkconfig not found or not readable
+                expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
+                if os.path.exists(expected_json_path):
+                    sdkconfig = json.load(open(expected_json_path))
+                    try:
+                        idf_target = sdkconfig['IDF_TARGET'].upper()
+                    except KeyError:
+                        pass
+                    else:
+                        logging.info('IDF_TARGET: {}'.format(idf_target))
+                else:
+                    logging.warning('{} not found. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
+
+                if isinstance(target, list):
+                    if idf_target in target:
+                        target = idf_target
+                    else:
+                        raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+                else:
+                    if idf_target != target:
+                        raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
 
             dut_dict = kwargs['dut_dict']
             if target not in dut_dict:
