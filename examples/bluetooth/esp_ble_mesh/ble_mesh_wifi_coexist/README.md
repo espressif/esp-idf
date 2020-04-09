@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 ESP BLE Mesh and WiFi Coexist example
 ========================
 

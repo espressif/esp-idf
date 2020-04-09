@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ble mesh provisioner demo
 ## Introduction  
 This demo implements ble mesh provisioner basic features.Based on this demo, provisioner can scan and prove unprovisioned device, send set/get message. Also can define new model.  

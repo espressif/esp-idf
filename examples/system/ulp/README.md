@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ULP Pulse Counting Example
 
 This example demonstrates how to program the ULP coprocessor to count pulses on an IO while the main CPUs are either running some other code or are in deep sleep. See the README.md file in the upper level 'examples' directory for more information about examples.

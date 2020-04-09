@@ -588,13 +588,7 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
 
     Some of examples do not support {IDF_TARGET_NAME} because required hardware is not included in {IDF_TARGET_NAME} so it cannot be supported.
 
-    .. only:: esp32
-
-        If building an example, please check the example CMakeLists.txt file for the clause ``SUPPORTED_TARGETS esp32``. If this is present including ``esp32`` target, or ``SUPPORTED_TARGETS`` does not exist at all, the example will work on {IDF_TARGET_NAME}.
-
-    .. only:: esp32s2
-
-        If building an example, please check the example CMakeLists.txt file for the clause ``SUPPORTED_TARGETS esp32s2``. If this is present including ``esp32s2`` target, or ``SUPPORTED_TARGETS`` does not exist at all, the example will work on {IDF_TARGET_NAME}.
+    If building an example, please check the README file for the ``Supported Targets`` table. If this is present including {IDF_TARGET_NAME} target, or the table does not exist at all, the example will work on {IDF_TARGET_NAME}.
 
 
 Updating ESP-IDF

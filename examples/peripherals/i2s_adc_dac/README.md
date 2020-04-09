@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # I2S Built-in ADC/DAC Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

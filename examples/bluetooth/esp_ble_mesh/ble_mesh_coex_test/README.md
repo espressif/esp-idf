@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Example of BLE Mesh and TCP Server/Client Coexistence
 
 This example introduces how to test the basic functions of `BLE Mesh data interface` and `TCP Server/Client Coexistence`. `BLE Mesh data interface` is GAP scanning and advertising.
