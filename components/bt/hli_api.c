@@ -87,7 +87,7 @@ void hli_intr_restore(uint32_t state)
 
 #define HLI_QUEUE_FLAG_SEMAPHORE    BIT(0)
 
-struct hli_queue_t s_meta_queue;
+struct hli_queue_t *s_meta_queue_ptr;
 
 static inline char* IRAM_ATTR wrap_ptr(hli_queue_handle_t queue, char *ptr)
 {
@@ -109,7 +109,7 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
     int do_yield = pdFALSE;
     XTHAL_SET_INTCLEAR(BIT(HLI_QUEUE_SW_INT_NUM));
     hli_queue_handle_t queue;
-    while (hli_queue_get(&s_meta_queue, &queue)) {
+    while (hli_queue_get(s_meta_queue_ptr, &queue)) {
         static char scratch[HLI_QUEUE_MAX_ELEM_SIZE];
         while (hli_queue_get(queue, scratch)) {
             int res = pdPASS;
@@ -119,7 +119,7 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
                 res = xQueueSendFromISR(queue->downstream, scratch, &do_yield);
             }
             if (res == pdFAIL) {
-                ESP_EARLY_LOGE(TAG, "Failed to send to queue %p", queue->downstream);
+                ESP_EARLY_LOGE(TAG, "Failed to send to %s %p", (queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) == 0 ? "queue" : "semaphore", queue->downstream);
             }
         }
     }
@@ -128,13 +128,31 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
     }
 }
 
+/* Notify the level 3 handler that an element is added to the given hli queue.
+ * Do this by placing the queue handle onto s_meta_queue, and raising a SW interrupt.
+ *
+ * This function must be called with HL interrupts disabled!
+ */
 static void IRAM_ATTR queue_signal(hli_queue_handle_t queue)
 {
-    bool res = hli_queue_put(&s_meta_queue, &queue);
-    if (!res) {
-        abort();
+    /* See if the queue is already in s_meta_queue, before adding */
+    bool found = false;
+    const hli_queue_handle_t *end = (hli_queue_handle_t*) s_meta_queue_ptr->end;
+    hli_queue_handle_t *item = (hli_queue_handle_t*) s_meta_queue_ptr->begin;
+    for (;item != end; item = (hli_queue_handle_t*) wrap_ptr(s_meta_queue_ptr, (char*) (item + 1))) {
+        if (*item == queue) {
+            found = true;
+            break;
+        }
     }
-    XTHAL_SET_INTSET(BIT(HLI_QUEUE_SW_INT_NUM));
+    if (!found) {
+        bool res = hli_queue_put(s_meta_queue_ptr, &queue);
+        if (!res) {
+            ets_printf(DRAM_STR("Fatal error in queue_signal: s_meta_queue full\n"));
+            abort();
+        }
+        XTHAL_SET_INTSET(BIT(HLI_QUEUE_SW_INT_NUM));
+    }
 }
 
 static void queue_init(hli_queue_handle_t queue, size_t buf_size, size_t elem_size, QueueHandle_t downstream)
@@ -149,7 +167,7 @@ static void queue_init(hli_queue_handle_t queue, size_t buf_size, size_t elem_si
 
 void hli_queue_setup(void)
 {
-    queue_init(&s_meta_queue, HLI_META_QUEUE_SIZE * sizeof(void*), sizeof(void*), NULL);
+    s_meta_queue_ptr = hli_queue_create(HLI_META_QUEUE_SIZE, sizeof(void*), NULL);
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_INTERNAL_SW1_INTR_SOURCE, ESP_INTR_FLAG_IRAM, queue_isr_handler, NULL, NULL));
     xt_ints_on(BIT(HLI_QUEUE_SW_INT_NUM));
 }
@@ -207,7 +225,7 @@ bool IRAM_ATTR hli_queue_put(hli_queue_handle_t queue, const void* data)
     if (!queue_full(queue)) {
         memcpy(queue->end, data, queue->elem_size);
         queue->end = wrap_ptr(queue, queue->end + queue->elem_size);
-        if (was_empty && queue != &s_meta_queue) {
+        if (was_empty && queue != s_meta_queue_ptr) {
             queue_signal(queue);
         }
         res = true;
