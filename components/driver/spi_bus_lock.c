@@ -590,6 +590,7 @@ static int try_acquire_free_dev(spi_bus_lock_t *lock, bool cs_required)
 esp_err_t spi_bus_lock_register_dev(spi_bus_lock_handle_t lock, spi_bus_lock_dev_config_t *config,
                                     spi_bus_lock_dev_handle_t *out_dev_handle)
 {
+    if (lock == NULL) return ESP_ERR_INVALID_ARG;
     int id = try_acquire_free_dev(lock, config->flags & SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED);
     if (id == -1) return ESP_ERR_NOT_SUPPORTED;
 
@@ -792,7 +793,7 @@ SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_req_exist(spi_bus_lock_t *lock)
 /*******************************************************************************
  * Static variables of the locks of the main flash
  ******************************************************************************/
-static StaticSemaphore_t main_flash_semphr;
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
 static spi_bus_lock_dev_t lock_main_flash_dev;
 
 static spi_bus_lock_t main_spi_bus_lock = {
@@ -806,23 +807,34 @@ static spi_bus_lock_t main_spi_bus_lock = {
     .new_req = 0,
     .periph_cs_num = SOC_SPI_PERIPH_CS_NUM(0),
 };
+const spi_bus_lock_handle_t g_main_spi_bus_lock = &main_spi_bus_lock;
+
+esp_err_t spi_bus_lock_init_main_bus(void)
+{
+    spi_bus_main_set_lock(g_main_spi_bus_lock);
+    return ESP_OK;
+}
+
+static StaticSemaphore_t main_flash_semphr;
 
 static spi_bus_lock_dev_t lock_main_flash_dev = {
     .semphr = NULL,
     .parent = &main_spi_bus_lock,
     .mask = DEV_MASK(0),
 };
-
-const spi_bus_lock_handle_t g_main_spi_bus_lock = &main_spi_bus_lock;
 const spi_bus_lock_dev_handle_t g_spi_lock_main_flash_dev = &lock_main_flash_dev;
 
 esp_err_t spi_bus_lock_init_main_dev(void)
 {
-    spi_bus_main_set_lock(g_main_spi_bus_lock);
     g_spi_lock_main_flash_dev->semphr = xSemaphoreCreateBinaryStatic(&main_flash_semphr);
     if (g_spi_lock_main_flash_dev->semphr == NULL) {
         return ESP_ERR_NO_MEM;
     }
-
     return ESP_OK;
 }
+#else //CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+
+//when the dev lock is not initialized, point to NULL
+const spi_bus_lock_dev_handle_t g_spi_lock_main_flash_dev = NULL;
+
+#endif

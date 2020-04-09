@@ -52,7 +52,7 @@ esp_err_t esp_flash_app_init(void);
 #endif
 
 /**
- *  Disable OS-level SPI flash protections in IDF
+ *  Disable (or enable) OS-level SPI flash protections in IDF
  *
  *  Called by the IDF internal code (e.g. coredump). You do not need to call this in your own applications.
  *
@@ -86,13 +86,23 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int *out_d
 esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip);
 
 /**
+ * @brief Initialize the bus lock on the SPI1 bus. Should be called if drivers (including esp_flash)
+ * wants to use SPI1 bus.
+ *
+ * @note When using legacy spi flash API, the bus lock will not be available on SPI1 bus.
+ *
+ * @return esp_err_t always ESP_OK.
+ */
+esp_err_t esp_flash_init_main_bus_lock(void);
+
+/**
  *  Initialize OS-level functions for the main flash chip.
  *
  * @param chip The chip to init os functions. Only pointer to the default chip is supported now.
  *
  * @return always ESP_OK
  */
-esp_err_t esp_flash_app_init_os_functions(esp_flash_t* chip);
+esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip);
 
 /**
  *  Disable OS-level functions for the main flash chip during special phases (e.g. coredump)

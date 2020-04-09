@@ -147,6 +147,11 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
 
     int dev_id;
     esp_err_t err = esp_flash_init_os_functions(chip, config->host_id, &dev_id);
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGE(TAG, "Init os functions failed! No free CS.");
+    } else if (err == ESP_ERR_INVALID_ARG) {
+        ESP_LOGE(TAG, "Init os functions failed! Bus lock not initialized (check CONFIG_SPI_FLASH_SHARE_SPI1_BUS).");
+    }
     if (err != ESP_OK) {
         ret = err;
         goto fail;
@@ -241,7 +246,13 @@ esp_err_t esp_flash_init_default_chip(void)
 
 esp_err_t esp_flash_app_init(void)
 {
-    return esp_flash_app_init_os_functions(&default_chip);
+    esp_err_t err = ESP_OK;
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    err = esp_flash_init_main_bus_lock();
+    if (err != ESP_OK) return err;
+#endif
+    err = esp_flash_app_enable_os_functions(&default_chip);
+    return err;
 }
 
-#endif
+#endif //!CONFIG_SPI_FLASH_USE_LEGACY_IMPL
