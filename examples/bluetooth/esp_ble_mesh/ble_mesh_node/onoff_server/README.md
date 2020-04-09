@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 ESP BLE Mesh Node demo
 ==========================
 

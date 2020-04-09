@@ -35,7 +35,7 @@ Building a project for ESP32-S2
 
    For some examples this is because required hardware is not included in ESP32-S2 so it cannot be supported. For some examples this is because the example has not yet been updated for ESP32-S2.
 
-   If building an example, please check the example CMakeLists.txt file for the clause ``SUPPORTED_TARGETS esp32``. If this is present, the example won't work on ESP32-S2.
+   If building an example, please check the README file for the ``Supported Targets`` table. If no ESP32-S2 listed, the example won't work on ESP32-S2.
 
 .. highlight:: bash
 

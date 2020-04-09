@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Using ESP-IDF in Custom CMake Projects
 
 This example illustrates using ESP-IDF components as libraries in custom CMake projects. The application

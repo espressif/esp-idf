@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Secure Boot
 
 The example checks if the secure boot feature is enabled/disabled and if enabled prints the secure boot version (Version 1 / Version 2) and FLASH_CRYPT_CNT eFuse value.

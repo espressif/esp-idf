@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Iperf Example
 
 ## Note about iperf version

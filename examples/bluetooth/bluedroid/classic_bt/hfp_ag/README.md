@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Hands-Free Audio Gateway
 
 This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG) Component and the effects of them by providing a set of commands. You can use this example to communicate with a Hands-Free Unit (e.g. a headphone set). This example uses UART for user commands.

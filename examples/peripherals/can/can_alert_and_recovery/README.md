@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # CAN Alert and Recovery Example
 
 ## Overview

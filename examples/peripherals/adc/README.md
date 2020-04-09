@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ADC1 Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

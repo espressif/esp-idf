@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # MCPWM brushed dc motor control Example
 
 This example will show you how to use MCPWM module to control brushed dc motor, you need to make connection between ESP32 and motor driver

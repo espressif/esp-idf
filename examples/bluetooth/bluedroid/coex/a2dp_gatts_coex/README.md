@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 ESP-IDF A2DP-GATTS_COEX demo
 ======================
 This demo showcases APIs to create a GATT service and A2DP profile and demonstrates BLE and classic Bluetooth coexistence.

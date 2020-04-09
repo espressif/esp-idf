@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 ESP-IDF Gattc and Gatts Coexistence example
 ==============================================
 
