@@ -79,6 +79,8 @@ class Search(object):
         """
         replicate_config = []
         for key in case.case_info:
+            if key == 'ci_target':  # ci_target is used to filter target, should not be duplicated.
+                continue
             if isinstance(case.case_info[key], (list, tuple)):
                 replicate_config.append(key)
 

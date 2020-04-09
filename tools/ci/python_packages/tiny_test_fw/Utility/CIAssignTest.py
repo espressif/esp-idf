@@ -234,12 +234,11 @@ class AssignTest(object):
 
         :return: filter for search test cases
         """
-        bot_filter = os.getenv("BOT_CASE_FILTER")
-        if bot_filter:
-            bot_filter = json.loads(bot_filter)
-        else:
-            bot_filter = dict()
-        return bot_filter
+        res = dict()
+        for bot_filter in [os.getenv('BOT_CASE_FILTER'), os.getenv('BOT_TARGET_FILTER')]:
+            if bot_filter:
+                res.update(json.loads(bot_filter))
+        return res
 
     def _apply_bot_test_count(self):
         """
