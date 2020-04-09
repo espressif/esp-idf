@@ -34,6 +34,7 @@
 #include "mbedtls/sha256.h"
 #else /* USE_MBEDTLS_CRYPTO */
 #include "sha256.h"
+#include "sha256_i.h"
 #include "crypto.h"
 #endif /* USE_MBEDTLS_CRYPTO */
 
@@ -79,20 +80,6 @@ out:
 }
 #else /* USE_MBEDTLS_CRYPTO */
 
-#define SHA256_BLOCK_SIZE 64
-
-struct sha256_state {
-	u64 length;
-	u32 state[8], curlen;
-	u8 buf[SHA256_BLOCK_SIZE];
-};
-
-static void sha256_init(struct sha256_state *md);
-static int sha256_process(struct sha256_state *md, const unsigned char *in,
-			  unsigned long inlen);
-static int sha256_done(struct sha256_state *md, unsigned char *out);
-
-
 /**
  * sha256_vector - SHA256 hash for data vector
  * @num_elem: Number of elements in the data vector
@@ -101,8 +88,7 @@ static int sha256_done(struct sha256_state *md, unsigned char *out);
  * @mac: Buffer for the hash
  * Returns: 0 on success, -1 of failure
  */
-int 
-sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len,
+int sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 		  u8 *mac)
 {
 	struct sha256_state ctx;
@@ -146,7 +132,7 @@ static const unsigned long K[64] = {
 ( ((((unsigned long) (x) & 0xFFFFFFFFUL) >> (unsigned long) ((y) & 31)) | \
    ((unsigned long) (x) << (unsigned long) (32 - ((y) & 31)))) & 0xFFFFFFFFUL)
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
-#define Maj(x,y,z)      (((x | y) & z) | (x & y)) 
+#define Maj(x,y,z)      (((x | y) & z) | (x & y))
 #define S(x, n)         RORc((x), (n))
 #define R(x, n)         (((x)&0xFFFFFFFFUL)>>(n))
 #define Sigma0(x)       (S(x, 2) ^ S(x, 13) ^ S(x, 22))
@@ -158,8 +144,7 @@ static const unsigned long K[64] = {
 #endif
 
 /* compress 512-bits */
-static int 
-sha256_compress(struct sha256_state *md, unsigned char *buf)
+static int sha256_compress(struct sha256_state *md, unsigned char *buf)
 {
 	u32 S[8], W[64], t0, t1;
 	u32 t;
@@ -178,7 +163,7 @@ sha256_compress(struct sha256_state *md, unsigned char *buf)
 	for (i = 16; i < 64; i++) {
 		W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) +
 			W[i - 16];
-	}        
+	}
 
 	/* Compress */
 #define RND(a,b,c,d,e,f,g,h,i)                          \
@@ -189,7 +174,7 @@ sha256_compress(struct sha256_state *md, unsigned char *buf)
 
 	for (i = 0; i < 64; ++i) {
 		RND(S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], i);
-		t = S[7]; S[7] = S[6]; S[6] = S[5]; S[5] = S[4]; 
+		t = S[7]; S[7] = S[6]; S[6] = S[5]; S[5] = S[4];
 		S[4] = S[3]; S[3] = S[2]; S[2] = S[1]; S[1] = S[0]; S[0] = t;
 	}
 
@@ -202,8 +187,7 @@ sha256_compress(struct sha256_state *md, unsigned char *buf)
 
 
 /* Initialize the hash state */
-static void 
-sha256_init(struct sha256_state *md)
+void sha256_init(struct sha256_state *md)
 {
 	md->curlen = 0;
 	md->length = 0;
@@ -224,9 +208,8 @@ sha256_init(struct sha256_state *md)
    @param inlen  The length of the data (octets)
    @return CRYPT_OK if successful
 */
-static int 
-sha256_process(struct sha256_state *md, const unsigned char *in,
-			  unsigned long inlen)
+int sha256_process(struct sha256_state *md, const unsigned char *in,
+		   unsigned long inlen)
 {
 	unsigned long n;
 
@@ -265,8 +248,7 @@ sha256_process(struct sha256_state *md, const unsigned char *in,
    @param out [out] The destination of the hash (32 bytes)
    @return CRYPT_OK if successful
 */
-static int 
-sha256_done(struct sha256_state *md, unsigned char *out)
+int sha256_done(struct sha256_state *md, unsigned char *out)
 {
 	int i;
 
