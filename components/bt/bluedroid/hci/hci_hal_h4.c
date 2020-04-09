@@ -343,7 +343,11 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
+#ifdef TASK_MONITOR_MODE
+    hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
+#else
     hci_host_task_post(TASK_POST_BLOCKING);
+#endif
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)

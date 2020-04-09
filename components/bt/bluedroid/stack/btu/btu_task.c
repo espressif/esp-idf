@@ -264,6 +264,11 @@ task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout)
 
     if (xQueueSend(xBtuQueue, &evt, timeout) != pdTRUE) {
         HCI_TRACE_ERROR("xBtuQueue failed\n");
+
+    #ifdef TASK_MONITOR_MODE
+        ets_printf("!! Btu Post failed.Timeout Abort !!");
+        abort();
+    #endif
         return TASK_POST_FAIL;
     }
 
@@ -425,8 +430,12 @@ void btu_general_alarm_cb(void *data)
 {
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, TASK_POST_BLOCKING);
+#endif
+
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -539,8 +548,12 @@ static void btu_l2cap_alarm_cb(void *data)
 {
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, TASK_POST_BLOCKING);
+#endif
+    
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -622,8 +635,11 @@ void btu_oneshot_alarm_cb(void *data)
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
     btu_stop_timer_oneshot(p_tle);
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, TASK_POST_BLOCKING);
+#endif
 }
 
 /*

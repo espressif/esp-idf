@@ -152,6 +152,10 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
 
     if (xQueueSend(xBtcQueue, msg, timeout) != pdTRUE) {
         BTC_TRACE_ERROR("Btc Post failed\n");
+    #ifdef TASK_MONITOR_MODE
+        ets_printf("!! Btc Post failed.Timeout Abort !!");
+        abort();
+    #endif
         return BT_STATUS_BUSY;
     }
 
@@ -182,8 +186,12 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     } else {
         lmsg.arg = NULL;
     }
-
+#ifdef TASK_MONITOR_MODE
+    return btc_task_post(&lmsg, TASK_POST_BLOCKING_WITH_TO);
+#else
     return btc_task_post(&lmsg, TASK_POST_BLOCKING);
+#endif
+    
 }
 
 #if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)

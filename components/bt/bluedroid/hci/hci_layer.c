@@ -141,6 +141,10 @@ task_post_status_t hci_host_task_post(task_post_t timeout)
     evt.par = 0;
 
     if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
+    #ifdef TASK_MONITOR_MODE
+        ets_printf("!! HCI send fail.Timeout Abort !!");
+        abort();
+    #endif
         HCI_TRACE_ERROR("xHciHostQueue failed\n");
         return TASK_POST_FAIL;
     }
@@ -271,7 +275,12 @@ static void transmit_command(
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
+    
+#ifdef TASK_MONITOR_MODE
+    hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
+#else
     hci_host_task_post(TASK_POST_BLOCKING);
+#endif
 
 }
 
@@ -292,7 +301,11 @@ static future_t *transmit_command_futured(BT_HDR *command)
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
+#ifdef TASK_MONITOR_MODE
+    hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
+#else
     hci_host_task_post(TASK_POST_BLOCKING);
+#endif
     return future;
 }
 
@@ -305,7 +318,11 @@ static void transmit_downward(uint16_t type, void *data)
         fixed_queue_enqueue(hci_host_env.packet_queue, data);
     }
 
+#ifdef TASK_MONITOR_MODE
+    hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
+#else
     hci_host_task_post(TASK_POST_BLOCKING);
+#endif
 }
 
 
@@ -413,6 +430,7 @@ static void command_timed_out(void *context)
         // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     {
         HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, wait_entry->opcode);
+        abort();
     }
 }
 
@@ -479,7 +497,11 @@ intercepted:
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
-        hci_host_task_post(TASK_POST_BLOCKING);
+        #ifdef TASK_MONITOR_MODE
+            hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
+        #else
+            hci_host_task_post(TASK_POST_BLOCKING);
+        #endif
     }
 
     if (wait_entry) {
@@ -507,7 +529,11 @@ static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
     //Tell Up-layer received packet.
+#ifdef TASK_MONITOR_MODE
+    if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING_WITH_TO) != TASK_POST_SUCCESS) {
+#else
     if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
+#endif
         osi_free(packet);
     }
 }

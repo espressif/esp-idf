@@ -204,8 +204,11 @@ void BTU_StartUp(void)
 
     xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, BTU_TASK_PINNED_TO_CORE);
 
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING);
-
+#endif
     return;
 
 error_exit:

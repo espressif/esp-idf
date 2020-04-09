@@ -571,7 +571,12 @@ void bta_sys_sendmsg(void *p_msg)
     // there is a procedure in progress that can schedule a task via this
     // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
     // it gets used here; hence we check for NULL before using it.
+#ifdef TASK_MONITOR_MODE
+    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg,  TASK_POST_BLOCKING_WITH_TO) != TASK_POST_SUCCESS) {
+#else
     if (btu_task_post(SIG_BTU_BTA_MSG, p_msg,  TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
+#endif
+    
         osi_free(p_msg);
     }
 }
@@ -590,8 +595,11 @@ void bta_alarm_cb(void *data)
 {
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_BTA_ALARM, p_tle, TASK_POST_BLOCKING);
+#endif
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

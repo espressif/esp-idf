@@ -101,6 +101,10 @@ typedef enum {
 
 #define TASK_POST_NON_BLOCKING          (0)
 #define TASK_POST_BLOCKING              (portMAX_DELAY)
+#define TASK_MONITOR_MODE               TRUE
+#ifdef TASK_MONITOR_MODE
+#define TASK_POST_BLOCKING_WITH_TO      (10000/portTICK_PERIOD_MS)
+#endif
 typedef uint32_t task_post_t;           /* Timeout of task post return, unit TICK */
 
 typedef enum {

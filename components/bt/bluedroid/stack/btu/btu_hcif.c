@@ -1085,8 +1085,11 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
     hack->context = context;
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
+#endif
 }
 
 
@@ -1290,8 +1293,11 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
     hack->context = context;
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
-
+#ifdef TASK_MONITOR_MODE
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING_WITH_TO);
+#else
     btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
+#endif
 }
 
 /*******************************************************************************
