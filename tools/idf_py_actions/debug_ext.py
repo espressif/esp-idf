@@ -100,9 +100,9 @@ def action_extensions(base_actions, project_path):
         _terminate_async_target("gdbgui")
         _terminate_async_target("gdb")
 
-    def post_debug(action, ctx, args, block):
+    def post_debug(action, ctx, args, **kwargs):
         """ Deal with asynchronous targets, such as openocd running in background """
-        if block == 1:
+        if kwargs["block"] == 1:
             for target in ["openocd", "gdbgui"]:
                 if target in processes and processes[target] is not None:
                     break
