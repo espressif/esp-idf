@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief         This function is called to start BLE advertising with the corresponding data
  *                and parameters while BLE Mesh is working at the same time.
@@ -53,5 +57,9 @@ esp_err_t esp_ble_mesh_start_ble_advertising(const esp_ble_mesh_ble_adv_param_t 
  *
  */
 esp_err_t esp_ble_mesh_stop_ble_advertising(uint8_t index);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_BLE_API_H_ */

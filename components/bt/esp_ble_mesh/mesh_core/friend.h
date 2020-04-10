@@ -11,6 +11,10 @@
 
 #include "net.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum bt_mesh_friend_pdu_type {
     BLE_MESH_FRIEND_PDU_SINGLE,
     BLE_MESH_FRIEND_PDU_PARTIAL,
@@ -55,5 +59,9 @@ int bt_mesh_friend_init(void);
 int bt_mesh_friend_deinit(void);
 
 void bt_mesh_friend_remove_lpn(u16_t lpn_addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _FRIEND_H_ */

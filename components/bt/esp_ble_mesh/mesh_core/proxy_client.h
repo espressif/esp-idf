@@ -18,6 +18,10 @@
 #include "net.h"
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_PROXY_ADV_NET_ID           0x00
 #define BLE_MESH_PROXY_ADV_NODE_ID          0x01
 
@@ -99,5 +103,9 @@ int bt_mesh_proxy_client_send_cfg(u8_t conn_handle, u16_t net_idx, struct bt_mes
 
 int bt_mesh_proxy_prov_client_init(void);
 int bt_mesh_proxy_prov_client_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROXY_CLIENT_H_ */

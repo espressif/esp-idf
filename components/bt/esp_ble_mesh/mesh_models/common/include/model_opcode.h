@@ -17,6 +17,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Generic OnOff Message Opcode */
 #define BLE_MESH_MODEL_OP_GEN_ONOFF_GET                          BLE_MESH_MODEL_OP_2(0x82, 0x01)
 #define BLE_MESH_MODEL_OP_GEN_ONOFF_SET                          BLE_MESH_MODEL_OP_2(0x82, 0x02)
@@ -272,5 +276,9 @@
 #define BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET                  BLE_MESH_MODEL_OP_1(0x62)
 #define BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK            BLE_MESH_MODEL_OP_1(0x63)
 #define BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS               BLE_MESH_MODEL_OP_1(0x64)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MODEL_OPCODE_H_ */

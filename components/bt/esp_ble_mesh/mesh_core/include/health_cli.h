@@ -20,6 +20,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Health client model common structure */
 typedef bt_mesh_client_user_data_t      bt_mesh_health_client_t;
 typedef bt_mesh_client_internal_data_t  health_internal_data_t;
@@ -66,6 +70,10 @@ struct bt_mesh_health_fault_status {
     u16_t cid;
     struct net_buf_simple *fault_array;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
