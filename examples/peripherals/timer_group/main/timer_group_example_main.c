@@ -41,7 +41,7 @@ xQueueHandle timer_queue;
 static void inline print_timer_counter(uint64_t counter_value)
 {
     printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
-                                    (uint32_t) (counter_value));
+           (uint32_t) (counter_value));
     printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
 }
 
@@ -101,19 +101,16 @@ void IRAM_ATTR timer_group0_isr(void *para)
  * timer_interval_sec - the interval of alarm to set
  */
 static void example_tg0_timer_init(int timer_idx,
-    bool auto_reload, double timer_interval_sec)
+                                   bool auto_reload, double timer_interval_sec)
 {
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider = TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en = TIMER_PAUSE;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.auto_reload = auto_reload;
-#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
-    config.clk_src = TIMER_SRC_CLK_APB;
-#endif
+    timer_config_t config = {
+        .divider = TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .auto_reload = auto_reload,
+    }; // default clock source is APB
     timer_init(TIMER_GROUP_0, timer_idx, &config);
 
     /* Timer's counter will initially start from value below.
@@ -124,7 +121,7 @@ static void example_tg0_timer_init(int timer_idx,
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
     timer_enable_intr(TIMER_GROUP_0, timer_idx);
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr,
-        (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
+                       (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
     timer_start(TIMER_GROUP_0, timer_idx);
 }

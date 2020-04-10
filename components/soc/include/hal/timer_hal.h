@@ -51,6 +51,15 @@ typedef struct {
 void timer_hal_init(timer_hal_context_t *hal, timer_group_t group_num, timer_idx_t timer_num);
 
 /**
+ * @brief Get interrupt status register address and corresponding control bits mask
+ *
+ * @param hal Context of the HAL layer
+ * @param status_reg[out] interrupt status register address
+ * @param mask_bit[out] control bits mask
+ */
+void timer_hal_get_status_reg_mask_bit(timer_hal_context_t *hal, uint32_t *status_reg, uint32_t *mask_bit);
+
+/**
  * @brief Set timer clock prescale value
  *
  * @param hal Context of the HAL layer
@@ -288,13 +297,12 @@ void timer_hal_init(timer_hal_context_t *hal, timer_group_t group_num, timer_idx
  * @brief Get interrupt status register address.
  *
  * @param hal Context of the HAL layer
- * @param intr_status_reg Interrupt status register address
  *
- * @return None
+ * @return Interrupt status register address
  */
-#define timer_hal_get_intr_status_reg(hal, intr_status_reg)  timer_ll_get_intr_status_reg((hal)->dev, intr_status_reg)
+#define timer_hal_get_intr_status_reg(hal)  timer_ll_get_intr_status_reg((hal)->dev)
 
-#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
 /**
  * @brief Set clock source.
  *
