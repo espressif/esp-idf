@@ -323,7 +323,8 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/api/models/include"
                     "esp_ble_mesh/api")
 
-        list(APPEND srcs "esp_ble_mesh/api/core/esp_ble_mesh_common_api.c"
+        list(APPEND srcs "esp_ble_mesh/api/core/esp_ble_mesh_ble_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_common_api.c"
                     "esp_ble_mesh/api/core/esp_ble_mesh_local_data_operation_api.c"
                     "esp_ble_mesh/api/core/esp_ble_mesh_low_power_api.c"
                     "esp_ble_mesh/api/core/esp_ble_mesh_networking_api.c"
