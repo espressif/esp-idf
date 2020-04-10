@@ -108,6 +108,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
         // When we resume scheduler, we expect the counter task
         // will preempt and count at least one more item
         esp_intr_noniram_enable();
+        timer_enable_intr(TIMER_GROUP_0, TIMER_0);
         xTaskResumeAll();
 
         TEST_ASSERT_NOT_EQUAL(count_config.counter, no_sched_task);
