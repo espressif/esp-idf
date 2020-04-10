@@ -12,6 +12,10 @@
 #include "mesh_slist.h"
 #include "mesh_atomic.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* number of nsec per usec */
 #define NSEC_PER_USEC   1000
 
@@ -275,6 +279,10 @@ void bt_mesh_atomic_unlock(void);
 
 void bt_mesh_k_init(void);
 void bt_mesh_k_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_KERNEL_H_ */
 

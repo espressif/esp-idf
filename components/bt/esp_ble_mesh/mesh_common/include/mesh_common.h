@@ -31,6 +31,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if CONFIG_BLE_MESH_ALLOC_FROM_PSRAM_FIRST
 #define bt_mesh_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
 #define bt_mesh_calloc(size)    heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
@@ -86,5 +90,9 @@ void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex);
 
 void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_COMMON_H_ */

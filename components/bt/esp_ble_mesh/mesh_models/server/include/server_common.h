@@ -19,6 +19,10 @@
 #include <stdint.h>
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_SERVER_RSP_MAX_LEN         384
 
 #define BLE_MESH_SERVER_TRANS_MIC_SIZE      4
@@ -122,5 +126,9 @@ void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
                                     u8_t tid, u16_t src, u16_t dst, s64_t *now);
 
 struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u16_t msg_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SERVER_COMMON_H_ */

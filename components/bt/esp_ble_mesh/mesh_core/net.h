@@ -12,6 +12,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_NET_FLAG_KR       BIT(0)
 #define BLE_MESH_NET_FLAG_IVU      BIT(1)
 
@@ -416,5 +420,9 @@ static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
         cb->end(0, cb_data);
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NET_H_ */

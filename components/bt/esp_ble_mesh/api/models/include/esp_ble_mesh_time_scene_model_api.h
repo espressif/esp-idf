@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_TIME_CLI
  *
  *  @brief  Define a new Time Client Model.
@@ -907,6 +911,10 @@ typedef void (* esp_ble_mesh_time_scene_server_cb_t)(esp_ble_mesh_time_scene_ser
  *
  */
 esp_err_t esp_ble_mesh_register_time_scene_server_callback(esp_ble_mesh_time_scene_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_TIME_SCENE_MODEL_API_H_ */
 

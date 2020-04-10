@@ -17,6 +17,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Client model opcode pair table */
 typedef struct {
     u32_t cli_op;       /* Client message opcode */
@@ -126,6 +130,10 @@ typedef struct {
  * @return Zero - success, otherwise - fail
  */
 int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CLIENT_COMMON_H_ */
 
