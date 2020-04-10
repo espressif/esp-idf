@@ -54,6 +54,7 @@ typedef enum {
     PERIPH_CRYPTO_DMA_MODULE,        //this DMA is shared between AES and SHA
     PERIPH_AES_DMA_MODULE,
     PERIPH_SHA_DMA_MODULE,
+    PERIPH_MODULE_MAX
 } periph_module_t;
 
 typedef enum {
