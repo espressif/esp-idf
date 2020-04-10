@@ -372,6 +372,24 @@ if BLE_MESH
             SDU size is 60 bytes, which leaves 56 bytes for application layer data
             using a 4-byte MIC, or 52 bytes using an 8-byte MIC.
 
+    config BLE_MESH_SUPPORT_BLE_ADV
+        bool "Support sending normal BLE advertising packets"
+        default n
+        help
+            When selected, users can send normal BLE advertising packets
+            with specific API.
+
+    if BLE_MESH_SUPPORT_BLE_ADV
+
+        config BLE_MESH_BLE_ADV_BUF_COUNT
+            int "Number of advertising buffers for BLE advertising packets"
+            default 3
+            range 1 255
+            help
+                Number of advertising buffers for BLE packets available.
+
+    endif # BLE_MESH_SUPPORT_BLE_ADV
+
     config BLE_MESH_IVU_DIVIDER
         int "Divider for IV Update state refresh timer"
         default 4

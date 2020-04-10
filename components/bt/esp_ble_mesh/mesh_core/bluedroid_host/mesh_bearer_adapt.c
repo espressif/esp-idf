@@ -400,6 +400,50 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     return 0;
 }
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
+                          const struct bt_mesh_ble_adv_data *data)
+{
+    struct bt_mesh_hci_cp_set_adv_data set = {0};
+    tBTM_BLE_ADV_CHNL_MAP channel_map = 0U;
+    tBTM_BLE_AFP adv_fil_pol = 0U;
+    tBLE_BD_ADDR p_dir_bda = {0};
+
+    if (data && param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
+        param->adv_type != BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        if (data->adv_data_len) {
+            set.len = data->adv_data_len;
+            memcpy(set.data, data->adv_data, data->adv_data_len);
+            BLE_MESH_BTM_CHECK_STATUS(BTM_BleWriteAdvDataRaw(set.data, set.len));
+        }
+        if (data->scan_rsp_data_len && param->adv_type != BLE_MESH_ADV_NONCONN_IND) {
+            set.len = data->scan_rsp_data_len;
+            memcpy(set.data, data->scan_rsp_data, data->scan_rsp_data_len);
+            BLE_MESH_BTM_CHECK_STATUS(BTM_BleWriteScanRspRaw(set.data, set.len));
+        }
+    }
+
+    channel_map = BLE_MESH_ADV_CHNL_37 | BLE_MESH_ADV_CHNL_38 | BLE_MESH_ADV_CHNL_39;
+    adv_fil_pol = BLE_MESH_AP_SCAN_CONN_ALL;
+    if (param->own_addr_type == BLE_MESH_ADDR_PUBLIC_ID ||
+        param->own_addr_type == BLE_MESH_ADDR_RANDOM_ID ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        p_dir_bda.type = param->peer_addr_type;
+        memcpy(p_dir_bda.bda, param->peer_addr, BLE_MESH_ADDR_LEN);
+    }
+
+    /* Check if we can start adv using BTM_BleSetAdvParamsStartAdvCheck */
+    BLE_MESH_BTM_CHECK_STATUS(
+        BTM_BleSetAdvParamsAll(param->interval, param->interval, param->adv_type,
+                               param->own_addr_type, &p_dir_bda,
+                               channel_map, adv_fil_pol, NULL));
+    BLE_MESH_BTM_CHECK_STATUS(BTM_BleStartAdv());
+
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
 int bt_le_adv_stop(void)
 {
 #if BLE_MESH_DEV

@@ -63,6 +63,8 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROXY_CLIENT_SET_FILTER_TYPE,
     BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR,
     BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR,
+    BTC_BLE_MESH_ACT_START_BLE_ADVERTISING,
+    BTC_BLE_MESH_ACT_STOP_BLE_ADVERTISING,
     BTC_BLE_MESH_ACT_DEINIT_MESH,
 } btc_ble_mesh_prov_act_t;
 
@@ -235,6 +237,13 @@ typedef union {
         uint16_t  addr_num;
         uint16_t *addr;
     } proxy_client_remove_filter_addr;
+    struct ble_mesh_start_ble_advertising_args {
+        esp_ble_mesh_ble_adv_param_t param;
+        esp_ble_mesh_ble_adv_data_t  data;
+    } start_ble_advertising;
+    struct ble_mesh_stop_ble_advertising_args {
+        uint8_t index;
+    } stop_ble_advertising;
     struct ble_mesh_deinit_args {
         esp_ble_mesh_deinit_param_t param;
     } mesh_deinit;
