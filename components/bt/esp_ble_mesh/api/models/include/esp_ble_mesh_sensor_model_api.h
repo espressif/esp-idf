@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_SENSOR_CLI
  *
  *  @brief  Define a new Sensor Client Model.
@@ -620,6 +624,10 @@ typedef void (* esp_ble_mesh_sensor_server_cb_t)(esp_ble_mesh_sensor_server_cb_e
  *
  */
 esp_err_t esp_ble_mesh_register_sensor_server_callback(esp_ble_mesh_sensor_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_SENSOR_MODEL_API_H_ */
 

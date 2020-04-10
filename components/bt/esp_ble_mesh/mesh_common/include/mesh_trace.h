@@ -11,6 +11,10 @@
 
 #include "esp_log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Define common tracing for all */
 #ifndef LOG_LEVEL_ERROR
 #define LOG_LEVEL_ERROR     1
@@ -125,6 +129,10 @@
 #define NET_BUF_SIMPLE_INFO(fmt, args...)
 #define NET_BUF_SIMPLE_DBG(fmt, args...)
 #define NET_BUF_SIMPLE_ASSERT(cond)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _BLE_MESH_TRACE_H_ */

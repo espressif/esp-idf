@@ -31,6 +31,10 @@
 #define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
 
@@ -2073,5 +2077,9 @@ typedef union {
         esp_ble_mesh_server_state_type_t type;  /*!< Type of the updated server state */
     } server_model_update_state;                /*!< Event parameter of ESP_BLE_MESH_SERVER_MODEL_UPDATE_STATE_COMP_EVT */
 } esp_ble_mesh_model_cb_param_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_DEFS_H_ */

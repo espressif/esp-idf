@@ -12,6 +12,10 @@
 
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int bt_mesh_test(void);
 
 struct bt_mesh_device_network_info {
@@ -40,5 +44,9 @@ int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl);
 int bt_mesh_test_start_scanning(bool wl_en);
 
 int bt_mesh_test_stop_scanning(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_TEST_H_ */
