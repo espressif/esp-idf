@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "adv.h"
 #include "mesh.h"
 #include "test.h"
 #include "crypto.h"
@@ -23,8 +24,8 @@ int bt_mesh_test(void)
 {
     return 0;
 }
-#endif /* #if defined(CONFIG_BLE_MESH_SELF_TEST) */
 
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
 int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
 {
     const struct bt_mesh_comp *comp = NULL;
@@ -125,3 +126,44 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
+
+#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
+int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl)
+{
+    int err = 0;
+
+    if (wl == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    BT_INFO("%s, addr %s, addr_type 0x%02x", wl->add_remove ? "Add" : "Remove",
+        bt_hex(wl->remote_bda, BLE_MESH_ADDR_LEN), wl->addr_type);
+
+    err = bt_le_update_white_list(wl);
+    if (err) {
+        BT_ERR("Failed to update white list");
+    }
+
+    return err;
+}
+
+int bt_mesh_test_start_scanning(bool wl_en)
+{
+    BT_INFO("Scan with filter policy %s", wl_en ? "enabled" : "disabled");
+
+    if (wl_en) {
+        return bt_mesh_scan_with_wl_enable();
+    } else {
+        return bt_mesh_scan_enable();
+    }
+}
+
+int bt_mesh_test_stop_scanning(void)
+{
+    return bt_mesh_scan_disable();
+}
+#endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
+
+#endif /* CONFIG_BLE_MESH_SELF_TEST */
