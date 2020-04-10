@@ -12,7 +12,7 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 
-TEST_CASE("mbedtls AES performance", "[aes]")
+TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
 {
     const unsigned CALLS = 256;
     const unsigned CALL_SZ = 32 * 1024;
