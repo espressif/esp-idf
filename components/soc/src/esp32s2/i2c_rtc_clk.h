@@ -16,6 +16,7 @@
 
 #include "i2c_apll.h"
 #include "i2c_bbpll.h"
+#include "i2c_ulp.h"
 
 #ifdef __cplusplus
 extern "C" {

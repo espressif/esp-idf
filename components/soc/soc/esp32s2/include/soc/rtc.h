@@ -751,6 +751,7 @@ typedef struct {
     uint32_t xtal_fpu : 1;
     uint32_t bbpll_fpu : 1;
     uint32_t cpu_waiti_clk_gate : 1;
+    uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
 } rtc_config_t;
 
 /**
@@ -768,7 +769,8 @@ typedef struct {
     .rtc_dboost_fpd = 1, \
     .xtal_fpu = 0, \
     .bbpll_fpu = 0, \
-    .cpu_waiti_clk_gate = 1\
+    .cpu_waiti_clk_gate = 1, \
+    .cali_ocode = 0\
 }
 
 /**
