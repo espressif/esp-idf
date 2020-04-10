@@ -29,11 +29,6 @@ _Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt ha
 _Static_assert(TIMER_INTR_T1 == TIMG_T1_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 
-typedef struct {
-    timg_dev_t *dev;
-    timer_idx_t idx;
-} timer_ll_context_t;
-
 // Get timer group instance with giving group number
 #define TIMER_LL_GET_HW(num) ((num == 0) ? (&TIMERG0) : (&TIMERG1))
 
@@ -42,12 +37,18 @@ typedef struct {
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
- * @param divider Prescale value
+ * @param divider Prescale value (0 and 1 are not valid)
  *
  * @return None
  */
-static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t divider)
+static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
+    // refer to TRM 18.2.1
+    if (divider == 65536) {
+        divider = 0;
+    } else if (divider == 1) {
+        divider = 2;
+    }
     int timer_en = hw->hw_timer[timer_num].config.enable;
     hw->hw_timer[timer_num].config.enable = 0;
     hw->hw_timer[timer_num].config.divider = divider;
@@ -63,9 +64,15 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
  *
  * @return None
  */
-static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t *divider)
+static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t *divider)
 {
-    *divider = hw->hw_timer[timer_num].config.divider;
+    uint32_t d = hw->hw_timer[timer_num].config.divider;
+    if (d == 0) {
+        d = 65536;
+    } else if (d == 1) {
+        d = 2;
+    }
+    *divider = d;
 }
 
 /**
@@ -255,6 +262,7 @@ static inline bool timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_n
 FORCE_INLINE_ATTR void timer_ll_intr_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
     hw->int_ena.val |= BIT(timer_num);
+    hw->hw_timer[timer_num].config.level_int_en = 1;
 }
 
 /**
@@ -268,6 +276,7 @@ FORCE_INLINE_ATTR void timer_ll_intr_enable(timg_dev_t *hw, timer_idx_t timer_nu
 FORCE_INLINE_ATTR void timer_ll_intr_disable(timg_dev_t *hw, timer_idx_t timer_num)
 {
     hw->int_ena.val &= (~BIT(timer_num));
+    hw->hw_timer[timer_num].config.level_int_en = 0;
 }
 
 /**
@@ -372,13 +381,17 @@ static inline bool timer_ll_get_edge_int_enable(timg_dev_t *hw, timer_idx_t time
  * @brief Get interrupt status register address.
  *
  * @param hw Beginning address of the peripheral registers.
- * @param intr_status_reg Interrupt status register address
  *
- * @return None
+ * @return Interrupt status register address
  */
-static inline void timer_ll_get_intr_status_reg(timg_dev_t *hw, uint32_t *intr_status_reg)
+static inline uint32_t timer_ll_get_intr_status_reg(timg_dev_t *hw)
 {
-    *intr_status_reg = (uint32_t)&(hw->int_st_timers.val);
+    return (uint32_t) & (hw->int_st_timers.val);
+}
+
+static inline uint32_t timer_ll_get_intr_mask_bit(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return (1U << timer_num);
 }
 
 #ifdef __cplusplus

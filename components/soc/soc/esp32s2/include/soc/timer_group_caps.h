@@ -14,6 +14,4 @@
 
 #pragma once
 
-#define TIMER_GROUP_SUPPORTS_XTAL_CLOCK
-
-#define WDT_SOURCE_CLK_FREQ_MHZ (80) // Watch Dog clock source comes from APB, which is 80MHz by default
+#define SOC_TIMER_GROUP_SUPPORT_XTAL
