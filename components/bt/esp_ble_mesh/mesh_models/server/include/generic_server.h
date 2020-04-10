@@ -11,6 +11,10 @@
 
 #include "server_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct bt_mesh_gen_onoff_state {
     u8_t onoff;
     u8_t target_onoff;
@@ -385,5 +389,9 @@ int bt_mesh_gen_user_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_gen_admin_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_gen_manu_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_gen_client_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _GENERIC_SERVER_H_ */

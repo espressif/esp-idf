@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_HEALTH_SRV
  *
  *  @brief  Define a new Health Server Model.
@@ -403,4 +407,8 @@ esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_
  */
 esp_err_t esp_ble_mesh_health_server_fault_update(esp_ble_mesh_elem_t *element);
 
-#endif /** _ESP_BLE_MESH_HEALTH_MODEL_API_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ESP_BLE_MESH_HEALTH_MODEL_API_H_ */

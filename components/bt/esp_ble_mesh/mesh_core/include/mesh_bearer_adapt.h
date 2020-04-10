@@ -15,6 +15,10 @@
 #include "mesh_uuid.h"
 #include "mesh_buf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* BLE Mesh Max Connection Count */
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #define BLE_MESH_MAX_CONN   \
@@ -812,6 +816,10 @@ enum {
 };
 
 int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_BEARER_ADRPT_H_ */
 

@@ -18,6 +18,10 @@
 #include "net.h"
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_INVALID_NODE_INDEX     0xFFFF
 #define BLE_MESH_NODE_NAME_SIZE         31
 
@@ -137,5 +141,9 @@ u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16]);
 const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx);
 
 const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROVISIONER_MAIN_H_ */

@@ -17,6 +17,10 @@
 
 #include "mesh_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * BLE Mesh Device Properties.
  *
@@ -1041,5 +1045,9 @@ typedef u16_t bt_mesh_volume_flow_t;
 /* Mesh Device Property related function */
 
 u8_t bt_mesh_get_dev_prop_len(u16_t prop_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _DEVICE_PROPERTY_H_ */

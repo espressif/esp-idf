@@ -19,6 +19,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct bt_mesh_health_srv_cb {
     /* Clear registered faults */
     void (*fault_clear)(struct bt_mesh_model *model, u16_t company_id);
@@ -89,6 +93,10 @@ extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
             bt_mesh_health_srv_op, pub, srv)
 
 int bt_mesh_fault_update(struct bt_mesh_elem *elem);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
