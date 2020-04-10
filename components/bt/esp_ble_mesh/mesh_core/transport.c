@@ -114,6 +114,7 @@ static u8_t seg_rx_buf_data[(CONFIG_BLE_MESH_RX_SEG_MSG_COUNT *
 static u16_t hb_sub_dst = BLE_MESH_ADDR_UNASSIGNED;
 
 static bt_mesh_mutex_t tx_seg_lock;
+static bt_mesh_mutex_t rx_seg_lock;
 
 static void bt_mesh_tx_seg_mutex_new(void)
 {
@@ -135,6 +136,28 @@ static void bt_mesh_tx_seg_lock(void)
 static void bt_mesh_tx_seg_unlock(void)
 {
     bt_mesh_mutex_unlock(&tx_seg_lock);
+}
+
+static void bt_mesh_rx_seg_mutex_new(void)
+{
+    if (!rx_seg_lock.mutex) {
+        bt_mesh_mutex_create(&rx_seg_lock);
+    }
+}
+
+static void bt_mesh_rx_seg_mutex_free(void)
+{
+    bt_mesh_mutex_free(&rx_seg_lock);
+}
+
+static void bt_mesh_rx_seg_lock(void)
+{
+    bt_mesh_mutex_lock(&rx_seg_lock);
+}
+
+static void bt_mesh_rx_seg_unlock(void)
+{
+    bt_mesh_mutex_unlock(&rx_seg_lock);
 }
 
 u8_t bt_mesh_get_seg_retrans_num(void)
@@ -910,7 +933,9 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
     while ((bit = find_lsb_set(ack))) {
         if (tx->seg[bit - 1]) {
             BT_DBG("seg %u/%u acked", bit - 1, tx->seg_n);
+            bt_mesh_tx_seg_lock();
             seg_tx_done(tx, bit - 1);
+            bt_mesh_tx_seg_unlock();
         }
 
         ack &= ~BIT(bit - 1);
@@ -1257,6 +1282,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 {
     BT_DBG("rx %p", rx);
 
+    bt_mesh_rx_seg_lock();
+
     k_delayed_work_cancel(&rx->ack);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && rx->obo &&
@@ -1278,6 +1305,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
         rx->src = BLE_MESH_ADDR_UNASSIGNED;
         rx->dst = BLE_MESH_ADDR_UNASSIGNED;
     }
+
+    bt_mesh_rx_seg_unlock();
 }
 
 static u32_t incomplete_timeout(struct seg_rx *rx)
@@ -1306,9 +1335,20 @@ static void seg_ack(struct k_work *work)
 
     BT_DBG("rx %p", rx);
 
+    bt_mesh_rx_seg_lock();
+
     if (k_uptime_get_32() - rx->last > incomplete_timeout(rx)) {
         BT_WARN("Incomplete timer expired");
+        bt_mesh_rx_seg_unlock();
         seg_rx_reset(rx, false);
+        return;
+    }
+
+    /* Add this check in case the timeout handler is just executed
+     * after the seg_rx_reset() which may reset rx->sub to NULL.
+     */
+    if (rx->sub == NULL) {
+        bt_mesh_rx_seg_unlock();
         return;
     }
 
@@ -1316,6 +1356,8 @@ static void seg_ack(struct k_work *work)
              rx->block, rx->obo);
 
     k_delayed_work_submit(&rx->ack, ack_timeout(rx));
+
+    bt_mesh_rx_seg_unlock();
 }
 
 static inline u8_t seg_len(bool ctl)
@@ -1814,6 +1856,7 @@ void bt_mesh_trans_init(void)
     }
 
     bt_mesh_tx_seg_mutex_new();
+    bt_mesh_rx_seg_mutex_new();
 }
 
 void bt_mesh_trans_deinit(bool erase)
@@ -1841,6 +1884,7 @@ void bt_mesh_trans_deinit(bool erase)
     }
 
     bt_mesh_tx_seg_mutex_free();
+    bt_mesh_rx_seg_mutex_free();
 }
 
 void bt_mesh_rpl_clear(void)
