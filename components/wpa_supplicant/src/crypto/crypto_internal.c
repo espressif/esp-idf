@@ -28,6 +28,8 @@
 #include "md5_i.h"
 #ifdef USE_MBEDTLS_CRYPTO
 #include "mbedtls/sha256.h"
+#else
+#include "sha256_i.h"
 #endif
 
 struct crypto_hash {
