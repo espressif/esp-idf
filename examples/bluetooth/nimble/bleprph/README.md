@@ -32,8 +32,6 @@ Note :
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Select I/O capabilities of device from 'Example Configuration > I/O Capability', default is 'Just_works'.
 
 * Enable/Disable other security related parameters 'Bonding, MITM option, secure connection(SM SC)' from 'Example Configuration'.

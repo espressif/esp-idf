@@ -34,8 +34,6 @@ To provision the device running this example, the `esp_prov.py` script needs to 
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Under Example Configuration set the following :
     * SoftAP SSID (Defaults to PROV_<MACID>)
     * SoftAP Password (Defaults to PROV_PASS)

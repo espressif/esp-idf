@@ -20,8 +20,6 @@ In this example, we generate a 100Hz triangle and sine wave and send it out from
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

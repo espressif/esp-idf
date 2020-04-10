@@ -30,8 +30,6 @@ We use ADC1_CHANNEL_7 (GPIO18) and DAC_CHANNEL_1 (GPIO17) by default, you need t
 ```
 idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 * Set ADC2 and DAC channel in "Example Configuration"
 
 ### Build and Flash

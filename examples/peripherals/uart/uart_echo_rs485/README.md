@@ -47,18 +47,9 @@ Note: The GPIO22 - GPIO25 can not be used with ESP32-S2 chip because they are us
 ```
 idf.py menuconfig
 ```
-or
-```
-idf.py menuconfig
-```
-* Set serial port under Serial Flasher Options to the serial port of ESP32-WROVER-KIT board.
 
 ### Build and Flash
 Build the project and flash it to the board, then run monitor tool to view serial output:
-```
-idf.py -p PORT flash monitor
-```
-or
 ```
 idf.py -p PORT flash monitor
 ```
