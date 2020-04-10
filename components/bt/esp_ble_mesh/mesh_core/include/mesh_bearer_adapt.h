@@ -409,6 +409,9 @@ struct bt_mesh_scan_param {
 
     /** Scan window (N * 0.625 ms) */
     u16_t window;
+
+    /** BLE scan filter policy */
+    u8_t  scan_fil_policy;
 };
 
 struct bt_mesh_conn {
@@ -654,6 +657,23 @@ int bt_le_adv_stop(void);
 int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t cb);
 
 int bt_le_scan_stop(void);
+
+typedef enum {
+    BLE_MESH_WHITELIST_REMOVE,
+    BLE_MESH_WHITELIST_ADD,
+} bt_mesh_wl_operation;
+
+struct bt_mesh_white_list {
+    bool add_remove;
+    u8_t remote_bda[BLE_MESH_ADDR_LEN];
+    u8_t addr_type;
+    /* For Bluedroid host, this callback is used to notify the
+     * result of updating white list.
+     */
+    void (*update_wl_comp_cb)(u8_t status, bt_mesh_wl_operation wl_operation);
+};
+
+int bt_le_update_white_list(struct bt_mesh_white_list *wl);
 
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb);
 void bt_mesh_gatts_conn_cb_deregister(void);
