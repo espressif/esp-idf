@@ -84,8 +84,8 @@ class PublicHeaderChecker:
     PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK = 6    # -> Both preprocessors produce different, non-zero output with extern "C" (header seems OK)
     PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED = 7  # -> Both preprocessors produce different, non-zero output without extern "C" (header fails)
 
-    def log(self, message):
-        if self.verbose:
+    def log(self, message, debug=False):
+        if self.verbose or debug:
             print(message)
 
     def __init__(self, verbose=False, jobs=1, prefix=None):
@@ -182,6 +182,8 @@ class PublicHeaderChecker:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
             return  # Header OK: produced zero code
+        self.log("{}: FAILED: compilation issue".format(header), True)
+        self.log(err, True)
         raise HeaderFailedBuildError()
 
     def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
@@ -198,11 +200,11 @@ class PublicHeaderChecker:
             if rc != 0:
                 if re.search(self.error_macro, err):
                     if re.search(self.error_orphan_kconfig, err):
-                        self.log("{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED".format(header))
+                        self.log("{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED".format(header), True)
                         return self.COMPILE_ERR_REF_CONFIG_HDR_FAILED
                     self.log("{}: Error directive failure: OK".format(header))
                     return self.COMPILE_ERR_ERROR_MACRO_HDR_OK
-                self.log("{}: FAILED: compilation issue".format(header))
+                self.log("{}: FAILED: compilation issue".format(header), True)
                 self.log(err)
                 return self.COMPILE_ERR_HDR_FAILED
             # compile with C compiler, outputs to another temp file
@@ -216,12 +218,12 @@ class PublicHeaderChecker:
                 if not cpp_out or cpp_out.isspace():
                     self.log("{} The same, but empty out - OK".format(header))
                     return self.PREPROC_OUT_ZERO_HDR_OK
-                self.log("{} FAILED It is the same!".format(header))
+                self.log("{} FAILED C and C++ preprocessor output is the same!".format(header), True)
                 return self.PREPROC_OUT_SAME_HRD_FAILED
             if re.search(self.extern_c, diff):
                 self.log("{} extern C present - OK".format(header))
                 return self.PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK
-            self.log("{} Different but no extern C - FAILED".format(header))
+            self.log("{} Different but no extern C - FAILED".format(header), True)
             return self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED
         finally:
             os.unlink(cpp_out_file)
@@ -231,7 +233,7 @@ class PublicHeaderChecker:
                 pass
 
     # Get compilation data from an example to list all public header files
-    def list_public_headers(self, ignore_dirs, ignore_files):
+    def list_public_headers(self, ignore_dirs, ignore_files, only_dir=None):
         idf_path = os.getenv('IDF_PATH')
         project_dir = os.path.join(idf_path, "examples", "get-started", "blink")
         subprocess.check_call(["idf.py", "reconfigure"], cwd=project_dir)
@@ -262,6 +264,9 @@ class PublicHeaderChecker:
         all_include_files = []
         files_to_check = []
         for d in include_dirs:
+            if only_dir is not None and not os.path.relpath(d, idf_path).startswith(only_dir):
+                self.log('{} - directory ignored (not in "{}")'.format(d, only_dir))
+                continue
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
                 self.log("{} - directory ignored".format(d))
                 continue
@@ -293,6 +298,7 @@ def check_all_headers():
     parser.add_argument("--jobs", "-j", help="number of jobs to run checker", default=1, type=int)
     parser.add_argument("--prefix", "-p", help="compiler prefix", default="xtensa-esp32-elf-", type=str)
     parser.add_argument("--exclude-file", "-e", help="exception file", default="check_public_headers_exceptions.txt", type=str)
+    parser.add_argument("--only-dir", "-d", help="reduce the analysis to this directory only", default=None, type=str)
     args = parser.parse_args()
 
     # process excluded files and dirs
@@ -311,7 +317,7 @@ def check_all_headers():
 
     # start header check
     with PublicHeaderChecker(args.verbose, args.jobs, args.prefix) as header_check:
-        header_check.list_public_headers(ignore_dirs, ignore_files)
+        header_check.list_public_headers(ignore_dirs, ignore_files, only_dir=args.only_dir)
         try:
             header_check.join()
             failures = header_check.get_failed()
