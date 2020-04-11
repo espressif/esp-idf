@@ -27,6 +27,7 @@ typedef unsigned long long  u64_t;
 
 typedef int         bt_mesh_atomic_t;
 
+#ifndef __cplusplus
 #ifndef bool
 #define bool        int8_t
 #endif
@@ -37,6 +38,7 @@ typedef int         bt_mesh_atomic_t;
 
 #ifndef true
 #define true        1
+#endif
 #endif
 
 #ifdef __cplusplus
