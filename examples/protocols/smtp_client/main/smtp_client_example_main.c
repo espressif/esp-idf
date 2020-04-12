@@ -425,7 +425,7 @@ static void smtp_client_task(void *pvParameters)
                    "From: %s\r\nSubject: mbed TLS Test mail\r\n"
                    "To: %s\r\n"
                    "MIME-Version: 1.0 (mime-construct 1.9)\n",
-                   "ESP32 SMTP Client", RECIPIENT_MAIL);
+                   "ESP32 SMTP Client", SENDER_MAIL, RECIPIENT_MAIL);
 
     /**
      * Note: We are not validating return for some ssl_writes.
