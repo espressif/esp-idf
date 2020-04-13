@@ -23,8 +23,6 @@ Pin connection:
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

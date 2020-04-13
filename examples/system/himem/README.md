@@ -32,8 +32,6 @@ a setup does not make much sense.
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Make sure that SPI RAM bank switching is enabled. (Compiling the example with default values will automatically enable this.) It can be found under
   Component config -> ESP32-specific -> Support for external, SPI-connected RAM  -> SPI RAM config .
 
@@ -110,4 +108,3 @@ I (132) spiram: Reserving pool of 32K of internal memory for DMA/internal alloca
 Himem has 6080KiB of memory, 6080KiB of which is free. Testing the free memory...
 Done!
 ```
-

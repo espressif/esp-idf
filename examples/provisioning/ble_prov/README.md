@@ -50,8 +50,6 @@ There are various applications, specific to Windows and macOS platform which can
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Under Example Configuration set the following :
     * Security Version (default 1)
     * Proof of Possession (default "abcd1234")
