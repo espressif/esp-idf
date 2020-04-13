@@ -47,18 +47,9 @@ Connect USB to RS485 adapter to computer and connect its D+, D- output lines wit
 ```
 idf.py menuconfig
 ```
-or
-```
-idf.py menuconfig
-```
-* Set serial port under Serial Flasher Options to the serial port of ESP32-WROVER-KIT board.
 
 ### Build and Flash
 Build the project and flash it to the board, then run monitor tool to view serial output:
-```
-idf.py -p PORT flash monitor
-```
-or
 ```
 idf.py -p PORT flash monitor
 ```

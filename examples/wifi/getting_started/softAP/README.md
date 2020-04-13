@@ -11,8 +11,6 @@
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Set WiFi SSID and WiFi Password and Maximal STA connections under Example Configuration Options.
 
 ### Build and Flash

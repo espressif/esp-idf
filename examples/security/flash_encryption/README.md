@@ -14,8 +14,6 @@ The example also demonstrates writing and reading encrypted partitions in flash.
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Enable the flash encryption mode (Development or Release) under Security Features. Default usage mode is Development (recommended during test and development phase).
 
 * Ensure Bootloader log verbosity is Info under Bootloader config.
