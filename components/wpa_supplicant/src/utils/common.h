@@ -434,6 +434,11 @@ struct wpa_freq_range_list {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 void wpa_bin_clear_free(void *bin, size_t len);
+int int_array_len(const int *a);
+void bin_clear_free(void *bin, size_t len);
+void str_clear_free(char *str);
+char * get_param(const char *cmd, const char *param);
+void * os_memdup(const void *src, size_t len);
 
 /*
  * gcc 4.4 ends up generating strict-aliasing warnings about some very common

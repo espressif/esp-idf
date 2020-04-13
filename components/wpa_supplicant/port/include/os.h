@@ -35,6 +35,15 @@ struct os_time {
 	suseconds_t usec;
 };
 
+struct os_tm {
+    int sec; /* 0..59 or 60 for leap seconds */
+    int min; /* 0..59 */
+    int hour; /* 0..23 */
+    int day; /* 1..31 */
+    int month; /* 1..12 */
+    int year; /* Four digit year */
+};
+
 /**
  * os_get_time - Get current time (sec, usec)
  * @t: Pointer to buffer for the time
@@ -76,6 +85,7 @@ int os_get_time(struct os_time *t);
 int os_mktime(int year, int month, int day, int hour, int min, int sec,
 	      os_time_t *t);
 
+int os_gmtime(os_time_t t, struct os_tm *tm);
 
 /**
  * os_daemonize - Run in the background (detach from the controlling terminal)
@@ -293,7 +303,4 @@ static inline int os_snprintf_error(size_t size, int res)
  * This function matches in behavior with the strlcpy(3) function in OpenBSD.
  */
 size_t os_strlcpy(char *dest, const char *src, size_t siz);
-
-
-
 #endif /* OS_H */
