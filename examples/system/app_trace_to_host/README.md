@@ -68,7 +68,7 @@ idf.py -p PORT flash monitor
 
 (Replace PORT with the name of the serial port to use.)
 
-**Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the ESP32 by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
+**Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the ESP32 by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to `adc.log` file in the example folder.
 
 ```bash
 esp apptrace start file://adc.log 0 9000 5 0 0
@@ -102,7 +102,7 @@ I (4329) example: Collected 5 samples in 20 ms.
 To access the JTAG logs, the `adc.log` file should be decoded. This can be done by using the `logtrace_proc.py` script  as such:
 
 ```bash
-$IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
+$IDF_PATH/tools/esp_app_trace/logtrace_proc.py adc.log build/app_trace_to_host.elf
 ```
 
 The `logtrace_proc.py` script should produce the following output when decoding:
