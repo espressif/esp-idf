@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
 # Application Level Tracing Example (Logging to Host)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -30,11 +27,13 @@ This example will assume that that an ESP-WROVER-KIT is used.
 
 #### Pin Assignment:
 
-The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `GPIO34` (`ADC1_CHANNEL_6`). Users may provide this signal themselves, our use the DAC generated signal by bridging GPIO34 with `GPIO25` (`DAC_CHANNEL_1`).
+The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHANNEL_1`. Listed below are the corresponding DAC/ADC channel pins
+for supported targets.
 
-| DAC Output         | ADC Input          |
-| ------------------ | ------------------ |
-| Channel 1 (GPIO25) | Channel 6 (GPIO34) |
+| Target             | DAC Output         | ADC Input          |
+| ------------------ | ------------------ | ------------------ |
+| ESP32              | Channel 1 (GPIO25) | Channel 6 (GPIO34) |
+| ESP32S2            | Channel 1 (GPIO17) | Channel 6 (GPIO7)  |
 
 #### Extra Connections:
 
