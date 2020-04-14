@@ -199,18 +199,21 @@ static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t pat
  */
 static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_ll_pattern_table_t pattern)
 {
+    /* There are 4 registers store 16 conversion rules. Each register `saradc_sar1_patt_tab` save 4 conversion rules.
+    Bit map [31:24] for `n + 1` item, [23:16] for `n + 2` item, [15:8] for `n + 3` item, [7:0] for `n + 4` item.*/
     uint32_t tab;
-    uint8_t *arg;
+    uint8_t index = pattern_index / 4;
+    uint8_t offset = (pattern_index % 4) * 8;
     if (adc_n == ADC_NUM_1) {
-        tab = SYSCON.saradc_sar1_patt_tab[pattern_index / 4];
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        SYSCON.saradc_sar1_patt_tab[pattern_index / 4] = tab;
+        tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
+        tab &= (~(0xFF000000 >> offset));           // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        SYSCON.saradc_sar1_patt_tab[index] = tab;   // Write back
     } else { // adc_n == ADC_NUM_2
-        tab = SYSCON.saradc_sar2_patt_tab[pattern_index / 4];
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        SYSCON.saradc_sar2_patt_tab[pattern_index / 4] = tab;
+        tab = SYSCON.saradc_sar2_patt_tab[index];   // Read old register value
+        tab &= (~(0xFF000000 >> offset));           // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        SYSCON.saradc_sar2_patt_tab[index] = tab;   // Write back
     }
 }
 
