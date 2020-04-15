@@ -76,7 +76,6 @@ void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame)
     }
 }
 
-
 static void send_reason(void)
 {
     esp_gdbstub_send_start();
@@ -90,6 +89,13 @@ static uint32_t gdbstub_hton(uint32_t i)
     return __builtin_bswap32(i);
 }
 
+static void esp_gdbstub_send_str_as_hex(const char *str)
+{
+    while (*str) {
+        esp_gdbstub_send_hex(*str, 8);
+        str++;
+    }    
+}
 /** Send all registers to gdb */
 static void handle_g_command(const unsigned char* cmd, int len)
 {
@@ -179,10 +185,6 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 
 static eTaskState get_task_state(size_t index) 
 {
-    if (index >= s_scratch.task_count) {
-        return eInvalid;
-    }
-
     return s_scratch.tasks[index].eState;
 }
 
@@ -288,14 +290,7 @@ static void handle_qsThreadInfo_command(const unsigned char* cmd, int len)
 
 /** qThreadExtraInfo requests the thread name */
 static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
-{
-    uint8_t task_state_string_index = 0;
-    const char task_state_string[][] = "Running",
-                                    "Ready",
-                                    "Blocked",
-                                    "Suspended",
-                                    "Invalid";
-
+{ 
     cmd += sizeof("qThreadExtraInfo,") - 1;
     int task_index = esp_gdbstub_gethex(&cmd, -1);
     TaskHandle_t handle;
@@ -304,37 +299,30 @@ static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
         return;
     }
     esp_gdbstub_send_start();
-    const char* task_name = pcTaskGetTaskName(handle);
-    while (*task_name) {
-        esp_gdbstub_send_hex(*task_name, 8);
-        task_name++;
-    }
-
+    esp_gdbstub_send_str_as_hex("Name: ");
+    esp_gdbstub_send_str_as_hex(pcTaskGetTaskName(handle));
     esp_gdbstub_send_hex(' ', 8);
-
+    
     eTaskState state = get_task_state(task_index);
     switch (state) {
         case eRunning:
-            task_state_string_index = 0;
+            esp_gdbstub_send_str_as_hex("State: Running"); 
         break;
         case eReady:
-            task_state_string_index = 1;
+            esp_gdbstub_send_str_as_hex("State: Ready"); 
         break;
         case eBlocked:
-            task_state_string_index = 2;
+            esp_gdbstub_send_str_as_hex("State: Blocked"); 
         break;
         case eSuspended:
-            task_state_string_index = 3;
+            esp_gdbstub_send_str_as_hex("State: Suspended"); 
+        break;
+        case eDeleted:
+            esp_gdbstub_send_str_as_hex("State: Deleted"); 
         break;
         default:
-            task_state_string_index = 4;
+            esp_gdbstub_send_str_as_hex("State: Invalid"); 
         break;
-    }
-
-    const char* buffer = &task_state_string[task_state_string_index][0];
-    while (*buffer) {
-        esp_gdbstub_send_hex(*buffer, 8);
-        buffer++;
     }
     
     esp_gdbstub_send_end();
