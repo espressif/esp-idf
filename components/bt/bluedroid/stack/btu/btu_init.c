@@ -146,6 +146,10 @@ void btu_free_core(void)
 ** Returns          void
 **
 ******************************************************************************/
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+    StaticQueue_t *btu_queue_buffer = NULL;
+    uint8_t *btu_queue_storage = NULL;
+#endif
 void BTU_StartUp(void)
 {
 #if BTU_DYNAMIC_MEMORY
@@ -178,14 +182,33 @@ void BTU_StartUp(void)
 
     osi_mutex_new(&btu_l2cap_alarm_lock);
 
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+    btu_queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    if (!btu_queue_buffer) {
+        BTC_TRACE_ERROR("Btu Queue malloc fail in PSRAM.\n");
+        goto error_exit;
+    }
+
+    btu_queue_storage = heap_caps_malloc((BTU_QUEUE_LEN*sizeof(BtTaskEvt_t)), MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+    if (!btu_queue_storage ) {
+        BTC_TRACE_ERROR("Btu Queue malloc fail in PSRAM.\n");
+        goto error_exit;
+    }
+
+    xBtuQueue = xQueueCreateStatic(BTU_QUEUE_LEN, sizeof(BtTaskEvt_t), btu_queue_storage, btu_queue_buffer);
+    BTC_TRACE_API("Btu Queue malloc in PSRAM Success.\n");
+#else
+    BTC_TRACE_API("xBtuQueue in internal RAM.");
     xBtuQueue = xQueueCreate(BTU_QUEUE_LEN, sizeof(BtTaskEvt_t));
+#endif
+
     xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, BTU_TASK_PINNED_TO_CORE);
 
     btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING);
 
     return;
 
-error_exit:;
+error_exit:
     LOG_ERROR("%s Unable to allocate resources for bt_workqueue", __func__);
     BTU_ShutDown();
 }
@@ -208,6 +231,17 @@ void BTU_ShutDown(void)
 
     vTaskDelete(xBtuTaskHandle);
     vQueueDelete(xBtuQueue);
+
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+    if(btu_queue_buffer){
+        heap_caps_free(btu_queue_buffer);
+        btu_queue_buffer = NULL;
+    }
+    if(btu_queue_storage){
+        heap_caps_free(btu_queue_storage);
+        btu_queue_storage = NULL;
+    }
+#endif
 
     btu_general_alarm_hash_map = NULL;
 

@@ -186,10 +186,33 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     return btc_task_post(&lmsg, TASK_POST_BLOCKING);
 }
 
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+    StaticQueue_t *btc_queue_buffer = NULL;
+    uint8_t *btc_queue_storage = NULL;
+#endif
 
 int btc_init(void)
 {
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+
+    btc_queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    if (!btc_queue_buffer) {
+        BTC_TRACE_ERROR("Btc Queue malloc fail in PSRAM.\n");
+        return BT_STATUS_NOMEM;
+    }
+
+    btc_queue_storage = heap_caps_malloc((BTC_TASK_QUEUE_LEN*sizeof(btc_msg_t)), MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+    if (!btc_queue_storage ) {
+        BTC_TRACE_ERROR("Btc Queue malloc fail in PSRAM.\n");
+        return BT_STATUS_NOMEM;
+    }
+
+    xBtcQueue = xQueueCreateStatic(BTC_TASK_QUEUE_LEN, sizeof(btc_msg_t), btc_queue_storage, btc_queue_buffer);
+    BTC_TRACE_API("Btc Queue malloc in PSRAM Success.\n");
+#else
+    BTC_TRACE_API("xBtcQueue in internal RAM.");
     xBtcQueue = xQueueCreate(BTC_TASK_QUEUE_LEN, sizeof(btc_msg_t));
+#endif
     xTaskCreatePinnedToCore(btc_task, "Btc_task", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle, BTC_TASK_PINNED_TO_CORE);
     if (xBtcTaskHandle == NULL || xBtcQueue == 0){
         return BT_STATUS_NOMEM;
@@ -208,6 +231,17 @@ void btc_deinit(void)
     vQueueDelete(xBtcQueue);
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_deinit();
+#endif
+
+#if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
+    if(btc_queue_buffer){
+        heap_caps_free(btc_queue_buffer);
+        btc_queue_buffer = NULL;
+    }
+    if(btc_queue_storage){
+        heap_caps_free(btc_queue_storage);
+        btc_queue_storage = NULL;
+    }
 #endif
     xBtcTaskHandle = NULL;
     xBtcQueue = 0;
