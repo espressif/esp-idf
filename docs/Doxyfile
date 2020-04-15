@@ -110,6 +110,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/adc_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
+    $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
     $(IDF_PATH)/components/soc/include/hal/spi_types.h \
     $(IDF_PATH)/components/soc/include/hal/pcnt_types.h \

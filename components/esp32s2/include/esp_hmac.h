@@ -44,12 +44,12 @@ typedef enum {
  *
  * @note Uses the HMAC peripheral in "upstream" mode.
  *
- * @param key_id Determines which of the 7 key blocks in the efuses should be used for the HMAC calcuation.
+ * @param key_id Determines which of the 6 key blocks in the efuses should be used for the HMAC calcuation.
  *        The corresponding purpose field of the key block in the efuse must be set to the HMAC upstream purpose value.
  * @param message the message for which to calculate the HMAC
  * @param message_len message length
  *             return ESP_ERR_INVALID_STATE if unsuccessful
- * @param [out] hmac the hmac result
+ * @param [out] hmac the hmac result; the buffer behind the provided pointer must be 32 bytes long
  *
  * @return
  *      * ESP_OK, if the calculation was successful,

@@ -160,6 +160,7 @@ def update_exclude_patterns(tags):
         for e in ['esp32s2.rst',
                   'hw-reference/esp32s2/**',
                   'api-guides/ulps2_instruction_set.rst',
+                  'api-reference/peripherals/hmac.rst',
                   'api-reference/peripherals/temp_sensor.rst']:
             exclude_patterns.append(e)
 
