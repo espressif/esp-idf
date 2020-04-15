@@ -185,15 +185,16 @@ def action_extensions(base_actions, project_path):
         processes["openocd_outfile_name"] = openocd_out_name
         print("OpenOCD started as a background task {}".format(process.pid))
 
-    def gdbui(action, ctx, args, gdbgui_port, require_openocd):
+    def gdbui(action, ctx, args, gdbgui_port, gdbinit, require_openocd):
         """
         Asynchronous GDB-UI target
         """
         project_desc = get_project_desc(args, ctx)
         local_dir = project_desc["build_dir"]
         gdb = project_desc["monitor_toolprefix"] + "gdb"
-        gdbinit = os.path.join(local_dir, 'gdbinit')
-        create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc["app_elf"]))
+        if gdbinit is None:
+            gdbinit = os.path.join(local_dir, 'gdbinit')
+            create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc["app_elf"]))
         args = ["gdbgui", "-g", gdb, '--gdb-args="-x={}"'.format(gdbinit)]
         if gdbgui_port is not None:
             args += ["--port", gdbgui_port]
@@ -242,13 +243,13 @@ def action_extensions(base_actions, project_path):
         processes["gdb"] = p
         return p.wait()
 
-    def gdbtui(action, ctx, args, require_openocd):
+    def gdbtui(action, ctx, args, gdbinit, require_openocd):
         """
         Synchronous GDB target with text ui mode
         """
-        gdb(action, ctx, args, 1, require_openocd)
+        gdb(action, ctx, args, 1, gdbinit, require_openocd)
 
-    def gdb(action, ctx, args, gdb_tui, require_openocd):
+    def gdb(action, ctx, args, gdb_tui, gdbinit, require_openocd):
         """
         Synchronous GDB target
         """
@@ -266,8 +267,9 @@ def action_extensions(base_actions, project_path):
             raise FatalError("ELF file not found. You need to build & flash the project before running debug targets", ctx)
         gdb = project_desc["monitor_toolprefix"] + "gdb"
         local_dir = project_desc["build_dir"]
-        gdbinit = os.path.join(local_dir, 'gdbinit')
-        create_local_gdbinit(gdbinit, elf_file)
+        if gdbinit is None:
+            gdbinit = os.path.join(local_dir, 'gdbinit')
+            create_local_gdbinit(gdbinit, elf_file)
         args = [gdb, '-x={}'.format(gdbinit)]
         if gdb_tui is not None:
             args += ['-tui']
@@ -290,6 +292,11 @@ def action_extensions(base_actions, project_path):
         ("Fail this target if openocd (this targets dependency) failed.\n"),
         "is_flag": True,
         "default": False,
+    }
+    gdbinit = {
+        "names": ["--gdbinit"],
+        "help": ("Specify the name of gdbinit file to use\n"),
+        "default": None,
     }
     debug_actions = {
         "global_action_callbacks": [global_callback],
@@ -324,7 +331,7 @@ def action_extensions(base_actions, project_path):
                         ("run gdb in TUI mode\n"),
                         "default":
                         None,
-                    }, fail_if_openocd_failed
+                    }, gdbinit, fail_if_openocd_failed
                 ],
                 "order_dependencies": ["all", "flash"],
             },
@@ -338,14 +345,14 @@ def action_extensions(base_actions, project_path):
                         ("The port on which gdbgui will be hosted. Default: 5000\n"),
                         "default":
                         None,
-                    }, fail_if_openocd_failed
+                    }, gdbinit, fail_if_openocd_failed
                 ],
                 "order_dependencies": ["all", "flash"],
             },
             "gdbtui": {
                 "callback": gdbtui,
                 "help": "GDB TUI mode.",
-                "options": [fail_if_openocd_failed],
+                "options": [gdbinit, fail_if_openocd_failed],
                 "order_dependencies": ["all", "flash"],
             },
             "post_debug": {
