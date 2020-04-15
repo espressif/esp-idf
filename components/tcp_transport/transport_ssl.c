@@ -171,6 +171,7 @@ static int ssl_close(esp_transport_handle_t t)
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->ssl_initialized) {
         esp_tls_conn_delete(ssl->tls);
+        ssl->conn_state = TRANS_SSL_INIT;
         ssl->ssl_initialized = false;
     }
     return ret;
