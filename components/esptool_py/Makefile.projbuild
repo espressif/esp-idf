@@ -1,6 +1,6 @@
 # Component support for esptool.py. Doesn't do much by itself,
 # components have their own flash targets that can use these variables.
-ESPPORT ?= $(CONFIG_ESPTOOLPY_PORT)
+ESPPORT ?= $(call dequote,$(CONFIG_ESPTOOLPY_PORT))
 ESPBAUD ?= $(CONFIG_ESPTOOLPY_BAUD)
 ESPFLASHMODE ?= $(CONFIG_ESPTOOLPY_FLASHMODE)
 ESPFLASHFREQ ?= $(CONFIG_ESPTOOLPY_FLASHFREQ)
