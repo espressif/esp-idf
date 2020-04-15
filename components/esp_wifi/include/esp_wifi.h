@@ -808,6 +808,21 @@ esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
   */
 esp_err_t esp_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 
+/**
+  * @brief     Get AID of STA connected with soft-AP
+  *
+  * @param     mac  STA's mac address
+  * @param[out]  aid  Store the AID corresponding to STA mac
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_NOT_FOUND: Requested resource not found
+  *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
+  *    - ESP_ERR_WIFI_CONN: WiFi internal error, the station/soft-AP control block is invalid
+  */
+esp_err_t esp_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
 
 /**
   * @brief     Set the WiFi API configuration storage type
