@@ -177,6 +177,15 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
     return true;
 }
 
+static eTaskState get_task_state(size_t index) 
+{
+    if (index >= s_scratch.task_count) {
+        return eInvalid;
+    }
+
+    return s_scratch.tasks[index].eState;
+}
+
 /** Get the index of the task running on the current CPU, and save the result */
 static void find_paniced_task_index(void)
 {
@@ -280,6 +289,13 @@ static void handle_qsThreadInfo_command(const unsigned char* cmd, int len)
 /** qThreadExtraInfo requests the thread name */
 static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
 {
+    uint8_t task_state_string_index = 0;
+    const char task_state_string[][] = "Running",
+                                    "Ready",
+                                    "Blocked",
+                                    "Suspended",
+                                    "Invalid";
+
     cmd += sizeof("qThreadExtraInfo,") - 1;
     int task_index = esp_gdbstub_gethex(&cmd, -1);
     TaskHandle_t handle;
@@ -293,7 +309,34 @@ static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
         esp_gdbstub_send_hex(*task_name, 8);
         task_name++;
     }
-    /** TODO: add "Running" or "Suspended" and "CPU0" or "CPU1" */
+
+    esp_gdbstub_send_hex(' ', 8);
+
+    eTaskState state = get_task_state(task_index);
+    switch (state) {
+        case eRunning:
+            task_state_string_index = 0;
+        break;
+        case eReady:
+            task_state_string_index = 1;
+        break;
+        case eBlocked:
+            task_state_string_index = 2;
+        break;
+        case eSuspended:
+            task_state_string_index = 3;
+        break;
+        default:
+            task_state_string_index = 4;
+        break;
+    }
+
+    const char* buffer = &task_state_string[task_state_string_index][0];
+    while (*buffer) {
+        esp_gdbstub_send_hex(*buffer, 8);
+        buffer++;
+    }
+    
     esp_gdbstub_send_end();
 }
 
