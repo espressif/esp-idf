@@ -166,6 +166,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
     // set controller
     adc_hal_set_controller( ADC_NUM_1, ADC_CTRL_RTC );
     hall_value = adc_hal_hall_convert();
+    adc_hal_hall_disable();
     ADC_EXIT_CRITICAL();
 
     return hall_value;
