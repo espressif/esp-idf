@@ -2,6 +2,8 @@
 ESP32-S2-Saola-1
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This user guide provides information on ESP32-S2-Saola-1, a small-sized `ESP32-S2 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ based development board produced by Espressif.
 
 .. figure:: ../../../_static/esp32-s2-saola-1-v1.2-isometric.png
@@ -129,6 +131,7 @@ Power Supply Options
 ^^^^^^^^^^^^^^^^^^^^
 
 There are three mutually exclusive ways to provide power to the board:
+
 - Micro USB port, default power supply
 - 5V and GND header pins
 - 3V3 and GND header pins
