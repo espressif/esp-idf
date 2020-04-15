@@ -2,6 +2,8 @@
 ESP32-S2-Saola-1
 ================
 
+:link_to_translation:`en: [English]`
+
 本指南介绍了乐鑫一款基于 `ESP32-S2 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ 的小型开发板 ESP32-S2-Saola-1。
 
 .. figure:: ../../../_static/esp32-s2-saola-1-v1.2-isometric.png
