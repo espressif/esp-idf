@@ -71,7 +71,6 @@ extern "C" {
 #define RTC_RESET_CAUSE_REG     RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 
-
 typedef enum {
     AWAKE = 0,             //<CPU ON
     LIGHT_SLEEP = BIT0,    //CPU waiti, PLL ON.  We don't need explicitly set this mode.

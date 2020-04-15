@@ -1,5 +1,5 @@
 COMPONENT_ADD_INCLUDEDIRS := include
-COMPONENT_SRCDIRS := patches
+COMPONENT_SRCDIRS := patches .
 COMPONENT_PRIV_INCLUDEDIRS := esp32
 
 #Linker scripts used to link the final application.
