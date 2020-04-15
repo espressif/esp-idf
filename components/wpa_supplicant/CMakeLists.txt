@@ -14,6 +14,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/aes-unwrap.c"
     "src/crypto/aes-wrap.c"
     "src/crypto/aes-omac1.c"
+    "src/crypto/sha256-tlsprf.c"
     "src/crypto/bignum.c"
     "src/crypto/ccmp.c"
     "src/crypto/crypto_mbedtls.c"
@@ -111,4 +112,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_ECC
     CONFIG_IEEE80211W
     CONFIG_WPA3_SAE
+    CONFIG_TLSV12
+    CONFIG_SHA256
     )
