@@ -246,7 +246,8 @@ esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t autht
     struct lwip_ppp_ctx *obj =  netif->lwip_ppp_ctx;
     pppapi_set_auth(obj->ppp, authtype, user, passwd);
 #else
-#error "Unsupported AUTH Negotiation"
+    ESP_LOGE(TAG, "%s failed: No authorisation enabled in menuconfig", __func__);
+    return ESP_ERR_ESP_NETIF_IF_NOT_READY;
 #endif
     return ESP_OK;
 }

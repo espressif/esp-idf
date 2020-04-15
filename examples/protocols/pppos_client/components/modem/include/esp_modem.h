@@ -50,6 +50,17 @@ typedef struct {
     uart_parity_t parity;           /*!< Parity type */
     modem_flow_ctrl_t flow_control; /*!< Flow control type */
     uint32_t baud_rate;             /*!< Communication baud rate */
+    int tx_io_num;                  /*!< TXD Pin Number */
+    int rx_io_num;                  /*!< RXD Pin Number */
+    int rts_io_num;                 /*!< RTS Pin Number */
+    int cts_io_num;                 /*!< CTS Pin Number */
+    int rx_buffer_size;             /*!< UART RX Buffer Size */
+    int tx_buffer_size;             /*!< UART TX Buffer Size */
+    int pattern_queue_size;         /*!< UART Pattern Queue Size */
+    int event_queue_size;           /*!< UART Event Queue Size */
+    uint32_t event_task_stack_size; /*!< UART Event Task Stack size */
+    int event_task_priority;        /*!< UART Event Task Priority */
+    int line_buffer_size;           /*!< Line buffer size for command mode */
 } esp_modem_dte_config_t;
 
 /**
@@ -69,7 +80,18 @@ typedef esp_err_t (*esp_modem_on_receive)(void *buffer, size_t len, void *contex
         .stop_bits = UART_STOP_BITS_1,          \
         .parity = UART_PARITY_DISABLE,          \
         .baud_rate = 115200,                    \
-        .flow_control = MODEM_FLOW_CONTROL_NONE \
+        .flow_control = MODEM_FLOW_CONTROL_NONE,\
+        .tx_io_num = 25,                        \
+        .rx_io_num = 26,                        \
+        .rts_io_num = 27,                       \
+        .cts_io_num = 23,                       \
+        .rx_buffer_size = 1024,                 \
+        .tx_buffer_size = 512,                  \
+        .pattern_queue_size = 20,               \
+        .event_queue_size = 30,                 \
+        .event_task_stack_size = 2048,          \
+        .event_task_priority = 5,               \
+        .line_buffer_size = 512                 \
     }
 
 /**

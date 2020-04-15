@@ -217,7 +217,7 @@ void app_main(void)
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_PAP;
 #elif CONFIG_LWIP_PPP_CHAP_SUPPORT
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_CHAP;
-#else
+#elif !defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_NONE)
 #error "Unsupported AUTH Negotiation"
 #endif
     ESP_ERROR_CHECK(esp_netif_init());
@@ -234,6 +234,18 @@ void app_main(void)
 
     /* create dte object */
     esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();
+    /* setup UART specific configuration based on kconfig options */
+    config.tx_io_num = CONFIG_EXAMPLE_MODEM_UART_TX_PIN;
+    config.rx_io_num = CONFIG_EXAMPLE_MODEM_UART_RX_PIN;
+    config.rts_io_num = CONFIG_EXAMPLE_MODEM_UART_RTS_PIN;
+    config.cts_io_num = CONFIG_EXAMPLE_MODEM_UART_CTS_PIN;
+    config.rx_buffer_size = CONFIG_EXAMPLE_MODEM_UART_RX_BUFFER_SIZE;
+    config.tx_buffer_size = CONFIG_EXAMPLE_MODEM_UART_TX_BUFFER_SIZE;
+    config.pattern_queue_size = CONFIG_EXAMPLE_MODEM_UART_PATTERN_QUEUE_SIZE;
+    config.event_queue_size = CONFIG_EXAMPLE_MODEM_UART_EVENT_QUEUE_SIZE;
+    config.event_task_stack_size = CONFIG_EXAMPLE_MODEM_UART_EVENT_TASK_STACK_SIZE;
+    config.event_task_priority = CONFIG_EXAMPLE_MODEM_UART_EVENT_TASK_PRIORITY;
+    config.line_buffer_size = CONFIG_EXAMPLE_MODEM_UART_RX_BUFFER_SIZE/2;
     modem_dte_t *dte = esp_modem_dte_init(&config);
     /* Register event handler */
     ESP_ERROR_CHECK(esp_modem_set_event_handler(dte, modem_event_handler, ESP_EVENT_ANY_ID, NULL));
@@ -261,7 +273,9 @@ void app_main(void)
     ESP_ERROR_CHECK(dce->get_battery_status(dce, &bcs, &bcl, &voltage));
     ESP_LOGI(TAG, "Battery voltage: %d mV", voltage);
     /* setup PPPoS network parameters */
+#if !defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_NONE) && (defined(CONFIG_LWIP_PPP_PAP_SUPPORT) || defined(CONFIG_LWIP_PPP_CHAP_SUPPORT))
     esp_netif_ppp_set_auth(esp_netif, auth_type, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
+#endif
     void *modem_netif_adapter = esp_modem_netif_setup(dte);
     esp_modem_netif_set_default_handlers(modem_netif_adapter, esp_netif);
     /* attach the modem to the network interface */

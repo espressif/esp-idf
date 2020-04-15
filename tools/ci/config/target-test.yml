@@ -313,6 +313,12 @@ test_app_test_002:
     - ESP32
     - Example_WIFI
 
+test_app_test_003:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - Example_PPP
+
 example_test_011:
   extends: .example_debug_template
   tags:
