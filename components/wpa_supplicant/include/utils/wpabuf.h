@@ -38,7 +38,7 @@ void wpabuf_free(struct wpabuf *buf);
 void * wpabuf_put(struct wpabuf *buf, size_t len);
 struct wpabuf * wpabuf_concat(struct wpabuf *a, struct wpabuf *b);
 struct wpabuf * wpabuf_zeropad(struct wpabuf *buf, size_t len);
-void wpabuf_printf(struct wpabuf *buf, char *fmt, ...) PRINTF_FORMAT(2, 3);
+void wpabuf_printf(struct wpabuf *buf, const char *fmt, ...) PRINTF_FORMAT(2, 3);
 
 
 /**

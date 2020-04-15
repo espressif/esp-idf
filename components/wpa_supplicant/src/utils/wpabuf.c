@@ -133,7 +133,6 @@ struct wpabuf * wpabuf_alloc(size_t len)
 	return buf;
 }
 
-
 struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len)
 {
 #ifdef WPA_TRACE
@@ -285,7 +284,7 @@ struct wpabuf * wpabuf_zeropad(struct wpabuf *buf, size_t len)
 	return ret;
 }
 
-void wpabuf_printf(struct wpabuf *buf, char *fmt, ...)
+void wpabuf_printf(struct wpabuf *buf, const char *fmt, ...)
 {
 	va_list ap;
 	void *tmp = wpabuf_mhead_u8(buf) + wpabuf_len(buf);

@@ -17,4 +17,11 @@ menu "Supplicant"
             Enabling this could increase the build size ~60kb
             depending on the project logging level.
 
+    config WPA_TESTING_OPTIONS
+        bool "Add DPP testing code"
+        default n
+        help
+            Select this to enable unity test for DPP.
+
+
 endmenu
