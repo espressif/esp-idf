@@ -68,6 +68,7 @@ esp_err_t dac_output_enable(dac_channel_t channel)
     dac_rtc_pad_init(channel);
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_power_on(channel);
+    dac_hal_rtc_sync_by_adc(false);
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
