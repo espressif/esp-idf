@@ -100,7 +100,7 @@ static inline bool valid_key_length(const esp_aes_context *ctx)
 void esp_aes_acquire_hardware( void )
 {
     /* Need to lock DMA since it is shared with SHA block */
-    esp_crypto_lock_acquire();
+    esp_crypto_dma_lock_acquire();
 
     /* Enable AES hardware */
     periph_module_enable(PERIPH_AES_DMA_MODULE);
@@ -112,7 +112,7 @@ void esp_aes_release_hardware( void )
     /* Disable AES hardware */
     periph_module_disable(PERIPH_AES_DMA_MODULE);
 
-    esp_crypto_lock_release();
+    esp_crypto_dma_lock_release();
 }
 
 

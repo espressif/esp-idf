@@ -27,14 +27,24 @@ extern "C" {
  */
 
 /**
- * Acquire lock for the ESP cryptography peripheral.
+ * Acquire lock for the AES and SHA cryptography peripherals, which both use the crypto DMA.
  */
-void esp_crypto_lock_acquire(void);
+void esp_crypto_dma_lock_acquire(void);
 
 /**
- * Release the lock for the ESP cryptography peripheral.
+ * Release lock for the AES and SHA cryptography peripherals, which both use the crypto DMA.
  */
-void esp_crypto_lock_release(void);
+void esp_crypto_dma_lock_release(void);
+
+/**
+ * Acquire lock for the MPI/RSA cryptography peripheral
+ */
+void esp_crypto_mpi_lock_acquire(void);
+
+/**
+ * Release lock for the MPI/RSA cryptography peripheral
+ */
+void esp_crypto_mpi_lock_release(void);
 
 #ifdef __cplusplus
 }

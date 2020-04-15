@@ -16,17 +16,29 @@
 
 #include "esp_crypto_lock.h"
 
-/* Single lock for SHA engine
-*/
-static _lock_t s_crypto_lock;
+/* Single lock for SHA and AES engine which both use the crypto DMA */
 
-void esp_crypto_lock_acquire(void)
+static _lock_t s_crypto_dma_lock;
+
+/* Lock for the MPI/RSA peripheral, also used by the DS peripheral */
+static _lock_t s_crypto_mpi_lock;
+
+void esp_crypto_dma_lock_acquire(void)
 {
-    _lock_acquire(&s_crypto_lock);
+    _lock_acquire(&s_crypto_dma_lock);
 }
 
-void esp_crypto_lock_release(void)
+void esp_crypto_dma_lock_release(void)
 {
-    _lock_release(&s_crypto_lock);
+    _lock_release(&s_crypto_dma_lock);
 }
 
+void esp_crypto_mpi_lock_acquire(void)
+{
+    _lock_acquire(&s_crypto_mpi_lock);
+}
+
+void esp_crypto_mpi_lock_release(void)
+{
+    _lock_release(&s_crypto_mpi_lock);
+}

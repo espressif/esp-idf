@@ -98,7 +98,7 @@ inline static size_t state_length(esp_sha_type type)
 /* Enable SHA peripheral and then lock it */
 void esp_sha_acquire_hardware()
 {
-    esp_crypto_lock_acquire();
+    esp_crypto_dma_lock_acquire();
 
     /* Enable SHA and DMA hardware */
     periph_module_enable(PERIPH_SHA_DMA_MODULE);
@@ -113,7 +113,7 @@ void esp_sha_release_hardware()
     /* Disable SHA and DMA hardware */
     periph_module_disable(PERIPH_SHA_DMA_MODULE);
 
-    esp_crypto_lock_release();
+    esp_crypto_dma_lock_release();
 }
 
 /* Busy wait until SHA is idle */
