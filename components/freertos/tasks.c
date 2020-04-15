@@ -5057,6 +5057,7 @@ TickType_t uxReturn;
 		}
 		pxTaskSnapshotArray[ *uxTask ].pxTCB = pxTCB;
 		pxTaskSnapshotArray[ *uxTask ].pxTopOfStack = (StackType_t *)pxTCB->pxTopOfStack;
+		pxTaskSnapshotArray[ *uxTask ].eState = eTaskGetState(pxTCB);
 		#if( portSTACK_GROWTH < 0 )
 		{
 			pxTaskSnapshotArray[ *uxTask ].pxEndOfStack = pxTCB->pxEndOfStack;

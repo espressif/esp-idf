@@ -199,6 +199,7 @@ typedef struct xTASK_SNAPSHOT
 	StackType_t *pxTopOfStack;  /*!< Points to the location of the last item placed on the tasks stack. */
 	StackType_t *pxEndOfStack;  /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
 									pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
+	eTaskState eState;			/*!< Current state of the task. Can be running or suspended */
 } TaskSnapshot_t;
 
 /**
