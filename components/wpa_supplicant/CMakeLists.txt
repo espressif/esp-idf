@@ -10,6 +10,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/aes-internal.c"
     "src/crypto/aes-unwrap.c"
     "src/crypto/aes-wrap.c"
+    "src/crypto/sha256-tlsprf.c"
     "src/crypto/bignum.c"
     "src/crypto/crypto_mbedtls.c"
     "src/crypto/crypto_ops.c"
@@ -102,4 +103,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
+    CONFIG_TLSV12
+    CONFIG_SHA256
     )

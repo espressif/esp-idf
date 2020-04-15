@@ -24,4 +24,8 @@ void hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
 void sha256_prf(const u8 *key, size_t key_len, const char *label,
 	      const u8 *data, size_t data_len, u8 *buf, size_t buf_len);
 
+void tls_prf_sha256(const u8 *secret, size_t secret_len,
+                    const char *label, const u8 *seed, size_t seed_len,
+                                u8 *out, size_t outlen);
+
 #endif /* SHA256_H */
