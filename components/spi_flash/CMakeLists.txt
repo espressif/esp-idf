@@ -15,6 +15,7 @@ else()
         "cache_utils.c"
         "flash_mmap.c"
         "flash_ops.c"
+        "${IDF_TARGET}/flash_ops_${IDF_TARGET}.c"
     )
     set(srcs
         "partition.c")
