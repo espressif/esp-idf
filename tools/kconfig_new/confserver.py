@@ -224,6 +224,13 @@ def handle_set(config, error, to_set):
                     sym.set_value(0)
                 else:
                     error.append("Boolean symbol %s only accepts true/false values" % sym.name)
+            elif sym.type == kconfiglib.HEX:
+                try:
+                    if not isinstance(val, int):
+                        val = int(val, 16)  # input can be a decimal JSON value or a string of hex digits
+                    sym.set_value(hex(val))
+                except ValueError:
+                    error.append("Hex symbol %s can accept a decimal integer or a string of hex digits, only")
             else:
                 sym.set_value(str(val))
             print("Set %s" % sym.name)
