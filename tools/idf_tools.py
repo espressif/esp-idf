@@ -1005,7 +1005,7 @@ def action_export(args):
                 continue
 
         if tool.version_in_path and tool.version_in_path not in tool.versions:
-            info('Not using an unsupported version of tool {} found in PATH: {}.'.format(
+            info('Not using a supported version of tool {} found in PATH: {}.'.format(
                  tool.name, tool.version_in_path) + prefer_system_hint, f=sys.stderr)
 
         version_to_use = tool.get_preferred_installed_version()
