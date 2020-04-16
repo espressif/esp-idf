@@ -91,7 +91,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010001
+#define OSI_VERSION              0x00010002
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* SPIRAM Configuration */
@@ -168,6 +168,8 @@ struct osi_funcs_t {
     void (* _btdm_sleep_exit_phase1)(void);  /* called from ISR */
     void (* _btdm_sleep_exit_phase2)(void);  /* called from ISR */
     void (* _btdm_sleep_exit_phase3)(void);  /* called from task */
+    bool (* _coex_bt_wakeup_request)(void);
+    void (* _coex_bt_wakeup_request_end)(void);
     int (* _coex_bt_request)(uint32_t event, uint32_t latency, uint32_t duration);
     int (* _coex_bt_release)(uint32_t event);
     int (* _coex_register_bt_cb)(coex_func_cb_t cb);
@@ -279,6 +281,8 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles);
 static void btdm_sleep_enter_phase2_wrapper(void);
 static void IRAM_ATTR btdm_sleep_exit_phase1_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
+static bool coex_bt_wakeup_request(void);
+static void coex_bt_wakeup_request_end(void);
 
 /* Local variable definition
  ***************************************************************************
@@ -326,6 +330,8 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._btdm_sleep_exit_phase1 = btdm_sleep_exit_phase1_wrapper,
     ._btdm_sleep_exit_phase2 = NULL,
     ._btdm_sleep_exit_phase3 = btdm_sleep_exit_phase3_wrapper,
+    ._coex_bt_wakeup_request = coex_bt_wakeup_request,
+    ._coex_bt_wakeup_request_end = coex_bt_wakeup_request_end,
     ._coex_bt_request = coex_bt_request_wrapper,
     ._coex_bt_release = coex_bt_release_wrapper,
     ._coex_register_bt_cb = coex_register_bt_cb_wrapper,
@@ -878,13 +884,24 @@ static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
 }
 #endif
 
-bool esp_vhci_host_check_send_available(void)
-{
-    return API_vhci_host_check_send_available();
-}
+#define BTDM_ASYNC_WAKEUP_REQ_HCI   0
+#define BTDM_ASYNC_WAKEUP_REQ_COEX   1
+#define BTDM_ASYNC_WAKEUP_REQMAX    2
 
-void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
+static bool async_wakeup_request(int event)
 {
+    bool request_lock = false;
+    switch (event) {
+        case BTDM_ASYNC_WAKEUP_REQ_HCI:
+            request_lock = true;
+            break;
+        case BTDM_ASYNC_WAKEUP_REQ_COEX:
+            request_lock = false;
+            break;
+        default:
+            return false;
+    }
+
     bool do_wakeup_request = false;
 
     if (!btdm_power_state_active()) {
@@ -895,13 +912,57 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
         esp_timer_stop(s_btdm_slp_tmr);
 #endif
         do_wakeup_request = true;
-        btdm_wakeup_request(true);
+        btdm_wakeup_request(request_lock);
     }
+
+    return do_wakeup_request;
+}
+
+static void async_wakeup_request_end(int event)
+{
+    bool request_lock = false;
+    switch (event) {
+        case BTDM_ASYNC_WAKEUP_REQ_HCI:
+            request_lock = true;
+            break;
+        case BTDM_ASYNC_WAKEUP_REQ_COEX:
+            request_lock = false;
+            break;
+        default:
+            return;
+    }
+
+    if (request_lock) {
+        btdm_wakeup_request_end();
+    }
+
+    return;
+}
+
+static bool coex_bt_wakeup_request(void)
+{
+    return async_wakeup_request(BTDM_ASYNC_WAKEUP_REQ_COEX);
+}
+
+static void coex_bt_wakeup_request_end(void)
+{
+    async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_COEX);
+    return;
+}
+
+bool esp_vhci_host_check_send_available(void)
+{
+    return API_vhci_host_check_send_available();
+}
+
+void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
+{
+    bool do_wakeup_request = async_wakeup_request(BTDM_ASYNC_WAKEUP_REQ_HCI);
 
     API_vhci_host_send_packet(data, len);
 
     if (do_wakeup_request) {
-        btdm_wakeup_request_end();
+        async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_HCI);
     }
 }
 
