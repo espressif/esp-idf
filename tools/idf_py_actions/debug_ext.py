@@ -18,7 +18,23 @@ def action_extensions(base_actions, project_path):
     OPENOCD_OUT_FILE = "openocd_out.txt"
     GDBGUI_OUT_FILE = "gdbgui_out.txt"
     # Internal dictionary of currently active processes, threads and their output files
-    processes = {"threads_to_join": []}
+    processes = {"threads_to_join": [], "openocd_issues": None}
+
+    def _check_for_common_openocd_issues(file_name, print_all=True):
+        if processes["openocd_issues"] is not None:
+            return processes["openocd_issues"]
+        try:
+            message = "Please check JTAG connection!"
+            with open(file_name, "r") as f:
+                content = f.read()
+                if print_all:
+                    print(content)
+                if re.search(r"Address already in use", content):
+                    message = ("Please check if another process uses the mentioned ports. OpenOCD already running, perhaps in the background?\n"
+                               "Please list all processes to check if OpenOCD is already running; if so, terminate it before starting OpenOCD from idf.py")
+        finally:
+            processes["openocd_issues"] = message
+            return message
 
     def _check_openocd_errors(fail_if_openocd_failed, target, ctx):
         if fail_if_openocd_failed:
@@ -41,9 +57,7 @@ def action_extensions(base_actions, project_path):
                 else:
                     return
                 # OpenOCD exited or error message detected -> print possible output and terminate
-                with open(name, "r") as f:
-                    print(f.read())
-                raise FatalError('Action "{}" failed due to errors in OpenOCD: Please check jtag connection!'.format(target), ctx)
+                raise FatalError('Action "{}" failed due to errors in OpenOCD:\n{}'.format(target, _check_for_common_openocd_issues(name)), ctx)
 
     def _terminate_async_target(target):
         if target in processes and processes[target] is not None:
@@ -61,6 +75,8 @@ def action_extensions(base_actions, project_path):
                     else:
                         p.kill()
                 if target + "_outfile_name" in processes:
+                    if target == "openocd":
+                        print(_check_for_common_openocd_issues(processes[target + "_outfile_name"], print_all=False))
                     os.unlink(processes[target + "_outfile_name"])
             except Exception as e:
                 print(e)
