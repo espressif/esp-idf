@@ -368,35 +368,6 @@ class Example(IDFApp):
                 raise OSError("Failed to find example binary")
 
 
-class LoadableElfExample(Example):
-    def __init__(self, app_path, app_files, config_name=None, target=None):
-        # add arg `app_files` for loadable elf example.
-        # Such examples only build elf files, so it doesn't generate flasher_args.json.
-        # So we can't get app files from config file. Test case should pass it to application.
-        super(IDFApp, self).__init__(app_path)
-        self.app_files = app_files
-        self.config_name = config_name
-        self.target = target
-        self.idf_path = self.get_sdk_path()
-        self.binary_path = self.get_binary_path(app_path, config_name, target)
-        self.elf_file = self._get_elf_file_path(self.binary_path)
-        assert os.path.exists(self.binary_path)
-
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        path = self._try_get_binary_from_local_fs(app_path, config_name, target)
-        if path:
-            return path
-        else:
-            artifacts = Artifacts(self.idf_path,
-                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.ExampleGroup),
-                                  app_path, config_name, target)
-            path = artifacts.download_artifact_files(self.app_files)
-            if path:
-                return os.path.join(self.idf_path, path)
-            else:
-                raise OSError("Failed to find example binary")
-
-
 class UT(IDFApp):
     def get_binary_path(self, app_path, config_name=None, target=None):
         if not config_name:
@@ -435,6 +406,35 @@ class TestApp(Example):
                 return os.path.join(self.idf_path, path)
             else:
                 raise OSError("Failed to find example binary")
+
+
+class LoadableElfTestApp(TestApp):
+    def __init__(self, app_path, app_files, config_name=None, target=None):
+        # add arg `app_files` for loadable elf test_app.
+        # Such examples only build elf files, so it doesn't generate flasher_args.json.
+        # So we can't get app files from config file. Test case should pass it to application.
+        super(IDFApp, self).__init__(app_path)
+        self.app_files = app_files
+        self.config_name = config_name
+        self.target = target
+        self.idf_path = self.get_sdk_path()
+        self.binary_path = self.get_binary_path(app_path, config_name, target)
+        self.elf_file = self._get_elf_file_path(self.binary_path)
+        assert os.path.exists(self.binary_path)
+
+    def get_binary_path(self, app_path, config_name=None, target=None):
+        path = self._try_get_binary_from_local_fs(app_path, config_name, target, local_build_dir="build_test_apps")
+        if path:
+            return path
+        else:
+            artifacts = Artifacts(self.idf_path,
+                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.TestAppsGroup),
+                                  app_path, config_name, target)
+            path = artifacts.download_artifact_files(self.app_files)
+            if path:
+                return os.path.join(self.idf_path, path)
+            else:
+                raise OSError("Failed to find the loadable ELF file")
 
 
 class SSC(IDFApp):

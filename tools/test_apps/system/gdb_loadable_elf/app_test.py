@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import threading
 import time
@@ -33,15 +34,15 @@ class SerialThread(object):
             Utility.console_log('The pyserial thread is still alive', 'O')
 
 
-@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
-def test_examples_loadable_elf(env, extra_data):
+@ttfw_idf.idf_custom_test(env_tag="test_jtag_arm", group="test-apps")
+def test_app_loadable_elf(env, extra_data):
 
-    rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
-    app_files = ['hello-world.elf', 'partition_table/partition-table.bin']
-    example = ttfw_idf.LoadableElfExample(rel_project_path, app_files, target="esp32")
+    rel_project_path = os.path.join('tools', 'test_apps', 'system', 'gdb_loadable_elf')
+    app_files = ['gdb_loadable_elf.elf', 'partition_table/partition-table.bin']
+    example = ttfw_idf.LoadableElfTestApp(rel_project_path, app_files, target="esp32")
     idf_path = example.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
-    elf_path = os.path.join(example.binary_path, 'hello-world.elf')
+    elf_path = os.path.join(example.binary_path, 'gdb_loadable_elf.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
 
     with SerialThread(esp_log_path):
@@ -74,4 +75,4 @@ def test_examples_loadable_elf(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_examples_loadable_elf()
+    test_app_loadable_elf()
