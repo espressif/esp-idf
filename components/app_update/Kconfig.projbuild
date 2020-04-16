@@ -22,4 +22,14 @@ menu "Application manager"
             The PROJECT_NAME variable from the build system will not affect the firmware image.
             This value will not be contained in the esp_app_desc structure.
 
+    config APP_RETRIEVE_LEN_ELF_SHA
+        int "The length of APP ELF SHA is stored in RAM(chars)"
+        default 16
+        range 8 64
+        help
+            At startup, the app will read this many hex characters from the embedded APP ELF SHA-256 hash value
+            and store it in static RAM. This ensures the app ELF SHA-256 value is always available
+            if it needs to be printed by the panic handler code.
+            Changing this value will change the size of a static buffer, in bytes.
+
 endmenu # "Application manager"
