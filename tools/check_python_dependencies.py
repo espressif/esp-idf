@@ -41,9 +41,9 @@ if __name__ == "__main__":
 
     default_requirements_path = os.path.join(idf_path, 'requirements.txt')
 
-    parser = argparse.ArgumentParser(description='ESP32 Python package dependency checker')
+    parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
     parser.add_argument('--requirements', '-r',
-                        help='Path to the requrements file',
+                        help='Path to the requirements file',
                         default=default_requirements_path)
     args = parser.parse_args()
 
@@ -100,6 +100,14 @@ if __name__ == "__main__":
         else:
             print('Please follow the instructions found in the "Set up the tools" section of '
                   'ESP-IDF Getting Started Guide')
+
+        print('Diagnostic information:')
+        idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
+        print('    IDF_PYTHON_ENV_PATH: {}'.format(idf_python_env_path or '(not set)'))
+        print('    Python interpreter used: {}'.format(sys.executable))
+        if idf_python_env_path not in sys.executable:
+            print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
+            print('    PATH: {}'.format(os.getenv('PATH')))
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))
