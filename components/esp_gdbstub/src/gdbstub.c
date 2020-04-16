@@ -22,6 +22,7 @@
 static void init_task_info(void);
 static void find_paniced_task_index(void);
 static int handle_task_commands(unsigned char *cmd, int len);
+static void esp_gdbstub_send_str_as_hex(const char *str);
 #endif
 
 static void send_reason(void);
@@ -89,6 +90,7 @@ static uint32_t gdbstub_hton(uint32_t i)
     return __builtin_bswap32(i);
 }
 
+#ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 static void esp_gdbstub_send_str_as_hex(const char *str)
 {
     while (*str) {
@@ -96,6 +98,8 @@ static void esp_gdbstub_send_str_as_hex(const char *str)
         str++;
     }    
 }
+#endif
+
 /** Send all registers to gdb */
 static void handle_g_command(const unsigned char* cmd, int len)
 {
@@ -186,6 +190,11 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 static eTaskState get_task_state(size_t index) 
 {
     return s_scratch.tasks[index].eState;
+}
+
+static int get_task_cpu_id(size_t index) 
+{
+    return s_scratch.tasks[index].xCpuId;
 }
 
 /** Get the index of the task running on the current CPU, and save the result */
@@ -306,7 +315,9 @@ static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
     eTaskState state = get_task_state(task_index);
     switch (state) {
         case eRunning:
-            esp_gdbstub_send_str_as_hex("State: Running"); 
+            esp_gdbstub_send_str_as_hex("State: Running ");
+            esp_gdbstub_send_str_as_hex("@CPU");
+            esp_gdbstub_send_hex(get_task_cpu_id(task_index) + '0', 8);
         break;
         case eReady:
             esp_gdbstub_send_str_as_hex("State: Ready"); 
