@@ -247,6 +247,8 @@ void app_main(void)
         ESP_LOGE(TAG, "IPv6 test failed!");
     }
 
+    /* Wait for the PPP server to stop */
+    vTaskDelay(30000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_modem_stop_ppp(dte));
     /* Destroy the netif adapter withe events, which internally frees also the esp-netif instance */
     esp_modem_netif_clear_default_handlers(modem_netif_adapter);
