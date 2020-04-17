@@ -311,13 +311,13 @@ def action_extensions(base_actions, project_path):
             },
             "efuse_common_table": {
                 "callback": build_target,
-                "help": "Genereate C-source for IDF's eFuse fields.",
+                "help": "Generate C-source for IDF's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
                 "options": global_options,
             },
             "efuse_custom_table": {
                 "callback": build_target,
-                "help": "Genereate C-source for user's eFuse fields.",
+                "help": "Generate C-source for user's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
                 "options": global_options,
             },
