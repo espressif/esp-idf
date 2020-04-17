@@ -1,3 +1,4 @@
+set pagination off
 # Connect to a running instance of OpenOCD
 target remote 127.0.0.1:3333
 # Reset and halt the target

@@ -19,7 +19,7 @@ import pexpect
 
 
 class CustomProcess(object):
-    def __init__(self, cmd, logfile, verbose):
+    def __init__(self, cmd, logfile, verbose=True):
         self.verbose = verbose
         self.f = open(logfile, 'w')
         if self.verbose:
@@ -68,8 +68,8 @@ class OCDProcess(CustomProcess):
 
 
 class GDBProcess(CustomProcess):
-    def __init__(self, logfile_path, elffile_path, extra_args='', verbose=True):
-        cmd = 'xtensa-esp32-elf-gdb {} {}'.format(extra_args, elffile_path)
+    def __init__(self, logfile_path, elffile_path, target, extra_args='', verbose=True):
+        cmd = 'xtensa-{}-elf-gdb {} {}'.format(target, extra_args, elffile_path)
         super(GDBProcess, self).__init__(cmd, logfile_path, verbose)
 
     def close(self):
@@ -82,3 +82,18 @@ class GDBProcess(CustomProcess):
             if self.verbose:
                 Utility.console_log('gdb needs to be killed', 'O')
             super(GDBProcess, self).close()
+
+
+class TelnetProcess(CustomProcess):
+    def __init__(self, logfile_path, host='localhost', port=4444, verbose=True):
+        cmd = 'telnet {} {}'.format(host, port)
+        super(TelnetProcess, self).__init__(cmd, logfile_path, verbose)
+
+    def close(self):
+        try:
+            self.pexpect_proc.sendline('exit')
+            self.pexpect_proc.expect_exact('Connection closed by foreign host.')
+        except Exception:
+            if self.verbose:
+                Utility.console_log('telnet needs to be killed', 'O')
+            super(TelnetProcess, self).close()

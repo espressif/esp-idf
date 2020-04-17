@@ -45,6 +45,11 @@ tools/unit-test-app/test_configs
 # Unit Test CMake compile log folder
 log_ut_cmake
 
+# test application build files
+tools/test_apps/**/build
+tools/test_apps/**/sdkconfig
+tools/test_apps/**/sdkconfig.old
+
 # IDF monitor test
 tools/test_idf_monitor/outputs
 

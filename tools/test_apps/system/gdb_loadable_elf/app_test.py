@@ -39,10 +39,10 @@ def test_app_loadable_elf(env, extra_data):
 
     rel_project_path = os.path.join('tools', 'test_apps', 'system', 'gdb_loadable_elf')
     app_files = ['gdb_loadable_elf.elf']
-    example = ttfw_idf.LoadableElfTestApp(rel_project_path, app_files, target="esp32")
-    idf_path = example.get_sdk_path()
+    app = ttfw_idf.LoadableElfTestApp(rel_project_path, app_files, target="esp32")
+    idf_path = app.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
-    elf_path = os.path.join(example.binary_path, 'gdb_loadable_elf.elf')
+    elf_path = os.path.join(app.binary_path, 'gdb_loadable_elf.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
 
     with SerialThread(esp_log_path):
@@ -51,8 +51,7 @@ def test_app_loadable_elf(env, extra_data):
         gdb_args = '-x {} --directory={}'.format(os.path.join(proj_path, '.gdbinit.ci'),
                                                  os.path.join(proj_path, 'main'))
 
-        with ttfw_idf.OCDProcess(openocd_log), ttfw_idf.GDBProcess(gdb_log, elf_path, gdb_args) as gdb:
-            gdb.pexpect_proc.sendline('')  # it is for "---Type <return> to continue, or q <return> to quit---"
+        with ttfw_idf.OCDProcess(openocd_log), ttfw_idf.GDBProcess(gdb_log, elf_path, app.target, gdb_args) as gdb:
             i = gdb.pexpect_proc.expect_exact(['Thread 1 hit Temporary breakpoint 2, app_main ()',
                                                'Load failed'])
             if i == 0:
