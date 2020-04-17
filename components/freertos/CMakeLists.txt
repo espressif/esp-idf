@@ -31,6 +31,8 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES app_trace
                     PRIV_REQUIRES soc)
 
+include_directories("../../../main/app/components/inc")
+
 if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority")
 endif()

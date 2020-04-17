@@ -80,6 +80,7 @@ task.h is included from an application file. */
 #include "queue.h"
 #include "timers.h"
 #include "portmacro.h"
+#include "eeprom_app.h"
 
 #if ( INCLUDE_xTimerPendFunctionCall == 1 ) && ( configUSE_TIMERS == 0 )
 	#error configUSE_TIMERS must be set to 1 to make the xTimerPendFunctionCall() function available.
@@ -439,6 +440,12 @@ DaemonTaskMessage_t xMessage;
 	{
 		mtCOVERAGE_TEST_MARKER();
 	}
+
+    /* Notify error Queue Full */
+    if( xReturn == errQUEUE_FULL )
+    {
+         EEPROM_APP_MetricsIncValue(METRIC_TIMER_ERROR_QUEUE_FULL);
+    }
 
 	return xReturn;
 }
