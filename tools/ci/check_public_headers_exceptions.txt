@@ -73,10 +73,6 @@ components/expat/
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
 
-components/freemodbus/common/include/esp_modbus_common.h
-components/freemodbus/common/include/esp_modbus_master.h
-components/freemodbus/common/include/esp_modbus_slave.h
-
 components/idf_test/include/idf_performance.h
 
 components/json/cJSON/
