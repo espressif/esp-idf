@@ -257,7 +257,8 @@ INPUT = \
     ##
     ## NOTE: for line below header_file.inc is not used
     $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
-    $(IDF_PATH)/components/ulp/include/ulp_common.h \
+    $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
+    $(IDF_PATH)/components/ulp/include/ulp_common.h \  
     ##
     ## Application Level Tracing - API Reference
     ##

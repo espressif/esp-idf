@@ -36,6 +36,7 @@ API Guides
     Tools <tools/index>
     ULP Coprocessor <ulp>
     :esp32: ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
+    :esp32s2: ULP-RISC-V Coprocessor <ulp-risc-v>
     Unit Testing <unit-tests>
     :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     :esp32s2: USB Console <usb-console>

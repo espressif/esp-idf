@@ -142,6 +142,9 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
     /* Start entry into sleep mode */
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SLEEP_EN);
 
+    /* Set wait cycle for touch or COCPU after deep sleep. */
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, 0xFF);
+
     while (GET_PERI_REG_MASK(RTC_CNTL_INT_RAW_REG,
                              RTC_CNTL_SLP_REJECT_INT_RAW | RTC_CNTL_SLP_WAKEUP_INT_RAW) == 0) {
         ;

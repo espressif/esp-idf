@@ -113,6 +113,59 @@
       ]
     },
     {
+      "description": "Toolchain for RISC-V",
+      "export_paths": [
+        [
+          "xPacks",
+          "riscv-none-embed-gcc",
+          "8.2.0-3.1",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack",
+      "install": "on_request",
+      "license": "MIT",
+      "name": "riscv-none-embed-gcc",
+      "version_cmd": [
+        "riscv-none-embed-gcc",
+        "--version"
+      ],
+      "version_regex": "(riscv-none-embed-gcc) \\(xPack GNU RISC-V Embedded GCC, 64-bit\\) (8.2.0)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "3d40fab50ebad8424ff85748f25d2eaee50f86a5d5222abd7a45a2e490f1e4f5",
+            "size": 216042047,
+            "url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/xpack-riscv-none-embed-gcc-8.2.0-3.1-linux-x64.tgz"
+          },
+          "linux-i686": {
+            "sha256": "2e856ee33ef544a2405183366cdf299da2cca697e8cc57627dfaad8ab4460a99",
+            "size": 219854326,
+            "url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/xpack-riscv-none-embed-gcc-8.2.0-3.1-linux-x32.tgz"
+          },
+          "macos": {
+            "sha256": "48ece50b7272a8e49e56e37f54f9962f93dce4ca44f1bb4c8113fab0230fbdf1",
+            "size": 214715632,
+            "url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/xpack-riscv-none-embed-gcc-8.2.0-3.1-darwin-x64.tgz"
+          },
+          "name": "riscv-none-embed-gcc-8.2.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "78bcd52f7b404133de3b2f9568e7101c1de747f98db3a7b0d6251b75a1754867",
+            "size": 232387519,
+            "url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/xpack-riscv-none-embed-gcc-8.2.0-3.1-win32-x32.zip"
+          },
+          "win64": {
+            "sha256": "98b60720607f1400081806d60d70796b30399f8b426e2c790a4abb0bffb9e5ec",
+            "size": 241927614,
+            "url": "https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/xpack-riscv-none-embed-gcc-8.2.0-3.1-win32-x64.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for ESP32 ULP coprocessor",
       "export_paths": [
         [
