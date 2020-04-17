@@ -661,6 +661,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Compiles with dependencies delivered by component manager"
     clean_build_dir
+    # Make sure that component manager is not installed
+    pip uninstall -y idf_component_manager
     printf "\n#include \"test_component.h\"\n" >> main/main.c
     printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
     ! idf.py build || failure "Build should fail if dependencies are not installed"
