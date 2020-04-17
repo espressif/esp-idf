@@ -18,5 +18,10 @@
 
 void usb_hal_init(usb_hal_context_t *usb)
 {
-    usb_ll_init(usb->use_external_phy);
+    if (usb->use_external_phy) {
+        usb_ll_ext_phy_enable();
+    } else {
+        usb_ll_int_phy_enable();
+        usb_ll_int_phy_pullup_conf(true, false, false, false);
+    }
 }
