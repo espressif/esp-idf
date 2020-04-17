@@ -142,6 +142,7 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
+    _invalid_pc_placeholder = ABSOLUTE(.);
     *(.*Vector.literal)
 
     *(.UserEnter.literal);
