@@ -67,6 +67,11 @@ typedef struct hli_queue_t* hli_queue_handle_t;
 void hli_queue_setup(void);
 
 /**
+ * @brief Shutdown hli_queue module.
+ */
+void hli_queue_shutdown(void);
+
+/**
  * @brief Create a hli queue, wrapping a FreeRTOS queue
  *
  * This queue can be used from high level interrupts,
@@ -80,6 +85,21 @@ void hli_queue_setup(void);
  * @return hli_queue_handle_t  handle of the created queue, or NULL on failure
  */
 hli_queue_handle_t hli_queue_create(size_t nelem, size_t elem_size, QueueHandle_t downstream);
+
+/**
+ * @brief Create a customer hli queue, wrapping a FreeRTOS queue
+ *
+ * This queue can be used from high level interrupts,
+ * but **ONLY ON THE CPU WHERE hli_queue_setup WAS CALLED**. Values sent to this
+ * queue are automatically forwarded to "downstream" FreeRTOS queue using a level 3
+ * software interrupt.
+ *
+ * @param nelem  number of elements in the queue
+ * @param elem_size  size of one element; must match element size of a downstream queue
+ * @param downstream  FreeRTOS queue to send the values to
+ * @return hli_queue_handle_t  handle of the created queue, or NULL on failure
+ */
+hli_queue_handle_t hli_customer_queue_create(size_t nelem, size_t elem_size, QueueHandle_t downstream);
 
 /**
  * @brief Create a hli queue, wrapping a FreeRTOS semaphore

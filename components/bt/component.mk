@@ -10,6 +10,7 @@ COMPONENT_ADD_INCLUDEDIRS := include
 LIBS := btdm_app
 
 COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/lib \
+						   -u ld_include_hli_vectors_bt \
                            $(addprefix -l,$(LIBS))
 
 # re-link program if BT binary libs change

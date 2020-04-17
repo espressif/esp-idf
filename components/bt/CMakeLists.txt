@@ -1,6 +1,7 @@
 if(CONFIG_BT_ENABLED)
 
-    set(COMPONENT_SRCS "bt.c")
+    set(COMPONENT_SRCS "bt.c"
+            "hli_api.c")
     set(COMPONENT_ADD_INCLUDEDIRS include)
 
     if(CONFIG_BLUEDROID_ENABLED)
@@ -294,4 +295,6 @@ if(CONFIG_BT_ENABLED)
 
     target_link_libraries(${COMPONENT_TARGET} "-L${CMAKE_CURRENT_LIST_DIR}/lib")
     target_link_libraries(${COMPONENT_TARGET} btdm_app)
+
+    target_link_libraries(${COMPONENT_TARGET} "-u ld_include_hli_vectors_bt")
 endif()

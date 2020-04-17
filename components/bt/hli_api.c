@@ -20,8 +20,34 @@ typedef struct {
     uint32_t intr_mask;
 } hli_handler_info_t;
 
+typedef struct {
+#define CUSTOMER_TYPE_REQUEST (0)
+#define CUSTOMER_TYPE_RELEASE (1)
+    struct {
+        uint32_t cb_type;
+        union {
+            int (* request)(uint32_t, uint32_t, uint32_t);
+            int (* release)(uint32_t);
+        } cb;
+    } customer_cb;
+    uint32_t arg0, arg1, arg2;
+} customer_swisr_t;
+
+static void IRAM_ATTR customer_swisr_handle(customer_swisr_t *cus_swisr)
+{
+    if (cus_swisr->customer_cb.cb_type == CUSTOMER_TYPE_REQUEST) {
+        if (cus_swisr->customer_cb.cb.request != NULL) {
+            cus_swisr->customer_cb.cb.request(cus_swisr->arg0, cus_swisr->arg1, cus_swisr->arg2);
+        }
+    } else if(cus_swisr->customer_cb.cb_type == CUSTOMER_TYPE_RELEASE) {
+        if (cus_swisr->customer_cb.cb.release != NULL) {
+            cus_swisr->customer_cb.cb.release(cus_swisr->arg0);
+        }
+    }
+}
+
 static hli_handler_info_t s_hli_handlers[HLI_MAX_HANDLERS];
-static const char* TAG = "hli_queue";
+// static const char* TAG = "hli_queue";
 
 esp_err_t hli_intr_register(intr_handler_t handler, void* arg, uint32_t intr_reg, uint32_t intr_mask)
 {
@@ -65,18 +91,18 @@ void IRAM_ATTR hli_c_handler(void)
         }
     }
     if (!handled) {
-        ets_printf(DRAM_STR("hli_c_handler: no handler found!\n"));
-        abort();
+        // ets_printf(DRAM_STR("hli_c_handler: no handler found!\n"));
+        // abort();
     }
 }
 
-uint32_t hli_intr_disable(void)
+uint32_t IRAM_ATTR hli_intr_disable(void)
 {
     // disable level 4 and below
     return XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
 }
 
-void hli_intr_restore(uint32_t state)
+void IRAM_ATTR hli_intr_restore(uint32_t state)
 {
     XTOS_RESTORE_JUST_INTLEVEL(state);
 }
@@ -86,8 +112,10 @@ void hli_intr_restore(uint32_t state)
 #define HLI_QUEUE_SW_INT_NUM    29
 
 #define HLI_QUEUE_FLAG_SEMAPHORE    BIT(0)
+#define HLI_QUEUE_FLAG_CUSTOMER     BIT(1)
 
-struct hli_queue_t *s_meta_queue_ptr;
+struct hli_queue_t *s_meta_queue_ptr = NULL;
+intr_handle_t ret_handle;
 
 static inline char* IRAM_ATTR wrap_ptr(hli_queue_handle_t queue, char *ptr)
 {
@@ -109,17 +137,20 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
     int do_yield = pdFALSE;
     XTHAL_SET_INTCLEAR(BIT(HLI_QUEUE_SW_INT_NUM));
     hli_queue_handle_t queue;
+
     while (hli_queue_get(s_meta_queue_ptr, &queue)) {
         static char scratch[HLI_QUEUE_MAX_ELEM_SIZE];
         while (hli_queue_get(queue, scratch)) {
             int res = pdPASS;
-            if ((queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) != 0) {
+            if ((queue->flags & HLI_QUEUE_FLAG_CUSTOMER) != 0) {
+                customer_swisr_handle((customer_swisr_t *)scratch);
+            } else if ((queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) != 0) {
                 res = xSemaphoreGiveFromISR((SemaphoreHandle_t) queue->downstream, &do_yield);
             } else {
                 res = xQueueSendFromISR(queue->downstream, scratch, &do_yield);
             }
             if (res == pdFAIL) {
-                ESP_EARLY_LOGE(TAG, "Failed to send to %s %p", (queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) == 0 ? "queue" : "semaphore", queue->downstream);
+                // ESP_EARLY_LOGE(TAG, "Failed to send to %s %p", (queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) == 0 ? "queue" : "semaphore", queue->downstream);
             }
         }
     }
@@ -167,9 +198,21 @@ static void queue_init(hli_queue_handle_t queue, size_t buf_size, size_t elem_si
 
 void hli_queue_setup(void)
 {
-    s_meta_queue_ptr = hli_queue_create(HLI_META_QUEUE_SIZE, sizeof(void*), NULL);
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_INTERNAL_SW1_INTR_SOURCE, ESP_INTR_FLAG_IRAM, queue_isr_handler, NULL, NULL));
-    xt_ints_on(BIT(HLI_QUEUE_SW_INT_NUM));
+    if (s_meta_queue_ptr == NULL) {
+        s_meta_queue_ptr = hli_queue_create(HLI_META_QUEUE_SIZE, sizeof(void*), NULL);
+        ESP_ERROR_CHECK(esp_intr_alloc(ETS_INTERNAL_SW1_INTR_SOURCE, ESP_INTR_FLAG_IRAM, queue_isr_handler, NULL, &ret_handle));
+        xt_ints_on(BIT(HLI_QUEUE_SW_INT_NUM));
+    }
+}
+
+void hli_queue_shutdown(void)
+{
+    if (s_meta_queue_ptr != NULL) {
+        hli_queue_delete(s_meta_queue_ptr);
+        s_meta_queue_ptr = NULL;
+        esp_intr_free(ret_handle);
+        xt_ints_off(BIT(HLI_QUEUE_SW_INT_NUM));
+    }
 }
 
 hli_queue_handle_t hli_queue_create(size_t nelem, size_t elem_size, QueueHandle_t downstream)
@@ -185,6 +228,16 @@ hli_queue_handle_t hli_queue_create(size_t nelem, size_t elem_size, QueueHandle_
         return NULL;
     }
     queue_init(res, buf_size, elem_size, downstream);
+    return res;
+}
+
+hli_queue_handle_t hli_customer_queue_create(size_t nelem, size_t elem_size, QueueHandle_t downstream)
+{
+    hli_queue_handle_t res = hli_queue_create(nelem, elem_size, (QueueHandle_t) downstream);
+    if (res == NULL) {
+        return NULL;
+    }
+    res->flags |= HLI_QUEUE_FLAG_CUSTOMER;
     return res;
 }
 

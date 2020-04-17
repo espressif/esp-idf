@@ -11,7 +11,7 @@
 /* Interrupt stack size, for C code.
  * TODO: reduce and make configurable.
  */
-#define L5_INTR_STACK_SIZE  4096
+#define L4_INTR_STACK_SIZE  4096
 
 /* Save area for the CPU state:
  * - 64 words for the general purpose registers
@@ -25,21 +25,20 @@
 #define REG_FILE_SIZE         (64 * 4)
 #define SPECREG_OFFSET        REG_FILE_SIZE
 #define SPECREG_SIZE          (7 * 4)
-#define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET * SPECREG_SIZE)
+#define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET + SPECREG_SIZE)
 
     .data
-_l5_intr_stack:
-    .space      L5_INTR_STACK_SIZE
+_l4_intr_stack:
+    .space      L4_INTR_STACK_SIZE
 
-_l5_save_ctx:
+_l4_save_ctx:
     .space      REG_SAVE_AREA_SIZE
 
     .section .iram1,"ax"
-    .global     xt_highint5
-    .type       xt_highint5,@function
+    .global     xt_highint4
+    .type       xt_highint4,@function
     .align      4
-
-xt_highint5:
+xt_highint4:
     /* disable exception mode, window overflow */
     movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
     wsr     a0, PS
@@ -50,7 +49,7 @@ xt_highint5:
     s32i    a1, a0, 4
     s32i    a2, a0, 8
     s32i    a3, a0, 12
-    rsr     a2, EXCSAVE_5  /* holds the value of a0 */
+    rsr     a2, EXCSAVE_4  /* holds the value of a0 */
     s32i    a2, a0, 0
 
     /* Save special registers */
@@ -76,7 +75,7 @@ xt_highint5:
      * These 60 registers are saved in 5 iterations, 12 registers at a time.
      */
     movi    a1, 5
-    movi    a3, _l5_save_ctx + 4 * 4
+    movi    a3, _l4_save_ctx + 4 * 4
 
     /* This is repeated 5 times, each time the window is shifted by 12 registers.
      * We come here with a1 = downcounter, a3 = save pointer, a2 and a0 unused.
@@ -100,7 +99,7 @@ xt_highint5:
      * At the same time we can decrement the counter and adjust the save area pointer
      */
 
-    /* a0 is constant (_l5_save_ctx), no need to copy */
+    /* a0 is constant (_l4_save_ctx), no need to copy */
     addi    a13, a1, -1  /* copy and decrement the downcounter */
     /* a2 is scratch so no need to copy */
     addi    a15, a3, 48  /* copy and adjust the save area pointer */
@@ -111,7 +110,7 @@ xt_highint5:
     /* the loop is complete */
 2:
     rotw 4      /* this brings us back to the original window */
-    /* a0 still points to _l5_save_ctx */
+    /* a0 still points to _l4_save_ctx */
 
     /* Can clear WINDOWSTART now, all registers are saved */
     rsr     a2, WINDOWBASE
@@ -123,13 +122,13 @@ xt_highint5:
 
 _highint4_stack_switch:
     movi    a0, 0
-    movi    sp, _l5_intr_stack + L5_INTR_STACK_SIZE - 16
+    movi    sp, _l4_intr_stack + L4_INTR_STACK_SIZE - 16
     s32e    a0, sp, -12         /* For GDB: set null SP */
     s32e    a0, sp, -16         /* For GDB: set null PC */
-    movi    a0, _highint5_stack_switch     /* For GDB: cosmetics, for the frame where stack switch happened */
+    movi    a0, _highint4_stack_switch     /* For GDB: cosmetics, for the frame where stack switch happened */
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
-    movi    a6, PS_INTLEVEL(5) | PS_UM | PS_WOE
+    movi    a6, PS_INTLEVEL(4) | PS_UM | PS_WOE
     wsr     a6, PS
     rsync
 
@@ -147,7 +146,7 @@ _highint4_stack_switch:
     /* Restore the special registers.
      * WINDOWSTART will be restored near the end.
      */
-    movi    a0, _l5_save_ctx + SPECREG_OFFSET
+    movi    a0, _l4_save_ctx + SPECREG_OFFSET
     l32i    a2, a0, 8
     wsr     a2, SAR
     l32i    a2, a0, 12
@@ -170,7 +169,7 @@ _highint4_stack_switch:
      * To simplify the loop, we put the initial values into a13 and a15.
      */
     rotw     -4
-    movi    a15, _l5_save_ctx + 64 * 4  /* point to the end of the save area */
+    movi    a15, _l4_save_ctx + 64 * 4  /* point to the end of the save area */
     movi    a13, 5
 
 1:
@@ -205,7 +204,7 @@ _highint4_stack_switch:
      * to be restored. Also need to restore WINDOWSTART, since all the general
      * registers are now in place.
      */
-    movi    a0, _l5_save_ctx
+    movi    a0, _l4_save_ctx
 
     l32i    a2, a0, SPECREG_OFFSET + 4
     wsr     a2, WINDOWSTART
@@ -215,7 +214,7 @@ _highint4_stack_switch:
     l32i    a3, a0, 12
     rsr     a0, EXCSAVE_4  /* holds the value of a0 before the interrupt handler */
 
-    /* Return from the interrupt, restoring PS from EPS_5 */
+    /* Return from the interrupt, restoring PS from EPS_4 */
     rfi     4
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined

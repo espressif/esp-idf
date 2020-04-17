@@ -35,8 +35,8 @@
 #if CONFIG_INT_WDT
 
 
-#define WDT_INT_NUM 24
-
+// #define WDT_INT_NUM 24
+#define WDT_INT_NUM ETS_T1_WDT_INUM
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
 #if CONFIG_INT_WDT_CHECK_CPU1

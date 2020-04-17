@@ -402,7 +402,7 @@
  *      2                       1               extern level
  *      3                       1               extern level
  *      4                       1               extern level            WBB
- *      5                       1               extern level            BT/BLE Controller       BT/BLE Controller
+ *      5                       1               extern level
  *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
  *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
  *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
@@ -421,14 +421,14 @@
  *      21                      2               extern level
  *      22                      3               extern edge
  *      23                      3               extern level
- *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            CACHEERR
- *      26                      5               extern level
+ *      24                      4               extern level
+ *      25                      4               extern level            BT/BLE Controller       BT/BLE Controller
+ *      26                      5               extern Level            CACHEERR
  *      27                      3               extern level            Reserved                Reserved
  *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
- *      29                      3               software                Reserved                Reserved
+ *      29                      3               software                BT/BLE hli              BT/BLE hli
  *      30                      4               extern edge             Reserved                Reserved
- *      31                      5               extern level
+ *      31                      5               extern level            TG1_WDT
  *************************************************************************************************************
  */
 
@@ -438,8 +438,8 @@
 #define ETS_WBB_INUM                            4
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
 #define ETS_FRC1_INUM                           22
-#define ETS_T1_WDT_INUM                         24
-#define ETS_CACHEERR_INUM                       25
+#define ETS_T1_WDT_INUM                         31
+#define ETS_CACHEERR_INUM                       26
 #define ETS_DPORT_INUM                          28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
