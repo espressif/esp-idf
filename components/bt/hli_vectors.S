@@ -8,10 +8,31 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 
+/* Interrupt stack size, for C code.
+ * TODO: reduce and make configurable.
+ */
 #define L5_INTR_STACK_SIZE  4096
+
+/* Save area for the CPU state:
+ * - 64 words for the general purpose registers
+ * - 7 words for some of the special registers:
+ *   - WINDOWBASE, WINDOWSTART — only WINDOWSTART is truly needed
+ *   - SAR, LBEG, LEND, LCOUNT — since the C code might use these
+ *   - EPC1 — since the C code might cause window overflow exceptions
+ * This is not laid out a standard exception frame structure
+ * for simplicity of the save/restore code.
+ */
+#define REG_FILE_SIZE         (64 * 4)
+#define SPECREG_OFFSET        REG_FILE_SIZE
+#define SPECREG_SIZE          (7 * 4)
+#define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET * SPECREG_SIZE)
+
     .data
 _l5_intr_stack:
     .space      L5_INTR_STACK_SIZE
+
+_l5_save_ctx:
+    .space      REG_SAVE_AREA_SIZE
 
     .section .iram1,"ax"
     .global     xt_highint5
@@ -19,30 +40,92 @@ _l5_intr_stack:
     .align      4
 
 xt_highint5:
-    /* Allocate exception frame and save minimal context. */
-    mov     a0, sp
-    addi    sp, sp, -XT_STK_FRMSZ
-    s32i    a0, sp, XT_STK_A1
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -12                     /* for debug backtrace */
-    #endif
-    rsr     a0, EPS_5                       /* save interruptee's PS */
-    s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_5                       /* save interruptee's PC */
-    s32i    a0, sp, XT_STK_PC
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -16                     /* for debug backtrace */
-    #endif
-    s32i    a12, sp, XT_STK_A12             /* _xt_context_save requires A12- */
-    s32i    a13, sp, XT_STK_A13             /* A13 to have already been saved */
-    call0   _xt_context_save
+    /* disable exception mode, window overflow */
+    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
+    wsr     a0, PS
+    rsync
 
-_highint5_stack_switch:
-    mov     a7, sp
+    movi    a0, _l4_save_ctx
+    /* save 4 lower registers */
+    s32i    a1, a0, 4
+    s32i    a2, a0, 8
+    s32i    a3, a0, 12
+    rsr     a2, EXCSAVE_5  /* holds the value of a0 */
+    s32i    a2, a0, 0
+
+    /* Save special registers */
+    addi    a0, a0, SPECREG_OFFSET
+    rsr     a2, WINDOWBASE
+    s32i    a2, a0, 0
+    rsr     a2, WINDOWSTART
+    s32i    a2, a0, 4
+    rsr     a2, SAR
+    s32i    a2, a0, 8
+    rsr     a2, LBEG
+    s32i    a2, a0, 12
+    rsr     a2, LEND
+    s32i    a2, a0, 16
+    rsr     a2, LCOUNT
+    s32i    a2, a0, 20
+    rsr     a2, EPC1
+    s32i    a2, a0, 24
+
+    /* Save the remaining physical registers.
+     * 4 registers are already saved, which leaves 60 registers to save.
+     * (FIXME: consider the case when the CPU is configured with physical 32 registers)
+     * These 60 registers are saved in 5 iterations, 12 registers at a time.
+     */
+    movi    a1, 5
+    movi    a3, _l5_save_ctx + 4 * 4
+
+    /* This is repeated 5 times, each time the window is shifted by 12 registers.
+     * We come here with a1 = downcounter, a3 = save pointer, a2 and a0 unused.
+     */
+1:
+    s32i    a4, a3, 0
+    s32i    a5, a3, 4
+    s32i    a6, a3, 8
+    s32i    a7, a3, 12
+    s32i    a8, a3, 16
+    s32i    a9, a3, 20
+    s32i    a10, a3, 24
+    s32i    a11, a3, 28
+    s32i    a12, a3, 32
+    s32i    a13, a3, 36
+    s32i    a14, a3, 40
+    s32i    a15, a3, 44
+
+    /* We are about to rotate the window, so that a12-a15 will become the new a0-a3.
+     * Copy a0-a3 to a12-15 to still have access to these values.
+     * At the same time we can decrement the counter and adjust the save area pointer
+     */
+
+    /* a0 is constant (_l5_save_ctx), no need to copy */
+    addi    a13, a1, -1  /* copy and decrement the downcounter */
+    /* a2 is scratch so no need to copy */
+    addi    a15, a3, 48  /* copy and adjust the save area pointer */
+    beqz    a13, 2f      /* have saved all registers ? */
+    rotw    3            /* rotate the window and go back */
+    j       1b
+
+    /* the loop is complete */
+2:
+    rotw 4      /* this brings us back to the original window */
+    /* a0 still points to _l5_save_ctx */
+
+    /* Can clear WINDOWSTART now, all registers are saved */
+    rsr     a2, WINDOWBASE
+    /* WINDOWSTART = (1 << WINDOWBASE) */
+    movi    a3, 1
+    ssl     a2
+    sll     a3, a3
+    wsr     a3, WINDOWSTART
+
+_highint4_stack_switch:
+    movi    a0, 0
     movi    sp, _l5_intr_stack + L5_INTR_STACK_SIZE - 16
-    s32e    a7, sp, -12
-    movi    a0, _Level5Vector+6            /* For GDB: pretend we came from the interrupt vector */
-    s32e    a0, sp, -16
+    s32e    a0, sp, -12         /* For GDB: set null SP */
+    s32e    a0, sp, -16         /* For GDB: set null PC */
     movi    a0, _highint5_stack_switch     /* For GDB: cosmetics, for the frame where stack switch happened */
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
@@ -56,17 +139,84 @@ _highint5_stack_switch:
 
     l32e    sp, sp, -12                     /* switch back to the original stack */
 
-    call0   _xt_context_restore
-    l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, EPS_5
-    l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_5
-    l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
-    l32i    sp, sp, XT_STK_A1               /* remove exception frame */
-    rsync                                   /* ensure PS and EPC written */
+    /* Done with C handler; re-enable exception mode, disabling window overflow */
+    movi    a2, PS_INTLEVEL(5) | PS_EXCM    /* TOCHECK */
+    wsr     a2, PS
+    rsync
 
-    rsr     a0, EXCSAVE_5                   /* restore a0 */
-    rfi     5
+    /* Restore the special registers.
+     * WINDOWSTART will be restored near the end.
+     */
+    movi    a0, _l5_save_ctx + SPECREG_OFFSET
+    l32i    a2, a0, 8
+    wsr     a2, SAR
+    l32i    a2, a0, 12
+    wsr     a2, LBEG
+    l32i    a2, a0, 16
+    wsr     a2, LEND
+    l32i    a2, a0, 20
+    wsr     a2, LCOUNT
+    l32i    a2, a0, 24
+    wsr     a2, EPC1
+
+    /* Restoring the physical registers.
+     * This is the reverse to the saving process above.
+     */
+
+    /* Rotate back to the final window, then start loading 12 registers at a time,
+     * in 5 iterations.
+     * Again, a1 is the downcounter and a3 is the save area pointer.
+     * After each rotation, a1 and a3 are copied from a13 and a15.
+     * To simplify the loop, we put the initial values into a13 and a15.
+     */
+    rotw     -4
+    movi    a15, _l5_save_ctx + 64 * 4  /* point to the end of the save area */
+    movi    a13, 5
+
+1:
+    /* Copy a1 and a3 from their previous location,
+     * at the same time decrementing and adjusting the save area pointer.
+     */
+    addi    a1, a13, -1
+    addi    a3, a15, -48
+
+    /* Load 12 registers */
+    l32i    a4, a3, 0
+    l32i    a5, a3, 4
+    l32i    a6, a3, 8
+    l32i    a7, a3, 12
+    l32i    a8, a3, 16
+    l32i    a9, a3, 20
+    l32i    a10, a3, 24
+    l32i    a11, a3, 28                                /* ensure PS and EPC written */
+    l32i    a12, a3, 32
+    l32i    a13, a3, 36
+    l32i    a14, a3, 40
+    l32i    a15, a3, 44
+
+    /* Done with the loop? */
+    beqz    a1, 2f
+    /* If no, rotate the window and repeat */
+    rotw    -3
+    j       1b
+
+2:
+    /* Done with the loop. Only 4 registers (a0-a3 in the original window) remain
+     * to be restored. Also need to restore WINDOWSTART, since all the general
+     * registers are now in place.
+     */
+    movi    a0, _l5_save_ctx
+
+    l32i    a2, a0, SPECREG_OFFSET + 4
+    wsr     a2, WINDOWSTART
+
+    l32i    a1, a0, 4
+    l32i    a2, a0, 8
+    l32i    a3, a0, 12
+    rsr     a0, EXCSAVE_4  /* holds the value of a0 before the interrupt handler */
+
+    /* Return from the interrupt, restoring PS from EPS_5 */
+    rfi     4
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the
