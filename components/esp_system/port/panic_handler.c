@@ -51,7 +51,9 @@
 
 #include "panic_internal.h"
 
-extern void esp_panic_handler(panic_info_t *);
+extern int _invalid_pc_placeholder;
+
+extern void esp_panic_handler(panic_info_t*);
 
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 
@@ -512,6 +514,13 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
 #endif
 
     if (esp_cpu_in_ocd_debug_mode()) {
+        if (!(esp_ptr_executable(cpu_ll_pc_to_ptr(frame->pc)) && (frame->pc & 0xC0000000U))) {
+            /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
+             * Incase the PC is invalid, GDB will fail to translate addresses to function names
+             * Hence replacing the PC to a placeholder address in case of invalid PC
+             */
+            frame->pc = (uint32_t)&_invalid_pc_placeholder;
+        }
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
                 frame->exccause == PANIC_RSN_INTWDT_CPU1) {
             wdt_hal_write_protect_disable(&wdt0_context);
