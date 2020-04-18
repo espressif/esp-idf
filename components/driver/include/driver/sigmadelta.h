@@ -19,7 +19,7 @@
 #include "driver/gpio.h"
 #include "hal/sigmadelta_types.h"
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -81,6 +81,6 @@ esp_err_t sigmadelta_set_prescale(sigmadelta_channel_t channel, uint8_t prescale
  */
 esp_err_t sigmadelta_set_pin(sigmadelta_channel_t channel, gpio_num_t gpio_num);
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
 #endif
