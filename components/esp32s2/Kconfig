@@ -498,6 +498,13 @@ menu "ESP32S2-specific"
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
 
+    config ESP32S2_RTCDATA_IN_FAST_MEM
+        bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+        default n
+        help
+            This option allows to place .rtc_data and .rtc_rodata sections into
+            RTC fast memory segment to free the slow memory region for ULP programs.
+
     config ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
         depends on !ESP32S2_MEMPROT_FEATURE

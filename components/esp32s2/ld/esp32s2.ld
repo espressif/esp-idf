@@ -96,7 +96,7 @@ _data_seg_org = ORIGIN(rtc_data_seg);
    When the option is not defined then use slow memory segment
    else the data will be placed in fast memory segment
    TODO: check whether the rtc_data_location is correct for esp32s2 - IDF-761 */
-#ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
+#ifndef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else
 REGION_ALIAS("rtc_data_location", rtc_data_seg );

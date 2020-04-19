@@ -46,7 +46,7 @@ SECTIONS
      named rtc_wake_stub*.c and the data marked with
      RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
      The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc.data :
   {
@@ -75,7 +75,7 @@ SECTIONS
      User data marked with RTC_NOINIT_ATTR will be placed
      into this section. See the file "esp_attr.h" for more information.
 	 The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc_noinit (NOLOAD):
   {
