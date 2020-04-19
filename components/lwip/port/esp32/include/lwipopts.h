@@ -269,6 +269,12 @@
    ---------- SNMP options ----------
    ----------------------------------
 */
+#define LWIP_SNMP                       CONFIG_LWIP_SNMP_SUPPORT
+#define MIB2_STATS                      CONFIG_LWIP_STATS
+#define SNMP_COMMUNITY                  CONFIG_LWIP_SNMP_COMMUNITY
+#define SNMP_COMMUNITY_TRAP             CONFIG_LWIP_SNMP_COMMUNITY_TRAP
+#define SNMP_COMMUNITY_WRITE            CONFIG_LWIP_SNMP_COMMUNITY_WRITE
+
 /*
    ----------------------------------
    ---------- IGMP options ----------

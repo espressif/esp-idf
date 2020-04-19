@@ -537,6 +537,24 @@ menu "LWIP"
         default 0x0 if LWIP_TCPIP_TASK_AFFINITY_CPU0
         default 0x1 if LWIP_TCPIP_TASK_AFFINITY_CPU1
 
+    menu "SNMP"
+        menuconfig LWIP_SNMP_SUPPORT
+            bool "Enable SNMP support"
+            default n
+            help
+                Enable SNMP support.
+        config LWIP_SNMP_COMMUNITY
+            string "The snmp read-access community"
+            default "public"
+        config LWIP_SNMP_COMMUNITY_TRAP
+            string "The snmp community used for sending traps"
+            default "public"
+        config LWIP_SNMP_COMMUNITY_WRITE
+            string "The snmp write-access community"
+            default "private"
+            help
+                The snmp write-access community. Set this community to "" in order to disallow any write access.
+    endmenu # SNMP
 
     menuconfig LWIP_PPP_SUPPORT
         bool "Enable PPP support (new/experimental)"

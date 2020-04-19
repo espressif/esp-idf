@@ -90,6 +90,32 @@ set(srcs
     "port/esp32/netif/dhcp_state.c"
     "port/esp32/netif/wlanif.c")
 
+if (CONFIG_LWIP_SNMP_SUPPORT)
+    list(APPEND srcs
+        "lwip/src/apps/snmp/snmp_asn1.c"
+        "lwip/src/apps/snmp/snmp_core.c"
+        "lwip/src/apps/snmp/snmp_mib2.c"
+        "lwip/src/apps/snmp/snmp_mib2_icmp.c"
+        "lwip/src/apps/snmp/snmp_mib2_interfaces.c"
+        "lwip/src/apps/snmp/snmp_mib2_ip.c"
+        "lwip/src/apps/snmp/snmp_mib2_snmp.c"
+        "lwip/src/apps/snmp/snmp_mib2_system.c"
+        "lwip/src/apps/snmp/snmp_mib2_tcp.c"
+        "lwip/src/apps/snmp/snmp_mib2_udp.c"
+        "lwip/src/apps/snmp/snmp_msg.c"
+        "lwip/src/apps/snmp/snmp_netconn.c"
+        "lwip/src/apps/snmp/snmp_pbuf_stream.c"
+        "lwip/src/apps/snmp/snmp_raw.c"
+        "lwip/src/apps/snmp/snmp_scalar.c"
+        "lwip/src/apps/snmp/snmp_snmpv2_framework.c"
+        "lwip/src/apps/snmp/snmp_snmpv2_usm.c"
+        "lwip/src/apps/snmp/snmp_table.c"
+        "lwip/src/apps/snmp/snmp_threadsync.c"
+        "lwip/src/apps/snmp/snmp_traps.c"
+        "lwip/src/apps/snmp/snmpv3.c"
+        "lwip/src/apps/snmp/snmpv3_mbedtls.c")
+endif()
+
 if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND srcs
         "lwip/src/netif/ppp/auth.c"
