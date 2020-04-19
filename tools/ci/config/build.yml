@@ -247,6 +247,7 @@ build_test_apps_esp32s2:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
+      - docs/_build/*/*/latex/*
     expire_in: 4 days
   only:
     variables:
@@ -258,7 +259,7 @@ build_test_apps_esp32s2:
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html latex -l $DOCLANG -t $DOCTGT build
 
 build_docs_en_esp32:
   extends: .build_docs_template
