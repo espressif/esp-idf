@@ -299,7 +299,7 @@ static void handle_qsThreadInfo_command(const unsigned char* cmd, int len)
 
 /** qThreadExtraInfo requests the thread name */
 static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
-{ 
+{
     cmd += sizeof("qThreadExtraInfo,") - 1;
     int task_index = esp_gdbstub_gethex(&cmd, -1);
     TaskHandle_t handle;
