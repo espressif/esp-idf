@@ -46,7 +46,7 @@
  */
 #define TG1_WDT_LIVELOCK_TIMEOUT_MS    (20)
 
-extern uint32_t _l4_intr_livelock_counter, _l4_intr_livelock_max;
+extern uint32_t _l5_intr_livelock_counter, _l5_intr_livelock_max;
 #endif
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
@@ -62,8 +62,8 @@ static void IRAM_ATTR tick_hook(void) {
         if (int_wdt_app_cpu_ticked) {
             TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-            _l4_intr_livelock_counter = 0;
-            TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2/(_l4_intr_livelock_max+1); //Set timeout before interrupt
+            _l5_intr_livelock_counter = 0;
+            TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2/(_l5_intr_livelock_max+1); //Set timeout before interrupt
 #else
             TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
 #endif
@@ -118,11 +118,11 @@ void esp_int_wdt_cpu_init()
      */
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-        _l4_intr_livelock_max = 0;
+        _l5_intr_livelock_max = 0;
         if (soc_has_cache_lock_bug()) {
             assert(((1000/CONFIG_FREERTOS_HZ)<<1) <= TG1_WDT_LIVELOCK_TIMEOUT_MS);
             assert(CONFIG_INT_WDT_TIMEOUT_MS >= (TG1_WDT_LIVELOCK_TIMEOUT_MS*3));
-            _l4_intr_livelock_max = CONFIG_INT_WDT_TIMEOUT_MS/TG1_WDT_LIVELOCK_TIMEOUT_MS - 1;
+            _l5_intr_livelock_max = CONFIG_INT_WDT_TIMEOUT_MS/TG1_WDT_LIVELOCK_TIMEOUT_MS - 1;
         }
 #endif
     //We do not register a handler for the interrupt because it is interrupt level 4 which

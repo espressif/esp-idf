@@ -42,16 +42,18 @@ _l5_intr_stack:
     .space      L5_INTR_STACK_SIZE*portNUM_PROCESSORS
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    .global _l4_intr_livelock_counter
-    .global _l4_intr_livelock_max
+    .global _l5_intr_livelock_counter
+    .global _l5_intr_livelock_max
     .align  16
-_l4_intr_livelock_counter:
+_l5_intr_livelock_counter:
     .word   0
-_l4_intr_livelock_max:
+_l5_intr_livelock_max:
     .word   0
-_l4_intr_livelock_sync:
+_l5_intr_livelock_sync:
     .word   0, 0
-_l4_intr_livelock_app:
+_l5_intr_livelock_app:
+    .word   0
+_l5_intr_livelock_pro:
     .word   0
 #endif
 
@@ -76,11 +78,11 @@ xt_highint5:
 
     /* Pro cpu (Core 0) can execute to here. */
     wsr     a5, depc                        /* use DEPC as temp storage */
-    movi    a0, _l4_intr_livelock_counter
+    movi    a0, _l5_intr_livelock_counter
     l32i    a0, a0, 0
-    movi    a5, _l4_intr_livelock_max
+    movi    a5, _l5_intr_livelock_max
     l32i    a5, a5, 0
-    bltu    a0, a5, .handle_livelock_int    /* _l4_intr_livelock_counter < _l4_intr_livelock_max */
+    bltu    a0, a5, .handle_livelock_int    /* _l5_intr_livelock_counter < _l5_intr_livelock_max */
 
     rsr     a5, depc                        /* restore a5 */
 #endif
@@ -180,6 +182,7 @@ xt_highint5:
     add     a3, a3, a2
     movi    a2, \inum
     s32i    a2, a3, 0
+    memw
     .endm
 
 /*
@@ -193,32 +196,35 @@ xt_highint5:
     .macro wdt_clr_intr_status  dev
     movi    a2, \dev
     movi    a3, TIMG_WDT_WKEY_VALUE
-    memw
     s32i    a3, a2, 100                     /* disable write protect */
+    memw
     l32i    a4, a2, 164
+    memw
     movi    a3, 4
     or      a3, a4, a3
-    memw
     s32i    a3, a2, 164                     /* clear 1st stage timeout interrupt */
+    memw
     movi    a3, 0
     s32i    a3, a2, 100                     /* enable write protect */
+    memw
     .endm
 
     .macro wdt_feed dev
     movi    a2, \dev
     movi    a3, TIMG_WDT_WKEY_VALUE
-    memw
     s32i    a3, a2, 100                     /* disable write protect */
-    movi    a4, _l4_intr_livelock_max
+    memw
+    movi    a4, _l5_intr_livelock_max
     l32i    a4, a4, 0
+    memw
     addi    a4, a4, 1
     movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<1)
     quou    a3, a3, a4
-    memw
     s32i    a3, a2, 80                      /* set timeout before interrupt */
-    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<2)
     memw
+    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<2)
     s32i    a3, a2, 84                      /* set timeout before system reset */
+    memw
     movi    a3, 1
     s32i    a3, a2, 96                      /* feed wdt */
     memw
@@ -231,19 +237,19 @@ xt_highint5:
 .handle_livelock_int:
 
     movi    a0, SOC_RTC_DATA_LOW
-    movi    a5, _l4_intr_livelock_sync
+    movi    a5, _l5_intr_livelock_sync
     l32i    a5, a5, 0
     s32i    a5, a0, 0
     memw
-    movi    a5, _l4_intr_livelock_sync
+    movi    a5, _l5_intr_livelock_sync
     l32i    a5, a5, 4
     s32i    a5, a0, 4
     memw
-    movi    a5, _l4_intr_livelock_app
+    movi    a5, _l5_intr_livelock_app
     l32i    a5, a5, 0
     s32i    a5, a0, 8
     memw
-    movi    a5, _l4_intr_livelock_counter
+    movi    a5, _l5_intr_livelock_counter
     l32i    a5, a5, 0
     s32i    a5, a0, 12
     memw
@@ -251,30 +257,30 @@ xt_highint5:
     getcoreid   a5
 
     /* Save A2, A3, A4 so we can use those registers */
-    movi    a0, L4_INTR_STACK_SIZE
+    movi    a0, L5_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l4_intr_stack
+    movi    a0, _l5_intr_stack
     add     a0, a0, a5
-    s32i    a2, a0, L4_INTR_A2_OFFSET
-    s32i    a3, a0, L4_INTR_A3_OFFSET
-    s32i    a4, a0, L4_INTR_A4_OFFSET
+    s32i    a2, a0, L5_INTR_A2_OFFSET
+    s32i    a3, a0, L5_INTR_A3_OFFSET
+    s32i    a4, a0, L5_INTR_A4_OFFSET
 
     /* Here, we can use a0, a2, a3, a4, a5 registers */
     getcoreid   a5
 
     beqz    a5, 1f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
 
     /* Dual core synchronization, ensuring that both cores enter interrupts */
 1:  movi    a4, 0x1
-    movi    a2, _l4_intr_livelock_sync
+    movi    a2, _l5_intr_livelock_sync
     addx4   a3, a5, a2
     s32i    a4, a3, 0
 
-1:  movi    a2, _l4_intr_livelock_sync
+1:  movi    a2, _l5_intr_livelock_sync
     movi    a3, 1
     addx4   a3, a3, a2
     l32i    a2, a2, 0
@@ -286,10 +292,10 @@ xt_highint5:
 
     beqz    a5, 1f                          /* Pro cpu (Core 0) jump bypass */
 
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a2, a2, 0
     bnei    a2, 2, 1f
-    movi    a2, _l4_intr_livelock_counter   /* _l4_intr_livelock_counter++ */
+    movi    a2, _l5_intr_livelock_counter   /* _l5_intr_livelock_counter++ */
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
@@ -343,27 +349,34 @@ xt_highint5:
     bltu    a4, a3, 2b
 
     beqz    a5, 2f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a2, a2, 0
     beqi    a2, 2, 8f
+    j       3f
 
-2:  movi    a2, _l4_intr_livelock_sync
-    movi    a4, 1
-    addx4   a3, a4, a2
+2:  movi    a2, _l5_intr_livelock_pro
+    l32i    a4, a2, 0
+    addi    a4, a4, 1
+    s32i    a4, a2, 0
+
+    movi    a2, _l5_intr_livelock_sync
+    movi    a3, 1
+    addx4   a3, a3, a2
     l32i    a2, a2, 0
     l32i    a3, a3, 0
     and     a2, a2, a3
-    beqz    a2, 4f
+    beqz    a2, 5f
+    j       1b
+5:  bgei    a4, 2, 4f
+    j       1b
 
-    beqz    a5, 3f
     /*
     Pro cpu (Core 0) jump bypass, continue waiting, App cpu (Core 1)
     can execute to here, unmap itself tg1 1st stage timeout interrupt
-    then restore registers and exit highint4.
+    then restore registers and exit highint5.
     */
-    intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 16
+3:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 16
     j       9f
-3:  j       1b
 
     /*
     Here, App cpu (Core 1) has exited isr, Pro cpu (Core 0) help the
@@ -371,13 +384,13 @@ xt_highint5:
     */
 4:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, ETS_T1_WDT_INUM
 
-1:  movi    a2, _l4_intr_livelock_sync
+1:  movi    a2, _l5_intr_livelock_sync
     movi    a4, 1
     addx4   a3, a4, a2
     l32i    a2, a2, 0
     l32i    a3, a3, 0
     and     a2, a2, a3
-    beqz    a2, 1b                          /* Wait for App cpu to enter highint4 again */
+    beqz    a2, 1b                          /* Wait for App cpu to enter highint5 again */
 
     wdt_clr_intr_status TIMERG1
     j       9f
@@ -389,29 +402,32 @@ xt_highint5:
 
     movi    a0, 0
     beqz    a5, 1f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a3, a2, 0
     bnei    a3, 2, 1f
     s32i    a0, a2, 0
 
-1:  movi    a2, _l4_intr_livelock_sync
+1:  bnez    a5, 2f
+    movi    a2, _l5_intr_livelock_pro
+    s32i    a0, a2, 0
+2:  movi    a2, _l5_intr_livelock_sync
     addx4   a2, a5, a2
     s32i    a0, a2, 0
 
     /* Done. Restore registers and return. */
-    movi    a0, L4_INTR_STACK_SIZE
+    movi    a0, L5_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l4_intr_stack
+    movi    a0, _l5_intr_stack
     add     a0, a0, a5
-    l32i    a2, a0, L4_INTR_A2_OFFSET
-    l32i    a3, a0, L4_INTR_A3_OFFSET
-    l32i    a4, a0, L4_INTR_A4_OFFSET
+    l32i    a2, a0, L5_INTR_A2_OFFSET
+    l32i    a3, a0, L5_INTR_A3_OFFSET
+    l32i    a4, a0, L5_INTR_A4_OFFSET
     rsync                                   /* ensure register restored */
 
     rsr     a5, depc
 
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
-    rfi     4
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
 
 #endif
 
@@ -423,7 +439,7 @@ xt_highint5:
     /* This section is for dport access register protection */
     /* Allocate exception frame and save minimal context. */
     /* Because the interrupt cause code has protection that only
-       allows one cpu to enter in the dport section of the L4
+       allows one cpu to enter in the dport section of the L5
        interrupt at one time, there's no need to have two
        _l5_intr_stack for each cpu */
 
