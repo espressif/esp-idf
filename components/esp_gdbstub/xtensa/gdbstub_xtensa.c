@@ -34,7 +34,7 @@ static void init_regfile(esp_gdbstub_gdb_regfile_t *dst)
 static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
 {
     if (dst->a[0] & 0x8000000U) {
-        dst->a[0] = (dst->a[0] & 0x3fffffffU) | 0x40000000U;
+        dst->a[0] = (uint32_t)cpu_ll_pc_to_ptr(dst->a[0]);
     }
     if (!esp_stack_ptr_is_sane(dst->a[1])) {
         dst->a[1] = 0xDEADBEEF;
@@ -49,14 +49,14 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
 {
     init_regfile(dst);
     const uint32_t *a_regs = (const uint32_t *) &frame->a0;
-    if (!(esp_ptr_executable((frame->pc & 0x3fffffffU) | 0x40000000U) && (frame->pc & 0xC0000000U))) {
+    if (!(esp_ptr_executable(cpu_ll_pc_to_ptr(frame->pc)) && (frame->pc & 0xC0000000U))) {
         /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
          * Incase the PC is invalid, GDB will fail to translate addresses to function names
          * Hence replacing the PC to a placeholder address in case of invalid PC
          */
         dst->pc = (uint32_t)&_invalid_pc_placeholder;
     } else {
-        dst->pc = (frame->pc & 0x3fffffffU) | 0x40000000U;
+        dst->pc = (uint32_t)cpu_ll_pc_to_ptr(frame->pc);
     }
 
     for (int i = 0; i < 16; i++) {
@@ -83,10 +83,10 @@ static void solicited_frame_to_regfile(const XtSolFrame *frame, esp_gdbstub_gdb_
 {
     init_regfile(dst);
     const uint32_t *a_regs = (const uint32_t *) &frame->a0;
-    if (!(esp_ptr_executable((frame->pc & 0x3fffffffU) | 0x40000000U) && (frame->pc & 0xC0000000U))) {
+    if (!(esp_ptr_executable(cpu_ll_pc_to_ptr(frame->pc)) && (frame->pc & 0xC0000000U))) {
         dst->pc = (uint32_t)&_invalid_pc_placeholder;
     } else {
-        dst->pc = (frame->pc & 0x3fffffffU) | 0x40000000U;
+        dst->pc = (uint32_t)cpu_ll_pc_to_ptr(frame->pc);
     }
 
     /* only 4 registers saved in the solicited frame */
