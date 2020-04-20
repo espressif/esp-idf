@@ -7,7 +7,7 @@
 import argparse
 import sys
 import logging
-from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS
+from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS, safe_exit_if_file_is_empty
 
 
 def main():
@@ -33,8 +33,8 @@ def main():
         default=1,
         type=int,
         help="Number of parallel build jobs. Note that this script doesn't start the jobs, " +
-        "it needs to be executed multiple times with same value of --parallel-count and " +
-        "different values of --parallel-index.",
+             "it needs to be executed multiple times with same value of --parallel-count and " +
+             "different values of --parallel-index.",
     )
     parser.add_argument(
         "--parallel-index",
@@ -71,11 +71,10 @@ def main():
         help="Name of the file to read the list of builds from. If not specified, read from stdin.",
     )
     args = parser.parse_args()
-
     setup_logging(args)
 
+    safe_exit_if_file_is_empty(args.build_list.name)
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
         logging.error("Empty build list!")
         raise SystemExit(1)

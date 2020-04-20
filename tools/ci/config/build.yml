@@ -126,6 +126,8 @@ build_examples_make:
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
   extends: .build_examples_template
+  dependencies:
+    - scan_tests
   artifacts:
     paths:
       - build_examples/list.json
@@ -142,6 +144,8 @@ build_examples_make:
     LOG_PATH: "${CI_PROJECT_DIR}/log_examples"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
     EXAMPLE_TEST_BUILD_SYSTEM: "cmake"
+    SCAN_EXAMPLE_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}.json
+
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
@@ -156,6 +160,8 @@ build_examples_cmake_esp32s2:
 .build_test_apps: &build_test_apps
   extends: .build_template
   stage: build
+  dependencies:
+    - scan_tests
   artifacts:
     when: always
     paths:
@@ -171,8 +177,9 @@ build_examples_cmake_esp32s2:
       - $LOG_PATH
     expire_in: 3 days
   variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_test_apps"
-    BUILD_PATH: "$CI_PROJECT_DIR/build_test_apps"
+    LOG_PATH: "${CI_PROJECT_DIR}/log_test_apps"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_test_apps"
+    SCAN_CUSTOM_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}.json
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null

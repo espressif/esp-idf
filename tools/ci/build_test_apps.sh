@@ -29,6 +29,7 @@ die() {
 [ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
 [ -z ${BUILD_PATH} ] && die "BUILD_PATH is not set"
 [ -z ${IDF_TARGET} ] && die "IDF_TARGET is not set"
+[ -z ${SCAN_CUSTOM_TEST_JSON} ] && die "SCAN_CUSTOM_TEST_JSON is not set"
 [ -d ${LOG_PATH} ] || mkdir -p ${LOG_PATH}
 [ -d ${BUILD_PATH} ] || mkdir -p ${BUILD_PATH}
 
@@ -74,6 +75,7 @@ ${IDF_PATH}/tools/find_apps.py tools/test_apps \
     --config 'sdkconfig.ci=default' \
     --config 'sdkconfig.ci.*=' \
     --config '=default' \
+    --scan-tests-json ${SCAN_CUSTOM_TEST_JSON}
 
 # --config rules above explained:
 # 1. If sdkconfig.ci exists, use it build the example with configuration name "default"

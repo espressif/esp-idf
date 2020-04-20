@@ -11,6 +11,8 @@ import re
 import glob
 import logging
 import typing
+from typing import Optional
+
 from find_build_apps import (
     BUILD_SYSTEMS,
     BUILD_SYSTEM_CMAKE,
@@ -22,8 +24,8 @@ from find_build_apps import (
     DEFAULT_TARGET,
 )
 
-# Helper functions
 
+# Helper functions
 
 def dict_from_sdkconfig(path):
     """
@@ -124,8 +126,8 @@ def find_builds_for_app(
     return build_items
 
 
-def find_apps(build_system_class, path, recursive, exclude_list,
-              target):  # type: (typing.Type[BuildSystem], str, bool, typing.List[str], str) -> typing.List[str]
+def find_apps(build_system_class, path, recursive, exclude_list, target,
+              build_apps_list_file=None):  # type: (typing.Type[BuildSystem], str, bool, typing.List[str], str, Optional[str]) -> typing.List[str]
     """
     Find app directories in path (possibly recursively), which contain apps for the given build system, compatible
     with the given target.
@@ -134,6 +136,8 @@ def find_apps(build_system_class, path, recursive, exclude_list,
     :param recursive: whether to recursively descend into nested directories if no app is found
     :param exclude_list: list of paths to be excluded from the recursive search
     :param target: desired value of IDF_TARGET; apps incompatible with the given target are skipped.
+    :param build_apps_list_file: List of apps need to be built, apps not on this list will be skipped.
+                                 None or empty file to build all apps.
     :return: list of paths of the apps found
     """
     build_system_name = build_system_class.NAME
@@ -147,6 +151,18 @@ def find_apps(build_system_class, path, recursive, exclude_list,
             return []
         return [path]
 
+    # if this argument is empty, treat it as build_all.
+    if not build_apps_list_file:
+        build_all = True
+    else:
+        # if this argument is not empty but the file doesn't exists, treat as no supported apps.
+        if not os.path.exists(build_apps_list_file):
+            return []
+        else:
+            build_all = False
+            with open(build_apps_list_file) as fr:
+                apps_need_be_built = set([line.strip() for line in fr.readlines() if line])
+
     # The remaining part is for recursive == True
     apps_found = []  # type: typing.List[str]
     for root, dirs, _ in os.walk(path, topdown=True):
@@ -155,6 +171,11 @@ def find_apps(build_system_class, path, recursive, exclude_list,
             logging.debug("Skipping {} (excluded)".format(root))
             del dirs[:]
             continue
+
+        if not build_all:
+            if os.path.abspath(root) not in apps_need_be_built:
+                logging.debug("Skipping, app not listed in {}".format(build_apps_list_file))
+                continue
 
         if build_system_class.is_app(root):
             logging.debug("Found {} app in {}".format(build_system_name, root))
@@ -193,22 +214,22 @@ def main():
     parser.add_argument(
         "--work-dir",
         help="If set, the app is first copied into the specified directory, and then built." +
-        "If not set, the work directory is the directory of the app.",
+             "If not set, the work directory is the directory of the app.",
     )
     parser.add_argument(
         "--config",
         action="append",
         help="Adds configurations (sdkconfig file names) to build. This can either be " +
-        "FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, " +
-        "relative to the project directory, to be used. Optional NAME can be specified, " +
-        "which can be used as a name of this configuration. FILEPATTERN is the name of " +
-        "the sdkconfig file, relative to the project directory, with at most one wildcard. " +
-        "The part captured by the wildcard is used as the name of the configuration.",
+             "FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, " +
+             "relative to the project directory, to be used. Optional NAME can be specified, " +
+             "which can be used as a name of this configuration. FILEPATTERN is the name of " +
+             "the sdkconfig file, relative to the project directory, with at most one wildcard. " +
+             "The part captured by the wildcard is used as the name of the configuration.",
     )
     parser.add_argument(
         "--build-dir",
         help="If set, specifies the build directory name. Can expand placeholders. Can be either a " +
-        "name relative to the work directory, or an absolute path.",
+             "name relative to the work directory, or an absolute path.",
     )
     parser.add_argument(
         "--build-log",
@@ -232,6 +253,13 @@ def main():
         type=argparse.FileType("w"),
         help="Output the list of builds to the specified file",
     )
+    parser.add_argument(
+        '-s',
+        '--scan-tests-json',
+        default=None,
+        help="Scan tests result. Restrict the build/architect behavior to apps need to be built.\n"
+             "If it's None or the file does not exist, will build all apps and upload all artifacts."
+    )
     parser.add_argument("paths", nargs="+", help="One or more app paths.")
     args = parser.parse_args()
     setup_logging(args)
@@ -251,17 +279,17 @@ def main():
     # Prepare the list of app paths
     app_paths = []  # type: typing.List[str]
     for path in args.paths:
-        app_paths += find_apps(build_system_class, path, args.recursive, args.exclude or [], args.target)
+        app_paths += find_apps(build_system_class, path, args.recursive, args.exclude or [], args.target, args.build_apps_list_file)
 
+    build_items = []  # type: typing.List[BuildItem]
     if not app_paths:
-        logging.critical("No {} apps found".format(build_system_class.NAME))
-        raise SystemExit(1)
-    logging.info("Found {} apps".format(len(app_paths)))
+        logging.warning("No {} apps found, skipping...".format(build_system_class.NAME))
+        sys.exit(0)
 
+    logging.info("Found {} apps".format(len(app_paths)))
     app_paths = sorted(app_paths)
 
     # Find compatible configurations of each app, collect them as BuildItems
-    build_items = []  # type: typing.List[BuildItem]
     config_rules = config_rules_from_str(args.config or [])
     for app_path in app_paths:
         build_items += find_builds_for_app(
@@ -278,6 +306,7 @@ def main():
     # Write out the BuildItems. Only JSON supported now (will add YAML later).
     if args.format != "json":
         raise NotImplementedError()
+
     out = args.output or sys.stdout
     out.writelines([item.to_json() + "\n" for item in build_items])
 
