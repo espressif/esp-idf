@@ -127,7 +127,6 @@ def filter_test_cases(test_methods, case_filter):
         * user case filter is ``chip: ["esp32", "esp32c"]``, case attribute is ``chip: "esp32"``
         * user case filter is ``chip: "esp32"``, case attribute is ``chip: "esp32"``
 
-
     :param test_methods: a list of test methods functions
     :param case_filter: case filter
     :return: filtered test methods

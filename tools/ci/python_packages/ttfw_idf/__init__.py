@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
 import os
 import re
+
+from typing import Union
 
 from tiny_test_fw import TinyFW, Utility
 from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp  # noqa: export all Apps for users
@@ -30,6 +33,28 @@ def format_case_id(chip, case_name):
     return "{}.{}".format(chip, case_name)
 
 
+def upper_list(text):  # type: (Union[str, unicode, list]) -> list
+    if isinstance(text, basestring):  # It's not working in python3
+        res = [text.upper()]
+    else:
+        res = [item.upper() for item in text]
+    return res
+
+
+def ci_target_check(func):
+    @functools.wraps(func)
+    def wrapper(**kwargs):
+        target = upper_list(kwargs.get('target', []))
+        ci_target = upper_list(kwargs.get('ci_target', []))
+        if not set(ci_target).issubset(set(target)):
+            raise ValueError('ci_target must be a subset of target')
+
+        return func(**kwargs)
+
+    return wrapper
+
+
+@ci_target_check
 def idf_example_test(app=Example, target="ESP32", ci_target=None, module="examples", execution_time=1,
                      level="example", erase_nvs=True, config_name=None, **kwargs):
     """
@@ -48,7 +73,7 @@ def idf_example_test(app=Example, target="ESP32", ci_target=None, module="exampl
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
                                              execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
                                              erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)
@@ -58,6 +83,7 @@ def idf_example_test(app=Example, target="ESP32", ci_target=None, module="exampl
     return test
 
 
+@ci_target_check
 def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", execution_time=1,
                   level="unit", erase_nvs=True, **kwargs):
     """
@@ -75,7 +101,7 @@ def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", ex
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
                                              execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
                                              erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)
@@ -85,6 +111,7 @@ def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", ex
     return test
 
 
+@ci_target_check
 def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
                     level="integration", erase_nvs=True, config_name=None, group="test-apps", **kwargs):
     """
@@ -104,7 +131,7 @@ def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", 
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=target, ci_target=ci_target, module=module,
+        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
                                              execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
                                              erase_nvs=erase_nvs, **kwargs)
         test_func = original_method(func)

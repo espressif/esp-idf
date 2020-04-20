@@ -166,21 +166,6 @@ def test_method(**kwargs):
         case_info["name"] = case_info["ID"] = test_func.__name__
         case_info["junit_report_by_case"] = False
 
-        def _filter_ci_target(target, ci_target):
-            if not ci_target:
-                return target
-            if isinstance(target, str):
-                if isinstance(ci_target, str) and target == ci_target:
-                    return ci_target
-            else:
-                if isinstance(ci_target, str) and ci_target in target:
-                    return ci_target
-                elif isinstance(ci_target, list) and set(ci_target).issubset(set(target)):
-                    return ci_target
-            raise ValueError('ci_target must be a subset of target')
-
-        if os.getenv('CI_JOB_NAME') and 'ci_target' in kwargs:
-            kwargs['target'] = _filter_ci_target(kwargs['target'], kwargs['ci_target'])
         case_info.update(kwargs)
 
         @functools.wraps(test_func)
@@ -230,7 +215,7 @@ def test_method(**kwargs):
 
             dut_dict = kwargs['dut_dict']
             if target not in dut_dict:
-                raise Exception('target can only be {%s}' % ', '.join(dut_dict.keys()))
+                raise Exception('target can only be {%s} (case insensitive)' % ', '.join(dut_dict.keys()))
 
             dut = dut_dict[target]
             try:

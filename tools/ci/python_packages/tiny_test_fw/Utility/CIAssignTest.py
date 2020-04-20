@@ -143,6 +143,7 @@ class AssignTest(object):
     DEFAULT_FILTER = {
         "category": "function",
         "ignore": False,
+        "supported_in_ci": True,
     }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
