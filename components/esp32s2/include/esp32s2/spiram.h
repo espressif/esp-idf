@@ -91,6 +91,54 @@ void esp_spiram_writeback_cache(void);
  */
 esp_err_t esp_spiram_reserve_dma_pool(size_t size);
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+
+extern int _instruction_reserved_start, _instruction_reserved_end;
+
+/**
+ * @brief Get the start page number of the instruction in SPI flash
+ * 
+ * @return start page number
+ */
+uint32_t instruction_flash_start_page_get(void);
+/**
+ * @brief Get the end page number of the instruction in SPI flash
+ * 
+ * @return end page number
+ */
+uint32_t instruction_flash_end_page_get(void);
+/**
+ * @brief Get the offset of instruction from SPI flash to SPI RAM
+ * 
+ * @return instruction offset
+ */
+int instruction_flash2spiram_offset(void);
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+
+extern int _rodata_reserved_start, _rodata_reserved_end;
+
+/**
+ * @brief Get the start page number of the rodata in SPI flash
+ * 
+ * @return start page number
+ */
+uint32_t rodata_flash_start_page_get(void);
+/**
+ * @brief Get the end page number of the rodata in SPI flash
+ * 
+ * @return end page number
+ */
+uint32_t rodata_flash_end_page_get(void);
+/**
+ * @brief Get the offset number of rodata from SPI flash to SPI RAM
+ * 
+ * @return rodata offset
+ */
+int rodata_flash2spiram_offset(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

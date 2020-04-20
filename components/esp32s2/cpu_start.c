@@ -200,6 +200,15 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    extern void instruction_flash_page_info_init(void);
+    instruction_flash_page_info_init();
+#endif
+#if CONFIG_SPIRAM_RODATA
+    extern void rodata_flash_page_info_init(void);
+    rodata_flash_page_info_init();
+#endif
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
