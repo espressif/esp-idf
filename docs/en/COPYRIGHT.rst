@@ -33,34 +33,35 @@ These third party libraries can be included into the application (firmware) prod
 
 * `linenoise`_ line editing library Copyright (c) 2010-2014 Salvatore Sanfilippo, Copyright (c) 2010-2013 Pieter Noordhuis, licensed under 2-clause BSD license.
 
-* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license.
+* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license as described in :component_file:`LICENSE file <coap/libcoap/LICENSE>` and :component_file:`COPYING file <coap/libcoap/COPYING>` .
 
-* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license.
+* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license as described in :component_file:`COPYING file <expat/expat/expat/COPYING>`.
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
-* `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license.
+* `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
 
-* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license.
+* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license as described in :component_file:`LICENSE file <libsodium/libsodium/LICENSE>`.
 
 * `micro-ecc`_ library, Copyright (c) 2014 Kenneth MacKay, is licensed under 2-clause BSD license.
 
-* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license.
+* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license as described in :component_file:`COPYING file <nghttp/nghttp2/COPYING>`.
 
-* `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0.
+* `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
 
-* `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license.
+* `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license as described in :component_file:`LICENSE file <spiffs/spiffs/LICENSE>`.
 
-* `TinyCBOR`_ library, Copyright (c) 2017 Intel Corporation, is licensed under MIT License.
+* `TinyCBOR`_ library, Copyright (c) 2017 Intel Corporation, is licensed under MIT License as described in :component_file:`LICENSE file <cbor/tinycbor/LICENSE>`.
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
 
-* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
+* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License as described in :component_file:`COPYING file<asio/asio/asio/COPYING>`.
 
-* :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0.
+* :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2,0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
+
 * :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
 
-* `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0.
+* `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
 
 Build Tools
