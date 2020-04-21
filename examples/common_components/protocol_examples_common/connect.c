@@ -65,8 +65,12 @@ static void on_got_ip(void *arg, esp_event_base_t event_base,
 static void on_got_ipv6(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
-    ESP_LOGI(TAG, "Got IPv6 event!");
     ip_event_got_ip6_t *event = (ip_event_got_ip6_t *)event_data;
+    if (event->esp_netif != s_example_esp_netif) {
+        ESP_LOGD(TAG, "Got IPv6 from another netif: ignored");
+        return;
+    }
+    ESP_LOGI(TAG, "Got IPv6 event!");
     memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
     xEventGroupSetBits(s_connect_event_group, GOT_IPV6_BIT);
 }
