@@ -7,6 +7,7 @@ import os
 import subprocess
 from docutils import nodes
 from collections import namedtuple
+from sphinx.transforms.post_transforms import SphinxPostTransform
 
 
 def get_github_rev():
@@ -52,27 +53,6 @@ def url_join(*url_parts):
     result = "/".join(url_parts)
     result = re.sub(r"([^:])//+", r"\1/", result)  # remove any // that isn't in the https:// part
     return result
-
-
-def setup(app):
-    rev = get_github_rev()
-    submods = get_submodules()
-
-    # links to files or folders on the GitHub
-    app.add_role('idf', github_link('tree', rev, submods, '/', app.config))
-    app.add_role('idf_file', github_link('blob', rev, submods, '/', app.config))
-    app.add_role('idf_raw', github_link('raw', rev, submods, '/', app.config))
-    app.add_role('component', github_link('tree', rev, submods, '/components/', app.config))
-    app.add_role('component_file', github_link('blob', rev, submods, '/components/', app.config))
-    app.add_role('component_raw', github_link('raw', rev, submods, '/components/', app.config))
-    app.add_role('example', github_link('tree', rev, submods, '/examples/', app.config))
-    app.add_role('example_file', github_link('blob', rev, submods, '/examples/', app.config))
-    app.add_role('example_raw', github_link('raw', rev, submods, '/examples/', app.config))
-
-    # link to the current documentation file in specific language version
-    app.add_role('link_to_translation', link_to_translation(app.config))
-
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.4'}
 
 
 def github_link(link_type, idf_rev, submods, root_path, app_config):
@@ -152,15 +132,58 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
     return role
 
 
-def link_to_translation(config):
-    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-        (language, link_text) = text.split(':')
-        docname = inliner.document.settings.env.docname
-        doc_path = inliner.document.settings.env.doc2path(docname, None, None)
-        return_path = '../' * doc_path.count('/')  # path back to the root from 'docname'
-        # then take off 3 more paths for language/release/targetname and build the new URL
-        url = "{}.html".format(os.path.join(return_path, '../../..', language, config.release,
-                                            config.idf_target, docname))
-        node = nodes.reference(rawtext, link_text, refuri=url, **options)
-        return [node], []
-    return role
+class translation_link(nodes.Element):
+    """Node for "link_to_translation" role."""
+
+
+# Linking to translation is done at the "writing" stage to avoid issues with the info being cached between builders
+def link_to_translation(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    node = translation_link()
+    node['expr'] = (rawtext, text, options)
+    return [node], []
+
+
+class TranslationLinkNodeTransform(SphinxPostTransform):
+    # Transform needs to happen early to ensure the new reference node is also transformed
+    default_priority = 0
+
+    def run(self, **kwargs):
+
+        # Only output relative links if building HTML
+        for node in self.document.traverse(translation_link):
+            if 'html' in self.app.builder.name:
+                rawtext, text, options = node['expr']
+                (language, link_text) = text.split(':')
+                env = self.document.settings.env
+                docname = env.docname
+                doc_path = env.doc2path(docname, None, None)
+                return_path = '../' * doc_path.count('/')  # path back to the root from 'docname'
+                # then take off 3 more paths for language/release/targetname and build the new URL
+                url = "{}.html".format(os.path.join(return_path, '../../..', language, env.config.release,
+                                                    env.config.idf_target, docname))
+                node.replace_self(nodes.reference(rawtext, link_text, refuri=url, **options))
+            else:
+                node.replace_self([])
+
+
+def setup(app):
+    rev = get_github_rev()
+    submods = get_submodules()
+
+    # links to files or folders on the GitHub
+    app.add_role('idf', github_link('tree', rev, submods, '/', app.config))
+    app.add_role('idf_file', github_link('blob', rev, submods, '/', app.config))
+    app.add_role('idf_raw', github_link('raw', rev, submods, '/', app.config))
+    app.add_role('component', github_link('tree', rev, submods, '/components/', app.config))
+    app.add_role('component_file', github_link('blob', rev, submods, '/components/', app.config))
+    app.add_role('component_raw', github_link('raw', rev, submods, '/components/', app.config))
+    app.add_role('example', github_link('tree', rev, submods, '/examples/', app.config))
+    app.add_role('example_file', github_link('blob', rev, submods, '/examples/', app.config))
+    app.add_role('example_raw', github_link('raw', rev, submods, '/examples/', app.config))
+
+    # link to the current documentation file in specific language version
+    app.add_role('link_to_translation', link_to_translation)
+    app.add_node(translation_link)
+    app.add_post_transform(TranslationLinkNodeTransform)
+
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.5'}
