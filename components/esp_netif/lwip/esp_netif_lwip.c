@@ -1161,8 +1161,13 @@ bool esp_netif_is_netif_up(esp_netif_t *esp_netif)
 {
     ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
-    if (esp_netif != NULL && esp_netif->lwip_netif != NULL && netif_is_up(esp_netif->lwip_netif)) {
-        return true;
+    if (esp_netif != NULL && esp_netif->lwip_netif != NULL) {
+        if (esp_netif->is_ppp_netif) {
+            // ppp implementation uses netif_set_link_up/down to update link state
+            return netif_is_link_up(esp_netif->lwip_netif);
+        }
+        // esp-netif handlers and drivers take care to set_netif_up/down on link state update
+        return netif_is_up(esp_netif->lwip_netif);
     } else {
         return false;
     }
