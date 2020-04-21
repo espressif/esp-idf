@@ -974,6 +974,9 @@ static void sanitize(char* src) {
 char *linenoise(const char *prompt) {
     char *buf = calloc(1, LINENOISE_MAX_LINE);
     int count = 0;
+    if (buf == NULL) {
+        return NULL;
+    }
     if (!dumbmode) {
         count = linenoiseRaw(buf, LINENOISE_MAX_LINE, prompt);
     } else {
