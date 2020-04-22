@@ -125,6 +125,9 @@ build_example () {
         # If sdkconfig.ci file is present, append it to sdkconfig.defaults,
         # replacing environment variables
         if [[ -f "$SDKCONFIG_DEFAULTS_CI" ]]; then
+            # Make sure that the last line of sdkconfig.defaults is terminated. Otherwise, the first line
+            # of $SDKCONFIG_DEFAULTS_CI will be joined with the last one of sdkconfig.defaults.
+            echo >> sdkconfig.defaults
             cat $SDKCONFIG_DEFAULTS_CI | $IDF_PATH/tools/ci/envsubst.py >> sdkconfig.defaults
         fi
 
