@@ -948,7 +948,7 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
 
-    ets_printf("\n##C##: BT version: hli_0423\n");
+    ets_printf("\n##C##: BT version: high level int 0427\n");
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
 
