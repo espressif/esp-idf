@@ -21,7 +21,7 @@ In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig opt
 
 This example should be able to run on any commonly available ESP32 development board without any extra hardware if only **Timer** and **ULP** wake up sources are used. However, the following extra connections will be required for the remaining wake up sources.
 
-- **EXT1:** GPIO2 and GPIO4 should be connected to LOW to avoid floating pins. When triggering a wake up, connect one or both of then pins to HIGH. Note that floating pins may trigger an wake up.
+- **EXT1:** GPIO2 and GPIO4 should be connected to LOW to avoid floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating pins may trigger a wake up.
 
 - **Touch:** GPIO32, GPIO33 in ESP32 or GPIO9 in ESP32-S2 should be connected to touch sensors (see [Touch Sensor Application Note](https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_en.md)).
 

@@ -207,7 +207,7 @@ test_weekend_network:
 
 example_test_001A:
   extends: .example_test_template
-  parallel: 3
+  parallel: 4
   tags:
     - ESP32
     - Example_WIFI
