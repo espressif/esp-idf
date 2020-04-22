@@ -1108,6 +1108,7 @@ int linenoiseHistoryLoad(const char *filename) {
 
     char *buf = calloc(1, LINENOISE_MAX_LINE);
     if (buf == NULL) {
+        fclose(fp);
         return -1;
     }
 
@@ -1122,6 +1123,6 @@ int linenoiseHistoryLoad(const char *filename) {
 
     free(buf);
     fclose(fp);
-    
+
     return 0;
 }
