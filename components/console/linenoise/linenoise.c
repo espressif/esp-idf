@@ -1119,6 +1119,9 @@ int linenoiseHistoryLoad(const char *filename) {
         if (p) *p = '\0';
         linenoiseHistoryAdd(buf);
     }
+
+    free(buf);
     fclose(fp);
+    
     return 0;
 }
