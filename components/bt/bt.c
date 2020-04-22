@@ -129,7 +129,7 @@ struct osi_funcs_t {
     void (*_mutex_delete)(void *mutex);
     int32_t (*_mutex_lock)(void *mutex);
     int32_t (*_mutex_unlock)(void *mutex);
-    void *(* _queue_create)(uint32_t queue_len, uint32_t item_size, int flag);
+    void *(* _queue_create)(uint32_t queue_len, uint32_t item_size);
     void (* _queue_delete)(void *queue);
     int32_t (* _queue_send)(void *queue, void *item, uint32_t block_time_ms);
     int32_t (* _queue_send_from_isr)(void *queue, void *item, void *hptw);
@@ -160,6 +160,10 @@ struct osi_funcs_t {
     int (* _coex_register_bt_cb)(coex_func_cb_t cb);
     uint32_t (* _coex_bb_reset_lock)(void);
     void (* _coex_bb_reset_unlock)(uint32_t restore);
+    xt_handler (*_set_isr_l3)(int n, xt_handler f, void *arg);
+    void (*_interrupt_l3_disable)(void);
+    void (*_interrupt_l3_restore)(void);
+    void *(* _customer_queue_create)(uint32_t queue_len, uint32_t item_size);
     uint32_t _magic;
 };
 
@@ -242,7 +246,7 @@ static void *mutex_create_wrapper(void);
 static void mutex_delete_wrapper(void *mutex);
 static int32_t mutex_lock_wrapper(void *mutex);
 static int32_t mutex_unlock_wrapper(void *mutex);
-static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size, int flag);
+static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
 static void queue_delete_hlevel_wrapper(void *queue);
 static int32_t IRAM_ATTR queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
 static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
@@ -266,6 +270,10 @@ static void IRAM_ATTR btdm_sleep_exit_phase1_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
 static bool coex_bt_wakeup_request(void);
 static void coex_bt_wakeup_request_end(void);
+static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
+static void IRAM_ATTR interrupt_l3_disable(void);
+static void IRAM_ATTR interrupt_l3_restore(void);
+
 
 /* Local variable definition
  ***************************************************************************
@@ -320,6 +328,10 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._coex_register_bt_cb = coex_register_bt_cb_wrapper,
     ._coex_bb_reset_lock = coex_bb_reset_lock_wrapper,
     ._coex_bb_reset_unlock = coex_bb_reset_unlock_wrapper,
+    ._set_isr_l3 = xt_set_interrupt_handler,
+    ._interrupt_l3_disable = interrupt_l3_disable,
+    ._interrupt_l3_restore = interrupt_l3_restore,
+    ._customer_queue_create = customer_queue_create_hlevel_wrapper,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -414,6 +426,24 @@ static void IRAM_ATTR interrupt_hlevel_restore(void)
     }
 }
 
+static void IRAM_ATTR interrupt_l3_disable(void)
+{
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(&global_int_mux);
+    } else {
+        portENTER_CRITICAL(&global_int_mux);
+    }
+}
+
+static void IRAM_ATTR interrupt_l3_restore(void)
+{
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(&global_int_mux);
+    } else {
+        portEXIT_CRITICAL(&global_int_mux);
+    }
+}
+
 static void IRAM_ATTR task_yield(void)
 {
     vPortYield();
@@ -451,11 +481,7 @@ static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
 
 static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
 {
-    if (hptw != NULL) {
-        *(uint32_t *)hptw = 0;
-    }
-    bool ret = hli_semaphore_give(semphr);
-    return ret;
+    return hli_semaphore_give(semphr);
 }
 
 static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
@@ -495,21 +521,20 @@ static int32_t mutex_unlock_wrapper(void *mutex)
     return (int32_t)xSemaphoreGive(mutex);
 }
 
-static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size, int flag)
+static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size)
 {
     QueueHandle_t downstream_queue = xQueueCreate(queue_len, item_size);
     assert(downstream_queue);
-    hli_queue_handle_t queue = NULL;
-    /**
-     * TODO: Should use macro here!
-     */
-    if (flag == 0) {
-        queue = hli_queue_create(queue_len, item_size, downstream_queue);
-    } else if (flag == 1) {
-        queue = hli_customer_queue_create(queue_len, item_size, downstream_queue);
-    } else {
-        assert(0);
-    }
+    hli_queue_handle_t queue = hli_queue_create(queue_len, item_size, downstream_queue);
+    assert(queue);
+    return queue;
+}
+
+static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size)
+{
+    QueueHandle_t downstream_queue = xQueueCreate(queue_len, item_size);
+    assert(downstream_queue);
+    hli_queue_handle_t queue = hli_customer_queue_create(queue_len, item_size, downstream_queue);
     assert(queue);
     return queue;
 }
@@ -534,9 +559,6 @@ static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block
 
 static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw)
 {
-    if (hptw != NULL) {
-        *(uint32_t *)hptw = 0;
-    }
     return hli_queue_put(queue, item);
 }
 
@@ -945,12 +967,28 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     return ESP_OK;
 }
 
+static void hli_queue_setup_cb(void* arg)
+{
+    hli_queue_setup();
+}
+
+static void hli_queue_setup_pinned_to_core(int core_id)
+{
+    if (xPortGetCoreID() == core_id) {
+        hli_queue_setup_cb(NULL);
+    } else {
+        esp_ipc_call(core_id, hli_queue_setup_cb, NULL);
+    }
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
 
     ets_printf("\n##C##: BT version: high level int 0427\n");
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
+
+    hli_queue_setup_pinned_to_core(CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
 
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
@@ -1345,23 +1383,5 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     }
     btdm_controller_scan_duplicate_list_clear();
     return ESP_OK;
-}
-
-void IRAM_ATTR interrupt_disable_l3(void)
-{
-    if (xPortInIsrContext()) {
-        portENTER_CRITICAL_ISR(&global_int_mux);
-    } else {
-        portENTER_CRITICAL(&global_int_mux);
-    }
-}
-
-void IRAM_ATTR interrupt_restore_l3(void)
-{
-    if (xPortInIsrContext()) {
-        portEXIT_CRITICAL_ISR(&global_int_mux);
-    } else {
-        portEXIT_CRITICAL(&global_int_mux);
-    }
 }
 #endif /*  CONFIG_BT_ENABLED */
