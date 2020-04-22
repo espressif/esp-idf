@@ -98,6 +98,10 @@ extern int _bss_start;
 extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+extern int _iram_bss_start;
+extern int _iram_bss_end;
+#endif
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
@@ -156,6 +160,11 @@ void IRAM_ATTR call_start_cpu0(void)
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    // Clear IRAM BSS
+    memset(&_iram_bss_start, 0, (&_iram_bss_end - &_iram_bss_start) * sizeof(_iram_bss_start));
+#endif
 
     /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
     if (rst_reas[0] != DEEPSLEEP_RESET) {
