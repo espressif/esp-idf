@@ -30,7 +30,7 @@ die() {
 [ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
 [ -z ${BUILD_PATH} ] && die "BUILD_PATH is not set"
 [ -z ${IDF_TARGET} ] && die "IDF_TARGET is not set"
-[ -z ${BUILD_SYSTEM} ] && die "BUILD_SYSTEM is not set"
+[ -z ${EXAMPLE_TEST_BUILD_SYSTEM} ] && die "EXAMPLE_TEST_BUILD_SYSTEM is not set"
 [ -d ${LOG_PATH} ] || mkdir -p ${LOG_PATH}
 [ -d ${BUILD_PATH} ] || mkdir -p ${BUILD_PATH}
 
@@ -74,7 +74,7 @@ cd ${IDF_PATH}
 ${IDF_PATH}/tools/find_apps.py examples \
     -vv \
     --format json \
-    --build-system ${BUILD_SYSTEM} \
+    --build-system ${EXAMPLE_TEST_BUILD_SYSTEM} \
     --target ${IDF_TARGET} \
     --recursive \
     --exclude examples/build_system/idf_as_lib \

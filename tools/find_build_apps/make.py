@@ -11,6 +11,11 @@ MAKE_PROJECT_LINE = r"include $(IDF_PATH)/make/project.mk"
 
 BUILD_SYSTEM_MAKE = "make"
 
+try:
+    string_type = basestring
+except NameError:
+    string_type = str
+
 
 class MakeBuildSystem(BuildSystem):
     NAME = BUILD_SYSTEM_MAKE
@@ -35,11 +40,6 @@ class MakeBuildSystem(BuildSystem):
             build_stderr = log_file
 
         for cmd in commands:
-            py3 = sys.version_info[0] == 3
-            if py3:
-                string_type = str
-            else:
-                string_type = basestring
             cmd = shlex.split(cmd) if isinstance(cmd, string_type) else cmd
             try:
                 subprocess.check_call(cmd, stdout=build_stdout, stderr=build_stderr, cwd=work_path)

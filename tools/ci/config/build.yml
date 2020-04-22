@@ -1,4 +1,3 @@
-
 .build_template:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -98,8 +97,7 @@ build_esp_idf_tests_cmake_esp32s2:
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh
     # Check if the tests demand Make built binaries. If not, delete them
-    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == ${BUILD_SYSTEM} ]; then exit 0; fi
-    - cd ..
+    - if [ ${EXAMPLE_TEST_BUILD_SYSTEM} == "cmake" ]; then exit 0; fi
     - rm -rf ${BUILD_PATH}
 
 build_examples_make:
@@ -109,30 +107,21 @@ build_examples_make:
   retry: 1
   artifacts:
     paths:
-      - build_examples_make/list.json
-      - build_examples_make/list_job_*.json
-      - build_examples_make/*/*/*/sdkconfig
-      - build_examples_make/*/*/*/build/*.bin
-      - build_examples_make/*/*/*/build/*.elf
-      - build_examples_make/*/*/*/build/*.map
-      - build_examples_make/*/*/*/build/download.config
-      - build_examples_make/*/*/*/build/bootloader/*.bin
-      - build_examples_make/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_examples_make"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples_make"
-    BUILD_SYSTEM: "make"
+    EXAMPLE_TEST_BUILD_SYSTEM: "make"
     IDF_TARGET: "esp32"  # currently we only support esp32
-#  only:
-#    refs:
-#      - master
-#      - /^release\/v/
-#      - /^v\d+\.\d+(\.\d+)?($|-)/
-#      - triggers
-#      - schedules
-#      - pipelines
-#      - web
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+      - pipelines
+      - web
 
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
@@ -152,7 +141,7 @@ build_examples_make:
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_examples"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
-    BUILD_SYSTEM: "cmake"
+    EXAMPLE_TEST_BUILD_SYSTEM: "cmake"
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
