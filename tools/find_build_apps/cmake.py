@@ -36,76 +36,7 @@ class CMakeBuildSystem(BuildSystem):
 
     @staticmethod
     def build(build_item):  # type: (BuildItem) -> None
-        app_path = build_item.app_dir
-        work_path = build_item.work_dir or app_path
-        if not build_item.build_dir:
-            build_path = os.path.join(work_path, "build")
-        elif os.path.isabs(build_item.build_dir):
-            build_path = build_item.build_dir
-        else:
-            build_path = os.path.join(work_path, build_item.build_dir)
-
-        if work_path != app_path:
-            if os.path.exists(work_path):
-                logging.debug("Work directory {} exists, removing".format(work_path))
-                if not build_item.dry_run:
-                    shutil.rmtree(work_path)
-            logging.debug("Copying app from {} to {}".format(app_path, work_path))
-            if not build_item.dry_run:
-                shutil.copytree(app_path, work_path)
-
-        if os.path.exists(build_path):
-            logging.debug("Build directory {} exists, removing".format(build_path))
-            if not build_item.dry_run:
-                shutil.rmtree(build_path)
-
-        if not build_item.dry_run:
-            os.makedirs(build_path)
-
-        # Prepare the sdkconfig file, from the contents of sdkconfig.defaults (if exists) and the contents of
-        # build_info.sdkconfig_path, i.e. the config-specific sdkconfig file.
-        #
-        # Note: the build system supports taking multiple sdkconfig.defaults files via SDKCONFIG_DEFAULTS
-        # CMake variable. However here we do this manually to perform environment variable expansion in the
-        # sdkconfig files.
-        sdkconfig_defaults_list = ["sdkconfig.defaults", "sdkconfig.defaults." + build_item.target]
-        if build_item.sdkconfig_path:
-            sdkconfig_defaults_list.append(build_item.sdkconfig_path)
-
-        sdkconfig_file = os.path.join(work_path, "sdkconfig")
-        if os.path.exists(sdkconfig_file):
-            logging.debug("Removing sdkconfig file: {}".format(sdkconfig_file))
-            if not build_item.dry_run:
-                os.unlink(sdkconfig_file)
-
-        extra_cmakecache_items = {}
-        logging.debug("Creating sdkconfig file: {}".format(sdkconfig_file))
-        if not build_item.dry_run:
-            with open(sdkconfig_file, "w") as f_out:
-                for sdkconfig_name in sdkconfig_defaults_list:
-                    sdkconfig_path = os.path.join(work_path, sdkconfig_name)
-                    if not sdkconfig_path or not os.path.exists(sdkconfig_path):
-                        continue
-                    logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
-                    with open(sdkconfig_path, "r") as f_in:
-                        for line in f_in:
-                            if not line.endswith("\n"):
-                                line += "\n"
-                            m = SDKCONFIG_LINE_REGEX.match(line)
-                            if m and m.group(1) in SDKCONFIG_TEST_OPTS:
-                                extra_cmakecache_items[m.group(1)] = m.group(2)
-                                continue
-                            f_out.write(os.path.expandvars(line))
-        else:
-            for sdkconfig_name in sdkconfig_defaults_list:
-                sdkconfig_path = os.path.join(app_path, sdkconfig_name)
-                if not sdkconfig_path:
-                    continue
-                logging.debug("Considering sdkconfig {}".format(sdkconfig_path))
-                if not os.path.exists(sdkconfig_path):
-                    continue
-                logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
-
+        build_path, work_path = BuildSystem.build_prepare(build_item)
         # Prepare the build arguments
         args = [
             # Assume it is the responsibility of the caller to
@@ -163,32 +94,6 @@ class CMakeBuildSystem(BuildSystem):
             return cmakelists_file.read()
 
     @staticmethod
-    def _read_readme(app_path):
-        # Markdown supported targets should be:
-        # e.g. | Supported Targets | ESP32 |
-        #      | ----------------- | ----- |
-        # reStructuredText supported targets should be:
-        # e.g. ================= =====
-        #      Supported Targets ESP32
-        #      ================= =====
-        def get_md_or_rst(app_path):
-            readme_path = os.path.join(app_path, 'README.md')
-            if not os.path.exists(readme_path):
-                readme_path = os.path.join(app_path, 'README.rst')
-                if not os.path.exists(readme_path):
-                    return None
-            return readme_path
-
-        readme_path = get_md_or_rst(app_path)
-        # Handle sub apps situation, e.g. master-slave
-        if not readme_path:
-            readme_path = get_md_or_rst(os.path.dirname(app_path))
-        if not readme_path:
-            return None
-        with open(readme_path, "r") as readme_file:
-            return readme_file.read()
-
-    @staticmethod
     def is_app(path):
         cmakelists_file_content = CMakeBuildSystem._read_cmakelists(path)
         if not cmakelists_file_content:
@@ -196,28 +101,3 @@ class CMakeBuildSystem(BuildSystem):
         if CMAKE_PROJECT_LINE not in cmakelists_file_content:
             return False
         return True
-
-    @staticmethod
-    def supported_targets(app_path):
-        readme_file_content = CMakeBuildSystem._read_readme(app_path)
-        if not readme_file_content:
-            return None
-        match = re.findall(SUPPORTED_TARGETS_REGEX, readme_file_content)
-        if not match:
-            return None
-        if len(match) > 1:
-            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
-        support_str = match[0].strip()
-
-        targets = []
-        for part in support_str.split('|'):
-            for inner in part.split(' '):
-                inner = inner.strip()
-                if not inner:
-                    continue
-                elif inner in FORMAL_TO_USUAL:
-                    targets.append(FORMAL_TO_USUAL[inner])
-                else:
-                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
-                                              .format(inner, app_path, ', '.join(FORMAL_TO_USUAL.keys())))
-        return targets
