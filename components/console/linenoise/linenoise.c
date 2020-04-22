@@ -1102,9 +1102,14 @@ int linenoiseHistorySave(const char *filename) {
  * on error -1 is returned. */
 int linenoiseHistoryLoad(const char *filename) {
     FILE *fp = fopen(filename,"r");
-    char buf[LINENOISE_MAX_LINE];
+    if (fp == NULL) {
+        return -1;
+    }
 
-    if (fp == NULL) return -1;
+    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    if (buf == NULL) {
+        return -1;
+    }
 
     while (fgets(buf,LINENOISE_MAX_LINE,fp) != NULL) {
         char *p;
