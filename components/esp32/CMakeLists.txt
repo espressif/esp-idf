@@ -22,7 +22,6 @@ else()
         "intr_alloc.c"
         "pm_esp32.c"
         "pm_trace.c"
-        "sleep_modes.c"
         "spiram.c"
         "spiram_psram.c"
         "system_api_esp32.c")
@@ -31,10 +30,9 @@ else()
 
     set(requires driver efuse soc) #unfortunately rom/uart uses SOC registers directly
 
-    # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     # esp_timer is added here because cpu_start.c uses esp_timer
-    set(priv_requires app_trace app_update bootloader_support log mbedtls nvs_flash pthread
+    set(priv_requires app_trace app_update bootloader_support esp_system log mbedtls nvs_flash pthread
         spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc)
     set(fragments linker.lf ld/esp32_fragments.lf)
 
