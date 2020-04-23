@@ -25,6 +25,7 @@ static const char *TAG = "pppos_test_app";
 static EventGroupHandle_t event_group = NULL;
 static const int CONNECT_BIT = BIT0;
 static const int STOP_BIT = BIT1;
+static const int DISCONNECT_BIT = BIT2;
 static const int TCP_SERVER_DONE = BIT3;
 static const int TCP_SERVER_FAILED = BIT4;
 static char addr_str[128];
@@ -53,6 +54,9 @@ static void on_ppp_changed(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "PPP state changed event %d", event_id);
+    if (event_id == NETIF_PPP_PHASE_DISCONNECT) {
+        xEventGroupSetBits(event_group, DISCONNECT_BIT);
+    }
 }
 
 
@@ -211,6 +215,11 @@ void app_main(void)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_PPP();
     esp_netif_t *esp_netif = esp_netif_new(&cfg);
     assert(esp_netif);
+    esp_netif_ppp_config_t ppp_config = {
+            .ppp_error_event_enabled = true,
+            .ppp_phase_event_enabled = true
+    };
+    esp_netif_ppp_set_params(esp_netif, &ppp_config);
 
     /* create dte object */
     esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();
@@ -228,7 +237,6 @@ void app_main(void)
     esp_netif_attach(esp_netif, modem_netif_adapter);
     /* Wait for IP address */
     xEventGroupWaitBits(event_group, CONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
-
     ESP_LOGI(TAG, "start IPv6 test");
     xTaskCreate(test_tcp_server_ipv6, "tcp_server_ipv6", 4096, NULL, 5, NULL);
     xEventGroupWaitBits(event_group, TCP_SERVER_DONE, pdTRUE, pdTRUE, portMAX_DELAY);
@@ -248,6 +256,8 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(esp_modem_stop_ppp(dte));
+    /* Wait for the PPP connection to terminate gracefully */
+    xEventGroupWaitBits(event_group, DISCONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
     /* Destroy the netif adapter withe events, which internally frees also the esp-netif instance */
     esp_modem_netif_clear_default_handlers(modem_netif_adapter);
     esp_modem_netif_teardown(modem_netif_adapter);

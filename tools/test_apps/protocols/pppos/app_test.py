@@ -5,6 +5,7 @@ import socket
 import subprocess
 import ttfw_idf
 import time
+import netifaces
 from threading import Thread, Event
 
 
@@ -58,7 +59,13 @@ def test_examples_protocol_pppos_connect(env, extra_data):
     t = Thread(target=run_server, args=(server_stop, port, server_ip, client_ip))
     t.start()
     try:
-        ip6_addr = dut1.expect(re.compile(r"Got IPv6 address ([0-9a-f\:]+)"), timeout=30)[0]
+        ppp_server_timeout = time.time() + 30
+        while "ppp0" not in netifaces.interfaces():
+            print("PPP server haven't yet setup its netif, list of active netifs:{}".format(netifaces.interfaces()))
+            time.sleep(0.5)
+            if time.time() > ppp_server_timeout:
+                raise ValueError("ENV_TEST_FAILURE: PPP server failed to setup ppp0 interface within timeout")
+        ip6_addr = dut1.expect(re.compile(r"Got IPv6 address (\w{4}\:\w{4}\:\w{4}\:\w{4}\:\w{4}\:\w{4}\:\w{4}\:\w{4})"), timeout=30)[0]
         print("IPv6 address of ESP: {}".format(ip6_addr))
 
         dut1.expect(re.compile(r"Socket listening"))
