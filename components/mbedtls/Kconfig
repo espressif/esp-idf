@@ -266,6 +266,19 @@ menu "mbedTLS"
 
             It is suggested that you should get the real time by "SNTP".
 
+    config MBEDTLS_ECDSA_DETERMINISTIC
+        bool "Enable deterministic ECDSA"
+        default y
+        help
+            Standard ECDSA is "fragile" in the sense that lack of entropy when signing
+            may result in a compromise of the long-term signing key.
+
+    config MBEDTLS_SHA512_C
+        bool "Enable the SHA-384 and SHA-512 cryptographic hash algorithms"
+        default y
+        help
+            Enable MBEDTLS_SHA512_C adds support for SHA-384 and SHA-512.
+
     choice MBEDTLS_TLS_MODE
         bool "TLS Protocol Role"
         default MBEDTLS_TLS_SERVER_AND_CLIENT
@@ -720,6 +733,27 @@ menu "mbedTLS"
         help
             Enable support for the Hashed Message Authentication Code
             (HMAC)-based key derivation function (HKDF).
+
+    config MBEDTLS_THREADING_C
+        bool "Enable the threading abstraction layer"
+        default n
+        help
+            If you do intend to use contexts between threads, you will need to enable
+            this layer to prevent race conditions.
+
+    config MBEDTLS_THREADING_ALT
+        bool "Enable threading alternate implementation"
+        depends on MBEDTLS_THREADING_C
+        default y
+        help
+            Enable threading alt to allow your own alternate threading implementation.
+
+    config MBEDTLS_THREADING_PTHREAD
+        bool "Enable threading pthread implementation"
+        depends on MBEDTLS_THREADING_C
+        default n
+        help
+            Enable the pthread wrapper layer for the threading layer.
 
     menuconfig MBEDTLS_SECURITY_RISKS
         bool "Show configurations with potential security risks"
