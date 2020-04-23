@@ -649,6 +649,17 @@ esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if
 esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6);
 
 /**
+ * @brief  Get all IPv6 addresses of the specified interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out] if_ip6 Array of IPv6 addresses will be copied to the argument
+ *
+ * @return
+ *      number of returned IPv6 addresses
+ */
+int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
+
+/**
  * @brief Sets IPv4 address to the specified octets
  *
  * @param[out] addr IP address to be set
