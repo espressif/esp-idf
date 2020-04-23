@@ -30,8 +30,12 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
 TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 {
     const size_t BUF_SZ = 100;
+#ifdef CONFIG_ESP32S2_MEMPROT_FEATURE
+    const size_t ALLOC_SZ = 32;
+#else
     const size_t ALLOC_SZ = 64; // More than half of BUF_SZ
-    const uint32_t MALLOC_CAP_INVENTED = (1<<30); /* this must be unused in esp_heap_caps.h */
+#endif
+    const uint32_t MALLOC_CAP_INVENTED = (1 << 30); /* this must be unused in esp_heap_caps.h */
 
     /* no memory exists to provide this capability */
     TEST_ASSERT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );

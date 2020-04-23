@@ -4,6 +4,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "soc/rtc.h"
+#include "soc/rtc_cntl_reg.h"
+#include "esp32s2/rom/uart.h"
+#include "esp32s2/memprot.h"
+#endif
+
 #include "esp_system.h"
 #include "panic_internal.h"
 
@@ -34,6 +41,23 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
     return ESP_ERR_INVALID_STATE;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2
+static __attribute__((noreturn)) void esp_digital_reset(void)
+{
+    // make sure all the panic handler output is sent from UART FIFO
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    // switch to XTAL (otherwise we will keep running from the PLL)
+
+    rtc_clk_cpu_freq_set_xtal();
+
+    // reset the digital part
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (true) {
+        ;
+    }
+}
+#endif
+
 void IRAM_ATTR esp_restart(void)
 {
     for (int i = SHUTDOWN_HANDLERS_NO - 1; i >= 0; i--) {
@@ -45,6 +69,11 @@ void IRAM_ATTR esp_restart(void)
     // Disable scheduler on this core.
     vTaskSuspendAll();
 
+#if CONFIG_IDF_TARGET_ESP32S2
+    if ( esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
+        esp_digital_reset();
+    }
+#endif
     esp_restart_noos();
 }
 
@@ -58,12 +87,12 @@ uint32_t esp_get_minimum_free_heap_size( void )
     return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
 }
 
-const char* esp_get_idf_version(void)
+const char *esp_get_idf_version(void)
 {
     return IDF_VER;
 }
 
-void __attribute__((noreturn)) esp_system_abort(const char* details)
+void __attribute__((noreturn)) esp_system_abort(const char *details)
 {
     panic_abort(details);
 }
