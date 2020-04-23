@@ -24,7 +24,7 @@ import proto
 from .security import Security
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -82,7 +82,13 @@ class Security1(Security):
     def __generate_key(self):
         # Generate private and public key pair for client
         self.client_private_key = X25519PrivateKey.generate()
-        self.client_public_key  = self.client_private_key.public_key().public_bytes()
+        try:
+            self.client_public_key = self.client_private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw)
+        except TypeError:
+            # backward compatible call for older cryptography library
+            self.client_public_key  = self.client_private_key.public_key().public_bytes()
 
     def _print_verbose(self, data):
         if (self.verbose):
