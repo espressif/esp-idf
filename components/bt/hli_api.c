@@ -46,7 +46,7 @@ static void IRAM_ATTR customer_swisr_handle(customer_swisr_t *cus_swisr)
     }
 }
 
-static hli_handler_info_t s_hli_handlers[HLI_MAX_HANDLERS];
+static DRAM_ATTR hli_handler_info_t s_hli_handlers[HLI_MAX_HANDLERS];
 // static const char* TAG = "hli_queue";
 
 esp_err_t hli_intr_register(intr_handler_t handler, void* arg, uint32_t intr_reg, uint32_t intr_mask)
@@ -114,7 +114,7 @@ void IRAM_ATTR hli_intr_restore(uint32_t state)
 #define HLI_QUEUE_FLAG_SEMAPHORE    BIT(0)
 #define HLI_QUEUE_FLAG_CUSTOMER     BIT(1)
 
-struct hli_queue_t *s_meta_queue_ptr = NULL;
+static DRAM_ATTR struct hli_queue_t *s_meta_queue_ptr = NULL;
 intr_handle_t ret_handle;
 
 static inline char* IRAM_ATTR wrap_ptr(hli_queue_handle_t queue, char *ptr)
@@ -139,7 +139,7 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
     hli_queue_handle_t queue;
 
     while (hli_queue_get(s_meta_queue_ptr, &queue)) {
-        static char scratch[HLI_QUEUE_MAX_ELEM_SIZE];
+        static DRAM_ATTR char scratch[HLI_QUEUE_MAX_ELEM_SIZE];
         while (hli_queue_get(queue, scratch)) {
             int res = pdPASS;
             if ((queue->flags & HLI_QUEUE_FLAG_CUSTOMER) != 0) {

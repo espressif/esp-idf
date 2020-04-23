@@ -381,7 +381,7 @@ struct interrupt_hlevel_cb{
     uint8_t nested;
 };
 
-struct interrupt_hlevel_cb hli_cb = {
+static DRAM_ATTR struct interrupt_hlevel_cb hli_cb = {
     .status = 0,
     .nested = 0,
 };
@@ -499,7 +499,7 @@ static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size,
 {
     QueueHandle_t downstream_queue = xQueueCreate(queue_len, item_size);
     assert(downstream_queue);
-    hli_queue_handle_t queue;
+    hli_queue_handle_t queue = NULL;
     /**
      * TODO: Should use macro here!
      */
@@ -947,6 +947,8 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
+
+    ets_printf("\n##C##: BT version: hli_0423\n");
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
 

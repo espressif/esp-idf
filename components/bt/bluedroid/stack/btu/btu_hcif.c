@@ -620,7 +620,7 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
     STREAM_TO_UINT8  (reason, p);
 
     handle = HCID_GET_HANDLE (handle);
-
+    ets_printf("\n##C##: %s: 0x%x, 0x%x\n", __func__, handle, reason);
 #if BTM_SCO_INCLUDED == TRUE
     /* If L2CAP doesn't know about it, send it to SCO */
     if (!l2c_link_hci_disc_comp (handle, reason)) {
