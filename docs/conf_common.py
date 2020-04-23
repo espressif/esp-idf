@@ -162,6 +162,7 @@ ESP32S2_DOCS = ['esp32s2.rst',
                 'api-guides/ulps2_instruction_set.rst',
                 'api-guides/dfu.rst',
                 'api-reference/peripherals/hmac.rst',
+                'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/temp_sensor.rst'
                 '']
 
