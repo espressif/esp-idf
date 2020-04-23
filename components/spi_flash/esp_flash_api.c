@@ -351,13 +351,15 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
             return err;
         }
 
+#ifndef CONFIG_SPI_FLASH_BYPASS_BLOCK_ERASE
         // If possible erase an entire multi-sector block
         if (block_erase_size > 0 && len >= block_erase_size && (start % block_erase_size) == 0) {
             err = chip->chip_drv->erase_block(chip, start);
             start += block_erase_size;
             len -= block_erase_size;
-        }
-        else {
+        } else
+#endif
+        {
             // Otherwise erase individual sector only
             err = chip->chip_drv->erase_sector(chip, start);
             start += sector_size;
