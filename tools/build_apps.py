@@ -5,9 +5,10 @@
 #
 
 import argparse
+import shutil
 import sys
 import logging
-from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS, safe_exit_if_file_is_empty
+from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS
 
 
 def main():
@@ -71,10 +72,11 @@ def main():
         help="Name of the file to read the list of builds from. If not specified, read from stdin.",
     )
     args = parser.parse_args()
+
     setup_logging(args)
 
-    safe_exit_if_file_is_empty(args.build_list.name)
     build_items = [BuildItem.from_json(line) for line in args.build_list]
+
     if not build_items:
         logging.error("Empty build list!")
         raise SystemExit(1)
@@ -106,6 +108,10 @@ def main():
 
     failed_builds = []
     for build_info in builds_for_current_job:
+        if not build_info.build:
+            logging.info('Skip build detected. Skipping...')
+            continue
+
         logging.info("Running build {}: {}".format(build_info.index, repr(build_info)))
         build_system_class = BUILD_SYSTEMS[build_info.build_system]
         try:
@@ -116,6 +122,11 @@ def main():
                 failed_builds.append(build_info)
             else:
                 raise SystemExit(1)
+        else:
+            if not build_info.preserve:
+                logging.info('NOT preserve artifacts detected. Deleting...')
+                shutil.rmtree(build_info.work_dir, ignore_errors=True)
+                shutil.rmtree(build_info.build_log_path, ignore_errors=True)
 
     if failed_builds:
         logging.error("The following build have failed:")

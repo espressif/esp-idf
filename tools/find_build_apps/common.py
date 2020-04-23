@@ -392,9 +392,3 @@ def setup_logging(args):
         stream=args.log_file or sys.stderr,
         level=log_level,
     )
-
-
-def safe_exit_if_file_is_empty(file_name):
-    if os.stat(file_name).st_size == 0:
-        logging.warning('Skipping all...')
-        sys.exit(0)

@@ -6,7 +6,6 @@ from .common import (
     config_rules_from_str,
     setup_logging,
     DEFAULT_TARGET,
-    safe_exit_if_file_is_empty,
 )
 from .cmake import CMakeBuildSystem, BUILD_SYSTEM_CMAKE
 from .make import MakeBuildSystem, BUILD_SYSTEM_MAKE
@@ -29,5 +28,4 @@ __all__ = [
     "MakeBuildSystem",
     "BUILD_SYSTEM_MAKE",
     "BUILD_SYSTEMS",
-    "safe_exit_if_file_is_empty",
 ]

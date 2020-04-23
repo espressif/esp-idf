@@ -13,10 +13,10 @@ import logging
 import re
 
 try:
-    from find_build_apps import BuildItem, setup_logging, safe_exit_if_file_is_empty
+    from find_build_apps import BuildItem, setup_logging
 except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from find_build_apps import BuildItem, setup_logging, safe_exit_if_file_is_empty
+    from find_build_apps import BuildItem, setup_logging
 
 WARNING_REGEX = re.compile(r"(?:error|warning)[^\w]", re.MULTILINE | re.IGNORECASE)
 
@@ -69,7 +69,6 @@ def main():
     args = parser.parse_args()
     setup_logging(args)
 
-    safe_exit_if_file_is_empty(args.build_list.name)
     build_items = [BuildItem.from_json(line) for line in args.build_list]
 
     if not build_items:
