@@ -100,6 +100,14 @@ menu "SPI Flash driver"
             this option, and the lock will be bypassed on SPI1 bus. Otherwise if extra devices
             are needed to attach to SPI1 bus, enable this option.
 
+    config SPI_FLASH_BYPASS_BLOCK_ERASE
+        bool "Bypass a block erase and always do sector erase"
+        default n
+        help
+            Some flash chips can have very high "max" erase times, especially for block erase (32KB or 64KB).
+            This option allows to bypass "block erase" and always do sector erase commands.
+            This will be much slower overall in most cases, but improves latency for other code to run.
+
     config SPI_FLASH_YIELD_DURING_ERASE
         bool "Enables yield operation during flash erase"
         default y

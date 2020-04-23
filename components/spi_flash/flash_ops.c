@@ -247,11 +247,14 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
             int64_t start_time_us = esp_timer_get_time();
 #endif
             spi_flash_guard_start();
+#ifndef CONFIG_SPI_FLASH_BYPASS_BLOCK_ERASE
             if (sector % sectors_per_block == 0 && end - sector >= sectors_per_block) {
                 rc = esp_rom_spiflash_erase_block(sector / sectors_per_block);
                 sector += sectors_per_block;
                 COUNTER_ADD_BYTES(erase, sectors_per_block * SPI_FLASH_SEC_SIZE);
-            } else {
+            } else
+#endif
+            {
                 rc = esp_rom_spiflash_erase_sector(sector);
                 ++sector;
                 COUNTER_ADD_BYTES(erase, SPI_FLASH_SEC_SIZE);
