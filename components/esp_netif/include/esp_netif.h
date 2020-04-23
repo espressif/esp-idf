@@ -403,6 +403,22 @@ esp_err_t esp_netif_set_old_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_i
 int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
 
 /**
+ * @brief  Get net interface name from network stack implementation
+ *
+ * @note This name could be used in `setsockopt()` to bind socket with appropriate interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out]  name Interface name as specified in underlying TCP/IP stack. Note that the
+ * actual name will be copied to the specified buffer, which must be allocated to hold
+ * maximum interface name size (6 characters for lwIP)
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+*/
+esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name);
+
+/**
  * @}
  */
 

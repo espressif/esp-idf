@@ -30,7 +30,6 @@ static const char *payload = "GET / HTTP/1.1\r\n\r\n";
 
 static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif)
 {
-    esp_netif_ip_info_t ip;
     char rx_buffer[128] = {0};
     const char *netif_name = esp_netif_get_desc(esp_netif);
 
@@ -42,7 +41,20 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
     }
     ESP_LOGI(TAG, "\"%s\" Socket created", netif_name);
 
-    /* Bind local IP of the network interface */
+    /* Bind the socket to an interface (based on example config option)
+     * - using netif local IP address
+     * - using netif name
+     */
+#if CONFIG_EXAMPLE_BIND_SOCKET_TO_NETIF_NAME
+    struct ifreq ifr;
+    esp_netif_get_netif_impl_name(esp_netif, ifr.ifr_name);
+    int ret = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,  (void*)&ifr, sizeof(struct ifreq));
+    if (ret < 0) {
+        ESP_LOGE(TAG, "\"%s\" Unable to bind socket to specified interface: errno %d", netif_name, errno);
+        goto app_multiple_handle_fail;
+    }
+#else
+    esp_netif_ip_info_t ip;
     memset(&ip, 0, sizeof(esp_netif_ip_info_t));
     ESP_ERROR_CHECK(esp_netif_get_ip_info(esp_netif, &ip));
 
@@ -51,12 +63,13 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
     addr.sin_family = AF_INET;
     addr.sin_port = htons(0);
     addr.sin_addr.s_addr = ip.ip.addr;
-            
+
     int ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
     if (ret < 0) {
         ESP_LOGE(TAG, "\"%s\" Unable to bind socket: errno %d", netif_name, errno);
         goto app_multiple_handle_fail;
     }
+#endif /* CONFIG_EXAMPLE_BIND_SOCKET_TO_NETIF_NAME */
 
     /* Connect to the host by the network interface */
     struct sockaddr_in destAddr;

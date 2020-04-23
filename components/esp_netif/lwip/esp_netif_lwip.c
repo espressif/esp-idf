@@ -1736,4 +1736,15 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif)
     return netif_get_index(esp_netif->lwip_netif);
 }
 
+esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    netif_index_to_name(netif_get_index(esp_netif->lwip_netif), name);
+    return ESP_OK;
+}
+
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
