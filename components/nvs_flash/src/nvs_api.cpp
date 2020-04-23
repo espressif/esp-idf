@@ -127,6 +127,20 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
     return NVSPartitionManager::get_instance()->deinit_partition(part_name);
 }
 
+extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition)
+{
+    Lock::init();
+    Lock lock;
+
+    if (!partition) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return nvs_flash_init_custom(partition->label,
+                                 partition->address / SPI_FLASH_SEC_SIZE,
+                                 partition->size / SPI_FLASH_SEC_SIZE);
+}
+
 #ifdef ESP_PLATFORM
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 {
@@ -188,6 +202,28 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
         return ESP_ERR_NOT_FOUND;
+    }
+
+    return esp_partition_erase_range(partition, 0, partition->size);
+}
+
+extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition)
+{
+    Lock::init();
+    Lock lock;
+
+    if (!partition) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the partition is initialized, uninitialize it first
+    if (NVSPartitionManager::get_instance()->lookup_storage_from_name(partition->label)) {
+        const esp_err_t err = close_handles_and_deinit(partition->label);
+
+        // only hypothetical/future case, deinit_partition() only fails if partition is uninitialized
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     return esp_partition_erase_range(partition, 0, partition->size);

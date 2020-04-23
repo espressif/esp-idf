@@ -62,6 +62,20 @@ esp_err_t nvs_flash_init(void);
 esp_err_t nvs_flash_init_partition(const char *partition_label);
 
 /**
+ * @brief Initialize NVS flash storage for the partition specified by partition pointer.
+ *
+ * @param[in] partition pointer to a partition obtained by the ESP partition API.
+ *
+ * @return
+ *      - ESP_OK if storage was successfully initialized
+ *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
+ *        (which may happen if NVS partition was truncated)
+ *      - ESP_ERR_INVALID_ARG in case partition is NULL
+ *      - one of the error codes from the underlying flash storage driver
+ */
+esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition);
+
+/**
  * @brief Deinitialize NVS storage for the default NVS partition
  *
  * Default NVS partition is the partition with "nvs" label in the partition table.
@@ -117,6 +131,26 @@ esp_err_t nvs_flash_erase(void);
  *      - different error in case de-initialization fails (shouldn't happen)
  */
 esp_err_t nvs_flash_erase_partition(const char *part_name);
+
+/**
+ * @brief Erase custom partition.
+ *
+ * Erase all content of specified custom partition.
+ *
+ * @note
+ *  If the partition is initialized, this function first de-initializes it.
+ *  Afterwards, the partition has to be initialized again to be used.
+ *
+ * @param[in] partition pointer to a partition obtained by the ESP partition API.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if there is no partition with the specified
+ *        parameters in the partition table
+ *      - ESP_ERR_INVALID_ARG in case partition is NULL
+ *      - one of the error codes from the underlying flash storage driver
+ */
+esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition);
 
 /**
  * @brief Initialize the default NVS partition.
