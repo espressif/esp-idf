@@ -1274,9 +1274,6 @@ typedef struct xSTATIC_TIMER
 		UBaseType_t		uxDummy7;
 	#endif
 	uint8_t 			ucDummy8;
-
-	portMUX_TYPE 		xDummy9;
-
 } StaticTimer_t;
 
 /*
