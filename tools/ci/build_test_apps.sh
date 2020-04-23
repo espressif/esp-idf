@@ -100,4 +100,4 @@ ${IDF_PATH}/tools/build_apps.py \
 
 
 # Check for build warnings
-${IDF_PATH}/tools/ci/check_build_warnings.py -vv ${JOB_BUILD_LIST_JSON}
+#${IDF_PATH}/tools/ci/check_build_warnings.py -vv ${JOB_BUILD_LIST_JSON}
