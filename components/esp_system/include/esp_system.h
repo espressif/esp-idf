@@ -38,9 +38,9 @@ typedef enum {
 /** @cond */
 #define TWO_UNIVERSAL_MAC_ADDR 2
 #define FOUR_UNIVERSAL_MAC_ADDR 4
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif defined CONFIG_IDF_TARGET_ESP32S2
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32S2_UNIVERSAL_MAC_ADDRESSES
 #endif
 /** @endcond */
@@ -250,7 +250,7 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 
 /**
  * @brief Trigger a software abort
- * 
+ *
  * @param details Details that will be displayed during panic handling.
  */
 void  __attribute__((noreturn)) esp_system_abort(const char* details);

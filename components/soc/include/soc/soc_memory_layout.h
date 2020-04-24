@@ -147,7 +147,7 @@ inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 
 inline static bool IRAM_ATTR esp_ptr_dma_ext_capable(const void *p)
 {
-#if CONFIG_IDF_TARGET_ESP32S2
+#ifdef CONFIG_IDF_TARGET_ESP32S2
     return (intptr_t)p >= SOC_DMA_EXT_LOW && (intptr_t)p < SOC_DMA_EXT_HIGH;
 #else
     return false;
@@ -182,7 +182,7 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
      * additional check is required */
     r |= (ip >= SOC_RTC_DRAM_LOW && ip < SOC_RTC_DRAM_HIGH);
 #endif
-#if CONFIG_SPIRAM
+#ifdef CONFIG_SPIRAM
 #if CONFIG_SPIRAM_SIZE != -1 // Fixed size, can be more accurate
     r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE));
 #else
@@ -252,7 +252,7 @@ inline static bool IRAM_ATTR esp_ptr_in_rtc_slow(const void *p) {
    - Address must pass esp_ptr_in_diram_dram() test, or result will be invalid pointer
 */
 inline static void * IRAM_ATTR esp_ptr_diram_dram_to_iram(const void *p) {
-#if SOC_DIRAM_INVERTED
+#ifdef SOC_DIRAM_INVERTED
     return (void *) ( SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - (intptr_t)p) - 4);
 #else
     return (void *) ( SOC_DIRAM_IRAM_LOW + ((intptr_t)p - SOC_DIRAM_DRAM_LOW) );
@@ -265,7 +265,7 @@ inline static void * IRAM_ATTR esp_ptr_diram_dram_to_iram(const void *p) {
    - Address must pass esp_ptr_in_diram_iram() test, or result will be invalid pointer
 */
 inline static void * IRAM_ATTR esp_ptr_diram_iram_to_dram(const void *p) {
-#if SOC_DIRAM_INVERTED
+#ifdef SOC_DIRAM_INVERTED
     return (void *) ( SOC_DIRAM_DRAM_LOW + (SOC_DIRAM_IRAM_HIGH - (intptr_t)p) - 4);
 #else
     return (void *) ( SOC_DIRAM_DRAM_LOW + ((intptr_t)p - SOC_DIRAM_IRAM_LOW) );
@@ -278,7 +278,7 @@ inline static bool IRAM_ATTR esp_stack_ptr_in_dram(uint32_t sp)
     return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 inline static bool IRAM_ATTR esp_stack_ptr_in_extram(uint32_t sp)
 {
     //Check if stack ptr is in between SOC_EXTRAM_DATA_LOW and SOC_EXTRAM_DATA_HIGH, and 16 byte aligned.
@@ -288,7 +288,7 @@ inline static bool IRAM_ATTR esp_stack_ptr_in_extram(uint32_t sp)
 
 inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
 {
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     return (esp_stack_ptr_in_dram(sp) || esp_stack_ptr_in_extram(sp));
 #else
     return esp_stack_ptr_in_dram(sp);
