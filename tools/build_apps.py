@@ -125,8 +125,8 @@ def main():
         else:
             if not build_info.preserve:
                 logging.info('NOT preserve artifacts detected. Deleting...')
+                # we only remove binaries here, log files are still needed by check_build_warnings.py
                 shutil.rmtree(build_info.work_dir, ignore_errors=True)
-                shutil.rmtree(build_info.build_log_path, ignore_errors=True)
 
     if failed_builds:
         logging.error("The following build have failed:")

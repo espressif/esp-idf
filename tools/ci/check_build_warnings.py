@@ -77,6 +77,9 @@ def main():
 
     found_warnings = 0
     for build_item in build_items:
+        if not build_item.build:
+            logging.debug('Skipping build detected. Skipping checking...')
+            continue
         if not build_item.build_log_path:
             logging.debug("No log file for {}".format(build_item.work_dir))
             continue

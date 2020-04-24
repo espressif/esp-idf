@@ -142,8 +142,6 @@ def find_apps(build_system_class, path, recursive, exclude_list, target):
     :param recursive: whether to recursively descend into nested directories if no app is found
     :param exclude_list: list of paths to be excluded from the recursive search
     :param target: desired value of IDF_TARGET; apps incompatible with the given target are skipped.
-    :param build_apps_list_file: List of apps need to be built, apps not on this list will be skipped.
-                                 None or empty file to build all apps.
     :return: list of paths of the apps found
     """
     build_system_name = build_system_class.NAME
