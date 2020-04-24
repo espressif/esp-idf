@@ -173,7 +173,10 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
 esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
-    uint8_t i = 0, efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
+    int i = 0;
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED /* Verify key against efuse block */
+    uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
     memcpy(efuse_trusted_digest, (uint8_t *) EFUSE_BLK2_RDATA0_REG, sizeof(efuse_trusted_digest));
 
     /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
@@ -197,6 +200,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
             return ESP_FAIL;
         }
     }
+#endif
 
     ESP_LOGI(TAG, "Verifying with RSA-PSS...");
     int ret = 0;
