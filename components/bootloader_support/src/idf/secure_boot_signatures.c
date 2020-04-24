@@ -187,11 +187,14 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
     bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_trusted_digest);
 
     if (memcmp(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN) != 0) {
-        if (esp_secure_boot_enabled()) {
+        const uint8_t zeroes[DIGEST_LEN] = {0};
+        /* Can't continue if secure boot is enabled, OR if a different digest is already written in efuse BLK2
+
+           (If BLK2 is empty and Secure Boot is disabled then we assume that it will be enabled later.)
+         */
+        if (esp_secure_boot_enabled() || memcmp(efuse_trusted_digest, zeroes, DIGEST_LEN) != 0) {
             ESP_LOGE(TAG, "Public key digest in eFuse BLK2 and the signature block don't match.");
             return ESP_FAIL;
-        } else {
-            ESP_LOGW(TAG, "Public key digest in eFuse BLK2 and the signature block don't match.");
         }
     }
 
