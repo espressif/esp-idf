@@ -124,6 +124,7 @@ menu "SPI Flash driver"
     config SPI_FLASH_YIELD_DURING_ERASE
         bool "Enables yield operation during flash erase"
         default y
+        depends on SPI_FLASH_USE_LEGACY_IMPL
         help
             This allows to yield the CPUs between erase commands.
             Prevents starvation of other tasks.
@@ -137,7 +138,7 @@ menu "SPI Flash driver"
             then it will yield CPUs after finishing a current command.
 
     config SPI_FLASH_ERASE_YIELD_TICKS
-        int "CPU release time (tick)"
+        int "CPU release time (tick) for an erase operation"
         depends on SPI_FLASH_YIELD_DURING_ERASE
         default 1
         help

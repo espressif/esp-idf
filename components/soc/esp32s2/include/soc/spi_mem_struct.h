@@ -266,7 +266,7 @@ typedef volatile struct spi_mem_dev_s {
         };
         uint32_t val;
     } fsm;
-    uint32_t data_buf[18];                                                /*data buffer*/
+    uint32_t data_buf[16];                                                /*data buffer*/
     union {
         struct {
             uint32_t waiti_en:             1;                   /*auto-waiting flash idle operation when program flash or erase flash. 1: enable 0: disable.*/

@@ -47,6 +47,8 @@
 #define CMD_LARGE_BLOCK_ERASE_4B 0xDC /* 64KB block erase command */
 #define CMD_PROGRAM_PAGE        0x02
 #define CMD_PROGRAM_PAGE_4B     0x12
+#define CMD_SUSPEND     0x75
+#define CMD_RESUME      0x7A
 
 #define CMD_RST_EN      0x66
 #define CMD_RST_DEV     0x99
