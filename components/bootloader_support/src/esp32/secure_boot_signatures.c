@@ -166,6 +166,8 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
                 return ESP_ERR_INVALID_STATE;
             }
         }
+
+        ESP_FAULT_ASSERT(!ets_use_secure_boot_v2());
 #endif
 
         memcpy(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN);
