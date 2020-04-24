@@ -55,6 +55,7 @@ typedef enum {
     PERIPH_AES_MODULE,
     PERIPH_SHA_MODULE,
     PERIPH_RSA_MODULE,
+    PERIPH_MODULE_MAX
 } periph_module_t;
 
 #ifdef __cplusplus

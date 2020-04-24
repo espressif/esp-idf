@@ -80,7 +80,7 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     uint64_t timer_val;
     esp_err_t err = timer_get_counter_value(group_num, timer_num, &timer_val);
     if (err == ESP_OK) {
-        uint16_t div;
+        uint32_t div;
         timer_hal_get_divider(&(p_timer_obj[group_num][timer_num]->hal), &div);
         *time = (double)timer_val * div / rtc_clk_apb_freq_get();
 #ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
@@ -262,7 +262,7 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
 
     int intr_source = 0;
     uint32_t status_reg = 0;
-    int mask = 0;
+    uint32_t mask = 0;
     switch (group_num) {
     case TIMER_GROUP_0:
     default:
@@ -271,8 +271,7 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
         } else {
             intr_source = ETS_TG0_T0_EDGE_INTR_SOURCE + timer_num;
         }
-        timer_hal_get_intr_status_reg(&(p_timer_obj[TIMER_GROUP_0][timer_num]->hal), &status_reg);
-        mask = 1 << timer_num;
+        timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_0][timer_num]->hal), &status_reg, &mask);
         break;
     case TIMER_GROUP_1:
         if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
@@ -280,8 +279,7 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
         } else {
             intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
         }
-        timer_hal_get_intr_status_reg(&(p_timer_obj[TIMER_GROUP_1][timer_num]->hal), &status_reg);
-        mask = 1 << timer_num;
+        timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_1][timer_num]->hal), &status_reg, &mask);
         break;
     }
     return esp_intr_alloc_intrstatus(intr_source, intr_alloc_flags, status_reg, mask, fn, arg, handle);
@@ -363,13 +361,9 @@ esp_err_t timer_get_config(timer_group_t group_num, timer_idx_t timer_num, timer
     config->counter_dir = timer_hal_get_counter_increase(&(p_timer_obj[group_num][timer_num]->hal));
     config->counter_en = timer_hal_get_counter_enable(&(p_timer_obj[group_num][timer_num]->hal));
 
-    uint16_t div;
+    uint32_t div;
     timer_hal_get_divider(&(p_timer_obj[group_num][timer_num]->hal), &div);
-    if (div == 0) {
-        config->divider = 65536;
-    } else {
-        config->divider = div;
-    }
+    config->divider = div;
 
     if (timer_hal_get_level_int_enable(&(p_timer_obj[group_num][timer_num]->hal))) {
         config->intr_type = TIMER_INTR_LEVEL;
