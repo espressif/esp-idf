@@ -44,16 +44,23 @@ TEST_CASE("can use std::vector", "[cxx]")
     TEST_ASSERT_EQUAL(51, std::accumulate(std::begin(v), std::end(v), 0));
 }
 
-/* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
-   - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
-     This info is kept until global destructors are called by __do_global_dtors_aux()
+/* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
    - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
    - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
    - 88 bytes are allocated by pthread_setspecific() to init internal lock
+   - some more memory...
    */
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=816]")
+#if CONFIG_IDF_TARGET_ESP32
+#define LEAKS "300"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define LEAKS "800"
+#else
+#error "unknown target in CXX tests, can't set leaks threshold"
+#endif
+
+TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value;
     try {
@@ -65,7 +72,7 @@ TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     bool thrown_value = false;
     try {
@@ -77,7 +84,7 @@ TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     void* thrown_value = 0;
     try {
@@ -89,7 +96,7 @@ TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     uint64_t thrown_value = 0;
     try {
@@ -101,7 +108,7 @@ TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     char thrown_value = '0';
     try {
@@ -113,7 +120,7 @@ TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     wchar_t thrown_value = 0;
     try {
@@ -125,7 +132,7 @@ TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     float thrown_value = 0;
     try {
@@ -137,7 +144,7 @@ TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     double thrown_value = 0;
     try {
@@ -149,7 +156,7 @@ TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     const char *thrown_value = 0;
     try {
@@ -167,7 +174,7 @@ public:
     NonExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value = 0;
     try {
@@ -185,7 +192,7 @@ public:
     ExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=816]")
+TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value = 0;
     try {
@@ -197,7 +204,7 @@ TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=816]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks=" LEAKS "]")
 {
     void **p, **pprev = NULL;
     int thrown_value = 0;
@@ -242,6 +249,60 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
     // expect abort() due to lack of memory for new exception
     TEST_ASSERT_TRUE(0 == 1);
 #endif
+}
+
+
+#define TIMEOUT 19
+
+#define RECURSION 19
+
+static esp_timer_handle_t crash_timer;
+
+static uint32_t result = 0;
+
+uint32_t calc_fac(uint32_t n) {
+    if (n == 1 || n == 0) {
+        return 1;
+    } else {
+        return n * calc_fac(n - 1);
+    }
+}
+
+static void timer_cb(void *arg) {
+    result = calc_fac(RECURSION);
+}
+
+// TODO: Not a unit test, refactor to integration test/system test, etc.
+TEST_CASE("frequent interrupts don't interfere with c++ exceptions", "[cxx] [exceptions] [leaks=" LEAKS "]")
+{// if exception workaround is disabled, this is almost guaranteed to fail
+    const esp_timer_create_args_t timer_args {
+        timer_cb,
+        NULL,
+        ESP_TIMER_TASK,
+        "crash_timer"
+    };
+
+    TEST_ESP_OK(esp_timer_create(&timer_args, &crash_timer));
+    TEST_ESP_OK(esp_timer_start_periodic(crash_timer, TIMEOUT));
+
+    for (int i = 0; i < 500; i++) {
+        bool thrown_value = false;
+        try {
+            throw true;
+        } catch (bool e) {
+            thrown_value = e;
+        }
+
+        if (thrown_value) {
+            printf("ex thrown %d\n", i);
+        } else {
+            printf("ex not thrown\n");
+            TEST_ASSERT(false);
+        }
+    }
+
+    TEST_ESP_OK(esp_timer_stop(crash_timer));
+    TEST_ESP_OK(esp_timer_delete(crash_timer));
 }
 
 #else // !CONFIG_COMPILER_CXX_EXCEPTIONS

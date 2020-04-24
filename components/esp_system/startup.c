@@ -102,6 +102,13 @@ static volatile bool s_system_full_inited = false;
 sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
 #endif
 
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+// workaround for C++ exception crashes
+void _Unwind_SetNoFunctionContextInstall(unsigned char enable);
+// workaround for C++ exception large memory allocation
+void _Unwind_SetEnableExceptionFdeSorting(unsigned char enable);
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
+
 static const char* TAG = "cpu_start";
 
 static void IRAM_ATTR do_global_ctors(void)
@@ -116,7 +123,7 @@ static void IRAM_ATTR do_global_ctors(void)
 
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
-#endif
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
@@ -375,4 +382,11 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
         esp_efuse_init(efuse_partition->address, efuse_partition->size);
     }
 #endif
+
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    ESP_EARLY_LOGD(TAG, "Setting C++ exception workarounds.");
+    _Unwind_SetNoFunctionContextInstall(1);
+    _Unwind_SetEnableExceptionFdeSorting(0);
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 }
+
