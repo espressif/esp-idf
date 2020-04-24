@@ -57,7 +57,6 @@ def main():
 
     actions.add_parser('example_test', parents=[common])
     actions.add_parser('test_apps', parents=[common])
-    # actions.add_parser('unit_test', parents=[common])
 
     args = parser.parse_args()
 
@@ -68,8 +67,6 @@ def main():
         elif args.action == 'test_apps':
             CIExampleAssignTest.CI_TEST_JOB_PATTERN = re.compile(r'^test_app_test_.+')
             assign = CIExampleAssignTest(path, args.ci_config_file, TestAppsGroup)
-        # elif args.action == 'unit_test':
-        #     assign = UnitTestAssignTest(args.test_case, args.ci_config_file)
         else:
             raise SystemExit(1)  # which is impossible
 

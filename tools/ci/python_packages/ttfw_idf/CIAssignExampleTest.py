@@ -65,7 +65,7 @@ def create_artifact_index_file(project_id=None, pipeline_id=None, case_group=Exa
         return "{}/list_job_{}.json".format(case_group.BUILD_LOCAL_DIR, parallel or 1)
 
     for build_job_name in case_group.BUILD_JOB_NAMES:
-        job_info_list = gitlab_inst.find_job_id(build_job_name, pipeline_id=pipeline_id, suffix='limit')
+        job_info_list = gitlab_inst.find_job_id(build_job_name, pipeline_id=pipeline_id)
         for job_info in job_info_list:
             raw_data = gitlab_inst.download_artifact(job_info["id"], [format_build_log_path()])[0]
             build_info_list = [json.loads(line) for line in raw_data.splitlines()]

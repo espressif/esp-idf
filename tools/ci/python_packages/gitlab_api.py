@@ -124,7 +124,7 @@ class Gitlab(object):
 
         return raw_data_list
 
-    def find_job_id(self, job_name, pipeline_id=None, job_status="success", suffix=None):
+    def find_job_id(self, job_name, pipeline_id=None, job_status="success"):
         """
         Get Job ID from job name of specific pipeline
 
@@ -132,7 +132,6 @@ class Gitlab(object):
         :param pipeline_id: If None, will get pipeline id from CI pre-defined variable.
         :param job_status: status of job. One pipeline could have multiple jobs with same name after retry.
                            job_status is used to filter these jobs.
-        :param suffix: suffix of the job. e.g. 'limit' for build only needed apps.
         :return: a list of job IDs (parallel job will generate multiple jobs)
         """
         job_id_list = []
@@ -145,9 +144,6 @@ class Gitlab(object):
             if match:
                 if match.group(1) == job_name and job.status == job_status:
                     job_id_list.append({"id": job.id, "parallel_num": match.group(3)})
-                elif suffix:
-                    if match.group(1) == "{}_{}".format(job_name, suffix) and job.status == job_status:
-                        job_id_list.append({"id": job.id, "parallel_num": match.group(3)})
         return job_id_list
 
     @retry_download
