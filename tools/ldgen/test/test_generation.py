@@ -1176,6 +1176,65 @@ class GenerationModelTest(unittest.TestCase):
 
             self._compare_rules(expected, actual)
 
+    def test_rules_order(self):
+        # The fragments are structured such that ldgen will:
+        #  - parse freertos2 mapping first
+        #  - entry for prvCheckPendingReadyList is parsed first before prvCheckDelayedList
+        # We expect that despite this, ldgen will output rules in a set order:
+        # by increasing specificity and alphabetically
+        rules_order_mapping_1 = """
+        [mapping]
+        archive: libfreertos2.a
+        entries:
+            croutine2 (noflash_text)
+            croutine (noflash_text)
+        """
+
+        rules_order_mapping_2 = """
+        [mapping]
+        archive: libfreertos.a
+        entries:
+            croutine:prvCheckPendingReadyList (noflash_text)
+            croutine:prvCheckDelayedList (noflash_text)
+        """
+
+        self._add_mapping(rules_order_mapping_2)
+        self._add_mapping(rules_order_mapping_1)
+
+        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+
+        expected = self._generate_default_rules()
+
+        flash_text_default = self._get_default("flash_text", expected)
+
+        iram0_text_E1 = PlacementRule("libfreertos2.a", "croutine2", None, self.model.sections["text"].entries, "iram0_text")
+        iram0_text_E2 = PlacementRule("libfreertos2.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
+        iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
+        iram0_text_E4 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
+
+        flash_text_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "flash_text")
+
+        # Add the exclusions
+        flash_text_default.add_exclusion(iram0_text_E1, self.sections_info)
+        flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
+
+        flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
+        flash_text_extra.add_exclusion(iram0_text_E3, self.sections_info)
+        flash_text_extra.add_exclusion(iram0_text_E4, self.sections_info)
+
+        # Add the rules, arranged by expected order
+        expected["flash_text"].append(flash_text_extra)
+        expected["iram0_text"].append(iram0_text_E4)
+        expected["iram0_text"].append(iram0_text_E3)
+        expected["iram0_text"].append(iram0_text_E2)
+        expected["iram0_text"].append(iram0_text_E1)
+
+        # Perform general comparison for all sections
+        self._compare_rules(expected, actual)
+
+        # Perform ordered comparison
+        self.assertListEqual(actual["flash_text"], expected["flash_text"])
+
 
 if __name__ == "__main__":
     unittest.main()
