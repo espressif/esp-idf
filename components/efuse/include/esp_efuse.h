@@ -308,14 +308,47 @@ void esp_efuse_reset(void);
  * By default, if booting from flash fails the ESP32 will boot a
  * BASIC console in ROM.
  *
- * Call this function (from bootloader or app) to permanently
- * disable the console on this chip.
- *
+ * Call this function (from bootloader or app) to permanently disable the console on this chip.
  *
  */
 void esp_efuse_disable_basic_rom_console(void);
 #endif
 
+
+/* @brief Disable ROM Download Mode via eFuse
+ *
+ * Permanently disables the ROM Download Mode feature. Once disabled, if the SoC is booted with
+ * strapping pins set for ROM Download Mode then an error is printed instead.
+ *
+ * @note Not all SoCs support this option. An error will be returned if called on an ESP32
+ * with a silicon revision lower than 3, as these revisions do not support this option.
+ *
+ * @note If ROM Download Mode is already disabled, this function does nothing and returns success.
+ *
+ * @return
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ * - ESP_ERR_NOT_SUPPORTED (ESP32 only) This SoC is not capable of disabling UART download mode
+ * - ESP_ERR_INVALID_STATE (ESP32 only) This eFuse is write protected and cannot be written
+ */
+esp_err_t esp_efuse_disable_rom_download_mode(void);
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+/* @brief Switch ROM Download Mode to Secure Download mode via eFuse
+ *
+ * Permanently enables Secure Download mode. This mode limits the use of ROM Download Mode functions
+ * to simple flash read, write and erase operations, plus a command to return a summary of currently
+ * enabled security features.
+ *
+ * @note If Secure Download mode is already enabled, this function does nothing and returns success.
+ *
+ * @note Disabling the ROM Download Mode also disables Secure Download Mode.
+ *
+ * @return
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ * - ESP_ERR_INVALID_STATE ROM Download Mode has been disabled via eFuse, so Secure Download mode is unavailable.
+ */
+esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
+#endif
 
 /* @brief Write random data to efuse key block write registers
  *
