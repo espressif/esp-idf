@@ -131,6 +131,25 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
     return err;
 }
 
+esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[])
+{
+    esp_err_t err;
+    uint8_t existing = 0;
+    const uint8_t one = 1;
+
+    if (field == NULL || field[0]->bit_count != 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Check existing value. esp_efuse_write_field_blob() also checks this, but will log an error */
+    err = esp_efuse_read_field_blob(field, &existing, 1);
+    if (err != ESP_OK || existing) {
+        return err; // Error reading, or the bit is already written and we can no-op this
+    }
+
+    return esp_efuse_write_field_blob(field, &one, 1);
+}
+
 // get the length of the field in bits
 int esp_efuse_get_field_size(const esp_efuse_desc_t* field[])
 {
