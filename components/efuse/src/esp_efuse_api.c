@@ -48,6 +48,14 @@ esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, 
     return err;
 }
 
+bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[])
+{
+    uint8_t value = 0;
+    esp_err_t err = esp_efuse_read_field_blob(field, &value, 1);
+    assert(err == ESP_OK);
+    return (err == ESP_OK) && value;
+}
+
 // read number of bits programmed as "1" in the particular field
 esp_err_t esp_efuse_read_field_cnt(const esp_efuse_desc_t* field[], size_t* out_cnt)
 {

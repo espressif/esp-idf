@@ -75,6 +75,23 @@ typedef struct {
  */
 esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, size_t dst_size_bits);
 
+
+/**
+ * @brief Read a single bit eFuse field as a boolean value.
+ *
+ * @note The value must exist and must be a single bit wide. If there is any possibility of an error
+ * in the provided arguments, call esp_efuse_read_field_blob() and check the returned value instead.
+ *
+ * @note If assertions are enabled and the parameter is invalid, execution will abort
+ *
+ * @param[in]  field          A pointer to the structure describing the fields of efuse.
+ * @return
+ *    - true: The field parameter is valid and the bit is set.
+ *    - false: The bit is not set, or the parameter is invalid and assertions are disabled.
+ *
+ */
+bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[]);
+
 /**
  * @brief   Reads bits from EFUSE field and returns number of bits programmed as "1".
  *
