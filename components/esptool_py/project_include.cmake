@@ -153,6 +153,9 @@ else()
     list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
 endif()
 
+if(NOT CONFIG_ESPTOOLPY_WITH_STUB)
+    list(APPEND esptool_flash_main_args "--no-stub")
+endif()
 
 idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
 idf_component_set_property(esptool_py FLASH_SUB_ARGS "${ESPTOOLPY_FLASH_OPTIONS}")
