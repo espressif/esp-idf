@@ -124,6 +124,23 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt);
 
 /**
+ * @brief Write a single bit eFuse field to 1
+ *
+ * For use with eFuse fields that are a single bit. This function will write the bit to value 1 if
+ * it is not already set, or does nothing if the bit is already set.
+ *
+ * This is equivalent to calling esp_efuse_write_field_cnt() with the cnt parameter equal to 1,
+ * except that it will return ESP_OK if the field is already set to 1.
+ *
+ * @param[in] field Pointer to the structure describing the efuse field.
+ *
+ * @return
+ * - ESP_OK: The operation was successfully completed, or the bit was already set to value 1.
+ * - ESP_ERR_INVALID_ARG: Error in the passed arugments, including if the efuse field is not 1 bit wide.
+ */
+esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[]);
+
+/**
  * @brief   Sets a write protection for the whole block.
  *
  * After that, it is impossible to write to this block.
