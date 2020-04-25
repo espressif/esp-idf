@@ -199,19 +199,22 @@ static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_cry
 
     ESP_LOGD(TAG, "All flash regions checked for encryption pass");
 
+    uint32_t new_flash_crypt_cnt;
+#ifdef CONFIG_FLASH_ENCRYPTION_DISABLE_PLAINTEXT
+    ESP_LOGI(TAG, "Setting FLASH_CRYPT_CNT efuse to max...");
+    new_flash_crypt_cnt = EFUSE_FLASH_CRYPT_CNT;
+#else
     /* Set least significant 0-bit in flash_crypt_cnt */
     int ffs_inv = __builtin_ffs((~flash_crypt_cnt) & EFUSE_RD_FLASH_CRYPT_CNT);
     /* ffs_inv shouldn't be zero, as zero implies flash_crypt_cnt == EFUSE_RD_FLASH_CRYPT_CNT (0x7F) */
-    uint32_t new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+    new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+    if (new_flash_crypt_cnt != EFUSE_FLASH_CRYPT_CNT) {
+        ESP_LOGW(TAG, "Not disabling FLASH_CRYPT_CNT - plaintext flashing is still possible");
+    }
+#endif
     ESP_LOGD(TAG, "FLASH_CRYPT_CNT 0x%x -> 0x%x", flash_crypt_cnt, new_flash_crypt_cnt);
     REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, new_flash_crypt_cnt);
 
-#ifdef CONFIG_FLASH_ENCRYPTION_DISABLE_PLAINTEXT
-    ESP_LOGI(TAG, "Write protecting FLASH_CRYPT_CNT efuse...");
-    REG_SET_BIT(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_FLASH_CRYPT_CNT);
-#else
-    ESP_LOGW(TAG, "Not disabling FLASH_CRYPT_CNT - plaintext flashing is still possible");
-#endif
 
     esp_efuse_burn_new_values();
 
@@ -348,12 +351,19 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     return err;
 }
 
-void esp_flash_write_protect_crypt_cnt() 
+void esp_flash_write_protect_crypt_cnt()
 {
+    if (!esp_flash_encryption_enabled()) {
+        ESP_LOGE(TAG, "flash encryption not enabled!");
+        return;
+    }
+
     uint32_t efuse_blk0 = REG_READ(EFUSE_BLK0_RDATA0_REG);
     bool flash_crypt_wr_dis = efuse_blk0 & EFUSE_WR_DIS_FLASH_CRYPT_CNT;
-    if(!flash_crypt_wr_dis) { 
-        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_FLASH_CRYPT_CNT);
+    unsigned flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_FLASH_CRYPT_CNT);
+    if(!flash_crypt_wr_dis && flash_crypt_cnt != EFUSE_FLASH_CRYPT_CNT) {
+        /* Disable by setting flash_crypt_cnt to max, to still allow disabling UART DL mode on ESP32 rev 3 */
+        REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, EFUSE_FLASH_CRYPT_CNT);
         esp_efuse_burn_new_values();
     }
 }

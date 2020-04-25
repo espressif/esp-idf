@@ -110,7 +110,11 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * is enabled but secure boot is not used. This should protect against
  * serial re-flashing of an unauthorised code in absence of secure boot.
  *
- * @return 
+ * @note To support disabling UART Download Mode on ESP32 V3 only, this function
+ * doesn't write protect FLASH_CRYPT_CNT but instead sets it to the max value
+ * (effectively the same result but allows burning the UART_DL_DIS efuse later on,
+ * as this is otherwise also disabled if FLASH_CRYPT_CNT is write protected.)
+ *
  */
 void esp_flash_write_protect_crypt_cnt();
 
