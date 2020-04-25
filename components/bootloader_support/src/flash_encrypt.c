@@ -33,8 +33,7 @@ void esp_flash_encryption_init_checks()
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
 #ifdef CONFIG_SECURE_BOOT
     if (esp_secure_boot_enabled() && esp_flash_encryption_enabled()) {
-        uint8_t flash_crypt_cnt_wr_dis = 0;
-        esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
+        bool flash_crypt_cnt_wr_dis = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT);
         if (!flash_crypt_cnt_wr_dis) {
             uint8_t flash_crypt_cnt = 0;
             esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt,
@@ -82,20 +81,20 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 
     if (esp_flash_encryption_enabled()) {
         /* Check if FLASH CRYPT CNT is write protected */
-
-        esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
-        if (!flash_crypt_cnt_wr_dis) {
+        efuse_flash_crypt_cnt_wr_protected = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT);
+        if (!efuse_flash_crypt_cnt_wr_protected) {
             uint8_t flash_crypt_cnt = 0;
             esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
             if (flash_crypt_cnt == (1 << (ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count)) - 1) {
-                flash_crypt_cnt_wr_dis = 1;
+                efuse_flash_crypt_cnt_wr_protected = 1; // CRYPT_CNT at max is same as write protected
             }
         }
 
-        if (flash_crypt_cnt_wr_dis) {
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_CACHE, &dis_dl_cache, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_ENCRYPT, &dis_dl_enc, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_DECRYPT, &dis_dl_dec, 1);
+        if (efuse_flash_crypt_cnt_wr_protected) {
+            dis_dl_cache = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+            dis_dl_dec = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+
             /* Check if DISABLE_DL_DECRYPT, DISABLE_DL_ENCRYPT & DISABLE_DL_CACHE are set */
             if ( dis_dl_cache && dis_dl_enc && dis_dl_dec ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
