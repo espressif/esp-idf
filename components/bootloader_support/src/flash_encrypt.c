@@ -76,13 +76,7 @@ void esp_flash_encryption_init_checks()
 
 void esp_flash_write_protect_crypt_cnt(void)
 {
-    uint8_t flash_crypt_cnt_wr_dis = 0;
-
-    esp_efuse_read_field_blob(WR_DIS_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
-
-    if (!flash_crypt_cnt_wr_dis) {
-        esp_efuse_write_field_cnt(WR_DIS_CRYPT_CNT, 1);
-    }
+    esp_efuse_write_field_bit(WR_DIS_CRYPT_CNT);
 }
 
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
@@ -121,7 +115,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#endif            
+#endif
         }
     } else {
         mode = ESP_FLASH_ENC_MODE_DISABLED;
