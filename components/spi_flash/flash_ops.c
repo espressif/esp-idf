@@ -45,6 +45,7 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 
+esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -434,58 +435,6 @@ out:
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 
-static IRAM_ATTR esp_err_t spi_flash_write_encrypted_in_rows(size_t dest_addr, const uint8_t *src, size_t size)
-{
-    assert((dest_addr % 16) == 0);
-    assert((size % 16) == 0);
-
-    /* esp_rom_spiflash_write_encrypted encrypts data in RAM as it writes,
-    so copy to a temporary buffer - 32 bytes at a time.
-
-    Each call to esp_rom_spiflash_write_encrypted takes a 32 byte "row" of
-    data to encrypt, and each row is two 16 byte AES blocks
-    that share a key (as derived from flash address).
-    */
-
-    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
-    WORD_ALIGNED_ATTR uint8_t encrypt_buf[32];
-    uint32_t row_size;
-    for (size_t i = 0; i < size; i += row_size) {
-        uint32_t row_addr = dest_addr + i;
-
-        if (i == 0 && (row_addr % 32) != 0) {
-            /* writing to second block of a 32 byte row */
-            row_size = 16;
-            row_addr -= 16;
-            /* copy to second block in buffer */
-            memcpy(encrypt_buf + 16, src + i, 16);
-            /* decrypt the first block from flash, will reencrypt to same bytes */
-            spi_flash_read_encrypted(row_addr, encrypt_buf, 16);
-        } else if (size - i == 16) {
-            /* 16 bytes left, is first block of a 32 byte row */
-            row_size = 16;
-            /* copy to first block in buffer */
-            memcpy(encrypt_buf, src + i, 16);
-            /* decrypt the second block from flash, will reencrypt to same bytes */
-            spi_flash_read_encrypted(row_addr + 16, encrypt_buf + 16, 16);
-        } else {
-            /* Writing a full 32 byte row (2 blocks) */
-            row_size = 32;
-            memcpy(encrypt_buf, src + i, 32);
-        }
-
-        spi_flash_guard_start();
-        rc = esp_rom_spiflash_write_encrypted(row_addr, (uint32_t *)encrypt_buf, 32);
-        spi_flash_guard_end();
-        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-            break;
-        }
-    }
-    bzero(encrypt_buf, sizeof(encrypt_buf));
-    return spi_flash_translate_rc(rc);
-}
-
-
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
     esp_err_t err = ESP_OK;
@@ -505,7 +454,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     }
 
 #ifndef CONFIG_SPI_FLASH_VERIFY_WRITE
-    err = spi_flash_write_encrypted_in_rows(dest_addr, (const uint8_t*)src, size);
+    err = spi_flash_write_encrypted_chip(dest_addr, src, size);
     COUNTER_ADD_BYTES(write, size);
     spi_flash_guard_start();
     spi_flash_check_and_flush_cache(dest_addr, size);
@@ -535,7 +484,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
         }
 #endif
 
-        err = spi_flash_write_encrypted_in_rows(dest_addr + i, src + i, read_len);
+        err = spi_flash_write_encrypted_chip(dest_addr + i, src + i, read_len);
         if (err != ESP_OK) {
             break;
         }
@@ -795,78 +744,6 @@ void spi_flash_dump_counters(void)
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
-#if CONFIG_IDF_TARGET_ESP32S2
-#define SPICACHE SPIMEM0
-#define SPIFLASH SPIMEM1
-#define FLASH_WRAP_CMD 0x77
-esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
-{
-    uint32_t reg_bkp_ctrl = SPIFLASH.ctrl.val;
-    uint32_t reg_bkp_usr  = SPIFLASH.user.val;
-    SPIFLASH.user.fwrite_dio = 0;
-    SPIFLASH.user.fwrite_dual = 0;
-    SPIFLASH.user.fwrite_qio = 1;
-    SPIFLASH.user.fwrite_quad = 0;
-    SPIFLASH.ctrl.fcmd_dual = 0;
-    SPIFLASH.ctrl.fcmd_quad = 0;
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 1;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
-    SPIFLASH.user2.usr_command_value = FLASH_WRAP_CMD;
-    SPIFLASH.user1.usr_addr_bitlen = 23;
-    SPIFLASH.addr = 0;
-    SPIFLASH.user.usr_miso = 0;
-    SPIFLASH.user.usr_mosi = 1;
-    SPIFLASH.mosi_dlen.usr_mosi_bit_len = 7;
-    SPIFLASH.data_buf[0] = (uint32_t) mode << 4;;
-    SPIFLASH.cmd.usr = 1;
-    while(SPIFLASH.cmd.usr != 0)
-    { }
-
-    SPIFLASH.ctrl.val = reg_bkp_ctrl;
-    SPIFLASH.user.val = reg_bkp_usr;
-    return ESP_OK;
-}
-
-esp_err_t spi_flash_enable_wrap(uint32_t wrap_size)
-{
-    switch(wrap_size) {
-        case 8:
-            return spi_flash_wrap_set(FLASH_WRAP_MODE_8B);
-        case 16:
-            return spi_flash_wrap_set(FLASH_WRAP_MODE_16B);
-        case 32:
-            return spi_flash_wrap_set(FLASH_WRAP_MODE_32B);
-        case 64:
-            return spi_flash_wrap_set(FLASH_WRAP_MODE_64B);
-        default:
-            return ESP_FAIL;
-    }
-}
-
-void spi_flash_disable_wrap(void)
-{
-    spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
-}
-
-bool spi_flash_support_wrap_size(uint32_t wrap_size)
-{
-    if (!REG_GET_BIT(SPI_MEM_CTRL_REG(0), SPI_MEM_FREAD_QIO) || !REG_GET_BIT(SPI_MEM_CTRL_REG(0), SPI_MEM_FASTRD_MODE)){
-        return ESP_FAIL;
-    }
-    switch(wrap_size) {
-        case 0:
-        case 8:
-        case 16:
-        case 32:
-        case 64:
-            return true;
-        default:
-            return false;
-    }
-}
-#endif
 #if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && defined(CONFIG_IDF_TARGET_ESP32S2)
 // TODO esp32s2: Remove once ESP32S2 has new SPI Flash API support
 esp_flash_t *esp_flash_default_chip = NULL;

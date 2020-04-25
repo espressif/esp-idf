@@ -601,7 +601,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
-            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            depends on (SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT) && IDF_TARGET_ESP32
             default N
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is
@@ -664,7 +664,7 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
             bool "Leave UART bootloader decryption enabled"
-            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && IDF_TARGET_ESP32
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader decryption access on
