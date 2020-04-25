@@ -268,6 +268,7 @@ void esp_efuse_burn_new_values(void);
  */
 void esp_efuse_reset(void);
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 /* @brief Disable BASIC ROM Console via efuse
  *
  * By default, if booting from flash fails the ESP32 will boot a
@@ -275,8 +276,12 @@ void esp_efuse_reset(void);
  *
  * Call this function (from bootloader or app) to permanently
  * disable the console on this chip.
+ *
+ *
  */
 void esp_efuse_disable_basic_rom_console(void);
+#endif
+
 
 /* @brief Write random data to efuse key block write registers
  *
