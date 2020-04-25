@@ -36,8 +36,18 @@ void esp_flash_encryption_init_checks()
         uint8_t flash_crypt_cnt_wr_dis = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
         if (!flash_crypt_cnt_wr_dis) {
-            ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
-            esp_flash_write_protect_crypt_cnt();
+            uint8_t flash_crypt_cnt = 0;
+            esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt,
+                                      ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
+            if (flash_crypt_cnt == (1<<(ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count))-1) {
+                // If encryption counter is already max, no need to write protect it
+                // (this distinction is important on ESP32 ECO3 where write-procted FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
+                flash_crypt_cnt_wr_dis = 1;
+            }
+            if (!flash_crypt_cnt_wr_dis) {
+                ESP_EARLY_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
+                esp_flash_write_protect_crypt_cnt();
+            }
         }
     }
 #endif // CONFIG_SECURE_BOOT_ENABLED
