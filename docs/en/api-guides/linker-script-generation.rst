@@ -54,7 +54,7 @@ fragment file. The path can either be an absolute path or a relative path from t
 
 .. code-block:: make
 
-    COMPONENT_ADD_LDFRAGMENTS += "my_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
 
 CMake
 """""

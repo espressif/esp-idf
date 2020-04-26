@@ -27,7 +27,7 @@ Make
 .. code-block:: make
 
     # 文件路径相对于组件的 Makefile
-    COMPONENT_ADD_LDFRAGMENTS += "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
 
 CMake
 """""
