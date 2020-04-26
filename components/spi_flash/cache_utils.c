@@ -35,6 +35,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "soc/soc_memory_layout.h"
 
 static __attribute__((unused)) const char* TAG = "cache";
 
@@ -111,6 +112,8 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
+    assert(esp_ptr_in_dram((const void *)get_sp()));
+
     spi_flash_op_lock();
 
     const uint32_t cpuid = xPortGetCoreID();
