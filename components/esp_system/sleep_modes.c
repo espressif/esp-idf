@@ -269,7 +269,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #ifdef CONFIG_IDF_TARGET_ESP32
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
-        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
+        rtc_hal_ulp_wakeup_enable();
     }
 #endif
 
@@ -500,7 +500,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup(void)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     return ESP_ERR_NOT_SUPPORTED;
 #endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
@@ -515,7 +515,8 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
     return ESP_ERR_INVALID_STATE;
 #endif // CONFIG_ESP32_ULP_COPROC_ENABLED
 #elif CONFIG_IDF_TARGET_ESP32S2
-    return ESP_ERR_NOT_SUPPORTED;
+    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+    return ESP_OK;
 #endif
 }
 
@@ -597,16 +598,9 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 static void ext0_wakeup_prepare(void)
 {
     int rtc_gpio_num = s_config.ext0_rtc_gpio_num;
-    // Set GPIO to be used for wakeup
-    REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtc_gpio_num);
-    // Set level which will trigger wakeup
-    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-            s_config.ext0_trigger_level, RTC_CNTL_EXT_WAKEUP0_LV_S);
-    // Find GPIO descriptor in the rtc_io_desc table and configure the pad
-    const rtc_io_desc_t* desc = &rtc_io_desc[rtc_gpio_num];
-    REG_SET_BIT(desc->reg, desc->mux);
-    SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
-    REG_SET_BIT(desc->reg, desc->ie);
+    rtcio_hal_ext0_set_wakeup_pin(rtc_gpio_num, s_config.ext0_trigger_level);
+    rtcio_hal_function_select(rtc_gpio_num, RTCIO_FUNC_RTC);
+    rtcio_hal_input_enable(rtc_gpio_num);
 }
 
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode)
@@ -641,35 +635,28 @@ static void ext1_wakeup_prepare(void)
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
         }
-        const rtc_io_desc_t* desc = &rtc_io_desc[rtc_pin];
         // Route pad to RTC
-        REG_SET_BIT(desc->reg, desc->mux);
-        SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
+        rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_RTC);
         // set input enable in sleep mode
-        REG_SET_BIT(desc->reg, desc->ie);
+        rtcio_hal_input_enable(rtc_pin);
+
         // Pad configuration depends on RTC_PERIPH state in sleep mode
         if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
             // RTC_PERIPH will be powered down, so RTC_IO_ registers will
             // loose their state. Lock pad configuration.
             // Pullups/pulldowns also need to be disabled.
-            REG_CLR_BIT(desc->reg, desc->pulldown);
-            REG_CLR_BIT(desc->reg, desc->pullup);
-#ifdef CONFIG_IDF_TARGET_ESP32
-            REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
-#elif CONFIG_IDF_TARGET_ESP32S2
-            REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, desc->hold_force);
-#endif
+            rtcio_hal_pullup_disable(rtc_pin);
+            rtcio_hal_pulldown_disable(rtc_pin);
+            rtcio_hal_hold_enable(rtc_pin);
         }
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
     }
+
     // Clear state from previous wakeup
-    REG_SET_BIT(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_STATUS_CLR);
-    // Set pins to be used for wakeup
-    REG_SET_FIELD(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_SEL, s_config.ext1_rtc_gpio_mask);
-    // Set logic function (any low, all high)
-    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-            s_config.ext1_trigger_mode, RTC_CNTL_EXT_WAKEUP1_LV_S);
+    rtc_hal_ext1_clear_wakeup_pins();
+    // Set RTC IO pins and mode (any high, all low) to be used for wakeup
+    rtc_hal_ext1_set_wakeup_pins(s_config.ext1_rtc_gpio_mask, s_config.ext1_trigger_mode);
 }
 
 uint64_t esp_sleep_get_ext1_wakeup_status(void)
@@ -677,7 +664,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_EXT1) {
         return 0;
     }
-    uint32_t status = REG_GET_FIELD(RTC_CNTL_EXT_WAKEUP1_STATUS_REG, RTC_CNTL_EXT_WAKEUP1_STATUS);
+    uint32_t status = rtc_hal_ext1_get_wakeup_pins();
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
     uint64_t gpio_mask = 0;
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
