@@ -642,6 +642,20 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
         }
         ESP_LOGD(TAG, "DHCP server already started");
         return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED;
+    } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
+        if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
+            if (p_netif != NULL) {
+                struct dhcp *dhcp_data = NULL;
+                dhcp_data = netif_dhcp_data(p_netif);
+                if (dhcp_data == NULL) {
+                    dhcp_data = (struct dhcp *)malloc(sizeof(struct dhcp));
+                    if (dhcp_data == NULL) {
+                        return ESP_ERR_NO_MEM;
+                    }
+                    dhcp_set_struct(p_netif, dhcp_data);
+                }
+            }
+        }
     }
 
     esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
@@ -1639,15 +1653,14 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
     if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
         return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
-
     struct dhcp *dhcp = netif_dhcp_data(esp_netif->lwip_netif);
-    if (dhcp == NULL) {
-        return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED;
-    }
-    if (opt_val == NULL) {
+     if (dhcp == NULL || opt_val == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
     if (opt_op == ESP_NETIF_OP_GET) {
+        if (esp_netif->dhcpc_status == ESP_NETIF_DHCP_STOPPED) {
+            return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED;
+        }
         switch (opt_id) {
             case ESP_NETIF_IP_REQUEST_RETRY_TIME:
                 if (opt_len == sizeof(dhcp->tries)) {
@@ -1659,6 +1672,9 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
                 break;
         }
     } else if (opt_op == ESP_NETIF_OP_SET) {
+        if (esp_netif->dhcpc_status == ESP_NETIF_DHCP_STARTED) {
+            return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED;
+        }
         switch (opt_id) {
             case ESP_NETIF_IP_REQUEST_RETRY_TIME:
                 if (opt_len == sizeof(dhcp->tries)) {
