@@ -66,6 +66,22 @@ This example shows how ESP32 acts as a BLE Mesh Provisioner and provisions other
 
 See [ble_mesh_provisioner](ble_mesh_provisioner) folder for more details.
 
+## ble_mesh_vendor_model
+
+This example demonstrates how ESP32 acts as a BLE Mesh Provisioner with vendor client model or as a BLE Mesh node with vendor server model.
+
+#### vendor_client
+
+This example shows how ESP32 acts as a BLE Mesh Provisioner with a vendor client model in the Primary Element.
+
+See [vendor_client](ble_mesh_vendor_model/vendor_client) folder for more details.
+
+#### vendor_server
+
+This example shows how ESP32 acts as a BLE Mesh Node with a vendor server model in the Primary Element.
+
+See [vendor_server](ble_mesh_vendor_model/vendor_server) folder for more details.
+
 ## ble_mesh_wifi_coexist
 
 This example shows how ESP32 acts as a BLE Mesh Fast Provisioning Server and coexists with Wi-Fi iperf functionality.
