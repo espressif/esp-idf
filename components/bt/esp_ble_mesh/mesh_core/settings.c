@@ -1039,14 +1039,14 @@ free:
     return err;
 }
 
-static int node_info_set(u16_t addr, bool prov, bool *exist)
+static int node_info_set(u16_t addr, bool *exist)
 {
     struct bt_mesh_node node = {0};
     struct node_info info = {0};
     char get[16] = {'\0'};
     int err = 0;
 
-    sprintf(get, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", addr);
+    sprintf(get, "mesh/pn/%04x/i", addr);
     err = bt_mesh_load_core_settings(get, (u8_t *)&info, sizeof(info), exist);
     if (err) {
         BT_ERR("%s, Failed to load node %s", __func__, get);
@@ -1068,7 +1068,7 @@ static int node_info_set(u16_t addr, bool prov, bool *exist)
     node.iv_index = info.iv_index;
     memcpy(node.dev_key, info.dev_key, 16);
 
-    err = bt_mesh_provisioner_restore_node_info(&node, prov);
+    err = bt_mesh_provisioner_restore_node_info(&node);
     if (err) {
         BT_ERR("%s, Failed to restore node 0x%04x", __func__, addr);
         return -EIO;
@@ -1079,14 +1079,14 @@ static int node_info_set(u16_t addr, bool prov, bool *exist)
     return 0;
 }
 
-static int node_name_set(u16_t addr, bool prov)
+static int node_name_set(u16_t addr)
 {
     char name[BLE_MESH_NODE_NAME_SIZE] = {0};
     char get[16] = {'\0'};
     bool exist = false;
     int err = 0;
 
-    sprintf(get, prov ? "mesh/pn/%04x/n" : "mesh/sn/%04x/n", addr);
+    sprintf(get, "mesh/pn/%04x/n", addr);
     err = bt_mesh_load_core_settings(get, (u8_t *)name, BLE_MESH_NODE_NAME_SIZE, &exist);
     if (err) {
         BT_ERR("%s, Failed to load node name %s", __func__, get);
@@ -1108,19 +1108,19 @@ static int node_name_set(u16_t addr, bool prov)
     return 0;
 }
 
-static int node_comp_data_set(u16_t addr, bool prov)
+static int node_comp_data_set(u16_t addr)
 {
     struct net_buf_simple *buf = NULL;
     char get[16] = {'\0'};
     int err = 0;
 
-    sprintf(get, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", addr);
+    sprintf(get, "mesh/pn/%04x/c", addr);
     buf = bt_mesh_get_core_settings_item(get);
     if (!buf) {
         return 0;
     }
 
-    err = bt_mesh_provisioner_restore_node_comp_data(addr, buf->data, buf->len, prov);
+    err = bt_mesh_provisioner_restore_node_comp_data(addr, buf->data, buf->len);
     if (err) {
         BT_ERR("%s, Failed to restore node comp data 0x%04x", __func__, addr);
     }
@@ -1134,7 +1134,7 @@ static int node_comp_data_set(u16_t addr, bool prov)
 static int p_node_set(const char *name)
 {
     struct net_buf_simple *buf = NULL;
-    bool exist = false, prov = false;
+    bool exist = false;
     size_t length = 0U;
     int err = 0;
     int i;
@@ -1144,40 +1144,38 @@ static int p_node_set(const char *name)
         return 0;
     }
 
-    prov = strcmp(name, "mesh/p_pnode") == 0 ? true : false;
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t addr = net_buf_simple_pull_le16(buf);
         if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
             BT_ERR("%s, 0x%04x is not a unicast address", __func__, addr);
-            goto free;
+            continue;
         }
 
-        err = node_info_set(addr, prov, &exist);
+        err = node_info_set(addr, &exist);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x info", __func__, addr);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
             continue;
         }
 
-        err = node_name_set(addr, prov);
+        err = node_name_set(addr);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x name", __func__, addr);
-            goto free;
+            continue;
         }
 
-        err = node_comp_data_set(addr, prov);
+        err = node_comp_data_set(addr);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x comp data", __func__, addr);
-            goto free;
+            continue;
         }
     }
 
-free:
     bt_mesh_free_buf(buf);
     return err;
 }
@@ -1207,8 +1205,7 @@ const struct bt_mesh_setting {
     { "mesh/p_appidx", p_app_idx_set },
     { "mesh/p_netkey", p_net_key_set },
     { "mesh/p_appkey", p_app_key_set },
-    { "mesh/p_pnode",  p_node_set    },
-    { "mesh/p_snode",  p_node_set    },
+    { "mesh/p_node",   p_node_set    },
 #endif
 };
 
@@ -1248,8 +1245,7 @@ int settings_core_load(void)
             !strcmp(settings[i].name, "mesh/p_appidx") ||
             !strcmp(settings[i].name, "mesh/p_netkey") ||
             !strcmp(settings[i].name, "mesh/p_appkey") ||
-            !strcmp(settings[i].name, "mesh/p_pnode") ||
-            !strcmp(settings[i].name, "mesh/p_snode")) &&
+            !strcmp(settings[i].name, "mesh/p_node")) &&
             (!IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) || bt_mesh_is_node())) {
             BT_DBG("Not restoring %s for node", settings[i].name);
             continue;
@@ -2252,14 +2248,10 @@ void bt_mesh_store_label(void)
  *      key: "mesh/pnk/xxxx" -> write/read to set/get the "xxxx" NetKey
  * key: "mesh/p_appkey" -> write/read to set/get all Provisioner AppKey Index
  *      key: "mesh/pak/xxxx" -> write/read to set/get the "xxxx" AppKey
- * key: "mesh/p_pnode" -> write/read to set/get all self-provisioned nodes info
+ * key: "mesh/p_node"   -> write/read to set/get all self-provisioned nodes info
  *      key: "mesh/pn/xxxx/i" -> write/read to set/get the "xxxx" provisioned node info
  *      key: "mesh/pn/xxxx/n" -> write/read to set/get the "xxxx" provisioned node name
  *      key: "mesh/pn/xxxx/c" -> write/read to set/get the "xxxx" provisioned node composition data
- * key: "mesh/p_snode" -> write/read to set/get all locally stored nodes info
- *      key: "mesh/sn/xxxx/i" -> write/read to set/get the "xxxx" stored node info
- *      key: "mesh/sn/xxxx/n" -> write/read to set/get the "xxxx" stored node name
- *      key: "mesh/sn/xxxx/c" -> write/read to set/get the "xxxx" stored node composition data
  */
 void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
 {
@@ -2449,7 +2441,7 @@ void bt_mesh_clear_rpl_single(u16_t src)
     }
 }
 
-void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
+void bt_mesh_store_node_info(struct bt_mesh_node *node)
 {
     struct node_info val = {0};
     char name[16] = {'\0'};
@@ -2471,43 +2463,43 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
     val.iv_index = node->iv_index;
     memcpy(val.dev_key, node->dev_key, 16);
 
-    sprintf(name, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", node->unicast_addr);
+    sprintf(name, "mesh/pn/%04x/i", node->unicast_addr);
     err = bt_mesh_save_core_settings(name, (const u8_t *)&val, sizeof(val));
     if (err) {
         BT_ERR("%s, Failed to save node %s", __func__, name);
         return;
     }
 
-    err = bt_mesh_add_core_settings_item(prov ? "mesh/p_pnode" : "mesh/p_snode", node->unicast_addr);
+    err = bt_mesh_add_core_settings_item("mesh/p_node", node->unicast_addr);
     if (err) {
         BT_ERR("%s, Failed to add node 0x%04x", __func__, node->unicast_addr);
     }
 }
 
-static void clear_node(u16_t addr, bool prov)
+static void clear_node(u16_t addr)
 {
     char name[16] = {'\0'};
     int err = 0;
 
     /* Clear node information */
-    sprintf(name, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", addr);
+    sprintf(name, "mesh/pn/%04x/i", addr);
     bt_mesh_save_core_settings(name, NULL, 0);
 
     /* Clear node name */
-    sprintf(name, prov ? "mesh/pn/%04x/n" : "mesh/sn/%04x/n", addr);
+    sprintf(name, "mesh/pn/%04x/n", addr);
     bt_mesh_save_core_settings(name, NULL, 0);
 
     /* Clear node composition data */
-    sprintf(name, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", addr);
+    sprintf(name, "mesh/pn/%04x/c", addr);
     bt_mesh_save_core_settings(name, NULL, 0);
 
-    err = bt_mesh_remove_core_settings_item(prov ? "mesh/p_pnode" : "mesh/p_snode", addr);
+    err = bt_mesh_remove_core_settings_item("mesh/p_node", addr);
     if (err) {
         BT_ERR("%s, Failed to remove node 0x%04x", __func__, addr);
     }
 }
 
-void bt_mesh_clear_node_info(u16_t unicast_addr, bool prov)
+void bt_mesh_clear_node_info(u16_t unicast_addr)
 {
     if (!BLE_MESH_ADDR_IS_UNICAST(unicast_addr)) {
         BT_ERR("%s, Invalid unicast address 0x%04x", __func__, unicast_addr);
@@ -2516,10 +2508,10 @@ void bt_mesh_clear_node_info(u16_t unicast_addr, bool prov)
 
     BT_DBG("Unicast address 0x%04x", unicast_addr);
 
-    clear_node(unicast_addr, prov);
+    clear_node(unicast_addr);
 }
 
-void bt_mesh_store_node_name(struct bt_mesh_node *node, bool prov)
+void bt_mesh_store_node_name(struct bt_mesh_node *node)
 {
     char node_name[BLE_MESH_NODE_NAME_SIZE] = {0};
     char name[16] = {'\0'};
@@ -2532,14 +2524,14 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node, bool prov)
 
     strncpy(node_name, node->name, BLE_MESH_NODE_NAME_SIZE);
 
-    sprintf(name, prov ? "mesh/pn/%04x/n" : "mesh/sn/%04x/n", node->unicast_addr);
+    sprintf(name, "mesh/pn/%04x/n", node->unicast_addr);
     err = bt_mesh_save_core_settings(name, (const u8_t *)node_name, BLE_MESH_NODE_NAME_SIZE);
     if (err) {
         BT_ERR("%s, Failed to save node name %s", __func__, name);
     }
 }
 
-void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov)
+void bt_mesh_store_node_comp_data(struct bt_mesh_node *node)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -2549,7 +2541,7 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov)
         return;
     }
 
-    sprintf(name, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", node->unicast_addr);
+    sprintf(name, "mesh/pn/%04x/c", node->unicast_addr);
     err = bt_mesh_save_core_settings(name, (const u8_t *)node->comp_data, node->comp_length);
     if (err) {
         BT_ERR("%s, Failed to save node comp data %s", __func__, name);

@@ -994,7 +994,7 @@ const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
 
 u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
 {
-    return bt_mesh_provisioner_get_prov_node_count();
+    return bt_mesh_provisioner_get_node_count();
 }
 
 /* Configuration Models */
@@ -1783,7 +1783,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT;
         param.provisioner_delete_node_with_addr_comp.unicast_addr = arg->delete_node_with_addr.unicast_addr;
         param.provisioner_delete_node_with_addr_comp.err_code =
-            bt_mesh_provisioner_delete_node_with_addr(arg->delete_node_with_addr.unicast_addr);
+            bt_mesh_provisioner_delete_node_with_node_addr(arg->delete_node_with_addr.unicast_addr);
         break;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV
