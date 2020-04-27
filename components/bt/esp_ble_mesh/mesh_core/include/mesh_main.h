@@ -20,6 +20,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     BLE_MESH_NO_OUTPUT       = 0,
     BLE_MESH_BLINK           = BIT(0),
@@ -628,6 +632,10 @@ void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
  *  @param cb Function to call when the Friendship status of friend node changes.
  */
 void bt_mesh_friend_set_cb(void (*cb)(bool establish, u16_t lpn_addr, u8_t reason));
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

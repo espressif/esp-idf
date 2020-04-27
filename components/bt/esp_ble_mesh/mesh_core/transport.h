@@ -12,6 +12,10 @@
 
 #include "net.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
 #define BLE_MESH_TX_SDU_MAX            (CONFIG_BLE_MESH_TX_SEG_MAX * 12)
@@ -113,5 +117,9 @@ void bt_mesh_heartbeat_send(void);
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
                         const u8_t **key, u8_t *aid,  u8_t role, u16_t dst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TRANSPORT_H_ */

@@ -15,6 +15,10 @@
 #include "lighting_server.h"
 #include "time_scene_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition);
 
 /* APIs used to get server model transtion time values */
@@ -88,5 +92,9 @@ void scene_recall_work_handler(struct k_work *work);
 void bt_mesh_server_stop_transition(struct bt_mesh_state_transition *transition);
 
 void bt_mesh_server_start_transition(struct bt_mesh_state_transition *transition);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _STATE_TRANSITION_H_ */

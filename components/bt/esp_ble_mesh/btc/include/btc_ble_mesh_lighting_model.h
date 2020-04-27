@@ -18,6 +18,10 @@
 #include "btc/btc_manage.h"
 #include "esp_ble_mesh_lighting_model_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     BTC_BLE_MESH_ACT_LIGHTING_CLIENT_GET_STATE,
     BTC_BLE_MESH_ACT_LIGHTING_CLIENT_SET_STATE,
@@ -73,6 +77,10 @@ void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type,
         const u8_t *val, size_t len);
 
 void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BTC_BLE_MESH_LIGHTING_MODEL_H_ */
 

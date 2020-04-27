@@ -10,6 +10,10 @@
 #include "net.h"
 #include "provisioner_main.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int settings_core_init(void);
 int settings_core_load(void);
 int settings_core_commit(void);
@@ -57,5 +61,9 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node);
 
 int bt_mesh_settings_init(void);
 int bt_mesh_settings_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SETTINGS_H_ */
