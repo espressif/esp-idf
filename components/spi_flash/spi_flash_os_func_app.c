@@ -18,7 +18,7 @@
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
 #include "hal/spi_types.h"
-
+#include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
@@ -45,36 +45,54 @@ typedef struct {
     bool no_protect;    //to decide whether to check protected region (for the main chip) or not.
 } spi1_app_func_arg_t;
 
-
-// in the future we will have arbitration among devices, including flash on the same flash bus
-static IRAM_ATTR esp_err_t spi_bus_acquire(spi_bus_lock_dev_handle_t dev_lock)
+IRAM_ATTR static void cache_enable(void* arg)
 {
-    // was in BG operation (cache). Disable it and schedule
+    g_flash_guard_default_ops.end();
+}
+
+IRAM_ATTR static void cache_disable(void* arg)
+{
+    g_flash_guard_default_ops.start();
+}
+
+static IRAM_ATTR esp_err_t spi_start(void *arg)
+{
+    spi_bus_lock_dev_handle_t dev_lock = ((app_func_arg_t *)arg)->dev_lock;
+
+    // wait for other devices (or cache) to finish their operation
     esp_err_t ret = spi_bus_lock_acquire_start(dev_lock, portMAX_DELAY);
     if (ret != ESP_OK) {
         return ret;
     }
-    return ESP_OK;
-}
-
-static IRAM_ATTR esp_err_t spi_bus_release(spi_bus_lock_dev_handle_t dev_lock)
-{
-    return spi_bus_lock_acquire_end(dev_lock);
-}
-
-//for SPI1, we have to disable the cache and interrupts before using the SPI bus
-static IRAM_ATTR esp_err_t spi_start(void *arg)
-{
-    spi_bus_lock_dev_handle_t dev_lock = ((app_func_arg_t *)arg)->dev_lock;
-    spi_bus_acquire(dev_lock);
     spi_bus_lock_touch(dev_lock);
     return ESP_OK;
 }
 
 static IRAM_ATTR esp_err_t spi_end(void *arg)
 {
-    spi_bus_release(((app_func_arg_t *)arg)->dev_lock);
+    return spi_bus_lock_acquire_end(((app_func_arg_t *)arg)->dev_lock);
+}
+
+static IRAM_ATTR esp_err_t spi1_start(void *arg)
+{
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    //use the lock to disable the cache and interrupts before using the SPI bus
+    return spi_start(arg);
+#else
+    //directly disable the cache and interrupts when lock is not used
+    cache_disable(NULL);
+#endif
     return ESP_OK;
+}
+
+static IRAM_ATTR esp_err_t spi1_end(void *arg)
+{
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    return spi_end(arg);
+#else
+    cache_enable(NULL);
+    return ESP_OK;
+#endif
 }
 
 static IRAM_ATTR esp_err_t delay_ms(void *arg, unsigned ms)
@@ -96,14 +114,14 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
 static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {};
 
 //for SPI1, we have to disable the cache and interrupts before using the SPI bus
-const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
-    .start = spi_start,
-    .end = spi_end,
+static const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
+    .start = spi1_start,
+    .end = spi1_end,
     .delay_ms = delay_ms,
     .region_protected = main_flash_region_protected,
 };
 
-const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
+static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .start = spi_start,
     .end = spi_end,
     .delay_ms = delay_ms,
@@ -164,36 +182,27 @@ esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip)
     return ESP_OK;
 }
 
-IRAM_ATTR static void cache_enable(void* arg)
+esp_err_t esp_flash_init_main_bus_lock(void)
 {
-    g_flash_guard_default_ops.end();
-}
+    spi_bus_lock_init_main_bus();
+    spi_bus_lock_set_bg_control(g_main_spi_bus_lock, cache_enable, cache_disable, NULL);
 
-IRAM_ATTR static void cache_disable(void* arg)
-{
-    g_flash_guard_default_ops.start();
-}
-
-esp_err_t esp_flash_app_init_os_functions(esp_flash_t* chip)
-{
     esp_err_t err = spi_bus_lock_init_main_dev();
     if (err != ESP_OK) {
         return err;
     }
+    return ESP_OK;
+}
 
-    spi_bus_lock_set_bg_control(g_main_spi_bus_lock,
-        cache_enable, cache_disable, NULL);
-
-    chip->os_func = &esp_flash_spi1_default_os_functions;
-    chip->os_func_data = &main_flash_arg;
+esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)
+{
     main_flash_arg = (spi1_app_func_arg_t) {
         .common_arg = {
             .dev_lock = g_spi_lock_main_flash_dev,   //for SPI1,
         },
         .no_protect = false,
     };
+    chip->os_func = &esp_flash_spi1_default_os_functions;
+    chip->os_func_data = &main_flash_arg;
     return ESP_OK;
 }
-
-
-

@@ -9,7 +9,17 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
 ESP32 integrates four SPI peripherals.
 
-- SPI0 and SPI1 are used internally to access the ESP32's attached flash memory and thus are currently not open to users. They share one signal bus via an arbiter.
+- SPI0 and SPI1 are used internally to access the ESP32's attached flash memory and share an arbiter.
+
+  .. only:: esp32
+
+      There are quite a few limitations when using SPI Master driver on the SPI1 bus, see
+      :ref:`spi_master_on_spi1_bus`.
+
+  .. only:: esp32s2
+
+      Currently SPI Master driver hasn't supported SPI1 bus.
+
 - SPI2 and SPI3 are general purpose SPI controllers, sometimes referred to as HSPI and VSPI, respectively. They are open to users. SPI2 and SPI3 have independent signal buses with the same respective names. Each bus has three CS lines to drive up to three SPI slaves.
 
 
@@ -44,7 +54,7 @@ The SPI master driver governs communications of Hosts with Devices. The driver s
 
 - Multi-threaded environments
 - Transparent handling of DMA transfers while reading and writing data
-- Automatic time-division multiplexing of data coming from different Devices on the same signal bus
+- Automatic time-division multiplexing of data coming from different Devices on the same signal bus, see :ref:`spi_bus_lock`.
 
 .. warning::
 
@@ -53,6 +63,10 @@ The SPI master driver governs communications of Hosts with Devices. The driver s
     - Refactor your application so that each SPI peripheral is only accessed by a single task at a time.
     - Add a mutex lock around the shared Device using :c:macro:`xSemaphoreCreateMutex`.
 
+.. toctree::
+   :hidden:
+
+   SPI Features <spi_features>
 
 SPI Transactions
 ----------------
@@ -223,6 +237,69 @@ In-flight polling transactions are disturbed by the ISR operation to accommodate
 To have better control of the calling sequence of functions, send mixed transactions to the same Device only within a single task.
 
 .. only:: esp32
+
+    .. _spi_master_on_spi1_bus:
+
+    Notes on Using the SPI Master driver on SPI1 Bus
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    .. note::
+
+        Though the :ref:`spi_bus_lock` feature makes it possible to use SPI Master driver on the SPI1
+        bus, it's still tricky and needs a lot of special treatment. It's a feature for advanced
+        developers.
+
+    To use SPI Master driver on SPI1 bus, you have to take care of two problems:
+
+    1. The code and data, required at the meanwhile the driver is operating SPI1 bus, should be
+       in the internal memory.
+
+       SPI1 bus is shared among devices and the cache for data (code) in the Flash as well as the
+       PSRAM. The cache should be disabled during the other drivers are operating the SPI1 bus.
+       Hence the data (code) in the flash as well as the PSRAM cannot be fetched at the meanwhile
+       the driver acquires the SPI1 bus by:
+
+       - Explicit bus acquiring between :cpp:func:`spi_device_acquire_bus` and
+         :cpp:func:`spi_device_release_bus`.
+       - Implicit bus acquiring between :cpp:func:`spi_device_polling_start` and
+         :cpp:func:`spi_device_polling_end` (or inside :cpp:func:`spi_device_polling_transmit`).
+
+       During the time above, all other tasks and most ISRs will be disabled (see
+       :ref:`iram-safe-interrupt-handlers`). Application code and data used by current task
+       should be placed in internal memory (DRAM or IRAM), or already in the ROM. Access to
+       external memory (flash code, const data in the flash, and static/heap data in the PSRAM)
+       will cause a `Cache disabled but cached memory region accessed` exception. For differences
+       between IRAM, DRAM, and flash cache, please refer to the :ref:`application memory layout
+       <memory-layout>` documentation.
+
+       To place functions into the IRAM, you can either:
+
+       1. Add `IRAM_ATTR` (include "esp_attr.h") to the function like:
+
+              IRAM_ATTR void foo(void) { }
+
+          Please note that when a function is inlined, it will follow its caller's segment, and
+          the attribute will not take effect. You may need to use `NOLINE_ATTR` to avoid this.
+
+       2. Use the `noflash` placement in the `linker.lf`. See more in
+          :doc:`../../api-guides/linker-script-generation`. Please note that, some code may be
+          transformed into lookup table in the const data by the compiler, so `noflash_text` is not
+          safe.
+
+       Please do take care that the optimization level may affect the compiler behavior of inline,
+       or transforming some code into lookup table in the const data, etc.
+
+       To place data into the DRAM, you can either:
+
+       1. Add `DRAM_ATTR` (include "esp_attr.h") to the data definition like:
+
+              DRAM_ATTR int g_foo = 3;
+
+       2. Use the `noflash` placement in the linker.lf. See more in
+          :doc:`../../api-guides/linker-script-generation`.
+
+    Please also see the example :example:`peripherals/spi_master/hd_eeprom`.
+
 
     GPIO Matrix and IO_MUX
     ----------------------

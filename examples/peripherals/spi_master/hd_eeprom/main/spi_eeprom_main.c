@@ -85,9 +85,11 @@ void app_main(void)
     eeprom_handle_t eeprom_handle;
 
     ESP_LOGI(TAG, "Initializing device...");
-    spi_eeprom_init(&eeprom_config, &eeprom_handle);
+    ret = spi_eeprom_init(&eeprom_config, &eeprom_handle);
+    ESP_ERROR_CHECK(ret);
 
-    spi_eeprom_write_enable(eeprom_handle);
+    ret = spi_eeprom_write_enable(eeprom_handle);
+    ESP_ERROR_CHECK(ret);
 
     const char test_str[] = "Hello World!";
     ESP_LOGI(TAG, "Write: %s", test_str);

@@ -687,7 +687,7 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
     if (disable) {
         return esp_flash_app_disable_os_functions(esp_flash_default_chip);
     } else {
-        return esp_flash_app_init_os_functions(esp_flash_default_chip);
+        return esp_flash_app_enable_os_functions(esp_flash_default_chip);
     }
 }
 #endif

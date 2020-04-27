@@ -204,7 +204,7 @@ menu "FreeRTOS"
 
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
         bool "Enable FreeRTOS static allocation API"
-        default y
+        default n
         help
             FreeRTOS gives the application writer the ability to instead provide the memory
             themselves, allowing the following objects to optionally be created without any

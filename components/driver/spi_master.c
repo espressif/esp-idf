@@ -204,6 +204,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
 
     const spi_bus_attr_t* bus_attr = spi_bus_get_attr(host_id);
     SPI_CHECK(bus_attr != NULL, "host_id not initialized", ESP_ERR_INVALID_STATE);
+    SPI_CHECK(bus_attr->lock != NULL, "SPI Master cannot attach to bus. (Check CONFIG_SPI_FLASH_SHARE_SPI1_BUS)", ESP_ERR_INVALID_ARG);
     // spihost contains atomic variables, which should not be put in PSRAM
     spi_host_t* host = heap_caps_malloc(sizeof(spi_host_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (host == NULL) {
@@ -307,7 +308,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     SPI_CHECK(is_valid_host(host_id), "invalid host", ESP_ERR_INVALID_ARG);
     if (bus_driver_ctx[host_id] == NULL) {
-        //lasy initialization the driver, get deinitialized by the bus is freed
+        //lazy initialization the driver, get deinitialized by the bus is freed
         err = spi_master_init_driver(host_id);
         if (err != ESP_OK) {
             return err;
