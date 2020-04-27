@@ -21,6 +21,7 @@
 #include "multi_heap.h"
 #include "esp_log.h"
 #include "heap_private.h"
+#include "esp_system.h"
 
 /*
 This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM
@@ -30,6 +31,8 @@ allocation possible, this code makes it possible to request memory that has cert
 its knowledge of how the memory is configured along with a priority scheme to allocate that memory in the most sane way
 possible. This should optimize the amount of RAM accessible to the code without hardwiring addresses.
 */
+
+static esp_alloc_failed_hook_t alloc_failed_callback;
 
 /*
   This takes a memory chunk in a region that can be addressed as both DRAM as well as IRAM. It will convert it to
@@ -53,6 +56,29 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     return iptr + 1;
 }
 
+
+static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name) 
+{
+    if (alloc_failed_callback) {
+        alloc_failed_callback(requested_size, caps, function_name);
+    }
+
+    #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
+    esp_system_abort("Memory allocation failed");
+    #endif
+}
+
+esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback)
+{
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    alloc_failed_callback = callback;
+
+    return ESP_OK;
+}
+
 bool heap_caps_match(const heap_t *heap, uint32_t caps)
 {
     return heap->heap != NULL && ((get_all_caps(heap) & caps) == caps);
@@ -68,6 +94,8 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
     if (size > HEAP_SIZE_MAX) {
         // Avoids int overflow when adding small numbers to size, or
         // calculating 'end' from start+size, by limiting 'size' to the possible range
+        heap_caps_alloc_failed(size, caps, __func__);
+
         return NULL;
     }
 
@@ -77,6 +105,8 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
         //NULL directly, even although our heap capabilities (based on soc_memory_tags & soc_memory_regions) would
         //indicate there is a tag for this.
         if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
+            heap_caps_alloc_failed(size, caps, __func__);
+
             return NULL;
         }
         caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
@@ -121,6 +151,9 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
             }
         }
     }
+
+    heap_caps_alloc_failed(size, caps, __func__);
+
     //Nothing usable found.
     return NULL;
 }
@@ -288,6 +321,8 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     }
 
     if (size > HEAP_SIZE_MAX) {
+        heap_caps_alloc_failed(size, caps, __func__);
+
         return NULL;
     }
 
@@ -342,6 +377,9 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         heap_caps_free(ptr);
         return new_p;
     }
+
+    heap_caps_alloc_failed(size, caps, __func__);
+
     return NULL;
 }
 
@@ -518,12 +556,15 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
     if (size > HEAP_SIZE_MAX) {
         // Avoids int overflow when adding small numbers to size, or
         // calculating 'end' from start+size, by limiting 'size' to the possible range
+        heap_caps_alloc_failed(size, caps, __func__);
+
         return NULL;
     }
 
     //aligned alloc for now only supports default allocator or external
     //allocator.
     if((caps & (MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM)) == 0) {
+        heap_caps_alloc_failed(size, caps, __func__);
         return NULL;
     }
 
@@ -550,6 +591,9 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
             }
         }
     }
+
+    heap_caps_alloc_failed(size, caps, __func__);
+
     //Nothing usable found.
     return NULL;
 }

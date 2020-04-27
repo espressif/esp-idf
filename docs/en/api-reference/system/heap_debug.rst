@@ -44,6 +44,33 @@ If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP:
 
 It's also possible to manually check heap integrity by calling :cpp:func:`heap_caps_check_integrity_all` or related functions. This function checks all of requested heap memory for integrity, and can be used even if assertions are disabled. If the integrity check prints an error, it will also contain the address(es) of corrupt heap structures.
 
+Memory Allocation Failed Hook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that will be invoked every time a allocation
+operation fails.
+
+Additionaly user can enable a generation of a system abort if allocation operation fails by following the steps below:
+- In the project configuration menu, navigate to ``Component config`` -> ``Heap Memory Debugging`` and select ``Abort if memory allocation fails`` option (see :ref:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS`).
+
+The example below show how to register a allocation failure callback::
+
+  #include "esp_heap_caps.h"
+
+  void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name) 
+  {
+    printf("%s was called but failed to allocate %d bytes with 0x%X capabilities. \n",function_name, requested_size, caps);
+  }
+
+  void app_main()
+  {
+      ...
+      esp_err_t error = heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
+      ...
+      void *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+      ...
+  }
+  
 Finding Heap Corruption
 ^^^^^^^^^^^^^^^^^^^^^^^
 
