@@ -19,6 +19,8 @@
 #include "nvs_partition_manager.hpp"
 #include "spi_flash_emulation.h"
 
+#include "test_fixtures.hpp"
+
 #include <iostream>
 
 using namespace std;
@@ -27,12 +29,12 @@ TEST_CASE("NVSHandleSimple CXX api open invalid arguments", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10, "test");
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
     REQUIRE(nvs::NVSPartitionManager::get_instance()->
-            init_custom("test", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK);
+            init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK);
 
     handle = nvs::open_nvs_handle_from_partition(nullptr, "ns_1", NVS_READWRITE, &result);
     CHECK(result == ESP_ERR_INVALID_ARG);
@@ -61,11 +63,11 @@ TEST_CASE("NVSHandleSimple CXX api open successful", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10, "test");
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom("test", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -87,11 +89,11 @@ TEST_CASE("NVSHandleSimple CXX api open default part successful", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10);
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom("nvs", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -113,11 +115,11 @@ TEST_CASE("NVSHandleSimple CXX api open default part ns NULL", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10);
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom("nvs", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -135,12 +137,12 @@ TEST_CASE("NVSHandleSimple CXX api read/write string", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10);
     char read_buffer [256];
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom("nvs", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -164,13 +166,13 @@ TEST_CASE("NVSHandleSimple CXX api read/write blob", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    SpiFlashEmulator emu(10);
+    PartitionEmulationFixture f(0, 10);
     const char blob [6] = {15, 16, 17, 18, 19};
     char read_blob[6] = {0};
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom("nvs", NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);

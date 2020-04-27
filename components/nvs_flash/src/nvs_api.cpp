@@ -20,9 +20,6 @@
 #include "esp_partition.h"
 #include "sdkconfig.h"
 #include "nvs_handle_simple.hpp"
-#ifdef CONFIG_NVS_ENCRYPTION
-#include "nvs_encr.hpp"
-#endif
 
 #ifdef ESP_PLATFORM
 #include <esp32/rom/crc.h>
@@ -57,14 +54,9 @@ private:
 uint32_t NVSHandleEntry::s_nvs_next_handle;
 
 extern "C" void nvs_dump(const char *partName);
-extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount);
-
-#ifdef CONFIG_NVS_ENCRYPTION
-extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount, nvs_sec_cfg_t* cfg);
-#endif
 
 #ifdef ESP_PLATFORM
-SemaphoreHandle_t nvs::Lock::mSemaphore = NULL;
+SemaphoreHandle_t nvs::Lock::mSemaphore = nullptr;
 #endif
 
 using namespace std;
@@ -83,40 +75,12 @@ extern "C" void nvs_dump(const char *partName)
     nvs::Storage* pStorage;
 
     pStorage = lookup_storage_from_name(partName);
-    if (pStorage == NULL) {
+    if (pStorage == nullptr) {
         return;
     }
 
     pStorage->debugDump();
-    return;
 }
-
-extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount)
-{
-    ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
-
-    return NVSPartitionManager::get_instance()->init_custom(partName, baseSector, sectorCount);
-}
-
-#ifdef CONFIG_NVS_ENCRYPTION
-extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount, nvs_sec_cfg_t* cfg)
-{
-    ESP_LOGD(TAG, "nvs_flash_secure_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
-
-    if(cfg) {
-        auto encrMgr = EncrMgr::getInstance();
-
-        if (!encrMgr) return ESP_ERR_NO_MEM;
-
-        auto err = encrMgr->setSecurityContext(baseSector, sectorCount, cfg);
-        if(err != ESP_OK) {
-            return err;
-        }
-    }
-
-    return nvs_flash_init_custom(partName, baseSector, sectorCount);
-}
-#endif
 
 static esp_err_t close_handles_and_deinit(const char* part_name)
 {
@@ -132,13 +96,24 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
     Lock::init();
     Lock lock;
 
-    if (!partition) {
+    if (partition == nullptr) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    return nvs_flash_init_custom(partition->label,
-                                 partition->address / SPI_FLASH_SEC_SIZE,
-                                 partition->size / SPI_FLASH_SEC_SIZE);
+    NVSPartition *part = new (std::nothrow) NVSPartition(partition);
+    if (part == nullptr) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t init_res = NVSPartitionManager::get_instance()->init_custom(part,
+            partition->address / SPI_FLASH_SEC_SIZE,
+            partition->size / SPI_FLASH_SEC_SIZE);
+
+    if (init_res != ESP_OK) {
+        delete part;
+    }
+
+    return init_res;
 }
 
 #ifdef ESP_PLATFORM
@@ -160,21 +135,8 @@ extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_
 {
     Lock::init();
     Lock lock;
-    nvs::Storage* mStorage;
 
-    mStorage = lookup_storage_from_name(part_name);
-    if (mStorage) {
-        return ESP_OK;
-    }
-
-    const esp_partition_t* partition = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
-    if (partition == NULL) {
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    return nvs_flash_secure_init_custom(part_name, partition->address / SPI_FLASH_SEC_SIZE,
-            partition->size / SPI_FLASH_SEC_SIZE, cfg);
+    return NVSPartitionManager::get_instance()->secure_init_partition(part_name, cfg);
 }
 
 extern "C" esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg)
@@ -200,7 +162,7 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
-    if (partition == NULL) {
+    if (partition == nullptr) {
         return ESP_ERR_NOT_FOUND;
     }
 
@@ -212,7 +174,7 @@ extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partit
     Lock::init();
     Lock lock;
 
-    if (!partition) {
+    if (partition == nullptr) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -515,7 +477,7 @@ extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats
     Lock lock;
     nvs::Storage* pStorage;
 
-    if (nvs_stats == NULL) {
+    if (nvs_stats == nullptr) {
         return ESP_ERR_INVALID_ARG;
     }
     nvs_stats->used_entries     = 0;
@@ -523,8 +485,8 @@ extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats
     nvs_stats->total_entries    = 0;
     nvs_stats->namespace_count  = 0;
 
-    pStorage = lookup_storage_from_name((part_name == NULL) ? NVS_DEFAULT_PART_NAME : part_name);
-    if (pStorage == NULL) {
+    pStorage = lookup_storage_from_name((part_name == nullptr) ? NVS_DEFAULT_PART_NAME : part_name);
+    if (pStorage == nullptr) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
 
@@ -538,7 +500,7 @@ extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats
 extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle_t c_handle, size_t* used_entries)
 {
     Lock lock;
-    if(used_entries == NULL){
+    if(used_entries == nullptr){
         return ESP_ERR_INVALID_ARG;
     }
     *used_entries = 0;
@@ -571,12 +533,12 @@ extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, n
         cfg->tky[cnt] = 0xee;
     }
 
-    err = spi_flash_write(partition->address, cfg->eky, NVS_KEY_SIZE);
+    err = esp_partition_write(partition, 0, cfg->eky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
 
-    err = spi_flash_write(partition->address + NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    err = esp_partition_write(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
@@ -622,17 +584,17 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
         return true;
     };
 
-    auto err = spi_flash_read(partition->address, eky_raw, NVS_KEY_SIZE);
+    auto err = esp_partition_read_raw(partition, 0, eky_raw, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
 
-    err = spi_flash_read(partition->address + NVS_KEY_SIZE, tky_raw, NVS_KEY_SIZE);
+    err = esp_partition_read_raw(partition, NVS_KEY_SIZE, tky_raw, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
 
-    err = spi_flash_read(partition->address + 2 * NVS_KEY_SIZE, &crc_raw, 4);
+    err = esp_partition_read_raw(partition, 2 * NVS_KEY_SIZE, &crc_raw, 4);
     if(err != ESP_OK) {
         return err;
     }
@@ -679,8 +641,8 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
 static nvs_iterator_t create_iterator(nvs::Storage *storage, nvs_type_t type)
 {
     nvs_iterator_t it = (nvs_iterator_t)calloc(1, sizeof(nvs_opaque_iterator_t));
-    if (it == NULL) {
-        return NULL;
+    if (it == nullptr) {
+        return nullptr;
     }
 
     it->storage = storage;
@@ -695,19 +657,19 @@ extern "C" nvs_iterator_t nvs_entry_find(const char *part_name, const char *name
     nvs::Storage *pStorage;
 
     pStorage = lookup_storage_from_name(part_name);
-    if (pStorage == NULL) {
-        return NULL;
+    if (pStorage == nullptr) {
+        return nullptr;
     }
 
     nvs_iterator_t it = create_iterator(pStorage, type);
-    if (it == NULL) {
-        return NULL;
+    if (it == nullptr) {
+        return nullptr;
     }
 
     bool entryFound = pStorage->findEntry(it, namespace_name);
     if (!entryFound) {
         free(it);
-        return NULL;
+        return nullptr;
     }
 
     return it;
@@ -721,7 +683,7 @@ extern "C" nvs_iterator_t nvs_entry_next(nvs_iterator_t it)
     bool entryFound = it->storage->nextEntry(it);
     if (!entryFound) {
         free(it);
-        return NULL;
+        return nullptr;
     }
 
     return it;

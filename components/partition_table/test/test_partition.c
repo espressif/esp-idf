@@ -10,7 +10,7 @@ TEST_CASE("Can read partition table", "[partition]")
 
     const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
     TEST_ASSERT_NOT_NULL(p);
-    TEST_ASSERT_EQUAL(0x10000, p->address);
+    TEST_ASSERT_EQUAL(0x20000, p->address);
     TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, p->subtype);
 
     esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);

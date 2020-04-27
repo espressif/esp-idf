@@ -18,6 +18,15 @@
 
 static const char* TAG = "test_nvs";
 
+TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
+{
+    const char *TOO_LONG_NAME = "0123456789abcdefg";
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, nvs_flash_init_partition(TOO_LONG_NAME));
+
+    nvs_flash_deinit_partition(TOO_LONG_NAME); // just in case
+}
+
 TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
 {
     nvs_handle_t handle;
@@ -26,7 +35,7 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
         nvs_flash_erase();
         err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( err );
+    TEST_ESP_OK( err );
 
     TEST_ESP_OK(nvs_flash_init());
     TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
@@ -468,7 +477,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     }
 
     for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( spi_flash_write(nvs_part->address + i, nvs_data_start + i, SPI_FLASH_SEC_SIZE) );
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_start + i, SPI_FLASH_SEC_SIZE) );
     }
 
     esp_err_t err = nvs_flash_read_security_cfg(key_part, &xts_cfg);

@@ -18,7 +18,7 @@
 #include <list>
 #include "nvs_types.hpp"
 #include "nvs_page.hpp"
-#include "nvs_pagemanager.hpp"
+#include "partition.hpp"
 #include "intrusive_list.h"
 
 namespace nvs
@@ -31,7 +31,7 @@ public:
 
     PageManager() {}
 
-    esp_err_t load(uint32_t baseSector, uint32_t sectorCount);
+    esp_err_t load(Partition *partition, uint32_t baseSector, uint32_t sectorCount);
 
     TPageListIterator begin()
     {

@@ -15,8 +15,12 @@
 
 namespace nvs
 {
-esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
+esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t sectorCount)
 {
+    if (partition == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     mBaseSector = baseSector;
     mPageCount = sectorCount;
     mPageList.clear();
@@ -26,7 +30,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     if (!mPages) return ESP_ERR_NO_MEM;
 
     for (uint32_t i = 0; i < sectorCount; ++i) {
-        auto err = mPages[i].load(baseSector + i);
+        auto err = mPages[i].load(partition, baseSector + i);
         if (err != ESP_OK) {
             return err;
         }
@@ -126,7 +130,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     }
 
     // partition should have at least one free page
-    if (mFreePageList.size() == 0) {
+    if (mFreePageList.empty()) {
         return ESP_ERR_NVS_NO_FREE_PAGES;
     }
 

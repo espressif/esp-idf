@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp_spi_flash.h"
+#include "esp_partition.h"
 #include "spi_flash_emulation.h"
 
 
@@ -22,39 +22,82 @@ void spi_flash_emulator_set(SpiFlashEmulator* e)
     s_emulator = e;
 }
 
-esp_err_t spi_flash_erase_sector(size_t sec)
+esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
+                                    size_t offset, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (!s_emulator->erase(sec)) {
+    if (size % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (offset % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t start_sector = offset / SPI_FLASH_SEC_SIZE;
+    size_t num_sectors = size / SPI_FLASH_SEC_SIZE;
+    for (size_t sector = start_sector; sector < (start_sector + num_sectors); sector++) {
+        if (!s_emulator->erase(sector)) {
+            return ESP_ERR_FLASH_OP_FAIL;
+        }
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_partition_read(const esp_partition_t* partition,
+                             size_t src_offset, void* dst, size_t size)
+{
+    if (!s_emulator) {
+        return ESP_ERR_FLASH_OP_TIMEOUT;
+    }
+
+    if (!s_emulator->read(reinterpret_cast<uint32_t*>(dst), src_offset, size)) {
         return ESP_ERR_FLASH_OP_FAIL;
     }
 
     return ESP_OK;
 }
 
-esp_err_t spi_flash_write(size_t des_addr, const void *src_addr, size_t size)
+esp_err_t esp_partition_read_raw(const esp_partition_t* partition,
+                                 size_t src_offset, void* dst, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (!s_emulator->write(des_addr, reinterpret_cast<const uint32_t*>(src_addr), size)) {
+    if (!s_emulator->read(reinterpret_cast<uint32_t*>(dst), src_offset, size)) {
         return ESP_ERR_FLASH_OP_FAIL;
     }
 
     return ESP_OK;
 }
 
-esp_err_t spi_flash_read(size_t src_addr, void *des_addr, size_t size)
+esp_err_t esp_partition_write(const esp_partition_t* partition,
+                             size_t dst_offset, const void* src, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (!s_emulator->read(reinterpret_cast<uint32_t*>(des_addr), src_addr, size)) {
+    if (!s_emulator->write(dst_offset, reinterpret_cast<const uint32_t*>(src), size)) {
+        return ESP_ERR_FLASH_OP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
+                                  size_t dst_offset, const void* src, size_t size)
+{
+    if (!s_emulator) {
+        return ESP_ERR_FLASH_OP_TIMEOUT;
+    }
+
+    if (!s_emulator->write(dst_offset, reinterpret_cast<const uint32_t*>(src), size)) {
         return ESP_ERR_FLASH_OP_FAIL;
     }
 
