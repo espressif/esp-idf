@@ -120,7 +120,7 @@ def convert_project(project_path):
     for p in component_paths:
         if "MSYSTEM" in os.environ:
             cmd = ["cygpath", "-w", p]
-            p = subprocess.check_output(cmd).strip()
+            p = subprocess.check_output(cmd).decode('utf-8').strip()
 
         convert_component(project_path, p)
 
