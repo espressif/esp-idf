@@ -539,13 +539,15 @@ if(CONFIG_BT_ENABLED)
 
         endif()
     endif()
+
 endif()
 
 # requirements can't depend on config
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer)
+                REQUIRES nvs_flash soc esp_timer
+                PRIV_REQUIRES esp_ipc)
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

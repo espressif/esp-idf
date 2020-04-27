@@ -32,7 +32,9 @@
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include "sdkconfig.h"
+#ifndef CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#endif
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"

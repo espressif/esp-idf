@@ -1,11 +1,13 @@
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#endif
 #include "esp_log.h"
-#include "sdkconfig.h"
 
 #if !CONFIG_FREERTOS_UNICORE
 static void test_func_ipc_cb(void *arg)
@@ -120,6 +122,6 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
         }
     }
 }
-#endif /* !CONFIG_FREERTOS_UNICORE */
+#endif /* CONFIG_ESP_IPC_USE_CALLERS_PRIORITY */
 
-#endif // CONFIG_ESP_IPC_USE_CALLERS_PRIORITY
+#endif /* !CONFIG_FREERTOS_UNICORE */

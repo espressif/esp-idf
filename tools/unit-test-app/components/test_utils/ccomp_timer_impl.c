@@ -26,7 +26,6 @@
 #include "xtensa/core-macros.h"
 #include "xtensa/xt_perf_consts.h"
 #include "xtensa-debug-module.h"
-#include "esp_ipc.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
