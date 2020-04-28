@@ -93,4 +93,5 @@ API Reference
 -------------
 
 .. include:: /_build/inc/pcnt.inc
+.. include:: /_build/inc/pcnt_types.inc
 

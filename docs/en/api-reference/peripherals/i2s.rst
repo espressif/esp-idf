@@ -209,4 +209,5 @@ API Reference
 -------------
 
 .. include:: /_build/inc/i2s.inc
+.. include:: /_build/inc/i2s_types.inc
 

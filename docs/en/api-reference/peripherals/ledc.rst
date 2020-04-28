@@ -174,4 +174,5 @@ API Reference
 -------------
 
 .. include:: /_build/inc/ledc.inc
+.. include:: /_build/inc/ledc_types.inc
 

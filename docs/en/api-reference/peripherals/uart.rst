@@ -380,6 +380,7 @@ API Reference
 -------------
 
 .. include:: /_build/inc/uart.inc
+.. include:: /_build/inc/uart_types.inc
 
 
 GPIO Lookup Macros

@@ -265,4 +265,5 @@ API Reference
 -------------
 
 .. include:: /_build/inc/rmt.inc
+.. include:: /_build/inc/rmt_types.inc
 
