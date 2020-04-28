@@ -104,7 +104,7 @@ The following describes how a command link for a "master write" is set up and wh
 1. Create a command link with :cpp:func:`i2c_cmd_link_create`.
 
     Then, populate it with the series of data to be sent to the slave:
-    
+
    a) **Start bit** - :cpp:func:`i2c_master_start`
    b) **Slave address** - :cpp:func:`i2c_master_write_byte`. The single byte address is provided as an argument of this function call.
    c) **Data** - One or more bytes as an argument of :cpp:func:`i2c_master_write`
@@ -249,3 +249,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/i2c.inc
+.. include-build-file:: inc/i2c_types.inc

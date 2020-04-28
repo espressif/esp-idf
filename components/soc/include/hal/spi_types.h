@@ -27,6 +27,8 @@ typedef enum {
     SPI3_HOST=2,    ///< SPI3
 } spi_host_device_t;
 
+/** @cond */    //Doxy command to hide preprocessor definitions from docs */
+
 //alias for different chips
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define SPI_HOST    SPI1_HOST
@@ -38,3 +40,5 @@ typedef enum {
 #define FSPI_HOST   SPI2_HOST
 #define HSPI_HOST   SPI3_HOST
 #endif
+
+/** @endcond */

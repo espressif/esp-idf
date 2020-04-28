@@ -203,4 +203,5 @@ API Reference
 -------------
 
 .. include-build-file:: inc/ledc.inc
+.. include-build-file:: inc/ledc_types.inc
 
