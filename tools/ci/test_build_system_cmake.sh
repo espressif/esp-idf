@@ -447,6 +447,12 @@ function run_tests()
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
     rm sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
 
+    print_status "Test if it can build the example to run on host"
+    pushd $IDF_PATH/examples/build_system/cmake/idf_as_lib
+    (set -euo pipefail && source build.sh)
+    popd
+    rm -r $IDF_PATH/examples/build_system/cmake/idf_as_lib/build
+
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -rf build
