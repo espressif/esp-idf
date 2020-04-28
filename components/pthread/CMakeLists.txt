@@ -10,7 +10,7 @@ if(GCC_NOT_5_2_0)
 endif()
 
 if(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
-    target_link_libraries(${COMPONENT_LIB} "-Wl,--wrap=vPortCleanUpTCB")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vPortCleanUpTCB")
 endif()
 
 if(extra_link_flags)
