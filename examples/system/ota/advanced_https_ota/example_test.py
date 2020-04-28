@@ -95,10 +95,34 @@ def get_ca_cert(ota_image_dir):
     return server_file, key_file
 
 
+def https_request_handler():
+    """
+    Returns a request handler class that handles broken pipe exception
+    """
+    class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+        def finish(self):
+            try:
+                if not self.wfile.closed:
+                    self.wfile.flush()
+                    self.wfile.close()
+            except socket.error:
+                pass
+            self.rfile.close()
+
+        def handle(self):
+            try:
+                BaseHTTPServer.BaseHTTPRequestHandler.handle(self)
+            except socket.error:
+                pass
+
+    return RequestHandler
+
+
 def start_https_server(ota_image_dir, server_ip, server_port):
     server_file, key_file = get_ca_cert(ota_image_dir)
+    requestHandler = https_request_handler()
     httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+                                      requestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
@@ -122,6 +146,12 @@ def redirect_handler_factory(url):
             self.send_response(301)
             self.send_header('Location', url)
             self.end_headers()
+
+        def handle(self):
+            try:
+                BaseHTTPServer.BaseHTTPRequestHandler.handle(self)
+            except socket.error:
+                pass
 
     return RedirectHandler
 
