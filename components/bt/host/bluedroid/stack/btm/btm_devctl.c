@@ -792,13 +792,24 @@ void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len)
 {
     UINT8 i;
 
-    BTM_TRACE_DEBUG ("BTM Event: Vendor Specific event from controller");
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    UINT8 sub_event;
+    UINT8 *p_evt = p;
 
+    STREAM_TO_UINT8(sub_event, p_evt);
+    /* Check in subevent if authentication is through Legacy Authentication. */
+    if (sub_event == ESP_VS_REM_LEGACY_AUTH_CMP) {
+        UINT16 hci_handle;
+        STREAM_TO_UINT16(hci_handle, p_evt);
+        btm_sec_handle_remote_legacy_auth_cmp(hci_handle);
+    }
+#endif /// (CLASSIC_BT_INCLUDED == TRUE)
     for (i = 0; i < BTM_MAX_VSE_CALLBACKS; i++) {
         if (btm_cb.devcb.p_vend_spec_cb[i]) {
             (*btm_cb.devcb.p_vend_spec_cb[i])(evt_len, p);
         }
     }
+    BTM_TRACE_DEBUG ("BTM Event: Vendor Specific event from controller");
 }
 
 

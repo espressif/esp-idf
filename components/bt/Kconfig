@@ -92,6 +92,19 @@ menu "Bluetooth"
             default BTDM_CTRL_AUTO_LATENCY if BTDM_CTRL_MODE_BTDM
             default n
 
+        config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT
+            bool "Legacy Authentication Vendor Specific Event Enable"
+            depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+            default y
+            help
+                To protect from BIAS attack during Legacy authentication,
+                Legacy authentication Vendor specific event should be enabled
+
+        config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+            bool
+            default BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+            default 0
+
 
         config BTDM_CTRL_BLE_MAX_CONN_EFF
             int
