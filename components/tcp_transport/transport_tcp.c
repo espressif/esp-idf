@@ -83,7 +83,11 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 
     // Set socket to non-blocking
     int flags;
-    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags |= O_NONBLOCK) < 0) {
+    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        goto error;
+    }
+    if (fcntl(tcp->sock, F_SETFL, flags |= O_NONBLOCK) < 0) {
         ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", tcp->sock, strerror(errno));
         goto error;
     }
@@ -126,7 +130,11 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
         }
     }
     // Reset socket to blocking
-    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        goto error;
+    }
+    if (fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
         ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
         goto error;
     }

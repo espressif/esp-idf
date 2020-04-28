@@ -464,14 +464,26 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
 }
 
 /**
+ * @brief      Compatible version of esp_tls_conn_destroy() to close the TLS/SSL connection
+ *
+ * @note This API will be removed in IDFv5.0
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ */
+void esp_tls_conn_delete(esp_tls_t *tls);
+
+/**
  * @brief      Close the TLS/SSL connection and free any allocated resources.
  *
  * This function should be called to close each tls connection opened with esp_tls_conn_new() or
  * esp_tls_conn_http_new() APIs.
  *
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ *
+ * @return    - 0 on success
+ *            - -1 if socket error or an invalid argument
  */
-void esp_tls_conn_delete(esp_tls_t *tls);
+int esp_tls_conn_destroy(esp_tls_t *tls);
 
 /**
  * @brief      Return the number of application data bytes remaining to be
