@@ -77,7 +77,7 @@ endfunction()
 # by converting it to a generated source file which is then compiled
 # to a binary object as part of the build
 function(target_add_binary_data target embed_file embed_type)
-    cmake_parse_arguments(_ "" "RENAME_TO" "" ${ARGN})
+    cmake_parse_arguments(_ "" "RENAME_TO" "DEPENDS" ${ARGN})
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -99,7 +99,7 @@ function(target_add_binary_data target embed_file embed_type)
         -D "FILE_TYPE=${embed_type}"
         -P "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
-        DEPENDS "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
+        DEPENDS "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake" ${__DEPENDS}
         WORKING_DIRECTORY "${build_dir}"
         VERBATIM)
 
