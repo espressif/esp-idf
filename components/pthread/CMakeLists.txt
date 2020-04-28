@@ -8,7 +8,7 @@ list(APPEND extra_link_flags "-u pthread_include_pthread_cond_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_local_storage_impl")
 
 if(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
-    target_link_libraries(${COMPONENT_LIB} "-Wl,--wrap=vPortCleanUpTCB")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vPortCleanUpTCB")
 endif()
 
 if(extra_link_flags)
