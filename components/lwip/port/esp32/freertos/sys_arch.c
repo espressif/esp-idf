@@ -40,6 +40,7 @@
 #include "arch/sys_arch.h"
 #include "lwip/stats.h"
 #include "esp_log.h"
+#include "debug/lwip_debug.h"
 
 /* This is the number of threads that can be started with sys_thread_new() */
 #define SYS_THREAD_MAX 4
@@ -249,6 +250,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   } else {
     LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
     xReturn = ERR_MEM;
+    SYS_ARCH_INC_WITH_LOCK(trypost_fail);
   }
 
   return xReturn;
@@ -304,6 +306,7 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
     ulReturn = Elapsed;
   } else { // timed out blocking for message
+    SYS_ARCH_INC_WITH_LOCK(fetch_fail);
     ulReturn = SYS_ARCH_TIMEOUT;
   }
 
@@ -325,6 +328,7 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
     ulReturn = ERR_OK;
   } else {
     ulReturn = SYS_MBOX_EMPTY;
+    SYS_ARCH_INC_WITH_LOCK(tryfetch_fail);
   }
 
   return ulReturn;

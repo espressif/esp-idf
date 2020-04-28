@@ -1,0 +1,228 @@
+menu "ESP DEBUG"
+
+config ESP32_WIFI_DEBUG_COUNTER
+    bool "Enable WiFi Debug Counter"
+    default n
+    help
+        Select this option to enable more debug counters
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_ENABLE
+    bool "Enable WiFi Packet Filter "
+    default n
+    help
+        Select this option to enable WiFi packet filter
+
+menu "WiFi Packet Filter Type"
+    depends on ESP32_WIFI_DEBUG_PKT_FILTER_ENABLE
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_TCP
+    bool "Filter TCP Packets"
+    default n
+    help
+        Select this option to filter TCP packets.
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_UDP
+    bool "Filter UDP Packets"
+    default n
+    help
+        Select this option to filter UDP packets.
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_ARP
+    bool "Filter ARP Packets"
+    default n
+    help
+        Select this option to filter ARP packets.
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_DHCP
+    bool "Filter DHCP Packets"
+    default n
+    help
+        Select this option to filter DHCP packets.
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_DNS
+    bool "Filter DNS Packets"
+    default n
+    help
+        Select this option to filter DNS packets.
+
+config ESP32_WIFI_DEBUG_PKT_FILTER_MDNS
+    bool "Filter MDNS Packets"
+    default n
+    help
+        Select this option to filter DNS packets.
+
+endmenu
+
+
+config ESP32_DEBUG_TASK_ENABLE
+    bool "Enable Debug Polling Task"
+    default n
+    help
+        Select this option to create debug task.
+config ESP32_DEBUG_TASK_PRIORITY
+    int "Debug Task priority"
+    depends on ESP32_DEBUG_TASK_ENABLE
+    range 1 23
+    default 10
+    help
+        Set WiFi debug task priority
+
+config ESP32_DEBUG_TASK_STACK_SIZE
+    int "Debug Task Stack Size"
+    depends on ESP32_DEBUG_TASK_ENABLE
+    default 3072 
+    range 1024 65536
+    help
+        Configure WiFi debug task stack size.
+
+config ESP32_DEBUG_TASK_POLLING_ENABLE
+    bool "Enable Debug Task Polling"
+    depends on ESP32_DEBUG_TASK_ENABLE
+    default n
+    help
+        Select this option to enable Debug Task Polling.
+
+        When the polling is enabled, the Debug Task query and dump the specified counters periodically.
+
+config ESP32_DEBUG_TASK_POLLING_PERIOD
+    int "Debug Task Polling Period (seconds)"
+    depends on ESP32_DEBUG_TASK_POLLING_ENABLE
+    range 1 65535
+    default 30
+    help
+        Select this option to enable Debug Task Polling
+
+menu "WiFi Polling Modules"
+depends on ESP32_DEBUG_TASK_POLLING_ENABLE
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_HARDWARE_DIAG
+    bool "Polling WiFi hardware diag registers"
+    default n
+    help
+        Select this option to polling WiFi hardware diag registers
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_HARDWARE_COUNTERS
+    bool "Polling WiFi hardware counters"
+    default n
+    help
+        Select this option to polling WiFi hardware counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_HARDWARE_MISC
+    bool "Polling WiFi hardware misc registers"
+    default n
+    help
+        Select this option to polling WiFi hardware misc registers
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_BUFFER_COUNTERS
+    bool "Polling WiFi buffer counters"
+    default y
+    help
+        Select this option to polling WiFi buffer counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_INT_COUNTERS
+    bool "Polling WiFi interrupt counters"
+    default y
+    help
+        Select this option to polling WiFi interrupt counters
+
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_RX_COUNTERS
+    bool "Polling WiFi receiving packet counters"
+    default y
+    help
+        Select this option to polling WiFi receiving packet counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_TX_COUNTERS
+    bool "Polling WiFi transmitting packet counters"
+    default y
+    help
+        Select this option to polling WiFi transmitting packet counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_BUFFER_COUNTERS
+    bool "Polling WiFi buffer counters"
+    default y
+    help
+        Select this option to polling WiFi buffer counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_SLEEP_COUNTERS
+    bool "Polling WiFi sleep counters"
+    default y
+    help
+        Select this option to polling WiFi sleep counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_EVENT_COUNTERS
+    bool "Polling WiFi event counters"
+    default n
+    help
+        Select this option to polling WiFi key event counters
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_NVS_INFO
+    bool "Polling WiFi NVS info"
+    default n
+    help
+        Select this option to polling WiFi NVS info
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_STA_INFO
+    bool "Polling WiFi station internal info"
+    default n
+    help
+        Select this option to polling WiFi station internal info
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_AP_INFO
+    bool "Polling WiFi soft-AP internal info"
+    default n
+    help
+        Select this option to polling WiFi soft-AP internal info
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_TRC_INFO
+    bool "Polling WiFi rate control info"
+    default n
+    help
+        Select this option to polling WiFi rate control info
+
+
+config ESP32_DEBUG_TASK_POLLING_WIFI_MEMORY_INFO
+    bool "Polling WiFi memory info"
+    default n
+    help
+        Select this option to polling WiFi memory info
+
+
+endmenu
+menu "LWIP Polling Modules"
+depends on ESP32_DEBUG_TASK_POLLING_ENABLE
+
+config ESP32_DEBUG_TASK_POLLING_LWIP_SOCKETS
+    bool "Polling LWIP sockets info"
+    default n
+    help
+        Select this option to polling WiFi memory info
+
+config ESP32_DEBUG_TASK_POLLING_LWIP_PKT_COUNTER
+    bool "Polling LWIP packet counters"
+    default n
+    help
+        Select this option to polling LWIP packet counters
+endmenu
+menu "System Polling Modules"
+depends on ESP32_DEBUG_TASK_POLLING_ENABLE
+
+config ESP32_DEBUG_TASK_POLLING_TASK_INFO
+    bool "Polling task info"
+    default n
+    help
+        Select this option to polling LWIP packet counters
+
+config ESP32_DEBUG_TASK_POLLING_MEMORY_INFO
+    bool "Polling memory info"
+    default n
+    help
+        Select this option to polling memory info
+
+endmenu
+
+
+endmenu
+
+
+

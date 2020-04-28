@@ -16,10 +16,25 @@
 #ifndef _LWIP_DEBUG_H
 #define _LWIP_DEBUG_H
 
-void dbg_lwip_tcp_pcb_show(void);
-void dbg_lwip_udp_pcb_show(void);
-void dbg_lwip_tcp_rxtx_show(void);
-void dbg_lwip_udp_rxtx_show(void);
-void dbg_lwip_mem_cnt_show(void);
+#include "esp_log.h"
+
+typedef struct {
+    uint32_t trypost_fail;
+    uint32_t fetch_fail;
+    uint32_t tryfetch_fail;
+} esp_lwip_stats_t;
+
+extern esp_lwip_stats_t g_esp_lwip_stats;
+
+#define SYS_ARCH_INC_WITH_LOCK(_f) do {\
+    sys_arch_protect();\
+    g_esp_lwip_stats._f ++;\
+    sys_arch_unprotect(0);\
+}while(0)
+
+#define LWIP_MODULE_SOCKETS    1
+#define LWIP_MODULE_STATS      (1<<1)
+
+void esp_lwip_dump(uint64_t modules);
 
 #endif
