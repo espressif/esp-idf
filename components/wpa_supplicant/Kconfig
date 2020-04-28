@@ -23,5 +23,10 @@ menu "Supplicant"
         help
             Select this to enable unity test for DPP.
 
+    config WPA_TLS_V12
+        bool "Enable TLS v1.2"
+        default n
+        help
+            Select this to enable TLS v1.2 for WPA2-Enterprise Authentication.
 
 endmenu
