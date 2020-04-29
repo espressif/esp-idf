@@ -59,7 +59,7 @@ typedef struct {
     esp_modem_on_receive receive_cb;        /*!< ptr to data reception */
     void *receive_cb_ctx;                   /*!< ptr to rx fn context data */
     int line_buffer_size;                   /*!< line buffer size in commnad mode */
-    int event_queue_size;                   /*!< UART event queue size */
+    int pattern_queue_size;                 /*!< UART pattern queue size */
 } esp_modem_dte_t;
 
 
@@ -315,7 +315,7 @@ static esp_err_t esp_modem_dte_change_mode(modem_dte_t *dte, modem_mode_t new_mo
         uart_disable_rx_intr(esp_dte->uart_port);
         uart_flush(esp_dte->uart_port);
         uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
-        uart_pattern_queue_reset(esp_dte->uart_port, esp_dte->event_queue_size);
+        uart_pattern_queue_reset(esp_dte->uart_port, esp_dte->pattern_queue_size);
         MODEM_CHECK(dce->set_working_mode(dce, new_mode) == ESP_OK, "set new working mode:%d failed", err, new_mode);
         break;
     default:
@@ -409,7 +409,6 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     }
     MODEM_CHECK(res == ESP_OK, "config uart flow control failed", err_uart_config);
     /* Install UART driver and get event queue used inside driver */
-    esp_dte->event_queue_size = config->event_queue_size;
     res = uart_driver_install(esp_dte->uart_port, config->rx_buffer_size, config->tx_buffer_size,
                               config->event_queue_size, &(esp_dte->event_queue), 0);
     MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
@@ -417,6 +416,7 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     /* Set pattern interrupt, used to detect the end of a line. */
     res = uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
     /* Set pattern queue size */
+    esp_dte->pattern_queue_size = config->pattern_queue_size;
     res |= uart_pattern_queue_reset(esp_dte->uart_port, config->pattern_queue_size);
     /* Starting in command mode -> explicitly disable RX interrupt */
     uart_disable_rx_intr(esp_dte->uart_port);
