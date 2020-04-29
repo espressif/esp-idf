@@ -186,7 +186,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     36      *((int*) 0) = 0;
     (gdb)
 
-GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
+GDB prompt can be used to inspect CPU registers, local and static variables, state of created tasks by issuing "info thread" command on the GDB prompt, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
 
 Guru Meditation Errors
 ----------------------
