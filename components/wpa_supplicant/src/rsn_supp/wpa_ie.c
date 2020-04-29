@@ -231,14 +231,16 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         /* PMKID */
         os_memcpy(pos, sm->cur_pmksa->pmkid, PMKID_LEN);
         pos += PMKID_LEN;
-    } else {
-        /* 0 PMKID Count */
-        WPA_PUT_LE16(pos, 0);
-        pos += 2;
     }
 
 #ifdef CONFIG_IEEE80211W
     if (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
+        if (!sm->cur_pmksa) {
+            /* 0 PMKID Count */
+            WPA_PUT_LE16(pos, 0);
+            pos += 2;
+        }
+
         /* Management Group Cipher Suite */
         RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_AES_128_CMAC);
         pos += RSN_SELECTOR_LEN;
@@ -329,6 +331,16 @@ static int  wpa_parse_generic(const u8 *pos, const u8 *end,
 			    pos, pos[1] + 2);
 		return 0;
 	}
+#ifdef CONFIG_IEEE80211W
+	if (pos[1] > RSN_SELECTOR_LEN + 2 &&
+	    RSN_SELECTOR_GET(pos + 2) == RSN_KEY_DATA_IGTK) {
+		ie->igtk = pos + 2 + RSN_SELECTOR_LEN;
+		ie->igtk_len = pos[1] - RSN_SELECTOR_LEN;
+		wpa_hexdump(MSG_DEBUG, "WPA: IGTK in EAPOL-Key",
+				pos, pos[1] + 2);
+		return 0;
+	}
+#endif
 	return 0;
 }
 

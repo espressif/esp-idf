@@ -316,6 +316,47 @@ typedef void * (*esp_aes_decrypt_init_t)(const unsigned char *key, unsigned int 
 typedef void (*esp_aes_decrypt_deinit_t)(void *ctx);
 
 /**
+ * @brief One-Key CBC MAC (OMAC1) hash with AES-128 for MIC computation
+ *
+ * @key: 128-bit key for the hash operation
+ * @data: Data buffer for which a MIC is computed
+ * @data_len: Length of data buffer in bytes
+ * @mic: Buffer for MIC (128 bits, i.e., 16 bytes)
+ * Returns: 0 on success, -1 on failure
+ */
+typedef int (*esp_omac1_aes_128_t)(const uint8_t *key, const uint8_t *data, size_t data_len,
+                                   uint8_t *mic);
+
+/**
+ * @brief Decrypt data using CCMP (Counter Mode CBC-MAC Protocol OR
+ *        Counter Mode Cipher Block Chaining Message Authentication
+ *        Code Protocol) which is used in IEEE 802.11i RSN standard.
+ * @tk: 128-bit Temporal Key for obtained during 4-way handshake
+ * @hdr: Pointer to IEEE802.11 frame headeri needed for AAD
+ * @data: Pointer to encrypted data buffer
+ * @data_len: Encrypted data length in bytes
+ * @decrypted_len: Length of decrypted data
+ * Returns: Pointer to decrypted data on success, NULL on failure
+ */
+typedef uint8_t * (*esp_ccmp_decrypt_t)(const uint8_t *tk, const uint8_t *ieee80211_hdr,
+                                        const uint8_t *data, size_t data_len, size_t *decrypted_len);
+
+/**
+ * @brief Encrypt data using CCMP (Counter Mode CBC-MAC Protocol OR
+ *        Counter Mode Cipher Block Chaining Message Authentication
+ *        Code Protocol) which is used in IEEE 802.11i RSN standard.
+ * @tk: 128-bit Temporal Key for obtained during 4-way handshake
+ * @frame: Pointer to IEEE802.11 frame including header
+ * @len: Length of the frame including header
+ * @hdrlen: Length of the header
+ * @pn: Packet Number counter
+ * @keyid: Key ID to be mentioned in CCMP Vector
+ * @encrypted_len: Length of the encrypted frame including header
+ */
+typedef uint8_t * (*esp_ccmp_encrypt_t)(const uint8_t *tk, uint8_t *frame, size_t len, size_t hdrlen,
+                                        uint8_t *pn, int keyid, size_t *encrypted_len);
+
+/**
   * @brief The crypto callback function structure used when do station security connect.
   *        The structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
@@ -342,6 +383,9 @@ typedef struct {
     esp_aes_decrypt_t aes_decrypt;
     esp_aes_decrypt_init_t aes_decrypt_init;
     esp_aes_decrypt_deinit_t aes_decrypt_deinit;
+    esp_omac1_aes_128_t omac1_aes_128;
+    esp_ccmp_decrypt_t ccmp_decrypt;
+    esp_ccmp_encrypt_t ccmp_encrypt;
 }wpa_crypto_funcs_t;
 
 /**
