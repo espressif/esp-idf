@@ -268,8 +268,12 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
 
     //check if the selected pins correspond to the iomux pins of the peripheral
-    bool use_iomux = bus_uses_iomux_pins(host, bus_config);
-    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
+    bool use_iomux = !(flags & SPICOMMON_BUSFLAG_GPIO_PINS) && bus_uses_iomux_pins(host, bus_config);
+    if (use_iomux) {
+        temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
+    } else {
+        temp_flag |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    }
 
     uint32_t missing_flag = flags & ~temp_flag;
     missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;//don't check this flag
