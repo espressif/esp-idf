@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
 from copy import deepcopy
 import CreateSectionTable
@@ -43,18 +44,24 @@ class Parser(object):
     MODULE_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "ModuleDefinition.yml")
     CONFIG_DEPENDENCY_FILE = os.path.join("tools", "unit-test-app", "tools", "ConfigDependency.yml")
     MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
-    TEST_CASE_FILE = os.path.join("components", "idf_test", "unit_test", "TestCaseAll.yml")
+    TEST_CASE_FILE_DIR = os.path.join("components", "idf_test", "unit_test")
     UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "output")
     UT_CONFIG_FOLDER = os.path.join("tools", "unit-test-app", "configs")
     ELF_FILE = "unit-test-app.elf"
     SDKCONFIG_FILE = "sdkconfig"
     STRIP_CONFIG_PATTERN = re.compile(r"(.+?)(_\d+)?$")
+    TOOLCHAIN_FOR_TARGET = {
+        "esp32": "xtensa-esp32-elf-",
+        "esp32s2": "xtensa-esp32s2-elf-",
+    }
 
-    def __init__(self, idf_path=os.getenv("IDF_PATH")):
+    def __init__(self, idf_path=os.getenv("IDF_PATH"), idf_target=os.getenv("IDF_TARGET")):
         self.test_env_tags = {}
         self.unit_jobs = {}
         self.file_name_cache = {}
         self.idf_path = idf_path
+        self.idf_target = idf_target
+        self.objdump = Parser.TOOLCHAIN_FOR_TARGET.get(idf_target, "") + "objdump"
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"), Loader=Loader)
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"), Loader=Loader)
         self.config_dependencies = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"),
@@ -66,27 +73,19 @@ class Parser(object):
     def parse_test_cases_for_one_config(self, configs_folder, config_output_folder, config_name):
         """
         parse test cases from elf and save test cases need to be executed to unit test folder
-        :param configs_folder: folder where per-config sdkconfig framents are located (i.e. tools/unit-test-app/configs)
+        :param configs_folder: folder where per-config sdkconfig fragments are located (i.e. tools/unit-test-app/configs)
         :param config_output_folder: build folder of this config
         :param config_name: built unit test config name
         """
         tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
         print("Tags of config %s: %s" % (config_name, tags))
-        # Search in tags to set the target
-        target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2_IDF": "esp32s2"}
-        for tag in target_tag_dict:
-            if tag in tags:
-                target = target_tag_dict[tag]
-                break
-        else:
-            target = "esp32"
 
         test_groups = self.get_test_groups(os.path.join(configs_folder, config_name))
 
         elf_file = os.path.join(config_output_folder, self.ELF_FILE)
-        subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep test_desc > case_address.tmp'.format(elf_file),
+        subprocess.check_output('{} -t {} | grep test_desc > case_address.tmp'.format(self.objdump, elf_file),
                                 shell=True)
-        subprocess.check_output('xtensa-esp32-elf-objdump -s {} > section_table.tmp'.format(elf_file), shell=True)
+        subprocess.check_output('{} -s {} > section_table.tmp'.format(self.objdump, elf_file), shell=True)
 
         table = CreateSectionTable.SectionTable("section_table.tmp")
         test_cases = []
@@ -105,13 +104,11 @@ class Parser(object):
 
                 name_addr = table.get_unsigned_int(section, test_addr, 4)
                 desc_addr = table.get_unsigned_int(section, test_addr + 4, 4)
-                file_name_addr = table.get_unsigned_int(section, test_addr + 12, 4)
                 function_count = table.get_unsigned_int(section, test_addr + 20, 4)
                 name = table.get_string("any", name_addr)
                 desc = table.get_string("any", desc_addr)
-                file_name = table.get_string("any", file_name_addr)
 
-                tc = self.parse_one_test_case(name, desc, file_name, config_name, stripped_config_name, tags, target)
+                tc = self.parse_one_test_case(name, desc, config_name, stripped_config_name, tags)
 
                 # check if duplicated case names
                 # we need to use it to select case,
@@ -229,7 +226,6 @@ class Parser(object):
         :param sdkconfig_file: sdk config file of the unit test config
         :return: required tags for runners
         """
-
         with open(sdkconfig_file, "r") as f:
             configs_raw_data = f.read()
 
@@ -250,12 +246,11 @@ class Parser(object):
                     return match.group(1).split(' ')
         return None
 
-    def parse_one_test_case(self, name, description, file_name, config_name, stripped_config_name, tags, target):
+    def parse_one_test_case(self, name, description, config_name, stripped_config_name, tags):
         """
         parse one test case
         :param name: test case name (summary)
         :param description: test case description (tag string)
-        :param file_name: the file defines this test case
         :param config_name: built unit test app name
         :param stripped_config_name: strip suffix from config name because they're the same except test components
         :param tags: tags to select runners
@@ -279,7 +274,7 @@ class Parser(object):
                           "multi_stage": prop["multi_stage"],
                           "timeout": int(prop["timeout"]),
                           "tags": tags,
-                          "chip_target": target})
+                          "chip_target": self.idf_target})
         return test_case
 
     def dump_test_cases(self, test_cases):
@@ -287,7 +282,7 @@ class Parser(object):
         dump parsed test cases to YAML file for test bench input
         :param test_cases: parsed test cases
         """
-        filename = os.path.join(self.idf_path, self.TEST_CASE_FILE)
+        filename = os.path.join(self.idf_path, self.TEST_CASE_FILE_DIR, self.idf_target + ".yml")
         try:
             os.mkdir(os.path.dirname(filename))
         except OSError:
@@ -305,7 +300,7 @@ class Parser(object):
         """ parse test cases from multiple built unit test apps """
         test_cases = []
 
-        output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER)
+        output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER, self.idf_target)
         configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
         test_configs = os.listdir(output_folder)
         for config in test_configs:
@@ -362,14 +357,22 @@ def main():
     test_parser()
 
     idf_path = os.getenv("IDF_PATH")
+    if not idf_path:
+        print("IDF_PATH must be set to use this script", file=sys.stderr)
+        raise SystemExit(1)
 
-    parser = Parser(idf_path)
+    idf_target = os.getenv("IDF_TARGET")
+    if not idf_target:
+        print("IDF_TARGET must be set to use this script", file=sys.stderr)
+        raise SystemExit(1)
+
+    parser = Parser(idf_path, idf_target)
     parser.parse_test_cases()
     parser.copy_module_def_file()
     if len(parser.parsing_errors) > 0:
         for error in parser.parsing_errors:
             print(error)
-        exit(-1)
+        exit(1)
 
 
 if __name__ == '__main__':

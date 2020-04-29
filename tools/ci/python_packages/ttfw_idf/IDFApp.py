@@ -385,7 +385,7 @@ class UT(IDFApp):
             return path
 
         # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
-        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", config_name)
+        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", target, config_name)
         if os.path.exists(path):
             return path
 
