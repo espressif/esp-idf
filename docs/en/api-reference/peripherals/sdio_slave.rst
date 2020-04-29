@@ -133,10 +133,6 @@ Func 1. Please refer to :ref:`esp_slave_protocol_layer`. There is also a compone
 for ESP32 master to communicate with ESP32 SDIO slave, see example :example:`peripherals/sdio`
 when programming your host.
 
-.. toctree::
-    :hidden:
-
-    esp_slave_protocol
 
 .. _interrupts:
 

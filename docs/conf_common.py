@@ -139,9 +139,7 @@ BT_DOCS = ['api-guides/blufi.rst',
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
 
-SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
-                   'api-reference/peripherals/esp_slave_protocol.rst',
-                   'api-reference/protocols/esp_serial_slave_link.rst']
+SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst']
 
 MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
@@ -168,6 +166,7 @@ ESP32S2_DOCS = ['esp32s2.rst',
                 'api-guides/usb-console.rst',
                 'api-reference/peripherals/hmac.rst',
                 'api-reference/peripherals/ds.rst',
+                'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst'
                 '']
 

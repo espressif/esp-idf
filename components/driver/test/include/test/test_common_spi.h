@@ -11,6 +11,7 @@
 #include <string.h>
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
+#include "sdkconfig.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
@@ -64,8 +65,8 @@
 #define SLAVE_PIN_NUM_MOSI    HSPI_IOMUX_PIN_NUM_MOSI
 #define SLAVE_PIN_NUM_CLK     HSPI_IOMUX_PIN_NUM_CLK
 #define SLAVE_PIN_NUM_CS      HSPI_IOMUX_PIN_NUM_CS
-#define SLAVE_PIN_NUM_WP      HSPI_IOMUX_PIN_NUM_WP
-#define SLAVE_PIN_NUM_HD      HSPI_IOMUX_PIN_NUM_HD
+#define SLAVE_PIN_NUM_WP      -1
+#define SLAVE_PIN_NUM_HD      -1
 
 #define SLAVE_IOMUX_PIN_MISO    -1
 #define SLAVE_IOMUX_PIN_MOSI    -1
@@ -236,6 +237,16 @@ void spitest_master_print_data(spi_transaction_t *t, int rxlength);
 void spitest_slave_print_data(slave_rxdata_t *t, bool print_rxdata);
 // Check whether master and slave data match
 esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_t *slave_t, bool check_master_data, bool check_slave_len, bool check_slave_data);
+
+#define spitest_cmp_or_dump(expected, actual, len) ({\
+    int r = memcmp(expected, actual, len);\
+    if (r != 0) {\
+        ESP_LOG_BUFFER_HEXDUMP("expected", expected, len, ESP_LOG_INFO);\
+        ESP_LOG_BUFFER_HEXDUMP("actual", actual, len, ESP_LOG_WARN);\
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, actual, len);\
+    }\
+    r;\
+})
 
 static inline int get_trans_len(spi_dup_t dup, spi_transaction_t *master_t)
 {
