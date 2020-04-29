@@ -408,16 +408,16 @@ void lwip_debug_dump_open_sockets(void *arg)
         recv_avail = conn->recv_avail;
 #endif
 
-            if (conn->type == NETCONN_TCP) {
+            if ( (conn->type == NETCONN_TCP) && conn->pcb.tcp) {
                 local_ip = &conn->pcb.tcp->local_ip;
                 remote_ip = &conn->pcb.tcp->remote_ip;
                 local_port = conn->pcb.tcp->local_port;
                 remote_port = conn->pcb.tcp->remote_port;
-            } else if (conn->type == NETCONN_UDP) {
-                local_ip = &conn->pcb.tcp->local_ip;
-                remote_ip = &conn->pcb.tcp->remote_ip;
-                local_port = conn->pcb.tcp->local_port;
-                remote_port = conn->pcb.tcp->remote_port;
+            } else if ( (conn->type == NETCONN_UDP) && conn->pcb.udp) {
+                local_ip = &conn->pcb.udp->local_ip;
+                remote_ip = &conn->pcb.udp->remote_ip;
+                local_port = conn->pcb.udp->local_port;
+                remote_port = conn->pcb.udp->remote_port;
             } else {
                 local_ip = remote_ip = &empty_ip;
                 local_port = remote_port = 0;
@@ -476,7 +476,7 @@ static void lwip_debug_dump_tcp_pcb_list_part3(lwip_debug_tcp_pcb_t* dbgpcb, uin
     while(dbgpcb){
         pcb = (struct tcp_pcb *)&dbgpcb->pcb;
 
-        ESP_LOGI(TAG, "%2x %6x %8x %4x %4x %4x %4x %8x %4x %8x %8x %8x %4x %4x %4x",
+        ESP_LOGI(TAG, "%2x %6x %8x %4x %4x %4x %4x %4x %8x %8x %8x %8x %4x %4x %4x",
             i++, pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv, pcb->rto, pcb->nrtx, pcb->dupacks, pcb->lastack, pcb->cwnd,
             pcb->ssthresh, 0, pcb->persist_cnt, pcb->persist_backoff, 0);
 
@@ -498,7 +498,7 @@ static void lwip_debug_dump_tcp_pcb_list_part4(lwip_debug_tcp_pcb_t* dbgpcb, uin
         unsent_oversize = pcb->unsent_oversize;
 #endif
 
-        ESP_LOGI(TAG, "%2x %8x %8x %8x %8x %8x %4x %5x %5x %6x %3x %3x", 
+        ESP_LOGI(TAG, "%2x %8x %8x %8x %8x %8x %8x %5x %5x %6x %3x %3x", 
             i++, pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2, pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max, pcb->snd_buf,
             pcb->snd_queuelen, unsent_oversize, dbgpcb->unsent_cnt, dbgpcb->unack_cnt);
         dbgpcb = dbgpcb->next;
@@ -537,7 +537,7 @@ static void lwip_debug_dump_tcp_pcbs_part3(lwip_debug_info_t *info)
     uint32_t id = 0;
 
     ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "%2s %6s %8s %4s %4s %4s %4s %8s %4s %8s %8s %8s %4s %4s %4s", 
+    ESP_LOGI(TAG, "%2s %6s %8s %4s %4s %4s %4s %4s %8s %8s %8s %8s %4s %4s %4s", 
                   "id", "rttest", "rtseq", "sa", "sv", "rto", "nrtx", "dup", "last", "cwnd", "ssthresh", "rto_end", "pist", "p_bo", "p_p");
 
     lwip_debug_dump_tcp_pcb_list_part3(info->active_pcbs, 0, &id);
@@ -550,7 +550,7 @@ static void lwip_debug_dump_tcp_pcbs_part4(lwip_debug_info_t *info)
     uint32_t id = 0;
 
     ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "%2s %8s %8s %8s %8s %8s %4s %5s %5s %6s %3s %3s", 
+    ESP_LOGI(TAG, "%2s %8s %8s %8s %8s %8s %8s %5s %5s %6s %3s %3s", 
                   "id", "snd_next", "snd_wl1", "snd_wl2", "wnd_lbb", "s_wnd", "s_wm", "s_buf", "s_qlen", "uns_os", "uns", "una");
 
     lwip_debug_dump_tcp_pcb_list_part4(info->active_pcbs, 0, &id);

@@ -302,7 +302,7 @@ static void wifi_debug_dump_sleep(const wifi_stats_optional_t *pm)
     ESP_LOGI(TAG, "%8s %8s %8s %8s %8s %8s %8s %16s %16s %16s",
         "slp_null", "wake_nul", "sleep", "wake", "bcn_dlay",
         "maxb_dl", "avgb_dl", "sleep_t", "wake_t", "total_t");
-    ESP_LOGI(TAG, "%8x %8x %8x %8x %8x %8x %8x %16llx %16llx %16llx",
+    ESP_LOGI(TAG, "%8x %8x %8x %8x %8x %8x %8x %16llx %16llu %16llu",
         pm->pm_sleep_null, pm->pm_wake_null, pm->pm_sleep, pm->pm_wake, pm->pm_bcn_delay_time,
         pm->pm_max_bcn_delay_time, pm->pm_avg_bcn_delay_time, pm->pm_sleep_time, pm->pm_wake_time, pm->pm_total_time);
  
