@@ -93,9 +93,9 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
     return 0;
 }
 
-void bt_mesh_reset(void)
+void bt_mesh_node_reset(void)
 {
-    if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+    if (!bt_mesh_is_provisioned()) {
         BT_WARN("%s, Not provisioned", __func__);
         return;
     }
@@ -103,7 +103,7 @@ void bt_mesh_reset(void)
     bt_mesh.iv_index = 0U;
     bt_mesh.seq = 0U;
 
-    memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+    bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_VALID);
 
     k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
@@ -136,8 +136,11 @@ void bt_mesh_reset(void)
     bt_mesh_comp_unprovision();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_seq();
         bt_mesh_clear_role();
     }
+
+    memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
         bt_mesh_prov_reset();
