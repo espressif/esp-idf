@@ -56,6 +56,7 @@ typedef enum {
     WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
     WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
     WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
+    WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 

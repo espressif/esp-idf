@@ -204,6 +204,10 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     } else if (key_mgmt == WPA_KEY_MGMT_PSK_SHA256) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_PSK_SHA256);
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_WPA3_SAE
+    } else if (key_mgmt == WPA_KEY_MGMT_SAE) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
+#endif /* CONFIG_WPA3_SAE */
     } else {
         wpa_printf(MSG_DEBUG, "Invalid key management type (%d).",
                key_mgmt);

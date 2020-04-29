@@ -64,7 +64,8 @@ enum {
     WPA_AUTH_CCKM       = 0x06,
     WPA2_AUTH_CCKM      = 0x07,
     WPA2_AUTH_PSK_SHA256= 0x08,
-    WPA2_AUTH_INVALID   = 0x09,
+    WPA3_AUTH_PSK       = 0x09,
+    WPA2_AUTH_INVALID   = 0x0a,
 };
 
 typedef enum {
@@ -121,6 +122,10 @@ struct wpa_funcs {
     int (*wpa_parse_wpa_ie)(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
     int (*wpa_config_bss)(u8 *bssid);
     int (*wpa_michael_mic_failure)(u16 is_unicast);
+#ifdef CONFIG_WPA3_SAE
+    u8 *(*wpa3_build_sae_msg)(u8 *bssid, u32 type, u32 *len);
+    int (*wpa3_parse_sae_msg)(u8 *buf, u32 len, u32 type);
+#endif
 };
 
 struct wpa2_funcs {
@@ -209,6 +214,7 @@ int esp_wifi_ipc_internal(wifi_ipc_config_t *cfg, bool sync);
 int esp_wifi_register_wpa2_cb_internal(struct wpa2_funcs *cb);
 int esp_wifi_unregister_wpa2_cb_internal(void);
 bool esp_wifi_sta_prof_is_wpa2_internal(void);
+bool esp_wifi_sta_prof_is_wpa3_internal(void);
 esp_err_t esp_wifi_sta_wpa2_ent_disable_internal(wifi_wpa2_param_t *param);
 esp_err_t esp_wifi_sta_wpa2_ent_enable_internal(wifi_wpa2_param_t *param);
 esp_err_t esp_wifi_set_wpa2_ent_state_internal(wpa2_ent_eap_state_t state);
