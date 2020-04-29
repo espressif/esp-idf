@@ -85,7 +85,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         TEST_ASSERT( buf != NULL);
 
-        sae_write_commit(&sae, buf, NULL);// No anti-clogging token
+        sae_write_commit(&sae, buf, NULL, NULL);// No anti-clogging token
 
         /* Parsing commit created by self will be detected as reflection attack*/
         TEST_ASSERT(sae_parse_commit(&sae,
@@ -125,14 +125,14 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
         TEST_ASSERT( buf1 != NULL);
-        sae_write_commit(&sae1, buf1, NULL);// No anti-clogging token
+        sae_write_commit(&sae1, buf1, NULL, NULL);// No anti-clogging token
 	ESP_LOG_BUFFER_HEXDUMP("SAE: Commit1", wpabuf_mhead_u8(buf1), wpabuf_len(buf1), ESP_LOG_INFO);
 
 
         /* STA2 creates commit msg buffer*/
         buf2 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
         TEST_ASSERT( buf2 != NULL);
-        sae_write_commit(&sae2, buf2, NULL);// No anti-clogging token
+        sae_write_commit(&sae2, buf2, NULL, NULL);// No anti-clogging token
         ESP_LOG_BUFFER_HEXDUMP("SAE: Commit2", wpabuf_mhead_u8(buf2), wpabuf_len(buf2), ESP_LOG_INFO);
 
         sae1.state = SAE_COMMITTED;
@@ -205,20 +205,20 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         TEST_ASSERT(sae_set_group(&sae2, IANA_SECP256R1) == 0);
 
         /* STA1 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd1, strlen((const char *)pwd), NULL, &sae1) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd1, strlen((const char *)pwd1), NULL, &sae1) == 0);
 
         /* STA2 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd2, strlen((const char *)pwd), NULL, &sae2) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd2, strlen((const char *)pwd2), NULL, &sae2) == 0);
 
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
         TEST_ASSERT( buf1 != NULL);
-        sae_write_commit(&sae1, buf1, NULL);// No anti-clogging token
+        sae_write_commit(&sae1, buf1, NULL, NULL);// No anti-clogging token
 
         /* STA2 creates commit msg buffer*/
         buf2 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
         TEST_ASSERT( buf2 != NULL);
-        sae_write_commit(&sae2, buf2, NULL);// No anti-clogging token
+        sae_write_commit(&sae2, buf2, NULL, NULL);// No anti-clogging token
 
         sae1.state = SAE_COMMITTED;
         sae2.state = SAE_COMMITTED;
