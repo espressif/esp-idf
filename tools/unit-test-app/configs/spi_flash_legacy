@@ -1,3 +1,4 @@
+# This config is for all targets
 TEST_COMPONENTS=spi_flash
 CONFIG_ESP32_SPIRAM_SUPPORT=y
 CONFIG_SPI_FLASH_USE_LEGACY_IMPL=y

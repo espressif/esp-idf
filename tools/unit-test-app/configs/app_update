@@ -1,3 +1,4 @@
+# This config is for all targets
 TEST_COMPONENTS=app_update
 TEST_EXCLUDE_COMPONENTS=libsodium bt
 CONFIG_UNITY_FREERTOS_STACK_SIZE=12288

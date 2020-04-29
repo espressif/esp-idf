@@ -15,11 +15,20 @@ IDF_PY = "idf.py"
 CMAKE_PROJECT_LINE = r"include($ENV{IDF_PATH}/tools/cmake/project.cmake)"
 
 SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
+SDKCONFIG_LINE_REGEX = re.compile(r"^([^=]+)=\"?([^\"\n]*)\"?\n*$")
 
 FORMAL_TO_USUAL = {
     'ESP32': 'esp32',
     'ESP32-S2': 'esp32s2',
 }
+
+# If these keys are present in sdkconfig.defaults, they will be extracted and passed to CMake
+SDKCONFIG_TEST_OPTS = [
+    "EXCLUDE_COMPONENTS",
+    "TEST_EXCLUDE_COMPONENTS",
+    "TEST_COMPONENTS",
+    "TEST_GROUPS"
+]
 
 
 class CMakeBuildSystem(BuildSystem):
@@ -69,6 +78,7 @@ class CMakeBuildSystem(BuildSystem):
             if not build_item.dry_run:
                 os.unlink(sdkconfig_file)
 
+        extra_cmakecache_items = {}
         logging.debug("Creating sdkconfig file: {}".format(sdkconfig_file))
         if not build_item.dry_run:
             with open(sdkconfig_file, "w") as f_out:
@@ -81,13 +91,11 @@ class CMakeBuildSystem(BuildSystem):
                         for line in f_in:
                             if not line.endswith("\n"):
                                 line += "\n"
+                            m = SDKCONFIG_LINE_REGEX.match(line)
+                            if m and m.group(1) in SDKCONFIG_TEST_OPTS:
+                                extra_cmakecache_items[m.group(1)] = m.group(2)
+                                continue
                             f_out.write(os.path.expandvars(line))
-            # Also save the sdkconfig file in the build directory
-            shutil.copyfile(
-                os.path.join(work_path, "sdkconfig"),
-                os.path.join(build_path, "sdkconfig"),
-            )
-
         else:
             for sdkconfig_name in sdkconfig_defaults_list:
                 sdkconfig_path = os.path.join(app_path, sdkconfig_name)
@@ -109,6 +117,11 @@ class CMakeBuildSystem(BuildSystem):
             work_path,
             "-DIDF_TARGET=" + build_item.target,
         ]
+        for key, val in extra_cmakecache_items.items():
+            args.append("-D{}={}".format(key, val))
+        if "TEST_EXCLUDE_COMPONENTS" in extra_cmakecache_items \
+                and "TEST_COMPONENTS" not in extra_cmakecache_items:
+            args.append("-DTESTS_ALL=1")
         if build_item.verbose:
             args.append("-v")
         args.append("build")
@@ -131,6 +144,12 @@ class CMakeBuildSystem(BuildSystem):
             subprocess.check_call(args, stdout=build_stdout, stderr=build_stderr)
         except subprocess.CalledProcessError as e:
             raise BuildError("Build failed with exit code {}".format(e.returncode))
+        else:
+            # Also save the sdkconfig file in the build directory
+            shutil.copyfile(
+                os.path.join(work_path, "sdkconfig"),
+                os.path.join(build_path, "sdkconfig"),
+            )
         finally:
             if log_file:
                 log_file.close()

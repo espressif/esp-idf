@@ -1,3 +1,5 @@
+# Only need to test this for one target (e.g. ESP32)
+CONFIG_IDF_TARGET="esp32"
 TEST_COMPONENTS=cxx
 CONFIG_COMPILER_CXX_EXCEPTIONS=y
 CONFIG_COMPILER_CXX_RTTI=y
