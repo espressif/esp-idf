@@ -1,5 +1,8 @@
-set(COMPONENT_SRCS "esp_hid_host_main.c"
-                   "esp_hid_gap.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcs "esp_hid_host_main.c"
+         "esp_hid_gap.c")
+         
+set(include_dirs ".")
 
-register_component()
+idf_component_register(SRCS "${srcs}"
+                       INCLUDE_DIRS "${include_dirs}"
+                       REQUIRES esp_hid)
