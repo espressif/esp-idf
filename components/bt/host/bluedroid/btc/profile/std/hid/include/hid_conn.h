@@ -25,7 +25,9 @@
 #ifndef HID_CONN_H
 #define HID_CONN_H
 
+#include "common/bt_defs.h"
 #if (HID_HOST_INCLUDED == TRUE)
+
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
@@ -56,7 +58,6 @@ typedef struct hid_conn {
     UINT16            rem_mtu_size;
     UINT16            disc_reason;                       /* Reason for disconnecting (for HID_HDEV_EVT_CLOSE) */
     TIMER_LIST_ENT    timer_entry;
-
 } tHID_CONN;
 
 #define HID_SEC_CHN   1
