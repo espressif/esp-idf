@@ -150,7 +150,8 @@ void app_main(void)
            "This is an example of ESP-IDF console component.\n"
            "Type 'help' to get the list of commands.\n"
            "Use UP/DOWN arrows to navigate through command history.\n"
-           "Press TAB when typing command name to auto-complete.\n");
+           "Press TAB when typing command name to auto-complete.\n"
+           "Press Enter or Ctrl+C will terminate the console environment.\n");
 
     /* Figure out if the terminal supports escape sequences */
     int probe_status = linenoiseProbe();
