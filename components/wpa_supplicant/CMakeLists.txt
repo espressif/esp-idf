@@ -3,6 +3,7 @@ set(srcs "port/os_xtensa.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"
     "src/ap/wpa_auth_ie.c"
+    "src/common/sae.c"
     "src/common/wpa_common.c"
     "src/crypto/aes-cbc.c"
     "src/crypto/aes-ccm.c"
@@ -110,4 +111,5 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_TLSV12
     CONFIG_SHA256
     CONFIG_IEEE80211W
+    CONFIG_WPA3_SAE
     )
