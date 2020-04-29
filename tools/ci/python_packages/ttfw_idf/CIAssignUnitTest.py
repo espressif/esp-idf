@@ -46,7 +46,7 @@ class Group(CIAssignTest.Group):
             for key in self.filters:
                 if self._get_case_attr(case, key) != self.filters[key]:
                     if key == "tags":
-                        if self._get_case_attr(case, key).issubset(self.filters[key]):
+                        if set(self._get_case_attr(case, key)).issubset(set(self.filters[key])):
                             continue
                     break
             else:

@@ -112,7 +112,7 @@ def main():
         try:
             build_system_class.build(build_info)
         except BuildError as e:
-            logging.error(e.message)
+            logging.error(str(e))
             if args.keep_going:
                 failed_builds.append(build_info)
             else:
