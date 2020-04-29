@@ -80,7 +80,6 @@ class PlacementRule():
         def do_section_expansion(rule, section):
             if section in rule.get_section_names():
                 sections_in_obj = sections_infos.get_obj_sections(rule.archive, rule.obj)
-
                 expansions = fnmatch.filter(sections_in_obj, section)
                 return expansions
 
@@ -254,10 +253,17 @@ class GenerationModel:
 
     DEFAULT_SCHEME = "default"
 
-    def __init__(self):
+    def __init__(self, check_mappings=False, check_mapping_exceptions=None):
         self.schemes = {}
         self.sections = {}
         self.mappings = {}
+
+        self.check_mappings = check_mappings
+
+        if check_mapping_exceptions:
+            self.check_mapping_exceptions = check_mapping_exceptions
+        else:
+            self.check_mapping_exceptions = []
 
     def _add_mapping_rules(self, archive, obj, symbol, scheme_name, scheme_dict, rules):
         # Use an ordinary dictionary to raise exception on non-existing keys
@@ -338,6 +344,14 @@ class GenerationModel:
                 try:
                     if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
                             scheme_name == GenerationModel.DEFAULT_SCHEME):
+
+                        if self.check_mappings and mapping.name not in self.check_mapping_exceptions:
+                            if not obj == Mapping.MAPPING_ALL_OBJECTS:
+                                obj_section = sections_infos.get_obj_sections(archive, obj)
+                                if not obj_section:
+                                    message = "'%s\:%s' not found" % (archive, obj)
+                                    raise GenerationException(message, mapping)
+
                         self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
                 except KeyError:
                     message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
@@ -623,17 +637,31 @@ class SectionsInfo(dict):
         return results
 
     def get_obj_sections(self, archive, obj):
-        stored = self.sections[archive]
+        res = []
+        try:
+            stored = self.sections[archive]
 
-        # Parse the contents of the sections file
-        if not isinstance(stored, dict):
-            parsed = self._get_infos_from_file(stored)
-            stored = dict()
-            for content in parsed.contents:
-                sections = list(map(lambda s: s, content.sections))
-                stored[content.object] = sections
-            self.sections[archive] = stored
+            # Parse the contents of the sections file on-demand,
+            # save the result for later
+            if not isinstance(stored, dict):
+                parsed = self._get_infos_from_file(stored)
+                stored = dict()
+                for content in parsed.contents:
+                    sections = list(map(lambda s: s, content.sections))
+                    stored[content.object] = sections
+                self.sections[archive] = stored
 
-        for obj_key in stored.keys():
-            if obj_key == obj + ".o" or obj_key == obj + ".c.obj":
-                return stored[obj_key]
+            try:
+                res = stored[obj + ".o"]
+            except KeyError:
+                try:
+                    res = stored[obj + ".c.obj"]
+                except KeyError:
+                    try:
+                        res = stored[obj + ".cpp.obj"]
+                    except KeyError:
+                        res = stored[obj + ".S.obj"]
+        except KeyError:
+            pass
+
+        return res
