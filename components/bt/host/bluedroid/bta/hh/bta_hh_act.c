@@ -34,6 +34,7 @@
 #include "bta_hh_int.h"
 #include "bta/bta_hh_co.h"
 #include "bta/utl.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 **  Constants
@@ -196,7 +197,7 @@ static void bta_hh_sdp_cback(UINT16 result, UINT16 attr_mask,
         }
 
 #if BTA_HH_DEBUG
-        APPL_TRACE_EVENT("bta_hh_sdp_cback: p_cb: %d result 0x%02x, \
+        APPL_TRACE_EVENT("bta_hh_sdp_cback: p_cb: %p result 0x%02x, \
                             attr_mask 0x%02x, handle %x", \
                          p_cb, result, attr_mask, p_cb->hid_handle);
 #endif
@@ -261,7 +262,7 @@ static void bta_hh_di_sdp_cback(UINT16 result)
     tSDP_DI_GET_RECORD  di_rec;
     tHID_STATUS ret;
 #if BTA_HH_DEBUG
-    APPL_TRACE_EVENT("bta_hh_di_sdp_cback: p_cb: %d result 0x%02x", p_cb, result);
+    APPL_TRACE_EVENT("bta_hh_di_sdp_cback: p_cb: %p result 0x%02x", p_cb, result);
 #endif
 
     /* if DI record does not exist on remote device, vendor_id in tBTA_HH_DEV_DSCP_INFO will be
