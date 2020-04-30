@@ -207,7 +207,7 @@ test_weekend_network:
 
 example_test_001A:
   extends: .example_test_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32
     - Example_WIFI
@@ -290,7 +290,7 @@ example_test_009:
   artifacts:
       when: always
       paths:
-        - $CI_PROJECT_DIR/examples/get-started/hello_world/*.log
+        - $CI_PROJECT_DIR/examples/storage/semihost_vfs/*.log
       expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"
@@ -306,6 +306,13 @@ test_app_test_001:
   tags:
     - ESP32
     - test_jtag_arm
+  artifacts:
+      when: always
+      paths:
+        - $CI_PROJECT_DIR/tools/test_apps/system/gdb_loadable_elf/*.log
+      expire_in: 1 week
+  variables:
+    SETUP_TOOLS: "1"
 
 test_app_test_002:
   extends: .test_app_template
@@ -338,6 +345,12 @@ example_test_012:
   tags:
     - ESP32
     - Example_RMT_IR_PROTOCOLS
+
+example_test_013:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - UT_T1_SDMODE
 
 UT_001:
   extends: .unit_test_template
