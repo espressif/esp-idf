@@ -1,31 +1,24 @@
 .. _esp-wroom-solo-wrover-modules:
 
-WROOM、SOLO、WROVER 和 PICO 系列模组
-=====================================
+模组
+====
 
-WROOM、SOLO、WROVER 和 PICO 系列模组内置 ESP32 芯片并集成了晶振、天线匹配电路等重要组件，可直接集成到终端产品中。如果再结合一些其他组件，例如编程接口、Bootstrapping 电阻和排针，您就可以体验 ESP32 的强大功能了。
+ESP32 系列模组集成了晶振、天线匹配电路等重要组件，可直接集成到终端产品中。如果再结合一些其他组件，例如编程接口、自举电阻和排针，您就可以体验 ESP32 的强大功能了。
 
-下表总结了上述系列模组的主要特点，详细信息见后续章节。
+下表总结了上述系列模组的主要特点，详细信息见后文。
 
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| 模组                | 芯片         | Flash (MB)  | PSRAM (MB)  | 天线 | 尺寸 (mm)       |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROOM-32      | ESP32-D0WDQ6 | 4           | –           | MIFA | 18 × 25.5 × 3.1 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROOM-32D     | ESP32-D0WD   | 4、8 或 16  | –           | MIFA | 18 × 25.5 × 3.1 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROOM-32U     | ESP32-D0WD   | 4、8 或 16  | –           | U.FL | 18 × 19.2 × 3.1 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-SOLO-1        | ESP32-S0WD   | 4           | –           | MIFA | 18 × 25.5 × 3.1 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROVER (PCB)  | ESP32-D0WDQ6 | 4           | 8           | MIFA | 18 × 31.4 × 3.3 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROVER (IPEX) | ESP32-D0WDQ6 | 4           | 8           | U.FL | 18 × 31.4 × 3.3 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROVER-B      | ESP32-D0WD   | 4、8 或 16  | 8           | MIFA | 18 × 31.4 × 3.3 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
-| ESP32-WROVER-IB     | ESP32-D0WD   | 4、8 或 16  | 8           | U.FL | 18 × 31.4 × 3.3 |
-+---------------------+--------------+-------------+-------------+------+-----------------+
+=====================  ==============  ============  ============  ======  =================
+ 模组                   芯片             Flash (MB)    PSRAM (MB)    天线     尺寸 (mm)       
+=====================  ==============  ============  ============  ======  =================
+ ESP32-WROOM-32        ESP32-D0WDQ6    4             –             MIFA    18 × 25.5 × 3.1 
+ ESP32-WROOM-32D       ESP32-D0WD      4、8 或 16     –             MIFA    18 × 25.5 × 3.1 
+ ESP32-WROOM-32U       ESP32-D0WD      4、8 或 16     –             U.FL    18 × 19.2 × 3.1 
+ ESP32-SOLO-1          ESP32-S0WD      4             –             MIFA    18 × 25.5 × 3.1 
+ ESP32-WROVER (PCB)    ESP32-D0WDQ6    4             8             MIFA    18 × 31.4 × 3.3 
+ ESP32-WROVER (IPEX)   ESP32-D0WDQ6    4             8             U.FL    18 × 31.4 × 3.3 
+ ESP32-WROVER-B        ESP32-D0WD      4、8 或 16     8             MIFA    18 × 31.4 × 3.3 
+ ESP32-WROVER-IB       ESP32-D0WD      4、8 或 16     8             U.FL    18 × 31.4 × 3.3 
+=====================  ==============  ============  ============  ======  =================
 
 
 * ESP32-**D**.. 代表双核芯片，ESP32-**S**.. 代表单核芯片；
@@ -38,11 +31,11 @@ WROOM、SOLO、WROVER 和 PICO 系列模组内置 ESP32 芯片并集成了晶振
 .. _esp-modules-and-boards-esp32-wroom-32:
 
 ESP32-WROOM-32 模组
---------------------
+-------------------
 
 ESP32-WROOM-32 模组是 WROOM/WROVER 系列最先发布的模组，内置 ESP32-D0WDQ6 芯片，是一款基础且常用的 ESP32 模组。
 
-有关该模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 章节中的表格。
+有关该模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 中的表格和`乐鑫产品订购信息`_。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-wroom-32-front-back.jpg
     :align: center
@@ -52,7 +45,7 @@ ESP32-WROOM-32 模组是 WROOM/WROVER 系列最先发布的模组，内置 ESP32
     ESP32-WROOM-32 模组（正反面图）
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * 《`ESP32-WROOM-32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_》(PDF)；
 * `ESP32-WROOM-32 参考设计 <https://www.espressif.com/zh-hans/support/download/documents?keys=ESP32-WROOM-32+%E5%8F%82%E8%80%83%E8%AE%BE%E8%AE%A1>`_，包括原理图（由 OrCAD Capture 绘制）、PCB 布局（由 Mentor PADS 绘制）、GERBER 文件和 BOM 清单。
@@ -60,7 +53,7 @@ ESP32-WROOM-32 模组是 WROOM/WROVER 系列最先发布的模组，内置 ESP32
 .. _esp-modules-and-boards-esp32-wroom-32d-and-u:
 
 ESP32-WROOM-32D/ESP32-WROOM-32U 模组
---------------------------------------
+------------------------------------
 
 两款模组均集成了 ESP32-D0WD 芯片，与 :ref:`esp-modules-and-boards-esp32-wroom-32` 集成的 ESP32-D0WDQ6 相比，ESP32-D0WD 芯片的封装更小，在 PCB 上占用的面积更小。
 
@@ -83,7 +76,7 @@ ESP32-WROOM-32U 是整个 WROOM/WROVER 模组系列中最小的模组。
     ESP32-WROOM-32U 模组（正反面图）
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * 《`ESP32-WROOM-32D/ESP32-WROOM-32U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_》(PDF)
 
@@ -95,7 +88,7 @@ ESP32-SOLO-1 模组
 
 ESP32-SOLO-1 模组是 ESP32-WROOM-32D 模组的简化版本，内置一个 ESP32 单核芯片，支持高达 160 MHz 的时钟频率。
 
-有关此模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 章节中的表格和 `乐鑫产品订购信息`_。
+有关此模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 中的表格和 `乐鑫产品订购信息`_。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-solo-1-front-back.jpg
     :align: center
@@ -105,18 +98,18 @@ ESP32-SOLO-1 模组是 ESP32-WROOM-32D 模组的简化版本，内置一个 ESP3
     ESP32-SOLO-1 模组（正反面图）
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * 《`ESP32-SOLO-1 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1c_datasheet_cn.pdf>`__》(PDF)
 
 .. _esp-modules-and-boards-esp32-wrover:
 
 ESP32-WROVER 系列模组
--------------------------
+---------------------
 
 ESP32-WROVER 系列模组在 ESP32-WROOM-32x 模组的基础上进行了一些修改，其中包含一些功能升级，并新增 8 MB SPI PSRAM（伪静态 RAM）。
 
-有关该模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 章节中的表格和 `乐鑫产品订购信息`_。
+有关该模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 中的表格和 `乐鑫产品订购信息`_。
 
 * **ESP32-WROVER (PCB)** 模组和 **ESP32-WROVER (IPEX)** 模组内置 1.8 V PSRAM，支持 144 MHz 时钟频率。
 * **ESP32-WROVER-B** 模组和 **ESP32-WROVER-IB** 模组内置 3.3 V PSRAM，支持 133 MHz 时钟频率。
@@ -131,7 +124,7 @@ ESP32-WROVER 系列模组在 ESP32-WROOM-32x 模组的基础上进行了一些�
     ESP32-WROVER 模组（正反面图）
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * 《`ESP32-WROVER 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`__》(PDF)
 * 《`ESP32-WROVER-B 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`__》(PDF)
@@ -151,12 +144,12 @@ ESP32-PICO-D4 模组是一款 SiP 模组，无缝集成了所有外设，包括�
 有关该模组的详细信息，请查看 `乐鑫产品订购信息`_。
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * 《`ESP32-PICO-D4 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`__》(PDF)
 
 ESP32 开发板
-==================
+============
 
 ESP32 系列开发板功能各异，具体有以下不同点：
 
@@ -167,7 +160,7 @@ ESP32 系列开发板功能各异，具体有以下不同点：
 .. _esp-modules-and-boards-esp32-pico-kit:
 
 ESP32-PICO-KIT V4.1 开发板
----------------------------
+--------------------------
 ESP32-PICO-KIT V4.1 开发板是基于 ESP32 的最小开发板，内置连接至电脑 USB 端口所需的所有组件，同时设有排针，可直接将此开发板插接于迷你面包板。
 
 ESP32-PICO-KIT V4.1 开发板集成了 `ESP32-PICO-D4 模组`_，只需在 PCB (20 x 52 mm) 上添加少许外部组件即可构成一个功能齐全的开发板。这部分外部组件包括天线、LDO、USB 至 UART 桥接器、一个重置按钮和一个固件下载模式激活按钮。
@@ -183,7 +176,7 @@ ESP32-PICO-KIT V4.1 开发板集成了 `ESP32-PICO-D4 模组`_，只需在 PCB (
 与 ESP32-PICO-KIT V4 相比，ESP32-PICO-KIT V4.1 开发板支持 CP2102N USB 至 UART 桥接器，可提供高达 3 Mbps 的传输速率。
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * :doc:`../../hw-reference/esp32/get-started-pico-kit`
 * `ESP32-PICO-KIT V4.1 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
@@ -191,7 +184,7 @@ ESP32-PICO-KIT V4.1 开发板集成了 `ESP32-PICO-D4 模组`_，只需在 PCB (
 * 《`ESP32-PICO-D4 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_》(PDF)
 
 较早版本开发板
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp32-pico-kit-v4`
 * :ref:`esp-modules-and-boards-esp32-pico-kit-v3`
@@ -200,7 +193,7 @@ ESP32-PICO-KIT V4.1 开发板集成了 `ESP32-PICO-D4 模组`_，只需在 PCB (
 .. _esp-modules-and-boards-esp32-devkitc:
 
 ESP32 DevKitC V4 开发板
-------------------------------
+-----------------------
 
 ESP32 DevKitC V4 开发板是一款小巧实用的开发板，具备以下特色功能：
 
@@ -220,7 +213,7 @@ ESP32 DevKitC V4 开发板是一款小巧实用的开发板，具备以下特色
     ESP32 DevKitC V4 开发板
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * :doc:`../../hw-reference/esp32/get-started-devkitc`
 * `ESP32-DevKitC 原理图 <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ (PDF)
@@ -228,7 +221,7 @@ ESP32 DevKitC V4 开发板是一款小巧实用的开发板，具备以下特色
 * `CP210x USB 至 UART 桥 VCP 驱动器 <https://cn.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
 较早版本开发板
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp32-devkitc-v2`
 
@@ -236,7 +229,7 @@ ESP32 DevKitC V4 开发板是一款小巧实用的开发板，具备以下特色
 .. _esp-modules-and-boards-esp-wrover-kit:
 
 ESP-WROVER-KIT V4.1 开发板
--------------------------------
+--------------------------
 
 ESP-WROVER-KIT V4.1 开发板具备以下特色功能：
 
@@ -269,7 +262,7 @@ ESP-WROVER-KIT V4.1 开发板集成了 ESP-WROVER-B 模组，该模组集成了 
 上图所示开发板集成了 ESP32-WROVER-B 模组。
 
 相关文档
-^^^^^^^^^^^^^
+^^^^^^^^
 
 * :doc:`../../hw-reference/esp32/get-started-wrover-kit`
 * `ESP-WROVER-KIT V4.1 原理图 <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf>`__ (PDF)
@@ -277,17 +270,12 @@ ESP-WROVER-KIT V4.1 开发板集成了 ESP-WROVER-B 模组，该模组集成了 
 * `FTDI 虚拟 COM 端口驱动`_
 
 较早版本开发板
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp-wrover-kit-v3`
 * :ref:`esp-modules-and-boards-esp-wrover-kit-v2`
 * :ref:`esp-modules-and-boards-esp-wrover-kit-v1`
 
-
-相关文档
-=================
-
-* :doc:`modules-and-boards-previous`
 
 
 .. _FTDI 虚拟 COM 端口驱动: https://www.ftdichip.com/Drivers/VCP.htm

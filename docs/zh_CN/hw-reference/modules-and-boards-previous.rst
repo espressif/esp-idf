@@ -4,7 +4,9 @@
 {IDF_TARGET_NAME} 模组与开发板（历史版本）
 **************************************
 
-This sections contains overview and links to documentation of previous version {IDF_TARGET_NAME} Modules and Boards that have been replaced with newer versions or discontinued. It is maintained for convenience of users as previous versions of some modules and boards are still in use and some may still be available for purchase.
+:link_to_translation:`en:[English]`
+
+本节列出了旧版或已停产 {IDF_TARGET_NAME}  模组和开发板的概述和文档链接，便于有意购买和使用旧版模组和开发板的用户参考。
 
 
 .. only:: esp32
@@ -21,4 +23,4 @@ This sections contains overview and links to documentation of previous version {
 * :doc:`modules-and-boards`
 
 
-.. _FTDI Virtual COM Port Drivers: https://www.ftdichip.com/Drivers/VCP.htm
+.. _FTDI 虚拟 COM 端口驱动: http://www.ftdichip.com/Drivers/VCP.htm
