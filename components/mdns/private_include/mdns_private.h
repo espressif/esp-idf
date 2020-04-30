@@ -56,7 +56,7 @@
 #define MDNS_ANSWER_AAAA_SIZE       16
 
 #define MDNS_SERVICE_PORT           5353                    // UDP port that the server runs on
-#define MDNS_SERVICE_STACK_DEPTH    4096                    // Stack size for the service thread
+#define MDNS_SERVICE_STACK_DEPTH    CONFIG_MDNS_TASK_STACK_SIZE
 #define MDNS_TASK_PRIORITY          CONFIG_MDNS_TASK_PRIORITY
 #if (MDNS_TASK_PRIORITY > ESP_TASK_PRIO_MAX)
 #error "mDNS task priority is higher than ESP_TASK_PRIO_MAX"
