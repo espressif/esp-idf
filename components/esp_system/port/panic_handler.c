@@ -542,25 +542,6 @@ void xt_unhandled_exception(XtExcFrame *frame)
     panic_handler(frame, false);
 }
 
-static __attribute__((noreturn)) void esp_digital_reset(void)
-{
-    // make sure all the panic handler output is sent from UART FIFO
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    // switch to XTAL (otherwise we will keep running from the PLL)
-
-    rtc_clk_cpu_freq_set_xtal();
-
-#if CONFIG_IDF_TARGET_ESP32
-    esp_cpu_unstall(PRO_CPU_NUM);
-#endif
-
-    // reset the digital part
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
-    while (true) {
-        ;
-    }
-}
-
 void __attribute__((noreturn)) panic_restart(void)
 {
     bool digital_reset_needed = false;
@@ -576,7 +557,7 @@ void __attribute__((noreturn)) panic_restart(void)
     }
 #endif
     if (digital_reset_needed) {
-        esp_digital_reset();
+        esp_restart_noos_dig();
     }
     esp_restart_noos();
 }

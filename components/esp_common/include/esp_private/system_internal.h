@@ -37,6 +37,11 @@ extern "C" {
 void esp_restart_noos(void) __attribute__ ((noreturn));
 
 /**
+ * @brief Similar to esp_restart_noos, but resets all the digital peripherals.
+ */
+void esp_restart_noos_dig(void) __attribute__ ((noreturn));
+
+/**
  * @brief  Internal function to set reset reason hint
  *
  * The hint is used do distinguish different reset reasons when software reset
