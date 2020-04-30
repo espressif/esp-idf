@@ -39,17 +39,27 @@ static void register_light_sleep(void);
 static void register_tasks(void);
 #endif
 
-void register_system(void)
+void register_system_common(void)
 {
     register_free();
     register_heap();
     register_version();
     register_restart();
-    register_deep_sleep();
-    register_light_sleep();
 #if WITH_TASKS_INFO
     register_tasks();
 #endif
+}
+
+void register_system_sleep(void)
+{
+    register_deep_sleep();
+    register_light_sleep();
+}
+
+void register_system(void)
+{
+    register_system_common();
+    register_system_sleep();
 }
 
 /* 'version' command */
@@ -124,7 +134,7 @@ static void register_free(void)
 static int heap_size(int argc, char **argv)
 {
     uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "min heap size: %u", heap_size);
+    printf("min heap size: %u\n", heap_size);
     return 0;
 }
 
