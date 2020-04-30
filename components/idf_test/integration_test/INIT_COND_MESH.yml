@@ -95,7 +95,6 @@ initial condition:
   - - MSSC SSC[1-<node_num>] mesh -Q -o 3
     - - P SSC[1-<node_num>] RE "MID,%%s"%%(<mesh_id>)
       - P SSC[1-<node_num>] RE "MROUTER,%%s"%%(<router_ssid>)
-      - P SSC[1-<node_num>] RE "SWITCH_PARENT,%%s"%%(<duration_ms>)
       - P SSC[1-<node_num>] C NO_SPECIFIC_SETTINGS
   restore cmd set:
   - ''

@@ -402,22 +402,23 @@ test cases:
   cmd set:
   - ''
   - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 0
-    - - P MNODE(0) C +MESHTXPKT,OK
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
       - P MNODE(0,0) C +MESHRXPKT,OK
   - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 1
-    - - P MNODE(0) C +MESHTXPKT,OK
+    - - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
   - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 2
-    - - P MNODE(0) C +MESHTXPKT,OK
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
       - P MNODE(0,0) C +MESHRXPKT,OK
   - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 2
-    - - P MNODE(0,0) C +MESHTXPKT,FAIL
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
   - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 0
-    - - P MNODE(0,0) C +MESHTXPKT,FAIL
+    - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
   expected result: |-
     1. succeed
-    2. succeed
+    2. failed
     3. succeed
-    4. succeed
+    4. failed
     5. succeed
   steps: |-
     1. root send unicast to L2 with tos = P2P

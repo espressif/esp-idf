@@ -470,8 +470,8 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MESH_QUEUE_READ
     ERR_TBL_IT(ESP_ERR_MESH_QUEUE_READ),                        /* 16408 0x4018 */
 #   endif
-#   ifdef      ESP_ERR_MESH_INACTIVE
-    ERR_TBL_IT(ESP_ERR_MESH_INACTIVE),                          /* 16409 0x4019 */
+#   ifdef      ESP_ERR_MESH_PS
+    ERR_TBL_IT(ESP_ERR_MESH_PS),                                /* 16409 0x4019 */
 #   endif
     // components/esp_netif/include/esp_netif_types.h
 #   ifdef      ESP_ERR_ESP_NETIF_BASE
