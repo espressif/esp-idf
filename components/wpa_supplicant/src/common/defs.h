@@ -22,7 +22,7 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 #define WPA_CIPHER_WEP104               BIT(8)
 #define WPA_CIPHER_TKIP                 BIT(1)
 #define WPA_CIPHER_CCMP                 BIT(3)
-#define WPA_CIPHER_AES_128_CMAC         BIT(2)
+#define WPA_CIPHER_AES_128_CMAC         BIT(5)
 #define WPA_CIPHER_GCMP                 BIT(6)
 
 #define WPA_KEY_MGMT_IEEE8021X BIT(0)
@@ -303,7 +303,6 @@ enum wpa_states {
 
 #define MLME_SETPROTECTION_KEY_TYPE_GROUP 0
 #define MLME_SETPROTECTION_KEY_TYPE_PAIRWISE 1
-
 
 /**
  * enum mfp_options - Management frame protection (IEEE 802.11w) options

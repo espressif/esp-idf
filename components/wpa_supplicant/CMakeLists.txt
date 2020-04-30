@@ -106,4 +106,5 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_ECC
     CONFIG_TLSV12
     CONFIG_SHA256
+    CONFIG_IEEE80211W
     )

@@ -134,6 +134,7 @@ typedef enum {
     WIFI_CIPHER_TYPE_TKIP,       /**< the cipher type is TKIP */
     WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
     WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
+    WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 
@@ -199,6 +200,12 @@ typedef enum {
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
 
+/** Configuration structure for Protected Management Frame */
+typedef struct {
+    bool capable;            /**< Advertizes support for Protected Management Frame. Device will prefer to connect in PMF mode if other device also advertizes PMF capability. */
+    bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
+} wifi_pmf_config_t;
+
 /** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
     uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
@@ -222,6 +229,7 @@ typedef struct {
     uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
     wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.

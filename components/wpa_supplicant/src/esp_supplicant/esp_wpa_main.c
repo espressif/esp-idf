@@ -158,32 +158,6 @@ void  wpa_sta_connect(uint8_t *bssid)
     WPA_ASSERT(ret == 0);
 }
 
-int cipher_type_map(int wpa_cipher)
-{
-    switch (wpa_cipher) {
-    case WPA_CIPHER_NONE:
-        return WIFI_CIPHER_TYPE_NONE;
-
-    case WPA_CIPHER_WEP40:
-        return WIFI_CIPHER_TYPE_WEP40;
-
-    case WPA_CIPHER_WEP104:
-        return WIFI_CIPHER_TYPE_WEP104;
-
-    case WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP;
-
-    case WPA_CIPHER_CCMP:
-        return WIFI_CIPHER_TYPE_CCMP;
-
-    case WPA_CIPHER_CCMP|WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP_CCMP;
-
-    default:
-        return WIFI_CIPHER_TYPE_UNKNOWN;
-    }
-}
-
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
 {
     struct wpa_ie_data ie;
@@ -191,12 +165,12 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
 
     ret = wpa_parse_wpa_ie(wpa_ie, wpa_ie_len, &ie);
     data->proto = ie.proto;
-    data->pairwise_cipher = cipher_type_map(ie.pairwise_cipher);
-    data->group_cipher = cipher_type_map(ie.group_cipher);
+    data->pairwise_cipher = cipher_type_map_supp_to_public(ie.pairwise_cipher);
+    data->group_cipher = cipher_type_map_supp_to_public(ie.group_cipher);
     data->key_mgmt = ie.key_mgmt;
     data->capabilities = ie.capabilities;
     data->pmkid = ie.pmkid;
-    data->mgmt_group_cipher = cipher_type_map(ie.mgmt_group_cipher);
+    data->mgmt_group_cipher = cipher_type_map_supp_to_public(ie.mgmt_group_cipher);
 
     return ret;
 }
