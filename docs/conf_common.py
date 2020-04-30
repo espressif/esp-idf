@@ -67,6 +67,8 @@ extensions = ['breathe',
               'idf_extensions.gen_idf_tools_links',
               'idf_extensions.format_idf_target',
               'idf_extensions.latex_builder',
+              'idf_extensions.gen_defines',
+              'idf_extensions.exclude_docs',
 
               # from https://github.com/pfalcon/sphinx_selective_exclude
               'sphinx_selective_exclude.eager_only',
@@ -124,47 +126,49 @@ print('Version: {0}  Release: {1}'.format(version, release))
 exclude_patterns = ['**/inc/**', '_static', '**/_build']
 
 
-# Add target-specific excludes based on tags (for the IDF_TARGET). Haven't found any better way to do this yet
-def update_exclude_patterns(tags):
-    if "esp32" not in tags:
-        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
-        # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['api-guides/blufi.rst',
-                  'api-guides/build-system-legacy.rst',
-                  'api-guides/esp-ble-mesh/**',
-                  'api-guides/RF_calibration.rst',  # temporary until support re-added in esp_wifi
-                  'api-guides/ulp-legacy.rst',
-                  'api-guides/unit-tests-legacy.rst',
-                  'api-guides/ulp_instruction_set.rst',
-                  'api-guides/jtag-debugging/configure-wrover.rst',
-                  'api-reference/system/himem.rst',
-                  'api-reference/bluetooth/**',
-                  'api-reference/peripherals/sdio_slave.rst',
-                  'api-reference/peripherals/esp_slave_protocol.rst',
-                  'api-reference/peripherals/mcpwm.rst',
-                  'api-reference/peripherals/sd_pullup_requirements.rst',
-                  'api-reference/peripherals/sdmmc_host.rst',
-                  'api-reference/protocols/esp_serial_slave_link.rst',
-                  'api-reference/system/ipc.rst',
-                  'get-started-legacy/**',
-                  'security/secure-boot-v1.rst',
-                  'security/secure-boot-v2.rst',
-                  'gnu-make-legacy.rst',
-                  'hw-reference/esp32/**',
-                  ]:
-            exclude_patterns.append(e)
+BT_DOCS = ['api-guides/blufi.rst',
+           'api-guides/esp-ble-mesh/**',
+           'api-reference/bluetooth/**']
 
-    if "esp32s2" not in tags:
-        # Exclude ESP32-S2-only document pages so they aren't found in the initial search for .rst files
-        # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['esp32s2.rst',
-                  'hw-reference/esp32s2/**',
-                  'api-guides/dfu.rst',
-                  'api-guides/ulps2_instruction_set.rst',
-                  'api-reference/peripherals/hmac.rst',
-                  'api-reference/peripherals/temp_sensor.rst']:
-            exclude_patterns.append(e)
+SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
+              'api-reference/peripherals/sd_pullup_requirements.rst']
 
+SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
+                   'api-reference/peripherals/esp_slave_protocol.rst',
+                   'api-reference/protocols/esp_serial_slave_link.rst']
+
+MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
+
+LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
+               'gnu-make-legacy.rst',
+               'api-guides/ulp-legacy.rst',
+               'api-guides/unit-tests-legacy.rst',
+               'get-started-legacy/**']
+
+ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
+              'api-guides/jtag-debugging/configure-wrover.rst',
+              'api-reference/system/himem.rst',
+              'api-guides/RF_calibration.rst',
+              'api-reference/system/ipc.rst',
+              'security/secure-boot-v1.rst',
+              'security/secure-boot-v2.rst',
+              'hw-reference/esp32/**'] + LEGACY_DOCS
+
+ESP32S2_DOCS = ['esp32s2.rst',
+                'hw-reference/esp32s2/**',
+                'api-guides/ulps2_instruction_set.rst',
+                'api-guides/dfu.rst',
+                'api-reference/peripherals/hmac.rst',
+                'api-reference/peripherals/temp_sensor.rst'
+                '']
+
+# format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
+conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
+                            'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
+                            'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
+                            'esp32':ESP32_DOCS,
+                            'esp32s2':ESP32S2_DOCS}
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -377,6 +381,8 @@ def setup(app):
     if "idf_target" not in app.config:
         app.add_config_value('idf_target', None, 'env')
         app.add_config_value('idf_targets', None, 'env')
+
+    app.add_config_value('conditional_include_dict', None, 'env')
 
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir

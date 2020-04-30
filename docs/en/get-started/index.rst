@@ -20,8 +20,8 @@ Introduction
 .. list::
 
     * Wi-Fi (2.4 GHz band)
-    :esp32: * Bluetooth
-    :esp32: * Dual high performance cores
+    :SOC_BT_SUPPORTED: * Bluetooth
+    :CONFIG_FREERTOS_UNICORE: * Dual high performance cores
     * Ultra Low Power co-processor
     * Multiple peripherals
     :esp32s2: * Built-in security hardware
@@ -322,7 +322,7 @@ Linux and macOS
 .. code-block:: bash
 
     cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_CL} 
+    idf.py set-target {IDF_TARGET_CL}
     idf.py menuconfig
 
 Windows
@@ -590,7 +590,7 @@ See also:
 
 Now you are ready to try some other :idf:`examples`, or go straight to developing your own applications.
 
-.. important:: 
+.. important::
 
     Some of examples do not support {IDF_TARGET_NAME} because required hardware is not included in {IDF_TARGET_NAME} so it cannot be supported.
 

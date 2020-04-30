@@ -2,7 +2,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from io import open
-import glob
 import os
 import os.path
 import re
@@ -45,27 +44,8 @@ def _parse_defines(header_path, sdk_config_path):
     return defines
 
 
-def generate_doxygen(app, project_description):
+def generate_doxygen(app, defines):
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
-
-    sdk_config_path = os.path.join(project_description["build_dir"], "config")
-
-    # Parse kconfig macros to pass into doxygen
-    #
-    # TODO: this should use the set of "config which can't be changed" eventually,
-    # not the header
-    defines = _parse_defines(os.path.join(project_description["build_dir"],
-                                          "config", "sdkconfig.h"), sdk_config_path)
-
-    # Add all SOC _caps.h headers to the defines
-    #
-    # kind of a hack, be nicer to add a component info dict in project_description.json
-    soc_path = [p for p in project_description["build_component_paths"] if p.endswith("/soc")][0]
-    soc_headers = glob.glob(os.path.join(soc_path, "soc", project_description["target"],
-                                         "include", "soc", "*_caps.h"))
-    assert len(soc_headers) > 0
-    for soc_header in soc_headers:
-        defines.update(_parse_defines(soc_header, sdk_config_path))
 
     # Call Doxygen to get XML files from the header files
     print("Calling Doxygen to generate latest XML files")
