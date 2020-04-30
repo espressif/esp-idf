@@ -31,7 +31,7 @@
 typedef struct {
     uint32_t icache_autoload;
     uint32_t dcache_autoload;
-} spi_noos_arg_t; 
+} spi_noos_arg_t;
 
 static DRAM_ATTR spi_noos_arg_t spi_arg = { 0 };
 #endif
@@ -71,11 +71,19 @@ static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
     return ESP_OK;
 }
 
+// Currently when the os is not up yet, the caller is supposed to call esp_flash APIs with proper
+// buffers.
+IRAM_ATTR void* get_temp_buffer_not_supported(void* arg, size_t reqest_size, size_t* out_size)
+{
+    return NULL;
+}
+
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .start = start,
     .end = end,
     .delay_us = delay_us,
     .region_protected = NULL,
+    .get_temp_buffer = get_temp_buffer_not_supported,
     .yield = NULL,
 };
 

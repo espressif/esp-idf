@@ -368,3 +368,6 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
  *      - or other error passed from the ``configure_host_mode`` function of host driver
  */
 esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip);
+
+/// Default timeout configuration used by most chips
+const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;

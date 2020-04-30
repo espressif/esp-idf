@@ -28,9 +28,9 @@
         .supports_direct_write = spi_flash_hal_supports_direct_write, \
         .supports_direct_read = spi_flash_hal_supports_direct_read, \
         .program_page = spi_flash_hal_program_page, \
-        .max_write_bytes = SPI_FLASH_HAL_MAX_WRITE_BYTES, \
+        .write_data_slicer = memspi_host_write_data_slicer, \
         .read = spi_flash_hal_read, \
-        .max_read_bytes = SPI_FLASH_HAL_MAX_READ_BYTES, \
+        .read_data_slicer = memspi_host_read_data_slicer, \
         .host_idle = spi_flash_hal_host_idle, \
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
@@ -140,3 +140,40 @@ void memspi_host_program_page(spi_flash_host_driver_t *driver, const void *buffe
  * @param wp Enable or disable write protect (true - enable, false - disable).
  */
 esp_err_t memspi_host_set_write_protect(spi_flash_host_driver_t *driver, bool wp);
+
+/**
+ * Read data to buffer.
+ *
+ * @param driver The driver context.
+ * @param buffer Buffer which contains the data to be read.
+ * @param address Starting address of where to read the data.
+ * @param length The number of bytes to read.
+ */
+esp_err_t memspi_host_read(spi_flash_host_driver_t *driver, void *buffer, uint32_t address, uint32_t read_len);
+
+/**
+ * @brief Slicer for read data used in non-encrypted regions. This slicer does nothing but
+ *        limit the length to the maximum size the host supports.
+ *
+ * @param address Flash address to read
+ * @param len Length to read
+ * @param align_address Output of the address to read, should be equal to the input `address`
+ * @param page_size Physical SPI flash page size
+ *
+ * @return Length that can actually be read in one `read` call in `spi_flash_host_driver_t`.
+ */
+int memspi_host_read_data_slicer(uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
+
+/**
+ * @brief Slicer for write data used in non-encrypted regions. This slicer limit the length to the
+ *        maximum size the host supports, and truncate if the write data lie accross the page boundary
+ *        (256 bytes)
+ *
+ * @param address Flash address to write
+ * @param len Length to write
+ * @param align_address Output of the address to write, should be equal to the input `address`
+ * @param page_size Physical SPI flash page size
+ *
+ * @return Length that can actually be written in one `program_page` call in `spi_flash_host_driver_t`.
+ */
+int memspi_host_write_data_slicer(uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);

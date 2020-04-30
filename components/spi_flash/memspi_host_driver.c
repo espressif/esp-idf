@@ -19,6 +19,9 @@
 #include "cache_utils.h"
 #include "esp_flash_partitions.h"
 
+#define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
+#define SPI_FLASH_HAL_MAX_READ_BYTES 64
+
 static const char TAG[] = "memspi";
 static const spi_flash_host_driver_t esp_flash_default_host = ESP_FLASH_DEFAULT_HOST_DRIVER();
 
@@ -38,25 +41,25 @@ extern bool spi_flash_hal_gpspi_supports_direct_write(spi_flash_host_driver_t *d
 extern bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_driver_t *driver, const void *p);
 
 /** Default configuration for GPSPI */
-static const spi_flash_host_driver_t esp_flash_gpspi_host = { 
-        .dev_config = spi_flash_hal_gpspi_device_config, 
-        .common_command = spi_flash_hal_gpspi_common_command, 
-        .read_id = memspi_host_read_id_hs, 
-        .erase_chip = memspi_host_erase_chip, 
-        .erase_sector = memspi_host_erase_sector, 
-        .erase_block = memspi_host_erase_block, 
-        .read_status = memspi_host_read_status_hs, 
-        .set_write_protect = memspi_host_set_write_protect, 
-        .supports_direct_write = spi_flash_hal_gpspi_supports_direct_write, 
-        .supports_direct_read = spi_flash_hal_gpspi_supports_direct_read, 
-        .program_page = memspi_host_program_page, 
-        .max_write_bytes = SPI_FLASH_HAL_MAX_WRITE_BYTES, 
-        .read = spi_flash_hal_gpspi_read, 
-        .max_read_bytes = SPI_FLASH_HAL_MAX_READ_BYTES, 
-        .host_idle = spi_flash_hal_gpspi_host_idle, 
-        .configure_host_io_mode = spi_flash_hal_gpspi_configure_host_io_mode, 
-        .poll_cmd_done = spi_flash_hal_gpspi_poll_cmd_done, 
-        .flush_cache = NULL, 
+static const spi_flash_host_driver_t esp_flash_gpspi_host = {
+        .dev_config = spi_flash_hal_gpspi_device_config,
+        .common_command = spi_flash_hal_gpspi_common_command,
+        .read_id = memspi_host_read_id_hs,
+        .erase_chip = memspi_host_erase_chip,
+        .erase_sector = memspi_host_erase_sector,
+        .erase_block = memspi_host_erase_block,
+        .read_status = memspi_host_read_status_hs,
+        .set_write_protect = memspi_host_set_write_protect,
+        .supports_direct_write = spi_flash_hal_gpspi_supports_direct_write,
+        .supports_direct_read = spi_flash_hal_gpspi_supports_direct_read,
+        .program_page = memspi_host_program_page,
+        .write_data_slicer = memspi_host_write_data_slicer,
+        .read = spi_flash_hal_gpspi_read,
+        .read_data_slicer = memspi_host_read_data_slicer,
+        .host_idle = spi_flash_hal_gpspi_host_idle,
+        .configure_host_io_mode = spi_flash_hal_gpspi_configure_host_io_mode,
+        .poll_cmd_done = spi_flash_hal_gpspi_poll_cmd_done,
+        .flush_cache = NULL,
 };
 #endif
 
@@ -143,7 +146,7 @@ void memspi_host_erase_chip(spi_flash_host_driver_t *chip_drv)
 
 void memspi_host_erase_sector(spi_flash_host_driver_t *chip_drv, uint32_t start_address)
 {
-    spi_flash_trans_t t = { 
+    spi_flash_trans_t t = {
         .command = CMD_SECTOR_ERASE,
         .address_bitlen = 24,
         .address = start_address
@@ -153,7 +156,7 @@ void memspi_host_erase_sector(spi_flash_host_driver_t *chip_drv, uint32_t start_
 
 void memspi_host_erase_block(spi_flash_host_driver_t *chip_drv, uint32_t start_address)
 {
-    spi_flash_trans_t t = { 
+    spi_flash_trans_t t = {
         .command = CMD_LARGE_BLOCK_ERASE,
         .address_bitlen = 24,
         .address = start_address,
@@ -163,7 +166,7 @@ void memspi_host_erase_block(spi_flash_host_driver_t *chip_drv, uint32_t start_a
 
 void memspi_host_program_page(spi_flash_host_driver_t *chip_drv, const void *buffer, uint32_t address, uint32_t length)
 {
-    spi_flash_trans_t t = { 
+    spi_flash_trans_t t = {
         .command = CMD_PROGRAM_PAGE,
         .address_bitlen = 24,
         .address = address,
@@ -176,6 +179,7 @@ void memspi_host_program_page(spi_flash_host_driver_t *chip_drv, const void *buf
 esp_err_t memspi_host_read(spi_flash_host_driver_t *chip_drv, void *buffer, uint32_t address, uint32_t read_len)
 {
     spi_flash_trans_t t = {
+        .command = CMD_READ,
         .address_bitlen = 24,
         .address = address,
         .miso_len = read_len,
@@ -193,3 +197,24 @@ esp_err_t memspi_host_set_write_protect(spi_flash_host_driver_t *chip_drv, bool 
     chip_drv->common_command(chip_drv, &t);
     return ESP_OK;
 }
+
+// When encryption is enabled, etc. the data slicer may be complicated
+// This is the simple case where the hardware has no other requirements than the size and page boundary
+int memspi_host_write_data_slicer(uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
+{
+    uint32_t align_addr = address;
+    uint32_t end_bound = (align_addr/page_size + 1) * page_size;
+    // Shouldn't program cross the page, or longer than SPI_FLASH_HAL_MAX_WRITE_BYTES
+    uint32_t max_len = MIN(end_bound - align_addr, SPI_FLASH_HAL_MAX_WRITE_BYTES);
+    *align_address = address;
+    return MIN(max_len, len);
+}
+
+int memspi_host_read_data_slicer(uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
+{
+    // Shouldn't read longer than SPI_FLASH_HAL_MAX_READ_BYTES
+    uint32_t max_len = SPI_FLASH_HAL_MAX_READ_BYTES;
+    *align_address = address;
+    return MIN(max_len, len);
+}
+

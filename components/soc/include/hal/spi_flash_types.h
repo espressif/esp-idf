@@ -115,18 +115,36 @@ struct spi_flash_host_driver_t {
      * Program a page of the flash. Check ``max_write_bytes`` for the maximum allowed writing length.
      */
     void (*program_page)(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
-    /** Check whether need to allocate new buffer to write */
+    /** Check whether given buffer can be directly used to write */
     bool (*supports_direct_write)(spi_flash_host_driver_t *driver, const void *p);
-    /** Check whether need to allocate new buffer to read */
-    bool (*supports_direct_read)(spi_flash_host_driver_t *driver, const void *p);
-    /** maximum length of program_page */
-    int max_write_bytes;
+    /**
+     * Slicer for write data. The `program_page` should be called iteratively with the return value
+     * of this function.
+     *
+     * @param address Beginning flash address to write
+     * @param len Length request to write
+     * @param align_addr Output of the aligned address to write to
+     * @param page_size Physical page size of the flash chip
+     * @return Length that can be actually written in one `program_page` call
+     */
+    int (*write_data_slicer)(uint32_t address, uint32_t len, uint32_t *align_addr, uint32_t page_size);
     /**
      * Read data from the flash. Check ``max_read_bytes`` for the maximum allowed reading length.
      */
     esp_err_t (*read)(spi_flash_host_driver_t *driver, void *buffer, uint32_t address, uint32_t read_len);
-    /** maximum length of read */
-    int max_read_bytes;
+    /** Check whether given buffer can be directly used to read */
+    bool (*supports_direct_read)(spi_flash_host_driver_t *driver, const void *p);
+    /**
+     * Slicer for read data. The `read` should be called iteratively with the return value
+     * of this function.
+     *
+     * @param address Beginning flash address to read
+     * @param len Length request to read
+     * @param align_addr Output of the aligned address to read
+     * @param page_size Physical page size of the flash chip
+     * @return Length that can be actually read in one `read` call
+     */
+    int (*read_data_slicer)(uint32_t address, uint32_t len, uint32_t *align_addr, uint32_t page_size);
     /**
      * Check whether the host is idle to perform new operations.
      */

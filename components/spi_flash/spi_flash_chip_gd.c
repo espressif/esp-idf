@@ -78,6 +78,7 @@ static const char chip_name[] = "gd";
 // So we only replace these two functions.
 const spi_flash_chip_t esp_flash_chip_gd = {
     .name = chip_name,
+    .timeout = &spi_flash_chip_generic_timeout,
     .probe = spi_flash_chip_gd_probe,
     .reset = spi_flash_chip_generic_reset,
     .detect_size = spi_flash_chip_generic_detect_size,
