@@ -1,7 +1,7 @@
 .. _esp-modules-and-boards-previous_esp32:
 
-Modules (No updated or discontinued modules)
-============================================
+Modules
+=======
 
 So far, no modules have been updated or discontinued.
 

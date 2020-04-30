@@ -4,6 +4,8 @@
 Previous Versions of {IDF_TARGET_NAME} Modules and Boards
 *********************************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 This sections contains overview and links to documentation of previous version {IDF_TARGET_NAME} Modules and Boards that have been replaced with newer versions or discontinued. It is maintained for convenience of users as previous versions of some modules and boards are still in use and some may still be available for purchase.
 
 

@@ -1,10 +1,10 @@
-************************
-ESP32 H/W 硬件参考
-************************
+*******************************
+{IDF_TARGET_NAME} H/W 硬件参考
+*******************************
 :link_to_translation:`en:[English]`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
     {IDF_TARGET_NAME} 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
     :esp32: ESP32 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>
