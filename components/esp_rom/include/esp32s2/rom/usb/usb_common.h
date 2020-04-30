@@ -238,6 +238,11 @@ extern const struct rom_usb_descriptors acm_usb_descriptors;
 extern const struct rom_usb_descriptors dfu_usb_descriptors;
 extern const struct rom_usb_descriptors *rom_usb_curr_desc;
 
+/* ROM patch: set the ACM descriptor with the correct serial number.
+ * Only needed on ESP32-S2, on later chips the ROM descriptor is correct.
+ */
+void rom_usb_cdc_set_descriptor_patch(void);
+
 
 #ifdef __cplusplus
 }
