@@ -15,8 +15,6 @@ import functools
 import os
 import re
 
-from typing import Optional
-
 from tiny_test_fw import TinyFW, Utility
 from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp  # noqa: export all Apps for users
 from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
@@ -39,11 +37,11 @@ except NameError:
     string_type = str
 
 
-def upper_list(text):  # type: (Optional[string_type, list]) -> list
+def upper_list(text):
+    if not text:
+        return text
     if isinstance(text, string_type):
         res = [text.upper()]
-    elif text is None:
-        res = []
     else:
         res = [item.upper() for item in text]
     return res
