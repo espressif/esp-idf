@@ -44,6 +44,7 @@ import re
 import json
 
 import yaml
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -67,13 +68,23 @@ class Group(object):
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
         # we use ci_job_match_keys to match CI job tags. It's a set of required tags.
-        self.ci_job_match_keys = set([self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS])
+        self.ci_job_match_keys = self._get_match_keys(case)
 
     @staticmethod
     def _get_case_attr(case, attr):
         # we might use different type for case (dict or test_func)
         # this method will do get attribute form cases
         return case.case_info[attr]
+
+    def _get_match_keys(self, case):
+        keys = []
+        for attr in self.CI_JOB_MATCH_KEYS:
+            val = self._get_case_attr(case, attr)
+            if isinstance(val, list):
+                keys.extend(val)
+            else:
+                keys.append(val)
+        return set(keys)
 
     def accept_new_case(self):
         """

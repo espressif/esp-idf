@@ -23,6 +23,7 @@ from . import load_source
 
 class Search(object):
     TEST_CASE_FILE_PATTERN = "*_test.py"
+    SUPPORT_REPLICATE_CASES_KEY = ['target']
 
     @classmethod
     def _search_cases_from_file(cls, file_name):
@@ -104,7 +105,8 @@ class Search(object):
             if not replicate_config:
                 break
             key = replicate_config.pop()
-            replicated_cases = _replicate_for_key(replicated_cases, key, case.case_info[key])
+            if key in cls.SUPPORT_REPLICATE_CASES_KEY:
+                replicated_cases = _replicate_for_key(replicated_cases, key, case.case_info[key])
 
         # mark the cases with targets not in ci_target
         for case in replicated_cases:
