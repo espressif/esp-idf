@@ -21,4 +21,8 @@
 #define USE_MBEDTLS_CRYPTO 1
 #endif
 
+#if CONFIG_WPA_TLS_V12
+#define CONFIG_TLSV12
+#endif
+
 #endif /* _SUPPLICANT_OPT_H */

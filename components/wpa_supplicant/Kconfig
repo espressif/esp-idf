@@ -6,4 +6,10 @@ menu "Supplicant"
         help
             Select this option to use MbedTLS crypto API's which utilize hardware acceleration.
 
+    config WPA_TLS_V12
+        bool "Enable TLS v1.2"
+        default n
+        help
+            Select this to enable TLS v1.2 for WPA2-Enterprise Authentication.
+
 endmenu
