@@ -502,7 +502,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param);
  *  to enable unprovisioned advertising on one or more provisioning bearers.
  *
  */
-void bt_mesh_reset(void);
+void bt_mesh_node_reset(void);
 
 /** @brief Suspend the Mesh network temporarily.
  *

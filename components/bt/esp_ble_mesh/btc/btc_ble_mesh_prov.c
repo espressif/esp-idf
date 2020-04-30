@@ -1574,7 +1574,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     case BTC_BLE_MESH_ACT_NODE_RESET:
         BT_DBG("%s, BTC_BLE_MESH_ACT_NODE_RESET", __func__);
-        bt_mesh_reset();
+        bt_mesh_node_reset();
         return;
     case BTC_BLE_MESH_ACT_SET_OOB_PUB_KEY:
         act = ESP_BLE_MESH_NODE_PROV_SET_OOB_PUB_KEY_COMP_EVT;
