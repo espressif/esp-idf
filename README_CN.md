@@ -2,9 +2,7 @@
 
 * [English Version](./README.md)
 
-[![Documentation Status](https://readthedocs.com/projects/espressif-esp-idf/badge/?version=latest)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/?badge=latest)
-
-ESP-IDF 是由乐鑫官方推出的针对 [ESP32](https://espressif.com/en/products/hardware/esp32/overview) 系列芯片的开发框架。
+ESP-IDF 是由乐鑫官方推出的针对 [ESP32 和 ESP32-S2](https://www.espressif.com/en/products/hardware/soc) 系列芯片的开发框架。
 
 # 使用 ESP-IDF 进行开发
 
@@ -74,7 +72,7 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 观察串口输入
 
-`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示 ESP32 的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
+`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示 ESP32 和 ESP32-S2 的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
 
 输入 `Ctrl-]` 可退出监视器。
 
