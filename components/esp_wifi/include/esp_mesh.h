@@ -224,6 +224,8 @@ typedef enum {
     MESH_PROTO_HTTP,    /**< HTTP protocol */
     MESH_PROTO_JSON,    /**< JSON format */
     MESH_PROTO_MQTT,    /**< MQTT protocol */
+    MESH_PROTO_AP,      /**< IP network mesh communication of node's AP inteface */
+    MESH_PROTO_STA,     /**< IP network mesh communication of node's STA inteface */
 } mesh_proto_t;
 
 /**

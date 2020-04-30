@@ -54,6 +54,7 @@
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"
 
+#if !ESP_L2_TO_L3_COPY
 /**
  * @brief Free resources allocated in L2 layer
  *
@@ -65,6 +66,7 @@ static void lwip_netif_wifi_free_rx_buffer(struct netif *netif, void *buf)
     esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
     esp_netif_free_rx_buffer(esp_netif, buf);
 }
+#endif
 
 /**
  * In this function, the hardware should be initialized.
@@ -177,14 +179,12 @@ wlanif_input(void *h, void *buffer, size_t len, void* eb)
 #if (ESP_L2_TO_L3_COPY == 1)
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
-//    esp_wifi_internal_free_rx_buffer(eb);
       esp_netif_free_rx_buffer(esp_netif, eb);
     return;
   }
   p->l2_owner = NULL;
   memcpy(p->payload, buffer, len);
   esp_netif_free_rx_buffer(esp_netif, eb);
-//  esp_wifi_internal_free_rx_buffer(eb);
 #else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){

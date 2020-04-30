@@ -78,6 +78,12 @@ extern "C" {
 #define ESP_IPADDR_TYPE_V6                6U
 #define ESP_IPADDR_TYPE_ANY               46U
 
+#define ESP_IP4TOUINT32(a,b,c,d) (((uint32_t)((a) & 0xffU) << 24) | \
+                               ((uint32_t)((b) & 0xffU) << 16) | \
+                               ((uint32_t)((c) & 0xffU) << 8)  | \
+                                (uint32_t)((d) & 0xffU))
+
+#define ESP_IP4TOADDR(a,b,c,d) esp_netif_htonl(ESP_IP4TOUINT32(a, b, c, d))
 
 struct esp_ip6_addr {
     uint32_t addr[4];

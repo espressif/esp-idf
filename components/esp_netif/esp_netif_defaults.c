@@ -24,12 +24,6 @@
 //  - default init / create functions for basic default interfaces
 //
 
-#define IP4TOUINT32(a,b,c,d) (((uint32_t)((a) & 0xffU) << 24) | \
-                               ((uint32_t)((b) & 0xffU) << 16) | \
-                               ((uint32_t)((c) & 0xffU) << 8)  | \
-                                (uint32_t)((d) & 0xffU))
-
-#define IP4TOADDR(a,b,c,d) esp_netif_htonl(IP4TOUINT32(a, b, c, d))
 
 
 //
@@ -44,7 +38,7 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_I
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
 
 const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
-        .ip = { .addr = IP4TOADDR( 192, 168, 4, 1) },
-        .gw = { .addr = IP4TOADDR( 192, 168, 4, 1) },
-        .netmask = { .addr = IP4TOADDR( 255, 255, 255, 0) },
+        .ip = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
+        .gw = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
+        .netmask = { .addr = ESP_IP4TOADDR( 255, 255, 255, 0) },
 };
