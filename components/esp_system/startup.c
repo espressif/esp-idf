@@ -50,6 +50,9 @@
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
+#include "esp_private/usb_console.h"
+#include "esp_vfs_cdcacm.h"
+
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
@@ -195,18 +198,25 @@ static void IRAM_ATTR do_core_init(void)
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_IO
+#ifdef CONFIG_ESP_CONSOLE_UART
     esp_vfs_dev_uart_register();
+    const char *default_stdio_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
+#endif // CONFIG_ESP_CONSOLE_UART
+#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+    ESP_ERROR_CHECK(esp_usb_console_init());
+    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
+    const char *default_stdio_dev = "/dev/cdcacm";
+#endif // CONFIG_ESP_CONSOLE_USB_CDC
 #endif // CONFIG_VFS_SUPPORT_IO
 
-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
     esp_reent_init(_GLOBAL_REENT);
-    const char *default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
-    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
-    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
-    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+    _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
+    _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_stdio_dev, "w");
+#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
-#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
@@ -337,7 +347,7 @@ void IRAM_ATTR start_cpu0_default(void)
 
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
-#ifdef CONFIG_PM_ENABLE
+#if defined(CONFIG_PM_ENABLE) && defined(CONFIG_ESP_CONSOLE_UART)
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
