@@ -26,12 +26,13 @@
 #include "bootloader_clock.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
+#include "bootloader_console.h"
 
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
+
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
@@ -216,59 +217,6 @@ static esp_err_t bootloader_init_spi_flash(void)
     return ESP_OK;
 }
 
-static void bootloader_init_uart_console(void)
-{
-#if CONFIG_ESP_CONSOLE_UART_NONE
-    ets_install_putc1(NULL);
-    ets_install_putc2(NULL);
-#else // CONFIG_ESP_CONSOLE_UART_NONE
-    const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
-
-    uartAttach(NULL);
-    ets_install_uart_printf();
-
-    // Wait for UART FIFO to be empty.
-    uart_tx_wait_idle(0);
-
-#if CONFIG_ESP_CONSOLE_UART_CUSTOM
-    // Some constants to make the following code less upper-case
-    const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
-    const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
-    // Switch to the new UART (this just changes UART number used for
-    // ets_printf in ROM code).
-    uart_tx_switch(uart_num);
-    // If console is attached to UART1 or if non-default pins are used,
-    // need to reconfigure pins using GPIO matrix
-    if (uart_num != 0 || uart_tx_gpio != 43 || uart_rx_gpio != 44) {
-        // Change pin mode UART to GPIO
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_GPIO44);
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_GPIO43);
-        // Route GPIO signals to/from pins
-        // (arrays should be optimized away by the compiler)
-        const uint32_t tx_idx_list[2] = {U0TXD_OUT_IDX, U1TXD_OUT_IDX};
-        const uint32_t rx_idx_list[2] = {U0RXD_IN_IDX, U1RXD_IN_IDX};
-        const uint32_t uart_reset[2] = {DPORT_UART_RST, DPORT_UART1_RST};
-        const uint32_t tx_idx = tx_idx_list[uart_num];
-        const uint32_t rx_idx = rx_idx_list[uart_num];
-
-        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
-        gpio_pad_pullup(uart_rx_gpio);
-
-        gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
-        gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
-
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, uart_reset[uart_num]);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, uart_reset[uart_num]);
-    }
-#endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
-
-    // Set configured UART console baud rate
-    const int uart_baud = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
-    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
-
-#endif // CONFIG_ESP_CONSOLE_UART_NONE
-}
-
 static void wdt_reset_cpu0_info_enable(void)
 {
     DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
@@ -366,8 +314,8 @@ esp_err_t bootloader_init(void)
     bootloader_reset_mmu();
     // config clock
     bootloader_clock_configure();
-    // initialize uart console, from now on, we can use esp_log
-    bootloader_init_uart_console();
+    // initialize console, from now on, we can use esp_log
+    bootloader_console_init();
     /* print 2nd bootloader banner */
     bootloader_print_banner();
     // update flash ID
