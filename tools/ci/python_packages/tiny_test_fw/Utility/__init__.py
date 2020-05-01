@@ -61,11 +61,15 @@ def load_source(path):
         return __LOADED_MODULES[path]
     except KeyError:
         try:
+            dir = os.path.dirname(path)
+            sys.path.append(dir)
             from importlib.machinery import SourceFileLoader
             ret = SourceFileLoader(load_name, path).load_module()
         except ImportError:
             # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
             import imp
             ret = imp.load_source(load_name, path)
+        finally:
+            sys.path.remove(dir)
         __LOADED_MODULES[path] = ret
         return ret
