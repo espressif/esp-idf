@@ -83,8 +83,6 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     }
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
-
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -145,6 +143,9 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
 {
+#ifdef CONFIG_IDF_ENV_FPGA
+    return;
+#endif
     rtc_slow_freq_t rtc_slow_freq = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
     uint32_t cal_val = 0;
     /* number of times to repeat 32k XTAL calibration
@@ -283,11 +284,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                         DPORT_SPI3_DMA_CLK_EN;
     common_perip_clk1 = 0;
 
+#ifndef CONFIG_IDF_ENV_FPGA
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
      * the current is not reduced when disable I2S clock.
      */
     REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
     REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
+#endif // CONFIG_IDF_ENV_FPGA
 
     /* Disable some peripheral clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, common_perip_clk);

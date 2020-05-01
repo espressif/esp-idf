@@ -35,6 +35,7 @@
  */
 void rtc_sleep_pu(rtc_sleep_pu_config_t cfg)
 {
+#if !CONFIG_IDF_ENV_FPGA
     REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU, cfg.dig_fpu);
     REG_SET_FIELD(RTC_CNTL_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU, cfg.rtc_fpu);
     REG_SET_FIELD(APB_CTRL_FRONT_END_MEM_PD_REG, APB_CTRL_DC_MEM_FORCE_PU, cfg.fe_fpu);
@@ -47,6 +48,7 @@ void rtc_sleep_pu(rtc_sleep_pu_config_t cfg)
     REG_SET_FIELD(NRXPD_CTRL, NRX_DEMAP_FORCE_PU, cfg.nrx_fpu);
     REG_SET_FIELD(FE_GEN_CTRL, FE_IQ_EST_FORCE_PU, cfg.fe_fpu);
     REG_SET_FIELD(FE2_TX_INTERP_CTRL, FE2_TX_INF_FORCE_PU, cfg.fe_fpu);
+#endif
     if (cfg.sram_fpu) {
         REG_SET_FIELD(APB_CTRL_MEM_POWER_UP_REG, APB_CTRL_SRAM_POWER_UP, APB_CTRL_SRAM_POWER_UP);
     } else {
