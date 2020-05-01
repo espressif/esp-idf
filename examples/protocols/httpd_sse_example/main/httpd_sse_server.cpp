@@ -33,8 +33,6 @@
 // ?? missing in original header
 extern "C" int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
 
-EventQueueHandle_t signalEvtQueue = NULL;
-
 static const char *TAG = "http_server";
 static const int max_open_sockets = 7;
 
