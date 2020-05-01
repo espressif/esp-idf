@@ -219,14 +219,20 @@ static inline void uart_ll_rxfifo_rst(uart_dev_t *hw)
 /**
  * @brief  Reset the UART hw txfifo.
  *
+ * Note:   Due to hardware issue, reset UART1's txfifo will also reset UART2's txfifo.
+ *         So reserve this function for UART1 and UART2. Please do DPORT reset for UART and its memory at chip startup
+ *         to ensure the TX FIFO is reset correctly at the beginning.
+ *
  * @param  hw Beginning address of the peripheral registers.
  *
  * @return None
  */
 static inline void uart_ll_txfifo_rst(uart_dev_t *hw)
 {
-    hw->conf0.txfifo_rst = 1;
-    hw->conf0.txfifo_rst = 0;
+    if (hw == &UART0) {
+        hw->conf0.txfifo_rst = 1;
+        hw->conf0.txfifo_rst = 0;
+    }
 }
 
 /**

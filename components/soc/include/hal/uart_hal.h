@@ -150,6 +150,7 @@ void uart_hal_write_txfifo(uart_hal_context_t *hal, const uint8_t *buf, uint32_t
 
 /**
  * @brief  Reset the UART txfifo
+ * @note   On ESP32, this function is reserved for UART1 and UART2.
  *
  * @param  hal Context of the HAL layer
  *
