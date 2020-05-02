@@ -155,7 +155,7 @@ led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config)
     ws2812_t1l_ticks = (uint32_t)(ratio * WS2812_T1L_NS);
 
     // set ws2812 to rmt adapter
-    rmt_translator_init((rmt_channel_t)config->dev, ws2812_rmt_adapter);
+    rmt_translator_init((rmt_channel_t)config->dev, ws2812_rmt_adapter, NULL);
 
     ws2812->rmt_channel = (rmt_channel_t)config->dev;
     ws2812->strip_len = config->max_leds;
