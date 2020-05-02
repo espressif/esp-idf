@@ -62,7 +62,7 @@ typedef struct {
  * @param[out] item_num: number of RMT items which are converted from source data
  */
 static void IRAM_ATTR ws2812_rmt_adapter(const void *src, rmt_item32_t *dest, size_t src_size,
-        size_t wanted_num, size_t *translated_size, size_t *item_num)
+        size_t wanted_num, size_t *translated_size, size_t *item_num, void *ctx)
 {
     if (src == NULL || dest == NULL) {
         *translated_size = 0;
