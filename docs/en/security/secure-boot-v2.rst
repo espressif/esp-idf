@@ -249,3 +249,13 @@ Secure Boot & Flash Encryption
 ------------------------------
 
 If secure boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+
+Advanced Features
+-----------------
+
+JTAG Debugging
+~~~~~~~~~~~~~~
+
+By default, when Secure Boot is enabled then JTAG debugging is disabled via eFuse. The bootloader does this on first boot, at the same time it enables Secure Boot.
+
+See :ref:`jtag-debugging-security-features` for more information about using JTAG Debugging with either Secure Boot or signed app verification enabled.
