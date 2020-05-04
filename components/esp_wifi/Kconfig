@@ -297,7 +297,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_ENABLE_WPA3_SAE
         bool "Enable WPA3-Personal"
-        default n
+        default y
         help
             Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
