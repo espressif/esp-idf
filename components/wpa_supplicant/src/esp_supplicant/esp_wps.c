@@ -61,7 +61,7 @@ typedef struct {
     int ret; /* return value */
 } wps_ioctl_param_t;
 
-static void *s_wps_task_hdl = NULL;
+static TaskHandle_t s_wps_task_hdl = NULL;
 static void *s_wps_queue = NULL;
 static void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
 static void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
