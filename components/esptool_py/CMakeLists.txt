@@ -34,12 +34,14 @@ if(NOT BOOTLOADER_BUILD)
         set(ESPTOOLPY_AFTER "no_reset")
     endif()
 
-    file(READ "flasher_args.json.in" flasher_args_content)
-    string(CONFIGURE "${flasher_args_content}" flasher_args_content)
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        file(READ "flasher_args.json.in" flasher_args_content)
+        string(CONFIGURE "${flasher_args_content}" flasher_args_content)
 
-    file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in" 
-                  CONTENT "${flasher_args_content}")
-    file_generate("${CMAKE_BINARY_DIR}/flasher_args.json" 
-                  INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
+        file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in" 
+                    CONTENT "${flasher_args_content}")
+        file_generate("${CMAKE_BINARY_DIR}/flasher_args.json" 
+                    INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
+    endif()
 endif()
 
