@@ -21,32 +21,41 @@
 #include "esp_private/esp_timer_private.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
-#include "soc/cpu.h"
-#include "soc/rtc.h"
-#include "soc/spi_periph.h"
-#include "soc/dport_reg.h"
-#include "soc/soc_memory_layout.h"
-#include "hal/wdt_hal.h"
-#include "driver/rtc_io.h"
-#include "driver/uart.h"
-#include "driver/touch_sensor_common.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/touch_sensor.h"
+#include "driver/touch_sensor_common.h"
+#include "driver/rtc_io.h"
+#include "driver/uart.h"
+
+#include "soc/cpu.h"
+#include "soc/rtc.h"
+#include "soc/dport_reg.h"
 #include "soc/uart_caps.h"
+
+#include "hal/wdt_hal.h"
+#include "hal/rtc_io_hal.h"
+#include "hal/rtc_hal.h"
+#include "hal/uart_hal.h"
+#include "hal/touch_sensor_hal.h"
 #include "hal/clk_gate_ll.h"
+
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#include "esp32/rom/rtc.h"
 #include "esp32/clk.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "soc/extmem_reg.h"
+#include "esp32s2/rom/uart.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -312,6 +321,8 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 {
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
+
+    // record current RTC time
     esp_sync_counters_rtc_and_frc();
     // Configure wake stub
     if (esp_get_deep_sleep_wake_stub() == NULL) {
@@ -522,14 +533,9 @@ static void timer_wakeup_prepare(void)
     if (sleep_duration < 0) {
         sleep_duration = 0;
     }
-    int64_t rtc_count_delta = rtc_time_us_to_slowclk(sleep_duration, period);
 
-    rtc_sleep_set_wakeup_time(s_config.rtc_ticks_at_sleep_start + rtc_count_delta);
-
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
-    SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
-#endif
+    int64_t ticks = rtc_time_us_to_slowclk(sleep_duration, period);
+    rtc_hal_set_wakeup_timer(s_config.rtc_ticks_at_sleep_start + ticks);
 }
 
 
