@@ -707,6 +707,16 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     bin_header_match build/bootloader/bootloader.bin "021f"
     rm sdkconfig
 
+    print_status "DFU build works"
+    rm -f -r build sdkconfig
+    idf.py dfu &> tmp.log
+    grep "command \"dfu\" is not known to idf.py and is not a Ninja target" tmp.log || (tail -n 100 tmp.log ; failure "DFU build should fail for default chip target")
+    idf.py set-target esp32s2
+    idf.py dfu &> tmp.log
+    grep "build/dfu.bin\" has been written. You may proceed with DFU flashing." tmp.log || (tail -n 100 tmp.log ; failure "DFU build should succeed for esp32s2")
+    rm tmp.log
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} "dfu.bin"
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"

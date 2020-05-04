@@ -31,11 +31,11 @@ MacPorts 需要完整的 XCode 软件，而 homebrew 只需要安装 XCode 命�
 
 	- 若有 HomeBrew，您可以运行::
 
-		brew install cmake ninja
+		brew install cmake ninja dfu-util
 
 	- 若有 MacPorts，您可以运行::
 
-		sudo port install cmake ninja
+		sudo port install cmake ninja dfu-util
 
 从源代码编译工具链
 =================================

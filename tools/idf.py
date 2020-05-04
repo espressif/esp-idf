@@ -447,7 +447,7 @@ def init_cli(verbose_output=None):
         def _print_closing_message(self, args, actions):
             # print a closing message of some kind
             #
-            if "flash" in str(actions):
+            if "flash" in str(actions) or "dfu" in str(actions):
                 print("Done")
                 return
 

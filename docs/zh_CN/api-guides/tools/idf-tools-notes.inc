@@ -50,3 +50,8 @@ On Linux and macOS, it is recommended to install ninja using the OS package mana
 
 
 ---
+
+.. tool-dfu-util-notes
+
+
+---

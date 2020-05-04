@@ -31,11 +31,11 @@ Install Prerequisites
 
   - If you have HomeBrew, you can run::
 
-      brew install cmake ninja
+      brew install cmake ninja dfu-util
 
   - If you have MacPorts, you can run::
 
-      sudo port install cmake ninja
+      sudo port install cmake ninja dfu-util
 
 Compile the Toolchain from Source
 =================================

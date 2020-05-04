@@ -483,6 +483,43 @@
           }
         }
       ]
+    },
+    {
+      "description": "dfu-util (Device Firmware Upgrade Utilities)",
+      "export_paths": [
+        [
+          "dfu-util-0.9-win64"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "http://dfu-util.sourceforge.net/",
+      "install": "never",
+      "license": "GPL-2.0-only",
+      "name": "dfu-util",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "dfu-util",
+        "--version"
+      ],
+      "version_regex": "dfu-util ([0-9.]+)",
+      "versions": [
+        {
+          "name": "0.9",
+          "status": "recommended",
+          "win64": {
+            "sha256": "5816d7ec68ef3ac07b5ac9fb9837c57d2efe45b6a80a2f2bbe6b40b1c15c470e",
+            "size": 735635,
+            "url": "https://dl.espressif.com/dl/dfu-util-0.9-win64.zip"
+          }
+        }
+      ]
     }
   ],
   "version": 1

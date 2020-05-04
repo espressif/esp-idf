@@ -11,6 +11,7 @@ API Guides
     Build System <build-system>
     :esp32: Build System (Legacy GNU Make) <build-system-legacy>
     Deep Sleep Wake Stubs <deep-sleep-stub>
+    :esp32s2: Device Firmware Upgrade through USB <dfu>
     Error Handling <error-handling>
     :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
     ESP-MESH (Wi-Fi) <mesh>

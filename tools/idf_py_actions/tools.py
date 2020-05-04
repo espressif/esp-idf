@@ -270,6 +270,13 @@ def get_sdkconfig_value(sdkconfig_file, key):
     return value
 
 
+def is_target_supported(project_path, supported_targets):
+    """
+    Returns True if the active target is supported, or False otherwise.
+    """
+    return get_sdkconfig_value(os.path.join(project_path, "sdkconfig"), 'CONFIG_IDF_TARGET') in supported_targets
+
+
 def _guess_or_check_idf_target(args, prog_name, cache):
     """
     If CMakeCache.txt doesn't exist, and IDF_TARGET is not set in the environment, guess the value from

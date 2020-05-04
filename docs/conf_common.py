@@ -159,6 +159,7 @@ def update_exclude_patterns(tags):
         # note: in toctrees, these also need to be marked with a :esp32: filter
         for e in ['esp32s2.rst',
                   'hw-reference/esp32s2/**',
+                  'api-guides/dfu.rst',
                   'api-guides/ulps2_instruction_set.rst',
                   'api-reference/peripherals/hmac.rst',
                   'api-reference/peripherals/temp_sensor.rst']:
