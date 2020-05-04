@@ -248,7 +248,13 @@ In the terminal where you are going to use ESP-IDF, run:
 
 Note the space between the leading dot and the path!
 
-You can also automate this step, making ESP-IDF tools available in every terminal, by adding this line to your ``.profile`` or ``.bash_profile`` script.
+You can also create an alias for the export script to your ``.profile`` or ``.bash_profile`` script. This way you can set up the environment in a new terminal window by typing ``get_idf``:
+
+.. code-block:: bash
+
+    alias get_idf='. $HOME/esp/esp-idf/export.sh'
+
+Note that it is not recommended to source ``export.sh`` from the profile script directly. Doing so activates IDF virtual environment in every terminal session (even in those where IDF is not needed), defeating the purpose of the virtual environment and likely affecting other software.
 
 .. _get-started-start-project:
 
