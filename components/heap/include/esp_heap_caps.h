@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include "multi_heap.h"
 #include <sdkconfig.h>
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,21 @@ extern "C" {
 #define MALLOC_CAP_IRAM_8BIT        (1<<13) ///< Memory must be in IRAM and allow unaligned access
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
+
+/**
+ * @brief callback called when a allocation operation fails, if registered
+ * @param size in bytes of failed allocation
+ * @param caps capabillites requested of failed allocation
+ * @param function_name function which generated the failure
+ */ 
+typedef void (*esp_alloc_failed_hook_t) (size_t size, uint32_t caps, const char * function_name);
+
+/**
+ * @brief registers a callback function to be invoked if a memory allocation operation fails
+ * @param callback caller defined callback to be invoked
+ * @return ESP_OK if callback was registered.
+ */  
+esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback);
 
 /**
  * @brief Allocate a chunk of memory which has the given capabilities
