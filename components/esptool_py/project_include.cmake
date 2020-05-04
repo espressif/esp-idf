@@ -259,7 +259,7 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
 endfunction()
 
 if(NOT BOOTLOADER_BUILD)
-    set(flash_deps "partition_table")
+    set(flash_deps "partition_table_bin")
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
         list(APPEND flash_deps "app")
