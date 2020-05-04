@@ -79,6 +79,7 @@ function idf_export_main() {
     idf_exports=$(${IDF_PATH}/tools/idf_tools.py export) || return 1
     eval "${idf_exports}"
 
+    echo "Using Python interpreter in $(which python)"
     echo "Checking if Python packages are up to date..."
     python ${IDF_PATH}/tools/check_python_dependencies.py || return 1
 
