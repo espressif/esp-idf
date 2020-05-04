@@ -353,6 +353,13 @@ function run_tests()
     grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Project not configured correctly using idf.py set-target"
     grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py set-target"
 
+    print_status "idf.py understands alternative target names"
+    clean_build_dir
+    rm sdkconfig
+    idf.py set-target ESP32-S2
+    grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Project not configured correctly using idf.py set-target"
+    grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py set-target"
+
     print_status "Can guess target from sdkconfig, if CMakeCache does not exist"
     idf.py fullclean || failure "Failed to clean the build directory"
     idf.py reconfigure || failure "Failed to reconfigure after fullclean"

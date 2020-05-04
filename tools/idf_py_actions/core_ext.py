@@ -8,7 +8,7 @@ import click
 from idf_py_actions.constants import GENERATORS, SUPPORTED_TARGETS
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_target
+from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_target, TargetChoice
 
 
 def action_extensions(base_actions, project_path):
@@ -379,7 +379,7 @@ def action_extensions(base_actions, project_path):
                     {
                         "names": ["idf-target"],
                         "nargs": 1,
-                        "type": click.Choice(SUPPORTED_TARGETS),
+                        "type": TargetChoice(SUPPORTED_TARGETS),
                     },
                 ],
                 "dependencies": ["fullclean"],
