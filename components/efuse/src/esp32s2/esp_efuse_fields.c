@@ -45,20 +45,6 @@ uint32_t esp_efuse_get_pkg_ver(void)
     return pkg_ver;
 }
 
-// Disable BASIC ROM Console via efuse
-void esp_efuse_disable_basic_rom_console(void)
-{
-    uint8_t dis_tiny_basic = 0;
-    uint8_t dis_legacy_spi_boot = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_DIS_TINY_BASIC, &dis_tiny_basic, 1);
-    esp_efuse_read_field_blob(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, &dis_legacy_spi_boot, 1);
-    if (dis_tiny_basic == 0 || dis_legacy_spi_boot == 0) {
-        esp_efuse_write_field_cnt(ESP_EFUSE_DIS_TINY_BASIC, 1);
-        esp_efuse_write_field_cnt(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, 1);
-        ESP_EARLY_LOGI(TAG, "Disable tiny basic console in ROM and Disable_Legcy_SPI_boot mode...");
-    }
-}
-
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
 {
     uint32_t buf[8];

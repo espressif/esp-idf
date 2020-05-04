@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table fc489601ff9b21658f4eb9c617ee072d
+// md5_digest_table 21c19cced6c4c11c1f731e2ece7d74ab
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -88,7 +88,7 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_3[] = {
-    {EFUSE_BLK0, 18, 1}, 	 // Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_TINY_BASIC DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION,
+    {EFUSE_BLK0, 18, 1}, 	 // Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLK1[] = {
@@ -297,10 +297,6 @@ static const esp_efuse_desc_t DIS_LEGACY_SPI_BOOT[] = {
 
 static const esp_efuse_desc_t UART_PRINT_CHANNEL[] = {
     {EFUSE_BLK0, 130, 1}, 	 // 0: UART0. 1: UART1,
-};
-
-static const esp_efuse_desc_t DIS_TINY_BASIC[] = {
-    {EFUSE_BLK0, 131, 1}, 	 // Disable tiny basic console in ROM,
 };
 
 static const esp_efuse_desc_t DIS_USB_DOWNLOAD_MODE[] = {
@@ -513,7 +509,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_3[] = {
-    &WR_DIS_GROUP_3[0],    		// Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_TINY_BASIC DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
+    &WR_DIS_GROUP_3[0],    		// Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
     NULL
 };
 
@@ -774,11 +770,6 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_LEGACY_SPI_BOOT[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CHANNEL[] = {
     &UART_PRINT_CHANNEL[0],    		// 0: UART0. 1: UART1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_TINY_BASIC[] = {
-    &DIS_TINY_BASIC[0],    		// Disable tiny basic console in ROM
     NULL
 };
 

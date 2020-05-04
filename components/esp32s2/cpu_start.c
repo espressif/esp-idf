@@ -284,9 +284,6 @@ void start_cpu0_default(void)
 #if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
     rtc_gpio_force_hold_dis_all();
 
 #ifdef CONFIG_VFS_SUPPORT_IO
