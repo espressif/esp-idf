@@ -1,4 +1,3 @@
-
 assign_test:
   tags:
     - assign_test
@@ -8,12 +7,13 @@ assign_test:
   # we have a lot build example jobs. now we don't use dependencies, just download all artifacts of build stage.
   dependencies:
     - build_ssc_esp32
-    - build_esp_idf_tests_cmake
+    - build_esp_idf_tests_cmake_esp32
+    - build_esp_idf_tests_cmake_esp32s2
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
     TEST_APP_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/tools/test_apps/test_configs"
-    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
+    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
   artifacts:
     paths:
       - components/idf_test/*/CIConfigs
@@ -55,8 +55,8 @@ update_test_cases:
       - master
       - schedules
   dependencies:
-    - build_esp_idf_tests_make
-    - build_esp_idf_tests_cmake
+    - build_esp_idf_tests_cmake_esp32
+    - build_esp_idf_tests_cmake_esp32s2
   artifacts:
     when: always
     paths:
@@ -64,7 +64,7 @@ update_test_cases:
     expire_in: 1 week
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
-    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
+    UNIT_TEST_CASE_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
     PYTHON_VER: 3
@@ -75,7 +75,8 @@ update_test_cases:
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
     # update unit test cases
-    - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT unity -d $UNIT_TEST_CASE_FILE -r $GIT_SHA
+    - export UNIT_TEST_CASE_FILES=$(find $UNIT_TEST_CASE_DIR -maxdepth 1 -name "*.yml" | xargs)
+    - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT unity -d $UNIT_TEST_CASE_FILES -r $GIT_SHA
     # update example test cases
     - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT tiny_test_fw -d ${CI_PROJECT_DIR}/examples -r $GIT_SHA
     # organize test cases

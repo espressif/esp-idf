@@ -8,27 +8,6 @@
     BATCH_BUILD: "1"
     V: "0"
 
-.build_esp_idf_unit_test_template:
-  extends: .build_template
-  artifacts:
-    paths:
-      - components/idf_test/unit_test/TestCaseAll.yml
-      # Keep only significant files in the output folder (mainly to get rid of .map files)
-      - tools/unit-test-app/output/*/*.bin
-      - tools/unit-test-app/output/*/sdkconfig
-      - tools/unit-test-app/output/*/*.elf
-      - tools/unit-test-app/output/*/flasher_args.json
-      - tools/unit-test-app/output/*/bootloader/*.bin
-      - tools/unit-test-app/output/*/partition_table/*.bin
-    expire_in: 4 days
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_UNIT_TEST
-      - $BOT_LABEL_UNIT_TEST_S2
-      - $BOT_LABEL_REGULAR_TEST
-
 .build_ssc_template:
   extends: .build_template
   parallel: 3
@@ -61,36 +40,42 @@ build_ssc_esp32s2:
   variables:
     TARGET_NAME: "ESP32S2"
 
-build_esp_idf_tests_make:
-  extends: .build_esp_idf_unit_test_template
+.build_esp_idf_tests_cmake:
+  extends: .build_template
+  artifacts:
+    paths:
+      - tools/unit-test-app/output/${IDF_TARGET}
+      - tools/unit-test-app/builds/${IDF_TARGET}/*.json
+      - components/idf_test/unit_test/*.yml
+      - ${LOG_PATH}
+    when: always
+    expire_in: 4 days
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
+      - $BOT_LABEL_REGULAR_TEST
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    - export IDF_TARGET=esp32
+    - mkdir -p ${LOG_PATH}
+    - ${CI_PROJECT_DIR}/tools/ci/build_unit_test.sh
     - cd $CI_PROJECT_DIR/tools/unit-test-app
-    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
-    - make ut-clean-all-configs
-    - make ut-build-all-configs
     - python tools/UnitTestParser.py
-    # Check if the tests demand Make built binaries. If not, delete them
-    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
-    - rm -rf builds output sdkconfig
-    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
 
-build_esp_idf_tests_cmake:
-  extends: .build_esp_idf_unit_test_template
-  script:
-    - export PATH="$IDF_PATH/tools:$PATH"
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    - cd $CI_PROJECT_DIR/tools/unit-test-app
-    - idf.py ut-clean-all-configs
-    - idf.py ut-build-all-configs
-    - python tools/UnitTestParser.py
-    # Check if the tests demand CMake built binaries. If not, delete them
-    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
-    - rm -rf builds output sdkconfig
-    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+build_esp_idf_tests_cmake_esp32:
+  extends: .build_esp_idf_tests_cmake
+  variables:
+    IDF_TARGET: esp32
+
+build_esp_idf_tests_cmake_esp32s2:
+  extends: .build_esp_idf_tests_cmake
+  variables:
+    IDF_TARGET: esp32s2
 
 build_examples_make:
   extends: .build_template

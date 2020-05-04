@@ -1,3 +1,5 @@
+# This config is split between targets since different component needs to be excluded (esp32, esp32s2)
+CONFIG_IDF_TARGET="esp32"
 TEST_COMPONENTS=app_update
 TEST_EXCLUDE_COMPONENTS=libsodium bt
 CONFIG_UNITY_FREERTOS_STACK_SIZE=12288

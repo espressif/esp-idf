@@ -53,7 +53,6 @@ from . import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):
-
     MAX_EXECUTION_TIME = 30
     MAX_CASE = 15
     SORT_KEYS = ["env_tag"]
