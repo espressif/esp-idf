@@ -13,14 +13,19 @@ DFU is supported by ESP32-S2 chips. The necessary connections for the USB periph
 +------+-------------+
 | GPIO | USB         |
 +======+=============+
-| 19   | D- (green)  |
+| 20   | D- (green)  |
 +------+-------------+
-| 20   | D+ (white)  |
+| 19   | D+ (white)  |
 +------+-------------+
 | GND  | GND (black) |
 +------+-------------+
-|      | +5V (red)   |
+| +5V  | +5V (red)   |
 +------+-------------+
+
+.. note::
+    The ESP32-S2 chip needs to be in bootloader mode for the detection as a DFU device and flashing. This can be
+    achieved by pulling GPIO0 down (e.g. pressing the BOOT button), pulsing RESET down for a moment and releasing
+    GPIO0.
 
 The software requirements of DFU are included in :ref:`get-started-get-prerequisites` of the Getting Started Guide.
 
@@ -95,5 +100,5 @@ Common errors
   An easy way of checking the tool is running ``dfu-util --version``. Please see :ref:`get-started-get-prerequisites` for
   installing ``dfu-util``.
 - The reason for ``No DFU capable USB device available`` could be that the USB driver wasn't properly installed on
-  Windows (see :ref:`api_guide_dfu_flash_win`) or udev rule was not setup on Linux
-  (see :ref:`api_guide_dfu_flash_udev`).
+  Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux
+  (see :ref:`api_guide_dfu_flash_udev`) or the device isn't in bootloader mode.
