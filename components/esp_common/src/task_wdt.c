@@ -26,6 +26,7 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#include "esp_debug_helpers.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "esp_log.h"
@@ -33,6 +34,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/crosscore_int.h"
 #include "hal/timer_types.h"
 #include "hal/wdt_hal.h"
 
@@ -172,13 +174,24 @@ static void task_wdt_isr(void *arg)
     }
 
     esp_task_wdt_isr_user_handler();
+
     if (twdt_config->panic){     //Trigger Panic if configured to do so
         ESP_EARLY_LOGE(TAG, "Aborting.");
         portEXIT_CRITICAL_ISR(&twdt_spinlock);
         esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
+    } else {
+        int current_core = xPortGetCoreID();
+        //Print backtrace of current core
+        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+        esp_backtrace_print(100);
+    #if !CONFIG_FREERTOS_UNICORE
+        //Print backtrace of other core
+        ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", !current_core);
+        esp_crosscore_int_send_print_backtrace(!current_core);
+    #endif
     }
-
+    
     portEXIT_CRITICAL_ISR(&twdt_spinlock);
 }
 
