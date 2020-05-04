@@ -322,8 +322,6 @@ class GenerationModel:
         return scheme_dictionary
 
     def generate_rules(self, sections_infos):
-        placement_rules = collections.defaultdict(list)
-
         scheme_dictionary = self._build_scheme_dictionary()
 
         # Generate default rules
@@ -353,14 +351,19 @@ class GenerationModel:
         for mapping_rules in all_mapping_rules.values():
             self._create_exclusions(mapping_rules, default_rules, sections_infos)
 
+        placement_rules = collections.defaultdict(list)
+
         # Add the default rules grouped by target
         for default_rule in default_rules:
             existing_rules = placement_rules[default_rule.target]
             if default_rule.get_section_names():
                 existing_rules.append(default_rule)
 
-        for mapping_rules in all_mapping_rules.values():
+        archives = sorted(all_mapping_rules.keys())
+
+        for archive in archives:
             # Add the mapping rules grouped by target
+            mapping_rules = sorted(all_mapping_rules[archive], key=lambda m: (m.specificity, str(m)))
             for mapping_rule in mapping_rules:
                 existing_rules = placement_rules[mapping_rule.target]
                 if mapping_rule.get_section_names():
