@@ -12,7 +12,7 @@ import ttfw_idf
 
 class SerialThread(object):
     def run(self, log_path, exit_event):
-        with serial.Serial('/dev/ttyUSB1', 115200) as ser, open(log_path, 'wb') as f:
+        with serial.Serial(os.getenv('ESPPORT', '/dev/ttyUSB1'), 115200) as ser, open(log_path, 'wb') as f:
             while True:
                 f.write(ser.read(ser.in_waiting))
                 if exit_event.is_set():
