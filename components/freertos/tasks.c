@@ -5877,6 +5877,118 @@ const TickType_t xConstTickCount = xTickCount;
 		return uxTask;
 	}
 
+	static TCB_t *prvFirstTaskGet( List_t *pxList )
+	{
+		ListItem_t *pxListItem = listGET_HEAD_ENTRY( pxList );
+		if( pxListItem != listGET_END_MARKER( pxList ) ) {
+			return listGET_LIST_ITEM_OWNER( pxListItem );
+		}
+		return NULL;
+	}
+
+	static TCB_t *prvNextTaskGet( TCB_t *pxTCB )
+	{
+		List_t *pxList = listLIST_ITEM_CONTAINER( &( pxTCB->xStateListItem ) );
+		ListItem_t *pxListItem = listGET_NEXT( &( pxTCB->xStateListItem ) );
+		if( pxListItem != listGET_END_MARKER( pxList ) ) {
+			return listGET_LIST_ITEM_OWNER( pxListItem );
+		}
+		return NULL;
+	}
+
+	inline void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
+	{
+		configASSERT( portVALID_TCB_MEM(pxTask) );
+		configASSERT( pxTaskSnapshot != NULL );
+		pxTaskSnapshot->pxTCB = (TCB_t *)pxTask;
+		pxTaskSnapshot->pxTopOfStack = (StackType_t *)((TCB_t *)pxTask)->pxTopOfStack;
+		pxTaskSnapshot->pxEndOfStack = ((TCB_t *)pxTask)->pxEndOfStack;
+	}
+
+	TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask )
+	{
+		TCB_t *pxTCB = pxTask;
+		List_t *pxTaskList = NULL;
+		UBaseType_t i = configMAX_PRIORITIES;
+		UBaseType_t bCurTaskListFound = pdFALSE;
+		List_t *task_lists[] = {
+			pxDelayedTaskList,
+			pxOverflowDelayedTaskList,
+		#if( INCLUDE_vTaskDelete == 1 )
+			&xTasksWaitingTermination,
+		#endif
+		#if( INCLUDE_vTaskSuspend == 1 )
+			&xSuspendedTaskList
+		#endif
+		};
+
+		if( pxTask != NULL && !portVALID_TCB_MEM(pxTask) ) {
+			return NULL;
+		}
+
+		if( pxTCB != NULL ) {
+			pxTCB = prvNextTaskGet( pxTCB );
+			if( pxTCB != NULL ) {
+				// take care not to return garbage
+				return portVALID_TCB_MEM(pxTCB) ? pxTCB : NULL;
+			}
+			pxTaskList = listLIST_ITEM_CONTAINER( &( ((TCB_t *)pxTask)->xStateListItem ) );
+		}
+		/* ready tasks lists */
+		do
+		{
+			i--;
+			List_t *pxList = &( pxReadyTasksLists[ i ] );
+			if( bCurTaskListFound == pdFALSE && pxTaskList != NULL ) {
+				/* need to find list the current task item from */
+				if( pxTaskList == pxList ) {
+					bCurTaskListFound = pdTRUE;
+				}
+				continue; /* go to the next 'ready list' */
+			}
+			pxTCB = prvFirstTaskGet( pxList );
+			if( pxTCB != NULL ) {
+				// take care not to return garbage
+				return portVALID_TCB_MEM(pxTCB) ? pxTCB : NULL;
+		}
+		}
+		while( i > tskIDLE_PRIORITY );
+		/* pending ready tasks lists */
+		for (i = 0; i < portNUM_PROCESSORS; i++) {
+			List_t *pxList = &( xPendingReadyList[ i ] );
+			if( bCurTaskListFound == pdFALSE && pxTaskList != NULL ) {
+				/* need to find list the current task item from */
+				if( pxTaskList == pxList ) {
+					bCurTaskListFound = pdTRUE;
+				}
+				continue; /* go to the next 'ready list' */
+			}
+			pxTCB = prvFirstTaskGet( pxList );
+			if( pxTCB != NULL ) {
+				// take care not to return garbage
+				return portVALID_TCB_MEM(pxTCB) ? pxTCB : NULL;
+			}
+		}
+		/* other tasks lists */
+		for (i = 0; i < sizeof(task_lists)/sizeof(task_lists[0]); i++) {
+			List_t *pxList = task_lists[ i ];
+			if( bCurTaskListFound == pdFALSE && pxTaskList != NULL ) {
+				/* need to find list the current task item from */
+				if( pxTaskList == pxList ) {
+					bCurTaskListFound = pdTRUE;
+				}
+				continue; /* go to the next 'ready list' */
+			}
+			pxTCB = prvFirstTaskGet( pxList );
+			if( pxTCB != NULL ) {
+				// take care not to return garbage
+				return portVALID_TCB_MEM(pxTCB) ? pxTCB : NULL;
+			}
+		}
+
+		return NULL;
+	}
+
 #endif
 
 /* Code below here allows additional code to be inserted into this source file,
