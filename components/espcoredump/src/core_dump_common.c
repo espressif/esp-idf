@@ -103,7 +103,7 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_config_t* write_
 static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err;
-    static core_dump_task_header_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     uint32_t task_num, tcb_sz = esp_core_dump_get_tcb_len();
     uint32_t data_len = 0, task_id;
     int curr_task_index = COREDUMP_CURR_TASK_NOT_FOUND;
@@ -116,7 +116,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
     // Verifies all tasks in the snapshot
     for (task_id = 0; task_id < task_num; task_id++) {
         bool is_current_task = false, stack_is_valid = false;
-        bool tcb_is_valid = esp_core_dump_check_task(frame, &tasks[task_id], &is_current_task, &stack_is_valid);
+        bool tcb_is_valid = esp_core_dump_check_task(frame, tasks[task_id], &is_current_task, &stack_is_valid);
         // Check if task tcb or stack is corrupted
         if (!tcb_is_valid || !stack_is_valid) {
             // If tcb or stack for task is corrupted count task as broken
@@ -126,26 +126,26 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
             curr_task_index = task_id; // save current crashed task index in the snapshot
             ESP_COREDUMP_LOG_PROCESS("Task #%d (TCB:%x) is first crashed task.",
                                         task_id,
-                                        tasks[task_id].tcb_addr);
+                                        tasks[task_id]->tcb_addr);
         }
         // Increase core dump size by task stack size
         uint32_t stk_vaddr, stk_len;
-        esp_core_dump_get_stack(&tasks[task_id], &stk_vaddr, &stk_len);
+        esp_core_dump_get_stack(tasks[task_id], &stk_vaddr, &stk_len);
         data_len += esp_core_dump_get_stack_len(stk_vaddr, stk_vaddr+stk_len);
         // Add tcb size
         data_len += (tcb_sz + sizeof(core_dump_task_header_t));
     }
 
     if (esp_core_dump_in_isr_context()) {
-        interrupted_task_stack.start = tasks[curr_task_index].stack_start;
-        interrupted_task_stack.size = esp_core_dump_get_stack_len(tasks[curr_task_index].stack_start, tasks[curr_task_index].stack_end);
+        interrupted_task_stack.start = tasks[curr_task_index]->stack_start;
+        interrupted_task_stack.size = esp_core_dump_get_stack_len(tasks[curr_task_index]->stack_start, tasks[curr_task_index]->stack_end);
         // size of the task's stack has been already taken into account, also addresses have also been checked
         data_len += sizeof(core_dump_mem_seg_header_t);
-        tasks[curr_task_index].stack_start = (uint32_t)frame;
-        tasks[curr_task_index].stack_end = esp_core_dump_get_isr_stack_end();
-        ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu to %lu", tasks[curr_task_index].stack_end - tasks[curr_task_index].stack_start, data_len);
+        tasks[curr_task_index]->stack_start = (uint32_t)frame;
+        tasks[curr_task_index]->stack_end = esp_core_dump_get_isr_stack_end();
+        ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu to %lu", tasks[curr_task_index]->stack_end - tasks[curr_task_index]->stack_start, data_len);
         // take into account size of the ISR stack
-        data_len += esp_core_dump_get_stack_len(tasks[curr_task_index].stack_start, tasks[curr_task_index].stack_end);
+        data_len += esp_core_dump_get_stack_len(tasks[curr_task_index]->stack_start, tasks[curr_task_index]->stack_end);
     }
 
     // Check if current task TCB is broken
@@ -193,10 +193,10 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
     }
 
     // Write first crashed task data first (not always first task in the snapshot)
-    err = esp_core_dump_save_task(write_cfg, &tasks[curr_task_index]);
+    err = esp_core_dump_save_task(write_cfg, tasks[curr_task_index]);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to save first crashed task #%d (TCB:%x), error=%d!",
-                            curr_task_index, tasks[curr_task_index].tcb_addr, err);
+                            curr_task_index, tasks[curr_task_index]->tcb_addr, err);
         return err;
     }
 
@@ -206,10 +206,10 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
         if (task_id == curr_task_index) {
             continue;
         }
-        err = esp_core_dump_save_task(write_cfg, &tasks[task_id]);
+        err = esp_core_dump_save_task(write_cfg, tasks[task_id]);
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to save core dump task #%d (TCB:%x), error=%d!",
-                                    task_id, tasks[curr_task_index].tcb_addr, err);
+                                    task_id, tasks[curr_task_index]->tcb_addr, err);
             return err;
         }
     }

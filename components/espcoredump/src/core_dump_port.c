@@ -275,13 +275,21 @@ inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
     return esp_core_dump_mem_seg_is_sane(addr, COREDUMP_TCB_SIZE);
 }
 
-uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
+uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
                         const uint32_t snapshot_size)
 {
+    static TaskSnapshot_t s_tasks_snapshots[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     uint32_t tcb_sz; // unused
-    uint32_t task_num = (uint32_t)uxTaskGetSnapshotAll((TaskSnapshot_t*)tasks,
+
+    /* implying that TaskSnapshot_t extends core_dump_task_header_t by adding extra fields */
+    _Static_assert(sizeof(TaskSnapshot_t) >= sizeof(core_dump_task_header_t), "FreeRTOS task snapshot binary compatibility issue!");
+
+    uint32_t task_num = (uint32_t)uxTaskGetSnapshotAll(s_tasks_snapshots,
                                                          (UBaseType_t)snapshot_size,
                                                          (UBaseType_t*)&tcb_sz);
+    for (uint32_t i = 0; i < task_num; i++) {
+        tasks[i] = (core_dump_task_header_t *)&s_tasks_snapshots[i];
+    }
     return task_num;
 }
 

@@ -302,7 +302,7 @@ static int elf_add_tcb(core_dump_elf_t *self, core_dump_task_header_t *task)
 }
 
 // get index of current crashed task (not always first task in the snapshot)
-static int elf_get_current_task_index(core_dump_task_header_t *tasks,
+static int elf_get_current_task_index(core_dump_task_header_t** tasks,
                                         uint32_t task_num)
 {
     int task_id;
@@ -311,13 +311,13 @@ static int elf_get_current_task_index(core_dump_task_header_t *tasks,
 
     // get index of current crashed task (not always first task in the snapshot)
     for (task_id = 0; task_id < task_num; task_id++) {
-        bool tcb_is_valid = esp_core_dump_tcb_addr_is_sane((uint32_t)tasks[task_id].tcb_addr);
-        bool stack_is_valid = esp_core_dump_check_stack(tasks[task_id].stack_start, tasks[task_id].stack_end);
-        if (stack_is_valid && tcb_is_valid && curr_task_handle == tasks[task_id].tcb_addr) {
+        bool tcb_is_valid = esp_core_dump_tcb_addr_is_sane((uint32_t)tasks[task_id]->tcb_addr);
+        bool stack_is_valid = esp_core_dump_check_stack(tasks[task_id]->stack_start, tasks[task_id]->stack_end);
+        if (stack_is_valid && tcb_is_valid && curr_task_handle == tasks[task_id]->tcb_addr) {
             curr_task_index = task_id; // save current crashed task index in the snapshot
             ESP_COREDUMP_LOG_PROCESS("Task #%d, (TCB:%x) is current crashed task.",
                                         task_id,
-                                        tasks[task_id].tcb_addr);
+                                        tasks[task_id]->tcb_addr);
         }
     }
     return curr_task_index;
@@ -416,7 +416,7 @@ static int elf_process_note_segment(core_dump_elf_t *self, int notes_size)
 }
 
 static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
-                                    core_dump_task_header_t* tasks,
+                                    core_dump_task_header_t** tasks,
                                     uint32_t task_num)
 {
     int len = 0;
@@ -428,7 +428,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
     }
 
     // place current task dump first
-    int ret = elf_process_task_regdump(self, frame, &tasks[curr_task_index]);
+    int ret = elf_process_task_regdump(self, frame, tasks[curr_task_index]);
     if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
         // when writing segments headers this function writes nothing
         ELF_CHECK_ERR((ret >= 0), ret, "Task #%d, PR_STATUS write failed, return (%d).", curr_task_index, ret);
@@ -444,7 +444,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
         if (task_id == curr_task_index) {
             continue; // skip current task (already processed)
         }
-        ret = elf_process_task_regdump(self, frame, &tasks[task_id]);
+        ret = elf_process_task_regdump(self, frame, tasks[task_id]);
         if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
             // when writing segments headers this function writes nothing
             ELF_CHECK_ERR((ret >= 0), ret, "Task #%d, PR_STATUS write failed, return (%d).", task_id, ret);
@@ -462,12 +462,12 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
             // in this stage we can safely replace task's stack with IRQ's one
             // if task had corrupted stack it was replaced with fake one in HW dependent code called by elf_process_task_regdump()
             // in the "write data" stage registers from ISR's stack will be saved in PR_STATUS
-            self->interrupted_task.stack_start = tasks[curr_task_index].stack_start;
-            self->interrupted_task.stack_end = tasks[curr_task_index].stack_end;
+            self->interrupted_task.stack_start = tasks[curr_task_index]->stack_start;
+            self->interrupted_task.stack_end = tasks[curr_task_index]->stack_end;
             uint32_t isr_stk_end = esp_core_dump_get_isr_stack_end();
             ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu (%x - %x)", isr_stk_end - (uint32_t)frame, (uint32_t)frame, isr_stk_end);
-            tasks[curr_task_index].stack_start = (uint32_t)frame;
-            tasks[curr_task_index].stack_end = isr_stk_end;
+            tasks[curr_task_index]->stack_start = (uint32_t)frame;
+            tasks[curr_task_index]->stack_end = isr_stk_end;
         }
 
         // actually we write current task's stack here which was replaced by ISR's
@@ -479,7 +479,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
 }
 
 static int elf_write_tasks_data(core_dump_elf_t *self, void* frame,
-                                core_dump_task_header_t* tasks,
+                                core_dump_task_header_t** tasks,
                                 uint32_t task_num)
 {
     int elf_len = 0;
@@ -496,11 +496,11 @@ static int elf_write_tasks_data(core_dump_elf_t *self, void* frame,
     // processes all task's stack data and writes segment data into partition
     // if flash configuration is set
     for (task_id = 0; task_id < task_num; task_id++) {
-        ret = elf_process_task_tcb(self, &tasks[task_id]);
+        ret = elf_process_task_tcb(self, tasks[task_id]);
         ELF_CHECK_ERR((ret > 0), ret,
                         "Task #%d, TCB write failed, return (%d).", task_id, ret);
         elf_len += ret;
-        ret = elf_process_task_stack(self, &tasks[task_id]);
+        ret = elf_process_task_stack(self, tasks[task_id]);
         ELF_CHECK_ERR((ret != ELF_PROC_ERR_WRITE_FAIL), ELF_PROC_ERR_WRITE_FAIL,
                         "Task #%d, stack write failed, return (%d).", task_id, ret);
         elf_len += ret;
@@ -546,7 +546,7 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
 }
 
 static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
-                                            core_dump_task_header_t* tasks,
+                                            core_dump_task_header_t** tasks,
                                             uint32_t task_num)
 {
     int tot_len = 0;
@@ -574,7 +574,7 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
 esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err = ESP_OK;
-    static core_dump_task_header_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     static core_dump_elf_t self;
     core_dump_header_t dump_hdr;
     uint32_t tcb_sz = COREDUMP_TCB_SIZE, task_num;
