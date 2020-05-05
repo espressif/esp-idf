@@ -129,6 +129,7 @@ static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by def
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
+static bool allow_empty = true;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -887,6 +888,10 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     return l.len;
 }
 
+void linenoiseAllowEmpty(bool val) {
+    allow_empty = val;
+}
+
 int linenoiseProbe(void) {
     /* Switch to non-blocking mode */
     int flags = fcntl(STDIN_FILENO, F_GETFL);
@@ -982,8 +987,9 @@ char *linenoise(const char *prompt) {
     if (count > 0) {
         sanitize(buf);
         count = strlen(buf);
-    }
-    if (count <= 0) {
+    } else if (count == 0 && allow_empty) {
+        /* will return an empty (0-length) string */
+    } else {
         free(buf);
         return NULL;
     }
