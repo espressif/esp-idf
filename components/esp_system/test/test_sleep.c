@@ -2,7 +2,6 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
-#include "esp32/clk.h"
 #include "driver/rtc_io.h"
 #include "esp_rom_uart.h"
 #include "freertos/FreeRTOS.h"
@@ -14,11 +13,20 @@
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
-#include "esp32/rom/rtc.h"
+#include "hal/rtc_cntl_ll.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#include "esp32/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#include "esp32s2/rom/rtc.h"
+#endif
 
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
@@ -127,7 +135,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 }
 
 
-#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
+#if defined(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL)
 #define MAX_SLEEP_TIME_ERROR_US 200
 #else
 #define MAX_SLEEP_TIME_ERROR_US 100
