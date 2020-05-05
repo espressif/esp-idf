@@ -289,7 +289,7 @@ example_test_009:
   artifacts:
       when: always
       paths:
-        - $CI_PROJECT_DIR/examples/storage/semihost_vfs/*.log
+        - $CI_PROJECT_DIR/examples/*/*/*.log
       expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"

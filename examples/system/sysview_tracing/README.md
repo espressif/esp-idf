@@ -65,7 +65,7 @@ static void example_task(void *p)
 
 Potential problem can arise in such program because task and timer has no any mechanism to acknowledge the events transfer. Task needs some time to process an event before waiting for the next one. In this case call to `ESP_LOGI` will be the most time consuming part of event processing. Therefore when timer's ISR is called at some rate it can happen that `xTaskNotifyFromISR` gets called several times before task calls `xTaskNotifyWait`. In these conditions some events will be lost. Possible solution for this is to increase timer's tick period or to use some events acknowledgement mechanism.
 
-Check the full example code [sysview_tracing](main/sysview_tracing.c) that when compiled in dual core mode reproduces the described problem on both cores. Below is the output of example compiled in signle core mode. It shows that task misses several events:
+Check the full example code [sysview_tracing](main/sysview_tracing.c) that when compiled in dual core mode reproduces the described problem on both cores. Below is the output of example compiled in single core mode. It shows that task misses several events:
 
 ```
 I (295) example: 0x3ffb6c10: run task
