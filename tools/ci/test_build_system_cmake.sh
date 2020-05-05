@@ -716,6 +716,13 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     grep "build/dfu.bin\" has been written. You may proceed with DFU flashing." tmp.log || (tail -n 100 tmp.log ; failure "DFU build should succeed for esp32s2")
     rm tmp.log
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} "dfu.bin"
+    rm -rf build sdkconfig
+
+    print_status "Loadable ELF build works"
+    echo "CONFIG_APP_BUILD_TYPE_ELF_RAM=y" > sdkconfig
+    idf.py reconfigure || failure "Couldn't configure for loadable ELF file"
+    test -f build/flasher_args.json && failure "flasher_args.json should not be generated in a loadable ELF build"
+    idf.py build || failure "Couldn't build a loadable ELF file"
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

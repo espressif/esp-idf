@@ -12,7 +12,7 @@ import ttfw_idf
 
 class SerialThread(object):
     def run(self, log_path, exit_event):
-        with serial.Serial('/dev/ttyUSB1', 115200) as ser, open(log_path, 'wb') as f:
+        with serial.Serial(os.getenv('ESPPORT', '/dev/ttyUSB1'), 115200) as ser, open(log_path, 'wb') as f:
             while True:
                 f.write(ser.read(ser.in_waiting))
                 if exit_event.is_set():
@@ -38,7 +38,7 @@ class SerialThread(object):
 def test_app_loadable_elf(env, extra_data):
 
     rel_project_path = os.path.join('tools', 'test_apps', 'system', 'gdb_loadable_elf')
-    app_files = ['gdb_loadable_elf.elf', 'partition_table/partition-table.bin']
+    app_files = ['gdb_loadable_elf.elf']
     example = ttfw_idf.LoadableElfTestApp(rel_project_path, app_files, target="esp32")
     idf_path = example.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
