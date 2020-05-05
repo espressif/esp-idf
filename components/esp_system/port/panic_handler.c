@@ -486,7 +486,13 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
         BUSY_WAIT_IF_TRUE(frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0);
 
         // For cache error, pause the non-offending core - offending core handles panic
-        BUSY_WAIT_IF_TRUE(frame->exccause == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid());
+        if (frame->exccause == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid()) {
+            // Only print the backtrace for the offending core in case of the cache error
+            xt_exc_frames[core_id] = NULL;
+            while (1) {
+                ;
+            }
+        }
     }
 
     ets_delay_us(1);
@@ -536,42 +542,22 @@ void xt_unhandled_exception(XtExcFrame *frame)
     panic_handler(frame, false);
 }
 
-static __attribute__((noreturn)) void esp_digital_reset(void)
-{
-    // make sure all the panic handler output is sent from UART FIFO
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    // switch to XTAL (otherwise we will keep running from the PLL)
-
-    rtc_clk_cpu_freq_set_xtal();
-
-#if CONFIG_IDF_TARGET_ESP32
-    esp_cpu_unstall(PRO_CPU_NUM);
-#endif
-
-    // reset the digital part
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
-    while (true) {
-        ;
-    }
-}
-
 void __attribute__((noreturn)) panic_restart(void)
 {
-    // If resetting because of a cache error, reset the digital part
-    // Make sure that the reset reason is not a generic panic reason as well on ESP32S2,
-    // as esp_cache_err_get_cpuid always returns PRO_CPU_NUM
-
     bool digital_reset_needed = false;
-    if ( esp_cache_err_get_cpuid() != -1 && esp_reset_reason_get_hint() != ESP_RST_PANIC ) {
-        digital_reset_needed = true;
-    }
-#if CONFIG_IDF_TARGET_ESP32S2
-    if ( esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any() ) {
+#ifdef CONFIG_IDF_TARGET_ESP32
+    // On the ESP32, cache error status can only be cleared by system reset
+    if (esp_cache_err_get_cpuid() != -1) {
         digital_reset_needed = true;
     }
 #endif
-    if ( digital_reset_needed ) {
-        esp_digital_reset();
+#if CONFIG_IDF_TARGET_ESP32S2
+    if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
+        digital_reset_needed = true;
+    }
+#endif
+    if (digital_reset_needed) {
+        esp_restart_noos_dig();
     }
     esp_restart_noos();
 }
