@@ -38,7 +38,7 @@ class SerialThread(object):
 def test_app_loadable_elf(env, extra_data):
 
     rel_project_path = os.path.join('tools', 'test_apps', 'system', 'gdb_loadable_elf')
-    app_files = ['gdb_loadable_elf.elf', 'partition_table/partition-table.bin']
+    app_files = ['gdb_loadable_elf.elf']
     example = ttfw_idf.LoadableElfTestApp(rel_project_path, app_files, target="esp32")
     idf_path = example.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
