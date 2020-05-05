@@ -38,4 +38,5 @@ API Guides
     :esp32: ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     Unit Testing <unit-tests>
     :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
+    :esp32s2: USB Console <usb-console>
     WiFi Driver <wifi>
