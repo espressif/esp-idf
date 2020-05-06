@@ -164,13 +164,14 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
                 return test_cases
 
         test_cases = []
-        if os.path.isdir(test_case_path):
-            for yml_file in find_by_suffix('.yml', test_case_path):
+        if os.path.isdir(self.test_case_path):
+            for yml_file in find_by_suffix('.yml', self.test_case_path):
                 test_cases.extend(get_test_cases_from_yml(yml_file))
-        elif os.path.isfile(test_case_path):
-            test_cases.extend(get_test_cases_from_yml(test_case_path))
+        elif os.path.isfile(self.test_case_path):
+            test_cases.extend(get_test_cases_from_yml(self.test_case_path))
         else:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
+            raise SystemExit(1)
 
         # filter keys are lower case. Do map lower case keys with original keys.
         try:
