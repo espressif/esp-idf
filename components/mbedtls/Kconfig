@@ -695,6 +695,25 @@ menu "mbedTLS"
 
             # end of Elliptic Curve options
 
+    config MBEDTLS_POLY1305_C
+        bool "Poly1305 MAC algorithm"
+        default n
+        help
+            Enable support for Poly1305 MAC algorithm.
+
+    config MBEDTLS_CHACHA20_C
+        bool "Chacha20 stream cipher"
+        default n
+        help
+            Enable support for Chacha20 stream cipher.
+
+    config MBEDTLS_CHACHAPOLY_C
+        bool "ChaCha20-Poly1305 AEAD algorithm"
+        default n
+        depends on MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C
+        help
+            Enable support for ChaCha20-Poly1305 AEAD algorithm
+
     menuconfig MBEDTLS_SECURITY_RISKS
         bool "Show configurations with potential security risks"
         default n

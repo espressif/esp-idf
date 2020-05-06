@@ -1452,24 +1452,28 @@
 /**
  * \def MBEDTLS_CHACHA20_C
  *
- * Disable the ChaCha20 stream cipher.
+ * Enable the ChaCha20 stream cipher.
  *
  * Module:  library/chacha20.c
  */
-#ifdef MBEDTLS_CHACHA20_C
+#ifdef CONFIG_MBEDTLS_CHACHA20_C
+#define MBEDTLS_CHACHA20_C
+#else
 #undef MBEDTLS_CHACHA20_C
 #endif
 
 /**
  * \def MBEDTLS_CHACHAPOLY_C
  *
- * Disable the ChaCha20-Poly1305 AEAD algorithm.
+ * Enable the ChaCha20-Poly1305 AEAD algorithm.
  *
  * Module:  library/chachapoly.c
  *
  * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
  */
-#ifdef MBEDTLS_CHACHAPOLY_C
+#ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
+#define MBEDTLS_CHACHAPOLY_C
+#else
 #undef MBEDTLS_CHACHAPOLY_C
 #endif
 
@@ -1932,12 +1936,14 @@
 /**
  * \def MBEDTLS_POLY1305_C
  *
- * Disable the Poly1305 MAC algorithm.
+ * Enable the Poly1305 MAC algorithm.
  *
  * Module:  library/poly1305.c
  * Caller:  library/chachapoly.c
  */
-#ifdef MBEDTLS_POLY1305_C
+#ifdef CONFIG_MBEDTLS_POLY1305_C
+#define MBEDTLS_POLY1305_C
+#else
 #undef MBEDTLS_POLY1305_C
 #endif
 
