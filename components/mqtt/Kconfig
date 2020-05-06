@@ -78,6 +78,21 @@ menu "ESP-MQTT Configurations"
         help
             MQTT task stack size
 
+    config MQTT_DISABLE_API_LOCKS
+        bool "Disable API locks"
+        default n
+        depends on MQTT_USE_CUSTOM_CONFIG
+        help
+            Default config employs API locks to protect internal structures. It is possible to disable
+            these locks if the user code doesn't access MQTT API from multiple concurrent tasks
+
+    config MQTT_TASK_PRIORITY
+        int "MQTT task priority"
+        default 5
+        depends on MQTT_USE_CUSTOM_CONFIG
+        help
+            MQTT task priority. Higher number denotes higher priority.
+
     config MQTT_TASK_CORE_SELECTION_ENABLED
         bool "Enable MQTT task core selection"
         default false
