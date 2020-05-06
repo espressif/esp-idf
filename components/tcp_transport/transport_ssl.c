@@ -74,7 +74,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) <= 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
         esp_transport_set_errors(t, ssl->tls->error_handle);
-        esp_tls_conn_delete(ssl->tls);
+        esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;
         return -1;
     }
@@ -170,7 +170,7 @@ static int ssl_close(esp_transport_handle_t t)
     int ret = -1;
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->ssl_initialized) {
-        esp_tls_conn_delete(ssl->tls);
+        ret = esp_tls_conn_destroy(ssl->tls);
         ssl->conn_state = TRANS_SSL_INIT;
         ssl->ssl_initialized = false;
     }
