@@ -2746,7 +2746,7 @@ static void node_reset(struct bt_mesh_model *model,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
-        bt_mesh_reset();
+        bt_mesh_node_reset();
     }
 }
 
