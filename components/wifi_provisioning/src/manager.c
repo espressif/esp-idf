@@ -766,7 +766,7 @@ esp_err_t wifi_prov_mgr_event_handler(void *ctx, system_event_t *event)
 
     /* Only handle events when credential is received and
      * Wi-Fi STA is yet to complete trying the connection */
-    if (prov_ctx->prov_state != WIFI_PROV_STATE_CRED_RECV) {
+    if (prov_ctx->prov_state < WIFI_PROV_STATE_CRED_RECV) {
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_OK;
     }
