@@ -1389,7 +1389,7 @@ static bool ready_to_recv(void)
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         return true;
     } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
-        if (bt_mesh_provisioner_get_all_node_count()) {
+        if (bt_mesh_provisioner_get_node_count()) {
             return true;
         }
     }

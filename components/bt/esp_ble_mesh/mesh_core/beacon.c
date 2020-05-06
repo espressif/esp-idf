@@ -269,7 +269,7 @@ static bool ready_to_send(void)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
-        if (bt_mesh_provisioner_get_all_node_count()) {
+        if (bt_mesh_provisioner_get_node_count()) {
             return true;
         }
     }

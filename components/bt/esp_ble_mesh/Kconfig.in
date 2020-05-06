@@ -56,7 +56,7 @@ if BLE_MESH
 
         config BLE_MESH_WAIT_FOR_PROV_MAX_DEV_NUM
             int "Maximum number of unprovisioned devices that can be added to device queue"
-            default 20
+            default 10
             range 1 100
             help
                 This option specifies how many unprovisioned devices can be added to device
@@ -64,20 +64,9 @@ if BLE_MESH
                 queue in the bottom layer which is used to store unprovisioned device
                 information (e.g. Device UUID, address).
 
-        config BLE_MESH_MAX_STORED_NODES
-            int "Maximum number of nodes whose information can be stored"
-            default 20
-            range BLE_MESH_MAX_PROV_NODES 1000
-            help
-                This option specifies the maximum number of nodes whose information can be
-                stored by a Provisioner in its upper layer.
-                Users can change this value according to the number of nodes whose information
-                (e.g. Device UUID, unicast address, element number) are going to be stored by
-                a Provisioner. And the nodes include the provisioned ones and user-added ones.
-
         config BLE_MESH_MAX_PROV_NODES
             int "Maximum number of devices that can be provisioned by Provisioner"
-            default 20
+            default 10
             range 1 1000
             help
                 This option specifies how many devices can be provisioned by a Provisioner.
@@ -348,6 +337,11 @@ if BLE_MESH
             The replay protection list is used to prevent a node from replay attack,
             which will store the source address and sequence number of the received
             mesh messages.
+            For Provisioner, the replay protection list size should not be smaller than
+            the maximum number of nodes whose information can be stored. And the element
+            number of each node should also be taken into consideration. For example, if
+            Provisioner can provision up to 20 nodes and each node contains two elements,
+            then the replay protection list size of Provisioner should be at least 40.
 
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
