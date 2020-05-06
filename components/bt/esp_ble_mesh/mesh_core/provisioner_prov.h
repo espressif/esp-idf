@@ -18,6 +18,10 @@
 #include "mesh_main.h"
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !CONFIG_BLE_MESH_PROVISIONER
 
 #define CONFIG_BLE_MESH_PBA_SAME_TIME   0
@@ -424,5 +428,9 @@ u8_t bt_mesh_set_fast_prov_unicast_addr_range(u16_t min, u16_t max);
  * @return None
  */
 void bt_mesh_set_fast_prov_flags_iv_index(u8_t flags, u32_t iv_index);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROVISIONER_PROV_H_ */

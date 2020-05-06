@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief: event, event code of provisioning events; param, parameters of provisioning events */
 typedef void (* esp_ble_mesh_prov_cb_t)(esp_ble_mesh_prov_cb_event_t event,
                                         esp_ble_mesh_prov_cb_param_t *param);
@@ -366,5 +370,9 @@ esp_err_t esp_ble_mesh_set_fast_prov_info(esp_ble_mesh_fast_prov_info_t *fast_pr
  *
  */
 esp_err_t esp_ble_mesh_set_fast_prov_action(esp_ble_mesh_fast_prov_action_t action);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_PROVISIONING_API_H_ */

@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief: event, event code of user-defined model events; param, parameters of user-defined model events */
 typedef void (* esp_ble_mesh_model_cb_t)(esp_ble_mesh_model_cb_event_t event,
         esp_ble_mesh_model_cb_param_t *param);
@@ -380,5 +384,9 @@ uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void);
  *
  */
 const uint8_t *esp_ble_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app_idx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_NETWORKING_API_H_ */

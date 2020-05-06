@@ -11,6 +11,10 @@
 
 #include "server_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct bt_mesh_light_lightness_state {
     u16_t lightness_linear;
     u16_t target_lightness_linear;
@@ -526,5 +530,9 @@ int bt_mesh_light_xyl_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_light_xyl_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_light_lc_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_light_lc_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LIGHTING_SERVER_H_ */

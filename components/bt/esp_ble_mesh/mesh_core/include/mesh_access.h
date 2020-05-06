@@ -23,6 +23,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_ADDR_UNASSIGNED   0x0000
 #define BLE_MESH_ADDR_ALL_NODES    0xffff
 #define BLE_MESH_ADDR_PROXIES      0xfffc
@@ -488,6 +492,10 @@ struct bt_mesh_comp {
     size_t elem_count;
     struct bt_mesh_elem *elem;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
