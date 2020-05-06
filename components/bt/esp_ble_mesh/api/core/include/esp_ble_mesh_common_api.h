@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief         Initialize BLE Mesh module.
  *                This API initializes provisioning capabilities and composition data information.
@@ -45,5 +49,9 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
  *
  */
 esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_COMMON_API_H_ */

@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_LIGHT_LIGHTNESS_CLI
  *
  *  @brief  Define a new Light Lightness Client Model.
@@ -1670,6 +1674,10 @@ typedef void (* esp_ble_mesh_lighting_server_cb_t)(esp_ble_mesh_lighting_server_
  *
  */
 esp_err_t esp_ble_mesh_register_lighting_server_callback(esp_ble_mesh_lighting_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_LIGHTING_MODEL_API_H_ */
 

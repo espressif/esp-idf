@@ -18,6 +18,10 @@
 #include "btc/btc_manage.h"
 #include "esp_ble_mesh_health_model_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     BTC_BLE_MESH_ACT_HEALTH_CLIENT_GET_STATE,
     BTC_BLE_MESH_ACT_HEALTH_CLIENT_SET_STATE,
@@ -83,5 +87,9 @@ void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model, u8_t tes
 void btc_ble_mesh_health_server_attention_on(struct bt_mesh_model *model, u8_t time);
 
 void btc_ble_mesh_health_server_attention_off(struct bt_mesh_model *model);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BTC_BLE_MESH_HEALTH_MODEL_H_ */

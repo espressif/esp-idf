@@ -11,6 +11,10 @@
 
 #include "net.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void bt_mesh_beacon_enable(void);
 void bt_mesh_beacon_disable(void);
 
@@ -23,5 +27,9 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 
 void bt_mesh_beacon_init(void);
 void bt_mesh_beacon_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BEACON_H_ */

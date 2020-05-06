@@ -13,6 +13,10 @@
 #include "mesh_access.h"
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Maximum advertising data payload for a single data type */
 #define BLE_MESH_ADV_DATA_SIZE 29
 
@@ -106,5 +110,9 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
 
 int bt_mesh_stop_ble_advertising(u8_t index);
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ADV_H_ */

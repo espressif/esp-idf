@@ -21,6 +21,10 @@
 
 #include "client_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Sensor Client Model Context */
 extern const struct bt_mesh_model_op sensor_cli_op[];
 
@@ -170,5 +174,9 @@ int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void 
  * @return Zero-success, other-fail
  */
 int bt_mesh_sensor_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SENSOR_CLIENT_H_ */

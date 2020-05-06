@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief       Enable BLE Mesh device LPN functionality.
  *
@@ -57,5 +61,9 @@ esp_err_t esp_ble_mesh_lpn_disable(bool force);
  *
  */
 esp_err_t esp_ble_mesh_lpn_poll(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_LOW_POWER_API_H_ */
