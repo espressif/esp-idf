@@ -382,7 +382,24 @@ class SerialReader(StoppableThread):
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
             while self.alive:
-                data = self.serial.read(self.serial.in_waiting or 1)
+                try:
+                    data = self.serial.read(self.serial.in_waiting or 1)
+                except (serial.serialutil.SerialException, IOError) as e:
+                    data = b''
+                    # self.serial.open() was successful before, therefore, this is an issue related to
+                    # the disapperence of the device
+                    red_print(e)
+                    yellow_print('Waiting for the device to reconnect', newline='')
+                    self.serial.close()
+                    while self.alive:  # so that exiting monitor works while waiting
+                        try:
+                            time.sleep(0.5)
+                            self.serial.open()
+                            break  # device connected
+                        except serial.serialutil.SerialException:
+                            yellow_print('.', newline='')
+                            sys.stderr.flush()
+                    yellow_print('')  # go to new line
                 if len(data):
                     self.event_queue.put((TAG_SERIAL, data), False)
         finally:
