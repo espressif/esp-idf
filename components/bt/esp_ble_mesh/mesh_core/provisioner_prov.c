@@ -2178,6 +2178,11 @@ int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_
      *  Parameter num_flag is used to indicate whether the value
      *  output by provisioner is number or string.
      */
+    if (num == NULL || size > BLE_MESH_PROV_INPUT_OOB_MAX_LEN) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
     if (!link[idx].auth) {
         BT_ERR("%s, link auth is NULL", __func__);
         return -EINVAL;

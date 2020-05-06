@@ -660,6 +660,11 @@ void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh
 
     switch (type) {
     case BLE_MESH_PROXY_ADV_NET_ID: {
+        if (buf->len != sizeof(ctx.net_id.net_id)) {
+            BT_WARN("Malformed Network ID");
+            return;
+        }
+
         struct bt_mesh_subnet *sub = NULL;
         sub = bt_mesh_is_net_id_exist(buf->data);
         if (!sub) {

@@ -62,6 +62,10 @@ typedef enum {
     BLE_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } bt_mesh_prov_oob_info_t;
 
+#define BLE_MESH_PROV_STATIC_OOB_MAX_LEN    16
+#define BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN    8
+#define BLE_MESH_PROV_INPUT_OOB_MAX_LEN     8
+
 /** Provisioning properties & capabilities. */
 struct bt_mesh_prov {
 #if CONFIG_BLE_MESH_NODE
