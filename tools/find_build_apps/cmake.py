@@ -15,28 +15,19 @@ IDF_PY = "idf.py"
 CMAKE_PROJECT_LINE = r"include($ENV{IDF_PATH}/tools/cmake/project.cmake)"
 
 SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
-SDKCONFIG_LINE_REGEX = re.compile(r"^([^=]+)=\"?([^\"\n]*)\"?\n*$")
 
 FORMAL_TO_USUAL = {
     'ESP32': 'esp32',
     'ESP32-S2': 'esp32s2',
 }
 
-# If these keys are present in sdkconfig.defaults, they will be extracted and passed to CMake
-SDKCONFIG_TEST_OPTS = [
-    "EXCLUDE_COMPONENTS",
-    "TEST_EXCLUDE_COMPONENTS",
-    "TEST_COMPONENTS",
-    "TEST_GROUPS"
-]
-
 
 class CMakeBuildSystem(BuildSystem):
     NAME = BUILD_SYSTEM_CMAKE
 
-    @staticmethod
-    def build(build_item):  # type: (BuildItem) -> None
-        build_path, work_path = BuildSystem.build_prepare(build_item)
+    @classmethod
+    def build(cls, build_item):  # type: (BuildItem) -> None
+        build_path, work_path, extra_cmakecache_items = cls.build_prepare(build_item)
         # Prepare the build arguments
         args = [
             # Assume it is the responsibility of the caller to
@@ -48,11 +39,12 @@ class CMakeBuildSystem(BuildSystem):
             work_path,
             "-DIDF_TARGET=" + build_item.target,
         ]
-        for key, val in extra_cmakecache_items.items():
-            args.append("-D{}={}".format(key, val))
-        if "TEST_EXCLUDE_COMPONENTS" in extra_cmakecache_items \
-                and "TEST_COMPONENTS" not in extra_cmakecache_items:
-            args.append("-DTESTS_ALL=1")
+        if extra_cmakecache_items:
+            for key, val in extra_cmakecache_items.items():
+                args.append("-D{}={}".format(key, val))
+            if "TEST_EXCLUDE_COMPONENTS" in extra_cmakecache_items \
+                    and "TEST_COMPONENTS" not in extra_cmakecache_items:
+                args.append("-DTESTS_ALL=1")
         if build_item.verbose:
             args.append("-v")
         args.append("build")

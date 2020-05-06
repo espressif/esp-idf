@@ -20,9 +20,9 @@ except NameError:
 class MakeBuildSystem(BuildSystem):
     NAME = BUILD_SYSTEM_MAKE
 
-    @staticmethod
-    def build(build_item):
-        build_path, work_path = BuildSystem.build_prepare(build_item)
+    @classmethod
+    def build(cls, build_item):
+        build_path, work_path = cls.build_prepare(build_item)
         commands = [
             'make clean',
             'make defconfig',
