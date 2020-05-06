@@ -41,7 +41,7 @@ def upper_list(text):
     if not text:
         return text
     if isinstance(text, string_type):
-        res = [text.upper()]
+        res = text.upper()
     else:
         res = [item.upper() for item in text]
     return res
