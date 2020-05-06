@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief         Get the model publish period, the unit is ms.
  *
@@ -103,5 +107,9 @@ esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *ele
  *
  */
 const esp_ble_mesh_comp_t *esp_ble_mesh_get_composition_data(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_LOCAL_DATA_OPERATION_API_H_ */

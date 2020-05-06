@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief   Enable advertising with Node Identity.
  *
@@ -113,6 +117,10 @@ esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle,
  */
 esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle,
         uint16_t net_idx, uint16_t *addr, uint16_t addr_num);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_PROXY_API_H_ */
 

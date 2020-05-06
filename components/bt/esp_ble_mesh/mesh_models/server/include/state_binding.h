@@ -11,6 +11,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     GENERIC_ONOFF_STATE,
     GENERIC_LEVEL_STATE,
@@ -90,5 +94,9 @@ u16_t bt_mesh_convert_level_to_saturation(s16_t level);
 int bt_mesh_update_binding_state(struct bt_mesh_model *model,
                                  bt_mesh_server_state_type_t type,
                                  bt_mesh_server_state_value_t *value);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _STATE_BINDING_H_ */

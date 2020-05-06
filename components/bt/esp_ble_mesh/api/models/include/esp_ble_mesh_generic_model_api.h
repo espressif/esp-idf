@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI
  *
  *  @brief  Define a new Generic OnOff Client Model.
@@ -1292,6 +1296,10 @@ typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb
  *
  */
 esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_GENERIC_MODEL_API_H_ */
 
