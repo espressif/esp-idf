@@ -846,6 +846,79 @@ again:
     return 0;
 }
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
+                          const struct bt_mesh_ble_adv_data *data)
+{
+    struct ble_gap_adv_params adv_params = {0};
+    ble_addr_t p_dir_bda = {0};
+    int err = 0;
+
+    if (data && param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
+        param->adv_type != BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        if (data->adv_data_len) {
+            err = ble_gap_adv_set_data(data->adv_data, data->adv_data_len);
+            if (err) {
+                BT_ERR("Failed to set advertising data, err %d", err);
+                return err;
+            }
+        }
+        if (data->scan_rsp_data_len && param->adv_type != BLE_MESH_ADV_NONCONN_IND) {
+            err = ble_gap_adv_rsp_set_data(data->scan_rsp_data, data->scan_rsp_data_len);
+            if (err) {
+                BT_ERR("Failed to set scan rsp data, err %d", err);
+                return err;
+            }
+        }
+    }
+
+    switch (param->adv_type) {
+    case BLE_MESH_ADV_IND:
+        adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        break;
+    case BLE_MESH_ADV_DIRECT_IND:
+        adv_params.conn_mode = BLE_GAP_CONN_MODE_DIR;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        break;
+    case BLE_MESH_ADV_SCAN_IND:
+        adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        break;
+    case BLE_MESH_ADV_NONCONN_IND:
+        adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        break;
+    case BLE_MESH_ADV_DIRECT_IND_LOW_DUTY:
+        adv_params.conn_mode = BLE_GAP_CONN_MODE_DIR;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        break;
+    }
+    adv_params.itvl_min = param->interval;
+    adv_params.itvl_max = param->interval;
+    adv_params.channel_map = BLE_MESH_ADV_CHNL_37 | BLE_MESH_ADV_CHNL_38 | BLE_MESH_ADV_CHNL_39;
+    adv_params.filter_policy = BLE_MESH_AP_SCAN_CONN_ALL;
+    adv_params.high_duty_cycle = (param->adv_type == BLE_MESH_ADV_DIRECT_IND) ? true : false;
+
+    if (param->own_addr_type == BLE_MESH_ADDR_PUBLIC_ID ||
+        param->own_addr_type == BLE_MESH_ADDR_RANDOM_ID ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        p_dir_bda.type = param->peer_addr_type;
+        memcpy(p_dir_bda.val, param->peer_addr, BLE_MESH_ADDR_LEN);
+    }
+
+    err = ble_gap_adv_start(param->own_addr_type, &p_dir_bda, BLE_HS_FOREVER, &adv_params,
+                            gap_event_cb, NULL);
+    if (err) {
+        BT_ERR("Failed to start advertising, err %d", err);
+        return err;
+    }
+
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
 int bt_le_adv_stop(void)
 {
 #if BLE_MESH_DEV

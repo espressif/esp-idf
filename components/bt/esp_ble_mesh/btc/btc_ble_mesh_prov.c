@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
+#include "adv.h"
 #include "mesh_proxy.h"
 #include "mesh.h"
 #include "access.h"
@@ -1879,6 +1880,26 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+    case BTC_BLE_MESH_ACT_START_BLE_ADVERTISING: {
+        struct bt_mesh_ble_adv_param *set = (struct bt_mesh_ble_adv_param *)&arg->start_ble_advertising.param;
+        struct bt_mesh_ble_adv_data *data = NULL;
+        if (arg->start_ble_advertising.data.adv_data_len ||
+            arg->start_ble_advertising.data.scan_rsp_data_len) {
+            data = (struct bt_mesh_ble_adv_data *)&arg->start_ble_advertising.data;
+        }
+        act = ESP_BLE_MESH_START_BLE_ADVERTISING_COMP_EVT;
+        param.start_ble_advertising_comp.err_code =
+            bt_mesh_start_ble_advertising(set, data, &param.start_ble_advertising_comp.index);
+        break;
+    }
+    case BTC_BLE_MESH_ACT_STOP_BLE_ADVERTISING:
+        act = ESP_BLE_MESH_STOP_BLE_ADVERTISING_COMP_EVT;
+        param.stop_ble_advertising_comp.index = arg->stop_ble_advertising.index;
+        param.stop_ble_advertising_comp.err_code =
+            bt_mesh_stop_ble_advertising(arg->stop_ble_advertising.index);
+        break;
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);

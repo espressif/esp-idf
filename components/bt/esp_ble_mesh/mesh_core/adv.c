@@ -21,6 +21,7 @@
 
 #include "mesh.h"
 #include "mesh_hci.h"
+#include "mesh_common.h"
 #include "adv.h"
 #include "beacon.h"
 #include "prov.h"
@@ -32,6 +33,8 @@
 
 /* Convert from ms to 0.625ms units */
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
+/* Convert from 0.625ms units to interval(ms) */
+#define ADV_SCAN_INT(val) ((val) * 5 / 8)
 
 /* Window and Interval are equal for continuous scanning */
 #define MESH_SCAN_INTERVAL 0x20
@@ -73,7 +76,11 @@ struct bt_mesh_queue {
 
 static struct bt_mesh_queue xBleMeshQueue;
 /* We reserve one queue for bt_mesh_adv_update() */
-#define BLE_MESH_QUEUE_SIZE         (CONFIG_BLE_MESH_ADV_BUF_COUNT + 1)
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+#define BLE_MESH_QUEUE_SIZE     (CONFIG_BLE_MESH_ADV_BUF_COUNT + CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT + 1)
+#else
+#define BLE_MESH_QUEUE_SIZE     (CONFIG_BLE_MESH_ADV_BUF_COUNT + 1)
+#endif
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
 NET_BUF_POOL_DEFINE(relay_adv_buf_pool, CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT,
@@ -92,6 +99,30 @@ static QueueSetHandle_t xBleMeshQueueSet;
 
 static bool ignore_relay_packet(u32_t timestamp);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+/* length + advertising data + length + scan response data */
+NET_BUF_POOL_DEFINE(ble_adv_buf_pool, CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT,
+                    ((BLE_MESH_ADV_DATA_SIZE + 3) << 1), BLE_MESH_ADV_USER_DATA_SIZE, NULL);
+
+static struct bt_mesh_adv ble_adv_pool[CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT];
+
+enum {
+    TIMER_INIT,  /* Resend timer is initialized */
+    NUM_FLAGS,
+};
+
+static struct ble_adv_tx {
+    struct bt_mesh_ble_adv_param param;
+    struct net_buf              *buf;
+    struct k_delayed_work        resend;
+    BLE_MESH_ATOMIC_DEFINE(flags, NUM_FLAGS);
+} ble_adv_tx[CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT];
+
+#define SEND_BLE_ADV_INFINITE    0xFFFF
+
+static void bt_mesh_ble_adv_deinit(void);
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 struct bt_mesh_adv_task {
     TaskHandle_t handle;
@@ -136,28 +167,63 @@ static inline int adv_send(struct net_buf *buf)
     struct bt_mesh_adv_data ad = {0};
     int err = 0;
 
-    adv_int = MAX(adv_int_min,
-                  BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
-    duration = (BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1) *
-               (adv_int + 10);
-
     BT_DBG("type %u len %u: %s", BLE_MESH_ADV(buf)->type,
-           buf->len, bt_hex(buf->data, buf->len));
-    BT_DBG("count %u interval %ums duration %ums",
-           BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1, adv_int,
-           duration);
+        buf->len, bt_hex(buf->data, buf->len));
 
-    ad.type = adv_type[BLE_MESH_ADV(buf)->type];
-    ad.data_len = buf->len;
-    ad.data = buf->data;
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+    if (BLE_MESH_ADV(buf)->type != BLE_MESH_ADV_BLE) {
+#endif
+        adv_int = MAX(adv_int_min,
+                      BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
+        duration = (BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1) *
+                   (adv_int + 10);
 
-    param.options = 0U;
-    param.interval_min = ADV_SCAN_UNIT(adv_int);
-    param.interval_max = param.interval_min;
+        BT_DBG("count %u interval %ums duration %ums",
+               BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1, adv_int,
+               duration);
 
-    bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
+        ad.type = adv_type[BLE_MESH_ADV(buf)->type];
+        ad.data_len = buf->len;
+        ad.data = buf->data;
 
-    err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
+        param.options = 0U;
+        param.interval_min = ADV_SCAN_UNIT(adv_int);
+        param.interval_max = param.interval_min;
+
+        bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
+
+        err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+    } else {
+        struct bt_mesh_ble_adv_data data = {0};
+        struct ble_adv_tx *tx = cb_data;
+
+        if (tx == NULL) {
+            BT_ERR("%s, Invalid adv user data", __func__);
+            net_buf_unref(buf);
+            return -EINVAL;
+        }
+
+        BT_DBG("interval %dms, duration %dms, period %dms, count %d",
+            ADV_SCAN_INT(tx->param.interval), tx->param.duration,
+            tx->param.period, tx->param.count);
+
+        data.adv_data_len = tx->buf->data[0];
+        if (data.adv_data_len) {
+            memcpy(data.adv_data, tx->buf->data + 1, data.adv_data_len);
+        }
+        data.scan_rsp_data_len = tx->buf->data[data.adv_data_len + 1];
+        if (data.scan_rsp_data_len) {
+            memcpy(data.scan_rsp_data, tx->buf->data + data.adv_data_len + 2, data.scan_rsp_data_len);
+        }
+        duration = tx->param.duration;
+
+        bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+
+        err = bt_mesh_ble_adv_start(&tx->param, &data);
+    }
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
     net_buf_unref(buf);
     adv_send_start(duration, err, cb, cb_data);
     if (err) {
@@ -381,7 +447,7 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
     return;
 }
 
-static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
+static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front)
 {
     BT_DBG("%s", __func__);
 
@@ -390,9 +456,16 @@ static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
         return;
     }
 
-    if (xQueueSend(xBleMeshQueue.queue, msg, timeout) != pdTRUE) {
-        BT_ERR("%s, Failed to send item to queue", __func__);
-        bt_mesh_unref_buf(msg);
+    if (front) {
+        if (xQueueSendToFront(xBleMeshQueue.queue, msg, timeout) != pdTRUE) {
+            BT_ERR("%s, Failed to send item to queue front", __func__);
+            bt_mesh_unref_buf(msg);
+        }
+    } else {
+        if (xQueueSend(xBleMeshQueue.queue, msg, timeout) != pdTRUE) {
+            BT_ERR("%s, Failed to send item to queue back", __func__);
+            bt_mesh_unref_buf(msg);
+        }
     }
 }
 
@@ -413,7 +486,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
     bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
 
     msg.arg = (void *)net_buf_ref(buf);
-    bt_mesh_task_post(&msg, portMAX_DELAY);
+    bt_mesh_task_post(&msg, portMAX_DELAY, false);
 }
 
 void bt_mesh_adv_update(void)
@@ -425,7 +498,7 @@ void bt_mesh_adv_update(void)
 
     BT_DBG("%s", __func__);
 
-    bt_mesh_task_post(&msg, K_NO_WAIT);
+    bt_mesh_task_post(&msg, K_NO_WAIT, false);
 }
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
@@ -823,6 +896,10 @@ void bt_mesh_adv_deinit(void)
 
     bt_mesh_unref_buf_from_pool(&adv_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+    bt_mesh_ble_adv_deinit();
+#endif
 }
 
 int bt_mesh_scan_enable(void)
@@ -895,3 +972,248 @@ int bt_mesh_scan_with_wl_enable(void)
     return 0;
 }
 #endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+static struct bt_mesh_adv *ble_adv_alloc(int id)
+{
+    return &ble_adv_pool[id];
+}
+
+static struct net_buf *bt_mesh_ble_adv_create(enum bt_mesh_adv_type type, u8_t xmit, s32_t timeout)
+{
+    return bt_mesh_adv_create_from_pool(&ble_adv_buf_pool, ble_adv_alloc, type,
+                                        xmit, timeout);
+}
+
+static void bt_mesh_ble_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
+                                 void *cb_data, bool front)
+{
+    bt_mesh_msg_t msg = {
+        .relay = false,
+    };
+
+    BT_DBG("type 0x%02x len %u: %s", BLE_MESH_ADV(buf)->type, buf->len,
+           bt_hex(buf->data, buf->len));
+
+    BLE_MESH_ADV(buf)->cb = cb;
+    BLE_MESH_ADV(buf)->cb_data = cb_data;
+    BLE_MESH_ADV(buf)->busy = 1U;
+
+    bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+
+    msg.arg = (void *)net_buf_ref(buf);
+    bt_mesh_task_post(&msg, portMAX_DELAY, front);
+}
+
+static void ble_adv_tx_reset(struct ble_adv_tx *tx, bool unref)
+{
+    if (tx->buf == NULL) {
+        return;
+    }
+
+    if (bt_mesh_atomic_test_bit(tx->flags, TIMER_INIT)) {
+        k_delayed_work_free(&tx->resend);
+    }
+    bt_mesh_atomic_set(tx->flags, 0);
+    memset(&tx->param, 0, sizeof(tx->param));
+    BLE_MESH_ADV(tx->buf)->busy = 0U;
+    if (unref) {
+        net_buf_unref(tx->buf);
+    }
+    tx->buf = NULL;
+}
+
+static void ble_adv_send_start(u16_t duration, int err, void *cb_data)
+{
+    struct ble_adv_tx *tx = cb_data;
+
+    BT_DBG("%s, duration %d, err %d", __func__, duration, err);
+
+    /* If failed to send BLE adv packet, and param->count is not 0
+     * which means the timer has been initialized, here we need to
+     * free the timer.
+     */
+    if (err) {
+        ble_adv_tx_reset(tx, true);
+    }
+}
+
+static void ble_adv_send_end(int err, void *cb_data)
+{
+    struct ble_adv_tx *tx = cb_data;
+
+    BT_DBG("%s, err %d", __func__, err);
+
+    if (err) {
+        ble_adv_tx_reset(tx, true);
+        return;
+    }
+
+    if (tx->param.count) {
+        if (tx->param.period) {
+            k_delayed_work_submit(&tx->resend, tx->param.period);
+        } else {
+            k_work_submit(&tx->resend.work);
+        }
+    } else {
+        ble_adv_tx_reset(tx, true);
+    }
+}
+
+static struct bt_mesh_send_cb ble_adv_send_cb = {
+    .start = ble_adv_send_start,
+    .end = ble_adv_send_end,
+};
+
+static void ble_adv_resend(struct k_work *work)
+{
+    struct ble_adv_tx *tx = CONTAINER_OF(work, struct ble_adv_tx, resend.work);
+    bool front = false;
+
+    if (tx->buf == NULL) {
+        /* The advertising has been cancelled */
+        return;
+    }
+
+    front = (tx->param.priority == BLE_MESH_BLE_ADV_PRIO_HIGH) ? true : false;
+    bt_mesh_ble_adv_send(tx->buf, &ble_adv_send_cb, tx, front);
+
+    if (tx->param.count == SEND_BLE_ADV_INFINITE) {
+        /* Send the BLE advertising packet infinitely */
+        return;
+    }
+
+    if (tx->param.count > 0U) {
+        tx->param.count--;
+    }
+}
+
+int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
+                                  const struct bt_mesh_ble_adv_data *data, u8_t *index)
+{
+    struct ble_adv_tx *tx = NULL;
+    struct net_buf *buf = NULL;
+    bool front = false;
+
+    if (param == NULL || index == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    if (param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
+        (param->interval < 0x20 || param->interval > 0x4000)) {
+        BT_ERR("%s, Invalid adv interval 0x%04x", __func__, param->interval);
+        return -EINVAL;
+    }
+
+    if (param->adv_type > BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        BT_ERR("%s, Invalid adv type 0x%02x", __func__, param->adv_type);
+        return -EINVAL;
+    }
+
+    if (param->own_addr_type > BLE_MESH_ADDR_RANDOM_ID) {
+        BT_ERR("%s, Invalid own addr type 0x%02x", __func__, param->own_addr_type);
+        return -EINVAL;
+    }
+
+    if ((param->own_addr_type == BLE_MESH_ADDR_PUBLIC_ID ||
+        param->own_addr_type == BLE_MESH_ADDR_RANDOM_ID ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND ||
+        param->adv_type == BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) &&
+        param->peer_addr_type > BLE_MESH_ADDR_RANDOM) {
+        BT_ERR("%s, Invalid peer addr type 0x%02x", __func__, param->peer_addr_type);
+        return -EINVAL;
+    }
+
+    if (data && (data->adv_data_len > 31 || data->scan_rsp_data_len > 31)) {
+        BT_ERR("%s, Invalid adv data length, %d %d", __func__,
+            data->adv_data_len, data->scan_rsp_data_len);
+        return -EINVAL;
+    }
+
+    if (param->priority > BLE_MESH_BLE_ADV_PRIO_HIGH) {
+        BT_ERR("%s, Invalid adv priority %d", __func__, param->priority);
+        return -EINVAL;
+    }
+
+    if (param->duration < ADV_SCAN_INT(param->interval)) {
+        BT_ERR("%s, Too small duration %dms", __func__, param->duration);
+        return -EINVAL;
+    }
+
+    buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, 0U, K_NO_WAIT);
+    if (!buf) {
+        BT_ERR("%s, Unable to allocate buffer", __func__);
+        return -ENOBUFS;
+    }
+
+    /* Set advertising data and scan response data */
+    memset(buf->data, 0, buf->size);
+    if (data) {
+        net_buf_add_u8(buf, data->adv_data_len);
+        if (data->adv_data_len) {
+            net_buf_add_mem(buf, data->adv_data, data->adv_data_len);
+        }
+        net_buf_add_u8(buf, data->scan_rsp_data_len);
+        if (data->scan_rsp_data_len) {
+            net_buf_add_mem(buf, data->scan_rsp_data, data->scan_rsp_data_len);
+        }
+    }
+
+    *index = net_buf_id(buf);
+    tx = &ble_adv_tx[*index];
+    tx->buf = buf;
+    memcpy(&tx->param, param, sizeof(tx->param));
+
+    front = (tx->param.priority == BLE_MESH_BLE_ADV_PRIO_HIGH) ? true : false;
+    bt_mesh_ble_adv_send(buf, &ble_adv_send_cb, tx, front);
+    if (param->count) {
+        k_delayed_work_init(&tx->resend, ble_adv_resend);
+        bt_mesh_atomic_set_bit(tx->flags, TIMER_INIT);
+    } else {
+        /* Send the BLE advertising packet only once */
+        net_buf_unref(buf);
+    }
+
+    return 0;
+}
+
+int bt_mesh_stop_ble_advertising(u8_t index)
+{
+    struct ble_adv_tx *tx = NULL;
+    bool unref = true;
+
+    if (index >= ARRAY_SIZE(ble_adv_tx)) {
+        BT_ERR("%s, Invalid index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    tx = &ble_adv_tx[index];
+
+    if (tx->buf == NULL) {
+        BT_WARN("%s, Already stopped, index %d", __func__, index);
+        return 0;
+    }
+
+    /* busy 1, ref 1; busy 1, ref 2;
+     * busy 0, ref 0; busy 0, ref 1;
+     */
+    if (BLE_MESH_ADV(tx->buf)->busy == 1U &&
+        tx->buf->ref == 1U) {
+        unref = false;
+    }
+    ble_adv_tx_reset(tx, unref);
+
+    return 0;
+}
+
+static void bt_mesh_ble_adv_deinit(void)
+{
+    for (int i = 0; i < ARRAY_SIZE(ble_adv_tx); i++) {
+        struct ble_adv_tx *tx = &ble_adv_tx[i];
+        ble_adv_tx_reset(tx, false);
+    }
+    bt_mesh_unref_buf_from_pool(&ble_adv_buf_pool);
+    memset(ble_adv_pool, 0, sizeof(ble_adv_pool));
+}
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
