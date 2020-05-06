@@ -552,7 +552,7 @@ static bool is_unprov_dev_being_provision(const u8_t uuid[16])
      * Unprovisioned Device Beacon when Transaction ACK for Provisioning Complete
      * is received). So in Fast Provisioning the Provisioner should ignore this.
      */
-    if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
+    if (bt_mesh_provisioner_get_node_with_uuid(uuid)) {
         BT_WARN("Device has already been provisioned");
         return true;
     }
@@ -625,15 +625,9 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16], bt_mesh_prov_b
     }
 
     /* Check if the device has already been provisioned */
-    if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
-        BT_WARN("Provisioned before, start to provision again");
+    if (bt_mesh_provisioner_get_node_with_uuid(uuid)) {
+        BT_INFO("Provisioned before, start to provision again");
         return 0;
-    }
-
-    /* Check if the provisioned nodes queue is full */
-    if (bt_mesh_provisioner_get_prov_node_count() == CONFIG_BLE_MESH_MAX_PROV_NODES) {
-        BT_WARN("Current provisioned devices reach max limit");
-        return -ENOMEM;
     }
 
     return 0;
@@ -660,6 +654,7 @@ static int provisioner_start_prov_pb_adv(const u8_t uuid[16], const bt_mesh_addr
     if (assign_addr == BLE_MESH_ADDR_UNASSIGNED &&
             prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_ERR("No available unicast address to assign");
+        bt_mesh_pb_adv_unlock();
         return -EIO;
     }
 
@@ -718,6 +713,7 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16], const bt_mesh_add
     if (assign_addr == BLE_MESH_ADDR_UNASSIGNED &&
             prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_ERR("No available unicast address to assign");
+        bt_mesh_pb_gatt_unlock();
         return -EIO;
     }
 
@@ -818,6 +814,14 @@ int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, u
 #endif
     }
 
+    /* Check if the provisioned nodes array is full */
+    if (bt_mesh_provisioner_get_node_with_uuid(add_dev->uuid) == NULL) {
+        if (bt_mesh_provisioner_get_node_count() == CONFIG_BLE_MESH_MAX_PROV_NODES) {
+            BT_WARN("Current provisioned devices reach max limit");
+            return -ENOMEM;
+        }
+    }
+
     add_addr.type = add_dev->addr_type;
     memcpy(add_addr.val, add_dev->addr, BLE_MESH_ADDR_LEN);
 
@@ -877,10 +881,12 @@ start:
     }
 
     /* Check if current provisioned node count + active link reach max limit */
-    if (bt_mesh_provisioner_get_prov_node_count() + prov_ctx.pba_count + \
-            prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
-        BT_ERR("Node count + active link count reach max limit");
-        return -EIO;
+    if (bt_mesh_provisioner_get_node_with_uuid(add_dev->uuid) == NULL) {
+        if (bt_mesh_provisioner_get_node_count() + prov_ctx.pba_count + \
+                prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
+            BT_WARN("Node count + active link count reach max limit");
+            return -EIO;
+        }
     }
 
     if ((err = provisioner_check_unprov_dev_info(add_dev->uuid, add_dev->bearer))) {
@@ -952,11 +958,19 @@ int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t ad
      *    can not know the exactly allocated addresses of them.
      */
 
-    /* Check if current provisioned node count + active link reach max limit */
-    if (bt_mesh_provisioner_get_prov_node_count() + prov_ctx.pba_count + \
-            prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
-        BT_ERR("Node count + active link count reach max limit");
-        return -EIO;
+    if (bt_mesh_provisioner_get_node_with_uuid(uuid) == NULL) {
+        /* Check if the provisioned nodes array is full */
+        if (bt_mesh_provisioner_get_node_count() == CONFIG_BLE_MESH_MAX_PROV_NODES) {
+            BT_WARN("Current provisioned devices reach max limit");
+            return -ENOMEM;
+        }
+
+        /* Check if current provisioned node count + active link reach max limit */
+        if (bt_mesh_provisioner_get_node_count() + prov_ctx.pba_count + \
+                prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
+            BT_WARN("Node count + active link count reach max limit");
+            return -EIO;
+        }
     }
 
     if ((err = provisioner_check_unprov_dev_info(uuid, bearer))) {
@@ -1049,15 +1063,11 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
 
     /* Third: find if the device is been provisioned */
     if (addr_cmp && (del_dev->addr_type <= BLE_MESH_ADDR_RANDOM)) {
-        if (bt_mesh_provisioner_find_node_with_addr(&del_addr, true)) {
-            return 0;
-        }
+        bt_mesh_provisioner_delete_node_with_dev_addr(&del_addr);
     }
 
     if (uuid_cmp) {
-        if (bt_mesh_provisioner_find_node_with_uuid(del_dev->uuid, true)) {
-            return 0;
-        }
+        bt_mesh_provisioner_delete_node_with_uuid(del_dev->uuid);
     }
 
     return 0;
@@ -1242,6 +1252,26 @@ int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr)
 
     return 0;
 }
+
+#if CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
+int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element_num)
+{
+    u16_t max_addr = FAST_PROV_ENABLE() ? prov_ctx.fast_prov.unicast_addr_max : PROV_MAX_ADDR_TO_ASSIGN;
+
+    if (unicast_addr + element_num > max_addr) {
+        BT_WARN("%s, Not enough unicast address to allocate", __func__);
+        prov_ctx.curr_alloc_addr = BLE_MESH_ADDR_UNASSIGNED;
+    } else {
+        prov_ctx.curr_alloc_addr = unicast_addr + element_num;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_prov_info(prov_ctx.primary_addr, prov_ctx.curr_alloc_addr);
+    }
+
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
 
 /* The following APIs are for fast provisioning */
 
@@ -2470,38 +2500,35 @@ static void send_prov_data(const u8_t idx)
         sys_put_be16(prev_addr, &pdu[23]);
         link[idx].unicast_addr = prev_addr;
     } else {
+        u16_t alloc_addr = BLE_MESH_ADDR_UNASSIGNED;
+
         if (BLE_MESH_ADDR_IS_UNICAST(link[idx].assign_addr)) {
-            if (link[idx].assign_addr + link[idx].element_num - 1 > max_addr) {
-                BT_ERR("%s, Too large assigned address for the device", __func__);
-                goto fail;
-            }
-
-            /* Make sure the assigned unicast address is not identical with any unicast address
-             * of other nodes. Also need to make sure the address is not identical with any
-             * address of Provisioner.
-             */
-            if (bt_mesh_provisioner_check_is_addr_dup(link[idx].assign_addr, link[idx].element_num, true)) {
-                BT_ERR("%s, Assigned address 0x%04x is duplicated", __func__, link[idx].assign_addr);
-                goto fail;
-            }
-
-            sys_put_be16(link[idx].assign_addr, &pdu[23]);
-            link[idx].unicast_addr = link[idx].assign_addr;
+            alloc_addr = link[idx].assign_addr;
         } else {
             /* If this device to be provisioned is a new device */
             if (prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
                 BT_ERR("%s, No unicast address can be allocated", __func__);
                 goto fail;
             }
-
-            if (prov_ctx.curr_alloc_addr + link[idx].element_num - 1 > max_addr) {
-                BT_ERR("%s, Not enough unicast address for the device", __func__);
-                goto fail;
-            }
-
-            sys_put_be16(prov_ctx.curr_alloc_addr, &pdu[23]);
-            link[idx].unicast_addr = prov_ctx.curr_alloc_addr;
+            alloc_addr = prov_ctx.curr_alloc_addr;
         }
+
+        if (alloc_addr + link[idx].element_num - 1 > max_addr) {
+            BT_ERR("%s, Not enough unicast address for the device", __func__);
+            goto fail;
+        }
+
+        /* Make sure the assigned unicast address is not identical with any unicast
+         * address of other nodes. And make sure the address is not identical with
+         * any unicast address of Provisioner.
+         */
+        if (bt_mesh_provisioner_check_is_addr_dup(alloc_addr, link[idx].element_num, true)) {
+            BT_ERR("%s, Assigned address 0x%04x is duplicated", __func__, alloc_addr);
+            goto fail;
+        }
+
+        sys_put_be16(alloc_addr, &pdu[23]);
+        link[idx].unicast_addr = alloc_addr;
     }
 
     prov_buf_init(&buf, PROV_DATA);
