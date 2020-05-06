@@ -138,7 +138,7 @@ static void provisioner_prov_complete(int node_index, const uint8_t uuid[16], ui
                                       uint8_t elem_num, uint16_t net_idx)
 {
     example_node_info_t *node = NULL;
-    char name[10];
+    char name[11] = {0};
     esp_err_t err;
 
     ESP_LOGI(TAG, "Node index: 0x%x, unicast address: 0x%02x, element num: %d, netkey index: 0x%02x",
