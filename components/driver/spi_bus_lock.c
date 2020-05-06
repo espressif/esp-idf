@@ -657,9 +657,10 @@ IRAM_ATTR bool spi_bus_lock_touch(spi_bus_lock_dev_handle_t dev_handle)
 {
     spi_bus_lock_dev_t* last_dev = dev_handle->parent->last_dev;
     dev_handle->parent->last_dev = dev_handle;
-    if (last_dev) {
-        ESP_DRAM_LOGD(TAG, "SPI dev changed from %d to %d",
-                    dev_lock_get_id(last_dev), dev_lock_get_id(dev_handle));
+    if (last_dev != dev_handle) {
+        int last_dev_id = (last_dev? dev_lock_get_id(last_dev): -1);
+        ESP_DRAM_LOGV(TAG, "SPI dev changed from %d to %d",
+                    last_dev_id, dev_lock_get_id(dev_handle));
     }
     return (dev_handle != last_dev);
 }
