@@ -69,9 +69,14 @@ typedef enum {
 #define PSRAM_EID(id)          (((id) >> PSRAM_ID_EID_S) & PSRAM_ID_EID_M)
 #define PSRAM_IS_VALID(id)     (PSRAM_KGD(id) == PSRAM_ID_KGD)
 
-// PSRAM_EID = 0x26 or 0x4x ----> 64MBit psram
-// PSRAM_EID = 0x20 ------------> 32MBit psram
-#define PSRAM_IS_64MBIT(id)       ((PSRAM_EID(id) == 0x26) || ((PSRAM_EID(id) & 0xf0) == 0x40))
+// Use the [7:5](bit7~bit5) of EID to distinguish the psram size:
+//
+//   BIT7  |  BIT6  |  BIT5  |  SIZE(MBIT)
+//   -------------------------------------
+//    0    |   0    |   0    |     16
+//    0    |   0    |   1    |     32
+//    0    |   1    |   0    |     64
+#define PSRAM_IS_64MBIT(id)       ((PSRAM_EID(id) == 0x26) || ((PSRAM_EID(id) & 0xe0) == 0x40))
 #define PSRAM_IS_32MBIT_VER0(id)  (PSRAM_EID(id) == 0x20)
 
 // IO-pins for PSRAM. These need to be in the VDD_SIO power domain because all chips we
