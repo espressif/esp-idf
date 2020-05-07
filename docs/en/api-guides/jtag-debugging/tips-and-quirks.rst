@@ -288,13 +288,13 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
         ::
 
-            openocd -l openocd_log.txt -d 3 -f board/esp32-wrover-kit-3.3v.cfg
+            openocd -l openocd_log.txt -d3 -f board/esp32-wrover-kit-3.3v.cfg
 
-        Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d 3`` is set. If you still like to see the log on the screen, then use another command instead:
+        Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d3`` is set. If you still like to see the log on the screen, then use another command instead:
 
         ::
 
-            openocd -d 3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
+            openocd -d3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
 
     Debugger:
 
