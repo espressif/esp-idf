@@ -3528,6 +3528,16 @@ u8_t bt_mesh_net_transmit_get(void)
     return 0;
 }
 
+void bt_mesh_net_transmit_set(u8_t val)
+{
+    if (conf == NULL) {
+        BT_ERR("Invalid conf!");
+        return;
+    }
+
+    conf->net_transmit = val;
+}
+
 u8_t bt_mesh_relay_get(void)
 {
     if (conf) {
