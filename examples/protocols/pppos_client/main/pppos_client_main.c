@@ -257,6 +257,7 @@ void app_main(void)
 #else
 #error "Unsupported DCE"
 #endif
+    assert(dce != NULL);
     ESP_ERROR_CHECK(dce->set_flow_ctrl(dce, MODEM_FLOW_CONTROL_NONE));
     ESP_ERROR_CHECK(dce->store_profile(dce));
     /* Print Module ID, Operator, IMEI, IMSI */
