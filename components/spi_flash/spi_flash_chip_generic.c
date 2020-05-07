@@ -76,7 +76,7 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
     t = (spi_flash_trans_t) {
         .command = CMD_RST_EN,
     };
-    esp_err_t err = chip->host->common_command(chip->host, &t);
+    esp_err_t err = chip->host->driver->common_command(chip->host, &t);
     if (err != ESP_OK) {
         return err;
     }
@@ -84,7 +84,7 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
     t = (spi_flash_trans_t) {
         .command = CMD_RST_DEV,
     };
-    err = chip->host->common_command(chip->host, &t);
+    err = chip->host->driver->common_command(chip->host, &t);
     if (err != ESP_OK) {
         return err;
     }
@@ -118,10 +118,10 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_chip(chip->host);
+        chip->host->driver->erase_chip(chip->host);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, 0, chip->size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, 0, chip->size);
             if (err != ESP_OK) {
                 return err;
             }
@@ -138,10 +138,10 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_sector(chip->host, start_address);
+        chip->host->driver->erase_sector(chip->host, start_address);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
             if (err != ESP_OK) {
                 return err;
             }
@@ -158,10 +158,10 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_block(chip->host, start_address);
+        chip->host->driver->erase_block(chip->host, start_address);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
             if (err != ESP_OK) {
                 return err;
             }
@@ -188,10 +188,10 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
 
     while (err == ESP_OK && length > 0) {
         memset(temp_buffer, 0xFF, sizeof(temp_buffer));
-        uint32_t read_len = chip->host->read_data_slicer(address, length, &align_address, page_size);
+        uint32_t read_len = chip->host->driver->read_data_slicer(chip->host, address, length, &align_address, page_size);
         uint32_t left_off = address - align_address;
         uint32_t data_len = MIN(align_address + read_len, address + length) - address;
-        err = chip->host->read(chip->host, temp_buffer, align_address, read_len);
+        err = chip->host->driver->read(chip->host, temp_buffer, align_address, read_len);
 
         memcpy(buffer, temp_buffer + left_off, data_len);
 
@@ -211,7 +211,7 @@ esp_err_t spi_flash_chip_generic_page_program(esp_flash_t *chip, const void *buf
 
     if (err == ESP_OK) {
         // Perform the actual Page Program command
-        chip->host->program_page(chip->host, buffer, address, length);
+        chip->host->driver->program_page(chip->host, buffer, address, length);
 
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
     }
@@ -227,7 +227,7 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
 
     while (err == ESP_OK && length > 0) {
         memset(temp_buffer, 0xFF, sizeof(temp_buffer));
-        uint32_t page_len = chip->host->write_data_slicer(address, length, &align_address, page_size);
+        uint32_t page_len = chip->host->driver->write_data_slicer(chip->host, address, length, &align_address, page_size);
         uint32_t left_off = address - align_address;
         uint32_t write_len = MIN(align_address + page_len, address + length) - address;
         memcpy(temp_buffer + left_off, buffer, write_len);
@@ -241,8 +241,8 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
             length -= write_len;
         }
     }
-    if (err == ESP_OK && chip->host->flush_cache) {
-        err = chip->host->flush_cache(chip->host, address, length);
+    if (err == ESP_OK && chip->host->driver->flush_cache) {
+        err = chip->host->driver->flush_cache(chip->host, address, length);
     }
     return err;
 }
@@ -259,7 +259,7 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
     err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
 
     if (err == ESP_OK) {
-        chip->host->set_write_protect(chip->host, write_protect);
+        chip->host->driver->set_write_protect(chip->host, write_protect);
     }
 
     bool wp_read;
@@ -276,7 +276,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
     esp_err_t err = ESP_OK;
     uint8_t status;
     assert(out_write_protect!=NULL);
-    err = chip->host->read_status(chip->host, &status);
+    err = chip->host->driver->read_status(chip->host, &status);
     if (err != ESP_OK) {
         return err;
     }
@@ -287,7 +287,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
 
 esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_us)
 {
-    while (chip->host->host_idle(chip->host) && *timeout_us > 0) {
+    while (chip->host->driver->host_idle(chip->host) && *timeout_us > 0) {
 #if HOST_DELAY_INTERVAL_US > 0
         if (*timeout_us > 1) {
             int delay = MIN(HOST_DELAY_INTERVAL_US, *timeout_us);
@@ -314,7 +314,7 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
             return err;
         }
 
-        err = chip->host->read_status(chip->host, &status);
+        err = chip->host->driver->read_status(chip->host, &status);
         if (err != ESP_OK) {
             return err;
         }
@@ -374,7 +374,7 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
 
-    return chip->host->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
+    return chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
                                                 chip->read_mode);
 }
 
@@ -451,7 +451,7 @@ static esp_err_t spi_flash_common_read_qe_sr(esp_flash_t *chip, uint8_t qe_rdsr_
         .miso_data = (uint8_t*) &sr_buf,
         .miso_len = qe_sr_bitwidth / 8,
     };
-    esp_err_t ret = chip->host->common_command(chip->host, &t);
+    esp_err_t ret = chip->host->driver->common_command(chip->host, &t);
     *sr = sr_buf;
     return ret;
 }
@@ -464,7 +464,7 @@ static esp_err_t spi_flash_common_write_qe_sr(esp_flash_t *chip, uint8_t qe_wrsr
         .mosi_len = qe_sr_bitwidth / 8,
         .miso_len = 0,
     };
-    return chip->host->common_command(chip->host, &t);
+    return chip->host->driver->common_command(chip->host, &t);
 }
 
 esp_err_t spi_flash_common_read_status_16b_rdsr_rdsr2(esp_flash_t* chip, uint32_t* out_sr)

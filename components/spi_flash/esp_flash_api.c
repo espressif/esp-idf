@@ -103,7 +103,7 @@ static esp_err_t IRAM_ATTR spiflash_start_default(esp_flash_t *chip)
             return err;
         }
     }
-    chip->host->dev_config(chip->host);
+    chip->host->driver->dev_config(chip->host);
     return ESP_OK;
 }
 
@@ -151,8 +151,8 @@ bool esp_flash_chip_driver_initialized(const esp_flash_t *chip)
 esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
 {
     esp_err_t err = ESP_OK;
-    if (chip == NULL || chip->host == NULL || chip->host->driver_data == NULL ||
-        ((memspi_host_data_t*)chip->host->driver_data)->spi == NULL) {
+    if (chip == NULL || chip->host == NULL || chip->host->driver == NULL ||
+        ((memspi_host_inst_t*)chip->host)->spi == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -212,11 +212,11 @@ esp_err_t IRAM_ATTR esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id
 
     // Send generic RDID command twice, check for a matching result and retry in case we just powered on (inner
     // function fails if it sees all-ones or all-zeroes.)
-    err = chip->host->read_id(chip->host, flash_id);
+    err = chip->host->driver->read_id(chip->host, flash_id);
 
     if (err == ESP_OK) { // check we see the same ID twice, in case of transient power-on errors
         uint32_t new_id;
-        err = chip->host->read_id(chip->host, &new_id);
+        err = chip->host->driver->read_id(chip->host, &new_id);
         if (err == ESP_OK && (new_id != *flash_id)) {
             err = ESP_ERR_FLASH_NOT_INITIALISED;
         }
@@ -284,7 +284,7 @@ esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *out_id)
         return err;
     }
 
-    err = chip->host->read_id(chip->host, out_id);
+    err = chip->host->driver->read_id(chip->host, out_id);
 
     return rom_spiflash_api_funcs->end(chip, err);
 }
@@ -553,7 +553,7 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to receive in another buffer in DRAM.
-    bool direct_read = chip->host->supports_direct_read(chip->host, buffer);
+    bool direct_read = chip->host->driver->supports_direct_read(chip->host, buffer);
     uint8_t* temp_buffer = NULL;
 
     //each time, we at most read this length
@@ -617,7 +617,7 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to copy the data first
-    bool direct_write = chip->host->supports_direct_write(chip->host, buffer);
+    bool direct_write = chip->host->driver->supports_direct_write(chip->host, buffer);
 
     err = ESP_OK;
     /* Write output in chunks, either by buffering on stack or

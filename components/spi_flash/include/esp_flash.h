@@ -80,7 +80,7 @@ typedef struct {
     risk.
 */
 struct esp_flash_t {
-    spi_flash_host_driver_t *host;      ///< Pointer to hardware-specific "host_driver" structure. Must be initialized before used.
+    spi_flash_host_inst_t* host;   ///< Pointer to hardware-specific "host_driver" structure. Must be initialized before used.
     const spi_flash_chip_t *chip_drv;   ///< Pointer to chip-model-specific "adapter" structure. If NULL, will be detected during initialisation.
 
     const esp_flash_os_functions_t *os_func;    ///< Pointer to os-specific hook structure. Call ``esp_flash_init_os_functions()`` to setup this field, after the host is properly initialized.

@@ -8,6 +8,7 @@
 #include "esp_flash.h"
 #include "driver/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
+#include "memspi_host_driver.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 
@@ -18,7 +19,6 @@
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
-#include "hal/spi_flash_hal.h"
 #include "ccomp_timer.h"
 #include "esp_rom_gpio.h"
 
@@ -175,9 +175,9 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
         host_id = SPI_HOST;
         cs_id = 0;
     } else {
-        spi_flash_memspi_data_t* driver_data = (spi_flash_memspi_data_t*)chip->host->driver_data;
-        host_id = spi_flash_ll_hw_get_id(driver_data->spi);
-        cs_id = driver_data->cs_num;
+        spi_flash_hal_context_t* host_data = (spi_flash_hal_context_t*)chip->host;
+        host_id = spi_flash_ll_hw_get_id(host_data->spi);
+        cs_id = host_data->cs_num;
     }
     if (out_host_id) {
         *out_host_id = host_id;

@@ -22,18 +22,18 @@
 
 #include "spi_flash_hal_common.inc"
 
-bool spi_flash_hal_gpspi_supports_direct_write(spi_flash_host_driver_t *host, const void *p)
+bool spi_flash_hal_gpspi_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
 {
     return true;
 }
 
-bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_driver_t *host, const void *p)
+bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
 {
     return true;
 }
 
-bool spi_flash_hal_gpspi_host_idle(spi_flash_host_driver_t *chip_drv)
+bool spi_flash_hal_gpspi_host_idle(spi_flash_host_inst_t *host)
 {
-    spi_dev_t *dev = get_spi_dev(chip_drv);
+    spi_dev_t *dev = get_spi_dev(host);
     return spi_flash_ll_host_idle(dev);
 }
