@@ -422,6 +422,14 @@ static int get_time_wrapper(void *t)
     return os_get_time(t);
 }
 
+static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
+{
+    /* The bit width of WiFi light sleep clock calibration is 12 while the one of 
+     * system is 19. It should shift 19 - 12 = 7.
+    */
+    return (esp_clk_slowclk_cal_get() >> 7);
+}
+
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
 {
     return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
@@ -604,7 +612,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._get_time = get_time_wrapper,
     ._random = os_random,
 #if CONFIG_IDF_TARGET_ESP32S2
-    ._slowclk_cal_get = esp_clk_slowclk_cal_get,
+    ._slowclk_cal_get = esp_clk_slowclk_cal_get_wrapper,
 #endif
     ._log_write = esp_log_write,
     ._log_writev = esp_log_writev,

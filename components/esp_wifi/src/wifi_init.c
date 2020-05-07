@@ -17,6 +17,8 @@
 #include "esp_log.h"
 #include "esp_private/wifi.h"
 #include "esp_pm.h"
+#include "esp_sleep.h"
+#include "esp_private/pm_impl.h"
 #include "soc/rtc.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
@@ -122,6 +124,11 @@ esp_err_t esp_wifi_deinit(void)
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     tcpip_adapter_clear_default_wifi_handlers();
 #endif
+#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
+#endif
+#endif
 
     return err;
 }
@@ -136,6 +143,16 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             return err;
         }
     }
+#endif
+#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_err_t ret = esp_pm_register_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register skip light sleep callback (0x%x)", ret);
+        return ret;
+    }
+    esp_sleep_enable_wifi_wakeup();
+#endif
 #endif
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     esp_err_t err = tcpip_adapter_set_default_wifi_handlers();

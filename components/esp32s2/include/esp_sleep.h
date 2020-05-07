@@ -64,6 +64,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
     ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only)
     ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
+    ESP_SLEEP_WAKEUP_WIFI,         //!< Wakeup caused by WIFI (light sleep only)
 } esp_sleep_source_t;
 
 /* Leave this type define for compatibility */
@@ -240,6 +241,13 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
 uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
 /**
+ * @brief Enable wakeup by WiFi MAC
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_wifi_wakeup(void);
+
+/**
  * @brief Set power down mode for an RTC power domain in sleep mode
  *
  * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
@@ -348,7 +356,6 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
  *  See docs/deep-sleep-stub.rst for details.
  */
 void esp_default_wake_deep_sleep(void);
-
 
 #ifdef __cplusplus
 }
