@@ -1332,3 +1332,17 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
     }
     return read_len;
 }
+
+esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, const int len)
+{
+    if (client == NULL || url == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->connection_info.host && client->connection_info.scheme && client->connection_info.path) {
+        snprintf(url, len, "%s://%s%s", client->connection_info.scheme, client->connection_info.host, client->connection_info.path);
+        return ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "Failed to get URL");
+    }
+    return ESP_FAIL;
+}
