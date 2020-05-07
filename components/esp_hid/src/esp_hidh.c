@@ -301,6 +301,7 @@ esp_err_t esp_hidh_dev_reports_get(esp_hidh_dev_t *dev, size_t *num_reports, esp
     for (uint8_t i = 0; i < dev->reports_len; i++) {
         if (dr == NULL) {
             //error
+            free(r);
             return ESP_FAIL;
         }
         r[i].map_index = dr->map_index;
