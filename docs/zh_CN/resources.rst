@@ -3,6 +3,16 @@
 ****
 :link_to_translation:`en:[English]`
 
+.. toctree::
+    :caption: 第三方工具
+    :maxdepth: 2
+
+    third-party-tools/platformio
+
+
+有用的链接
+##########
+
 * 您可以在 `ESP32 论坛 <https://esp32.com/>`_ 中提出您的问题，访问社区资源。
 
 * 您可以通过 GitHub 的 `Issues <https://github.com/espressif/esp-idf/issues>`_  版块提交 bug 或功能请求。在提交新 Issue 之前，请先查看现有的 `Issues <https://github.com/espressif/esp-idf/issues>`_。

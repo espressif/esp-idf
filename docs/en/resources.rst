@@ -3,6 +3,16 @@ Resources
 *********
 :link_to_translation:`zh_CN:[中文]`
 
+.. toctree::
+    :caption: Third-Party Tools
+    :maxdepth: 2
+
+    third-party-tools/platformio
+
+
+Useful Links
+############
+
 * The `esp32.com forum <https://esp32.com/>`_ is a place to ask questions and find community resources.
 
 * Check the `Issues <https://github.com/espressif/esp-idf/issues>`_  section on GitHub if you find a bug or have a feature request. Please check existing `Issues <https://github.com/espressif/esp-idf/issues>`_ before opening a new one.
