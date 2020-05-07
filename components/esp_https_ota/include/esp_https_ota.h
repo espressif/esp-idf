@@ -162,7 +162,7 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle);
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info);
 
 
-/*
+/**
 * @brief  This function returns OTA image data read so far.
 *
 * @note   This API should be called only if `esp_https_ota_perform()` has been called atleast once or
