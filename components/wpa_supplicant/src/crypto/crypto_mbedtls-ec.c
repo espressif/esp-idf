@@ -432,6 +432,7 @@ int crypto_ec_point_is_on_curve(struct crypto_ec *e,
 
 cleanup:
 	mbedtls_mpi_free(&y_sqr_lhs);
+	mbedtls_mpi_free(&two);
 	mbedtls_mpi_free(y_sqr_rhs);
 	os_free(y_sqr_rhs);
 	return (ret == 0) && (on_curve == 1);
