@@ -167,10 +167,16 @@ u8_t bt_mesh_get_seg_retrans_num(void)
 
 s32_t bt_mesh_get_seg_retrans_timeout(u8_t ttl)
 {
+    /* This function will be used when a client model sending an
+     * acknowledged message. And if the dst of a message is not
+     * a unicast address, the function will not be invoked.
+     * So we can directly use the SEG_RETRANSMIT_TIMEOUT_UNICAST
+     * macro here.
+     */
     struct seg_tx tx = {
         .ttl = ttl,
     };
-    return SEG_RETRANSMIT_TIMEOUT(&tx);
+    return SEG_RETRANSMIT_TIMEOUT_UNICAST(&tx);
 }
 
 void bt_mesh_set_hb_sub_dst(u16_t addr)
