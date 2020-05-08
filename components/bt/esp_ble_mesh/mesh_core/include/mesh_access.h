@@ -191,9 +191,9 @@ struct bt_mesh_model_op {
 #define BLE_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
 /** Length of a short Mesh MIC. */
-#define BLE_MESH_MIC_SHORT 4
+#define BLE_MESH_MIC_SHORT  4
 /** Length of a long Mesh MIC. */
-#define BLE_MESH_MIC_LONG 8
+#define BLE_MESH_MIC_LONG   8
 
 /** @def BLE_MESH_MODEL_OP_LEN
  *
