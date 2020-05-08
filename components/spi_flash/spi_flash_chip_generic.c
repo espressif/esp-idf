@@ -20,12 +20,15 @@
 
 static const char TAG[] = "chip_generic";
 
-#define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT 4000
-#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT 500  //according to GD25Q127 + 100ms
-#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT 1300  //according to GD25Q127 + 100ms
+#define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200
+#define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS     4000
+#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS   500  //according to GD25Q127 + 100ms
+#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS    1300  //according to GD25Q127 + 100ms
+#define SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS   500
 
-#define DEFAULT_IDLE_TIMEOUT 200
-#define DEFAULT_PAGE_PROGRAM_TIMEOUT 500
+#define HOST_DELAY_INTERVAL_US                      1
+#define CHIP_WAIT_IDLE_INTERVAL_US                  20
+
 
 esp_err_t spi_flash_chip_generic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -54,7 +57,7 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
         return err;
     }
 
-    err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
     return err;
 }
 
@@ -80,7 +83,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
 
     err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
     }
     if (err == ESP_OK) {
         chip->host->erase_chip(chip->host);
@@ -91,7 +94,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS * 1000);
     }
     return err;
 }
@@ -100,7 +103,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
 {
     esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
     }
     if (err == ESP_OK) {
         chip->host->erase_sector(chip->host, start_address);
@@ -111,7 +114,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS * 1000);
     }
     return err;
 }
@@ -120,7 +123,7 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
 {
     esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
     }
     if (err == ESP_OK) {
         chip->host->erase_block(chip->host, start_address);
@@ -131,7 +134,7 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS * 1000);
     }
     return err;
 }
@@ -163,13 +166,13 @@ esp_err_t spi_flash_chip_generic_page_program(esp_flash_t *chip, const void *buf
 {
     esp_err_t err;
 
-    err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
 
     if (err == ESP_OK) {
         // Perform the actual Page Program command
         chip->host->program_page(chip->host, buffer, address, length);
 
-        err = chip->chip_drv->wait_idle(chip, DEFAULT_PAGE_PROGRAM_TIMEOUT);
+        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000);
     }
     return err;
 }
@@ -210,7 +213,7 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
 {
     esp_err_t err = ESP_OK;
 
-    err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
 
     if (err == ESP_OK) {
         chip->host->set_write_protect(chip->host, write_protect);
@@ -239,25 +242,31 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
     return err;
 }
 
-esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_ms)
+esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_us)
 {
-    while (chip->host->host_idle(chip->host) && *timeout_ms > 0) {
-        if (*timeout_ms > 1) {
-            chip->os_func->delay_ms(chip->os_func_data, 1);
+    while (chip->host->host_idle(chip->host) && *timeout_us > 0) {
+#if HOST_DELAY_INTERVAL_US > 0
+        if (*timeout_us > 1) {
+            int delay = MIN(HOST_DELAY_INTERVAL_US, *timeout_us);
+            chip->os_func->delay_us(chip->os_func_data, delay);
+            *timeout_us -= delay;
+        } else {
+            return ESP_ERR_TIMEOUT;
         }
-        (*timeout_ms)--;
+#endif
     }
-    return (*timeout_ms > 0) ? ESP_OK : ESP_ERR_TIMEOUT;
+    return ESP_OK;
 }
 
-esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_ms)
+esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_us)
 {
-    timeout_ms++; // allow at least one pass before timeout, last one has no sleep cycle
+    timeout_us++; // allow at least one pass before timeout, last one has no sleep cycle
 
     uint8_t status = 0;
-    while (timeout_ms > 0) {
+    const int interval = CHIP_WAIT_IDLE_INTERVAL_US;
+    while (timeout_us > 0) {
 
-        esp_err_t err = spi_flash_generic_wait_host_idle(chip, &timeout_ms);
+        esp_err_t err = spi_flash_generic_wait_host_idle(chip, & timeout_us);
         if (err != ESP_OK) {
             return err;
         }
@@ -269,13 +278,14 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_m
         if ((status & SR_WIP) == 0) {
             break; // Write in progress is complete
         }
-        if (timeout_ms > 1) {
-            chip->os_func->delay_ms(chip->os_func_data, 1);
+        if (timeout_us > 0 && interval > 0) {
+            int delay = MIN(interval, timeout_us);
+            chip->os_func->delay_us(chip->os_func_data, delay);
+            timeout_us -= delay;
         }
-        timeout_ms--;
     }
 
-    return (timeout_ms > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
+    return (timeout_us > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
 }
 
 esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
@@ -495,7 +505,7 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
             return ret;
         }
 
-        ret = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+        ret = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
         if (ret != ESP_OK) {
             return ret;
         }
