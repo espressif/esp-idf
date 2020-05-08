@@ -191,6 +191,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     set(config_dir ${build_dir}/config)
     file(MAKE_DIRECTORY "${config_dir}")
 
+    message(STATUS "Project sdkconfig file ${sdkconfig}")
+
     # Generate the config outputs
     set(sdkconfig_cmake ${config_dir}/sdkconfig.cmake)
     set(sdkconfig_header ${config_dir}/sdkconfig.h)
