@@ -258,6 +258,8 @@ esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
     // check if driver has started
     if (eth_driver->flags & ESP_ETH_FLAGS_STARTED) {
         eth_driver->flags &= ~ESP_ETH_FLAGS_STARTED;
+        esp_eth_mac_t *mac = eth_driver->mac;
+        ETH_CHECK(mac->stop(mac) == ESP_OK, "stop mac failed", err, ESP_FAIL);
         ETH_CHECK(xTimerStop(eth_driver->check_link_timer, 0) == pdPASS,
                   "stop eth_link_timer failed", err, ESP_FAIL);
         ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,

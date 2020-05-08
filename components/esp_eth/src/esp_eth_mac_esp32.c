@@ -336,6 +336,20 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_start(&emac->hal);
+    return ESP_OK;
+}
+
+static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_stop(&emac->hal);
+    return ESP_OK;
+}
+
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
@@ -410,6 +424,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.set_mediator = emac_esp32_set_mediator;
     emac->parent.init = emac_esp32_init;
     emac->parent.deinit = emac_esp32_deinit;
+    emac->parent.start = emac_esp32_start;
+    emac->parent.stop = emac_esp32_stop;
     emac->parent.del = emac_esp32_del;
     emac->parent.write_phy_reg = emac_esp32_write_phy_reg;
     emac->parent.read_phy_reg = emac_esp32_read_phy_reg;
