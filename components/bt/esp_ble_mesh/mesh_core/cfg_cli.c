@@ -341,14 +341,13 @@ static void net_key_status(struct bt_mesh_model *model,
                            struct net_buf_simple *buf)
 {
     struct bt_mesh_cfg_netkey_status status = {0};
-    u16_t app_idx = 0U;
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
-    key_idx_unpack(buf, &status.net_idx, &app_idx);
+    status.net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
     cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_netkey_status));
 }
