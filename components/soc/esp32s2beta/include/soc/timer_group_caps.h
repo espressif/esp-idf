@@ -14,4 +14,4 @@
 
 #pragma once
 
-#define TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+#define SOC_TIMER_GROUP_SUPPORT_XTAL
