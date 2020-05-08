@@ -44,6 +44,8 @@ or run [build.sh](./build.sh) to build for the host:
 ./build-esp32.sh
 ```
 
+Note: To build for a different target SoC, copy the `build-esp32.sh` file and change the `-DTARGET=esp32` clause on the second line.
+
 or
 
 ```bash
@@ -67,6 +69,24 @@ or
 # Run the example on the host
 ./run.sh
 ```
+
+## Configuring this Example
+
+To modify the example ESP-IDF project configuration, first create the CMake build directory. This can be done by running `build-esp32.sh` or by running only the first two lines in `build-esp32.sh` (which won't build the actual project yet).
+
+Then execute the menuconfig build target in the build directory:
+
+```bash
+cmake --build build -- menuconfig
+```
+
+If using ninja directly:
+
+```bash
+ninja -C build menuconfig
+```
+
+Note: ESP-IDF project configuration isn't used by the host CMake builds, the config is only read when the project is built using the ESP-IDF build system.
 
 ---
 
