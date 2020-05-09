@@ -26,7 +26,7 @@
 // | Including ROM header file in a PUBLIC API file will be REMOVED in the next major release (5.x). |
 // | User should include "esp_rom_gpio.h" in their code if they have to use those ROM API.           |
 // |================================================================================================ |
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/gpio.h"

@@ -50,7 +50,7 @@ typedef enum {
 #define GPIO_SEL_19             (BIT(19))                        /*!< Pin 19 selected */
 #define GPIO_SEL_20             (BIT(20))                        /*!< Pin 20 selected */
 #define GPIO_SEL_21             (BIT(21))                        /*!< Pin 21 selected */
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define GPIO_SEL_22             (BIT(22))                        /*!< Pin 22 selected */
 #define GPIO_SEL_23             (BIT(23))                        /*!< Pin 23 selected */
 
@@ -158,7 +158,7 @@ typedef enum {
     GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
     GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */
     GPIO_NUM_23 = 23,   /*!< GPIO23, input and output */
 
