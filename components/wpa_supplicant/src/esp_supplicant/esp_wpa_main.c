@@ -26,6 +26,7 @@
 #include "esp_wpas_glue.h"
 #include "esp_hostap.h"
 
+#include "esp_system.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
@@ -188,6 +189,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         case WIFI_REASON_AUTH_FAIL:
         case WIFI_REASON_ASSOC_FAIL:
         case WIFI_REASON_CONNECTION_FAIL:
+            esp_wpa3_free_sae_data();
             wpa_sta_clear_curr_pmksa();
             break;
         default:
