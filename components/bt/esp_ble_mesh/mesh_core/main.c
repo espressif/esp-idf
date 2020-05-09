@@ -661,6 +661,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_provisioner_pb_gatt_enable();
         }
+        bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr());
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);
         bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));
