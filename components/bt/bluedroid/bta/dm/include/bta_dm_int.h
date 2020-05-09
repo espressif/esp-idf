@@ -25,7 +25,7 @@
 #define BTA_DM_INT_H
 
 #include "common/bt_target.h"
-
+#include "freertos/semphr.h"
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
 #include "bta/bta_gatt_api.h"
 #endif
@@ -1209,6 +1209,7 @@ extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
+SemaphoreHandle_t deinit_semaphore;
 #endif
 
 extern BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg);
