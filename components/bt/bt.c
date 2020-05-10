@@ -388,16 +388,6 @@ static inline void btdm_check_and_init_bb(void)
     }
 }
 
-struct interrupt_hlevel_cb{
-    uint32_t status;
-    uint8_t nested;
-};
-
-static DRAM_ATTR struct interrupt_hlevel_cb hli_cb = {
-    .status = 0,
-    .nested = 0,
-};
-
 static xt_handler set_isr_hlevel_wrapper(int mask, xt_handler f, void *arg)
 {
     esp_err_t err = hli_intr_register((intr_handler_t) f, arg, DPORT_PRO_INTR_STATUS_0_REG, mask);
@@ -411,19 +401,14 @@ static xt_handler set_isr_hlevel_wrapper(int mask, xt_handler f, void *arg)
 static void IRAM_ATTR interrupt_hlevel_disable(void)
 {
     assert(xPortGetCoreID() == CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
-    uint32_t status = hli_intr_disable();
-    if (hli_cb.nested++ == 0) {
-        hli_cb.status = status;
-    }
+    hli_intr_disable();
 }
 
 static void IRAM_ATTR interrupt_hlevel_restore(void)
 {
     assert(xPortGetCoreID() == CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
-    assert(hli_cb.nested > 0);
-    if (--hli_cb.nested == 0) {
-        hli_intr_restore(hli_cb.status);
-    }
+    hli_intr_restore();
+
 }
 
 static void IRAM_ATTR interrupt_l3_disable(void)

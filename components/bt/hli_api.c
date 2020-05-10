@@ -9,7 +9,8 @@
 #include "hli_api.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-
+#include "soc/timer_group_reg.h"
+#include "soc/timer_group_struct.h"
 
 #define HLI_MAX_HANDLERS    4
 
@@ -96,16 +97,65 @@ void IRAM_ATTR hli_c_handler(void)
     }
 }
 
-uint32_t IRAM_ATTR hli_intr_disable(void)
+struct interrupt_hlevel_cb{
+    uint32_t status;
+    uint8_t nested;
+};
+
+static DRAM_ATTR struct interrupt_hlevel_cb hli_cb = {
+    .status = 0,
+    .nested = 0,
+};
+
+
+void IRAM_ATTR hli_intr_disable(void)
 {
     // disable level 4 and below
-    return XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
+    uint32_t status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
+    if (hli_cb.nested++ == 0) {
+        /**
+         * To fix live lock
+         * change timeout to 1 tick(500us) and deed dog
+         */
+        #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+        TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+
+        TIMERG1.wdt_config0.en=0;
+        TIMERG1.wdt_config2 = 1;
+        TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;
+        TIMERG1.wdt_config0.en=1;
+
+        TIMERG1.wdt_wprotect=0;
+        #endif
+        hli_cb.status = status;
+    }
 }
 
-void IRAM_ATTR hli_intr_restore(uint32_t state)
+void IRAM_ATTR hli_intr_restore(void)
 {
-    XTOS_RESTORE_JUST_INTLEVEL(state);
+    assert(hli_cb.nested > 0);
+    if (--hli_cb.nested == 0) {
+        /**
+         * To fix live lock
+         * change timeout to 1 tick(500us) and deed dog
+         */
+        #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+        extern uint32_t _l5_intr_livelock_max;
+        extern uint32_t _l5_intr_livelock_counter;
+
+        TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2/(_l5_intr_livelock_max+1);
+        TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
+        TIMERG1.wdt_feed=1;
+        TIMERG1.wdt_wprotect=0;
+
+        _l5_intr_livelock_counter = 0;
+
+        #endif
+        XTOS_RESTORE_JUST_INTLEVEL(hli_cb.status);
+    }
 }
+
 
 #define HLI_META_QUEUE_SIZE     16
 #define HLI_QUEUE_MAX_ELEM_SIZE 32
@@ -259,20 +309,20 @@ void hli_queue_delete(hli_queue_handle_t queue)
 
 bool IRAM_ATTR hli_queue_get(hli_queue_handle_t queue, void* out)
 {
-    uint32_t int_state = hli_intr_disable();
+    hli_intr_disable();
     bool res = false;
     if (!queue_empty(queue)) {
         memcpy(out, queue->begin, queue->elem_size);
         queue->begin = wrap_ptr(queue, queue->begin + queue->elem_size);
         res = true;
     }
-    hli_intr_restore(int_state);
+    hli_intr_restore();
     return res;
 }
 
 bool IRAM_ATTR hli_queue_put(hli_queue_handle_t queue, const void* data)
 {
-    uint32_t int_state = hli_intr_disable();
+    hli_intr_disable();
     bool res = false;
     bool was_empty = queue_empty(queue);
     if (!queue_full(queue)) {
@@ -283,7 +333,7 @@ bool IRAM_ATTR hli_queue_put(hli_queue_handle_t queue, const void* data)
         }
         res = true;
     }
-    hli_intr_restore(int_state);
+    hli_intr_restore();
     return res;
 }
 
