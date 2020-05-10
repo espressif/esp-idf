@@ -21,9 +21,11 @@
 #include "soc/usb_reg.h"
 #include "soc/usb_types.h"
 #include "soc/usb_struct.h"
+#include "soc/usb_wrap_reg.h"
+#include "soc/usb_wrap_struct.h"
 
 /**
- * @brief A pin decriptor for init
+ * @brief A pin descriptor for init
  */
 typedef struct {
     const int pin;
