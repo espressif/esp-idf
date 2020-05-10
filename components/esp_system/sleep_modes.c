@@ -336,11 +336,7 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
 
     // Enter sleep
-#ifdef CONFIG_IDF_TARGET_ESP32
-    esp_sleep_start(RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_XTAL | pd_flags);
-#elif CONFIG_IDF_TARGET_ESP32S2
     esp_sleep_start(RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | pd_flags);
-#endif
 
     // Because RTC is in a slower clock domain than the CPU, it
     // can take several CPU cycles for the sleep mode to start.
@@ -825,15 +821,13 @@ static uint32_t get_power_down_flags(void)
     }
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-    if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] != ESP_PD_OPTION_ON) {
-        pd_flags |= RTC_SLEEP_PD_XTAL;
-    }
+    pd_flags |= RTC_SLEEP_PD_XTAL;
+#endif
 
+#if ((defined CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT))
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
     // If enabled EXT1 only and enable the additional current by touch, should be keep RTC_PERIPH power on.
-#if ((defined CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT))
-    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
-#endif
+        pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
     }
 #endif
 
