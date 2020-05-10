@@ -61,6 +61,7 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
         .configure_host_io_mode = spi_flash_hal_gpspi_configure_host_io_mode,
         .poll_cmd_done = spi_flash_hal_gpspi_poll_cmd_done,
         .flush_cache = NULL,
+        .check_suspend = memspi_host_cb_check_suspend,
 };
 #endif
 

@@ -255,6 +255,10 @@ esp_err_t esp_flash_init_default_chip(void)
         return err;
     }
 
+#ifdef CONFIG_SPI_FLASH_AUTO_SUSPEND
+    spi_flash_hal_setup_auto_suspend_mode(default_chip.host);
+#endif
+
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
     err = esp_flash_init(&default_chip);

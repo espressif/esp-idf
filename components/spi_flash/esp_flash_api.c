@@ -173,6 +173,9 @@ bool esp_flash_chip_driver_initialized(const esp_flash_t *chip)
     return true;
 }
 
+#ifdef CONFIG_SPI_FLASH_AUTO_SUSPEND
+    spi_flash_ll_auto_suspend_init(spi_flash_ll_get_hw(SPI_HOST), val);
+#endif
 esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
 {
     // Chip init flow

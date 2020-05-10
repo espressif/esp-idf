@@ -35,6 +35,7 @@
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
+        .check_suspend = memspi_host_cb_check_suspend, \
 }
 
 /// configuration for the memspi host
@@ -176,3 +177,11 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
  * @return Length that can actually be written in one `program_page` call in `spi_flash_host_driver_t`.
  */
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
+
+/**
+ * @brief Check the suspend status and resume a suspended operation.
+ *
+ * @param host The driver context.
+ *
+ */
+void memspi_host_cb_check_suspend(spi_flash_host_inst_t *host);
