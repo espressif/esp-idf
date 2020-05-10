@@ -712,7 +712,14 @@ menu "mbedTLS"
         default n
         depends on MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C
         help
-            Enable support for ChaCha20-Poly1305 AEAD algorithm
+            Enable support for ChaCha20-Poly1305 AEAD algorithm.
+
+    config MBEDTLS_HKDF_C
+        bool "HKDF algorithm (RFC 5869)"
+        default n
+        help
+            Enable support for the Hashed Message Authentication Code
+            (HMAC)-based key derivation function (HKDF).
 
     menuconfig MBEDTLS_SECURITY_RISKS
         bool "Show configurations with potential security risks"
