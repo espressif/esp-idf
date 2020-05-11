@@ -66,7 +66,7 @@
 #define DR_REG_PCNT_BASE                        0x3f417000
 #define DR_REG_SLC_BASE                         0x3f418000
 #define DR_REG_LEDC_BASE                        0x3f419000
-#define DR_REG_MCP_BASE                         0x3f4c3000
+#define DR_REG_CP_BASE                          0x3f4c3000
 #define DR_REG_EFUSE_BASE                       0x3f41A000
 #define DR_REG_NRX_BASE                         0x3f41CC00
 #define DR_REG_BB_BASE                          0x3f41D000

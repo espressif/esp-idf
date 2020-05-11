@@ -40,6 +40,7 @@
 #define SOC_TWAI_SUPPORTED 1
 #define SOC_CP_DMA_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 1
+#define SOC_DEDICATED_GPIO_SUPPORTED 1
 #define SOC_SUPPORTS_SECURE_DL_MODE 1
 #define SOC_RISCV_COPROC_SUPPORTED 1
 #define SOC_USB_SUPPORTED 1
@@ -94,6 +95,12 @@
 #define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25 | BIT47))
 // GPIO 46, 47 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46 | BIT47))
+
+/*-------------------------- Dedicated GPIO CAPS ---------------------------------------*/
+#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
+#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+#define SOC_DEDIC_GPIO_ALLOW_REG_ACCESS (1) /*!< Allow access dedicated GPIO channel by register */
+#define SOC_DEDIC_GPIO_HAS_INTERRUPT    (1) /*!< Dedicated GPIO has its own interrupt source */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-S2 have 2 I2C.

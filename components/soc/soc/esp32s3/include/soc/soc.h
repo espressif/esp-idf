@@ -41,9 +41,9 @@
 #define DR_REG_RSA_BASE                         0x6003c000
 #define DR_REG_HMAC_BASE                        0x6003e000
 #define DR_REG_DIGITAL_SIGNATURE_BASE           0x6003d000
+#define DR_REG_GDMA_BASE                        0x6003f000
 #define DR_REG_CRYPTO_DMA_BASE                  0x6003f000
 #define DR_REG_ASSIST_DEBUG_BASE                0x600ce000
-#define DR_REG_DEDICATED_GPIO_BASE              0x600cf000
 #define DR_REG_WORLD_CNTL_BASE                  0x600d0000
 #define DR_REG_DPORT_END                        0x600d3FFC
 #define DR_REG_UART_BASE                        0x60000000

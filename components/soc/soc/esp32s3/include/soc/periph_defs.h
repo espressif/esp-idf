@@ -55,6 +55,7 @@ typedef enum {
     PERIPH_RSA_MODULE,
     PERIPH_SYSTIMER_MODULE,
     PERIPH_GDMA_MODULE,
+    PERIPH_DEDIC_GPIO_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 

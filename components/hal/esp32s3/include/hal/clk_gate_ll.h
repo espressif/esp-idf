@@ -92,6 +92,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_BT_LC_EN;
     case PERIPH_SYSTIMER_MODULE:
         return SYSTEM_SYSTIMER_CLK_EN;
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return SYSTEM_CLK_EN_DEDICATED_GPIO;
     case PERIPH_GDMA_MODULE:
         return SYSTEM_DMA_CLK_EN;
     case PERIPH_AES_MODULE:
@@ -163,6 +165,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_TWAI_RST;
     case PERIPH_SYSTIMER_MODULE:
         return SYSTEM_SYSTIMER_RST;
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return SYSTEM_RST_EN_DEDICATED_GPIO;
     case PERIPH_GDMA_MODULE:
         return SYSTEM_DMA_RST;
     case PERIPH_AES_MODULE:
@@ -197,6 +201,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return SYSTEM_CPU_PERI_CLK_EN_REG;
     case PERIPH_RNG_MODULE:
     case PERIPH_WIFI_MODULE:
     case PERIPH_BT_MODULE:
@@ -219,6 +225,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return SYSTEM_CPU_PERI_RST_EN_REG;
     case PERIPH_RNG_MODULE:
     case PERIPH_WIFI_MODULE:
     case PERIPH_BT_MODULE:

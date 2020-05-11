@@ -3,6 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "adc_common.c"
     "dac_common.c"
+    "dedic_gpio.c"
     "gpio.c"
     "i2c.c"
     "i2s.c"
