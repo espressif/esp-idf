@@ -214,7 +214,7 @@ static void esp_local_ctrl_command_cleanup(LocalCtrlMessage *resp, void **ctx)
                 if (resp->resp_get_prop_vals) {
                     prop_val_free_fn_t *free_fns = (prop_val_free_fn_t *)(*ctx);
                     for (size_t i = 0; i < resp->resp_get_prop_vals->n_props; i++) {
-                        if (free_fns[i]) {
+                        if (free_fns && free_fns[i]) {
                             free_fns[i](resp->resp_get_prop_vals->props[i]->value.data);
                         }
                         free(resp->resp_get_prop_vals->props[i]);
