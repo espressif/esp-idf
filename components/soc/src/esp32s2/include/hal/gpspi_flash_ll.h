@@ -34,9 +34,14 @@
 extern "C" {
 #endif
 
-#define gpspi_flash_ll_get_hw(host_id)  (((host_id)==SPI2_HOST ? &GPSPI2 \
-                                                : ((host_id)==SPI3_HOST ? &GPSPI3 \
-                                                : ({abort();(spi_dev_t*)0;}))))
+#define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : (\
+                                          ((host_id)==SPI3_HOST) ? &GPSPI3 : (\
+                                          {abort();(spi_dev_t*)0;}\
+                                        )) )
+#define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : (\
+                                          ((dev) == (void*)&GPSPI3) ? SPI3_HOST : (\
+                                          -1 \
+                                        )) )
 
 typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
 
@@ -286,10 +291,10 @@ static inline void gpspi_flash_ll_set_command8(spi_dev_t *dev, uint8_t command)
 
 /**
  * Get the address length that is set in register, in bits.
- * 
+ *
  * @param dev Beginning address of the peripheral registers.
- * 
- */ 
+ *
+ */
 static inline int gpspi_flash_ll_get_addr_bitlen(spi_dev_t *dev)
 {
     return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;
@@ -346,7 +351,7 @@ static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
  *
  * @param dev Beginning address of the peripheral registers.
  * @param out_en whether to enable IO output for dummy phase
- * @param out_level dummy output level 
+ * @param out_level dummy output level
  */
 static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en, uint32_t out_lev)
 {

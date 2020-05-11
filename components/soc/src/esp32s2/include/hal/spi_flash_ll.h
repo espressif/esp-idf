@@ -41,6 +41,12 @@ extern "C" {
 #define spi_flash_ll_get_hw(host_id)  (((host_id)<=SPI1_HOST ? (spi_dev_t*) spimem_flash_ll_get_hw(host_id) \
                                       : gpspi_flash_ll_get_hw(host_id)))
 
+#define spi_flash_ll_hw_get_id(dev) ({int dev_id = spimem_flash_ll_hw_get_id(dev); \
+                                     if (dev_id < 0) {\
+                                        dev_id = gpspi_flash_ll_hw_get_id(dev);\
+                                     }\
+                                     dev_id; \
+                                    })
 
 typedef union  {
     gpspi_flash_ll_clock_reg_t gpspi;
