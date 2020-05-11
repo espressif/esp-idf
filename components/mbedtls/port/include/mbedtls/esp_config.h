@@ -1692,17 +1692,19 @@
 /**
  * \def MBEDTLS_HKDF_C
  *
- * Disable the HKDF algorithm (RFC 5869).
+ * Enable the HKDF algorithm (RFC 5869).
  *
  * Module:  library/hkdf.c
  * Caller:
  *
  * Requires: MBEDTLS_MD_C
  *
- * This module adds support for the Hashed Message Authentication Code
+ * This module enables support for the Hashed Message Authentication Code
  * (HMAC)-based key derivation function (HKDF).
  */
-#ifdef MBEDTLS_HKDF_C
+#ifdef CONFIG_MBEDTLS_HKDF_C
+#define MBEDTLS_HKDF_C
+#else
 #undef MBEDTLS_HKDF_C
 #endif
 
