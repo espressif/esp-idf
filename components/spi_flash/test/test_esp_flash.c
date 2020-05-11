@@ -19,6 +19,7 @@
 #include "sdkconfig.h"
 
 #include "hal/spi_flash_hal.h"
+#include "ccomp_timer.h"
 
 #define FUNC_SPI    1
 
@@ -164,6 +165,26 @@ flashtest_config_t config_list[] = {
     // },
 };
 #endif
+
+static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int* out_cs_id)
+{
+    spi_host_device_t host_id;
+    int cs_id;
+    if (chip == NULL) {
+        host_id = SPI_HOST;
+        cs_id = 0;
+    } else {
+        spi_flash_memspi_data_t* driver_data = (spi_flash_memspi_data_t*)chip->host->driver_data;
+        host_id = spi_flash_ll_hw_get_id(driver_data->spi);
+        cs_id = driver_data->cs_num;
+    }
+    if (out_host_id) {
+        *out_host_id = host_id;
+    }
+    if (out_cs_id) {
+        *out_cs_id = cs_id;
+    }
+}
 
 static void setup_bus(spi_host_device_t host_id)
 {
@@ -615,8 +636,11 @@ void test_permutations(flashtest_config_t* config)
                 cfg->speed = speed;
                 setup_new_chip(cfg, &chip);
 
+                spi_host_device_t host_id;
+                get_chip_host(chip, &host_id, NULL);
+
                 if (io_mode > SPI_FLASH_FASTRD
-                    && !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(((spi_flash_memspi_data_t *)chip->host->driver_data)->spi)) {
+                    && !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)) {
                     continue;
                 }
 
@@ -719,6 +743,157 @@ static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, si
     read_and_check(chip, part, source, length);
 }
 
+typedef struct {
+    uint32_t us_start;
+    size_t len;
+    const char* name;
+} time_meas_ctx_t;
+
+static void time_measure_start(time_meas_ctx_t* ctx)
+{
+    ctx->us_start = esp_timer_get_time();
+    ccomp_timer_start();
+}
+
+static uint32_t time_measure_end(time_meas_ctx_t* ctx)
+{
+    uint32_t c_time_us = ccomp_timer_stop();
+    uint32_t time_us = esp_timer_get_time() - ctx->us_start;
+
+    ESP_LOGI(TAG, "%s: compensated: %.2lf kB/s, typical: %.2lf kB/s", ctx->name, ctx->len / (c_time_us / 1000.), ctx->len / (time_us/1000.));
+    return ctx->len * 1000 / (c_time_us / 1000);
+}
+
+#define TEST_TIMES      20
+#define TEST_SECTORS    4
+
+static uint32_t measure_erase(const esp_partition_t* part)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE * TEST_SECTORS;
+    time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
+
+    time_measure_start(&time_ctx);
+    esp_err_t err = esp_flash_erase_region(part->flash_chip, part->address, total_len);
+    TEST_ESP_OK(err);
+    return time_measure_end(&time_ctx);
+}
+
+// should called after measure_erase
+static uint32_t measure_write(const char* name, const esp_partition_t* part, const uint8_t* data_to_write, int seg_len)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
+
+    time_measure_start(&time_ctx);
+    for (int i = 0; i < TEST_TIMES; i ++) {
+        // Erase one time, but write 100 times the same data
+        size_t len = total_len;
+        int offset = 0;
+
+        while (len) {
+            int len_write = MIN(seg_len, len);
+            esp_err_t err = esp_flash_write(part->flash_chip, data_to_write + offset, part->address + offset, len_write);
+            TEST_ESP_OK(err);
+
+            offset += len_write;
+            len -= len_write;
+        }
+    }
+    return time_measure_end(&time_ctx);
+}
+
+static uint32_t measure_read(const char* name, const esp_partition_t* part, uint8_t* data_read, int seg_len)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
+
+    time_measure_start(&time_ctx);
+    for (int i = 0; i < TEST_TIMES; i ++) {
+        size_t len = total_len;
+        int offset = 0;
+
+        while (len) {
+            int len_read = MIN(seg_len, len);
+            esp_err_t err = esp_flash_read(part->flash_chip, data_read + offset, part->address + offset, len_read);
+            TEST_ESP_OK(err);
+
+            offset += len_read;
+            len -= len_read;
+        }
+    }
+    return time_measure_end(&time_ctx);
+}
+
+#define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", &test_part, data_to_write, n))
+#define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", &test_part, data_read, n))
+
+static void test_flash_read_write_performance(esp_flash_t* chip)
+{
+    const esp_partition_t *part = get_test_data_partition();
+    // Copy to new partition variable and replace the chip member
+    // Actually there's no "partition" in the external flash on runners. We just don't bother creating a new partition variable.
+    esp_partition_t test_part;
+    memcpy(&test_part, part, sizeof(esp_partition_t));
+    test_part.flash_chip = chip;
+
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
+    srand(777);
+    for (int i = 0; i < total_len; i++) {
+        data_to_write[i] = rand();
+    }
+
+    uint32_t erase_1 = measure_erase(&test_part);
+    uint32_t speed_WR_4B = MEAS_WRITE(4);
+    uint32_t speed_RD_4B = MEAS_READ(4);
+    uint32_t erase_2 = measure_erase(&test_part);
+    uint32_t speed_WR_2KB = MEAS_WRITE(2048);
+    uint32_t speed_RD_2KB = MEAS_READ(2048);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
+
+#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#  define CHECK_DATA(bus, suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##suffix, "%d", speed_##suffix)
+#  define CHECK_ERASE(bus, var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##ERASE, "%d", var)
+#else
+#  define CHECK_DATA(bus, suffix) ((void)speed_##suffix)
+#  define CHECK_ERASE(bus, var)   ((void)var)
+#endif
+
+// Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
+#define CHECK_PERFORMANCE(bus) do {\
+            CHECK_DATA(bus, WR_4B); \
+            CHECK_DATA(bus, RD_4B); \
+            CHECK_DATA(bus, WR_2KB); \
+            CHECK_DATA(bus, RD_2KB); \
+            CHECK_ERASE(bus, erase_1); \
+            CHECK_ERASE(bus, erase_2); \
+        } while (0)
+
+    spi_host_device_t host_id;
+    int cs_id;
+
+    get_chip_host(chip, &host_id, &cs_id);
+    if (host_id != SPI_HOST) {
+        // Chips on other SPI buses
+        CHECK_PERFORMANCE(EXT_);
+    } else if (cs_id == 0) {
+        // Main flash
+        CHECK_PERFORMANCE();
+    } else {
+        // Other cs pins on SPI1
+        CHECK_PERFORMANCE(SPI1_);
+    }
+    free(data_to_write);
+    free(data_read);
+}
+
+FLASH_TEST_CASE("Test esp_flash read/write performance", test_flash_read_write_performance);
+FLASH_TEST_CASE_3("Test esp_flash read/write performance", test_flash_read_write_performance);
+
+
 #ifdef CONFIG_SPIRAM_USE_MALLOC
 
 /* Utility: Read into a small internal RAM buffer using esp_flash_read() and compare what
@@ -783,7 +958,6 @@ static void test_flash_read_large_psram_buffer_low_internal_mem(esp_flash_t *chi
 }
 
 FLASH_TEST_CASE("esp_flash_read large PSRAM buffer low memory", test_flash_read_large_psram_buffer_low_internal_mem);
-
 
 
 #endif
