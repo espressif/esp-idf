@@ -63,7 +63,8 @@ def test_examples_protocol_socket(env, extra_data):
     dut1.start_app()
 
     ipv4 = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)[0]
-    ipv6 = dut1.expect(re.compile(r" IPv6 address: ([0-9A-Fa-f\:]+)"), timeout=30)[0]
+    ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
+    ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print("Connected with IPv4={} and IPv6={}".format(ipv4, ipv6))
 
     # test IPv4
