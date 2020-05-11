@@ -1047,7 +1047,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
 static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
-    return httpd_resp_send(r, str, (str == NULL) ? 0 : strlen(str));
+    return httpd_resp_send(r, str, (str == NULL) ? 0 : HTTPD_RESP_USE_STRLEN);
 }
 
 /**
@@ -1068,7 +1068,7 @@ static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
 static inline esp_err_t httpd_resp_sendstr_chunk(httpd_req_t *r, const char *str) {
-    return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : strlen(str));
+    return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : HTTPD_RESP_USE_STRLEN);
 }
 
 /* Some commonly used status codes */
