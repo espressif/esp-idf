@@ -14,7 +14,6 @@
 
 #include "mesh_common.h"
 #include "provisioner_prov.h"
-#include "bt_common.h"
 
 static hash_map_t *bm_alarm_hash_map;
 static const size_t BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE = 20 + CONFIG_BLE_MESH_PBA_SAME_TIME + \
