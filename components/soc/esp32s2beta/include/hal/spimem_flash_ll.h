@@ -31,7 +31,8 @@
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 
-#define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
+#define spimem_flash_ll_get_hw(host_id) (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
+#define spimem_flash_ll_hw_get_id(dev)  ((dev) == (void*)&SPIMEM1? SPI1_HOST: -1)
 
 typedef typeof(SPIMEM1.clock) spimem_flash_ll_clock_reg_t;
 

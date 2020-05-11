@@ -40,7 +40,16 @@
 #define SPI_FLASH_LL_CLKREG_VAL_80MHZ   ((spi_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
 
 /// Get the start address of SPI peripheral registers by the host ID
-#define spi_flash_ll_get_hw(host_id)  ((host_id)==SPI1_HOST? &SPI1:((host_id)==SPI2_HOST?&SPI2:((host_id)==SPI3_HOST?&SPI3:({abort();(spi_dev_t*)0;}))))
+#define spi_flash_ll_get_hw(host_id) ( ((host_id)==SPI1_HOST) ? &SPI1 :(\
+                                       ((host_id)==SPI2_HOST) ? &SPI2 :(\
+                                       ((host_id)==SPI3_HOST) ? &SPI3 :(\
+                                       {abort();(spi_dev_t*)0;}\
+                                     ))) )
+#define spi_flash_ll_hw_get_id(dev) ( ((dev) == &SPI1) ? SPI1_HOST :(\
+                                      ((dev) == &SPI2) ? SPI2_HOST :(\
+                                      ((dev) == &SPI3) ? SPI3_HOST :(\
+                                      -1\
+                                    ))) )
 
 /// type to store pre-calculated register value in above layers
 typedef typeof(SPI1.clock) spi_flash_ll_clock_reg_t;
@@ -155,12 +164,12 @@ static inline void spi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 
 /**
  * Set the data to be written in the data buffer.
- * 
+ *
  * @param dev Beginning address of the peripheral registers.
- * @param buffer Buffer holding the data 
+ * @param buffer Buffer holding the data
  * @param length Length of data in bytes.
  */
-static inline void spi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length) 
+static inline void spi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length)
 {
     // Load data registers, word at a time
     int num_words = (length + 3) >> 2;
