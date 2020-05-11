@@ -132,6 +132,7 @@ static u16 wps_ignore_null_padding_in_attr(const u8 *pos, u16 type, u16 attr_dat
 {
 	u16 len = attr_data_len;
 
+#ifdef CONFIG_WPA_WPS_WARS
 	if (len == 0)
 		return 0;
 	/*
@@ -153,6 +154,7 @@ static u16 wps_ignore_null_padding_in_attr(const u8 *pos, u16 type, u16 attr_dat
 		default:
 			break;
 	}
+#endif
 
 	return len;
 }
