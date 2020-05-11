@@ -353,13 +353,13 @@ static void log_performance_tohost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_4BIT, "%d", speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_1BIT, "%d", speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_SPI, "%d", speed);
             break;
         }
     }
@@ -439,13 +439,13 @@ static void log_performance_frhost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT, "%d", speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_1BIT, "%d", speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_SPI, "%d", speed);
             break;
         }
     }
