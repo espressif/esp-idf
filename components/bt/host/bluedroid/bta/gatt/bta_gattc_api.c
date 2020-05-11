@@ -31,7 +31,7 @@
 #include "bta/bta_sys.h"
 #include "bta/bta_gatt_api.h"
 #include "bta_gattc_int.h"
-
+#include "stack/l2c_api.h"
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -602,7 +602,10 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
             p_buf->p_value = (UINT8 *)(p_buf + 1);
             memcpy(p_buf->p_value, p_value, len);
         }
-
+        if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+        }
         bta_sys_sendmsg(p_buf);
     }
     return;
@@ -649,7 +652,10 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
             /* pack the descr data */
             memcpy(p_buf->p_value, p_data->p_value, p_data->len);
         }
-
+        if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+        }
         bta_sys_sendmsg(p_buf);
     }
     return;
