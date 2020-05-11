@@ -71,7 +71,7 @@ static esp_err_t adder_post_handler(httpd_req_t *req)
 
     /* Respond with the accumulated value */
     snprintf(outbuf, sizeof(outbuf),"%d", *adder);
-    httpd_resp_send(req, outbuf, strlen(outbuf));
+    httpd_resp_send(req, outbuf, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -95,7 +95,7 @@ static esp_err_t adder_get_handler(httpd_req_t *req)
 
     /* Respond with the accumulated value */
     snprintf(outbuf, sizeof(outbuf),"%d", *((int *)req->sess_ctx));
-    httpd_resp_send(req, outbuf, strlen(outbuf));
+    httpd_resp_send(req, outbuf, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -133,7 +133,7 @@ static esp_err_t adder_put_handler(httpd_req_t *req)
 
     /* Respond with the reset value */
     snprintf(outbuf, sizeof(outbuf),"%d", *((int *)req->sess_ctx));
-    httpd_resp_send(req, outbuf, strlen(outbuf));
+    httpd_resp_send(req, outbuf, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 

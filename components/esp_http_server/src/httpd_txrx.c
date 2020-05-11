@@ -451,7 +451,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
 #endif
 
     /* Send HTTP error message */
-    ret = httpd_resp_send(req, msg, strlen(msg));
+    ret = httpd_resp_send(req, msg, HTTPD_RESP_USE_STRLEN);
 
 #ifdef CONFIG_HTTPD_ERR_RESP_NO_DELAY
     /* If TCP_NODELAY was set successfully above, time to disable it */
