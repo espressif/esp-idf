@@ -14,13 +14,13 @@
 
 #include <errno.h>
 
+#include "btc_ble_mesh_sensor_model.h"
+
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
-
-#include "btc_ble_mesh_sensor_model.h"
 
 static void update_sensor_periodic_pub(struct bt_mesh_model *model, u16_t prop_id);
 

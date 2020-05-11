@@ -12,11 +12,11 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
+#include "btc_ble_mesh_health_model.h"
+
 #include "foundation.h"
 #include "mesh_common.h"
 #include "health_cli.h"
-
-#include "btc_ble_mesh_health_model.h"
 
 s32_t health_msg_timeout;
 

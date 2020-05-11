@@ -15,10 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_time_scene_model.h"
+
 #include "model_opcode.h"
 #include "time_scene_client.h"
-
-#include "btc_ble_mesh_time_scene_model.h"
 
 /** The following are the macro definitions of time and client
  *  scene model messages length, and a message is composed of

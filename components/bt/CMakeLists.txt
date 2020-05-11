@@ -351,6 +351,8 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_common/mesh_buf.c"
                     "esp_ble_mesh/mesh_common/mesh_common.c"
                     "esp_ble_mesh/mesh_common/mesh_kernel.c"
+                    "esp_ble_mesh/mesh_common/mesh_mutex.c"
+                    "esp_ble_mesh/mesh_common/mesh_timer.c"
                     "esp_ble_mesh/mesh_common/mesh_util.c"
                     "esp_ble_mesh/mesh_core/storage/settings_nvs.c"
                     "esp_ble_mesh/mesh_core/access.c"

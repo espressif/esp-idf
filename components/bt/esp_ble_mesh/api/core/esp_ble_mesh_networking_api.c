@@ -15,8 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "btc/btc_manage.h"
-
 #include "esp_err.h"
 
 #include "btc_ble_mesh_prov.h"
@@ -71,9 +69,9 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
-        mic_len = 4;
+        mic_len = ESP_BLE_MESH_MIC_SHORT;
     } else {
-        mic_len = ctx->send_rel ? 8 : 4;
+        mic_len = ctx->send_rel ? ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
     }
 
     if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {

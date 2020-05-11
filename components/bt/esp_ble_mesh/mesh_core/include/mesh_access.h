@@ -11,10 +11,9 @@
 #ifndef _BLE_MESH_ACCESS_H_
 #define _BLE_MESH_ACCESS_H_
 
-#include "mesh_types.h"
-#include "mesh_util.h"
+#include "sdkconfig.h"
 #include "mesh_buf.h"
-#include "mesh_kernel.h"
+#include "mesh_timer.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -192,9 +191,9 @@ struct bt_mesh_model_op {
 #define BLE_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
 /** Length of a short Mesh MIC. */
-#define BLE_MESH_MIC_SHORT 4
+#define BLE_MESH_MIC_SHORT  4
 /** Length of a long Mesh MIC. */
-#define BLE_MESH_MIC_LONG 8
+#define BLE_MESH_MIC_LONG   8
 
 /** @def BLE_MESH_MODEL_OP_LEN
  *
@@ -339,7 +338,8 @@ struct bt_mesh_model_pub {
 
     u16_t addr;         /**< Publish Address. */
     u16_t key:12,       /**< Publish AppKey Index. */
-          cred:1;       /**< Friendship Credentials Flag. */
+          cred:1,       /**< Friendship Credentials Flag. */
+          send_rel:1;   /**< Force reliable sending (segment acks) */
 
     u8_t  ttl;          /**< Publish Time to Live. */
     u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
@@ -366,6 +366,9 @@ struct bt_mesh_model_pub {
      *  will be called periodically and is expected to update
      *  @ref bt_mesh_model_pub.msg with a valid publication
      *  message.
+     *
+     *  If the callback returns non-zero, the publication is skipped
+     *  and will resume on the next periodic publishing interval.
      *
      *  @param mod The Model the Publication Context belogs to.
      *
