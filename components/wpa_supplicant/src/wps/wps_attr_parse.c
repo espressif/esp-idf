@@ -134,6 +134,7 @@ static u16 wps_ignore_null_padding_in_attr(const u8 *pos, u16 type, u16 attr_dat
 
 	if (len == 0)
 		return 0;
+#ifdef CONFIG_WPA_WPS_WARS
 	/*
 	 * Some AP's keep NULL-padding at the end of some variable length WPS Attributes.
 	 * This is not as par the WPS2.0 specs, but to avoid interop issues, ignore the
@@ -153,6 +154,7 @@ static u16 wps_ignore_null_padding_in_attr(const u8 *pos, u16 type, u16 attr_dat
 		default:
 			break;
 	}
+#endif
 
 	return len;
 }
