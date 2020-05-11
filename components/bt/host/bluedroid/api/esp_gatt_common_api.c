@@ -49,10 +49,16 @@ esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
 }
 
 #if (BLE_INCLUDED == TRUE)
-extern uint16_t L2CA_GetFreePktBufferNum_LE(void);
+extern UINT16 L2CA_GetFreePktBufferNum_LE(void);
 
-uint16_t esp_ble_get_sendable_packets_num ()
+uint16_t esp_ble_get_sendable_packets_num (void)
 {
     return L2CA_GetFreePktBufferNum_LE();
+}
+
+extern UINT16 L2CA_GetCurFreePktBufferNum_LE(UINT16 conn_id);
+uint16_t esp_ble_get_cur_sendable_packets_num (uint16_t connid)
+{
+    return L2CA_GetCurFreePktBufferNum_LE(connid);
 }
 #endif
