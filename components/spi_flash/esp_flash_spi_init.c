@@ -145,7 +145,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         goto fail;
     }
 
-    int dev_id;
+    int dev_id = -1;
     esp_err_t err = esp_flash_init_os_functions(chip, config->host_id, &dev_id);
     if (err == ESP_ERR_NOT_SUPPORTED) {
         ESP_LOGE(TAG, "Init os functions failed! No free CS.");
@@ -155,6 +155,12 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     if (err != ESP_OK) {
         ret = err;
         goto fail;
+    }
+    // When `CONFIG_SPI_FLASH_SHARE_SPI1_BUS` is not enabled on SPI1 bus, the
+    // `esp_flash_init_os_functions` will not be able to assign a new device ID. In this case, we
+    // use the `cs_id` in the config structure.
+    if (dev_id == -1 && config->host_id == SPI_HOST) {
+        dev_id = config->cs_id;
     }
     assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);
 

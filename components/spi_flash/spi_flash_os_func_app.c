@@ -127,14 +127,30 @@ static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .delay_ms = delay_ms,
 };
 
-esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int* out_dev_id)
+static spi_bus_lock_dev_handle_t register_dev(int host_id)
 {
     spi_bus_lock_handle_t lock = spi_bus_lock_get_by_id(host_id);
     spi_bus_lock_dev_handle_t dev_handle;
     spi_bus_lock_dev_config_t config = {.flags = SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED};
     esp_err_t err = spi_bus_lock_register_dev(lock, &config, &dev_handle);
     if (err != ESP_OK) {
-        return err;
+        return NULL;
+    }
+    return dev_handle;
+}
+
+esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int* out_dev_id)
+{
+    spi_bus_lock_dev_handle_t dev_handle = NULL;
+
+    // Skip initializing the bus lock when the bus is SPI1 and the bus is not shared with SPI Master
+    // driver, leaving dev_handle = NULL
+    bool skip_register_dev = (host_id == SPI_HOST);
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    skip_register_dev = false;
+#endif
+    if (!skip_register_dev) {
+        dev_handle = register_dev(host_id);
     }
 
     if (host_id == SPI1_HOST) {
@@ -166,7 +182,10 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int* out_d
         return ESP_ERR_INVALID_ARG;
     }
 
-    *out_dev_id = spi_bus_lock_get_dev_id(dev_handle);
+    // Bus lock not initialized, the device ID should be directly given by application.
+    if (dev_handle) {
+        *out_dev_id = spi_bus_lock_get_dev_id(dev_handle);
+    }
 
     return ESP_OK;
 }
@@ -174,7 +193,11 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int* out_d
 esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip)
 {
     if (chip->os_func_data) {
-        spi_bus_lock_unregister_dev(((app_func_arg_t*)chip->os_func_data)->dev_lock);
+        spi_bus_lock_dev_handle_t dev_lock = ((app_func_arg_t*)chip->os_func_data)->dev_lock;
+        // SPI bus lock is possible not used on SPI1 bus
+        if (dev_lock) {
+            spi_bus_lock_unregister_dev(dev_lock);
+        }
         free(chip->os_func_data);
     }
     chip->os_func = NULL;
