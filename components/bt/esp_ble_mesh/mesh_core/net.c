@@ -1393,6 +1393,14 @@ static bool ready_to_recv(void)
 
 static bool ignore_net_msg(u16_t src, u16_t dst)
 {
+    if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
+        /* When fast provisioning is enabled, the node addr
+         * message will be sent to the Primary Provisioner,
+         * which shall not be ignored here.
+         */
+        return false;
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
         bt_mesh_is_provisioner_en() &&
         BLE_MESH_ADDR_IS_UNICAST(dst) &&
@@ -1403,6 +1411,7 @@ static bool ignore_net_msg(u16_t src, u16_t dst)
          * be ignored.
          */
         if (!bt_mesh_provisioner_get_node_with_addr(src)) {
+            BT_INFO("Not found node address 0x%04x", src);
             return true;
         }
     }
