@@ -39,7 +39,7 @@ struct bt_mesh_dev bt_mesh_dev;
 #define BLE_MESH_GATT_GET_CONN_ID(conn_id)              (((u16_t)(conn_id)) >> 8)
 #define BLE_MESH_GATT_CREATE_CONN_ID(gatt_if, conn_id)  ((u16_t)((((u8_t)(conn_id)) << 8) | ((u8_t)(gatt_if))))
 
-/* We don't need to manage the BLE_MESH_DEV_ADVERTISING flags in the version of bluedriod,
+/* We don't need to manage the BLE_MESH_DEV_ADVERTISING flags in the version of Bluedroid,
  * it will manage it in the BTM layer.
  */
 #define BLE_MESH_DEV    0
@@ -638,7 +638,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             /* This is for EspBleMesh Android app. When it tries to connect with the
              * device at the first time and it fails due to some reason. And after
              * the second connection, the device needs to send GATT service change
-             * indication to the phone manually to notify it dicovering service again.
+             * indication to the phone manually to notify it discovering service again.
              */
             BTA_GATTS_SendServiceChangeIndication(bt_mesh_gatts_if, bt_mesh_gatts_addr);
         }
@@ -973,10 +973,10 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
                 bta_uuid_to_bt_mesh_uuid(&bta_uuid, gatts_chrc->uuid);
                 BTA_GATTS_AddCharacteristic(svc_handle, &bta_uuid, bt_mesh_perm_to_bta_perm(svc->attrs[i + 1].perm), gatts_chrc->properties, NULL, NULL);
                 if (future_await(future_mesh) == FUTURE_FAIL) {
-                    BT_ERR("%s, Failed to add characristic", __func__);
+                    BT_ERR("%s, Failed to add characteristic", __func__);
                     return ESP_FAIL;
                 }
-                /* All the characristic should have two handle: the declaration handle and the value handle */
+                /* All the characteristic should have two handles: the declaration handle and the value handle */
                 svc->attrs[i].handle = char_handle - 1;
                 svc->attrs[i + 1].handle =  char_handle;
                 BT_DBG("Add characteristic: char_uuid = %x, char_handle = %d, perm = %d, char_pro = %d", BLE_MESH_UUID_16(gatts_chrc->uuid)->val, char_handle, svc->attrs[i + 1].perm, gatts_chrc->properties);
@@ -1194,7 +1194,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
                 (bt_mesh_gattc_info[i].service_uuid == 0x0000)) {
             memcpy(bt_mesh_gattc_info[i].addr.val, addr->val, BLE_MESH_ADDR_LEN);
             bt_mesh_gattc_info[i].addr.type = addr->type;
-            /* Service to be found after exhanging mtu size */
+            /* Service to be found after exchanging mtu size */
             bt_mesh_gattc_info[i].service_uuid = service_uuid;
             break;
         }

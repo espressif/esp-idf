@@ -806,9 +806,9 @@ if BLE_MESH
                 Enable support for Generic Default Transition Time client model.
 
         config BLE_MESH_GENERIC_POWER_ONOFF_CLI
-            bool "Generic Power Onoff Client Model"
+            bool "Generic Power OnOff Client Model"
             help
-                Enable support for Generic Power Onoff client model.
+                Enable support for Generic Power OnOff client model.
 
         config BLE_MESH_GENERIC_POWER_LEVEL_CLI
             bool "Generic Power Level Client Model"
@@ -909,7 +909,7 @@ if BLE_MESH
                 bool "Use white list to filter mesh advertising packets"
                 default n
                 help
-                    With this option enabled, users can use whilte list to filter mesh
+                    With this option enabled, users can use white list to filter mesh
                     advertising packets while scanning.
 
         endif # BLE_MESH_SELF_TEST

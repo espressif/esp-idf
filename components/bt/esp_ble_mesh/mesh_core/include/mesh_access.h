@@ -313,7 +313,7 @@ struct bt_mesh_model_op {
 
 /** @def BLE_MESH_PUB_TRANSMIT_COUNT
  *
- *  @brief Decode Pubhlish Retransmit count from a given value.
+ *  @brief Decode Publish Retransmit count from a given value.
  *
  *  @param transmit Encoded Publish Retransmit count & interval value.
  *
@@ -370,7 +370,7 @@ struct bt_mesh_model_pub {
      *  If the callback returns non-zero, the publication is skipped
      *  and will resume on the next periodic publishing interval.
      *
-     *  @param mod The Model the Publication Context belogs to.
+     *  @param mod The Model the Publication Context belongs to.
      *
      *  @return Zero on success or (negative) error code otherwise.
      */
