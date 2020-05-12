@@ -235,13 +235,14 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  *  void vATask( void * pvParameters )
  *  {
- *     // Semaphore cannot be used before a call to xSemaphoreCreateBinary().
+ *     // Semaphore cannot be used before a call to xSemaphoreCreateBinary() or
+ *     // xSemaphoreCreateBinaryStatic().
  *     // The semaphore's data structures will be placed in the xSemaphoreBuffer
  *     // variable, the address of which is passed into the function.  The
  *     // function's parameter is not NULL, so the function will not attempt any
  *     // dynamic memory allocation, and therefore the function will not return
  *     // return NULL.
- *     xSemaphore = xSemaphoreCreateBinary( &xSemaphoreBuffer );
+ *     xSemaphore = xSemaphoreCreateBinaryStatic( &xSemaphoreBuffer );
  *
  *     // Rest of task code goes here.
  *  }
