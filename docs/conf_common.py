@@ -383,6 +383,7 @@ def setup(app):
         app.add_config_value('idf_targets', None, 'env')
 
     app.add_config_value('conditional_include_dict', None, 'env')
+    app.add_config_value('docs_to_build', None, 'env')
 
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
