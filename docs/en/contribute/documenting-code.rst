@@ -328,11 +328,11 @@ Would render in the documentation as:
 
     This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
-This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file:
+This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file::
 
     {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
 
-This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example:
+This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example::
 
     {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
 
