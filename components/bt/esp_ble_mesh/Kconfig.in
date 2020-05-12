@@ -285,6 +285,29 @@ if BLE_MESH
                 introduce message replay attacks and system security will be in a
                 vulnerable state.
 
+        config BLE_MESH_SETTINGS_BACKWARD_COMPATIBILITY
+            bool "A specific option for settings backward compatibility"
+            depends on BLE_MESH_NODE
+            default n
+            help
+                This option is created to solve the issue of failure in recovering
+                node information after mesh stack updates. In the old version mesh
+                stack, there is no key of "mesh/role" in nvs. In the new version
+                mesh stack, key of "mesh/role" is added in nvs, recovering node
+                information needs to check "mesh/role" key in nvs and implements
+                selective recovery of mesh node information. Therefore, there may
+                be failure in recovering node information during node restarting
+                after OTA.
+
+                The new version mesh stack adds the option of "mesh/role" because
+                we have added the support of storing Provisioner information, while
+                the old version only supports storing node information.
+
+                If users are updating their nodes from old version to new version,
+                we recommend enabling this option, so that system could set the flag
+                in advance before recovering node information and make sure the node
+                information recovering could work as expected.
+
     endif  # if BLE_MESH_SETTINGS
 
     config BLE_MESH_SUBNET_COUNT
