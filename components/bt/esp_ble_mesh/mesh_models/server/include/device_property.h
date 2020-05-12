@@ -561,7 +561,7 @@ typedef struct __packed average_current {
 } bt_mesh_average_current_t;
 
 /* This characteristic aggregates the Voltage characteristic and instance of the Time
- * Exponential 8 characateristic.
+ * Exponential 8 characteristic.
  */
 typedef struct __packed average_voltage {
     bt_mesh_voltage_t            voltage;
