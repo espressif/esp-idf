@@ -196,7 +196,7 @@ Running the utility
 
 You can run the utility to generate factory images for each device using the command below. A sample CSV file is provided with the utility::
 
-    python mfg_gen.py generate samples/sample_config.csmples/sample_values_singlepage_blob.csv Sample 0x3000
+    python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000
 
 The master value CSV file should have the path in the ``file`` type relative to the directory from which you are running the utility.
 
