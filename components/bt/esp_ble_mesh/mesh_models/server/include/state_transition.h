@@ -21,7 +21,7 @@ extern "C" {
 
 void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition);
 
-/* APIs used to get server model transtion time values */
+/* APIs used to get server model transition time values */
 
 void generic_onoff_tt_values(struct bt_mesh_gen_onoff_srv *srv,
                              u8_t trans_time, u8_t delay);
@@ -61,7 +61,7 @@ void light_lc_tt_values(struct bt_mesh_light_lc_srv *srv,
 
 void scene_tt_values(struct bt_mesh_scene_srv *srv, u8_t trans_time, u8_t delay);
 
-/* Server model transtion timer handlers */
+/* Server model transition timer handlers */
 
 void generic_onoff_work_handler(struct k_work *work);
 

@@ -1603,7 +1603,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
     /* Look for free slot for a new RX session */
     rx = seg_rx_alloc(net_rx, hdr, seq_auth, seg_n);
     if (!rx) {
-        /* Warn but don't cancel since the existing slots willl
+        /* Warn but don't cancel since the existing slots will
          * eventually be freed up and we'll be able to process
          * this one.
          */

@@ -492,7 +492,7 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
     }
 
     if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
-        BT_WARN("Unexpected message withouth a preceding Poll");
+        BT_WARN("Unexpected message without a preceding Poll");
         return;
     }
 

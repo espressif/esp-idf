@@ -3459,7 +3459,7 @@ void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
     struct bt_mesh_cfg_srv *cfg = conf;
 
     if (!cfg) {
-        BT_WARN("No configuaration server context available");
+        BT_WARN("No configuration server context available");
         return;
     }
 
