@@ -161,7 +161,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                     param->model_operation.ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
                     sizeof(tid), (uint8_t *)&tid);
             if (err) {
-                ESP_LOGE(TAG, "Faild to send message 0x%06x", ESP_BLE_MESH_VND_MODEL_OP_STATUS);
+                ESP_LOGE(TAG, "Failed to send message 0x%06x", ESP_BLE_MESH_VND_MODEL_OP_STATUS);
             }
         }
         break;

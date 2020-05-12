@@ -518,7 +518,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                 param->client_send_timeout.model,
                 param->client_send_timeout.ctx);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Faield to resend fast prov client message", __func__);
+            ESP_LOGE(TAG, "%s: Failed to resend fast prov client message", __func__);
             return;
         }
         break;

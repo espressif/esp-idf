@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BLE_MESH_BEARER_ADRPT_H_
-#define _BLE_MESH_BEARER_ADRPT_H_
+#ifndef _BLE_MESH_BEARER_ADAPT_H_
+#define _BLE_MESH_BEARER_ADAPT_H_
 
 #include <sys/types.h>
 #include "mesh_types.h"
@@ -809,5 +809,5 @@ int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info);
 }
 #endif
 
-#endif /* _BLE_MESH_BEARER_ADRPT_H_ */
+#endif /* _BLE_MESH_BEARER_ADAPT_H_ */
 

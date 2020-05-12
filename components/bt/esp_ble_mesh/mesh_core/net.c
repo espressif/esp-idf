@@ -778,7 +778,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
     err = bt_mesh_net_obfuscate(buf->data, BLE_MESH_NET_IVI_TX, priv);
     if (err) {
-        BT_ERR("%s, Deobfuscate failed (err %d)", __func__, err);
+        BT_ERR("%s, De-obfuscate failed (err %d)", __func__, err);
         return err;
     }
 
