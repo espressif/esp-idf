@@ -15,10 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_sensor_model.h"
+
 #include "model_opcode.h"
 #include "sensor_client.h"
-
-#include "btc_ble_mesh_sensor_model.h"
 
 /** The following are the macro definitions of sensor client
  *  model messages length, and a message is composed of three

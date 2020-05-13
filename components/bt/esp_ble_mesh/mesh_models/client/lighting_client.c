@@ -15,10 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_lighting_model.h"
+
 #include "model_opcode.h"
 #include "lighting_client.h"
-
-#include "btc_ble_mesh_lighting_model.h"
 
 /** The following are the macro definitions of lighting client
  *  model messages length, and a message is composed of three

@@ -411,7 +411,7 @@ static int publish_retransmit(struct bt_mesh_model *mod)
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -425,6 +425,14 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 
     bt_mesh_free_buf(sdu);
     return err;
+}
+
+static void publish_retransmit_end(int err, struct bt_mesh_model_pub *pub)
+{
+    /* Cancel all retransmits for this publish attempt */
+    pub->count = 0U;
+    /* Make sure the publish timer gets reset */
+    publish_sent(err, pub->mod);
 }
 
 static void mod_publish(struct k_work *work)
@@ -468,7 +476,10 @@ static void mod_publish(struct k_work *work)
      */
     err = pub->update(pub->mod);
     if (err) {
-        BT_ERR("%s, Failed to update publication message", __func__);
+        /* Cancel this publish attempt. */
+        BT_ERR("Update failed, skipping publish (err %d)", err);
+        pub->period_start = k_uptime_get_32();
+        publish_retransmit_end(err, pub);
         return;
     }
 
@@ -616,7 +627,7 @@ void bt_mesh_comp_provision(u16_t addr)
 
     dev_primary_addr = addr;
 
-    BT_INFO("addr 0x%04x elem_count %u", addr, dev_comp->elem_count);
+    BT_INFO("Primary address 0x%04x, element count %u", addr, dev_comp->elem_count);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -786,6 +797,10 @@ static int get_opcode(struct net_buf_simple *buf, u32_t *opcode)
         }
 
         *opcode = net_buf_simple_pull_u8(buf) << 16;
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         *opcode |= net_buf_simple_pull_le16(buf);
         return 0;
     }
@@ -827,7 +842,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return;
     }
 
-    BT_INFO("OpCode 0x%08x", opcode);
+    BT_DBG("OpCode 0x%08x", opcode);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -910,6 +925,10 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
         break;
     case 3:
         net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         net_buf_simple_add_le16(msg, opcode & 0xffff);
         break;
     default:
@@ -948,8 +967,8 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    BT_INFO("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->ctx->net_idx,
-           tx->ctx->app_idx, tx->ctx->addr);
+    BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x",
+        tx->ctx->app_idx, tx->src, tx->ctx->addr);
     BT_INFO("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
     if (!ready_to_send(role, tx->ctx->addr)) {
@@ -957,12 +976,12 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    if (net_buf_simple_tailroom(msg) < 4) {
+    if (net_buf_simple_tailroom(msg) < BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Not enough tailroom for TransMIC", __func__);
         return -EINVAL;
     }
 
-    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - 4) {
+    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Too big message", __func__);
         return -EMSGSIZE;
     }
@@ -1040,7 +1059,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         return -EADDRNOTAVAIL;
     }
 
-    if (pub->msg->len + 4 > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
+    if (pub->msg->len + BLE_MESH_MIC_SHORT > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
         BT_ERR("%s, Message does not fit maximum SDU size", __func__);
         return -EMSGSIZE;
     }
@@ -1051,6 +1070,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     }
 
     ctx.addr = pub->addr;
+    ctx.send_rel = pub->send_rel;
     ctx.send_ttl = pub->ttl;
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
@@ -1069,7 +1089,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     BT_INFO("Publish Retransmit Count %u Interval %ums", pub->count,
            BLE_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -1079,10 +1099,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     err = model_send(model, &tx, true, sdu, &pub_sent_cb, model);
     if (err) {
-        /* Don't try retransmissions for this publish attempt */
-        pub->count = 0U;
-        /* Make sure the publish timer gets reset */
-        publish_sent(err, model);
+        publish_retransmit_end(err, pub);
     }
 
     bt_mesh_free_buf(sdu);
