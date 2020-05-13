@@ -35,7 +35,7 @@ With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0
 Setting up Python 3 as default for Ubuntu and Debian
 ----------------------------------------------------
 
-Ubuntu and Debian are still providing Python 2.7 as the default interpreter. Python 3 can be installed as follows::
+Ubuntu and Debian are still providing Python 2.7 as the default interpreter but some required packages may be missing for newer distributions. Python 3 is recommended and can be installed as follows::
 
     sudo apt-get install python3 python3-pip python3-setuptools
 
