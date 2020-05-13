@@ -253,7 +253,8 @@ def main():
 
     print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information")
     print_partition_info_subparser_info_type = print_partition_info_subparser.add_mutually_exclusive_group()
-    print_partition_info_subparser_info_type.add_argument("--info", help="type of partition information to get", nargs="+")
+    print_partition_info_subparser_info_type.add_argument("--info", help="type of partition information to get",
+                                                          choices=["offset", "size"], default=["offset", "size"], nargs="+")
     print_partition_info_subparser_info_type.add_argument("--table", help="dump the partition table to a file")
 
     generate_blank_subparser = subparsers.add_parser("generate_blank_partition_file", help="generate a blank (all 0xFF) partition file of \
