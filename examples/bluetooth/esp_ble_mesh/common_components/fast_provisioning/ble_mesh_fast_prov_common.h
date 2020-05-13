@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_FAST_PROV_COMMON_H
-#define _ESP_FAST_PROV_COMMON_H
+#ifndef _BLE_MESH_FAST_PROV_COMMON_H_
+#define _BLE_MESH_FAST_PROV_COMMON_H_
 
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_config_model_api.h"
@@ -118,4 +118,4 @@ typedef struct {
     uint8_t status_act; /* Indicate the result of action */
 } example_fast_prov_net_key_status_t;
 
-#endif /* _ESP_FAST_PROV_COMMON_H */
+#endif /* _BLE_MESH_FAST_PROV_COMMON_H_ */

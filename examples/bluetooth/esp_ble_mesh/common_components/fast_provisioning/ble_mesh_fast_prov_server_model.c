@@ -22,8 +22,8 @@
 #include "esp_ble_mesh_proxy_api.h"
 #include "esp_ble_mesh_config_model_api.h"
 
-#include "esp_fast_prov_operation.h"
-#include "esp_fast_prov_server_model.h"
+#include "ble_mesh_fast_prov_operation.h"
+#include "ble_mesh_fast_prov_server_model.h"
 
 #define TAG "FAST_PROV_SERVER"
 

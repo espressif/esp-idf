@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_init
-                         $ENV{IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/fast_prov_vendor_model)
+                         $ENV{IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/fast_provisioning)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(ble_mesh_wifi_coexist)
