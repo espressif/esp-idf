@@ -1750,6 +1750,8 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
         return -EINVAL;
     }
 
+    __ASSERT(prov_info->uuid, "%s, Device UUID is not initialized", __func__);
+
     /* Changed by Espressif. Use micro-ecc to generate public key now. */
     key = bt_mesh_pub_key_get();
     if (!key) {

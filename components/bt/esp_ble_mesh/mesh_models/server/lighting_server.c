@@ -8,13 +8,13 @@
 
 #include <errno.h>
 
+#include "btc_ble_mesh_lighting_model.h"
+
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
-
-#include "btc_ble_mesh_lighting_model.h"
 
 static bt_mesh_mutex_t light_server_lock;
 

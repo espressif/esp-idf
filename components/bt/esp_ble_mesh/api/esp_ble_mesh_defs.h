@@ -38,6 +38,12 @@ extern "C" {
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
 
+/*!< Length of a short Mesh MIC. */
+#define ESP_BLE_MESH_MIC_SHORT              4
+
+/*!< Length of a long Mesh MIC. */
+#define ESP_BLE_MESH_MIC_LONG               8
+
 /*!< The maximum length of a BLE Mesh provisioned node name */
 #define ESP_BLE_MESH_NODE_NAME_MAX_LEN      31
 
@@ -369,7 +375,8 @@ typedef struct {
 
     uint16_t publish_addr;  /*!< Publish Address. */
     uint16_t app_idx:12,    /*!< Publish AppKey Index. */
-             cred:1;        /*!< Friendship Credentials Flag. */
+             cred:1,        /*!< Friendship Credentials Flag. */
+             send_rel:1;    /*!< Force reliable sending (segment acks) */
 
     uint8_t  ttl;           /*!< Publish Time to Live. */
     uint8_t  retransmit;    /*!< Retransmit Count & Interval Steps. */

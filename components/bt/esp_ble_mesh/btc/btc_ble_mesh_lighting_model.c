@@ -15,10 +15,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "mesh_common.h"
-#include "lighting_client.h"
-
 #include "btc_ble_mesh_lighting_model.h"
+#include "lighting_client.h"
 #include "esp_ble_mesh_lighting_model_api.h"
 
 /* Lighting Client Models related functions */

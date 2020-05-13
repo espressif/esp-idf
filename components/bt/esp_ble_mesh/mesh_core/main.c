@@ -319,7 +319,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         return -EALREADY;
     }
 
-    bt_mesh_k_init();
+    bt_mesh_mutex_init();
+
+    bt_mesh_timer_init();
 
     bt_mesh_hci_init();
 
@@ -332,6 +334,19 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
         bt_mesh_gatt_init();
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
+        if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+            bt_mesh_proxy_init();
+        }
+        if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+            bt_mesh_proxy_prov_client_init();
+        }
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
@@ -362,19 +377,6 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     bt_mesh_beacon_init();
 
     bt_mesh_adv_init();
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-        if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
-            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-            bt_mesh_proxy_init();
-        }
-        if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
-            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
-            bt_mesh_proxy_prov_client_init();
-        }
-    }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
         bt_mesh_provisioner_init();
@@ -485,7 +487,9 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
         bt_mesh_settings_deinit();
     }
 
-    bt_mesh_k_deinit();
+    bt_mesh_timer_deinit();
+
+    bt_mesh_mutex_deinit();
 
     mesh_init = false;
     return 0;
@@ -657,6 +661,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_provisioner_pb_gatt_enable();
         }
+        bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr());
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);
         bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));
