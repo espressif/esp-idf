@@ -3,7 +3,7 @@ import re
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='8Mpsram')
 def test_examples_himem(env, extra_data):
 
     dut = env.get_dut('himem', 'examples/system/himem')
