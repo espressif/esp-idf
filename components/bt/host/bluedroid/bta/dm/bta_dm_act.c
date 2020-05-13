@@ -334,6 +334,9 @@ void bta_dm_deinit_cb(void)
     }
 #endif
     memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+#if BTA_DYNAMIC_MEMORY
+    xSemaphoreGive(deinit_semaphore);
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 /*******************************************************************************
