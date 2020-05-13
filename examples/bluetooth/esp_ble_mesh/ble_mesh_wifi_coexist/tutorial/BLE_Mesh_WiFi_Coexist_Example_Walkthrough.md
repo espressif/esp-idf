@@ -3,7 +3,7 @@
 This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi function while operating Bluetooth. In this demo, 
 
 * The Wi-Fi function is demonstrated by measuring its transfer rate, using the `iperf` protocol;
-* The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `ble_mesh_fast_prov_server`.
+* The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `fast_prov_server`.
 
 
 > Note: In this demo, you call wifi API and bluetooth API to achieve the functions you want. such as `wifi_get_local_ip` API and `esp_ble_mesh_provisioner_add_unprov_dev` API.
@@ -46,7 +46,7 @@ $ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_wifi_coexist
 └── tutorial         /* More in-depth information about the demo */
 ```
 
-The `main` folder mainly implements the BLE Mesh feature.  Details can be seen in `ble_mesh_fast_prov_server`.
+The `main` folder mainly implements the BLE Mesh feature.  Details can be seen in `fast_prov_server`.
 
 The `components` folder mainly implements the Wi-Fi feature, which allows some basic commands and `iperf-relared` test commands.
 
