@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS "ble_mesh_demo_init.c")
+set(COMPONENT_SRCS "ble_mesh_example_init.c")
 
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 

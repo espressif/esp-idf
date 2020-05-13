@@ -27,7 +27,7 @@
 #endif
 
 #include "esp_ble_mesh_defs.h"
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 #ifdef CONFIG_BLUEDROID_ENABLED
 

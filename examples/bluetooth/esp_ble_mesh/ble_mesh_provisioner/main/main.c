@@ -19,7 +19,7 @@
 #include "esp_ble_mesh_config_model_api.h"
 #include "esp_ble_mesh_generic_model_api.h"
 
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 #define LED_OFF             0x0
 #define LED_ON              0x1
