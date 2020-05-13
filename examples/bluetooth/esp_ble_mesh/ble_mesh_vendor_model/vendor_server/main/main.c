@@ -22,7 +22,7 @@
 #include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "board.h"
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 #define CID_ESP     0x02E5
 #define CID_NVAL    0xFFFF

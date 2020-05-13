@@ -20,7 +20,7 @@
 #include "esp_ble_mesh_generic_model_api.h"
 
 #include "board.h"
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 #define CID_ESP 0x02E5
 
