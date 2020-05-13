@@ -88,6 +88,13 @@ static void fragment_and_dispatch(BT_HDR *packet)
         controller->get_acl_data_size_ble();
 
     max_packet_size = max_data_size + HCI_ACL_PREAMBLE_SIZE;
+    if((packet->len > max_packet_size) && (packet->layer_specific == 0) && (event == MSG_STACK_TO_HC_HCI_ACL)) {
+        packet->event = MSG_HC_TO_STACK_L2C_SEG_XMIT;
+        current_fragment_packet = NULL;
+        callbacks->transmit_finished(packet, false);
+        return;
+
+    }
     remaining_length = packet->len;
     STREAM_TO_UINT16(continuation_handle, stream);
     continuation_handle = APPLY_CONTINUATION_FLAG(continuation_handle);

@@ -1836,7 +1836,7 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
 
     // If already congested, do not accept any more packets
     if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent) {
-        L2CAP_TRACE_DEBUG ("L2CAP - CID: 0x%04x cannot send, already congested\
+        L2CAP_TRACE_ERROR ("L2CAP - CID: 0x%04x cannot send, already congested\
             xmit_hold_q.count: %u buff_quota: %u", fixed_cid,
             fixed_queue_length(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q),
             p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->buff_quota);
