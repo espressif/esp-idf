@@ -28,7 +28,11 @@ static const char *TAG = "test_adc";
 #define ADC1_TEST_ATTEN         ADC_ATTEN_DB_11
 #define ADC2_TEST_ATTEN         ADC_ATTEN_DB_11
 
+#if CONFIG_IDF_TARGET_ESP32
 #define ADC1_TEST_CHANNEL_NUM   8
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define ADC1_TEST_CHANNEL_NUM   10
+#endif
 #define ADC2_TEST_CHANNEL_NUM   6
 
 static const int adc1_ch[ADC1_TEST_CHANNEL_NUM] = {
@@ -40,6 +44,10 @@ static const int adc1_ch[ADC1_TEST_CHANNEL_NUM] = {
     ADC1_CHANNEL_5,
     ADC1_CHANNEL_6,
     ADC1_CHANNEL_7,
+#if CONFIG_IDF_TARGET_ESP32S2
+    ADC1_CHANNEL_8,
+    ADC1_CHANNEL_9,
+#endif
 };
 
 static const int adc2_ch[ADC2_TEST_CHANNEL_NUM] = {
@@ -65,6 +73,7 @@ static void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
     TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
     TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
     TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_PULLDOWN));
+    TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
 }
 
 static void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
@@ -79,6 +88,8 @@ static void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
     TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
     TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
     TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_ONLY));
+    TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+    TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 1));
 }
 
 static void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
@@ -93,6 +104,8 @@ static void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
     TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
     TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
     TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLDOWN_ONLY));
+    TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+    TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 0));
 }
 
 static void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
@@ -107,6 +120,7 @@ static void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
     TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
     TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
     TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
 }
 
 TEST_CASE("ADC1 rtc read", "[adc1]")
@@ -177,6 +191,7 @@ TEST_CASE("ADC1 rtc read", "[adc1]")
         adc1_val[i] = adc1_get_raw((adc1_channel_t)adc1_ch[i]);
         printf("CH%d-%d ", adc1_ch[i], adc1_val[i]);
 #ifdef CONFIG_IDF_TARGET_ESP32S2
+        TEST_ASSERT_NOT_EQUAL( adc1_val[i], 0x1fff );
         TEST_ASSERT_NOT_EQUAL( adc1_val[i], 0 );
 #endif
     }
@@ -263,4 +278,78 @@ TEST_CASE("ADC2 rtc read", "[adc2]")
     for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
         adc_io_normal(ADC_UNIT_1, adc1_ch[i]);
     }
+}
+
+#include "touch_scope.h"
+/**
+ * 0: ADC1 channels raw data debug.
+ * 1: ADC2 channels raw data debug.
+ */
+#define SCOPE_DEBUG_TYPE            1
+#define SCOPE_DEBUG_CHANNEL_MAX    (10)
+#define SCOPE_DEBUG_ENABLE         (0)
+#define SCOPE_UART_BUADRATE        (256000)
+#define SCOPE_DEBUG_FREQ_MS        (50)
+
+/**
+ * Manual test: Capture ADC-DMA data and display it on the serial oscilloscope. Used to observe the stability of the data.
+ * Use step:
+ *      1. Call this function in `esp-idf/tools/unit-test-app/main/app_main.c`.
+ *      2. Use `ESP-Tuning Tool`(download from `www.espressif.com`) to capture.
+ *      3. The readings of multiple channels will be displayed on the tool.
+ */
+void test_adc_slope_debug(void)
+{
+    float scope_temp[SCOPE_DEBUG_CHANNEL_MAX] = {0};  // max scope channel is 10.
+    test_tp_scope_debug_init(0, -1, -1, SCOPE_UART_BUADRATE);
+
+#if SCOPE_DEBUG_TYPE == 0
+    /* adc1 Configure */
+    adc1_config_width(ADC1_TEST_WIDTH);
+    ESP_LOGI(TAG, "ADC1 [CH - GPIO] atten %d:", ADC1_TEST_ATTEN);
+    for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
+        TEST_ESP_OK( adc1_config_channel_atten(adc1_ch[i], ADC1_TEST_ATTEN) );
+        ESP_LOGI(TAG, "[CH%d - IO%d]", adc1_ch[i], ADC_GET_IO_NUM(0, adc1_ch[i]));
+    }
+    /* tie midedle */
+    for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
+        adc_fake_tie_middle(ADC_UNIT_1, adc1_ch[i]);
+    }
+    vTaskDelay(10 / portTICK_RATE_MS);
+
+    while (1) {
+        /* adc Read */
+        for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
+            scope_temp[i] = adc1_get_raw((adc1_channel_t)adc1_ch[i]);
+        }
+        test_tp_print_to_scope(scope_temp, ADC1_TEST_CHANNEL_NUM);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+    }
+#elif SCOPE_DEBUG_TYPE == 1
+    int adc2_val[ADC2_TEST_CHANNEL_NUM] = {0};
+
+    /* adc2 Configure */
+    ESP_LOGI(TAG, "ADC2 [CH - GPIO] atten %d:", ADC2_TEST_ATTEN);
+    for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
+        TEST_ESP_OK( adc2_config_channel_atten(adc2_ch[i], ADC2_TEST_ATTEN) );
+        ESP_LOGI(TAG, "[CH%d - IO%d]:", adc2_ch[i], ADC_GET_IO_NUM(1, adc2_ch[i]));
+    }
+    /* tie midedle */
+    for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
+        adc_fake_tie_middle(ADC_UNIT_2, adc2_ch[i]);
+    }
+    vTaskDelay(10 / portTICK_RATE_MS);
+
+    while (1) {
+        /* adc Read */
+        printf("ADC2: ");
+        for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
+            adc2_get_raw((adc2_channel_t)adc2_ch[i], ADC2_TEST_WIDTH, &adc2_val[i]);
+            scope_temp[i] = adc2_val[i];
+        }
+
+        test_tp_print_to_scope(scope_temp, ADC2_TEST_CHANNEL_NUM);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+    }
+#endif
 }
