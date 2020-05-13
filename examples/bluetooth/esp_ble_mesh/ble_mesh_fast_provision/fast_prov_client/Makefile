@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_mesh_fast_prov_server
+PROJECT_NAME := fast_prov_client
 
 EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/bluetooth/esp_ble_mesh/components/example_init \
                         $(IDF_PATH)/examples/bluetooth/esp_ble_mesh/components/fast_prov_vendor_model

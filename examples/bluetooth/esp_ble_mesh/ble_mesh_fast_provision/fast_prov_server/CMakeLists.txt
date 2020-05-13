@@ -6,4 +6,4 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/bluetooth/esp_ble_mesh/componen
                          $ENV{IDF_PATH}/examples/bluetooth/esp_ble_mesh/components/fast_prov_vendor_model)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(ble_mesh_fast_prov_server)
+project(fast_prov_server)
