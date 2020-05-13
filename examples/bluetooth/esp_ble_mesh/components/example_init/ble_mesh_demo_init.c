@@ -1,7 +1,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * Additional Copyright (c) 2020 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sdkconfig.h>
+
 /* BLE */
 #ifdef CONFIG_BLUEDROID_ENABLED
 #include "esp_bt.h"
@@ -27,7 +28,6 @@
 
 #include "esp_ble_mesh_defs.h"
 #include "ble_mesh_demo_init.h"
-#include "esp_ble_mesh_common_api.h"
 
 #ifdef CONFIG_BLUEDROID_ENABLED
 
@@ -49,7 +49,6 @@ void ble_mesh_get_dev_uuid(uint8_t *dev_uuid)
 esp_err_t bluetooth_init(void)
 {
     esp_err_t ret;
-
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -78,17 +77,26 @@ esp_err_t bluetooth_init(void)
 
     return ret;
 }
-
-#endif
+#endif /* CONFIG_BLUEDROID_ENABLED */
 
 #ifdef CONFIG_NIMBLE_ENABLED
 static SemaphoreHandle_t mesh_sem;
 static uint8_t own_addr_type;
 void ble_store_config_init(void);
-static uint8_t addr_val[BD_ADDR_LEN] = {0};
-    
+static uint8_t addr_val[6] = {0};
+
 void ble_mesh_get_dev_uuid(uint8_t *dev_uuid)
 {
+    if (dev_uuid == NULL) {
+        ESP_LOGE(TAG, "%s, Invalid device uuid", __func__);
+        return;
+    }
+
+    /* Copy device address to the device uuid with offset equals to 2 here.
+     * The first two bytes is used for matching device uuid by Provisioner.
+     * And using device address here is to avoid using the same device uuid
+     * by different unprovisioned devices.
+     */
     memcpy(dev_uuid + 2, addr_val, BD_ADDR_LEN);
 }
 
@@ -150,4 +158,4 @@ esp_err_t bluetooth_init(void)
 
     return ESP_OK;
 }
-#endif
+#endif /* CONFIG_NIMBLE_ENABLED */
