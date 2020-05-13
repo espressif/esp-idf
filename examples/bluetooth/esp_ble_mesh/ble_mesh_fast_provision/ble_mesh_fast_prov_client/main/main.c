@@ -29,7 +29,7 @@
 #include "esp_fast_prov_common.h"
 #include "esp_fast_prov_operation.h"
 #include "esp_fast_prov_client_model.h"
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 #define PROV_OWN_ADDR       0x0001
 #define APP_KEY_OCTET       0x12

@@ -30,7 +30,7 @@
 #include "esp_fast_prov_operation.h"
 #include "esp_fast_prov_client_model.h"
 #include "esp_fast_prov_server_model.h"
-#include "ble_mesh_demo_init.h"
+#include "ble_mesh_example_init.h"
 
 extern struct _led_state led_state[3];
 extern struct k_delayed_work send_self_prov_node_addr_timer;
