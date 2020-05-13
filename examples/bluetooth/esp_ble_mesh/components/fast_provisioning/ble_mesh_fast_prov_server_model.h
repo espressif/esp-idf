@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_FAST_PROV_SERVER_MODEL_H
-#define _ESP_FAST_PROV_SERVER_MODEL_H
+#ifndef _BLE_MESH_FAST_PROV_SERVER_MODEL_H_
+#define _BLE_MESH_FAST_PROV_SERVER_MODEL_H_
 
-#include "esp_fast_prov_common.h"
+#include "ble_mesh_fast_prov_common.h"
 
 #define DISABLE_FAST_PROV_TIMEOUT       K_SECONDS(10)
 #define GATT_PROXY_ENABLE_TIMEOUT       K_SECONDS(10)
@@ -99,4 +99,4 @@ esp_err_t example_handle_fast_prov_status_send_comp_evt(int err_code, uint32_t o
 
 esp_err_t example_fast_prov_server_init(esp_ble_mesh_model_t *model);
 
-#endif /* _ESP_FAST_PROV_SERVER_MODEL_H */
+#endif /* _BLE_MESH_FAST_PROV_SERVER_MODEL_H_ */

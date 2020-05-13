@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_FAST_PROV_OPERATION_H
-#define _ESP_FAST_PROV_OPERATION_H
+#ifndef _BLE_MESH_FAST_PROV_OPERATION_H_
+#define _BLE_MESH_FAST_PROV_OPERATION_H_
 
-#include "esp_fast_prov_common.h"
+#include "ble_mesh_fast_prov_common.h"
 
 esp_err_t example_store_node_info(const uint8_t uuid[16], uint16_t node_addr,
                                   uint8_t elem_num, uint16_t net_idx,
@@ -66,4 +66,4 @@ esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint32_t opcode, struct net_buf_simple *msg);
 
-#endif /* _ESP_FAST_PROV_OPERATION_H */
+#endif /* _BLE_MESH_FAST_PROV_OPERATION_H_ */
