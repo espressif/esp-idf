@@ -14,7 +14,7 @@
 
 """ IDF Test Applications """
 import subprocess
-
+import hashlib
 import json
 import os
 import sys
@@ -151,6 +151,7 @@ class IDFApp(App.BaseApp):
         self.idf_path = self.get_sdk_path()
         self.binary_path = self.get_binary_path(app_path, config_name, target)
         self.elf_file = self._get_elf_file_path(self.binary_path)
+        self._elf_file_sha256 = None
         assert os.path.exists(self.binary_path)
         if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
             if self.IDF_FLASH_ARGS_FILE not in os.listdir(self.binary_path):
@@ -307,6 +308,7 @@ class IDFApp(App.BaseApp):
                         _size = int(_size[:-1]) * 1024 * 1024
                     else:
                         _size = int(_size)
+                    _offset = int(_offset, 0)
                 except ValueError:
                     continue
                 partition_table[_name] = {
@@ -318,6 +320,16 @@ class IDFApp(App.BaseApp):
                 }
 
         return partition_table
+
+    def get_elf_sha256(self):
+        if self._elf_file_sha256:
+            return self._elf_file_sha256
+
+        sha256 = hashlib.sha256()
+        with open(self.elf_file, 'rb') as f:
+            sha256.update(f.read())
+        self._elf_file_sha256 = sha256.hexdigest()
+        return self._elf_file_sha256
 
 
 class Example(IDFApp):
