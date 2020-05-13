@@ -39,9 +39,9 @@
 #include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "board.h"
-#include "esp_fast_prov_operation.h"
-#include "esp_fast_prov_client_model.h"
-#include "esp_fast_prov_server_model.h"
+#include "ble_mesh_fast_prov_operation.h"
+#include "ble_mesh_fast_prov_client_model.h"
+#include "ble_mesh_fast_prov_server_model.h"
 #include "ble_mesh_example_init.h"
 
 extern struct _led_state led_state[3];

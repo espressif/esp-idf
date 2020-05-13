@@ -16,7 +16,7 @@
 
 #include "driver/gpio.h"
 #include "board.h"
-#include "esp_fast_prov_common.h"
+#include "ble_mesh_fast_prov_common.h"
 
 #define TAG "BOARD"
 
