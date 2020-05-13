@@ -351,6 +351,12 @@ example_test_013:
     - ESP32
     - UT_T1_SDMODE
 
+example_test_014:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - 8Mpsram
+
 UT_001:
   extends: .unit_test_template
   parallel: 38
