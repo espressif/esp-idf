@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_FAST_PROV_CLIENT_MODEL_H
-#define _ESP_FAST_PROV_CLIENT_MODEL_H
+#ifndef _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_
+#define _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_
 
 #include "esp_ble_mesh_defs.h"
 
@@ -33,4 +33,4 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint16_t len, const uint8_t *data);
 
-#endif /* _ESP_FAST_PROV_CLIENT_MODEL_H */
+#endif /* _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_ */

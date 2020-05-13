@@ -18,9 +18,9 @@
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_local_data_operation_api.h"
 
-#include "esp_fast_prov_operation.h"
-#include "esp_fast_prov_client_model.h"
-#include "esp_fast_prov_server_model.h"
+#include "ble_mesh_fast_prov_operation.h"
+#include "ble_mesh_fast_prov_client_model.h"
+#include "ble_mesh_fast_prov_server_model.h"
 
 #define TAG "FAST_PROV_CLIENT"
 

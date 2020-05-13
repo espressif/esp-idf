@@ -26,9 +26,9 @@
 #include "esp_ble_mesh_config_model_api.h"
 #include "esp_ble_mesh_generic_model_api.h"
 
-#include "esp_fast_prov_common.h"
-#include "esp_fast_prov_operation.h"
-#include "esp_fast_prov_client_model.h"
+#include "ble_mesh_fast_prov_common.h"
+#include "ble_mesh_fast_prov_operation.h"
+#include "ble_mesh_fast_prov_client_model.h"
 #include "ble_mesh_example_init.h"
 
 #define PROV_OWN_ADDR       0x0001
