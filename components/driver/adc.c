@@ -144,14 +144,16 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 
         ADC_CHECK_RET(rtc_gpio_init(gpio_num));
         ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     }
     if (adc_unit & ADC_UNIT_2) {
         ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_NUM_2, channel);
         ADC_CHECK_RET(rtc_gpio_init(gpio_num));
         ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     }
     return ESP_OK;
 }
@@ -385,7 +387,8 @@ static esp_err_t adc2_pad_init(adc2_channel_t channel)
     ADC_CHECK_RET(adc2_pad_get_io_num(channel, &gpio_num));
     ADC_CHECK_RET(rtc_gpio_init(gpio_num));
     ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-    ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
+    ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     return ESP_OK;
 }
 
