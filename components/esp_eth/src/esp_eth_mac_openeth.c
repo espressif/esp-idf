@@ -319,6 +319,18 @@ static esp_err_t emac_opencores_deinit(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+static esp_err_t emac_opencores_start(esp_eth_mac_t *mac)
+{
+    openeth_enable();
+    return ESP_OK;
+}
+
+static esp_err_t emac_opencores_stop(esp_eth_mac_t *mac)
+{
+    openeth_disable();
+    return ESP_OK;
+}
+
 static esp_err_t emac_opencores_del(esp_eth_mac_t *mac)
 {
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
@@ -366,6 +378,8 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.set_mediator = emac_opencores_set_mediator;
     emac->parent.init = emac_opencores_init;
     emac->parent.deinit = emac_opencores_deinit;
+    emac->parent.start = emac_opencores_start;
+    emac->parent.stop = emac_opencores_stop;
     emac->parent.del = emac_opencores_del;
     emac->parent.write_phy_reg = emac_opencores_write_phy_reg;
     emac->parent.read_phy_reg = emac_opencores_read_phy_reg;
