@@ -244,8 +244,8 @@ static void emac_esp32_rx_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        // block indefinitely until got notification from underlay event
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         do {
             length = ETH_MAX_PACKET_SIZE;
             buffer = malloc(length);
