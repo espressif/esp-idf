@@ -63,6 +63,17 @@ menu "LWIP"
             will be redirected to lwip_select(), therefore, select can be used
             for sockets only.
 
+    config LWIP_SO_LINGER
+        bool "Enable SO_LINGER processing"
+        default n
+        help
+            Enabling this option allows SO_LINGER processing.
+            When close socket, the TCP connection will be immediately disconnected.
+            The unsent data in the send buffer will be discarded and an RST message
+            will be sent to the other party. It is worth noting that because of this way,
+            the abnormal handshake in 4 ends the TCP connection, the TCP connection will
+            not enter the 'TIME_WAIT' state.
+
     config LWIP_SO_REUSE
         bool "Enable SO_REUSEADDR option"
         default y
