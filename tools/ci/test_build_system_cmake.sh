@@ -656,8 +656,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout main/main.c
 
     print_status "Defaults set properly for unspecified idf_build_process args"
-    pushd .
-    cd $IDF_PATH/examples/build_system/cmake/idf_as_lib
+    pushd $IDF_PATH/examples/build_system/cmake/idf_as_lib
     cp CMakeLists.txt CMakeLists.txt.bak
     echo -e "\nidf_build_get_property(project_dir PROJECT_DIR)" >> CMakeLists.txt
     echo -e "\nmessage(\"Project directory: \${project_dir}\")" >> CMakeLists.txt
