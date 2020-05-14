@@ -17,6 +17,7 @@ API 指南
    Flash Encryption <../security/flash-encryption>
    FreeRTOS SMP Changes <freertos-smp>
    Thread Local Storage <thread-local-storage>
+   硬件抽象层 <hardware-abstraction>
    High Level Interrupts <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
    引导加载程序 <bootloader>
