@@ -20,6 +20,7 @@
 #include "esp_log.h"
 #include "driver/spi_common.h"
 #include "soc/soc_caps.h"
+#include "ccomp_timer.h"
 
 #if defined(SOC_SDMMC_HOST_SUPPORTED) && defined(SOC_SDIO_SLAVE_SUPPORTED)
 #include "driver/sdio_slave.h"
@@ -352,17 +353,16 @@ static void log_performance_tohost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_4BIT, "%d", speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_1BIT, "%d", speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_TOHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_SPI, "%d", speed);
             break;
         }
     }
-    ESP_LOGI(MASTER_TAG, "Throughput: %.2lf MB/s", speed/1000.);
 }
 
 static void test_tp_tohost_master(essl_handle_t handle, const sdio_test_config_t* config)
@@ -377,8 +377,12 @@ static void test_tp_tohost_master(essl_handle_t handle, const sdio_test_config_t
     int remain_length = expected_length;
     int offset = 0;
 
+    // Two counters are used. The `esp_timer_get_time()` is for the typical time, and the
+    // `ccomp_timer` is for performance test to reduce influence caused by cache miss.
+    int64_t pre_us = esp_timer_get_time();
+    err = ccomp_timer_start();
+    assert(err == ESP_OK);
     // though the flow is the same, the check of config->check_data influences the throughput much, put it outside
-    uint32_t pre = xTaskGetTickCount();
     if (config->check_data) {
         do {
             size_t rcv_len;
@@ -416,11 +420,15 @@ static void test_tp_tohost_master(essl_handle_t handle, const sdio_test_config_t
             remain_length -= rcv_len;
         } while (remain_length > 0);
     }
-    uint32_t end = xTaskGetTickCount();
+    int64_t c_time_ms = ccomp_timer_stop()/1000;
+    int64_t end_us = esp_timer_get_time();
 
-    uint32_t total_time_ms = (end-pre)*portTICK_PERIOD_MS;
-    uint32_t throughput_byte_per_ms = expected_length / total_time_ms;
-    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms, bytes transferred: %d", total_time_ms, expected_length);
+    uint32_t total_time_ms = (end_us - pre_us)/1000;
+    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
+
+    uint32_t throughput_byte_per_ms = expected_length / c_time_ms;
+    ESP_LOGI(MASTER_TAG, "Throughput: compensated %.2lf MB/s, typical %.2lf MB/s",
+             throughput_byte_per_ms/1000., expected_length/(total_time_ms*1000.));
     log_performance_tohost(throughput_byte_per_ms, config);
 
     send_finish_test(handle);
@@ -431,17 +439,16 @@ static void log_performance_frhost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT, "%d", speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_1BIT, "%d", speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_MBSEC_FRHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_SPI, "%d", speed);
             break;
         }
     }
-    ESP_LOGI(MASTER_TAG, "Throughput: %.2lf MB/s", speed/1000.);
 }
 
 static void test_tp_frhost_master(essl_handle_t handle, const sdio_test_config_t* config)
@@ -454,7 +461,12 @@ static void test_tp_frhost_master(essl_handle_t handle, const sdio_test_config_t
 
     int remain_length = expected_length;
     int offset = 0;
-    uint32_t pre = xTaskGetTickCount();
+
+    // Two counters are used. The `esp_timer_get_time()` is for the typical time, and the
+    // `ccomp_timer` is for performance test to reduce influence caused by cache miss.
+    int64_t pre_us = esp_timer_get_time();
+    err = ccomp_timer_start();
+    assert(err == ESP_OK);
     do {
         int send_len;
         uint8_t* send_start;
@@ -468,11 +480,15 @@ static void test_tp_frhost_master(essl_handle_t handle, const sdio_test_config_t
         offset += send_len;
     } while (remain_length > 0);
 
-    uint32_t end = xTaskGetTickCount();
+    int64_t c_time_ms = ccomp_timer_stop()/1000;
+    int64_t end_us = esp_timer_get_time();
 
-    uint32_t total_time_ms = (end-pre)*portTICK_PERIOD_MS;
-    uint32_t throughput_byte_per_ms = expected_length / total_time_ms;
-    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms, bytes transferred: %d", total_time_ms, expected_length);
+    uint32_t total_time_ms = (end_us - pre_us)/1000;
+    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
+
+    uint32_t throughput_byte_per_ms = expected_length / c_time_ms;
+    ESP_LOGI(MASTER_TAG, "Throughput: compensated %.2lf MB/s, typical %.2lf MB/s",
+             throughput_byte_per_ms/1000., expected_length/(total_time_ms*1000.));
     log_performance_frhost(throughput_byte_per_ms, config);
 
     send_finish_test(handle);
