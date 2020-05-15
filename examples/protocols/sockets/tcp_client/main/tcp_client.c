@@ -54,10 +54,12 @@ static void tcp_client_task(void *pvParameters)
         ip_protocol = IPPROTO_IP;
         inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 #else // IPV6
-        struct sockaddr_in6 dest_addr;
+        struct sockaddr_in6 dest_addr = { 0 };
         inet6_aton(HOST_IP_ADDR, &dest_addr.sin6_addr);
         dest_addr.sin6_family = AF_INET6;
         dest_addr.sin6_port = htons(PORT);
+        // Setting scope_id to the connecting interface for correct routing if IPv6 Local Link supplied
+        dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
         addr_family = AF_INET6;
         ip_protocol = IPPROTO_IPV6;
         inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
