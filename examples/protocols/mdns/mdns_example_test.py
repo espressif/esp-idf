@@ -117,11 +117,11 @@ def test_examples_protocol_mdns(env, extra_data):
         stop_mdns_server.set()
         thread1.join()
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    # 3. check the mdns name is accessible
-    if not esp_answered.wait(timeout=30):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
-    # 4. check DUT output if mdns advertized host is resolved
     try:
+        # 3. check the mdns name is accessible
+        if not esp_answered.wait(timeout=30):
+            raise ValueError('Test has failed: did not receive mdns answer within timeout')
+        # 4. check DUT output if mdns advertized host is resolved
         dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: gethostbyname: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: getaddrinfo: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
