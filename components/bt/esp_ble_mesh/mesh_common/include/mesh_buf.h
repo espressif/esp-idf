@@ -153,6 +153,18 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
 }
 
 /**
+ * @brief Initialize a net_buf_simple object with data.
+ *
+ * Initialized buffer object with external data.
+ *
+ * @param buf Buffer to initialize.
+ * @param data External data pointer
+ * @param size Amount of data the pointed data buffer if able to fit.
+ */
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size);
+
+/**
  * @brief Reset buffer
  *
  * Reset buffer data so it can be reused for other purposes.
