@@ -736,10 +736,20 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
     return false;
 }
 
+static bool model_has_dst(struct bt_mesh_model *model, u16_t dst)
+{
+    if (BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return (dev_comp->elem[model->elem_idx].addr == dst);
+    } else if (BLE_MESH_ADDR_IS_GROUP(dst) || BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
+        return bt_mesh_model_find_group(model, dst);
+    }
+
+    return (model->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
+}
+
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
-        u8_t model_count, u16_t dst,
-        u16_t app_idx, u32_t opcode,
-        struct bt_mesh_model **model)
+                                              u8_t model_count, u32_t opcode,
+                                              struct bt_mesh_model **model)
 {
     int i;
 
@@ -747,17 +757,6 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
         const struct bt_mesh_model_op *op;
 
         *model = &models[i];
-
-        if (BLE_MESH_ADDR_IS_GROUP(dst) ||
-                BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
-            if (!bt_mesh_model_find_group(*model, dst)) {
-                continue;
-            }
-        }
-
-        if (!model_has_key(*model, app_idx)) {
-            continue;
-        }
 
         for (op = (*model)->op; op->func; op++) {
             if (op->opcode == opcode) {
@@ -846,24 +845,13 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
-
-        if (BLE_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
-            if (elem->addr != rx->ctx.recv_dst) {
-                continue;
-            }
-        } else if (BLE_MESH_ADDR_IS_GROUP(rx->ctx.recv_dst) ||
-                   BLE_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
-            /* find_op() will do proper model/group matching */
-        } else if (i != 0 ||
-                   !bt_mesh_fixed_group_match(rx->ctx.recv_dst)) {
-            continue;
-        }
+        struct net_buf_simple_state state = {0};
 
         /* SIG models cannot contain 3-byte (vendor) OpCodes, and
          * vendor models cannot contain SIG (1- or 2-byte) OpCodes, so
          * we only need to do the lookup in one of the model lists.
          */
-        if (opcode < 0x10000) {
+        if (BLE_MESH_MODEL_OP_LEN(opcode) < 3) {
             models = elem->models;
             count = elem->model_count;
         } else {
@@ -871,44 +859,44 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             count = elem->vnd_model_count;
         }
 
-        op = find_op(models, count, rx->ctx.recv_dst, rx->ctx.app_idx,
-                     opcode, &model);
-        if (op) {
-            struct net_buf_simple_state state;
-
-            if (buf->len < op->min_len) {
-                BT_ERR("%s, Too short message for OpCode 0x%08x",
-                       __func__, opcode);
-                continue;
-            }
-
-            /* The callback will likely parse the buffer, so
-             * store the parsing state in case multiple models
-             * receive the message.
-             */
-            net_buf_simple_save(buf, &state);
-
-            /** Changed by Espressif, here we update recv_op with the
-             *  value opcode got from the buf.
-             */
-            rx->ctx.recv_op = opcode;
-            /** Changed by Espressif, we update the model pointer to the
-             *  found model when we received a message.
-             */
-            rx->ctx.model = model;
-            /** Changed by Espressif, we update the srv_send flag to be
-             *  true when we received a message. This flag will be used
-             *  when a server model sends a status message and will
-             *  have no impact on the client sent messages.
-             */
-            rx->ctx.srv_send = true;
-
-            op->func(model, &rx->ctx, buf);
-            net_buf_simple_restore(buf, &state);
-
-        } else {
+        op = find_op(models, count, opcode, &model);
+        if (!op) {
             BT_DBG("No OpCode 0x%08x for elem %d", opcode, i);
+            continue;
         }
+
+        if (!model_has_key(model, rx->ctx.app_idx)) {
+            continue;
+        }
+
+        if (!model_has_dst(model, rx->ctx.recv_dst)) {
+            continue;
+        }
+
+        if (buf->len < op->min_len) {
+            BT_ERR("Too short message for OpCode 0x%08x", opcode);
+            continue;
+        }
+
+        /* The following three operations are added by Espressif.
+         * 1. Update the "recv_op" with the opcode got from the buf;
+         * 2. Update the model pointer with the found model;
+         * 3. Update the "srv_send" to be true when received a message.
+         *    This flag will be used when a server model sends a status
+         *    message, and has no impact on the client messages.
+         * Most of these info will be used by the application layer.
+         */
+        rx->ctx.recv_op = opcode;
+        rx->ctx.model = model;
+        rx->ctx.srv_send = true;
+
+        /* The callback will likely parse the buffer, so store
+         * the parsing state in case multiple models receive
+         * the message.
+         */
+        net_buf_simple_save(buf, &state);
+        op->func(model, &rx->ctx, buf);
+        net_buf_simple_restore(buf, &state);
     }
 }
 
