@@ -13,9 +13,9 @@ DFU is supported by ESP32-S2 chips. The necessary connections for the USB periph
 +------+-------------+
 | GPIO | USB         |
 +======+=============+
-| 20   | D- (green)  |
+| 20   | D+ (green)  |
 +------+-------------+
-| 19   | D+ (white)  |
+| 19   | D- (white)  |
 +------+-------------+
 | GND  | GND (black) |
 +------+-------------+
@@ -26,6 +26,10 @@ DFU is supported by ESP32-S2 chips. The necessary connections for the USB periph
     The ESP32-S2 chip needs to be in bootloader mode for the detection as a DFU device and flashing. This can be
     achieved by pulling GPIO0 down (e.g. pressing the BOOT button), pulsing RESET down for a moment and releasing
     GPIO0.
+
+.. warning::
+    Some cables are wired up with non-standard colors and some drivers are able to work with swapped D+ and D-
+    connections. Please try to swap the cables connecting to D+ and D- if your device is not detected.
 
 The software requirements of DFU are included in :ref:`get-started-get-prerequisites` of the Getting Started Guide.
 
@@ -91,10 +95,19 @@ USB drivers (Windows only)
 Please see the `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_ for more
 details.
 
+The drivers can be installed by the `Zadig tool <https://zadig.akeo.ie/>`_. Please make sure that the device is in
+download mode before running the tool and that it detects the ESP32-S2 device before installing the drivers. The Zadig
+tool might detect several USB interfaces of ESP32-S2. Please install the WinUSB driver for only that interface for
+which there is no driver installed (probably it is Interface 2) and don't re-install the driver for the other interface.
+
+.. warning::
+    The manual installation of the driver in Device Manager of Windows is not recommended because the flashing might
+    not work properly.
+
 .. _api_guide_dfu_flash_errors:
 
-Common errors
--------------
+Common errors and known issues
+------------------------------
 
 - ``dfu-util: command not found`` might indicate that the tool hasn't been installed or is not available from the terminal.
   An easy way of checking the tool is running ``dfu-util --version``. Please see :ref:`get-started-get-prerequisites` for
@@ -102,3 +115,5 @@ Common errors
 - The reason for ``No DFU capable USB device available`` could be that the USB driver wasn't properly installed on
   Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux
   (see :ref:`api_guide_dfu_flash_udev`) or the device isn't in bootloader mode.
+- Flashing with ``dfu-util`` on Windows fails on the first attempt with error ``Lost device after RESET?``. Please
+  retry the flashing and it should succeed the next time.
