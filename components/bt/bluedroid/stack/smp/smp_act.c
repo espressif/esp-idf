@@ -1945,8 +1945,7 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
 
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
     }
-    else if(p_dev_rec && !p_dev_rec->enc_init_by_we){
-
+    else if(p_dev_rec && !p_dev_rec->role_master && !p_dev_rec->enc_init_by_we ){
         /*
         if enc_init_by_we is false, it means that client initiates encryption before slave calls esp_ble_set_encryption()
         we need initiate pairing_bda and p_cb->role then encryption, for example iPhones
@@ -1954,6 +1953,12 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
         memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
         p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
         p_cb->role = HCI_ROLE_SLAVE;
+        p_dev_rec->enc_init_by_we = FALSE;
+        smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
+    }else if(p_dev_rec && p_dev_rec->role_master && p_dev_rec->enc_init_by_we){
+        memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
+        p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
+        p_cb->role = HCI_ROLE_MASTER;
         p_dev_rec->enc_init_by_we = FALSE;
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
     }

@@ -264,7 +264,7 @@ typedef struct
 }tL2CAP_SEC_DATA;
 
 #ifndef L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA
-#define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 100
+#define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 10
 #endif
 /* Define a channel control block (CCB). There may be many channel control blocks
 ** between the same two Bluetooth devices (i.e. on the same link).
