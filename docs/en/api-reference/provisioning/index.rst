@@ -10,4 +10,11 @@ Provisioning API
     Unified Provisioning <provisioning>
     Wi-Fi Provisioning <wifi_provisioning>
 
-Code examples for this API section are provided in the :example:`provisioning` directory of ESP-IDF examples.
+Code examples for above API are provided in the :example:`provisioning` directory of ESP-IDF examples.
+
+.. toctree::
+    :maxdepth: 1
+
+    SmartConfig <../network/esp_smartconfig>
+
+Code example for above API is provided in :example:`wifi/smart_config`
