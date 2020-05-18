@@ -635,10 +635,15 @@ def init_cli(verbose_output=None):
     all_actions = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ["IDF_PATH"], "tools", "idf_py_actions")
-    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
-    extension_dirs = [idf_py_extensions_path] + extra_paths
-    extensions = {}
+    extension_dirs = [realpath(idf_py_extensions_path)]
+    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH")
+    if extra_paths is not None:
+        for path in extra_paths.split(';'):
+            path = realpath(path)
+            if path not in extension_dirs:
+                extension_dirs.append(path)
 
+    extensions = {}
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
             print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)
