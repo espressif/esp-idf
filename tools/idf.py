@@ -200,7 +200,7 @@ def init_cli(verbose_output=None):
             self.action_args = action_args
             self.aliases = aliases
 
-        def run(self, context, global_args, action_args=None):
+        def __call__(self, context, global_args, action_args=None):
             if action_args is None:
                 action_args = self.action_args
 
@@ -611,7 +611,7 @@ def init_cli(verbose_output=None):
                         name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
 
                     print("Executing action: %s" % name_with_aliases)
-                    task.run(ctx, global_args, task.action_args)
+                    task(ctx, global_args, task.action_args)
 
                 self._print_closing_message(global_args, tasks_to_run.keys())
 
