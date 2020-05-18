@@ -89,6 +89,7 @@ set(srcs
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/netif/dhcp_state.c"
+    "port/esp32/netif/sio.c"
     "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
