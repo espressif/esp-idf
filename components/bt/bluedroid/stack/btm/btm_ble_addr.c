@@ -59,7 +59,8 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         /* set it to controller */
         btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
 
-        p_cb->own_addr_type = BLE_ADDR_RANDOM;
+        p_cb->exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
+        memcpy(p_cb->resolvale_addr, p_cb->private_addr, BD_ADDR_LEN);
         if (p_cb->set_local_privacy_cback){
             (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
             p_cb->set_local_privacy_cback = NULL;
@@ -613,12 +614,7 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
     BD_ADDR     dummy_bda = {0};
 
     if (p != NULL) {
-/*
- *  Temporary solutions for pair with random address:
- *  use BLE_ADDR_RANDOM when adverting with random adress or in privacy mode
- *  We will do futher work here
- */
-        if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE || btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
+        if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
             p->conn_addr_type = BLE_ADDR_RANDOM;
             if (memcmp(local_rpa, dummy_bda, BD_ADDR_LEN)) {
                 memcpy(p->conn_addr, local_rpa, BD_ADDR_LEN);

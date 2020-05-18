@@ -179,7 +179,6 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
 esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
 {
     btc_msg_t msg;

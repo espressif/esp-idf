@@ -368,6 +368,10 @@ void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport)
         btm_sec_clear_ble_keys (p_dev_rec);
 #endif
     }
+    /* No BLE keys and BT keys, clear the sec_flags */
+    if(p_dev_rec->sec_flags == BTM_SEC_IN_USE) {
+        p_dev_rec->sec_flags = 0;
+    }
 }
 
 /*******************************************************************************
