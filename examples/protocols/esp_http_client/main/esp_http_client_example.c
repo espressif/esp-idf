@@ -111,8 +111,17 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 static void http_rest_with_url(void)
 {
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
+    /**
+     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+     * If host and path parameters are not set, query parameter will be ignored. In such cases,
+     * query parameter should be specified in URL.
+     *
+     * If URL as well as host and path parameters are specified, values of host and path will be considered.
+     */
     esp_http_client_config_t config = {
-        .url = "http://httpbin.org/get",
+        .host = "httpbin.org",
+        .path = "/get",
+        .query = "esp",
         .event_handler = _http_event_handler,
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
     };
