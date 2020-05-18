@@ -21,3 +21,8 @@ Aside from linking to a recompiled version of Newlib with the additional flag, E
 
 - Avoids using some ROM functions
 - Allocates static memory for the WiFi stack
+
+ESP32 rev v3
+------------
+
+ESP32 revision 3 ("ECO V3") fixes the PSRAM cache issue found in rev. 1. When :ref:`CONFIG_ESP32_REV_MIN` option is set to rev. 3, compiler workarounds related to PSRAM will be disabled. For more information about ESP32 ECO V3, see `ESP32 ECO V3 User Guide`_.
