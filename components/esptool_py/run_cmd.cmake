@@ -3,8 +3,8 @@ if(NOT IDF_PATH)
 endif()
 include("${IDF_PATH}/tools/cmake/utilities.cmake")
 spaces2list(CMD)
-
 execute_process(COMMAND ${CMD}
+    COMMAND_ECHO STDOUT
     WORKING_DIRECTORY "${WORKING_DIRECTORY}"
     RESULT_VARIABLE result
     )

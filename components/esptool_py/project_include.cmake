@@ -7,6 +7,7 @@ idf_build_get_property(python PYTHON)
 set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${target})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
+set(ESPMONITOR ${python} "${idf_path}/tools/idf_monitor.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
@@ -136,7 +137,7 @@ add_custom_target(erase_flash
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
-    -D IDF_MONITOR="${idf_path}/tools/idf_monitor.py"
+    -D IDF_MONITOR="${ESPMONITOR}"
     -D ELF_FILE="${elf_dir}/${elf}"
     -D WORKING_DIRECTORY="${build_dir}"
     -P run_idf_monitor.cmake
