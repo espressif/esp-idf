@@ -139,7 +139,9 @@ typedef UINT16 tGATT_DISCONN_REASON;
 
 /* default GATT MTU size over LE link
 */
+#ifndef GATT_DEF_BLE_MTU_SIZE
 #define GATT_DEF_BLE_MTU_SIZE               23
+#endif
 
 /* invalid connection ID
 */
