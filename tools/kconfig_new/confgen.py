@@ -355,13 +355,23 @@ def write_makefile(deprecated_options, config, filename):
 
         def get_makefile_config_string(name, value, orig_type):
             if orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
-                return "{}{}={}\n".format(config.config_prefix, name, '' if value == 'n' else value)
-            elif orig_type in (kconfiglib.INT, kconfiglib.HEX):
-                return "{}{}={}\n".format(config.config_prefix, name, value)
+                value = '' if value == 'n' else value
+            elif orig_type == kconfiglib.INT:
+                try:
+                    value = int(value)
+                except ValueError:
+                    value = ""
+            elif orig_type == kconfiglib.HEX:
+                try:
+                    value = hex(int(value, 16))  # ensure 0x prefix
+                except ValueError:
+                    value = ""
             elif orig_type == kconfiglib.STRING:
-                return '{}{}="{}"\n'.format(config.config_prefix, name, kconfiglib.escape(value))
+                value = '"{}"'.format(kconfiglib.escape(value))
             else:
                 raise RuntimeError('{}{}: unknown type {}'.format(config.config_prefix, name, orig_type))
+
+            return '{}{}={}\n'.format(config.config_prefix, name, value)
 
         def write_makefile_node(node):
             item = node.item
@@ -419,13 +429,14 @@ def write_cmake(deprecated_options, config, filename):
                     val = ""  # write unset values as empty variables
                 elif sym.orig_type == kconfiglib.STRING:
                     val = kconfiglib.escape(val)
-                write("set({}{} \"{}\")\n".format(
-                    prefix, sym.name, val))
+                elif sym.orig_type == kconfiglib.HEX:
+                    val = hex(int(val, 16))  # ensure 0x prefix
+                write('set({}{} "{}")\n'.format(prefix, sym.name, val))
 
                 configs_list.append(prefix + sym.name)
                 dep_opt = deprecated_options.get_deprecated_option(sym.name)
                 if dep_opt:
-                    tmp_dep_list.append("set({}{} \"{}\")\n".format(prefix, dep_opt, val))
+                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, dep_opt, val))
                     configs_list.append(prefix + dep_opt)
 
         for n in config.node_iter():
