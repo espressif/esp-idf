@@ -26,10 +26,14 @@ extern "C" {
 #endif
 
 // Maximum Transmission Unit used in GATT
+#ifndef ESP_GATT_DEF_BLE_MTU_SIZE
 #define ESP_GATT_DEF_BLE_MTU_SIZE   23   /* relate to GATT_DEF_BLE_MTU_SIZE in stack/gatt_api.h */
+#endif
 
 // Maximum Transmission Unit allowed in GATT
+#ifndef ESP_GATT_MAX_MTU_SIZE
 #define ESP_GATT_MAX_MTU_SIZE       517  /* relate to GATT_MAX_MTU_SIZE in stack/gatt_api.h */
+#endif
 
 /**
  * @brief           This function is called to set local MTU,
