@@ -1,4 +1,3 @@
-
 # idf_build_get_property
 #
 # @brief Retrieve the value of the specified property related to ESP-IDF build.
@@ -126,7 +125,8 @@ endfunction()
 # properties used for the processing phase of the build.
 #
 function(__build_init idf_path)
-    # Create the build target, to which the ESP-IDF build properties, dependencies are attached to
+    # Create the build target, to which the ESP-IDF build properties, dependencies are attached to.
+    # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
 
     set_default(python "python")
