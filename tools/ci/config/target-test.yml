@@ -458,25 +458,12 @@ UT_034:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
 
-UT_035:
-  extends: .unit_test_template
-  parallel: 24
-  tags:
-    - ESP32S2BETA_IDF
-    - UT_T1_1
-
 UT_036:
   extends: .unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_PSRAMV0
     - psram
-
-UT_037:
-  extends: .unit_test_template
-  tags:
-    - ESP32S2BETA_IDF
-    - UT_T1_LEDC
 
 UT_041:
   extends: .unit_test_template
