@@ -98,7 +98,7 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
             if line_no is None:
                 warning("Line number anchor in URL %s doesn't seem to be valid" % link)
             else:
-                line_no = tuple(int(l) for l in line_no.groups() if l)  # tuple of (nnn,) or (nnn, NNN) for ranges
+                line_no = tuple(int(ln_group) for ln_group in line_no.groups() if ln_group)  # tuple of (nnn,) or (nnn, NNN) for ranges
         elif '#' in abs_path:  # drop any other anchor from the line
             abs_path = abs_path.split('#')[0]
             warning("URL %s seems to contain an unusable anchor after the #, only line numbers are supported" % link)
@@ -121,7 +121,7 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
             elif os.path.exists(abs_path) and not os.path.isdir(abs_path):
                 with open(abs_path, "r") as f:
                     lines = len(f.readlines())
-                if any(True for l in line_no if l > lines):
+                if any(True for ln in line_no if ln > lines):
                     warning("URL %s specifies a range larger than file (file has %d lines)" % (rel_path, lines))
 
             if tuple(sorted(line_no)) != line_no:  # second line number comes before first one!

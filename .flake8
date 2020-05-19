@@ -141,13 +141,14 @@ exclude =
     __pycache__,
     # submodules
         components/bootloader/subproject/components/micro-ecc/micro-ecc,
+        components/bt/host/nimble/nimble,
         components/esptool_py/esptool,
         components/expat/expat,
         components/json/cJSON,
         components/libsodium/libsodium,
         components/mbedtls/mbedtls,
         components/nghttp/nghttp2,
-        components/bt/host/nimble/nimble,
+        components/tinyusb,
         components/unity/unity,
         examples/build_system/cmake/import_lib/main/lib/tinyxml2,
     # other third-party libraries
