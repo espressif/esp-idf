@@ -10,7 +10,22 @@ Before using the example, run `idf.py menuconfig` (or `idf.py menuconfig` if usi
 
 A python test script `scripts/esp_local_ctrl.py` has been provided for as a client side application for controlling the device over the same Wi-Fi network. The script relies on a pre-generated `main/certs/rootCA.pem` to verify the server certificate. The server side private key and certificate can also be found under `main/certs`, namely `prvtkey.pem` and `cacert.pem`.
 
-After configuring the Wi-Fi, flashing and booting the device, run:
+After configuring the Wi-Fi, flashing and booting the device, run the following command to test the device name
+resolution through mDNS:
+
+```
+ping my_esp_ctrl_device.local
+```
+
+Sample output:
+
+```
+64 bytes from 192.168.32.156 (192.168.32.156): icmp_seq=1 ttl=255 time=58.1 ms
+64 bytes from 192.168.32.156 (192.168.32.156): icmp_seq=2 ttl=255 time=89.9 ms
+64 bytes from 192.168.32.156 (192.168.32.156): icmp_seq=3 ttl=255 time=123 ms
+```
+
+After you've tested the name resolution, run:
 
 ```
 python scripts/esp_local_ctrl.py
