@@ -10,6 +10,7 @@
 #define _BLE_MESH_BEARER_ADAPT_H_
 
 #include <sys/types.h>
+#include "sdkconfig.h"
 #include "mesh_types.h"
 #include "mesh_util.h"
 #include "mesh_uuid.h"
