@@ -364,9 +364,6 @@ static void wdt_reset_info_dump(int cpu)
         lsstat = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0STAT_REG);
         lsaddr = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0DATA_REG);
-#else
-        ESP_LOGE(TAG, "WDT reset info: &s CPU not support!\n", cpu_name);
-        return;
 #endif
     }
 
@@ -407,7 +404,9 @@ static void bootloader_check_wdt_reset(void)
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+#if !CONFIG_FREERTOS_UNICORE
         wdt_reset_info_dump(1);
+#endif
     }
     wdt_reset_cpu0_info_enable();
 }
