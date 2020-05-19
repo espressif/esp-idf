@@ -454,6 +454,10 @@ extern "C" {
 	#define traceCREATE_COUNTING_SEMAPHORE_FAILED()
 #endif
 
+#ifndef traceQUEUE_SEMAPHORE_RECEIVE
+	#define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#endif
+
 #ifndef traceQUEUE_SEND
 	#define traceQUEUE_SEND( pxQueue )
 #endif
@@ -504,6 +508,14 @@ extern "C" {
 
 #ifndef traceQUEUE_DELETE
 	#define traceQUEUE_DELETE( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR
+	#define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+	#define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
 #endif
 
 #ifndef traceTASK_CREATE

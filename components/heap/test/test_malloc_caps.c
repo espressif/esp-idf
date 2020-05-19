@@ -145,8 +145,8 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 
     multi_heap_info_t after;
     heap_caps_get_info(&after, MALLOC_CAP_8BIT);
-    TEST_ASSERT(after.largest_free_block < original.largest_free_block);
-    TEST_ASSERT(after.total_free_bytes < original.total_free_bytes);
+    TEST_ASSERT(after.largest_free_block <= original.largest_free_block);
+    TEST_ASSERT(after.total_free_bytes <= original.total_free_bytes);
 
     free(b);
     heap_caps_get_info(&after, MALLOC_CAP_8BIT);

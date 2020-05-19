@@ -601,12 +601,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 */
 void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 {
-	TCB_t *curTCB;
 	BaseType_t i;
 
 	if (xCoreID != tskNO_AFFINITY) {
-		curTCB = pxCurrentTCB[xCoreID];
-		if ( curTCB->uxPriority < uxPriority ) {	// NOLINT(clang-analyzer-core.NullDereference) IDF-685
+		if ( pxCurrentTCB[ xCoreID ]->uxPriority < uxPriority ) {	// NOLINT(clang-analyzer-core.NullDereference) IDF-685
 			vPortYieldOtherCore( xCoreID );
 		}
 	}
@@ -1440,7 +1438,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 			if( xShouldDelay != pdFALSE )
 			{
-				traceTASK_DELAY_UNTIL( xTimeToWake );
+				traceTASK_DELAY_UNTIL();
 
 				/* prvAddCurrentTaskToDelayedList() needs the block time, not
 				the time to wake, so subtract the current tick count. */
@@ -3433,7 +3431,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xIte
 			xTicksToWait = portMAX_DELAY;
 		}
 
-		traceTASK_DELAY_UNTIL( ( xTickCount + xTicksToWait ) );
+		traceTASK_DELAY_UNTIL( );
 		prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
 		taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}

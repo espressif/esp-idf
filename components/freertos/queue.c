@@ -1171,7 +1171,7 @@ Queue_t * const pxQueue = xQueue;
 		{
 			const int8_t cTxLock = pxQueue->cTxLock;
 
-			traceQUEUE_SEND_FROM_ISR( pxQueue );
+			traceQUEUE_GIVE_FROM_ISR( pxQueue );
 
 			/* A task can only have an inherited priority if it is a mutex
 			holder - and if there is a mutex holder then the mutex cannot be
@@ -1276,7 +1276,7 @@ Queue_t * const pxQueue = xQueue;
 		}
 		else
 		{
-			traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue );
+			traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue );
 			xReturn = errQUEUE_FULL;
 		}
 		taskEXIT_CRITICAL_ISR(&pxQueue->mux);
@@ -1462,7 +1462,7 @@ Queue_t * const pxQueue = xQueue;
 			must be the highest priority task wanting to access the queue. */
 			if( uxSemaphoreCount > ( UBaseType_t ) 0 )
 			{
-				traceQUEUE_RECEIVE( pxQueue );
+				traceQUEUE_SEMAPHORE_RECEIVE( pxQueue );
 
 				/* Semaphores are queues with a data size of zero and where the
 				messages waiting is the semaphore's count.  Reduce the count. */

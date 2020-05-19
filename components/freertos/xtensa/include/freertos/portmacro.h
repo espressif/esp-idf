@@ -93,8 +93,10 @@ extern "C" {
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
+#endif
 #include "esp_system.h"
 #include "soc/cpu.h"
+#include <limits.h>
 
 /*-----------------------------------------------------------
  * Port specific definitions.

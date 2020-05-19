@@ -103,8 +103,8 @@ pool_t tlsf_add_pool(tlsf_t tlsf, void* mem, size_t bytes);
 void tlsf_remove_pool(tlsf_t tlsf, pool_t pool);
 
 /* malloc/memalign/realloc/free replacements. */
-void* tlsf_malloc(tlsf_t tlsf, size_t bytes);
-void* tlsf_memalign(tlsf_t tlsf, size_t align, size_t bytes);
+void* tlsf_malloc(tlsf_t tlsf, size_t size);
+void* tlsf_memalign(tlsf_t tlsf, size_t align, size_t size);
 void* tlsf_realloc(tlsf_t tlsf, void* ptr, size_t size);
 void tlsf_free(tlsf_t tlsf, void* ptr);
 
