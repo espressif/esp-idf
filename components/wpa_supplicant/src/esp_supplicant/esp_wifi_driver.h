@@ -233,5 +233,6 @@ esp_err_t esp_wifi_set_wps_start_flag_internal(bool start);
 uint16_t esp_wifi_sta_pmf_enabled(void);
 wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
 int esp_wifi_set_igtk_internal(uint8_t if_index, const wifi_wpa_igtk_t *igtk);
+esp_err_t esp_wifi_internal_issue_disconnect(uint8_t reason_code);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
