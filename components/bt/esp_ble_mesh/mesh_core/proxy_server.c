@@ -1429,6 +1429,7 @@ int bt_mesh_proxy_deinit(void)
 
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     bt_mesh_gatts_service_deregister(&proxy_svc);
+    next_idx = 0;
 #endif
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
@@ -1445,6 +1446,7 @@ int bt_mesh_proxy_deinit(void)
     memset(device_name, 0, sizeof(device_name));
 
     bt_mesh_gatts_conn_cb_deregister();
+    conn_count = 0;
 
     return 0;
 }
