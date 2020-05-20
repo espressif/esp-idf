@@ -614,7 +614,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 #if ESP_GRATUITOUS_ARP
         netif_set_garp_flag(esp_netif->lwip_netif);
 #else
-        ESP_LOGW(TAG,"CONFIG_LWIP_ESP_GRATUITOUS_ARP not enabled, but esp-netif configured woth ESP_NETIF_FLAG_GARP")
+        ESP_LOGW(TAG,"CONFIG_LWIP_ESP_GRATUITOUS_ARP not enabled, but esp-netif configured with ESP_NETIF_FLAG_GARP");
 #endif
     }
     struct netif *p_netif = esp_netif->lwip_netif;
