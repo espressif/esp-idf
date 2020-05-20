@@ -27,6 +27,9 @@ import base64
 import binascii
 import logging
 import re
+import time
+from pygdbmi.gdbcontroller import GdbController, DEFAULT_GDB_TIMEOUT_SEC, \
+    DEFAULT_TIME_TO_CHECK_FOR_ADDITIONAL_OUTPUT_SEC
 
 idf_path = os.getenv('IDF_PATH')
 if idf_path:
@@ -1180,210 +1183,8 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname, exe_name)
 
 
-class GDBMIOutRecordHandler(object):
-    """GDB/MI output record handler base class
-    """
-    TAG = ''
-
-    def __init__(self, f, verbose=False):
-        """Base constructor for GDB/MI output record handler
-        """
-        self.verbose = verbose
-
-    def execute(self, ln):
-        """Base method to execute GDB/MI output record handler function
-        """
-        if self.verbose:
-            logging.debug("%s.execute: [[%s]]" % (self.__class__.__name__, ln))
-
-
-class GDBMIOutStreamHandler(GDBMIOutRecordHandler):
-    """GDB/MI output stream handler class
-    """
-    def __init__(self, f, verbose=False):
-        """Constructor for GDB/MI output stream handler
-        """
-        super(GDBMIOutStreamHandler, self).__init__(None, verbose)
-        self.func = f
-
-    def execute(self, ln):
-        """Executes GDB/MI output stream handler function
-        """
-        GDBMIOutRecordHandler.execute(self, ln)
-        if self.func:
-            # remove TAG / quotes and replace c-string \n with actual NL
-            self.func(ln[1:].strip('"').replace('\\n', '\n').replace('\\t', '\t'))
-
-
-class GDBMIResultHandler(GDBMIOutRecordHandler):
-    """GDB/MI result handler class
-    """
-    TAG = '^'
-    RC_DONE = 'done'
-    RC_RUNNING = 'running'
-    RC_CONNECTED = 'connected'
-    RC_ERROR = 'error'
-    RC_EXIT = 'exit'
-
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIResultHandler, self).__init__(None, verbose)
-        self.result_class = ''
-        self.result_str = ''
-
-    def _parse_rc(self, ln, rc):
-        """Parses result code
-        """
-        rc_str = "{0}{1}".format(self.TAG, rc)
-        if not ln.startswith(rc_str):
-            return False
-        self.result_class = rc
-        if len(ln) > len(rc_str):
-            self.result_str = ln[len(rc_str):]
-            if self.result_str.startswith(','):
-                self.result_str = self.result_str[1:]
-            else:
-                logging.error("Invalid result format: '%s'" % ln)
-        else:
-            self.result_str = ''
-        return True
-
-    def execute(self, ln):
-        """Executes GDB/MI result handler function
-        """
-        GDBMIOutRecordHandler.execute(self, ln)
-        if self._parse_rc(ln, self.RC_DONE):
-            return
-        if self._parse_rc(ln, self.RC_RUNNING):
-            return
-        if self._parse_rc(ln, self.RC_CONNECTED):
-            return
-        if self._parse_rc(ln, self.RC_ERROR):
-            return
-        if self._parse_rc(ln, self.RC_EXIT):
-            return
-        logging.error("Unknown GDB/MI result: '%s'" % ln)
-
-
-class GDBMIThreadListIdsHandler(GDBMIResultHandler):
-    """GDB/MI thread-list-ids handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIThreadListIdsHandler, self).__init__(verbose)
-        self.threads = []
-        self.current_thread = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI thread-list-ids handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        result = re.search(r'thread-ids\s*=\s*\{([^\{\}]*)\}', self.result_str)
-        if result:
-            for tid in re.finditer(r'thread-id="(\d+)"', result.group(1)):
-                self.threads.append(tid.group(1))
-        result = re.search(r'current-thread-id="(\d+)"', self.result_str)
-        if result:
-            self.current_thread = result.group(1)
-
-
-class GDBMIThreadSelectHandler(GDBMIResultHandler):
-    """GDB/MI thread-select handler class
-    """
-    def execute(self, ln):
-        """Executes GDB/MI thread-select handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-
-
-class GDBMIThreadInfoHandler(GDBMIResultHandler):
-    """GDB/MI thread-info handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIThreadInfoHandler, self).__init__(verbose)
-        self.current = False
-        self.id = ''
-        self.target_id = ''
-        self.details = ''
-        self.name = ''
-        self.frame = ''
-        self.state = ''
-        self.core = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI thread-info  handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        result = re.search(r'id="(\d+)"', self.result_str)
-        if result:
-            self.id = result.group(1)
-        result = re.search(r'current="\*"', self.result_str)
-        if result:
-            self.current = True
-        result = re.search(r'target-id="([^"]+)"', self.result_str)
-        if result:
-            self.target_id = result.group(1)
-
-
-class GDBMIDataEvalHandler(GDBMIResultHandler):
-    """GDB/MI data-evaluate-expression handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIDataEvalHandler, self).__init__(verbose)
-        self.value = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI data-evaluate-expression handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        if self.verbose:
-            logging.debug("GDBMIDataEvalHandler: result '%s'", self.result_str)
-        pos = 0
-        r = re.compile(r'([a-zA-Z_]+)=(.+)\,')
-        while True:
-            m = r.search(self.result_str, pos=pos)
-            if not m:
-                break
-            if m.group(1) == 'value':
-                if self.verbose:
-                    logging.debug("GDBMIDataEvalHandler: found value = '%s'", m.group(2))
-                self.value = self.result.group(1)
-                return
-            pos = m.end(2) + 1
-        res_str = self.result_str[pos:]
-        res_str = res_str.replace(r'\"', '\'')
-        m = re.search(r'value="([^"]+)"', res_str)
-        if m:
-            if self.verbose:
-                logging.debug("GDBMIDataEvalHandler: found value = '%s'", m.group(1))
-            self.value = m.group(1)
-
-
-class GDBMIStreamConsoleHandler(GDBMIOutStreamHandler):
-    """GDB/MI console stream handler class
-    """
-    TAG = '~'
-
-
-def load_aux_elf(elf_path):
-    """ Loads auxilary ELF file and composes GDB command to read its symbols
+def load_aux_elf(elf_path):  # type: (str) -> (ESPCoreDumpElfFile, str)
+    """ Loads auxiliary ELF file and composes GDB command to read its symbols.
     """
     elf = None
     sym_cmd = ''
@@ -1392,31 +1193,37 @@ def load_aux_elf(elf_path):
         for s in elf.sections:
             if s.name == '.text':
                 sym_cmd = 'add-symbol-file %s 0x%x' % (elf_path, s.addr)
-    return (elf, sym_cmd)
+    return elf, sym_cmd
+
+
+def core_prepare(args, rom_elf):
+    loader = None
+    core_fname = None
+    if not args.core:
+        # Core file not specified, try to read core dump from flash.
+        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
+    elif args.core_format and args.core_format != "elf":
+        # Core file specified, but not yet in ELF format. Convert it from raw or base64 into ELF.
+        loader = ESPCoreDumpFileLoader(args.core, args.core_format == 'b64')
+    else:
+        # Core file is already in the ELF format
+        core_fname = args.core
+
+    # Load/convert the core file
+    if loader:
+        core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
+        if not core_fname:
+            loader.cleanup()
+            raise RuntimeError("Failed to create corefile!")
+
+    return core_fname, loader
 
 
 def dbg_corefile(args):
     """ Command to load core dump from file or flash and run GDB debug session with it
     """
-    global CLOSE_FDS
-    loader = None
-    rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
-    if not args.core:
-        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
-        core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-        if not core_fname:
-            logging.error("Failed to create corefile!")
-            loader.cleanup()
-            return
-    else:
-        core_fname = args.core
-        if args.core_format and args.core_format != 'elf':
-            loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-            if not core_fname:
-                logging.error("Failed to create corefile!")
-                loader.cleanup()
-                return
+    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
+    core_fname, loader = core_prepare(args, rom_elf)
 
     p = subprocess.Popen(bufsize=0,
                          args=[args.gdb,
@@ -1431,131 +1238,110 @@ def dbg_corefile(args):
     p.wait()
 
     if loader:
-        if not args.core and not args.save_core:
-            loader.remove_tmp_file(core_fname)
         loader.cleanup()
     print('Done!')
+
+
+def gdbmi_filter_responses(responses, resp_message, resp_type):
+    return list(filter(lambda rsp: rsp["message"] == resp_message and rsp["type"] == resp_type, responses))
+
+
+def gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=True, done_message=None, done_type=None):  # type: (GdbController, str, typing.Optional[str], str, bool, typing.Optional[str], typing.Optional[str]) -> list
+    p.write(cmd, read_response=False)
+    t_end = time.time() + DEFAULT_GDB_TIMEOUT_SEC
+    filtered_response_list = []
+    all_responses = []
+    found = False
+    while time.time() < t_end:
+        more_responses = p.get_gdb_response(timeout_sec=0, raise_error_on_timeout=False)
+        filtered_response_list += filter(lambda rsp: rsp["message"] == resp_message and rsp["type"] == resp_type, more_responses)
+        all_responses += more_responses
+        if filtered_response_list and not multiple:
+            break
+        if done_message and done_type and gdbmi_filter_responses(more_responses, done_message, done_type):
+            break
+    if not filtered_response_list and not multiple:
+        raise ValueError("Couldn't find response with message '{}', type '{}' in responses '{}'".format(
+            resp_message, resp_type, str(all_responses)
+        ))
+    return filtered_response_list
+
+
+def gdbmi_run_cmd_get_one_response(p, cmd, resp_message, resp_type):  # type: (GdbController, str, typing.Optional[str], str) -> dict
+    return gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=False)[0]
+
+
+def gdbmi_start(gdb_path, gdb_cmds, core_filename, prog_filename):  # type: (str, typing.List[str], str, str) -> GdbController
+    """ Start GDB and get GdbController instance which wraps it """
+    gdb_args = ['--quiet',  # inhibit dumping info at start-up
+                '--nx',  # inhibit window interface
+                '--nw',  # ignore .gdbinit
+                '--interpreter=mi2',  # use GDB/MI v2
+                '--core=%s' % core_filename]  # core file
+    for c in gdb_cmds:
+        if c:
+            gdb_args += ['-ex', c]
+    gdb_args.append(prog_filename)
+    res = GdbController(gdb_path=gdb_path, gdb_args=gdb_args)
+    # Consume initial output by issuing a dummy command
+    res.write("-data-list-register-values x pc")
+    return res
+
+
+def gdbmi_cmd_exec_console(p, gdb_cmd):  # type: (GdbController, str) -> str
+    """ Execute a generic GDB console command via MI2 """
+    filtered_responses = gdbmi_run_cmd_get_responses(p, "-interpreter-exec console \"%s\"" % gdb_cmd, None, "console", multiple=True, done_message="done", done_type="result")
+    return "".join([x["payload"] for x in filtered_responses])\
+             .replace('\\n', '\n').replace('\\t', '\t').rstrip("\n")
+
+
+def gdbmi_get_thread_ids(p):  # type: (GdbController) -> (str, typing.List[str])
+    """ Get the current thread ID and the list of all thread IDs known to GDB, as strings """
+    result = gdbmi_run_cmd_get_one_response(p, "-thread-list-ids", "done", "result")["payload"]
+    current_thread_id = result["current-thread-id"]
+    thread_ids = result["thread-ids"]["thread-id"]
+    return current_thread_id, thread_ids
+
+
+def gdbmi_switch_thread(p, thr_id):  # type: (GdbController, str) -> None
+    """ Tell GDB to switch to a specific thread, given its ID """
+    gdbmi_run_cmd_get_one_response(p, "-thread-select %s" % thr_id, "done", "result")
+
+
+def gdbmi_get_thread_info(p, thr_id=None):  # type: (GdbController, typing.Optional[str]) -> dict
+    """ Get thread info dictionary for the given thread ID """
+    return gdbmi_run_cmd_get_one_response(p, "-thread-info" + (" %s" % thr_id) if thr_id else "", "done", "result")["payload"]["threads"][0]
+
+
+def gdbmi_data_evaluate_expression(p, expr):  # type: (GdbController, str) -> str
+    """ Get the value of an expression, similar to the 'print' command """
+    return gdbmi_run_cmd_get_one_response(p, "-data-evaluate-expression \"%s\"" % expr, "done", "result")["payload"]["value"]
+
+
+def gdbmi_freertos_get_task_name(p, tcb_addr):  # type: (GdbController, int) -> str
+    """ Get FreeRTOS task name given the TCB address """
+    try:
+        val = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
+    except ESPCoreDumpError:
+        return ''
+
+    # Value is of form '0x12345678 "task_name"', extract the actual name
+    result = re.search(r"\"([^']*)\"$", val)
+    if result:
+        return result.group(1)
+    return ''
+
+
+def gdb2freertos_thread_id(gdb_target_id):  # type: (str) -> int
+    """ Convert GDB 'target ID' to the FreeRTOS TCB address """
+    return int(gdb_target_id.replace("process ", ""), 0)
 
 
 def info_corefile(args):
     """ Command to load core dump from file or flash and print it's data in user friendly form
     """
-    global CLOSE_FDS
-
-    def gdbmi_console_stream_handler(ln):
-        sys.stdout.write(ln)
-        sys.stdout.flush()
-
-    def gdbmi_read2prompt(f, out_handlers=None):
-        while True:
-            ln = f.readline().decode('utf-8').rstrip(' \r\n')
-            if ln == '(gdb)':
-                break
-            elif len(ln) == 0:
-                break
-            elif out_handlers:
-                for h in out_handlers:
-                    if ln.startswith(out_handlers[h].TAG):
-                        out_handlers[h].execute(ln)
-                        break
-
-    def gdbmi_start(handlers, gdb_cmds):
-        gdb_args = [args.gdb,
-                    '--quiet',  # inhibit dumping info at start-up
-                    '--nx',  # inhibit window interface
-                    '--nw',  # ignore .gdbinit
-                    '--interpreter=mi2',  # use GDB/MI v2
-                    '--core=%s' % core_fname]  # core file
-        for c in gdb_cmds:
-            gdb_args += ['-ex', c]
-        gdb_args.append(args.prog)
-        p = subprocess.Popen(bufsize=0,
-                             args=gdb_args,
-                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             close_fds=CLOSE_FDS)
-        gdbmi_read2prompt(p.stdout, handlers)
-        return p
-
-    def gdbmi_cmd_exec(p, handlers, gdbmi_cmd):
-        for t in handlers:
-            handlers[t].result_class = None
-        p.stdin.write(bytearray("%s\n" % gdbmi_cmd, encoding='utf-8'))
-        gdbmi_read2prompt(p.stdout, handlers)
-        if not handlers[GDBMIResultHandler.TAG].result_class or handlers[GDBMIResultHandler.TAG].result_class == GDBMIResultHandler.RC_EXIT:
-            logging.error("GDB exited (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
-            p.wait()
-            logging.error("Problem occured! GDB exited, restart it.")
-            p = gdbmi_start(handlers, [])
-        elif handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-            logging.error("GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
-        return p
-
-    def gdbmi_getinfo(p, handlers, gdb_cmd):
-        return gdbmi_cmd_exec(p, handlers, "-interpreter-exec console \"%s\"" % gdb_cmd)
-
-    def gdbmi_get_thread_ids(p):
-        handlers = {}
-        result = GDBMIThreadListIdsHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        p = gdbmi_cmd_exec(p, handlers, "-thread-list-ids")
-        return p,result.threads,result.current_thread
-
-    def gdbmi_switch_thread(p, thr_id):
-        handlers = {}
-        result = GDBMIThreadSelectHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        return gdbmi_cmd_exec(p, handlers, "-thread-select %s" % thr_id)
-
-    def gdbmi_get_thread_info(p, thr_id):
-        handlers = {}
-        result = GDBMIThreadInfoHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        if thr_id:
-            cmd = "-thread-info %s" % thr_id
-        else:
-            cmd = "-thread-info"
-        p = gdbmi_cmd_exec(p, handlers, cmd)
-        return p,result
-
-    def gdbmi_data_evaluate_expression(p, expr):
-        handlers = {}
-        result = GDBMIDataEvalHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        p = gdbmi_cmd_exec(p, handlers, "-data-evaluate-expression \"%s\"" % expr)
-        return p,result
-
-    def gdbmi_freertos_get_task_name(p, tcb_addr):
-        p,res = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
-        result = re.match("0x[a-fA-F0-9]+[^']*'([^']*)'", res.value)
-        if result:
-            return p,result.group(1)
-        return p,''
-
-    def gdb2freertos_thread_id(gdb_thread_id):
-        return int(gdb_thread_id.replace("process ", ""), 0)
-
-    loader = None
-    rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
-    if not args.core:
-        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
-        core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-        if not core_fname:
-            logging.error("Failed to create corefile!")
-            loader.cleanup()
-            return
-    else:
-        core_fname = args.core
-        if args.core_format and args.core_format != 'elf':
-            loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-            if not core_fname:
-                logging.error("Failed to create corefile!")
-                loader.cleanup()
-                return
+    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
+    core_fname, loader = core_prepare(args, rom_elf)
 
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf = ESPCoreDumpElfFile(core_fname)
@@ -1602,10 +1388,8 @@ def info_corefile(args):
         if not merged:
             merged_segs.append((s.name, s.addr, len(s.data), s.attr_str(), False))
 
-    handlers = {}
-    handlers[GDBMIResultHandler.TAG] = GDBMIResultHandler(verbose=False)
-    handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-    p = gdbmi_start(handlers, [rom_sym_cmd])
+    p = gdbmi_start(args.gdb, [rom_sym_cmd], core_fname, args.prog)
+
     extra_note = None
     task_info = []
     for seg in core_elf.aux_segments:
@@ -1623,14 +1407,12 @@ def info_corefile(args):
     print("===============================================================")
     print("==================== ESP32 CORE DUMP START ====================")
 
-    handlers[GDBMIResultHandler.TAG].result_class = None
-    handlers[GDBMIStreamConsoleHandler.TAG].func = gdbmi_console_stream_handler
     if extra_note:
         extra_info = struct.unpack("<%dL" % (len(extra_note.desc) / struct.calcsize("<L")), extra_note.desc)
         if extra_info[0] == ESPCoreDumpLoader.ESP_COREDUMP_CURR_TASK_MARKER:
             print("\nCrashed task has been skipped.")
         else:
-            p,task_name = gdbmi_freertos_get_task_name(p, extra_info[0])
+            task_name = gdbmi_freertos_get_task_name(p, extra_info[0])
             print("\nCrashed task handle: 0x%x, name: '%s', GDB name: 'process %d'" % (extra_info[0], task_name, extra_info[0]))
     print("\n================== CURRENT THREAD REGISTERS ===================")
     if extra_note:
@@ -1655,9 +1437,9 @@ def info_corefile(args):
         print("eps7           0x%x" % extra_info[1 + 2 * ESPCoreDumpElfFile.REG_EPS7_IDX + 1])
     else:
         print("Exception registers have not been found!")
-    p = gdbmi_getinfo(p, handlers, "info registers")
+    print(gdbmi_cmd_exec_console(p, "info registers"))
     print("\n==================== CURRENT THREAD STACK =====================")
-    p = gdbmi_getinfo(p, handlers, "bt")
+    print(gdbmi_cmd_exec_console(p, "bt"))
     if task_info and task_info[0].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
         print("The current crashed task is corrupted.")
         print("Task #%d info: flags, tcb, stack (%x, %x, %x)." % (task_info[0].task_index,
@@ -1665,29 +1447,27 @@ def info_corefile(args):
               task_info[0].task_tcb_addr,
               task_info[0].task_stack_start))
     print("\n======================== THREADS INFO =========================")
-    p = gdbmi_getinfo(p, handlers, "info threads")
+    print(gdbmi_cmd_exec_console(p, "info threads"))
     # THREADS STACKS
-    p,threads,cur_thread = gdbmi_get_thread_ids(p)
-    print()
+    cur_thread, threads = gdbmi_get_thread_ids(p)
     for thr_id in threads:
         task_index = int(thr_id) - 1
-        p = gdbmi_switch_thread(p, thr_id)
-        p,thr_info_res = gdbmi_get_thread_info(p, thr_id)
-        if not thr_info_res.target_id:
+        gdbmi_switch_thread(p, thr_id)
+        thr_info_res = gdbmi_get_thread_info(p, thr_id)
+        if not thr_info_res["target-id"]:
             print("WARNING: Unable to switch to thread %s\n" % thr_id)
             continue
-        tcb_addr = gdb2freertos_thread_id(thr_info_res.target_id)
-        p,task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
-        print("==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
-        p = gdbmi_getinfo(p, handlers, "bt")
+        tcb_addr = gdb2freertos_thread_id(thr_info_res["target-id"])
+        task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
+        print("\n==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
+        print(gdbmi_cmd_exec_console(p, "bt"))
         if task_info and task_info[task_index].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
             print("The task '%s' is corrupted." % thr_id)
             print("Task #%d info: flags, tcb, stack (%x, %x, %x)." % (task_info[task_index].task_index,
                   task_info[task_index].task_flags,
                   task_info[task_index].task_tcb_addr,
                   task_info[task_index].task_stack_start))
-        print()
-    print("\n======================= ALL MEMORY REGIONS ========================")
+    print("\n\n======================= ALL MEMORY REGIONS ========================")
     print("Name   Address   Size   Attrs")
     for ms in merged_segs:
         print("%s 0x%x 0x%x %s" % (ms[0], ms[1], ms[2], ms[3]))
@@ -1707,19 +1487,14 @@ def info_corefile(args):
             else:
                 seg_name = 'tasks.data'
             print(".coredump.%s 0x%x 0x%x %s" % (seg_name, cs.addr, len(cs.data), cs.attr_str()))
-            p = gdbmi_getinfo(p, handlers, "x/%dx 0x%x" % (old_div(len(cs.data),4), cs.addr))
+            print(gdbmi_cmd_exec_console(p, "x/%dx 0x%x" % (old_div(len(cs.data),4), cs.addr)))
 
     print("\n===================== ESP32 CORE DUMP END =====================")
     print("===============================================================")
 
-    p.stdin.write(b'q\n')
-    p.wait()
-    p.stdin.close()
-    p.stdout.close()
+    p.exit()
 
     if loader:
-        if not args.core and not args.save_core:
-            loader.remove_tmp_file(core_fname)
         loader.cleanup()
     print('Done!')
 
