@@ -114,7 +114,7 @@ typedef struct {
 } wifi_active_scan_time_t;
 
 /** @brief Aggregate of active & passive scan time per channel */
-typedef union {
+typedef struct {
     wifi_active_scan_time_t active;  /**< active scan time per channel, units: millisecond. */
     uint32_t passive;                /**< passive scan time per channel, units: millisecond, values above 1500ms may
                                           cause station to disconnect from AP and are not recommended. */
