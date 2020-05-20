@@ -14,12 +14,12 @@
    I2C <i2c>
    I2S <i2s>
    LED Control <ledc>
-   :esp32: MCPWM <mcpwm>
+   :SOC_MCPWM_SUPPORTED: MCPWM <mcpwm>
    Pulse Counter <pcnt>
    Remote Control <rmt>
-   :esp32: SDMMC Host <sdmmc_host>
+   :SOC_SDMMC_HOST_SUPPORTED: SDMMC Host <sdmmc_host>
    SD SPI Host <sdspi_host>
-   :esp32: SDIO Slave <sdio_slave>
+   :SOC_SDIO_SLAVE_SUPPORTED: SDIO Slave <sdio_slave>
    Sigma-delta Modulation <sigmadelta>
    SPI Master <spi_master>
    SPI Slave <spi_slave>
@@ -28,5 +28,5 @@
    Touch Sensor <touch_pad>
    UART <uart>
 
-本部分的 API 示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals` 目录下。 
+本部分的 API 示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals` 目录下。
 
