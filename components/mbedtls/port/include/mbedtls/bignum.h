@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __ESP_MBEDTLS_BIGNUM_H__
-#define __ESP_MBEDTLS_BIGNUM_H__
+#pragma once
 
 #include_next "mbedtls/bignum.h"
+#include "sdkconfig.h"
 
 /**
  * This is a wrapper for the main mbedtls/bignum.h. This wrapper
@@ -58,6 +58,8 @@ void esp_mpi_acquire_hardware(void);
  */
 void esp_mpi_release_hardware(void);
 
+#if CONFIG_MBEDTLS_HARDWARE_MPI
+
 /* @brief MPI modular mupltiplication function
  *
  * Calculates Z = (X * Y) mod M using MPI hardware acceleration.
@@ -75,4 +77,4 @@ void esp_mpi_release_hardware(void);
  */
 int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M);
 
-#endif
+#endif // CONFIG_MBEDTLS_HARDWARE_MPI
