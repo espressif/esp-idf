@@ -81,20 +81,35 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
-
-
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
-                                "${COMPONENT_DIR}/port/esp_mem.c"
-                                "${COMPONENT_DIR}/port/esp_timing.c"
-                                "${COMPONENT_DIR}/port/esp_sha.c"
-				"${COMPONENT_DIR}/port/esp_bignum.c"
-                                "${COMPONENT_DIR}/port/esp_aes_xts.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/bignum.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/aes.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/sha.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha1.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha256.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha512.c")
+                                  "${COMPONENT_DIR}/port/esp_mem.c"
+                                  "${COMPONENT_DIR}/port/esp_timing.c"
+                                  "${COMPONENT_DIR}/port/esp_sha.c"
+                                  "${COMPONENT_DIR}/port/esp_aes_xts.c"
+                                  "${COMPONENT_DIR}/port/${idf_target}/aes.c"
+                                  "${COMPONENT_DIR}/port/${idf_target}/sha.c"
+)
+
+# Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
+#
+# We don't need to filter aes.c as this uses a different prefix (esp_aes_x) and the
+# config option only changes the prefixes in the header so mbedtls_aes_x compiles to esp_aes_x
+#
+# The other port-specific files don't override internal mbedTLS functions, they just add new functions.
+
+if(CONFIG_MBEDTLS_HARDWARE_MPI)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/esp_bignum.c"
+                                       "${COMPONENT_DIR}/port/${idf_target}/bignum.c"
+    )
+endif()
+
+if(CONFIG_MBEDTLS_HARDWARE_SHA)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/${idf_target}/esp_sha1.c"
+                                       "${COMPONENT_DIR}/port/${idf_target}/esp_sha256.c"
+                                       "${COMPONENT_DIR}/port/${idf_target}/esp_sha512.c"
+    )
+endif()
+
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
