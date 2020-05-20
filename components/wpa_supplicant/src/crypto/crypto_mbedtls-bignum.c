@@ -148,7 +148,7 @@ int crypto_bignum_mulmod(const struct crypto_bignum *a,
                          struct crypto_bignum *d)
 {
     int res;
-#if ALLOW_EVEN_MOD // Must enable this macro if c is even.
+#if ALLOW_EVEN_MOD || !CONFIG_MBEDTLS_HARDWARE_MPI // Must enable ALLOW_EVEN_MOD if c is even
     mbedtls_mpi temp;
     mbedtls_mpi_init(&temp);
 
