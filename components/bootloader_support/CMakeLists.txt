@@ -4,6 +4,7 @@ set(srcs
     "src/bootloader_flash.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
+    "src/bootloader_random_${IDF_TARGET}.c"
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
     "src/flash_encrypt.c"
