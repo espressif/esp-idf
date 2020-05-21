@@ -19,3 +19,8 @@ if(CONFIG_ESP_TLS_USING_WOLFSSL)
     idf_component_get_property(wolfssl esp-wolfssl COMPONENT_LIB)
     target_link_libraries(${COMPONENT_LIB} PUBLIC ${wolfssl})
 endif()
+
+if(CONFIG_ESP_TLS_USE_SE)
+    idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC ${cryptoauthlib})
+endif()

@@ -133,6 +133,15 @@ void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **
 void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t);
 
 /**
+ * @brief      Set the ssl context to use secure element (atecc608a) for client(device) private key and certificate
+ *
+ * @note       Recommended to be used with ESP32-WROOM-32SE (which has inbuilt ATECC608A a.k.a Secure Element)
+ *
+ * @param      t     ssl transport
+ */
+void esp_transport_ssl_use_secure_element(esp_transport_handle_t t);
+
+/**
  * @brief      Set PSK key and hint for PSK server/client verification in esp-tls component.
  *             Important notes:
  *             - This function stores the pointer to data, rather than making a copy.

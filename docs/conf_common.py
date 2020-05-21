@@ -152,6 +152,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
               'security/secure-boot-v2.rst',
+              'api-reference/peripherals/secure_element.rst',
               'hw-reference/esp32/**'] + LEGACY_DOCS
 
 ESP32S2_DOCS = ['esp32s2.rst',

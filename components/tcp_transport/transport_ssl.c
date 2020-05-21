@@ -280,6 +280,14 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     }
 }
 
+void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.use_secure_element = true;
+    }
+}
+
 esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
