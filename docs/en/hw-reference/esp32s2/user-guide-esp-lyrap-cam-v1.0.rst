@@ -50,7 +50,7 @@ Description of Components
    * - Power ON LED
      - Red LED is on if the power supply voltage is correct
    * - Camera Module Connector
-     - Supports OV2640 and OV3660 camera modules (however, support for OV3660 is not yet implemented in software); this extension board is supplied with an OV2640 camera module
+     - Supports OV2640 and OV3660 camera modules; this extension board is supplied with an OV2640 camera module
    * - Power Regulator
      - LDO Regulator converting 3.3 V to 2.8 V and 1.5 V
 

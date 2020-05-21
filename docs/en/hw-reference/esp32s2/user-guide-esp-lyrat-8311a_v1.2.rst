@@ -106,7 +106,10 @@ To mount your ESP-LyraT-8311A onto the board with a female Extension Header:
 Software Setup
 ^^^^^^^^^^^^^^
 
-See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-S2-Kaluga-1 kit user guide.
+Depending on your application see:
+
+* `ESP-ADF Getting Started Guide <https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html#about-esp-adf>`_ if you develop with ESP-ADF (Espressif Audio Development Framework).
+* Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-S2-Kaluga-1 kit user guide if you develop directly with ESP-IDF (Espressif IOT Development Framework).
 
 
 Hardware Reference
