@@ -1820,6 +1820,17 @@ BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR emote_bda, tBLE_AD
 
 /*******************************************************************************
 **
+** Function         BTM_BleClearWhitelist
+**
+** Description      Clear all white list
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleClearWhitelist(void);
+
+/*******************************************************************************
+**
 ** Function         BTM_BleUpdateAdvFilterPolicy
 **
 ** Description      This function update the filter policy of advertiser.
