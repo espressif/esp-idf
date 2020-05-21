@@ -159,6 +159,7 @@ enum {
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
     BTA_DM_API_REMOVE_DEVICE_EVT,
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
+    BTA_DM_API_CLEAR_WHITE_LIST_EVT,
     BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
     BTA_DM_API_READ_RSSI_EVT,
 #if BLE_INCLUDED == TRUE
@@ -1285,6 +1286,7 @@ extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_clear_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rssi(tBTA_DM_MSG *p_data);
 extern void bta_dm_set_visibility (tBTA_DM_MSG *p_data);
