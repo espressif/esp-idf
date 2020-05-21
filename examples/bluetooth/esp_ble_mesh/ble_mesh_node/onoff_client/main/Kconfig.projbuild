@@ -13,10 +13,4 @@ menu "Example Configuration"
             bool "ESP32-WROVER"
     endchoice
 
-    config BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0
-        bool "Fix bug of Silicon Lab Android App v1.1.0 when reconnection will cause sequence number to recount from 0"
-        default y
-        help
-            It is an ad hoc solution and needs further modifications.
-
 endmenu
