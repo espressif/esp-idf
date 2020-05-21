@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <exception>
+#include <regex>
 #include <bits/functexcept.h>
 #include <sdkconfig.h>
 
@@ -36,6 +37,12 @@ extern "C" void __cxx_fatal_exception_int(int i)
     abort();
 }
 
+extern "C" void __cxx_fatal_exception_regex_error_type(std::regex_constants::error_type error)
+{
+    printf("%s Regex error (%u)\n", FATAL_EXCEPTION, error);
+    abort();
+}
+
 #if !GCC_NOT_5_2_0
 void std::__throw_bad_exception(void) __attribute__((alias("__cxx_fatal_exception")));
 void std::__throw_bad_alloc(void) __attribute__((alias("__cxx_fatal_exception")));
@@ -55,6 +62,7 @@ void std::__throw_ios_failure(const char*) __attribute__((alias("__cxx_fatal_exc
 void std::__throw_system_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
 void std::__throw_bad_function_call(void) __attribute__((alias("__cxx_fatal_exception")));
 void std::__throw_future_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
+void std::__throw_regex_error(std::regex_constants::error_type) __attribute__((alias("__cxx_fatal_exception_regex_error_type")));
 #endif
 
 /* The following definitions are needed because libstdc++ is also compiled with
