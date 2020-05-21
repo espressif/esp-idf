@@ -250,16 +250,34 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
     return ESP_ERR_INVALID_ARG;
 }
 
-esp_err_t esp_ota_end(esp_ota_handle_t handle)
+static ota_ops_entry_t *get_ota_ops_entry(esp_ota_handle_t handle)
 {
-    ota_ops_entry_t *it;
-    esp_err_t ret = ESP_OK;
-
+    ota_ops_entry_t *it = NULL;
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             break;
         }
     }
+   return it;
+}
+
+esp_err_t esp_ota_abort(esp_ota_handle_t handle)
+{
+    ota_ops_entry_t *it = get_ota_ops_entry(handle);
+    esp_err_t ret = ESP_OK;
+
+    if (it == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    LIST_REMOVE(it, entries);
+    free(it);
+    return ret;
+}
+
+esp_err_t esp_ota_end(esp_ota_handle_t handle)
+{
+    ota_ops_entry_t *it = get_ota_ops_entry(handle);
+    esp_err_t ret = ESP_OK;
 
     if (it == NULL) {
         return ESP_ERR_NOT_FOUND;
