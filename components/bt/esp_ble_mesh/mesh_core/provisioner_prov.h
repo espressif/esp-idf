@@ -143,7 +143,7 @@ int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_s
 int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
 
 /**
- * @brief This function deinitializes provisioner's PB-GATT and PB-ADV
+ * @brief This function de-initializes provisioner's PB-GATT and PB-ADV
  *        related information.
  *
  * @param[in] erase: Indicate if erasing provisioning information from flash.
@@ -173,7 +173,7 @@ void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_
  */
 const struct bt_mesh_prov *bt_mesh_provisioner_get_prov_info(void);
 
-void bt_mesh_provisoner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
+void bt_mesh_provisioner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
 
 /* The following APIs are for primary provisioner application use */
 

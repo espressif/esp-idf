@@ -189,7 +189,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
-        /* Make sure we're scanning for provisioning inviations */
+        /* Make sure we're scanning for provisioning invitations */
         bt_mesh_scan_enable();
         /* Enable unprovisioned beacon sending */
         bt_mesh_beacon_enable();

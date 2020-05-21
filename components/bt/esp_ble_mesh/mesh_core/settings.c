@@ -86,7 +86,7 @@ struct hb_pub_val {
           indefinite: 1;
 };
 
-/* Miscelaneous configuration server model states */
+/* Miscellaneous configuration server model states */
 struct cfg_val {
     u8_t net_transmit;
     u8_t relay;
@@ -817,7 +817,7 @@ static int p_prov_set(const char *name)
         return 0;
     }
 
-    bt_mesh_provisoner_restore_prov_info(val.primary_addr, val.alloc_addr);
+    bt_mesh_provisioner_restore_prov_info(val.primary_addr, val.alloc_addr);
 
     BT_INFO("Restored Primary Address 0x%04x, next address allocation 0x%04x",
         val.primary_addr, val.alloc_addr);
