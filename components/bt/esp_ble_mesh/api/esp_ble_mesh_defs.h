@@ -242,6 +242,15 @@ typedef enum {
     ESP_BLE_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } esp_ble_mesh_prov_oob_info_t;
 
+/*!< Maximum length of value used by Static OOB authentication */
+#define ESP_BLE_MESH_PROV_STATIC_OOB_MAX_LEN    16
+
+/*!< Maximum length of string used by Output OOB authentication */
+#define ESP_BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN    8
+
+/*!< Maximum length of string used by Output OOB authentication */
+#define ESP_BLE_MESH_PROV_INPUT_OOB_MAX_LEN     8
+
 /*!< Macros used to define message opcode */
 #define ESP_BLE_MESH_MODEL_OP_1(b0)         (b0)
 #define ESP_BLE_MESH_MODEL_OP_2(b0, b1)     (((b0) << 8) | (b1))
@@ -697,7 +706,7 @@ typedef struct {
     uint8_t  dev_key[16];   /*!< Node device key */
 
     /* Additional information */
-    char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN]; /*!< Node name */
+    char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN + 1]; /*!< Node name */
     uint16_t comp_length;  /*!< Length of Composition Data */
     uint8_t *comp_data;    /*!< Value of Composition Data */
 } __attribute__((packed)) esp_ble_mesh_node_t;
