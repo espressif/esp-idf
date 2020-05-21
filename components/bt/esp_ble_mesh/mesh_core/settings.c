@@ -1438,8 +1438,7 @@ static void schedule_store(int flag)
         timeout = K_NO_WAIT;
     } else if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_RPL_PENDING) &&
                (!(bt_mesh_atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
-                (CONFIG_BLE_MESH_RPL_STORE_TIMEOUT <
-                 CONFIG_BLE_MESH_STORE_TIMEOUT))) {
+                (CONFIG_BLE_MESH_RPL_STORE_TIMEOUT < CONFIG_BLE_MESH_STORE_TIMEOUT))) {
         timeout = K_SECONDS(CONFIG_BLE_MESH_RPL_STORE_TIMEOUT);
     } else {
         timeout = K_SECONDS(CONFIG_BLE_MESH_STORE_TIMEOUT);
@@ -1451,7 +1450,7 @@ static void schedule_store(int flag)
         return;
     }
 
-    BT_DBG("Waiting %d seconds", timeout / MSEC_PER_SEC);
+    BT_INFO("Waiting %d seconds", timeout / MSEC_PER_SEC);
 
     if (timeout) {
         k_delayed_work_submit(&pending_store, timeout);
