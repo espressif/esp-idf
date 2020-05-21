@@ -647,6 +647,28 @@ menu "LWIP"
         help
             Enable PPP debug log output
 
+    menuconfig LWIP_SLIP_SUPPORT
+        bool "Enable SLIP support (new/experimental)"
+        default n
+        help
+            Enable SLIP stack. Now only SLIP over serial is possible.
+
+            SLIP over serial support is experimental and unsupported.
+
+    config LWIP_SLIP_RX_FROM_ISR
+        bool "Enable LWIP SLIP interrupt mode"
+        depends on LWIP_SLIP_SUPPORT
+        default y
+        help
+            Enable interrupt functions in SLIP netif/slipif.h
+
+    config LWIP_SLIP_DEBUG_ON
+        bool "Enable SLIP debug log output"
+        depends on LWIP_SLIP_SUPPORT
+        default n
+        help
+            Enable SLIP debug log output
+
     menu "ICMP"
 
         config LWIP_MULTICAST_PING

@@ -474,6 +474,27 @@
    ------------------------------------
 */
 
+#ifdef CONFIG_LWIP_SLIP_SUPPORT
+
+/**
+ * Enable SLIP receive from ISR functions
+ */
+#define SLIP_RX_FROM_ISR CONFIG_LWIP_SLIP_RX_FROM_ISR
+
+/**
+ * PPP_DEBUG: Enable debugging for PPP.
+ */
+#define SLIP_DEBUG_ON                    CONFIG_LWIP_SLIP_DEBUG_ON
+
+#if SLIP_DEBUG_ON
+#define SLIP_DEBUG                       LWIP_DBG_ON
+#else
+#define SLIP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+
+#endif
+
 /*
    ------------------------------------
    ---------- Thread options ----------
