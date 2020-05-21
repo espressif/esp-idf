@@ -151,6 +151,7 @@ exclude =
         components/tinyusb,
         components/unity/unity,
         examples/build_system/cmake/import_lib/main/lib/tinyxml2,
+        examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib,
     # other third-party libraries
         tools/kconfig_new/kconfiglib.py,
         tools/kconfig_new/menuconfig.py,
