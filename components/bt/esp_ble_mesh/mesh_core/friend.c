@@ -444,7 +444,7 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
         return err;
     }
 
-    /* No need to reencrypt the message if the sequence number is
+    /* No need to re-encrypt the message if the sequence number is
      * unchanged.
      */
     if (meta.net.seq == bt_mesh.seq) {
@@ -1426,7 +1426,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
     }
 
     if (type == BLE_MESH_FRIEND_PDU_SINGLE && !info.ctl) {
-        /* Unsegmented application packets may be reencrypted later,
+        /* Unsegmented application packets may be re-encrypted later,
          * as they depend on the the sequence number being the same
          * when encrypting in transport and network.
          */

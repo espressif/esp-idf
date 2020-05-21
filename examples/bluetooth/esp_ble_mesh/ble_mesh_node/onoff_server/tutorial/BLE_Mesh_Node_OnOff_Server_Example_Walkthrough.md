@@ -17,7 +17,7 @@ This demo has only one element, in which the following two models are implemente
 
 ## 2. Code Analysis
 
-### 2.1 Foler Structure
+### 2.1 Folder Structure
 
 The folder `ble_mesh_node` contains the following files and subfolders:
 
@@ -261,7 +261,7 @@ The block above shows a specific implementation of the model structure. Although
 - `pub`: structure that needs to be defined if the Model structure supports the Publish function.
 - `user_data`: optional variable for storing the application layer data.
 
-The other structures and variables (keys, group, element) get their values through the BLE Mesh stack during the initialization or configuration stages. You are not reqiured to initialize them.
+The other structures and variables (keys, group, element) get their values through the BLE Mesh stack during the initialization or configuration stages. You are not required to initialize them.
 
 The next code block presents the definition of the model structure, and the `root_models[]` array. This array is used for indicating the number of the existing model structures. A model is implemented by using a macro.
 
@@ -274,7 +274,7 @@ static esp_ble_mesh_model_t root_models[] = {
 };
 ```
 
-Different models require different macros. The exisitng types of models and their respective macros needed for implementation are given in the table below.
+Different models require different macros. The existing types of models and their respective macros needed for implementation are given in the table below.
 
 |  | Model Name | Macro Required for its Definition |
 | --------------- | ---- | ----------------------------- |
@@ -385,9 +385,9 @@ The list of configuration options in BLE Mesh menuconfig is stored in `Component
 
 ```
 —— Bluetooth Mesh support
-[*]   Suppoft for BLE Mesh Node
-[ ]   Support for BLE lqesh Provisioner
-[*]   Provisiosing support using the advertising bearer (PB-ADV)
+[*]   Support for BLE Mesh Node
+[ ]   Support for BLE Mesh Provisioner
+[*]   Provisioning support using the advertising bearer (PB-ADV)
 [*]   net buffer pool usage
 [*]   Provisioning support using GATT (PB-GATT)
 [*]   GATT Proxy Service
