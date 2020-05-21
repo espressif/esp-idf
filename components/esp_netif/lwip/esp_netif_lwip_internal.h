@@ -16,6 +16,7 @@
 
 #include "esp_netif.h"
 #include "esp_netif_ppp.h"
+#include "esp_netif_slip.h"
 #include "lwip/netif.h"
 
 struct esp_netif_netstack_lwip_vanilla_config {
@@ -28,11 +29,17 @@ struct esp_netif_netstack_lwip_ppp_config {
     esp_netif_ppp_config_t ppp_events;
 };
 
+struct esp_netif_netstack_lwip_slip_config {
+    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
+    esp_netif_slip_config_t slip_config;
+};
+
 // LWIP netif specific network stack configuration
 struct esp_netif_netstack_config {
     union {
         struct esp_netif_netstack_lwip_vanilla_config lwip;
         struct esp_netif_netstack_lwip_ppp_config lwip_ppp;
+        struct esp_netif_netstack_lwip_slip_config lwip_slip;
     };
 };
 
@@ -58,8 +65,9 @@ typedef struct esp_netif_ip_lost_timer_s {
     bool timer_running;
 } esp_netif_ip_lost_timer_t;
 
-// Forward declare the ppp context
+// Forward declare the ppp and slip context
 typedef struct lwip_ppp_ctx lwip_ppp_ctx_t;
+typedef struct lwip_slip_ctx lwip_slip_ctx_t;
 
 /**
  * @brief Main esp-netif container with interface related information
@@ -73,10 +81,13 @@ struct esp_netif_obj {
     // lwip netif related
     struct netif *lwip_netif;
     lwip_ppp_ctx_t *lwip_ppp_ctx;
+    lwip_slip_ctx_t *lwip_slip_ctx;
     err_t (*lwip_init_fn)(struct netif*);
     void (*lwip_input_fn)(void *input_netif_handle, void *buffer, size_t len, void *eb);
     void * netif_handle;    // netif impl context (either vanilla lwip-netif or ppp_pcb)
+
     bool is_ppp_netif;
+    bool is_slip_netif;
 
     // io driver related
     void* driver_handle;

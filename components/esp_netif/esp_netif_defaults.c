@@ -37,6 +37,8 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_I
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
 
+const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config = ESP_NETIF_INHERENT_DEFAULT_SLIP();
+
 const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
         .ip = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
         .gw = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
