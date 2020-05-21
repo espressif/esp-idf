@@ -211,11 +211,11 @@ project_homepage = "https://github.com/espressif/esp-idf"
 # Redirects should be listed in page_redirects.xt
 #
 with open("../page_redirects.txt") as f:
-    lines = [re.sub(" +", " ", l.strip()) for l in f.readlines() if l.strip() != "" and not l.startswith("#")]
+    lines = [re.sub(" +", " ", line.strip()) for line in f.readlines() if line.strip() != "" and not line.startswith("#")]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
             raise RuntimeError("Invalid line in page_redirects.txt: %s" % line)
-html_redirect_pages = [tuple(l.split(' ')) for l in lines]
+html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

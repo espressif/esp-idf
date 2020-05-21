@@ -6,10 +6,13 @@
 
 # Importing conf_common adds all the non-language-specific
 # parts to this conf module
-import sys
-import os
-sys.path.insert(0, os.path.abspath('..'))
-from conf_common import *  # noqa: F401, F403 - need to make available everything from common
+try:
+    from conf_common import *  # noqa: F403
+except ImportError:
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath('..'))
+    from conf_common import *  # noqa: F403
 
 # General information about the project.
 project = u'ESP-IDF Programming Guide'

@@ -54,7 +54,7 @@ check_examples_rom_header:
     - tools/ci/check_examples_rom_header.sh
 
 check_python_style:
-  extends: .check_job_template_with_filter
+  extends: .python_lint_template
   artifacts:
     when: on_failure
     paths:
