@@ -74,6 +74,30 @@ struct esp_eth_mac_s {
     esp_err_t (*deinit)(esp_eth_mac_t *mac);
 
     /**
+    * @brief Start Ethernet MAC
+    *
+    * @param[in] mac: Ethernet MAC instance
+    *
+    * @return
+    *      - ESP_OK: start Ethernet MAC successfully
+    *      - ESP_FAIL: start Ethernet MAC failed because some other error occurred
+    *
+    */
+    esp_err_t (*start)(esp_eth_mac_t *mac);
+
+    /**
+    * @brief Stop Ethernet MAC
+    *
+    * @param[in] mac: Ethernet MAC instance
+    *
+    * @return
+    *      - ESP_OK: stop Ethernet MAC successfully
+    *      - ESP_FAIL: stop Ethernet MAC failed because some error occurred
+    *
+    */
+    esp_err_t (*stop)(esp_eth_mac_t *mac);
+
+    /**
     * @brief Transmit packet from Ethernet MAC
     *
     * @param[in] mac: Ethernet MAC instance
