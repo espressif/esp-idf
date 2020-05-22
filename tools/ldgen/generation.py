@@ -41,7 +41,7 @@ class PlacementRule():
 
     __metadata = collections.namedtuple("__metadata", "excludes expansions expanded")
 
-    def __init__(self, archive, obj, symbol, sections, target):
+    def __init__(self, archive, obj, symbol, sections, target, emit=None, align=None, keep=False):
         if archive == "*":
             archive = None
 
@@ -52,6 +52,9 @@ class PlacementRule():
         self.obj = obj
         self.symbol = symbol
         self.target = target
+        self.emit = emit
+        self.align = align
+        self.keep = keep
         self.sections = dict()
 
         self.specificity = 0
@@ -202,6 +205,15 @@ class PlacementRule():
         else:
             rule_string = "*%s:%s(%s)" % (archive, obj, sections_string)
 
+        if self.keep:
+            rule_string = "KEEP(%s)" % (rule_string)
+
+        if self.emit:
+            rule_string = "__start_%s = ABSOLUTE(.); %s; __stop_%s = ABSOLUTE(.);" % (self.emit, rule_string, self.emit)
+
+        if self.align:
+            rule_string = ". = ALIGN(%d); %s" % (self.align, rule_string)
+
         return rule_string
 
     def __eq__(self, other):
@@ -259,7 +271,7 @@ class GenerationModel:
         self.sections = {}
         self.mappings = {}
 
-    def _add_mapping_rules(self, archive, obj, symbol, scheme_name, scheme_dict, rules):
+    def _add_mapping_rules(self, archive, obj, symbol, scheme_name, scheme_dict, rules, emit=None, align=None, keep=False):
         # Use an ordinary dictionary to raise exception on non-existing keys
         temp_dict = dict(scheme_dict)
 
@@ -271,7 +283,7 @@ class GenerationModel:
             for section in sections:
                 section_entries.extend(section.entries)
 
-            rule = PlacementRule(archive, obj, symbol, section_entries, target)
+            rule = PlacementRule(archive, obj, symbol, section_entries, target, emit, align, keep)
 
             if rule not in rules:
                 rules.append(rule)
@@ -334,11 +346,11 @@ class GenerationModel:
         for mapping in self.mappings.values():
             archive = mapping.archive
             mapping_rules = all_mapping_rules[archive]
-            for (obj, symbol, scheme_name) in mapping.entries:
+            for (obj, symbol, scheme_name, emit, align, keep) in mapping.entries:
                 try:
                     if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
                             scheme_name == GenerationModel.DEFAULT_SCHEME):
-                        self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
+                        self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules, emit, align, keep)
                 except KeyError:
                     message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
                     raise GenerationException(message, mapping)
