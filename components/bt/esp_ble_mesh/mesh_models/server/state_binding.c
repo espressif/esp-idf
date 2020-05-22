@@ -8,6 +8,7 @@
 
 #include <errno.h>
 
+#include "mesh_common.h"
 #include "model_opcode.h"
 #include "state_binding.h"
 #include "state_transition.h"

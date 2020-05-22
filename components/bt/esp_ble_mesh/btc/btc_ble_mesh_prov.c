@@ -15,10 +15,16 @@
 #include <string.h>
 #include <errno.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "btc_ble_mesh_prov.h"
+#include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_health_model.h"
+#include "btc_ble_mesh_generic_model.h"
+#include "btc_ble_mesh_time_scene_model.h"
+#include "btc_ble_mesh_sensor_model.h"
+#include "btc_ble_mesh_lighting_model.h"
 
 #include "adv.h"
+#include "mesh_kernel.h"
 #include "mesh_proxy.h"
 #include "mesh.h"
 #include "access.h"
@@ -39,15 +45,6 @@
 #include "client_common.h"
 #include "state_binding.h"
 
-#include "btc_ble_mesh_prov.h"
-#include "btc_ble_mesh_config_model.h"
-#include "btc_ble_mesh_health_model.h"
-#include "btc_ble_mesh_generic_model.h"
-#include "btc_ble_mesh_time_scene_model.h"
-#include "btc_ble_mesh_sensor_model.h"
-#include "btc_ble_mesh_lighting_model.h"
-
-#include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -1965,8 +1962,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND: {
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & payload, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;
@@ -1983,8 +1980,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
         bt_mesh_role_param_t common = {0};
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & message, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;

@@ -6,13 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "model_opcode.h"
-#include "state_transition.h"
-
 #include "btc_ble_mesh_generic_model.h"
 #include "btc_ble_mesh_lighting_model.h"
 #include "btc_ble_mesh_time_scene_model.h"
 #include "btc_ble_mesh_sensor_model.h"
+
+#include "model_opcode.h"
+#include "state_transition.h"
 
 /* Function to calculate Remaining Time (Start) */
 

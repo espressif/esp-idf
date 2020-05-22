@@ -22,9 +22,7 @@
 #include "client_common.h"
 #include "mesh_common.h"
 
-#define UNSEG_ACCESS_MSG_MAX_LEN    11  /* 11 octets (Opcode + Payload), 4 octets TransMIC */
-#define SEG_ACCESS_MSG_SEG_LEN      12  /* 12 * 32 = 384 octets (Opcode + Payload + TransMIC) */
-#define HCI_TIME_FOR_START_ADV      K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
+#define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
 {
@@ -183,11 +181,12 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
     bool need_seg = false;
     u8_t mic_size = 0;
 
-    if (msg->len > UNSEG_ACCESS_MSG_MAX_LEN || ctx->send_rel) {
+    if (msg->len > BLE_MESH_SDU_UNSEG_MAX || ctx->send_rel) {
         need_seg = true;    /* Needs segmentation */
     }
 
-    mic_size = (need_seg && net_buf_simple_tailroom(msg) >= 8U) ? 8U : 4U;
+    mic_size = (need_seg && net_buf_simple_tailroom(msg) >= BLE_MESH_MIC_LONG) ?
+                BLE_MESH_MIC_LONG : BLE_MESH_MIC_SHORT;
 
     if (need_seg) {
         /* Based on the message length, calculate how many segments are needed.
@@ -203,17 +202,14 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
          * messages, but if there are other messages between any two retrans-
          * missions of the same segmented messages, then the whole time will
          * be longer.
+         *
+         * Since the transport behavior has been changed, i.e. start retransmit
+         * timer after the last segment is sent, so we can simplify the timeout
+         * calculation here. And the retransmit timer will be started event if
+         * the attempts reaches ZERO when the dst is a unicast address.
          */
-        if (duration + HCI_TIME_FOR_START_ADV < seg_retrans_to) {
-            s32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
-            time = (seg_duration + seg_retrans_to) * (seg_retrans_num - 1) + seg_duration;
-        } else {
-            /* If the duration is bigger than the segment retransmit timeout
-             * value. In this situation, the segment retransmit timeout value
-             * may need to be optimized based on the "Network Transmit" value.
-             */
-            time = seg_count * (duration + HCI_TIME_FOR_START_ADV) * seg_retrans_num;
-        }
+        s32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
+        time = (seg_duration + seg_retrans_to) * seg_retrans_num;
 
         BT_INFO("Original timeout %dms, calculated timeout %dms", timeout, time);
 
