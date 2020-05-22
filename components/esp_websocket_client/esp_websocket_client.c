@@ -39,6 +39,7 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_NETWORK_TIMEOUT_MS    (10*1000)
 #define WEBSOCKET_PING_TIMEOUT_MS       (10*1000)
 #define WEBSOCKET_EVENT_QUEUE_SIZE      (1)
+#define WEBSOCKET_PINGPONG_TIMEOUT_SEC  (120)
 
 #define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
@@ -65,6 +66,7 @@ typedef struct {
     char                        *subprotocol;
     char                        *user_agent;
     char                        *headers;
+    int                         pingpong_timeout_sec;
 } websocket_config_storage_t;
 
 typedef enum {
@@ -84,9 +86,11 @@ struct esp_websocket_client {
     uint64_t                    keepalive_tick_ms;
     uint64_t                    reconnect_tick_ms;
     uint64_t                    ping_tick_ms;
+    uint64_t                    pingpong_tick_ms;
     int                         wait_timeout_ms;
     int                         auto_reconnect;
     bool                        run;
+    bool                        wait_for_pong_resp;
     EventGroupHandle_t          status_bits;
     xSemaphoreHandle            lock;
     char                        *rx_buffer;
@@ -206,6 +210,13 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
         cfg->auto_reconnect = false;
     }
 
+    if (config->disable_pingpong_discon){
+        cfg->pingpong_timeout_sec = 0;
+    } else if (config->pingpong_timeout_sec) {
+        cfg->pingpong_timeout_sec = config->pingpong_timeout_sec;
+    } else {
+        cfg->pingpong_timeout_sec = WEBSOCKET_PINGPONG_TIMEOUT_SEC;
+    }
 
     return ESP_OK;
 }
@@ -335,6 +346,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     client->keepalive_tick_ms = _tick_get_ms();
     client->reconnect_tick_ms = _tick_get_ms();
     client->ping_tick_ms = _tick_get_ms();
+    client->wait_for_pong_resp = false;
 
     int buffer_size = config->buffer_size;
     if (buffer_size <= 0) {
@@ -474,6 +486,9 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
         esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PONG | WS_TRANSPORT_OPCODES_FIN, data, client->payload_len,
                                   client->config->network_timeout_ms);
     }
+    else if (client->last_opcode == WS_TRANSPORT_OPCODES_PONG) {
+        client->wait_for_pong_resp = false;
+    }
 
     return ESP_OK;
 }
@@ -522,6 +537,7 @@ static void esp_websocket_client_task(void *pv)
                 ESP_LOGD(TAG, "Transport connected to %s://%s:%d", client->config->scheme, client->config->host, client->config->port);
 
                 client->state = WEBSOCKET_STATE_CONNECTED;
+                client->wait_for_pong_resp = false;
                 esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_CONNECTED, NULL, 0);
 
                 break;
@@ -530,7 +546,21 @@ static void esp_websocket_client_task(void *pv)
                     client->ping_tick_ms = _tick_get_ms();
                     ESP_LOGD(TAG, "Sending PING...");
                     esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING | WS_TRANSPORT_OPCODES_FIN, NULL, 0, client->config->network_timeout_ms);
+
+                    if (!client->wait_for_pong_resp && client->config->pingpong_timeout_sec) {
+                        client->pingpong_tick_ms = _tick_get_ms();
+                        client->wait_for_pong_resp = true;
+                    }
                 }
+
+                if ( _tick_get_ms() - client->pingpong_tick_ms > client->config->pingpong_timeout_sec*1000 ) {
+                    if (client->wait_for_pong_resp) {
+                        ESP_LOGE(TAG, "Error, no PONG received for more than %d seconds after PING", client->config->pingpong_timeout_sec);
+                        esp_websocket_client_abort_connection(client);
+                        break;
+                    }
+                }
+
                 if (read_select == 0) {
                     ESP_LOGV(TAG, "Read poll timeout: skipping esp_transport_read()...");
                     break;
