@@ -109,7 +109,7 @@ static enum {
     MESH_GATT_PROXY,
 } gatt_svc = MESH_GATT_NONE;
 
-static char device_name[DEVICE_NAME_SIZE + 1] = "ESP-BLE-MESH";
+static char device_name[DEVICE_NAME_SIZE + 1];
 
 int bt_mesh_set_device_name(const char *name)
 {
@@ -1416,6 +1416,7 @@ int bt_mesh_proxy_init(void)
 
     bt_mesh_gatts_conn_cb_register(&conn_callbacks);
 
+    strncpy(device_name, "ESP-BLE-MESH", DEVICE_NAME_SIZE);
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
@@ -1428,6 +1429,7 @@ int bt_mesh_proxy_deinit(void)
 
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     bt_mesh_gatts_service_deregister(&proxy_svc);
+    next_idx = 0;
 #endif
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
@@ -1444,6 +1446,7 @@ int bt_mesh_proxy_deinit(void)
     memset(device_name, 0, sizeof(device_name));
 
     bt_mesh_gatts_conn_cb_deregister();
+    conn_count = 0;
 
     return 0;
 }
