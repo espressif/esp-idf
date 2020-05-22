@@ -85,6 +85,7 @@ typedef struct {
     char                        *subprotocol;               /*!< Websocket subprotocol */
     char                        *user_agent;                /*!< Websocket user-agent */
     char                        *headers;                   /*!< Websocket additional headers */
+    int                         pingpong_timeout_sec;       /*!< Period before connection is aborted due to no PONGs received, disabled if value is 0 */
 } esp_websocket_client_config_t;
 
 /**
@@ -185,7 +186,7 @@ int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const ch
 int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout);
 
 /**
- * @brief      Check the WebSocket connection status
+ * @brief      Check the WebSocket client connection state
  *
  * @param[in]  client  The client handle
  *
