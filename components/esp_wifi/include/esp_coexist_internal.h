@@ -54,18 +54,6 @@ esp_err_t coex_init(void);
 void coex_deinit(void);
 
 /**
- * @brief Pause software coexist
- *        extern function for internal use.
- */
-void coex_pause(void);
-
-/**
- * @brief Resume software coexist
- *        extern function for internal use.
- */
-void coex_resume(void);
-
-/**
  * @brief Get software coexist version string
  *        extern function for internal use.
  * @return : version string
