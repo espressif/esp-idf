@@ -488,6 +488,39 @@ Example:
     entries:
         * (noflash)
 
+.. _ldgen-mapping-flags :
+
+**Mapping flags**
+
+Each mapping entry can be followed by a set of mapping flags, influencing linker script
+generation.
+Supported flags are:
+
+.. code-block:: none
+
+    keep
+    emit(symbol)
+    align(alignment)
+
+The :code:`keep` flag ensures that all sections matched by a mapping will be guarded with a
+:code:`KEEP(...)` in the resulting linker script. This protects the sections from being
+garbage collected, even if they do not specify any symbols required by the application.
+
+The :code:`emit(symbol)` flag causes the generated linker script to emit symbols for start
+and end of a mapping. The symbols will be called :code:`__start_symbol` and
+:code:`__stop_symbol` and can be referenced in the application code.
+
+The :code:`align(alignment)` flag aligns the start of the mapping to :code:`alignment` bytes.
+
+Example:
+
+.. code-block:: none
+
+    [mapping:map]
+    archive: libmain.a
+    entries:
+        initdata (rodata) emit(initdata) align(8) keep
+
 .. _ldgen-symbol-granularity-placements :
 
 On Symbol-Granularity Placements
