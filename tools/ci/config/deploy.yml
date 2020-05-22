@@ -53,9 +53,12 @@ push_to_github:
   tags:
     - deploy
   only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
   when: on_success
   dependencies: []
   extends: .before_script_lesser
