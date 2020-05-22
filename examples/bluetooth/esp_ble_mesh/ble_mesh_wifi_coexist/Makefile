@@ -5,8 +5,7 @@
 
 PROJECT_NAME := ble_mesh_wifi_coexist
 
-COMPONENT_ADD_INCLUDEDIRS := components/include
-
-EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/bluetooth/esp_ble_mesh/common_vendor_models/fast_prov_vendor_model/components
+EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/bluetooth/esp_ble_mesh/common_components/example_init \
+                        $(IDF_PATH)/examples/bluetooth/esp_ble_mesh/common_components/fast_provisioning
 
 include $(IDF_PATH)/make/project.mk
