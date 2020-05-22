@@ -85,12 +85,7 @@ def action_extensions(base_actions, project_path):
             monitor_args += ["-p", args.port]
 
         if not monitor_baud:
-            if os.getenv("IDF_MONITOR_BAUD"):
-                monitor_baud = os.getenv("IDF_MONITOR_BAUD", None)
-            elif os.getenv("MONITORBAUD"):
-                monitor_baud = os.getenv("MONITORBAUD", None)
-            else:
-                monitor_baud = project_desc["monitor_baud"]
+            monitor_baud = os.getenv("IDF_MONITOR_BAUD") or os.getenv("MONITORBAUD") or project_desc["monitor_baud"]
 
         monitor_args += ["-b", monitor_baud]
         monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
