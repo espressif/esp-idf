@@ -198,6 +198,18 @@ config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
         ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to disable this and use
         xTaskCreateStatic to create the tasks stack in external memory.
 
+config SPIRAM_2T_MODE
+    bool "Enable SPI PSRAM 2T mode"
+    depends on SPIRAM_SUPPORT
+    default "n"
+    help
+        Enable this option to fix single bit errors inside 64Mbit PSRAM.
+
+        Some 64Mbit PSRAM chips have a hardware issue in the RAM which causes bit errors at multiple
+        fixed bit positions.
+
+        Note: If this option is enabled, the 64Mbit PSRAM chip will appear to be 32Mbit in size, but applications
+        will not be affected.
 endmenu
 
 config MEMMAP_TRACEMEM
