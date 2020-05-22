@@ -48,45 +48,6 @@ typedef enum {
     PHY_RF_CAL_FULL    = 0x00000002         /*!< Do full RF calibration. Produces best results, but also consumes a lot of time and current. Suggested to be used once. */
 } esp_phy_calibration_mode_t;
 
-
-/**
- * @brief Modules for modem sleep 
- */
-typedef enum{
-    MODEM_BLE_MODULE,              //!< BLE controller used
-    MODEM_CLASSIC_BT_MODULE,       //!< Classic BT controller used
-    MODEM_WIFI_STATION_MODULE,     //!< Wi-Fi Station used
-    MODEM_WIFI_SOFTAP_MODULE,      //!< Wi-Fi SoftAP used
-    MODEM_WIFI_SNIFFER_MODULE,     //!< Wi-Fi Sniffer used
-    MODEM_WIFI_NULL_MODULE,        //!< Wi-Fi Null mode used
-    MODEM_USER_MODULE,             //!< User used
-    MODEM_MODULE_COUNT             //!< Number of items
-}modem_sleep_module_t;
-
-/**
- * @brief Module WIFI mask for medem sleep
- */
-#define MODEM_BT_MASK   ((1<<MODEM_BLE_MODULE)          |   \
-                         (1<<MODEM_CLASSIC_BT_MODULE))
-
-/**
- * @brief Module WIFI mask for medem sleep
- */
-#define MODEM_WIFI_MASK ((1<<MODEM_WIFI_STATION_MODULE) |   \
-                         (1<<MODEM_WIFI_SOFTAP_MODULE)  |   \
-                         (1<<MODEM_WIFI_SNIFFER_MODULE) |   \
-                         (1<<MODEM_WIFI_NULL_MODULE))
-
-/**
- * @brief Modules needing to call phy_rf_init
- */
-typedef enum{
-    PHY_BT_MODULE,          //!< Bluetooth used
-    PHY_WIFI_MODULE,        //!< Wi-Fi used
-    PHY_MODEM_MODULE,       //!< Modem sleep used
-    PHY_MODULE_COUNT        //!< Number of items
-}phy_rf_module_t;
-
 /**
  * @brief Get PHY init data
  *
@@ -169,38 +130,29 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
 esp_err_t esp_phy_erase_cal_data_in_nvs(void);
 
 /**
- * @brief Initialize PHY and RF module
+ * @brief Enable PHY and RF module
  *
- * PHY and RF module should be initialized in order to use WiFi or BT.
- * Now PHY and RF initializing job is done automatically when start WiFi or BT. Users should not
+ * PHY and RF module should be enabled in order to use WiFi or BT.
+ * Now PHY and RF enabling job is done automatically when start WiFi or BT. Users should not
  * call this API in their application.
  *
- * @param init_data  PHY parameters. Default set of parameters can
- *                   be obtained by calling esp_phy_get_default_init_data
- *                   function.
- * @param mode  Calibration mode (Full, partial, or no calibration)
- * @param[inout] calibration_data
- * @return ESP_OK on success.
- * @return ESP_FAIL on fail.
  */
-esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,esp_phy_calibration_mode_t mode, 
-        esp_phy_calibration_data_t* calibration_data, phy_rf_module_t module);
+void esp_phy_enable(void);
 
 /**
- * @brief De-initialize PHY and RF module
+ * @brief Disable PHY and RF module
  *
- * PHY module should be de-initialized in order to shutdown WiFi or BT.
- * Now PHY and RF de-initializing job is done automatically when stop WiFi or BT. Users should not
+ * PHY module should be disabled in order to shutdown WiFi or BT.
+ * Now PHY and RF disabling job is done automatically when stop WiFi or BT. Users should not
  * call this API in their application.
  *
- * @return ESP_OK on success.
  */
-esp_err_t esp_phy_rf_deinit(phy_rf_module_t module);
+void esp_phy_disable(void);
 
 /**
  * @brief Load calibration data from NVS and initialize PHY and RF module
  */
-void esp_phy_load_cal_and_init(phy_rf_module_t module);
+void esp_phy_load_cal_and_init(void);
 
 /**
  * @brief Enable WiFi/BT common clock
@@ -213,30 +165,6 @@ void esp_phy_common_clock_enable(void);
  *
  */
 void esp_phy_common_clock_disable(void);
-
-/**
- * @brief Module requires to enter modem sleep
- */
-esp_err_t esp_modem_sleep_enter(modem_sleep_module_t module);
-
-/**
- * @brief Module requires to exit modem sleep
- */
-esp_err_t esp_modem_sleep_exit(modem_sleep_module_t module);
-
-/**
- * @brief Register module to make it be able to require to enter/exit modem sleep
- *        Although the module has no sleep function, as long as the module use RF,
- *        it must call esp_modem_sleep_regsiter. Otherwise, other modules with sleep
- *        function will disable RF without checking the module which doesn't call
- *        esp_modem_sleep_regsiter.
- */
-esp_err_t esp_modem_sleep_register(modem_sleep_module_t module);
-
-/**
- * @brief De-register module from modem sleep list 
- */
-esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module);
 
 /**
  * @brief            Get the time stamp when PHY/RF was switched on
