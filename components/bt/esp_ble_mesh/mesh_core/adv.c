@@ -614,7 +614,7 @@ static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
 
     BT_DBG("Received adv pkt with flags: 0x%02x", flags);
 
-    /* Flags context will not be checked curently */
+    /* Flags context will not be checked currently */
     ((void) flags);
 
     return true;
