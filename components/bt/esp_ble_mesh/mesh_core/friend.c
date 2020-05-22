@@ -67,6 +67,8 @@ enum {
 
 static void (*friend_cb)(bool establish, u16_t lpn_addr, u8_t reason);
 
+static bool friend_init = false;
+
 static struct bt_mesh_subnet *friend_subnet_get(u16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
@@ -1243,6 +1245,11 @@ int bt_mesh_friend_init(void)
 {
     int i;
 
+    if (friend_init == true) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
     for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
         struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
         int j;
@@ -1259,12 +1266,19 @@ int bt_mesh_friend_init(void)
         }
     }
 
+    friend_init = true;
+
     return 0;
 }
 
 int bt_mesh_friend_deinit(void)
 {
     int i;
+
+    if (friend_init == false) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
 
     bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
 
@@ -1279,6 +1293,8 @@ int bt_mesh_friend_deinit(void)
 
     bt_mesh_unref_buf_from_pool(&friend_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
+
+    friend_init = false;
 
     return 0;
 }
