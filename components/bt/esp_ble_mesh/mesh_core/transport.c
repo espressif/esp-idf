@@ -698,17 +698,8 @@ static bool is_replay(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
                 return true;
             }
 
-#if !CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0
             if ((!rx->old_iv && rpl->old_iv) ||
                     rpl->seq < rx->seq) {
-#else /* CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0 */
-            /**
-             * Added 10 here to fix the bug of Silicon Lab Android App 1.1.0 when
-             * reconnection will cause its sequence number recounting from 0.
-             */
-            if ((!rx->old_iv && rpl->old_iv) ||
-                    (rpl->seq < rx->seq) || (rpl->seq > rx->seq + 10)) {
-#endif /* #if !CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0 */
                 if (match) {
                     *match = rpl;
                 } else {
