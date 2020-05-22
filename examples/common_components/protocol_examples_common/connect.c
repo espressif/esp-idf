@@ -167,7 +167,6 @@ esp_err_t example_connect(void)
     // iterate over active interfaces, and print out IPs of "our" netifs
     esp_netif_t *netif = NULL;
     esp_netif_ip_info_t ip;
-    esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
     for (int i=0; i<esp_netif_get_nr_of_ifs(); ++i) {
         netif = esp_netif_next(netif);
         if (is_our_netif(TAG, netif)) {
@@ -176,6 +175,7 @@ esp_err_t example_connect(void)
 
             ESP_LOGI(TAG, "- IPv4 address: " IPSTR, IP2STR(&ip.ip));
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
+            esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
             int ip6_addrs = esp_netif_get_all_ip6(netif, ip6);
             for (int j=0; j< ip6_addrs; ++j) {
                 esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
