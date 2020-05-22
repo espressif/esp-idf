@@ -1689,6 +1689,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		if (random_get_bytes(r, sizeof(r)) < 0)
 			return -1;
 		os_free(wps->new_psk);
+		wps->new_psk = NULL;
 		//wps->new_psk = base64_encode(r, sizeof(r), &wps->new_psk_len);
 		if (wps->new_psk == NULL)
 			return -1;
