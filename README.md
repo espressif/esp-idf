@@ -2,7 +2,7 @@
 
 * [中文版](./README_CN.md)
 
-ESP-IDF is the official development framework for the [ESP32 and ESP32-S Series SoCs](https://www.espressif.com/en/products/hardware/soc).
+ESP-IDF is the official development framework for the **ESP32** and **ESP32-S** Series SoCs.
 
 # Developing With ESP-IDF
 
@@ -10,8 +10,12 @@ ESP-IDF is the official development framework for the [ESP32 and ESP32-S Series 
 
 See setup guides for detailed instructions to set up the ESP-IDF:
 
-* [Getting Started Guide for the stable ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
-* [Getting Started Guide for the latest (master branch) ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/)
+| Chip | Getting Started Guides for ESP-IDF |
+|:----:|:----|
+| <img src="docs/_static/chip-esp32.svg" height="85" alt="ESP32"> |  <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/) version</li></ul> |
+| <img src="docs/_static/chip-esp32-s2.svg" height="100" alt="ESP32-S2"> | <ul><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/) version</li></ul> |
+
+**Note:** Each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) how to find documentation and how to checkout specific release of ESP-IDF.
 
 ### Non-GitHub forks
 
