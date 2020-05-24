@@ -591,7 +591,7 @@ class SectionsInfo(dict):
         try:
             results = parser.parseString(first_line)
         except ParseException as p:
-            raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.message)
+            raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.msg)
 
         archive = os.path.basename(results.archive_path)
         self.sections[archive] = SectionsInfo.__info(sections_info_dump.name, sections_info_dump.read())
