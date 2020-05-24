@@ -23,6 +23,8 @@ import re
 import subprocess
 from sanitize_version import sanitize_version
 from idf_extensions.util import download_file_if_missing
+from get_github_rev import get_github_rev
+
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -223,6 +225,14 @@ html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_theme = 'sphinx_idf_theme'
 
+# context used by sphinx_idf_theme
+html_context = {
+    "display_github": True,  # Add 'Edit on Github' link instead of 'View page source'
+    "github_user": "espressif",
+    "github_repo": "esp-idf",
+    "github_version": get_github_rev(),
+}
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -241,6 +251,7 @@ html_theme = 'sphinx_idf_theme'
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 html_logo = "../_static/espressif-logo.svg"
+
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -395,6 +406,7 @@ def setup(app):
 
     # Config values pushed by -D using the cmdline is not available when setup is called
     app.connect('config-inited',  setup_config_values)
+    app.connect('config-inited',  setup_html_context)
 
 
 def setup_config_values(app, config):
@@ -408,6 +420,11 @@ def setup_config_values(app, config):
 
     pdf_name = "esp-idf-{}-{}-{}".format(app.config.language, app.config.version, app.config.idf_target)
     app.add_config_value('pdf_file', pdf_name, 'env')
+
+
+def setup_html_context(app, config):
+    # Setup path for 'edit on github'-link
+    config.html_context['conf_py_path'] = "/docs/{}/".format(app.config.language)
 
 
 def setup_diag_font(app):
