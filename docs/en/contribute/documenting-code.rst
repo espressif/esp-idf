@@ -511,6 +511,23 @@ Choices for language (``-l``) are ``en`` and ``zh_CN``. Choices for target (``-t
 
 Build documentation will be placed in ``_build/<language>/<target>/html`` folder. To see it, open the ``index.html`` inside this directory in a web browser.
 
+Building a subset of the documentation
+""""""""""""""""""""""""""""""""""""""
+Since building the full documentation can be quite slow, it might be useful to just build just the subset of the documentation you are interested in.
+
+This can be achieved by listing the document you want to build::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst build
+
+Building multiple documents is also possible::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst api-reference/peripherals/adc.rst build
+
+As well as wildcards::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/* build
+
+Note that this is a feature intended to simply testing and debugging during writing of documentation. The HTML output won't be perfect, i.e. it will not build a proper index that lists all the documents, and any references to documents that are not built will result in warnings.
 
 Building PDF
 """"""""""""

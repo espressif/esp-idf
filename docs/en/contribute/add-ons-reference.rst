@@ -167,6 +167,8 @@ Other Extensions
 :idf_file:`docs/idf_extensions/exclude_docs.py`
     Sphinx extension that updates the excluded documents according to the conditional_include_dict {tag:documents}. If the tag is set, then the list of documents will be included.
 
+    Also responsible for excluding documents when building with the config value ``docs_to_build`` set. In these cases all documents not listed in ``docs_to_build`` will be excluded.
+
     Subscribes to ``idf-defines-generated`` as it relies on the sphinx tags to determine which documents to exclude
 
 :idf_file:`docs/idf_extensions/run_doxygen.py`
