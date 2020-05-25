@@ -12,17 +12,19 @@ import sys
 
 # -----------  Config  ----------
 PORT = 3333
-IP_VERSION = 'IPv4'
-IPV4 = '192.168.0.167'
-IPV6 = 'FE80::32AE:A4FF:FE80:5288'
+IP_VERSION = 'IPv6'
+IPV4 = '192.168.0.42'
+IPV6 = 'fd00:0000:0000:0000:260a:c4ff:fe09:885c'
 # -------------------------------
 
 if IP_VERSION == 'IPv4':
     family_addr = socket.AF_INET
-    host = IPV4
+    addr = (IPV4, PORT)
 elif IP_VERSION == 'IPv6':
     family_addr = socket.AF_INET6
-    host = IPV6
+    for res in socket.getaddrinfo(IPV6, PORT, socket.AF_INET6,
+                                  socket.SOCK_STREAM, socket.SOL_TCP):
+        af, socktype, proto, canonname, addr = res
 else:
     print('IP_VERSION must be IPv4 or IPv6')
     sys.exit(1)
@@ -34,7 +36,7 @@ except socket.error as msg:
         sys.exit(1)
 
 try:
-    sock.connect((host, PORT))
+    sock.connect((IPV6, PORT))
 except socket.error as msg:
         print('Could not open socket: ', msg)
         sock.close()
