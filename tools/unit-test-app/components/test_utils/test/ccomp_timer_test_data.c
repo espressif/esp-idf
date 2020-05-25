@@ -8,7 +8,6 @@
 #include "eri.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_ipc.h"
 
 
 #if CONFIG_IDF_TARGET_ESP32

@@ -53,7 +53,7 @@ TEST_CASE("can use std::vector", "[cxx]")
    */
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=816]")
 {
     int thrown_value;
     try {
@@ -65,7 +65,7 @@ TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=816]")
 {
     bool thrown_value = false;
     try {
@@ -77,7 +77,7 @@ TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=816]")
 {
     void* thrown_value = 0;
     try {
@@ -89,7 +89,7 @@ TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=816]")
 {
     uint64_t thrown_value = 0;
     try {
@@ -101,7 +101,7 @@ TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=816]")
 {
     char thrown_value = '0';
     try {
@@ -113,7 +113,7 @@ TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=816]")
 {
     wchar_t thrown_value = 0;
     try {
@@ -125,7 +125,7 @@ TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=816]")
 {
     float thrown_value = 0;
     try {
@@ -137,7 +137,7 @@ TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=816]")
 {
     double thrown_value = 0;
     try {
@@ -149,7 +149,7 @@ TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=816]")
 {
     const char *thrown_value = 0;
     try {
@@ -167,7 +167,7 @@ public:
     NonExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=816]")
 {
     int thrown_value = 0;
     try {
@@ -185,7 +185,7 @@ public:
     ExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=816]")
 {
     int thrown_value = 0;
     try {

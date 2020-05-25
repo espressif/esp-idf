@@ -704,7 +704,6 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
 
 #include "soc/dport_reg.h"
 #include "soc/frc_timer_reg.h"
-#include "esp_ipc.h"
 static bool task_stop;
 static bool time_jumped;
 

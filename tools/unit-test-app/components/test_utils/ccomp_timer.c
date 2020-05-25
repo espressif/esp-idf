@@ -21,7 +21,6 @@
 #include "freertos/semphr.h"
 
 #include "esp_log.h"
-#include "esp_ipc.h"
 #include "esp_intr_alloc.h"
 
 #if CONFIG_IDF_TARGET_ESP32
