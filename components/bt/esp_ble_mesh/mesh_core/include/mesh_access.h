@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+#define BLE_MESH_CID_NVAL          0xFFFF
+
 #define BLE_MESH_ADDR_UNASSIGNED   0x0000
 #define BLE_MESH_ADDR_ALL_NODES    0xffff
 #define BLE_MESH_ADDR_PROXIES      0xfffc
