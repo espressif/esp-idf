@@ -69,5 +69,6 @@ HOLDING READ/WRITE: time_stamp(us):12104081, mb_addr:1, type:2, st_address:0x3ff
 ```
 The output lines describe type of operation, its timestamp, modbus address, access type, storage address in parameter structure and number of registers accordingly.
 
+Note: Refer to file below for more information about current implementation of Modbus:
 
-
+* `components/freemodbus/README.rst`
