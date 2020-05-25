@@ -20,8 +20,6 @@
 #include "cfg_cli.h"
 #include "esp_ble_mesh_config_model_api.h"
 
-#define CID_NVAL 0xffff
-
 extern s32_t config_msg_timeout;
 
 /* Configuration Client Model related functions */
