@@ -167,7 +167,9 @@ esp_err_t example_connect(void)
     // iterate over active interfaces, and print out IPs of "our" netifs
     esp_netif_t *netif = NULL;
     esp_netif_ip_info_t ip;
+#ifdef CONFIG_EXAMPLE_CONNECT_IPV6
     esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
+#endif
     for (int i=0; i<esp_netif_get_nr_of_ifs(); ++i) {
         netif = esp_netif_next(netif);
         if (is_our_netif(TAG, netif)) {
