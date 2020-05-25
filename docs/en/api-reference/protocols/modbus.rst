@@ -109,3 +109,10 @@ The examples below use the FreeModbus library port for serial slave and master i
 
 Please refer to the specific example README.md for details.
 
+Modbus Readme File
+------------------
+
+
+.. include:: ../../../../components/freemodbus/README.rst
+
+

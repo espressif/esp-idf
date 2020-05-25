@@ -78,5 +78,7 @@ Kconfig value CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND (CONFIG_FMB_SERIAL_ASCII_TIME
 ESP_ERR_NOT_SUPPORTED (0x106), ESP_ERR_INVALID_RESPONSE (0x108) - Modbus slave device does not support requested command or register and sent exeption response. 
 
 ESP_ERR_INVALID_STATE (0x103) - Modbus stack is not configured correctly or can't work correctly due to critical failure.
- 
 
+Note: Refer to file below for more information about current implementation of Modbus:
+
+* `components/freemodbus/README.rst`
