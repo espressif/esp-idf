@@ -185,11 +185,9 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 #endif
         break;
     case ESP_MAC_BT:
-        memcpy(mac, efuse_mac, 6);
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
-        mac[5] += 2;
-#else
-        mac[5] += 1;
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += CONFIG_ESP_MAC_ADDR_UNIVERSE_BT_OFFSET;
 #endif
         break;
     case ESP_MAC_ETH:
