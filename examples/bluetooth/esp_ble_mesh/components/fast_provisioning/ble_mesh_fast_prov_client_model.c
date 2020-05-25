@@ -379,7 +379,7 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
             return ESP_FAIL;
         }
         cli_model = example_find_model(esp_ble_mesh_get_primary_element_address(),
-                                       ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, CID_NVAL);
+                                       ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, ESP_BLE_MESH_CID_NVAL);
         if (!cli_model) {
             ESP_LOGE(TAG, "%s: Failed to get Generic OnOff Client Model info", __func__);
             return ESP_FAIL;

@@ -58,6 +58,9 @@ typedef uint8_t esp_ble_mesh_octet16_t[ESP_BLE_MESH_OCTET16_LEN];
 #define ESP_BLE_MESH_OCTET8_LEN     8
 typedef uint8_t esp_ble_mesh_octet8_t[ESP_BLE_MESH_OCTET8_LEN];
 
+/*!< Invalid Company ID */
+#define ESP_BLE_MESH_CID_NVAL                     0xFFFF
+
 #define ESP_BLE_MESH_ADDR_UNASSIGNED              0x0000
 #define ESP_BLE_MESH_ADDR_ALL_NODES               0xFFFF
 #define ESP_BLE_MESH_ADDR_PROXIES                 0xFFFC
