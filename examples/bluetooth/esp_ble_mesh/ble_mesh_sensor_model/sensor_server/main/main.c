@@ -24,7 +24,6 @@
 #include "board.h"
 
 #define CID_ESP     0x02E5
-#define CID_NVAL    0xFFFF
 
 /* Sensor Property ID */
 #define SENSOR_PROPERTY_ID_0        0x0056  /* Present Indoor Ambient Temperature */

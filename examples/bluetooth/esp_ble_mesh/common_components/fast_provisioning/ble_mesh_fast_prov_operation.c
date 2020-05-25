@@ -150,7 +150,7 @@ esp_ble_mesh_model_t *example_find_model(uint16_t element_addr, uint16_t model_i
         return NULL;
     }
 
-    if (company_id == CID_NVAL) {
+    if (company_id == ESP_BLE_MESH_CID_NVAL) {
         return esp_ble_mesh_find_sig_model(element, model_id);
     } else {
         return esp_ble_mesh_find_vendor_model(element, company_id, model_id);
