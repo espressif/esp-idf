@@ -21,6 +21,9 @@ extern "C" {
 #include "soc/rmt_struct.h"
 #include "soc/rmt_caps.h"
 
+#define RMT_LL_HW_BASE  (&RMT)
+#define RMT_LL_MEM_BASE (&RMTMEM)
+
 static inline void rmt_ll_enable_drive_clock(rmt_dev_t *dev, bool enable)
 {
     dev->apb_conf.clk_en = enable; // register clock gating
@@ -367,9 +370,10 @@ static inline void rmt_ll_tx_set_carrier_always_on(rmt_dev_t *dev, uint32_t chan
     dev->conf_ch[channel].conf0.carrier_eff_en = !enable;
 }
 
+//Writes items to the specified TX channel memory with the given offset and writen length.
+//the caller should ensure that (length + off) <= (memory block * SOC_RMT_CHANNEL_MEM_WORDS)
 static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const rmt_item32_t *data, uint32_t length, uint32_t off)
 {
-    length = (off + length) > SOC_RMT_CHANNEL_MEM_WORDS ? (SOC_RMT_CHANNEL_MEM_WORDS - off) : length;
     for (uint32_t i = 0; i < length; i++) {
         mem->chan[channel].data32[i + off].val = data[i].val;
     }
