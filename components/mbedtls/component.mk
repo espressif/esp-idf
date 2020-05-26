@@ -10,6 +10,20 @@ COMPONENT_OBJEXCLUDE := mbedtls/library/net_sockets.o
 
 COMPONENT_SUBMODULES += mbedtls
 
+# Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
+#
+# We don't need to exclude aes.o as these functions use a different prefix (esp_aes_x) and the
+# config option only changes the prefixes in the header so mbedtls_aes_x compiles to esp_aes_x
+#
+# The other port-specific files don't override internal mbedTLS functions, they just add new functions.
+
+ifndef CONFIG_MBEDTLS_HARDWARE_MPI
+    COMPONENT_OBJEXCLUDE += port/esp_bignum.o port/$(IDF_TARGET)/bignum.o
+endif
+
+ifndef CONFIG_MBEDTLS_HARDWARE_SHA
+    COMPONENT_OBJEXCLUDE += port/$(IDF_TARGET)/esp_sha1.o port/$(IDF_TARGET)/esp_sha256.o port/$(IDF_TARGET)/esp_sha512.o
+endif
 
 ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
