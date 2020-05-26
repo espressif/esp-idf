@@ -64,6 +64,22 @@ which relies on `dfu-util <http://dfu-util.sourceforge.net/>`_. Please see :ref:
 installing ``dfu-util``. ``dfu-util`` needs additional setup for :ref:`api_guide_dfu_flash_win` or setting up an
 :ref:`api_guide_dfu_flash_udev`. Mac OS users should be able to use ``dfu-util`` without further setup.
 
+If there are more boards with the same chip connected then ``idf.py dfu-list`` can be used to list the available
+devices, for example::
+
+    Found Runtime: [303a:0002] ver=0723, devnum=4, cfg=1, intf=2, path="1-10", alt=0, name="UNKNOWN", serial="0"
+    Found Runtime: [303a:0002] ver=0723, devnum=6, cfg=1, intf=2, path="1-2", alt=0, name="UNKNOWN", serial="0"
+
+Consequently, the desired device can be selected for flashing by the ``--path`` argument. For example, the devices
+listed above can be flashed individually by the following commands::
+
+    idf.py dfu-flash --path 1-10
+    idf.py dfu-flash --path 1-2
+
+.. note::
+    The vendor and product identificators are set based on the selected chip target by the ``idf.py set-target``
+    command and it is not selectable during the ``idf.py dfu-flash`` call.
+
 See :ref:`api_guide_dfu_flash_errors` and their solutions.
 
 .. _api_guide_dfu_flash_udev:
