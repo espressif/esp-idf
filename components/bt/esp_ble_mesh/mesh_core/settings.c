@@ -19,6 +19,7 @@
 #include "cfg_srv.h"
 #include "mesh_common.h"
 #include "settings_nvs.h"
+#include "settings.h"
 #include "provisioner_main.h"
 #include "provisioner_prov.h"
 
@@ -166,8 +167,6 @@ struct node_info {
     u32_t iv_index;
     u8_t  dev_key[16];
 } __packed;
-
-#define DEVICE_ROLE_BITS    (BIT(BLE_MESH_NODE) | BIT(BLE_MESH_PROVISIONER))
 
 static int role_set(const char *name)
 {
@@ -1257,15 +1256,15 @@ int settings_core_load(void)
         settings[i].func(settings[i].name);
 
         if (!strcmp(settings[i].name, "mesh/role")) {
-            u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & DEVICE_ROLE_BITS;
+            u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
             switch (role) {
             case 0U:
                 BT_INFO("Mesh device just starts up, no restore");
                 return 0;
-            case BIT(BLE_MESH_NODE):
+            case BLE_MESH_SETTINGS_ROLE_NODE:
                 BT_INFO("Restored mesh device role: Node");
                 break;
-            case BIT(BLE_MESH_PROVISIONER):
+            case BLE_MESH_SETTINGS_ROLE_PROV:
                 BT_INFO("Restored mesh device role: Provisioner");
                 break;
             default:
@@ -1486,7 +1485,7 @@ static void store_pending_net(void)
 
 void bt_mesh_store_role(void)
 {
-    BT_DBG("Store, device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & DEVICE_ROLE_BITS);
+    BT_DBG("Store, device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK);
 
     bt_mesh_save_core_settings("mesh/role", (const u8_t *)bt_mesh.flags, sizeof(bt_mesh.flags));
 }
