@@ -80,8 +80,8 @@ static struct seg_tx {
                              new_key:1;     /* New/old key */
     u8_t                     nack_count;    /* Number of unacked segs */
     u8_t                     ttl;
-    u8_t                     seg_pending:5, /* Number of segments pending */
-                             attempts:3;
+    u8_t                     seg_pending;   /* Number of segments pending */
+    u8_t                     attempts;      /* Transmit attempts */
     const struct bt_mesh_send_cb *cb;
     void                    *cb_data;
     struct k_delayed_work    retransmit;    /* Retransmit timer */
