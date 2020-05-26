@@ -1112,7 +1112,7 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
     return original_size;
 }
 
-int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size)
+int uart_write_bytes(uart_port_t uart_num, const void* src, size_t size)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));
     UART_CHECK((p_uart_obj[uart_num] != NULL), "uart driver error", (-1));
@@ -1120,7 +1120,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size)
     return uart_tx_all(uart_num, src, size, 0, 0);
 }
 
-int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len)
+int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t size, int brk_len)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", (-1));
@@ -1146,7 +1146,7 @@ static bool uart_check_buf_full(uart_port_t uart_num)
     return false;
 }
 
-int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickType_t ticks_to_wait)
+int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));
     UART_CHECK((buf), "uart data null", (-1));
@@ -1184,7 +1184,7 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
         } else {
             len_tmp = p_uart_obj[uart_num]->rx_cur_remain;
         }
-        memcpy(buf + copy_len, p_uart_obj[uart_num]->rx_ptr, len_tmp);
+        memcpy((uint8_t *)buf + copy_len, p_uart_obj[uart_num]->rx_ptr, len_tmp);
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         p_uart_obj[uart_num]->rx_buffered_len -= len_tmp;
         uart_pattern_queue_update(uart_num, len_tmp);
