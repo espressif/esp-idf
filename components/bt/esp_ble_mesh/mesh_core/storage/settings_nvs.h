@@ -15,11 +15,14 @@
 #ifndef _BLE_MESH_SETTINGS_NVS_H_
 #define _BLE_MESH_SETTINGS_NVS_H_
 
+#include "nvs_flash.h"
 #include "mesh_buf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef nvs_handle      bt_mesh_nvs_handle_t;
 
 #define SETTINGS_ITEM_SIZE              sizeof(u16_t)
 
