@@ -26,6 +26,7 @@ SOURCE_FILES = \
 	test_nvs_handle.cpp \
 	test_nvs_storage.cpp \
 	test_nvs_cxx_api.cpp \
+	test_nvs_initialization.cpp \
 	crc.cpp \
 	main.cpp
 
