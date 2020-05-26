@@ -412,6 +412,8 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     res = uart_driver_install(esp_dte->uart_port, config->rx_buffer_size, config->tx_buffer_size,
                               config->event_queue_size, &(esp_dte->event_queue), 0);
     MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
+    res = uart_set_rx_timeout(esp_dte->uart_port, 1);
+    MODEM_CHECK(res == ESP_OK, "set rx timeout failed", err_uart_config);
 
     /* Set pattern interrupt, used to detect the end of a line. */
     res = uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
