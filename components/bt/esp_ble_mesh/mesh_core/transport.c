@@ -837,9 +837,11 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
         return 0;
     }
 
-    BT_WARN("%s, No matching AppKey", __func__);
+    if (rx->local_match) {
+        BT_WARN("%s, No matching AppKey", __func__);
+    }
     bt_mesh_free_buf(sdu);
-    return -EINVAL;
+    return 0;
 }
 
 static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
