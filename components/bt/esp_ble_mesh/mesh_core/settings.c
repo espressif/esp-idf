@@ -168,6 +168,30 @@ struct node_info {
     u8_t  dev_key[16];
 } __packed;
 
+static bt_mesh_mutex_t settings_lock;
+
+static void bt_mesh_settings_mutex_new(void)
+{
+    if (settings_lock.mutex == NULL) {
+        bt_mesh_mutex_create(&settings_lock);
+    }
+}
+
+static void bt_mesh_settings_mutex_free(void)
+{
+    bt_mesh_mutex_free(&settings_lock);
+}
+
+void bt_mesh_settings_lock(void)
+{
+    bt_mesh_mutex_lock(&settings_lock);
+}
+
+void bt_mesh_settings_unlock(void)
+{
+    bt_mesh_mutex_unlock(&settings_lock);
+}
+
 static int role_set(const char *name)
 {
     bool exist = false;
@@ -2557,7 +2581,8 @@ int bt_mesh_settings_init(void)
 {
     BT_DBG("%s", __func__);
 
-    bt_mesh_settings_foreach();
+    bt_mesh_settings_mutex_new();
+    bt_mesh_settings_init_foreach();
 
     return 0;
 }
@@ -2571,7 +2596,8 @@ int settings_core_deinit(void)
 
 int bt_mesh_settings_deinit(void)
 {
-    bt_mesh_settings_deforeach();
+    bt_mesh_settings_deinit_foreach();
+    bt_mesh_settings_mutex_free();
 
     return 0;
 }

@@ -64,6 +64,9 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node);
 void bt_mesh_store_node_comp_data(struct bt_mesh_node *node);
 #endif
 
+void bt_mesh_settings_lock(void);
+void bt_mesh_settings_unlock(void);
+
 int bt_mesh_settings_init(void);
 int bt_mesh_settings_deinit(void);
 
