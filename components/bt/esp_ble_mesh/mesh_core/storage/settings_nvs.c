@@ -15,9 +15,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "nvs.h"
-#include "nvs_flash.h"
-
 #include "mesh_common.h"
 #include "settings_nvs.h"
 #include "settings.h"
@@ -31,7 +28,7 @@ enum settings_type {
 
 struct settings_context {
     char *nvs_name;
-    nvs_handle handle;
+    bt_mesh_nvs_handle_t handle;
 
     int (*settings_init)(void);
     int (*settings_load)(void);
@@ -123,14 +120,14 @@ void bt_mesh_settings_deforeach(void)
 
 /* API used to get BLE Mesh related nvs handle */
 
-static inline nvs_handle settings_get_nvs_handle(enum settings_type type)
+static inline bt_mesh_nvs_handle_t settings_get_nvs_handle(enum settings_type type)
 {
     return settings_ctx[type].handle;
 }
 
 /* API used to store/erase BLE Mesh related settings */
 
-static int settings_save(nvs_handle handle, const char *key, const u8_t *val, size_t len)
+static int settings_save(bt_mesh_nvs_handle_t handle, const char *key, const u8_t *val, size_t len)
 {
     int err = 0;
 
@@ -167,13 +164,13 @@ static int settings_save(nvs_handle handle, const char *key, const u8_t *val, si
 
 int bt_mesh_save_core_settings(const char *key, const u8_t *val, size_t len)
 {
-    nvs_handle handle = settings_get_nvs_handle(SETTINGS_CORE);
+    bt_mesh_nvs_handle_t handle = settings_get_nvs_handle(SETTINGS_CORE);
     return settings_save(handle, key, val, len);
 }
 
 /* API used to load BLE Mesh related settings */
 
-static int settings_load(nvs_handle handle, const char *key,
+static int settings_load(bt_mesh_nvs_handle_t handle, const char *key,
                          u8_t *buf, size_t buf_len, bool *exist)
 {
     int err = 0;
@@ -201,13 +198,13 @@ static int settings_load(nvs_handle handle, const char *key,
 
 int bt_mesh_load_core_settings(const char *key, u8_t *buf, size_t buf_len, bool *exist)
 {
-    nvs_handle handle = settings_get_nvs_handle(SETTINGS_CORE);
+    bt_mesh_nvs_handle_t handle = settings_get_nvs_handle(SETTINGS_CORE);
     return settings_load(handle, key, buf, buf_len, exist);
 }
 
 /* API used to get length of BLE Mesh related settings */
 
-static size_t settings_get_length(nvs_handle handle, const char *key)
+static size_t settings_get_length(bt_mesh_nvs_handle_t handle, const char *key)
 {
     size_t len = 0U;
     int err = 0;
@@ -233,7 +230,7 @@ static size_t settings_get_length(nvs_handle handle, const char *key)
  * Mesh settings.
  */
 
-static struct net_buf_simple *settings_get_item(nvs_handle handle, const char *key)
+static struct net_buf_simple *settings_get_item(bt_mesh_nvs_handle_t handle, const char *key)
 {
     struct net_buf_simple *buf = NULL;
     size_t length = 0U;
@@ -272,7 +269,7 @@ static struct net_buf_simple *settings_get_item(nvs_handle handle, const char *k
 
 struct net_buf_simple *bt_mesh_get_core_settings_item(const char *key)
 {
-    nvs_handle handle = settings_get_nvs_handle(SETTINGS_CORE);
+    bt_mesh_nvs_handle_t handle = settings_get_nvs_handle(SETTINGS_CORE);
     return settings_get_item(handle, key);
 }
 
@@ -305,7 +302,7 @@ static bool is_settings_item_exist(struct net_buf_simple *buf, const u16_t val)
 
 /* API used to add the settings item */
 
-static int settings_add_item(nvs_handle handle, const char *key, const u16_t val)
+static int settings_add_item(bt_mesh_nvs_handle_t handle, const char *key, const u16_t val)
 {
     struct net_buf_simple *store = NULL;
     struct net_buf_simple *buf = NULL;
@@ -344,13 +341,13 @@ static int settings_add_item(nvs_handle handle, const char *key, const u16_t val
 
 int bt_mesh_add_core_settings_item(const char *key, const u16_t val)
 {
-    nvs_handle handle = settings_get_nvs_handle(SETTINGS_CORE);
+    bt_mesh_nvs_handle_t handle = settings_get_nvs_handle(SETTINGS_CORE);
     return settings_add_item(handle, key, val);
 }
 
 /* API used to remove the settings item */
 
-static int settings_remove_item(nvs_handle handle, const char *key, const u16_t val)
+static int settings_remove_item(bt_mesh_nvs_handle_t handle, const char *key, const u16_t val)
 {
     struct net_buf_simple *store = NULL;
     struct net_buf_simple *buf = NULL;
@@ -399,7 +396,7 @@ static int settings_remove_item(nvs_handle handle, const char *key, const u16_t 
 
 int bt_mesh_remove_core_settings_item(const char *key, const u16_t val)
 {
-    nvs_handle handle = settings_get_nvs_handle(SETTINGS_CORE);
+    bt_mesh_nvs_handle_t handle = settings_get_nvs_handle(SETTINGS_CORE);
     return settings_remove_item(handle, key, val);
 }
 
