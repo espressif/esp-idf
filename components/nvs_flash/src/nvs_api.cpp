@@ -158,17 +158,13 @@ static esp_err_t close_handles_and_deinit(const char* partition_name)
 #endif
 
     /* Clean up handles related to the storage being deinitialized */
-    auto it = s_nvs_handles.begin();
-    auto next = it;
-    while(it != s_nvs_handles.end()) {
-        next++;
+    for (auto it = s_nvs_handles.begin(), next = it; it != s_nvs_handles.end() && next++; it = next) {
         if (it->mStoragePtr == storage) {
             ESP_LOGD(TAG, "Deleting handle %d (ns=%d) related to partition \"%s\" (missing call to nvs_close?)",
                      it->mHandle, it->mNsIndex, partition_name);
             s_nvs_handles.erase(it);
             delete static_cast<HandleEntry*>(it);
         }
-        it = next;
     }
 
     /* Finally delete the storage itself */

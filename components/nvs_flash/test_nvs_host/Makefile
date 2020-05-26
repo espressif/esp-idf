@@ -19,6 +19,7 @@ SOURCE_FILES = \
 	test_intrusive_list.cpp \
 	test_nvs.cpp \
 	test_nvs_storage.cpp \
+	test_nvs_initialization.cpp \
 	crc.cpp \
 	main.cpp
 
