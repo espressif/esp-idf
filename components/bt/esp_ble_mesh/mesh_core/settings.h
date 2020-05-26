@@ -14,6 +14,11 @@
 extern "C" {
 #endif
 
+#define BLE_MESH_SETTINGS_ROLE_NONE     0
+#define BLE_MESH_SETTINGS_ROLE_NODE     (BIT(BLE_MESH_NODE))
+#define BLE_MESH_SETTINGS_ROLE_PROV     (BIT(BLE_MESH_PROVISIONER))
+#define BLE_MESH_SETTINGS_ROLE_BIT_MASK (BIT(BLE_MESH_NODE) | BIT(BLE_MESH_PROVISIONER))
+
 int settings_core_init(void);
 int settings_core_load(void);
 int settings_core_commit(void);
