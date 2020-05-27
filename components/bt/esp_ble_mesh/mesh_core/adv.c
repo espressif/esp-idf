@@ -1163,7 +1163,16 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
     front = (tx->param.priority == BLE_MESH_BLE_ADV_PRIO_HIGH) ? true : false;
     bt_mesh_ble_adv_send(buf, &ble_adv_send_cb, tx, front);
     if (param->count) {
-        k_delayed_work_init(&tx->resend, ble_adv_resend);
+        if (k_delayed_work_init(&tx->resend, ble_adv_resend)) {
+            /* If failed to create a timer, the BLE adv packet will be
+             * sent only once. Just give a warning here, and since the
+             * BLE adv packet can be sent, return 0 here.
+             */
+            BT_WARN("Send BLE adv packet only once");
+            tx->param.count = 0;
+            net_buf_unref(buf);
+            return 0;
+        }
         bt_mesh_atomic_set_bit(tx->flags, TIMER_INIT);
     } else {
         /* Send the BLE advertising packet only once */

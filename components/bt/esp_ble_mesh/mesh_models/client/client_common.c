@@ -324,13 +324,17 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     node->opcode = opcode;
     node->op_pending = bt_mesh_client_get_status_op(client->op_pair, client->op_pair_size, opcode);
     if (node->op_pending == 0U) {
-        BT_ERR("%s, Not found the status opcode in the op_pair list", __func__);
+        BT_ERR("Not found the status opcode in op_pair list");
         bt_mesh_free(node);
         return -EINVAL;
     }
     node->timeout = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
 
-    k_delayed_work_init(&node->timer, timer_handler);
+    if (k_delayed_work_init(&node->timer, timer_handler)) {
+        BT_ERR("%s, Failed to create a timer", __func__);
+        bt_mesh_free(node);
+        return -EIO;
+    }
 
     bt_mesh_list_lock();
     sys_slist_append(&internal->queue, &node->client_node);
@@ -492,6 +496,7 @@ int bt_mesh_client_clear_list(void *data)
     bt_mesh_list_lock();
     while (!sys_slist_is_empty(&internal->queue)) {
         node = (void *)sys_slist_get_not_empty(&internal->queue);
+        k_delayed_work_free(&node->timer);
         bt_mesh_free(node);
     }
     bt_mesh_list_unlock();
