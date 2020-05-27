@@ -471,7 +471,7 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
     // if a PING message received -> send out the PONG, this will not work for PING messages with payload longer than buffer len
     if (client->last_opcode == WS_TRANSPORT_OPCODES_PING) {
         const char *data = (client->payload_len == 0) ? NULL : client->rx_buffer;
-        esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PONG, data, client->payload_len,
+        esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PONG | WS_TRANSPORT_OPCODES_FIN, data, client->payload_len,
                                   client->config->network_timeout_ms);
     }
 
@@ -529,7 +529,7 @@ static void esp_websocket_client_task(void *pv)
                 if (_tick_get_ms() - client->ping_tick_ms > WEBSOCKET_PING_TIMEOUT_MS) {
                     client->ping_tick_ms = _tick_get_ms();
                     ESP_LOGD(TAG, "Sending PING...");
-                    esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING, NULL, 0, client->config->network_timeout_ms);
+                    esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING | WS_TRANSPORT_OPCODES_FIN, NULL, 0, client->config->network_timeout_ms);
                 }
                 if (read_select == 0) {
                     ESP_LOGV(TAG, "Read poll timeout: skipping esp_transport_read()...");
@@ -649,22 +649,26 @@ static int esp_websocket_client_send_with_opcode(esp_websocket_client_handle_t c
         ESP_LOGE(TAG, "Invalid transport");
         goto unlock_and_return;
     }
-
+    uint32_t current_opcode = opcode;
     while (widx < len) {
         if (need_write > client->buffer_size) {
             need_write = client->buffer_size;
+        } else {
+            current_opcode |= WS_TRANSPORT_OPCODES_FIN;
         }
         memcpy(client->tx_buffer, data + widx, need_write);
         // send with ws specific way and specific opcode
-        wlen = esp_transport_ws_send_raw(client->transport, opcode, (char *)client->tx_buffer, need_write,
+        wlen = esp_transport_ws_send_raw(client->transport, current_opcode, (char *)client->tx_buffer, need_write,
                                         (timeout==portMAX_DELAY)? -1 : timeout * portTICK_PERIOD_MS);
         if (wlen <= 0) {
             ret = wlen;
             ESP_LOGE(TAG, "Network error: esp_transport_write() returned %d, errno=%d", ret, errno);
             goto unlock_and_return;
         }
+        current_opcode = 0;
         widx += wlen;
         need_write = len - widx;
+
     }
     ret = widx;
 unlock_and_return:
