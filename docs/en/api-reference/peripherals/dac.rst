@@ -39,3 +39,4 @@ e.g.
 2. ``DAC_GPIO26_CHANNEL`` is the channel number of GPIO 26 (channel 2).
 
 .. include:: /_build/inc/dac_channel.inc
+.. include:: /_build/inc/dac_types.inc

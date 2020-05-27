@@ -19,9 +19,9 @@ Configuration and Reading ADC
 
 The ADC should be configured before reading is taken.
 
- - For ADC1, configure desired precision and attenuation by calling functions :cpp:func:`adc1_config_width` and :cpp:func:`adc1_config_channel_atten`. 
+ - For ADC1, configure desired precision and attenuation by calling functions :cpp:func:`adc1_config_width` and :cpp:func:`adc1_config_channel_atten`.
  - For ADC2, configure the attenuation by :cpp:func:`adc2_config_channel_atten`. The reading width of ADC2 is configured every time you take the reading.
- 
+
 Attenuation configuration is done per channel, see :cpp:type:`adc1_channel_t` and :cpp:type:`adc2_channel_t`, set as a parameter of above functions.
 
 Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` and :cpp:func:`adc2_get_raw`. Reading width of ADC2 should be set as a parameter of :cpp:func:`adc2_get_raw` instead of in the configuration functions.
@@ -55,7 +55,7 @@ Reading voltage on ADC2 channel 7 (GPIO 27)::
     #include <driver/adc.h>
 
     ...
-        
+
         int read_raw;
         adc2_config_channel_atten( ADC2_CHANNEL_7, ADC_ATTEN_0db );
 
@@ -92,7 +92,7 @@ The ESP32 ADC can be sensitive to noise leading to large discrepancies in ADC re
 .. figure:: ../../../_static/adc-noise-graph.jpg
     :align: center
     :alt: ADC noise mitigation
-    
+
     Graph illustrating noise mitigation using capacitor and multisampling of 64 samples.
 
 ADC Calibration
@@ -103,7 +103,7 @@ The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions t
 .. figure:: ../../../_static/adc-vref-graph.jpg
     :align: center
     :alt: ADC reference voltage comparison
-    
+
     Graph illustrating effect of differing reference voltages on the ADC voltage curve.
 
 Correcting ADC readings using this API involves characterizing one of the ADCs at a given attenuation to obtain a characteristics curve (ADC-Voltage curve) that takes into account the difference in ADC reference voltage. The characteristics curve is in the form of ``y = coeff_a * x + coeff_b`` and is used to convert ADC readings to voltages in mV. Calculation of the characteristics curve is based on calibration values which can be stored in eFuse or provided by the user.
@@ -115,7 +115,7 @@ Calibration values are used to generate characteristic curves that account for t
 
 * **Two Point** values represent each of the ADCs’ readings at 150mV and 850mV. To obtain more accurate calibration results these values should be measured by user and burned into eFuse ``BLOCK3``.
 
-* **eFuse Vref** represents the true ADC reference voltage. This value is measured and burned into eFuse ``BLOCK0`` during factory calibration. 
+* **eFuse Vref** represents the true ADC reference voltage. This value is measured and burned into eFuse ``BLOCK0`` during factory calibration.
 
 * **Default Vref** is an estimate of the ADC reference voltage provided by the user as a parameter during characterization. If Two Point or eFuse Vref values are unavailable, **Default Vref** will be used.
 
@@ -124,7 +124,7 @@ Individual measurement and burning of the **eFuse Vref** has been applied to ESP
 .. figure:: ../../../_static/chip_surface_marking.png
     :align: center
     :alt: ESP32 Chip Surface Marking
-    
+
     ESP32 Chip Surface Marking
 
 If you would like to purchase chips or modules with calibration, double check with distributor or Espressif directly.
@@ -135,7 +135,7 @@ If you are unable to check the date code (i.e. the chip may be enclosed inside a
 
     $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 
-Replace ``/dev/ttyUSB0`` with ESP32 board's port name. 
+Replace ``/dev/ttyUSB0`` with ESP32 board's port name.
 
 A chip that has specific **eFuse Vref** value programmed (in this case 1093mV) will be reported as follows::
 
@@ -163,9 +163,9 @@ Characterizing an ADC at a particular attenuation::
 
     #include "driver/adc.h"
     #include "esp_adc_cal.h"
-    
+
     ...
-    
+
         //Characterize ADC at particular atten
         esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
         esp_adc_cal_value_t val_type = esp_adc_cal_characterize(unit, atten, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars);
@@ -182,15 +182,15 @@ Reading an ADC then converting the reading to a voltage::
 
     #include "driver/adc.h"
     #include "esp_adc_cal.h"
-    
+
     ...
         uint32_t reading =  adc1_get_raw(ADC1_CHANNEL_5);
         uint32_t voltage = esp_adc_cal_raw_to_voltage(reading, adc_chars);
-        
+
 Routing ADC reference voltage to GPIO, so it can be manually measured (for **Default Vref**)::
 
     #include "driver/adc.h"
-    
+
     ...
 
         esp_err_t status = adc2_vref_to_gpio(GPIO_NUM_25);
@@ -225,6 +225,8 @@ ADC driver
 ^^^^^^^^^^
 
 .. include:: /_build/inc/adc.inc
+
+.. include:: /_build/inc/adc_types.inc
 
 .. _adc-api-reference-adc-calibration:
 

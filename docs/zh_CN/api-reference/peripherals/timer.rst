@@ -105,3 +105,4 @@ API 参考
 -------------
 
 .. include:: /_build/inc/timer.inc
+.. include:: /_build/inc/timer_types.inc

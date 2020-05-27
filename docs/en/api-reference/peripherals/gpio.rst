@@ -20,9 +20,10 @@ API Reference - Normal GPIO
 ---------------------------
 
 .. include:: /_build/inc/gpio.inc
+.. include:: /_build/inc/gpio_types.inc
 
 API Reference - RTC GPIO
 ------------------------
 
 .. include:: /_build/inc/rtc_io.inc
-
+.. include:: /_build/inc/rtc_io_types.inc
