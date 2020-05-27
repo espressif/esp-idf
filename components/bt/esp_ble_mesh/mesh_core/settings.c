@@ -1211,43 +1211,44 @@ const struct bt_mesh_setting {
     const char *name;
     int (*func)(const char *name);
 } settings[] = {
-    { "mesh/role",     role_set      },
-    { "mesh/net",      net_set       },
-    { "mesh/iv",       iv_set        },
-    { "mesh/seq",      seq_set       },
-    { "mesh/rpl",      rpl_set       },
-    { "mesh/netkey",   net_key_set   },
-    { "mesh/appkey",   app_key_set   },
-    { "mesh/hb_pub",   hb_pub_set    },
-    { "mesh/cfg",      cfg_set       },
-    { "mesh/sig",      sig_mod_set   },
-    { "mesh/vnd",      vnd_mod_set   },
+    { "mesh/role",     role_set      }, /* For Node & Provisioner */
+    { "mesh/net",      net_set       }, /* For Node */
+    { "mesh/iv",       iv_set        }, /* For Node & Provisioner */
+    { "mesh/seq",      seq_set       }, /* For Node & Provisioner */
+    { "mesh/rpl",      rpl_set       }, /* For Node & Provisioner */
+    { "mesh/netkey",   net_key_set   }, /* For Node */
+    { "mesh/appkey",   app_key_set   }, /* For Node */
+    { "mesh/hb_pub",   hb_pub_set    }, /* For Node */
+    { "mesh/cfg",      cfg_set       }, /* For Node */
+    { "mesh/sig",      sig_mod_set   }, /* For Node & Provisioner */
+    { "mesh/vnd",      vnd_mod_set   }, /* For Node & Provisioner */
 #if CONFIG_BLE_MESH_LABEL_COUNT > 0
-    { "mesh/vaddr",    va_set        },
+    { "mesh/vaddr",    va_set        }, /* For Node */
 #endif
 #if CONFIG_BLE_MESH_PROVISIONER
-    { "mesh/p_prov",   p_prov_set    },
-    { "mesh/p_netidx", p_net_idx_set },
-    { "mesh/p_appidx", p_app_idx_set },
-    { "mesh/p_netkey", p_net_key_set },
-    { "mesh/p_appkey", p_app_key_set },
-    { "mesh/p_node",   p_node_set    },
+    { "mesh/p_prov",   p_prov_set    }, /* For Provisioner */
+    { "mesh/p_netidx", p_net_idx_set }, /* For Provisioner */
+    { "mesh/p_appidx", p_app_idx_set }, /* For Provisioner */
+    { "mesh/p_netkey", p_net_key_set }, /* For Provisioner */
+    { "mesh/p_appkey", p_app_key_set }, /* For Provisioner */
+    { "mesh/p_node",   p_node_set    }, /* For Provisioner */
 #endif
 };
 
 /**
  * For Provisioner, the load operation needs the following actions:
+ * role_set:    Need, restore the device role
  * net_set:     Not needed
- * iv_set:      Need, although Provisioner will do some initialization of IV Index
- *              during startup, but we need to restore the last IV Index status
+ * iv_set:      Need, restore the last IV Index status
  * seq_set:     Need, restore the previous sequence number
  * rpl_set:     Need, restore the previous Replay Protection List
- * net_key_set: Need, restore the previous network keys
- * app_key_set: Need, restore the previous application keys
+ * net_key_set: Not needed
+ * app_key_set: Not needed
  * hb_pub_set:  Not needed currently
  * cfg_set:     Not needed currently
  * sig_mod_set: Need, restore SIG models related info (app, sub, pub)
  * vnd_mod_set: Need, restore vendor models related info (app, sub, pub)
+ * va_set:      Not needed currently
  */
 int settings_core_load(void)
 {
@@ -1260,7 +1261,8 @@ int settings_core_load(void)
             !strcmp(settings[i].name, "mesh/netkey") ||
             !strcmp(settings[i].name, "mesh/appkey") ||
             !strcmp(settings[i].name, "mesh/hb_pub") ||
-            !strcmp(settings[i].name, "mesh/cfg")) &&
+            !strcmp(settings[i].name, "mesh/cfg") ||
+            !strcmp(settings[i].name, "mesh/vaddr")) &&
             (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioner())) {
             BT_DBG("Not restoring %s for Provisioner", settings[i].name);
             continue;
@@ -1282,7 +1284,7 @@ int settings_core_load(void)
         if (!strcmp(settings[i].name, "mesh/role")) {
             u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
             switch (role) {
-            case 0U:
+            case BLE_MESH_SETTINGS_ROLE_NONE:
                 BT_INFO("Mesh device just starts up, no restore");
                 return 0;
             case BLE_MESH_SETTINGS_ROLE_NODE:
@@ -1482,16 +1484,10 @@ static void schedule_store(int flag)
     }
 }
 
-static void clear_iv(void)
-{
-    BT_DBG("Clearing IV");
-    bt_mesh_save_core_settings("mesh/iv", NULL, 0);
-}
-
 static void clear_net(void)
 {
     BT_DBG("Clearing Network");
-    bt_mesh_save_core_settings("mesh/net", NULL, 0);
+    bt_mesh_erase_core_settings("mesh/net");
 }
 
 static void store_pending_net(void)
@@ -1542,7 +1538,8 @@ void bt_mesh_store_iv(bool only_duration)
 
 void bt_mesh_clear_iv(void)
 {
-    clear_iv();
+    BT_DBG("Clearing IV");
+    bt_mesh_erase_core_settings("mesh/iv");
 }
 
 static void store_pending_seq(void)
@@ -1566,7 +1563,7 @@ void bt_mesh_store_seq(void)
 
 void bt_mesh_clear_seq(void)
 {
-    bt_mesh_save_core_settings("mesh/seq", NULL, 0);
+    bt_mesh_erase_core_settings("mesh/seq");
 }
 
 static void store_rpl(struct bt_mesh_rpl *entry)
@@ -1609,7 +1606,7 @@ static void clear_rpl(void)
 
     buf = bt_mesh_get_core_settings_item("mesh/rpl");
     if (!buf) {
-        bt_mesh_save_core_settings("mesh/rpl", NULL, 0);
+        bt_mesh_erase_core_settings("mesh/rpl");
         return;
     }
 
@@ -1617,11 +1614,17 @@ static void clear_rpl(void)
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         src = net_buf_simple_pull_le16(buf);
+
+        if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
+            BT_ERR("Invalid source address 0x%04x", src);
+            continue;
+        }
+
         sprintf(name, "mesh/rpl/%04x", src);
-        bt_mesh_save_core_settings(name, NULL, 0);
+        bt_mesh_erase_core_settings(name);
     }
 
-    bt_mesh_save_core_settings("mesh/rpl", NULL, 0);
+    bt_mesh_erase_core_settings("mesh/rpl");
 
     bt_mesh_free_buf(buf);
     return;
@@ -1687,7 +1690,7 @@ static void store_pending_cfg(void)
 static void clear_cfg(void)
 {
     BT_DBG("Clearing configuration");
-    bt_mesh_save_core_settings("mesh/cfg", NULL, 0);
+    bt_mesh_erase_core_settings("mesh/cfg");
 }
 
 static void clear_app_key(u16_t app_idx)
@@ -1698,7 +1701,7 @@ static void clear_app_key(u16_t app_idx)
     BT_DBG("AppKeyIndex 0x%03x", app_idx);
 
     sprintf(name, "mesh/ak/%04x", app_idx);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/appkey", app_idx);
     if (err) {
@@ -1716,7 +1719,7 @@ static void clear_net_key(u16_t net_idx)
     BT_DBG("NetKeyIndex 0x%03x", net_idx);
 
     sprintf(name, "mesh/nk/%04x", net_idx);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/netkey", net_idx);
     if (err) {
@@ -1834,7 +1837,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
             !bt_mesh_is_provisioned()) {
-        bt_mesh_save_core_settings(name, NULL, 0);
+        bt_mesh_erase_core_settings(name);
         return;
     }
 
@@ -1865,7 +1868,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
             !bt_mesh_is_provisioned()) {
-        bt_mesh_save_core_settings(name, NULL, 0);
+        bt_mesh_erase_core_settings(name);
         return;
     }
 
@@ -1896,6 +1899,15 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
         return;
     }
 
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            !bt_mesh_is_provisioned()) {
+        bt_mesh_erase_core_settings(name);
+        return;
+    }
+
     pub.addr = model->pub->addr;
     pub.key = model->pub->key;
     pub.ttl = model->pub->ttl;
@@ -1903,16 +1915,6 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
     pub.period = model->pub->period;
     pub.period_div = model->pub->period_div;
     pub.cred = model->pub->cred;
-
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-
-    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
-            !bt_mesh_is_provisioned()) {
-        bt_mesh_save_core_settings(name, NULL, 0);
-        return;
-    }
 
     err = bt_mesh_save_core_settings(name, (const u8_t *)&pub, sizeof(pub));
     if (err) {
@@ -1971,7 +1973,7 @@ static void store_pending_va(void)
         sprintf(name, "mesh/va/%04x", i);
 
         if (IS_VA_DEL(lab)) {
-            err = bt_mesh_save_core_settings(name, NULL, 0);
+            err = bt_mesh_erase_core_settings(name);
         } else {
             va.ref = lab->ref;
             va.addr = lab->addr;
@@ -2029,7 +2031,7 @@ static void store_pending(struct k_work *work)
         if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioned()) {
             store_pending_iv();
         } else {
-            clear_iv();
+            bt_mesh_clear_iv();
         }
     }
 
@@ -2055,8 +2057,8 @@ static void store_pending(struct k_work *work)
         bt_mesh_model_foreach(store_pending_mod, NULL);
         if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
                 !bt_mesh_is_provisioned()) {
-            bt_mesh_save_core_settings("mesh/sig", NULL, 0);
-            bt_mesh_save_core_settings("mesh/vnd", NULL, 0);
+            bt_mesh_erase_core_settings("mesh/sig");
+            bt_mesh_erase_core_settings("mesh/vnd");
         }
     }
 
@@ -2166,7 +2168,7 @@ void bt_mesh_store_cfg(void)
 void bt_mesh_clear_role(void)
 {
     BT_DBG("Clear device role");
-    bt_mesh_save_core_settings("mesh/role", NULL, 0);
+    bt_mesh_erase_core_settings("mesh/role");
 }
 
 void bt_mesh_clear_net(void)
@@ -2286,7 +2288,8 @@ void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
 
 void bt_mesh_clear_prov_info(void)
 {
-    bt_mesh_save_core_settings("mesh/p_prov", NULL, 0);
+    BT_DBG("Clearing prov info");
+    bt_mesh_erase_core_settings("mesh/p_prov");
 }
 
 static void clear_p_net_key(u16_t net_idx)
@@ -2295,7 +2298,7 @@ static void clear_p_net_key(u16_t net_idx)
     int err = 0;
 
     sprintf(name, "mesh/pnk/%04x", net_idx);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/p_netkey", net_idx);
     if (err) {
@@ -2309,7 +2312,7 @@ static void clear_p_app_key(u16_t app_idx)
     int err = 0;
 
     sprintf(name, "mesh/pak/%04x", app_idx);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/p_appkey", app_idx);
     if (err) {
@@ -2375,7 +2378,8 @@ void bt_mesh_store_p_net_idx(void)
 
 void bt_mesh_clear_p_net_idx(void)
 {
-    bt_mesh_save_core_settings("mesh/p_netidx", NULL, 0);
+    BT_DBG("Clearing NetKey Index");
+    bt_mesh_erase_core_settings("mesh/p_netidx");
 }
 
 void bt_mesh_store_p_app_idx(void)
@@ -2388,7 +2392,8 @@ void bt_mesh_store_p_app_idx(void)
 
 void bt_mesh_clear_p_app_idx(void)
 {
-    bt_mesh_save_core_settings("mesh/p_appidx", NULL, 0);
+    BT_DBG("Clearing AppKey Index");
+    bt_mesh_erase_core_settings("mesh/p_appidx");
 }
 
 void bt_mesh_store_p_subnet(struct bt_mesh_subnet *sub)
@@ -2452,7 +2457,7 @@ void bt_mesh_clear_rpl_single(u16_t src)
     }
 
     sprintf(name, "mesh/rpl/%04x", src);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/rpl", src);
     if (err) {
@@ -2502,15 +2507,15 @@ static void clear_node(u16_t addr)
 
     /* Clear node information */
     sprintf(name, "mesh/pn/%04x/i", addr);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     /* Clear node name */
     sprintf(name, "mesh/pn/%04x/n", addr);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     /* Clear node composition data */
     sprintf(name, "mesh/pn/%04x/c", addr);
-    bt_mesh_save_core_settings(name, NULL, 0);
+    bt_mesh_erase_core_settings(name);
 
     err = bt_mesh_remove_core_settings_item("mesh/p_node", addr);
     if (err) {
