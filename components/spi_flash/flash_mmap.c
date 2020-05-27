@@ -378,15 +378,26 @@ uint32_t spi_flash_cache2phys(const void *cached)
 {
     intptr_t c = (intptr_t)cached;
     size_t cache_page;
+    int offset = 0;
     if (c >= VADDR1_START_ADDR && c < VADDR1_FIRST_USABLE_ADDR) {
         /* IRAM address, doesn't map to flash */
         return SPI_FLASH_CACHE2PHYS_FAIL;
     } else if (c < VADDR1_FIRST_USABLE_ADDR) {
         /* expect cache is in DROM */
         cache_page = (c - VADDR0_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + DROM0_PAGES_START;
+#if CONFIG_SPIRAM_RODATA
+        if (c >= (uint32_t)&_rodata_reserved_start && c <= (uint32_t)&_rodata_reserved_end) {
+            offset = rodata_flash2spiram_offset();
+        }
+#endif
     } else {
         /* expect cache is in IROM */
         cache_page = (c - VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + IROM0_PAGES_START;
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        if (c >= (uint32_t)&_instruction_reserved_start && c <= (uint32_t)&_instruction_reserved_end) {
+            offset = instruction_flash2spiram_offset();
+        }
+#endif
     }
 
     if (cache_page >= PAGES_LIMIT) {
@@ -398,7 +409,7 @@ uint32_t spi_flash_cache2phys(const void *cached)
         /* page is not mapped */
         return SPI_FLASH_CACHE2PHYS_FAIL;
     }
-    uint32_t phys_offs = (phys_page & MMU_ADDR_MASK)* SPI_FLASH_MMU_PAGE_SIZE;
+    uint32_t phys_offs = ((phys_page & MMU_ADDR_MASK) + offset) * SPI_FLASH_MMU_PAGE_SIZE;
     return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
 }
 
@@ -422,7 +433,24 @@ const void *IRAM_ATTR spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_me
     spi_flash_disable_interrupts_caches_and_other_cpu();
     DPORT_INTERRUPT_DISABLE();
     for (int i = start; i < end; i++) {
-        if (DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == PAGE_IN_FLASH(phys_page)) {
+        uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]);
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
+            if (mmu_value & MMU_ACCESS_SPIRAM) {
+                mmu_value += instruction_flash2spiram_offset();
+                mmu_value = (mmu_value & MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
+            }
+        }
+#endif
+#if CONFIG_SPIRAM_RODATA
+        if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
+            if (mmu_value & MMU_ACCESS_SPIRAM) {
+                mmu_value += rodata_flash2spiram_offset();
+                mmu_value = (mmu_value & MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
+            }
+        }
+#endif
+        if (mmu_value == PAGE_IN_FLASH(phys_page)) {
             i -= page_delta;
             intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
             DPORT_INTERRUPT_RESTORE();
