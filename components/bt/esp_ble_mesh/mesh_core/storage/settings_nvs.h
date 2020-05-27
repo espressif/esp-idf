@@ -37,6 +37,9 @@ int bt_mesh_save_settings(bt_mesh_nvs_handle_t handle, const char *key,
                           const u8_t *val, size_t len);
 int bt_mesh_save_core_settings(const char *key, const u8_t *val, size_t len);
 
+int bt_mesh_erase_settings(bt_mesh_nvs_handle_t handle, const char *key);
+int bt_mesh_erase_core_settings(const char *key);
+
 int bt_mesh_load_settings(bt_mesh_nvs_handle_t handle, const char *key,
                           u8_t *buf, size_t buf_len, bool *exist);
 int bt_mesh_load_core_settings(const char *key, u8_t *buf, size_t buf_len, bool *exist);

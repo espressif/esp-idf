@@ -178,6 +178,16 @@ int bt_mesh_save_core_settings(const char *key, const u8_t *val, size_t len)
     return bt_mesh_save_settings(handle, key, val, len);
 }
 
+int bt_mesh_erase_settings(bt_mesh_nvs_handle_t handle, const char *key)
+{
+    return bt_mesh_save_settings(handle, key, NULL, 0);
+}
+
+int bt_mesh_erase_core_settings(const char *key)
+{
+    return bt_mesh_save_core_settings(key, NULL, 0);
+}
+
 /* API used to load BLE Mesh related settings */
 
 static int settings_load(bt_mesh_nvs_handle_t handle, const char *key,
