@@ -2389,7 +2389,7 @@ static void store_p_app_key(struct bt_mesh_app_key *app)
 
 void bt_mesh_store_p_net_idx(void)
 {
-    BT_DBG("p_net_idx_next 0x%03x", bt_mesh.p_net_idx_next);
+    BT_DBG("Store, p_net_idx_next 0x%03x", bt_mesh.p_net_idx_next);
 
     bt_mesh_save_core_settings("mesh/p_netidx",
         (const u8_t *)&bt_mesh.p_net_idx_next, sizeof(bt_mesh.p_net_idx_next));
@@ -2403,7 +2403,7 @@ void bt_mesh_clear_p_net_idx(void)
 
 void bt_mesh_store_p_app_idx(void)
 {
-    BT_DBG("p_app_idx_next 0x%03x", bt_mesh.p_app_idx_next);
+    BT_DBG("Store, p_app_idx_next 0x%03x", bt_mesh.p_app_idx_next);
 
     bt_mesh_save_core_settings("mesh/p_appidx",
         (const u8_t *)&bt_mesh.p_app_idx_next, sizeof(bt_mesh.p_app_idx_next));

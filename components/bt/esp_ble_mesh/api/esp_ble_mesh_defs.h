@@ -1132,6 +1132,7 @@ typedef union {
      */
     struct ble_mesh_provisioner_add_local_app_key_comp_param {
         int err_code;                           /*!< Indicate the result of adding local AppKey by the Provisioner */
+        uint16_t net_idx;                       /*!< NetKey Index */
         uint16_t app_idx;                       /*!< AppKey Index */
     } provisioner_add_app_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT */
     /**
