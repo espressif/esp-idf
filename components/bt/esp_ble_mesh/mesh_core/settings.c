@@ -363,13 +363,18 @@ static int rpl_set(const char *name)
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t src = net_buf_simple_pull_le16(buf);
+
+        if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
+            BT_ERR("Invalid source address 0x%04x", src);
+            continue;
+        }
+
         sprintf(get, "mesh/rpl/%04x", src);
 
         err = bt_mesh_load_core_settings(get, (u8_t *)&rpl, sizeof(rpl), &exist);
         if (err) {
             BT_ERR("Failed to load RPL entry 0x%04x", src);
-            bt_mesh_rpl_reset();
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -386,10 +391,11 @@ static int rpl_set(const char *name)
             }
         }
 
-        BT_INFO("Restored RPL entry 0x%04x: seq 0x%06x, old_iv %u", src, rpl.seq, rpl.old_iv);
         entry->src = src;
         entry->seq = rpl.seq;
         entry->old_iv = rpl.old_iv;
+
+        BT_INFO("Restored RPL entry 0x%04x: seq 0x%06x, old_iv %u", src, rpl.seq, rpl.old_iv);
     }
 
 free:
@@ -438,7 +444,7 @@ static int net_key_set(const char *name)
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load NetKey 0x%03x", net_idx);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -498,7 +504,7 @@ static int app_key_set(const char *name)
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load AppKey 0x%03x", app_idx);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -508,8 +514,7 @@ static int app_key_set(const char *name)
         sub = bt_mesh_subnet_get(key.net_idx);
         if (!sub) {
             BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
-            err = -ENOENT;
-            goto free;
+            continue;
         }
 
         app = bt_mesh_app_key_find(app_idx);
@@ -685,7 +690,7 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
         model->pub->period = 0U;
         model->pub->retransmit = 0U;
         model->pub->count = 0U;
-        return 0;
+        return -EIO;
     }
 
     if (exist == false) {
@@ -700,8 +705,7 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     model->pub->retransmit = pub.retransmit;
     model->pub->count = 0U;
 
-    BT_INFO("Restored Model Publication, address 0x%04x, app_idx 0x%03x",
-           pub.addr, pub.key);
+    BT_INFO("Restored Model Publication, address 0x%04x, app_idx 0x%03x", pub.addr, pub.key);
 
     return 0;
 }
@@ -712,7 +716,6 @@ static int model_set(bool vnd, const char *name)
     struct net_buf_simple *buf = NULL;
     u8_t elem_idx = 0U, model_idx = 0U;
     size_t length = 0U;
-    int err = 0;
     int i;
 
     BT_DBG("%s", __func__);
@@ -726,6 +729,7 @@ static int model_set(bool vnd, const char *name)
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t model_key = net_buf_simple_pull_le16(buf);
+
         elem_idx = BLE_MESH_GET_ELEM_IDX(model_key);
         model_idx = BLE_MESH_GET_MODEL_IDX(model_key);
 
@@ -733,29 +737,16 @@ static int model_set(bool vnd, const char *name)
         if (!model) {
             BT_ERR("%s model not found, elem_idx %u, model_idx %u",
                 vnd ? "vnd" : "sig", elem_idx, model_idx);
-            err = -ENOENT;
-            goto free;
+            continue;
         }
 
-        err = model_set_bind(vnd, model, model_key);
-        if (err) {
-            goto free;
-        }
-
-        err = model_set_sub(vnd, model, model_key);
-        if (err) {
-            goto free;
-        }
-
-        err = model_set_pub(vnd, model, model_key);
-        if (err) {
-            goto free;
-        }
+        model_set_bind(vnd, model, model_key);
+        model_set_sub(vnd, model, model_key);
+        model_set_pub(vnd, model, model_key);
     }
 
-free:
     bt_mesh_free_buf(buf);
-    return err;
+    return 0;
 }
 
 static int sig_mod_set(const char *name)
@@ -796,7 +787,7 @@ static int va_set(const char *name)
         err = bt_mesh_load_core_settings(get, (u8_t *)&va, sizeof(va), &exist);
         if (err) {
             BT_ERR("Failed to load virtual address 0x%04x", index);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -805,7 +796,7 @@ static int va_set(const char *name)
 
         if (va.ref == 0) {
             BT_DBG("Ignore virtual address %s with ref = 0", get);
-            goto free;
+            continue;
         }
 
         lab = get_label(index);
@@ -970,7 +961,7 @@ static int p_net_key_set(const char *name)
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load NetKey 0x%03x", net_idx);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -1030,7 +1021,7 @@ static int p_app_key_set(const char *name)
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load AppKey 0x%03x", app_idx);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -1040,8 +1031,7 @@ static int p_app_key_set(const char *name)
         sub = bt_mesh_provisioner_subnet_get(key.net_idx);
         if (!sub) {
             BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
-            err = -ENOENT;
-            goto free;
+            continue;
         }
 
         app = bt_mesh_provisioner_app_key_find(app_idx);
