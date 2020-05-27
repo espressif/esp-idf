@@ -80,8 +80,8 @@ static struct seg_tx {
                              new_key:1;     /* New/old key */
     u8_t                     nack_count;    /* Number of unacked segs */
     u8_t                     ttl;
-    u8_t                     seg_pending:5, /* Number of segments pending */
-                             attempts:3;
+    u8_t                     seg_pending;   /* Number of segments pending */
+    u8_t                     attempts;      /* Transmit attempts */
     const struct bt_mesh_send_cb *cb;
     void                    *cb_data;
     struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -837,9 +837,11 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
         return 0;
     }
 
-    BT_WARN("%s, No matching AppKey", __func__);
+    if (rx->local_match) {
+        BT_WARN("%s, No matching AppKey", __func__);
+    }
     bt_mesh_free_buf(sdu);
-    return -EINVAL;
+    return 0;
 }
 
 static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
