@@ -2302,34 +2302,6 @@ void bt_mesh_clear_prov_info(void)
     bt_mesh_erase_core_settings("mesh/p_prov");
 }
 
-static void clear_p_net_key(u16_t net_idx)
-{
-    char name[16] = {'\0'};
-    int err = 0;
-
-    sprintf(name, "mesh/pnk/%04x", net_idx);
-    bt_mesh_erase_core_settings(name);
-
-    err = bt_mesh_remove_core_settings_item("mesh/p_netkey", net_idx);
-    if (err) {
-        BT_ERR("Failed to remove 0x%03x from mesh/p_netkey", net_idx);
-    }
-}
-
-static void clear_p_app_key(u16_t app_idx)
-{
-    char name[16] = {'\0'};
-    int err = 0;
-
-    sprintf(name, "mesh/pak/%04x", app_idx);
-    bt_mesh_erase_core_settings(name);
-
-    err = bt_mesh_remove_core_settings_item("mesh/p_appkey", app_idx);
-    if (err) {
-        BT_ERR("Failed to remove 0x%03x from mesh/p_appkey", app_idx);
-    }
-}
-
 static void store_p_net_key(struct bt_mesh_subnet *sub)
 {
     struct net_key_val key = {0};
@@ -2432,28 +2404,36 @@ void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key)
     store_p_app_key(key);
 }
 
-void bt_mesh_clear_p_subnet(struct bt_mesh_subnet *sub)
+void bt_mesh_clear_p_subnet(u16_t net_idx)
 {
-    if (sub == NULL) {
-        BT_ERR("Invalid subnet");
-        return;
+    char name[16] = {'\0'};
+    int err = 0;
+
+    BT_DBG("NetKeyIndex 0x%03x", net_idx);
+
+    sprintf(name, "mesh/pnk/%04x", net_idx);
+    bt_mesh_erase_core_settings(name);
+
+    err = bt_mesh_remove_core_settings_item("mesh/p_netkey", net_idx);
+    if (err) {
+        BT_ERR("Failed to remove 0x%04x from mesh/p_netkey", net_idx);
     }
-
-    BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
-
-    clear_p_net_key(sub->net_idx);
 }
 
-void bt_mesh_clear_p_app_key(struct bt_mesh_app_key *key)
+void bt_mesh_clear_p_app_key(u16_t app_idx)
 {
-    if (key == NULL) {
-        BT_ERR("Invalid AppKey");
-        return;
+    char name[16] = {'\0'};
+    int err = 0;
+
+    BT_DBG("AppKeyIndex 0x%03x", app_idx);
+
+    sprintf(name, "mesh/pak/%04x", app_idx);
+    bt_mesh_erase_core_settings(name);
+
+    err = bt_mesh_remove_core_settings_item("mesh/p_appkey", app_idx);
+    if (err) {
+        BT_ERR("Failed to remove 0x%04x from mesh/p_appkey", app_idx);
     }
-
-    BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
-
-    clear_p_app_key(key->app_idx);
 }
 
 void bt_mesh_clear_rpl_single(u16_t src)
