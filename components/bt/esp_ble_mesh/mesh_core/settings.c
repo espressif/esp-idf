@@ -550,13 +550,13 @@ static int hb_pub_set(const char *name)
     BT_DBG("%s", __func__);
 
     if (!hb_pub) {
-        BT_ERR("Invalid heartbeat pub");
+        BT_ERR("Invalid heartbeat publication");
         return -EINVAL;
     }
 
     err = bt_mesh_load_core_settings(name, (u8_t *)&hb_val, sizeof(hb_val), &exist);
     if (err) {
-        BT_ERR("Failed to load heartbeat pub");
+        BT_ERR("Failed to load heartbeat publication");
         hb_pub->dst = BLE_MESH_ADDR_UNASSIGNED;
         hb_pub->count = 0U;
         hb_pub->ttl = 0U;
@@ -1652,7 +1652,7 @@ static void store_pending_hb_pub(void)
     struct hb_pub_val val = {0};
 
     if (!hb_pub) {
-        BT_WARN("NULL heartbeat publication");
+        BT_ERR("Invalid heartbeat publication");
         return;
     }
 
@@ -1664,6 +1664,12 @@ static void store_pending_hb_pub(void)
     val.net_idx = hb_pub->net_idx;
 
     bt_mesh_save_core_settings("mesh/hb_pub", (const u8_t *)&val, sizeof(val));
+}
+
+static void clear_hb_pub(void)
+{
+    BT_DBG("Clear heartbeat publication");
+    bt_mesh_erase_core_settings("mesh/hb_pub");
 }
 
 static void store_pending_cfg(void)
@@ -2041,7 +2047,11 @@ static void store_pending(struct k_work *work)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
         bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_HB_PUB_PENDING)) {
-        store_pending_hb_pub();
+        if (bt_mesh_is_provisioned()) {
+            store_pending_hb_pub();
+        } else {
+            clear_hb_pub();
+        }
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
