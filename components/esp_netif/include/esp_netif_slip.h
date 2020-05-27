@@ -23,7 +23,13 @@ extern "C" {
 #include "driver/uart.h"
 
 /** @brief SLIP event base */
-ESP_EVENT_DECLARE_BASE(NETIF_SLIP_STATUS);
+ESP_EVENT_DECLARE_BASE(SLIP_EVENT);
+
+typedef enum esp_netif_slip_event {
+    SLIP_EVENT_START = 1,
+    SLIP_EVENT_STOP = 2,
+
+} esp_netif_slip_event_e;
 
 /** @brief Forward declaration of lwip_slip_ctx for external use */
 typedef struct lwip_slip_ctx lwip_slip_ctx_t;

@@ -33,7 +33,7 @@
 #include <string.h>
 
 
-ESP_EVENT_DEFINE_BASE(NETIF_SLIP_STATUS);
+ESP_EVENT_DEFINE_BASE(SLIP_EVENT);
 
 static const char *TAG = "esp-netif_lwip-slip";
 
@@ -121,7 +121,7 @@ esp_err_t esp_netif_stop_slip(lwip_slip_ctx_t *slip_ctx)
     ESP_LOGI(TAG, "%s: Stopped SLIP connection: %p", __func__, slip_ctx);
 
     // Stop interface
-    netif_set_link_down(slip_ctx->esp_netif->lwip_netif)
+    netif_set_link_down(slip_ctx->esp_netif->lwip_netif);
 
     return ESP_OK;
 }
