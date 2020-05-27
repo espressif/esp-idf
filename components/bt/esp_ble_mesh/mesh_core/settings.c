@@ -1565,6 +1565,7 @@ void bt_mesh_store_seq(void)
 
 void bt_mesh_clear_seq(void)
 {
+    BT_DBG("Clearing Seq");
     bt_mesh_erase_core_settings("mesh/seq");
 }
 
@@ -1838,14 +1839,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
     int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
-            !bt_mesh_is_provisioned()) {
-        bt_mesh_erase_core_settings(name);
-        return;
-    }
 
     err = bt_mesh_save_core_settings(name, (const u8_t *)model->keys, sizeof(model->keys));
     if (err) {
@@ -1869,14 +1863,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
     int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
-            !bt_mesh_is_provisioned()) {
-        bt_mesh_erase_core_settings(name);
-        return;
-    }
 
     err = bt_mesh_save_core_settings(name, (const u8_t *)model->groups, sizeof(model->groups));
     if (err) {
@@ -1907,12 +1894,6 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
-            !bt_mesh_is_provisioned()) {
-        bt_mesh_erase_core_settings(name);
-        return;
-    }
 
     pub.addr = model->pub->addr;
     pub.key = model->pub->key;
@@ -1958,6 +1939,66 @@ static void store_pending_mod(struct bt_mesh_model *model,
     if (model->flags & BLE_MESH_MOD_PUB_PENDING) {
         model->flags &= ~BLE_MESH_MOD_PUB_PENDING;
         store_pending_mod_pub(model, vnd);
+    }
+}
+
+static void clear_mod_bind(struct bt_mesh_model *model, bool vnd)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
+
+    bt_mesh_erase_core_settings(name);
+    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+}
+
+static void clear_mod_sub(struct bt_mesh_model *model, bool vnd)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
+
+    bt_mesh_erase_core_settings(name);
+    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+}
+
+static void clear_mod_pub(struct bt_mesh_model *model, bool vnd)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+
+    bt_mesh_erase_core_settings(name);
+    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+}
+
+static void clear_pending_mod(struct bt_mesh_model *model,
+                              struct bt_mesh_elem *elem, bool vnd,
+                              bool primary, void *user_data)
+{
+    if (!model->flags) {
+        return;
+    }
+
+    if (model->flags & BLE_MESH_MOD_BIND_PENDING) {
+        model->flags &= ~BLE_MESH_MOD_BIND_PENDING;
+        clear_mod_bind(model, vnd);
+    }
+
+    if (model->flags & BLE_MESH_MOD_SUB_PENDING) {
+        model->flags &= ~BLE_MESH_MOD_SUB_PENDING;
+        clear_mod_sub(model, vnd);
+    }
+
+    if (model->flags & BLE_MESH_MOD_PUB_PENDING) {
+        model->flags &= ~BLE_MESH_MOD_PUB_PENDING;
+        clear_mod_pub(model, vnd);
     }
 }
 
@@ -2012,7 +2053,7 @@ static void store_pending(struct k_work *work)
     BT_DBG("%s", __func__);
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_RPL_PENDING)) {
-        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioned()) {
+        if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
             store_pending_rpl();
         } else {
             clear_rpl();
@@ -2034,7 +2075,7 @@ static void store_pending(struct k_work *work)
     }
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_IV_PENDING)) {
-        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioned()) {
+        if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
             store_pending_iv();
         } else {
             bt_mesh_clear_iv();
@@ -2042,7 +2083,11 @@ static void store_pending(struct k_work *work)
     }
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_SEQ_PENDING)) {
-        store_pending_seq();
+        if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
+            store_pending_seq();
+        } else {
+            bt_mesh_clear_seq();
+        }
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
@@ -2064,15 +2109,17 @@ static void store_pending(struct k_work *work)
     }
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_MOD_PENDING)) {
-        bt_mesh_model_foreach(store_pending_mod, NULL);
-        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
-                !bt_mesh_is_provisioned()) {
+        if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
+            bt_mesh_model_foreach(store_pending_mod, NULL);
+        } else {
+            bt_mesh_model_foreach(clear_pending_mod, NULL);
             bt_mesh_erase_core_settings("mesh/sig");
             bt_mesh_erase_core_settings("mesh/vnd");
         }
     }
 
-    if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+        bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING)) {
         store_pending_va();
     }
 }
