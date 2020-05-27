@@ -25,6 +25,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/portable.h"
 #include "dm9051.h"
 #include "sdkconfig.h"
 
@@ -750,8 +751,12 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create dm9051 task */
-    BaseType_t xReturned = xTaskCreate(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
-                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = xPortGetCoreID();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
+                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create dm9051 task failed", err, NULL);
     return &(emac->parent);
 
