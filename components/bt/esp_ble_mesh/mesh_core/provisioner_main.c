@@ -495,33 +495,6 @@ int bt_mesh_provisioner_restore_node_name(u16_t addr, const char *name)
     return 0;
 }
 
-int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length)
-{
-    struct bt_mesh_node *node = NULL;
-
-    if (!data || length == 0U) {
-        BT_ERR("%s, Invalid comp data info", __func__);
-        return -EINVAL;
-    }
-
-    node = provisioner_find_node_with_addr(addr, NULL);
-    if (node == NULL) {
-        BT_ERR("%s, Node not exists, addr 0x%04x", __func__, addr);
-        return -ENODEV;
-    }
-
-    node->comp_data = bt_mesh_calloc(length);
-    if (!node->comp_data) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
-    }
-
-    node->comp_length = length;
-    memcpy(node->comp_data, data, length);
-
-    return 0;
-}
-
 struct bt_mesh_node *bt_mesh_provisioner_get_node_with_uuid(const u8_t uuid[16])
 {
     return provisioner_find_node_with_uuid(uuid, NULL);
@@ -676,18 +649,23 @@ u16_t bt_mesh_provisioner_get_node_index(const char *name)
     return BLE_MESH_INVALID_NODE_INDEX;
 }
 
-int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length)
+#define COMP_DATA_PAGE_0_MIN_LEN    16
+
+static int store_node_comp_data(u16_t addr, const u8_t *data, u16_t length, bool store)
 {
     struct bt_mesh_node *node = NULL;
-    u16_t index = 0U;
 
-    if (!BLE_MESH_ADDR_IS_UNICAST(addr) || !data ||
-            (length % 2) || length <= 14) {
-        BT_ERR("%s, Invalid parameter", __func__);
+    if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
+        BT_ERR("%s, Not a unicast address 0x%04x", __func__, addr);
         return -EINVAL;
     }
 
-    node = provisioner_find_node_with_addr(addr, &index);
+    if (data == NULL || (length % 2) || length < COMP_DATA_PAGE_0_MIN_LEN) {
+        BT_ERR("%s, Invalid composition data", __func__);
+        return -EINVAL;
+    }
+
+    node = provisioner_find_node_with_addr(addr, NULL);
     if (node == NULL) {
         BT_ERR("%s, Node not exists, addr 0x%04x", __func__, addr);
         return -ENODEV;
@@ -699,16 +677,24 @@ int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t
         return -ENOMEM;
     }
 
-    BT_DBG("node index %d", index);
-
     memcpy(node->comp_data, data, length);
     node->comp_length = length;
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
         bt_mesh_store_node_comp_data(node);
     }
 
     return 0;
+}
+
+int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length)
+{
+    return store_node_comp_data(addr, data, length, true);
+}
+
+int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length)
+{
+    return store_node_comp_data(addr, data, length, false);
 }
 
 /* Provisioner DevKey, NetKey and AppKey related functions */
