@@ -35,6 +35,11 @@ void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 {
     int i, j;
 
+    if (dev_comp == NULL) {
+        BT_ERR("Invalid device composition");
+        return;
+    }
+
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
 
