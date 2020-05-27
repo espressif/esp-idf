@@ -165,7 +165,7 @@ int bt_mesh_provisioner_deinit(bool erase)
     for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT; i++) {
         if (bt_mesh.p_sub[i]) {
             if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]);
+                bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]->net_idx);
             }
             bt_mesh_free(bt_mesh.p_sub[i]);
             bt_mesh.p_sub[i] = NULL;
@@ -175,7 +175,7 @@ int bt_mesh_provisioner_deinit(bool erase)
     for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_APP_KEY_COUNT; i++) {
         if (bt_mesh.p_app_keys[i]) {
             if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]);
+                bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]->app_idx);
             }
             bt_mesh_free(bt_mesh.p_app_keys[i]);
             bt_mesh.p_app_keys[i] = NULL;
@@ -1198,7 +1198,7 @@ int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx)
             bt_mesh_model_foreach(_model_unbind, &app_idx);
 
             if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_app_key(key);
+                bt_mesh_clear_p_app_key(app_idx);
             }
 
             bt_mesh_free(bt_mesh.p_app_keys[i]);
@@ -1391,7 +1391,7 @@ int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx)
             }
 
             if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_subnet(sub);
+                bt_mesh_clear_p_subnet(net_idx);
             }
 
             bt_mesh_free(bt_mesh.p_sub[i]);
