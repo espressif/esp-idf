@@ -30,19 +30,19 @@ See [ble_mesh_provisioner](ble_mesh_console/ble_mesh_provisioner) folder for mor
 
 This example illustrates the solution of ESP-BLE-MESH Fast Provisioning.
 
-#### ble_mesh_fast_prov_client
+#### fast_prov_client
 
 This example shows how ESP32, acting as a BLE Mesh Fast Provisioning Client, provisions other unprovisioned devices and then controls the nodes.
 
-See [ble_mesh_fast_prov_client](ble_mesh_fast_provision/ble_mesh_fast_prov_client) folder for more details.
+See [fast_prov_client](ble_mesh_fast_provision/fast_prov_client) folder for more details.
 
-#### ble_mesh_fast_prov_server
+#### fast_prov_server
 
 This example illustrates the process that:
 1. ESP32 as a BLE Mesh Fast Provisioning Server is provisioned into a node;
 2. ESP32 as a Temporary Provisioner provisions other unprovisioned devices.
 
-See [ble_mesh_fast_prov_server](ble_mesh_fast_provision/ble_mesh_fast_prov_server) folder for more details.
+See [fast_prov_server](ble_mesh_fast_provision/fast_prov_server) folder for more details.
 
 ## ble_mesh_node
 
