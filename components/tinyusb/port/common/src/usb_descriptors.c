@@ -35,7 +35,7 @@ tusb_desc_device_t descriptor_tinyusb = {
     .bDeviceProtocol = 0x00,
 #endif
 
-    .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor = 0xCafe,
     .idProduct = USB_TUSB_PID,
@@ -77,7 +77,7 @@ tusb_desc_device_t descriptor_kconfig = {
     .bDeviceProtocol = 0x00,
 #endif
 
-    .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
 #if CONFIG_USB_DESC_USE_ESPRESSIF_VID
     .idVendor = USB_ESPRESSIF_VID,

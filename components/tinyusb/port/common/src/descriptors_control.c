@@ -29,7 +29,7 @@ uint8_t const desc_hid_report[] = {
 
 uint8_t const desc_configuration[] = {
     // interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(0, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
 #   if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
@@ -83,7 +83,7 @@ static uint16_t _desc_str[32];
  * @param index
  * @return uint16_t const*
  */
-uint16_t const *tud_descriptor_string_cb(uint8_t index)
+uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
     uint8_t chr_count;
 
@@ -108,7 +108,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index)
     }
 
     // first byte is len, second byte is string type
-    _desc_str[0] = TUD_DESC_STR_HEADER(chr_count);
+    _desc_str[0] = (TUSB_DESC_STRING << 8 ) | (2*chr_count + 2);
 
     return _desc_str;
 }
