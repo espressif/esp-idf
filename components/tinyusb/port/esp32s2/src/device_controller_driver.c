@@ -106,7 +106,7 @@ static void bus_reset(void)
 static void enum_done_processing(void)
 {
 
-    ESP_EARLY_LOGV(TAG, "dcd_int_handler - Speed enumeration done! Sending DCD_EVENT_BUS_RESET then");
+    ESP_EARLY_LOGV(TAG, "dcd_irq_handler - Speed enumeration done! Sending DCD_EVENT_BUS_RESET then");
     // On current silicon on the Full Speed core, speed is fixed to Full Speed.
     // However, keep for debugging and in case Low Speed is ever supported.
     uint32_t enum_spd = (USB0.dsts >> USB_ENUMSPD_S) & (USB_ENUMSPD_V);
@@ -639,25 +639,25 @@ static void handle_epin_ints(void)
 }
 
 
-static void dcd_int_handler(void)
+void dcd_irq_handler(void)
 {
     uint32_t int_status = USB0.gintsts;
     uint32_t int_msk = USB0.gintmsk;
 
     if (int_status & USB_DISCONNINT_M) {
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - disconnected");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - disconnected");
         USB0.gintsts = USB_DISCONNINT_M;
     }
 
     if (int_status & USB_USBRST_M) {
 
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - reset");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - reset");
         USB0.gintsts = USB_USBRST_M;
         bus_reset();
     }
 
     if (int_status & USB_RESETDET_M) {
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - reset while suspend");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - reset while suspend");
         USB0.gintsts = USB_RESETDET_M;
         bus_reset();
     }
@@ -677,19 +677,19 @@ static void dcd_int_handler(void)
     }
 
     if ((int_status & USB_RXFLVI_M) & (int_msk & USB_RXFLVIMSK_M)) {
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - rx!");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - rx!");
         read_rx_fifo();
     }
 
     // OUT endpoint interrupt handling.
     if (int_status & USB_OEPINT_M) {
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - OUT endpoint!");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - OUT endpoint!");
         handle_epout_ints();
     }
 
     // IN endpoint interrupt handling.
     if (int_status & USB_IEPINT_M) {
-        ESP_EARLY_LOGV(TAG, "dcd_int_handler - IN endpoint!");
+        ESP_EARLY_LOGV(TAG, "dcd_irq_handler - IN endpoint!");
         handle_epin_ints();
     }
 
@@ -714,7 +714,7 @@ static void dcd_int_handler(void)
 void dcd_int_enable(uint8_t rhport)
 {
     (void)rhport;
-    esp_intr_alloc(ETS_USB_INTR_SOURCE, ESP_INTR_FLAG_LOWMED, (intr_handler_t)dcd_int_handler, NULL, &usb_ih);
+    esp_intr_alloc(ETS_USB_INTR_SOURCE, ESP_INTR_FLAG_LOWMED, (intr_handler_t)dcd_irq_handler, NULL, &usb_ih);
 }
 
 void dcd_int_disable(uint8_t rhport)
