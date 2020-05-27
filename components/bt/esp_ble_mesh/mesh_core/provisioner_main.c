@@ -1027,6 +1027,7 @@ int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16],
             }
         }
         *app_idx = key->app_idx;
+        bt_mesh.p_app_idx_next++;
     }
     key->updated = false;
 
@@ -1283,6 +1284,7 @@ int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx
             }
         }
         *net_idx = sub->net_idx;
+        bt_mesh.p_net_idx_next++;
     }
     sub->kr_phase = BLE_MESH_KR_NORMAL;
     sub->kr_flag  = false;
