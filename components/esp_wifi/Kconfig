@@ -14,8 +14,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
-        range 2 25 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        range 8 25 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 2 25
         default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help
@@ -79,7 +78,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_STATIC_TX_BUFFER_NUM
         int "Max number of WiFi static TX buffers"
         depends on ESP32_WIFI_STATIC_TX_BUFFER
-        range 6 64
+        range 1 64
         default 16
         help
             Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
@@ -94,7 +93,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         int "Max number of WiFi dynamic TX buffers"
         depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
-        range 16 128
+        range 1 128
         default 32
         help
             Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
