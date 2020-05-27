@@ -1768,7 +1768,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
     return err;
 }
 
-void bt_mesh_rx_reset(void)
+void bt_mesh_rx_reset(bool erase)
 {
     int i;
 
@@ -1778,10 +1778,10 @@ void bt_mesh_rx_reset(void)
         seg_rx_reset(&seg_rx[i], true);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && erase) {
         bt_mesh_clear_rpl();
-    } else {
-        (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
     }
 }
 
@@ -1863,16 +1863,7 @@ void bt_mesh_trans_deinit(bool erase)
 {
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-        seg_rx_reset(&seg_rx[i], true);
-    }
-
-    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_clear_rpl();
-    } else {
-        bt_mesh_rpl_clear();
-    }
-
+    bt_mesh_rx_reset(erase);
     bt_mesh_tx_reset();
 
     for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
@@ -1885,12 +1876,6 @@ void bt_mesh_trans_deinit(bool erase)
 
     bt_mesh_tx_seg_mutex_free();
     bt_mesh_rx_seg_mutex_free();
-}
-
-void bt_mesh_rpl_clear(void)
-{
-    BT_DBG("%s", __func__);
-    (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }
 
 void bt_mesh_heartbeat_send(void)

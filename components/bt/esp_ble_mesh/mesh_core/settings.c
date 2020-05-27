@@ -1355,12 +1355,12 @@ int settings_core_commit(void)
 
 #if defined(CONFIG_BLE_MESH_NODE)
     if (bt_mesh_is_node()) {
-        BT_INFO("sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
-
         if (bt_mesh.sub[0].net_idx == BLE_MESH_KEY_UNUSED) {
             /* Nothing to do since we're not yet provisioned */
             return 0;
         }
+
+        BT_INFO("Settings commit, sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_server_prov_disable(true);
@@ -1388,7 +1388,7 @@ int settings_core_commit(void)
             return 0;
         }
 
-        BT_INFO("p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
+        BT_INFO("Settings commit, p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
 
         for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
             sub = bt_mesh.p_sub[i];
@@ -1405,11 +1405,13 @@ int settings_core_commit(void)
     }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
-    if (bt_mesh.ivu_duration < BLE_MESH_IVU_MIN_HOURS) {
-        k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
-    }
+    if (bt_mesh_is_node() || bt_mesh_is_provisioner()) {
+        if (bt_mesh.ivu_duration < BLE_MESH_IVU_MIN_HOURS) {
+            k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
+        }
 
-    bt_mesh_model_foreach(commit_model, NULL);
+        bt_mesh_model_foreach(commit_model, NULL);
+    }
 
 #if defined(CONFIG_BLE_MESH_NODE)
     if (bt_mesh_is_node()) {
@@ -1601,8 +1603,6 @@ static void clear_rpl(void)
     int i;
 
     BT_DBG("%s", __func__);
-
-    bt_mesh_rpl_clear();
 
     buf = bt_mesh_get_core_settings_item("mesh/rpl");
     if (!buf) {
