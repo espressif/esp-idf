@@ -141,6 +141,7 @@ static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_
 TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
 {
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     // auto detect PHY address
