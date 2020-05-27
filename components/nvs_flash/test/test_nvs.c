@@ -321,6 +321,24 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
     TEST_ASSERT_TRUE(!memcmp(ptxt_hex, ctxt_hex, 32));
 }
 
+TEST_CASE("nvs_flash_generate_keys fails due to external partition", "[nvs_custom_part]")
+{
+    nvs_sec_cfg_t keys;
+    struct esp_flash_t spi_flash = {};
+    esp_partition_t partition = {};
+    partition.flash_chip = &spi_flash;
+    TEST_ESP_ERR(nvs_flash_generate_keys(&partition, &keys), ESP_ERR_NOT_SUPPORTED);
+}
+
+TEST_CASE("nvs_flash_read_security_cfg fails due to external partition", "[nvs_custom_part]")
+{
+    nvs_sec_cfg_t keys;
+    struct esp_flash_t spi_flash = {};
+    esp_partition_t partition = {};
+    partition.flash_chip = &spi_flash;
+    TEST_ESP_ERR(nvs_flash_read_security_cfg(&partition, &keys), ESP_ERR_NOT_SUPPORTED);
+}
+
 TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 {
     nvs_sec_cfg_t cfg, cfg2;

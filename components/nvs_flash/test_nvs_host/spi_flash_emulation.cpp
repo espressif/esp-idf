@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "spi_flash_emulation.h"
 
-
 static SpiFlashEmulator* s_emulator = nullptr;
+
+static esp_flash_t esp_flash_default_chip_instance;
+
+esp_flash_t *esp_flash_default_chip = &esp_flash_default_chip_instance;
 
 void spi_flash_emulator_set(SpiFlashEmulator* e)
 {
