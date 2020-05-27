@@ -11,15 +11,9 @@ menu "CoAP Configuration"
             - Encrypt using defined Public Key Infrastructure (PKI if uri includes coaps://)
 
         config COAP_MBEDTLS_PSK
-            select MBEDTLS_SSL_PROTO_DTLS
-            select MBEDTLS_PSK_MODES
-            select MBEDTLS_KEY_EXCHANGE_PSK
             bool "Pre-Shared Keys"
 
         config COAP_MBEDTLS_PKI
-            select MBEDTLS_SSL_PROTO_DTLS
-            select MBEDTLS_PSK_MODES
-            select MBEDTLS_KEY_EXCHANGE_PSK
             bool "PKI Certificates"
 
     endchoice #COAP_MBEDTLS_ENCRYPTION_MODE
