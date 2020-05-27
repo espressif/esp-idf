@@ -218,7 +218,7 @@ static void clear_friendship(bool force, bool disable)
         return;
     }
 
-    bt_mesh_rx_reset();
+    bt_mesh_rx_reset(true);
 
     k_delayed_work_cancel(&lpn->timer);
 

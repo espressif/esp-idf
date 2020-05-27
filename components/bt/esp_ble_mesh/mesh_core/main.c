@@ -107,7 +107,7 @@ void bt_mesh_node_reset(void)
 
     bt_mesh_cfg_reset();
 
-    bt_mesh_rx_reset();
+    bt_mesh_rx_reset(true);
     bt_mesh_tx_reset();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
