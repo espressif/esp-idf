@@ -91,14 +91,16 @@ void app_main(void)
         printf("esp32_bluetooth_init failed (ret %d)", res);
     }
 
+    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
-    repl_config.prompt = prompt;
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
 #if CONFIG_STORE_HISTORY
     initialize_filesystem();
-    repl_config.his_save_path = HISTORY_PATH;
+    repl_config.history_save_path = HISTORY_PATH;
 #endif
-    ESP_ERROR_CHECK(esp_console_repl_init(&repl_config));
+    repl_config.prompt = "ble_mesh_node>";
+    // init console REPL environment
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     /* Register commands */
     register_system();
@@ -110,5 +112,5 @@ void app_main(void)
 #endif
 
     // start console REPL
-    ESP_ERROR_CHECK(esp_console_repl_start());
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

@@ -27,10 +27,12 @@ void app_main(void)
 
     initialise_wifi();
 
+    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     repl_config.prompt = "iperf>";
-    // init console REPL
-    ESP_ERROR_CHECK(esp_console_repl_init(&repl_config));
+    // init console REPL environment
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
     /* Register commands */
     register_system();
     register_wifi();
@@ -46,6 +48,6 @@ void app_main(void)
     printf(" =================================================\n\n");
 
     // start console REPL
-    ESP_ERROR_CHECK(esp_console_repl_start());
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
 

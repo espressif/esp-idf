@@ -40,14 +40,16 @@ static void initialize_filesystem(void)
 
 void app_main(void)
 {
+    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
 #if CONFIG_EXAMPLE_STORE_HISTORY
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_PATH;
 #endif
     repl_config.prompt = "i2c-tools>";
-    // initialize console REPL environment
-    ESP_ERROR_CHECK(esp_console_repl_init(&repl_config));
+    // init console REPL environment
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     register_i2ctools();
     register_system();
@@ -65,5 +67,5 @@ void app_main(void)
     printf(" ==============================================================\n\n");
 
     // start console REPL
-    ESP_ERROR_CHECK(esp_console_repl_start());
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
