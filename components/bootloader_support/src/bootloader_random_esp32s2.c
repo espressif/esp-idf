@@ -39,6 +39,10 @@ void bootloader_random_enable(void)
     periph_module_enable(PERIPH_RNG_MODULE);
 #endif // BOOTLOADER_BUILD
 
+    // Enable 8M clock source for RNG (this is actually enough to produce strong random results,
+    // but enabling the SAR ADC as well adds some insurance.)
+    REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN);
+
     // Enable SAR ADC to read a disconnected input for additional entropy
     SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN0_REG,DPORT_APB_SARADC_CLK_EN);
 
@@ -94,4 +98,9 @@ void bootloader_random_disable(void)
     SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN0_REG, DPORT_APB_SARADC_CLK_EN);
     SET_PERI_REG_BITS(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
     CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
+
+    /* Note: the 8M CLK entropy source continues running even after this function is called,
+       but as mentioned above it's better to enable Wi-Fi or BT or call bootloader_random_enable()
+       in order to get a secondary entropy source.
+    */
 }
