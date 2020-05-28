@@ -19,14 +19,13 @@
 
 #if CONFIG_WPA_MBEDTLS_CRYPTO
 #define USE_MBEDTLS_CRYPTO 1
+#else
+#define CONFIG_TLS_INTERNAL_CLIENT
+#define CONFIG_TLSV12
 #endif
 
 #if CONFIG_WPA_DEBUG_PRINT
 #define DEBUG_PRINT
-#endif
-
-#if CONFIG_WPA_TLS_V12
-#define CONFIG_TLSV12
 #endif
 
 #endif /* _SUPPLICANT_OPT_H */
