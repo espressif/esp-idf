@@ -1,36 +1,16 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.protobuf'
 
 android {
 
     compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 21
+        applicationId "com.espressif.wifi_provisioning"
+        minSdkVersion 24
         targetSdkVersion 28
-        versionCode 5
-        versionName "1.2"
+        versionCode 6
+        versionName "2.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-    }
-
-    flavorDimensions "transport", "security"
-
-    productFlavors {
-
-        wifi {
-            dimension "transport"
-            applicationId "com.espressif.provsoftap"
-        }
-        ble {
-            dimension "transport"
-            applicationId "com.espressif.provble"
-        }
-        sec0 {
-            dimension "security"
-        }
-        sec1 {
-            dimension "security"
-        }
     }
 
     buildTypes {
@@ -40,8 +20,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
-            resValue "string", "wifi_network_name_prefix", "PROV_"
+            resValue "string", "wifi_device_name_prefix", "PROV_"
             resValue "string", "ble_device_name_prefix", "PROV_"
+            buildConfigField "boolean", "IS_QR_CODE_SUPPORTED", "true"
             buildConfigField "boolean", "IS_ALLOWED_FILTERING_BY_PREFIX", "true"
         }
 
@@ -49,42 +30,28 @@ android {
             debuggable true
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
-            resValue "string", "wifi_network_name_prefix", "PROV_"
+            resValue "string", "wifi_device_name_prefix", "PROV_"
             resValue "string", "ble_device_name_prefix", "PROV_"
+            buildConfigField "boolean", "IS_QR_CODE_SUPPORTED", "true"
             buildConfigField "boolean", "IS_ALLOWED_FILTERING_BY_PREFIX", "true"
-        }
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = 'com.google.protobuf:protoc:3.5.1'
-    }
-    plugins {
-        javalite {
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                remove java
-            }
-            task.plugins {
-                javalite {}
-            }
         }
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-    implementation 'com.android.support:design:28.0.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.wang.avi:library:2.1.3'
+    implementation 'org.greenrobot:eventbus:3.1.1'
+    implementation 'androidx.preference:preference:1.1.1'
+
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
     implementation 'com.google.crypto.tink:tink-android:1.1.0'
+    implementation project(path: ':provisioning')
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }

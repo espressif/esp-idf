@@ -9,9 +9,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.espressif.provision.R;
-import com.espressif.AppConstants;
-import com.espressif.ui.models.WiFiAccessPoint;
+import androidx.core.content.ContextCompat;
+
+import com.espressif.provisioning.ESPConstants;
+import com.espressif.provisioning.WiFiAccessPoint;
+import com.espressif.wifi_provisioning.R;
 
 import java.util.ArrayList;
 
@@ -41,7 +43,7 @@ public class WiFiListAdapter extends ArrayAdapter<WiFiAccessPoint> {
         wifiNameText.setText(wiFiAccessPoint.getWifiName());
         rssiImage.setImageLevel(getRssiLevel(wiFiAccessPoint.getRssi()));
 
-        if (wiFiAccessPoint.getSecurity() == AppConstants.WIFI_OPEN) {
+        if (wiFiAccessPoint.getSecurity() == ESPConstants.WIFI_OPEN) {
             lockImage.setVisibility(View.GONE);
         } else {
             lockImage.setVisibility(View.VISIBLE);
@@ -49,6 +51,7 @@ public class WiFiListAdapter extends ArrayAdapter<WiFiAccessPoint> {
 
         if (wiFiAccessPoint.getWifiName().equals(context.getString(R.string.join_other_network))) {
 
+            wifiNameText.setTextColor(ContextCompat.getColor(context.getApplicationContext(), R.color.colorPrimary));
             rssiImage.setVisibility(View.VISIBLE);
             rssiImage.setImageResource(R.drawable.ic_right_arrow);
         }

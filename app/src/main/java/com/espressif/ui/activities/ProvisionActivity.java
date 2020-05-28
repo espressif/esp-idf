@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,383 +11,279 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.espressif.ui.activities;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Vibrator;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.HapticFeedbackConstants;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.widget.ContentLoadingProgressBar;
 
 import com.espressif.AppConstants;
-import com.espressif.provision.Provision;
-import com.espressif.provision.R;
-import com.espressif.provision.security.Security;
-import com.espressif.provision.security.Security0;
-import com.espressif.provision.security.Security1;
-import com.espressif.provision.session.Session;
-import com.espressif.provision.transport.SoftAPTransport;
-import com.espressif.provision.transport.Transport;
+import com.espressif.wifi_provisioning.R;
+import com.espressif.provisioning.ESPConstants;
+import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.listeners.ProvisionListener;
 
-import espressif.Constants;
-import espressif.WifiConstants;
+import org.greenrobot.eventbus.EventBus;
+
 
 public class ProvisionActivity extends AppCompatActivity {
 
-    private static final String TAG = "Espressif::" + ProvisionActivity.class.getSimpleName();
+    private static final String TAG = ProvisionActivity.class.getSimpleName();
 
-    private TextView ssid;
-    private EditText ssidInput;
-    private EditText passwordInput;
-    private Button btnProvision;
-    private ProgressBar progressBar;
+    private TextView tvTitle, tvBack, tvCancel;
+    private ImageView tick1, tick2, tick3;
+    private ContentLoadingProgressBar progress1, progress2, progress3;
+    private TextView tvErrAtStep1, tvErrAtStep2, tvErrAtStep3, tvProvError;
 
-    private int wifiSecurityType;
+    private CardView btnOk;
+    private TextView txtOkBtn;
+
     private String ssidValue, passphraseValue = "";
-    private String pop, baseUrl, transportVersion, securityVersion;
+    private ESPProvisionManager provisionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_provision);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle(R.string.title_activity_provision);
-        setSupportActionBar(toolbar);
 
         Intent intent = getIntent();
-        final String wifiSSID = intent.getStringExtra(Provision.PROVISIONING_WIFI_SSID);
-        wifiSecurityType = intent.getIntExtra(AppConstants.KEY_WIFI_SECURITY_TYPE, AppConstants.WIFI_OPEN);
-        pop = intent.getStringExtra(AppConstants.KEY_PROOF_OF_POSSESSION);
-        baseUrl = intent.getStringExtra(Provision.CONFIG_BASE_URL_KEY);
-        transportVersion = intent.getStringExtra(Provision.CONFIG_TRANSPORT_KEY);
-        securityVersion = intent.getStringExtra(Provision.CONFIG_SECURITY_KEY);
+        ssidValue = intent.getStringExtra(AppConstants.KEY_WIFI_SSID);
+        passphraseValue = intent.getStringExtra(AppConstants.KEY_WIFI_PASSWORD);
+        provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        initViews();
 
-        ssid = findViewById(R.id.ssid_text);
-        ssidInput = findViewById(R.id.ssid_input);
-        passwordInput = findViewById(R.id.password_input);
-        btnProvision = findViewById(R.id.btn_provision);
-        progressBar = findViewById(R.id.progress_indicator);
-
-        ssidValue = wifiSSID;
         Log.d(TAG, "Selected AP -" + ssidValue);
-        Log.e(TAG, "POP : " + pop);
-
-        if (TextUtils.isEmpty(wifiSSID)) {
-
-            ssid.setVisibility(View.GONE);
-            ssidInput.setVisibility(View.VISIBLE);
-
-        } else {
-
-            ssidInput.setVisibility(View.GONE);
-            ssid.setVisibility(View.VISIBLE);
-            ssid.setText(wifiSSID);
-
-            if (wifiSecurityType == AppConstants.WIFI_OPEN) {
-
-                passwordInput.setVisibility(View.GONE);
-                findViewById(R.id.password_input_layout).setVisibility(View.GONE);
-                btnProvision.setEnabled(false);
-                btnProvision.setAlpha(0.5f);
-                btnProvision.setTextColor(Color.WHITE);
-                doProvisioning();
-            }
-        }
-
-        btnProvision.setEnabled(false);
-        btnProvision.setAlpha(0.5f);
-        btnProvision.setTextColor(Color.WHITE);
-
-        ssidInput.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                ssidValue = editable.toString().trim();
-                enableProvisionBtn();
-            }
-        });
-
-        passwordInput.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                passphraseValue = editable.toString().trim();
-                enableProvisionBtn();
-            }
-        });
-
-        btnProvision.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                Vibrator vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                vib.vibrate(HapticFeedbackConstants.VIRTUAL_KEY);
-                doProvisioning();
-            }
-        });
+        showLoading();
+        doProvisioning();
     }
 
     @Override
     public void onBackPressed() {
-        BLEProvisionLanding.isBleWorkDone = true;
+        provisionManager.getEspDevice().disconnectDevice();
         super.onBackPressed();
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
+    }
+
+    private View.OnClickListener okBtnClickListener = new View.OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+
+            finish();
+        }
+    };
+
+    private void initViews() {
+
+        tvTitle = findViewById(R.id.main_toolbar_title);
+        tvBack = findViewById(R.id.btn_back);
+        tvCancel = findViewById(R.id.btn_cancel);
+
+        tick1 = findViewById(R.id.iv_tick_1);
+        tick2 = findViewById(R.id.iv_tick_2);
+        tick3 = findViewById(R.id.iv_tick_3);
+
+        progress1 = findViewById(R.id.prov_progress_1);
+        progress2 = findViewById(R.id.prov_progress_2);
+        progress3 = findViewById(R.id.prov_progress_3);
+
+        tvErrAtStep1 = findViewById(R.id.tv_prov_error_1);
+        tvErrAtStep2 = findViewById(R.id.tv_prov_error_2);
+        tvErrAtStep3 = findViewById(R.id.tv_prov_error_3);
+        tvProvError = findViewById(R.id.tv_prov_error);
+
+        tvTitle.setText(R.string.title_activity_provisioning);
+        tvBack.setVisibility(View.GONE);
+        tvCancel.setVisibility(View.GONE);
+
+        btnOk = findViewById(R.id.btn_ok);
+        txtOkBtn = findViewById(R.id.text_btn);
+
+        txtOkBtn.setText(R.string.btn_ok);
+        btnOk.setOnClickListener(okBtnClickListener);
     }
 
     private void doProvisioning() {
 
-        btnProvision.setEnabled(false);
-        btnProvision.setAlpha(0.5f);
-        btnProvision.setTextColor(Color.WHITE);
-        ssidInput.setEnabled(false);
-        passwordInput.setEnabled(false);
-        progressBar.setVisibility(View.VISIBLE);
+        tick1.setVisibility(View.GONE);
+        progress1.setVisibility(View.VISIBLE);
 
-        final Security security;
-        final Transport transport;
+        provisionManager.getEspDevice().provision(ssidValue, passphraseValue, new ProvisionListener() {
 
-        if (securityVersion.equals(Provision.CONFIG_SECURITY_SECURITY1)) {
-            security = new Security1(pop);
-        } else {
-            security = new Security0();
-        }
+            @Override
+            public void createSessionFailed(Exception e) {
 
-        if (transportVersion.equals(Provision.CONFIG_TRANSPORT_WIFI)) {
+                runOnUiThread(new Runnable() {
 
-            transport = new SoftAPTransport(baseUrl);
-            provision(transport, security);
-
-        } else if (transportVersion.equals(Provision.CONFIG_TRANSPORT_BLE)) {
-
-            if (BLEProvisionLanding.bleTransport == null) {
-
-                Log.e(TAG, "BLE Transport is Null. It should not be null.");
-                BLEProvisionLanding.isBleWorkDone = true;
-                finish();
-
-            } else {
-                provision(BLEProvisionLanding.bleTransport, security);
+                    @Override
+                    public void run() {
+                        tick1.setImageResource(R.drawable.ic_error);
+                        tick1.setVisibility(View.VISIBLE);
+                        progress1.setVisibility(View.GONE);
+                        tvErrAtStep1.setVisibility(View.VISIBLE);
+                        tvErrAtStep1.setText(R.string.error_session_creation);
+                        tvProvError.setVisibility(View.VISIBLE);
+                        hideLoading();
+                    }
+                });
             }
-        }
-    }
 
-    private void provision(Transport transport, Security security) {
+            @Override
+            public void wifiConfigSent() {
 
-        Log.d(TAG, "================== PROVISION +++++++++++++++++++++++++++++");
-        Session session = WiFiScanActivity.session;
+                runOnUiThread(new Runnable() {
 
-        if (session == null) {
+                    @Override
+                    public void run() {
+                        tick1.setImageResource(R.drawable.ic_checkbox_on);
+                        tick1.setVisibility(View.VISIBLE);
+                        progress1.setVisibility(View.GONE);
+                        tick2.setVisibility(View.GONE);
+                        progress2.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
 
-            session = new Session(transport, security);
-            final Session finalSession = session;
-            session.sessionListener = new Session.SessionListener() {
+            @Override
+            public void wifiConfigFailed(Exception e) {
 
-                @Override
-                public void OnSessionEstablished() {
+                runOnUiThread(new Runnable() {
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(ProvisionActivity.this,
-                                    "Session Established",
-                                    Toast.LENGTH_SHORT)
-                                    .show();
+                    @Override
+                    public void run() {
+                        tick1.setImageResource(R.drawable.ic_error);
+                        tick1.setVisibility(View.VISIBLE);
+                        progress1.setVisibility(View.GONE);
+                        tvErrAtStep1.setVisibility(View.VISIBLE);
+                        tvErrAtStep1.setText(R.string.error_prov_step_1);
+                        tvProvError.setVisibility(View.VISIBLE);
+                        hideLoading();
+                    }
+                });
+            }
+
+            @Override
+            public void wifiConfigApplied() {
+
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        tick2.setImageResource(R.drawable.ic_checkbox_on);
+                        tick2.setVisibility(View.VISIBLE);
+                        progress2.setVisibility(View.GONE);
+                        tick3.setVisibility(View.GONE);
+                        progress3.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+
+            @Override
+            public void wifiConfigApplyFailed(Exception e) {
+
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        tick2.setImageResource(R.drawable.ic_error);
+                        tick2.setVisibility(View.VISIBLE);
+                        progress2.setVisibility(View.GONE);
+                        tvErrAtStep2.setVisibility(View.VISIBLE);
+                        tvErrAtStep2.setText(R.string.error_prov_step_2);
+                        tvProvError.setVisibility(View.VISIBLE);
+                        hideLoading();
+                    }
+                });
+            }
+
+            @Override
+            public void provisioningFailedFromDevice(final ESPConstants.ProvisionFailureReason failureReason) {
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        switch (failureReason) {
+                            case AUTH_FAILED:
+                                tvErrAtStep3.setText(R.string.error_authentication_failed);
+                                break;
+                            case NETWORK_NOT_FOUND:
+                                tvErrAtStep3.setText(R.string.error_network_not_found);
+                                break;
+                            case DEVICE_DISCONNECTED:
+                            case UNKNOWN:
+                                tvErrAtStep3.setText(R.string.error_prov_step_3);
+                                break;
                         }
-                    });
-
-                    applyConfig(finalSession);
-                }
-
-                @Override
-                public void OnSessionEstablishFailed(Exception e) {
-                    e.printStackTrace();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(ProvisionActivity.this,
-                                    "Cannot establish session",
-                                    Toast.LENGTH_LONG)
-                                    .show();
-                            toggleFormState(true);
-                        }
-                    });
-                    String statusText = getResources().getString(R.string.error_pop_incorrect);
-                    finish();
-                    Intent goToSuccessPage = new Intent(getApplicationContext(), ProvisionSuccessActivity.class);
-                    goToSuccessPage.putExtra(AppConstants.KEY_STATUS_MSG, statusText);
-                    goToSuccessPage.putExtras(getIntent());
-                    startActivity(goToSuccessPage);
-                }
-            };
-            session.init(null);
-        } else {
-            applyConfig(session);
-        }
-    }
-
-    private void applyConfig(Session session) {
-
-        Log.d(TAG, "Session established : " + session.isEstablished());
-        final Provision provision = new Provision(session);
-
-        provision.provisioningListener = new Provision.ProvisioningListener() {
-            @Override
-            public void OnApplyConfigurationsSucceeded() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(ProvisionActivity.this,
-                                "Configurations successfully applied",
-                                Toast.LENGTH_LONG)
-                                .show();
+                        tick3.setImageResource(R.drawable.ic_error);
+                        tick3.setVisibility(View.VISIBLE);
+                        progress3.setVisibility(View.GONE);
+                        tvErrAtStep3.setVisibility(View.VISIBLE);
+                        tvProvError.setVisibility(View.VISIBLE);
+                        hideLoading();
                     }
                 });
             }
 
             @Override
-            public void OnApplyConfigurationsFailed() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(ProvisionActivity.this,
-                                "Configurations cannot be applied",
-                                Toast.LENGTH_LONG)
-                                .show();
-                    }
-                });
-            }
-
-            @Override
-            public void OnWifiConnectionStatusUpdated(final WifiConstants.WifiStationState newStatus,
-                                                      final WifiConstants.WifiConnectFailedReason failedReason,
-                                                      final Exception e) {
-
-                Log.d(TAG, "OnWifiConnectionStatusUpdated");
-                String statusText = "";
-                if (e != null) {
-                    statusText = e.getMessage();
-                } else if (newStatus == WifiConstants.WifiStationState.Connected) {
-                    statusText = getResources().getString(R.string.success_text);
-                } else if (newStatus == WifiConstants.WifiStationState.Disconnected) {
-                    statusText = getResources().getString(R.string.wifi_disconnected_text);
-                } else {
-
-                    if (failedReason == WifiConstants.WifiConnectFailedReason.AuthError) {
-                        statusText = getResources().getString(R.string.error_authentication_failed);
-                    } else if (failedReason == WifiConstants.WifiConnectFailedReason.NetworkNotFound) {
-                        statusText = getResources().getString(R.string.error_network_not_found);
-                    } else {
-                        statusText = getResources().getString(R.string.error_unknown);
-                    }
-                }
-
-                final String finalStatusText = statusText;
+            public void deviceProvisioningSuccess() {
 
                 runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
-
-                        goToSuccessPage(finalStatusText);
+                        tick3.setImageResource(R.drawable.ic_checkbox_on);
+                        tick3.setVisibility(View.VISIBLE);
+                        progress3.setVisibility(View.GONE);
+                        hideLoading();
                     }
                 });
             }
 
             @Override
-            public void OnProvisioningFailed(Exception e) {
+            public void onProvisioningFailed(Exception e) {
+
                 runOnUiThread(new Runnable() {
+
                     @Override
                     public void run() {
-                        Toast.makeText(ProvisionActivity.this,
-                                "Provisioning Failed",
-                                Toast.LENGTH_LONG)
-                                .show();
-                        toggleFormState(true);
+                        tick3.setImageResource(R.drawable.ic_error);
+                        tick3.setVisibility(View.VISIBLE);
+                        progress3.setVisibility(View.GONE);
+                        tvErrAtStep3.setVisibility(View.VISIBLE);
+                        tvErrAtStep3.setText(R.string.error_prov_step_3);
+                        tvProvError.setVisibility(View.VISIBLE);
+                        hideLoading();
                     }
                 });
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        };
-
-        provision.configureWifi(ssidValue, passphraseValue, new Provision.ProvisionActionListener() {
-
-            @Override
-            public void onComplete(Constants.Status status, Exception e) {
-
-                provision.applyConfigurations(null);
             }
         });
     }
 
-    private void enableProvisionBtn() {
+    private void showLoading() {
 
-        if (!TextUtils.isEmpty(ssidValue)/* && !TextUtils.isEmpty(passphraseValue) */) {
-            btnProvision.setEnabled(true);
-            btnProvision.setAlpha(1f);
-        } else {
-            btnProvision.setEnabled(false);
-            btnProvision.setAlpha(0.5f);
-            btnProvision.setTextColor(Color.WHITE);
-        }
+        btnOk.setEnabled(false);
+        btnOk.setAlpha(0.5f);
     }
 
-    private void toggleFormState(boolean isEnabled) {
+    public void hideLoading() {
 
-        if (isEnabled) {
-
-            progressBar.setVisibility(View.GONE);
-            btnProvision.setEnabled(true);
-            btnProvision.setAlpha(1f);
-            ssidInput.setEnabled(true);
-            passwordInput.setEnabled(true);
-
-        } else {
-
-            progressBar.setVisibility(View.VISIBLE);
-            btnProvision.setEnabled(false);
-            btnProvision.setAlpha(0.5f);
-            btnProvision.setTextColor(Color.WHITE);
-            ssidInput.setEnabled(false);
-            passwordInput.setEnabled(false);
-        }
-    }
-
-    private void goToSuccessPage(String statusText) {
-
-        toggleFormState(true);
-        finish();
-        Intent goToSuccessPage = new Intent(getApplicationContext(), ProvisionSuccessActivity.class);
-        goToSuccessPage.putExtra(AppConstants.KEY_STATUS_MSG, statusText);
-        goToSuccessPage.putExtras(getIntent());
-        startActivity(goToSuccessPage);
+        btnOk.setEnabled(true);
+        btnOk.setAlpha(1f);
     }
 }

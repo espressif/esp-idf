@@ -1,5 +1,51 @@
 <resources>
-    <string name="app_name">Espressif</string>
+
+    <string name="app_name">ESP Provisioning</string>
+
+    <!-- Screen Titles -->
+    <string name="title_activity_connect_device">Connect to Device</string>
+    <string name="title_activity_pop">Proof of Possession</string>
+    <string name="title_activity_wifi_scan_list">Select Wi-Fi Network</string>
+    <string name="title_activity_provisioning">Provisioning</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_add_device">Add Device</string>
+
+    <!-- Button Text -->
+    <string name="btn_ok">Ok</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_provision">Provision</string>
+    <string name="btn_scan_qr_code">Scan QR Code</string>
+    <string name="btn_provision_device">Provision New Device</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_connecting">Connecting&#8230;</string>
+    <string name="btn_wifi_settings">Go to Wi-Fi Settings</string>
+    <string name="btn_scan_again">Scan Again</string>
+    <string name="btn_no_qr_code">I don\'t have a QR code</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_change_prefix">Change</string>
+
+    <!-- Hint Text -->
+    <string name="hint_pop">Proof of Possession</string>
+    <string name="hint_ssid">Network Name</string>
+    <string name="hint_value">Enter Value</string>
+    <string name="hint_password">Password</string>
+
+    <!-- Instruction Strings -->
+    <string name="pop_instruction">Enter your proof of possession PIN for</string>
+    <string name="setup_instructions">To complete setup of your device, please provide your Home Network\'s credentials.</string>
+    <string name="connect_device_instruction">To provision your device, make sure it is turned ON. Connect your mobile phone to the Wi-Fi network with a device name.</string>
+
+    <!-- Provisioning Steps Strings -->
+    <string name="prov_step_1">Sending Wi-Fi credentials</string>
+    <string name="prov_step_2">Applying Wi-Fi connection</string>
+    <string name="prov_step_3">Checking provisioning status</string>
+    <string name="error_session_creation">Failed to create session</string>
+    <string name="error_prov_step_1">Failed to send Wi-Fi credentials</string>
+    <string name="error_prov_step_2">Failed to apply Wi-Fi credentials</string>
+    <string name="error_prov_step_3">Failed to provisioning device</string>
+
     <string name="action_settings">Settings</string>
     <string name="title_activity_provision_landing">Connect to device</string>
     <string name="connect_to_device_instructions">To provision your new device, please make sure that your device is turned on. Now connect your phone to the Wi-Fi network with a name like</string>
@@ -8,11 +54,9 @@
     <string name="connect_to_device_action">Connect</string>
     <string name="connected_to_device_action">Provision Network</string>
     <string name="title_activity_provision_instructions">Provision Instructions</string>
-    <string name="setup_instructions">To complete setup of your device, please provide your Home Network\'s credentials.</string>
     <string name="ssid_hint_text">Network Name</string>
     <string name="password_hint_text">Password</string>
     <string name="provision">Provision</string>
-    <string name="dialog_msg_for_gps">Location services are disabled. Please enable them to continue</string>
 
     <string name="success_text">Device has been successfully provisioned!</string>
     <string name="wifi_disconnected_text">Please check the device indicators for provisioning status.</string>
@@ -23,39 +67,25 @@
     <string name="enable_bluetooth_action">Enable</string>
     <string name="enabled_bluetooth_action">Provision Network</string>
 
-    <!--Strings used for Buttons-->
-    <string name="btn_start_provisioning">Start Provisioning</string>
-    <string name="btn_scan_again">Scan Again</string>
-    <string name="btn_sign_in_amazon">Sign in with Amazon</string>
-    <string name="btn_do_it_later">Do It Later</string>
-    <string name="btn_sign_out">Sign Out</string>
-    <string name="btn_skip">Skip</string>
-    <string name="btn_next">Next</string>
-    <string name="btn_change_prefix">Change</string>
-    <string name="btn_save">Save</string>
-    <string name="btn_ok">Ok</string>
-    <string name="btn_cancel">Cancel</string>
-
     <!-- Strings used for Progress -->
     <string name="progress_scanning">Scanning Devices...</string>
     <string name="progress_get_status">Getting Status</string>
     <string name="progress_loading">Loading...</string>
 
     <!--Error Messages-->
+    <string name="error_title">Error!</string>
     <string name="error_ble_not_supported">Sorry! BLE is not supported.</string>
     <string name="error_bluetooth_not_supported">Sorry! Bluetooth is not supported.</string>
     <string name="error_device_not_supported">Communication failed. Device may not be supported.</string>
-    <string name="error_network_not_found">Device provisioning failed. Reason : Network not found. Please reset device to factory settings and retry.</string>
-    <string name="error_authentication_failed">Device provisioning failed. Reason : Wi-Fi Authentication failed. Please reset device to factory settings and retry.</string>
-    <string name="error_unknown">Device provisioning failed. Reason : Unknown. Please reset device to factory settings and retry.</string>
+    <string name="error_network_not_found">Network not found.</string>
+    <string name="error_authentication_failed">Wi-Fi Authentication failed.</string>
+    <string name="error_unknown">Device provisioning failed. Reason : Unknown.</string>
     <string name="error_pop_incorrect">Error establishing session.\n Check if Proof of Possession(POP) is correct!</string>
-
-    <!--Screen titles-->
-    <string name="title_activity_connect_device">Connect to Device</string>
-    <string name="title_activity_pop">Proof Of Possession</string>
-    <string name="title_activity_wifi_scan_list">Wi-Fi List</string>
-    <string name="title_activity_provision">Provision</string>
-    <string name="title_activity_provision_success">ProvisionSuccessActivity</string>
+    <string name="error_no_ble_device">No Bluetooth devices found!</string>
+    <string name="error_device_connect_failed">Error! Failed to connect with device.</string>
+    <string name="error_ssid_empty">Network name cannot be empty</string>
+    <string name="error_password_empty">Password cannot be empty</string>
+    <string name="error_provisioning">Reset your board to factory defaults and retry</string>
 
     <string name="prefix">Prefix :</string>
     <string name="hint_prefix">Enter Prefix</string>
@@ -65,5 +95,20 @@
 
     <string name="join_other_network">Join Other Network</string>
     <string name="networks">Networks</string>
+    <string name="connect_your_device">Connect to your device</string>
+
+    <string name="dialog_msg_gps">Location services are disabled. Please enable them to continue</string>
+    <string name="dialog_msg_device_selection">Select Device Type</string>
+    <string name="looking_for_qr_code">Looking for QR Code</string>
+    <string name="position_camera_for_qr_code">Please position the camera to point at the QR Code.</string>
+    <string name="dialog_title_network_info">Enter Network Information</string>
+
+    <!-- Preference Titles -->
+    <string name="device_settings">Device Settings</string>
+
+    <!-- Messages Preferences -->
+    <string name="device_selection_title">Supported Device Types</string>
+    <string name="security_selection_title">Encrypted Device Communication</string>
+    <string name="summary_security">Send data using Security1</string>
 
 </resources>

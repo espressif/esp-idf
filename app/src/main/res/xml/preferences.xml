@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/device_settings">
+
+        <ListPreference
+            app:defaultValue="both"
+            app:entries="@array/device_entries"
+            app:entryValues="@array/device_values"
+            app:iconSpaceReserved="false"
+            app:key="device_types"
+            app:title="@string/device_selection_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="security_type"
+            app:summary="@string/summary_security"
+            app:title="@string/security_selection_title" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

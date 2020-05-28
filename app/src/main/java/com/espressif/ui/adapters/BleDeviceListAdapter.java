@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.espressif.provision.R;
+import com.espressif.wifi_provisioning.R;
 
 import java.util.ArrayList;
 

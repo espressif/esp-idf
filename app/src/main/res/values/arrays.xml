@@ -1,0 +1,14 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="device_entries">
+        <item>BLE</item>
+        <item>Wi-Fi</item>
+        <item>Both</item>
+    </string-array>
+
+    <string-array name="device_values">
+        <item>ble</item>
+        <item>wifi</item>
+        <item>both</item>
+    </string-array>
+</resources>
