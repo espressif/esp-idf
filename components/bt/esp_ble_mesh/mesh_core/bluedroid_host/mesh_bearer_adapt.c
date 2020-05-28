@@ -46,12 +46,7 @@ struct bt_mesh_dev bt_mesh_dev;
 
 /* P-256 Variables */
 static u8_t bt_mesh_public_key[64];
-static BT_OCTET32 bt_mesh_private_key = {
-    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,
-    0x74, 0xc9, 0xb3, 0xe3, 0xd2, 0x10, 0x3f, 0x50,
-    0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
-    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
-};
+static BT_OCTET32 bt_mesh_private_key;
 
 /* Scan related functions */
 static bt_mesh_scan_cb_t *bt_mesh_scan_dev_found_cb;
@@ -98,11 +93,6 @@ static tBTA_GATTC_IF bt_mesh_gattc_if;
 #endif
 
 int bt_mesh_host_init(void)
-{
-    return 0;
-}
-
-int bt_mesh_host_deinit(void)
 {
     return 0;
 }
@@ -1797,8 +1787,17 @@ void bt_mesh_gatt_deinit(void)
 void bt_mesh_adapt_init(void)
 {
     BT_DBG("%s", __func__);
+
     /* initialization of P-256 parameters */
     p_256_init_curve(KEY_LENGTH_DWORDS_P256);
+
+    /* Set "bt_mesh_dev.flags" to 0 (only the "BLE_MESH_DEV_HAS_PUB_KEY"
+     * flag is used) here, because we need to make sure each time after
+     * the private key is initialized, a corresponding public key must
+     * be generated.
+     */
+    bt_mesh_atomic_set(bt_mesh_dev.flags, 0);
+    bt_mesh_rand(bt_mesh_private_key, sizeof(bt_mesh_private_key));
 }
 
 int bt_mesh_rand(void *buf, size_t len)
@@ -1854,7 +1853,8 @@ const u8_t *bt_mesh_pub_key_get(void)
     memcpy(bt_mesh_public_key + BT_OCTET32_LEN, public_key.y, BT_OCTET32_LEN);
 
     bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY);
-    BT_DBG("gen the bt_mesh_public_key:%s", bt_hex(bt_mesh_public_key, sizeof(bt_mesh_public_key)));
+
+    BT_DBG("Public Key %s", bt_hex(bt_mesh_public_key, sizeof(bt_mesh_public_key)));
 
     return bt_mesh_public_key;
 }
