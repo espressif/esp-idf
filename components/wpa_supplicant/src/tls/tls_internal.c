@@ -18,10 +18,6 @@
 #include "tls/tlsv1_client.h"
 #include "tls/tlsv1_server.h"
 
-#ifndef CONFIG_TLS_INTERNAL_CLIENT
-#define CONFIG_TLS_INTERNAL_CLIENT
-#endif
-
 static int tls_ref_count = 0;
 
 struct tls_global {
@@ -280,43 +276,76 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
 	return -1;
 }
 
-
-int tls_connection_get_keys(void *tls_ctx, struct tls_connection *conn,
-			    struct tls_keys *keys)
+int tls_connection_get_random(void *tls_ctx, struct tls_connection *conn,
+			    struct tls_random *data)
 {
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
 	if (conn->client)
-		return tlsv1_client_get_keys(conn->client, keys);
+		return tlsv1_client_get_random(conn->client, data);
 #endif /* CONFIG_TLS_INTERNAL_CLIENT */
 #ifdef CONFIG_TLS_INTERNAL_SERVER
 	if (conn->server)
-		return tlsv1_server_get_keys(conn->server, keys);
+		return tlsv1_server_get_random(conn->server, data);
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
 	return -1;
 }
 
-
-int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
-		       const char *label, int server_random_first,
-		       u8 *out, size_t out_len)
+static int tls_get_keyblock_size(struct tls_connection *conn)
 {
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
+	if (conn->client)
+		return tlsv1_client_get_keyblock_size(conn->client);
+#endif /* CONFIG_TLS_INTERNAL_CLIENT */
+#ifdef CONFIG_TLS_INTERNAL_SERVER
+	if (conn->server)
+		return tlsv1_server_get_keyblock_size(conn->server);
+#endif /* CONFIG_TLS_INTERNAL_SERVER */
+	return -1;
+}
+
+static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
+			      const char *label, int server_random_first,
+			      int skip_keyblock, u8 *out, size_t out_len)
+{
+	int ret = -1, skip = 0;
+	u8 *tmp_out = NULL;
+	u8 *_out = out;
+
+	if (skip_keyblock) {
+		skip = tls_get_keyblock_size(conn);
+		if (skip < 0)
+			return -1;
+		tmp_out = os_malloc(skip + out_len);
+		if (!tmp_out)
+			return -1;
+		_out = tmp_out;
+	}
+#ifdef CONFIG_TLS_INTERNAL_CLIENT
 	if (conn->client) {
-		return tlsv1_client_prf(conn->client, label,
+		ret = tlsv1_client_prf(conn->client, label,
 					server_random_first,
 					out, out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_CLIENT */
 #ifdef CONFIG_TLS_INTERNAL_SERVER
 	if (conn->server) {
-		return tlsv1_server_prf(conn->server, label,
+		ret = tlsv1_server_prf(conn->server, label,
 					server_random_first,
 					out, out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
-	return -1;
+	if (ret == 0 && skip_keyblock)
+		os_memcpy(out, _out + skip, out_len);
+	wpa_bin_clear_free(tmp_out, skip);
+
+	return ret;
 }
 
+int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
+			      const char *label, u8 *out, size_t out_len)
+{
+	return tls_connection_prf(tls_ctx, conn, label, 0, 0, out, out_len);
+}
 
 struct wpabuf * tls_connection_handshake(void *tls_ctx,
 					 struct tls_connection *conn,
@@ -585,27 +614,10 @@ int tls_connection_get_write_alerts(void *tls_ctx,
 	return 0;
 }
 
-
-int tls_connection_get_keyblock_size(void *tls_ctx,
-				     struct tls_connection *conn)
-{
-#ifdef CONFIG_TLS_INTERNAL_CLIENT
-	if (conn->client)
-		return tlsv1_client_get_keyblock_size(conn->client);
-#endif /* CONFIG_TLS_INTERNAL_CLIENT */
-#ifdef CONFIG_TLS_INTERNAL_SERVER
-	if (conn->server)
-		return tlsv1_server_get_keyblock_size(conn->server);
-#endif /* CONFIG_TLS_INTERNAL_SERVER */
-	return -1;
-}
-
-
 unsigned int tls_capabilities(void *tls_ctx)
 {
 	return 0;
 }
-
 
 int tls_connection_set_session_ticket_cb(void *tls_ctx,
 					 struct tls_connection *conn,
@@ -625,91 +637,4 @@ int tls_connection_set_session_ticket_cb(void *tls_ctx,
 	}
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
 	return -1;
-}
-
-
-
-/**
- * tls_prf_sha1_md5 - Pseudo-Random Function for TLS (TLS-PRF, RFC 2246)
- * @secret: Key for PRF
- * @secret_len: Length of the key in bytes
- * @label: A unique label for each purpose of the PRF
- * @seed: Seed value to bind into the key
- * @seed_len: Length of the seed
- * @out: Buffer for the generated pseudo-random key
- * @outlen: Number of bytes of key to generate
- * Returns: 0 on success, -1 on failure.
- *
- * This function is used to derive new, cryptographically separate keys from a
- * given key in TLS. This PRF is defined in RFC 2246, Chapter 5.
- */
-int tls_prf_sha1_md5(const u8 *secret, size_t secret_len, const char *label,
-		     const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
-{
-	size_t L_S1, L_S2, i;
-	const u8 *S1, *S2;
-	u8 A_MD5[MD5_MAC_LEN], A_SHA1[SHA1_MAC_LEN];
-	u8 P_MD5[MD5_MAC_LEN], P_SHA1[SHA1_MAC_LEN];
-	int MD5_pos, SHA1_pos;
-	const u8 *MD5_addr[3];
-	size_t MD5_len[3];
-	const unsigned char *SHA1_addr[3];
-	size_t SHA1_len[3];
-
-	if (secret_len & 1)
-		return -1;
-
-	MD5_addr[0] = A_MD5;
-	MD5_len[0] = MD5_MAC_LEN;
-	MD5_addr[1] = (unsigned char *) label;
-	MD5_len[1] = os_strlen(label);
-	MD5_addr[2] = seed;
-	MD5_len[2] = seed_len;
-
-	SHA1_addr[0] = A_SHA1;
-	SHA1_len[0] = SHA1_MAC_LEN;
-	SHA1_addr[1] = (unsigned char *) label;
-	SHA1_len[1] = os_strlen(label);
-	SHA1_addr[2] = seed;
-	SHA1_len[2] = seed_len;
-
-	/* RFC 2246, Chapter 5
-	 * A(0) = seed, A(i) = HMAC(secret, A(i-1))
-	 * P_hash = HMAC(secret, A(1) + seed) + HMAC(secret, A(2) + seed) + ..
-	 * PRF = P_MD5(S1, label + seed) XOR P_SHA-1(S2, label + seed)
-	 */
-
-	L_S1 = L_S2 = (secret_len + 1) / 2;
-	S1 = secret;
-	S2 = secret + L_S1;
-	if (secret_len & 1) {
-		/* The last byte of S1 will be shared with S2 */
-		S2--;
-	}
-
-	hmac_md5_vector(S1, L_S1, 2, &MD5_addr[1], &MD5_len[1], A_MD5);
-	hmac_sha1_vector(S2, L_S2, 2, &SHA1_addr[1], &SHA1_len[1], A_SHA1);
-
-	MD5_pos = MD5_MAC_LEN;
-	SHA1_pos = SHA1_MAC_LEN;
-	for (i = 0; i < outlen; i++) {
-		if (MD5_pos == MD5_MAC_LEN) {
-			hmac_md5_vector(S1, L_S1, 3, MD5_addr, MD5_len, P_MD5);
-			MD5_pos = 0;
-			hmac_md5(S1, L_S1, A_MD5, MD5_MAC_LEN, A_MD5);
-		}
-		if (SHA1_pos == SHA1_MAC_LEN) {
-			hmac_sha1_vector(S2, L_S2, 3, SHA1_addr, SHA1_len,
-					 P_SHA1);
-			SHA1_pos = 0;
-			hmac_sha1(S2, L_S2, A_SHA1, SHA1_MAC_LEN, A_SHA1);
-		}
-
-		out[i] = P_MD5[MD5_pos] ^ P_SHA1[SHA1_pos];
-
-		MD5_pos++;
-		SHA1_pos++;
-	}
-
-	return 0;
 }
