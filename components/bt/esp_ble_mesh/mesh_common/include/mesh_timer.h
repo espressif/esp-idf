@@ -244,7 +244,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work);
 
 int k_delayed_work_free(struct k_delayed_work *work);
 
-void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler);
+int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler);
 
 /**
  * @brief Get system uptime.
