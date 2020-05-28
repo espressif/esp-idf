@@ -1,0 +1,58 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+import "wifi_constants.proto";
+
+message CmdGetStatus {
+
+}
+
+message RespGetStatus {
+    Status status = 1;
+    WifiStationState sta_state = 2;
+    oneof state {
+        WifiConnectFailedReason fail_reason = 10;
+        WifiConnectedState connected = 11;
+    }
+}
+
+message CmdSetConfig {
+    bytes ssid = 1;
+    bytes passphrase = 2;
+    bytes bssid = 3;
+    int32 channel = 4;
+}
+
+message RespSetConfig {
+    Status status = 1;
+}
+
+message CmdApplyConfig {
+
+}
+
+message RespApplyConfig {
+    Status status = 1;
+}
+
+enum WiFiConfigMsgType {
+    TypeCmdGetStatus = 0;
+    TypeRespGetStatus = 1;
+    TypeCmdSetConfig = 2;
+    TypeRespSetConfig = 3;
+    TypeCmdApplyConfig = 4;
+    TypeRespApplyConfig = 5;
+}
+
+message WiFiConfigPayload {
+    WiFiConfigMsgType msg = 1;
+    oneof payload {
+        CmdGetStatus cmd_get_status = 10;
+        RespGetStatus resp_get_status = 11;
+        CmdSetConfig cmd_set_config = 12;
+        RespSetConfig resp_set_config = 13;
+        CmdApplyConfig cmd_apply_config = 14;
+        RespApplyConfig resp_apply_config = 15;
+    }
+}

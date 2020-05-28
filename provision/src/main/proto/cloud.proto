@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package cloud;
+
+enum CloudConfigStatus {
+    Success = 0;
+    InvalidParam = 1;
+    InvalidState = 2;
+}
+
+message CmdGetSetDetails {
+    string UserID = 1;
+    string SecretKey = 2;
+}
+message RespGetSetDetails{
+    CloudConfigStatus Status = 1;
+    string DeviceSecret = 2;
+}
+
+enum CloudConfigMsgType {
+    TypeCmdGetSetDetails = 0;
+    TypeRespGetSetDetails = 1;
+}
+
+message CloudConfigPayload {
+    CloudConfigMsgType msg = 1;
+    oneof payload {
+        CmdGetSetDetails cmd_get_set_details = 10;
+        RespGetSetDetails resp_get_set_details = 11;
+    }
+}

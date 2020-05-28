@@ -1,0 +1,41 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+
+message SessionCmd1 {
+    bytes client_verify_data = 2;
+}
+
+message SessionResp1 {
+    Status status = 1;
+    bytes device_verify_data = 3;
+}
+
+message SessionCmd0 {
+    bytes client_pubkey = 1;
+}
+
+message SessionResp0 {
+    Status status = 1;
+    bytes device_pubkey = 2;
+    bytes device_random = 3;
+}
+
+enum Sec1MsgType {
+    Session_Command0 = 0;
+    Session_Response0 = 1;
+    Session_Command1 = 2;
+    Session_Response1 = 3;
+}
+
+message Sec1Payload {
+    Sec1MsgType msg = 1;
+    oneof payload {
+        SessionCmd0 sc0 = 20;
+        SessionResp0 sr0 = 21;
+        SessionCmd1 sc1 = 22;
+        SessionResp1 sr1 = 23;
+    }
+}
+
