@@ -21,6 +21,7 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/esp_efuse.h"
@@ -332,7 +333,7 @@ void esp_efuse_disable_basic_rom_console(void);
  */
 esp_err_t esp_efuse_disable_rom_download_mode(void);
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if SOC_SUPPORTS_SECURE_DL_MODE
 /* @brief Switch ROM Download Mode to Secure Download mode via eFuse
  *
  * Permanently enables Secure Download mode. This mode limits the use of ROM Download Mode functions

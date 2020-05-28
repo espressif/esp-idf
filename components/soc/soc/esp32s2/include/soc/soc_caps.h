@@ -6,3 +6,5 @@
 #pragma once
 
 #define SOC_CPU_CORES_NUM 1
+
+#define SOC_SUPPORTS_SECURE_DL_MODE 1
