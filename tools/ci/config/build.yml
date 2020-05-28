@@ -1,4 +1,3 @@
-
 .build_template:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -77,26 +76,12 @@ build_esp_idf_tests_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
-build_examples_make:
+.build_examples_template:
   extends: .build_template
   parallel: 8
-  # This is a workaround for a rarely encountered issue with building examples in CI.
-  # Probably related to building of Kconfig in 'make clean' stage
-  retry: 1
   artifacts:
     when: always
-    paths:
-      - build_examples/*/*/*/build/*.bin
-      - build_examples/*/*/*/sdkconfig
-      - build_examples/*/*/*/build/*.elf
-      - build_examples/*/*/*/build/*.map
-      - build_examples/*/*/*/build/download.config
-      - build_examples/*/*/*/build/bootloader/*.bin
-      - build_examples/*/*/*/*/build/partition_table/*.bin
-      - $LOG_PATH
     expire_in: 4 days
-  variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
     # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
     variables:
@@ -105,6 +90,30 @@ build_examples_make:
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - mkdir ${BUILD_PATH}
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_examples.sh
+    # Check if the tests demand Make built binaries. If not, delete them
+    - if [ ${EXAMPLE_TEST_BUILD_SYSTEM} == "cmake" ]; then exit 0; fi
+    - rm -rf ${BUILD_PATH}
+
+build_examples_make:
+  extends: .build_examples_template
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
+  retry: 1
+  artifacts:
+    paths:
+      - $LOG_PATH
+  variables:
+    LOG_PATH: "${CI_PROJECT_DIR}/log_examples_make"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_examples_make"
+    EXAMPLE_TEST_BUILD_SYSTEM: "make"
+    IDF_TARGET: "esp32"  # currently we only support esp32
+  only:
     refs:
       - master
       - /^release\/v/
@@ -113,26 +122,11 @@ build_examples_make:
       - schedules
       - pipelines
       - web
-  script:
-    # it's not possible to build 100% out-of-tree and have the "artifacts"
-    # mechanism work, but this is the next best thing
-    - rm -rf build_examples
-    - mkdir build_examples
-    - cd build_examples
-    # build some of examples
-    - mkdir -p ${LOG_PATH}
-    - ${IDF_PATH}/tools/ci/build_examples.sh
-    # Check if the tests demand Make built binaries. If not, delete them
-    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
-    - cd ..
-    - rm -rf build_examples
 
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
-  extends: .build_template
-  parallel: 8
+  extends: .build_examples_template
   artifacts:
-    when: always
     paths:
       - build_examples/list.json
       - build_examples/list_job_*.json
@@ -144,27 +138,10 @@ build_examples_make:
       - build_examples/*/*/*/build/bootloader/*.bin
       - build_examples/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
-    expire_in: 4 days
   variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_examples"
-    BUILD_PATH: "$CI_PROJECT_DIR/build_examples"
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_EXAMPLE_TEST
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_WEEKEND_TEST
-  script:
-    # it's not possible to build 100% out-of-tree and have the "artifacts"
-    # mechanism work, but this is the next best thing
-    - mkdir -p ${BUILD_PATH}
-    - mkdir -p ${LOG_PATH}
-    - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
-    # Check if the tests demand CMake built binaries. If not, delete them
-    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
-    - cd ..
-    - rm -rf build_examples
+    LOG_PATH: "${CI_PROJECT_DIR}/log_examples"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
+    EXAMPLE_TEST_BUILD_SYSTEM: "cmake"
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
