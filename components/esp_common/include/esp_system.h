@@ -118,6 +118,16 @@ esp_reset_reason_t esp_reset_reason(void);
 uint32_t esp_get_free_heap_size(void);
 
 /**
+  * @brief  Get the size of available internal heap.
+  *
+  * Note that the returned value may be larger than the maximum contiguous block
+  * which can be allocated.
+  *
+  * @return Available internal heap size, in bytes.
+  */
+uint32_t esp_get_free_internal_heap_size(void);
+
+/**
   * @brief Get the minimum heap that has ever been available
   *
   * @return Minimum free heap ever available
