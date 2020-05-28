@@ -955,6 +955,8 @@ void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
         btc_gap_bt_inquiry_in_progress = false;
     } else if (bl_flags == BTM_BL_INQUIRY_COMPLETE) {
+        /* The Inquiry Complete event is not transported to app layer,
+        since the app only cares about the Name Discovery Complete event */
         btc_gap_bt_inquiry_in_progress = false;
     }
 }
