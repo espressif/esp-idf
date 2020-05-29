@@ -18,6 +18,8 @@
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 
 /*
@@ -83,6 +85,14 @@ static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
     return ESP_OK;
 }
 
+static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg)
+{
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+    vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+#endif
+    return ESP_OK;
+}
+
 static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
     if (((spi1_app_func_arg_t*)arg)->no_protect || esp_partition_main_flash_region_safe(start_addr, size)) {
@@ -115,14 +125,16 @@ static app_func_arg_t spi3_arg = {
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
     .start = spi1_start,
     .end = spi1_end,
-    .delay_us = delay_us,
     .region_protected = main_flash_region_protected,
+    .delay_us = delay_us,
+    .yield = spi_flash_os_yield,
 };
 
 const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .start = spi23_start,
     .end = spi23_end,
     .delay_us = delay_us,
+    .yield = spi_flash_os_yield
 };
 
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
