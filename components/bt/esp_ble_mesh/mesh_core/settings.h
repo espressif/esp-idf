@@ -19,11 +19,6 @@ extern "C" {
 #define BLE_MESH_SETTINGS_ROLE_PROV     (BIT(BLE_MESH_PROVISIONER))
 #define BLE_MESH_SETTINGS_ROLE_BIT_MASK (BIT(BLE_MESH_NODE) | BIT(BLE_MESH_PROVISIONER))
 
-int settings_core_init(void);
-int settings_core_load(void);
-int settings_core_commit(void);
-int settings_core_deinit(void);
-
 void bt_mesh_store_role(void);
 void bt_mesh_store_net(void);
 void bt_mesh_store_iv(bool only_duration);
@@ -67,8 +62,14 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node);
 void bt_mesh_settings_lock(void);
 void bt_mesh_settings_unlock(void);
 
+int settings_core_init(void);
+int settings_core_load(void);
+int settings_core_commit(void);
+int settings_core_deinit(void);
+int settings_core_erase(void);
+
 int bt_mesh_settings_init(void);
-int bt_mesh_settings_deinit(void);
+int bt_mesh_settings_deinit(bool erase);
 
 #ifdef __cplusplus
 }
