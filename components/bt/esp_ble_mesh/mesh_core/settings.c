@@ -585,7 +585,8 @@ static int hb_pub_set(const char *name)
         hb_pub->count = 0U;
     }
 
-    BT_INFO("Restored Heartbeat Publication, dst 0x%04x", hb_pub->dst);
+    BT_INFO("Restored Heartbeat Publication, dst 0x%04x, period %d, net_idx 0x%03x",
+            hb_pub->dst, hb_pub->period, hb_pub->net_idx);
 
     return 0;
 }
@@ -618,7 +619,10 @@ static int cfg_set(const char *name)
 
     memcpy(&stored_cfg.cfg, &val, sizeof(val));
     stored_cfg.valid = true;
-    BT_INFO("Restored Configuration State");
+
+    BT_INFO("Restored Configuration, ttl %d, transmit 0x%02x, retransmit 0x%02x",
+            val.default_ttl, val.net_transmit, val.relay_retransmit);
+
     return 0;
 }
 
@@ -641,6 +645,10 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key
         return -EIO;
     }
 
+    if (exist == true) {
+        BT_INFO("Restored Model Bound AppKey, index %s", bt_hex(model->keys, sizeof(model->keys)));
+    }
+
     return 0;
 }
 
@@ -661,6 +669,10 @@ static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     if (err) {
         BT_ERR("Failed to load model subscriptions");
         return -EIO;
+    }
+
+    if (exist == true) {
+        BT_INFO("Restored Model Subscription, address %s", bt_hex(model->groups, sizeof(model->groups)));
     }
 
     return 0;
@@ -1467,7 +1479,7 @@ static void schedule_store(int flag)
         return;
     }
 
-    BT_INFO("Waiting %d seconds", timeout / MSEC_PER_SEC);
+    BT_INFO("Settings store, waiting %d seconds", timeout / MSEC_PER_SEC);
 
     if (timeout) {
         k_delayed_work_submit(&pending_store, timeout);
@@ -2602,35 +2614,34 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node)
 
 int settings_core_init(void)
 {
-    BT_DBG("%s", __func__);
-
     k_delayed_work_init(&pending_store, store_pending);
-
-    return 0;
-}
-
-int bt_mesh_settings_init(void)
-{
-    BT_DBG("%s", __func__);
-
-    bt_mesh_settings_mutex_new();
-    bt_mesh_settings_init_foreach();
-
     return 0;
 }
 
 int settings_core_deinit(void)
 {
     k_delayed_work_free(&pending_store);
-
     return 0;
 }
 
-int bt_mesh_settings_deinit(void)
+int settings_core_erase(void)
 {
-    bt_mesh_settings_deinit_foreach();
-    bt_mesh_settings_mutex_free();
+    /* Erase here must not use the pending_store timer. */
+    bt_mesh_clear_role();
+    return 0;
+}
 
+int bt_mesh_settings_init(void)
+{
+    bt_mesh_settings_mutex_new();
+    bt_mesh_settings_init_foreach();
+    return 0;
+}
+
+int bt_mesh_settings_deinit(bool erase)
+{
+    bt_mesh_settings_deinit_foreach(erase);
+    bt_mesh_settings_mutex_free();
     return 0;
 }
 
