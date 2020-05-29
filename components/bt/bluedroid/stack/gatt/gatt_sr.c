@@ -132,7 +132,7 @@ void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb)
     /* Double check in case any buffers are queued */
     GATT_TRACE_DEBUG("gatt_dequeue_sr_cmd" );
     if (p_tcb->sr_cmd.p_rsp_msg) {
-        GATT_TRACE_ERROR("%s free msg %p", __func__, p_tcb->sr_cmd.p_rsp_msg);
+        GATT_TRACE_DEBUG("%s free msg %p", __func__, p_tcb->sr_cmd.p_rsp_msg);
 
         osi_free(p_tcb->sr_cmd.p_rsp_msg);
         p_tcb->sr_cmd.p_rsp_msg = NULL;
@@ -557,8 +557,11 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
                                                           key_size,
                                                           trans_id);
 
-                    if (err == GATT_SUCCESS) {
-                        gatt_sr_process_app_rsp(p_tcb, gatt_cb.sr_reg[i_rcb].gatt_if , trans_id, op_code, GATT_SUCCESS, p_msg);
+                    if (err == GATT_SUCCESS || err == GATT_STACK_RSP) {
+                        err = gatt_sr_process_app_rsp(p_tcb, gatt_cb.sr_reg[i_rcb].gatt_if , trans_id, op_code, GATT_SUCCESS, p_msg);
+                        if(err != GATT_SUCCESS) {
+                            break;
+                        }
                     }
                     /* either not using or done using the buffer, release it now */
                     osi_free(p_msg);
