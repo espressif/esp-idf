@@ -31,7 +31,7 @@ typedef nvs_handle      bt_mesh_nvs_handle_t;
 #define BLE_MESH_GET_MODEL_KEY(a, b)    ((u16_t)(((u16_t)((a) << 8)) | (b)))
 
 void bt_mesh_settings_init_foreach(void);
-void bt_mesh_settings_deinit_foreach(void);
+void bt_mesh_settings_deinit_foreach(bool erase);
 
 int bt_mesh_save_settings(bt_mesh_nvs_handle_t handle, const char *key,
                           const u8_t *val, size_t len);

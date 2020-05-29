@@ -23,7 +23,6 @@
 
 enum settings_type {
     SETTINGS_CORE,
-    SETTINGS_SERVER,
 };
 
 struct settings_context {
@@ -44,12 +43,7 @@ static struct settings_context settings_ctx[] = {
         .settings_load = settings_core_load,
         .settings_commit = settings_core_commit,
         .settings_deinit = settings_core_deinit,
-    },
-    [SETTINGS_SERVER] = {
-        .nvs_name = "mesh_server",
-        .settings_init = NULL,
-        .settings_load = NULL,
-        .settings_commit = NULL,
+        .settings_erase = settings_core_erase,
     },
 };
 
@@ -98,7 +92,7 @@ void bt_mesh_settings_init_foreach(void)
     }
 }
 
-void bt_mesh_settings_deinit_foreach(void)
+void bt_mesh_settings_deinit_foreach(bool erase)
 {
     int i;
 
@@ -107,6 +101,11 @@ void bt_mesh_settings_deinit_foreach(void)
 
         if (ctx->settings_deinit && ctx->settings_deinit()) {
             BT_ERR("Deinit settings failed, name %s", ctx->nvs_name);
+            continue;
+        }
+
+        if (erase && ctx->settings_erase && ctx->settings_erase()) {
+            BT_ERR("Erase settings failed, name %s", ctx->nvs_name);
             continue;
         }
 
