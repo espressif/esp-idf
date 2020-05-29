@@ -313,3 +313,25 @@ test_mkdfu:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
 
+test_docs:
+  stage: host_test
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  tags:
+    - host_test
+  dependencies: []
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_HOST_TEST
+      - $BOT_LABEL_REGULAR_TEST
+  artifacts:
+    when: on_failure
+    paths:
+        - docs/test/_build/*/*/*/html/*
+    expire_in: 1 week
+  script:
+  - cd ${IDF_PATH}/docs/test
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r ${IDF_PATH}/docs/requirements.txt
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
+

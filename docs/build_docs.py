@@ -78,6 +78,7 @@ def main():
     parser.add_argument("--language", "-l", choices=LANGUAGES, required=False)
     parser.add_argument("--target", "-t", choices=TARGETS, required=False)
     parser.add_argument("--build-dir", "-b", type=str, default="_build")
+    parser.add_argument("--source-dir", "-s", type=str, default="")
     parser.add_argument("--builders", "-bs", nargs='+', type=str, default=["html"],
                         help="List of builders for Sphinx, e.g. html or latex, for latex a PDF is also generated")
     parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
@@ -155,7 +156,9 @@ def parallel_call(args, callback):
     for target in targets:
         for language in languages:
             build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
-            entries.append((language, target, build_dir, args.sphinx_parallel_jobs, args.builders, args.input_docs))
+            source_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), args.source_dir, language)
+
+            entries.append((language, target, build_dir, source_dir, args.sphinx_parallel_jobs, args.builders, args.input_docs))
 
     print(entries)
     errcodes = pool.map(callback, entries)
@@ -177,7 +180,7 @@ def parallel_call(args, callback):
         return 0
 
 
-def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername, input_docs):
+def sphinx_call(language, target, build_dir, src_dir, sphinx_parallel_jobs, buildername, input_docs):
     # Note: because this runs in a multiprocessing Process, everything which happens here should be isolated to a single process
     # (ie it doesn't matter if Sphinx is using global variables, as they're it's own copy of the global variables)
 
@@ -204,7 +207,7 @@ def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername, 
             "-t", target,
             "-D", "idf_target={}".format(target),
             "-D", "docs_to_build={}".format(",". join(input_docs)),
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), language),  # srcdir for this language
+            src_dir,
             os.path.join(build_dir, buildername)                    # build directory
             ]
 
@@ -240,9 +243,9 @@ def action_build(args):
 
 
 def call_build_docs(entry):
-    (language, target, build_dir, sphinx_parallel_jobs, builders, input_docs) = entry
+    (language, target, build_dir, src_dir, sphinx_parallel_jobs, builders, input_docs) = entry
     for buildername in builders:
-        ret = sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername, input_docs)
+        ret = sphinx_call(language, target, build_dir, src_dir, sphinx_parallel_jobs, buildername, input_docs)
 
         # Warnings are checked after each builder as logs are overwritten
         # check Doxygen warnings:
