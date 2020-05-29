@@ -889,7 +889,7 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
                     core_off += self.ESP_COREDUMP_MEM_SEG_HDR_SZ
                     mem_start,mem_sz = struct.unpack_from(self.ESP_COREDUMP_MEM_SEG_HDR_FMT, data)
                     logging.debug("Read memory segment %d bytes @ 0x%x" % (mem_sz, mem_start))
-                    data = self.read_data(core_off, stack_len_aligned)
+                    data = self.read_data(core_off, mem_sz)
                     core_elf.add_program_segment(mem_start, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
                     core_off += mem_sz
             # add notes
