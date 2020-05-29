@@ -23,7 +23,7 @@ if(CONFIG_USB_ENABLED)
         "${COMPONENT_DIR}/port/common/src/descriptors_control.c"
         "${COMPONENT_DIR}/port/common/src/usb_descriptors.c"
         "${COMPONENT_DIR}/port/common/src/usbd.c"
-        "${COMPONENT_DIR}/port/esp32s2/src/device_controller_driver.c"
+#        "${COMPONENT_DIR}/port/esp32s2/src/device_controller_driver.c"
         "${COMPONENT_DIR}/port/esp32s2/src/tinyusb.c"
         # tusb:
         "${COMPONENT_DIR}/tinyusb/src/common/tusb_fifo.c"
@@ -33,5 +33,6 @@ if(CONFIG_USB_ENABLED)
         "${COMPONENT_DIR}/tinyusb/src/class/hid/hid_device.c"
         "${COMPONENT_DIR}/tinyusb/src/class/midi/midi_device.c"
         "${COMPONENT_DIR}/tinyusb/src/tusb.c"
+        "${COMPONENT_DIR}/tinyusb/src/portable/espressif/esp32s2/dcd_esp32s2.c"
         )
 endif()
