@@ -16,7 +16,9 @@ This extension board can be used in many ways. The applications might include vo
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.2-3d.png
     :align: center
-    :scale: 90%
+    :width: 2545px
+    :height: 1786px
+    :scale: 30%
     :alt: ESP-LyraT-8311A
     :figclass: align-center
 
@@ -41,7 +43,9 @@ Description of Components
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.2-layout-front.png
     :align: center
-    :scale: 90%
+    :width: 934px
+    :height: 565px
+    :scale: 80%
     :alt: ESP-LyraT-8311A - front
     :figclass: align-center
 

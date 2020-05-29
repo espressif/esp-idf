@@ -1,6 +1,6 @@
-=====================
+=======================
 ESP32-S2-Kaluga-1 套件
-=====================
+=======================
 
 :link_to_translation:`en:[English]`
 
@@ -19,7 +19,9 @@ ESP32-S2 的功能强大，应用场景非常丰富。对于初学者来说，�
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png
     :align: center
-    :scale: 90%
+    :width: 3452px
+    :height: 1590px
+    :scale: 20%
     :alt: ESP32-S2-Kaluga-1 套装装配图
     :figclass: align-center
 
@@ -68,7 +70,9 @@ ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板�
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-3d.png
     :align: center
-    :scale: 90%
+    :width: 2631px
+    :height: 1966px
+    :scale: 25%
     :alt: ESP32-S2-Kaluga-1
     :figclass: align-center
 
@@ -101,10 +105,12 @@ ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板�
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-layout-front.png
     :align: center
-    :scale: 90%
+    :width: 934px
+    :height: 645px
+    :scale: 70%
     :alt: ESP32-S2-Kaluga-1 - 正面
     :figclass: align-center
-    
+
     ESP32-S2-Kaluga-1 - 正面（点击放大）
 
 
@@ -141,7 +147,7 @@ ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板�
       - 按下 **Boot** 键并保持，同时按一下 **Reset** 键，进入“固件下载”模式，通过串口下载固件。
     * - USB-UART/JTAG 端口
       - PC 和 ESP32-S2 模组之间的通信接口（UART 或 JTAG）
-    * - USB 电源端口 
+    * - USB 电源端口
       - 电路板的电源
     * - 电池端口
       - 2 针连接器，连接外部电源
@@ -224,7 +230,7 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
     - 螺丝 (x 4)
     - 螺母 (x 4)
 
-零售购买，请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。 
+零售购买，请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
 
 批发订单
@@ -232,7 +238,7 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
 
 ESP32-S2-Kaluga-1 开发套件的批发包装为纸板箱。
 
-批量订货，请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF)。
+批量订货，请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)。
 
 
 硬件参考
@@ -281,7 +287,7 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
     user-guide-esp-lyrat-8311a_v1.2
 
 - `ESP32-S2-WROVER 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_cn.pdf>`_ (PDF)
-- `《乐鑫产品订购信息》<https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+- `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
 
 - `ESP32-S2-Kaluga-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_SCH_20200424A.pdf>`_ (PDF)
 - `ESP32-S2-Kaluga-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_PCB_20200325AF.pdf>`_ (PDF)

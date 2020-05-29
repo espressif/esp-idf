@@ -10,7 +10,9 @@ ESP-LyraP-LCD32 可为您的主板增加 LCD 图像显示功能。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-3d.png
     :align: center
-    :scale: 90%
+    :width: 2243px
+    :height: 1534px
+    :scale: 30%
     :alt: ESP-LyraP-LCD32
     :figclass: align-center
 
@@ -35,14 +37,16 @@ ESP-LyraP-LCD32 可为您的主板增加了一块 3.2" LCD 图形显示屏（320
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-layout-front.png
     :align: center
-    :scale: 90%
+    :width: 934px
+    :height: 600px
+    :scale: 70%
     :alt: ESP-LyraP-LCD32 - 正面
     :figclass: align-center
 
     ESP-LyraP-LCD32 - front （点击放大）
 
 
-在下面的组件描述中，**保留**表示该功能可用，但当前版本的套件并未启用该功能。
+在下面的组件描述中，**保留** 表示该功能可用，但当前版本的套件并未启用该功能。
 
 
 .. list-table::
