@@ -81,6 +81,7 @@ static spi_flash_counters_t s_flash_stats;
 
 static esp_err_t spi_flash_translate_rc(esp_rom_spiflash_result_t rc);
 static bool is_safe_write_address(size_t addr, size_t size);
+static void spi_flash_os_yield(void);
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
     .start                  = spi_flash_disable_interrupts_caches_and_other_cpu,
@@ -88,18 +89,20 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
     .op_lock                = spi_flash_op_lock,
     .op_unlock              = spi_flash_op_unlock,
 #if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
-    .is_safe_write_address  = is_safe_write_address
+    .is_safe_write_address  = is_safe_write_address,
 #endif
+    .yield                  = spi_flash_os_yield,
 };
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
     .start                  = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
     .end                    = spi_flash_enable_interrupts_caches_no_os,
-    .op_lock                = 0,
-    .op_unlock              = 0,
+    .op_lock                = NULL,
+    .op_unlock              = NULL,
 #if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
-    .is_safe_write_address  = 0
+    .is_safe_write_address  = NULL,
 #endif
+    .yield                  = NULL,
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
@@ -184,6 +187,13 @@ static inline void IRAM_ATTR spi_flash_guard_op_unlock(void)
     }
 }
 
+static void IRAM_ATTR spi_flash_os_yield(void)
+{
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+    vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+#endif
+}
+
 #ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
 {
@@ -262,7 +272,9 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
             no_yield_time_us += (esp_timer_get_time() - start_time_us);
             if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
                 no_yield_time_us = 0;
-                vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+                if (s_flash_guard_ops && s_flash_guard_ops->yield) {
+                    s_flash_guard_ops->yield();
+                }
             }
 #endif
         }
