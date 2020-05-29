@@ -967,4 +967,13 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
     btc_gatts_cb_param_copy_free(msg, p_data);
 }
 
+void btc_congest_callback(tBTA_GATTS *param)
+{
+    esp_ble_gatts_cb_param_t esp_param;
+    esp_gatt_if_t gatts_if = BTC_GATT_GET_GATT_IF(param->congest.conn_id);
+    esp_param.congest.conn_id = BTC_GATT_GET_CONN_ID(param->congest.conn_id);
+    esp_param.congest.congested = param->congest.congested;
+    btc_gatts_cb_to_app(ESP_GATTS_CONGEST_EVT, gatts_if, &esp_param);
+
+}
 #endif  ///GATTS_INCLUDED

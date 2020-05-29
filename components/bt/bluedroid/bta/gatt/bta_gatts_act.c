@@ -1014,22 +1014,14 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 ** Returns          none.
 **
 *******************************************************************************/
+extern void btc_congest_callback(tBTA_GATTS *param);
 static void bta_gatts_cong_cback (UINT16 conn_id, BOOLEAN congested)
 {
-    tBTA_GATTS_RCB *p_rcb;
-    tGATT_IF gatt_if;
-    tBTA_GATT_TRANSPORT transport;
     tBTA_GATTS cb_data;
 
-    if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda, &transport)) {
-        p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
+    cb_data.congest.conn_id = conn_id;
+    cb_data.congest.congested = congested;
 
-        if (p_rcb && p_rcb->p_cback) {
-            cb_data.congest.conn_id = conn_id;
-            cb_data.congest.congested = congested;
-
-            (*p_rcb->p_cback)(BTA_GATTS_CONGEST_EVT, &cb_data);
-        }
-    }
+    btc_congest_callback(&cb_data);
 }
 #endif /* GATTS_INCLUDED */
