@@ -172,3 +172,10 @@ void esp_chip_info(esp_chip_info_t* out_info)
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+inline bool soc_has_cache_lock_bug(void)
+{
+    return (esp_efuse_get_chip_ver() == 3);
+}
+#endif
