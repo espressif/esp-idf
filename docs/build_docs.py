@@ -238,33 +238,24 @@ def action_build(args):
         if ret != 0:
             return ret
 
-    # check Doxygen warnings:
-    ret = 0
-    for target in targets:
-        for language in languages:
-            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
-            ret += check_docs(language, target,
-                              log_file=os.path.join(build_dir, DXG_WARN_LOG),
-                              known_warnings_file=DXG_KNOWN_WARNINGS,
-                              out_sanitized_log_file=os.path.join(build_dir, DXG_SANITIZED_LOG))
-
-    # check Sphinx warnings:
-    for target in targets:
-        for language in languages:
-            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
-            ret += check_docs(language, target,
-                              log_file=os.path.join(build_dir, SPHINX_WARN_LOG),
-                              known_warnings_file=SPHINX_KNOWN_WARNINGS,
-                              out_sanitized_log_file=os.path.join(build_dir, SPHINX_SANITIZED_LOG))
-
-    if ret != 0:
-        return ret
-
 
 def call_build_docs(entry):
     (language, target, build_dir, sphinx_parallel_jobs, builders, input_docs) = entry
     for buildername in builders:
         ret = sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername, input_docs)
+
+        # Warnings are checked after each builder as logs are overwritten
+        # check Doxygen warnings:
+        ret += check_docs(language, target,
+                          log_file=os.path.join(build_dir, DXG_WARN_LOG),
+                          known_warnings_file=DXG_KNOWN_WARNINGS,
+                          out_sanitized_log_file=os.path.join(build_dir, DXG_SANITIZED_LOG))
+        # check Sphinx warnings:
+        ret += check_docs(language, target,
+                          log_file=os.path.join(build_dir, SPHINX_WARN_LOG),
+                          known_warnings_file=SPHINX_KNOWN_WARNINGS,
+                          out_sanitized_log_file=os.path.join(build_dir, SPHINX_SANITIZED_LOG))
+
         if ret != 0:
             return ret
 

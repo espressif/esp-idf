@@ -19,7 +19,9 @@ There are many ways of how the ESP32-S2's abundant functionalities can be used. 
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png
     :align: center
-    :scale: 90%
+    :width: 3452px
+    :height: 1590px
+    :scale: 20%
     :alt: ESP32-S2-Kaluga-1-Kit-Assembly
     :figclass: align-center
 
@@ -68,7 +70,9 @@ The ESP32-S2-Kaluga-1 board has connectors for:
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-3d.png
     :align: center
-    :scale: 90%
+    :width: 2631px
+    :height: 1966px
+    :scale: 25%
     :alt: ESP32-S2-Kaluga-1
     :figclass: align-center
 
@@ -81,14 +85,14 @@ All the four extension boards are specially desgined to support the following fe
     * Supports acrylic panels up to 5 mm
     * Wet hand operation
     * Water rejection, ESP32-S2 can be configured to disable all touchpads automatically if multiple pads are simultaneously covered with water and to re-enable touchpads if the water is removed
- 
+
 * Audio playback
     * Connect speakers to play audio
     * Use together with the Touch panel to control audio playback and adjust volume
- 
+
 * LCD display
     * LCD interface (8-bit parallel RGB, 8080, and 6800 interface)
- 
+
 * Camera image acquisition
     * Supports OV2640 and OV3660 camera modules
     * 8-bit DVP image sensor interface (ESP32-S2 also supports 16-bit DVP image sensors, you can design it yourself)
@@ -101,7 +105,9 @@ Description of Components
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-layout-front.png
     :align: center
-    :scale: 90%
+    :width: 934px
+    :height: 645px
+    :scale: 70%
     :alt: ESP32-S2-Kaluga-1 - front
     :figclass: align-center
 

@@ -10,7 +10,9 @@ The ESP-LyraP-LCD32 extends the functionality of your main board by adding an LC
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-3d.png
     :align: center
-    :scale: 90%
+    :width: 2243px
+    :height: 1534px
+    :scale: 30%
     :alt: ESP-LyraP-LCD32
     :figclass: align-center
 
@@ -35,7 +37,9 @@ Description of Components
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-layout-front.png
     :align: center
-    :scale: 90%
+    :width: 934px
+    :height: 600px
+    :scale: 70%
     :alt: ESP-LyraP-LCD32 - front
     :figclass: align-center
 
