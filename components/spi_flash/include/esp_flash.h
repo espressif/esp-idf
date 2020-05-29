@@ -50,6 +50,9 @@ typedef struct {
 
     /** Delay for at least 'us' microseconds. Called in between 'start' and 'end'. */
     esp_err_t (*delay_us)(void *arg, unsigned us);
+
+    /** Yield to other tasks. Called during erase operations. */
+    esp_err_t (*yield)(void *arg);
 } esp_flash_os_functions_t;
 
 /** @brief Structure to describe a SPI flash chip connected to the system.

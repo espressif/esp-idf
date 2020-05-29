@@ -76,6 +76,7 @@ const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .end = end,
     .delay_us = delay_us,
     .region_protected = NULL,
+    .yield = NULL,
 };
 
 esp_err_t IRAM_ATTR esp_flash_app_disable_os_functions(esp_flash_t* chip)
