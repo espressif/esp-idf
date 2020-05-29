@@ -522,10 +522,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     bt_mesh_comp_unprovision();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        if (param->erase) {
-            bt_mesh_clear_role();
-        }
-        bt_mesh_settings_deinit();
+        bt_mesh_settings_deinit(param->erase);
     }
 
     bt_mesh_timer_deinit();
