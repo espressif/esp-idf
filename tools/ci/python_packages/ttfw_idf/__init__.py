@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import functools
+import json
+import logging
 import os
 import re
 
@@ -27,8 +29,8 @@ TARGET_DUT_CLS_DICT = {
 }
 
 
-def format_case_id(chip, case_name):
-    return "{}.{}".format(chip, case_name)
+def format_case_id(target, case_name):
+    return "{}.{}".format(target, case_name)
 
 
 try:
@@ -37,21 +39,66 @@ except NameError:
     string_type = str
 
 
-def upper_list(text):
-    if not text:
-        return text
+def upper_list_or_str(text):
+    """
+    Return the uppercase of list of string or string. Return itself for other
+    data types
+    :param text: list or string, other instance will be returned immediately
+    :return: uppercase of list of string
+    """
     if isinstance(text, string_type):
-        res = text.upper()
+        return [text.upper()]
+    elif isinstance(text, list):
+        return [item.upper() for item in text]
     else:
-        res = [item.upper() for item in text]
-    return res
+        return text
+
+
+def local_test_check(decorator_target):
+    # Try to get the sdkconfig.json to read the IDF_TARGET value.
+    # If not set, will set to ESP32.
+    # For CI jobs, this is a fake procedure, the true target and dut will be
+    # overwritten by the job config YAML file.
+    idf_target = 'ESP32'  # default if sdkconfig not found or not readable
+    if os.getenv('CI_JOB_ID'):  # Only auto-detect target when running locally
+        return idf_target
+
+    expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
+    if os.path.exists(expected_json_path):
+        sdkconfig = json.load(open(expected_json_path))
+        try:
+            idf_target = sdkconfig['IDF_TARGET'].upper()
+        except KeyError:
+            logging.warning('IDF_TARGET not in {}. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
+        else:
+            logging.info('IDF_TARGET: {}'.format(idf_target))
+    else:
+        logging.warning('{} not found. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
+
+    if isinstance(decorator_target, list):
+        if idf_target not in decorator_target:
+            raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+    else:
+        if idf_target != decorator_target:
+            raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
+    return idf_target
+
+
+def get_dut_class(target, erase_nvs=None):
+    if target not in TARGET_DUT_CLS_DICT:
+        raise Exception('target can only be {%s} (case insensitive)' % ', '.join(TARGET_DUT_CLS_DICT.keys()))
+
+    dut = TARGET_DUT_CLS_DICT[target.upper()]
+    if erase_nvs:
+        dut.ERASE_NVS = 'erase_nvs'
+    return dut
 
 
 def ci_target_check(func):
     @functools.wraps(func)
     def wrapper(**kwargs):
-        target = upper_list(kwargs.get('target', []))
-        ci_target = upper_list(kwargs.get('ci_target', []))
+        target = upper_list_or_str(kwargs.get('target', []))
+        ci_target = upper_list_or_str(kwargs.get('ci_target', []))
         if not set(ci_target).issubset(set(target)):
             raise ValueError('ci_target must be a subset of target')
 
@@ -79,9 +126,13 @@ def idf_example_test(app=Example, target="ESP32", ci_target=None, module="exampl
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
-                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
-                                             erase_nvs=erase_nvs, **kwargs)
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
@@ -107,9 +158,13 @@ def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", ex
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
-                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
-                                             erase_nvs=erase_nvs, **kwargs)
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
@@ -137,9 +192,13 @@ def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", 
     """
 
     def test(func):
-        original_method = TinyFW.test_method(app=app, target=upper_list(target), ci_target=upper_list(ci_target), module=module,
-                                             execution_time=execution_time, level=level, dut_dict=TARGET_DUT_CLS_DICT,
-                                             erase_nvs=erase_nvs, **kwargs)
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
         test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func

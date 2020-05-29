@@ -13,8 +13,6 @@
 # limitations under the License.
 
 """ Interface for test cases. """
-import json
-import logging
 import os
 import time
 import traceback
@@ -64,6 +62,7 @@ class DefaultEnvConfig(object):
 
 set_default_config = DefaultEnvConfig.set_default_config
 get_default_config = DefaultEnvConfig.get_default_config
+
 
 MANDATORY_INFO = {
     "execution_time": 1,
@@ -159,13 +158,11 @@ def test_method(**kwargs):
                                    In some cases, one test function might test many test cases.
                                    If this flag is set, test case can update junit report by its own.
     """
-
     def test(test_func):
 
         case_info = MANDATORY_INFO.copy()
         case_info["name"] = case_info["ID"] = test_func.__name__
         case_info["junit_report_by_case"] = False
-
         case_info.update(kwargs)
 
         @functools.wraps(test_func)
@@ -183,48 +180,7 @@ def test_method(**kwargs):
                 if key in env_config:
                     env_config[key] = kwargs[key]
 
-            # Runner.py should overwrite target with the current target.
             env_config.update(overwrite)
-
-            # if target not in the default_config or the overwrite, then take it from kwargs passed from the decorator
-            target = env_config['target'] if 'target' in env_config else kwargs['target']
-
-            # This code block is used to do run local test script target set check
-            if not os.getenv('CI_JOB_NAME'):
-                idf_target = 'ESP32'  # default if sdkconfig not found or not readable
-                expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
-                if os.path.exists(expected_json_path):
-                    sdkconfig = json.load(open(expected_json_path))
-                    try:
-                        idf_target = sdkconfig['IDF_TARGET'].upper()
-                    except KeyError:
-                        pass
-                    else:
-                        logging.info('IDF_TARGET: {}'.format(idf_target))
-                else:
-                    logging.warning('{} not found. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
-
-                if isinstance(target, list):
-                    if idf_target in target:
-                        target = idf_target
-                    else:
-                        raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
-                else:
-                    if idf_target != target:
-                        raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
-
-            dut_dict = kwargs['dut_dict']
-            if target not in dut_dict:
-                raise Exception('target can only be {%s} (case insensitive)' % ', '.join(dut_dict.keys()))
-
-            dut = dut_dict[target]
-            try:
-                # try to config the default behavior of erase nvs
-                dut.ERASE_NVS = kwargs['erase_nvs']
-            except AttributeError:
-                pass
-
-            env_config['dut'] = dut
             env_inst = Env.Env(**env_config)
 
             # prepare for xunit test results
@@ -271,5 +227,4 @@ def test_method(**kwargs):
         handle_test.case_info = case_info
         handle_test.test_method = True
         return handle_test
-
     return test

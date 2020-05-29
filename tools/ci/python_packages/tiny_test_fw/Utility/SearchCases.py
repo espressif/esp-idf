@@ -111,8 +111,6 @@ class Search(object):
         # mark the cases with targets not in ci_target
         for case in replicated_cases:
             ci_target = case.case_info['ci_target']
-            if isinstance(ci_target, str):
-                ci_target = [ci_target]
             if not ci_target or case.case_info['target'] in ci_target:
                 case.case_info['supported_in_ci'] = True
             else:

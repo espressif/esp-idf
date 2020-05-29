@@ -45,6 +45,7 @@ Template Config File::
 import importlib
 
 import yaml
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -194,12 +195,22 @@ class Parser(object):
             try:
                 _target = _filter['target']
             except KeyError:
-                pass
+                _target = None
             else:
                 _overwrite.update({'target': _target})
 
             for test_method in test_methods:
                 if _filter_one_case(test_method, _filter):
+                    try:
+                        dut_dict = test_method.case_info['dut_dict']
+                    except (AttributeError, KeyError):
+                        dut_dict = None
+
+                    if dut_dict and _target:
+                        if _target.upper() in dut_dict:
+                            _overwrite.update({'dut': dut_dict[_target.upper()]})
+                        else:
+                            raise ValueError('target {} is not in the specified dut_dict'.format(_target))
                     test_case_list.append(TestCase.TestCase(test_method, _extra_data, **_overwrite))
         return test_case_list
 
