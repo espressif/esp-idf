@@ -484,6 +484,21 @@ Once the flash encryption is enabled in Release mode, the bootloader will write-
 For subsequent plaintext field updates, use :ref:`OTA scheme <updating-encrypted-flash-ota>`.
 
 
+. _flash-encrypt-best-practices:
+
+Best Practices
+^^^^^^^^^^^^^^
+
+When using Flash Encryption in production:
+
+.. list::
+
+   - Do not reuse the same flash encryption key between multiple devices. This means that an attacker who copies encrypted data from one device cannot transfer it to a second device.
+   :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :ref:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and enable :ref:`CONFIG_SECURE_DISABLE_ROM_DL_MODE`. The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
+   :esp32s2: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to basic flash read and write only. The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely, enable configuration option :ref:`CONFIG_SECURE_DISABLE_ROM_DL_MODE` or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+   :esp32: -  Enable :doc:`Secure Boot <secure-boot-v2>` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
+   :esp32s2: -  Enable Secure Boot as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
+
 Possible Failures
 -----------------
 
@@ -733,18 +748,12 @@ Limitations of Flash Encryption
 Flash encryption protects firmware against unauthorised readout and modification. It is important to understand the limitations of the flash encryption feature:
 
 .. list::
-
-  - **Flash encryption is only as strong as the key**. It is recommended to generate keys on the device during first boot (default behaviour). If generating keys on a host computer, ensure to follow a proper procedure and do not use the same key for produced devices.
-
-  - **Not all data is stored encrypted**. If storing data in flash memory, make sure that the method you are using (library, API, etc.) supports flash encryption.
-
-  :esp32: - **Flash encryption does not mask the high-level layout of flash**. This is because the same AES key is used for every pair of adjacent 16-byte AES blocks. If these blocks have identical content (such as empty or padding areas), these will produce matching pairs of encrypted blocks. It might allow an attacker to make high-level comparisons of firmware on encrypted devices, i.e., to tell if two devices are probably running the same firmware version.
-
-  :esp32: - **Flash encryption does not mask the high-level layout of flash**. Each pair of adjacent 16-byte AES blocks is encrypted with the same AES key. If these blocks have identical content (such as empty or padding areas), the result will be matching pairs of encrypted blocks. It might allow an attacker to make high-level comparisons of firmware on encrypted devices, i.e., to tell if two devices are probably running the same firmware version.
-
-  :esp32: - **An attacker can tell if a pair of adjacent 16-byte blocks (32 byte aligned) contains two identical 16-byte sequences** (the same reason as the previous bullet point). Keep this in mind if storing sensitive data in flash memory. While designing your flash storage, it is sufficient to use a counter byte or some other non-identical value every 16 bytes. :ref:`NVS Encryption <nvs_encryption>` deals with this and is suitable for many uses.
-
-  :esp32: - **Flash encryption alone may not prevent an attacker from modifying the firmware on the device**. To prevent unauthorized firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot-v2>`.
+    - Flash encryption is only as strong as the key. For this reason, we recommend keys are generated on the device during first boot (default behaviour). If generating keys off-device, ensure proper procedure is followed and don't share the same key between all production devices.
+    - Not all data is stored encrypted. If storing data on flash, check if the method you are using (library, API, etc.) supports flash encryption.
+    - Flash encryption does not prevent an attacker from understanding the high-level layout of the flash. This is because the same AES key is used for every pair of adjacent 16 byte AES blocks. When these adjacent 16 byte blocks contain identical content (such as empty or padding areas), these blocks will encrypt to produce matching pairs of encrypted blocks. This may allow an attacker to make high-level comparisons between encrypted devices (i.e. to tell if two devices are probably running the same firmware version).
+    :esp32: - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain two identical 16 byte sequences. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient). :ref:`NVS Encryption <nvs_encryption>` deals with this and is suitable for many uses.
+    :esp32: - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot-v2>`.
+    :esp32s2: - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with Secure Boot.
 
 .. _flash-encryption-and-secure-boot:
 

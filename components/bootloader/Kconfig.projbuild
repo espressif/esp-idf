@@ -587,6 +587,7 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE
 
     endchoice
 
@@ -698,5 +699,48 @@ menu "Security features"
                 the wrong device. The device needs to have flash encryption already enabled using espefuse.py.
 
     endmenu  # Potentially Insecure
+
+    config SECURE_DISABLE_ROM_DL_MODE
+        bool "Permanently disable ROM Download Mode"
+        depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3
+        default n
+        help
+            If set, during startup the app will burn an eFuse bit to permanently disable the UART ROM
+            Download Mode. This prevents any future use of esptool.py, espefuse.py and similar tools.
+
+            Once disabled, if the SoC is booted with strapping pins set for ROM Download Mode
+            then an error is printed instead.
+
+            It is recommended to enable this option in any production application where Flash
+            Encryption and/or Secure Boot is enabled and access to Download Mode is not required.
+
+            It is also possible to permanently disable Download Mode by calling
+            esp_efuse_disable_rom_download_mode() at runtime.
+
+    config SECURE_ENABLE_SECURE_ROM_DL_MODE
+        bool "Permanently switch to ROM UART Secure Download mode"
+        depends on IDF_TARGET_ESP32S2 && !SECURE_DISABLE_ROM_DL_MODE
+        help
+            If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
+            Download Mode into a separate Secure Download mode. This option can only work if
+            Download Mode is not already disabled by eFuse.
+
+            Secure Download mode limits the use of Download Mode functions to simple flash read,
+            write and erase operations, plus a command to return a summary of currently enabled
+            security features.
+
+            Secure Download mode is not compatible with the esptool.py flasher stub feature,
+            espefuse.py, read/writing memory or registers, encrypted download, or any other
+            features that interact with unsupported Download Mode commands.
+
+            Secure Download mode should be enabled in any application where Flash Encryption
+            and/or Secure Boot is enabled. Disabling this option does not immediately cancel
+            the benefits of the security features, but it increases the potential "attack
+            surface" for an attacker to try and bypass them with a successful physical attack.
+
+            It is also possible to enable secure download mode at runtime by calling
+            esp_efuse_enable_rom_secure_download_mode()
+
+
 endmenu  # Security features
 

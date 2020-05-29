@@ -34,12 +34,20 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         return r;
     }
 
-    ets_efuse_clear_program_registers();
-    REG_SET_BIT(EFUSE_PGM_DATA3_REG, EFUSE_SECURE_BOOT_EN);
-    ets_efuse_program(ETS_EFUSE_BLOCK0);
+    esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
 
-    assert(ets_efuse_secure_boot_enabled());
-    ESP_LOGI(TAG, "Secure boot permanently enabled");
+    esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
+
+    // TODO: also disable JTAG here, etc
+
+    esp_err_t err = esp_efuse_batch_write_commit();
+
+    if (err == ESP_OK) {
+        assert(ets_efuse_secure_boot_enabled());
+        ESP_LOGI(TAG, "Secure boot permanently enabled");
+    }
 
     return ESP_OK;
 }

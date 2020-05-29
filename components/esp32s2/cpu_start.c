@@ -292,6 +292,16 @@ void start_cpu0_default(void)
 #if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
 #endif
+
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    err = esp_efuse_disable_rom_download_mode();
+    assert(err == ESP_OK && "Failed to disable ROM download mode");
+#endif
+#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
+    err = esp_efuse_enable_rom_secure_download_mode();
+    assert(err == ESP_OK && "Failed to enable Secure Download mode");
+#endif
+
     rtc_gpio_force_hold_dis_all();
 
 #ifdef CONFIG_VFS_SUPPORT_IO
