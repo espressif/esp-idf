@@ -67,7 +67,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     uint32_t core_id, other_core_id;
    
     assert(lock);
-    irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);    
+    irq_status = XTOS_SET_MIN_INTLEVEL(XCHAL_EXCM_LEVEL);    
  
     if(timeout != SPINLOCK_WAIT_FOREVER){
         RSR(CCOUNT, ccount_start);   
@@ -139,7 +139,7 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
     uint32_t core_id;
 
     assert(lock);
-    irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+    irq_status = XTOS_SET_MIN_INTLEVEL(XCHAL_EXCM_LEVEL);
         
     RSR(PRID, core_id);
     assert(core_id == lock->owner); // This is a mutex we didn't lock, or it's corrupt
