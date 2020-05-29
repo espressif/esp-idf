@@ -238,7 +238,21 @@ static inline void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 static inline uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return hw->status.rxfifo_cnt;
+    uint32_t fifo_cnt = hw->status.rxfifo_cnt;
+    typeof(hw->mem_rx_status) rx_status = hw->mem_rx_status;
+    uint32_t len = 0;
+    
+    // When using DPort to read fifo, fifo_cnt is not credible, we need to calculate the real cnt based on the fifo read and write pointer. 
+    // When using AHB to read FIFO, we can use fifo_cnt to indicate the data length in fifo.
+    if (rx_status.wr_addr > rx_status.rd_addr) {
+        len = rx_status.wr_addr - rx_status.rd_addr;
+    } else if (rx_status.wr_addr < rx_status.rd_addr) {
+        len = (rx_status.wr_addr + 128) - rx_status.rd_addr;
+    } else {
+        len = fifo_cnt > 0 ? 128 : 0;
+    }
+
+    return len;
 }
 
 /**
