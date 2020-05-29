@@ -6,23 +6,6 @@
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
-
-#
-# Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/2683
-#
-# Note: warnings below will be gone after upgrade
-#       to the following package==version
-#
-#       sphinx==1.8.4
-#       breathe==4.11.1
-#
-esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
-  union esp_a2d_mcc_t::@1  esp_a2d_mcc_t::cie
-  ---------------------^
-esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
-  union esp_bt_uuid_t::@0  esp_bt_uuid_t::uuid
-  ---------------------^
-
 #
 # Breathe known issue: https://github.com/michaeljones/breathe/issues/405
 # Sphinx known issue: https://github.com/sphinx-doc/sphinx/pull/5901
