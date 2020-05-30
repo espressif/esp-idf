@@ -32,6 +32,7 @@ if(CONFIG_USB_ENABLED)
         "${COMPONENT_DIR}/tinyusb/src/class/cdc/cdc_device.c"
         "${COMPONENT_DIR}/tinyusb/src/class/hid/hid_device.c"
         "${COMPONENT_DIR}/tinyusb/src/class/midi/midi_device.c"
+        "${COMPONENT_DIR}/tinyusb/src/class/vendor/vendor_device.c"
         "${COMPONENT_DIR}/tinyusb/src/tusb.c"
         "${COMPONENT_DIR}/tinyusb/src/portable/espressif/esp32s2/dcd_esp32s2.c"
         )

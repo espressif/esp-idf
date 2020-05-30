@@ -61,6 +61,13 @@ extern "C" {
 #       endif
 #   endif
 
+#   if CFG_TUD_VENDOR
+#       if (CFG_TUD_VENDOR_EPSIZE < 4)
+#          define CFG_TUD_VENDOR_EPSIZE 4
+#          warning "CFG_TUD_VENDOR_EPSIZE was too low and was set to 4"
+#       endif
+#   endif
+
 #   if CFG_TUD_CUSTOM_CLASS
 #          warning "Please check that the buffer is more then 4 bytes"
 #   endif

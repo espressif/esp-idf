@@ -9,6 +9,13 @@ menu "TinyUSB"
         help
             Adds support for TinyUSB
 
+    config USB_MAX_POWER_USAGE
+        int "Max power usage from USB port"
+        default 100
+        depends on USB_ENABLED
+        help
+            Maxx power used by device from USB port in mA.
+
     config USB_CDC_ENABLED
         bool "Enable USB Serial (CDC) TinyUSB driver"
         default n
@@ -69,6 +76,27 @@ menu "TinyUSB"
         help
             Enable MIDI TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL
             and .string_descriptor = NULL in the tinyusb_config_t structure).
+
+    config USB_MIDI_RX_BUFSIZE
+        int "MIDI FIFO size of RX"
+        default 64
+        depends on USB_MIDI_ENABLED
+        help
+            CDC FIFO size of RX
+
+    config USB_MIDI_TX_BUFSIZE
+        int "MIDI FIFO size of TX"
+        default 64
+        depends on USB_MIDI_ENABLED
+        help
+            CDC FIFO size of TX
+
+    config USB_VENDOR_ENABLED
+        bool "Vendor class TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable USB vendor TinyUSB driver. Currently used by webusb driver.
 
     config USB_CUSTOM_CLASS_ENABLED
         bool "Enable a custom TinyUSB class"
@@ -157,12 +185,26 @@ menu "TinyUSB"
             help
                 Specify name of the MSC device
 
+        config USB_DESC_MIDI_STRING
+            string "MIDI Device String"
+            default "Espressif MIDI Device"
+            depends on USB_MIDI_ENABLED
+            help
+                Specify name of the MIDI device
+
         config USB_DESC_HID_STRING
             string "HID Device String"
             default "Espressif HID Device"
             depends on USB_HID_ENABLED
             help
                 Specify name of the HID device
+
+        config USB_DESC_VENDOR_STRING
+            string "VENDOR Device String"
+            default "Espressif VENDOR Device"
+            depends on USB_VENDOR_ENABLED
+            help
+                Specify name of the VENDOR device
 
     endmenu
 

@@ -29,7 +29,7 @@ uint8_t const desc_hid_report[] = {
 
 uint8_t const desc_configuration[] = {
     // interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, CONFIG_USB_MAX_POWER_USAGE),
 
 #   if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
@@ -41,7 +41,15 @@ uint8_t const desc_configuration[] = {
 #   endif
 #   if CFG_TUD_HID
     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10)
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10),
+#   endif
+#   if CFG_TUD_VENDOR
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 7, EPNUM_VENDOR, 0x80 | EPNUM_VENDOR, 64),
+#   endif
+#   if CFG_TUD_MIDI
+    // Interface number, string index, EP Out & EP In address, EP size
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 8, EPNUM_MIDI, 0x80 | EPNUM_MIDI, (CFG_TUSB_RHPORT0_MODE & OPT_MODE_HIGH_SPEED) ? 512 : 64),
 #   endif
 };
 

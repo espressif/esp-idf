@@ -89,6 +89,10 @@ extern "C" {
 #   define CONFIG_USB_CUSTOM_CLASS_ENABLED 0
 #endif
 
+#ifndef CONFIG_USB_VENDOR_ENABLED
+#   define CONFIG_USB_VENDOR_ENABLED 0
+#endif
+
 //------------- CLASS -------------//
 #define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
 #define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
@@ -97,7 +101,7 @@ extern "C" {
 #define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
 #define CFG_TUD_CUSTOM_CLASS CONFIG_USB_CUSTOM_CLASS_ENABLED
 
-
+#define CFG_TUD_VENDOR CONFIG_USB_VENDOR_ENABLED
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE CONFIG_USB_CDC_RX_BUFSIZE
@@ -109,6 +113,13 @@ extern "C" {
 // HID buffer size Should be sufficient to hold ID (if any) + Data
 #define CFG_TUD_HID_BUFSIZE CONFIG_USB_HID_BUFSIZE
 
+// VENDOR FIFO size of TX and RX
+#define CFG_TUD_VENDOR_RX_BUFSIZE 64
+#define CFG_TUD_VENDOR_TX_BUFSIZE 64
+
+// MIDI FIFO size of TX and RX
+#define CFG_TUD_MIDI_RX_BUFSIZE   CONFIG_USB_MIDI_RX_BUFSIZE
+#define CFG_TUD_MIDI_TX_BUFSIZE   CONFIG_USB_MIDI_TX_BUFSIZE
 #ifdef __cplusplus
 }
 #endif

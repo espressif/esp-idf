@@ -119,7 +119,19 @@ tusb_desc_strarray_device_t descriptor_str_kconfig = {
 #endif
 
 #if CONFIG_USB_HID_ENABLED
-    CONFIG_USB_DESC_HID_STRING           // 6: HIDs
+    CONFIG_USB_DESC_HID_STRING,          // 6: HIDs
+#else
+    "",
+#endif
+
+#if CONFIG_USB_VENDOR_ENABLED
+    CONFIG_USB_DESC_VENDOR_STRING,          // 7: Vendor
+#else
+    "",
+#endif
+
+#if CONFIG_USB_MIDI_ENABLED
+    CONFIG_USB_DESC_MIDI_STRING,          // 8: MIDI
 #else
     "",
 #endif

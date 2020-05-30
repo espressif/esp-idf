@@ -25,6 +25,8 @@
  *   [MSB]         HID | MSC | CDC          [LSB]
  */
 #define EPNUM_MSC 0x03
+#define EPNUM_VENDOR  0x06
+#define EPNUM_MIDI   0x05
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,12 +54,21 @@ enum {
     ITF_NUM_HID,
 #   endif
 
-    ITF_NUM_TOTAL
+#   if CFG_TUD_MIDI
+    ITF_NUM_MIDI,
+    ITF_NUM_MIDI_STREAMING,
+#   endif
+
+#   if CFG_TUD_VENDOR 
+    ITF_NUM_VENDOR,
+#   endif
+
+   ITF_NUM_TOTAL
 };
 
 enum {
     CONFIG_TOTAL_LEN = TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                       CFG_TUD_HID * TUD_HID_DESC_LEN
+                       CFG_TUD_HID * TUD_HID_DESC_LEN + CFG_TUD_VENDOR * TUD_VENDOR_DESC_LEN + CFG_TUD_MIDI * TUD_MIDI_DESC_LEN
 };
 
 bool tusb_desc_set;

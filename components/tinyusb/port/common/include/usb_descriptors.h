@@ -20,7 +20,7 @@
 
 #define USB_ESPRESSIF_VID 0x303A
 
-#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 7
+#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 9
 typedef char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 
 tusb_desc_device_t descriptor_tinyusb;
