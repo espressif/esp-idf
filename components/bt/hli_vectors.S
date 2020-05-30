@@ -27,80 +27,6 @@
 #define SPECREG_SIZE          (7 * 4)
 #define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET + SPECREG_SIZE)
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-#include "soc/timer_group_reg.h"
-
-    .extern     _l5_intr_livelock_counter
-    .extern     _l5_intr_livelock_max
-
-#define TIMG1_REG_OFFSET(reg)               ((reg) - REG_TIMG_BASE(1))
-#define TIMG1_WDTWPROTECT_OFFSET            TIMG1_REG_OFFSET(TIMG_WDTWPROTECT_REG(1))
-#define TIMG1_INT_CLR_OFFSET                TIMG1_REG_OFFSET(TIMG_INT_CLR_TIMERS_REG(1))
-#define TIMG1_WDTCONFIG0_OFFSET             TIMG1_REG_OFFSET(TIMG_WDTCONFIG0_REG(1))
-#define TIMG1_WDT_STG0_HOLD_OFFSET          TIMG1_REG_OFFSET(TIMG_WDTCONFIG2_REG(1))
-#define TIMG1_WDT_STG1_HOLD_OFFSET          TIMG1_REG_OFFSET(TIMG_WDTCONFIG3_REG(1))
-#define TIMG1_WDT_FEED_OFFSET               TIMG1_REG_OFFSET(TIMG_WDTFEED_REG(1))
-
-    .macro  livelock_wdt_reconf dev ticks
-    movi    a2, \dev
-    movi    a0, TIMG_WDT_WKEY_VALUE
-    s32i    a0, a2, TIMG1_WDTWPROTECT_OFFSET    /* disable write protect */
-    memw
-
-    l32i    a0, a2, TIMG1_WDTCONFIG0_OFFSET
-    memw
-    movi    a2, 0x7fffffff
-    and     a0, a2, a0
-    movi    a2, \dev
-    s32i    a0, a2, TIMG1_WDTCONFIG0_OFFSET     /* wdt disable */
-    memw
-
-    movi    a2, \dev
-    movi    a0, \ticks
-    s32i    a0, a2, TIMG1_WDT_STG0_HOLD_OFFSET  /* set timeout before interrupt */
-    memw
-    movi    a0, (CONFIG_INT_WDT_TIMEOUT_MS<<2)
-    s32i    a0, a2, TIMG1_WDT_STG1_HOLD_OFFSET  /* set timeout before system reset */
-    memw
-
-    l32i    a0, a2, TIMG1_WDTCONFIG0_OFFSET
-    memw
-    movi    a2, 0x80000000
-    or      a0, a2, a0
-    movi    a2, \dev
-    s32i    a0, a2, TIMG1_WDTCONFIG0_OFFSET     /* wdt enable */
-    memw
-
-    movi    a0, 0
-    s32i    a0, a2, TIMG1_WDTWPROTECT_OFFSET    /* enable write protect */
-    memw
-    .endm
-
-    .macro livelock_wdt_feed dev
-    movi    a2, \dev
-    movi    a3, TIMG_WDT_WKEY_VALUE
-    s32i    a3, a2, TIMG1_WDTWPROTECT_OFFSET    /* disable write protect */
-    memw
-    movi    a1, _l5_intr_livelock_max
-    l32i    a1, a1, 0
-    memw
-    addi    a1, a1, 1
-    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<1)
-    quou    a3, a3, a1
-    s32i    a3, a2, TIMG1_WDT_STG0_HOLD_OFFSET  /* set timeout before interrupt */
-    memw
-    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<2)
-    s32i    a3, a2, TIMG1_WDT_STG1_HOLD_OFFSET  /* set timeout before system reset */
-    memw
-    movi    a3, 1
-    s32i    a3, a2, TIMG1_WDT_FEED_OFFSET       /* feed wdt */
-    memw
-    movi    a3, 0
-    s32i    a3, a2, TIMG1_WDTWPROTECT_OFFSET    /* enable write protect */
-    memw
-    .endm
-#endif
-
     .data
 _l4_intr_stack:
     .space      L4_INTR_STACK_SIZE
@@ -113,11 +39,11 @@ _l4_save_ctx:
     .type       xt_highint4,@function
     .align      4
 xt_highint4:
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    wsr     a2, EXCVADDR                        /* use EXCVADDR as temp storage */
-    livelock_wdt_reconf    TIMERG1 1
-    rsr     a2, EXCVADDR                        /* restore a2 */
-#endif
+    /* disable exception mode, window overflow */
+    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
+    wsr     a0, PS
+    rsync
+
     movi    a0, _l4_save_ctx
     /* save 4 lower registers */
     s32i    a1, a0, 4
@@ -142,20 +68,6 @@ xt_highint4:
     s32i    a2, a0, 20
     rsr     a2, EPC1
     s32i    a2, a0, 24
-
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    livelock_wdt_feed    TIMERG1
-
-    movi    a3, 0
-    movi    a2, _l5_intr_livelock_counter
-    s32i    a3, a2, 0
-    memw
-#endif
-
-    /* disable exception mode, window overflow */
-    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
-    wsr     a0, PS
-    rsync
 
     /* Save the remaining physical registers.
      * 4 registers are already saved, which leaves 60 registers to save.

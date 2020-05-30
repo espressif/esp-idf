@@ -44,13 +44,17 @@ esp_err_t hli_intr_register(intr_handler_t handler, void* arg, uint32_t intr_reg
 
 /**
  * @brief Mask all interrupts (including high level ones) on the current CPU
+ *
+ * @return uint32_t interrupt status, pass it to hli_intr_restore
  */
-void hli_intr_disable(void);
+uint32_t hli_intr_disable(void);
 
 /**
  * @brief Re-enable interrupts
+ *
+ * @param state value returned by hli_intr_disable
  */
-void hli_intr_restore(void);
+void hli_intr_restore(uint32_t state);
 
 /**
  * @brief Type of a hli queue
