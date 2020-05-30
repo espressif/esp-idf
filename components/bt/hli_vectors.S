@@ -39,11 +39,6 @@ _l4_save_ctx:
     .type       xt_highint4,@function
     .align      4
 xt_highint4:
-    /* disable exception mode, window overflow */
-    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
-    wsr     a0, PS
-    rsync
-
     movi    a0, _l4_save_ctx
     /* save 4 lower registers */
     s32i    a1, a0, 4
@@ -68,6 +63,11 @@ xt_highint4:
     s32i    a2, a0, 20
     rsr     a2, EPC1
     s32i    a2, a0, 24
+
+    /* disable exception mode, window overflow */
+    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
+    wsr     a0, PS
+    rsync
 
     /* Save the remaining physical registers.
      * 4 registers are already saved, which leaves 60 registers to save.
