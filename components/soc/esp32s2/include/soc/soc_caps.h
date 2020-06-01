@@ -135,13 +135,9 @@
 #define SOC_I2C_SUPPORT_APB        (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// ESP32-S2 have 2 I2S
+// ESP32-S2 have 1 I2S
 #define SOC_I2S_NUM            (1)
-
-#define SOC_I2S_SUPPORTS_DMA_EQUAL (1) // ESP32-S2 need dma equal
-
-#define SOC_I2S_MAX_BUFFER_SIZE               (4 * 1024 * 1024) //the maximum RAM can be allocated
-
+#define SOC_I2S_SUPPORTS_APLL  (1)// ESP32-S2 support APLL
 #define SOC_I2S_APLL_MIN_FREQ                     (250000000)
 #define SOC_I2S_APLL_MAX_FREQ                     (500000000)
 #define SOC_I2S_APLL_MIN_RATE                 (10675) //in Hz, I2S Clock rate limited by hardware

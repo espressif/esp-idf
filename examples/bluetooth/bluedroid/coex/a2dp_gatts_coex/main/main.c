@@ -684,15 +684,24 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     i2s_config_t i2s_config = {
+        .param_cfg = {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 #else
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
 #endif
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+            .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+            .sample_rate = 44100,
+            .slot_bits_cfg = 16,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority

@@ -87,11 +87,20 @@ void app_main(void)
     //if 2-channels, 16-bit each channel, total buffer is 360*4 = 1440 bytes
     //if 2-channels, 24/32-bit each channel, total buffer is 360*8 = 2880 bytes
     i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = (I2S_BITS_PER_SLOT_16BIT << SLOT_BIT_SHIFT) | I2S_BITS_PER_SAMPLE_16BIT,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .use_apll = false,

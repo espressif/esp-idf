@@ -107,11 +107,20 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
 {
     // dac, adc  i2s
     i2s_config_t  i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .use_apll = 0,
@@ -152,11 +161,20 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
@@ -218,10 +236,19 @@ TEST_CASE("I2S adc test", "[i2s]")
 {
     // init I2S ADC
     i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
-        .sample_rate =  SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
+            .sample_rate =  SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
         .dma_buf_len = 1024,
@@ -272,11 +299,20 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
@@ -294,11 +330,20 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
-        .mode = I2S_MODE_SLAVE | I2S_MODE_RX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_SLAVE | I2S_MODE_RX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
@@ -357,11 +402,20 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_RX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 1,
@@ -379,11 +433,20 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
-        .mode = I2S_MODE_SLAVE | I2S_MODE_TX,                                  // Only RX
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_SLAVE | I2S_MODE_TX,                                  // Only RX
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 1,
@@ -442,11 +505,20 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
 TEST_CASE("I2S memory leaking test", "[i2s]")
 {
     i2s_config_t master_i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_RX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
@@ -489,11 +561,20 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     };
 
     i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .param_cfg = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+            .sample_rate = SAMPLE_RATE,
+            .slot_bits_cfg = SAMPLE_BITS,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#if SOC_I2S_SUPPORTS_TDM
+            .slot_channel_cfg = (2 << SLOT_CH_SHIFT) | 2,
+            .active_slot_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+            .left_align_en = false,
+            .big_edin_en = false,
+            .bit_order_msb_en = false,
+#endif
+        },
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .use_apll = true,
@@ -510,8 +591,8 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
 
     for (int i = 0; i < (sizeof(sample_rate_arr)/sizeof(sample_rate_arr[0])); i++) {
         for (int j = 0; j < (sizeof(bits_per_sample_arr)/sizeof(bits_per_sample_arr[0])); j++) {
-            i2s_config.sample_rate = sample_rate_arr[i];
-            i2s_config.bits_per_sample = bits_per_sample_arr[j];
+            i2s_config.param_cfg.sample_rate = sample_rate_arr[i];
+            i2s_config.param_cfg.slot_bits_cfg = bits_per_sample_arr[j];
 
             TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
             TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
