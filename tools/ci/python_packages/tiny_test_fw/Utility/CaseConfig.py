@@ -207,8 +207,10 @@ class Parser(object):
                         dut_dict = None
 
                     if dut_dict and _target:
+                        dut = test_method.case_info.get('dut')
                         if _target.upper() in dut_dict:
-                            _overwrite.update({'dut': dut_dict[_target.upper()]})
+                            if dut and dut in dut_dict.values():  # don't overwrite special cases
+                                _overwrite.update({'dut': dut_dict[_target.upper()]})
                         else:
                             raise ValueError('target {} is not in the specified dut_dict'.format(_target))
                     test_case_list.append(TestCase.TestCase(test_method, _extra_data, **_overwrite))
