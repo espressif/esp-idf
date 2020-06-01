@@ -82,7 +82,7 @@ void esp_efuse_reset(void)
 void esp_efuse_disable_basic_rom_console(void)
 {
     if (esp_efuse_write_field_cnt(ESP_EFUSE_CONSOLE_DEBUG_DISABLE, 1) == ESP_OK) {
-        ESP_EARLY_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
+        ESP_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
     }
 }
 
