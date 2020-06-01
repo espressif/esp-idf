@@ -310,14 +310,12 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ, report->value_len, 0, NULL);
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
-            } 
-	    else if (report->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+            } else if (report->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
                 //Output Report
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, report->value_len, 0, NULL);
-	    }
-	    else {
+	    } else {
                 //Feature Report
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write);
                 report->index = index;
