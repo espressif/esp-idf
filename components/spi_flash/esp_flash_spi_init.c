@@ -77,6 +77,8 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     if (use_iomux) {
+        // This requires `gpio_iomux_in` and `gpio_iomux_out` to be in the IRAM.
+        // `linker.lf` is used fulfill this requirement.
         gpio_iomux_in(cs_io_num, spics_in);
         gpio_iomux_out(cs_io_num, spics_func, false);
     } else {
@@ -181,6 +183,7 @@ static DRAM_ATTR esp_flash_t default_chip = {
 esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
+
     //the host is already initialized, only do init for the data and load it to the host
     spi_flash_hal_init(&default_driver_data, &cfg);
     default_chip.host->driver_data = &default_driver_data;

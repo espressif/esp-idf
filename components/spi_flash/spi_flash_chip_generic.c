@@ -456,12 +456,15 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
     esp_err_t ret = ESP_OK;
     const bool is_quad_mode = esp_flash_is_quad_mode(chip);
     bool update_config = false;
-    const bool force_check = true; //in case some chips doesn't support erase QE
+    /*
+     * By default, we don't clear the QE bit even the flash mode is not QIO or QOUT. Force clearing
+     * QE bit by the generic chip driver (command 01H with 2 bytes) may cause the output of some
+     * chips (MXIC) no longer valid.
+     * Enable this option when testing a new flash chip for clearing of QE.
+     */
+    const bool force_check = false;
 
-    bool need_check = is_quad_mode;
-    if (force_check) {
-        need_check = true;
-    }
+    bool need_check = is_quad_mode || force_check;
 
     uint32_t sr_update;
     if (need_check) {
