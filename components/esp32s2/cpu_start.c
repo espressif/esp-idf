@@ -293,15 +293,6 @@ void start_cpu0_default(void)
     esp_brownout_init();
 #endif
 
-#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    err = esp_efuse_disable_rom_download_mode();
-    assert(err == ESP_OK && "Failed to disable ROM download mode");
-#endif
-#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    err = esp_efuse_enable_rom_secure_download_mode();
-    assert(err == ESP_OK && "Failed to enable Secure Download mode");
-#endif
-
     rtc_gpio_force_hold_dis_all();
 
 #ifdef CONFIG_VFS_SUPPORT_IO
@@ -317,6 +308,16 @@ void start_cpu0_default(void)
 #else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+    // After setting _GLOBAL_REENT, ESP_LOGIx can be used instead of ESP_EARLY_LOGx.
+
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    err = esp_efuse_disable_rom_download_mode();
+    assert(err == ESP_OK && "Failed to disable ROM download mode");
+#endif
+#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
+    err = esp_efuse_enable_rom_secure_download_mode();
+    assert(err == ESP_OK && "Failed to enable Secure Download mode");
+#endif
 
     esp_timer_init();
     esp_set_time_from_rtc();
