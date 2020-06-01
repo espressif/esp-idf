@@ -194,6 +194,9 @@ def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", 
     def test(func):
         test_target = local_test_check(target)
         dut = get_dut_class(test_target, erase_nvs)
+        if 'dut' in kwargs:  # panic_test() will inject dut, resolve conflicts here
+            dut = kwargs['dut']
+            del kwargs['dut']
         original_method = TinyFW.test_method(
             app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
             module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
