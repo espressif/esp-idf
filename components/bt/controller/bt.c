@@ -1173,6 +1173,16 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     //overwrite some parameters
     cfg->bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF;
+
+#if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
+    //Customized PCM Configuration, specified in menuconfig
+    cfg->pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_CONFIG;
+    cfg->pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_CONFIG;
+#else
+    //Use Default PCM Configuration
+    cfg->pcm_role = 0;
+    cfg->pcm_polar = 0;
+#endif
     cfg->magic  = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL;
 
     if (((cfg->mode & ESP_BT_MODE_BLE) && (cfg->ble_max_conn <= 0 || cfg->ble_max_conn > BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT))
