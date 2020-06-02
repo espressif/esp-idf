@@ -39,8 +39,16 @@ def generate_doxygen(app, defines):
     })
     doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
     print("Running doxygen with doxyfile {}".format(doxyfile))
-    # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
-    subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir)
+
+    # It's possible to have doxygen log warnings to a file using WARN_LOGFILE directive,
+    # but in some cases it will still log an error to stderr and return success!
+    #
+    # So take all of stderr and redirect it to a logfile (will contain warnings and errors)
+    logfile = os.path.join(build_dir, "doxygen-warning-log.txt")
+
+    with open(logfile, "w") as f:
+        # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
+        subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir, stderr=f)
 
     # Doxygen has generated XML files in 'xml' directory.
     # Copy them to 'xml_in', only touching the files which have changed.
