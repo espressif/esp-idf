@@ -21,27 +21,9 @@ ALL_KINDS = [
 
 
 def setup(app):
-    # The idf_build_system extension will emit this event once it
-    app.connect('idf-info', generate_doxygen)
-
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
-
-
-def _parse_defines(header_path, sdk_config_path):
-    defines = {}
-    # Note: we run C preprocessor here without any -I arguments (except "sdkconfig.h"), so assumption is
-    # that these headers are all self-contained and don't include any other headers
-    # not in the same directory
-    print("Reading macros from %s..." % (header_path))
-    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-I", sdk_config_path,
-                                                "-dM", "-E", header_path]).decode()
-    for line in processed_output.split("\n"):
-        line = line.strip()
-        m = re.search("#define ([^ ]+) ?(.*)", line)
-        if m and not m.group(1).startswith("_"):
-            defines[m.group(1)] = m.group(2)
-
-    return defines
+    # The idf_build_system extension will emit this event once it has generated documentation macro definitions
+    app.connect('idf-defines-generated', generate_doxygen)
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
 
 
 def generate_doxygen(app, defines):
