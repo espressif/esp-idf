@@ -34,7 +34,7 @@ set -e
 pacman --noconfirm -Syu # This step may require the terminal to be closed and restarted
 
 pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim \
-       mingw-w64-i686-python2-pip mingw-w64-i686-python2-cryptography unzip winpty
+       mingw-w64-i686-python-pip mingw-w64-i686-python-cryptography unzip winpty
 
 # if IDF_PATH is set, install requirements now as well
 if [ -n "$IDF_PATH" ]; then
