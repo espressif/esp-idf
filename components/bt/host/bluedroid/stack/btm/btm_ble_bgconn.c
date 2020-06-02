@@ -385,6 +385,8 @@ void btm_ble_clear_white_list_complete(UINT8 *p_data, UINT16 evt_len)
 
     if (status == HCI_SUCCESS) {
         p_cb->white_list_avail_size = controller_get_interface()->get_ble_white_list_size();
+    } else {
+        BTM_TRACE_ERROR ("%s failed, status 0x%x\n", __func__, status);
     }
 }
 
