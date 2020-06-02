@@ -22,7 +22,6 @@
 #define LED_ON      0x01
 
 #define CID_ESP     0x02E5
-#define CID_NVAL    0xFFFF
 
 /* Fast Prov Model ID */
 #define ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI                 0x0000

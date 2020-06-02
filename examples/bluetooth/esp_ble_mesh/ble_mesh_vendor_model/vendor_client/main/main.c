@@ -23,7 +23,6 @@
 #include "board.h"
 
 #define CID_ESP             0x02E5
-#define CID_NVAL            0xFFFF
 
 #define PROV_OWN_ADDR       0x0001
 
