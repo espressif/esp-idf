@@ -7,6 +7,7 @@
 
 import glob
 import os
+import pprint
 import subprocess
 import re
 
@@ -32,6 +33,11 @@ def generate_defines(app, project_description):
     for soc_header in soc_headers:
         defines.update(get_defines(soc_header, sdk_config_path))
 
+    # write a list of definitions to make debugging easier
+    with open(os.path.join(app.config.build_dir, "macro-definitions.txt"), "w") as f:
+        pprint.pprint(defines, f)
+        print("Saved macro list to %s" % f.name)
+
     add_tags(app, defines)
 
     app.emit('idf-defines-generated', defines)
@@ -48,8 +54,14 @@ def get_defines(header_path, sdk_config_path):
     for line in processed_output.split("\n"):
         line = line.strip()
         m = re.search("#define ([^ ]+) ?(.*)", line)
-        if m and not m.group(1).startswith("_"):
-            defines[m.group(1)] = m.group(2)
+        if m:
+            name = m.group(1)
+            value = m.group(2)
+            if name.startswith("_"):
+                continue  # toolchain macro
+            if (" " in value) or ("=" in value):
+                value = ""  # macros that expand to multiple tokens (ie function macros) cause doxygen errors, so just mark as 'defined'
+            defines[name] = value
 
     return defines
 
@@ -69,4 +81,4 @@ def setup(app):
     app.connect('idf-info', generate_defines)
     app.add_event('idf-defines-generated')
 
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
