@@ -19,8 +19,10 @@
 #include "esp_wifi.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#if CONFIG_SNIFFER_PCAP_DESTINATION_SD
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
+#endif
 #include "nvs_flash.h"
 #include "sdmmc_cmd.h"
 #include "cmd_system.h"
