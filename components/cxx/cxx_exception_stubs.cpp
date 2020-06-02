@@ -36,6 +36,36 @@ extern "C" void __cxx_fatal_exception_int(int i)
     abort();
 }
 
+namespace std {
+
+void __throw_bad_exception(void) __attribute__((alias("__cxx_fatal_exception")));
+void __throw_bad_alloc(void) __attribute__((alias("__cxx_fatal_exception")));
+void __throw_bad_cast(void) __attribute__((alias("__cxx_fatal_exception")));
+void __throw_bad_typeid(void) __attribute__((alias("__cxx_fatal_exception")));
+void __throw_logic_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_domain_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_invalid_argument(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_length_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_out_of_range(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_out_of_range_fmt(const char*, ...) __attribute__((alias("__cxx_fatal_exception_message_va")));
+void __throw_runtime_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_range_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_overflow_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_underflow_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_ios_failure(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
+void __throw_system_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
+void __throw_bad_function_call(void) __attribute__((alias("__cxx_fatal_exception")));
+void __throw_future_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
+
+void unexpected(void) __attribute__((alias("__cxx_fatal_exception")));
+void set_unexpected(void) __attribute__((alias("__cxx_fatal_exception")));
+bool uncaught_exception() __attribute__((alias("__cxx_fatal_exception_bool")));
+
+void terminate(void) __attribute__((alias("__cxx_fatal_exception")));
+void set_terminate(void) __attribute__((alias("__cxx_fatal_exception")));
+
+} // namespace std
+
 /* The following definitions are needed because libstdc++ is also compiled with
    __throw_exception_again defined to throw, and some other exception code in a few places.
 
@@ -57,7 +87,12 @@ extern "C" void __cxa_free_dependent_exception(void) __attribute__((alias("__cxx
 extern "C" void __cxa_rethrow(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_throw(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_call_terminate(void) __attribute__((alias("__cxx_fatal_exception")));
-
-bool std::uncaught_exception() __attribute__((alias("__cxx_fatal_exception_bool")));
+extern "C" void __cxa_throw_bad_array_length(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_init_primary_exception(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_current_exception_type(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_call_unexpected(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_get_globals(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_get_globals_fast(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __gxx_personality_v0(void) __attribute__((alias("__cxx_fatal_exception")));
 
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
