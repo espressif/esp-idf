@@ -58,6 +58,10 @@ extensions = ['breathe',
               'extensions.toctree_filter',
               'extensions.list_filter',
 
+              # Note: order is important here, events must
+              # be registered by one extension before they can be
+              # connected to another extension
+
               'idf_extensions.include_build_file',
               'idf_extensions.link_roles',
               'idf_extensions.build_system',
@@ -65,11 +69,11 @@ extensions = ['breathe',
               'idf_extensions.gen_toolchain_links',
               'idf_extensions.gen_version_specific_includes',
               'idf_extensions.kconfig_reference',
+              'idf_extensions.gen_defines',
               'idf_extensions.run_doxygen',
               'idf_extensions.gen_idf_tools_links',
               'idf_extensions.format_idf_target',
               'idf_extensions.latex_builder',
-              'idf_extensions.gen_defines',
               'idf_extensions.exclude_docs',
 
               # from https://github.com/pfalcon/sphinx_selective_exclude
