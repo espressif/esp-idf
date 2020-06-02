@@ -1473,9 +1473,8 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_RELAY) &&
-            (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-            (!rx.local_match && !rx.friend_match))) {
+    if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
+            (!rx.local_match && !rx.friend_match)) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }
