@@ -94,9 +94,9 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 /**
  * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
  * Enable clock and select clock source for ADC digital controller.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
+ * Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
  *
- * @param clk Refer to `adc_digi_clk_t`.
+ * @param clk Refer to ``adc_digi_clk_t``.
  */
 void adc_hal_digi_clk_config(const adc_digi_clk_t *clk)
 {
@@ -127,7 +127,7 @@ void adc_hal_digi_disable(void)
  *
  * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
  * @param adc_n ADC unit.
- * @param config Refer to `adc_digi_monitor_t`.
+ * @param config Refer to ``adc_digi_monitor_t``.
  */
 void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
 {
@@ -148,7 +148,7 @@ void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
  * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
  * @note Default priority: Wi-Fi > RTC > Digital;
  *
- * @param config Refer to `adc_arbiter_t`.
+ * @param config Refer to ``adc_arbiter_t``.
  */
 void adc_hal_arbiter_config(adc_arbiter_t *config)
 {

@@ -13,7 +13,7 @@ typedef enum {
     ADC_UNIT_1 = 1,          /*!< SAR ADC 1. */
     ADC_UNIT_2 = 2,          /*!< SAR ADC 2. */
     ADC_UNIT_BOTH = 3,       /*!< SAR ADC 1 and 2. */
-    ADC_UNIT_ALTER = 7,      /*!< SAR ADC 1 and 2 alternative mode, not supported yet */
+    ADC_UNIT_ALTER = 7,      /*!< SAR ADC 1 and 2 alternative mode. */
     ADC_UNIT_MAX,
 } adc_unit_t;
 
@@ -75,28 +75,57 @@ typedef enum {
     ADC_WIDTH_MAX,
 } adc_bits_width_t;
 
+/**
+ * @brief ADC digital controller (DMA mode) output data format option.
+ */
+typedef enum {
+    ADC_DIGI_FORMAT_12BIT,   /*!<ADC to DMA data format,                [15:12]-channel, [11: 0]-12 bits ADC data (`adc_digi_output_data_t`).
+                                 Note: In single convert mode. */
+    ADC_DIGI_FORMAT_11BIT,   /*!<ADC to DMA data format, [15]-adc unit, [14:11]-channel, [10: 0]-11 bits ADC data (`adc_digi_output_data_t`).
+                                 Note: In multi or alter convert mode. */
+    ADC_DIGI_FORMAT_MAX,
+} adc_digi_output_format_t;
+
+/**
+ * @brief ADC digital controller (DMA mode) output data format.
+ *        Used to analyze the acquired ADC (DMA) data.
+ *
+ * @note  ESP32S2:
+ *        Member `channel` can be used to judge the validity of the ADC data, because the role of the arbiter may get invalid ADC data.
+ */
+typedef struct {
+    union {
+        struct {
+            uint16_t data:     12;  /*!<ADC real output data info. Resolution: 12 bit. */
+            uint16_t channel:   4;  /*!<ADC channel index info. For ESP32S2:
+                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+        } type1;                    /*!<When the configured output format is 12bit. `ADC_DIGI_FORMAT_12BIT` */
+        struct {
+            uint16_t data:     11;  /*!<ADC real output data info. Resolution: 11 bit. */
+            uint16_t channel:   4;  /*!<ADC channel index info. For ESP32S2:
+                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+            uint16_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
+        } type2;                    /*!<When the configured output format is 11bit. `ADC_DIGI_FORMAT_11BIT` */
+        uint16_t val;
+    };
+} adc_digi_output_data_t;
+
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 
 /**
  * @brief ADC digital controller (DMA mode) clock system setting.
- *        Expression: controller_clk = (`APLL` or `APB`) * (div_num  + div_b / div_a).
+ *        Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
  */
 typedef struct {
     bool use_apll;      /*!<true: use APLL clock; false: use APB clock. */
-    uint32_t div_num;   /*!<Division factor. Range: 1 ~ 255. */
+    uint32_t div_num;   /*!<Division factor. Range: 0 ~ 255.
+                            Note: When a higher frequency clock is used (the division factor is less than 9),
+                            the ADC reading value will be slightly offset. */
     uint32_t div_b;     /*!<Division factor. Range: 1 ~ 63. */
-    uint32_t div_a;     /*!<Division factor. Range: 1 ~ 63. */
+    uint32_t div_a;     /*!<Division factor. Range: 0 ~ 63. */
 } adc_digi_clk_t;
-
-/**
- * @brief ADC digital controller (DMA mode) clock system default setting.
- */
-#define ADC_DIGITAL_CLK_DEFAULT() { \
-    .use_apll = 0, \
-    .div_num = 40, \
-    .div_b = 1, \
-    .div_a = 1, \
-}
 
 /**
  * @brief ADC arbiter work mode option.
@@ -116,7 +145,7 @@ typedef enum {
  * @note ESP32S2: Only ADC2 support arbiter.
  */
 typedef struct {
-    adc_arbiter_mode_t mode; /*!<Refer to `adc_arbiter_mode_t`. Note: only support ADC2. */
+    adc_arbiter_mode_t mode; /*!<Refer to ``adc_arbiter_mode_t``. Note: only support ADC2. */
     uint8_t rtc_pri;        /*!<RTC controller priority. Range: 0 ~ 2. */
     uint8_t dig_pri;        /*!<Digital controller priority. Range: 0 ~ 2. */
     uint8_t pwdet_pri;      /*!<Wi-Fi controller priority. Range: 0 ~ 2. */
@@ -137,7 +166,11 @@ typedef struct {
 /**
  * @brief ADC digital controller (DMA mode) work mode.
  *
- * @note  Member `channel` can be used to judge the validity of the ADC data, because the role of the arbiter may get invalid ADC data.
+ * @note  The conversion mode affects the sampling frequency:
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
+ *        SINGLE_UNIT_2: When the measurement is triggered, only ADC2 is sampled once.
+ *        BOTH_UNIT    : When the measurement is triggered, ADC1 and ADC2 are sampled at the same time.
+ *        ALTER_UNIT   : When the measurement is triggered, ADC1 or ADC2 samples alternately.
  */
 typedef enum {
     ADC_CONV_SINGLE_UNIT_1 = 1, /*!< SAR ADC 1. */
@@ -146,42 +179,6 @@ typedef enum {
     ADC_CONV_ALTER_UNIT    = 7, /*!< SAR ADC 1 and 2 alternative mode. */
     ADC_CONV_UNIT_MAX,
 } adc_digi_convert_mode_t;
-
-/**
- * @brief ADC digital controller (DMA mode) output data format option.
- */
-typedef enum {
-    ADC_DIGI_FORMAT_12BIT,   /*!<ADC to DMA data format,                [15:12]-channel, [11: 0]-12 bits ADC data (`adc_digi_output_data_t`).
-                                 Note: In single convert mode. */
-    ADC_DIGI_FORMAT_11BIT,   /*!<ADC to DMA data format, [15]-adc unit, [14:11]-channel, [10: 0]-11 bits ADC data (`adc_digi_output_data_t`).
-                                 Note: In multi or alter convert mode. */
-    ADC_DIGI_FORMAT_MAX,
-} adc_digi_output_format_t;
-
-/**
- * @brief ADC digital controller (DMA mode) output data format.
- *        Used to analyze the acquired ADC (DMA) data.
- *
- * @note  Member `channel` can be used to judge the validity of the ADC data, because the role of the arbiter may get invalid ADC data.
- */
-typedef struct {
-    union {
-        struct {
-            uint16_t data:     12;  /*!<ADC real output data info. Resolution: 12 bit. */
-            uint16_t channel:   4;  /*!<ADC channel index info.
-                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
-                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
-        } type1;                    /*!<When the configured output format is 12bit. `ADC_DIGI_FORMAT_12BIT` */
-        struct {
-            uint16_t data:     11;  /*!<ADC real output data info. Resolution: 11 bit. */
-            uint16_t channel:   4;  /*!<ADC channel index info.
-                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
-                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
-            uint16_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
-        } type2;                    /*!<When the configured output format is 11bit. `ADC_DIGI_FORMAT_11BIT` */
-        uint16_t val;
-    };
-} adc_digi_output_data_t;
 
 /**
  * @brief ADC digital controller (DMA mode) conversion rules setting.
@@ -212,26 +209,54 @@ typedef enum {
 
 /**
  * @brief ADC digital controller (DMA mode) configuration parameters.
+ *
+ * Example setting: Use ADC1 channel0 to measure voltage, the sampling rate is required to be 1KHz:
+ *     +---------------------+--------+--------+--------+
+ *     | sample rate         |  1KHz  |  1KHz  |  1KHz  |
+ *     +---------------------+--------+--------+--------+
+ *     | conv_mode           | single |  both  |  alter |
+ *     | adc1_pattern_len    |    1   |    1   |    1   |
+ *     | dig_clk.use_apll    |    0   |    0   |    0   |
+ *     | dig_clk.div_num     |   99   |   99   |   99   |
+ *     | dig_clk.div_b       |    0   |    0   |    0   |
+ *     | dig_clk.div_a       |    0   |    0   |    0   |
+ *     | interval            |  400   |  400   |  200   |
+ *     +---------------------+--------+--------+--------+
+ *     | `trigger_meas_freq` |  1KHz  |  1KHz  |  2KHz  |
+ *     +---------------------+--------+--------+--------+
+ *
+ * Explain the relationship between `conv_limit_num`, `dma_eof_num` and the number of DMA output:
+ *     +---------------------+--------+--------+--------+
+ *     | conv_mode           | single |  both  |  alter |
+ *     +---------------------+--------+--------+--------+
+ *     | trigger meas times  |    1   |    1   |    1   |
+ *     +---------------------+--------+--------+--------+
+ *     | conv_limit_num      |   +1   |   +1   |   +1   |
+ *     | dma_eof_num         |   +1   |   +2   |   +1   |
+ *     | dma output (byte)   |   +2   |   +4   |   +2   |
+ *     +---------------------+--------+--------+--------+
  */
 typedef struct {
-    bool conv_limit_en;         /*!<Enable max conversion number detection for digital controller.
-                                    If the number of ADC conversion is equal to the `limit_num`, the conversion is stopped. */
-    uint32_t conv_limit_num;    /*!<ADC max conversion number for digital controller. */
-    uint32_t adc1_pattern_len;  /*!<Pattern table length for digital controller. Range: 0 ~ 16.
+    bool conv_limit_en;         /*!<Enable the function of limiting ADC conversion times.
+                                    If the number of ADC conversion trigger count is equal to the `limit_num`, the conversion is stopped. */
+    uint32_t conv_limit_num;    /*!<Set the upper limit of the number of ADC conversion triggers. Range: 1 ~ 255. */
+    uint32_t adc1_pattern_len;  /*!<Pattern table length for digital controller. Range: 0 ~ 16 (0: Don't change the pattern table setting).
                                     The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
                                     resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
                                     pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
-    uint32_t adc2_pattern_len;  /*!<Refer to `adc1_pattern_len` */
+    uint32_t adc2_pattern_len;  /*!<Refer to ``adc1_pattern_len`` */
     adc_digi_pattern_table_t *adc1_pattern;  /*!<Pointer to pattern table for digital controller. The table size defined by `adc1_pattern_len`. */
-    adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
-    adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. */
-    adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. */
+    adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to ``adc1_pattern`` */
+    adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
+    adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
     uint32_t interval;          /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
-                                    The unit is the divided clock. Range: 40 ~ 4095. */
-    adc_digi_clk_t dig_clk;     /*!<Refer to `adc_digi_clk_t` */
+                                    The unit is the divided clock. Range: 40 ~ 4095.
+                                    Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
+                                    Note: The sampling rate of each channel is also related to the conversion mode (See ``adc_digi_convert_mode_t``) and pattern table settings. */
+    adc_digi_clk_t dig_clk;     /*!<ADC digital controller clock divider settings. Refer to ``adc_digi_clk_t`` */
     uint32_t dma_eof_num;       /*!<DMA eof num of adc digital controller.
-                                    If the number of measurements reaches `dma_eof_num`,
-                                    then `dma_in_suc_eof` signal is generated. */
+                                    If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
+                                    Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
 } adc_digi_config_t;
 
 /**
