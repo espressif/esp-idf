@@ -636,6 +636,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
                               tx->ctx->addr, bt_mesh.seq,
                               BLE_MESH_NET_IVI_TX);
     if (err) {
+        BT_ERR("%s, Encrypt failed", __func__);
         return err;
     }
 
@@ -1967,7 +1968,7 @@ int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
 
     app_key = bt_mesh_tx_appkey_get(role, app_idx);
     if (!app_key) {
-        BT_ERR("%s, Failed to get AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%04x not exists", __func__, app_idx);
         return -ENOENT;
     }
 
