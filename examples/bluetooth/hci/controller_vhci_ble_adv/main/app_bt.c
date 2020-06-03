@@ -13,38 +13,9 @@
 #include "esp_bt.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "bt_hci_common.h"
 
 static const char *tag = "BLE_ADV";
-
-#define HCI_H4_CMD_PREAMBLE_SIZE           (4)
-
-/*  HCI Command opcode group field(OGF) */
-#define HCI_GRP_HOST_CONT_BASEBAND_CMDS    (0x03 << 10)            /* 0x0C00 */
-#define HCI_GRP_BLE_CMDS                   (0x08 << 10)
-
-#define HCI_RESET                          (0x0003 | HCI_GRP_HOST_CONT_BASEBAND_CMDS)
-#define HCI_BLE_WRITE_ADV_ENABLE           (0x000A | HCI_GRP_BLE_CMDS)
-#define HCI_BLE_WRITE_ADV_PARAMS           (0x0006 | HCI_GRP_BLE_CMDS)
-#define HCI_BLE_WRITE_ADV_DATA             (0x0008 | HCI_GRP_BLE_CMDS)
-
-#define HCIC_PARAM_SIZE_WRITE_ADV_ENABLE        (1)
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS    (15)
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA      (31)
-
-#define BD_ADDR_LEN     (6)                     /* Device address length */
-typedef uint8_t bd_addr_t[BD_ADDR_LEN];         /* Device address */
-
-#define UINT16_TO_STREAM(p, u16) {*(p)++ = (uint8_t)(u16); *(p)++ = (uint8_t)((u16) >> 8);}
-#define UINT8_TO_STREAM(p, u8)   {*(p)++ = (uint8_t)(u8);}
-#define BDADDR_TO_STREAM(p, a)   {int ijk; for (ijk = 0; ijk < BD_ADDR_LEN;  ijk++) *(p)++ = (uint8_t) a[BD_ADDR_LEN - 1 - ijk];}
-#define ARRAY_TO_STREAM(p, a, len) {int ijk; for (ijk = 0; ijk < len;        ijk++) *(p)++ = (uint8_t) a[ijk];}
-
-enum {
-    H4_TYPE_COMMAND = 1,
-    H4_TYPE_ACL     = 2,
-    H4_TYPE_SCO     = 3,
-    H4_TYPE_EVENT   = 4
-};
 
 static uint8_t hci_cmd_buf[128];
 
@@ -75,65 +46,6 @@ static esp_vhci_host_callback_t vhci_host_cb = {
     controller_rcv_pkt_ready,
     host_rcv_pkt
 };
-
-static uint16_t make_cmd_reset(uint8_t *buf)
-{
-    UINT8_TO_STREAM (buf, H4_TYPE_COMMAND);
-    UINT16_TO_STREAM (buf, HCI_RESET);
-    UINT8_TO_STREAM (buf, 0);
-    return HCI_H4_CMD_PREAMBLE_SIZE;
-}
-
-static uint16_t make_cmd_ble_set_adv_enable (uint8_t *buf, uint8_t adv_enable)
-{
-    UINT8_TO_STREAM (buf, H4_TYPE_COMMAND);
-    UINT16_TO_STREAM (buf, HCI_BLE_WRITE_ADV_ENABLE);
-    UINT8_TO_STREAM  (buf, HCIC_PARAM_SIZE_WRITE_ADV_ENABLE);
-    UINT8_TO_STREAM (buf, adv_enable);
-    return HCI_H4_CMD_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_ADV_ENABLE;
-}
-
-static uint16_t make_cmd_ble_set_adv_param (uint8_t *buf, uint16_t adv_int_min, uint16_t adv_int_max,
-        uint8_t adv_type, uint8_t addr_type_own,
-        uint8_t addr_type_dir, bd_addr_t direct_bda,
-        uint8_t channel_map, uint8_t adv_filter_policy)
-{
-    UINT8_TO_STREAM (buf, H4_TYPE_COMMAND);
-    UINT16_TO_STREAM (buf, HCI_BLE_WRITE_ADV_PARAMS);
-    UINT8_TO_STREAM  (buf, HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS );
-
-    UINT16_TO_STREAM (buf, adv_int_min);
-    UINT16_TO_STREAM (buf, adv_int_max);
-    UINT8_TO_STREAM (buf, adv_type);
-    UINT8_TO_STREAM (buf, addr_type_own);
-    UINT8_TO_STREAM (buf, addr_type_dir);
-    BDADDR_TO_STREAM (buf, direct_bda);
-    UINT8_TO_STREAM (buf, channel_map);
-    UINT8_TO_STREAM (buf, adv_filter_policy);
-    return HCI_H4_CMD_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS;
-}
-
-
-static uint16_t make_cmd_ble_set_adv_data(uint8_t *buf, uint8_t data_len, uint8_t *p_data)
-{
-    UINT8_TO_STREAM (buf, H4_TYPE_COMMAND);
-    UINT16_TO_STREAM (buf, HCI_BLE_WRITE_ADV_DATA);
-    UINT8_TO_STREAM  (buf, HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1);
-
-    memset(buf, 0, HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA);
-
-    if (p_data != NULL && data_len > 0) {
-        if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA) {
-            data_len = HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA;
-        }
-
-        UINT8_TO_STREAM (buf, data_len);
-
-        ARRAY_TO_STREAM (buf, p_data, data_len);
-    }
-    return HCI_H4_CMD_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1;
-}
-
 static void hci_cmd_send_reset(void)
 {
     uint16_t sz = make_cmd_reset (hci_cmd_buf);

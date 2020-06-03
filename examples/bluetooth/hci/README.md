@@ -17,3 +17,7 @@ See the [README.md](./controller_hci_uart/README.md) file in the example [contro
 Demonstrates interaction with controller though virtual HCI layer. In this example, simple BLE advertising is done.
 
 See the [README.md](./controller_vhci_ble_adv/README.md) file in the example [controller_vhci_ble_adv](./controller_vhci_ble_adv).
+
+## hci_common_component
+
+This is separate component adding functionalities for HCI Layer. Since this component is just used by HCI examples, it is not placed in global components.
