@@ -383,6 +383,15 @@ void net_buf_reset(struct net_buf *buf)
     net_buf_simple_reset(&buf->b);
 }
 
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size)
+{
+    buf->__buf = data;
+    buf->data  = data;
+    buf->size  = size;
+    buf->len   = size;
+}
+
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
     NET_BUF_ASSERT(buf);
