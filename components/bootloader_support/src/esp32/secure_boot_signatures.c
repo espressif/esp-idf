@@ -137,13 +137,13 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
 esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
+    secure_boot_v2_status_t r;
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
 
-    secure_boot_v2_status_t r;
     memcpy(efuse_trusted_digest, (uint8_t *)EFUSE_BLK2_RDATA0_REG, DIGEST_LEN); /* EFUSE_BLK2_RDATA0_REG - Stores the Secure Boot Public Key Digest */
 
     if (!ets_use_secure_boot_v2()) {
-        ESP_LOGI(TAG, "Secure Boot EFuse bit(ABS_DONE_1) not yet programmed.");
+        ESP_LOGI(TAG, "Secure Boot eFuse bit(ABS_DONE_1) not yet programmed.");
 
         /* Generating the SHA of the public key components in the signature block */
         bootloader_sha256_handle_t sig_block_sha;
@@ -151,9 +151,24 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         bootloader_sha256_data(sig_block_sha, &sig_block->block[0].key, sizeof(sig_block->block[0].key));
         bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_trusted_digest);
 
+#if CONFIG_SECURE_BOOT_V2_ENABLED
         if (memcmp(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN) != 0) {
-            ESP_LOGW(TAG, "Public key digest in eFuse BLK2 and the signature block don't match.");
+            /* Most likely explanation for this is that BLK2 is empty, and we're going to burn it
+               after we verify that the signature is valid. However, if BLK2 is not empty then we need to
+               fail here.
+            */
+            bool all_zeroes = true;
+            for (int i = 0; i < DIGEST_LEN; i++) {
+                all_zeroes = all_zeroes && (efuse_trusted_digest[i] == 0);
+            }
+            if (!all_zeroes) {
+                ESP_LOGE(TAG, "Different public key digest burned to eFuse BLK2");
+                return ESP_ERR_INVALID_STATE;
+            }
         }
+
+        ESP_FAULT_ASSERT(!ets_use_secure_boot_v2());
+#endif
 
         memcpy(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN);
     }
