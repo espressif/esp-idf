@@ -398,13 +398,13 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 
     key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
     if (!key) {
-        BT_ERR("%s, Failed to find AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%03x not exists", __func__, pub->key);
         return -EADDRNOTAVAIL;
     }
 
     tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, key->net_idx);
     if (!tx.sub) {
-        BT_ERR("%s, Failed to get subnet", __func__);
+        BT_ERR("%s, Subnet 0x%04x not exists", __func__, key->net_idx);
         return -EADDRNOTAVAIL;
     }
 
@@ -832,9 +832,9 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     u8_t count = 0U;
     int i;
 
-    BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
+    BT_INFO("recv, app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
            rx->ctx.addr, rx->ctx.recv_dst);
-    BT_INFO("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_INFO("recv, len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (get_opcode(buf, &opcode) < 0) {
         BT_WARN("%s, Unable to decode OpCode", __func__);
@@ -955,12 +955,12 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x",
+    BT_INFO("send, app_idx 0x%04x src 0x%04x dst 0x%04x",
         tx->ctx->app_idx, tx->src, tx->ctx->addr);
-    BT_INFO("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
+    BT_INFO("send, len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
     if (!ready_to_send(role, tx->ctx->addr)) {
-        BT_ERR("%s, fail", __func__);
+        BT_ERR("%s, Not ready", __func__);
         return -EINVAL;
     }
 
@@ -1045,7 +1045,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
     if (!key) {
-        BT_ERR("%s, Failed to get AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%03x not exists", __func__, pub->key);
         return -EADDRNOTAVAIL;
     }
 
@@ -1070,7 +1070,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, ctx.net_idx);
     if (!tx.sub) {
-        BT_ERR("%s, Failed to get subnet", __func__);
+        BT_ERR("%s, Subnet 0x%04x not exists", __func__, ctx.net_idx);
         return -EADDRNOTAVAIL;
     }
 
