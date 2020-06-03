@@ -32,7 +32,17 @@ The default behaviour is to just exit the interrupt or call the panic handler on
     .align      4
 
 _xt_debugexception:
-    movi    a0,PANIC_RSN_DEBUGEXCEPTION
+
+#define XT_DEBUGCAUSE_DI        (5)
+
+    getcoreid   a0
+    beqz    a0, 1f
+
+    rsr     a0, DEBUGCAUSE
+    extui   a0, a0, XT_DEBUGCAUSE_DI, 1
+    bnez    a0, _xt_debug_di_exc
+
+1:  movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,EXCCAUSE
     /* _xt_panic assumes a level 1 exception. As we're
        crashing anyhow, copy EPC & EXCSAVE from DEBUGLEVEL
@@ -42,6 +52,19 @@ _xt_debugexception:
     rsr     a0,(EXCSAVE + XCHAL_DEBUGLEVEL)
     wsr     a0,EXCSAVE_1
     call0   _xt_panic                       /* does not return */
+    rfi     XCHAL_DEBUGLEVEL
+
+    .align  4
+_xt_debug_di_exc:
+
+    movi    a0, 1234
+1:  addi    a0, a0, -1
+    .rept   4
+    nop
+    .endr
+    bnez    a0, 1b
+
+    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
 
 #endif /* Debug exception */

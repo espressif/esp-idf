@@ -104,6 +104,35 @@ void esp_int_wdt_init() {
     TIMERG1.wdt_wprotect=0;
     TIMERG1.int_clr_timers.wdt=1;
     timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
+
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+
+#define APB_DCRSET      (0x200c)
+#define APB_ITCTRL      (0x3f00)
+
+#define ERI_ADDR(APB)   (0x100000 + (APB))
+
+#define _SYM2STR(x)     # x
+#define SYM2STR(x)      _SYM2STR(x)
+    uint32_t eriadrs, scratch = 0, immediate = 0;
+    if (xPortGetCoreID() == PRO_CPU_NUM) {
+        __asm__ __volatile__ (
+                /* Enable Xtensa Debug Module Integration Mode */
+                "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_ITCTRL)) "\n"
+                "rer    %[REG], %[ERI]\n"
+                "movi   %[IMM], 1\n"
+                "or     %[REG], %[IMM], %[REG]\n"
+                "wer    %[REG], %[ERI]\n"
+                /* Enable Xtensa Debug Module BreakIn signal */
+                "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_DCRSET)) "\n"
+                "rer    %[REG], %[ERI]\n"
+                "movi   %[IMM], 0x10000\n"
+                "or     %[REG], %[IMM], %[REG]\n"
+                "wer    %[REG], %[ERI]\n"
+                : [ERI] "=r" (eriadrs), [REG] "+r" (scratch), [IMM] "+r" (immediate)
+            );
+    }
+#endif
 }
 
 void esp_int_wdt_cpu_init()
