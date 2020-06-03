@@ -133,22 +133,6 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
                     RTC controller setting
 ---------------------------------------------------------------*/
 
-esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
-{
-    ADC_ENTER_CRITICAL();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
-    ADC_EXIT_CRITICAL();
-    if (adc_hal_vref_output(gpio) != true) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    //Configure RTC gpio
-    rtc_gpio_init(gpio);
-    rtc_gpio_set_direction(gpio, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pullup_dis(gpio);
-    rtc_gpio_pulldown_dis(gpio);
-    return ESP_OK;
-}
-
 /*---------------------------------------------------------------
                         HALL SENSOR
 ---------------------------------------------------------------*/

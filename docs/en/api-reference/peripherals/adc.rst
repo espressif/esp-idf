@@ -53,7 +53,7 @@ Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` 
 
 This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-guides/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
 
-There is another specific function :cpp:func:`adc2_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc-api-adc-calibration`.
+There is another specific function :cpp:func:`adc_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc-api-adc-calibration`.
 
 .. todo::
 
@@ -228,7 +228,7 @@ Routing ADC reference voltage to GPIO, so it can be manually measured (for **Def
 
     ...
 
-        esp_err_t status = adc2_vref_to_gpio(GPIO_NUM_25);
+        esp_err_t status = adc_vref_to_gpio(ADC_UNIT_1, GPIO_NUM_25);
         if (status == ESP_OK) {
             printf("v_ref routed to GPIO\n");
         } else {

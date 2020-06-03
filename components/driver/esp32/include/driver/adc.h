@@ -47,22 +47,6 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel);
 ---------------------------------------------------------------*/
 
 /**
- *  @brief Output ADC2 reference voltage to GPIO 25 or 26 or 27
- *
- *  This function utilizes the testing mux exclusive to ADC 2 to route the
- *  reference voltage one of ADC2's channels. Supported GPIOs are GPIOs
- *  25, 26, and 27. This refernce voltage can be manually read from the pin
- *  and used in the esp_adc_cal component.
- *
- *  @param[in]  gpio    GPIO number (GPIOs 25, 26 and 27 are supported)
- *
- *  @return
- *                  - ESP_OK: v_ref successfully routed to selected GPIO
- *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
- */
-esp_err_t adc2_vref_to_gpio(gpio_num_t gpio);
-
-/**
  * @brief Read Hall Sensor
  *
  * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
