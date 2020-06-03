@@ -18,7 +18,7 @@ def test_examples_sntp(env, extra_data):
                    timeout=60)
 
     TIME_FORMAT = '%a %b %d %H:%M:%S %Y'
-    TIME_FORMAT_REGEX = r'\w+ \w+ \d{1,2} \d{2}:\d{2}:\d{2} \d{4}'
+    TIME_FORMAT_REGEX = r'\w+\s+\w+\s+\d{1,2}\s+\d{2}:\d{2}:\d{2} \d{4}'
     TIME_DIFF = datetime.timedelta(seconds=10 + 2)  # cpu spends 10 seconds in deep sleep
     NY_time = None
     SH_time = None
