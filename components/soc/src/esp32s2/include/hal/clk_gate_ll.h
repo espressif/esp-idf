@@ -260,6 +260,12 @@ static inline void periph_ll_reset(periph_module_t periph)
     DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
+static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
+{
+    return DPORT_REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) != 0 &&
+        DPORT_REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
