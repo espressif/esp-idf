@@ -86,6 +86,18 @@ static inline void dac_ll_rtc_reset(void)
     SENS.sar_dac_ctrl1.dac_reset = 0;
 }
 
+/**
+ * Enable/disable the synchronization operation function of ADC1 and DAC.
+ *
+ * @note  If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage.
+ *
+ * @param enable Enable or disable adc and dac synchronization function.
+ */
+static inline void dac_ll_rtc_sync_by_adc(bool enable)
+{
+    SENS.sar_amp_ctrl3.sar1_dac_xpd_fsm = enable;
+}
+
 /************************************/
 /*  DAC cosine wave generator API's */
 /************************************/
