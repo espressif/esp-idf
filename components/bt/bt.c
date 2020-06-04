@@ -1022,7 +1022,7 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
-    intptr_t mem_start, mem_end;
+    intptr_t mem_start=(intptr_t) NULL, mem_end=(intptr_t) NULL;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         return ESP_ERR_INVALID_STATE;
