@@ -296,6 +296,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         .rx_flow_ctrl_thresh = 120,
         .source_clk = UART_SCLK_APB,
     };
+    uart_wait_tx_idle_polling(uart_num);
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
     TEST_ESP_OK(uart_driver_install(uart_num, 1024 * 2, 1024 *2, 20, NULL, 0));
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
