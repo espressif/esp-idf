@@ -22,6 +22,7 @@ API Guides
     Flash Encryption <../security/flash-encryption>
     FreeRTOS SMP Changes <freertos-smp>
     General Notes <general-notes>
+    Hardware Abstraction <hardware-abstraction>
     High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>
