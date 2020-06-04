@@ -151,25 +151,6 @@ void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
  */
 void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t rx_eof_num, uint32_t addr);
 
-#if SOC_I2S_SUPPORTS_PDM
-/**
- * @brief Get I2S tx pdm
- *
- * @param hal Context of the HAL layer
- * @param fp tx pdm fp
- * @param fs tx pdm fs
- */
-void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, int *fp, int *fs);
-#endif
-
-/**
- * @brief Get I2S rx sinc dsr 16 en
- *
- * @param hal Context of the HAL layer
- * @param en 0: disable, 1: enable
- */
-#define i2s_hal_get_rx_sinc_dsr_16_en(hal, en) i2s_ll_get_rx_sinc_dsr_16_en((hal)->dev, en)
-
 /**
  * @brief Set I2S clk div
  *
@@ -241,16 +222,6 @@ void i2s_hal_stop_tx(i2s_hal_context_t *hal);
  */
 void i2s_hal_stop_rx(i2s_hal_context_t *hal);
 
-#if SOC_I2S_SUPPORTS_PDM
-/**
- * @brief Set I2S pdm rx down sample
- *
- * @param hal Context of the HAL layer
- * @param dsr 0:disable, 1: enable
- */
-#define i2s_hal_set_pdm_rx_down_sample(hal, dsr) i2s_ll_set_rx_sinc_dsr_16_en((hal)->dev, dsr)
-#endif
-
 /**
  * @brief Config I2S param
  *
@@ -287,6 +258,42 @@ void i2s_hal_enable_slave_mode(i2s_hal_context_t *hal);
  * @param i2s_num The uart port number, the max port number is (I2S_NUM_MAX -1)
  */
 void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num);
+
+#if SOC_I2S_SUPPORTS_PDM
+/**
+ * @brief Set I2S tx pdm
+ *
+ * @param hal Context of the HAL layer
+ * @param fp tx pdm fp
+ * @param fs tx pdm fs
+ */
+void i2s_hal_tx_pdm_cfg(i2s_hal_context_t *hal, uint32_t fp, uint32_t fs);
+
+/**
+ * @brief Get I2S tx pdm
+ *
+ * @param hal Context of the HAL layer
+ * @param dsr rx pdm dsr
+ */
+void i2s_hal_rx_pdm_cfg(i2s_hal_context_t *hal, uint32_t dsr);
+
+/**
+ * @brief Get I2S tx pdm configuration
+ *
+ * @param hal Context of the HAL layer
+ * @param fp Pointer to receive tx PDM fp configuration
+ * @param fs Pointer to receive tx PDM fs configuration
+ */
+void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, uint32_t *fp, uint32_t *fs);
+
+/**
+ * @brief Get I2S rx pdm configuration
+ *
+ * @param hal Context of the HAL layer
+ * @param dsr rx pdm dsr
+ */
+void i2s_hal_get_rx_pdm(i2s_hal_context_t *hal, uint32_t *dsr);
+#endif
 
 #ifdef __cplusplus
 }

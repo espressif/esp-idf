@@ -17,6 +17,9 @@
 #include "soc/soc.h"
 #include "hal/i2s_hal.h"
 
+#define I2S_TX_PDM_FP_DEF  960   // Set to the recommended value(960) in TRM
+#define I2S_RX_PDM_DSR_DEF 0
+
 void i2s_hal_set_tx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_sample_t bits)
 {
     if (bits <= I2S_BITS_PER_SAMPLE_16BIT) {
@@ -50,10 +53,24 @@ void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t bytes_num, uint32_t ad
 }
 
 #if SOC_I2S_SUPPORTS_PDM
-void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, int *fp, int *fs)
+void i2s_hal_tx_pdm_cfg(i2s_hal_context_t *hal, uint32_t fp, uint32_t fs)
 {
-    i2s_ll_get_tx_pdm_fp(hal->dev, (uint32_t *)fp);
-    i2s_ll_get_tx_pdm_fs(hal->dev, (uint32_t *)fs);
+    i2s_ll_tx_pdm_cfg(hal->dev, fp, fs);
+}
+
+void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, uint32_t *fp, uint32_t *fs)
+{
+    i2s_ll_get_tx_pdm(hal->dev, fp, fs);
+}
+
+void i2s_hal_rx_pdm_cfg(i2s_hal_context_t *hal, uint32_t dsr)
+{
+    i2s_ll_rx_pdm_cfg(hal->dev, dsr);
+}
+
+void i2s_hal_get_rx_pdm(i2s_hal_context_t *hal, uint32_t *dsr)
+{
+    i2s_ll_get_rx_pdm(hal->dev, dsr);
 }
 #endif
 
@@ -208,10 +225,10 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config
         i2s_ll_set_tx_pdm_en(hal->dev, 0);
     } else {
         if (i2s_config->mode & I2S_MODE_TX) {
-            i2s_ll_tx_pdm_cfg(hal->dev, i2s_config->sample_rate);
+            i2s_ll_tx_pdm_cfg(hal->dev, I2S_TX_PDM_FP_DEF, i2s_config->sample_rate/100);
         }
         if(i2s_config->mode & I2S_MODE_RX) {
-            i2s_ll_rx_pdm_cfg(hal->dev);
+            i2s_ll_rx_pdm_cfg(hal->dev, I2S_RX_PDM_DSR_DEF);
         }
         // PDM mode have nothing to do with communication format configuration.
         return;

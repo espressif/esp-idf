@@ -413,17 +413,19 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
     } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_PDM) {
         uint32_t b_clk = 0;
         if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
-            int fp;
-            int fs;
+            uint32_t fp, fs;
             i2s_hal_get_tx_pdm(&(p_i2s_obj[i2s_num]->hal), &fp, &fs);
-            b_clk = rate * I2S_PDM_BCK_FACTOR * (fp / fs);
-            fi2s_clk /= (I2S_PDM_BCK_FACTOR * (fp / fs));
+            // Recommended set `fp = 960, fs = sample_rate / 100`
+            fs = rate / 100;
+            i2s_hal_tx_pdm_cfg(&(p_i2s_obj[i2s_num]->hal), fp, fs);
+            b_clk = rate * I2S_PDM_BCK_FACTOR * fp / fs;
+            
         } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
-            bool en;
-            i2s_hal_get_rx_sinc_dsr_16_en(&(p_i2s_obj[i2s_num]->hal), &en);
-            b_clk = rate * I2S_PDM_BCK_FACTOR * (en ? 2 : 1);
-            fi2s_clk /= (I2S_PDM_BCK_FACTOR * (en ? 2 : 1));
+            uint32_t dsr;
+            i2s_hal_get_rx_pdm(&(p_i2s_obj[i2s_num]->hal), &dsr);
+            b_clk = rate * I2S_PDM_BCK_FACTOR * (dsr ? 2 : 1);
         }
+        fi2s_clk = b_clk * m_scale;
         int factor2 = 5 ;
         mclk = b_clk * factor2;
         clkmdiv = ((double) I2S_BASE_CLK) / mclk;
@@ -818,7 +820,7 @@ esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate)
 esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr)
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
-    i2s_hal_set_pdm_rx_down_sample(&(p_i2s_obj[i2s_num]->hal), dsr);
+    i2s_hal_rx_pdm_cfg(&(p_i2s_obj[i2s_num]->hal), dsr);
     return i2s_set_clk(i2s_num, p_i2s_obj[i2s_num]->sample_rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
 #endif
