@@ -25,7 +25,7 @@ The above URLs are all for the master branch latest version. Click the drop-down
 If using Windows and the MSYS2 MINGW32 terminal, run this command before running "make html" the first time:
 
 ```
-pacman -S doxygen mingw-w64-i686-python2-pillow
+pacman -S doxygen mingw-w64-i686-python-pillow
 ```
 
 Note: Currently it is not possible to build docs on Windows without using a Unix-on-Windows layer such as MSYS2 MINGW32.
