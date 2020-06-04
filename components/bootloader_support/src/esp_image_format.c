@@ -18,6 +18,7 @@
 #include <esp_secure_boot.h>
 #include <esp_fault.h>
 #include <esp_log.h>
+#include <esp_attr.h>
 #include <esp_spi_flash.h>
 #include <bootloader_flash.h>
 #include <bootloader_random.h>
@@ -722,7 +723,7 @@ static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t
     length = (length + 15) & ~15; // Pad to next full 16 byte block
 
     // Verify checksum
-    uint8_t buf[16];
+    WORD_ALIGNED_ATTR uint8_t buf[16];
     esp_err_t err = bootloader_flash_read(data->start_addr + unpadded_length, buf, length - unpadded_length, true);
     uint8_t calc = buf[length - unpadded_length - 1];
     uint8_t checksum = (checksum_word >> 24)
