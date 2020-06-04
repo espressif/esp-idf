@@ -11,6 +11,7 @@
    DAC <dac>
    GPIO (including RTC low power I/O) <gpio>
    :esp32s2: HMAC <hmac>
+   :esp32s2: Digital Signature <ds>
    I2C <i2c>
    I2S <i2s>
    LED Control <ledc>
