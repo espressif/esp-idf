@@ -28,7 +28,12 @@
 
 static const char TAG[] = "spi_flash";
 
+#ifdef CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
+#define MAX_WRITE_CHUNK CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE /* write in chunks */
+#else
 #define MAX_WRITE_CHUNK 8192 /* write in chunks */
+#endif // CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
+
 #define MAX_READ_CHUNK 16384
 
 

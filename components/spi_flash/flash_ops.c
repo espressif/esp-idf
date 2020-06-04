@@ -53,7 +53,12 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
 /* Limit number of bytes written/read in a single SPI operation,
    as these operations disable all higher priority tasks from running.
 */
+#ifdef CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
+#define MAX_WRITE_CHUNK CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
+#else
 #define MAX_WRITE_CHUNK 8192
+#endif // CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
+
 #define MAX_READ_CHUNK 16384
 
 static const char *TAG __attribute__((unused)) = "spi_flash";
