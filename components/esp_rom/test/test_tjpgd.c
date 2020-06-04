@@ -1,12 +1,13 @@
-
-
 #include <stdio.h>
-#include "esp32/rom/tjpgd.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "unity.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+
+#include "esp32/rom/tjpgd.h"
 #include "test_tjpgd_logo.h"
 
 typedef struct {
@@ -16,7 +17,6 @@ typedef struct {
     int outW;
     int outH;
 } JpegDev;
-
 
 static UINT infunc(JDEC *decoder, BYTE *buf, UINT len)
 {
@@ -28,7 +28,6 @@ static UINT infunc(JDEC *decoder, BYTE *buf, UINT len)
     jd->inPos += len;
     return len;
 }
-
 
 static UINT outfunc(JDEC *decoder, void *bitmap, JRECT *rect)
 {
@@ -49,7 +48,7 @@ static UINT outfunc(JDEC *decoder, void *bitmap, JRECT *rect)
 #define TESTH 48
 #define WORKSZ 3100
 
-TEST_CASE("Test JPEG decompression library", "[tjpgd]")
+TEST_CASE("Test JPEG decompression library", "[rom][tjpgd]")
 {
     char aapix[] = " .:;+=xX$$";
     unsigned char *decoded, *p;
@@ -60,7 +59,8 @@ TEST_CASE("Test JPEG decompression library", "[tjpgd]")
     JpegDev jd;
     decoded = malloc(48 * 48 * 3);
     for (x = 0; x < 48 * 48 * 3; x += 2) {
-        decoded[x] = 0; decoded[x + 1] = 0xff;
+        decoded[x] = 0;
+        decoded[x + 1] = 0xff;
     }
     work = malloc(WORKSZ);
     memset(work, 0, WORKSZ);
@@ -89,3 +89,5 @@ TEST_CASE("Test JPEG decompression library", "[tjpgd]")
     free(work);
     free(decoded);
 }
+
+#endif // #if CONFIG_IDF_TARGET_ESP32

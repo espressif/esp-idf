@@ -1,7 +1,7 @@
 #include <complex.h>
 #include "unity.h"
 
-TEST_CASE("libgcc math functions", "[rom]")
+TEST_CASE("libgcc math functions", "[rom][libgcc]")
 {
     extern int64_t __absvdi2(int64_t x);
     TEST_ASSERT(__absvdi2(-1L) == 1);
@@ -117,9 +117,9 @@ TEST_CASE("libgcc math functions", "[rom]")
     TEST_ASSERT(__muldf3(2.0, 8.0) == 16.0);
     extern int64_t __muldi3(int64_t x, int64_t y);
     TEST_ASSERT(__muldi3(2, 8) == 16);
-    extern complex float __mulsc3 (float a, float b, float c, float d);
+    extern complex float __mulsc3(float a, float b, float c, float d);
     TEST_ASSERT(__mulsc3(1.0f, 0.0f, 0.0f, -1.0f) == -I);
-    extern float __mulsf3 (float a, float b);
+    extern float __mulsf3(float a, float b);
     TEST_ASSERT(__mulsf3(2.0f, 8.0f) == 16.0f);
     extern int __mulsi3(int x, int y);
     TEST_ASSERT(__mulsi3(2, 8) == 16);
@@ -165,7 +165,7 @@ TEST_CASE("libgcc math functions", "[rom]")
     TEST_ASSERT(__ucmpdi2(0x100000000ULL, 0x100000000ULL) == 1);
     extern uint64_t __udivdi3(uint64_t x, uint64_t y);
     TEST_ASSERT(__udivdi3(15, 2) == 7);
-    extern uint64_t __udivmoddi4(uint64_t x, uint64_t y, uint64_t* z);
+    extern uint64_t __udivmoddi4(uint64_t x, uint64_t y, uint64_t *z);
     uint64_t z;
     TEST_ASSERT(__udivmoddi4(15, 2, &z) == 7);
     TEST_ASSERT(z == 1);
@@ -181,5 +181,4 @@ TEST_CASE("libgcc math functions", "[rom]")
     TEST_ASSERT(__unorddf2(1.0, 2.0) == 0);
     extern int __unordsf2(float x, float y);
     TEST_ASSERT(__unordsf2(2.0f, 1.0f) == 0);
-
 }
