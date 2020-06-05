@@ -202,7 +202,7 @@ static int fd_is_valid(int fd)
 static inline uint64_t httpd_sess_get_lru_counter()
 {
     static uint64_t lru_counter = 0;
-    return lru_counter++;
+    return ++lru_counter;
 }
 
 void httpd_sess_delete_invalid(struct httpd_data *hd)
