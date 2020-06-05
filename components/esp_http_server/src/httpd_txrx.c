@@ -599,3 +599,27 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
     }
     return ret;
 }
+
+int httpd_socket_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
+{
+    struct sock_db *sess = httpd_sess_get(hd, sockfd);
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!sess->send_fn) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return sess->send_fn(hd, sockfd, buf, buf_len, flags);
+}
+
+int httpd_socket_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    struct sock_db *sess = httpd_sess_get(hd, sockfd);
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!sess->recv_fn) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return sess->recv_fn(hd, sockfd, buf, buf_len, flags);
+}
