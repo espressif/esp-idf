@@ -1590,12 +1590,14 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
     ssl->param.depth = depth;
 }
 
+#define ESP_OPENSSL_VERIFYCB_IS_SUPPORTED 0
 /**
  * @brief set the SSL context verifying of the SSL context
  */
 void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ctx);
+    SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
 
     ctx->verify_mode = mode;
     ctx->default_verify_callback = verify_callback;
@@ -1607,6 +1609,7 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ssl);
+    SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
 
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;

@@ -89,7 +89,7 @@ static void ssl_platform_debug(void *ctx, int level,
 }
 #endif
 
-int mbedtls_ssl_send(void *ctx, const unsigned char *buf, size_t len )
+static int mbedtls_bio_send(void *ctx, const unsigned char *buf, size_t len )
 {
     BIO *bio = ctx;
     int written = BIO_write(bio, buf, len);
@@ -99,7 +99,7 @@ int mbedtls_ssl_send(void *ctx, const unsigned char *buf, size_t len )
     return written;
 }
 
-static int mbedtls_ssl_recv(void *ctx, unsigned char *buf, size_t len )
+static int mbedtls_bio_recv(void *ctx, unsigned char *buf, size_t len )
 {
     BIO *bio = ctx;
     int read = BIO_read(bio, buf, len);
@@ -316,7 +316,7 @@ int ssl_pm_handshake(SSL *ssl)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     if (ssl->bio) {
-        mbedtls_ssl_set_bio(&ssl_pm->ssl, ssl->bio, mbedtls_ssl_send, mbedtls_ssl_recv, NULL);
+        mbedtls_ssl_set_bio(&ssl_pm->ssl, ssl->bio, mbedtls_bio_send, mbedtls_bio_recv, NULL);
     }
 
     ret = ssl_pm_reload_crt(ssl);

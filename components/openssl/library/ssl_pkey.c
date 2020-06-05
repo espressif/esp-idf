@@ -276,14 +276,14 @@ failed1:
     return 0;
 }
 
-#define ESP_OPENSSL_FILES_NOT_SUPPORTED 1
+#define ESP_OPENSSL_FILES_IS_SUPPORTED 0
 /**
  * @brief load the private key file into SSL context
  */
 int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
     // Using file name as private key is discouraged
-    SSL_ASSERT1(ESP_OPENSSL_FILES_NOT_SUPPORTED);
+    SSL_ASSERT1(ESP_OPENSSL_FILES_IS_SUPPORTED);
     return -1;
 }
 
@@ -293,7 +293,7 @@ int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 int SSL_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
     // Using file name as private key is discouraged
-    SSL_ASSERT1(ESP_OPENSSL_FILES_NOT_SUPPORTED);
+    SSL_ASSERT1(ESP_OPENSSL_FILES_IS_SUPPORTED);
     return -1;
 }
 
