@@ -15,20 +15,56 @@
 #ifndef _ESP_ASIO_OPENSSL_STUBS_H
 #define _ESP_ASIO_OPENSSL_STUBS_H
 
-#include "internal/ssl_x509.h"
-#include "internal/ssl_pkey.h"
-#include "mbedtls/pem.h"
-#include <stdint.h>
-
 /**
  * @note This header contains openssl API which are NOT implemented, and are only provided
  * as stubs or no-operations to get the ASIO library compiled and working with most
  * practical use cases as an embedded application on ESP platform
  */
 
+#if defined(ASIO_USE_WOLFSSL)
+
+#include "wolfssl/ssl.h"
+// esp-wolfssl disables filesystem by default, but the ssl filesystem functions are needed for the ASIO to compile
+//  - so we could either configure wolfSSL to use filesystem
+//  - or use the default wolfSSL and declare the filesystem functions -- preferred option, as whenever
+//    the filesystem functions are used from app code (potential security impact if private keys in a filesystem)
+//    compilation fails with linking errors.
+
+#if defined(NO_FILESYSTEM)
+// WolfSSL methods that are not included in standard esp-wolfssl config, must be defined here
+// as function stubs,  so ASIO compiles, but would get link errors, if these functions were used.
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct WOLFSSL_CTX      WOLFSSL_CTX;
+
+void wolfSSL_CTX_set_verify_depth(WOLFSSL_CTX *ctx,int depth);
+int SSL_CTX_load_verify_locations(WOLFSSL_CTX*, const char*, const char*);
+int SSL_CTX_use_certificate_file(WOLFSSL_CTX*, const char*, int);
+int SSL_CTX_use_certificate_chain_file(WOLFSSL_CTX*, const char*);
+int SSL_CTX_use_PrivateKey_file(WOLFSSL_CTX*, const char*, int);
+int SSL_CTX_use_RSAPrivateKey_file(WOLFSSL_CTX*, const char*, int);
+
+#if defined(__cplusplus)
+} /* extern C */
+#endif
+
+#endif // NO_FILESYSTEM
+
+#elif defined(ASIO_USE_ESP_OPENSSL)
+
+#include "internal/ssl_x509.h"
+#include "internal/ssl_pkey.h"
+#include "mbedtls/pem.h"
+#include <stdint.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 // The most applicable OpenSSL version wrtt ASIO usage
 #define OPENSSL_VERSION_NUMBER 0x10100001L
@@ -40,10 +76,7 @@ extern "C" {
 #define SSL_R_SHORT_READ 219
 #define SSL_OP_ALL 0
 #define SSL_OP_SINGLE_DH_USE 0
-//#define OPENSSL_VERSION_NUMBER 0x10001000L
 #define SSL_OP_NO_COMPRESSION 0
-//#define LIBRESSL_VERSION_NUMBER 1
-//#define PEM_R_NO_START_LINE 110
 // Translates mbedTLS PEM parse error, used by ASIO
 #define PEM_R_NO_START_LINE -MBEDTLS_ERR_PEM_NO_HEADER_FOOTER_PRESENT
 
@@ -58,9 +91,6 @@ extern "C" {
 
 #define NID_subject_alt_name 85
 
-#define SSL_MODE_RELEASE_BUFFERS            0x00000000L
-#define SSL_MODE_ENABLE_PARTIAL_WRITE       0x00000001L
-#define SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER 0x00000002L
 
 #define GEN_DNS		2
 #define GEN_IPADD	7
@@ -154,13 +184,6 @@ void *	X509_STORE_CTX_get_ex_data(X509_STORE_CTX *ctx,int idx);
 int SSL_CTX_set_tmp_dh(SSL_CTX *ctx, const DH *dh);
 
 /**
- * @brief Sets SSL mode -- not implemented
- *
- * Current implementation is no-op
- */
-uint32_t SSL_set_mode(SSL *ssl, uint32_t mode);
-
-/**
  * @brief API provaded as declaration only
  *
  */
@@ -182,4 +205,5 @@ int SSL_CTX_clear_chain_certs(SSL_CTX *ctx);
 } /* extern C */
 #endif
 
+#endif /* ASIO_USE_ESP_OPENSSL, ASIO_USE_WOLFSSL */
 #endif /* _ESP_ASIO_OPENSSL_STUBS_H */

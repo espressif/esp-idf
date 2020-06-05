@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 /**
- * @note This file contains a very simple implementation of error stack provided
- * OpenSSL library. It is OFF by default.
+ * @note This file contains a very simple implementation of error stack
+ * for ESP APIs stubs to OpenSSL
  */
 
 #define OPENSSL_PUT_SYSTEM_ERROR() \

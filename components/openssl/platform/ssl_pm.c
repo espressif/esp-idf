@@ -25,7 +25,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
 #include "openssl/bio.h"
-#include "openssl/openssl_err.h"
+#include "openssl/err.h"
 
 #define X509_INFO_STRING_LENGTH 8192
 
@@ -316,7 +316,12 @@ int ssl_pm_handshake(SSL *ssl)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     if (ssl->bio) {
+        // if using BIO, make sure the mode is supported
+        SSL_ASSERT1(ssl->mode & (SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER));
         mbedtls_ssl_set_bio(&ssl_pm->ssl, ssl->bio, mbedtls_bio_send, mbedtls_bio_recv, NULL);
+    } else {
+        // defaults to SSL_read/write using a file descriptor -- expects default mode
+        SSL_ASSERT1(ssl->mode == 0);
     }
 
     ret = ssl_pm_reload_crt(ssl);

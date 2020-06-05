@@ -7,5 +7,6 @@
 # please read the ESP-IDF documents if you need to do this.
 #
 
-COMPONENT_EMBED_TXTFILES := cacert.pem
-COMPONENT_EMBED_TXTFILES += prvtkey.pem
+COMPONENT_EMBED_TXTFILES := ca.crt
+COMPONENT_EMBED_TXTFILES += server.key
+COMPONENT_EMBED_TXTFILES += srv.crt

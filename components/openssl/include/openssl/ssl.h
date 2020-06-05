@@ -22,7 +22,7 @@
 #include "internal/ssl_x509.h"
 #include "internal/ssl_pkey.h"
 #include "openssl/bio.h"
-#include "openssl/openssl_err.h"
+#include "openssl/err.h"
 
 /*
 {
@@ -1887,6 +1887,15 @@ openssl_verify_callback SSL_get_verify_callback(const SSL *s);
  *
  */
 void RSA_free(RSA *r);
+
+/**
+ * @brief Sets SSL mode, partially implemented
+ *
+ * @param ssl SSL context
+ *
+ * @return the new mode bitmask after adding mode
+ */
+uint32_t SSL_set_mode(SSL *ssl, uint32_t mode);
 
 #ifdef __cplusplus
 }

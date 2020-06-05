@@ -15,7 +15,7 @@
 #include "ssl_lib.h"
 #include "openssl/bio.h"
 #include "ssl_dbg.h"
-#include "openssl/openssl_err.h"
+#include "openssl/err.h"
 
 #define DEFAULT_BIO_SIZE 1024
 

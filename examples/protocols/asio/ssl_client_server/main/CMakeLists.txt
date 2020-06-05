@@ -1,3 +1,3 @@
 idf_component_register(SRCS "asio_ssl_main.cpp"
                     INCLUDE_DIRS "."
-        EMBED_TXTFILES cacert.pem prvtkey.pem)
+        EMBED_TXTFILES ca.crt server.key srv.crt)

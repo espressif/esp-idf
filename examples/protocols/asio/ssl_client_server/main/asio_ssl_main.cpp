@@ -1,3 +1,10 @@
+//
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+
 #include <string>
 #include "protocol_examples_common.h"
 #include "esp_event.h"
@@ -11,30 +18,36 @@
 #include "asio/buffer.hpp"
 #include "esp_pthread.h"
 
-extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
-extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
+extern const unsigned char server_pem_start[] asm("_binary_srv_crt_start");
+extern const unsigned char server_pem_end[]   asm("_binary_srv_crt_end");
 
-extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
-extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
+extern const unsigned char cacert_pem_start[] asm("_binary_ca_crt_start");
+extern const unsigned char cacert_pem_end[]   asm("_binary_ca_crt_end");
+
+extern const unsigned char prvtkey_pem_start[] asm("_binary_server_key_start");
+extern const unsigned char prvtkey_pem_end[]   asm("_binary_server_key_end");
 
 const asio::const_buffer cert_chain(cacert_pem_start, cacert_pem_end - cacert_pem_start);
 const asio::const_buffer privkey(prvtkey_pem_start, prvtkey_pem_end - prvtkey_pem_start);
-
-using asio::ip::tcp;
+const asio::const_buffer server_cert(server_pem_start, server_pem_end - server_pem_start);
 
 using asio::ip::tcp;
 
 enum { max_length = 1024 };
 
-class client
-{
+class Client {
 public:
-    client(asio::io_context& io_context,
+    Client(asio::io_context& io_context,
            asio::ssl::context& context,
            const tcp::resolver::results_type& endpoints)
             : socket_(io_context, context)
     {
+
+#if CONFIG_EXAMPLE_CLIENT_VERIFY_PEER
         socket_.set_verify_mode(asio::ssl::verify_peer);
+#else
+        socket_.set_verify_mode(asio::ssl::verify_none);
+#endif // CONFIG_EXAMPLE_CLIENT_VERIFY_PEER
 
         connect(endpoints);
     }
@@ -117,10 +130,9 @@ private:
     char reply_[max_length];
 };
 
-class session : public std::enable_shared_from_this<session>
-{
+class Session : public std::enable_shared_from_this<Session> {
 public:
-    session(tcp::socket socket, asio::ssl::context& context)
+    Session(tcp::socket socket, asio::ssl::context& context)
             : socket_(std::move(socket), context)
     {
     }
@@ -174,20 +186,19 @@ private:
     }
 
     asio::ssl::stream<tcp::socket> socket_;
-    char data_[1024];
+    char data_[max_length];
 };
 
-class server
-{
+class Server {
 public:
-    server(asio::io_context& io_context, unsigned short port)
+    Server(asio::io_context& io_context, unsigned short port)
             : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
               context_(asio::ssl::context::tls_server)
     {
         context_.set_options(
                 asio::ssl::context::default_workarounds
                 | asio::ssl::context::no_sslv2);
-        context_.use_certificate_chain(cert_chain);
+        context_.use_certificate_chain(server_cert);
         context_.use_private_key(privkey, asio::ssl::context::pem);
 
         do_accept();
@@ -201,7 +212,7 @@ private:
                 {
                     if (!error)
                     {
-                        std::make_shared<session>(std::move(socket), context_)->start();
+                        std::make_shared<Session>(std::move(socket), context_)->start();
                     }
 
                     do_accept();
@@ -225,7 +236,7 @@ void ssl_server_thread()
 {
     asio::io_context io_context;
 
-    server s(io_context, 443);
+    Server s(io_context, 443);
 
     io_context.run();
 }
@@ -240,9 +251,11 @@ void ssl_client_thread()
     auto endpoints = resolver.resolve(server_ip, server_port);
 
     asio::ssl::context ctx(asio::ssl::context::tls_client);
-    ctx.use_certificate_chain(cert_chain);
+#if CONFIG_EXAMPLE_CLIENT_VERIFY_PEER
+    ctx.add_certificate_authority(cert_chain);
+#endif // CONFIG_EXAMPLE_CLIENT_VERIFY_PEER
 
-    client c(io_context, ctx, endpoints);
+    Client c(io_context, ctx, endpoints);
 
     io_context.run();
 

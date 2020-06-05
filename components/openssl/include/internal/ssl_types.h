@@ -21,6 +21,7 @@
 
 #include "ssl_code.h"
 #include <stddef.h>
+#include <stdint.h>
 
 typedef void SSL_CIPHER;
 
@@ -256,7 +257,7 @@ struct ssl_st
 
     X509_VERIFY_PARAM param;
 
-    int err;
+    uint32_t mode;
 
     void (*info_callback) (const SSL *ssl, int type, int val);
 

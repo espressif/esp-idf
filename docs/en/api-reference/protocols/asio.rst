@@ -14,12 +14,12 @@ Asio also comes with a number of examples which could be find under Documentatio
 Supported features
 ^^^^^^^^^^^^^^^^^^
 ESP platform port currently supports only network asynchronous socket operations; does not support serial port.
-SSL/TLS support if disabled by default and could be enabled in component configuration menu and choosing TLS library from
+SSL/TLS support is disabled by default and could be enabled in component configuration menu by choosing TLS library from
 
 - mbedTLS with OpenSSL translation layer (default option)
 - wolfSSL
 
-SSL support is very basic at this stage, not including
+SSL support is very basic at this stage and it does include following features:
 
 - Verification callbacks
 - DH property files

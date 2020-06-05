@@ -1597,7 +1597,9 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
 void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ctx);
-    SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    if (verify_callback) {
+        SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    }
 
     ctx->verify_mode = mode;
     ctx->default_verify_callback = verify_callback;
@@ -1609,7 +1611,9 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ssl);
-    SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    if (verify_callback) {
+        SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    }
 
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;
@@ -1668,4 +1672,13 @@ int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos, unsigned 
      }
      ctx->ssl_alpn.alpn_list[i] = NULL;
      return 0;
+}
+
+/**
+ * @brief Set the mode, but might assert if the related mode is not supported once session starts
+ */
+uint32_t SSL_set_mode(SSL *ssl, uint32_t mode)
+{
+    ssl->mode |= mode;
+    return ssl->mode;
 }

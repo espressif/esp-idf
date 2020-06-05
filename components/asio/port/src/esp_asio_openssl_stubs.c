@@ -49,11 +49,6 @@ X509_NAME *X509_get_subject_name(X509 *a)
     return NULL;
 }
 
-uint32_t SSL_set_mode(SSL *ssl, uint32_t mode)
-{
-    return 0;
-}
-
 int SSL_CTX_clear_chain_certs(SSL_CTX *ctx)
 {
     return 1;

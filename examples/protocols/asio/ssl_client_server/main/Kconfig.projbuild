@@ -25,4 +25,12 @@ menu "Example Configuration"
         help
             Asio example server ip for the ASIO client to connect to.
 
+    config EXAMPLE_CLIENT_VERIFY_PEER
+        bool "Client to verify peer"
+        default n
+        depends on EXAMPLE_CLIENT
+        help
+            This option sets client's mode to verify peer, default is
+            verify-none
+
 endmenu
