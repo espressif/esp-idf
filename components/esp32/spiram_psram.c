@@ -900,8 +900,14 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     bootloader_common_vddsdio_configure();
     // GPIO related settings
     psram_gpio_config(&psram_io, mode);
+
+    /* 16Mbit psram ID read error
+     * workaround: Issue a pre-condition of dummy read id, then Read ID command
+     */
+    psram_read_id(&s_psram_id);
     psram_read_id(&s_psram_id);
     if (!PSRAM_IS_VALID(s_psram_id)) {
+        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", (uint32_t)s_psram_id);
         return ESP_FAIL;
     }
 
