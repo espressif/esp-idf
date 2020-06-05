@@ -81,7 +81,7 @@ typedef enum {
 #define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "btcT"
 #define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_LEN              300//60
+#define BTC_TASK_QUEUE_LEN              500//60
 
 #define BTC_A2DP_SINK_TASK_PINNED_TO_CORE     (TASK_PINNED_TO_CORE)
 #define BTC_A2DP_SINK_TASK_STACK_SIZE         (CONFIG_A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig

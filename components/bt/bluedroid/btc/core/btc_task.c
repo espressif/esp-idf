@@ -60,6 +60,8 @@
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
 
+void bt_abort_with_coredump_log(void);
+
 static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
     [BTC_PID_DEV]         = {btc_dev_call_handler,        NULL                    },
@@ -154,7 +156,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
         BTC_TRACE_ERROR("Btc Post failed\n");
     #ifdef TASK_MONITOR_MODE
         ets_printf("!! Btc Post failed.Timeout Abort !!");
-        abort();
+        bt_abort_with_coredump_log();
     #endif
         return BT_STATUS_BUSY;
     }

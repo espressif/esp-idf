@@ -81,6 +81,8 @@ extern void avdt_rcv_sync_info (BT_HDR *p_buf);
 #include "btm_ble_int.h"
 #endif
 
+void bt_abort_with_coredump_log(void);
+
 //#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
 //#include "bt_app_common.h"
 //#endif
@@ -267,7 +269,7 @@ task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout)
 
     #ifdef TASK_MONITOR_MODE
         ets_printf("!! Btu Post failed.Timeout Abort !!");
-        abort();
+        bt_abort_with_coredump_log();
     #endif
         return TASK_POST_FAIL;
     }

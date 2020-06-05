@@ -33,6 +33,8 @@
 #include "osi/mutex.h"
 #include "osi/fixed_queue.h"
 
+void bt_abort_with_coredump_log(void);
+
 typedef struct {
     uint16_t opcode;
     future_t *complete_future;
@@ -143,7 +145,7 @@ task_post_status_t hci_host_task_post(task_post_t timeout)
     if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
     #ifdef TASK_MONITOR_MODE
         ets_printf("!! HCI send fail.Timeout Abort !!");
-        abort();
+        bt_abort_with_coredump_log();
     #endif
         HCI_TRACE_ERROR("xHciHostQueue failed\n");
         return TASK_POST_FAIL;

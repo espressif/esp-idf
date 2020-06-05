@@ -1438,4 +1438,9 @@ void esp_bt_check_need_restart()
     }
 }
 
+void bt_abort_with_coredump_log(void)
+{
+    __asm__ __volatile__("ill\n");
+}
+
 #endif /*  CONFIG_BT_ENABLED */
