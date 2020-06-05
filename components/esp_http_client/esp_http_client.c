@@ -52,6 +52,7 @@ typedef struct {
     esp_http_buffer_t   *buffer;        /*!< data buffer as linked list */
     int                 status_code;    /*!< status code (integer) */
     int                 content_length; /*!< data length */
+    int                 chunk_length;   /*!< chunk length */
     int                 data_offset;    /*!< offset to http data (Skip header) */
     int                 data_process;   /*!< data processed */
     int                 method;         /*!< http method */
@@ -266,6 +267,14 @@ static int http_on_message_complete(http_parser *parser)
 static int http_on_chunk_complete(http_parser *parser)
 {
     ESP_LOGD(TAG, "http_on_chunk_complete");
+    return 0;
+}
+
+static int http_on_chunk_header(http_parser *parser)
+{
+    esp_http_client_handle_t client = parser->data;
+    client->response->chunk_length = parser->content_length;
+    ESP_LOGD(TAG, "http_on_chunk_header, chunk_length");
     return 0;
 }
 
@@ -604,6 +613,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     client->parser_settings->on_body = http_on_body;
     client->parser_settings->on_message_complete = http_on_message_complete;
     client->parser_settings->on_chunk_complete = http_on_chunk_complete;
+    client->parser_settings->on_chunk_header = http_on_chunk_header;
     client->parser->data = client;
     client->event.client = client;
 
@@ -1356,4 +1366,18 @@ esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, co
         ESP_LOGE(TAG, "Failed to get URL");
     }
     return ESP_FAIL;
+}
+
+esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len)
+{
+    if (client == NULL || len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (esp_http_client_is_chunked_response(client)) {
+        *len = client->response->chunk_length;
+    } else {
+        ESP_LOGE(TAG, "Response is not chunked");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
