@@ -72,10 +72,13 @@ xt_highint5:
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /* Timer 2 interrupt */
+    rsr     a0, INTENABLE
+    extui   a0, a0, 16, 1
+    beqz    a0, 1f
     rsr     a0, INTERRUPT
     extui   a0, a0, 16, 1
     bnez    a0, .handle_multicore_debug_int
-
+1:
     /* See if we're here for the tg1 watchdog interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_T1_WDT_INUM, 1
@@ -180,6 +183,10 @@ xt_highint5:
 .handle_multicore_debug_int:
 
     wsr     a2, depc                        /* temp storage */
+
+    rsr.ccount  a2
+    addmi   a2, a2, (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ*50)
+    wsr     a2, CCOMPARE2
 
     /* Enable Integration Mode */
     movi    a2, ERI_ADDR(APB_ITCTRL)

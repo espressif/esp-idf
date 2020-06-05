@@ -18,7 +18,7 @@
 #include "soc/soc.h"
 
 /*
-This file contains the default handlers for the high interrupt levels as well as some specialized exceptions. 
+This file contains the default handlers for the high interrupt levels as well as some specialized exceptions.
 The default behaviour is to just exit the interrupt or call the panic handler on the exceptions
 */
 
@@ -35,14 +35,24 @@ _xt_debugexception:
 
 #define XT_DEBUGCAUSE_DI        (5)
 
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#if (CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 0)
     getcoreid   a0
     beqz    a0, 1f
+#elif (CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 1)
+    getcoreid   a0
+    bnez    a0, 1f
+#else
+    j       1f
+#endif
 
     rsr     a0, DEBUGCAUSE
     extui   a0, a0, XT_DEBUGCAUSE_DI, 1
     bnez    a0, _xt_debug_di_exc
+1:
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
 
-1:  movi    a0,PANIC_RSN_DEBUGEXCEPTION
+    movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,EXCCAUSE
     /* _xt_panic assumes a level 1 exception. As we're
        crashing anyhow, copy EPC & EXCSAVE from DEBUGLEVEL
@@ -54,10 +64,47 @@ _xt_debugexception:
     call0   _xt_panic                       /* does not return */
     rfi     XCHAL_DEBUGLEVEL
 
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
     .align  4
 _xt_debug_di_exc:
 
-    movi    a0, 1234
+/*  After testing,
+    In 80 MHz, it will task 5us to loop 45 times;
+    In 160 MHz, it will task 5us to loop 90 times;
+    In 240 MHz, it will task 5us to loop 135 times;*/
+#if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 54
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 108
+# else
+    movi    a0, 135
+# endif
+
+#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 135
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 189
+# else
+    movi    a0, 243
+# endif
+
+#else
+    movi    a0, 243
+#endif
+
+
 1:  addi    a0, a0, -1
     .rept   4
     nop
@@ -66,6 +113,7 @@ _xt_debug_di_exc:
 
     rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
 
 #endif /* Debug exception */
 

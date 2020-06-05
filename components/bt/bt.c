@@ -984,7 +984,7 @@ static void hli_queue_setup_pinned_to_core(int core_id)
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
 
-    ets_printf("\n BT version: high level int 0510\n");
+    ets_printf("\n BT version: high level int 0605\n");
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
 

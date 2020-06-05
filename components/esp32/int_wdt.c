@@ -115,7 +115,7 @@ void esp_int_wdt_init() {
 #define _SYM2STR(x)     # x
 #define SYM2STR(x)      _SYM2STR(x)
     uint32_t eriadrs, scratch = 0, immediate = 0;
-    if (xPortGetCoreID() == PRO_CPU_NUM) {
+    if (xPortGetCoreID() != CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE) {
         __asm__ __volatile__ (
                 /* Enable Xtensa Debug Module Integration Mode */
                 "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_ITCTRL)) "\n"
