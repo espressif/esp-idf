@@ -99,5 +99,4 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 
     vSemaphoreDelete(semphr_done);
 }
-
 #endif

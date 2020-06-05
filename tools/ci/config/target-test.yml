@@ -561,6 +561,12 @@ UT_036:
     - UT_T1_PSRAMV0
     - psram
 
+UT_037:
+  extends: .unit_test_template
+  tags:
+    - ESP32S2_IDF
+    - UT_T2_1
+
 # ToDo: re-enable this job when ESP32-S2 LEDC runner installed
 # UT_037:
 #   extends: .unit_test_template
