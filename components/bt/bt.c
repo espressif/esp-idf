@@ -1385,6 +1385,18 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     return ESP_OK;
 }
 
+/**
+ * This function re-write controller's function,
+ * As coredump can not show paramerters in function which is in a .a file.
+ *
+ * After coredump fixing this issue, just delete this function.
+ */
+void IRAM_ATTR r_assert(const char *condition, int param0, int param1, const char *file, int line)
+{
+    __asm__ __volatile__("ill\n");
+}
+
+
 #define BT_IS_ALIVE true
 #define BT_NOT_ALIVE false
 
