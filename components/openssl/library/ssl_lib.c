@@ -1476,6 +1476,46 @@ long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
     return ctx->read_ahead;
 }
 
+char *SSL_CTX_get_ex_data(const SSL_CTX *ctx, int idx)
+{
+    SSL_ASSERT2(ctx);
+
+    return NULL;
+}
+
+int SSL_CTX_set_app_data(SSL_CTX *ctx, void *arg)
+{
+    SSL_ASSERT1(ctx);
+
+    return 0;
+}
+
+void *SSL_get_app_data(SSL *ssl)
+{
+    SSL_ASSERT2(ssl);
+
+    return NULL;
+}
+
+void SSL_set_app_data(SSL *ssl, void *arg)
+{
+    SSL_ASSERT3(ssl);
+}
+
+void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio)
+{
+    SSL_ASSERT3(ssl);
+
+    ssl->bio = rbio;
+}
+
+int SSL_CTX_use_certificate_chain_file(SSL_CTX *ctx, const char *file)
+{
+    SSL_ASSERT1(1)
+
+    return -1;
+}
+
 /**
  * @brief set SSL session time
  */
@@ -1573,6 +1613,26 @@ void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_C
 }
 
 /**
+ * @brief get the SSL verify callback from the context
+ */
+openssl_verify_callback SSL_CTX_get_verify_callback(const SSL_CTX *ctx)
+{
+    SSL_ASSERT2(ctx);
+
+    return ctx->default_verify_callback;
+}
+
+/**
+ * @brief get the SSL verify callback from ssl pointer
+ */
+openssl_verify_callback SSL_get_verify_callback(const SSL *ssl)
+{
+    SSL_ASSERT2(ssl);
+
+    return ssl->verify_callback;
+}
+
+/**
  * @brief set the ALPN protocols in the preferred order. SSL APIs require the
  * protocols in a <length><value><length2><value2> format. mbedtls doesn't need
  * that though. We sanitize that here itself. So convert from:
@@ -1606,4 +1666,3 @@ int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos, unsigned 
      ctx->ssl_alpn.alpn_list[i] = NULL;
      return 0;
 }
-
