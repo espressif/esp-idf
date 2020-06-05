@@ -94,6 +94,7 @@ typedef enum {
     WIFI_REASON_ASSOC_FAIL               = 203,
     WIFI_REASON_HANDSHAKE_TIMEOUT        = 204,
     WIFI_REASON_CONNECTION_FAIL          = 205,
+    WIFI_REASON_AUTH_CHANGED             = 206,
 } wifi_err_reason_t;
 
 typedef enum {
