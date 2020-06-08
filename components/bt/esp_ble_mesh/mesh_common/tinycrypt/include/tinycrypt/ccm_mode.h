@@ -89,9 +89,9 @@ extern "C" {
 
 /* struct tc_ccm_mode_struct represents the state of a CCM computation */
 typedef struct tc_ccm_mode_struct {
-	TCAesKeySched_t sched; /* AES key schedule */
-	uint8_t *nonce; /* nonce required by CCM */
-	unsigned int mlen; /* mac length in bytes (parameter t in SP-800 38C) */
+    TCAesKeySched_t sched; /* AES key schedule */
+    uint8_t *nonce; /* nonce required by CCM */
+    unsigned int mlen; /* mac length in bytes (parameter t in SP-800 38C) */
 } *TCCcmMode_t;
 
 /**
@@ -109,7 +109,7 @@ typedef struct tc_ccm_mode_struct {
  * @param mlen -- mac length in bytes (parameter t in SP-800 38C)
  */
 int tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
-		  unsigned int nlen, unsigned int mlen);
+                  unsigned int nlen, unsigned int mlen);
 
 /**
  * @brief CCM tag generation and encryption procedure
@@ -154,9 +154,9 @@ int tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
  *          7: always 0
  */
 int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
-			   	 const uint8_t *associated_data,
-			   	 unsigned int alen, const uint8_t *payload,
-				 unsigned int plen, TCCcmMode_t c);
+                                 const uint8_t *associated_data,
+                                 unsigned int alen, const uint8_t *payload,
+                                 unsigned int plen, TCCcmMode_t c);
 
 /**
  * @brief CCM decryption and tag verification procedure
@@ -200,9 +200,9 @@ int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
  *          7: always 0
  */
 int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
-				   const uint8_t *associated_data,
-				   unsigned int alen, const uint8_t *payload, unsigned int plen,
-				   TCCcmMode_t c);
+                                   const uint8_t *associated_data,
+                                   unsigned int alen, const uint8_t *payload, unsigned int plen,
+                                   TCCcmMode_t c);
 
 #ifdef __cplusplus
 }
