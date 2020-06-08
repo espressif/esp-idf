@@ -74,7 +74,7 @@
  * for some platforms, such as Unix and Linux. For other platforms, you may need
  * to provide another PRNG function.
 */
-#define default_RNG_defined 1
+#define default_RNG_defined 0
 
 int default_CSPRNG(uint8_t *dest, unsigned int size);
 
