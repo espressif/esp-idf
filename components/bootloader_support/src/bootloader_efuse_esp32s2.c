@@ -18,6 +18,7 @@
 
 uint8_t bootloader_common_get_chip_revision(void)
 {
+    // should return the same value as esp_efuse_get_chip_ver()
     /* No other revisions for ESP32-S2 */
     return 0;
 }

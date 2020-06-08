@@ -32,6 +32,7 @@ const static char *TAG = "efuse";
 // Returns chip version from efuse
 uint8_t esp_efuse_get_chip_ver(void)
 {
+    // should return the same value as bootloader_common_get_chip_revision()
     uint32_t chip_ver = 0;
     // TODO: ESP32S2 does not have this field
     return chip_ver;
@@ -41,7 +42,7 @@ uint8_t esp_efuse_get_chip_ver(void)
 uint32_t esp_efuse_get_pkg_ver(void)
 {
     uint32_t pkg_ver = 0;
-    // TODO: ESP32S2 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_PKG_VERSION, &pkg_ver, 4);
     return pkg_ver;
 }
 
