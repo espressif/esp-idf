@@ -334,6 +334,25 @@ esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_addr(uint16_t unicas
     return btc_ble_mesh_provisioner_get_node_with_addr(unicast_addr);
 }
 
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_name(const char *name)
+{
+    if (!name || (strlen(name) > ESP_BLE_MESH_NODE_NAME_MAX_LEN)) {
+        return NULL;
+    }
+
+    return btc_ble_mesh_provisioner_get_node_with_name(name);
+}
+
+uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return btc_ble_mesh_provisioner_get_prov_node_count();
+}
+
+const esp_ble_mesh_node_t **esp_ble_mesh_provisioner_get_node_table_entry(void)
+{
+    return btc_ble_mesh_provisioner_get_node_table_entry();
+}
+
 esp_err_t esp_ble_mesh_provisioner_delete_node_with_uuid(const uint8_t uuid[16])
 {
     btc_ble_mesh_prov_args_t arg = {0};
@@ -501,12 +520,6 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
 {
     return bt_mesh_provisioner_local_net_key_get(net_idx);
 }
-
-uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
-{
-    return btc_ble_mesh_provisioner_get_prov_node_count();
-}
-
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)
