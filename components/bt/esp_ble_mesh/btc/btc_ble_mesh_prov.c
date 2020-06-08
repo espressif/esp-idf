@@ -782,6 +782,20 @@ esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicas
     return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_with_addr(unicast_addr);
 }
 
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_name(const char *name)
+{
+    return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_with_name(name);
+}
+
+u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return bt_mesh_provisioner_get_node_count();
+}
+
+const esp_ble_mesh_node_t **btc_ble_mesh_provisioner_get_node_table_entry(void)
+{
+    return (const esp_ble_mesh_node_t **)bt_mesh_provisioner_get_node_table_entry();
+}
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
@@ -989,11 +1003,6 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem, u
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
 {
     return (const esp_ble_mesh_comp_t *)bt_mesh_comp_get();
-}
-
-u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
-{
-    return bt_mesh_provisioner_get_node_count();
 }
 
 /* Configuration Models */
