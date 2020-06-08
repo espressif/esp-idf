@@ -75,8 +75,8 @@
  *          the signer's public key and the signature values (r and s).
  */
 
-#ifndef __TC_ECC_DSA_H__
-#define __TC_ECC_DSA_H__
+#ifndef __BLE_MESH_TC_ECC_DSA_H__
+#define __BLE_MESH_TC_ECC_DSA_H__
 
 #include <tinycrypt/ecc.h>
 
@@ -136,4 +136,4 @@ int uECC_verify(const uint8_t *p_public_key, const uint8_t *p_message_hash,
 }
 #endif
 
-#endif /* __TC_ECC_DSA_H__ */
+#endif /* __BLE_MESH_TC_ECC_DSA_H__ */

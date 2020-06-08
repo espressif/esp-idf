@@ -71,8 +71,8 @@
  *            3) call tc_ccm_mode_decrypt to decrypt data and verify tag.
  */
 
-#ifndef __TC_CCM_MODE_H__
-#define __TC_CCM_MODE_H__
+#ifndef __BLE_MESH_TC_CCM_MODE_H__
+#define __BLE_MESH_TC_CCM_MODE_H__
 
 #include <tinycrypt/aes.h>
 #include <stddef.h>
@@ -208,4 +208,4 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 }
 #endif
 
-#endif /* __TC_CCM_MODE_H__ */
+#endif /* __BLE_MESH_TC_CCM_MODE_H__ */

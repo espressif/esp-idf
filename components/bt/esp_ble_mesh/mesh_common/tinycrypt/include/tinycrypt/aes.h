@@ -46,8 +46,8 @@
  *              2) call tc_aes_encrypt/decrypt to process the data.
  */
 
-#ifndef __TC_AES_H__
-#define __TC_AES_H__
+#ifndef __BLE_MESH_TC_AES_H__
+#define __BLE_MESH_TC_AES_H__
 
 #include <stdint.h>
 
@@ -127,4 +127,4 @@ int tc_aes_decrypt(uint8_t *out, const uint8_t *in,
 }
 #endif
 
-#endif /* __TC_AES_H__ */
+#endif /* __BLE_MESH_TC_AES_H__ */

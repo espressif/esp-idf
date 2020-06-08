@@ -54,8 +54,8 @@
  *              operation.
  */
 
-#ifndef __TC_SHA256_H__
-#define __TC_SHA256_H__
+#ifndef __BLE_MESH_TC_SHA256_H__
+#define __BLE_MESH_TC_SHA256_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -126,4 +126,4 @@ int tc_sha256_final(uint8_t *digest, TCSha256State_t s);
 }
 #endif
 
-#endif /* __TC_SHA256_H__ */
+#endif /* __BLE_MESH_TC_SHA256_H__ */
