@@ -110,22 +110,22 @@ extern "C" {
 
 /* struct tc_cmac_struct represents the state of a CMAC computation */
 typedef struct tc_cmac_struct {
-/* initialization vector */
-	uint8_t iv[TC_AES_BLOCK_SIZE];
-/* used if message length is a multiple of block_size bytes */
-	uint8_t K1[TC_AES_BLOCK_SIZE];
-/* used if message length isn't a multiple block_size bytes */
-	uint8_t K2[TC_AES_BLOCK_SIZE];
-/* where to put bytes that didn't fill a block */
-	uint8_t leftover[TC_AES_BLOCK_SIZE];
-/* identifies the encryption key */
-	unsigned int keyid;
-/* next available leftover location */
-	unsigned int leftover_offset;
-/* AES key schedule */
-	TCAesKeySched_t sched;
-/* calls to tc_cmac_update left before re-key */
-	uint64_t countdown;
+    /* initialization vector */
+    uint8_t iv[TC_AES_BLOCK_SIZE];
+    /* used if message length is a multiple of block_size bytes */
+    uint8_t K1[TC_AES_BLOCK_SIZE];
+    /* used if message length isn't a multiple block_size bytes */
+    uint8_t K2[TC_AES_BLOCK_SIZE];
+    /* where to put bytes that didn't fill a block */
+    uint8_t leftover[TC_AES_BLOCK_SIZE];
+    /* identifies the encryption key */
+    unsigned int keyid;
+    /* next available leftover location */
+    unsigned int leftover_offset;
+    /* AES key schedule */
+    TCAesKeySched_t sched;
+    /* calls to tc_cmac_update left before re-key */
+    uint64_t countdown;
 } *TCCmacState_t;
 
 /**
@@ -140,7 +140,7 @@ typedef struct tc_cmac_struct {
  * @param sched IN -- AES key schedule
  */
 int tc_cmac_setup(TCCmacState_t s, const uint8_t *key,
-		      TCAesKeySched_t sched);
+                  TCAesKeySched_t sched);
 
 /**
  * @brief Erases the CMAC state
