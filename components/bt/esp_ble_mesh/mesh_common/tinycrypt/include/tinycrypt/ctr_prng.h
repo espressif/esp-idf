@@ -56,8 +56,8 @@
  *              4) call tc_ctr_prng_uninstantiate to zero out the prng context
  */
 
-#ifndef __TC_CTR_PRNG_H__
-#define __TC_CTR_PRNG_H__
+#ifndef __BLE_MESH_TC_CTR_PRNG_H__
+#define __BLE_MESH_TC_CTR_PRNG_H__
 
 #include <tinycrypt/aes.h>
 
@@ -163,4 +163,4 @@ void tc_ctr_prng_uninstantiate(TCCtrPrng_t *const ctx);
 }
 #endif
 
-#endif /* __TC_CTR_PRNG_H__ */
+#endif /* __BLE_MESH_TC_CTR_PRNG_H__ */

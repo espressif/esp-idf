@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef __TC_CONSTANTS_H__
-#define __TC_CONSTANTS_H__
+#ifndef __BLE_MESH_TC_CONSTANTS_H__
+#define __BLE_MESH_TC_CONSTANTS_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,4 +58,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __TC_CONSTANTS_H__ */
+#endif /* __BLE_MESH_TC_CONSTANTS_H__ */

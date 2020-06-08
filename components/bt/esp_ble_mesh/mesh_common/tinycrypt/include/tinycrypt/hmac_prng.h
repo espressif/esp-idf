@@ -65,8 +65,8 @@
  *              3) call tc_hmac_prng_generate to out put the pseudo-random data.
  */
 
-#ifndef __TC_HMAC_PRNG_H__
-#define __TC_HMAC_PRNG_H__
+#ifndef __BLE_MESH_TC_HMAC_PRNG_H__
+#define __BLE_MESH_TC_HMAC_PRNG_H__
 
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/hmac.h>
@@ -161,4 +161,4 @@ int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng);
 }
 #endif
 
-#endif /* __TC_HMAC_PRNG_H__ */
+#endif /* __BLE_MESH_TC_HMAC_PRNG_H__ */

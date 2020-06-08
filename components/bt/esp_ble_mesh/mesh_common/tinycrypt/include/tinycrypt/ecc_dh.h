@@ -66,8 +66,8 @@
  *  Security: The curve NIST p-256 provides approximately 128 bits of security.
  */
 
-#ifndef __TC_ECC_DH_H__
-#define __TC_ECC_DH_H__
+#ifndef __BLE_MESH_TC_ECC_DH_H__
+#define __BLE_MESH_TC_ECC_DH_H__
 
 #include <tinycrypt/ecc.h>
 
@@ -128,4 +128,4 @@ int uECC_shared_secret(const uint8_t *p_public_key, const uint8_t *p_private_key
 }
 #endif
 
-#endif /* __TC_ECC_DH_H__ */
+#endif /* __BLE_MESH_TC_ECC_DH_H__ */
