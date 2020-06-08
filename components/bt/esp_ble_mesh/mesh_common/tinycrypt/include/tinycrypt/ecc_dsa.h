@@ -103,7 +103,7 @@ extern "C" {
  * attack.
  */
 int uECC_sign(const uint8_t *p_private_key, const uint8_t *p_message_hash,
-	      unsigned p_hash_size, uint8_t *p_signature, uECC_Curve curve);
+              unsigned p_hash_size, uint8_t *p_signature, uECC_Curve curve);
 
 #ifdef ENABLE_TESTS
 /*
@@ -111,14 +111,14 @@ int uECC_sign(const uint8_t *p_private_key, const uint8_t *p_message_hash,
  * Refer to uECC_sign() function for real applications.
  */
 int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
-		     unsigned int hash_size, uECC_word_t *k, uint8_t *signature,
-		     uECC_Curve curve);
+                     unsigned int hash_size, uECC_word_t *k, uint8_t *signature,
+                     uECC_Curve curve);
 #endif
 
 /**
  * @brief Verify an ECDSA signature.
  * @return returns TC_SUCCESS (1) if the signature is valid
- * 	   returns TC_FAIL (0) if the signature is invalid.
+ *     returns TC_FAIL (0) if the signature is invalid.
  *
  * @param p_public_key IN -- The signer's public key.
  * @param p_message_hash IN -- The hash of the signed data.
@@ -130,7 +130,7 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
  * the signature values (hash_size and signature).
  */
 int uECC_verify(const uint8_t *p_public_key, const uint8_t *p_message_hash,
-		unsigned int p_hash_size, const uint8_t *p_signature, uECC_Curve curve);
+                unsigned int p_hash_size, const uint8_t *p_signature, uECC_Curve curve);
 
 #ifdef __cplusplus
 }

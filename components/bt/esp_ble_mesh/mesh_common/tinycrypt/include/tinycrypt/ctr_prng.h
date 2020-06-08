@@ -68,14 +68,14 @@ extern "C" {
 #endif
 
 typedef struct {
-	/* updated each time another BLOCKLEN_BYTES bytes are produced */
-	uint8_t V[TC_AES_BLOCK_SIZE]; 
+    /* updated each time another BLOCKLEN_BYTES bytes are produced */
+    uint8_t V[TC_AES_BLOCK_SIZE];
 
-	/* updated whenever the PRNG is reseeded */
-	struct tc_aes_key_sched_struct key;
+    /* updated whenever the PRNG is reseeded */
+    struct tc_aes_key_sched_struct key;
 
-	/* number of requests since initialization/reseeding */
-	uint64_t reseedCount;
+    /* number of requests since initialization/reseeding */
+    uint64_t reseedCount;
 } TCCtrPrng_t;
 
 
@@ -98,11 +98,11 @@ typedef struct {
  *  @param plen IN -- personalization length in bytes
  *
  */
-int tc_ctr_prng_init(TCCtrPrng_t * const ctx, 
-		     uint8_t const * const entropy,
-		     unsigned int entropyLen, 
-		     uint8_t const * const personalization,
-		     unsigned int pLen);
+int tc_ctr_prng_init(TCCtrPrng_t *const ctx,
+                     uint8_t const *const entropy,
+                     unsigned int entropyLen,
+                     uint8_t const *const personalization,
+                     unsigned int pLen);
 
 /**
  *  @brief CTR-PRNG reseed procedure
@@ -123,11 +123,11 @@ int tc_ctr_prng_init(TCCtrPrng_t * const ctx,
  *  @param additional_input IN -- additional input to the prng (may be null)
  *  @param additionallen IN -- additional input length in bytes
  */
-int tc_ctr_prng_reseed(TCCtrPrng_t * const ctx, 
-		       uint8_t const * const entropy,
-		       unsigned int entropyLen,
-		       uint8_t const * const additional_input,
-		       unsigned int additionallen);
+int tc_ctr_prng_reseed(TCCtrPrng_t *const ctx,
+                       uint8_t const *const entropy,
+                       unsigned int entropyLen,
+                       uint8_t const *const additional_input,
+                       unsigned int additionallen);
 
 /**
  *  @brief CTR-PRNG generate procedure
@@ -145,11 +145,11 @@ int tc_ctr_prng_reseed(TCCtrPrng_t * const ctx,
  *  @param out IN/OUT -- buffer to receive output
  *  @param outlen IN -- size of out buffer in bytes
  */
-int tc_ctr_prng_generate(TCCtrPrng_t * const ctx,
-			 uint8_t const * const additional_input,
-			 unsigned int additionallen,
-			 uint8_t * const out,
-			 unsigned int outlen);
+int tc_ctr_prng_generate(TCCtrPrng_t *const ctx,
+                         uint8_t const *const additional_input,
+                         unsigned int additionallen,
+                         uint8_t *const out,
+                         unsigned int outlen);
 
 /**
  *  @brief CTR-PRNG uninstantiate procedure
@@ -157,7 +157,7 @@ int tc_ctr_prng_generate(TCCtrPrng_t * const ctx,
  *  @return none
  *  @param ctx IN/OUT -- the PRNG context
  */
-void tc_ctr_prng_uninstantiate(TCCtrPrng_t * const ctx);
+void tc_ctr_prng_uninstantiate(TCCtrPrng_t *const ctx);
 
 #ifdef __cplusplus
 }
