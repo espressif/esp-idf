@@ -24,6 +24,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "enc28j60.h"
 #include "sdkconfig.h"
 
@@ -919,8 +920,12 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create enc28j60 task */
-    BaseType_t xReturned = xTaskCreate(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
-                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
+                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create enc28j60 task failed", err, NULL);
 
     return &(emac->parent);
