@@ -193,6 +193,18 @@ static void adjtime_corr_stop (void)
 int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if defined( WITH_FRC ) || defined( WITH_RTC )
+    if(outdelta != NULL){
+        _lock_acquire(&s_adjust_time_lock);
+        adjust_boot_time();
+        if (adjtime_start != 0) {
+            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
+            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
+        } else {
+            outdelta->tv_sec    = 0;
+            outdelta->tv_usec   = 0;
+        }
+        _lock_release(&s_adjust_time_lock);
+    }
     if(delta != NULL){
         int64_t sec  = delta->tv_sec;
         int64_t usec = delta->tv_usec;
@@ -209,18 +221,6 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         adjust_boot_time();
         adjtime_start = get_time_since_boot();
         adjtime_total_correction = sec * 1000000L + usec;
-        _lock_release(&s_adjust_time_lock);
-    }
-    if(outdelta != NULL){
-        _lock_acquire(&s_adjust_time_lock);
-        adjust_boot_time();
-        if (adjtime_start != 0) {
-            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
-            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
-        } else {
-            outdelta->tv_sec    = 0;
-            outdelta->tv_usec   = 0;
-        }
         _lock_release(&s_adjust_time_lock);
     }
   return 0;
