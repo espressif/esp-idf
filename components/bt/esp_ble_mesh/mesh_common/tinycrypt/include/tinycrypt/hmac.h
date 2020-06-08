@@ -60,8 +60,8 @@
  *              4) call tc_hmac_final to out put the tag.
  */
 
-#ifndef __TC_HMAC_H__
-#define __TC_HMAC_H__
+#ifndef __BLE_MESH_TC_HMAC_H__
+#define __BLE_MESH_TC_HMAC_H__
 
 #include <tinycrypt/sha256.h>
 
@@ -136,4 +136,4 @@ int tc_hmac_final(uint8_t *tag, unsigned int taglen, TCHmacState_t ctx);
 }
 #endif
 
-#endif /*__TC_HMAC_H__*/
+#endif /*__BLE_MESH_TC_HMAC_H__*/

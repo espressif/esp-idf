@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef __TC_UTILS_H__
-#define __TC_UTILS_H__
+#ifndef __BLE_MESH_TC_UTILS_H__
+#define __BLE_MESH_TC_UTILS_H__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -118,4 +118,4 @@ int _compare(const uint8_t *a, const uint8_t *b, size_t size);
 }
 #endif
 
-#endif /* __TC_UTILS_H__ */
+#endif /* __BLE_MESH_TC_UTILS_H__ */

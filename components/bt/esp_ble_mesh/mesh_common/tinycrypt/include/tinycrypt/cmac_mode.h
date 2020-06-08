@@ -94,8 +94,8 @@
  *           tc_cmac_erase to accomplish this.
  */
 
-#ifndef __TC_CMAC_MODE_H__
-#define __TC_CMAC_MODE_H__
+#ifndef __BLE_MESH_TC_CMAC_MODE_H__
+#define __BLE_MESH_TC_CMAC_MODE_H__
 
 #include <tinycrypt/aes.h>
 
@@ -191,4 +191,4 @@ int tc_cmac_final(uint8_t *tag, TCCmacState_t s);
 }
 #endif
 
-#endif /* __TC_CMAC_MODE_H__ */
+#endif /* __BLE_MESH_TC_CMAC_MODE_H__ */
