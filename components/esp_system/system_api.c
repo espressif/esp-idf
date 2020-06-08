@@ -6,7 +6,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "panic_internal.h"
+#include "esp_private/panic_internal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

@@ -130,7 +130,7 @@ static int esp_core_dump_uart_get_char(void) {
     return i;
 }
 
-void esp_core_dump_to_uart(XtExcFrame *frame)
+void esp_core_dump_to_uart(panic_info_t *info)
 {
     core_dump_write_config_t wr_cfg;
     core_dump_write_data_t wr_data;
@@ -163,7 +163,7 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
         ch = esp_core_dump_uart_get_char();
     }
     ESP_COREDUMP_LOGI("Print core dump to uart...");
-    esp_core_dump_write((void*)frame, &wr_cfg);
+    esp_core_dump_write(info, &wr_cfg);
     ESP_COREDUMP_LOGI("Core dump has been written to uart.");
 }
 

@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "freertos/xtensa_context.h"
+#include "esp_private/panic_internal.h"
 
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
@@ -46,7 +47,7 @@ void esp_core_dump_init(void);
  * The structure of core dump data is described below in details.
  * 1) Core dump starts with header:
  * 1.1) TOTAL_LEN is total length of core dump data in flash including CRC. Size is 4 bytes.
- * 1.2) VERSION field keeps 4 byte version of core dump. 
+ * 1.2) VERSION field keeps 4 byte version of core dump.
  * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes.
  * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes.
  * 2) Core dump header is followed by the data for every task in the system.
@@ -58,7 +59,7 @@ void esp_core_dump_init(void);
  * 4) Task's stack is placed after TCB data. Size is (STACK_END - STACK_TOP) bytes.
  * 5) CRC is placed at the end of the data.
  */
-void esp_core_dump_to_flash(XtExcFrame *frame);
+void esp_core_dump_to_flash(panic_info_t *info);
 
 /**
  * @brief  Print base64-encoded core dump to UART.
@@ -68,7 +69,7 @@ void esp_core_dump_to_flash(XtExcFrame *frame);
  * 2) Since CRC is omitted TOTAL_LEN does not include its size.
  * 3) Printed base64 data are surrounded with special messages to help user recognize the start and end of actual data.
  */
-void esp_core_dump_to_uart(XtExcFrame *frame);
+void esp_core_dump_to_uart(panic_info_t *info);
 
 /**************************************************************************************/
 /*********************************** USER MODE API ************************************/

@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "esp_core_dump_priv.h"
 #include "core_dump_elf.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_common";
@@ -100,7 +99,7 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_config_t* write_
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_t *write_cfg)
+static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err;
     static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
@@ -116,7 +115,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
     // Verifies all tasks in the snapshot
     for (task_id = 0; task_id < task_num; task_id++) {
         bool is_current_task = false, stack_is_valid = false;
-        bool tcb_is_valid = esp_core_dump_check_task(frame, tasks[task_id], &is_current_task, &stack_is_valid);
+        bool tcb_is_valid = esp_core_dump_check_task(info, tasks[task_id], &is_current_task, &stack_is_valid);
         // Check if task tcb or stack is corrupted
         if (!tcb_is_valid || !stack_is_valid) {
             // If tcb or stack for task is corrupted count task as broken
@@ -141,7 +140,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
         interrupted_task_stack.size = esp_core_dump_get_stack_len(tasks[curr_task_index]->stack_start, tasks[curr_task_index]->stack_end);
         // size of the task's stack has been already taken into account, also addresses have also been checked
         data_len += sizeof(core_dump_mem_seg_header_t);
-        tasks[curr_task_index]->stack_start = (uint32_t)frame;
+        tasks[curr_task_index]->stack_start = (uint32_t)info->frame;
         tasks[curr_task_index]->stack_end = esp_core_dump_get_isr_stack_end();
         ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu to %lu", tasks[curr_task_index]->stack_end - tasks[curr_task_index]->stack_start, data_len);
         // take into account size of the ISR stack
@@ -182,7 +181,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
     hdr.version   = COREDUMP_VERSION;
     hdr.tasks_num = task_num; // save all the tasks in snapshot even broken
     hdr.mem_segs_num = 0;
-    if (xPortInterruptedFromISRContext()) {
+    if (esp_core_dump_in_isr_context()) {
         hdr.mem_segs_num++; // stack of interrupted task
     }
     hdr.tcb_sz    = tcb_sz;
@@ -213,7 +212,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
             return err;
         }
     }
-    if (xPortInterruptedFromISRContext()) {
+    if (esp_core_dump_in_isr_context()) {
         err = esp_core_dump_save_mem_segment(write_cfg, &interrupted_task_stack);
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to save interrupted task stack, error=%d!", err);
@@ -236,16 +235,16 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
 }
 #endif
 
-inline void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg)
+inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
     esp_core_dump_setup_stack();
 
 #ifndef CONFIG_ESP32_ENABLE_COREDUMP_TO_NONE
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
 #if CONFIG_ESP32_COREDUMP_DATA_FORMAT_BIN
-    err = esp_core_dump_write_binary(frame, write_cfg);
+    err = esp_core_dump_write_binary(info, write_cfg);
 #elif CONFIG_ESP32_COREDUMP_DATA_FORMAT_ELF
-    err = esp_core_dump_write_elf(frame, write_cfg);
+    err = esp_core_dump_write_elf(info, write_cfg);
 #endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write binary failed with error=%d", err);

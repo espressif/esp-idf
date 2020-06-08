@@ -446,12 +446,12 @@ inline void* esp_core_dump_get_current_task_handle()
     return (void*)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
 }
 
-bool esp_core_dump_check_task(void *frame,
+bool esp_core_dump_check_task(panic_info_t *info,
                                 core_dump_task_header_t *task,
                                 bool* is_current,
                                 bool* stack_is_valid)
 {
-    XtExcFrame *exc_frame = frame;
+    XtExcFrame *exc_frame = (XtExcFrame *)info->frame;
     bool is_curr_task = false;
     bool stack_is_sane = false;
     uint32_t stk_size = 0;
@@ -469,6 +469,9 @@ bool esp_core_dump_check_task(void *frame,
             task->stack_start = (uint32_t)exc_frame;
         }
         exc_frame->exit = COREDUMP_CURR_TASK_MARKER;
+        if (info->pseudo_excause) {
+            exc_frame->exccause += XCHAL_EXCCAUSE_NUM;
+        }
         s_extra_info.crashed_task_tcb = (uint32_t)task->tcb_addr;
     }
 

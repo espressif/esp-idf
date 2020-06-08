@@ -51,7 +51,7 @@ bool esp_core_dump_tcb_addr_is_sane(uint32_t addr);
 bool esp_core_dump_task_stack_end_is_sane(uint32_t sp);
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
 void *esp_core_dump_get_current_task_handle(void);
-bool esp_core_dump_check_task(void *frame, core_dump_task_header_t *task_snaphort, bool* is_current, bool* stack_is_valid);
+bool esp_core_dump_check_task(panic_info_t *info, core_dump_task_header_t *task_snaphort, bool* is_current, bool* stack_is_valid);
 bool esp_core_dump_check_stack(uint32_t stack_start, uint32_t stack_end);
 uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot, uint32_t* stk_base, uint32_t* stk_len);
 

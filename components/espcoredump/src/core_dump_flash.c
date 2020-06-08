@@ -226,7 +226,7 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
     return err;
 }
 
-void esp_core_dump_to_flash(void *frame)
+void esp_core_dump_to_flash(panic_info_t *info)
 {
     static core_dump_write_config_t wr_cfg;
     static core_dump_write_data_t wr_data;
@@ -254,7 +254,7 @@ void esp_core_dump_to_flash(void *frame)
     wr_cfg.priv = &wr_data;
 
     ESP_COREDUMP_LOGI("Save core dump to flash...");
-    esp_core_dump_write(frame, &wr_cfg);
+    esp_core_dump_write(info, &wr_cfg);
     ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
 }
 
