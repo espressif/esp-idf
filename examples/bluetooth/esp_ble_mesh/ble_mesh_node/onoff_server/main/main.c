@@ -24,6 +24,8 @@
 #include "board.h"
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP 0x02E5
 
 extern struct _led_state led_state[3];
