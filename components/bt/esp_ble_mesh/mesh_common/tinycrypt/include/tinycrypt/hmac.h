@@ -70,10 +70,10 @@ extern "C" {
 #endif
 
 struct tc_hmac_state_struct {
-	/* the internal state required by h */
-	struct tc_sha256_state_struct hash_state;
-	/* HMAC key schedule */
-	uint8_t key[2*TC_SHA256_BLOCK_SIZE];
+    /* the internal state required by h */
+    struct tc_sha256_state_struct hash_state;
+    /* HMAC key schedule */
+    uint8_t key[2 * TC_SHA256_BLOCK_SIZE];
 };
 typedef struct tc_hmac_state_struct *TCHmacState_t;
 
@@ -90,7 +90,7 @@ typedef struct tc_hmac_state_struct *TCHmacState_t;
  * @param key_size IN -- the HMAC key size
  */
 int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key,
-		    unsigned int key_size);
+                    unsigned int key_size);
 
 /**
  * @brief HMAC init procedure
@@ -112,7 +112,7 @@ int tc_hmac_init(TCHmacState_t ctx);
  *  @param data_length IN -- size of data in bytes
  */
 int tc_hmac_update(TCHmacState_t ctx, const void *data,
-		   unsigned int data_length);
+                   unsigned int data_length);
 
 /**
  *  @brief HMAC final procedure
