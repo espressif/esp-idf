@@ -105,7 +105,7 @@ if __name__ == "__main__":
         idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
         print('    IDF_PYTHON_ENV_PATH: {}'.format(idf_python_env_path or '(not set)'))
         print('    Python interpreter used: {}'.format(sys.executable))
-        if idf_python_env_path not in sys.executable:
+        if not idf_python_env_path or idf_python_env_path not in sys.executable:
             print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
             print('    PATH: {}'.format(os.getenv('PATH')))
         sys.exit(1)
