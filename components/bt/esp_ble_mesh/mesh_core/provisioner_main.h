@@ -85,6 +85,10 @@ const char *bt_mesh_provisioner_get_node_name(u16_t index);
 
 u16_t bt_mesh_provisioner_get_node_index(const char *name);
 
+struct bt_mesh_node *bt_mesh_provisioner_get_node_with_name(const char *name);
+
+const struct bt_mesh_node **bt_mesh_provisioner_get_node_table_entry(void);
+
 int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length);
 
 const u8_t *bt_mesh_provisioner_net_key_get(u16_t net_idx);
