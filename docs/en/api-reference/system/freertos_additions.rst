@@ -14,6 +14,8 @@ entries of arbitrary lengths.
 :ref:`hooks`: ESP-IDF FreeRTOS hooks provides support for registering extra Idle and
 Tick hooks at run time. Moreover, the hooks can be asymmetric amongst both CPUs.
 
+:ref:`component-specific-properties`: Currently added only one component specific property `ORIG_INCLUDE_PATH`.
+
 
 .. _ring-buffers:
 
@@ -519,3 +521,13 @@ Hooks API Reference
 -------------------
 
 .. include-build-file:: inc/esp_freertos_hooks.inc
+
+
+.. _component-specific-properties:
+
+Component Specific Properties
+-----------------------------
+
+Besides standart component variables that could be gotten with basic cmake build properties FreeRTOS component also provides an arguments (only one so far) for simpler integration with other modules:
+
+- `ORIG_INCLUDE_PATH` -  contains an absolute path to freertos root include folder. Thus instead of `#include "freertos/FreeRTOS.h"` you can refer to headers directly: `#include "FreeRTOS.h"`.
