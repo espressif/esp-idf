@@ -359,7 +359,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
 
     // Setup timer to wakeup with timeout
-     esp_sleep_enable_timer_wakeup(2000000);
+    esp_sleep_enable_timer_wakeup(2000000);
 
     // Save start time
     gettimeofday(&tv_start, NULL);
@@ -412,6 +412,9 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     // Check error message when source is already disabled
     esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
+
+    // Disable ext0 wakeup source, as this might interfere with other tests
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
 
 static RTC_DATA_ATTR struct timeval start;
