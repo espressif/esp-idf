@@ -189,10 +189,6 @@ Generally, if the application has a correct error-handling code, upon receiving 
 Ideally, the application sockets and the network layer should not be affected, since the Wi-Fi connection only fails temporarily and recovers very quickly. In future IDF releases, we are going to provide a more robust solution for handling events that disrupt Wi-Fi connection, as ESP32's Wi-Fi functionality continuously improves.
 
 
-SYSTEM_EVENT_STA_AUTHMODE_CHANGE
-++++++++++++++++++++++++++++++++++++
-This event arises when the AP to which the station is connected changes its authentication mode, e.g., from no auth to WPA. Upon receiving this event, the event task will do nothing. Generally, the application event callback does not need to handle this either.
-
 SYSTEM_EVENT_STA_GOT_IP
 ++++++++++++++++++++++++++++++++++++
 SYSTEM_EVENT_AP_STA_GOT_IP6
@@ -982,6 +978,17 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 |                           |       |         | WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.                         |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
+| CONNECTION_FAIL           |  205  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
+|                           |       |         | connection to the AP has failed.                            |
+|                           |       |         |                                                             |
++---------------------------+-------+---------+-------------------------------------------------------------+
+| AUTH_CHANGED              |  206  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
+|                           |       |         | disconnection has happened since AP has changed the         |
+|                           |       |         | authmode.                                                   |
+|                           |       |         |                                                             |
++---------------------------+-------+---------+-------------------------------------------------------------+
+
+
 
 ESP32 Wi-Fi Configuration
 ---------------------------
@@ -1160,6 +1167,8 @@ Home Channel
 
 In soft-AP mode, the home channel is defined as that of the soft-AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+SoftAP mode, the home channel of soft-AP and station must be the same. If the home channels of Station and Soft-AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the soft-AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the soft-AP needs to switch its channel from 6 to 9 to make sure that both station and soft-AP have the same home channel.
 
+.. attention::
+    WEP/WPA security modes are deprecated in IEEE802.11-2016 specifications and are recommended not to be used. These modes c    an be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as WIFI_AUTH_WPA2_PSK.
 
 Wi-Fi Vendor IE Configuration
 +++++++++++++++++++++++++++++++++++
