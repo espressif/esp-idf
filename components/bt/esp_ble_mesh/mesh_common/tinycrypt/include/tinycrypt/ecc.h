@@ -68,8 +68,8 @@
  *
  */
 
-#ifndef __TC_UECC_H__
-#define __TC_UECC_H__
+#ifndef __BLE_MESH_TC_UECC_H__
+#define __BLE_MESH_TC_UECC_H__
 
 #include <stdint.h>
 
@@ -542,4 +542,4 @@ void uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes,
 }
 #endif
 
-#endif /* __TC_UECC_H__ */
+#endif /* __BLE_MESH_TC_UECC_H__ */

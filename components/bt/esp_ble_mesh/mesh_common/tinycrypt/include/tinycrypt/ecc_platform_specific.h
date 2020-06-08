@@ -55,8 +55,8 @@
  *  uECC_platform_specific.h -- Interface to platform specific functions
  */
 
-#ifndef __UECC_PLATFORM_SPECIFIC_H_
-#define __UECC_PLATFORM_SPECIFIC_H_
+#ifndef __BLE_MESH_UECC_PLATFORM_SPECIFIC_H_
+#define __BLE_MESH_UECC_PLATFORM_SPECIFIC_H_
 
 /*
  * The RNG function should fill 'size' random bytes into 'dest'. It should
@@ -78,4 +78,4 @@
 
 int default_CSPRNG(uint8_t *dest, unsigned int size);
 
-#endif /* __UECC_PLATFORM_SPECIFIC_H_ */
+#endif /* __BLE_MESH_UECC_PLATFORM_SPECIFIC_H_ */

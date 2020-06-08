@@ -71,8 +71,8 @@
  *
  */
 
-#ifndef __TC_CBC_MODE_H__
-#define __TC_CBC_MODE_H__
+#ifndef __BLE_MESH_TC_CBC_MODE_H__
+#define __BLE_MESH_TC_CBC_MODE_H__
 
 #include <tinycrypt/aes.h>
 
@@ -148,4 +148,4 @@ int tc_cbc_mode_decrypt(uint8_t *out, unsigned int outlen, const uint8_t *in,
 }
 #endif
 
-#endif /* __TC_CBC_MODE_H__ */
+#endif /* __BLE_MESH_TC_CBC_MODE_H__ */
