@@ -362,7 +362,6 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_common/tinycrypt/src/hmac.c"
                     "esp_ble_mesh/mesh_common/tinycrypt/src/sha256.c"
                     "esp_ble_mesh/mesh_common/tinycrypt/src/utils.c"
-                    "esp_ble_mesh/mesh_common/mesh_aes_encrypt.c"
                     "esp_ble_mesh/mesh_common/mesh_atomic.c"
                     "esp_ble_mesh/mesh_common/mesh_buf.c"
                     "esp_ble_mesh/mesh_common/mesh_common.c"
