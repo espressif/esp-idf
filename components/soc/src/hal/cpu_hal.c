@@ -68,8 +68,3 @@ void cpu_hal_set_vecbase(const void* base)
 {
     cpu_ll_set_vecbase(base);
 }
-
-void cpu_hal_delay_us(uint32_t delay_us)
-{
-    ets_delay_us(delay_us);
-}

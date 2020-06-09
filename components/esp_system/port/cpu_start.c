@@ -140,8 +140,8 @@ void IRAM_ATTR call_start_cpu1(void)
 
     s_cpu_inited[1] = true;
 
-    while(!s_resume_cores) {
-        cpu_hal_delay_us(100);
+    while (!s_resume_cores) {
+        ets_delay_us(100);
     }
 
     SYS_STARTUP_FN();
@@ -172,12 +172,12 @@ static void start_other_core(void)
 
         volatile bool cpus_up = false;
 
-        while(!cpus_up){
+        while (!cpus_up){
             cpus_up = true;
             for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
                 cpus_up &= s_cpu_up[i];
             }
-            cpu_hal_delay_us(100);
+            ets_delay_us(100);
         }
     }
     else {
@@ -190,12 +190,7 @@ static void start_other_core(void)
 
 static void intr_matrix_clear(void)
 {
-#if CONFIG_IDF_TARGET_ESP32
-    //Clear all the interrupt matrix register
-    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i <= ETS_CACHE_IA_INTR_SOURCE; i++) {
-#elif CONFIG_IDF_TARGET_ESP32S2
     for (int i = ETS_WIFI_MAC_INTR_SOURCE; i < ETS_MAX_INTR_SOURCE; i++) {
-#endif
         intr_matrix_set(0, i, ETS_INVALID_INUM);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         intr_matrix_set(1, i, ETS_INVALID_INUM);
@@ -232,12 +227,10 @@ void IRAM_ATTR call_start_cpu0(void)
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
-#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
         wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-#endif
     }
 #endif
 
@@ -413,12 +406,12 @@ void IRAM_ATTR call_start_cpu0(void)
 
     volatile bool cpus_inited = false;
 
-    while(!cpus_inited) {
+    while (!cpus_inited) {
         cpus_inited = true;
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             cpus_inited &= s_cpu_inited[i];
         }
-        cpu_hal_delay_us(100);
+        ets_delay_us(100);
     }
 #endif
 

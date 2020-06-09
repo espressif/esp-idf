@@ -21,7 +21,7 @@
 
 #define MHZ (1000000)
 
-// g_ticks_us defined in ROMs for PRO and APP CPU
+// g_ticks_us defined in ROMs
 extern uint32_t g_ticks_per_us_pro;
 
 int IRAM_ATTR esp_clk_cpu_freq(void)

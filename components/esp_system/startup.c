@@ -54,10 +54,12 @@
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp32/spiram.h"
 #include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/uart.h"
+#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/spiram.h"
 #include "esp32s2/brownout.h"
 #endif
@@ -143,8 +145,8 @@ static void IRAM_ATTR do_system_init_fn(void)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static void IRAM_ATTR app_mainX_default(void)
 {
-    while(1) {
-        cpu_hal_delay_us(UINT32_MAX);
+    while (1) {
+        ets_delay_us(UINT32_MAX);
     }
 }
 
@@ -152,8 +154,8 @@ static void IRAM_ATTR start_cpuX_default(void)
 {
     do_system_init_fn();
 
-    while(!s_system_full_inited) {
-        cpu_hal_delay_us(100);
+    while (!s_system_full_inited) {
+        ets_delay_us(100);
     }
 
     app_mainX();
@@ -190,12 +192,6 @@ static void IRAM_ATTR do_core_init(void)
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
-#endif
-
-#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE || CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
-    // [refactor-todo] leads to call chain `esp_efuse_read_field_blob` (efuse) -> `esp_efuse_utility_process` ->  `ESP_LOGX`
-    // syscall table must at least be init
-    esp_efuse_disable_basic_rom_console();
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_IO
@@ -277,12 +273,12 @@ static void IRAM_ATTR do_secondary_init(void)
     // Wait for all cores to finish secondary init.
     volatile bool system_inited = false;
 
-    while(!system_inited) {
+    while (!system_inited) {
         system_inited = true;
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             system_inited &= s_system_inited[i];
         }
-        cpu_hal_delay_us(100);
+        ets_delay_us(100);
     }
 #endif
 }
@@ -336,22 +332,17 @@ void IRAM_ATTR start_cpu0_default(void)
 #endif
 
     app_main();
-    while(1);
+    while (1);
 }
 
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
-    esp_err_t err;
-
 #ifdef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
     uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_ESP_CONSOLE_UART_NONE
-
-    err = esp_pthread_init();
-    assert(err == ESP_OK && "Failed to init pthread module!");
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();

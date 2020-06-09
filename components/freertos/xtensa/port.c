@@ -473,50 +473,50 @@ extern void __real_app_main(void);
 static void main_task(void* args)
 {
 #if !CONFIG_FREERTOS_UNICORE
-    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
-    while (port_xSchedulerRunning[1] == 0) {
-        ;
-    }
+	// Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+	while (port_xSchedulerRunning[1] == 0) {
+		;
+	}
 #endif
 
 	// [refactor-todo] check if there is a way to move the following block to esp_system startup
-    heap_caps_enable_nonos_stack_heaps();
+	heap_caps_enable_nonos_stack_heaps();
 
-    // Now we have startup stack RAM available for heap, enable any DMA pool memory
+	// Now we have startup stack RAM available for heap, enable any DMA pool memory
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-    if (g_spiram_ok) {
-        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
-            abort();
-        }
-    }
+	if (g_spiram_ok) {
+		esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+		if (r != ESP_OK) {
+			ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+			abort();
+		}
+	}
 #endif
 
-    //Initialize task wdt if configured to do so
+	//Initialize task wdt if configured to do so
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+	ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+	ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
 #endif
 
-    //Add IDLE 0 to task wdt
+	//Add IDLE 0 to task wdt
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
-    }
+	TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+	if(idle_0 != NULL){
+		ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
+	}
 #endif
-    //Add IDLE 1 to task wdt
+	//Add IDLE 1 to task wdt
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
-    }
+	TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+	if(idle_1 != NULL){
+		ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
+	}
 #endif
 
-    __real_app_main();
-    vTaskDelete(NULL);
+	__real_app_main();
+	vTaskDelete(NULL);
 }
 
 // For now, running FreeRTOS on one core and a bare metal on the other (or other OSes)
@@ -529,7 +529,6 @@ static void main_task(void* args)
 #endif
 
 
-
 #if !CONFIG_FREERTOS_UNICORE
 void app_mainX(void)
 {
@@ -538,63 +537,63 @@ void app_mainX(void)
 		abort();
 	}
 
-    // Wait for FreeRTOS initialization to finish on PRO CPU
-    while (port_xSchedulerRunning[0] == 0) {
-        ;
-    }
+	// Wait for FreeRTOS initialization to finish on PRO CPU
+	while (port_xSchedulerRunning[0] == 0) {
+		;
+	}
 
 #if CONFIG_APPTRACE_ENABLE
-    // [refactor-todo] move to esp_system initialization
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+	// [refactor-todo] move to esp_system initialization
+	esp_err_t err = esp_apptrace_init();
+	assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
 #endif
 
 #if CONFIG_ESP_INT_WDT
-    //Initialize the interrupt watch dog for CPU1.
-    esp_int_wdt_cpu_init();
+	//Initialize the interrupt watch dog for CPU1.
+	esp_int_wdt_cpu_init();
 #endif
 
-    esp_crosscore_int_init();
-    esp_dport_access_int_init();
+	esp_crosscore_int_init();
+	esp_dport_access_int_init();
 
-    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
-    xPortStartScheduler();
-    abort(); /* Only get to here if FreeRTOS somehow very broken */
+	ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
+	xPortStartScheduler();
+	abort(); /* Only get to here if FreeRTOS somehow very broken */
 }
 #endif
 
 void __wrap_app_main(void)
 {
 #if CONFIG_ESP_INT_WDT
-    esp_int_wdt_init();
-    //Initialize the interrupt watch dog for CPU0.
-    esp_int_wdt_cpu_init();
+	esp_int_wdt_init();
+	//Initialize the interrupt watch dog for CPU0.
+	esp_int_wdt_cpu_init();
 #else
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+	assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
 #endif
 #endif
 
-    esp_crosscore_int_init();
+	esp_crosscore_int_init();
 
 #ifndef CONFIG_FREERTOS_UNICORE
-    esp_dport_access_int_init();
+	esp_dport_access_int_init();
 #endif
 
-    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
-                                                ESP_TASK_MAIN_STACK, NULL,
-                                                ESP_TASK_MAIN_PRIO, NULL, 0);
-    assert(res == pdTRUE);
+	portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+												ESP_TASK_MAIN_STACK, NULL,
+												ESP_TASK_MAIN_PRIO, NULL, 0);
+	assert(res == pdTRUE);
 
 	// ESP32 has single core variants. Check that FreeRTOS has been configured properly.
 #if CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
-    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
-        ESP_EARLY_LOGE(TAG, "Running on single core chip, but FreeRTOS is built with dual core support.");
-        ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
-        abort();
-    }
+	if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+		ESP_EARLY_LOGE(TAG, "Running on single core chip, but FreeRTOS is built with dual core support.");
+		ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
+		abort();
+	}
 #endif // CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
 
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
-    vTaskStartScheduler();
+	ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+	vTaskStartScheduler();
 }

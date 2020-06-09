@@ -107,13 +107,6 @@ void cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_tr
  */
 void cpu_hal_clear_watchpoint(int id);
 
-/*
- * Insert a delay.
- * 
- * @param delay_us length of delay in microseconds
- */
-void cpu_hal_delay_us(uint32_t delay_us);
-
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0
 
 /**
