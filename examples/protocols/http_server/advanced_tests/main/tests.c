@@ -255,8 +255,6 @@ static esp_err_t leftover_data_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-extern int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
-
 static void generate_async_resp(void *arg)
 {
     char buf[250];
@@ -272,10 +270,10 @@ static void generate_async_resp(void *arg)
 
     snprintf(buf, sizeof(buf), HTTPD_HDR_STR,
          strlen(STR));
-    httpd_default_send(hd, fd, buf, strlen(buf), 0);
+    httpd_socket_send(hd, fd, buf, strlen(buf), 0);
     /* Space for sending additional headers based on set_header */
-    httpd_default_send(hd, fd, "\r\n", strlen("\r\n"), 0);
-    httpd_default_send(hd, fd, STR, strlen(STR), 0);
+    httpd_socket_send(hd, fd, "\r\n", strlen("\r\n"), 0);
+    httpd_socket_send(hd, fd, STR, strlen(STR), 0);
 #undef STR
     free(arg);
 }
