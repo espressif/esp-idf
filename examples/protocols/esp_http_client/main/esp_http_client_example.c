@@ -294,10 +294,18 @@ static void http_rest_with_hostname_path(void)
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
 static void http_auth_basic(void)
 {
+    /**
+     * Note: `max_authorization_retries` in esp_http_client_config_t
+     * can be used to configure number of retry attempts to be performed
+     * in case unauthorized status code is received.
+     *
+     * To disable authorization retries, set max_authorization_retries to -1.
+     */
     esp_http_client_config_t config = {
         .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
         .event_handler = _http_event_handler,
         .auth_type = HTTP_AUTH_TYPE_BASIC,
+        .max_authorization_retries = -1,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
