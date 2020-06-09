@@ -28,6 +28,7 @@ import argparse
 import queue
 from threading import Thread, Event
 import tempfile
+from io import open
 
 
 class HeaderFailed(Exception):
@@ -60,7 +61,7 @@ class HeaderFailedContainsCode(HeaderFailed):
 def exec_cmd_to_temp_file(what, suffix=""):
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     rc, out, err = exec_cmd(what, out_file)
-    with open(out_file.name, "r") as f:
+    with open(out_file.name, "r", encoding='utf-8') as f:
         out = f.read()
     return rc, out, err, out_file.name
 
@@ -129,6 +130,11 @@ class PublicHeaderChecker:
                         self.check_one_header(task, num)
                     except HeaderFailed as e:
                         self.failed_queue.put("{}: Failed! {}".format(task, e))
+                    except Exception as e:
+                        # Makes sure any unexpected exceptions causes the program to terminate
+                        self.failed_queue.put("{}: Failed! {}".format(task, e))
+                        self.terminate.set()
+                        raise
 
     def get_failed(self):
         return list(self.failed_queue.queue)
@@ -166,6 +172,7 @@ class PublicHeaderChecker:
             raise HeaderFailedCppGuardMissing()
         else:
             self.compile_one_header(header)
+            temp_header = None
             try:
                 _, _, _, temp_header = exec_cmd_to_temp_file(["sed", "/#include/d; /#error/d", header], suffix=".h")
                 res = self.preprocess_one_header(temp_header, num, ignore_sdkconfig_issue=True)
@@ -174,7 +181,8 @@ class PublicHeaderChecker:
                 elif res == self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED:
                     raise HeaderFailedCppGuardMissing()
             finally:
-                os.unlink(temp_header)
+                if temp_header:
+                    os.unlink(temp_header)
 
     def compile_one_header(self, header):
         rc, out, err = exec_cmd([self.gcc, "-S", "-o-", "-include", header, self.main_c] + self.include_dir_flags)
@@ -238,7 +246,7 @@ class PublicHeaderChecker:
         project_dir = os.path.join(idf_path, "examples", "get-started", "blink")
         subprocess.check_call(["idf.py", "reconfigure"], cwd=project_dir)
         build_commands_json = os.path.join(project_dir, "build", "compile_commands.json")
-        with open(build_commands_json, "r") as f:
+        with open(build_commands_json, "r", encoding='utf-8') as f:
             build_command = json.load(f)[0]["command"].split()
         include_dir_flags = []
         include_dirs = []
@@ -303,7 +311,7 @@ def check_all_headers():
 
     # process excluded files and dirs
     exclude_file = os.path.join(os.path.dirname(__file__), args.exclude_file)
-    with open(exclude_file, "r") as f:
+    with open(exclude_file, "r", encoding='utf-8') as f:
         lines = [line.rstrip() for line in f]
     ignore_files = []
     ignore_dirs = []
