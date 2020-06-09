@@ -1001,6 +1001,26 @@ void esp_vfs_dev_uart_register(void)
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
 
+int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
+{
+    if (uart_num < 0 || uart_num >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+    s_ctx[uart_num]->rx_mode = mode;
+    return 0;
+}
+
+int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode)
+{
+    if (uart_num < 0 || uart_num >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+    s_ctx[uart_num]->tx_mode = mode;
+    return 0;
+}
+
 void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
 {
     for (int i = 0; i < UART_NUM; ++i) {
