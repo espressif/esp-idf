@@ -1,8 +1,7 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
+import http.server
 from threading import Thread
 import ssl
 
@@ -86,8 +85,7 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     key_file_handle.write(server_key)
     key_file_handle.close()
 
-    httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+    httpd = http.server.HTTPServer((server_ip, server_port), http.server.SimpleHTTPRequestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
