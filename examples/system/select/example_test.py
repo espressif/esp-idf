@@ -16,7 +16,7 @@ def get_uart_msgs(i):
             'uart_select_example: {} bytes were received through UART1: {}'.format(len(msg), msg)]
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_select(env, extra_data):
 
     dut = env.get_dut('select', 'examples/system/select')
