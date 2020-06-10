@@ -17,3 +17,7 @@ __sf_fake_stderr = 0x3ff96458;
 __sf_fake_stdin = 0x3ff96498;
 __sf_fake_stdout = 0x3ff96478;
 __wctomb = 0x3ff96540;
+__sfp_lock = 0x3ffae0ac;
+__sinit_lock = 0x3ffae0a8;
+__env_lock_object = 0x3ffae0b8;
+__tz_lock_object = 0x3ffae080;

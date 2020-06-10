@@ -199,6 +199,7 @@ static void do_core_init(void)
        fail initializing it properly. */
     heap_caps_init();
     esp_setup_syscall_table();
+    esp_newlib_locks_init();
     esp_newlib_time_init();
 
     if (g_spiram_ok) {

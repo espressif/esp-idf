@@ -53,4 +53,9 @@ void esp_set_time_from_rtc(void);
  */
 void esp_sync_counters_rtc_and_frc(void);
 
+/**
+ * Initialize newlib static locks
+ */
+void esp_newlib_locks_init(void);
+
 #endif //__ESP_NEWLIB_H__

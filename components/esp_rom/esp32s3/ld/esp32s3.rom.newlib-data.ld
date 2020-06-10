@@ -15,3 +15,5 @@ _PathLocale = 0x3fcefcd0;
 __sf_fake_stderr = 0x3ff0c524;
 __sf_fake_stdin = 0x3ff0c564;
 __sf_fake_stdout = 0x3ff0c544;
+__sinit_recursive_mutex = 0x3fcefcd4;
+__sfp_recursive_mutex = 0x3fcefcd8;

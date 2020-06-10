@@ -30,9 +30,8 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE c m gcc "$<TARGET_FILE:${newlib
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
-# Forces the linker to include locks, heap, and syscalls from this component,
+# Forces the linker to include heap, syscalls, and pthread from this component,
 # instead of the implementations provided by newlib.
-set(EXTRA_LINK_FLAGS "-u newlib_include_locks_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_pthread_impl")
