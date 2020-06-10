@@ -581,6 +581,19 @@ typedef enum {
     WPS_FAIL_REASON_MAX
 } wifi_event_sta_wps_fail_reason_t;
 
+#define MAX_SSID_LEN        32
+#define MAX_PASSPHRASE_LEN  64
+#define MAX_WPS_AP_CRED     3
+
+/** Argument structure for WIFI_EVENT_STA_WPS_ER_SUCCESS event */
+typedef struct {
+    uint8_t ap_cred_cnt;                        /**< Number of AP credentials received */
+    struct {
+        uint8_t ssid[MAX_SSID_LEN];             /**< SSID of AP */
+        uint8_t passphrase[MAX_PASSPHRASE_LEN]; /**< Passphrase for the AP */
+    } ap_cred[MAX_WPS_AP_CRED];                 /**< All AP credentials received from WPS handshake */
+} wifi_event_sta_wps_er_success_t;
+
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
