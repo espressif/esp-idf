@@ -261,7 +261,8 @@ def main():
     subparsers.add_parser("erase_partition", help="erase the contents of a partition on the device", parents=[partition_selection_parser])
 
     print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information", parents=[partition_selection_parser])
-    print_partition_info_subparser.add_argument("--info", help="type of partition information to get", nargs="+")
+    print_partition_info_subparser.add_argument("--info", help="type of partition information to get",
+                                                choices=["offset", "size"], default=["offset", "size"], nargs="+")
 
     args = parser.parse_args()
     quiet = args.quiet
