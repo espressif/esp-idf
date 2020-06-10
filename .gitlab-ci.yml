@@ -4,6 +4,7 @@ stages:
   - assign_test
   - host_test
   - target_test
+  - test_deploy
   - post_check
   - deploy
   - post_deploy

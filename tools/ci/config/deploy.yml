@@ -1,4 +1,3 @@
-
 .clang_tidy_deploy_template:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
@@ -26,6 +25,8 @@
 
 clang_tidy_deploy:
   extends: .clang_tidy_deploy_template
+  # Override default stage to happen before the post_check
+  stage: test_deploy
   dependencies:
     - clang_tidy_check
     - clang_tidy_check_all
@@ -103,6 +104,8 @@ push_to_github:
 # deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
 deploy_docs_preview:
   extends: .deploy_docs_template
+  # Override default stage to happen before the post_check
+  stage: test_deploy
   only:
     refs:
       - triggers
