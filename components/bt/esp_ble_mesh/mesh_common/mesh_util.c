@@ -17,11 +17,16 @@
 const char *bt_hex(const void *buf, size_t len)
 {
     static const char hex[] = "0123456789abcdef";
-    static char str[129];
+    static char hexbufs[2][129];
+    static u8_t curbuf;
     const u8_t *b = buf;
+    char *str = NULL;
     int i;
 
-    len = MIN(len, (sizeof(str) - 1) / 2);
+    str = hexbufs[curbuf++];
+    curbuf %= ARRAY_SIZE(hexbufs);
+
+    len = MIN(len, (sizeof(hexbufs[0]) - 1) / 2);
 
     for (i = 0; i < len; i++) {
         str[i * 2]     = hex[b[i] >> 4];
