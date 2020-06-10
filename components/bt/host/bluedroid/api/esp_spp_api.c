@@ -154,6 +154,18 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_spp_stop_srv(void)
+{
+    btc_msg_t msg;
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_SPP;
+    msg.act = BTC_SPP_ACT_STOP_SRV;
+
+    return (btc_transfer_context(&msg, NULL, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 
 esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 {
