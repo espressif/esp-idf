@@ -27,7 +27,20 @@ extern "C" {
 
 #define TIMER_BASE_CLK   (APB_CLK_FREQ)  /*!< Frequency of the clock on the input of the timer groups */
 
-typedef void (*timer_isr_t)(void *);
+/**
+ * @brief Interrupt handle callback function. User need to retrun a bool value
+ *        in callback.
+ *
+ * @return
+ *     - True Do task yield at the end of ISR
+ *     - False Not do task yield at the end of ISR
+ *
+ * @note If you called FreeRTOS functions in callback, you need to return true or false based on
+ *       the retrun value of argument `pxHigherPriorityTaskWoken`.
+ *       For example, `xQueueSendFromISR` is called in callback, if the return value `pxHigherPriorityTaskWoken`
+ *       of any FreeRTOS calls is pdTRUE, return true; otherwise return false.
+ */
+typedef bool (*timer_isr_t)(void *);
 
 /**
  * @brief Interrupt handle, used in order to free the isr after use.
@@ -190,6 +203,9 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  *       This ISR handler do not need to handle interrupt status, and should be kept short.
  *       If you want to realize some specific applications or write the whole ISR, you can
  *       call timer_isr_register(...) to register ISR.
+ *
+ *       The callback should return a bool value to determine whether need to do YIELD at
+ *       the end of the ISR.
  *
  *       If the intr_alloc_flags value ESP_INTR_FLAG_IRAM is set,
  *       the handler function must be declared with IRAM_ATTR attribute
