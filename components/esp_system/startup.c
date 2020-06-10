@@ -77,23 +77,23 @@
 #define STRINGIFY2(s) #s
 
 // App entry point for core 0
-extern void app_main(void);
+extern void start_app(void);
 
 // Entry point for core 0 from hardware init (port layer)
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 // Entry point for core [1..X] from hardware init (port layer)
-void start_cpuX(void) __attribute__((weak, alias("start_cpuX_default"))) __attribute__((noreturn));
+void start_cpu_other_cores(void) __attribute__((weak, alias("start_cpu_other_cores_default"))) __attribute__((noreturn));
 
 // App entry point for core [1..X]
-void app_mainX(void) __attribute__((weak, alias("app_mainX_default"))) __attribute__((noreturn));
+void start_app_other_cores(void) __attribute__((weak, alias("start_app_other_cores_default"))) __attribute__((noreturn));
 
 static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
 sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #if SOC_CPU_CORES_NUM > 1
-    [1 ... SOC_CPU_CORES_NUM - 1] = start_cpuX
+    [1 ... SOC_CPU_CORES_NUM - 1] = start_cpu_other_cores
 #endif
 };
 
@@ -143,14 +143,14 @@ static void IRAM_ATTR do_system_init_fn(void)
 }
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-static void IRAM_ATTR app_mainX_default(void)
+static void IRAM_ATTR start_app_other_cores_default(void)
 {
     while (1) {
         ets_delay_us(UINT32_MAX);
     }
 }
 
-static void IRAM_ATTR start_cpuX_default(void)
+static void IRAM_ATTR start_cpu_other_cores_default(void)
 {
     do_system_init_fn();
 
@@ -158,7 +158,7 @@ static void IRAM_ATTR start_cpuX_default(void)
         ets_delay_us(100);
     }
 
-    app_mainX();
+    start_app_other_cores();
 }
 #endif
 
@@ -331,7 +331,7 @@ void IRAM_ATTR start_cpu0_default(void)
     s_system_full_inited = true;
 #endif
 
-    app_main();
+    start_app();
     while (1);
 }
 

@@ -138,6 +138,8 @@ extern void _frxt_tick_timer_init(void);
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
+extern void app_main(void);
+
 static const char* TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 								// for now maintain the same log output
 
@@ -460,15 +462,6 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 	esp_system_abort(buf);
 }
 
-// `esp_system` calls the app entry point app_main for core 0 and app_mainX for
-// the rest of the cores which the app normally provides for non-os builds.
-// If `freertos` is included in the build, wrap the call to app_main and provide
-// our own definition of app_mainX so that we can do our own initializations for each
-// core and start the scheduler.
-//
-// We now simply execute the real app_main in the context of the main task that
-// we also start.
-extern void __real_app_main(void);
 
 static void main_task(void* args)
 {
@@ -515,7 +508,7 @@ static void main_task(void* args)
 	}
 #endif
 
-	__real_app_main();
+	app_main();
 	vTaskDelete(NULL);
 }
 
@@ -530,7 +523,7 @@ static void main_task(void* args)
 
 
 #if !CONFIG_FREERTOS_UNICORE
-void app_mainX(void)
+void start_app_other_cores(void)
 {
 	// For now, we only support up to two core: 0 and 1.
 	if (xPortGetCoreID() >= 2) {
@@ -562,7 +555,7 @@ void app_mainX(void)
 }
 #endif
 
-void __wrap_app_main(void)
+void start_app(void)
 {
 #if CONFIG_ESP_INT_WDT
 	esp_int_wdt_init();
