@@ -80,6 +80,9 @@ typedef wifi_event_sta_authmode_change_t system_event_sta_authmode_change_t;
 /** Argument structure of SYSTEM_EVENT_STA_WPS_ER_PIN event */
 typedef wifi_event_sta_wps_er_pin_t system_event_sta_wps_er_pin_t;
 
+/** Argument structure of SYSTEM_EVENT_STA_WPS_ER_PIN event */
+typedef wifi_event_sta_wps_er_success_t system_event_sta_wps_er_success_t;
+
 /** Argument structure of  event */
 typedef wifi_event_ap_staconnected_t system_event_ap_staconnected_t;
 
@@ -107,6 +110,7 @@ typedef union {
     system_event_sta_got_ip_t                  got_ip;             /*!< ESP32 station got IP, first time got IP or when IP is changed */
     system_event_sta_wps_er_pin_t              sta_er_pin;         /*!< ESP32 station WPS enrollee mode PIN code received */
     system_event_sta_wps_fail_reason_t         sta_er_fail_reason; /*!< ESP32 station WPS enrollee mode failed reason code received */
+    system_event_sta_wps_er_success_t          sta_er_success;     /*!< ESP32 station WPS enrollee success */
     system_event_ap_staconnected_t             sta_connected;      /*!< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /*!< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /*!< ESP32 soft-AP receive probe request packet */
