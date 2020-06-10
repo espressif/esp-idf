@@ -107,7 +107,7 @@ class FragmentFile():
             try:
                 parse_ctx.fragment.set_key_value(parse_ctx.key, stmts)
             except Exception as e:
-                raise ParseFatalException(pstr, loc, "unable to add key '%s'; %s" % (parse_ctx.key, e.message))
+                raise ParseFatalException(pstr, loc, "unable to add key '%s'; %s" % (parse_ctx.key, str(e)))
             return None
 
         key = Word(alphanums + "_") + Suppress(":")
@@ -139,7 +139,7 @@ class FragmentFile():
             except KeyError:
                 raise ParseFatalException(pstr, loc, "key '%s' is not supported by fragment" % key)
             except Exception as e:
-                raise ParseFatalException(pstr, loc, "unable to parse key '%s'; %s" % (key, e.message))
+                raise ParseFatalException(pstr, loc, "unable to parse key '%s'; %s" % (key, str(e)))
 
             key_stmt << (conditional | Group(key_grammar).setResultsName("value"))
 

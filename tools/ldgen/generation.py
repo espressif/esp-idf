@@ -618,7 +618,7 @@ class SectionsInfo(dict):
         try:
             results = parser.parseString(sections_info_text)
         except ParseException as p:
-            raise ParseException("Unable to parse section info file " + info.filename + ". " + p.message)
+            raise ParseException("Unable to parse section info file " + info.filename + ". " + p.msg)
 
         return results
 
