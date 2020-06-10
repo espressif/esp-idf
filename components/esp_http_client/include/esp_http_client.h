@@ -83,6 +83,13 @@ typedef enum {
     HTTP_METHOD_SUBSCRIBE,  /*!< HTTP SUBSCRIBE Method */
     HTTP_METHOD_UNSUBSCRIBE,/*!< HTTP UNSUBSCRIBE Method */
     HTTP_METHOD_OPTIONS,    /*!< HTTP OPTIONS Method */
+    HTTP_METHOD_COPY,       /*!< HTTP COPY Method */
+    HTTP_METHOD_MOVE,       /*!< HTTP MOVE Method */
+    HTTP_METHOD_LOCK,       /*!< HTTP LOCK Method */
+    HTTP_METHOD_UNLOCK,     /*!< HTTP UNLOCK Method */
+    HTTP_METHOD_PROPFIND,   /*!< HTTP PROPFIND Method */
+    HTTP_METHOD_PROPPATCH,  /*!< HTTP PROPPATCH Method */
+    HTTP_METHOD_MKCOL,      /*!< HTTP MKCOL Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 

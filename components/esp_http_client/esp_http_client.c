@@ -151,7 +151,14 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "NOTIFY",
     "SUBSCRIBE",
     "UNSUBSCRIBE",
-    "OPTIONS"
+    "OPTIONS",
+    "COPY",
+    "MOVE",
+    "LOCK",
+    "UNLOCK",
+    "PROPFIND",
+    "PROPPATCH",
+    "MKCOL"
 };
 
 static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
