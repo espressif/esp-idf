@@ -67,7 +67,7 @@ if __name__ == "__main__":
         if sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
             print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
                   " searching the package database and if found then "
-                  "\"pacman -S mingw-w64-i686-python{}-<package_name>\" for installing it.".format(sys.version_info[0],))
+                  "\"pacman -S mingw-w64-i686-python-<package_name>\" for installing it.")
             print("NOTE: You may need to run \"pacman -Syu\" if your package database is older and run twice if the "
                   "previous run updated \"pacman\" itself.")
             print("Please read https://github.com/msys2/msys2/wiki/Using-packages for further information about using "
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                     continue
                 elif requirement.startswith('setuptools'):
                     print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
-                    print("pacman -S mingw-w64-i686-python{}-setuptools".format(sys.version_info[0],))
+                    print("pacman -S mingw-w64-i686-python-setuptools")
                     continue
         else:
             print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required'

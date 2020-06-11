@@ -291,9 +291,9 @@ Installation of Doxygen is OS dependent:
 
         ::
 
-            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+            $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        Check the log on the screen that ``mingw-w64-i686-python2-pillow-4.3.0-1`` is installed. Previous versions of *pillow* will not work.
+        Check the log on the screen that ``mingw-w64-i686-python-pillow-4.3.0-1`` is installed. Previous versions of *pillow* will not work.
 
     A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
 
