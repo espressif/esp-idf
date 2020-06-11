@@ -44,29 +44,6 @@ esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config);
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
-/**
- * @brief ADC digital controller initialization.
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_init(void);
-
-/**
- * @brief ADC digital controller deinitialization.
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_deinit(void);
-
-/**
- * @brief Setting the digital controller.
- *
- * @param config Pointer to digital controller paramter. Refer to `adc_digi_config_t`.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);
 
 /**
  * @brief Enable digital controller to trigger the measurement.

@@ -35,23 +35,6 @@ extern "C" {
                     Digital controller setting
 ---------------------------------------------------------------*/
 /**
- * Digital controller initialization.
- */
-void adc_hal_digi_init(void);
-
-/**
- * Digital controller deinitialization.
- */
-void adc_hal_digi_deinit(void);
-
-/**
- * Setting the digital controller.
- *
- * @param cfg Pointer to digital controller paramter.
- */
-void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
-
-/**
  * ADC Digital controller output data invert or not.
  *
  * @param adc_n ADC unit.

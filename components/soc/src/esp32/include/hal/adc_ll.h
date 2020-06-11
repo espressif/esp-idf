@@ -9,37 +9,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    ADC_CONV_SINGLE_UNIT_1 = 1, /*!< SAR ADC 1*/
-    ADC_CONV_SINGLE_UNIT_2 = 2, /*!< SAR ADC 2, not supported yet*/
-    ADC_CONV_BOTH_UNIT     = 3, /*!< SAR ADC 1 and 2, not supported yet */
-    ADC_CONV_ALTER_UNIT    = 7, /*!< SAR ADC 1 and 2 alternative mode, not supported yet */
-    ADC_CONV_UNIT_MAX,
-} adc_hal_digi_convert_mode_t;
-
-typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
     ADC_NUM_2 = 1,          /*!< SAR ADC 2 */
     ADC_NUM_MAX,
 } adc_ll_num_t;
-
-typedef struct {
-    union {
-        struct {
-            uint8_t atten:     2;   /*!< ADC sampling voltage attenuation configuration.
-                                         0: input voltage * 1;
-                                         1: input voltage * 1/1.34;
-                                         2: input voltage * 1/2;
-                                         3: input voltage * 1/3.6. */
-            uint8_t bit_width: 2;   /*!< ADC resolution.
-                                         0: 9 bit;
-                                         1: 10 bit;
-                                         2: 11 bit;
-                                         3: 12 bit. */
-            uint8_t channel:   4;   /*!< ADC channel index. */
-        };
-        uint8_t val;
-    };
-} adc_hal_digi_pattern_table_t;
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
@@ -151,9 +124,9 @@ static inline void adc_ll_digi_convert_limit_disable(void)
  *
  * @note ESP32 only support ADC1 single mode.
  *
- * @param mode Conversion mode select, see ``adc_hal_digi_convert_mode_t``.
+ * @param mode Conversion mode select, see ``adc_digi_convert_mode_t``.
  */
-static inline void adc_ll_digi_set_convert_mode(adc_hal_digi_convert_mode_t mode)
+static inline void adc_ll_digi_set_convert_mode(adc_digi_convert_mode_t mode)
 {
     if (mode == ADC_CONV_SINGLE_UNIT_1) {
         SYSCON.saradc_ctrl.work_mode = 0;
@@ -219,9 +192,9 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_
  *
  * @param adc_n ADC unit.
  * @param pattern_index Items index. Range: 0 ~ 15.
- * @param pattern Stored conversion rules, see ``adc_hal_digi_pattern_table_t``.
+ * @param pattern Stored conversion rules, see ``adc_digi_pattern_table_t``.
  */
-static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_hal_digi_pattern_table_t pattern)
+static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
 {
     uint32_t tab;
     uint8_t index = pattern_index / 4;

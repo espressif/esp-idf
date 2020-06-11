@@ -40,7 +40,6 @@
 
 #define ADC_MAX_MEAS_NUM_DEFAULT      (255)
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
-#define SAR_ADC_CLK_DIV_DEFUALT       (2)
 
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
 #define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
@@ -94,14 +93,13 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
         ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
     }
 
-    adc_hal_digi_pattern_table_t adc1_pattern[1];
-    adc_hal_digi_pattern_table_t adc2_pattern[1];
-    adc_hal_digi_config_t dig_cfg = {
+    adc_digi_pattern_table_t adc1_pattern[1];
+    adc_digi_pattern_table_t adc2_pattern[1];
+    adc_digi_config_t dig_cfg = {
         .conv_limit_en = ADC_MEAS_NUM_LIM_DEFAULT,
         .conv_limit_num = ADC_MAX_MEAS_NUM_DEFAULT,
-        .clk_div = SAR_ADC_CLK_DIV_DEFUALT,
         .format = DIG_ADC_OUTPUT_FORMAT_DEFUALT,
-        .conv_mode = (adc_hal_digi_convert_mode_t)adc_unit,
+        .conv_mode = (adc_digi_convert_mode_t)adc_unit,
     };
 
     if (adc_unit & ADC_UNIT_1) {
@@ -124,6 +122,30 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     adc_hal_digi_controller_config(&dig_cfg);
     ADC_EXIT_CRITICAL();
 
+    return ESP_OK;
+}
+
+esp_err_t adc_digi_init(void)
+{
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_init();
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t adc_digi_deinit(void)
+{
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_deinit();
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
+{
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_controller_config(config);
+    ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
