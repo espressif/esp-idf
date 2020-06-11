@@ -81,7 +81,7 @@ def _test_iteration_events(dut):
     print("Deleted task event source")
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_default_event_loop_example(env, extra_data):
     dut = env.get_dut('default_event_loop', 'examples/system/esp_event/default_event_loop')
 
