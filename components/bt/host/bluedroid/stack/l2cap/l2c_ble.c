@@ -1279,7 +1279,7 @@ UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb)
     UINT32 timeout = 6;
     if (p_lcb != NULL){
         //1.25 * conn_int *(1+ latency) *32
-        timeout = (40 * ( 1 + p_lcb->current_used_conn_latency) * p_lcb->current_used_conn_interval + 500) / 1000;
+        timeout = (40 * ( 1 + p_lcb->current_used_conn_latency) * p_lcb->current_used_conn_interval + 1000) / 1000;
         if (timeout < 1){
             timeout = 1;
         }else if (timeout > 120){
