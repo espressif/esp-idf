@@ -28,20 +28,6 @@ typedef unsigned long long  u64_t;
 
 typedef int         bt_mesh_atomic_t;
 
-#ifndef __cplusplus
-#ifndef bool
-#define bool        int8_t
-#endif
-
-#ifndef false
-#define false       0
-#endif
-
-#ifndef true
-#define true        1
-#endif
-#endif
-
 #ifndef PRIu64
 #define PRIu64      "llu"
 #endif
