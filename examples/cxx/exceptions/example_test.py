@@ -3,7 +3,7 @@ from __future__ import print_function
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_system_cpp_exceptions(env, extra_data):
     dut = env.get_dut('cpp_exceptions_example', 'examples/cxx/exceptions', dut_class=ttfw_idf.ESP32DUT)
     # start test

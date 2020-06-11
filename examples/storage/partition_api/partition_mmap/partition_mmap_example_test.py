@@ -2,7 +2,7 @@ import re
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_partition_mmap(env, extra_data):
 
     dut = env.get_dut('partition_mmap', 'examples/storage/partition_api/partition_mmap')
