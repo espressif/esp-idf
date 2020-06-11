@@ -16,7 +16,7 @@ Toolchain Setup
 
 The quick setup is to download the Windows all-in-one toolchain & MSYS2 zip file from dl.espressif.com:
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_gcc8_toolchain-20191231.zip
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_esp2020r2_toolchain-20200601.zip
 
 Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
 
