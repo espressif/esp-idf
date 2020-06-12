@@ -292,7 +292,8 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+        .rx_flow_ctrl_thresh = 120,
         .source_clk = UART_SCLK_APB,
     };
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
