@@ -9,6 +9,11 @@ ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
    LINKER_SCRIPTS += esp32.extram.bss.ld
 endif
 
+ifdef CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+   # This linker script must come before esp32.project.ld
+   LINKER_SCRIPTS += esp32.extram.noinit.ld
+endif
+
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.

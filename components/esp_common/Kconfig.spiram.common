@@ -97,3 +97,11 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed in
         PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
         to external memory defaultly.
+
+config SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+    bool "Enable placement of noinit segments in external memory"
+    default n
+    depends on SPIRAM
+    help
+        If enabled, noinit variables can be placed in PSRAM using EXT_RAM_NOINIT_ATTR.
+        If disabled, EXT_RAM_NOINIT_ATTR will act like __NOINIT_ATTR.
