@@ -64,14 +64,17 @@ esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, ui
     }
     gpio_pad_pullup(num_pin);
     uint32_t tm_start = esp_log_early_timestamp();
-    if (GPIO_INPUT_GET(num_pin) == 1) {
+    if (GPIO_INPUT_GET(num_pin) == 0) {
+        ESP_LOGI(TAG, "<-----------GPIO_NOT_HOLD------------->");
         return GPIO_NOT_HOLD;
     }
     do {
-        if (GPIO_INPUT_GET(num_pin) != 0) {
+        if (GPIO_INPUT_GET(num_pin) != 1) {
+	    ESP_LOGI(TAG, "<-----------GPIO_SHORT_HOLD------------->");
             return GPIO_SHORT_HOLD;
         }
     } while (delay_sec > ((esp_log_early_timestamp() - tm_start) / 1000L));
+    ESP_LOGI(TAG, "<-----------GPIO_LONG_HOLD------------->");
     return GPIO_LONG_HOLD;
 }
 
