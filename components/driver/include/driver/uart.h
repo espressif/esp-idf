@@ -858,7 +858,6 @@ esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en);
   * @param always_rx_timeout_en Set to false enable the default behavior of timeout interrupt,
   *                             set it to true to always trigger timeout interrupt.
   *
-  * * @return None
   */
 void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout_en);
 
