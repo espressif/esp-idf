@@ -23,6 +23,7 @@
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
 #include "driver/spi_common_internal.h"
+#include "hal/spi_flash_hal.h"
 #include "esp_flash_internal.h"
 #include "esp_rom_gpio.h"
 #if CONFIG_IDF_TARGET_ESP32

@@ -177,6 +177,10 @@ struct spi_flash_host_driver_s {
      * modified, the cache needs to be flushed. Left NULL if not supported.
      */
     esp_err_t (*flush_cache)(spi_flash_host_inst_t* host, uint32_t addr, uint32_t size);
+    /**
+     * Check the necessity of suspending erase/program operations.
+     */
+    void (*check_suspend)(spi_flash_host_inst_t *host);
 };
 
 #ifdef __cplusplus

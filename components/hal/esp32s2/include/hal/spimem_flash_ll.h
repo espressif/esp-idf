@@ -106,6 +106,67 @@ static inline void spimem_flash_ll_erase_block(spi_mem_dev_t *dev)
 }
 
 /**
+ * Suspend erase/program operation.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_suspend(spi_mem_dev_t *dev)
+{
+    dev->flash_sus_cmd.flash_pes = 1;
+}
+
+/**
+ * Resume suspended erase/program operation.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_resume(spi_mem_dev_t *dev)
+{
+    dev->misc.auto_per = 0; // Must disable Hardware Auto-Resume (should not be enabled, ESP32-S2 has bugs).
+    dev->flash_sus_cmd.flash_per = 1;
+    while (dev->flash_sus_cmd.flash_per) { };
+}
+
+/**
+ * Initialize auto wait idle mode
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param auto_sus Enable/disable Flash Auto-Suspend.
+ */
+static inline void spimem_flash_ll_auto_suspend_init(spi_mem_dev_t *dev, bool auto_sus)
+{
+    dev->flash_sus_ctrl.flash_pes_command = 0x75; // Set auto suspend command, usually 0x75
+    dev->flash_sus_ctrl.flash_per_command = 0x7A; // Set auto resume command, usually 0x7A
+    // SET_PERI_REG_MASK(SPI_MEM_FLASH_SUS_CMD_REG(1), SPI_MEM_PES_PER_EN_M); // Only on S3 chip
+    // SET_PERI_REG_MASK(SPI_MEM_FLASH_SUS_CMD_REG(1), SPI_MEM_PESR_IDLE_EN_M); // MUST SET 1, to avoid missing Resume (Only on S3 chip)
+    dev->flash_sus_ctrl.flash_pes_en = auto_sus; // enable Flash Auto-Suspend.
+}
+
+/**
+ * Initialize auto wait idle mode
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param auto_waiti Enable/disable auto wait-idle function
+ */
+static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool auto_waiti)
+{
+    dev->flash_waiti_ctrl.waiti_cmd = 0x05; // Set the command to send, to fetch flash status reg value.
+    dev->flash_waiti_ctrl.waiti_en = auto_waiti;  // enable auto wait-idle function.
+}
+
+/**
+ * Return the suspend status of erase or program operations.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ *
+ * @return true if suspended, otherwise false.
+ */
+static inline bool spimem_flash_ll_sus_status(const spi_mem_dev_t *dev)
+{
+    return dev->sus_status.flash_sus;
+}
+
+/**
  * Enable/disable write protection for the flash chip.
  *
  * @param dev Beginning address of the peripheral registers.

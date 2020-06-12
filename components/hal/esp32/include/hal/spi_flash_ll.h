@@ -118,6 +118,51 @@ static inline void spi_flash_ll_erase_block(spi_dev_t *dev)
 }
 
 /**
+ * Suspend erase/program operation.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spi_flash_ll_suspend(spi_dev_t *dev)
+{
+    dev->cmd.flash_pes = 1;
+}
+
+/**
+ * Resume suspended erase/program operation.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spi_flash_ll_resume(spi_dev_t *dev)
+{
+    dev->cmd.flash_per = 1;
+}
+
+/**
+ * Initialize auto wait idle mode. (work only for ESP32-S2)
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param auto_sus Enable/disable Flash Auto-Suspend.
+ */
+#define spi_flash_ll_auto_wait_idle_init(...) ()
+
+/**
+ * Initialize auto wait idle mode (work only for ESP32-S2)
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param auto_waiti Enable/disable auto wait-idle function
+ */
+#define spi_flash_ll_auto_suspend_init(...) ()
+
+/**
+ * Return the suspend status of erase or program operations. (work only for ESP32-S2)
+ *
+ * @param dev Beginning address of the peripheral registers.
+ *
+ * @return true if suspended, otherwise false.
+ */
+#define spi_flash_ll_sus_status(...) ({false;})
+
+/**
  * Enable/disable write protection for the flash chip.
  *
  * @param dev Beginning address of the peripheral registers.

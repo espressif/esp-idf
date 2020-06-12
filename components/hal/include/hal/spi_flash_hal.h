@@ -206,6 +206,13 @@ esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_inst_t *host, uint
 void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host);
 
 /**
+ * Setup a auto-suspend mode.
+ *
+ * @param host The driver context.
+ */
+void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host);
+
+/**
  * Check whether the given buffer can be used as the write buffer directly. If 'chip' is connected to the main SPI bus, we can only write directly from
  * regions that are accessible ith cache disabled. *
  *
