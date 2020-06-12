@@ -38,7 +38,7 @@ static void configure_pins(usb_hal_context_t *usb)
         }
     }
     if (!usb->use_external_phy) {
-        gpio_set_drive_capability(USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
+        gpio_set_drive_capability(USBPHY_DM_NUM, GPIO_DRIVE_CAP_3);
         gpio_set_drive_capability(USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
     }
 }
