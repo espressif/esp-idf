@@ -655,13 +655,6 @@ menu "LWIP"
 
             SLIP over serial support is experimental and unsupported.
 
-    config LWIP_SLIP_RX_FROM_ISR
-        bool "Enable LWIP SLIP interrupt mode"
-        depends on LWIP_SLIP_SUPPORT
-        default y
-        help
-            Enable interrupt functions in SLIP netif/slipif.h
-
     config LWIP_SLIP_DEBUG_ON
         bool "Enable SLIP debug log output"
         depends on LWIP_SLIP_SUPPORT

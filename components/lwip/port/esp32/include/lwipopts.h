@@ -477,9 +477,16 @@
 #ifdef CONFIG_LWIP_SLIP_SUPPORT
 
 /**
- * Enable SLIP receive from ISR functions
+ * Enable SLIP receive from ISR functions and disable Rx thread
+ *
+ * This is the only supported mode of lwIP SLIP interface, so that
+ * - incoming packets are queued into pbufs
+ * - no thread is created from lwIP
+ * meaning it is the application responsibility to read data
+ * from IO driver and feed them to the slip interface
  */
-#define SLIP_RX_FROM_ISR CONFIG_LWIP_SLIP_RX_FROM_ISR
+#define SLIP_RX_FROM_ISR                 1
+#define SLIP_USE_RX_THREAD               0
 
 /**
  * PPP_DEBUG: Enable debugging for PPP.

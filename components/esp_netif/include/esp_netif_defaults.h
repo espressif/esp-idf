@@ -79,10 +79,10 @@ extern "C" {
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = 0,    \
-        .lost_ip_event = 0,  \
-        .if_key = "SLIP_DEF",  \
-        .if_desc = "slip",   \
-        .route_prio = 20   \
+        .lost_ip_event = 0,   \
+        .if_key = "SLP_DEF",  \
+        .if_desc = "slip",    \
+        .route_prio = 16      \
 };
 
 /**
@@ -129,9 +129,9 @@ extern "C" {
 * @brief  Default configuration reference of SLIP client
 */
 #define ESP_NETIF_DEFAULT_SLIP()                       \
-    {                                                 \
+    {                                                  \
         .base = ESP_NETIF_BASE_DEFAULT_SLIP,           \
-        .driver = NULL,                               \
+        .driver = NULL,                                \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_SLIP,      \
     }
     
@@ -167,7 +167,7 @@ extern "C" {
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA     _g_esp_netif_netstack_default_wifi_sta
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
-#define ESP_NETIF_NETSTACK_DEFAULT_SLIP          _g_esp_netif_netstack_default_slip
+#define ESP_NETIF_NETSTACK_DEFAULT_SLIP         _g_esp_netif_netstack_default_slip
 
 //
 // Include default network stacks configs

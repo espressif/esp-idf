@@ -4,7 +4,7 @@
 
 ## Overview
 
-This provides SLIP support for connection to Contiki gateway devices, allowing the ESP32 to be used to bridge between low-power networks and IP (Wifi / Ethernet).
+This provides SLIP support for connection to Contiki gateway devices, allowing the ESP platform board to be used to bridge between low-power networks and IP (Wifi / Ethernet).
 
 ## How to use example
 
@@ -12,7 +12,33 @@ This provides SLIP support for connection to Contiki gateway devices, allowing t
 
 To run this example, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC).
 For test purpose, you also need a SLIP capable gateway device, such as anything running [Contiki](https://github.com/contiki-os/contiki) gateway firmware.
-You can also try other modules as long as they implement the SLIP protocol.
+You can also try other modules as long as they implement the SLIP protocol (e.g. linux device with slip module loaded)
+
+#### Setup a test SLIP device
+
+It is possible to configure any device with linux and a serial interface
+(e.g. raspberry PI or a PC with USB to serial bridge) to enable SLIP interface.
+
+To test this example with such device, please follow these steps:
+
+- Configure IPv4 mode in the example configuration menu
+
+- Setup SLIP interface
+```
+slattach -v -L -s 115200 -p slip /dev/ttyAMA0
+```
+where the `/dev/ttyAMA0` is the device's serial port
+
+- Configure IP addresses
+```
+ifconfig sl0 10.0.0.1 dstaddr 10.0.0.2
+```
+where the `10.0.0.2` is IPv4 address of the ESP platform board
+
+- Send and receive back UDP packets, as the example implements UDP echo server
+```
+nc -u 10.0.0.2 5678
+```
 
 #### Pin Assignment
 
@@ -30,7 +56,7 @@ You can also try other modules as long as they implement the SLIP protocol.
 Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - Choose the RX and TX pins
-
+- Choose port number and IP protocol for socket udp server
 For use in external projects `SLIP support` must be enabled under the `components/lwip` menu.
 
 

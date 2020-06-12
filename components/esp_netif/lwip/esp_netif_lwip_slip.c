@@ -16,19 +16,14 @@
 #include "lwip/dns.h"
 #include "esp_netif.h"
 #include "esp_log.h"
-#include "esp_netif_net_stack.h"
-#include "esp_event.h"
 #include "esp_netif_slip.h"
-
 #include "esp_netif_lwip_internal.h"
-
+#include "esp_netif_net_stack.h"
 #include "lwip/opt.h"
-#include "lwip/sio.h"
-#include "lwip/ip.h"
-#include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/netif.h"
 #include "netif/slipif.h"
+#include "lwip/sio.h"
 
 #include <string.h>
 
@@ -38,25 +33,21 @@ ESP_EVENT_DEFINE_BASE(SLIP_EVENT);
 static const char *TAG = "esp-netif_lwip-slip";
 
 /**
- * @brief LWIP SLIP context object
+ * @brief LWIP SLIP context object extends esp-netif related data
  */
 typedef struct lwip_slip_ctx {
-    //! ESP netif object
-    esp_netif_t *esp_netif;
+    //! Generic esp-netif related data
+    netif_related_data_t base;
 
     //! SLIP interface IP6 address
-    ip6_addr_t addr;
-
-
-    //! UART device for underling SIO
-    uart_port_t uart_dev;
+    esp_ip6_addr_t addr;
 
 } lwip_slip_ctx_t;
 
 /**
  * @brief Create a new lwip slip interface
  */
-lwip_slip_ctx_t *esp_netif_new_slip(esp_netif_t *esp_netif, const esp_netif_netstack_config_t *esp_netif_stack_config)
+netif_related_data_t * esp_netif_new_slip(esp_netif_t *esp_netif, const esp_netif_netstack_config_t *esp_netif_stack_config)
 {
     ESP_LOGD(TAG, "%s", __func__);
 
@@ -68,60 +59,29 @@ lwip_slip_ctx_t *esp_netif_new_slip(esp_netif_t *esp_netif, const esp_netif_nets
         ESP_LOGE(TAG, "%s: cannot allocate lwip_slip_ctx_t", __func__);
         return NULL;
     }
+    // Setup the generic esp-netif fields
+    slip_ctx->base.is_point2point = true;
+    slip_ctx->base.netif_type = SLIP_LWIP_NETIF;
 
-    ESP_LOGD(TAG, "%s: Initialising SLIP (esp_netif %p, lwip_netif %p, device: %d)", __func__, esp_netif, netif_impl, slip_ctx->uart_dev);
-
-    // Load config
-    const esp_netif_slip_config_t *slip_config = &esp_netif_stack_config->lwip_slip.slip_config;
-
-    // Attache network interface and uart device
-    slip_ctx->uart_dev = slip_config->uart_dev;
-    slip_ctx->esp_netif = esp_netif;
+    ESP_LOGD(TAG, "%s: Initialising SLIP (esp_netif %p, lwip_netif %p)", __func__, esp_netif, netif_impl);
 
     ESP_LOGI(TAG, "%s: Created SLIP interface (netif %p, slip_ctx: %p)", __func__, esp_netif, slip_ctx);
 
-    return slip_ctx;
-}
-
-/**
- * @brief Creates new SLIP related structure
- */
-esp_err_t esp_netif_start_slip(lwip_slip_ctx_t *slip_ctx)
-{
-    ESP_LOGI(TAG, "%s: Starting SLIP connection (slip_ctx: %p, addr: %s)", __func__, slip_ctx, ip6addr_ntoa(&slip_ctx->addr));
-
-    struct netif *netif_impl = slip_ctx->esp_netif->lwip_netif;
-
-    // Store serial port number in net interface for SIO open command
-    netif_impl->state = (void *)slip_ctx->uart_dev;
-
-    // Attach interface
-    netif_add_noaddr(slip_ctx->esp_netif->lwip_netif, (void *)slip_ctx->uart_dev, &slipif_init, &ip_input);
-
-    // Bind address
-    int8_t addr_index = 0;
-
-    // Note that addr_set is used here as the address is statically configured
-    // rather than negotiated over the link
-    netif_ip6_addr_set(slip_ctx->esp_netif->lwip_netif, addr_index, &slip_ctx->addr);
-    netif_ip6_addr_set_state(slip_ctx->esp_netif->lwip_netif, addr_index, IP6_ADDR_VALID);
-
-    // Setup interface
-    netif_set_link_up(slip_ctx->esp_netif->lwip_netif);
-    netif_set_up(slip_ctx->esp_netif->lwip_netif);
-
-    return ESP_OK;
+    return (netif_related_data_t *)slip_ctx;
 }
 
 /**
  * @brief Stops the SLIP interface
  */
-esp_err_t esp_netif_stop_slip(lwip_slip_ctx_t *slip_ctx)
+esp_err_t esp_netif_stop_slip(esp_netif_t *esp_netif)
 {
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)esp_netif;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
+
     ESP_LOGI(TAG, "%s: Stopped SLIP connection: %p", __func__, slip_ctx);
 
     // Stop interface
-    netif_set_link_down(slip_ctx->esp_netif->lwip_netif);
+    netif_set_link_down(esp_netif->lwip_netif);
 
     return ESP_OK;
 }
@@ -133,59 +93,64 @@ esp_err_t esp_netif_stop_slip(lwip_slip_ctx_t *slip_ctx)
 esp_err_t esp_netif_slip_set_params(esp_netif_t *netif, const esp_netif_slip_config_t *slip_config)
 {
 
-    lwip_slip_ctx_t *slip_ctx = netif->lwip_slip_ctx;
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)netif->related_data;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
 
     ESP_LOGD(TAG, "%s (slip_ctx: %p)", __func__, slip_ctx);
 
-    if (netif_is_link_up(slip_ctx->esp_netif->lwip_netif)) {
+    if (netif_is_link_up(netif->lwip_netif)) {
         ESP_LOGE(TAG, "Cannot set parameters while SLIP interface is running");
         return ESP_ERR_INVALID_STATE;
     }
 
-    memcpy(&slip_ctx->addr, &slip_config->addr, sizeof(ip6_addr_t));
-    slip_ctx->uart_dev = slip_config->uart_dev;
+    memcpy(&slip_ctx->addr, &slip_config->ip6_addr, sizeof(ip6_addr_t));
+
 
     return ESP_OK;
 }
 
+esp_err_t esp_netif_slip_set_ipv6(esp_netif_t *netif, const esp_ip6_addr_t *ipv6)
+{
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)netif->related_data;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
+
+    ESP_LOGV(TAG, "%s (slip_ctx: %p)", __func__, slip_ctx);
+
+    if (netif_is_link_up(netif->lwip_netif)) {
+        ESP_LOGE(TAG, "Cannot set parameters while SLIP interface is running");
+        return ESP_ERR_INVALID_STATE;
+    }
+    memcpy(&slip_ctx->addr, ipv6, sizeof(ip6_addr_t));
+    int8_t addr_index = 0;
+
+    netif_ip6_addr_set(netif->lwip_netif, addr_index, (ip6_addr_t *)&slip_ctx->addr);
+    netif_ip6_addr_set_state(netif->lwip_netif, addr_index, IP6_ADDR_VALID);
+
+    return ESP_OK;
+}
+
+
 /**
  * @brief Write incoming serial data to the SLIP interface
  */
-void esp_netif_lwip_slip_input(void *ctx, void *buffer, size_t len, void *eb)
+void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb)
 {
-    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)ctx;
+#if CONFIG_LWIP_SLIP_SUPPORT
+    esp_netif_t *netif = h;
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)netif->related_data;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
 
     ESP_LOGD(TAG, "%s", __func__);
     ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
 
     // Update slip netif with data
-    slipif_received_bytes(slip_ctx->esp_netif->lwip_netif, buffer, len);
+    slipif_received_bytes(netif->lwip_netif, buffer, len);
 
     // Process incoming bytes
     for (int i = 0; i < len; i++) {
-        slipif_process_rxqueue(slip_ctx->esp_netif->lwip_netif);
+        slipif_process_rxqueue(netif->lwip_netif);
     }
-}
-
-/**
- * @brief Write raw data out the SLIP interface
- */
-void esp_netif_lwip_slip_output(lwip_slip_ctx_t *slip_ctx, void *buffer, size_t len)
-{
-    struct netif *lwip_netif = slip_ctx->esp_netif->lwip_netif;
-
-    ESP_LOGD(TAG, "%s", __func__);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
-
-    struct pbuf p = {
-        .next = NULL,
-        .payload = buffer,
-        .tot_len = len,
-        .len = len,
-    };
-
-    // Call slip if output function to feed data out slip interface
-    lwip_netif->output_ip6(lwip_netif, &p, NULL);
+#endif
 }
 
 /**
@@ -209,37 +174,110 @@ void esp_netif_lwip_slip_raw_output(esp_netif_t *slip_netif, void *buffer, size_
 }
 
 /**
- * @brief Fetch pointer to internal slip_lwip_context
- *
- * This is required to support the wiring of esp_netif objects outside
- * of this component.
- *
- * @return
- *        - lwip slip context
- */
-lwip_slip_ctx_t *esp_netif_lwip_slip_get_ctx(esp_netif_t *slip_netif)
-{
-    return slip_netif->lwip_slip_ctx;
-}
-
-/**
  * @brief Destroys the SLIP context object
  */
-void esp_netif_destroy_slip(lwip_slip_ctx_t *slip_ctx)
+void esp_netif_destroy_slip(netif_related_data_t *slip)
 {
     ESP_LOGD(TAG, "%s", __func__);
 
     // Free base object
-    free(slip_ctx);
+    free(slip);
 }
 
-void esp_netif_slip_set_default_netif(lwip_slip_ctx_t *slip_ctx)
+const esp_ip6_addr_t *esp_slip_get_ip6(esp_netif_t *slip_netif)
 {
-    netif_set_default(slip_ctx->esp_netif->lwip_netif);
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)slip_netif->related_data;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
+    return &slip_ctx->addr;
 }
 
-const ip6_addr_t *esp_slip_get_ip6(esp_netif_t *slip_netif)
+/** @brief Get esp-netif object corresponding to registration index
+ */
+static esp_netif_t * get_netif_with_esp_index(int index)
 {
-    return &slip_netif->lwip_slip_ctx->addr;
+    esp_netif_t *netif = NULL;
+    int counter = 0;
+    while ((netif = esp_netif_next(netif)) != NULL) {
+        if (counter == index) {
+            return netif;
+        }
+        counter++;
+    }
+    return NULL;
 }
 
+/** @brief Return list registration index of the supplied netif ptr
+ */
+static int get_esp_netif_index(esp_netif_t * esp_netif)
+{
+    esp_netif_t *netif = NULL;
+    int counter = 0;
+    while ((netif = esp_netif_next(netif)) != NULL) {
+        if (esp_netif == netif) {
+            return counter;
+        }
+        counter++;
+    }
+    return -1;
+}
+
+err_t esp_slipif_init(struct netif *netif)
+{
+    esp_netif_t *esp_netif = netif->state;
+    int esp_index = get_esp_netif_index(esp_netif);
+    if (esp_index < 0) {
+        return ERR_IF;
+    }
+
+    // Store netif index in net interface for SIO open command to abstract the dev
+    netif->state = (void *)esp_index;
+
+    err_t err = slipif_init(netif);
+    netif_set_up(netif);
+    netif_set_link_up(netif);
+    return err;
+}
+
+static const struct esp_netif_netstack_config s_netif_config_slip = {
+        .lwip = {
+                .init_fn = esp_slipif_init,
+                .input_fn = esp_netif_lwip_slip_input,
+        }
+};
+
+const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_slip = &s_netif_config_slip;
+
+
+/***
+ * @brief Open a serial device for communication
+ */
+sio_fd_t sio_open(uint8_t devnum)
+{
+    ESP_LOGD(TAG, "Opening device: %d\r\n", devnum);
+
+    esp_netif_t *esp_netif = get_netif_with_esp_index(devnum);
+    if (!esp_netif) {
+        ESP_LOGE(TAG, "didn't find esp-netif with index=%d\n", devnum);
+        return NULL;
+    }
+
+    // Return SIO handle
+    return esp_netif;
+}
+
+/***
+ * @brief Send a single character to the serial device (blocking)
+ */
+void sio_send(uint8_t c, sio_fd_t fd)
+{
+    esp_netif_t *esp_netif = fd;
+
+    ESP_LOGD(TAG, "%s", __func__);
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, &c, 1, ESP_LOG_DEBUG);
+
+    esp_err_t ret = esp_netif_transmit(esp_netif, &c, 1);
+    if (ret != ESP_OK) {
+        // Handle errors
+        ESP_LOGD(TAG, "%s: uart_write_bytes error %i", __func__, ret);
+    }
+}
