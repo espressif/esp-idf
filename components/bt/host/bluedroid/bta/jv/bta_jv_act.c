@@ -48,6 +48,7 @@
 
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
+#if BTA_JV_L2CAP_INCLUDED
 /* one of these exists for each client */
 struct fc_client {
     struct fc_client    *next_all_list;
@@ -92,11 +93,10 @@ static void __attribute__((unused)) fc_init(void)
     pthread_once(&fc_init_once,  fc_init_work);
 }
 
-
 static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected,
                                  UINT16 reason, tBT_TRANSPORT );
 static void fcchan_data_cbk(UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf);
-
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 extern void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str);
 static inline void logu(const char *title, const uint8_t *p_uuid)
@@ -112,8 +112,7 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle);
 static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb);
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb);
 static void bta_jv_pm_state_change(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE state);
-tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE
-                                        new_st);
+tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE new_st);
 
 static int find_rfc_pcb(void *user_data, tBTA_JV_RFC_CB **cb, tBTA_JV_PCB **pcb);
 static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle);
@@ -437,7 +436,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB *p_cb, tBTA_JV_PCB *p_pc
     }
     return status;
 }
-
+#if BTA_JV_L2CAP_INCLUDED
 /*******************************************************************************
 **
 ** Function     bta_jv_free_l2c_cb
@@ -463,6 +462,7 @@ tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB *p_cb)
     p_cb->p_cback = NULL;
     return status;
 }
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /*******************************************************************************
 **
@@ -517,10 +517,8 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
                 }
             }
 
-            APPL_TRACE_API("%s(jv_handle: 0x%2x), idx: %d, "
-                           "app_id: 0x%x", __func__, jv_handle, i, bta_jv_cb.pm_cb[i].app_id);
-            APPL_TRACE_API("%s, bd_counter = %d, "
-                           "appid_counter = %d", __func__, bd_counter, appid_counter);
+            APPL_TRACE_API("%s(jv_handle: 0x%2x), idx: %d, app_id: 0x%x", __func__, jv_handle, i, bta_jv_cb.pm_cb[i].app_id);
+            APPL_TRACE_API("%s, bd_counter = %d, appid_counter = %d", __func__, bd_counter, appid_counter);
             if (bd_counter > 1) {
                 bta_jv_pm_conn_idle(&bta_jv_cb.pm_cb[i]);
             }
@@ -539,14 +537,15 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
                     tBTA_JV_PCB *p_pcb = bta_jv_rfc_port_to_pcb(bta_jv_cb.rfc_cb[hi].rfc_hdl[si]);
                     if (p_pcb) {
                         if (NULL == p_pcb->p_pm_cb) {
-                            APPL_TRACE_WARNING("%s(jv_handle:"
-                                               " 0x%x):port_handle: 0x%x, p_pm_cb: %d: no link to "
-                                               "pm_cb?", __func__, jv_handle, p_pcb->port_handle, i);
+                            APPL_TRACE_WARNING("%s(jv_handle: 0x%x):port_handle: 0x%x, p_pm_cb: %d: no link to pm_cb?",
+                                                 __func__, jv_handle, p_pcb->port_handle, i);
                         }
                         p_cb = &p_pcb->p_pm_cb;
                     }
                 }
-            } else {
+            } 
+#if BTA_JV_L2CAP_INCLUDED
+            else {
                 if (jv_handle < BTA_JV_MAX_L2C_CONN) {
                     tBTA_JV_L2C_CB *p_l2c_cb = &bta_jv_cb.l2c_cb[jv_handle];
                     if (NULL == p_l2c_cb->p_pm_cb) {
@@ -556,6 +555,8 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
                     p_cb = &p_l2c_cb->p_pm_cb;
                 }
             }
+#endif /* BTA_JV_L2CAP_INCLUDED */
+
             if (p_cb) {
                 *p_cb = NULL;
                 status = BTA_JV_SUCCESS;
@@ -598,7 +599,9 @@ static tBTA_JV_PM_CB *bta_jv_alloc_set_pm_profile_cb(UINT32 jv_handle, tBTA_JV_P
                         break;
                     }
                 }
-            } else {
+            }
+#if BTA_JV_L2CAP_INCLUDED
+            else {
                 /* use jv handle for l2cap bd address retrieval */
                 for (j = 0; j < BTA_JV_MAX_L2C_CONN; j++) {
                     if (jv_handle == bta_jv_cb.l2c_cb[j].handle) {
@@ -613,6 +616,7 @@ static tBTA_JV_PM_CB *bta_jv_alloc_set_pm_profile_cb(UINT32 jv_handle, tBTA_JV_P
                     }
                 }
             }
+#endif /* BTA_JV_L2CAP_INCLUDED */
             APPL_TRACE_API("bta_jv_alloc_set_pm_profile_cb(handle 0x%2x, app_id %d): "
                            "idx: %d, (BTA_JV_PM_MAX_NUM: %d), pp_cb: %p", jv_handle, app_id,
                            i, BTA_JV_PM_MAX_NUM, (void *)pp_cb);
@@ -695,7 +699,6 @@ BOOLEAN bta_jv_check_psm(UINT16 psm)
         }
     }
     return ret;
-
 }
 
 /*******************************************************************************
@@ -1181,6 +1184,7 @@ void bta_jv_delete_record(tBTA_JV_MSG *p_data)
     }
 }
 
+#if BTA_JV_L2CAP_INCLUDED
 /*******************************************************************************
 **
 ** Function     bta_jv_l2cap_client_cback
@@ -1606,6 +1610,7 @@ void bta_jv_l2cap_write_fixed(tBTA_JV_MSG *p_data)
 
     ls->p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, (tBTA_JV *)&evt_data, ls->user_data);
 }
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /*******************************************************************************
 **
@@ -2457,7 +2462,7 @@ static void bta_jv_pm_state_change(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE
 }
 /**********************************************************************************************/
 
-
+#if BTA_JV_L2CAP_INCLUDED
 static struct fc_channel *fcchan_get(uint16_t chan, char create)
 {
     struct fc_channel *t = fc_channels;
@@ -2897,6 +2902,6 @@ extern void bta_jv_l2cap_close_fixed (tBTA_JV_MSG *p_data)
         fcclient_free(t);
     }
 }
-
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 #endif  ///defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE
