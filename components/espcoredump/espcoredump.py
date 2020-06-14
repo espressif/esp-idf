@@ -1727,11 +1727,6 @@ def info_corefile(args):
 def main():
     parser = argparse.ArgumentParser(description='espcoredump.py v%s - ESP32 Core Dump Utility' % __version__, prog='espcoredump')
 
-    parser.add_argument('--chip', '-c',
-                        help='Target chip type',
-                        choices=['auto', 'esp32'],
-                        default=os.environ.get('ESPTOOL_CHIP', 'auto'))
-
     parser.add_argument(
         '--port', '-p',
         help='Serial port device',

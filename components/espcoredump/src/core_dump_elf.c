@@ -23,7 +23,9 @@
 #include "elf.h"                    // for ELF file types
 
 #define ELF_SEG_HEADERS_COUNT(_self_, _task_num_) (uint32_t)((_task_num_) * 2/*stack + tcb*/ \
-                                    + 1/* regs notes */ + 1/* ver info + extra note */ + ((_self_)->interrupted_task.stack_start ? 1 : 0))
+                                    + 1/* regs notes */ + 1/* ver info + extra note */ + ((_self_)->interrupted_task.stack_start ? 1 : 0) \
+                                    + /* user mapped variables */ esp_core_dump_get_user_ram_segments())
+
 
 #define ELF_HLEN 52
 #define ELF_CORE_SEC_TYPE 1
@@ -508,6 +510,31 @@ static int elf_write_tasks_data(core_dump_elf_t *self, void* frame,
     return elf_len;
 }
 
+static int elf_write_core_dump_user_data(core_dump_elf_t *self)
+{
+    int data_len = 0;
+    int total_sz = 0;
+    uint32_t start = 0;
+
+    for (coredump_region_t i = COREDUMP_MEMORY_START; i < COREDUMP_MEMORY_MAX; i++) {
+        data_len = esp_core_dump_get_user_ram_info(i, &start);
+
+        ELF_CHECK_ERR((data_len >= 0), ELF_PROC_ERR_OTHER, "invalid memory region");
+
+        if (data_len > 0) {
+            int ret = elf_add_segment(self, PT_LOAD,
+                        (uint32_t)start,
+                        (void*)start,
+                        (uint32_t) data_len);
+
+            ELF_CHECK_ERR((ret > 0), ret, "memory region write failed. Returned (%d).", ret);
+            total_sz += ret;
+        }
+    }
+
+    return total_sz;
+}
+
 static int elf_write_core_dump_info(core_dump_elf_t *self)
 {
     void *extra_info;
@@ -562,6 +589,12 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
     data_sz = elf_write_tasks_data(self, frame, tasks, task_num);
     ELF_CHECK_ERR((data_sz > 0), data_sz, "ELF Size writing error, returned (%d).", data_sz);
     tot_len += data_sz;
+
+    // write core dump memory regions defined by user
+    data_sz = elf_write_core_dump_user_data(self);
+    ELF_CHECK_ERR((data_sz >= 0), data_sz, "memory regions writing error, returned (%d).", data_sz);
+    tot_len += data_sz;
+
     // write data with version control information and some extra info
     // this should go after tasks processing
     data_sz = elf_write_core_dump_info(self);

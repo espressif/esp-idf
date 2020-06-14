@@ -36,6 +36,18 @@ entries:
 entries:
     .rtc.bss
 
+[sections:rtc_fast_coredump]
+entries:
+    .rtc.fast.coredump+
+
+[sections:rtc_coredump]
+entries:
+    .rtc.coredump+
+
+[sections:dram_coredump]
+entries:
+    .dram1.coredump+
+
 [sections:iram]
 entries:
     .iram1+
@@ -67,6 +79,9 @@ entries:
     rtc_bss -> rtc_bss
     wifi_iram -> flash_text
     wifi_rx_iram -> flash_text
+    dram_coredump -> dram_coredump
+    rtc_coredump -> rtc_coredump
+    rtc_fast_coredump -> rtc_fast_coredump
 
 [scheme:rtc]
 entries:
