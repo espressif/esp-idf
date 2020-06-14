@@ -32,9 +32,13 @@
 // Forces data into IRAM instead of DRAM
 #define IRAM_DATA_ATTR __attribute__((section(".iram.data")))
 
+// Forces data into IRAM instead of DRAM and map it to coredump
+#define COREDUMP_IRAM_DATA_ATTR _SECTION_ATTR_IMPL(".iram.data.coredump", __COUNTER__)
+
 // Forces bss into IRAM instead of DRAM
 #define IRAM_BSS_ATTR __attribute__((section(".iram.bss")))
 #else
+#define COREDUMP_IRAM_DATA_ATTR
 #define IRAM_DATA_ATTR
 
 #define IRAM_BSS_ATTR
@@ -84,6 +88,15 @@
 // Any variable marked with this attribute will keep its value
 // after restart or during a deep sleep / wake cycle.
 #define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __COUNTER__)
+
+// Forces code into DRAM instead of flash and map it to coredump
+#define COREDUMP_DRAM_ATTR _SECTION_ATTR_IMPL(".dram1.coredump", __COUNTER__)
+
+// Forces data into RTC memory and map it to coredump
+#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __COUNTER__)
+
+// Allows to place data into RTC_FAST memory and map it to coredump
+#define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __COUNTER__)
 
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))

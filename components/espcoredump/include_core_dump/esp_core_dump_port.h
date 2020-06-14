@@ -41,6 +41,15 @@ extern "C" {
 
 #define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)
 
+typedef enum {
+    COREDUMP_MEMORY_DRAM,
+    COREDUMP_MEMORY_IRAM,
+    COREDUMP_MEMORY_RTC,
+    COREDUMP_MEMORY_RTC_FAST,
+    COREDUMP_MEMORY_MAX,
+    COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
+} coredump_region_t;
+
 // Gets RTOS tasks snapshot
 uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
                         const uint32_t snapshot_size);
@@ -59,6 +68,10 @@ uint16_t esp_core_dump_get_arch_id(void);
 uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **reg_dump);
 void esp_core_dump_init_extra_info(void);
 uint32_t esp_core_dump_get_extra_info(void **info);
+
+uint32_t esp_core_dump_get_user_ram_segments(void);
+uint32_t esp_core_dump_get_user_ram_size(void);
+int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
 
 // Data integrity check functions
 void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data);
@@ -121,6 +134,16 @@ extern uint8_t *s_core_dump_sp;
     } \
 }
 #endif
+
+// coredump memory regions defined during compile timing
+extern int _coredump_dram_start;
+extern int _coredump_dram_end;
+extern int _coredump_iram_start;
+extern int _coredump_iram_end;
+extern int _coredump_rtc_start;
+extern int _coredump_rtc_end;
+extern int _coredump_rtc_fast_start;
+extern int _coredump_rtc_fast_end;
 
 #ifdef __cplusplus
 }
