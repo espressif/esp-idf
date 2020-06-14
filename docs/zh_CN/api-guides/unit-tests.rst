@@ -155,11 +155,11 @@ DUT2（slave）终端：
 -  ``idf.py -T all build`` - 编译单元测试程序，测试每个组件 ``test``
    子目录下的用例。
 
--  ``idf.py -T xxx build`` - 编译单元测试程序，测试指定的组件。
+-  ``idf.py -T "xxx yyy" build`` - 编译单元测试程序，测试指定的组件。
 
--  ``idf.py -T all -E xxx build`` -
+-  ``idf.py -T all -E "xxx yyy" build`` -
    编译单元测试程序，测试所有（除开指定）的组件。例如
-   ``idf.py -T all -E ulp mbedtls build`` -
+   ``idf.py -T all -E "ulp mbedtls" build`` -
    编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls``\ 组件。
 
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash``
