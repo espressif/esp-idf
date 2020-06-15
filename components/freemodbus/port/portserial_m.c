@@ -139,6 +139,8 @@ static void vUartTask(void* pvParameters)
                         // Read received data and send it to modbus stack
                         usResult = usMBMasterPortSerialRxPoll(xEvent.size);
                         ESP_LOGD(TAG,"Timeout occured, processed: %d bytes", usResult);
+                        // Block receiver task until data is not processed
+                        vTaskSuspend(NULL);
                     }
                     break;
                 //Event of HW FIFO overflow detected

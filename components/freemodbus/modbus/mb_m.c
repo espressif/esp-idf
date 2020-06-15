@@ -292,19 +292,19 @@ eMBMasterPoll( void )
             MB_PORT_CLEAR_EVENT( eEvent, EV_MASTER_READY );
         } else if ( MB_PORT_CHECK_EVENT( eEvent, EV_MASTER_FRAME_RECEIVED ) ) {
             eStatus = peMBMasterFrameReceiveCur( &ucRcvAddress, &ucMBFrame, &usLength);
-            ESP_LOG_BUFFER_HEX_LEVEL("POLL RCV buffer:", (void*)ucMBFrame, (uint16_t)usLength, ESP_LOG_DEBUG);
             // Check if the frame is for us. If not ,send an error process event.
             if ( ( eStatus == MB_ENOERR ) && ( ucRcvAddress == ucMBMasterGetDestAddress() ) )
             {
-                ESP_LOGD(MB_PORT_TAG, "%s: Packet data received successfully (%u).", __func__, eStatus);
                 ( void ) xMBMasterPortEventPost( EV_MASTER_EXECUTE );
+                ESP_LOGD(MB_PORT_TAG, "%s: Packet data received successfully (%u).", __func__, eStatus);
+                ESP_LOG_BUFFER_HEX_LEVEL("POLL RCV buffer", (void*)ucMBFrame, (uint16_t)usLength, ESP_LOG_DEBUG);
             }
             else
             {
                 vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
+                ( void ) xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
                 ESP_LOGD( MB_PORT_TAG, "%s: Packet data receive failed (addr=%u)(%u).",
                                        __func__, ucRcvAddress, eStatus);
-                ( void ) xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
             }
             MB_PORT_CLEAR_EVENT( eEvent, EV_MASTER_FRAME_RECEIVED );
         } else if ( MB_PORT_CHECK_EVENT( eEvent, EV_MASTER_EXECUTE ) ) {
@@ -371,6 +371,8 @@ eMBMasterPoll( void )
             if (eStatus != MB_ENOERR)
             {
                 ESP_LOGE( MB_PORT_TAG, "%s:Frame send error. %d", __func__, eStatus );
+            } else {
+                ESP_LOG_BUFFER_HEX_LEVEL("Sent buffer", (void*)ucMBFrame, usMBMasterGetPDUSndLength(), ESP_LOG_DEBUG);
             }
             MB_PORT_CLEAR_EVENT( eEvent, EV_MASTER_FRAME_TRANSMIT );
         } else if ( MB_PORT_CHECK_EVENT( eEvent, EV_MASTER_FRAME_SENT ) ) {
