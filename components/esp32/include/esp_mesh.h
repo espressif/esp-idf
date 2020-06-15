@@ -124,6 +124,9 @@ extern "C" {
 #define ESP_ERR_MESH_DISCARD_DUPLICATE    (ESP_ERR_MESH_BASE + 20)   /**< discard the packet due to the duplicate sequence number */
 #define ESP_ERR_MESH_DISCARD              (ESP_ERR_MESH_BASE + 21)   /**< discard the packet */
 #define ESP_ERR_MESH_VOTING               (ESP_ERR_MESH_BASE + 22)   /**< vote in progress */
+#define ESP_ERR_MESH_XMIT                 (ESP_ERR_MESH_BASE + 23)   /**< XMIT */
+#define ESP_ERR_MESH_QUEUE_READ           (ESP_ERR_MESH_BASE + 24)   /**< error in reading queue */
+#define ESP_ERR_MESH_RECV_RELEASE         (ESP_ERR_MESH_BASE + 26)   /**< release esp_mesh_recv_toDS */
 
 /**
  * @brief Flags bitmap for esp_mesh_send() and esp_mesh_recv()
@@ -203,6 +206,7 @@ typedef enum {
     MESH_ROOT,    /**< the only sink of the mesh network. Has the ability to access external IP network */
     MESH_NODE,    /**< intermediate device. Has the ability to forward packets over the mesh network */
     MESH_LEAF,    /**< has no forwarding ability */
+    MESH_STA,     /**< connect to router with a standlone Wi-Fi station mode, no network expansion capability */
 } mesh_type_t;
 
 /**
@@ -735,6 +739,7 @@ esp_err_t esp_mesh_recv(mesh_addr_t *from, mesh_data_t *data, int timeout_ms,
  *    - ESP_ERR_MESH_NOT_START
  *    - ESP_ERR_MESH_TIMEOUT
  *    - ESP_ERR_MESH_DISCARD
+ *    - ESP_ERR_MESH_RECV_RELEASE
  */
 esp_err_t esp_mesh_recv_toDS(mesh_addr_t *from, mesh_addr_t *to,
                              mesh_data_t *data, int timeout_ms, int *flag, mesh_opt_t opt[],
@@ -830,8 +835,10 @@ esp_err_t esp_mesh_get_id(mesh_addr_t *id);
 
 /**
  * @brief      Designate device type over the mesh network
+ *            - MESH_IDLE: designates a device as a self-organized node for a mesh network
  *            - MESH_ROOT: designates the root node for a mesh network
- *            - MESH_LEAF: designates a device as a standalone Wi-Fi station
+ *            - MESH_LEAF: designates a device as a standalone Wi-Fi station that connects to a parent
+ *            - MESH_STA: designates a device as a standalone Wi-Fi station that connects to a router
  *
  * @param[in]  type  device type
  *
