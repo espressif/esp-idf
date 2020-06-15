@@ -12,6 +12,10 @@ if(BOOTLOADER_BUILD)
         list(APPEND scripts "esp32s2/ld/esp32s2.rom.spiflash.ld")
     endif()
 
+    if(target STREQUAL "esp32s3")
+        list(APPEND scripts "esp32s3/ld/esp32s3.rom.spiflash.ld")
+    endif()
+
     if(CONFIG_ESP32_REV_MIN_3)
         list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
     endif()
@@ -60,6 +64,16 @@ else() # Regular app build
         if(CONFIG_NEWLIB_NANO_FORMAT)
             list(APPEND scripts "esp32s2/ld/esp32s2.rom.newlib-nano.ld")
         endif()
+
+    elseif(target STREQUAL "esp32s3")
+        # no SPIRAM workaround for esp32s3
+        list(APPEND scripts "esp32s3/ld/esp32s3.rom.newlib-funcs.ld"
+                            "esp32s3/ld/esp32s3.rom.spiflash.ld")
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+            list(APPEND scripts "esp32s3/ld/esp32s3.rom.newlib-nano.ld")
+        endif()
+
     endif()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
