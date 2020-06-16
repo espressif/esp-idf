@@ -181,11 +181,14 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-#ifndef CONFIG_APPTRACE_ENABLE
-#define configMINIMAL_STACK_SIZE		768
-#else
+#if defined(CONFIG_APPTRACE_ENABLE)
 /* apptrace module requires at least 2KB of stack per task */
 #define configMINIMAL_STACK_SIZE		2048
+#elif defined(CONFIG_COMPILER_OPTIMIZATION_NONE)
+/* with optimizations disabled, scheduler uses additional stack */
+#define configMINIMAL_STACK_SIZE		1024
+#else
+#define configMINIMAL_STACK_SIZE		768
 #endif
 
 #ifndef configIDLE_TASK_STACK_SIZE

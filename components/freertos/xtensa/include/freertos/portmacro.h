@@ -144,7 +144,7 @@ static inline uint32_t xPortGetCoreID(void);
 // They can be called from interrupts too.
 // WARNING: Only applies to current CPU. See notes above.
 static inline unsigned portENTER_CRITICAL_NESTED(void) {
-	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+	unsigned state = XTOS_SET_MIN_INTLEVEL(XCHAL_EXCM_LEVEL);
 	portbenchmarkINTERRUPT_DISABLE();
 	return state;
 }

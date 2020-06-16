@@ -129,12 +129,44 @@ def test_coredump_uart_abort(env, extra_data):
 
 
 @panic_test()
+def test_coredump_uart_int_wdt(env, extra_data):
+    with get_dut(env, "coredump_uart", "test_int_wdt") as dut:
+        dut.expect_gme("Interrupt wdt timeout on CPU0")
+        dut.expect_reg_dump(0)
+        dut.expect("Backtrace:")
+        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_reg_dump(1)
+        dut.expect("Backtrace:")
+        dut.expect_elf_sha256()
+        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect("Rebooting...")
+        dut.process_coredump_uart()
+        # TODO: check the contents of core dump output
+
+
+@panic_test()
 def test_coredump_flash_abort(env, extra_data):
     with get_dut(env, "coredump_flash", "test_abort") as dut:
         dut.expect(re.compile(r"abort\(\) was called at PC [0-9xa-f]+ on core 0"))
         dut.expect("Backtrace:")
         dut.expect_elf_sha256()
         dut.expect_none("CORRUPTED", "Guru Meditation", "Re-entered core dump")
+        dut.expect("Rebooting...")
+        dut.process_coredump_flash()
+        # TODO: check the contents of core dump output
+
+
+@panic_test()
+def test_coredump_flash_int_wdt(env, extra_data):
+    with get_dut(env, "coredump_flash", "test_int_wdt") as dut:
+        dut.expect_gme("Interrupt wdt timeout on CPU0")
+        dut.expect_reg_dump(0)
+        dut.expect("Backtrace:")
+        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_reg_dump(1)
+        dut.expect("Backtrace:")
+        dut.expect_elf_sha256()
+        dut.expect_none("CORRUPTED", "Guru Meditation")
         dut.expect("Rebooting...")
         dut.process_coredump_flash()
         # TODO: check the contents of core dump output
