@@ -221,3 +221,12 @@ scan_tests:
     - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
+
+check_readme_links:
+  extends: .check_job_template
+  tags: [ "amd64", "deploy", "internet" ]
+  allow_failure: true
+  variables:
+    PYTHON_VER: 3
+  script:
+    - python ${IDF_PATH}/tools/ci/check_readme_links.py

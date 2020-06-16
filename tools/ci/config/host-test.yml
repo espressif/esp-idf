@@ -312,3 +312,4 @@ test_mkdfu:
   script:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
+
