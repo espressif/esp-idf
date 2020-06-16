@@ -484,6 +484,24 @@ Where,
 ```c
 #define REMOTE_SERVICE_UUID        0x00FF
 ```
+There will be a detail to note if the UUID of the service application that the client is interested in is a 128-bit UUID, which is related to the little-endian storage mode of the processor architecture . The struct of UUID is defined as:
+
+```c
+typedef struct {
+#define ESP_UUID_LEN_16     2
+#define ESP_UUID_LEN_32     4
+#define ESP_UUID_LEN_128    16
+    uint16_t len;							/*!< UUID length, 16bit, 32bit or 128bit */
+    union {
+        uint16_t    uuid16;                 /*!< 16bit UUID */
+        uint32_t    uuid32;                 /*!< 32bit UUID */
+        uint8_t     uuid128[ESP_UUID_LEN_128]; /*!< 128bit UUID */
+    } uuid;									/*!< UUID */
+} __attribute__((packed)) esp_bt_uuid_t;
+```
+
+In little-endian storage mode, you can define service UUID directly in the normal order if it's a 16-bit or a 32-bit UUID. However, if service UUID is a 128-bit UUID, there is a little difference. For example, if the UUID of the service application that the client is interested in is 12345678-a1b2-c3d4-e5f6-9fafd205e457, `REMOTE_SERVICE_UUID` should be defined as {0x57,0xE4,0x05,0xD2,0xAF,0x9F,0xF6,0xE5,0xD4,0xC3,0xB2,0xA1,0x78,0x56,0x34,0x12}.
+
 The services are then discovered as follows:
 
 ```c
