@@ -87,8 +87,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                 // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
                 free(output_buffer);
                 output_buffer = NULL;
-                output_len = 0;
             }
+            output_len = 0;
             break;
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
@@ -98,8 +98,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                 if (output_buffer != NULL) {
                     free(output_buffer);
                     output_buffer = NULL;
-                    output_len = 0;
                 }
+                output_len = 0;
                 ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
                 ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
             }
