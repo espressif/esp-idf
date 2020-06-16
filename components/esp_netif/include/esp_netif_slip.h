@@ -22,15 +22,6 @@
 extern "C" {
 #endif
 
-/** @brief SLIP event base */
-ESP_EVENT_DECLARE_BASE(SLIP_EVENT);
-
-typedef enum esp_netif_slip_event {
-    SLIP_EVENT_START = 1,
-    SLIP_EVENT_STOP = 2,
-
-} esp_netif_slip_event_e;
-
 /** @brief Configuration structure for SLIP network interface
  *
  */

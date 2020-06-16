@@ -28,8 +28,6 @@
 #include <string.h>
 
 
-ESP_EVENT_DEFINE_BASE(SLIP_EVENT);
-
 static const char *TAG = "esp-netif_lwip-slip";
 
 /**

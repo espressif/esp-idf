@@ -200,42 +200,6 @@ static esp_err_t esp_slip_modem_post_attach(esp_netif_t *esp_netif, void *args)
     return ESP_OK;
 }
 
-esp_err_t esp_slip_modem_set_default_handlers(esp_netif_t *esp_netif) {
-    esp_err_t ret;
-
-    if (esp_netif == NULL) {
-        ESP_LOGE(TAG, "esp-netif handle can't be null");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    ret = esp_event_handler_register(SLIP_EVENT, SLIP_EVENT_START, esp_netif_action_start, esp_netif);
-    if (ret != ESP_OK) {
-        goto fail;
-    }
-
-    ret = esp_event_handler_register(SLIP_EVENT, SLIP_EVENT_STOP, esp_netif_action_stop, esp_netif);
-    if (ret != ESP_OK) {
-        goto fail;
-    }
-
-fail:
-    esp_eth_clear_default_handlers(esp_netif);
-    return ret;
-}
-
-esp_err_t esp_slip_modem_clear_default_handlers(void *esp_netif)
-{
-    if (!esp_netif) {
-        ESP_LOGE(TAG, "esp-netif handle can't be null");
-        return ESP_ERR_INVALID_ARG;
-    }
-    esp_event_handler_unregister(SLIP_EVENT, SLIP_EVENT_START, esp_netif_action_start);
-    esp_event_handler_unregister(SLIP_EVENT, SLIP_EVENT_STOP, esp_netif_action_stop);
-
-    return ESP_OK;
-}
-
-
 static void esp_slip_modem_uart_rx_task(void *arg)
 {
     esp_slip_modem_t *slip_modem = (esp_slip_modem_t *) arg;
