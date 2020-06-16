@@ -74,8 +74,6 @@ const soc_memory_type_desc_t soc_memory_types[] = {
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
 
-#define RESERVE_SPIRAM_SIZE (4*1024*1024)
-
 /*
 Region descriptors. These describe all regions of memory available, and map them to a type in the above type.
 
@@ -87,7 +85,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { SOC_RTC_DRAM_LOW, 0x2000, 16, 0}, //RTC Fast Memory
 #endif
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, RESERVE_SPIRAM_SIZE, 15, 0}, //SPI SRAM, if available
+    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 15, 0}, //SPI SRAM, if available
 #endif
     { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
     { 0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
@@ -178,7 +176,9 @@ SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace me
 #endif
 
 #ifdef CONFIG_SPIRAM
-SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_LOW + RESERVE_SPIRAM_SIZE, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
+/* Reserve the whole possible SPIRAM region here, spiram.c will add some or all of this
+ * memory to heap depending on the actual SPIRAM chip size. */
+SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, spi_ram);
 #endif
 
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;

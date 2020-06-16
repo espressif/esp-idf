@@ -270,6 +270,8 @@
 #define SOC_EXTRAM_DATA_LOW 0x3F500000
 #define SOC_EXTRAM_DATA_HIGH 0x3FF80000
 
+#define SOC_EXTRAM_DATA_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW)
+
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40020000
 #define SOC_DIRAM_IRAM_HIGH   0x40070000
