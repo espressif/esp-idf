@@ -36,7 +36,6 @@
 #include "hal/wdt_hal.h"
 #include "hal/clk_gate_ll.h"
 #include "driver/rtc_io.h"
-#include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
@@ -585,9 +584,9 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void)
 
 esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
 {
-    if (uart_num == UART_NUM_0) {
+    if (uart_num == 0) {
         s_config.wakeup_triggers |= RTC_UART0_TRIG_EN;
-    } else if (uart_num == UART_NUM_1) {
+    } else if (uart_num == 1) {
         s_config.wakeup_triggers |= RTC_UART1_TRIG_EN;
     } else {
         return ESP_ERR_INVALID_ARG;
