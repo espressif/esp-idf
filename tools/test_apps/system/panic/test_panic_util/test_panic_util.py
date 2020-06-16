@@ -252,7 +252,7 @@ def panic_test(**kwargs):
 
     if 'additional_duts' not in kwargs:
         kwargs['additional_duts'] = PANIC_TEST_DUT_DICT
-    return ttfw_idf.idf_custom_test(app=PanicTestApp, env_tag="test_jtag_arm", **kwargs)
+    return ttfw_idf.idf_custom_test(app=PanicTestApp, env_tag="Example_GENERIC", **kwargs)
 
 
 def get_dut(env, app_config_name, test_name, qemu_wdt_enable=False):
