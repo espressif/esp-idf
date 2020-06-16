@@ -18,7 +18,7 @@ A touch sensor system is built on a substrate which carries electrodes and relev
 
  The sensing pads can be arranged in different combinations (e.g., matrix, slider), so that a larger area or more points can be detected. The touch pad sensing process is under the control of a hardware-implemented finite-state machine (FSM) which is initiated by software or a dedicated hardware timer.
 
-Design, operation, and control registers of a touch sensor are discussed in `{IDF_TARGET_NAME} Technical Reference Manual <IDF_TARGET_TRM_URL>`_ (PDF). Please refer to this manual for additional details on how this subsystem works.
+Design, operation, and control registers of a touch sensor are discussed in `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF). Please refer to this manual for additional details on how this subsystem works.
 
 In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
