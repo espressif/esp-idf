@@ -273,7 +273,9 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     arg.send_ind.need_confirm = need_confirm;
     arg.send_ind.value_len = value_len;
     arg.send_ind.value = value;
-
+    if(need_confirm == false){
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+    }
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t),
                                  btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
