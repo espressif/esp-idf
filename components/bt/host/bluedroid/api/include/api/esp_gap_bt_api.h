@@ -427,13 +427,15 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback);
 esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discovery_mode_t d_mode);
 
 /**
- * @brief           Start device discovery. This function should be called after esp_bluedroid_enable() completes successfully.
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if discovery is started or halted.
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_RES_EVT if discovery result is got.
+ * @brief           This function starts Inquiry and Name Discovery. It should be called after esp_bluedroid_enable() completes successfully.
+ *                  When Inquiry is halted and cached results do not contain device name, then Name Discovery will connect to the peer target to get the device name.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT when Inquriry is started or Name Discovery is completed.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_RES_EVT each time the two types of discovery results are got.
  *
- * @param[in]       mode - inquiry mode
- * @param[in]       inq_len - inquiry duration in 1.28 sec units, ranging from 0x01 to 0x30
- * @param[in]       num_rsps - number of inquiry responses that can be received, value 0 indicates an unlimited number of responses
+ * @param[in]       mode - Inquiry mode
+ * @param[in]       inq_len - Inquiry duration in 1.28 sec units, ranging from 0x01 to 0x30. This parameter only specifies the total duration of the Inquiry process,
+ *                          - when this time expires, Inquiry will be halted.
+ * @param[in]       num_rsps - Number of responses that can be received before the Inquiry is halted, value 0 indicates an unlimited number of responses.
  *
  * @return
  *                  - ESP_OK : Succeed
@@ -444,8 +446,9 @@ esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_disco
 esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, uint8_t num_rsps);
 
 /**
- * @brief           Cancel device discovery. This function should be called after esp_bluedroid_enable() completes successfully
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if discovery is stopped.
+ * @brief           Cancel Inquiry and Name Discovery. This function should be called after esp_bluedroid_enable() completes successfully.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if Inquiry or Name Discovery is cancelled by
+ *                  calling this function.
  *
  * @return
  *                  - ESP_OK : Succeed
