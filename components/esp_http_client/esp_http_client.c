@@ -91,6 +91,7 @@ typedef enum {
 struct esp_http_client {
     int                         redirect_counter;
     int                         max_redirection_count;
+    int                         max_authorization_retries;
     int                         process_again;
     struct http_parser          *parser;
     struct http_parser_settings *parser_settings;
@@ -138,8 +139,9 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
-static int DEFAULT_MAX_REDIRECT = 10;
-static int DEFAULT_TIMEOUT_MS = 5000;
+static const int DEFAULT_MAX_REDIRECT = 10;
+static const int DEFAULT_MAX_AUTH_RETRIES = 10;
+static const int DEFAULT_TIMEOUT_MS = 5000;
 
 static const char *HTTP_METHOD_MAPPING[] = {
     "GET",
@@ -151,7 +153,14 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "NOTIFY",
     "SUBSCRIBE",
     "UNSUBSCRIBE",
-    "OPTIONS"
+    "OPTIONS",
+    "COPY",
+    "MOVE",
+    "LOCK",
+    "UNLOCK",
+    "PROPFIND",
+    "PROPPATCH",
+    "MKCOL"
 };
 
 static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
@@ -358,6 +367,7 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->event_handler = config->event_handler;
     client->timeout_ms = config->timeout_ms;
     client->max_redirection_count = config->max_redirection_count;
+    client->max_authorization_retries = config->max_authorization_retries;
     client->user_data = config->user_data;
     client->buffer_size_rx = config->buffer_size;
     client->buffer_size_tx = config->buffer_size_tx;
@@ -373,6 +383,12 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
 
     if (client->max_redirection_count == 0) {
         client->max_redirection_count = DEFAULT_MAX_REDIRECT;
+    }
+
+    if (client->max_authorization_retries == 0) {
+        client->max_authorization_retries = DEFAULT_MAX_AUTH_RETRIES;
+    } else if (client->max_authorization_retries == -1) {
+        client->max_authorization_retries = 0;
     }
 
     if (config->path) {
@@ -1302,6 +1318,10 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         return;
     }
     if (client->state != HTTP_STATE_RES_COMPLETE_HEADER) {
+        return;
+    }
+    if (client->redirect_counter >= client->max_authorization_retries) {
+        ESP_LOGE(TAG, "Error, reached max_authorization_retries count=%d", client->redirect_counter);
         return;
     }
 
