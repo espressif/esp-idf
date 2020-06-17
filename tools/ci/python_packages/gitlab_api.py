@@ -4,12 +4,15 @@ import argparse
 import tempfile
 import tarfile
 import zipfile
+from functools import wraps
 
 import gitlab
 
 
 class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r"(\w+)(\s+(\d+)/(\d+))?")
+
+    DOWNLOAD_ERROR_MAX_RETRIES = 3
 
     def __init__(self, project_id=None):
         config_data_from_env = os.getenv("PYTHON_GITLAB_CONFIG")
@@ -69,6 +72,31 @@ class Gitlab(object):
         with zipfile.ZipFile(temp_file.name, "r") as archive_file:
             archive_file.extractall(destination)
 
+    def retry_download(func):
+        """
+        This wrapper will only catch IOError and retry the whole function.
+
+        So only use it with download functions, read() inside and atomic
+        functions
+        """
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            retried = 0
+            while True:
+                try:
+                    res = func(self, *args, **kwargs)
+                except (IOError, EOFError) as e:
+                    retried += 1
+                    if retried > self.DOWNLOAD_ERROR_MAX_RETRIES:
+                        raise e  # get out of the loop
+                    else:
+                        print('Retried for the {} time'.format(retried))
+                        continue
+                else:
+                    break
+            return res
+        return wrapper
+
     def download_artifact(self, job_id, artifact_path, destination=None):
         """
         download specific path of job artifacts and extract to destination.
@@ -123,6 +151,7 @@ class Gitlab(object):
                     job_id_list.append({"id": job.id, "parallel_num": match.group(3)})
         return job_id_list
 
+    @retry_download
     def download_archive(self, ref, destination, project_id=None):
         """
         Download archive of certain commit of a repository and extract to destination path
