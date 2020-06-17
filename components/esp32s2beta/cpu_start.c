@@ -277,9 +277,6 @@ void start_cpu0_default(void)
 #if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
     rtc_gpio_force_hold_dis_all();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
@@ -292,6 +289,11 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stdin  = (FILE*) &__sf_fake_stdin;
     _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
+#endif
+    // After setting _GLOBAL_REENT, ESP_LOGIx can be used instead of ESP_EARLY_LOGx.
+
+#if CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
 #endif
     esp_timer_init();
     esp_set_time_from_rtc();

@@ -36,7 +36,7 @@ void esp_flash_encryption_init_checks()
         uint8_t flash_crypt_cnt_wr_dis = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
         if (!flash_crypt_cnt_wr_dis) {
-            ESP_EARLY_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
+            ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
             esp_flash_write_protect_crypt_cnt();
         }
     }
@@ -48,13 +48,13 @@ void esp_flash_encryption_init_checks()
     mode = esp_get_flash_encryption_mode();
     if (mode == ESP_FLASH_ENC_MODE_DEVELOPMENT) {
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-        ESP_EARLY_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
-        ESP_EARLY_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
+        ESP_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
+        ESP_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
 #else
-        ESP_EARLY_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
+        ESP_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
 #endif
     } else if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
-        ESP_EARLY_LOGI(TAG, "Flash encryption mode is RELEASE");
+        ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
     }
 }
 #endif
