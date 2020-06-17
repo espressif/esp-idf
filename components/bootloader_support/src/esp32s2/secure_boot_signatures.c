@@ -66,6 +66,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
     ets_secure_boot_key_digests_t trusted_keys;
     ets_secure_boot_key_digests_t trusted_key_copies[2];
     ETS_STATUS r;
+    ets_secure_boot_status_t sb_result;
 
     memset(&trusted_keys, 0, sizeof(ets_secure_boot_key_digests_t));
     memset(trusted_key_copies, 0, 2 * sizeof(ets_secure_boot_key_digests_t));
@@ -87,6 +88,6 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
     ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[1], sizeof(ets_secure_boot_key_digests_t)) == 0);
 
     ESP_LOGI(TAG, "Verifying with RSA-PSS boot...");
-    r = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys, verified_digest);
-    return (r == ETS_OK) ? ESP_OK : ESP_FAIL;
+    sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys, verified_digest);
+    return (sb_result == SB_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
