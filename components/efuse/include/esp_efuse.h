@@ -380,6 +380,11 @@ esp_err_t esp_efuse_batch_write_cancel(void);
  */
 esp_err_t esp_efuse_batch_write_commit(void);
 
+inline static bool soc_has_cache_lock_bug(void)
+{
+    return (esp_efuse_get_chip_ver() == 3);
+}
+
 #ifdef __cplusplus
 }
 #endif
