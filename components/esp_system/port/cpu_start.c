@@ -180,11 +180,6 @@ static void start_other_core(void)
             ets_delay_us(100);
         }
     }
-    else {
-        s_cpu_inited[1] = true;
-		ESP_EARLY_LOGI(TAG, "Single core mode");
-		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-    }
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
@@ -287,9 +282,14 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
+#if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     start_other_core();
-#endif
+#else
+    ESP_EARLY_LOGI(TAG, "Single core mode");
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN); // stop the other core
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#endif // SOC_CPU_CORES_NUM > 1
 
 #if CONFIG_SPIRAM_MEMTEST
     if (g_spiram_ok) {
