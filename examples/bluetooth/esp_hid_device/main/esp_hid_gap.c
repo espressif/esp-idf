@@ -379,18 +379,10 @@ static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
 
 static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
-    static bool scan_running = false;
-    static bool scan_wait_stop = false;
     switch (event) {
     case ESP_BT_GAP_DISC_STATE_CHANGED_EVT: {
         ESP_LOGV(TAG, "BT GAP DISC_STATE %s", (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STARTED) ? "START" : "STOP");
-        if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STARTED) {
-            scan_running = true;
-            scan_wait_stop = true;
-        } else if (scan_wait_stop) {
-            scan_wait_stop = false;
-        } else if (scan_running) {
-            scan_running = false;
+        if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STOPPED) {
             SEND_BT_CB();
         }
         break;
