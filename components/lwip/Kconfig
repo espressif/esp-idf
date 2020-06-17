@@ -497,6 +497,13 @@ menu "LWIP"
             help
                 Enable this feature to support TCP window scaling.
 
+        config LWIP_TCP_RTO_TIME
+            int "Default TCP rto time"
+            default 3000
+            help
+                Set default TCP rto time for a reasonable initial rto.
+                In bad network environment, recommend set value of rto time to 1500.
+
     endmenu # TCP
 
     menu "UDP"
