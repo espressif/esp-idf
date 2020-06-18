@@ -749,7 +749,7 @@ class Monitor(object):
             self._print(output)
             self._output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
         except subprocess.CalledProcessError as e:
-            yellow_print("Failed to run espcoredump script: {}\n\n".format(e))
+            yellow_print("Failed to run espcoredump script: {}\n{}\n\n".format(e, e.output))
             self._output_enabled = True
             self._print(COREDUMP_UART_START + b'\n')
             self._print(self._coredump_buffer)
