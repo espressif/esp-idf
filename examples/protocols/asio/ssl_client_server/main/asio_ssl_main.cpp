@@ -27,20 +27,20 @@ extern const unsigned char cacert_pem_end[]   asm("_binary_ca_crt_end");
 extern const unsigned char prvtkey_pem_start[] asm("_binary_server_key_start");
 extern const unsigned char prvtkey_pem_end[]   asm("_binary_server_key_end");
 
-const asio::const_buffer cert_chain(cacert_pem_start, cacert_pem_end - cacert_pem_start);
-const asio::const_buffer privkey(prvtkey_pem_start, prvtkey_pem_end - prvtkey_pem_start);
-const asio::const_buffer server_cert(server_pem_start, server_pem_end - server_pem_start);
+static const asio::const_buffer cert_chain(cacert_pem_start, cacert_pem_end - cacert_pem_start);
+static const asio::const_buffer privkey(prvtkey_pem_start, prvtkey_pem_end - prvtkey_pem_start);
+static const asio::const_buffer server_cert(server_pem_start, server_pem_end - server_pem_start);
 
 using asio::ip::tcp;
 
-enum { max_length = 1024 };
+static const std::size_t max_length = 1024;
 
 class Client {
 public:
-    Client(asio::io_context& io_context,
-           asio::ssl::context& context,
-           const tcp::resolver::results_type& endpoints)
-            : socket_(io_context, context)
+    Client(asio::io_context &io_context,
+           asio::ssl::context &context,
+           const tcp::resolver::results_type &endpoints)
+        : socket_(io_context, context)
     {
 
 #if CONFIG_EXAMPLE_CLIENT_VERIFY_PEER
@@ -53,37 +53,29 @@ public:
     }
 
 private:
-    void connect(const tcp::resolver::results_type& endpoints)
+    void connect(const tcp::resolver::results_type &endpoints)
     {
         asio::async_connect(socket_.lowest_layer(), endpoints,
-                            [this](const std::error_code& error,
-                                   const tcp::endpoint& /*endpoint*/)
-                            {
-                                if (!error)
-                                {
-                                    handshake();
-                                }
-                                else
-                                {
-                                    std::cout << "Connect failed: " << error.message() << "\n";
-                                }
-                            });
+                            [this](const std::error_code & error,
+        const tcp::endpoint & /*endpoint*/) {
+            if (!error) {
+                handshake();
+            } else {
+                std::cout << "Connect failed: " << error.message() << "\n";
+            }
+        });
     }
 
     void handshake()
     {
         socket_.async_handshake(asio::ssl::stream_base::client,
-                                [this](const std::error_code& error)
-                                {
-                                    if (!error)
-                                    {
-                                        send_request();
-                                    }
-                                    else
-                                    {
-                                        std::cout << "Handshake failed: " << error.message() << "\n";
-                                    }
-                                });
+        [this](const std::error_code & error) {
+            if (!error) {
+                send_request();
+            } else {
+                std::cout << "Handshake failed: " << error.message() << "\n";
+            }
+        });
     }
 
     void send_request()
@@ -92,37 +84,28 @@ private:
 
         asio::async_write(socket_,
                           asio::buffer(request_, request_length),
-                          [this](const std::error_code& error, std::size_t length)
-                          {
-                              if (!error)
-                              {
-                                  receive_response(length);
-                              }
-                              else
-                              {
-                                  std::cout << "Write failed: " << error.message() << "\n";
-                              }
-                          });
+        [this](const std::error_code & error, std::size_t length) {
+            if (!error) {
+                receive_response(length);
+            } else {
+                std::cout << "Write failed: " << error.message() << "\n";
+            }
+        });
     }
 
     void receive_response(std::size_t length)
     {
         asio::async_read(socket_,
                          asio::buffer(reply_, length),
-                         [this](const std::error_code& error, std::size_t length)
-                         {
-                             if (!error)
-                             {
-                                 std::cout << "Reply: ";
-                                 std::cout.write(reply_, length);
-                                 std::cout << "\n";
-                             }
-                             else
-                             {
-                                 std::cout << "Read failed: " << error.message() << "\n";
-                             }
-                         });
-
+        [this](const std::error_code & error, std::size_t length) {
+            if (!error) {
+                std::cout << "Reply: ";
+                std::cout.write(reply_, length);
+                std::cout << "\n";
+            } else {
+                std::cout << "Read failed: " << error.message() << "\n";
+            }
+        });
     }
 
     asio::ssl::stream<tcp::socket> socket_;
@@ -132,8 +115,8 @@ private:
 
 class Session : public std::enable_shared_from_this<Session> {
 public:
-    Session(tcp::socket socket, asio::ssl::context& context)
-            : socket_(std::move(socket), context)
+    Session(tcp::socket socket, asio::ssl::context &context)
+        : socket_(std::move(socket), context)
     {
     }
 
@@ -147,42 +130,37 @@ private:
     {
         auto self(shared_from_this());
         socket_.async_handshake(asio::ssl::stream_base::server,
-                                [this, self](const std::error_code& error)
-                                {
-                                    if (!error)
-                                    {
-                                        do_read();
-                                    }
-                                });
+        [this, self](const std::error_code & error) {
+            if (!error) {
+                do_read();
+            }
+        });
     }
 
     void do_read()
     {
         auto self(shared_from_this());
         socket_.async_read_some(asio::buffer(data_),
-                                [this, self](const std::error_code& ec, std::size_t length)
-                                {
-                                    if (!ec)
-                                    {
-                                        data_[length] = 0;
-                                        std::cout << "Server received: " << data_ << std::endl;
-                                        do_write(length);
-                                    }
-                                });
+        [this, self](const std::error_code & ec, std::size_t length) {
+            if (!ec) {
+                std::cout << "Server received: ";
+                std::cout.write(data_, length);
+                std::cout << std::endl;
+                do_write(length);
+            }
+        });
     }
 
     void do_write(std::size_t length)
     {
         auto self(shared_from_this());
         asio::async_write(socket_, asio::buffer(data_, length),
-                          [this, self](const std::error_code& ec,
-                                       std::size_t /*length*/)
-                          {
-                              if (!ec)
-                              {
-                                  do_read();
-                              }
-                          });
+                          [this, self](const std::error_code & ec,
+        std::size_t /*length*/) {
+            if (!ec) {
+                do_read();
+            }
+        });
     }
 
     asio::ssl::stream<tcp::socket> socket_;
@@ -191,13 +169,13 @@ private:
 
 class Server {
 public:
-    Server(asio::io_context& io_context, unsigned short port)
-            : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
-              context_(asio::ssl::context::tls_server)
+    Server(asio::io_context &io_context, unsigned short port)
+        : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
+          context_(asio::ssl::context::tls_server)
     {
         context_.set_options(
-                asio::ssl::context::default_workarounds
-                | asio::ssl::context::no_sslv2);
+            asio::ssl::context::default_workarounds
+            | asio::ssl::context::no_sslv2);
         context_.use_certificate_chain(server_cert);
         context_.use_private_key(privkey, asio::ssl::context::pem);
 
@@ -208,15 +186,13 @@ private:
     void do_accept()
     {
         acceptor_.async_accept(
-                [this](const std::error_code& error, tcp::socket socket)
-                {
-                    if (!error)
-                    {
-                        std::make_shared<Session>(std::move(socket), context_)->start();
-                    }
+        [this](const std::error_code & error, tcp::socket socket) {
+            if (!error) {
+                std::make_shared<Session>(std::move(socket), context_)->start();
+            }
 
-                    do_accept();
-                });
+            do_accept();
+        });
     }
 
     tcp::acceptor acceptor_;
@@ -289,7 +265,7 @@ extern "C" void app_main(void)
     work_threads.emplace_back(ssl_client_thread);
 #endif // CONFIG_EXAMPLE_CLIENT
 
-    for (auto & t : work_threads) {
+    for (auto &t : work_threads) {
         t.join();
     }
 
