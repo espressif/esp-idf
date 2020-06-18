@@ -53,7 +53,7 @@ static esp_err_t esp_modem_dte_transmit(void *h, void *buffer, size_t len)
  * @param esp_netif handle to esp-netif object
  * @param args pointer to modem-netif driver
  *
- * @return ESP_OK on success
+ * @return ESP_OK on success, modem-start error code if starting failed
  */
 static esp_err_t esp_modem_post_attach_start(esp_netif_t * esp_netif, void * args)
 {
@@ -66,8 +66,7 @@ static esp_err_t esp_modem_post_attach_start(esp_netif_t * esp_netif, void * arg
     };
     driver->base.netif = esp_netif;
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
-    esp_modem_start_ppp(dte);
-    return ESP_OK;
+    return esp_modem_start_ppp(dte);
 }
 
 /**
