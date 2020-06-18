@@ -187,6 +187,14 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         // no-op for esp32s2beta
     }
 
+    uint32_t reject_triggers = 0;
+    if ((pd_flags & RTC_SLEEP_PD_DIG) == 0) {
+        /* Light sleep, enable sleep reject for faster return from this function,
+         * in case the wakeup is already triggerred.
+         */
+        reject_triggers = s_config.wakeup_triggers;
+    }
+
     // Enter sleep
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
@@ -196,7 +204,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
-    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0, 0);
+
+    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, 0);
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set(cpu_freq);
