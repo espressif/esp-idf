@@ -139,7 +139,10 @@ ESP32-S2-Saola-1 的主要组件和连接方式如下图所示。
 相关文档
 ========
 * `ESP32-S2-Saola-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-SAOLA-1_V1.1_schematics.pdf>`_ (PDF)
+* `ESP32-S2-Saola-1 尺寸图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Saola-1_V1.2_Dimensions.pdf>`_ (PDF)
 * `ESP32-S2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-S2-WROVER & ESP32-S2-WROVER-I 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-S2-WROOM & ESP32-S2-WROOM-I 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_cn.pdf>`_ (PDF)
 * `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF) 
+
+有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
