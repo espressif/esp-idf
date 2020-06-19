@@ -18,7 +18,8 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "soc/gpio_periph.h"
-#include "esp32/rom/gpio.h"
+#include "soc/gpio_caps.h"
+#include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
@@ -362,35 +363,35 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
 
     // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
     // set this and card_detect to high to enable sdio interrupt
-    gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_int, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, pslot->card_int, false);
 
     // Set up Card Detect input
     int matrix_in_cd;
     if (gpio_cd != SDMMC_SLOT_NO_CD) {
         ESP_LOGD(TAG, "using GPIO%d as CD pin", gpio_cd);
-        gpio_pad_select_gpio(gpio_cd);
+        esp_rom_gpio_pad_select_gpio(gpio_cd);
         gpio_set_direction(gpio_cd, GPIO_MODE_INPUT);
         matrix_in_cd = gpio_cd;
     } else {
         // if not set, default to CD low (card present)
-        matrix_in_cd = GPIO_FUNC_IN_LOW;
+        matrix_in_cd = GPIO_MATRIX_CONST_ZERO_INPUT;
     }
-    gpio_matrix_in(matrix_in_cd, pslot->card_detect, false);
+    esp_rom_gpio_connect_in_signal(matrix_in_cd, pslot->card_detect, false);
 
     // Set up Write Protect input
     int matrix_in_wp;
     if (gpio_wp != SDMMC_SLOT_NO_WP) {
         ESP_LOGD(TAG, "using GPIO%d as WP pin", gpio_wp);
-        gpio_pad_select_gpio(gpio_wp);
+        esp_rom_gpio_pad_select_gpio(gpio_wp);
         gpio_set_direction(gpio_wp, GPIO_MODE_INPUT);
         matrix_in_wp = gpio_wp;
     } else {
         // if not set, default to WP high (not write protected)
-        matrix_in_wp = GPIO_FUNC_IN_HIGH;
+        matrix_in_wp = GPIO_MATRIX_CONST_ONE_INPUT;
     }
     // WP signal is normally active low, but hardware expects
     // an active-high signal, so invert it in GPIO matrix
-    gpio_matrix_in(matrix_in_wp, pslot->write_protect, true);
+    esp_rom_gpio_connect_in_signal(matrix_in_wp, pslot->write_protect, true);
 
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);

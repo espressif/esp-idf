@@ -40,6 +40,9 @@ extern "C" {
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 46))              /*!< Check whether it can be a valid GPIO number of output mode */
 #define GPIO_MASK_CONTAIN_INPUT_GPIO(gpio_mask)  ((gpio_mask & (GPIO_SEL_46)))                                    /*!< Check whether it contains input io */
 
+#define GPIO_MATRIX_CONST_ONE_INPUT   (0x38)
+#define GPIO_MATRIX_CONST_ZERO_INPUT  (0x3C)
+
 #ifdef __cplusplus
 }
 #endif

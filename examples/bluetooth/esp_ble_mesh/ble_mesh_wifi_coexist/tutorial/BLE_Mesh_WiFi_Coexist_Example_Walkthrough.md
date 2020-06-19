@@ -102,7 +102,7 @@ This demo calls the `board_init` function to:
 
 ```c
 for (int i = 0; i < 3; i++) {
-    gpio_pad_select_gpio(led_state[i].pin);
+    esp_rom_gpio_pad_select_gpio(led_state[i].pin);
     gpio_set_direction(led_state[i].pin, GPIO_MODE_OUTPUT);
     gpio_set_level(led_state[i].pin, LED_OFF);
     led_state[i].previous = LED_OFF;

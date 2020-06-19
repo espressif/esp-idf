@@ -24,14 +24,13 @@
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/uart.h"
-#include "esp32s2/rom/gpio.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
+#include "esp_rom_gpio.h"
 
 #ifdef CONFIG_ESP_CONSOLE_UART_NONE
 void bootloader_console_init(void)
@@ -70,9 +69,9 @@ void bootloader_console_init(void)
         const uint32_t tx_idx = uart_periph_signal[uart_num].tx_sig;
         const uint32_t rx_idx = uart_periph_signal[uart_num].rx_sig;
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
-        gpio_pad_pullup(uart_rx_gpio);
-        gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
-        gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
+        esp_rom_gpio_pad_pullup_only(uart_rx_gpio);
+        esp_rom_gpio_connect_out_signal(uart_tx_gpio, tx_idx, 0, 0);
+        esp_rom_gpio_connect_in_signal(uart_rx_gpio, rx_idx, 0);
         // Enable the peripheral
         periph_ll_enable_clk_clear_rst(PERIPH_UART0_MODULE + uart_num);
     }

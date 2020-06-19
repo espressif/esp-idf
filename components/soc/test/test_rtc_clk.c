@@ -5,12 +5,13 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/gpio_periph.h"
+#include "hal/gpio_ll.h"
 #include "driver/rtc_io.h"
 #include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
+#include "esp_rom_gpio.h"
 extern void rtc_clk_select_rtc_slow_clk(void); 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
@@ -148,16 +149,18 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 void stop_rtc_external_quartz(void){
     const uint8_t pin_32 = 32;
     const uint8_t pin_33 = 33;
-    const uint8_t mask_32 = (1 << (pin_32 - 32));
-    const uint8_t mask_33 = (1 << (pin_33 - 32));
 
     rtc_clk_32k_enable(false);
 
-    gpio_pad_select_gpio(pin_32);
-    gpio_pad_select_gpio(pin_33);
-    gpio_output_set_high(0, mask_32 | mask_33, mask_32 | mask_33, 0);
+    esp_rom_gpio_pad_select_gpio(pin_32);
+    esp_rom_gpio_pad_select_gpio(pin_33);
+    gpio_ll_output_enable(&GPIO, pin_32);
+    gpio_ll_output_enable(&GPIO, pin_33);
+    gpio_ll_set_level(&GPIO, pin_32, 0);
+    gpio_ll_set_level(&GPIO, pin_33, 0);
     ets_delay_us(500000);
-    gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
+    gpio_ll_output_disable(&GPIO, pin_32);
+    gpio_ll_output_disable(&GPIO, pin_33);
 }
 
 static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_ms)

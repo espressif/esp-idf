@@ -19,7 +19,7 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "esp32s2/rom/efuse.h"
-#include "esp32s2/rom/gpio.h"
+#include "esp_rom_gpio.h"
 #include "esp32s2/rom/spi_flash.h"
 
 #include "bootloader_init.h"
@@ -66,15 +66,15 @@ void bootloader_configure_spi_pins(int drv)
         hd_gpio_num = (spiconfig >> 24)  & 0x3f;
         wp_gpio_num = wp_pin;
     }
-    gpio_pad_set_drv(clk_gpio_num, drv);
-    gpio_pad_set_drv(q_gpio_num,   drv);
-    gpio_pad_set_drv(d_gpio_num,   drv);
-    gpio_pad_set_drv(cs0_gpio_num, drv);
+    esp_rom_gpio_pad_set_drv(clk_gpio_num, drv);
+    esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
+    esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);
+    esp_rom_gpio_pad_set_drv(cs0_gpio_num, drv);
     if (hd_gpio_num <= MAX_PAD_GPIO_NUM) {
-        gpio_pad_set_drv(hd_gpio_num, drv);
+        esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
     }
     if (wp_gpio_num <= MAX_PAD_GPIO_NUM) {
-        gpio_pad_set_drv(wp_gpio_num, drv);
+        esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
     }
 }
 

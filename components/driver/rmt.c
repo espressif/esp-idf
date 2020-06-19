@@ -26,6 +26,7 @@
 #include "soc/soc_memory_layout.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
+#include "esp_rom_gpio.h"
 
 #define RMT_CHANNEL_ERROR_STR "RMT CHANNEL ERR"
 #define RMT_ADDR_ERROR_STR "RMT ADDRESS ERR"
@@ -486,10 +487,10 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     if (mode == RMT_MODE_TX) {
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-        gpio_matrix_out(gpio_num, RMT_SIG_OUT0_IDX + channel, 0, 0);
+        esp_rom_gpio_connect_out_signal(gpio_num, RMT_SIG_OUT0_IDX + channel, 0, 0);
     } else {
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-        gpio_matrix_in(gpio_num, RMT_SIG_IN0_IDX + channel, 0);
+        esp_rom_gpio_connect_in_signal(gpio_num, RMT_SIG_IN0_IDX + channel, 0);
     }
     return ESP_OK;
 }

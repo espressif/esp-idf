@@ -20,6 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "dp83848";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -178,7 +179,7 @@ static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     if (dp83848->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(dp83848->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(dp83848->reset_gpio_num);
         gpio_set_direction(dp83848->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(dp83848->reset_gpio_num, 0);
         gpio_set_level(dp83848->reset_gpio_num, 1);

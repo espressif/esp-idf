@@ -18,7 +18,7 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32 GPIO register operations
+// The LL layer for ESP32-S2 GPIO register operations
 
 #pragma once
 

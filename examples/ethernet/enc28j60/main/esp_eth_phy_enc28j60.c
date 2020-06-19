@@ -163,7 +163,7 @@ static esp_err_t enc28j60_reset_hw(esp_eth_phy_t *phy)
     phy_enc28j60_t *enc28j60 = __containerof(phy, phy_enc28j60_t, parent);
     // set reset_gpio_num minus zero can skip hardware reset phy chip
     if (enc28j60->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(enc28j60->reset_gpio_num);
+        gpio_reset_pin(enc28j60->reset_gpio_num);
         gpio_set_direction(enc28j60->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(enc28j60->reset_gpio_num, 0);
         gpio_set_level(enc28j60->reset_gpio_num, 1);

@@ -22,7 +22,7 @@
 #include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
 
-#include "esp32/rom/lldesc.h"
+#include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
 
@@ -38,6 +38,7 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_efuse.h"
+#include "esp_rom_gpio.h"
 
 static const char* I2S_TAG = "I2S";
 
@@ -121,7 +122,7 @@ static inline void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, boo
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_DEF_OUTPUT);
-        gpio_matrix_out(gpio, signal_idx, out_inv, oen_inv);
+        esp_rom_gpio_connect_out_signal(gpio, signal_idx, out_inv, oen_inv);
     }
 }
 
@@ -131,7 +132,7 @@ static inline void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         //Set direction, for some GPIOs, the input function are not enabled as default.
         gpio_set_direction(gpio, GPIO_MODE_DEF_INPUT);
-        gpio_matrix_in(gpio, signal_idx, inv);
+        esp_rom_gpio_connect_in_signal(gpio, signal_idx, inv);
     }
 }
 

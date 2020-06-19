@@ -29,6 +29,7 @@
 #include "driver/uart_select.h"
 #include "driver/periph_ctrl.h"
 #include "sdkconfig.h"
+#include "esp_rom_gpio.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
@@ -564,24 +565,24 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if(tx_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
         gpio_set_level(tx_io_num, 1);
-        gpio_matrix_out(tx_io_num, uart_periph_signal[uart_num].tx_sig, 0, 0);
+        esp_rom_gpio_connect_out_signal(tx_io_num, uart_periph_signal[uart_num].tx_sig, 0, 0);
     }
     if(rx_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
         gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
-        gpio_matrix_in(rx_io_num, uart_periph_signal[uart_num].rx_sig, 0);
+        esp_rom_gpio_connect_in_signal(rx_io_num, uart_periph_signal[uart_num].rx_sig, 0);
     }
     if(rts_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
-        gpio_matrix_out(rts_io_num, uart_periph_signal[uart_num].rts_sig, 0, 0);
+        esp_rom_gpio_connect_out_signal(rts_io_num, uart_periph_signal[uart_num].rts_sig, 0, 0);
     }
     if(cts_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
         gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
-        gpio_matrix_in(cts_io_num, uart_periph_signal[uart_num].cts_sig, 0);
+        esp_rom_gpio_connect_in_signal(cts_io_num, uart_periph_signal[uart_num].cts_sig, 0);
     }
     return ESP_OK;
 }

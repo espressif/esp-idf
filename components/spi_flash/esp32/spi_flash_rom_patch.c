@@ -13,7 +13,6 @@
 // limitations under the License.
 #include "sdkconfig.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/gpio.h"
 #include "esp32/rom/spi_flash.h"
 #include "soc/spi_periph.h"
 

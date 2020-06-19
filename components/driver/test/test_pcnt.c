@@ -21,7 +21,9 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
+#include "soc/gpio_caps.h"
 #include "unity.h"
+#include "esp_rom_gpio.h"
 
 #define PULSE_IO 21
 #define PCNT_INPUT_IO 4
@@ -49,9 +51,9 @@ static void pcnt_test_io_config(int ctrl_level)
 {
     // Connect internal signals using IO matrix.
     gpio_set_direction(PULSE_IO, GPIO_MODE_INPUT_OUTPUT);
-    gpio_matrix_out(PULSE_IO, LEDC_LS_SIG_OUT1_IDX, 0, 0); // LEDC_TIMER_1, LEDC_LOW_SPEED_MODE
-    gpio_matrix_in(PULSE_IO, PCNT_SIG_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
-    gpio_matrix_in(ctrl_level ? GPIO_FUNC_IN_HIGH: GPIO_FUNC_IN_LOW, PCNT_CTRL_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
+    esp_rom_gpio_connect_out_signal(PULSE_IO, LEDC_LS_SIG_OUT1_IDX, 0, 0); // LEDC_TIMER_1, LEDC_LOW_SPEED_MODE
+    esp_rom_gpio_connect_in_signal(PULSE_IO, PCNT_SIG_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
+    esp_rom_gpio_connect_in_signal(ctrl_level ? GPIO_MATRIX_CONST_ONE_INPUT: GPIO_MATRIX_CONST_ZERO_INPUT, PCNT_CTRL_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
 }
 
 /* use LEDC to produce pulse for PCNT

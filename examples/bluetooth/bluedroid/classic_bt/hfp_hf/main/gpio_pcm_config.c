@@ -10,6 +10,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "gpio_pcm_config.h"
+#include "esp_rom_gpio.h"
 
 #define GPIO_OUTPUT_PCM_FSYNC      (25)
 #define GPIO_OUTPUT_PCM_CLK_OUT    (5)
@@ -25,7 +26,7 @@ void app_gpio_pcm_io_cfg(void)
     gpio_config_t io_conf;
     /// configure the PCM output pins
     //disable interrupt
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     //set as output mode
     io_conf.mode = GPIO_MODE_OUTPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
@@ -39,7 +40,7 @@ void app_gpio_pcm_io_cfg(void)
 
     /// configure the PCM input pin
     //interrupt of rising edge
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     //bit mask of the pins, use GPIO4/5 here
     io_conf.pin_bit_mask = GPIO_INPUT_PCM_PIN_SEL;
     //set as input mode
@@ -51,10 +52,10 @@ void app_gpio_pcm_io_cfg(void)
     gpio_config(&io_conf);
 
     /// matrix out | in the internal PCM signals to the GPIOs
-    gpio_matrix_out(GPIO_OUTPUT_PCM_FSYNC, PCMFSYNC_OUT_IDX, false, false);
-    gpio_matrix_out(GPIO_OUTPUT_PCM_CLK_OUT, PCMCLK_OUT_IDX, false, false);
-    gpio_matrix_out(GPIO_OUTPUT_PCM_DOUT, PCMDOUT_IDX, false, false);
-    gpio_matrix_in(GPIO_INPUT_PCM_DIN, PCMDIN_IDX, false);
+    esp_rom_gpio_connect_out_signal(GPIO_OUTPUT_PCM_FSYNC, PCMFSYNC_OUT_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(GPIO_OUTPUT_PCM_CLK_OUT, PCMCLK_OUT_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(GPIO_OUTPUT_PCM_DOUT, PCMDOUT_IDX, false, false);
+    esp_rom_gpio_connect_in_signal(GPIO_INPUT_PCM_DIN, PCMDIN_IDX, false);
 }
 
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
@@ -68,7 +69,7 @@ void app_gpio_aec_io_cfg(void)
 {
     gpio_config_t io_conf;
     //disable interrupt
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     //set as output mode
     io_conf.mode = GPIO_MODE_OUTPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19

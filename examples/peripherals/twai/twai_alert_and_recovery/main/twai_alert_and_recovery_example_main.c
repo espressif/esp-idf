@@ -27,6 +27,7 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "driver/twai.h"
+#include "esp_rom_gpio.h"
 
 /* --------------------- Definitions and static variables ------------------ */
 //Example Configuration
@@ -53,10 +54,10 @@ static void invert_tx_bits(bool enable)
 {
     if (enable) {
         //Inverts output of TX to trigger errors
-        gpio_matrix_out(TX_GPIO_NUM, TWAI_TX_IDX, true, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_IDX, true, false);
     } else {
         //Returns TX to default settings
-        gpio_matrix_out(TX_GPIO_NUM, TWAI_TX_IDX, false, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_IDX, false, false);
     }
 }
 

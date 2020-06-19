@@ -37,7 +37,7 @@
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/gpio.h"
+#include "esp_rom_gpio.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"
@@ -74,15 +74,15 @@ void bootloader_configure_spi_pins(int drv)
     } else {
         const uint32_t spiconfig = ets_efuse_get_spiconfig();
         if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
-            gpio_matrix_out(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
-            gpio_matrix_out(FLASH_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
-            gpio_matrix_in(FLASH_SPIQ_IO, SPIQ_IN_IDX, 0);
-            gpio_matrix_out(FLASH_SPID_IO, SPID_OUT_IDX, 0, 0);
-            gpio_matrix_in(FLASH_SPID_IO, SPID_IN_IDX, 0);
-            gpio_matrix_out(FLASH_SPIWP_IO, SPIWP_OUT_IDX, 0, 0);
-            gpio_matrix_in(FLASH_SPIWP_IO, SPIWP_IN_IDX, 0);
-            gpio_matrix_out(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
-            gpio_matrix_in(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIQ_IO, SPIQ_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPID_IO, SPID_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPID_IO, SPID_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIWP_IO, SPIWP_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIWP_IO, SPIWP_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
             //select pin function gpio
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);

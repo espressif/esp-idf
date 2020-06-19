@@ -21,6 +21,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "rtl8201";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -172,7 +173,7 @@ static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     if (rtl8201->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(rtl8201->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(rtl8201->reset_gpio_num);
         gpio_set_direction(rtl8201->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(rtl8201->reset_gpio_num, 0);
         gpio_set_level(rtl8201->reset_gpio_num, 1);

@@ -17,7 +17,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32/rom/gpio.h"
+#include "esp_rom_gpio.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/efuse.h"
 #include "soc/gpio_periph.h"
@@ -93,15 +93,15 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
     } else {
         const uint32_t spiconfig = ets_efuse_get_spiconfig();
         if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
-            gpio_matrix_out(SPI_IOMUX_PIN_NUM_CS, SPICS0_OUT_IDX, 0, 0);
-            gpio_matrix_out(SPI_IOMUX_PIN_NUM_MISO, SPIQ_OUT_IDX, 0, 0);
-            gpio_matrix_in(SPI_IOMUX_PIN_NUM_MISO, SPIQ_IN_IDX, 0);
-            gpio_matrix_out(SPI_IOMUX_PIN_NUM_MOSI, SPID_OUT_IDX, 0, 0);
-            gpio_matrix_in(SPI_IOMUX_PIN_NUM_MOSI, SPID_IN_IDX, 0);
-            gpio_matrix_out(SPI_IOMUX_PIN_NUM_WP, SPIWP_OUT_IDX, 0, 0);
-            gpio_matrix_in(SPI_IOMUX_PIN_NUM_WP, SPIWP_IN_IDX, 0);
-            gpio_matrix_out(SPI_IOMUX_PIN_NUM_HD, SPIHD_OUT_IDX, 0, 0);
-            gpio_matrix_in(SPI_IOMUX_PIN_NUM_HD, SPIHD_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_CS, SPICS0_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_MISO, SPIQ_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_MISO, SPIQ_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_MOSI, SPID_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_MOSI, SPID_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_WP, SPIWP_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_WP, SPIWP_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_IN_IDX, 0);
             //select pin function gpio
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
