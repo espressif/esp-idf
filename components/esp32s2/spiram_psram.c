@@ -47,6 +47,8 @@
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
 
+static const char* TAG = "psram";
+
 //Commands for PSRAM chip
 #define PSRAM_READ                 0x03
 #define PSRAM_FAST_READ            0x0B
@@ -150,7 +152,6 @@ typedef struct {
     .psram_spihd_sd2_io = PSRAM_SPIHD_SD2_IO,  \
 }
 
-//static const char* TAG = "psram";
 typedef enum {
     PSRAM_SPI_1  = 0x1,
     /* PSRAM_SPI_2, */
@@ -431,8 +432,14 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     /* SPI1: set cs timing(hold time) in order to send commands on SPI1 */
     psram_set_clk_mode(_SPI_FLASH_PORT, PSRAM_CLK_MODE_A1C);
     psram_set_spi1_cmd_cs_timing(PSRAM_CLK_MODE_A1C);
-    psram_read_id(&s_psram_id);    
+
+    /* 16Mbit psram ID read error
+     * workaround: Issue a pre-condition of dummy read id, then Read ID command
+     */
+    psram_read_id(&s_psram_id);
+    psram_read_id(&s_psram_id);
     if (!PSRAM_IS_VALID(s_psram_id)) {
+        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", s_psram_id);
         return ESP_FAIL;
     }
 
