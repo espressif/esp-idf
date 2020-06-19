@@ -2193,6 +2193,7 @@ static void gen_client_prop_get(struct bt_mesh_model *model,
         total_len += sizeof(u16_t);
         if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
             /* Add this in case the message is too long */
+            BT_WARN("Too large generic client properties status");
             break;
         }
         net_buf_simple_add_le16(sdu, srv->property_ids[i]);
