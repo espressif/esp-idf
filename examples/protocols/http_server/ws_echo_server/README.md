@@ -10,6 +10,7 @@ ws_server_example_test.py could be used as a simple WS client).
 
 The server registers WebSocket handler which echoes back the received WebSocket frame. It also demonstrates
 use of asynchronous send, which is triggered on reception of a certain message.
+Please note that the WebSocket HTTPD server does not automatically fragment messages, so the application code must deal with fragmentation, setting `final` flag as appropriate. Single (complete/unfragmented) WebSocket frames must have the `FIN` flag set to be accepted as valid  (see [RFC6455, section 5.4](https://tools.ietf.org/html/rfc6455#section-5.4)).
 
 ### Hardware Required
 
