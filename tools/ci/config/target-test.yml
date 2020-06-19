@@ -305,6 +305,7 @@ example_test_009:
       expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"
+    PYTHON_VER: 3
 
 example_test_010:
   extends: .example_test_template
@@ -368,6 +369,7 @@ test_app_test_001:
       expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"
+    PYTHON_VER: 3
 
 test_app_test_002:
   extends: .test_app_template
