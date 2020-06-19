@@ -14,7 +14,6 @@ else()
     set(srcs "cache_err_int.c"
              "memprot.c"
              "clk.c"
-             "cpu_start.c"
              "crosscore_int.c"
              "dport_access.c"
              "hw_random.c"
@@ -50,9 +49,6 @@ else()
                         REQUIRED_IDF_TARGETS esp32s2)
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/esp32s2_out.ld")
-
-    # Rely on user code to define app_main
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
 
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary

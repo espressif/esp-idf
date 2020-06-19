@@ -22,6 +22,14 @@
 
 #include "soc/cpu_caps.h"
 
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
+#endif
+
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 void cpu_hal_set_breakpoint(int id, const void* addr)
 {

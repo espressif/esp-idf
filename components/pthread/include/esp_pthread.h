@@ -82,6 +82,11 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
  */
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p);
 
+/**
+ * @brief Initialize pthread library
+ */
+esp_err_t esp_pthread_init(void);
+
 #ifdef __cplusplus
 }
 #endif

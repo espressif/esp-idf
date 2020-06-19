@@ -103,6 +103,7 @@
 
 #include "esp_debug_helpers.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 #include "esp_private/crosscore_int.h"
 
 #include "esp_intr_alloc.h"
@@ -110,12 +111,37 @@
 #include "sdkconfig.h"
 #include "esp_compiler.h"
 
+#include "esp_task_wdt.h"
+#include "esp_task.h"
+
+#include "soc/soc_caps.h"
+#include "soc/efuse_reg.h"
+#include "soc/dport_access.h"
+#include "soc/dport_reg.h"
+#include "esp_int_wdt.h"
+
+
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/spiram.h"
+#endif
+
+#include "esp_private/startup_internal.h" // [refactor-todo] for g_spiram_ok
+#include "esp_app_trace.h" // [refactor-todo] for esp_app_trace_init
+
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);
 
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
+extern void app_main(void);
+
+static const char* TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
+								// for now maintain the same log output
 
 #if CONFIG_FREERTOS_CORETIMER_0
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
@@ -127,10 +153,10 @@ extern void _xt_coproc_init(void);
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
 /*-----------------------------------------------------------*/
-unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Duplicate of inaccessible xSchedulerRunning; needed at startup to avoid counting nesting
+volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Duplicate of inaccessible xSchedulerRunning; needed at startup to avoid counting nesting
 unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
-BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};  
-BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};  
+BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
+BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 /*-----------------------------------------------------------*/
 
 // User exception dispatcher when exiting
@@ -385,12 +411,12 @@ uint32_t xPortGetTickRateHz(void) {
 void __attribute__((optimize("-O3"))) vPortEnterCritical(portMUX_TYPE *mux)
 {
 	BaseType_t oldInterruptLevel = portENTER_CRITICAL_NESTED();
-	/* Interrupts may already be disabled (because we're doing this recursively) 
+	/* Interrupts may already be disabled (because we're doing this recursively)
 	* but we can't get the interrupt level after
 	* vPortCPUAquireMutex, because it also may mess with interrupts.
 	* Get it here first, then later figure out if we're nesting
 	* and save for real there.
-	*/ 
+	*/
 	vPortCPUAcquireMutex( mux );
 	BaseType_t coreID = xPortGetCoreID();
 	BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
@@ -408,7 +434,7 @@ void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 	vPortCPUReleaseMutex( mux );
 	BaseType_t coreID = xPortGetCoreID();
 	BaseType_t nesting =  port_uxCriticalNesting[coreID];
-	
+
 	if(nesting > 0U)
 	{
 		nesting--;
@@ -434,4 +460,133 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 		dest = strcat(dest, str[i]);
 	}
 	esp_system_abort(buf);
+}
+
+
+static void main_task(void* args)
+{
+#if !CONFIG_FREERTOS_UNICORE
+	// Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+	while (port_xSchedulerRunning[1] == 0) {
+		;
+	}
+#endif
+
+	// [refactor-todo] check if there is a way to move the following block to esp_system startup
+	heap_caps_enable_nonos_stack_heaps();
+
+	// Now we have startup stack RAM available for heap, enable any DMA pool memory
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+	if (g_spiram_ok) {
+		esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+		if (r != ESP_OK) {
+			ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+			abort();
+		}
+	}
+#endif
+
+	//Initialize task wdt if configured to do so
+#ifdef CONFIG_ESP_TASK_WDT_PANIC
+	ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+#elif CONFIG_ESP_TASK_WDT
+	ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+#endif
+
+	//Add IDLE 0 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+	TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+	if(idle_0 != NULL){
+		ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
+	}
+#endif
+	//Add IDLE 1 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+	TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+	if(idle_1 != NULL){
+		ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
+	}
+#endif
+
+	app_main();
+	vTaskDelete(NULL);
+}
+
+// For now, running FreeRTOS on one core and a bare metal on the other (or other OSes)
+// is not supported. For now CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+// should mirror each other's values.
+//
+// And since this should be true, we can just check for CONFIG_FREERTOS_UNICORE.
+#if CONFIG_FREERTOS_UNICORE != CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+	#error "FreeRTOS and system configuration mismatch regarding the use of multiple cores."
+#endif
+
+
+#if !CONFIG_FREERTOS_UNICORE
+void start_app_other_cores(void)
+{
+	// For now, we only support up to two core: 0 and 1.
+	if (xPortGetCoreID() >= 2) {
+		abort();
+	}
+
+	// Wait for FreeRTOS initialization to finish on PRO CPU
+	while (port_xSchedulerRunning[0] == 0) {
+		;
+	}
+
+#if CONFIG_APPTRACE_ENABLE
+	// [refactor-todo] move to esp_system initialization
+	esp_err_t err = esp_apptrace_init();
+	assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+#endif
+
+#if CONFIG_ESP_INT_WDT
+	//Initialize the interrupt watch dog for CPU1.
+	esp_int_wdt_cpu_init();
+#endif
+
+	esp_crosscore_int_init();
+	esp_dport_access_int_init();
+
+	ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
+	xPortStartScheduler();
+	abort(); /* Only get to here if FreeRTOS somehow very broken */
+}
+#endif
+
+void start_app(void)
+{
+#if CONFIG_ESP_INT_WDT
+	esp_int_wdt_init();
+	//Initialize the interrupt watch dog for CPU0.
+	esp_int_wdt_cpu_init();
+#else
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+	assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+#endif
+#endif
+
+	esp_crosscore_int_init();
+
+#ifndef CONFIG_FREERTOS_UNICORE
+	esp_dport_access_int_init();
+#endif
+
+	portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+												ESP_TASK_MAIN_STACK, NULL,
+												ESP_TASK_MAIN_PRIO, NULL, 0);
+	assert(res == pdTRUE);
+
+	// ESP32 has single core variants. Check that FreeRTOS has been configured properly.
+#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
+	if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+		ESP_EARLY_LOGE(TAG, "Running on single core chip, but FreeRTOS is built with dual core support.");
+		ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
+		abort();
+	}
+#endif // CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
+
+	ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+	vTaskStartScheduler();
 }

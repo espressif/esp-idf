@@ -72,9 +72,9 @@ function run_tests()
     print_status "Updating component source file rebuilds component"
     # touch a file & do a build
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/cpu_start.c
+    touch ${IDF_PATH}/components/esp_system/port/cpu_start.c
     idf.py build || failure "Failed to partial build"
-    assert_rebuilt ${APP_BINS} esp-idf/esp32/libesp32.a esp-idf/esp32/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp32.dir/cpu_start.c.obj
+    assert_rebuilt ${APP_BINS} esp-idf/esp_system/libesp_system.a esp-idf/esp_system/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp_system.dir/port/cpu_start.c.obj
     assert_not_rebuilt esp-idf/lwip/liblwip.a esp-idf/freertos/libfreertos.a ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "Bootloader source file rebuilds bootloader"
@@ -109,12 +109,12 @@ function run_tests()
 	echo "project-version-2.0(012345678901234567890123456789)" > ${TESTDIR}/template/version.txt
 	idf.py build || failure "Failed to rebuild with changed app version"
     assert_rebuilt ${APP_BINS}
-    assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp_system/libesp_system.a
 
     print_status "Re-building does not change app.bin"
     take_build_snapshot
     idf.py build
-    assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp_system/libesp_system.a
     rm -f ${IDF_PATH}/version.txt
     rm -f ${TESTDIR}/template/version.txt
 

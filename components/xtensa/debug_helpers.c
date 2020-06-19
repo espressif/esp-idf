@@ -20,6 +20,8 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/cpu.h"
 
+#include "sdkconfig.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

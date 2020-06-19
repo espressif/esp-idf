@@ -499,8 +499,8 @@ ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
     :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
     on **PRO_CPU**. Note that this is **not equivalent to running vanilla
-    FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such
-    as :component_file:`esp32/cpu_start.c`. For more details regarding the
+    FreeRTOS**. Note that this option may affect behavior of components other than
+    :component:`freertos`. For more details regarding the
     effects of running ESP-IDF FreeRTOS on a single core, search for
     occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 

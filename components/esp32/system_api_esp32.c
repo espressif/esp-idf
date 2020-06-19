@@ -33,12 +33,7 @@
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
 
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/cache_err_int.h"
-#endif
-
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
