@@ -525,6 +525,7 @@ static void send_scene_register_status(struct bt_mesh_model *model,
             if ((publish == false && total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) ||
                     (publish == true && total_len > msg->size + BLE_MESH_SERVER_TRANS_MIC_SIZE)) {
                 /* Add this in case the message is too long */
+                BT_WARN("Too large scene register status");
                 break;
             }
             net_buf_simple_add_le16(msg, scene->scene_number);
