@@ -20,7 +20,7 @@
 
 #include "esp32/rom/cache.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/crc.h"
+#include "esp_rom_crc.h"
 
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
@@ -231,7 +231,7 @@ static const char *TAG = "secure_boot_v2";
 
 static esp_err_t validate_signature_block(const ets_secure_boot_signature_t *sig_block, uint8_t *digest)
 {
-    uint32_t crc = crc32_le(0, (uint8_t *)sig_block, CRC_SIGN_BLOCK_LEN);
+    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)sig_block, CRC_SIGN_BLOCK_LEN);
     if (sig_block->block[0].magic_byte == SIG_BLOCK_MAGIC_BYTE && sig_block->block[0].block_crc == crc && !memcmp(digest, sig_block->block[0].image_digest, DIGEST_LEN)) {
         ESP_LOGI(TAG, "valid signature block found");
         return ESP_OK;

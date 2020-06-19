@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,25 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROM_CRC_H
-#define ROM_CRC_H
-
-#include <stdint.h>
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** \defgroup uart_apis, uart configuration and communication related apis
-  * @brief uart apis
-  */
+#include <stdint.h>
 
-/** @addtogroup uart_apis
-  * @{
-  */
-
-
-/*           Notes about CRC APIs usage
+/**           Notes about CRC API
  * The ESP32 ROM include some CRC tables and CRC APIs to speed up CRC calculation.
  * The CRC APIs include CRC8, CRC16, CRC32 algorithms for both little endian and big endian modes.
  * Here are the polynomials for the algorithms:
@@ -67,94 +57,68 @@ extern "C" {
  * CRC-16/XMODEM, poly= 0x1021, init = 0x0000, refin = false, refout = false, xorout = 0x0000
  *     crc = ~crc16_be((uint16_t)~0x0000, buf, length);
  *
- *
  */
 
 /**
-  * @brief CRC32 value that is in little endian.
-  *
-  * @param  uint32_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint32_t crc32_le(uint32_t crc, uint8_t const *buf, uint32_t len);
+ * @brief CRC32 value in little endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC32 value
+ */
+uint32_t esp_rom_crc32_le(uint32_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief CRC32 value that is in big endian.
-  *
-  * @param  uint32_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint32_t crc32_be(uint32_t crc, uint8_t const *buf, uint32_t len);
+ * @brief CRC32 value in big endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC32 value
+ */
+uint32_t esp_rom_crc32_be(uint32_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief CRC16 value that is in little endian.
-  *
-  * @param  uint16_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint16_t crc16_le(uint16_t crc, uint8_t const *buf, uint32_t len);
+ * @brief CRC16 value in little endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC16 value
+ */
+uint16_t esp_rom_crc16_le(uint16_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief CRC16 value that is in big endian.
-  *
-  * @param  uint16_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint16_t crc16_be(uint16_t crc, uint8_t const *buf, uint32_t len);
+ * @brief CRC16 value in big endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC16 value
+ */
+uint16_t esp_rom_crc16_be(uint16_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief CRC8 value that is in little endian.
-  *
-  * @param  uint8_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint8_t crc8_le(uint8_t crc, uint8_t const *buf, uint32_t len);
+ * @brief CRC8 value in little endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC8 value
+ */
+uint8_t esp_rom_crc8_le(uint8_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief CRC8 value that is in big endian.
-  *
-  * @param  uint32_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint8_t crc8_be(uint8_t crc, uint8_t const *buf, uint32_t len);
-
-/**
-  * @}
-  */
+ * @brief CRC8 value in big endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC8 value
+ */
+uint8_t esp_rom_crc8_be(uint8_t crc, uint8_t const *buf, uint32_t len);
 
 #ifdef __cplusplus
 }
-#endif
-
-
 #endif
