@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.5)
 include("${BUILD_PROPERTIES_FILE}")
 include("${COMPONENT_PROPERTIES_FILE}")
 
@@ -18,18 +19,52 @@ function(__component_get_property var component_target property)
     set(${var} ${${_property}} PARENT_SCOPE)
 endfunction()
 
+#
+# Given a component name or alias, get the corresponding component target.
+#
+function(__component_get_target var name_or_alias)
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
+
+    # Assume first that the paramters is an alias.
+    string(REPLACE "::" "_" name_or_alias "${name_or_alias}")
+    set(component_target ___${name_or_alias})
+
+    if(component_target IN_LIST component_targets)
+        set(${var} ${component_target} PARENT_SCOPE)
+        set(target ${component_target})
+    else() # assumption is wrong, try to look for it manually
+        unset(target)
+        foreach(component_target ${component_targets})
+            __component_get_property(_component_name ${component_target} COMPONENT_NAME)
+            if(name_or_alias STREQUAL _component_name)
+                set(target ${component_target})
+                break()
+            endif()
+        endforeach()
+        set(${var} ${target} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(idf_component_get_property var component property)
+    __component_get_target(component_target ${component})
+    __component_get_property(_var ${component_target} ${property})
+    set(${var} ${_var} PARENT_SCOPE)
+endfunction()
+
 macro(require_idf_targets)
 endmacro()
 
 macro(idf_component_register)
     set(options)
-    set(single_value)
+    set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
                     PRIV_REQUIRES REQUIRED_IDF_TARGETS EMBED_FILES EMBED_TXTFILES)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" "${ARGN}")
-    set(__component_requires "${__REQUIRES}")
     set(__component_priv_requires "${__PRIV_REQUIRES}")
+    set(__component_requires "${__REQUIRES}")
+    set(__component_kconfig "${__KCONFIG}")
+    set(__component_kconfig_projbuild "${__KCONFIG_PROJBUILD}")
     set(__component_registered 1)
     return()
 endmacro()
@@ -64,6 +99,8 @@ function(__component_get_requirements)
 
     set(__component_requires "${__component_requires}" PARENT_SCOPE)
     set(__component_priv_requires "${__component_priv_requires}" PARENT_SCOPE)
+    set(__component_kconfig "${__component_kconfig}" PARENT_SCOPE)
+    set(__component_kconfig_projbuild "${__component_kconfig_projbuild}" PARENT_SCOPE)
     set(__component_registered ${__component_registered} PARENT_SCOPE)
 endfunction()
 
@@ -97,6 +134,21 @@ foreach(__component_target ${__component_targets})
 __component_set_property(${__component_target} PRIV_REQUIRES \"${__component_priv_requires}\")
 __component_set_property(${__component_target} __COMPONENT_REGISTERED ${__component_registered})"
     )
+
+    if(__component_kconfig)
+        get_filename_component(__component_kconfig "${__component_kconfig}" ABSOLUTE)
+        set(__contents
+"${__contents}\n__component_set_property(${__component_target} KCONFIG \"${__component_kconfig}\")"
+            )
+    endif()
+
+    if(__component_kconfig_projbuild)
+        get_filename_component(__component_kconfig "${__component_kconfig}" ABSOLUTE)
+        set(__contents
+"${__contents}\n__component_set_property(${__component_target} KCONFIG_PROJBUILD \"${__component_kconfig_projbuild}\")"
+            )
+    endif()
+
     set(__component_requires_contents "${__component_requires_contents}\n${__contents}")
 endforeach()
 
