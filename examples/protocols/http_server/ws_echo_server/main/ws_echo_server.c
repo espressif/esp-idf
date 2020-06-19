@@ -48,7 +48,6 @@ static void ws_async_send(void *arg)
     ws_pkt.payload = (uint8_t*)data;
     ws_pkt.len = strlen(data);
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-    ws_pkt.final = true;
 
     httpd_ws_send_frame_async(hd, fd, &ws_pkt);
     free(resp_arg);
