@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 
 from find_apps import find_apps
-from find_build_apps import CMakeBuildSystem
+from find_build_apps import BUILD_SYSTEMS, BUILD_SYSTEM_CMAKE
 from ttfw_idf.CIAssignExampleTest import CIExampleAssignTest, TestAppsGroup, ExampleGroup
 
 VALID_TARGETS = [
@@ -54,13 +54,14 @@ def main():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('paths', type=str, nargs='+',
                         help="One or more app paths")
-    common.add_argument('-c', '--ci_config_file', type=str, required=True,
+    common.add_argument('-b', '--build-system', choices=BUILD_SYSTEMS.keys(), default=BUILD_SYSTEM_CMAKE)
+    common.add_argument('-c', '--ci-config-file', type=str, required=True,
                         help="gitlab ci config target-test file")
-    common.add_argument('-o', '--output_path', type=str, required=True,
+    common.add_argument('-o', '--output-path', type=str, required=True,
                         help="output path of the scan result")
-    common.add_argument('-p', '--preserve-all', action="store_true",
+    common.add_argument('--preserve', action="store_true",
                         help='add this flag to preserve artifacts for all apps')
-    common.add_argument('-b', '--build-all', action="store_true",
+    common.add_argument('--build-all', action="store_true",
                         help='add this flag to build all apps')
 
     actions.add_parser('example_test', parents=[common])
@@ -90,8 +91,8 @@ def main():
     '''
     {
         <target>: {
-            'test_case_apps': [<app_dir>],
-            'standalone_apps': [<app_dir>],
+            'test_case_apps': [<app_dir>],   # which is used in target tests
+            'standalone_apps': [<app_dir>],  # which is not
         },
         ...
     }
@@ -99,6 +100,9 @@ def main():
     scan_info_dict = defaultdict(dict)
     # store the test cases dir, exclude these folders when scan for standalone apps
     exclude_apps = []
+
+    build_system = args.build_system.lower()
+    build_system_class = BUILD_SYSTEMS[build_system]
 
     for target in VALID_TARGETS:
         target_dict = scan_info_dict[target]
@@ -108,32 +112,36 @@ def main():
             app_target = case.case_info['target']
             if app_target.lower() != target.lower():
                 continue
-            test_case_apps.update(find_apps(CMakeBuildSystem, app_dir, True, [], target.lower()))
+            test_case_apps.update(find_apps(build_system_class, app_dir, True, [], target.lower()))
             exclude_apps.append(app_dir)
 
     for target in VALID_TARGETS:
         target_dict = scan_info_dict[target]
         standalone_apps = target_dict['standalone_apps'] = set()
         for path in args.paths:
-            standalone_apps.update(find_apps(CMakeBuildSystem, path, True, exclude_apps, target.lower()))
+            standalone_apps.update(find_apps(build_system_class, path, True, exclude_apps, target.lower()))
 
     build_all = _judge_build_all(args.build_all)
+    test_case_apps_preserve_default = True if build_system == 'cmake' else False
+
     for target in VALID_TARGETS:
         apps = []
         for app_dir in scan_info_dict[target]['test_case_apps']:
             apps.append({
                 'app_dir': app_dir,
                 'build': True,
-                'preserve': True,
+                'preserve': args.preserve or test_case_apps_preserve_default
             })
         for app_dir in scan_info_dict[target]['standalone_apps']:
             apps.append({
                 'app_dir': app_dir,
-                'build': build_all,
-                'preserve': args.preserve_all and build_all,  # you can't preserve the artifacts if you don't build them right?
+                'build': build_all if build_system == 'cmake' else True,
+                'preserve': (args.preserve and build_all) if build_system == 'cmake' else False
             })
-        with open(os.path.join(args.output_path, 'scan_{}.json'.format(target.lower())), 'w') as fw:
-            fw.writelines([json.dumps(app) + '\n' for app in apps])
+        output_path = os.path.join(args.output_path, 'scan_{}_{}.json'.format(target.lower(), build_system))
+        if apps:
+            with open(output_path, 'w') as fw:
+                fw.writelines([json.dumps(app) + '\n' for app in apps])
 
 
 if __name__ == '__main__':

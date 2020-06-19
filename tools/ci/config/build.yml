@@ -96,9 +96,6 @@ build_esp_idf_tests_cmake_esp32s2:
     - mkdir ${BUILD_PATH}
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh
-    # Check if the tests demand Make built binaries. If not, delete them
-    - if [ ${EXAMPLE_TEST_BUILD_SYSTEM} == "cmake" ]; then exit 0; fi
-    - rm -rf ${BUILD_PATH}
 
 build_examples_make:
   extends: .build_examples_template
@@ -113,6 +110,7 @@ build_examples_make:
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples_make"
     EXAMPLE_TEST_BUILD_SYSTEM: "make"
     IDF_TARGET: "esp32"  # currently we only support esp32
+    SCAN_EXAMPLE_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}.json
   only:
     refs:
       - master
@@ -145,7 +143,6 @@ build_examples_make:
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
     EXAMPLE_TEST_BUILD_SYSTEM: "cmake"
     SCAN_EXAMPLE_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}.json
-
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
