@@ -259,6 +259,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
     endif()
 
+    idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
+
     # Generate the menuconfig target
     add_custom_target(menuconfig
         ${menuconfig_depends}
@@ -266,6 +268,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         COMMAND ${prepare_kconfig_files_command}
         COMMAND ${confgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --dont-write-deprecated
         --output config ${sdkconfig}
         COMMAND ${TERM_CHECK_CMD}
@@ -275,13 +278,17 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
+        "IDF_ENV_FPGA=${idf_env_fpga}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
         # done manually
         USES_TERMINAL
         # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
         # compatibility)
-        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${idf_target}" --output config ${sdkconfig}
+        COMMAND ${confgen_basecommand}
+        --env "IDF_TARGET=${idf_target}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
+        --output config ${sdkconfig}
         )
 
     # Custom target to run confserver.py from the build tool
