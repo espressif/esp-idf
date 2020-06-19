@@ -1,4 +1,5 @@
 import argparse
+import errno
 import json
 import os
 import re
@@ -20,7 +21,12 @@ SPECIAL_REFS = [
 ]
 
 
-def _judge_build_all():
+def _judge_build_all(args_build_all):
+    if args_build_all:
+        return True
+    if os.getenv('BUILD_ALL_APPS'):
+        return True
+
     ref = os.getenv('CI_COMMIT_REF_NAME')
     pipeline_src = os.getenv('CI_PIPELINE_SOURCE')
     if not ref or not pipeline_src:
@@ -49,11 +55,13 @@ def main():
     common.add_argument('paths', type=str, nargs='+',
                         help="One or more app paths")
     common.add_argument('-c', '--ci_config_file', type=str, required=True,
-                        help="gitlab ci config file")
+                        help="gitlab ci config target-test file")
     common.add_argument('-o', '--output_path', type=str, required=True,
                         help="output path of the scan result")
     common.add_argument('-p', '--preserve-all', action="store_true",
                         help='add this flag to preserve artifacts for all apps')
+    common.add_argument('-b', '--build-all', action="store_true",
+                        help='add this flag to build all apps')
 
     actions.add_parser('example_test', parents=[common])
     actions.add_parser('test_apps', parents=[common])
@@ -72,10 +80,12 @@ def main():
 
         test_cases.extend(assign.search_cases())
 
-    try:
-        os.makedirs(args.output_path)
-    except Exception:
-        pass
+    if not os.path.exists(args.output_path):
+        try:
+            os.makedirs(args.output_path)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise e
 
     '''
     {
@@ -90,13 +100,12 @@ def main():
     # store the test cases dir, exclude these folders when scan for standalone apps
     exclude_apps = []
 
-    # TODO change this chip to target after feat/add_multi_target_for_example_test is merged
     for target in VALID_TARGETS:
         target_dict = scan_info_dict[target]
         test_case_apps = target_dict['test_case_apps'] = set()
         for case in test_cases:
             app_dir = case.case_info['app_dir']
-            app_target = case.case_info['chip']
+            app_target = case.case_info['target']
             if app_target.lower() != target.lower():
                 continue
             test_case_apps.update(find_apps(CMakeBuildSystem, app_dir, True, [], target.lower()))
@@ -108,7 +117,7 @@ def main():
         for path in args.paths:
             standalone_apps.update(find_apps(CMakeBuildSystem, path, True, exclude_apps, target.lower()))
 
-    build_all = _judge_build_all()
+    build_all = _judge_build_all(args.build_all)
     for target in VALID_TARGETS:
         apps = []
         for app_dir in scan_info_dict[target]['test_case_apps']:
