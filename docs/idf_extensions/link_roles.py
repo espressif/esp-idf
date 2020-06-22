@@ -57,7 +57,8 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
         # Redirects to submodule repo if path is a submodule, else default to IDF repo
         def redirect_submodule(path, submods, rev):
             for key, value in submods.items():
-                if path.lstrip('/').startswith(key):
+                # Add path separator to end of submodule path to ensure we are matching a directory
+                if path.lstrip('/').startswith(os.path.join(key, '')):
                     return value.url.replace('.git', ''), value.rev, re.sub('^/{}/'.format(key), '', path)
 
             return IDF_REPO, rev, path
