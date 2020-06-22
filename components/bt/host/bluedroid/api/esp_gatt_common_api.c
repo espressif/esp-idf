@@ -49,10 +49,35 @@ esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
 }
 
 #if (BLE_INCLUDED == TRUE)
-extern uint16_t L2CA_GetFreePktBufferNum_LE(void);
+extern UINT16 L2CA_GetFreePktBufferNum_LE(void);
 
-uint16_t esp_ble_get_sendable_packets_num ()
+/**
+ * @brief           This function is called to get currently sendable packets number on controller,
+ *                  the function is called only in BLE running core and single connection now.
+ *
+ * @return
+ *                  sendable packets number on controller
+ *
+ */
+ 
+uint16_t esp_ble_get_sendable_packets_num (void)
 {
     return L2CA_GetFreePktBufferNum_LE();
+}
+
+/**
+ * @brief           This function is used to query the number of available buffers for the current connection.
+ *                  When you need to query the current available buffer number, it is recommended to use this API.
+ * @param[in]       conn_id: current connection id.
+ * 
+ * @return
+ *                  Number of available buffers for the current connection
+ *
+ */
+ 
+extern UINT16 L2CA_GetCurFreePktBufferNum_LE(UINT16 conn_id);
+uint16_t esp_ble_get_cur_sendable_packets_num (uint16_t connid)
+{
+    return L2CA_GetCurFreePktBufferNum_LE(connid);
 }
 #endif
