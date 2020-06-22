@@ -28,17 +28,17 @@ void touch_hal_init(void)
     touch_ll_set_voltage_low(TOUCH_PAD_LOW_VOLTAGE_THRESHOLD);
     touch_ll_set_voltage_attenuation(TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
     touch_ll_set_idle_channel_connect(TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT);
-    /* Clear touch channels to initialize the channel value (baseline, raw_data).
+    /* Clear touch channels to initialize the channel value (benchmark, raw_data).
      * Note: Should call it after enable clock gate. */
     touch_ll_clkgate(true);  // Enable clock gate for touch sensor.
-    touch_ll_filter_reset_baseline(TOUCH_PAD_MAX);
-    touch_ll_sleep_reset_baseline();
+    touch_ll_reset_benchmark(TOUCH_PAD_MAX);
+    touch_ll_sleep_reset_benchmark();
 }
 
 void touch_hal_deinit(void)
 {
-    touch_ll_filter_reset_baseline(TOUCH_PAD_MAX);
-    touch_ll_sleep_reset_baseline();
+    touch_ll_reset_benchmark(TOUCH_PAD_MAX);
+    touch_ll_sleep_reset_benchmark();
     touch_ll_stop_fsm();
     touch_ll_clkgate(false);
     touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
@@ -58,10 +58,7 @@ void touch_hal_filter_set_config(const touch_filter_config_t *filter_info)
 {
     touch_ll_filter_set_filter_mode(filter_info->mode);
     touch_ll_filter_set_debounce(filter_info->debounce_cnt);
-    touch_ll_filter_set_hysteresis(filter_info->hysteresis_thr);
     touch_ll_filter_set_noise_thres(filter_info->noise_thr);
-    touch_ll_filter_set_neg_noise_thres(filter_info->noise_neg_thr);
-    touch_ll_filter_set_baseline_reset(filter_info->neg_noise_limit);
     touch_ll_filter_set_jitter_step(filter_info->jitter_step);
     touch_ll_filter_set_smooth_mode(filter_info->smh_lvl);
 }
@@ -70,10 +67,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info)
 {
     touch_ll_filter_get_filter_mode(&filter_info->mode);
     touch_ll_filter_get_debounce(&filter_info->debounce_cnt);
-    touch_ll_filter_get_hysteresis(&filter_info->hysteresis_thr);
     touch_ll_filter_get_noise_thres(&filter_info->noise_thr);
-    touch_ll_filter_get_neg_noise_thres(&filter_info->noise_neg_thr);
-    touch_ll_filter_get_baseline_reset(&filter_info->neg_noise_limit);
     touch_ll_filter_get_jitter_step(&filter_info->jitter_step);
     touch_ll_filter_get_smooth_mode(&filter_info->smh_lvl);
 }
@@ -149,7 +143,7 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
         /* Default change touch dbias to self-dbias to save power.
         Measuring the sleep pad threshold after `sleep_channel_set_config`. */
         touch_ll_sleep_low_power(true);
-        touch_ll_sleep_reset_baseline();
+        touch_ll_sleep_reset_benchmark();
     } else {
         touch_ll_sleep_set_channel_num(TOUCH_PAD_NUM0);
     }

@@ -225,7 +225,7 @@ typedef volatile struct {
         struct {
             uint32_t touch_outen:        15;                /*touch controller output enable*/
             uint32_t touch_status_clr:    1;                /*clear all touch active status*/
-            uint32_t touch_data_sel:      2;                /*3: smooth data 2: baseline 1 0: raw_data*/
+            uint32_t touch_data_sel:      2;                /*3: smooth data 2: benchmark 1 0: raw_data*/
             uint32_t touch_denoise_end:   1;                /*touch_denoise_done*/
             uint32_t touch_unit_end:      1;                /*touch_unit_done*/
             uint32_t touch_approach_pad2: 4;                /*indicate which pad is approach pad2*/

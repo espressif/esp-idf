@@ -24,9 +24,7 @@ extern "C" {
 #define SOC_TOUCH_PAD_MEASURE_WAIT          (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 
-#define SOC_TOUCH_SHIELD_CHANNEL            (14) /*!< The waterproof function includes a shielded channel (TOUCH_PAD_NUM14)
-                                                    The shielded channel outputs the same signal as the channel being measured. 
-                                                    It is generally designed as a grid and is placed around the touch buttons. */
+#define SOC_TOUCH_SHIELD_CHANNEL            (14) /*!< The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) */
 #define SOC_TOUCH_DENOISE_CHANNEL           (0)  /*!< T0 is an internal channel that does not have a corresponding external GPIO. 
                                                     T0 will work simultaneously with the measured channel Tn. Finally, the actual 
                                                     measured value of Tn is the value after subtracting lower bits of T0. */
