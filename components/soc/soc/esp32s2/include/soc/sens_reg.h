@@ -631,7 +631,7 @@ extern "C" {
 #define SENS_TOUCH_DENOISE_END_V  0x1
 #define SENS_TOUCH_DENOISE_END_S  18
 /* SENS_TOUCH_DATA_SEL : R/W ;bitpos:[17:16] ;default: 2'd0 ; */
-/*description: 3: smooth data 2: baseline 1 0: raw_data*/
+/*description: 3: smooth data 2: benchmark 1 0: raw_data*/
 #define SENS_TOUCH_DATA_SEL  0x00000003
 #define SENS_TOUCH_DATA_SEL_M  ((SENS_TOUCH_DATA_SEL_V)<<(SENS_TOUCH_DATA_SEL_S))
 #define SENS_TOUCH_DATA_SEL_V  0x3

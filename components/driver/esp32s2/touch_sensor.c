@@ -322,21 +322,21 @@ esp_err_t IRAM_ATTR touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR touch_pad_filter_read_baseline(touch_pad_t touch_num, uint32_t *basedata)
+esp_err_t IRAM_ATTR touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark)
 {
     TOUCH_CHANNEL_CHECK(touch_num);
     TOUCH_ENTER_CRITICAL_SAFE();
-    touch_hal_filter_read_baseline(touch_num, basedata);
+    touch_hal_read_benchmark(touch_num, benchmark);
     TOUCH_EXIT_CRITICAL_SAFE();
     return ESP_OK;
 }
 
 /* Should be call after clk enable and filter enable. */
-esp_err_t touch_pad_filter_reset_baseline(touch_pad_t touch_num)
+esp_err_t touch_pad_reset_benchmark(touch_pad_t touch_num)
 {
     TOUCH_CHECK(touch_num <= TOUCH_PAD_MAX && touch_num >= 0, "Touch channel error", ESP_ERR_INVALID_ARG);
     TOUCH_ENTER_CRITICAL();
-    touch_hal_filter_reset_baseline(touch_num);
+    touch_hal_reset_benchmark(touch_num);
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -345,10 +345,7 @@ esp_err_t touch_pad_filter_set_config(touch_filter_config_t *filter_info)
 {
     TOUCH_CHECK(filter_info->mode < TOUCH_PAD_FILTER_MAX, TOUCH_PARAM_CHECK_STR("mode"), ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(filter_info->debounce_cnt <= TOUCH_DEBOUNCE_CNT_MAX, TOUCH_PARAM_CHECK_STR("debounce"), ESP_ERR_INVALID_ARG);
-    TOUCH_CHECK(filter_info->hysteresis_thr <= TOUCH_HYSTERESIS_THR_MAX, TOUCH_PARAM_CHECK_STR("hysteresis"), ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(filter_info->noise_thr <= TOUCH_NOISE_THR_MAX, TOUCH_PARAM_CHECK_STR("noise"), ESP_ERR_INVALID_ARG);
-    TOUCH_CHECK(filter_info->noise_neg_thr <= TOUCH_NOISE_NEG_THR_MAX, TOUCH_PARAM_CHECK_STR("noise"), ESP_ERR_INVALID_ARG);
-    TOUCH_CHECK(filter_info->neg_noise_limit <= TOUCH_NEG_NOISE_CNT_LIMIT, TOUCH_PARAM_CHECK_STR("noise_limit"), ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(filter_info->jitter_step <= TOUCH_JITTER_STEP_MAX, TOUCH_PARAM_CHECK_STR("jitter_step"), ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(filter_info->smh_lvl < TOUCH_PAD_SMOOTH_MAX, TOUCH_PARAM_CHECK_STR("smooth level"), ESP_ERR_INVALID_ARG);
 
@@ -522,7 +519,7 @@ esp_err_t touch_pad_proximity_get_data(touch_pad_t touch_num, uint32_t *measure_
 {
     TOUCH_CHECK(touch_hal_proximity_pad_check(touch_num), "touch num is not proximity", ESP_ERR_INVALID_ARG);
     TOUCH_ENTER_CRITICAL_SAFE();
-    touch_hal_filter_read_baseline(touch_num, measure_out);
+    touch_hal_read_benchmark(touch_num, measure_out);
     TOUCH_EXIT_CRITICAL_SAFE();
     return ESP_OK;
 }
@@ -585,10 +582,10 @@ esp_err_t touch_pad_sleep_get_threshold(touch_pad_t pad_num, uint32_t *touch_thr
     return ESP_OK;
 }
 
-esp_err_t touch_pad_sleep_channel_read_baseline(touch_pad_t pad_num, uint32_t *baseline)
+esp_err_t touch_pad_sleep_channel_read_benchmark(touch_pad_t pad_num, uint32_t *benchmark)
 {
     TOUCH_ENTER_CRITICAL_SAFE();
-    touch_hal_sleep_read_baseline(baseline);
+    touch_hal_sleep_read_benchmark(benchmark);
     TOUCH_EXIT_CRITICAL_SAFE();
     return ESP_OK;
 }
@@ -609,10 +606,10 @@ esp_err_t touch_pad_sleep_channel_read_data(touch_pad_t pad_num, uint32_t *raw_d
     return ESP_OK;
 }
 
-esp_err_t touch_pad_sleep_channel_reset_baseline(void)
+esp_err_t touch_pad_sleep_channel_reset_benchmark(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_sleep_reset_baseline();
+    touch_hal_sleep_reset_benchmark();
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
