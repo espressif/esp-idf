@@ -365,7 +365,7 @@ test_app_test_001:
   artifacts:
       when: always
       paths:
-        - $CI_PROJECT_DIR/tools/test_apps/system/gdb_loadable_elf/*.log
+        - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
       expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"

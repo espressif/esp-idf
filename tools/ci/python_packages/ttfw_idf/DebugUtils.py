@@ -27,7 +27,7 @@ class CustomProcess(object):
         self.f = open(logfile, 'w')
         if self.verbose:
             Utility.console_log('Starting {} > {}'.format(cmd, self.f.name))
-        self.pexpect_proc = pexpect.spawn(cmd, timeout=60, logfile=self.f, encoding='utf-8')
+        self.pexpect_proc = pexpect.spawn(cmd, timeout=60, logfile=self.f, encoding='utf-8', codec_errors='ignore')
 
     def __enter__(self):
         return self
