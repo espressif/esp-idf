@@ -27,6 +27,7 @@
 # any external libraries here - put in external script, or import in
 # their specific function instead.
 import codecs
+import fnmatch
 import json
 import locale
 import multiprocessing
@@ -489,6 +490,21 @@ def fullclean(action, ctx, args):
             shutil.rmtree(f)
         else:
             os.remove(f)
+
+
+def python_clean(action, ctx, args):
+    for root, dirnames, filenames in os.walk(os.environ["IDF_PATH"]):
+        for d in dirnames:
+            if d == "__pycache__":
+                dir_to_delete = os.path.join(root, d)
+                if args.verbose:
+                    print("Removing: %s" % dir_to_delete)
+                shutil.rmtree(dir_to_delete)
+        for filename in fnmatch.filter(filenames, '*.py[co]'):
+            file_to_delete = os.path.join(root, filename)
+            if args.verbose:
+                print("Removing: %s" % file_to_delete)
+            os.remove(file_to_delete)
 
 
 def _safe_relpath(path, start=None):
@@ -1123,6 +1139,13 @@ def init_cli():
                 + "The next time the project is built, CMake will configure it from scratch. "
                 + "Note that this option recursively deletes all files in the build directory, so use with care."
                 + "Project configuration is not deleted.",
+            },
+            "python-clean": {
+                "callback": python_clean,
+                "short_help": "Delete generated Python byte code from the IDF directory",
+                "help": ("Delete generated Python byte code from the IDF directory "
+                         "which may cause issues when switching between IDF and Python versions. "
+                         "It is advised to run this target after switching versions.")
             },
         }
     }

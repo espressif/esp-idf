@@ -395,6 +395,17 @@ function run_tests()
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     rm -r build
 
+    print_status "Cleaning Python bytecode"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -eq 0 ]; then
+        failure "No Python bytecode in IDF!"
+    fi
+    idf.py python-clean
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -gt 0 ]; then
+        failure "Python bytecode isn't working!"
+    fi
+
     print_status "Displays partition table when executing target partition_table"
     idf.py partition_table | grep -E "# Espressif .+ Partition Table"
     rm -r build
