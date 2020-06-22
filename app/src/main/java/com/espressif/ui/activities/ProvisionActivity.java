@@ -113,6 +113,7 @@ public class ProvisionActivity extends AppCompatActivity {
 
         btnOk = findViewById(R.id.btn_ok);
         txtOkBtn = findViewById(R.id.text_btn);
+        btnOk.findViewById(R.id.iv_arrow).setVisibility(View.GONE);
 
         txtOkBtn.setText(R.string.btn_ok);
         btnOk.setOnClickListener(okBtnClickListener);

@@ -373,6 +373,8 @@ public class AddDeviceActivity extends AppCompatActivity {
 
                     Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
                     finish();
+                } else {
+                    device.connectToDevice();
                 }
             } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
 
@@ -380,6 +382,8 @@ public class AddDeviceActivity extends AppCompatActivity {
 
                     Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
                     finish();
+                } else {
+                    device.connectToDevice();
                 }
             } else {
                 device.connectToDevice();
