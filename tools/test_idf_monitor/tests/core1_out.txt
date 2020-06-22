@@ -36,7 +36,6 @@ I (401) esp_core_dump_uart: Press Enter to print core dump to UART...
 Core Dump detected!
 I (434) esp_core_dump_uart: Print core dump to uart...
 I (434) esp_core_dump_elf: Found tasks: 8
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 espcoredump.py v0.4-dev
 ===============================================================
 ==================== ESP32 CORE DUMP START ====================
@@ -112,48 +111,40 @@ a15            0x0	0
   6    process 1073412788 0x400812c4 in ?? ()
   7    process 1073432444 0x40087e10 in ?? ()
   8    process 1073413520 0x400812c4 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 1 (TCB: 0x3ffb5e80, name: '') =====================
 #0  0x400e37f7 in ?? ()
 #1  0x400d0c31 in ?? ()
 #2  0x40087018 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 2 (TCB: 0x3ffb6d48, name: '') =====================
 #0  0x40087010 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 3 (TCB: 0x3ffb65e4, name: '') =====================
 #0  0x40087010 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 4 (TCB: 0x3ffb77a0, name: '') =====================
 #0  0x400812c4 in ?? ()
 #1  0x40089806 in ?? ()
 #2  0x400898f3 in ?? ()
 #3  0x40087018 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 5 (TCB: 0x3ffb4bf0, name: '') =====================
 #0  0x400812c4 in ?? ()
 #1  0x4008913b in ?? ()
 #2  0x400d0d5c in ?? ()
 #3  0x40087018 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 6 (TCB: 0x3ffafab4, name: '') =====================
 #0  0x400812c4 in ?? ()
 #1  0x40087e10 in ?? ()
 #2  0x400d1f4b in ?? ()
 #3  0x40087018 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 7 (TCB: 0x3ffb477c, name: '') =====================
 #0  0x40087e10 in ?? ()
 #1  0x40081a2b in ?? ()
 #2  0x40087018 in ?? ()
-ERROR: GDB/MI command failed (error / msg="No symbol table is loaded.  Use the \"file\" command.")!
 
 ==================== THREAD 8 (TCB: 0x3ffafd90, name: '') =====================
 #0  0x400812c4 in ?? ()

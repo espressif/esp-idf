@@ -14,19 +14,20 @@ try:
     from past.utils import old_div
     from builtins import object
 except ImportError:
-    print('Import has failed probably because of the missing "future" package. Please install all the packages for '
-          'interpreter {} from the $IDF_PATH/requirements.txt file.'.format(sys.executable))
+    sys.stderr.write('Import has failed probably because of the missing "future" package. Please install all the packages for '
+                     'interpreter {} from the $IDF_PATH/requirements.txt file.\n'.format(sys.executable))
     sys.exit(1)
 import os
 import argparse
 import subprocess
 import tempfile
 import struct
-import errno
 import base64
 import binascii
 import logging
 import re
+import time
+from pygdbmi.gdbcontroller import GdbController, DEFAULT_GDB_TIMEOUT_SEC
 
 idf_path = os.getenv('IDF_PATH')
 if idf_path:
@@ -36,8 +37,13 @@ try:
     import esptool
 
 except ImportError:
-    print("esptool is not found! Set proper $IDF_PATH in environment.")
+    sys.stderr.write("esptool is not found! Set proper $IDF_PATH in environment.\n")
     sys.exit(2)
+
+try:
+    import typing
+except ImportError:
+    pass  # only needed for type annotations, ignore if not found
 
 __version__ = "0.4-dev"
 
@@ -628,7 +634,10 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
         """Base constructor for core dump loader
         """
         super(ESPCoreDumpLoader, self).__init__()
-        self.fcore = None
+        # Source core file, before converting it into ELF
+        self.core_src_file = None  # type: typing.Optional[typing.BinaryIO]
+        # Temporary ELF core file, passed to the GDB
+        self.core_elf_file = None  # type: typing.Optional[typing.BinaryIO]
         self.hdr = {}
 
     def _get_registers_from_stack(self, data, grows_down):
@@ -742,24 +751,7 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
         """
         return ((addr < 0x3f3fffff and addr >= 0x20000000) or addr >= 0x80000000)
 
-    def remove_tmp_file(self, fname):
-        """Silently removes temporary file
-        """
-        try:
-            os.remove(fname)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                logging.warning("Failed to remove temp file '%s' (%d)!" % (fname, e.errno))
-
-    def cleanup(self):
-        """Cleans up loader resources
-        """
-        if self.fcore:
-            self.fcore.close()
-            if self.fcore_name:
-                self.remove_tmp_file(self.fcore_name)
-
-    def _extract_elf_corefile(self, core_fname=None, off=0, exe_name=None):
+    def _extract_elf_corefile(self, off=0, exe_name=None):
         """ Reads the ELF formatted core dump image and parse it
         """
         core_off = off
@@ -772,182 +764,179 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
             raise ESPCoreDumpLoaderError("Core dump version '%d' is not supported!" % self.dump_ver)
         core_elf = ESPCoreDumpElfFile()
         data = self.read_data(core_off, self.hdr['tot_len'] - checksum_len - self.ESP_COREDUMP_HDR_SZ)
-        with open(core_fname, 'w+b') as fce:
-            try:
-                fce.write(data)
-                fce.flush()
-                fce.seek(0)
-                core_elf._read_elf_file(fce)
-                if exe_name:
-                    exe_elf = ESPCoreDumpElfFile(exe_name)
-                # Read note segments from core file which are belong to tasks (TCB or stack)
-                for ns in core_elf.aux_segments:
-                    if ns.type != ESPCoreDumpElfFile.PT_NOTE:
-                        continue
-                    note_read = 0
-                    while note_read < len(ns.data):
-                        note = Elf32NoteDesc("", 0, None)
-                        note_read += note.read(ns.data[note_read:])
-                        # Check for version info note
-                        if 'ESP_CORE_DUMP_INFO' == note.name and note.type == self.ESP_CORE_DUMP_INFO_TYPE and exe_name:
-                            app_sha256 = binascii.hexlify(exe_elf.sha256())
-                            n_ver_len = struct.calcsize("<L")
-                            n_sha256_len = self.ESP_COREDUMP_SHA256_SZ * 2  # SHA256 as hex string
-                            n_ver,coredump_sha256 = struct.unpack("<L%ds" % (n_sha256_len), note.desc[:n_ver_len + n_sha256_len])
-                            if coredump_sha256 != app_sha256 or ESPCoreDumpVersion(n_ver).dump_ver != self.dump_ver:
-                                raise ESPCoreDumpError("Invalid application image for coredump: app_SHA256(%s) != coredump_SHA256(%s)." %
-                                                       (app_sha256, coredump_sha256))
-            except ESPCoreDumpError as e:
-                logging.warning("Failed to extract ELF core dump image into file %s. (Reason: %s)" % (core_fname, e))
-        return core_fname
 
-    def _extract_bin_corefile(self, core_fname=None, rom_elf=None, off=0):
+        try:
+            self.core_elf_file.write(data)
+            self.core_elf_file.flush()
+            self.core_elf_file.seek(0)
+            core_elf._read_elf_file(self.core_elf_file)
+
+            if exe_name:
+                exe_elf = ESPCoreDumpElfFile(exe_name)
+            # Read note segments from core file which are belong to tasks (TCB or stack)
+            for ns in core_elf.aux_segments:
+                if ns.type != ESPCoreDumpElfFile.PT_NOTE:
+                    continue
+                note_read = 0
+                while note_read < len(ns.data):
+                    note = Elf32NoteDesc("", 0, None)
+                    note_read += note.read(ns.data[note_read:])
+                    # Check for version info note
+                    if 'ESP_CORE_DUMP_INFO' == note.name and note.type == self.ESP_CORE_DUMP_INFO_TYPE and exe_name:
+                        app_sha256 = binascii.hexlify(exe_elf.sha256())
+                        n_ver_len = struct.calcsize("<L")
+                        n_sha256_len = self.ESP_COREDUMP_SHA256_SZ * 2  # SHA256 as hex string
+                        n_ver,coredump_sha256 = struct.unpack("<L%ds" % (n_sha256_len), note.desc[:n_ver_len + n_sha256_len])
+                        if coredump_sha256 != app_sha256 or ESPCoreDumpVersion(n_ver).dump_ver != self.dump_ver:
+                            raise ESPCoreDumpError("Invalid application image for coredump: app_SHA256(%s) != coredump_SHA256(%s)." %
+                                                   (app_sha256, coredump_sha256))
+        except ESPCoreDumpError as e:
+            logging.warning("Failed to extract ELF core dump image into file %s. (Reason: %s)" % (self.core_elf_file.name, e))
+
+    def _extract_bin_corefile(self, off=0):  # type: (int) -> None
         """Creates core dump ELF file
         """
         core_off = off
-        with open(core_fname, 'w+b') as fce:
-            tcbsz_aligned = self.hdr['tcbsz']
-            if tcbsz_aligned % 4:
-                tcbsz_aligned = 4 * (old_div(tcbsz_aligned,4) + 1)
-            core_elf = ESPCoreDumpElfFile()
-            notes = b''
-            core_dump_info_notes = b''
-            task_info_notes = b''
-            task_status = EspCoreDumpTaskStatus()
-            for i in range(self.hdr['task_num']):
-                task_status.task_index = i
-                task_status.task_flags = EspCoreDumpTaskStatus.TASK_STATUS_CORRECT
-                data = self.read_data(core_off, self.ESP_COREDUMP_TSK_HDR_SZ)
-                tcb_addr,stack_top,stack_end = struct.unpack_from(self.ESP_COREDUMP_TSK_HDR_FMT, data)
-                if stack_end > stack_top:
-                    stack_len = stack_end - stack_top
-                    stack_base = stack_top
-                else:
-                    stack_len = stack_top - stack_end
-                    stack_base = stack_end
-                stack_len_aligned = stack_len
-                if stack_len_aligned % 4:
-                    stack_len_aligned = 4 * (old_div(stack_len_aligned,4) + 1)
+        tcbsz_aligned = self.hdr['tcbsz']
+        if tcbsz_aligned % 4:
+            tcbsz_aligned = 4 * (old_div(tcbsz_aligned,4) + 1)
+        core_elf = ESPCoreDumpElfFile()
+        notes = b''
+        core_dump_info_notes = b''
+        task_info_notes = b''
+        task_status = EspCoreDumpTaskStatus()
+        for i in range(self.hdr['task_num']):
+            task_status.task_index = i
+            task_status.task_flags = EspCoreDumpTaskStatus.TASK_STATUS_CORRECT
+            data = self.read_data(core_off, self.ESP_COREDUMP_TSK_HDR_SZ)
+            tcb_addr,stack_top,stack_end = struct.unpack_from(self.ESP_COREDUMP_TSK_HDR_FMT, data)
+            if stack_end > stack_top:
+                stack_len = stack_end - stack_top
+                stack_base = stack_top
+            else:
+                stack_len = stack_top - stack_end
+                stack_base = stack_end
+            stack_len_aligned = stack_len
+            if stack_len_aligned % 4:
+                stack_len_aligned = 4 * (old_div(stack_len_aligned,4) + 1)
 
-                core_off += self.ESP_COREDUMP_TSK_HDR_SZ
-                logging.debug("Read TCB %d bytes @ 0x%x" % (tcbsz_aligned, tcb_addr))
-                data = self.read_data(core_off, tcbsz_aligned)
-                task_status.task_tcb_addr = tcb_addr
-                try:
-                    if self.tcb_is_sane(tcb_addr, tcbsz_aligned):
-                        if self.hdr['tcbsz'] != tcbsz_aligned:
-                            core_elf.add_program_segment(tcb_addr, data[:self.hdr['tcbsz'] - tcbsz_aligned],
-                                                         ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-                        else:
-                            core_elf.add_program_segment(tcb_addr, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-                        # task_status.task_name = bytearray("%s\0" % task_name_str, encoding='ascii')
-                    elif tcb_addr and self.addr_is_fake(tcb_addr):
-                        task_status.task_flags |= EspCoreDumpTaskStatus.TASK_STATUS_TCB_CORRUPTED
-                except ESPCoreDumpError as e:
-                    logging.warning("Skip TCB %d bytes @ 0x%x. (Reason: %s)" % (tcbsz_aligned, tcb_addr, e))
+            core_off += self.ESP_COREDUMP_TSK_HDR_SZ
+            logging.debug("Read TCB %d bytes @ 0x%x" % (tcbsz_aligned, tcb_addr))
+            data = self.read_data(core_off, tcbsz_aligned)
+            task_status.task_tcb_addr = tcb_addr
+            try:
+                if self.tcb_is_sane(tcb_addr, tcbsz_aligned):
+                    if self.hdr['tcbsz'] != tcbsz_aligned:
+                        core_elf.add_program_segment(tcb_addr, data[:self.hdr['tcbsz'] - tcbsz_aligned],
+                                                     ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+                    else:
+                        core_elf.add_program_segment(tcb_addr, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+                    # task_status.task_name = bytearray("%s\0" % task_name_str, encoding='ascii')
+                elif tcb_addr and self.addr_is_fake(tcb_addr):
+                    task_status.task_flags |= EspCoreDumpTaskStatus.TASK_STATUS_TCB_CORRUPTED
+            except ESPCoreDumpError as e:
+                logging.warning("Skip TCB %d bytes @ 0x%x. (Reason: %s)" % (tcbsz_aligned, tcb_addr, e))
 
-                core_off += tcbsz_aligned
-                logging.debug("Read stack %d bytes @ 0x%x" % (stack_len_aligned, stack_base))
-                data = self.read_data(core_off, stack_len_aligned)
-                if stack_len != stack_len_aligned:
-                    data = data[:stack_len - stack_len_aligned]
-                task_status.task_stack_start = stack_base
-                task_status.task_stack_len = stack_len_aligned
-                try:
-                    if self.stack_is_sane(stack_base):
-                        core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-                    elif stack_base and self.addr_is_fake(stack_base):
-                        task_status.task_flags |= EspCoreDumpTaskStatus.TASK_STATUS_STACK_CORRUPTED
-                        core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-                except ESPCoreDumpError as e:
-                    logging.warning("Skip task's (%x) stack %d bytes @ 0x%x. (Reason: %s)" % (tcb_addr, stack_len_aligned, stack_base, e))
-                core_off += stack_len_aligned
-                try:
-                    logging.debug("Stack start_end: 0x%x @ 0x%x" % (stack_top, stack_end))
-                    task_regs,extra_regs = self._get_registers_from_stack(data, stack_end > stack_top)
-                except Exception as e:
-                    logging.error(e)
-                    return None
-                task_info_notes += Elf32NoteDesc("TASK_INFO", self.ESP_CORE_DUMP_TASK_INFO_TYPE, task_status.dump()).dump()
-                prstatus = XtensaPrStatus()
-                prstatus.pr_cursig = 0  # TODO: set sig only for current/failed task
-                prstatus.pr_pid = tcb_addr
-                note = Elf32NoteDesc("CORE", 1, prstatus.dump() + struct.pack("<%dL" % len(task_regs), *task_regs)).dump()
-                notes += note
-                if ESPCoreDumpElfFile.REG_EXCCAUSE_IDX in extra_regs and len(core_dump_info_notes) == 0:
-                    # actually there will be only one such note - for crashed task
-                    core_dump_info_notes += Elf32NoteDesc("ESP_CORE_DUMP_INFO", self.ESP_CORE_DUMP_INFO_TYPE, struct.pack("<L", self.hdr['ver'])).dump()
-                    exc_regs = []
-                    for reg_id in extra_regs:
-                        exc_regs.extend([reg_id, extra_regs[reg_id]])
-                    core_dump_info_notes += Elf32NoteDesc("EXTRA_INFO", self.ESP_CORE_DUMP_EXTRA_INFO_TYPE,
-                                                          struct.pack("<%dL" % (1 + len(exc_regs)), tcb_addr, *exc_regs)).dump()
-            self.set_version(self.hdr['ver'])
-            if self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
-                for i in range(self.hdr['segs_num']):
-                    data = self.read_data(core_off, self.ESP_COREDUMP_MEM_SEG_HDR_SZ)
-                    core_off += self.ESP_COREDUMP_MEM_SEG_HDR_SZ
-                    mem_start,mem_sz = struct.unpack_from(self.ESP_COREDUMP_MEM_SEG_HDR_FMT, data)
-                    logging.debug("Read memory segment %d bytes @ 0x%x" % (mem_sz, mem_start))
-                    data = self.read_data(core_off, mem_sz)
-                    core_elf.add_program_segment(mem_start, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-                    core_off += mem_sz
-            # add notes
+            core_off += tcbsz_aligned
+            logging.debug("Read stack %d bytes @ 0x%x" % (stack_len_aligned, stack_base))
+            data = self.read_data(core_off, stack_len_aligned)
+            if stack_len != stack_len_aligned:
+                data = data[:stack_len - stack_len_aligned]
+            task_status.task_stack_start = stack_base
+            task_status.task_stack_len = stack_len_aligned
             try:
-                core_elf.add_aux_segment(notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+                if self.stack_is_sane(stack_base):
+                    core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+                elif stack_base and self.addr_is_fake(stack_base):
+                    task_status.task_flags |= EspCoreDumpTaskStatus.TASK_STATUS_STACK_CORRUPTED
+                    core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
             except ESPCoreDumpError as e:
-                logging.warning("Skip NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(notes), 0, e))
-            # add core dump info notes
+                logging.warning("Skip task's (%x) stack %d bytes @ 0x%x. (Reason: %s)" % (tcb_addr, stack_len_aligned, stack_base, e))
+            core_off += stack_len_aligned
             try:
-                core_elf.add_aux_segment(core_dump_info_notes, ESPCoreDumpElfFile.PT_NOTE, 0)
-            except ESPCoreDumpError as e:
-                logging.warning("Skip core dump info NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(core_dump_info_notes), 0, e))
-            try:
-                core_elf.add_aux_segment(task_info_notes, ESPCoreDumpElfFile.PT_NOTE, 0)
-            except ESPCoreDumpError as e:
-                logging.warning("Skip failed tasks info NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(task_info_notes), 0, e))
-            # add ROM text sections
-            if rom_elf:
-                for ps in rom_elf.program_segments:
-                    if (ps.flags & ESPCoreDumpSegment.PF_X) == 0:
-                        continue
-                    try:
-                        core_elf.add_program_segment(ps.addr, ps.data, ESPCoreDumpElfFile.PT_LOAD, ps.flags)
-                    except ESPCoreDumpError as e:
-                        logging.warning("Skip ROM segment %d bytes @ 0x%x. (Reason: %s)" % (len(ps.data), ps.addr, e))
-            # dump core ELF
-            core_elf.e_type = ESPCoreDumpElfFile.ET_CORE
-            core_elf.e_machine = ESPCoreDumpElfFile.EM_XTENSA
-            core_elf.dump(fce)
-        return core_fname
+                logging.debug("Stack start_end: 0x%x @ 0x%x" % (stack_top, stack_end))
+                task_regs,extra_regs = self._get_registers_from_stack(data, stack_end > stack_top)
+            except Exception as e:
+                raise ESPCoreDumpError(str(e))
+            task_info_notes += Elf32NoteDesc("TASK_INFO", self.ESP_CORE_DUMP_TASK_INFO_TYPE, task_status.dump()).dump()
+            prstatus = XtensaPrStatus()
+            prstatus.pr_cursig = 0  # TODO: set sig only for current/failed task
+            prstatus.pr_pid = tcb_addr
+            note = Elf32NoteDesc("CORE", 1, prstatus.dump() + struct.pack("<%dL" % len(task_regs), *task_regs)).dump()
+            notes += note
+            if ESPCoreDumpElfFile.REG_EXCCAUSE_IDX in extra_regs and len(core_dump_info_notes) == 0:
+                # actually there will be only one such note - for crashed task
+                core_dump_info_notes += Elf32NoteDesc("ESP_CORE_DUMP_INFO", self.ESP_CORE_DUMP_INFO_TYPE, struct.pack("<L", self.hdr['ver'])).dump()
+                exc_regs = []
+                for reg_id in extra_regs:
+                    exc_regs.extend([reg_id, extra_regs[reg_id]])
+                core_dump_info_notes += Elf32NoteDesc("EXTRA_INFO", self.ESP_CORE_DUMP_EXTRA_INFO_TYPE,
+                                                      struct.pack("<%dL" % (1 + len(exc_regs)), tcb_addr, *exc_regs)).dump()
+        self.set_version(self.hdr['ver'])
+        if self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
+            for i in range(self.hdr['segs_num']):
+                data = self.read_data(core_off, self.ESP_COREDUMP_MEM_SEG_HDR_SZ)
+                core_off += self.ESP_COREDUMP_MEM_SEG_HDR_SZ
+                mem_start,mem_sz = struct.unpack_from(self.ESP_COREDUMP_MEM_SEG_HDR_FMT, data)
+                logging.debug("Read memory segment %d bytes @ 0x%x" % (mem_sz, mem_start))
+                data = self.read_data(core_off, mem_sz)
+                core_elf.add_program_segment(mem_start, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+                core_off += mem_sz
+        # add notes
+        try:
+            core_elf.add_aux_segment(notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+        except ESPCoreDumpError as e:
+            logging.warning("Skip NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(notes), 0, e))
+        # add core dump info notes
+        try:
+            core_elf.add_aux_segment(core_dump_info_notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+        except ESPCoreDumpError as e:
+            logging.warning("Skip core dump info NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(core_dump_info_notes), 0, e))
+        try:
+            core_elf.add_aux_segment(task_info_notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+        except ESPCoreDumpError as e:
+            logging.warning("Skip failed tasks info NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(task_info_notes), 0, e))
+        # dump core ELF
+        core_elf.e_type = ESPCoreDumpElfFile.ET_CORE
+        core_elf.e_machine = ESPCoreDumpElfFile.EM_XTENSA
+        core_elf.dump(self.core_elf_file)
 
-    def create_corefile(self, core_fname=None, exe_name=None, rom_elf=None, off=0):
+    def create_corefile(self, exe_name=None):  # type: (str) -> None
         """Creates core dump ELF file
         """
+        off = 0
         data = self.read_data(off, self.ESP_COREDUMP_HDR_SZ)
         vals = struct.unpack_from(self.ESP_COREDUMP_HDR_FMT, data)
         self.hdr = dict(zip(('tot_len', 'ver', 'task_num', 'tcbsz', 'segs_num'), vals))
-        if not core_fname:
-            fce = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
-            core_fname = fce.name
+        self.core_elf_file = tempfile.NamedTemporaryFile()
         self.set_version(self.hdr['ver'])
         if self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32S2 or self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32:
             if self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_CRC32 or self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_SHA256:
-                return self._extract_elf_corefile(core_fname, off + self.ESP_COREDUMP_HDR_SZ, exe_name)
+                self._extract_elf_corefile(off + self.ESP_COREDUMP_HDR_SZ, exe_name)
             elif self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
-                return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP_COREDUMP_HDR_SZ)
+                self._extract_bin_corefile(off + self.ESP_COREDUMP_HDR_SZ)
             elif self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V1:
-                return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP_COREDUMP_BIN_V1_HDR_SZ)
-            raise ESPCoreDumpLoaderError("Core dump version '0x%x' is not supported!" % (self.dump_ver))
+                self._extract_bin_corefile(off + self.ESP_COREDUMP_BIN_V1_HDR_SZ)
+            else:
+                raise ESPCoreDumpLoaderError("Core dump version '0x%x' is not supported!" % (self.dump_ver))
         else:
             raise ESPCoreDumpLoaderError("Core dump chip '0x%x' is not supported!" % (self.chip_ver))
+        self.core_elf_file.flush()
 
     def read_data(self, off, sz):
         """Reads data from raw core dump got from flash or UART
         """
-        self.fcore.seek(off)
-        data = self.fcore.read(sz)
+        self.core_src_file.seek(off)
+        data = self.core_src_file.read(sz)
         return data
+
+    def cleanup(self):
+        if self.core_elf_file:
+            self.core_elf_file.close()
+            self.core_elf_file = None
+        if self.core_src_file:
+            self.core_src_file.close()
+            self.core_src_file = None
 
 
 class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
@@ -957,35 +946,25 @@ class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
         """Constructor for core dump file loader
         """
         super(ESPCoreDumpFileLoader, self).__init__()
-        self.fcore = self._load_coredump(path, b64)
+        self._load_coredump(path, b64)
 
     def _load_coredump(self, path, b64):
         """Loads core dump from (raw binary or base64-encoded) file
         """
-        logging.debug("Load core dump from '%s'", path)
-        self.fcore_name = None
-        if b64:
-            fhnd,self.fcore_name = tempfile.mkstemp()
-            fcore = os.fdopen(fhnd, 'wb')
-            fb64 = open(path, 'rb')
-            try:
+        logging.debug("Load core dump from '%s', %s format" % (path, "b64" if b64 else "raw"))
+        if not b64:
+            self.core_src_file = open(path, mode="rb")
+        else:
+            self.core_src_file = tempfile.NamedTemporaryFile("w+b")
+            with open(path, 'rb') as fb64:
                 while True:
                     line = fb64.readline()
                     if len(line) == 0:
                         break
                     data = base64.standard_b64decode(line.rstrip(b'\r\n'))
-                    fcore.write(data)
-                fcore.close()
-                fcore = open(self.fcore_name, 'rb')
-            except Exception as e:
-                if self.fcore_name:
-                    self.remove_tmp_file(self.fcore_name)
-                    raise e
-            finally:
-                fb64.close()
-        else:
-            fcore = open(path, 'rb')
-        return fcore
+                    self.core_src_file.write(data)
+                self.core_src_file.flush()
+                self.core_src_file.seek(0)
 
 
 class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
@@ -1003,7 +982,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         self.baud = baud
         self.chip = chip
         self.dump_sz = 0
-        self.fcore = self._load_coredump(off)
+        self._load_coredump(off)
 
     def get_tool_path(self, use_esptool=None):
         """Get tool path
@@ -1049,31 +1028,25 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         if self.port:
             part_tool_args.extend(['--port', self.port])
         part_tool_args.extend(['read_partition', '--partition-type', 'data', '--partition-subtype', 'coredump', '--output'])
-        self.fcore_name = None
-        f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
+        self.core_src_file = tempfile.NamedTemporaryFile()
         try:
-            part_tool_args.append(f.name)
-            self.fcore_name = f.name
+            part_tool_args.append(self.core_src_file.name)
+            self.fcore_name = self.core_src_file.name
             # read core dump partition
             et_out = subprocess.check_output(part_tool_args)
             if len(et_out):
                 logging.info(et_out.decode('utf-8'))
-            self.dump_sz = self._read_core_dump_length(f)
-            f.seek(self.dump_sz)
+            self.dump_sz = self._read_core_dump_length(self.core_src_file)
+            self.core_src_file.seek(self.dump_sz)
             # cut free space of the partition
-            f.truncate()
-            f.seek(0)
+            self.core_src_file.truncate()
+            self.core_src_file.seek(0)
         except subprocess.CalledProcessError as e:
             logging.error("parttool script execution failed with err %d" % e.returncode)
             logging.debug("Command ran: '%s'" % e.cmd)
             logging.debug("Command out:")
             logging.debug(e.output)
-            if self.fcore_name:
-                f.close()
-                self.remove_tmp_file(self.fcore_name)
             raise e
-
-        return f
 
     def invoke_esptool(self, tool_path=None, off=None):
         """Loads core dump from flash using elftool
@@ -1083,8 +1056,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             tool_args.extend(['-p', self.port])
         if self.baud:
             tool_args.extend(['-b', str(self.baud)])
-        f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
-        self.fcore_name = None
+        self.core_src_file = tempfile.NamedTemporaryFile()
         try:
             (part_offset, part_size) = self.get_core_dump_partition_info(tool_path='')
             if not off:
@@ -1093,13 +1065,12 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             if part_offset != off:
                 logging.warning("Predefined image offset: %d does not match core dump partition offset: %d", off, part_offset)
             tool_args.extend(['read_flash', str(off), str(self.ESP_COREDUMP_FLASH_LEN_SZ)])
-            tool_args.append(f.name)
-            self.fcore_name = f.name
+            tool_args.append(self.core_src_file.name)
             # read core dump length
             et_out = subprocess.check_output(tool_args)
             if len(et_out):
                 logging.info(et_out.decode('utf-8'))
-            self.dump_sz = self._read_core_dump_length(f)
+            self.dump_sz = self._read_core_dump_length(self.core_src_file)
             if self.dump_sz == 0 or self.dump_sz > part_size:
                 logging.error("Incorrect size of core dump image: %d, use partition size instead: %d", self.dump_sz, part_size)
                 self.dump_sz = part_size
@@ -1113,11 +1084,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             logging.debug("Command ran: '%s'" % e.cmd)
             logging.debug("Command out:")
             logging.debug(e.output)
-            if self.fcore_name:
-                f.close()
-                self.remove_tmp_file(self.fcore_name)
             raise e
-        return f
 
     def _load_coredump(self, off=None):
         """Loads core dump from flash using parttool or elftool (if offset is set)
@@ -1127,22 +1094,21 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             if off:
                 tool_path = ''
                 logging.info("Invoke esptool to read image.")
-                f = self.invoke_esptool(tool_path=tool_path, off=off)
+                self.invoke_esptool(tool_path=tool_path, off=off)
             else:
                 tool_path = ''
                 logging.info("Invoke parttool to read image.")
-                f = self.invoke_parttool(tool_path=tool_path)
+                self.invoke_parttool(tool_path=tool_path)
         except subprocess.CalledProcessError as e:
             if len(e.output):
                 logging.info(e.output)
             logging.warning("System path is not set. Try to use predefined path.")
             if off:
                 tool_path = self.get_tool_path(use_esptool=True)
-                f = self.invoke_esptool(tool_path=tool_path, off=off)
+                self.invoke_esptool(tool_path=tool_path, off=off)
             else:
                 tool_path = self.get_tool_path(use_esptool=False)
-                f = self.invoke_parttool(tool_path=tool_path)
-        return f
+                self.invoke_parttool(tool_path=tool_path)
 
     def _read_core_dump_length(self, f):
         """Reads core dump length
@@ -1151,7 +1117,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         tot_len, = struct.unpack_from(self.ESP_COREDUMP_FLASH_LEN_FMT, data)
         return tot_len
 
-    def create_corefile(self, core_fname=None, exe_name=None, rom_elf=None):
+    def create_corefile(self, exe_name=None):  # type: (str) -> None
         """Checks flash coredump data integrity and creates ELF file
         """
         data = self.read_data(0, self.ESP_COREDUMP_HDR_SZ)
@@ -1177,213 +1143,11 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             dump_sha256_str = binascii.hexlify(dump_sha256).decode('ascii')
             if dump_sha256_str != data_sha256_str:
                 raise ESPCoreDumpLoaderError("Invalid core dump SHA256 '%s', should be '%s'" % (dump_sha256_str, data_sha256_str))
-        return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname, exe_name)
+        super(ESPCoreDumpFlashLoader, self).create_corefile(exe_name)
 
 
-class GDBMIOutRecordHandler(object):
-    """GDB/MI output record handler base class
-    """
-    TAG = ''
-
-    def __init__(self, f, verbose=False):
-        """Base constructor for GDB/MI output record handler
-        """
-        self.verbose = verbose
-
-    def execute(self, ln):
-        """Base method to execute GDB/MI output record handler function
-        """
-        if self.verbose:
-            logging.debug("%s.execute: [[%s]]" % (self.__class__.__name__, ln))
-
-
-class GDBMIOutStreamHandler(GDBMIOutRecordHandler):
-    """GDB/MI output stream handler class
-    """
-    def __init__(self, f, verbose=False):
-        """Constructor for GDB/MI output stream handler
-        """
-        super(GDBMIOutStreamHandler, self).__init__(None, verbose)
-        self.func = f
-
-    def execute(self, ln):
-        """Executes GDB/MI output stream handler function
-        """
-        GDBMIOutRecordHandler.execute(self, ln)
-        if self.func:
-            # remove TAG / quotes and replace c-string \n with actual NL
-            self.func(ln[1:].strip('"').replace('\\n', '\n').replace('\\t', '\t'))
-
-
-class GDBMIResultHandler(GDBMIOutRecordHandler):
-    """GDB/MI result handler class
-    """
-    TAG = '^'
-    RC_DONE = 'done'
-    RC_RUNNING = 'running'
-    RC_CONNECTED = 'connected'
-    RC_ERROR = 'error'
-    RC_EXIT = 'exit'
-
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIResultHandler, self).__init__(None, verbose)
-        self.result_class = ''
-        self.result_str = ''
-
-    def _parse_rc(self, ln, rc):
-        """Parses result code
-        """
-        rc_str = "{0}{1}".format(self.TAG, rc)
-        if not ln.startswith(rc_str):
-            return False
-        self.result_class = rc
-        if len(ln) > len(rc_str):
-            self.result_str = ln[len(rc_str):]
-            if self.result_str.startswith(','):
-                self.result_str = self.result_str[1:]
-            else:
-                logging.error("Invalid result format: '%s'" % ln)
-        else:
-            self.result_str = ''
-        return True
-
-    def execute(self, ln):
-        """Executes GDB/MI result handler function
-        """
-        GDBMIOutRecordHandler.execute(self, ln)
-        if self._parse_rc(ln, self.RC_DONE):
-            return
-        if self._parse_rc(ln, self.RC_RUNNING):
-            return
-        if self._parse_rc(ln, self.RC_CONNECTED):
-            return
-        if self._parse_rc(ln, self.RC_ERROR):
-            return
-        if self._parse_rc(ln, self.RC_EXIT):
-            return
-        logging.error("Unknown GDB/MI result: '%s'" % ln)
-
-
-class GDBMIThreadListIdsHandler(GDBMIResultHandler):
-    """GDB/MI thread-list-ids handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIThreadListIdsHandler, self).__init__(verbose)
-        self.threads = []
-        self.current_thread = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI thread-list-ids handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        result = re.search(r'thread-ids\s*=\s*\{([^\{\}]*)\}', self.result_str)
-        if result:
-            for tid in re.finditer(r'thread-id="(\d+)"', result.group(1)):
-                self.threads.append(tid.group(1))
-        result = re.search(r'current-thread-id="(\d+)"', self.result_str)
-        if result:
-            self.current_thread = result.group(1)
-
-
-class GDBMIThreadSelectHandler(GDBMIResultHandler):
-    """GDB/MI thread-select handler class
-    """
-    def execute(self, ln):
-        """Executes GDB/MI thread-select handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-
-
-class GDBMIThreadInfoHandler(GDBMIResultHandler):
-    """GDB/MI thread-info handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIThreadInfoHandler, self).__init__(verbose)
-        self.current = False
-        self.id = ''
-        self.target_id = ''
-        self.details = ''
-        self.name = ''
-        self.frame = ''
-        self.state = ''
-        self.core = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI thread-info  handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        result = re.search(r'id="(\d+)"', self.result_str)
-        if result:
-            self.id = result.group(1)
-        result = re.search(r'current="\*"', self.result_str)
-        if result:
-            self.current = True
-        result = re.search(r'target-id="([^"]+)"', self.result_str)
-        if result:
-            self.target_id = result.group(1)
-
-
-class GDBMIDataEvalHandler(GDBMIResultHandler):
-    """GDB/MI data-evaluate-expression handler class
-    """
-    def __init__(self, verbose=False):
-        """Constructor for GDB/MI result handler
-        """
-        super(GDBMIDataEvalHandler, self).__init__(verbose)
-        self.value = ''
-
-    def execute(self, ln):
-        """Executes GDB/MI data-evaluate-expression handler function
-        """
-        GDBMIResultHandler.execute(self, ln)
-        if self.result_class != self.RC_DONE:
-            return
-        # simple parsing method
-        if self.verbose:
-            logging.debug("GDBMIDataEvalHandler: result '%s'", self.result_str)
-        pos = 0
-        r = re.compile(r'([a-zA-Z_]+)=(.+)\,')
-        while True:
-            m = r.search(self.result_str, pos=pos)
-            if not m:
-                break
-            if m.group(1) == 'value':
-                if self.verbose:
-                    logging.debug("GDBMIDataEvalHandler: found value = '%s'", m.group(2))
-                self.value = self.result.group(1)
-                return
-            pos = m.end(2) + 1
-        res_str = self.result_str[pos:]
-        res_str = res_str.replace(r'\"', '\'')
-        m = re.search(r'value="([^"]+)"', res_str)
-        if m:
-            if self.verbose:
-                logging.debug("GDBMIDataEvalHandler: found value = '%s'", m.group(1))
-            self.value = m.group(1)
-
-
-class GDBMIStreamConsoleHandler(GDBMIOutStreamHandler):
-    """GDB/MI console stream handler class
-    """
-    TAG = '~'
-
-
-def load_aux_elf(elf_path):
-    """ Loads auxilary ELF file and composes GDB command to read its symbols
+def load_aux_elf(elf_path):  # type: (str) -> (ESPCoreDumpElfFile, str)
+    """ Loads auxiliary ELF file and composes GDB command to read its symbols.
     """
     elf = None
     sym_cmd = ''
@@ -1392,173 +1156,162 @@ def load_aux_elf(elf_path):
         for s in elf.sections:
             if s.name == '.text':
                 sym_cmd = 'add-symbol-file %s 0x%x' % (elf_path, s.addr)
-    return (elf, sym_cmd)
+    return elf, sym_cmd
+
+
+def core_prepare(args):
+    loader = None
+    core_filename = None
+    if not args.core:
+        # Core file not specified, try to read core dump from flash.
+        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
+    elif args.core_format != "elf":
+        # Core file specified, but not yet in ELF format. Convert it from raw or base64 into ELF.
+        loader = ESPCoreDumpFileLoader(args.core, args.core_format == 'b64')
+    else:
+        # Core file is already in the ELF format
+        core_filename = args.core
+
+    # Load/convert the core file
+    if loader:
+        loader.create_corefile(exe_name=args.prog)
+        core_filename = loader.core_elf_file.name
+        if args.save_core:
+            # We got asked to save the core file, make a copy
+            with open(args.save_core, "w+b") as f_out:
+                loader.core_elf_file.seek(0)
+                f_out.write(loader.core_elf_file.read())
+
+    return core_filename, loader
 
 
 def dbg_corefile(args):
     """ Command to load core dump from file or flash and run GDB debug session with it
     """
-    global CLOSE_FDS
-    loader = None
-    rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
-    if not args.core:
-        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
-        core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-        if not core_fname:
-            logging.error("Failed to create corefile!")
-            loader.cleanup()
-            return
-    else:
-        core_fname = args.core
-        if args.core_format and args.core_format != 'elf':
-            loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-            if not core_fname:
-                logging.error("Failed to create corefile!")
-                loader.cleanup()
-                return
+    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
+    core_filename, loader = core_prepare(args)
 
     p = subprocess.Popen(bufsize=0,
                          args=[args.gdb,
                                '--nw',  # ignore .gdbinit
-                               '--core=%s' % core_fname,  # core file,
+                               '--core=%s' % core_filename,  # core file,
                                '-ex', rom_sym_cmd,
                                args.prog
                                ],
                          stdin=None, stdout=None, stderr=None,
                          close_fds=CLOSE_FDS
                          )
-    p.wait()
 
-    if loader:
-        if not args.core and not args.save_core:
-            loader.remove_tmp_file(core_fname)
-        loader.cleanup()
+    p.wait()
     print('Done!')
+    if loader:
+        loader.cleanup()
+
+
+def gdbmi_filter_responses(responses, resp_message, resp_type):
+    return list(filter(lambda rsp: rsp["message"] == resp_message and rsp["type"] == resp_type, responses))
+
+
+def gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=True, done_message=None, done_type=None): \
+        # type: (GdbController, str, typing.Optional[str], str, bool, typing.Optional[str], typing.Optional[str]) -> list
+    p.write(cmd, read_response=False)
+    t_end = time.time() + DEFAULT_GDB_TIMEOUT_SEC
+    filtered_response_list = []
+    all_responses = []
+    while time.time() < t_end:
+        more_responses = p.get_gdb_response(timeout_sec=0, raise_error_on_timeout=False)
+        filtered_response_list += filter(lambda rsp: rsp["message"] == resp_message and rsp["type"] == resp_type, more_responses)
+        all_responses += more_responses
+        if filtered_response_list and not multiple:
+            break
+        if done_message and done_type and gdbmi_filter_responses(more_responses, done_message, done_type):
+            break
+    if not filtered_response_list and not multiple:
+        raise ESPCoreDumpError("Couldn't find response with message '{}', type '{}' in responses '{}'".format(
+            resp_message, resp_type, str(all_responses)
+        ))
+    return filtered_response_list
+
+
+def gdbmi_run_cmd_get_one_response(p, cmd, resp_message, resp_type):  # type: (GdbController, str, typing.Optional[str], str) -> dict
+    return gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=False)[0]
+
+
+def gdbmi_start(gdb_path, gdb_cmds, core_filename, prog_filename):  # type: (str, typing.List[str], str, str) -> GdbController
+    """ Start GDB and get GdbController instance which wraps it """
+    gdb_args = ['--quiet',  # inhibit dumping info at start-up
+                '--nx',  # inhibit window interface
+                '--nw',  # ignore .gdbinit
+                '--interpreter=mi2',  # use GDB/MI v2
+                '--core=%s' % core_filename]  # core file
+    for c in gdb_cmds:
+        if c:
+            gdb_args += ['-ex', c]
+    gdb_args.append(prog_filename)
+    res = GdbController(gdb_path=gdb_path, gdb_args=gdb_args)
+    # Consume initial output by issuing a dummy command
+    res.write("-data-list-register-values x pc")
+    return res
+
+
+def gdbmi_cmd_exec_console(p, gdb_cmd):  # type: (GdbController, str) -> str
+    """ Execute a generic GDB console command via MI2 """
+    filtered_responses = gdbmi_run_cmd_get_responses(p, "-interpreter-exec console \"%s\"" % gdb_cmd, None, "console",
+                                                     multiple=True, done_message="done", done_type="result")
+    return "".join([x["payload"] for x in filtered_responses])\
+             .replace('\\n', '\n').replace('\\t', '\t').rstrip("\n")
+
+
+def gdbmi_get_thread_ids(p):  # type: (GdbController) -> (str, typing.List[str])
+    """ Get the current thread ID and the list of all thread IDs known to GDB, as strings """
+    result = gdbmi_run_cmd_get_one_response(p, "-thread-list-ids", "done", "result")["payload"]
+    current_thread_id = result["current-thread-id"]
+    thread_ids = result["thread-ids"]["thread-id"]
+    return current_thread_id, thread_ids
+
+
+def gdbmi_switch_thread(p, thr_id):  # type: (GdbController, str) -> None
+    """ Tell GDB to switch to a specific thread, given its ID """
+    gdbmi_run_cmd_get_one_response(p, "-thread-select %s" % thr_id, "done", "result")
+
+
+def gdbmi_get_thread_info(p, thr_id=None):  # type: (GdbController, typing.Optional[str]) -> dict
+    """ Get thread info dictionary for the given thread ID """
+    return gdbmi_run_cmd_get_one_response(p, "-thread-info" + (" %s" % thr_id) if thr_id else "", "done", "result")["payload"]["threads"][0]
+
+
+def gdbmi_data_evaluate_expression(p, expr):  # type: (GdbController, str) -> str
+    """ Get the value of an expression, similar to the 'print' command """
+    return gdbmi_run_cmd_get_one_response(p, "-data-evaluate-expression \"%s\"" % expr, "done", "result")["payload"]["value"]
+
+
+def gdbmi_freertos_get_task_name(p, tcb_addr):  # type: (GdbController, int) -> str
+    """ Get FreeRTOS task name given the TCB address """
+    try:
+        val = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
+    except ESPCoreDumpError:
+        return ''
+
+    # Value is of form '0x12345678 "task_name"', extract the actual name
+    result = re.search(r"\"([^']*)\"$", val)
+    if result:
+        return result.group(1)
+    return ''
+
+
+def gdb2freertos_thread_id(gdb_target_id):  # type: (str) -> int
+    """ Convert GDB 'target ID' to the FreeRTOS TCB address """
+    return int(gdb_target_id.replace("process ", ""), 0)
 
 
 def info_corefile(args):
     """ Command to load core dump from file or flash and print it's data in user friendly form
     """
-    global CLOSE_FDS
-
-    def gdbmi_console_stream_handler(ln):
-        sys.stdout.write(ln)
-        sys.stdout.flush()
-
-    def gdbmi_read2prompt(f, out_handlers=None):
-        while True:
-            ln = f.readline().decode('utf-8').rstrip(' \r\n')
-            if ln == '(gdb)':
-                break
-            elif len(ln) == 0:
-                break
-            elif out_handlers:
-                for h in out_handlers:
-                    if ln.startswith(out_handlers[h].TAG):
-                        out_handlers[h].execute(ln)
-                        break
-
-    def gdbmi_start(handlers, gdb_cmds):
-        gdb_args = [args.gdb,
-                    '--quiet',  # inhibit dumping info at start-up
-                    '--nx',  # inhibit window interface
-                    '--nw',  # ignore .gdbinit
-                    '--interpreter=mi2',  # use GDB/MI v2
-                    '--core=%s' % core_fname]  # core file
-        for c in gdb_cmds:
-            gdb_args += ['-ex', c]
-        gdb_args.append(args.prog)
-        p = subprocess.Popen(bufsize=0,
-                             args=gdb_args,
-                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             close_fds=CLOSE_FDS)
-        gdbmi_read2prompt(p.stdout, handlers)
-        return p
-
-    def gdbmi_cmd_exec(p, handlers, gdbmi_cmd):
-        for t in handlers:
-            handlers[t].result_class = None
-        p.stdin.write(bytearray("%s\n" % gdbmi_cmd, encoding='utf-8'))
-        gdbmi_read2prompt(p.stdout, handlers)
-        if not handlers[GDBMIResultHandler.TAG].result_class or handlers[GDBMIResultHandler.TAG].result_class == GDBMIResultHandler.RC_EXIT:
-            logging.error("GDB exited (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
-            p.wait()
-            logging.error("Problem occured! GDB exited, restart it.")
-            p = gdbmi_start(handlers, [])
-        elif handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-            logging.error("GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
-        return p
-
-    def gdbmi_getinfo(p, handlers, gdb_cmd):
-        return gdbmi_cmd_exec(p, handlers, "-interpreter-exec console \"%s\"" % gdb_cmd)
-
-    def gdbmi_get_thread_ids(p):
-        handlers = {}
-        result = GDBMIThreadListIdsHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        p = gdbmi_cmd_exec(p, handlers, "-thread-list-ids")
-        return p,result.threads,result.current_thread
-
-    def gdbmi_switch_thread(p, thr_id):
-        handlers = {}
-        result = GDBMIThreadSelectHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        return gdbmi_cmd_exec(p, handlers, "-thread-select %s" % thr_id)
-
-    def gdbmi_get_thread_info(p, thr_id):
-        handlers = {}
-        result = GDBMIThreadInfoHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        if thr_id:
-            cmd = "-thread-info %s" % thr_id
-        else:
-            cmd = "-thread-info"
-        p = gdbmi_cmd_exec(p, handlers, cmd)
-        return p,result
-
-    def gdbmi_data_evaluate_expression(p, expr):
-        handlers = {}
-        result = GDBMIDataEvalHandler(verbose=False)
-        handlers[GDBMIResultHandler.TAG] = result
-        handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-        p = gdbmi_cmd_exec(p, handlers, "-data-evaluate-expression \"%s\"" % expr)
-        return p,result
-
-    def gdbmi_freertos_get_task_name(p, tcb_addr):
-        p,res = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
-        result = re.match("0x[a-fA-F0-9]+[^']*'([^']*)'", res.value)
-        if result:
-            return p,result.group(1)
-        return p,''
-
-    def gdb2freertos_thread_id(gdb_thread_id):
-        return int(gdb_thread_id.replace("process ", ""), 0)
-
-    loader = None
-    rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
-    if not args.core:
-        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
-        core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-        if not core_fname:
-            logging.error("Failed to create corefile!")
-            loader.cleanup()
-            return
-    else:
-        core_fname = args.core
-        if args.core_format and args.core_format != 'elf':
-            loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, exe_name=args.prog, rom_elf=rom_elf)
-            if not core_fname:
-                logging.error("Failed to create corefile!")
-                loader.cleanup()
-                return
+    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
+    core_filename, loader = core_prepare(args)
 
     exe_elf = ESPCoreDumpElfFile(args.prog)
-    core_elf = ESPCoreDumpElfFile(core_fname)
+    core_elf = ESPCoreDumpElfFile(core_filename)
     merged_segs = []
     core_segs = core_elf.program_segments
     for s in exe_elf.sections:
@@ -1602,10 +1355,8 @@ def info_corefile(args):
         if not merged:
             merged_segs.append((s.name, s.addr, len(s.data), s.attr_str(), False))
 
-    handlers = {}
-    handlers[GDBMIResultHandler.TAG] = GDBMIResultHandler(verbose=False)
-    handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-    p = gdbmi_start(handlers, [rom_sym_cmd])
+    p = gdbmi_start(args.gdb, [rom_sym_cmd], core_filename, args.prog)
+
     extra_note = None
     task_info = []
     for seg in core_elf.aux_segments:
@@ -1623,14 +1374,12 @@ def info_corefile(args):
     print("===============================================================")
     print("==================== ESP32 CORE DUMP START ====================")
 
-    handlers[GDBMIResultHandler.TAG].result_class = None
-    handlers[GDBMIStreamConsoleHandler.TAG].func = gdbmi_console_stream_handler
     if extra_note:
         extra_info = struct.unpack("<%dL" % (len(extra_note.desc) / struct.calcsize("<L")), extra_note.desc)
         if extra_info[0] == ESPCoreDumpLoader.ESP_COREDUMP_CURR_TASK_MARKER:
             print("\nCrashed task has been skipped.")
         else:
-            p,task_name = gdbmi_freertos_get_task_name(p, extra_info[0])
+            task_name = gdbmi_freertos_get_task_name(p, extra_info[0])
             print("\nCrashed task handle: 0x%x, name: '%s', GDB name: 'process %d'" % (extra_info[0], task_name, extra_info[0]))
     print("\n================== CURRENT THREAD REGISTERS ===================")
     if extra_note:
@@ -1655,9 +1404,9 @@ def info_corefile(args):
         print("eps7           0x%x" % extra_info[1 + 2 * ESPCoreDumpElfFile.REG_EPS7_IDX + 1])
     else:
         print("Exception registers have not been found!")
-    p = gdbmi_getinfo(p, handlers, "info registers")
+    print(gdbmi_cmd_exec_console(p, "info registers"))
     print("\n==================== CURRENT THREAD STACK =====================")
-    p = gdbmi_getinfo(p, handlers, "bt")
+    print(gdbmi_cmd_exec_console(p, "bt"))
     if task_info and task_info[0].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
         print("The current crashed task is corrupted.")
         print("Task #%d info: flags, tcb, stack (%x, %x, %x)." % (task_info[0].task_index,
@@ -1665,29 +1414,27 @@ def info_corefile(args):
               task_info[0].task_tcb_addr,
               task_info[0].task_stack_start))
     print("\n======================== THREADS INFO =========================")
-    p = gdbmi_getinfo(p, handlers, "info threads")
+    print(gdbmi_cmd_exec_console(p, "info threads"))
     # THREADS STACKS
-    p,threads,cur_thread = gdbmi_get_thread_ids(p)
-    print()
+    cur_thread, threads = gdbmi_get_thread_ids(p)
     for thr_id in threads:
         task_index = int(thr_id) - 1
-        p = gdbmi_switch_thread(p, thr_id)
-        p,thr_info_res = gdbmi_get_thread_info(p, thr_id)
-        if not thr_info_res.target_id:
+        gdbmi_switch_thread(p, thr_id)
+        thr_info_res = gdbmi_get_thread_info(p, thr_id)
+        if not thr_info_res["target-id"]:
             print("WARNING: Unable to switch to thread %s\n" % thr_id)
             continue
-        tcb_addr = gdb2freertos_thread_id(thr_info_res.target_id)
-        p,task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
-        print("==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
-        p = gdbmi_getinfo(p, handlers, "bt")
+        tcb_addr = gdb2freertos_thread_id(thr_info_res["target-id"])
+        task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
+        print("\n==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
+        print(gdbmi_cmd_exec_console(p, "bt"))
         if task_info and task_info[task_index].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
             print("The task '%s' is corrupted." % thr_id)
             print("Task #%d info: flags, tcb, stack (%x, %x, %x)." % (task_info[task_index].task_index,
                   task_info[task_index].task_flags,
                   task_info[task_index].task_tcb_addr,
                   task_info[task_index].task_stack_start))
-        print()
-    print("\n======================= ALL MEMORY REGIONS ========================")
+    print("\n\n======================= ALL MEMORY REGIONS ========================")
     print("Name   Address   Size   Attrs")
     for ms in merged_segs:
         print("%s 0x%x 0x%x %s" % (ms[0], ms[1], ms[2], ms[3]))
@@ -1707,21 +1454,15 @@ def info_corefile(args):
             else:
                 seg_name = 'tasks.data'
             print(".coredump.%s 0x%x 0x%x %s" % (seg_name, cs.addr, len(cs.data), cs.attr_str()))
-            p = gdbmi_getinfo(p, handlers, "x/%dx 0x%x" % (old_div(len(cs.data),4), cs.addr))
+            print(gdbmi_cmd_exec_console(p, "x/%dx 0x%x" % (old_div(len(cs.data),4), cs.addr)))
 
     print("\n===================== ESP32 CORE DUMP END =====================")
     print("===============================================================")
 
-    p.stdin.write(b'q\n')
-    p.wait()
-    p.stdin.close()
-    p.stdout.close()
-
-    if loader:
-        if not args.core and not args.save_core:
-            loader.remove_tmp_file(core_fname)
-        loader.cleanup()
+    p.exit()
     print('Done!')
+    if loader:
+        loader.cleanup()
 
 
 def main():
@@ -1801,8 +1542,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except ESPCoreDumpError as e:
-        print('\nA fatal error occurred: %s' % e)
-        sys.exit(2)
+    main()
