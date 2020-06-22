@@ -1,3 +1,4 @@
+import fnmatch
 import os
 import shutil
 import subprocess
@@ -120,6 +121,20 @@ def action_extensions(base_actions, project_path):
                 shutil.rmtree(f)
             else:
                 os.remove(f)
+
+    def python_clean(action, ctx, args):
+        for root, dirnames, filenames in os.walk(os.environ["IDF_PATH"]):
+            for d in dirnames:
+                if d == "__pycache__":
+                    dir_to_delete = os.path.join(root, d)
+                    if args.verbose:
+                        print("Removing: %s" % dir_to_delete)
+                    shutil.rmtree(dir_to_delete)
+            for filename in fnmatch.filter(filenames, '*.py[co]'):
+                file_to_delete = os.path.join(root, filename)
+                if args.verbose:
+                    print("Removing: %s" % file_to_delete)
+                os.remove(file_to_delete)
 
     def set_target(action, ctx, args, idf_target):
         if(not args["preview"] and idf_target in PREVIEW_TARGETS):
@@ -417,6 +432,14 @@ def action_extensions(base_actions, project_path):
                     "Note that this option recursively deletes all files "
                     "in the build directory, so use with care."
                     "Project configuration is not deleted.")
+            },
+            "python-clean": {
+                "callback": python_clean,
+                "short_help": "Delete generated Python byte code from the IDF directory",
+                "help": (
+                    "Delete generated Python byte code from the IDF directory "
+                    "which may cause issues when switching between IDF and Python versions. "
+                    "It is advised to run this target after switching versions.")
             },
         }
     }

@@ -488,6 +488,17 @@ function run_tests()
         rm -r sdkconfig.defaults build
     done
 
+    print_status "Cleaning Python bytecode"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -eq 0 ]; then
+        failure "No Python bytecode in IDF!"
+    fi
+    idf.py python-clean
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -gt 0 ]; then
+        failure "Python bytecode isn't working!"
+    fi
+
     print_status "Displays partition table when executing target partition_table"
     idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
