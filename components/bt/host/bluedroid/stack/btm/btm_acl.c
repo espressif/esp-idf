@@ -1140,7 +1140,6 @@ void btm_read_remote_ext_features_complete (UINT8 *p)
 
     if (max_page > HCI_EXT_FEATURES_PAGE_MAX) {
         BTM_TRACE_ERROR("btm_read_remote_ext_features_complete page=%d unknown", max_page);
-        return;
     }
 
     p_acl_cb = &btm_cb.acl_db[acl_idx];
