@@ -56,7 +56,7 @@
         android:layout_gravity="center"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:text="@string/connect_to_device_instructions"
+        android:text="@string/connect_device_instruction_general"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textSize="18sp" />
