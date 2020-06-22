@@ -53,6 +53,9 @@ static void spp_read_handle(void * param)
     int size = 0;
     int fd = (int)param;
     do {
+        /* controll the log frequency, retry after 1s */
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
         size = read (fd, spp_data, SPP_DATA_LEN);
         ESP_LOGI(SPP_TAG, "fd = %d data_len = %d", fd, size);
         if (size == -1) {
