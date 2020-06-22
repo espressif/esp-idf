@@ -15,14 +15,11 @@
 package com.espressif.provisioning;
 
 import android.Manifest;
-import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
@@ -37,8 +34,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.espressif.provisioning.listeners.ProvisionListener;
 import com.espressif.provisioning.listeners.ResponseListener;
@@ -109,7 +104,7 @@ public class ESPDevice {
         handler = new Handler(Looper.getMainLooper());
         this.transportType = transportType;
         this.securityType = securityType;
-        wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         switch (transportType) {
@@ -126,11 +121,9 @@ public class ESPDevice {
 
     /**
      * This method is used to connect ESPDevice.
-     *
-     * @param activity Activity.
      */
     @RequiresPermission(allOf = {Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_FINE_LOCATION})
-    public void connectToDevice(Activity activity) {
+    public void connectToDevice() {
 
         switch (transportType) {
 
@@ -139,9 +132,8 @@ public class ESPDevice {
                 break;
 
             case TRANSPORT_SOFTAP:
-//                enableOnlyWifiNetwork();
                 deviceConnectionReqCount = 0;
-                connectWiFiDevice(activity, wifiDevice.getWifiName(), wifiDevice.getPassword());
+                connectWiFiDevice(wifiDevice.getWifiName(), wifiDevice.getPassword());
                 break;
         }
     }
@@ -152,9 +144,11 @@ public class ESPDevice {
      * @param bluetoothDevice    BluetoothDevice
      * @param primaryServiceUuid Primary service UUID.
      */
+    @RequiresPermission(Manifest.permission.BLUETOOTH)
     public void connectBLEDevice(BluetoothDevice bluetoothDevice, String primaryServiceUuid) {
 
         if (transport instanceof BLETransport) {
+            deviceName = bluetoothDevice.getName();
             ((BLETransport) transport).connect(bluetoothDevice, UUID.fromString(primaryServiceUuid));
         } else {
             Log.e(TAG, "Trying to connect device with wrong transport.");
@@ -183,129 +177,131 @@ public class ESPDevice {
     /**
      * This method is used to connect ESPDevice using Wi-Fi transport.
      *
-     * @param activity Activity.
      * @param ssid     SSID of the device.
      * @param password Password of Wi-Fi device.
      */
     @RequiresPermission(allOf = {Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_FINE_LOCATION})
-    public void connectWiFiDevice(Activity activity, String ssid, String password) {
+    public void connectWiFiDevice(String ssid, String password) {
 
         Log.e(TAG, "connectWiFiDevice ========== SSID : " + ssid + " and Password : " + password);
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//
-//            WifiNetworkSpecifier networkSpecifier = new WifiNetworkSpecifier.Builder()
-//                    .setSsid(ssid)
-//                    .setWpa2Passphrase(password)
-//                    .build();
-//
-//            NetworkRequest request = new NetworkRequest.Builder()
-//                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI) // we want WiFi
-//                    .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) // Internet not required
-//                    .setNetworkSpecifier(networkSpecifier) // we want _our_ network
-//                    .build();
-//
-//            networkCallback = new ConnectivityManager.NetworkCallback() {
-//
-//                @Override
-//                public void onAvailable(Network network) {
-//
-//                    Log.e(TAG, "Network is available - 1");
-//                    connectivityManager.bindProcessToNetwork(network);
-//                }
-//
-//                @Override
-//                public void onUnavailable() {
-//                    super.onUnavailable();
-//                    Log.e(TAG, "Network is Unavailable - 1");
-//                }
-//
-//                @Override
-//                public void onLost(@NonNull Network network) {
-//                    super.onLost(network);
-//                    Log.e(TAG, "Lost Network Connection - 1");
-//                }
-//            };
-//            connectivityManager.registerNetworkCallback(request, networkCallback);
-//            scheduleWiFiConnectionFailure();
-//            checkDeviceConnection(activity, ssid);
-//
-//        } else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
-        NetworkRequest.Builder request = new NetworkRequest.Builder();
-        request.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
-        request.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);// Internet not required
+            WifiNetworkSpecifier.Builder builder = new WifiNetworkSpecifier.Builder();
+            builder.setSsid(ssid);
+            builder.setWpa2Passphrase(password);
 
-        networkCallback = new ConnectivityManager.NetworkCallback() {
+            WifiNetworkSpecifier wifiNetworkSpecifier = builder.build();
 
-            @Override
-            public void onAvailable(Network network) {
+            NetworkRequest.Builder networkRequestBuilder = new NetworkRequest.Builder();
+            networkRequestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
+            networkRequestBuilder.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            networkRequestBuilder.setNetworkSpecifier(wifiNetworkSpecifier);
 
-                Log.e(TAG, "Network is available - 2");
-                connectivityManager.bindProcessToNetwork(network);
-            }
+            NetworkRequest networkRequest = networkRequestBuilder.build();
 
-            @Override
-            public void onUnavailable() {
-                super.onUnavailable();
-                Log.e(TAG, "Network is Unavailable - 2");
-            }
+            networkCallback = new ConnectivityManager.NetworkCallback() {
 
-            @Override
-            public void onLost(@NonNull Network network) {
-                super.onLost(network);
-                Log.e(TAG, "Lost Network Connection - 2");
-            }
-        };
-        connectivityManager.registerNetworkCallback(request.build(), networkCallback);
+                @Override
+                public void onAvailable(Network network) {
 
-        if (!wifiManager.isWifiEnabled()) {
-            wifiManager.setWifiEnabled(true);
-        }
+                    Log.e(TAG, "Network is available - 1");
+                    connectivityManager.bindProcessToNetwork(network);
+                    getCapabilitiesFromDevice();
+                }
 
-        Log.d(TAG, "Device name : " + ssid);
-        Log.d(TAG, "Device password : " + password);
+                @Override
+                public void onUnavailable() {
+                    super.onUnavailable();
+                    Log.e(TAG, "Network is Unavailable - 1");
+                    handler.postDelayed(wifiConnectionFailedTask, 200);
+                }
 
-        WifiConfiguration config = new WifiConfiguration();
-        config.SSID = String.format("\"%s\"", ssid);
+                @Override
+                public void onLost(@NonNull Network network) {
+                    super.onLost(network);
+                    Log.e(TAG, "Lost Network Connection - 1");
+                }
+            };
 
-        int netId = -1;
-        List<WifiConfiguration> apList = wifiManager.getConfiguredNetworks();
-        Log.d(TAG, "List Size : " + apList.size());
-
-        for (WifiConfiguration i : apList) {
-
-            if (i.SSID != null && i.SSID.equals("\"" + ssid + "\"")) {
-                netId = i.networkId;
-            }
-        }
-
-        if (netId == -1) {
-
-            if (TextUtils.isEmpty(password)) {
-                Log.i(TAG, "Connect to open network");
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-            } else {
-                Log.i(TAG, "Connect to secure network");
-                config.preSharedKey = String.format("\"%s\"", password);
-            }
-
-            netId = wifiManager.addNetwork(config);
-            Log.d(TAG, "Network Id : " + netId);
-        }
-
-        if (netId != -1) {
-
-            Log.d(TAG, "Connect to network : " + netId);
-            wifiManager.enableNetwork(netId, true);
-            scheduleWiFiConnectionFailure();
-            checkDeviceConnection(activity, ssid);
+            connectivityManager.requestNetwork(networkRequest, networkCallback);
 
         } else {
-            Log.e(TAG, "Failed to add network");
-            EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+
+            NetworkRequest.Builder request = new NetworkRequest.Builder();
+            request.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
+            request.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);// Internet not required
+
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+
+                @Override
+                public void onAvailable(Network network) {
+
+                    Log.e(TAG, "Network is available - 2");
+                    connectivityManager.bindProcessToNetwork(network);
+                }
+
+                @Override
+                public void onUnavailable() {
+                    super.onUnavailable();
+                    Log.e(TAG, "Network is Unavailable - 2");
+                }
+
+                @Override
+                public void onLost(@NonNull Network network) {
+                    super.onLost(network);
+                    Log.e(TAG, "Lost Network Connection - 2");
+                }
+            };
+            connectivityManager.registerNetworkCallback(request.build(), networkCallback);
+
+            if (!wifiManager.isWifiEnabled()) {
+                wifiManager.setWifiEnabled(true);
+            }
+
+            Log.d(TAG, "Device name : " + ssid);
+            Log.d(TAG, "Device password : " + password);
+
+            WifiConfiguration config = new WifiConfiguration();
+            config.SSID = String.format("\"%s\"", ssid);
+
+            int netId = -1;
+            List<WifiConfiguration> apList = wifiManager.getConfiguredNetworks();
+            Log.d(TAG, "List Size : " + apList.size());
+
+            for (WifiConfiguration i : apList) {
+
+                if (i.SSID != null && i.SSID.equals("\"" + ssid + "\"")) {
+                    netId = i.networkId;
+                }
+            }
+
+            if (netId == -1) {
+
+                if (TextUtils.isEmpty(password)) {
+                    Log.i(TAG, "Connect to open network");
+                    config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                } else {
+                    Log.i(TAG, "Connect to secure network");
+                    config.preSharedKey = String.format("\"%s\"", password);
+                }
+
+                netId = wifiManager.addNetwork(config);
+                Log.d(TAG, "Network Id : " + netId);
+            }
+
+            if (netId != -1) {
+
+                Log.d(TAG, "Connect to network : " + netId);
+                wifiManager.enableNetwork(netId, true);
+                scheduleWiFiConnectionFailure();
+                checkDeviceConnection(ssid);
+
+            } else {
+                Log.e(TAG, "Failed to add network");
+                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            }
         }
-//        }
     }
 
     /**
@@ -781,8 +777,7 @@ public class ESPDevice {
                     if (provisionListener != null) {
                         provisionListener.deviceProvisioningSuccess();
                     }
-                    // TODO
-//                    session = null;
+                    session = null;
                     disableOnlyWifiNetwork();
 
                 } else if (wifiStationState == WifiConstants.WifiStationState.Disconnected) {
@@ -791,6 +786,8 @@ public class ESPDevice {
                     if (provisionListener != null) {
                         provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.DEVICE_DISCONNECTED);
                     }
+                    session = null;
+                    disableOnlyWifiNetwork();
 
                 } else if (wifiStationState == WifiConstants.WifiStationState.Connecting) {
 
@@ -799,6 +796,7 @@ public class ESPDevice {
                         pollForWifiConnectionStatus();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                        session = null;
                         disableOnlyWifiNetwork();
                         provisionListener.onProvisioningFailed(new RuntimeException("Provisioning Failed"));
                     }
@@ -815,6 +813,7 @@ public class ESPDevice {
                     } else {
                         provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.UNKNOWN);
                     }
+                    session = null;
                     disableOnlyWifiNetwork();
                 }
             }
@@ -1027,13 +1026,13 @@ public class ESPDevice {
 
             transport.sendConfigData(ESPConstants.HANDLER_PROTO_VER, tempData.getBytes(), new ResponseListener() {
 
+                @RequiresPermission(allOf = {Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE})
                 @Override
                 public void onSuccess(byte[] returnData) {
 
                     String data = new String(returnData, StandardCharsets.UTF_8);
                     Log.d(TAG, "Value : " + data);
                     deviceCapabilities = new ArrayList<>();
-                    scheduleWiFiConnectionFailure();
 
                     try {
                         JSONObject jsonObject = new JSONObject(data);
@@ -1048,6 +1047,7 @@ public class ESPDevice {
                             String cap = capabilities.getString(i);
                             deviceCapabilities.add(cap);
                         }
+                        deviceName = fetchWiFiSSID();
                         Log.d(TAG, "Capabilities : " + deviceCapabilities);
 
                     } catch (JSONException e) {
@@ -1080,6 +1080,7 @@ public class ESPDevice {
         public void run() {
 
             handler.removeCallbacks(getCapabilitiesTask);
+            handler.removeCallbacks(deviceConnectionFailedTask);
             Log.e(TAG, "deviceConnectionFailedTask");
             EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
         }
@@ -1101,28 +1102,15 @@ public class ESPDevice {
     }
 
     @RequiresPermission(allOf = {Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE})
-    private String fetchWiFiSSID(final Activity activity) {
+    private String fetchWiFiSSID() {
 
         String ssid = null;
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        if (wifiInfo.getSupplicantState() == SupplicantState.COMPLETED) {
 
-            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-            if (networkInfo == null) {
-                return null;
-            }
-
-            if (networkInfo.isConnected()) {
-                final WifiInfo connectionInfo = wifiManager.getConnectionInfo();
-                if (connectionInfo != null && connectionInfo.getSupplicantState() == SupplicantState.COMPLETED) {
-                    ssid = connectionInfo.getSSID();
-                    ssid = ssid.replaceAll("^\"|\"$", "");
-                }
-            }
-        } else {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+            ssid = wifiInfo.getSSID();
+            ssid = ssid.replace("\"", "");
         }
-
         Log.e(TAG, "Returning ssid : " + ssid);
         return ssid;
     }
@@ -1140,11 +1128,9 @@ public class ESPDevice {
 
     private class FetchNetworkName implements Runnable {
 
-        private Activity activity;
         private String ssid;
 
-        FetchNetworkName(Activity activity, String ssid) {
-            this.activity = activity;
+        FetchNetworkName(String ssid) {
             this.ssid = ssid;
         }
 
@@ -1152,7 +1138,7 @@ public class ESPDevice {
         @RequiresPermission(allOf = {Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE})
         public void run() {
 
-            String networkName = fetchWiFiSSID(activity);
+            String networkName = fetchWiFiSSID();
             Log.d(TAG, "Fetch SSID : " + networkName);
             Log.d(TAG, "SSID : " + ssid);
 
@@ -1165,21 +1151,22 @@ public class ESPDevice {
                 }
                 Log.e(TAG, "Removed wifiConnectionFailedTask");
                 handler.removeCallbacks(wifiConnectionFailedTask);
+                deviceName = ssid;
                 getCapabilitiesFromDevice();
 
             } else {
 
                 handler.removeCallbacks(task);
-                checkDeviceConnection(activity, ssid);
+                checkDeviceConnection(ssid);
             }
         }
     }
 
     FetchNetworkName task;
 
-    private void checkDeviceConnection(Activity activity, String ssid) {
+    private void checkDeviceConnection(String ssid) {
 
-        task = new FetchNetworkName(activity, ssid);
+        task = new FetchNetworkName(ssid);
         handler.postDelayed(task, 2000);
     }
 }

@@ -23,7 +23,7 @@ android {
     buildToolsVersion "29.0.1"
 
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -70,6 +70,7 @@ dependencies {
     implementation 'com.google.crypto.tink:tink-android:1.1.0'
     implementation 'com.google.android.gms:play-services-vision:20.0.0'
     implementation 'androidx.preference:preference:1.1.1'
+    implementation 'com.budiyev.android:code-scanner:2.1.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

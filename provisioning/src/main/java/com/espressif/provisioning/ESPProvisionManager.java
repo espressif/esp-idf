@@ -19,16 +19,18 @@ import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 
+import com.budiyev.android.codescanner.CodeScanner;
+import com.budiyev.android.codescanner.DecodeCallback;
 import com.espressif.provisioning.device_scanner.BleScanner;
 import com.espressif.provisioning.device_scanner.WiFiScanner;
 import com.espressif.provisioning.listeners.BleScanListener;
@@ -38,12 +40,15 @@ import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.Result;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * App can use this class to provision device. It has APIs to scan devices, scan QR code and connect with the device to get
@@ -107,48 +112,33 @@ public class ESPProvisionManager {
      * This method scans QR code from, get the device information and checks whether this device is available or not.
      * If device is available in scanning (BLE / Wi-Fi), then it will return ESPDevice.
      *
-     * @param activityContext    Activity Context.
-     * @param surfaceView        SurfaceView in which CameraPreview needs to be display to scan QR code.
-     * @param qrCodeScanListener QRCodeScanListener
+     * @param activityContext     Activity Context.
+     * @param cameraSourcePreview CameraSourcePreview in which CameraSource needs to be display to scan QR code.
+     * @param qrCodeScanListener  QRCodeScanListener
      */
     @RequiresPermission(allOf = {Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
-    public void scanQRCode(final Activity activityContext, final SurfaceView surfaceView, final QRCodeScanListener qrCodeScanListener) {
+    public void scanQRCode(final Activity activityContext, final CameraSourcePreview cameraSourcePreview, final QRCodeScanListener qrCodeScanListener) {
 
         isScanned = false;
         BarcodeDetector barcodeDetector = new BarcodeDetector.Builder(activityContext)
                 .setBarcodeFormats(Barcode.QR_CODE)
                 .build();
 
-        final CameraSource cameraSource = new CameraSource.Builder(activityContext, barcodeDetector)
-                .setRequestedPreviewSize(1920, 1080)
-                .setAutoFocusEnabled(true) //you should add this feature
+        CameraSource cameraSource = new CameraSource.Builder(activityContext, barcodeDetector)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setRequestedPreviewSize(1600, 1024)
+                .setAutoFocusEnabled(true)
                 .build();
 
-        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-
-                try {
-                    if (cameraSource != null) {
-                        cameraSource.start(surfaceView.getHolder());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        if (cameraSource != null) {
+            try {
+                cameraSourcePreview.start(cameraSource);
+            } catch (IOException e) {
+                Log.e(TAG, "Unable to start camera source.", e);
+                cameraSource.release();
+                cameraSource = null;
             }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-                if (cameraSource != null) {
-                    cameraSource.stop();
-                }
-            }
-        });
+        }
 
         barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
 
@@ -188,7 +178,7 @@ public class ESPProvisionManager {
 
                             @Override
                             public void run() {
-                                cameraSource.release();
+                                cameraSourcePreview.release();
                             }
                         });
 
@@ -222,7 +212,116 @@ public class ESPProvisionManager {
                         espDevice = new ESPDevice(context, transportType, securityType);
                         espDevice.setDeviceName(deviceName);
                         espDevice.setProofOfPossession(pop);
-                        isDeviceAvailable(espDevice, password, qrCodeScanListener);
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && transportType.equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+
+                            WiFiAccessPoint wiFiDevice = new WiFiAccessPoint();
+                            wiFiDevice.setWifiName(deviceName);
+                            wiFiDevice.setPassword(password);
+                            espDevice.setWifiDevice(wiFiDevice);
+                            qrCodeScanListener.deviceDetected(espDevice);
+                        } else {
+                            isDeviceAvailable(espDevice, password, qrCodeScanListener);
+                        }
+
+                    } catch (JSONException e) {
+
+                        e.printStackTrace();
+                        qrCodeScanListener.onFailure(new RuntimeException("QR code not valid"));
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * This method scans QR code from, get the device information and checks whether this device is available or not.
+     * If device is available in scanning (BLE / Wi-Fi), then it will return ESPDevice.
+     *
+     * @param codeScanner        CodeScanner in which CameraSource needs to be display to scan QR code.
+     * @param qrCodeScanListener QRCodeScanListener
+     */
+    @RequiresPermission(allOf = {Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
+    public void scanQRCode(final CodeScanner codeScanner, final QRCodeScanListener qrCodeScanListener) {
+
+        isScanned = false;
+        List<BarcodeFormat> formats = new ArrayList<>();
+        formats.add(BarcodeFormat.QR_CODE);
+
+        codeScanner.setDecodeCallback(new DecodeCallback() {
+            @Override
+            public void onDecoded(@NonNull final Result result) {
+
+                String scannedData = result.getText();
+
+                if (!TextUtils.isEmpty(scannedData) && !isScanned) {
+
+                    Log.d(TAG, "QR Code Data : " + scannedData);
+
+                    try {
+                        JSONObject jsonObject = new JSONObject(scannedData);
+
+                        String deviceName = jsonObject.optString("name");
+                        String pop = jsonObject.optString("pop");
+                        String transport = jsonObject.optString("transport");
+                        int security = jsonObject.optInt("security", 1);
+                        String password = jsonObject.optString("password");
+                        isScanned = true;
+
+                        if (qrCodeScanListener != null) {
+                            qrCodeScanListener.qrCodeScanned();
+                        }
+
+                        Handler handler = new Handler(Looper.getMainLooper());
+                        handler.post(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                codeScanner.releaseResources();
+                            }
+                        });
+
+                        ESPConstants.TransportType transportType = null;
+                        ESPConstants.SecurityType securityType = null;
+
+                        if (!TextUtils.isEmpty(transport)) {
+
+                            if (transport.equalsIgnoreCase("softap")) {
+
+                                transportType = ESPConstants.TransportType.TRANSPORT_SOFTAP;
+
+                            } else if (transport.equalsIgnoreCase("ble")) {
+
+                                transportType = ESPConstants.TransportType.TRANSPORT_BLE;
+
+                            } else {
+                                qrCodeScanListener.onFailure(new RuntimeException("Transport type not supported"));
+                            }
+
+                        } else {
+                            qrCodeScanListener.onFailure(new RuntimeException("Transport is not available"));
+                        }
+
+                        if (security == 0) {
+                            securityType = ESPConstants.SecurityType.SECURITY_0;
+                        } else {
+                            securityType = ESPConstants.SecurityType.SECURITY_1;
+                        }
+
+                        espDevice = new ESPDevice(context, transportType, securityType);
+                        espDevice.setDeviceName(deviceName);
+                        espDevice.setProofOfPossession(pop);
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && transportType.equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+
+                            WiFiAccessPoint wiFiDevice = new WiFiAccessPoint();
+                            wiFiDevice.setWifiName(deviceName);
+                            wiFiDevice.setPassword(password);
+                            espDevice.setWifiDevice(wiFiDevice);
+                            qrCodeScanListener.deviceDetected(espDevice);
+                        } else {
+                            isDeviceAvailable(espDevice, password, qrCodeScanListener);
+                        }
 
                     } catch (JSONException e) {
 
@@ -328,6 +427,7 @@ public class ESPProvisionManager {
             device = device1;
             listener = listener1;
             password = password1;
+            isDeviceFound = false;
         }
 
         @Override
@@ -342,7 +442,7 @@ public class ESPProvisionManager {
 
                     @Override
                     public void scanStartFailed() {
-                        listener.onFailure(new RuntimeException("Bluetooth is not ON."));
+                        listener.onFailure(new RuntimeException("Please turn on bluetooth and try again."));
                     }
 
                     @Override
@@ -362,7 +462,6 @@ public class ESPProvisionManager {
 
                                 device.setBluetoothDevice(btDevice);
                                 device.setPrimaryServiceUuid(serviceUuid);
-                                listener.deviceDetected(device);
                             }
                         }
                     }
@@ -384,6 +483,8 @@ public class ESPProvisionManager {
                                 String errMsg = "" + device.getDeviceName() + " device not found";
                                 listener.onFailure(new RuntimeException(errMsg));
                             }
+                        } else {
+                            listener.deviceDetected(device);
                         }
                     }
 
