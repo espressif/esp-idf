@@ -61,6 +61,9 @@ static void spp_write_handle(void * param)
     int fd = (int)param;
     printf("%s %d  %p\n", __func__,fd,param);
     do {
+        /*Controll the log frequency, retry after 1s*/
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
         size = write (fd, spp_data, SPP_DATA_LEN);
         ESP_LOGI(SPP_TAG, "fd = %d  data_len = %d",fd, size);
         if (size == -1) {
