@@ -26,10 +26,12 @@ public class AppConstants {
     public static final String KEY_WIFI_SSID = "ssid";
     public static final String KEY_WIFI_PASSWORD = "password";
     public static final String KEY_DEVICE_TYPES = "device_types";
+    public static final String KEY_SECURITY_TYPE = "security_type";
 
     public static final String ESP_PREFERENCES = "Esp_Preferences";
 
-    public static final String DEVICE_TYPE_WIFI = "wifi";
+    public static final String DEVICE_TYPE_SOFTAP = "wifi";
     public static final String DEVICE_TYPE_BLE = "ble";
     public static final String DEVICE_TYPE_BOTH = "both";
+    public static final String DEVICE_TYPE_DEFAULT = DEVICE_TYPE_BOTH;
 }

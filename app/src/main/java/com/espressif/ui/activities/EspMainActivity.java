@@ -21,6 +21,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -38,10 +40,10 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.BuildConfig;
-import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.wifi_provisioning.BuildConfig;
+import com.espressif.wifi_provisioning.R;
 
 public class EspMainActivity extends AppCompatActivity {
 
@@ -52,7 +54,7 @@ public class EspMainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 2;
 
     private ESPProvisionManager provisionManager;
-    private CardView btnAddDevice, btnScanQRCode;
+    private CardView btnAddDevice;
     private SharedPreferences sharedPreferences;
     private String deviceType;
 
@@ -70,24 +72,16 @@ public class EspMainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-//        if (BuildConfig.FLAVOR_transport.equals("ble") && BLEProvisionLanding.isBleWorkDone) {
-//            BLEProvisionLanding.bleTransport.disconnect();
-//        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_settings, menu);
-        return true;
+
+        if (BuildConfig.isSettingsAllowed) {
+            // Inflate the menu; this adds items to the action bar if it is present.
+            getMenuInflater().inflate(R.menu.menu_settings, menu);
+            return true;
+        } else {
+            menu.clear();
+            return true;
+        }
     }
 
     @Override
@@ -115,7 +109,7 @@ public class EspMainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 
                 if (isLocationEnabled()) {
-                    askForDeviceType();
+                    addDeviceClick();
                 }
             }
         }
@@ -128,55 +122,21 @@ public class EspMainActivity extends AppCompatActivity {
     private void initViews() {
 
         btnAddDevice = findViewById(R.id.btn_provision_device);
-        btnScanQRCode = findViewById(R.id.btn_scan_qr_code);
-
-        if (BuildConfig.IS_QR_CODE_SUPPORTED) {
-
-            TextView tvQrCodeBtn = btnScanQRCode.findViewById(R.id.text_btn);
-            tvQrCodeBtn.setText(R.string.btn_scan_qr_code);
-        } else {
-            btnScanQRCode.setVisibility(View.GONE);
-        }
-
-        btnScanQRCode.findViewById(R.id.iv_arrow).setVisibility(View.GONE);
         btnAddDevice.findViewById(R.id.iv_arrow).setVisibility(View.GONE);
-        btnScanQRCode.setOnClickListener(scanQrCodeBtnClickListener);
         btnAddDevice.setOnClickListener(addDeviceBtnClickListener);
-    }
 
-    View.OnClickListener scanQrCodeBtnClickListener = new View.OnClickListener() {
+        TextView tvAppVersion = findViewById(R.id.tv_app_version);
 
-        @Override
-        public void onClick(View v) {
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-
-                if (!isLocationEnabled()) {
-                    askForLocation();
-                    return;
-                }
-            }
-
-            deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_BOTH);
-
-            if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE) || deviceType.equals(AppConstants.DEVICE_TYPE_BOTH)) {
-
-                final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-                BluetoothAdapter bleAdapter = bluetoothManager.getAdapter();
-
-                if (!bleAdapter.isEnabled()) {
-                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-                } else {
-                    Intent intent = new Intent(EspMainActivity.this, AddDeviceActivity.class);
-                    startActivity(intent);
-                }
-            } else {
-                Intent intent = new Intent(EspMainActivity.this, AddDeviceActivity.class);
-                startActivity(intent);
-            }
+        String version = "";
+        try {
+            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            version = pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
-    };
+        String appVersion = getString(R.string.app_version) + " - v" + version;
+        tvAppVersion.setText(appVersion);
+    }
 
     View.OnClickListener addDeviceBtnClickListener = new View.OnClickListener() {
 
@@ -190,8 +150,19 @@ public class EspMainActivity extends AppCompatActivity {
                     return;
                 }
             }
+            addDeviceClick();
+        }
+    };
 
-            deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_BOTH);
+    private void addDeviceClick() {
+
+        if (BuildConfig.isQrCodeSupported) {
+
+            gotoQrCodeActivity();
+
+        } else {
+
+            deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
 
             if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE) || deviceType.equals(AppConstants.DEVICE_TYPE_BOTH)) {
 
@@ -202,18 +173,18 @@ public class EspMainActivity extends AppCompatActivity {
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
                 } else {
-                    askForDeviceType();
+                    startProvisioningFlow();
                 }
             } else {
-                askForDeviceType();
+                startProvisioningFlow();
             }
         }
-    };
+    }
 
-    private void askForDeviceType() {
+    private void startProvisioningFlow() {
 
-        String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_BOTH);
-        final boolean isSec1 = sharedPreferences.getBoolean("security_type", true);
+        String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+        final boolean isSec1 = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
         Log.d(TAG, "Device Types : " + deviceType);
         Log.d(TAG, "isSec1 : " + isSec1);
         int securityType = 0;
@@ -228,26 +199,21 @@ public class EspMainActivity extends AppCompatActivity {
             } else {
                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
             }
-            Intent intent = new Intent(EspMainActivity.this, BLEProvisionLanding.class);
-            intent.putExtra("security_type", securityType);
-            startActivity(intent);
+            goToBLEProvisionLandingActivity(securityType);
 
-        } else if (deviceType.equals(AppConstants.DEVICE_TYPE_WIFI)) {
+        } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
 
             if (isSec1) {
                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_1);
             } else {
                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_0);
             }
-//            Intent intent1 = new Intent(EspMainActivity.this, WiFiProvisionLanding.class);
-            Intent intent1 = new Intent(EspMainActivity.this, ProvisionLanding.class);
-            intent1.putExtra("security_type", securityType);
-            startActivity(intent1);
+            goToWiFiProvisionLandingActivity(securityType);
 
         } else {
 
             final String[] deviceTypes = {"BLE", "Wi-Fi"};
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
             builder.setCancelable(true);
             builder.setTitle(R.string.dialog_msg_device_selection);
             final int finalSecurityType = securityType;
@@ -258,25 +224,23 @@ public class EspMainActivity extends AppCompatActivity {
 
                     switch (position) {
                         case 0:
+
                             if (isSec1) {
                                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_1);
                             } else {
                                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
                             }
-                            Intent intent = new Intent(EspMainActivity.this, BLEProvisionLanding.class);
-                            intent.putExtra("security_type", finalSecurityType);
-                            startActivity(intent);
+                            goToBLEProvisionLandingActivity(finalSecurityType);
                             break;
+
                         case 1:
+
                             if (isSec1) {
                                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_1);
                             } else {
                                 provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_0);
                             }
-//                            Intent intent1 = new Intent(EspMainActivity.this, WiFiProvisionLanding.class);
-                            Intent intent1 = new Intent(EspMainActivity.this, ProvisionLanding.class);
-                            intent1.putExtra("security_type", finalSecurityType);
-                            startActivity(intent1);
+                            goToWiFiProvisionLandingActivity(finalSecurityType);
                             break;
                     }
                     dialog.dismiss();
@@ -288,7 +252,7 @@ public class EspMainActivity extends AppCompatActivity {
 
     private void askForLocation() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setCancelable(true);
         builder.setMessage(R.string.dialog_msg_gps);
 
@@ -333,5 +297,24 @@ public class EspMainActivity extends AppCompatActivity {
 
         boolean result = gps_enabled || network_enabled;
         return result;
+    }
+
+    private void gotoQrCodeActivity() {
+        Intent intent = new Intent(EspMainActivity.this, AddDeviceActivity.class);
+        startActivity(intent);
+    }
+
+    private void goToBLEProvisionLandingActivity(int securityType) {
+
+        Intent intent = new Intent(EspMainActivity.this, BLEProvisionLanding.class);
+        intent.putExtra(AppConstants.KEY_SECURITY_TYPE, securityType);
+        startActivity(intent);
+    }
+
+    private void goToWiFiProvisionLandingActivity(int securityType) {
+
+        Intent intent = new Intent(EspMainActivity.this, ProvisionLanding.class);
+        intent.putExtra(AppConstants.KEY_SECURITY_TYPE, securityType);
+        startActivity(intent);
     }
 }

@@ -104,7 +104,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.title_activity_connect_device);
         setSupportActionBar(toolbar);
-        securityType = getIntent().getIntExtra("security_type", 0);
+        securityType = getIntent().getIntExtra(AppConstants.KEY_SECURITY_TYPE, 0);
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -265,7 +265,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
         textPrefix.setText(deviceNamePrefix);
 
         // Set visibility of Prefix layout
-        if (BuildConfig.IS_ALLOWED_FILTERING_BY_PREFIX) {
+        if (BuildConfig.isFilteringByPrefixAllowed) {
 
             prefixLayout.setVisibility(View.VISIBLE);
 
@@ -377,7 +377,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
     private void alertForDeviceNotSupported(String msg) {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setCancelable(false);
 
         builder.setTitle(R.string.error_title);
@@ -502,7 +502,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
     private void askForPrefix() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setCancelable(true);
 
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(this);

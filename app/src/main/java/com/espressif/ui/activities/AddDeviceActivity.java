@@ -15,31 +15,41 @@
 package com.espressif.ui.activities;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.Log;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 
+import com.budiyev.android.codescanner.CodeScanner;
+import com.budiyev.android.codescanner.CodeScannerView;
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPDevice;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.listeners.QRCodeScanListener;
+import com.espressif.wifi_provisioning.R;
 import com.wang.avi.AVLoadingIndicatorView;
 
 import org.greenrobot.eventbus.EventBus;
@@ -54,42 +64,77 @@ public class AddDeviceActivity extends AppCompatActivity {
 
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final int REQUEST_ACCESS_FINE_LOCATION = 2;
+    private static final int REQUEST_ENABLE_BT = 3;
 
     private TextView tvTitle, tvBack, tvCancel;
     private CardView btnAddManually;
     private TextView txtAddManuallyBtn;
+    private SharedPreferences sharedPreferences;
 
-    private SurfaceView surfaceView;
     private AVLoadingIndicatorView loader;
     private Intent intent;
     private ESPDevice espDevice;
     private ESPProvisionManager provisionManager;
+    //    private CameraSourcePreview cameraPreview;
+    private CodeScanner codeScanner;
+    private boolean isQrCodeDataReceived = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_device);
         intent = new Intent();
+        sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
         EventBus.getDefault().register(this);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-//        if (cameraSource != null) {
-//            try {
-//                cameraSource.release();
-//            } catch (NullPointerException ignored) {
-//            }
-//            cameraSource = null;
-//        }
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
+
+        if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+//            if (cameraPreview != null) {
+//                try {
+//                    cameraPreview.start();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+
+            if (codeScanner != null && !isQrCodeDataReceived) {
+                codeScanner.startPreview();
+            }
+        }
+
+        // This condition is to get event of cancel button of "try again" popup. Because Android 10 is not giving event on cancel button click if network is not found.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+
+            String ssid = getWifiSsid();
+            Log.d(TAG, "Currently connected WiFi SSID : " + ssid);
+            Log.d(TAG, "Device Name  : " + espDevice.getDeviceName());
+            if (!TextUtils.isEmpty(ssid) && !ssid.equals(espDevice.getDeviceName())) {
+                Log.e(TAG, "Device is not connected");
+                finish();
+            }
+        }
+    }
+
+    /**
+     * Stops the camera.
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+//        if (cameraPreview != null) {
+//            cameraPreview.stop();
+//        }
+        if (codeScanner != null) {
+            codeScanner.stopPreview();
+        }
     }
 
     @Override
@@ -97,6 +142,12 @@ public class AddDeviceActivity extends AppCompatActivity {
 
         hideLoading();
         EventBus.getDefault().unregister(this);
+//        if (cameraPreview != null) {
+//            cameraPreview.release();
+//        }
+        if (codeScanner != null) {
+            codeScanner.releaseResources();
+        }
         super.onDestroy();
     }
 
@@ -106,7 +157,6 @@ public class AddDeviceActivity extends AppCompatActivity {
         if (provisionManager.getEspDevice() != null) {
             provisionManager.getEspDevice().disconnectDevice();
         }
-
         super.onBackPressed();
     }
 
@@ -126,10 +176,19 @@ public class AddDeviceActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
+            startProvisioningFlow();
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(DeviceConnectionEvent event) {
 
-        Log.d(TAG, "ON Device Prov Event RECEIVED : " + event.getEventType());
+        Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());
 
         switch (event.getEventType()) {
 
@@ -140,7 +199,7 @@ public class AddDeviceActivity extends AppCompatActivity {
 
                 if (deviceCaps.contains("wifi_scan")) {
 
-                    goToWifiScanListActivity();
+                    goToWiFiScanActivity();
 
                 } else {
 
@@ -149,13 +208,25 @@ public class AddDeviceActivity extends AppCompatActivity {
                 break;
 
             case ESPConstants.EVENT_DEVICE_DISCONNECTED:
-                Toast.makeText(AddDeviceActivity.this, "Device disconnected", Toast.LENGTH_LONG).show();
-                finish();
+
+                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_BLE)) {
+
+                    Toast.makeText(AddDeviceActivity.this, "Device disconnected", Toast.LENGTH_LONG).show();
+                    finish();
+                } else {
+                    askForManualDeviceConnection();
+                }
                 break;
 
             case ESPConstants.EVENT_DEVICE_CONNECTION_FAILED:
-                Toast.makeText(AddDeviceActivity.this, "Failed to connect with device", Toast.LENGTH_LONG).show();
-                finish();
+
+                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_BLE)) {
+
+                    Toast.makeText(AddDeviceActivity.this, "Failed to connect with device", Toast.LENGTH_LONG).show();
+                    finish();
+                } else {
+                    askForManualDeviceConnection();
+                }
                 break;
         }
     }
@@ -165,24 +236,22 @@ public class AddDeviceActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
 
-            SharedPreferences sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
-            final boolean isSec1 = sharedPreferences.getBoolean("security_type", true);
-            Log.e(TAG, "isSec1 : " + isSec1);
-            int securityType = 0;
-            if (isSec1) {
-                securityType = 1;
-            }
+            String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
 
-            if (isSec1) {
-                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_1);
+            if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE) || deviceType.equals(AppConstants.DEVICE_TYPE_BOTH)) {
+
+                final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+                BluetoothAdapter bleAdapter = bluetoothManager.getAdapter();
+
+                if (!bleAdapter.isEnabled()) {
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                } else {
+                    startProvisioningFlow();
+                }
             } else {
-                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_0);
+                startProvisioningFlow();
             }
-            finish();
-//            Intent intent1 = new Intent(getApplicationContext(), WiFiProvisionLanding.class);
-            Intent intent1 = new Intent(getApplicationContext(), ProvisionLanding.class);
-            intent1.putExtra("security_type", securityType);
-            startActivity(intent1);
         }
     };
 
@@ -191,6 +260,9 @@ public class AddDeviceActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
 
+            if (provisionManager.getEspDevice() != null) {
+                provisionManager.getEspDevice().disconnectDevice();
+            }
             setResult(RESULT_CANCELED, intent);
             finish();
         }
@@ -207,24 +279,33 @@ public class AddDeviceActivity extends AppCompatActivity {
         tvCancel.setVisibility(View.VISIBLE);
         tvCancel.setOnClickListener(cancelBtnClickListener);
 
-        surfaceView = findViewById(R.id.surfaceView);
+        CodeScannerView scannerView = findViewById(R.id.scanner_view);
+        codeScanner = new CodeScanner(this, scannerView);
+
+//        cameraPreview = findViewById(R.id.preview);
         btnAddManually = findViewById(R.id.btn_add_device_manually);
         txtAddManuallyBtn = findViewById(R.id.text_btn);
         loader = findViewById(R.id.loader);
 
         txtAddManuallyBtn.setText(R.string.btn_no_qr_code);
         btnAddManually.setOnClickListener(btnAddManuallyClickListener);
+
         initialiseDetectorsAndSources();
     }
 
     private void initialiseDetectorsAndSources() {
 
         if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            provisionManager.scanQRCode(this, surfaceView, qrCodeScanListener);
-            surfaceView.setVisibility(View.VISIBLE);
+            provisionManager.scanQRCode(codeScanner, qrCodeScanListener);
+//            cameraPreview.setVisibility(View.VISIBLE);
+            findViewById(R.id.scanner_view).setVisibility(View.VISIBLE);
 
+            if (codeScanner != null) {
+                codeScanner.startPreview();
+            }
         } else {
             Log.e(TAG, "All permissions are not granted.");
             askForPermissions();
@@ -241,6 +322,10 @@ public class AddDeviceActivity extends AppCompatActivity {
 
             ActivityCompat.requestPermissions(AddDeviceActivity.this, new
                     String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
+        } else if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(AddDeviceActivity.this, new
+                    String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
         }
     }
 
@@ -265,6 +350,7 @@ public class AddDeviceActivity extends AppCompatActivity {
                     showLoading();
                     Vibrator vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                     vib.vibrate(50);
+                    isQrCodeDataReceived = true;
                 }
             });
         }
@@ -272,38 +358,55 @@ public class AddDeviceActivity extends AppCompatActivity {
         @Override
         public void deviceDetected(ESPDevice device) {
 
+            Log.e(TAG, "Device detected");
             espDevice = device;
             if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 Log.e(TAG, "Location Permission not granted.");
                 return;
             }
-            device.connectToDevice(AddDeviceActivity.this);
+
+            String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+
+            if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE)) {
+
+                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+
+                    Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
+
+                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_BLE)) {
+
+                    Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            } else {
+                device.connectToDevice();
+            }
         }
 
         @Override
         public void onFailure(final Exception e) {
 
             Log.e(TAG, "Error : " + e.getMessage());
-            e.printStackTrace();
 
             runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
                     hideLoading();
-                    Toast.makeText(AddDeviceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddDeviceActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                     finish();
                 }
             });
         }
     };
 
-    private void goToWifiScanListActivity() {
+    private void goToWiFiScanActivity() {
 
         finish();
         Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
-        wifiListIntent.putExtras(getIntent());
-        wifiListIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, espDevice.getProofOfPossession());
         startActivity(wifiListIntent);
     }
 
@@ -311,8 +414,151 @@ public class AddDeviceActivity extends AppCompatActivity {
 
         finish();
         Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
-        provisionIntent.putExtras(getIntent());
-        provisionIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, espDevice.getProofOfPossession());
         startActivity(provisionIntent);
+    }
+
+    private void askForManualDeviceConnection() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        builder.setCancelable(true);
+
+        builder.setMessage("Unable to connect with device. \nDo you want to connect device manually ?");
+
+        // Set up the buttons
+        builder.setPositiveButton(R.string.btn_yes, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+                if (espDevice != null) {
+                    if (espDevice.getSecurityType().equals(ESPConstants.SecurityType.SECURITY_0)) {
+                        goToWiFiProvisionLandingActivity(0);
+                    } else {
+                        goToWiFiProvisionLandingActivity(1);
+                    }
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        builder.setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+                finish();
+            }
+        });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    private void startProvisioningFlow() {
+
+        String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+        final boolean isSec1 = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
+        Log.d(TAG, "Device Types : " + deviceType);
+        Log.d(TAG, "isSec1 : " + isSec1);
+        int securityType = 0;
+        if (isSec1) {
+            securityType = 1;
+        }
+
+        if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE)) {
+
+            if (isSec1) {
+                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_1);
+            } else {
+                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
+            }
+            goToBLEProvisionLandingActivity(securityType);
+
+        } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
+
+            if (isSec1) {
+                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_1);
+            } else {
+                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_0);
+            }
+            goToWiFiProvisionLandingActivity(securityType);
+
+        } else {
+
+            final String[] deviceTypes = {"BLE", "Wi-Fi"};
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+            builder.setCancelable(true);
+            builder.setTitle(R.string.dialog_msg_device_selection);
+            final int finalSecurityType = securityType;
+            builder.setItems(deviceTypes, new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int position) {
+
+                    switch (position) {
+                        case 0:
+
+                            if (isSec1) {
+                                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_1);
+                            } else {
+                                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_BLE, ESPConstants.SecurityType.SECURITY_0);
+                            }
+                            dialog.dismiss();
+                            goToBLEProvisionLandingActivity(finalSecurityType);
+                            break;
+
+                        case 1:
+
+                            if (isSec1) {
+                                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_1);
+                            } else {
+                                provisionManager.createESPDevice(ESPConstants.TransportType.TRANSPORT_SOFTAP, ESPConstants.SecurityType.SECURITY_0);
+                            }
+                            dialog.dismiss();
+                            goToWiFiProvisionLandingActivity(finalSecurityType);
+                            break;
+                    }
+                    dialog.dismiss();
+                }
+            });
+            builder.show();
+        }
+    }
+
+    private void goToBLEProvisionLandingActivity(int securityType) {
+
+        finish();
+        Intent bleProvisioningIntent = new Intent(AddDeviceActivity.this, BLEProvisionLanding.class);
+        bleProvisioningIntent.putExtra(AppConstants.KEY_SECURITY_TYPE, securityType);
+        startActivity(bleProvisioningIntent);
+    }
+
+    private void goToWiFiProvisionLandingActivity(int securityType) {
+
+        finish();
+        Intent wifiProvisioningIntent = new Intent(getApplicationContext(), ProvisionLanding.class);
+        wifiProvisioningIntent.putExtra(AppConstants.KEY_SECURITY_TYPE, securityType);
+
+        if (espDevice != null) {
+            wifiProvisioningIntent.putExtra(AppConstants.KEY_DEVICE_NAME, espDevice.getDeviceName());
+            wifiProvisioningIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, espDevice.getProofOfPossession());
+        }
+        getApplicationContext().startActivity(wifiProvisioningIntent);
+    }
+
+    private String getWifiSsid() {
+
+        String ssid = null;
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        if (wifiInfo.getSupplicantState() == SupplicantState.COMPLETED) {
+
+            ssid = wifiInfo.getSSID();
+            ssid = ssid.replace("\"", "");
+        }
+        return ssid;
     }
 }

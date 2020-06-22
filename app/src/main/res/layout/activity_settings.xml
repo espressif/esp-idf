@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -6,4 +6,18 @@
         android:id="@+id/settings"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-</LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_app_version"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="@dimen/margin_32"
+        android:alpha="0.5"
+        android:text="@string/app_version"
+        android:lineSpacingExtra="6sp"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="12sp" />
+
+</RelativeLayout>

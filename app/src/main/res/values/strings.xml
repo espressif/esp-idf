@@ -1,17 +1,20 @@
 <resources>
 
     <string name="app_name">ESP Provisioning</string>
+    <string name="app_name_ble">ESP BLE Prov</string>
+    <string name="app_name_softap">ESP SoftAP Prov</string>
 
     <!-- Screen Titles -->
     <string name="title_activity_connect_device">Connect to Device</string>
     <string name="title_activity_pop">Proof of Possession</string>
     <string name="title_activity_wifi_scan_list">Select Wi-Fi Network</string>
+    <string name="title_activity_wifi_config">Wi-Fi Configuration</string>
     <string name="title_activity_provisioning">Provisioning</string>
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_add_device">Add Device</string>
 
     <!-- Button Text -->
-    <string name="btn_ok">Ok</string>
+    <string name="btn_ok">OK</string>
     <string name="btn_cancel">Cancel</string>
     <string name="btn_next">Next</string>
     <string name="btn_back">Back</string>
@@ -25,6 +28,7 @@
     <string name="btn_no_qr_code">I don\'t have a QR code</string>
     <string name="btn_save">Save</string>
     <string name="btn_change_prefix">Change</string>
+    <string name="btn_yes">Yes</string>
 
     <!-- Hint Text -->
     <string name="hint_pop">Proof of Possession</string>
@@ -34,8 +38,9 @@
 
     <!-- Instruction Strings -->
     <string name="pop_instruction">Enter your proof of possession PIN for</string>
-    <string name="setup_instructions">To complete setup of your device, please provide your Home Network\'s credentials.</string>
-    <string name="connect_device_instruction">To provision your device, make sure it is turned ON. Connect your mobile phone to the Wi-Fi network with a device name.</string>
+    <string name="setup_instructions">To complete setup of your device %1$s, please provide your Home Network\'s credentials.</string>
+    <string name="connect_device_instruction_general">To provision your device, make sure it is turned ON. Connect your mobile phone to the Wi-Fi network with a name like PROV_XXXXXX</string>
+    <string name="connect_device_instruction_specific">To provision your device, make sure it is turned ON. Connect your mobile phone to the Wi-Fi network with the name</string>
 
     <!-- Provisioning Steps Strings -->
     <string name="prov_step_1">Sending Wi-Fi credentials</string>
@@ -48,7 +53,6 @@
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_provision_landing">Connect to device</string>
-    <string name="connect_to_device_instructions">To provision your new device, please make sure that your device is turned on. Now connect your phone to the Wi-Fi network with a name like</string>
     <string name="connected_to_device_instructions">You are now connected to the device. To provision the device, please enter your Network credentials on the next page.</string>
     <string name="no_internet_note">To make sure you are really connected to the device, please make sure you accept the system dialog informing you that network has no internet access.</string>
     <string name="connect_to_device_action">Connect</string>
@@ -92,6 +96,7 @@
     <string name="hint_key">Enter PIN</string>
     <string name="devices_title">Devices</string>
     <string name="enter_device_key">Enter Your Proof Of Possession PIN</string>
+    <string name="app_version">App Version</string>
 
     <string name="join_other_network">Join Other Network</string>
     <string name="networks">Networks</string>

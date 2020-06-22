@@ -4,20 +4,40 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include layout="@layout/tool_bar_main_purple" />
+    <include
+        android:id="@+id/title_bar"
+        layout="@layout/tool_bar_main_purple" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/ll_instruction_text"
-        android:layout_alignParentTop="true">
+        android:layout_below="@id/title_bar" >
 
-        <SurfaceView
-            android:id="@+id/surfaceView"
+        <com.budiyev.android.codescanner.CodeScannerView
+            android:id="@+id/scanner_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"
+            app:autoFocusButtonColor="@android:color/white"
+            app:autoFocusButtonVisible="false"
+            app:flashButtonColor="@android:color/white"
+            app:flashButtonVisible="false"
+            app:frameColor="@android:color/white"
+            app:frameCornersSize="50dp"
+            app:frameCornersRadius="0dp"
+            app:frameAspectRatioWidth="1"
+            app:frameAspectRatioHeight="1"
+            app:frameSize="0.75"
+            app:frameThickness="2dp"
+            app:maskColor="#77000000"/>
+
+        <com.espressif.provisioning.CameraSourcePreview
+            android:id="@+id/preview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_alignParentTop="true"
-            android:visibility="invisible" />
+            android:visibility="gone" />
 
         <com.wang.avi.AVLoadingIndicatorView
             android:id="@+id/loader"
@@ -35,7 +55,10 @@
         android:id="@+id/ll_instruction_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/margin_32"
+        android:layout_marginTop="@dimen/margin_16"
+        android:layout_marginBottom="@dimen/margin_32"
+        android:layout_marginStart="@dimen/margin_32"
+        android:layout_marginEnd="@dimen/margin_32"
         android:orientation="vertical"
         android:layout_above="@+id/btn_add_device_manually">
 

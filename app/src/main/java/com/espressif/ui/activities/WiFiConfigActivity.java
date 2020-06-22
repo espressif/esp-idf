@@ -17,7 +17,6 @@ package com.espressif.ui.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -26,47 +25,27 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.wifi_provisioning.R;
 
-import java.util.ArrayList;
+public class WiFiConfigActivity extends AppCompatActivity {
 
-public class ProofOfPossessionActivity extends AppCompatActivity {
-
-    private static final String TAG = ProofOfPossessionActivity.class.getSimpleName();
+    private static final String TAG = WiFiConfigActivity.class.getSimpleName();
 
     private TextView tvTitle, tvBack, tvCancel;
     private CardView btnNext;
     private TextView txtNextBtn;
 
-    private String deviceName;
-    private TextView tvPopInstruction;
-    private EditText etPop;
+    private EditText etSsid, etPassword;
     private ESPProvisionManager provisionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pop);
+        setContentView(R.layout.activity_wifi_config);
 
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
-
-        deviceName = provisionManager.getEspDevice().getDeviceName();
-
-        if (!TextUtils.isEmpty(deviceName)) {
-            String popText = getString(R.string.pop_instruction) + " " + deviceName;
-            tvPopInstruction.setText(popText);
-        }
-
-        String pop = getResources().getString(R.string.proof_of_possesion);
-
-        if (!TextUtils.isEmpty(pop)) {
-
-            etPop.setText(pop);
-            etPop.setSelection(etPop.getText().length());
-        }
-        etPop.requestFocus();
     }
 
     @Override
@@ -80,16 +59,15 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
 
-            final String pop = etPop.getText().toString();
-            Log.d(TAG, "POP : " + pop);
-            provisionManager.getEspDevice().setProofOfPossession(pop);
-            ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+            String ssid = etSsid.getText().toString();
+            String password = etPassword.getText().toString();
 
-            if (deviceCaps.contains("wifi_scan")) {
-                goToWiFiScanListActivity();
-            } else {
-                goToWiFiConfigActivity();
+            if (TextUtils.isEmpty(ssid)) {
+                etSsid.setError(getString(R.string.error_ssid_empty));
+                return;
             }
+
+            goToProvisionActivity(ssid, password);
         }
     };
 
@@ -107,35 +85,34 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
         tvTitle = findViewById(R.id.main_toolbar_title);
         tvBack = findViewById(R.id.btn_back);
         tvCancel = findViewById(R.id.btn_cancel);
-        tvPopInstruction = findViewById(R.id.tv_pop);
-        etPop = findViewById(R.id.et_pop);
+        etSsid = findViewById(R.id.et_ssid_input);
+        etPassword = findViewById(R.id.et_password_input);
 
-        tvTitle.setText(R.string.title_activity_pop);
+        String deviceName = provisionManager.getEspDevice().getDeviceName();
+        if (!TextUtils.isEmpty(deviceName)) {
+            String msg = String.format(getString(R.string.setup_instructions), deviceName);
+            TextView tvInstructionMsg = findViewById(R.id.setup_instructions_view);
+            tvInstructionMsg.setText(msg);
+        }
+
+        tvTitle.setText(R.string.title_activity_wifi_config);
         tvBack.setVisibility(View.GONE);
         tvCancel.setVisibility(View.VISIBLE);
-
         tvCancel.setOnClickListener(cancelBtnClickListener);
 
         btnNext = findViewById(R.id.btn_next);
         txtNextBtn = findViewById(R.id.text_btn);
-
         txtNextBtn.setText(R.string.btn_next);
         btnNext.setOnClickListener(nextBtnClickListener);
     }
 
-    private void goToWiFiScanListActivity() {
+    private void goToProvisionActivity(String ssid, String password) {
 
-        Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
-        wifiListIntent.putExtras(getIntent());
-        startActivity(wifiListIntent);
         finish();
-    }
-
-    private void goToWiFiConfigActivity() {
-
-        Intent wifiConfigIntent = new Intent(getApplicationContext(), WiFiConfigActivity.class);
-        wifiConfigIntent.putExtras(getIntent());
-        startActivity(wifiConfigIntent);
-        finish();
+        Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
+        provisionIntent.putExtras(getIntent());
+        provisionIntent.putExtra(AppConstants.KEY_WIFI_SSID, ssid);
+        provisionIntent.putExtra(AppConstants.KEY_WIFI_PASSWORD, password);
+        startActivity(provisionIntent);
     }
 }

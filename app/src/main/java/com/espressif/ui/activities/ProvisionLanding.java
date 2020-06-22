@@ -20,6 +20,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -55,15 +56,19 @@ public class ProvisionLanding extends AppCompatActivity {
     private TextView txtConnectBtn;
     private ImageView arrowImage;
     private ContentLoadingProgressBar progressBar;
+    private TextView tvConnectDeviceInstruction, tvDeviceName;
 
     private ESPProvisionManager provisionManager;
     private int securityType;
+    private String deviceName, pop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_provision_landing);
-        securityType = getIntent().getIntExtra("security_type", 0);
+        securityType = getIntent().getIntExtra(AppConstants.KEY_SECURITY_TYPE, 0);
+        deviceName = getIntent().getStringExtra(AppConstants.KEY_DEVICE_NAME);
+        pop = getIntent().getStringExtra(AppConstants.KEY_PROOF_OF_POSSESSION);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
         EventBus.getDefault().register(this);
@@ -73,6 +78,16 @@ public class ProvisionLanding extends AppCompatActivity {
     protected void onDestroy() {
         EventBus.getDefault().unregister(this);
         super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (provisionManager.getEspDevice() != null) {
+            provisionManager.getEspDevice().disconnectDevice();
+        }
+
+        super.onBackPressed();
     }
 
     @Override
@@ -118,17 +133,33 @@ public class ProvisionLanding extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
                 arrowImage.setVisibility(View.VISIBLE);
 
-                if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType == 1) {
+                if (!TextUtils.isEmpty(pop)) {
 
-                    goToPopActivity();
+                    provisionManager.getEspDevice().setProofOfPossession(pop);
 
-                } else if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
+                    if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
 
-                    goToWifiScanListActivity();
+                        goToWifiScanListActivity();
+
+                    } else {
+
+                        goToProvisionActivity();
+                    }
 
                 } else {
 
-                    goToProvisionActivity();
+                    if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType == 1) {
+
+                        goToPopActivity();
+
+                    } else if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
+
+                        goToWifiScanListActivity();
+
+                    } else {
+
+                        goToProvisionActivity();
+                    }
                 }
                 break;
 
@@ -195,6 +226,22 @@ public class ProvisionLanding extends AppCompatActivity {
         txtConnectBtn = findViewById(R.id.text_btn);
         arrowImage = findViewById(R.id.iv_arrow);
         progressBar = findViewById(R.id.progress_indicator);
+        tvConnectDeviceInstruction = findViewById(R.id.tv_connect_device_instruction);
+        tvDeviceName = findViewById(R.id.tv_device_name);
+        String instruction = getString(R.string.connect_device_instruction_general);
+
+        if (TextUtils.isEmpty(deviceName)) {
+
+            tvConnectDeviceInstruction.setText(instruction);
+            tvDeviceName.setVisibility(View.GONE);
+
+        } else {
+
+            instruction = getString(R.string.connect_device_instruction_specific);
+            tvConnectDeviceInstruction.setText(instruction);
+            tvDeviceName.setVisibility(View.VISIBLE);
+            tvDeviceName.setText(deviceName);
+        }
 
         txtConnectBtn.setText(R.string.btn_connect);
         btnConnect.setOnClickListener(btnConnectClickListener);
