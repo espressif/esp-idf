@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
+# if(IN_LIST) is used, which requires CMP0057 set to NEW
+cmake_policy(SET CMP0057 NEW)
 include("${BUILD_PROPERTIES_FILE}")
 include("${COMPONENT_PROPERTIES_FILE}")
 
