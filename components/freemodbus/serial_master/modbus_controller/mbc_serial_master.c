@@ -361,7 +361,7 @@ static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode,
             continue; // The length of strings is different then check next record in the table
         }
         // Compare the name of parameter with parameter key from table
-        uint8_t comp_result = memcmp((const char*)name, (const char*)reg_ptr->param_key, (size_t)param_key_len);
+        int comp_result = memcmp((const void*)name, (const void*)reg_ptr->param_key, (size_t)param_key_len);
         if (comp_result == 0) {
             // The correct line is found in the table and reg_ptr points to the found parameter description
             request->slave_addr = reg_ptr->mb_slave_addr;
