@@ -17,9 +17,9 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
 #include "esp32s2/pm.h"
 #endif
 
