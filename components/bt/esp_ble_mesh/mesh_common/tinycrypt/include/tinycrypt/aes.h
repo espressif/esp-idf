@@ -46,11 +46,10 @@
  *              2) call tc_aes_encrypt/decrypt to process the data.
  */
 
-#ifndef _BLE_MESH_AES_ENCRYPT_H_
-#define _BLE_MESH_AES_ENCRYPT_H_
+#ifndef __BLE_MESH_TC_AES_H__
+#define __BLE_MESH_TC_AES_H__
 
 #include <stdint.h>
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,40 +58,12 @@ extern "C" {
 #define Nb (4)  /* number of columns (32-bit words) comprising the state */
 #define Nk (4)  /* number of 32-bit words comprising the key */
 #define Nr (10) /* number of rounds */
-#define TC_AES_BLOCK_SIZE   (Nb*Nk)
-#define TC_AES_KEY_SIZE     (Nb*Nk)
-
-#define TC_CRYPTO_SUCCESS   1
-#define TC_CRYPTO_FAIL      0
-
-#define TC_ZERO_BYTE        0x00
-
-/* padding for last message block */
-#define TC_CMAC_PADDING     0x80
+#define TC_AES_BLOCK_SIZE (Nb*Nk)
+#define TC_AES_KEY_SIZE (Nb*Nk)
 
 typedef struct tc_aes_key_sched_struct {
     unsigned int words[Nb * (Nr + 1)];
 } *TCAesKeySched_t;
-
-/* struct tc_cmac_struct represents the state of a CMAC computation */
-typedef struct tc_cmac_struct {
-    /* initialization vector */
-    uint8_t iv[TC_AES_BLOCK_SIZE];
-    /* used if message length is a multiple of block_size bytes */
-    uint8_t K1[TC_AES_BLOCK_SIZE];
-    /* used if message length isn't a multiple block_size bytes */
-    uint8_t K2[TC_AES_BLOCK_SIZE];
-    /* where to put bytes that didn't fill a block */
-    uint8_t leftover[TC_AES_BLOCK_SIZE];
-    /* identifies the encryption key */
-    unsigned int keyid;
-    /* next available leftover location */
-    unsigned int leftover_offset;
-    /* AES key schedule */
-    TCAesKeySched_t sched;
-    /* calls to tc_cmac_update left before re-key */
-    uint64_t countdown;
-} *TCCmacState_t;
 
 /**
  *  @brief Set AES-128 encryption key
@@ -152,20 +123,8 @@ int tc_aes128_set_decrypt_key(TCAesKeySched_t s, const uint8_t *k);
 int tc_aes_decrypt(uint8_t *out, const uint8_t *in,
                    const TCAesKeySched_t s);
 
-int tc_cmac_setup(TCCmacState_t s, const uint8_t *key, TCAesKeySched_t sched);
-
-void gf_double(uint8_t *out, uint8_t *in);
-
-int tc_cmac_init(TCCmacState_t s);
-
-int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length);
-
-int tc_cmac_final(uint8_t *tag, TCCmacState_t s);
-
-int tc_cmac_erase(TCCmacState_t s);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _BLE_MESH_AES_ENCRYPT_H_ */
+#endif /* __BLE_MESH_TC_AES_H__ */
