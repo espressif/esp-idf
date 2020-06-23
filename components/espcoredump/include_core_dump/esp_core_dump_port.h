@@ -16,11 +16,7 @@
 
 #include "freertos/FreeRTOS.h"
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/crc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/crc.h"
-#endif
+#include "esp_rom_crc.h"
 #elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
 #include "mbedtls/sha256.h"
 #endif

@@ -1,9 +1,12 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(INCLUDE_DIRS include)
+idf_component_register(SRCS "patches/esp_rom_crc.c"
+                       INCLUDE_DIRS include
+                       PRIV_INCLUDE_DIRS "${target}")
 
 if(BOOTLOADER_BUILD)
     set(scripts
+        "${target}/ld/${target}.rom.api.ld"
         "${target}/ld/${target}.rom.ld"
         "${target}/ld/${target}.rom.newlib-funcs.ld"
         "${target}/ld/${target}.rom.libgcc.ld"
@@ -23,6 +26,7 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 else() # Regular app build
     set(scripts
+        "${target}/ld/${target}.rom.api.ld"
         "${target}/ld/${target}.rom.ld"
         "${target}/ld/${target}.rom.libgcc.ld"
         "${target}/ld/${target}.rom.newlib-data.ld")

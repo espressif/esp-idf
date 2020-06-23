@@ -19,14 +19,13 @@
 #include "esp_log.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/crc.h"
 #include "esp32/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/crc.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/gpio.h"
 #endif
+#include "esp_rom_crc.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
@@ -43,7 +42,7 @@ static const char* TAG = "boot_comm";
 
 uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s)
 {
-    return crc32_le(UINT32_MAX, (uint8_t*)&s->ota_seq, 4);
+    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)&s->ota_seq, 4);
 }
 
 bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s)
@@ -311,12 +310,12 @@ rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)(SOC_RTC_DRAM_HIGH 
 
 static bool check_rtc_retain_mem(void)
 {
-    return crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc)) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
+    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc)) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
 }
 
 static void update_rtc_retain_mem_crc(void)
 {
-    rtc_retain_mem->crc = crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc));
+    rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc));
 }
 
 void bootloader_common_reset_rtc_retain_mem(void)

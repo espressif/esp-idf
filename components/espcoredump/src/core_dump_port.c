@@ -217,7 +217,7 @@ void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, 
 {
     if (wr_data && data) {
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
-        wr_data->crc = crc32_le(wr_data->crc, data, data_len);
+        wr_data->crc = esp_rom_crc32_le(wr_data->crc, data, data_len);
 #elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
 #if CONFIG_MBEDTLS_HARDWARE_SHA
         // set software mode of SHA calculation

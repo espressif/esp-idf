@@ -34,15 +34,14 @@
 #include "esp_coexist_internal.h"
 #include "driver/periph_ctrl.h"
 #include "esp_private/wifi.h"
+#include "esp_rom_crc.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/crc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/crc.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -843,7 +842,7 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
 static esp_err_t phy_crc_check_init_data(uint8_t* init_data, const uint8_t* checksum, size_t init_data_length)
 {   
     uint32_t crc_data = 0;
-    crc_data = crc32_le(crc_data, init_data, init_data_length);
+    crc_data = esp_rom_crc32_le(crc_data, init_data, init_data_length);
     uint32_t crc_size_conversion = htonl(crc_data);
 
     if (crc_size_conversion != *(uint32_t*)(checksum)) {
