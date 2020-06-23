@@ -17,6 +17,11 @@
 
 #include <sys/reent.h>
 
+/*
+ * Initialize newlib time functions
+ */
+void esp_newlib_time_init(void);
+
 /**
  * Replacement for newlib's _REENT_INIT_PTR and __sinit.
  *
