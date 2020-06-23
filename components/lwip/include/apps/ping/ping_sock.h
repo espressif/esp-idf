@@ -82,7 +82,7 @@ typedef struct {
         .count = 5,                      \
         .interval_ms = 1000,             \
         .timeout_ms = 1000,              \
-        .data_size = 56,                 \
+        .data_size = 64,                 \
         .tos = 0,                        \
         .target_addr = ip_addr_any_type, \
         .task_stack_size = 2048,         \
