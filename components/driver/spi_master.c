@@ -430,6 +430,8 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_IOMUX_PINS));
+        hal->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
+        spi_ll_master_set_pos_cs(hal->hw, freecs, hal->positive_cs);
     }
 
     *handle=dev;
@@ -504,6 +506,7 @@ static void SPI_MASTER_ISR_ATTR spi_setup_device(spi_host_t *host, int dev_id)
     hal->rx_lsbfirst = dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
     hal->no_compensate = dev->cfg.flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
     hal->sio = dev->cfg.flags & SPI_DEVICE_3WIRE ? 1 : 0;
+    hal->positive_cs = dev->cfg.flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
     hal->dummy_bits = dev->cfg.dummy_bits;
     hal->cs_setup = dev->cfg.cs_ena_pretrans;
     hal->cs_hold =dev->cfg.cs_ena_posttrans;

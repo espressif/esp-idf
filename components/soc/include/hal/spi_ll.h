@@ -275,7 +275,7 @@ static inline void spi_ll_master_set_pos_cs(spi_dev_t *hw, int cs, uint32_t pos_
     if (pos_cs) {
         hw->pin.master_cs_pol |= (1 << cs);
     } else {
-        hw->pin.master_cs_pol &= (1 << cs);
+        hw->pin.master_cs_pol &= ~(1 << cs);
     }
 }
 
