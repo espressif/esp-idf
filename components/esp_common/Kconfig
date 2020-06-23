@@ -99,8 +99,13 @@ menu "Common ESP-related"
         depends on ESP_CONSOLE_UART_CUSTOM
         default ESP_CONSOLE_UART_CUSTOM_NUM_0
         help
-            Select which UART peripheral to use for console output.
-            On ESP32, UART2 is not supported for console output via ets_printf.
+            This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
+
+            Due to an ESP32 ROM bug, UART2 is not supported for console output
+            via ets_printf.
 
         config ESP_CONSOLE_UART_CUSTOM_NUM_0
             bool "UART0"
@@ -121,6 +126,12 @@ menu "Common ESP-related"
         range 0 46
         default 1 if IDF_TARGET_ESP32
         default 43 if IDF_TARGET_ESP32S2
+        help
+             This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
+             boot log output and default standard output and standard error of the app).
+
+             If the configuration is different in the Bootloader binary compared to the app binary, UART
+             is reconfigured after the bootloader exits and the app starts.
 
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
@@ -128,13 +139,35 @@ menu "Common ESP-related"
         range 0 46
         default 3 if IDF_TARGET_ESP32
         default 44 if IDF_TARGET_ESP32S2
+        help
+            This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
+            default default standard input of the app).
+
+            Note: The default ESP-IDF Bootloader configures this pin but doesn't read anything from the UART.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
+
 
     config ESP_CONSOLE_UART_BAUDRATE
         int
         prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
         depends on ESP_CONSOLE_UART
         default 115200
-        range 1200 4000000
+        range 1200 4000000 if !PM_ENABLE
+        range 1200 1000000 if PM_ENABLE
+        help
+            This baud rate is used by both the ESP-IDF Bootloader and the app (including
+            boot log output and default standard input/output/error of the app).
+
+            The app's maximum baud rate depends on the UART clock source. If Power Management is disabled,
+            the UART clock source is the APB clock and all baud rates in the available range will be sufficiently
+            accurate. If Power Management is enabled, REF_TICK clock source is used so the baud rate is divided
+            from 1MHz. Baud rates above 1Mbps are not possible and values between 500Kbps and 1Mbps may not be
+            accurate.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
 
     config ESP_CONSOLE_USB_CDC_RX_BUF_SIZE
         int "Size of USB CDC RX buffer"
