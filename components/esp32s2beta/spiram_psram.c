@@ -343,11 +343,9 @@ static void psram_disable_qio_mode(psram_spi_num_t spi_num)
     psram_cmd_end(spi_num);
 }
 
-//read psram id
-static void psram_read_id(uint32_t* dev_id)
+//read psram id, should issue `psram_disable_qio_mode` before calling this
+static void psram_read_id(int spi_num, uint32_t* dev_id)
 {
-    psram_spi_num_t spi_num = PSRAM_SPI_1;
-    psram_disable_qio_mode(spi_num);
     uint32_t dummy_bits = 0 + extra_dummy;
     psram_cmd_t ps_cmd;
 
@@ -509,10 +507,9 @@ bool psram_support_wrap_size(uint32_t wrap_size)
 
 }
 
-static void psram_read_id(uint32_t* dev_id)
+//read psram id, should issue `psram_disable_qio_mode` before calling this
+static void psram_read_id(int spi_num, uint32_t* dev_id)
 {
-    psram_spi_num_t spi_num = PSRAM_SPI_1;
-    psram_disable_qio_mode(spi_num);
     uint32_t dummy_bits = 0;
     uint32_t addr = 0;
     psram_cmd_t ps_cmd;
@@ -754,14 +751,19 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     psram_gpio_config(mode);
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[PSRAM_CS_IO], PIN_FUNC_GPIO);
 
-    /* 16Mbit psram ID read error
-     * workaround: Issue a pre-condition of dummy read id, then Read ID command
-     */
-    psram_read_id(&s_psram_id);
-    psram_read_id(&s_psram_id);
+    int spi_num = PSRAM_SPI_1;
+    psram_disable_qio_mode(spi_num);
+    psram_read_id(spi_num, &s_psram_id);
     if (!PSRAM_IS_VALID(s_psram_id)) {
-        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", s_psram_id);
-        return ESP_FAIL;
+        /* 16Mbit psram ID read error workaround:
+         * treat the first read id as a dummy one as the pre-condition,
+         * Send Read ID command again
+         */
+        psram_read_id(spi_num, &s_psram_id);
+        if (!PSRAM_IS_VALID(s_psram_id)) {
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", s_psram_id);
+            return ESP_FAIL;
+        }
     }
     uint32_t flash_id = g_rom_flashchip.device_id;
     if (flash_id == FLASH_ID_GD25LQ32C) {
