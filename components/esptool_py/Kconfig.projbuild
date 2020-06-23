@@ -195,8 +195,13 @@ menu "Serial flasher config"
             Baud rate to use when running 'idf.py monitor' or 'make monitor'
             to view serial output from a running chip.
 
+            If "Same as UART Console baud rate" is chosen then the value will
+            follow the "UART Console baud rate" config item.
+
             Can override by setting the MONITORBAUD environment variable.
 
+        config ESPTOOLPY_MONITOR_BAUD_CONSOLE
+            bool "Same as UART console baud rate"
         config ESPTOOLPY_MONITOR_BAUD_9600B
             bool "9600 bps"
         config ESPTOOLPY_MONITOR_BAUD_57600B
@@ -220,6 +225,7 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_MONITOR_BAUD
         int
+        default ESP_CONSOLE_UART_BAUDRATE if ESPTOOLPY_MONITOR_BAUD_CONSOLE
         default 9600 if ESPTOOLPY_MONITOR_BAUD_9600B
         default 57600 if ESPTOOLPY_MONITOR_BAUD_57600B
         default 115200 if ESPTOOLPY_MONITOR_BAUD_115200B
