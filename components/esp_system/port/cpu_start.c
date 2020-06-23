@@ -30,11 +30,13 @@
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rtc.h"
 #include "esp32/cache_err_int.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rtc.h"
 #include "esp32s2/brownout.h"
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/rom/cache.h"

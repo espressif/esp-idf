@@ -30,9 +30,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
 #include "esp32/clk.h"
+#include "esp32/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/clk.h"
+#include "esp32s2/rtc.h"
 #endif
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) \
@@ -61,29 +63,6 @@ static uint64_t s_boot_time; // when RTC is used to persist time, two RTC_STORE 
 
 static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
 
-#ifdef WITH_RTC
-static uint64_t get_rtc_time_us(void)
-{
-    const uint64_t ticks = rtc_time_get();
-    const uint32_t cal = esp_clk_slowclk_cal_get();
-    /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
-     * for a 32kHz clock. We need to calculate (assuming no overflow):
-     *   (ticks * cal) >> RTC_CLK_CAL_FRACT
-     *
-     * An overflow in the (ticks * cal) multiplication would cause time to
-     * wrap around after approximately 13 days, which is probably not enough
-     * for some applications.
-     * Therefore multiplication is split into two terms, for the lower 32-bit
-     * and the upper 16-bit parts of "ticks", i.e.:
-     *   ((ticks_low + 2^32 * ticks_high) * cal) >> RTC_CLK_CAL_FRACT
-     */
-    const uint64_t ticks_low = ticks & UINT32_MAX;
-    const uint64_t ticks_high = ticks >> 32;
-    return ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
-           ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
-}
-#endif // WITH_RTC
-
 #if defined( WITH_FRC ) || defined( WITH_RTC )
 uint64_t esp_time_impl_get_time_since_boot(void)
 {
@@ -96,7 +75,7 @@ uint64_t esp_time_impl_get_time_since_boot(void)
     microseconds = esp_timer_get_time();
 #endif // WITH_RTC
 #elif defined(WITH_RTC)
-    microseconds = get_rtc_time_us();
+    microseconds = esp_rtc_get_time_us();
 #endif // WITH_FRC
     return microseconds;
 }
@@ -106,7 +85,7 @@ uint64_t esp_time_impl_get_time(void)
 #if defined( WITH_FRC )
     return esp_timer_get_time();
 #elif defined( WITH_RTC )
-    return get_rtc_time_us();
+    return esp_rtc_get_time_us();
 #endif // WITH_FRC
 }
 #endif // defined( WITH_FRC ) || defined( WITH_RTC )
@@ -151,6 +130,27 @@ uint32_t esp_clk_slowclk_cal_get(void)
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
 
+uint64_t esp_rtc_get_time_us(void)
+{
+    const uint64_t ticks = rtc_time_get();
+    const uint32_t cal = esp_clk_slowclk_cal_get();
+    /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
+     * for a 32kHz clock. We need to calculate (assuming no overflow):
+     *   (ticks * cal) >> RTC_CLK_CAL_FRACT
+     *
+     * An overflow in the (ticks * cal) multiplication would cause time to
+     * wrap around after approximately 13 days, which is probably not enough
+     * for some applications.
+     * Therefore multiplication is split into two terms, for the lower 32-bit
+     * and the upper 16-bit parts of "ticks", i.e.:
+     *   ((ticks_low + 2^32 * ticks_high) * cal) >> RTC_CLK_CAL_FRACT
+     */
+    const uint64_t ticks_low = ticks & UINT32_MAX;
+    const uint64_t ticks_high = ticks >> 32;
+    return ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
+           ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
+}
+
 void esp_clk_slowclk_cal_set(uint32_t new_cal)
 {
 #if defined(WITH_RTC)
@@ -175,7 +175,7 @@ void esp_set_time_from_rtc(void)
 {
 #if defined( WITH_FRC ) && defined( WITH_RTC )
     // initialize time from RTC clock
-    s_microseconds_offset = get_rtc_time_us() - esp_timer_get_time();
+    s_microseconds_offset = esp_rtc_get_time_us() - esp_timer_get_time();
 #endif // WITH_FRC && WITH_RTC
 }
 
@@ -185,7 +185,7 @@ void esp_sync_counters_rtc_and_frc(void)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     settimeofday(&tv, NULL);
-    int64_t s_microseconds_offset_cur = get_rtc_time_us() - esp_timer_get_time();
+    int64_t s_microseconds_offset_cur = esp_rtc_get_time_us() - esp_timer_get_time();
     esp_time_impl_set_boot_time(esp_time_impl_get_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
 #endif
 }
