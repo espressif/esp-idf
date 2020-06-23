@@ -21,7 +21,7 @@ list(APPEND ldfragments newlib.lf)
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS priv_include
-                    PRIV_REQUIRES soc esp_timer
+                    PRIV_REQUIRES soc
                     LDFRAGMENTS "${ldfragments}")  
 
 # Toolchain libraries require code defined in this component

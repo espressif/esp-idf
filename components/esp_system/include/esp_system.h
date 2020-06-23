@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+typedef int64_t (*esp_system_time_fn_t)(void);
+
 typedef enum {
     ESP_MAC_WIFI_STA,
     ESP_MAC_WIFI_SOFTAP,
@@ -285,6 +287,20 @@ typedef struct {
  * @param[out] out_info structure to be filled
  */
 void esp_chip_info(esp_chip_info_t* out_info);
+
+/** 
+ * @brief Get the time in microseconds since startup
+ * 
+ * @returns time since startup in microseconds
+ */
+int64_t esp_system_get_time(void);
+
+/** 
+ * @brief Get the resolution of the time returned by `esp_system_get_time`.
+ * 
+ * @returns the resolution in microseconds
+ */
+uint32_t esp_system_get_time_resolution(void);
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 /**

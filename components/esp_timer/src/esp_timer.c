@@ -97,7 +97,6 @@ static StaticQueue_t s_timer_semaphore_memory;
 static portMUX_TYPE s_timer_lock = portMUX_INITIALIZER_UNLOCKED;
 
 
-
 esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
                            esp_timer_handle_t* out_handle)
 {
@@ -349,7 +348,6 @@ static IRAM_ATTR bool is_initialized(void)
     return s_timer_task != NULL;
 }
 
-
 esp_err_t esp_timer_init(void)
 {
     esp_err_t err;
@@ -376,6 +374,11 @@ esp_err_t esp_timer_init(void)
     }
 
     err = esp_timer_impl_init(&timer_alarm_handler);
+    if (err != ESP_OK) {
+        goto out;
+    }
+
+    err = esp_timer_timekeeping_impl_init();
     if (err != ESP_OK) {
         goto out;
     }

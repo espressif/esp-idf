@@ -117,3 +117,8 @@ uint64_t esp_timer_impl_get_counter_reg(void);
  * @return the value of the alarm register
  */
 uint64_t esp_timer_impl_get_alarm_reg(void);
+
+/**
+ * @brief Initialize and provide system timekeeping functions.
+ */
+esp_err_t esp_timer_timekeeping_impl_init(void);

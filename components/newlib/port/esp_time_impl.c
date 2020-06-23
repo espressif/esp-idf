@@ -15,8 +15,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "esp_timer.h"
-
 #include "esp_system.h"
 
 #include "soc/spinlock.h"
@@ -70,24 +68,31 @@ uint64_t esp_time_impl_get_time_since_boot(void)
 
 #ifdef WITH_FRC
 #ifdef WITH_RTC
-    microseconds = s_microseconds_offset + esp_timer_get_time();
+    microseconds = s_microseconds_offset + esp_system_get_time();
 #else
-    microseconds = esp_timer_get_time();
+    microseconds = esp_system_get_time();
 #endif // WITH_RTC
 #elif defined(WITH_RTC)
+    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
     microseconds = esp_rtc_get_time_us();
+    spinlock_release(&s_time_lock);
 #endif // WITH_FRC
     return microseconds;
 }
 
 uint64_t esp_time_impl_get_time(void)
 {
+    uint64_t microseconds = 0;
 #if defined( WITH_FRC )
-    return esp_timer_get_time();
+    microseconds = esp_system_get_time();
 #elif defined( WITH_RTC )
-    return esp_rtc_get_time_us();
+    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    microseconds = esp_rtc_get_time_us();
+    spinlock_release(&s_time_lock);
 #endif // WITH_FRC
+    return microseconds;
 }
+
 #endif // defined( WITH_FRC ) || defined( WITH_RTC )
 
 
@@ -175,7 +180,7 @@ void esp_set_time_from_rtc(void)
 {
 #if defined( WITH_FRC ) && defined( WITH_RTC )
     // initialize time from RTC clock
-    s_microseconds_offset = esp_rtc_get_time_us() - esp_timer_get_time();
+    s_microseconds_offset = esp_rtc_get_time_us() - esp_system_get_time();
 #endif // WITH_FRC && WITH_RTC
 }
 
@@ -185,7 +190,7 @@ void esp_sync_counters_rtc_and_frc(void)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     settimeofday(&tv, NULL);
-    int64_t s_microseconds_offset_cur = esp_rtc_get_time_us() - esp_timer_get_time();
+    int64_t s_microseconds_offset_cur = esp_rtc_get_time_us() - esp_system_get_time();
     esp_time_impl_set_boot_time(esp_time_impl_get_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
 #endif
 }
@@ -193,15 +198,4 @@ void esp_sync_counters_rtc_and_frc(void)
 void esp_time_impl_init(void)
 {
     esp_set_time_from_rtc();
-}
-
-uint32_t esp_time_impl_get_time_resolution(void)
-{
-#if defined( WITH_FRC )
-    return 1L;
-#elif defined( WITH_RTC )
-    uint32_t rtc_freq = rtc_clk_slow_freq_get_hz();
-    assert(rtc_freq != 0);
-    return 1000000L / rtc_freq;
-#endif // WITH_FRC
 }
