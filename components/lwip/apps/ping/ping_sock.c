@@ -103,10 +103,10 @@ static int esp_ping_receive(esp_ping_t *ep)
     int len = 0;
     struct sockaddr_storage from;
     int fromlen = sizeof(from);
+    uint16_t data_head = (uint16_t)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr));
 
     while ((len = recvfrom(ep->sock, buf, sizeof(buf), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen)) > 0) {
-        if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
-            ep->recv_len = (uint32_t)len;
+        if (len >= data_head) {
             if (from.ss_family == AF_INET) {
                 // IPv4
                 struct sockaddr_in *from4 = (struct sockaddr_in *)&from;
@@ -126,6 +126,7 @@ static int esp_ping_receive(esp_ping_t *ep)
                 if ((iecho->id == ep->packet_hdr->id) && (iecho->seqno == ep->packet_hdr->seqno)) {
                     ep->received++;
                     ep->ttl = iphdr->_ttl;
+                    ep->recv_len = lwip_ntohs(IPH_LEN(iphdr)) - data_head;  // The data portion of ICMP
                     return len;
                 }
             }
