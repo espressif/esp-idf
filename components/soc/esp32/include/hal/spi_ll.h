@@ -287,7 +287,7 @@ static inline void spi_ll_master_set_pos_cs(spi_dev_t *hw, int cs, uint32_t pos_
     if (pos_cs) {
         hw->pin.master_cs_pol |= (1 << cs);
     } else {
-        hw->pin.master_cs_pol &= (1 << cs);
+        hw->pin.master_cs_pol &= ~(1 << cs);
     }
 }
 
@@ -611,7 +611,7 @@ static inline void spi_ll_master_set_cksel(spi_dev_t *hw, int cs, uint32_t cksel
     if (cksel) {
         hw->pin.master_ck_sel |= (1 << cs);
     } else {
-        hw->pin.master_ck_sel &= (1 << cs);
+        hw->pin.master_ck_sel &= ~(1 << cs);
     }
 }
 
