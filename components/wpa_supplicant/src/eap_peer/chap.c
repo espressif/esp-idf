@@ -2,12 +2,13 @@
  * CHAP-MD5
  *
  */
-#ifdef CHAP_MD5
+#ifndef CHAP_MD5
+#define CHAP_MD5
 
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "crypto/crypto.h"
-#include "wpa2/eap_peer/chap.h"
+#include "eap_peer/chap.h"
 
 int chap_md5(u8 id, const u8 *secret, size_t secret_len, const u8 *challenge,
 	     size_t challenge_len, u8 *response)

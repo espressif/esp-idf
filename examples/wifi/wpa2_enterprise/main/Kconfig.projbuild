@@ -29,6 +29,27 @@ menu "Example Configuration"
         default 1 if EXAMPLE_EAP_METHOD_PEAP
         default 2 if EXAMPLE_EAP_METHOD_TTLS
 
+    choice
+        prompt "Phase2 method for TTLS"
+        depends on EXAMPLE_EAP_METHOD_TTLS
+        default EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+            bool "MSCHAPV2"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAP
+            bool "MSCHAP"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_PAP
+            bool "PAP"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_CHAP
+            bool "CHAP"
+    endchoice
+
+    config EXAMPLE_EAP_METHOD_TTLS_PHASE_2
+        int
+        default 1 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+        default 2 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAP
+        default 3 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_PAP
+        default 4 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_CHAP
+
     config EXAMPLE_EAP_ID
         string "EAP ID"
         default "example@espressif.com"

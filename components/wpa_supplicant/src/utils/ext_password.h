@@ -25,7 +25,7 @@ void ext_password_free(struct wpabuf *pw);
 
 #define ext_password_init(b, p)
 #define ext_password_deinit(d)
-#define ext_password_get(d, n)
+#define ext_password_get(d, n) NULL
 #define ext_password_free(p)
 
 #endif /* CONFIG_EXT_PASSWORD */
