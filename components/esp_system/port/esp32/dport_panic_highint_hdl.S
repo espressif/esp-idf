@@ -41,7 +41,7 @@ Interrupt , a high-priority interrupt, is used for several things:
 _l4_intr_stack:
     .space      L4_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
     .global _l4_intr_livelock_counter
     .global _l4_intr_livelock_max
     .align  16
@@ -70,7 +70,7 @@ xt_highint4:
     bnez    a0, .handle_dport_access_int
 #endif // CONFIG_FREERTOS_UNICORE
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
     /* See if we're here for the tg1 watchdog interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_T1_WDT_INUM, 1
@@ -163,7 +163,7 @@ xt_highint4:
     rfi     4
 
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
 
 /*
 --------------------------------------------------------------------------------
