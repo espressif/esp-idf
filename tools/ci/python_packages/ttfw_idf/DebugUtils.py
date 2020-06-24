@@ -14,11 +14,27 @@
 
 from __future__ import unicode_literals
 from io import open
-from tiny_test_fw import Utility
-import debug_backend
 import logging
+
 import pexpect
 import pygdbmi.gdbcontroller
+
+from tiny_test_fw import Utility
+
+try:
+    import debug_backend
+except ImportError:
+    # Exception is ignored so the package is not required for those who don't use debug utils.
+    err_msg = 'Please install py_debug_backend for debug utils to work properly!'
+
+    class debug_backend(object):
+        @staticmethod
+        def create_oocd(*args, **kwargs):
+            raise RuntimeError(err_msg)
+
+        @staticmethod
+        def create_gdb(*args, **kwargs):
+            raise RuntimeError(err_msg)
 
 
 class CustomProcess(object):
