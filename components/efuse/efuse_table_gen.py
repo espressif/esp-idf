@@ -30,7 +30,7 @@ quiet = False
 max_blk_len = 256
 idf_target = "esp32"
 
-copyright = '''// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+copyright = '''// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -228,7 +228,7 @@ class FuseTable(list):
                  "}",
                  "#endif",
                  ""]
-        return '\n'.join(rows) + "\n"
+        return '\n'.join(rows)
 
     def to_c_file(self, file_name, debug):
         rows = [copyright]
@@ -300,7 +300,7 @@ class FuseTable(list):
         rows += ["    NULL",
                  "};\n"]
 
-        return '\n'.join(rows) + "\n"
+        return '\n'.join(rows)
 
 
 class FuseDefinition(object):
@@ -466,7 +466,7 @@ def main():
     global idf_target
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
-    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3'], default='esp32')
+    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action="store_false")
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action="store_true")
