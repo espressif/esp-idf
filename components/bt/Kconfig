@@ -42,6 +42,19 @@ config BTDM_CONTROLLER_AUTO_LATENCY_EFF
     default BTDM_CONTROLLER_AUTO_LATENCY if BT_ENABLED
     default n
 
+config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT
+    bool "Legacy Authentication Vendor Specific Event Enable"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        To protect from BIAS attack during Legacy authentication,
+        Legacy authentication Vendor specific event should be enabled
+
+config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+    bool
+    default BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT if BLUEDROID_ENABLED
+    default 0
+
 choice BTDM_CONTROLLER_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
     depends on BT_ENABLED && !FREERTOS_UNICORE

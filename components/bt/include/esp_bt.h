@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200611
+
 /**
  * @brief Controller config options, depend on config mask.
  *        Config mask indicate which functions enabled, this means
@@ -42,6 +44,7 @@ typedef struct {
     uint32_t  controller_debug_flag;         /*!< Controller debug log flag */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
     bool auto_latency;                      /*!< BLE auto latency, used to enhance classic BT performance */
+    bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
 } esp_bt_controller_config_t;
 
 #ifdef CONFIG_BT_ENABLED
@@ -95,6 +98,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CONTROLLER_AUTO_LATENCY_EFF false
 #endif
 
+#ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#else
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF false
+#endif
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                       \
     .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,     \
     .controller_task_prio = ESP_TASK_BT_CONTROLLER_PRIO,            \
@@ -107,6 +116,7 @@ the adv packet will be discarded until the memory is restored. */
     .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,         \
     .bt_sco_datapath = CONFIG_BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF,    \
     .auto_latency = BTDM_CONTROLLER_AUTO_LATENCY_EFF,               \
+    .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
 };
 
 #else
