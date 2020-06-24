@@ -152,7 +152,7 @@ COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_common/include           \
                              esp_ble_mesh/api
 
 COMPONENT_SRCDIRS += esp_ble_mesh/mesh_common               \
-                     esp_ble_mesh/mesh_common/tinycrypt     \
+                     esp_ble_mesh/mesh_common/tinycrypt/src \
                      esp_ble_mesh/mesh_core                 \
                      esp_ble_mesh/mesh_core/storage         \
                      esp_ble_mesh/btc                       \
