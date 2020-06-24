@@ -336,17 +336,16 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         bt_mesh_gatt_init();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-        if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
-            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-            bt_mesh_proxy_init();
-        }
-        if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
-            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
-            bt_mesh_proxy_prov_client_init();
-        }
+    if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+        bt_mesh_proxy_init();
+    }
+
+    if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        bt_mesh_proxy_prov_client_init();
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
@@ -444,10 +443,10 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 
     bt_mesh_beacon_deinit();
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
-            bt_mesh_proxy_deinit();
-        }
+    if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+        bt_mesh_proxy_deinit();
     }
 
     if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
