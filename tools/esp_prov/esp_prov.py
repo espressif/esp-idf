@@ -475,9 +475,9 @@ if __name__ == '__main__':
         time.sleep(5)
         print("\n==== Wi-Fi connection state  ====")
         ret = get_wifi_config(obj_transport, obj_security)
-        if (ret == 1):
+        if (ret == "connecting"):
             continue
-        elif (ret == 0):
+        elif (ret == "connected"):
             print("==== Provisioning was successful ====")
         else:
             print("---- Provisioning failed ----")
