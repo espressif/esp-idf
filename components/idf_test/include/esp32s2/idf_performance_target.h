@@ -7,7 +7,7 @@
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             90.0
 // esp_sha() time to process 32KB of input data from RAM
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      900
-#define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    800
+#define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    900
 
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               13500
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              130000
