@@ -38,7 +38,7 @@
       - $BOT_LABEL_INTEGRATION_TEST
       - $BOT_LABEL_REGULAR_TEST
   script:
-    - git clone $SSC_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
     - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
