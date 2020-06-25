@@ -101,9 +101,9 @@ def test_examples_provisioning_softap(env, extra_data):
         time.sleep(5)
         print("Wi-Fi connection state")
         ret = esp_prov.get_wifi_config(transport, security)
-        if (ret == 1):
+        if (ret == "connecting"):
             continue
-        elif (ret == 0):
+        elif (ret == "connected"):
             print("Provisioning was successful")
             success = True
         break
