@@ -65,7 +65,6 @@ def config_get_status_response(security_ctx, response_data):
     return "unknown"
 
 
-
 def config_set_config_request(security_ctx, ssid, passphrase):
     # Form protobuf request packet for SetConfig command
     cmd = proto.wifi_config_pb2.WiFiConfigPayload()
