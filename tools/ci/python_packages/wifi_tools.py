@@ -71,16 +71,17 @@ class wpa_cli:
 
         self.new_network = self.iface_ifc.AddNetwork({"ssid": ssid, "psk": password})
         self.iface_ifc.SelectNetwork(self.new_network)
+        time.sleep(10)
 
         ip = None
         retry = 10
         while retry > 0:
-            time.sleep(5)
             ip = get_wiface_IPv4(self.iface_name)
             if ip is not None:
                 self.connected = True
                 return ip
             retry -= 1
+            time.sleep(3)
 
         self.reset()
         raise RuntimeError('wpa_cli : Connection failed')
