@@ -10,6 +10,7 @@ set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
 # Internally, the Python interpreter is already set to 'python'. Re-set here
 # to be absolutely sure.
 set_default(PYTHON "python")
+file(TO_CMAKE_PATH ${PYTHON} PYTHON)
 idf_build_set_property(PYTHON ${PYTHON})
 
 # On processing, checking Python required modules can be turned off if it was
