@@ -39,7 +39,7 @@
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone test env configs
-    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
@@ -77,7 +77,7 @@
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone test env configs
-    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
@@ -164,10 +164,10 @@
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
-    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    - git clone $TEST_SCRIPT_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_SCRIPT_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
     # run test
@@ -240,7 +240,7 @@ example_test_002:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone test env configs
-    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
@@ -612,10 +612,10 @@ nvs_compatible_test:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
-    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    - git clone $TEST_SCRIPT_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_SCRIPT_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
     # prepare nvs bins

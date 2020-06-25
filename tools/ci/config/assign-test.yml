@@ -39,7 +39,7 @@ assign_test:
     # assign unit test cases
     - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
-    - git clone $TEST_SCRIPT_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $TEST_SCRIPT_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
     # assgin integration test cases
@@ -70,7 +70,7 @@ update_test_cases:
     PYTHON_VER: 3
   script:
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - git clone $TEST_MANAGEMENT_REPO
+    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
     - python $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
