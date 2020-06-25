@@ -169,7 +169,7 @@
     - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone auto test repo
-    - git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
     - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - export PYTHONPATH="${CI_PROJECT_DIR}/auto_test_script/packages:$PYTHONPATH"
@@ -617,7 +617,7 @@ nvs_compatible_test:
     - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    - git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
     - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - export PYTHONPATH="${CI_PROJECT_DIR}/auto_test_script/packages:$PYTHONPATH"
