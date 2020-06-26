@@ -742,6 +742,7 @@ void bt_mesh_generic_server_cb_evt_to_btc(u8_t evt_type,
     cb_params.ctx.recv_ttl = ctx->recv_ttl;
     cb_params.ctx.recv_op = ctx->recv_op;
     cb_params.ctx.recv_dst = ctx->recv_dst;
+    cb_params.ctx.recv_rssi = ctx->recv_rssi;
 
     if (val && len) {
         length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
