@@ -144,7 +144,6 @@ def init_cli(verbose_output=None):
 
     class Deprecation(object):
         """Construct deprecation notice for help messages"""
-
         def __init__(self, deprecated=False):
             self.deprecated = deprecated
             self.since = None
@@ -292,7 +291,6 @@ def init_cli(verbose_output=None):
 
         names - alias of 'param_decls'
         """
-
         def __init__(self, **kwargs):
             names = kwargs.pop("names")
             super(Argument, self).__init__(names, **kwargs)
@@ -331,7 +329,6 @@ def init_cli(verbose_output=None):
 
     class Option(click.Option):
         """Option that knows whether it should be global"""
-
         def __init__(self, scope=None, deprecated=False, hidden=False, **kwargs):
             """
             Keyword arguments additional to Click's Option class:
@@ -355,6 +352,9 @@ def init_cli(verbose_output=None):
                 deprecation = Deprecation(deprecated)
                 self.help = deprecation.help(self.help)
 
+            if self.envvar:
+                self.help += " The default value can be set with the %s environment variable." % self.envvar
+
             if self.scope.is_global:
                 self.help += " This option can be used at most once either globally, or for one subcommand."
 
@@ -367,7 +367,6 @@ def init_cli(verbose_output=None):
 
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
-
         def __init__(self, all_actions=None, verbose_output=None, help=None):
             super(CLI, self).__init__(
                 chain=True,
