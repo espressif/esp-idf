@@ -140,6 +140,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
 
     string(REPLACE ";" " " kconfigs "${kconfigs}")
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
@@ -258,8 +259,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
         set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
     endif()
-
-    idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
 
     # Generate the menuconfig target
     add_custom_target(menuconfig
