@@ -55,8 +55,9 @@ class wpa_cli:
         if self.iface_ifc is None:
             raise RuntimeError('supplicant : Failed to fetch interface')
 
-        self.old_network = self.iface_obj.Get("fi.w1.wpa_supplicant1.Interface", "CurrentNetwork",
-                                              dbus_interface='org.freedesktop.DBus.Properties')
+        self.old_network = self._get_iface_property("CurrentNetwork")
+        print("Old network is %s" % self.old_network)
+
         if self.old_network == '/':
             self.old_network = None
         else:
@@ -77,6 +78,8 @@ class wpa_cli:
 
         if self.new_network is not None:
             self.iface_ifc.RemoveNetwork(self.new_network)
+
+        print("Pre-connect state is %s, IP is %s" % (self._get_iface_property("State"), get_wiface_IPv4(self.iface_name)))
 
         self.new_network = self.iface_ifc.AddNetwork({"ssid": ssid, "psk": password})
         self.iface_ifc.SelectNetwork(self.new_network)
