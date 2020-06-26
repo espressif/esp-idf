@@ -181,10 +181,6 @@ function(__project_init components_var test_components_var)
             __project_component_dir(${component_dir})
         endforeach()
     else()
-        # Add project manifest and lock file to the list of dependencies
-        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/idf_project.yml")
-        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/dependencies.lock")
-
         idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
         if(idf_component_manager)
             if(idf_component_manager EQUAL "0")
@@ -213,8 +209,8 @@ function(__project_init components_var test_components_var)
                 message(WARNING "IDF_COMPONENT_MANAGER environment variable is set to unknown value "
                         "\"${idf_component_manager}\". If you want to use component manager set it to 1.")
             endif()
-        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/idf_project.yml")
-            message(WARNING "\"idf_project.yml\" file is found in project directory, "
+        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main/idf_component.yml")
+            message(WARNING "\"idf_component.yml\" file is found in project's main component directory, "
                     "but component manager is not enabled. Please set IDF_COMPONENT_MANAGER environment variable.")
         endif()
 
