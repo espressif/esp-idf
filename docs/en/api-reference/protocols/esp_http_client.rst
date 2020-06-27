@@ -100,7 +100,7 @@ Persistent Connections example
 HTTPS
 -----
 
-The HTTP client supports SSL connections using **mbedtls**, with the **url** configuration starting with ``https`` scheme (or ``transport_type = HTTP_TRANSPORT_OVER_SSL``). HTTPS support can be configured via :ref:CONFIG_ENABLE_HTTPS (enabled by default)..
+The HTTP client supports SSL connections using **mbedtls**, with the **url** configuration starting with ``https`` scheme (or ``transport_type = HTTP_TRANSPORT_OVER_SSL``). HTTPS support can be configured via :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
 
 .. note:: By providing information using HTTPS, the library will use the SSL transport type to connect to the server. If you want to verify server, then need to provide additional certificate in PEM format, and provide to ``cert_pem`` in ``esp_http_client_config_t``
 

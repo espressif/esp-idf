@@ -10,6 +10,11 @@
 #define _BLE_MESH_TRACE_H_
 
 #include "esp_log.h"
+#include "mesh_util.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Define common tracing for all */
 #ifndef LOG_LEVEL_ERROR
@@ -51,10 +56,6 @@
 #else
 #define BLE_MESH_LOG_LOCAL_LEVEL_MAPPING    LOG_LOCAL_LEVEL
 #endif
-
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif /* MAX(a, b) */
 
 #define BLE_MESH_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_LOG_LEVEL, BLE_MESH_LOG_LOCAL_LEVEL_MAPPING) >= LOG_LEVEL_##LEVEL)
 
@@ -125,6 +126,10 @@
 #define NET_BUF_SIMPLE_INFO(fmt, args...)
 #define NET_BUF_SIMPLE_DBG(fmt, args...)
 #define NET_BUF_SIMPLE_ASSERT(cond)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _BLE_MESH_TRACE_H_ */

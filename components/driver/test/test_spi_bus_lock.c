@@ -336,6 +336,9 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
     err = test_polling_send(handle);
     TEST_ESP_OK(err);
     test_acquire(handle);
+
+    err = spi_bus_remove_device(handle);
+    TEST_ESP_OK(err);
 }
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 

@@ -92,6 +92,40 @@ menu "mbedTLS"
             This defines maximum outgoing fragment length, overriding default
             maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).
 
+    config MBEDTLS_DYNAMIC_BUFFER
+        bool "Using dynamic TX/RX buffer"
+        default n
+        select MBEDTLS_ASYMMETRIC_CONTENT_LEN
+        help
+            Using dynamic TX/RX buffer. After enabling this option, mbedTLS will
+            allocate TX buffer when need to send data and then free it if all data
+            is sent, allocate RX buffer when need to receive data and then free it
+            when all data is used or read by upper layer.
+
+            By default, when SSL is initialized, mbedTLS also allocate TX and
+            RX buffer with the default value of "MBEDTLS_SSL_OUT_CONTENT_LEN" or
+            "MBEDTLS_SSL_IN_CONTENT_LEN", so to save more heap, users can set
+            the options to be an appropriate value.
+
+    config MBEDTLS_DYNAMIC_FREE_PEER_CERT
+        bool "Free SSL peer certificate after its usage"
+        default n
+        depends on MBEDTLS_DYNAMIC_BUFFER
+        help
+            Free peer certificate after its usage in handshake process.
+
+    config MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
+        bool "Free certificate, key and DHM data after its usage"
+        default n
+        depends on MBEDTLS_DYNAMIC_BUFFER
+        help
+            Free certificate, private key and DHM data after its usage in handshake process.
+
+            The option will decrease heap cost when handshake, but also lead to problem:
+
+            Becasue all certificate, private key and DHM data are freed so users should register
+            certificate and private key to ssl config object again.
+
     config MBEDTLS_DEBUG
         bool "Enable mbedTLS debugging"
         default n
@@ -246,6 +280,20 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config MBEDTLS_ATCA_HW_ECDSA_SIGN
+        bool "Enable hardware ECDSA sign acceleration when using ATECC608A"
+        default n
+        help
+            This option enables hardware acceleration for ECDSA sign function, only
+            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+
+    config MBEDTLS_ATCA_HW_ECDSA_VERIFY
+        bool "Enable hardware ECDSA verify acceleration when using ATECC608A"
+        default n
+        help
+            This option enables hardware acceleration for ECDSA sign function, only
+            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time"
         depends on !ESP32_TIME_SYSCALL_USE_NONE
@@ -265,6 +313,19 @@ menu "mbedTLS"
             X.509 certificates.
 
             It is suggested that you should get the real time by "SNTP".
+
+    config MBEDTLS_ECDSA_DETERMINISTIC
+        bool "Enable deterministic ECDSA"
+        default y
+        help
+            Standard ECDSA is "fragile" in the sense that lack of entropy when signing
+            may result in a compromise of the long-term signing key.
+
+    config MBEDTLS_SHA512_C
+        bool "Enable the SHA-384 and SHA-512 cryptographic hash algorithms"
+        default y
+        help
+            Enable MBEDTLS_SHA512_C adds support for SHA-384 and SHA-512.
 
     choice MBEDTLS_TLS_MODE
         bool "TLS Protocol Role"
@@ -388,6 +449,13 @@ menu "mbedTLS"
             default y
             help
                 Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+        config MBEDTLS_KEY_EXCHANGE_ECJPAKE
+            bool "Enable ECJPAKE based ciphersuite modes"
+            depends on MBEDTLS_ECJPAKE_C && MBEDTLS_ECP_DP_SECP256R1_ENABLED
+            default n
+            help
+                Enable to support ciphersuites with prefix TLS-ECJPAKE-WITH-
 
     endmenu # TLS key exchange modes
 
@@ -586,17 +654,24 @@ menu "mbedTLS"
         help
             Enable ECDSA. Needed to use ECDSA-xxx TLS ciphersuites.
 
+    config MBEDTLS_ECJPAKE_C
+        bool "Elliptic curve J-PAKE"
+        depends on MBEDTLS_ECP_C
+        default n
+        help
+            Enable ECJPAKE. Needed to use ECJPAKE-xxx TLS ciphersuites.
+
     config MBEDTLS_ECP_DP_SECP192R1_ENABLED
         bool "Enable SECP192R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP192R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP224R1_ENABLED
         bool "Enable SECP224R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP224R1 Elliptic Curve.
 
@@ -610,63 +685,63 @@ menu "mbedTLS"
     config MBEDTLS_ECP_DP_SECP384R1_ENABLED
         bool "Enable SECP384R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP384R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP521R1_ENABLED
         bool "Enable SECP521R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP521R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP192K1_ENABLED
         bool "Enable SECP192K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP192K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP224K1_ENABLED
         bool "Enable SECP224K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP224K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP256K1_ENABLED
         bool "Enable SECP256K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for SECP256K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP256R1_ENABLED
         bool "Enable BP256R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP384R1_ENABLED
         bool "Enable BP384R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP512R1_ENABLED
         bool "Enable BP512R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_CURVE25519_ENABLED
         bool "Enable CURVE25519 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HW_ECDSA_SIGN || MBEDTLS_ATCA_HW_ECDSA_VERIFY)
         help
             Enable support for CURVE25519 Elliptic Curve.
 
@@ -680,6 +755,53 @@ menu "mbedTLS"
             Disabling this option saves some code size.
 
             # end of Elliptic Curve options
+
+    config MBEDTLS_POLY1305_C
+        bool "Poly1305 MAC algorithm"
+        default n
+        help
+            Enable support for Poly1305 MAC algorithm.
+
+    config MBEDTLS_CHACHA20_C
+        bool "Chacha20 stream cipher"
+        default n
+        help
+            Enable support for Chacha20 stream cipher.
+
+    config MBEDTLS_CHACHAPOLY_C
+        bool "ChaCha20-Poly1305 AEAD algorithm"
+        default n
+        depends on MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C
+        help
+            Enable support for ChaCha20-Poly1305 AEAD algorithm.
+
+    config MBEDTLS_HKDF_C
+        bool "HKDF algorithm (RFC 5869)"
+        default n
+        help
+            Enable support for the Hashed Message Authentication Code
+            (HMAC)-based key derivation function (HKDF).
+
+    config MBEDTLS_THREADING_C
+        bool "Enable the threading abstraction layer"
+        default n
+        help
+            If you do intend to use contexts between threads, you will need to enable
+            this layer to prevent race conditions.
+
+    config MBEDTLS_THREADING_ALT
+        bool "Enable threading alternate implementation"
+        depends on MBEDTLS_THREADING_C
+        default y
+        help
+            Enable threading alt to allow your own alternate threading implementation.
+
+    config MBEDTLS_THREADING_PTHREAD
+        bool "Enable threading pthread implementation"
+        depends on MBEDTLS_THREADING_C
+        default n
+        help
+            Enable the pthread wrapper layer for the threading layer.
 
     menuconfig MBEDTLS_SECURITY_RISKS
         bool "Show configurations with potential security risks"

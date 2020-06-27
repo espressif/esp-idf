@@ -22,3 +22,77 @@
 
 #define WITLB(at, as)        asm volatile ("witlb  %0, %1; \n isync \n " : : "r" (at), "r" (as))
 #define WDTLB(at, as)        asm volatile ("wdtlb  %0, %1; \n dsync \n " : : "r" (at), "r" (as))
+
+/* The SET_STACK implements a setting a new stack pointer (sp or a1).
+ * to do this the need reset PS_WOE, reset WINDOWSTART, update SP, and return PS_WOE.
+ *
+ * Note: It has 2 implementations one for using in assembler files (*.S) and one for using in C.
+ *
+ * C code prototype for SET_STACK:
+ *   uint32_t ps_reg;
+ *   uint32_t w_base;
+ *   RSR(PS, ps_reg);
+ *   ps_reg &= ~(PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK);
+ *   WSR(PS, ps_reg);
+ *
+ *   RSR(WINDOWBASE, w_base);
+ *   WSR(WINDOWSTART, (1 << w_base));
+ *
+ *   asm volatile ( "movi sp, "XTSTR( (SOC_DRAM_LOW + (SOC_DRAM_HIGH - SOC_DRAM_LOW) / 2) )"");
+ *
+ *   RSR(PS, ps_reg);
+ *   ps_reg |= (PS_WOE_MASK);
+ *   WSR(PS, ps_reg);
+*/
+#ifdef __ASSEMBLER__
+    .macro SET_STACK  new_sp tmp1 tmp2
+    rsr.ps \tmp1
+    movi \tmp2, ~(PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK)
+    and \tmp1, \tmp1, \tmp2
+    wsr.ps \tmp1
+    rsync
+
+    rsr.windowbase \tmp1
+    ssl	\tmp1
+    movi \tmp1, 1
+    sll	\tmp1, \tmp1
+    wsr.windowstart \tmp1
+    rsync
+
+    mov sp, \new_sp
+
+    rsr.ps \tmp1
+    movi \tmp2, (PS_WOE)
+    or \tmp1, \tmp1, \tmp2
+    wsr.ps \tmp1
+    rsync
+    .endm
+#else
+#define SET_STACK(new_sp) \
+    do { \
+        uint32_t tmp1 = 0, tmp2 = 0; \
+        asm volatile ( \
+          "rsr.ps %1 \n"\
+          "movi %2, ~" XTSTR( PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK ) " \n"\
+          "and %1, %1, %2 \n"\
+          "wsr.ps %1 \n"\
+          "rsync \n"\
+          " \n"\
+          "rsr.windowbase %1 \n"\
+          "ssl	%1 \n"\
+          "movi %1, 1 \n"\
+          "sll	%1, %1 \n"\
+          "wsr.windowstart %1 \n"\
+          "rsync \n"\
+          " \n"\
+          "mov sp, %0 \n"\
+          "rsr.ps %1 \n"\
+          " \n"\
+          "movi %2, " XTSTR( PS_WOE_MASK ) "\n"\
+          " \n"\
+          "or %1, %1, %2 \n"\
+          "wsr.ps %1 \n"\
+          "rsync \n"\
+          : "+r"(new_sp), "+r"(tmp1), "+r"(tmp2)); \
+    } while (0);
+#endif // __ASSEMBLER__

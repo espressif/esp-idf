@@ -559,7 +559,7 @@ static ssize_t proxy_recv_ntf(struct bt_mesh_conn *conn, u8_t *data, u16_t len)
 }
 
 /**
- * Currently proxy client does't need bt_mesh_proxy_client_enable() and
+ * Currently proxy client doesn't need bt_mesh_proxy_client_enable() and
  * bt_mesh_proxy_client_disable() functions, and once they are used,
  * proxy client can be enabled to parse node_id_adv and net_id_adv in
  * order to support proxy client role.
@@ -580,7 +580,7 @@ int bt_mesh_proxy_client_enable(void)
 
     /**
      * TODO:
-     * Once at leat one device has been provisioned, proxy client can be
+     * Once at least one device has been provisioned, proxy client can be
      * set to allow receiving and parsing node_id & net_id adv packets,
      * and we may use a global flag to indicate this.
      */
@@ -660,6 +660,11 @@ void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh
 
     switch (type) {
     case BLE_MESH_PROXY_ADV_NET_ID: {
+        if (buf->len != sizeof(ctx.net_id.net_id)) {
+            BT_WARN("Malformed Network ID");
+            return;
+        }
+
         struct bt_mesh_subnet *sub = NULL;
         sub = bt_mesh_is_net_id_exist(buf->data);
         if (!sub) {
@@ -678,7 +683,7 @@ void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh
          */
         return;
     default:
-        BT_DBG("%s, Unknwon Mesh Proxy adv type 0x%02x", __func__, type);
+        BT_DBG("%s, Unknown Mesh Proxy adv type 0x%02x", __func__, type);
         return;
     }
 

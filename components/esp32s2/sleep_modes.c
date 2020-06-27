@@ -582,6 +582,12 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
     return ESP_OK;
 }
 
+esp_err_t esp_sleep_enable_wifi_wakeup(void)
+{
+    s_config.wakeup_triggers |= RTC_WIFI_TRIG_EN;
+    return ESP_OK;
+}
+
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
     if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET && !s_light_sleep_wakeup) {
@@ -603,6 +609,8 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_GPIO;
     } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN)) {
         return ESP_SLEEP_WAKEUP_UART;
+    } else if (wakeup_cause & RTC_WIFI_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_WIFI;
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }

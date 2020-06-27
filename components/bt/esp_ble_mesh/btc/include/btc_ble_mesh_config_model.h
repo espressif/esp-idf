@@ -18,6 +18,10 @@
 #include "btc/btc_manage.h"
 #include "esp_ble_mesh_config_model_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     BTC_BLE_MESH_ACT_CONFIG_CLIENT_GET_STATE,
     BTC_BLE_MESH_ACT_CONFIG_CLIENT_SET_STATE,
@@ -70,5 +74,9 @@ void bt_mesh_config_server_cb_evt_to_btc(u8_t evt_type,
         struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
         const u8_t *val, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BTC_BLE_MESH_CONFIG_MODEL_H_ */

@@ -11,3 +11,4 @@ string(SUBSTRING "${WIFI_SUPPLICANT_MD5}" 0 7 WIFI_SUPPLICANT_MD5)
 
 add_definitions(-DWIFI_SUPPLICANT_MD5=\"${WIFI_SUPPLICANT_MD5}\")
 add_definitions(-DCONFIG_WPA3_SAE)
+add_definitions(-DCONFIG_DPP)

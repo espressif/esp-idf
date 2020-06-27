@@ -50,14 +50,22 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libfreertos.a --diff app2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 app_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s2 (target autodetected)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py on bootloader for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 bootloader_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py on bootloader for esp32s2 (target autodetected)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py bootloader_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archives for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 --archives app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --files for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 --files app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archive_details for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 --archive_details libdriver.a app_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with another app (different target)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff app_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with another app (wrong target)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 app.map --diff app2.map &>> output \
     && echo -e "\n***\nProducing JSON output..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json app.map &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map &>> output \

@@ -44,6 +44,7 @@ import re
 import json
 
 import yaml
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -53,7 +54,6 @@ from . import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):
-
     MAX_EXECUTION_TIME = 30
     MAX_CASE = 15
     SORT_KEYS = ["env_tag"]
@@ -68,13 +68,23 @@ class Group(object):
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
         # we use ci_job_match_keys to match CI job tags. It's a set of required tags.
-        self.ci_job_match_keys = set([self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS])
+        self.ci_job_match_keys = self._get_match_keys(case)
 
     @staticmethod
     def _get_case_attr(case, attr):
         # we might use different type for case (dict or test_func)
         # this method will do get attribute form cases
         return case.case_info[attr]
+
+    def _get_match_keys(self, case):
+        keys = []
+        for attr in self.CI_JOB_MATCH_KEYS:
+            val = self._get_case_attr(case, attr)
+            if isinstance(val, list):
+                keys.extend(val)
+            else:
+                keys.append(val)
+        return set(keys)
 
     def accept_new_case(self):
         """
@@ -144,6 +154,7 @@ class AssignTest(object):
     DEFAULT_FILTER = {
         "category": "function",
         "ignore": False,
+        "supported_in_ci": True,
     }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
@@ -235,12 +246,11 @@ class AssignTest(object):
 
         :return: filter for search test cases
         """
-        bot_filter = os.getenv("BOT_CASE_FILTER")
-        if bot_filter:
-            bot_filter = json.loads(bot_filter)
-        else:
-            bot_filter = dict()
-        return bot_filter
+        res = dict()
+        for bot_filter in [os.getenv('BOT_CASE_FILTER'), os.getenv('BOT_TARGET_FILTER')]:
+            if bot_filter:
+                res.update(json.loads(bot_filter))
+        return res
 
     def _apply_bot_test_count(self):
         """

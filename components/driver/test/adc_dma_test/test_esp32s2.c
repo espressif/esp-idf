@@ -17,6 +17,10 @@
 */
 
 #include "esp_system.h"
+#include "esp_intr_alloc.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/adc.h"
 #include "driver/dac.h"
 #include "driver/rtc_io.h"
@@ -30,10 +34,12 @@
 #include "test_utils.h"
 #include "soc/spi_reg.h"
 #include "soc/adc_periph.h"
+#include "test/test_common_adc.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32) // This testcase for ESP32S2
 
 #include "soc/system_reg.h"
+#include "soc/lldesc.h"
 
 static const char *TAG = "test_adc";
 
@@ -62,10 +68,11 @@ static void test_pxp_deinit_io(void)
    TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(SENS_SARDATE_REG, SENS_SAR_DATE), SENS.sardate.sar_date);     \
    TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(RTC_IO_DATE_REG, RTC_IO_IO_DATE), RTCIO.date.date);           \
 })
+/** Sample rate = APB_CLK(80 MHz) / (CLK_DIV + 1) / TRIGGER_INTERVAL / 2. */
 #define TEST_ADC_TRIGGER_INTERVAL_DEFAULT (40)
-#define TEST_ADC_COUNT_NUM    (10)
-#define TEST_ADC_CHANNEL      (10)
-static adc_channel_t adc_list[TEST_ADC_CHANNEL] = {
+#define TEST_ADC_DIGI_CLK_DIV_DEFAULT     (9)
+static uint8_t adc_test_num = 9;
+static adc_channel_t adc_list[SOC_ADC_PATT_LEN_MAX] = {
     ADC_CHANNEL_0,
     ADC_CHANNEL_1,
     ADC_CHANNEL_2,
@@ -73,188 +80,148 @@ static adc_channel_t adc_list[TEST_ADC_CHANNEL] = {
     ADC_CHANNEL_4,
     ADC_CHANNEL_5,
     ADC_CHANNEL_6,
-    ADC_CHANNEL_7,
+    // ADC_CHANNEL_7, // Workaround: IO18 is pullup outside in ESP32S2-Saola Runner.
     ADC_CHANNEL_8,
     ADC_CHANNEL_9,
 };
 /* For ESP32S2, it should use same atten, or, it will have error. */
-// #define TEST_ADC_ATTEN_DEFAULT (ADC_ATTEN_11db)
-static adc_atten_t adc_atten[ADC_ATTEN_MAX] = {
-    ADC_ATTEN_DB_0,
-    ADC_ATTEN_DB_2_5,
-    ADC_ATTEN_DB_6,
-    ADC_ATTEN_DB_11
-};
+#define TEST_ADC_ATTEN_DEFAULT (ADC_ATTEN_11db)
+
 /*******************************************/
 /**           SPI DMA INIT CODE            */
 /*******************************************/
 extern esp_err_t adc_digi_reset(void);
 
-typedef struct dma_link {
-    struct {
-        uint32_t size :    12;      //the size of buf, must be able to be divisible by 4
-        uint32_t length:   12;      //in link,
-        uint32_t reversed: 6;       //reversed
-        uint32_t eof:      1;       //if this dma link is the last one, you shoule set this bit 1.
-        uint32_t owner:    1;       //the owner of buf, bit 1 : DMA, bit 0 : CPU.
-    } des;
-    uint8_t *buf;                   //the pointer of buf
-    struct dma_link *pnext;    //point to the next dma linker, if this link is the last one, set it NULL.
-} dma_link_t;
 /* Work mode.
- * sigle: eof_num;
+ * single: eof_num;
  * double: SAR_EOF_NUMBER/2;
  * alter: eof_num;
  * */
-#define SAR_SIMPLE_NUM  64
-#define SAR_DMA_DATA_SIZE(unit, sample_num)     (SAR_EOF_NUMBER(unit, sample_num) * 2) // 1 adc -> 2 byte
+#define SAR_SIMPLE_NUM  512  // Set sample number of enabled unit.
+/* Use two DMA linker to save ADC data. ADC sample 1 times -> 2 byte data -> 2 DMA link buf. */
+#define SAR_DMA_DATA_SIZE(unit, sample_num)     (SAR_EOF_NUMBER(unit, sample_num)) //
 #define SAR_EOF_NUMBER(unit, sample_num)        ((sample_num) * (unit))
-#define SAR_MEAS_LIMIT_NUM(unit, sample_num)    (SAR_EOF_NUMBER(unit, sample_num) / unit)
+#define SAR_MEAS_LIMIT_NUM(unit, sample_num)    (SAR_SIMPLE_NUM)
+#define SAR_SIMPLE_TIMEOUT_MS  1000
+
+typedef struct dma_msg {
+    uint32_t int_msk;
+    uint8_t *data;
+    uint32_t data_len;
+} adc_dma_event_t;
 
 static uint8_t link_buf[2][SAR_DMA_DATA_SIZE(2, SAR_SIMPLE_NUM)] = {0};
-static dma_link_t dma1;
-static dma_link_t dma2;
+static lldesc_t dma1 = {0};
+static lldesc_t dma2 = {0};
+static bool adc_dma_flag = false;
+static QueueHandle_t que_adc = NULL;
+static adc_dma_event_t adc_evt;
 
-static void dma_linker_init(adc_unit_t adc, bool is_loop)
+/** ADC-DMA ISR handler. */
+static IRAM_ATTR void adc_dma_isr(void *arg)
 {
-    dma1.des.eof = 0;
-    dma1.des.owner = 1;
-    dma1.pnext = &dma2;
-    dma1.des.size = SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM);
-    dma1.des.length = 0;        //For input buffer, this field is no use.
-    dma1.buf = &link_buf[0][0];
-
-    dma2.des.eof = 1;
-    dma2.des.owner = 1;
-    if (is_loop) {
-        dma2.pnext = &dma1;
-    } else {
-        dma2.pnext = NULL;
+    uint32_t int_st = REG_READ(SPI_DMA_INT_ST_REG(3));
+    int task_awoken = pdFALSE;
+    REG_WRITE(SPI_DMA_INT_CLR_REG(3), int_st);
+    if (int_st & SPI_IN_SUC_EOF_INT_ST_M) {
+        adc_evt.int_msk = int_st;
+        xQueueSendFromISR(que_adc, &adc_evt, &task_awoken);
     }
-    dma2.des.size = SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM);
-    dma2.des.length = 0;        //For input buffer, this field is no use.
-    dma2.buf = &link_buf[1][0];
+    if (int_st & SPI_IN_DONE_INT_ST) {
+        adc_evt.int_msk = int_st;
+        xQueueSendFromISR(que_adc, &adc_evt, &task_awoken);
+    }
+    ESP_EARLY_LOGV(TAG, "int msk%x\n", int_st);
+    if (task_awoken == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
+}
 
+/** Register ADC-DMA handler. */
+static esp_err_t adc_dma_isr_register(void (*fun)(void *), void *arg)
+{
+    esp_err_t ret = ESP_FAIL;
+    ret = esp_intr_alloc(ETS_SPI3_DMA_INTR_SOURCE, 0, fun, arg, NULL);
+    return ret;
+}
+
+/** Reset DMA linker pointer and start DMA. */
+static void dma_linker_restart(void)
+{
+    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_STOP);
+    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_START);
+    SET_PERI_REG_BITS(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_ADDR, (uint32_t)&dma1, 0);
+    REG_SET_BIT(SPI_DMA_CONF_REG(3), SPI_IN_RST);
+    REG_CLR_BIT(SPI_DMA_CONF_REG(3), SPI_IN_RST);
+    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_STOP);
+    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_START);
+}
+
+/**
+ * DMA liner initialization and start.
+ * @param is_loop
+ *     - true: The two dma linked lists are connected end to end, with no end mark (eof).
+ *     - false: The two dma linked lists are connected end to end, with end mark (eof).
+ * @param int_mask DMA interrupt types.
+ */
+static void dma_linker_init(adc_unit_t adc, bool is_loop, uint32_t int_mask)
+{
+    dma1 = (lldesc_t) {
+        .size = SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM),
+        .owner = 1,
+        .buf = &link_buf[0][0],
+        .qe.stqe_next = &dma2,
+    };
+    dma2 = (lldesc_t) {
+        .size = SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM),
+        .owner = 1,
+        .buf = &link_buf[1][0],
+    };
+    if (is_loop) {
+        dma2.qe.stqe_next = &dma1;
+    } else {
+        dma2.qe.stqe_next = NULL;
+    }
     REG_SET_BIT(DPORT_PERIP_CLK_EN_REG, DPORT_APB_SARADC_CLK_EN_M);
     REG_SET_BIT(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_DMA_CLK_EN_M);
     REG_SET_BIT(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
     REG_CLR_BIT(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_DMA_RST_M);
     REG_CLR_BIT(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST_M);
-    uint32_t dma_pointer = (uint32_t)&dma1;
-    SET_PERI_REG_BITS(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_ADDR, dma_pointer, 0);
-    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_START);
-    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_STOP);
-    REG_SET_BIT(SPI_DMA_INT_ENA_REG(3), SPI_IN_SUC_EOF_INT_ENA);
-    printf("reg addr 0x%08x 0x%08x \n", SPI_DMA_IN_LINK_REG(3), dma_pointer);
-}
-
-static void dma_linker_restart(void)
-{
-    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_STOP);
-    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_START);
-    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_RESTART_M);
-    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_RESTART_M);
-    REG_SET_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_START);
-    REG_CLR_BIT(SPI_DMA_IN_LINK_REG(3), SPI_INLINK_STOP);
-    adc_digi_reset();
+    if (!adc_dma_flag) {
+        que_adc = xQueueCreate(5, sizeof(adc_dma_event_t));
+        adc_dma_isr_register(adc_dma_isr, NULL);
+        adc_dma_flag = true;
+    }
+    REG_WRITE(SPI_DMA_INT_CLR_REG(3), 0xFFFFFFFF);
+    REG_WRITE(SPI_DMA_INT_ENA_REG(3), int_mask);
+    dma_linker_restart();
+    printf("reg addr 0x%08x 0x%08x \n", SPI_DMA_IN_LINK_REG(3), (uint32_t)&dma1);
 }
 
 /*******************************************/
 /**           SPI DMA INIT CODE END        */
 /*******************************************/
 
-/**
- * TEST TOOLS
- * Note: internal pullup/pulldown is weak energy. if enabled WiFi, it should be need outside pullup/pulldown.
- */
-#define ADC_GET_IO_NUM(periph, channel) (adc_channel_io_map[periph][channel])
-
-static void adc_fake_tie_middle(adc_unit_t adc)
-{
-    if (adc & ADC_UNIT_1) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_1, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_en(ADC_GET_IO_NUM(0, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_en(ADC_GET_IO_NUM(0, adc_list[i])));
-        }
-    }
-    if (adc & ADC_UNIT_2) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_2, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_en(ADC_GET_IO_NUM(1, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_en(ADC_GET_IO_NUM(1, adc_list[i])));
-        }
-    }
-    vTaskDelay(10 / portTICK_RATE_MS); // To wait stable of IO.
-}
-
-static void adc_fake_tie_high(adc_unit_t adc)
-{
-    if (adc & ADC_UNIT_1) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_1, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_en(ADC_GET_IO_NUM(0, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_dis(ADC_GET_IO_NUM(0, adc_list[i])));
-        }
-    }
-    if (adc & ADC_UNIT_2) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_2, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_en(ADC_GET_IO_NUM(1, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_dis(ADC_GET_IO_NUM(1, adc_list[i])));
-        }
-    }
-    vTaskDelay(10 / portTICK_RATE_MS); // To wait stable of IO.
-}
-
-static void adc_fake_tie_low(adc_unit_t adc)
-{
-    if (adc & ADC_UNIT_1) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_1, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_dis(ADC_GET_IO_NUM(0, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_en(ADC_GET_IO_NUM(0, adc_list[i])));
-        }
-    }
-    if (adc & ADC_UNIT_2) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_2, adc_list[i]);
-            TEST_ESP_OK(rtc_gpio_pullup_dis(ADC_GET_IO_NUM(1, adc_list[i])));
-            TEST_ESP_OK(rtc_gpio_pulldown_en(ADC_GET_IO_NUM(1, adc_list[i])));
-        }
-    }
-    vTaskDelay(10 / portTICK_RATE_MS); // To wait stable of IO.
-}
-
-static void adc_io_normal(adc_unit_t adc)
-{
-    if (adc & ADC_UNIT_1) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_1, adc_list[i]);
-        }
-    }
-    if (adc & ADC_UNIT_2) {
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc_gpio_init(ADC_UNIT_2, adc_list[i]);
-        }
-    }
-    vTaskDelay(10 / portTICK_RATE_MS); // To wait stable of IO.
-}
-
-#define DEBUG_CHECK_ENABLE  0
+#define DEBUG_CHECK_ENABLE  1
 #define DEBUG_PRINT_ENABLE  1
-#define DEBUG_CHECK_ERROR   100
+#define DEBUG_CHECK_ERROR   10
 
+/**
+ * Check the ADC-DMA data in linker buffer by input level.
+ * ideal_level
+ *     - -1: Don't check data.
+ *     -  0: ADC channel voltage is 0v.
+ *     -  1: ADC channel voltage is 3.3v.
+ *     -  2: ADC channel voltage is 1.4v.
+ */
 static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
 {
-#if DEBUG_CHECK_ENABLE
     int unit_old = 1;
     int ch_cnt = 0;
-#endif
     for (int cnt = 0; cnt < 2; cnt++) {
         ets_printf("\n[%s] link_buf[%d]: \n", __func__, cnt % 2);
-        for (int i = 0; i < SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM); i++, i++) {
-            uint16_t h = link_buf[cnt % 2][i + 1], l = link_buf[cnt % 2][i];
+        for (int i = 0; i < SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM); i += 2) {
+            uint8_t h = link_buf[cnt % 2][i + 1], l = link_buf[cnt % 2][i];
             uint16_t temp = (h << 8 | l);
             adc_digi_output_data_t *data = (adc_digi_output_data_t *)&temp;
 
@@ -266,21 +233,24 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
                 ets_printf("[%d_%d_%04x] ", data->type2.unit, data->type2.channel, data->type2.data);
 #endif
 #if DEBUG_CHECK_ENABLE
-                TEST_ASSERT_NOT_EQUAL(unit_old, data->type2.unit);
-                unit_old = data->type2.unit;
-                if (data->type2.channel > ADC_CHANNEL_MAX) {
-                    printf("Data invalid [%d]\n", data->type2.channel);
-                    continue;
+                if (ideal_level >= 0) {
+                    TEST_ASSERT_NOT_EQUAL(unit_old, data->type2.unit);
+                    unit_old = data->type2.unit;
+                    if (data->type2.channel > ADC_CHANNEL_MAX) {
+                        printf("Data invalid [%d]\n", data->type2.channel);
+                        continue;
+                    }
+                    int cur_ch = ((ch_cnt++ / 2) % adc_test_num);
+                    TEST_ASSERT_EQUAL( data->type2.channel, adc_list[cur_ch] );
                 }
-                int cur_ch = ((ch_cnt++ / 2) % TEST_ADC_CHANNEL);
-                TEST_ASSERT_EQUAL( data->type2.channel, adc_list[cur_ch] );
-                /*Check data channel unit*/
-                if (ideal_level == 1) {
-                    TEST_ASSERT_INT_WITHIN( DEBUG_CHECK_ERROR, 0x7FF, data->type2.data );
-                } else if (ideal_level == 0) {
-                    TEST_ASSERT_INT_WITHIN( DEBUG_CHECK_ERROR, 0, data->type2.data );
-                } else {
-                    // middle vol
+                if (ideal_level == 1) {         // high level 3.3v
+                    TEST_ASSERT_EQUAL( 0x7FF, data->type2.data );
+                } else if (ideal_level == 0) {  // low level 0v
+                    TEST_ASSERT_LESS_THAN( 10, data->type2.data );
+                } else if (ideal_level == 2) {  // middle level 1.4v
+                    TEST_ASSERT_INT_WITHIN( 128, 1100, data->type2.data );
+                } else if (ideal_level == 3) {  // normal level
+                } else { // no check
                 }
 #endif
             } else {        //ADC_ENCODE_12BIT
@@ -291,23 +261,18 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
                 ets_printf("[%d_%04x] ", data->type1.channel, data->type1.data);
 #endif
 #if DEBUG_CHECK_ENABLE
-                /*Check data channel */
-                if (ideal_level == 1) {
-                    if (data->type1.data != 0XFFF) {
-                        return ESP_FAIL;
-                    }
-                } else if (ideal_level == 0) {
-                    if (data->type1.data != 0) {
-                        return ESP_FAIL;
-                    }
-                } else {
-                    if (data->type1.data == 0 || data->type1.data == 0XFFF) {
-                        return ESP_FAIL;
-                    }
+                if (ideal_level >= 0) {
+                    int cur_ch = ((ch_cnt++) % adc_test_num);
+                    TEST_ASSERT_EQUAL( adc_list[cur_ch], data->type1.channel );
                 }
-                int cur_ch = ((i / 2) % TEST_ADC_CHANNEL);
-                if (data->type1.channel != adc_list[cur_ch] ) {
-                    return ESP_FAIL;
+                if (ideal_level == 1) {         // high level 3.3v
+                    TEST_ASSERT_EQUAL( 0XFFF, data->type1.data );
+                } else if (ideal_level == 0) {  // low level 0v
+                    TEST_ASSERT_LESS_THAN( 10, data->type1.data );
+                } else if (ideal_level == 2) {  // middle level 1.4v
+                    TEST_ASSERT_INT_WITHIN( 256, 2200, data->type1.data );
+                } else if (ideal_level == 3) {  // normal level
+                } else { // no check
                 }
 #endif
             }
@@ -321,55 +286,82 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
 
 static esp_err_t adc_dma_data_multi_st_check(adc_unit_t adc)
 {
-    ESP_LOGI(TAG, "adc IO fake tie low, test ...");
-    adc_fake_tie_low(adc);
+    adc_dma_event_t evt;
+
+    ESP_LOGI(TAG, "adc IO normal, test ...");
+    for (int i = 0; i < adc_test_num; i++) {
+        adc_io_normal(adc, adc_list[i]);
+    }
+    TEST_ESP_OK( adc_digi_start() );
+    while (1) {
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
+            break;
+        }
+    }
     TEST_ESP_OK( adc_digi_stop() );
     dma_linker_restart();
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    TEST_ESP_OK( adc_digi_start() );
-    while (0 == REG_GET_BIT(SPI_DMA_INT_ST_REG(3), SPI_IN_SUC_EOF_INT_ST)) {};
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    if ( ESP_OK != adc_dma_data_check(adc, 0)) {
-        return ESP_FAIL;
-    }
+    adc_digi_reset();
+    TEST_ESP_OK( adc_dma_data_check(adc, -1) ); // Don't check data.
 
     ESP_LOGI(TAG, "adc IO fake tie high, test ...");
-    adc_fake_tie_high(adc);
+    for (int i = 0; i < adc_test_num; i++) {
+        adc_fake_tie_high(adc, adc_list[i]);
+    }
+    TEST_ESP_OK( adc_digi_start() );
+    while (1) {
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
+            break;
+        }
+    }
     TEST_ESP_OK( adc_digi_stop() );
     dma_linker_restart();
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    TEST_ESP_OK( adc_digi_start() );
-    while (0 == REG_GET_BIT(SPI_DMA_INT_ST_REG(3), SPI_IN_SUC_EOF_INT_ST)) {};
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    if ( ESP_OK != adc_dma_data_check(adc, 1)) {
-        return ESP_FAIL;
+    adc_digi_reset();
+    TEST_ESP_OK( adc_dma_data_check(adc, 1) );
+
+    ESP_LOGI(TAG, "adc IO fake tie low, test ...");
+    for (int i = 0; i < adc_test_num; i++) {
+        adc_fake_tie_low(adc, adc_list[i]);
     }
+    TEST_ESP_OK( adc_digi_start() );
+    while (1) {
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
+            break;
+        }
+    }
+    TEST_ESP_OK( adc_digi_stop() );
+    dma_linker_restart();
+    adc_digi_reset();
+    TEST_ESP_OK( adc_dma_data_check(adc, 0) );
 
     ESP_LOGI(TAG, "adc IO fake tie middle, test ...");
-    adc_fake_tie_middle(adc);
+    for (int i = 0; i < adc_test_num; i++) {
+        adc_fake_tie_middle(adc, adc_list[i]);
+    }
+    TEST_ESP_OK( adc_digi_start() );
+    while (1) {
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
+            break;
+        }
+    }
     TEST_ESP_OK( adc_digi_stop() );
     dma_linker_restart();
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    TEST_ESP_OK( adc_digi_start() );
-    while (0 == REG_GET_BIT(SPI_DMA_INT_ST_REG(3), SPI_IN_SUC_EOF_INT_ST)) {};
-    REG_SET_BIT(SPI_DMA_INT_CLR_REG(3), SPI_IN_SUC_EOF_INT_CLR);
-    if ( ESP_OK != adc_dma_data_check(adc, 2)) {
-        return ESP_FAIL;
-    }
-
-    TEST_ESP_OK( adc_digi_stop() );
-    adc_io_normal(adc);
+    adc_digi_reset();
+    TEST_ESP_OK( adc_dma_data_check(adc, 2) );
 
     return ESP_OK;
 }
 
 #include "soc/apb_saradc_struct.h"
 /**
- * @brief Test the partten table setting. It's easy wrong.
+ * Test the partten table setting. It's easy wrong.
  *
  * @param adc_n ADC unit.
  * @param in_partten_len The length of partten be set.
- * @param in_partten_len The channel number of the last message.
+ * @param in_last_ch The channel number of the last message.
  */
 static esp_err_t adc_check_patt_table(adc_unit_t adc, uint32_t in_partten_len, adc_channel_t in_last_ch)
 {
@@ -409,6 +401,12 @@ static esp_err_t adc_check_patt_table(adc_unit_t adc, uint32_t in_partten_len, a
     return ret;
 }
 
+/**
+ * Testcase: Check the base function of ADC-DMA. Include:
+ * - Various conversion modes.
+ * - Whether the channel and data are lost.
+ * - Whether the data is the same as the channel voltage.
+ */
 int test_adc_dig_dma_single_unit(adc_unit_t adc)
 {
     ESP_LOGI(TAG, "  >> %s <<  ", __func__);
@@ -429,28 +427,28 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
         .conv_limit_num = 0,
         .interval = TEST_ADC_TRIGGER_INTERVAL_DEFAULT,
         .dig_clk.use_apll = 0,  // APB clk
-        .dig_clk.div_num = 2,   // 80 MHz / 160 = 500 KHz
-        .dig_clk.div_b = 1,
-        .dig_clk.div_a = 1,
+        .dig_clk.div_num = TEST_ADC_DIGI_CLK_DIV_DEFAULT,
+        .dig_clk.div_b = 0,
+        .dig_clk.div_a = 0,
         .dma_eof_num = SAR_EOF_NUMBER((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM),
     };
     /* Config pattern table */
-    adc_digi_pattern_table_t adc1_patt[TEST_ADC_CHANNEL] = {0};
-    adc_digi_pattern_table_t adc2_patt[TEST_ADC_CHANNEL] = {0};
+    adc_digi_pattern_table_t adc1_patt[SOC_ADC_PATT_LEN_MAX] = {0};
+    adc_digi_pattern_table_t adc2_patt[SOC_ADC_PATT_LEN_MAX] = {0};
     if (adc & ADC_UNIT_1) {
-        config.adc1_pattern_len = TEST_ADC_CHANNEL;
+        config.adc1_pattern_len = adc_test_num;
         config.adc1_pattern = adc1_patt;
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc1_patt[i].atten = adc_atten[i%ADC_ATTEN_MAX];
+        for (int i = 0; i < adc_test_num; i++) {
+            adc1_patt[i].atten = TEST_ADC_ATTEN_DEFAULT;
             adc1_patt[i].channel = adc_list[i];
             adc_gpio_init(ADC_UNIT_1, adc_list[i]);
         }
     }
     if (adc & ADC_UNIT_2) {
-        config.adc2_pattern_len = TEST_ADC_CHANNEL;
+        config.adc2_pattern_len = adc_test_num;
         config.adc2_pattern = adc2_patt;
-        for (int i = 0; i < TEST_ADC_CHANNEL; i++) {
-            adc2_patt[i].atten = adc_atten[i%ADC_ATTEN_MAX];
+        for (int i = 0; i < adc_test_num; i++) {
+            adc2_patt[i].atten = TEST_ADC_ATTEN_DEFAULT;
             adc2_patt[i].channel = adc_list[i];
             adc_gpio_init(ADC_UNIT_2, adc_list[i]);
         }
@@ -470,13 +468,12 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
     }
     TEST_ESP_OK( adc_digi_controller_config(&config) );
 
-    dma_linker_init(adc, false);
-    TEST_ESP_OK( adc_check_patt_table(adc, TEST_ADC_CHANNEL, adc_list[TEST_ADC_CHANNEL - 1]) );
+    dma_linker_init(adc, false, SPI_IN_SUC_EOF_INT_ENA);
 
-    TEST_ESP_OK( adc_digi_start() );
-
+    TEST_ESP_OK( adc_check_patt_table(adc, adc_test_num, adc_list[adc_test_num - 1]) );
     adc_dma_data_multi_st_check(adc);
 
+    TEST_ESP_OK( adc_digi_deinit() );
     return 0;
 }
 
@@ -489,6 +486,172 @@ TEST_CASE("ADC DMA single read", "[ADC]")
     test_adc_dig_dma_single_unit(ADC_UNIT_1);
 
     test_adc_dig_dma_single_unit(ADC_UNIT_2);
+}
+
+#include "touch_scope.h"
+/**
+ * 0: ADC1 channels raw data debug.
+ * 1: ADC2 channels raw data debug.
+ * 2: ADC1 one channel raw data debug.
+ */
+#define SCOPE_DEBUG_TYPE            0
+#define SCOPE_DEBUG_CHANNEL_MAX    (10)
+#define SCOPE_DEBUG_ENABLE         (0)
+#define SCOPE_UART_BUADRATE        (256000)
+#define SCOPE_DEBUG_FREQ_MS        (50)
+#define SCOPE_OUTPUT_UART          (0)
+static float scope_temp[SCOPE_DEBUG_CHANNEL_MAX] = {0};  // max scope channel is 10.
+
+int test_adc_dig_scope_debug_unit(adc_unit_t adc)
+{
+    ESP_LOGI(TAG, "  >> %s <<  ", __func__);
+    ESP_LOGI(TAG, "  >> adc unit: %x <<  ", adc);
+
+    TEST_ESP_OK( adc_digi_init() );
+    if (adc & ADC_UNIT_2) {
+        /* arbiter config */
+        adc_arbiter_t arb_cfg = {
+            .mode = ADC_ARB_MODE_FIX,
+            .dig_pri = 0,
+            .pwdet_pri = 2,
+            .rtc_pri = 1,
+        };
+        TEST_ESP_OK( adc_arbiter_config(ADC_UNIT_2, &arb_cfg) );   // If you want use force
+    }
+    adc_digi_config_t config = {
+        .conv_limit_en = false,
+        .conv_limit_num = 0,
+        .interval = TEST_ADC_TRIGGER_INTERVAL_DEFAULT,
+        .dig_clk.use_apll = 0,  // APB clk
+        .dig_clk.div_num = TEST_ADC_DIGI_CLK_DIV_DEFAULT,
+        .dig_clk.div_a = 0,
+        .dig_clk.div_b = 0,
+        .dma_eof_num = SAR_EOF_NUMBER((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM),
+    };
+    /* Config pattern table */
+    adc_digi_pattern_table_t adc1_patt[SOC_ADC_PATT_LEN_MAX] = {0};
+    adc_digi_pattern_table_t adc2_patt[SOC_ADC_PATT_LEN_MAX] = {0};
+    if (adc & ADC_UNIT_1) {
+        config.adc1_pattern_len = adc_test_num;
+        config.adc1_pattern = adc1_patt;
+        for (int i = 0; i < adc_test_num; i++) {
+            adc1_patt[i].atten = TEST_ADC_ATTEN_DEFAULT;
+            adc1_patt[i].channel = adc_list[i];
+            adc_gpio_init(ADC_UNIT_1, adc_list[i]);
+        }
+    }
+    if (adc & ADC_UNIT_2) {
+        config.adc2_pattern_len = adc_test_num;
+        config.adc2_pattern = adc2_patt;
+        for (int i = 0; i < adc_test_num; i++) {
+            adc2_patt[i].atten = TEST_ADC_ATTEN_DEFAULT;
+            adc2_patt[i].channel = adc_list[i];
+            adc_gpio_init(ADC_UNIT_2, adc_list[i]);
+        }
+    }
+    if (adc == ADC_UNIT_1) {
+        config.conv_mode = ADC_CONV_SINGLE_UNIT_1;
+        config.format = ADC_DIGI_FORMAT_12BIT;
+    } else if (adc == ADC_UNIT_2) {
+        config.conv_mode = ADC_CONV_SINGLE_UNIT_2;
+        config.format = ADC_DIGI_FORMAT_12BIT;
+    } else if (adc == ADC_UNIT_BOTH) {
+        config.conv_mode = ADC_CONV_BOTH_UNIT;
+        config.format = ADC_DIGI_FORMAT_11BIT;
+    } else if (adc == ADC_UNIT_ALTER) {
+        config.conv_mode = ADC_CONV_ALTER_UNIT;
+        config.format = ADC_DIGI_FORMAT_11BIT;
+    }
+    TEST_ESP_OK( adc_digi_controller_config(&config) );
+
+    dma_linker_init(adc, false, SPI_IN_DONE_INT_ENA & SPI_IN_SUC_EOF_INT_ENA);
+
+    ESP_LOGI(TAG, "adc IO fake tie middle, test ...");
+    for (int i = 0; i < adc_test_num; i++) {
+        adc_fake_tie_middle(adc, adc_list[i]);
+    }
+
+    return 0;
+}
+
+static void scope_output(int adc_num, int channel, int data)
+{
+    /** can replace by uart log.*/
+#if SCOPE_OUTPUT_UART
+    static int icnt = 0;
+    if (icnt++ % 8 == 0) {
+        ets_printf("\n");
+    }
+    ets_printf("[%d_%d_%04x] ", adc_num, channel, data);
+    return;
+#endif
+#if SCOPE_DEBUG_TYPE == 0
+    if (adc_num != 0) {
+        return;
+    }
+#elif SCOPE_DEBUG_TYPE == 1
+    if (adc_num != 1) {
+        return;
+    }
+#endif
+    int i;
+    /* adc Read */
+    for (i = 0; i < adc_test_num; i++) {
+        if (adc_list[i] == channel && scope_temp[i] == 0) {
+            scope_temp[i] = data;
+            break;
+        }
+    }
+    if (i == adc_test_num) {
+        test_tp_print_to_scope(scope_temp, adc_test_num);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        for (int i = 0; i < adc_test_num; i++) {
+            scope_temp[i] = 0;
+        }
+    }
+}
+
+/**
+ * Manual test: Capture ADC-DMA data and display it on the serial oscilloscope. Used to observe the stability of the data.
+ * Use step:
+ *      1. Run this test from the unit test app.
+ *      2. Use `ESP-Tuning Tool`(download from `www.espressif.com`) to capture.
+ *      3. The readings of multiple channels will be displayed on the tool.
+ */
+TEST_CASE("test_adc_digi_slope_debug", "[adc_dma][ignore]")
+{
+    adc_dma_event_t evt;
+    test_tp_scope_debug_init(0, -1, -1, SCOPE_UART_BUADRATE);
+    adc_unit_t adc = ADC_CONV_BOTH_UNIT;
+    test_adc_dig_scope_debug_unit(adc);
+    while (1) {
+        TEST_ESP_OK( adc_digi_start() );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, portMAX_DELAY), pdTRUE );
+        if (evt.int_msk & SPI_IN_SUC_EOF_INT_ST) {
+            TEST_ESP_OK( adc_digi_stop() );
+            dma_linker_restart();
+            adc_digi_reset();
+            for (int cnt = 0; cnt < 2; cnt++) {
+                ets_printf("cnt%d\n", cnt);
+                for (int i = 0; i < SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM); i += 2) {
+                    uint8_t h = link_buf[cnt % 2][i + 1], l = link_buf[cnt % 2][i];
+                    uint16_t temp = (h << 8 | l);
+                    adc_digi_output_data_t *data = (adc_digi_output_data_t *)&temp;
+                    if (adc > ADC_UNIT_2) {  //ADC_ENCODE_11BIT
+                        scope_output(data->type2.unit, data->type2.channel, data->type2.data);
+                    } else {        //ADC_ENCODE_12BIT
+                        if (adc == ADC_UNIT_1) {
+                            scope_output(0, data->type1.channel, data->type1.data);
+                        } else if (adc == ADC_UNIT_2) {
+                            scope_output(1, data->type1.channel, data->type1.data);
+                        }
+                    }
+                    link_buf[cnt % 2][i] = 0;
+                    link_buf[cnt % 2][i + 1] = 0;
+                }
+            }
+        }
+    }
 }
 
 #endif // !DISABLED_FOR_TARGETS(ESP8266, ESP32)

@@ -9,8 +9,8 @@ if BLE_MESH
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         depends on BT_BLUEDROID_ENABLED
-        select BLE_SCAN_DUPLICATE
-        select BLE_MESH_SCAN_DUPLICATE_EN
+        select BTDM_BLE_SCAN_DUPL
+        select BTDM_BLE_MESH_SCAN_DUPL_EN
         default y
         help
             Enable this option to allow using specific duplicate scan filter
@@ -56,7 +56,7 @@ if BLE_MESH
 
         config BLE_MESH_WAIT_FOR_PROV_MAX_DEV_NUM
             int "Maximum number of unprovisioned devices that can be added to device queue"
-            default 20
+            default 10
             range 1 100
             help
                 This option specifies how many unprovisioned devices can be added to device
@@ -64,20 +64,9 @@ if BLE_MESH
                 queue in the bottom layer which is used to store unprovisioned device
                 information (e.g. Device UUID, address).
 
-        config BLE_MESH_MAX_STORED_NODES
-            int "Maximum number of nodes whose information can be stored"
-            default 20
-            range BLE_MESH_MAX_PROV_NODES 1000
-            help
-                This option specifies the maximum number of nodes whose information can be
-                stored by a Provisioner in its upper layer.
-                Users can change this value according to the number of nodes whose information
-                (e.g. Device UUID, unicast address, element number) are going to be stored by
-                a Provisioner. And the nodes include the provisioned ones and user-added ones.
-
         config BLE_MESH_MAX_PROV_NODES
             int "Maximum number of devices that can be provisioned by Provisioner"
-            default 20
+            default 10
             range 1 1000
             help
                 This option specifies how many devices can be provisioned by a Provisioner.
@@ -296,6 +285,29 @@ if BLE_MESH
                 introduce message replay attacks and system security will be in a
                 vulnerable state.
 
+        config BLE_MESH_SETTINGS_BACKWARD_COMPATIBILITY
+            bool "A specific option for settings backward compatibility"
+            depends on BLE_MESH_NODE
+            default n
+            help
+                This option is created to solve the issue of failure in recovering
+                node information after mesh stack updates. In the old version mesh
+                stack, there is no key of "mesh/role" in nvs. In the new version
+                mesh stack, key of "mesh/role" is added in nvs, recovering node
+                information needs to check "mesh/role" key in nvs and implements
+                selective recovery of mesh node information. Therefore, there may
+                be failure in recovering node information during node restarting
+                after OTA.
+
+                The new version mesh stack adds the option of "mesh/role" because
+                we have added the support of storing Provisioner information, while
+                the old version only supports storing node information.
+
+                If users are updating their nodes from old version to new version,
+                we recommend enabling this option, so that system could set the flag
+                in advance before recovering node information and make sure the node
+                information recovering could work as expected.
+
     endif  # if BLE_MESH_SETTINGS
 
     config BLE_MESH_SUBNET_COUNT
@@ -348,6 +360,11 @@ if BLE_MESH
             The replay protection list is used to prevent a node from replay attack,
             which will store the source address and sequence number of the received
             mesh messages.
+            For Provisioner, the replay protection list size should not be smaller than
+            the maximum number of nodes whose information can be stored. And the element
+            number of each node should also be taken into consideration. For example, if
+            Provisioner can provision up to 20 nodes and each node contains two elements,
+            then the replay protection list size of Provisioner should be at least 40.
 
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
@@ -812,9 +829,9 @@ if BLE_MESH
                 Enable support for Generic Default Transition Time client model.
 
         config BLE_MESH_GENERIC_POWER_ONOFF_CLI
-            bool "Generic Power Onoff Client Model"
+            bool "Generic Power OnOff Client Model"
             help
-                Enable support for Generic Power Onoff client model.
+                Enable support for Generic Power OnOff client model.
 
         config BLE_MESH_GENERIC_POWER_LEVEL_CLI
             bool "Generic Power Level Client Model"
@@ -915,7 +932,7 @@ if BLE_MESH
                 bool "Use white list to filter mesh advertising packets"
                 default n
                 help
-                    With this option enabled, users can use whilte list to filter mesh
+                    With this option enabled, users can use white list to filter mesh
                     advertising packets while scanning.
 
         endif # BLE_MESH_SELF_TEST

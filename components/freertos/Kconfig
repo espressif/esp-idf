@@ -174,6 +174,8 @@ menu "FreeRTOS"
 
     config FREERTOS_ISR_STACKSIZE
         int "ISR stack size"
+        range 2100 32768 if ESP32_COREDUMP_DATA_FORMAT_ELF
+        default 2100 if ESP32_COREDUMP_DATA_FORMAT_ELF
         range 1536 32768
         default 1536
         help
@@ -204,7 +206,7 @@ menu "FreeRTOS"
 
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
         bool "Enable FreeRTOS static allocation API"
-        default y
+        default n
         help
             FreeRTOS gives the application writer the ability to instead provide the memory
             themselves, allowing the following objects to optionally be created without any

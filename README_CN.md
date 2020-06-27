@@ -2,9 +2,7 @@
 
 * [English Version](./README.md)
 
-[![Documentation Status](https://readthedocs.com/projects/espressif-esp-idf/badge/?version=latest)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/?badge=latest)
-
-ESP-IDF 是由乐鑫官方推出的针对 [ESP32](https://espressif.com/en/products/hardware/esp32/overview) 系列芯片的开发框架。
+ESP-IDF 是由乐鑫官方推出的针对 **ESP32** 和 **ESP32-S2** 系列芯片的开发框架。
 
 # 使用 ESP-IDF 进行开发
 
@@ -12,8 +10,13 @@ ESP-IDF 是由乐鑫官方推出的针对 [ESP32](https://espressif.com/en/produ
 
 请参阅如下指南搭建 ESP-IDF 的开发环境：
 
-* [ESP-IDF 稳定版本的入门指南](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
-* [ESP-IDF 开发版本（master 分支）的入门指南](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/)
+| 芯片 | ESP-IDF 入门指南 |
+|:----:|:----|
+| <img src="docs/_static/chip-esp32.svg" height="85" alt="ESP32"> | <ul><li>[稳定](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/) 版</li><li>[最新（master 分支)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/) 版本</li></ul> |
+| <img src="docs/_static/chip-esp32-s2.svg" height="100" alt="ESP32-S2"> | <ul><li>[最新（master 分支)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/get-started/) 版本</li></ul> |
+
+**注意：** 每个 ESP-IDF 版本都有其对应的文档。 请参阅 [版本](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html) 部分，如何查找文档以及如何检出ESP-IDF的特定发行版。
+
 
 ### 非 GitHub 分叉的 ESP-IDF 项目
 
@@ -74,7 +77,7 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 观察串口输入
 
-`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示 ESP32 的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
+`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示 ESP32 和 ESP32-S2 的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
 
 输入 `Ctrl-]` 可退出监视器。
 

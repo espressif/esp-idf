@@ -32,20 +32,22 @@ typedef struct {
     int sock;
 } transport_tcp_t;
 
-static int resolve_dns(const char *host, struct sockaddr_in *ip) {
+static int resolve_dns(const char *host, struct sockaddr_in *ip) 
+{
+    const struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+    };
+    struct addrinfo *res;
 
-    struct hostent *he;
-    struct in_addr **addr_list;
-    he = gethostbyname(host);
-    if (he == NULL) {
-        return ESP_FAIL;
-    }
-    addr_list = (struct in_addr **)he->h_addr_list;
-    if (addr_list[0] == NULL) {
+    int err = getaddrinfo(host, NULL, &hints, &res);
+    if(err != 0 || res == NULL) {
+        ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
         return ESP_FAIL;
     }
     ip->sin_family = AF_INET;
-    memcpy(&ip->sin_addr, addr_list[0], sizeof(ip->sin_addr));
+    memcpy(&ip->sin_addr, &((struct sockaddr_in *)(res->ai_addr))->sin_addr, sizeof(ip->sin_addr));
+    freeaddrinfo(res);
     return ESP_OK;
 }
 
@@ -79,14 +81,68 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     setsockopt(tcp->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 
-    ESP_LOGD(TAG, "[sock=%d],connecting to server IP:%s,Port:%d...",
-             tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port);
-    if (connect(tcp->sock, (struct sockaddr *)(&remote_ip), sizeof(struct sockaddr)) != 0) {
-        close(tcp->sock);
-        tcp->sock = -1;
-        return -1;
+    // Set socket to non-blocking
+    int flags;
+    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        goto error;
+    }
+    if (fcntl(tcp->sock, F_SETFL, flags |= O_NONBLOCK) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", tcp->sock, strerror(errno));
+        goto error;
+    }
+
+    ESP_LOGD(TAG, "[sock=%d] Connecting to server. IP: %s, Port: %d",
+            tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port);
+
+    if (connect(tcp->sock, (struct sockaddr *)(&remote_ip), sizeof(struct sockaddr)) < 0) {
+        if (errno == EINPROGRESS) {
+            fd_set fdset;
+
+            esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
+            FD_ZERO(&fdset);
+            FD_SET(tcp->sock, &fdset);
+
+            int res = select(tcp->sock+1, NULL, &fdset, NULL, &tv);
+            if (res < 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
+                goto error;
+            }
+            else if (res == 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
+                goto error;
+            } else {
+                int sockerr;
+                socklen_t len = (socklen_t)sizeof(int);
+
+                if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
+                    ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", tcp->sock, strerror(errno));
+                    goto error;
+                }
+                else if (sockerr) {
+                    ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", tcp->sock, strerror(sockerr));
+                    goto error;
+                }
+            }
+        } else {
+            ESP_LOGE(TAG, "[sock=%d] connect() error: %s", tcp->sock, strerror(errno));
+            goto error;
+        }
+    }
+    // Reset socket to blocking
+    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        goto error;
+    }
+    if (fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
+        goto error;
     }
     return tcp->sock;
+error:
+    close(tcp->sock);
+    tcp->sock = -1;
+    return -1;
 }
 
 static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)

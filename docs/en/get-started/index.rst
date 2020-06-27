@@ -20,8 +20,8 @@ Introduction
 .. list::
 
     * Wi-Fi (2.4 GHz band)
-    :esp32: * Bluetooth
-    :esp32: * Dual high performance cores
+    :SOC_BT_SUPPORTED: * Bluetooth
+    :CONFIG_FREERTOS_UNICORE: * Dual high performance cores
     * Ultra Low Power co-processor
     * Multiple peripherals
     :esp32s2: * Built-in security hardware
@@ -78,6 +78,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         :maxdepth: 1
 
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
+        ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
 
 .. _get-started-step-by-step:
 
@@ -248,7 +249,13 @@ In the terminal where you are going to use ESP-IDF, run:
 
 Note the space between the leading dot and the path!
 
-You can also automate this step, making ESP-IDF tools available in every terminal, by adding this line to your ``.profile`` or ``.bash_profile`` script.
+You can also create an alias for the export script to your ``.profile`` or ``.bash_profile`` script. This way you can set up the environment in a new terminal window by typing ``get_idf``:
+
+.. code-block:: bash
+
+    alias get_idf='. $HOME/esp/esp-idf/export.sh'
+
+Note that it is not recommended to source ``export.sh`` from the profile script directly. Doing so activates IDF virtual environment in every terminal session (even in those where IDF is not needed), defeating the purpose of the virtual environment and likely affecting other software.
 
 .. _get-started-start-project:
 
@@ -316,7 +323,7 @@ Linux and macOS
 .. code-block:: bash
 
     cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_CL} 
+    idf.py set-target {IDF_TARGET_CL}
     idf.py menuconfig
 
 Windows
@@ -584,7 +591,7 @@ See also:
 
 Now you are ready to try some other :idf:`examples`, or go straight to developing your own applications.
 
-.. important:: 
+.. important::
 
     Some of examples do not support {IDF_TARGET_NAME} because required hardware is not included in {IDF_TARGET_NAME} so it cannot be supported.
 

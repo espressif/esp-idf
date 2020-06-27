@@ -24,11 +24,16 @@ extern "C" {
 /// Configurations for the SPI Flash to init
 typedef struct {
     spi_host_device_t host_id;      ///< Bus to use
-    int cs_id;                      ///< CS pin (signal) to use
     int cs_io_num;                  ///< GPIO pin to output the CS signal
-    esp_flash_io_mode_t io_mode;  ///< IO mode to read from the Flash
+    esp_flash_io_mode_t io_mode;    ///< IO mode to read from the Flash
     esp_flash_speed_t speed;        ///< Speed of the Flash clock
     int input_delay_ns;             ///< Input delay of the data pins, in ns. Set to 0 if unknown.
+    /**
+     * CS line ID, ignored when not `host_id` is not SPI1_HOST, or
+     * `CONFIG_SPI_FLASH_SHARE_SPI1_BUS` is enabled. In this case, the CS line used is
+     * automatically assigned by the SPI bus lock.
+     */
+    int cs_id;
 } esp_flash_spi_device_config_t;
 
 /**

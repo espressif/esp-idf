@@ -9,6 +9,13 @@
 */
 #include "sdkconfig.h"
 
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC 0
+#endif
 
 #ifdef CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x2000
@@ -83,7 +90,7 @@ MEMORY
                                      len = 0x2000 - CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
 
   /* RTC fast memory (same block as above), viewed from data bus */
-  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000
+  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 }
 
 _static_data_end = _bss_end;
@@ -96,7 +103,7 @@ _data_seg_org = ORIGIN(rtc_data_seg);
    When the option is not defined then use slow memory segment
    else the data will be placed in fast memory segment
    TODO: check whether the rtc_data_location is correct for esp32s2 - IDF-761 */
-#ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
+#ifndef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else
 REGION_ALIAS("rtc_data_location", rtc_data_seg );

@@ -26,6 +26,9 @@
 #include <mbedtls/bignum.h>
 #include "bignum_impl.h"
 #include <sys/param.h>
+#include <sys/lock.h>
+
+static _lock_t mpi_lock;
 
 /* Round up number of words to nearest
    512 bit (16 word) block count.
@@ -37,6 +40,9 @@ size_t esp_mpi_hardware_words(size_t words)
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
+    /* newlib locks lazy initialize on ESP-IDF */
+    _lock_acquire(&mpi_lock);
+
     /* Enable RSA hardware */
     periph_module_enable(PERIPH_RSA_MODULE);
     DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
@@ -52,6 +58,8 @@ void esp_mpi_disable_hardware_hw_op( void )
 
     /* Disable RSA hardware */
     periph_module_disable(PERIPH_RSA_MODULE);
+
+    _lock_release(&mpi_lock);
 }
 
 

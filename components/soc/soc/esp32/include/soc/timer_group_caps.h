@@ -13,5 +13,3 @@
 // limitations under the License.
 
 #pragma once
-
-#define WDT_SOURCE_CLK_FREQ_MHZ (80) // Watch Dog clock source comes from APB, which is 80MHz by default

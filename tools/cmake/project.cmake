@@ -486,6 +486,9 @@ macro(project project_name)
 
     unset(idf_size)
 
+    # Add DFU build and flash targets
+    __add_dfu_targets()
+
     idf_build_executable(${project_elf})
 
     __project_info("${test_components}")

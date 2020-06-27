@@ -35,7 +35,7 @@
 #include "stack/l2c_api.h"
 #include "bta/utl.h"
 
-#include "osi/include/log.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 **  Constants

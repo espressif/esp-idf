@@ -414,6 +414,17 @@ esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t
   */
 esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 
+#if CONFIG_IDF_TARGET_ESP32S2
+/**
+  * @brief     Check if WiFi TSF is active 
+  *
+  * @return    
+  *    - true: Active 
+  *    - false: Not active 
+  */
+bool esp_wifi_internal_is_tsf_active(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

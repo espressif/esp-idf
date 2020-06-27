@@ -64,6 +64,7 @@ extern "C" {
 #define ESP_ERR_WOLFSSL_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x19)  /*!< wolfSSL api returned failed */
 #define ESP_ERR_WOLFSSL_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< wolfSSL api returned failed */
 
+#define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*< esp-tls use Secure Element returned failed */
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #define ESP_TLS_ERR_SSL_WANT_READ                          MBEDTLS_ERR_SSL_WANT_READ
 #define ESP_TLS_ERR_SSL_WANT_WRITE                         MBEDTLS_ERR_SSL_WANT_WRITE
@@ -182,6 +183,9 @@ typedef struct esp_tls_cfg {
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
+
+    bool use_secure_element;                /*!< Enable this option to use secure element or
+                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds */
 
@@ -464,14 +468,26 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
 }
 
 /**
+ * @brief      Compatible version of esp_tls_conn_destroy() to close the TLS/SSL connection
+ *
+ * @note This API will be removed in IDFv5.0
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ */
+void esp_tls_conn_delete(esp_tls_t *tls);
+
+/**
  * @brief      Close the TLS/SSL connection and free any allocated resources.
  *
  * This function should be called to close each tls connection opened with esp_tls_conn_new() or
  * esp_tls_conn_http_new() APIs.
  *
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ *
+ * @return    - 0 on success
+ *            - -1 if socket error or an invalid argument
  */
-void esp_tls_conn_delete(esp_tls_t *tls);
+int esp_tls_conn_destroy(esp_tls_t *tls);
 
 /**
  * @brief      Return the number of application data bytes remaining to be

@@ -20,6 +20,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     BLE_MESH_NO_OUTPUT       = 0,
     BLE_MESH_BLINK           = BIT(0),
@@ -57,6 +61,10 @@ typedef enum {
     BLE_MESH_PROV_OOB_IN_MANUAL = BIT(14),
     BLE_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } bt_mesh_prov_oob_info_t;
+
+#define BLE_MESH_PROV_STATIC_OOB_MAX_LEN    16
+#define BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN    8
+#define BLE_MESH_PROV_INPUT_OOB_MAX_LEN     8
 
 /** Provisioning properties & capabilities. */
 struct bt_mesh_prov {
@@ -494,7 +502,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param);
  *  to enable unprovisioned advertising on one or more provisioning bearers.
  *
  */
-void bt_mesh_reset(void);
+void bt_mesh_node_reset(void);
 
 /** @brief Suspend the Mesh network temporarily.
  *
@@ -628,6 +636,10 @@ void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
  *  @param cb Function to call when the Friendship status of friend node changes.
  */
 void bt_mesh_friend_set_cb(void (*cb)(bool establish, u16_t lpn_addr, u8_t reason));
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

@@ -75,27 +75,29 @@ def main():
 
     print("DOCS_DEPLOY_SERVER {} DOCS_DEPLOY_PATH {}".format(docs_server, docs_path))
 
-    tarball_path, version_urls = build_doc_tarball(version, build_dir)
+    tarball_path, version_urls = build_doc_tarball(version, git_ver, build_dir)
 
     deploy(version, tarball_path, docs_path, docs_server)
 
     print("Docs URLs:")
+    doc_deploy_type = os.getenv('TYPE')
     for vurl in version_urls:
+        language, _, target = vurl.split('/')
+        tag = '{}_{}'.format(language, target)
         url = "{}/{}/index.html".format(url_base, vurl)  # (index.html needed for the preview server)
         url = re.sub(r"([^:])//", r"\1/", url)  # get rid of any // that isn't in the https:// part
-        print(url)
+        print('[document {}][{}] {}'.format(doc_deploy_type, tag, url))
 
     # note: it would be neater to use symlinks for stable, but because of the directory order
     # (language first) it's kind of a pain to do on a remote server, so we just repeat the
     # process but call the version 'stable' this time
     if is_stable_version(version):
         print("Deploying again as stable version...")
-        tarball_path, version_urls = build_doc_tarball("stable", build_dir)
+        tarball_path, version_urls = build_doc_tarball("stable", git_ver, build_dir)
         deploy("stable", tarball_path, docs_path, docs_server)
 
 
 def deploy(version, tarball_path, docs_path, docs_server):
-
     def run_ssh(commands):
         """ Log into docs_server and run a sequence of commands using ssh """
         print("Running ssh: {}".format(commands))
@@ -109,7 +111,7 @@ def deploy(version, tarball_path, docs_path, docs_server):
     tarball_name = os.path.basename(tarball_path)
 
     run_ssh(["cd {}".format(docs_path),
-             "rm -rf ./*/{}".format(version),   # remove any pre-existing docs matching this version
+             "rm -rf ./*/{}".format(version),  # remove any pre-existing docs matching this version
              "tar -zxvf {}".format(tarball_name),  # untar the archive with the new docs
              "rm {}".format(tarball_name)])
 
@@ -118,7 +120,7 @@ def deploy(version, tarball_path, docs_path, docs_server):
     # another thing made much more complex by the directory structure putting language before version...
 
 
-def build_doc_tarball(version, build_dir):
+def build_doc_tarball(version, git_ver, build_dir):
     """ Make a tar.gz archive of the docs, in the directory structure used to deploy as
         the given version """
     version_paths = []
@@ -127,6 +129,12 @@ def build_doc_tarball(version, build_dir):
     # find all the 'html/' directories under build_dir
     html_dirs = glob.glob("{}/**/html/".format(build_dir), recursive=True)
     print("Found %d html directories" % len(html_dirs))
+
+    pdfs = glob.glob("{}/**/latex/build/*.pdf".format(build_dir), recursive=True)
+    print("Found %d PDFs in latex directories" % len(pdfs))
+
+    # add symlink for stable and latest and adds them to PDF blob
+    symlinks = create_and_add_symlinks(version, git_ver, pdfs)
 
     def not_sources_dir(ti):
         """ Filter the _sources directories out of the tarballs """
@@ -154,7 +162,39 @@ def build_doc_tarball(version, build_dir):
             tarball.add(html_dir, archive_path, filter=not_sources_dir)
             version_paths.append(archive_path)
 
+        for pdf_path in pdfs:
+            # pdf_path has the form '<ignored>/<language>/<target>/latex/build'
+            latex_dirname = os.path.dirname(pdf_path)
+            pdf_filename = os.path.basename(pdf_path)
+            target_dirname = os.path.dirname(os.path.dirname(latex_dirname))
+            target = os.path.basename(target_dirname)
+            language = os.path.basename(os.path.dirname(target_dirname))
+
+            # when deploying, we want the layout 'language/version/target/pdf'
+            archive_path = "{}/{}/{}/{}".format(language, version, target, pdf_filename)
+            print("Archiving '{}' as '{}'...".format(pdf_path, archive_path))
+            tarball.add(pdf_path, archive_path)
+
+    for symlink in symlinks:
+        os.unlink(symlink)
+
     return (os.path.abspath(tarball_path), version_paths)
+
+
+def create_and_add_symlinks(version, git_ver, pdfs):
+    """ Create symbolic links for PDFs for 'latest' and 'stable' releases """
+
+    symlinks = []
+    if 'stable' in version or 'latest' in version:
+        for pdf_path in pdfs:
+            symlink_path = pdf_path.replace(git_ver, version)
+            os.symlink(pdf_path, symlink_path)
+            symlinks.append(symlink_path)
+
+        pdfs.extend(symlinks)
+        print("Found %d PDFs in latex directories after adding symlink" % len(pdfs))
+
+    return symlinks
 
 
 def is_stable_version(version):

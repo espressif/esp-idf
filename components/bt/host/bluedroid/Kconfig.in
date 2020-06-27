@@ -99,6 +99,13 @@ config BT_HFP_WBS_ENABLE
         This enables Wide Band Speech. Should disable it when SCO data path is PCM.
         Otherwise there will be no data transmited via GPIOs.
 
+config BT_HID_HOST_ENABLED
+    bool "Classic BT HID Host"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT HID Host
+
 config BT_SSP_ENABLED
     bool "Secure Simple Pairing"
     depends on BT_CLASSIC_ENABLED

@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
 # Wifi Power Save Example
 
 This example shows how to use power save mode of wifi.

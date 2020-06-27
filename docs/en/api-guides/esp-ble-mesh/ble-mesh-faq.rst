@@ -548,7 +548,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     Normally when they are several unprovisioned devices, users can provision them one by one. But when it comes to a large number of unprovisioned devices (e.g. 100), provisioning them one by one will take huge amount of time. With fast provisioning, users can provision 100 unprovisioned devices in about 50 seconds.
 
-4.2 Why EspBleMesh App would wait for a long time or keep waiting during fast provisioning?
+4.2 Why EspBleMesh App would wait for a long time during fast provisioning?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     After the App provisioned one Proxy node, it will disconnect from the App during fast provisioning, and reconnect with the App when all the nodes are provisioned.
@@ -563,7 +563,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     The **count** value is provided to the Proxy node which is provisioned by the App so as to determine when to start Proxy advertising in advance.
 
-4.5 When will Configuration Client Model of the node running :example:`ble_mesh_fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>` example start to work?
+4.5 When will Configuration Client Model of the node running :example:`fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server>` example start to work?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Configuration Client Model will start to work after the Temporary Provisioner functionality is enabled.

@@ -51,7 +51,15 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 4: SPI SRAM data
     //TODO, in fact, part of them support EDMA, to be supported.
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
+    //Type 5: RTC Fast RAM
+    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, 0 }, false, false},
 };
+
+#ifdef CONFIG_ESP32S2_MEMPROT_FEATURE
+#define SOC_MEMORY_TYPE_DEFAULT 0
+#else
+#define SOC_MEMORY_TYPE_DEFAULT 2
+#endif
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
 
@@ -62,46 +70,49 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
+#ifdef CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+    { SOC_RTC_DRAM_LOW, 0x2000, 5, 0}, //RTC Fast Memory
+#endif
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
 #endif
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB2000, 0x2000, 2, 0x40022000}, //Block 1, can be use as I/D cache memory
-    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB2000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40022000}, //Block 1, can be use as I/D cache memory
+    { 0x3FFB4000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40026000}, //Block 3, can be use as D cache memory
 #else
-    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #else
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40024000}, //Block SOC_MEMORY_TYPE_DEFAULT, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, SOC_MEMORY_TYPE_DEFAULT, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #endif
-    { 0x3FFB8000, 0x4000, 2, 0x40028000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x3FFBC000, 0x4000, 2, 0x4002C000}, //Block 5,  can be remapped to ROM, can be used as trace memory
-    { 0x3FFC0000, 0x4000, 2, 0x40030000}, //Block 6,  can be used as trace memory
-    { 0x3FFC4000, 0x4000, 2, 0x40034000}, //Block 7,  can be used as trace memory
-    { 0x3FFC8000, 0x4000, 2, 0x40038000}, //Block 8,  can be used as trace memory
-    { 0x3FFCC000, 0x4000, 2, 0x4003C000}, //Block 9,  can be used as trace memory
+    { 0x3FFB8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40028000}, //Block 4,  can be remapped to ROM, can be used as trace memory
+    { 0x3FFBC000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x4002C000}, //Block 5,  can be remapped to ROM, can be used as trace memory
+    { 0x3FFC0000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40030000}, //Block 6,  can be used as trace memory
+    { 0x3FFC4000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40034000}, //Block 7,  can be used as trace memory
+    { 0x3FFC8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40038000}, //Block 8,  can be used as trace memory
+    { 0x3FFCC000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x4003C000}, //Block 9,  can be used as trace memory
 
-    { 0x3FFD0000, 0x4000, 2, 0x40040000}, //Block 10,  can be used as trace memory
-    { 0x3FFD4000, 0x4000, 2, 0x40044000}, //Block 11,  can be used as trace memory
-    { 0x3FFD8000, 0x4000, 2, 0x40048000}, //Block 12,  can be used as trace memory
-    { 0x3FFDC000, 0x4000, 2, 0x4004C000}, //Block 13,  can be used as trace memory
-    { 0x3FFE0000, 0x4000, 2, 0x40050000}, //Block 14,  can be used as trace memory
-    { 0x3FFE4000, 0x4000, 2, 0x40054000}, //Block 15,  can be used as trace memory
-    { 0x3FFE8000, 0x4000, 2, 0x40058000}, //Block 16,  can be used as trace memory
-    { 0x3FFEC000, 0x4000, 2, 0x4005C000}, //Block 17,  can be used as trace memory
-    { 0x3FFF0000, 0x4000, 2, 0x40060000}, //Block 18,  can be used for MAC dump, can be used as trace memory
-    { 0x3FFF4000, 0x4000, 2, 0x40064000}, //Block 19,  can be used for MAC dump, can be used as trace memory
-    { 0x3FFF8000, 0x4000, 2, 0x40068000}, //Block 20,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFD0000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40040000}, //Block 10,  can be used as trace memory
+    { 0x3FFD4000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40044000}, //Block 11,  can be used as trace memory
+    { 0x3FFD8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40048000}, //Block 12,  can be used as trace memory
+    { 0x3FFDC000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x4004C000}, //Block 13,  can be used as trace memory
+    { 0x3FFE0000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40050000}, //Block 14,  can be used as trace memory
+    { 0x3FFE4000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40054000}, //Block 15,  can be used as trace memory
+    { 0x3FFE8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40058000}, //Block 16,  can be used as trace memory
+    { 0x3FFEC000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x4005C000}, //Block 17,  can be used as trace memory
+    { 0x3FFF0000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40060000}, //Block 18,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFF4000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40064000}, //Block 19,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFF8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40068000}, //Block 20,  can be used for MAC dump, can be used as trace memory
     { 0x3FFFC000, 0x4000, 1, 0x4006C000}, //Block 21,  can be used for MAC dump, can be used as trace memory, used for startup stack
 };
 
@@ -109,7 +120,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
 
 
 extern int _dram0_rtos_reserved_start;
-extern int _data_start, _heap_start, _iram_start, _iram_end;
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;
 
 /* Reserved memory regions
 
@@ -133,6 +144,15 @@ SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_dat
 // Blocks 19 and 20 may be reserved for the trace memory
 #if CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM > 0
 SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
+#endif
+
+// RTC Fast RAM region
+#ifdef CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+#ifdef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_data);
+#else
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_fast_end, rtcram_data);
+#endif
 #endif
 
 #endif // BOOTLOADER_BUILD

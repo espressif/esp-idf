@@ -11,17 +11,24 @@ volatile static int RTC_NOINIT_ATTR access = 0;
 static void trigger_illegal_access(void)
 {
     access = 0;
-    intptr_t addr = 0x60000000;
+    intptr_t addr = 0x80000000; // MPU region 4
     volatile int __attribute__((unused)) val = 0;
+
+    // Marked as an illegal access region at startup in ESP32, ESP32S2.
+    // Make accessible temporarily.
+    mpu_hal_set_region_access(4, MPU_REGION_RW);
 
     val = *((int*) addr);
     ++access;
     TEST_ASSERT_EQUAL(1, access);
     printf("Sucessfully accessed location %p\r\n", (void*)addr);
 
-    mpu_hal_set_region_access(3, MPU_REGION_ILLEGAL); // 0x60000000
+    // Make access to region illegal again.
+    mpu_hal_set_region_access(4, MPU_REGION_ILLEGAL); 
     ++access;
 
+    // Since access to region is illegal, this should fail (causing a reset), and the increment
+    // to access count is not performed.
     val = *((int*) addr); 
     ++access;
 }

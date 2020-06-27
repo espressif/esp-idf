@@ -1,4 +1,4 @@
 [mapping:esp_common]
-archive: lib_esp_common.a
+archive: libesp_common.a
 entries:
     esp_err (noflash)

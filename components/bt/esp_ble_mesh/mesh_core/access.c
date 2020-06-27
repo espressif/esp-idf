@@ -398,20 +398,20 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 
     key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
     if (!key) {
-        BT_ERR("%s, Failed to find AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%03x not exists", __func__, pub->key);
         return -EADDRNOTAVAIL;
     }
 
     tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, key->net_idx);
     if (!tx.sub) {
-        BT_ERR("%s, Failed to get subnet", __func__);
+        BT_ERR("%s, Subnet 0x%04x not exists", __func__, key->net_idx);
         return -EADDRNOTAVAIL;
     }
 
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -425,6 +425,14 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 
     bt_mesh_free_buf(sdu);
     return err;
+}
+
+static void publish_retransmit_end(int err, struct bt_mesh_model_pub *pub)
+{
+    /* Cancel all retransmits for this publish attempt */
+    pub->count = 0U;
+    /* Make sure the publish timer gets reset */
+    publish_sent(err, pub->mod);
 }
 
 static void mod_publish(struct k_work *work)
@@ -468,7 +476,10 @@ static void mod_publish(struct k_work *work)
      */
     err = pub->update(pub->mod);
     if (err) {
-        BT_ERR("%s, Failed to update publication message", __func__);
+        /* Cancel this publish attempt. */
+        BT_ERR("Update failed, skipping publish (err %d)", err);
+        pub->period_start = k_uptime_get_32();
+        publish_retransmit_end(err, pub);
         return;
     }
 
@@ -616,7 +627,7 @@ void bt_mesh_comp_provision(u16_t addr)
 
     dev_primary_addr = addr;
 
-    BT_INFO("addr 0x%04x elem_count %u", addr, dev_comp->elem_count);
+    BT_INFO("Primary address 0x%04x, element count %u", addr, dev_comp->elem_count);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -725,10 +736,20 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
     return false;
 }
 
+static bool model_has_dst(struct bt_mesh_model *model, u16_t dst)
+{
+    if (BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return (dev_comp->elem[model->elem_idx].addr == dst);
+    } else if (BLE_MESH_ADDR_IS_GROUP(dst) || BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
+        return !!bt_mesh_model_find_group(model, dst);
+    }
+
+    return (model->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
+}
+
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
-        u8_t model_count, u16_t dst,
-        u16_t app_idx, u32_t opcode,
-        struct bt_mesh_model **model)
+                                              u8_t model_count, u32_t opcode,
+                                              struct bt_mesh_model **model)
 {
     int i;
 
@@ -736,17 +757,6 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
         const struct bt_mesh_model_op *op;
 
         *model = &models[i];
-
-        if (BLE_MESH_ADDR_IS_GROUP(dst) ||
-                BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
-            if (!bt_mesh_model_find_group(*model, dst)) {
-                continue;
-            }
-        }
-
-        if (!model_has_key(*model, app_idx)) {
-            continue;
-        }
 
         for (op = (*model)->op; op->func; op++) {
             if (op->opcode == opcode) {
@@ -786,6 +796,10 @@ static int get_opcode(struct net_buf_simple *buf, u32_t *opcode)
         }
 
         *opcode = net_buf_simple_pull_u8(buf) << 16;
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         *opcode |= net_buf_simple_pull_le16(buf);
         return 0;
     }
@@ -818,37 +832,26 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     u8_t count = 0U;
     int i;
 
-    BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
+    BT_INFO("recv, app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
            rx->ctx.addr, rx->ctx.recv_dst);
-    BT_INFO("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_INFO("recv, len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (get_opcode(buf, &opcode) < 0) {
         BT_WARN("%s, Unable to decode OpCode", __func__);
         return;
     }
 
-    BT_INFO("OpCode 0x%08x", opcode);
+    BT_DBG("OpCode 0x%08x", opcode);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
-
-        if (BLE_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
-            if (elem->addr != rx->ctx.recv_dst) {
-                continue;
-            }
-        } else if (BLE_MESH_ADDR_IS_GROUP(rx->ctx.recv_dst) ||
-                   BLE_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
-            /* find_op() will do proper model/group matching */
-        } else if (i != 0 ||
-                   !bt_mesh_fixed_group_match(rx->ctx.recv_dst)) {
-            continue;
-        }
+        struct net_buf_simple_state state = {0};
 
         /* SIG models cannot contain 3-byte (vendor) OpCodes, and
          * vendor models cannot contain SIG (1- or 2-byte) OpCodes, so
          * we only need to do the lookup in one of the model lists.
          */
-        if (opcode < 0x10000) {
+        if (BLE_MESH_MODEL_OP_LEN(opcode) < 3) {
             models = elem->models;
             count = elem->model_count;
         } else {
@@ -856,44 +859,44 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             count = elem->vnd_model_count;
         }
 
-        op = find_op(models, count, rx->ctx.recv_dst, rx->ctx.app_idx,
-                     opcode, &model);
-        if (op) {
-            struct net_buf_simple_state state;
-
-            if (buf->len < op->min_len) {
-                BT_ERR("%s, Too short message for OpCode 0x%08x",
-                       __func__, opcode);
-                continue;
-            }
-
-            /* The callback will likely parse the buffer, so
-             * store the parsing state in case multiple models
-             * receive the message.
-             */
-            net_buf_simple_save(buf, &state);
-
-            /** Changed by Espressif, here we update recv_op with the
-             *  value opcode got from the buf.
-             */
-            rx->ctx.recv_op = opcode;
-            /** Changed by Espressif, we update the model pointer to the
-             *  found model when we received a message.
-             */
-            rx->ctx.model = model;
-            /** Changed by Espressif, we update the srv_send flag to be
-             *  true when we received a message. This flag will be used
-             *  when a server model sends a status message and will
-             *  have no impact on the client sent messages.
-             */
-            rx->ctx.srv_send = true;
-
-            op->func(model, &rx->ctx, buf);
-            net_buf_simple_restore(buf, &state);
-
-        } else {
+        op = find_op(models, count, opcode, &model);
+        if (!op) {
             BT_DBG("No OpCode 0x%08x for elem %d", opcode, i);
+            continue;
         }
+
+        if (!model_has_key(model, rx->ctx.app_idx)) {
+            continue;
+        }
+
+        if (!model_has_dst(model, rx->ctx.recv_dst)) {
+            continue;
+        }
+
+        if (buf->len < op->min_len) {
+            BT_ERR("Too short message for OpCode 0x%08x", opcode);
+            continue;
+        }
+
+        /* The following three operations are added by Espressif.
+         * 1. Update the "recv_op" with the opcode got from the buf;
+         * 2. Update the model pointer with the found model;
+         * 3. Update the "srv_send" to be true when received a message.
+         *    This flag will be used when a server model sends a status
+         *    message, and has no impact on the client messages.
+         * Most of these info will be used by the application layer.
+         */
+        rx->ctx.recv_op = opcode;
+        rx->ctx.model = model;
+        rx->ctx.srv_send = true;
+
+        /* The callback will likely parse the buffer, so store
+         * the parsing state in case multiple models receive
+         * the message.
+         */
+        net_buf_simple_save(buf, &state);
+        op->func(model, &rx->ctx, buf);
+        net_buf_simple_restore(buf, &state);
     }
 }
 
@@ -910,6 +913,10 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
         break;
     case 3:
         net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         net_buf_simple_add_le16(msg, opcode & 0xffff);
         break;
     default:
@@ -948,21 +955,21 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    BT_INFO("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->ctx->net_idx,
-           tx->ctx->app_idx, tx->ctx->addr);
-    BT_INFO("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
+    BT_INFO("send, app_idx 0x%04x src 0x%04x dst 0x%04x",
+        tx->ctx->app_idx, tx->src, tx->ctx->addr);
+    BT_INFO("send, len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
     if (!ready_to_send(role, tx->ctx->addr)) {
-        BT_ERR("%s, fail", __func__);
+        BT_ERR("%s, Not ready", __func__);
         return -EINVAL;
     }
 
-    if (net_buf_simple_tailroom(msg) < 4) {
+    if (net_buf_simple_tailroom(msg) < BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Not enough tailroom for TransMIC", __func__);
         return -EINVAL;
     }
 
-    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - 4) {
+    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Too big message", __func__);
         return -EMSGSIZE;
     }
@@ -1013,7 +1020,9 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     struct bt_mesh_model_pub *pub = model->pub;
     struct bt_mesh_app_key *key = NULL;
     struct net_buf_simple *sdu = NULL;
-    struct bt_mesh_msg_ctx ctx = {0};
+    struct bt_mesh_msg_ctx ctx = {
+        .model = model,
+    };
     struct bt_mesh_net_tx tx = {
         .sub = NULL,
         .ctx = &ctx,
@@ -1036,11 +1045,11 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
     if (!key) {
-        BT_ERR("%s, Failed to get AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%03x not exists", __func__, pub->key);
         return -EADDRNOTAVAIL;
     }
 
-    if (pub->msg->len + 4 > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
+    if (pub->msg->len + BLE_MESH_MIC_SHORT > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
         BT_ERR("%s, Message does not fit maximum SDU size", __func__);
         return -EMSGSIZE;
     }
@@ -1051,6 +1060,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     }
 
     ctx.addr = pub->addr;
+    ctx.send_rel = pub->send_rel;
     ctx.send_ttl = pub->ttl;
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
@@ -1060,7 +1070,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, ctx.net_idx);
     if (!tx.sub) {
-        BT_ERR("%s, Failed to get subnet", __func__);
+        BT_ERR("%s, Subnet 0x%04x not exists", __func__, ctx.net_idx);
         return -EADDRNOTAVAIL;
     }
 
@@ -1069,7 +1079,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     BT_INFO("Publish Retransmit Count %u Interval %ums", pub->count,
            BLE_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -1079,10 +1089,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     err = model_send(model, &tx, true, sdu, &pub_sent_cb, model);
     if (err) {
-        /* Don't try retransmissions for this publish attempt */
-        pub->count = 0U;
-        /* Make sure the publish timer gets reset */
-        publish_sent(err, model);
+        publish_retransmit_end(err, pub);
     }
 
     bt_mesh_free_buf(sdu);

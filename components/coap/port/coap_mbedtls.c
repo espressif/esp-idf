@@ -908,6 +908,7 @@ fail:
 }
 #endif /* !defined(ESPIDF_VERSION) || CONFIG_MBEDTLS_TLS_SERVER) */
 
+#if !defined(ESPIDF_VERSION) || defined(CONFIG_MBEDTLS_PSK_MODES)
 #define MAX_CIPHERS 100
 static int psk_ciphers[MAX_CIPHERS];
 static int pki_ciphers[MAX_CIPHERS];
@@ -964,6 +965,7 @@ set_ciphersuites(mbedtls_ssl_config *conf, int is_psk)
   }
   mbedtls_ssl_conf_ciphersuites(conf, is_psk ? psk_ciphers : pki_ciphers);
 }
+#endif /* !ESPIDF_VERSION || CONFIG_MBEDTLS_PSK_MODES */
 
 static int setup_client_ssl_session(coap_session_t *c_session,
                                     coap_mbedtls_env_t *m_env)
@@ -1066,7 +1068,9 @@ static int setup_client_ssl_session(coap_session_t *c_session,
 #if !defined(ESPIDF_VERSION) || defined(CONFIG_MBEDTLS_SSL_PROTO_DTLS)
     mbedtls_ssl_set_mtu(&m_env->ssl, c_session->mtu);
 #endif /* !ESPIDF_VERSION || CONFIG_MBEDTLS_SSL_PROTO_DTLS */
+#if !defined(ESPIDF_VERSION) || defined(CONFIG_MBEDTLS_PSK_MODES)
     set_ciphersuites(&m_env->conf, 0);
+#endif /* !ESPIDF_VERSION || CONFIG_MBEDTLS_PSK_MODES */
   }
   return 0;
 
@@ -1260,6 +1264,13 @@ int coap_dtls_context_set_psk(struct coap_context_t *c_context,
 {
   coap_mbedtls_context_t *m_context =
               ((coap_mbedtls_context_t *)c_context->dtls_context);
+#if defined(ESPIDF_VERSION) && (!defined(CONFIG_MBEDTLS_PSK_MODES) || !defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK))
+  coap_log(LOG_EMERG, "coap_dtls_context_set_psk:"
+           " libcoap not compiled with MBEDTLS_PSK_MODES and MBEDTLS_KEY_EXCHANGE_PSK"
+           " - update mbedTLS to include psk mode configs\n");
+  return 0;
+#endif /* ESPIDF_VERSION && (!CONFIG_MBEDTLS_PSK_MODES || !CONFIG_MBEDTLS_KEY_EXCHANGE_PSK) */
+
 #if defined(ESPIDF_VERSION) && !defined(CONFIG_MBEDTLS_TLS_SERVER)
   coap_log(LOG_EMERG, "coap_dtls_context_set_psk:"
            " libcoap not compiled for Server Mode for MbedTLS"
@@ -1322,6 +1333,13 @@ int coap_dtls_context_set_pki(struct coap_context_t *c_context,
                           coap_dtls_pki_t *setup_data,
                           coap_dtls_role_t role UNUSED)
 {
+#if defined(ESPIDF_VERSION) && (!defined(CONFIG_MBEDTLS_PSK_MODES) || !defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK))
+  coap_log(LOG_EMERG, "coap_dtls_context_set_pki:"
+           " libcoap not compiled with MBEDTLS_PSK_MODES and MBEDTLS_KEY_EXCHANGE_PSK"
+           " - update mbedTLS to include psk mode configs\n");
+  return 0;
+#endif /* ESPIDF_VERSION && (!CONFIG_MBEDTLS_PSK_MODES || !CONFIG_MBEDTLS_KEY_EXCHANGE_PSK) */
+
   coap_mbedtls_context_t *m_context =
              ((coap_mbedtls_context_t *)c_context->dtls_context);
 

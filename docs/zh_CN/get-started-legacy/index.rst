@@ -436,5 +436,6 @@ Windows 操作系统
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
 
-.. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
+.. Note: These two targets may be used from git-clone-notes.inc depending on version, don't remove
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

@@ -700,7 +700,7 @@ void rtc_sleep_set_wakeup_time(uint64_t t);
 #define RTC_GPIO_TRIG_EN    BIT(2)  //!< GPIO wakeup (light sleep only)
 #define RTC_TIMER_TRIG_EN   BIT(3)  //!< Timer wakeup
 #define RTC_SDIO_TRIG_EN    BIT(4)  //!< SDIO wakeup (light sleep only)
-#define RTC_MAC_TRIG_EN     BIT(5)  //!< MAC wakeup (light sleep only)
+#define RTC_WIFI_TRIG_EN    BIT(5)  //!< WIFI wakeup (light sleep only)
 #define RTC_UART0_TRIG_EN   BIT(6)  //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN   BIT(7)  //!< UART1 wakeup (light sleep only)
 #define RTC_TOUCH_TRIG_EN   BIT(8)  //!< Touch wakeup

@@ -260,42 +260,40 @@ _out:
  * provisioning, -1 if wps_a is considered more like, or 0 if no preference
  */
 int wps_ap_priority_compar(const struct wpabuf *wps_a,
-               const struct wpabuf *wps_b)
+                           const struct wpabuf *wps_b)
 {
-    struct wps_parse_attr *attr_a, *attr_b;
+    struct wps_parse_attr *attr = NULL;
     int sel_a, sel_b;
-    int ret = 0;
+    int ret = 0; /* No preference */
 
-    attr_a = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
-    attr_b = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
+    attr = os_zalloc(sizeof(*attr));
 
-    if (attr_a == NULL || attr_b == NULL) {
-        ret = 0;
-        goto _out;
+    if (!attr)
+	    return ret;
+
+    if (wps_a == NULL || wps_parse_msg(wps_a, attr) < 0) {
+        ret = 1;
+        goto exit;
     }
+    sel_a = attr->selected_registrar && *(attr->selected_registrar) != 0;
 
-    if (wps_a == NULL || wps_parse_msg(wps_a, attr_a) < 0)
-        return 1;   // NOLINT(clang-analyzer-unix.Malloc)
-    if (wps_b == NULL || wps_parse_msg(wps_b, attr_b) < 0)
-        return -1;
-
-    sel_a = attr_a->selected_registrar && *attr_a->selected_registrar != 0;
-    sel_b = attr_b->selected_registrar && *attr_b->selected_registrar != 0;
+    if (wps_b == NULL || wps_parse_msg(wps_b, attr) < 0) {
+        ret = -1;
+        goto exit;
+    }
+    sel_b = attr->selected_registrar && *(attr->selected_registrar) != 0;
 
     if (sel_a && !sel_b) {
         ret = -1;
-        goto _out;
+        goto exit;
     }
     if (!sel_a && sel_b) {
         ret = 1;
-        goto _out;
+        goto exit;
     }
 
-_out:
-    if (attr_a)
-        os_free(attr_a);
-    if (attr_b)
-        os_free(attr_b);
+exit:
+    os_free(attr);
     return ret;
 }
 

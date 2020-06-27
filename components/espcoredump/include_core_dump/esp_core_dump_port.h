@@ -42,7 +42,7 @@ extern "C" {
 #define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)
 
 // Gets RTOS tasks snapshot
-uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
+uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
                         const uint32_t snapshot_size);
 
 // Checks TCB consistency

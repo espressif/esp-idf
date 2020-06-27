@@ -21,4 +21,4 @@ sphinx_selective_exclude==1.0.3
 #
 # See docs/en/contribute/documenting-code.rst, 'sphinx_idf_theme' section
 # for full setup instructions.
-sphinx_idf_theme==0.1
+sphinx_idf_theme==0.2

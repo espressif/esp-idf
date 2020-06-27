@@ -44,7 +44,7 @@ Make
 
 .. code-block:: make
 
-    COMPONENT_ADD_LDFRAGMENTS += "my_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
 
 CMake
 """""

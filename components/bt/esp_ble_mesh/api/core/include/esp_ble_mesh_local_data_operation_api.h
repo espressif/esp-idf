@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief         Get the model publish period, the unit is ms.
  *
@@ -103,5 +107,41 @@ esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *ele
  *
  */
 const esp_ble_mesh_comp_t *esp_ble_mesh_get_composition_data(void);
+
+/**
+ * @brief        A local model of node or Provisioner subscribes a group address.
+ *
+ * @note         This function shall not be invoked before node is provisioned or Provisioner is enabled.
+ *
+ * @param[in]    element_addr: Unicast address of the element to which the model belongs.
+ * @param[in]    company_id: A 16-bit company identifier.
+ * @param[in]    model_id: A 16-bit model identifier.
+ * @param[in]    group_addr: The group address to be subscribed.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_model_subscribe_group_addr(uint16_t element_addr, uint16_t company_id,
+                                                  uint16_t model_id, uint16_t group_addr);
+
+/**
+ * @brief        A local model of node or Provisioner unsubscribes a group address.
+ *
+ * @note         This function shall not be invoked before node is provisioned or Provisioner is enabled.
+ *
+ * @param[in]    element_addr: Unicast address of the element to which the model belongs.
+ * @param[in]    company_id: A 16-bit company identifier.
+ * @param[in]    model_id: A 16-bit model identifier.
+ * @param[in]    group_addr: The subscribed group address.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_model_unsubscribe_group_addr(uint16_t element_addr, uint16_t company_id,
+                                                    uint16_t model_id, uint16_t group_addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_LOCAL_DATA_OPERATION_API_H_ */

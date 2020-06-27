@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_SENSOR_CLI
  *
  *  @brief  Define a new Sensor Client Model.
@@ -345,6 +349,91 @@ esp_err_t esp_ble_mesh_sensor_client_set_state(esp_ble_mesh_client_common_param_
  */
 #define ESP_BLE_MESH_SENSOR_DATA_ZERO_LEN   0x7F
 
+/** @def    ESP_BLE_MESH_GET_SENSOR_DATA_FORMAT
+ *
+ *  @brief  Get format of the sensor data.
+ *
+ *  @note   Multiple sensor data may be concatenated. Make sure the _data pointer is
+ *          updated before getting the format of the corresponding sensor data.
+ *
+ *  @param  _data Pointer to the start of the sensor data.
+ *
+ *  @return Format of the sensor data.
+ */
+#define ESP_BLE_MESH_GET_SENSOR_DATA_FORMAT(_data)      (((_data)[0]) & BIT_MASK(1))
+
+/** @def    ESP_BLE_MESH_GET_SENSOR_DATA_LENGTH
+ *
+ *  @brief  Get length of the sensor data.
+ *
+ *  @note   Multiple sensor data may be concatenated. Make sure the _data pointer is
+ *          updated before getting the length of the corresponding sensor data.
+ *
+ *  @param  _data Pointer to the start of the sensor data.
+ *  @param  _fmt  Format of the sensor data.
+ *
+ *  @return Length (zero-based) of the sensor data.
+ */
+#define ESP_BLE_MESH_GET_SENSOR_DATA_LENGTH(_data, _fmt)    \
+            (((_fmt) == ESP_BLE_MESH_SENSOR_DATA_FORMAT_A) ? ((((_data)[0]) >> 1) & BIT_MASK(4)) : ((((_data)[0]) >> 1) & BIT_MASK(7)))
+
+/** @def    ESP_BLE_MESH_GET_SENSOR_DATA_PROPERTY_ID
+ *
+ *  @brief  Get Sensor Property ID of the sensor data.
+ *
+ *  @note   Multiple sensor data may be concatenated. Make sure the _data pointer is
+ *          updated before getting Sensor Property ID of the corresponding sensor data.
+ *
+ *  @param  _data Pointer to the start of the sensor data.
+ *  @param  _fmt  Format of the sensor data.
+ *
+ *  @return Sensor Property ID of the sensor data.
+ */
+#define ESP_BLE_MESH_GET_SENSOR_DATA_PROPERTY_ID(_data, _fmt)   \
+            (((_fmt) == ESP_BLE_MESH_SENSOR_DATA_FORMAT_A) ? ((((_data)[1]) << 3) | (((_data)[0]) >> 5)) : ((((_data)[2]) << 8) | ((_data)[1])))
+
+/** @def    ESP_BLE_MESH_SENSOR_DATA_FORMAT_A_MPID
+ *
+ *  @brief  Generate a MPID value for sensor data with Format A.
+ *
+ *  @note   1. The Format field is 0b0 and indicates that Format A is used.
+ *          2. The Length field is a 1-based uint4 value (valid range 0x0–0xF,
+ *             representing range of 1–16).
+ *          3. The Property ID is an 11-bit bit field representing 11 LSb of a Property ID.
+ *          4. This format may be used for Property Values that are not longer than 16
+ *             octets and for Property IDs less than 0x0800.
+ *
+ *  @param  _len Length of Sensor Raw value.
+ *  @param  _id  Sensor Property ID.
+ *
+ *  @return 2-octet MPID value for sensor data with Format A.
+ *
+ */
+#define ESP_BLE_MESH_SENSOR_DATA_FORMAT_A_MPID(_len, _id) \
+        ((((_id) & BIT_MASK(11)) << 5) | (((_len) & BIT_MASK(4)) << 1) | ESP_BLE_MESH_SENSOR_DATA_FORMAT_A)
+
+/** @def    ESP_BLE_MESH_SENSOR_DATA_FORMAT_B_MPID
+ *
+ *  @brief  Generate a MPID value for sensor data with Format B.
+ *
+ *  @note   1. The Format field is 0b1 and indicates Format B is used.
+ *          2. The Length field is a 1-based uint7 value (valid range 0x0–0x7F, representing
+ *             range of 1–127). The value 0x7F represents a length of zero.
+ *          3. The Property ID is a 16-bit bit field representing a Property ID.
+ *          4. This format may be used for Property Values not longer than 128 octets and for
+ *             any Property IDs. Property values longer than 128 octets are not supported by
+ *             the Sensor Status message.
+ *          5. Exclude the generated 1-octet value, the 2-octet Sensor Property ID
+ *
+ *  @param  _len Length of Sensor Raw value.
+ *  @param  _id  Sensor Property ID.
+ *
+ *  @return 3-octet MPID value for sensor data with Format B.
+ *
+ */
+#define ESP_BLE_MESH_SENSOR_DATA_FORMAT_B_MPID(_len, _id) \
+        (((_id) << 8) | (((_len) & BIT_MASK(7)) << 1) | ESP_BLE_MESH_SENSOR_DATA_FORMAT_B)
+
 /** This enum value is value of Sensor Sampling Function */
 enum esp_ble_mesh_sensor_sample_func {
     ESP_BLE_MESH_SAMPLE_FUNC_UNSPECIFIED,
@@ -523,7 +612,7 @@ typedef struct {
 typedef struct {
     bool     op_en;         /*!< Indicate if optional parameters are included */
     uint16_t property_id;   /*!< Property identifying a sensor */
-    struct net_buf_simple *raw_value;   /*!< Raw value containg X1 and X2 (optional) */
+    struct net_buf_simple *raw_value;   /*!< Raw value containing X1 and X2 (optional) */
 } esp_ble_mesh_server_recv_sensor_series_get_t;
 
 /**
@@ -620,6 +709,10 @@ typedef void (* esp_ble_mesh_sensor_server_cb_t)(esp_ble_mesh_sensor_server_cb_e
  *
  */
 esp_err_t esp_ble_mesh_register_sensor_server_callback(esp_ble_mesh_sensor_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_SENSOR_MODEL_API_H_ */
 

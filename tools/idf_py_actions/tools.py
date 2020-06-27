@@ -1,3 +1,4 @@
+import click
 import os
 import re
 import subprocess
@@ -269,6 +270,13 @@ def get_sdkconfig_value(sdkconfig_file, key):
     return value
 
 
+def is_target_supported(project_path, supported_targets):
+    """
+    Returns True if the active target is supported, or False otherwise.
+    """
+    return get_sdkconfig_value(os.path.join(project_path, "sdkconfig"), 'CONFIG_IDF_TARGET') in supported_targets
+
+
 def _guess_or_check_idf_target(args, prog_name, cache):
     """
     If CMakeCache.txt doesn't exist, and IDF_TARGET is not set in the environment, guess the value from
@@ -314,3 +322,25 @@ def _guess_or_check_idf_target(args, prog_name, cache):
                          "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
                          "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
                          .format(t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
+
+
+class TargetChoice(click.Choice):
+    """
+    A version of click.Choice with two special features:
+    - ignores hyphens
+    - not case sensitive
+    """
+    def __init__(self, choices):
+        super(TargetChoice, self).__init__(choices, case_sensitive=False)
+
+    def convert(self, value, param, ctx):
+        def normalize(str):
+            return str.lower().replace("-", "")
+
+        saved_token_normalize_func = ctx.token_normalize_func
+        ctx.token_normalize_func = normalize
+
+        try:
+            return super(TargetChoice, self).convert(value, param, ctx)
+        finally:
+            ctx.token_normalize_func = saved_token_normalize_func

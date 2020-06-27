@@ -15,6 +15,7 @@ else()
         "cache_utils.c"
         "flash_mmap.c"
         "flash_ops.c"
+        "${IDF_TARGET}/flash_ops_${IDF_TARGET}.c"
     )
     set(srcs
         "partition.c")
@@ -40,7 +41,7 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support app_update soc)
+    set(priv_requires bootloader_support app_update soc esp_ipc)
 endif()
 
 idf_component_register(SRCS "${srcs}"

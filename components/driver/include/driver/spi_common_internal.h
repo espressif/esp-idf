@@ -767,11 +767,18 @@ bool spi_bus_lock_bg_req_exist(spi_bus_lock_handle_t lock);
 /*******************************************************************************
  * Variable and APIs for the OS to initialize the locks for the main chip
  ******************************************************************************/
-/// The lock for the main flash device
-extern const spi_bus_lock_dev_handle_t g_spi_lock_main_flash_dev;
-
 /// The lock for the main bus
 extern const spi_bus_lock_handle_t g_main_spi_bus_lock;
+
+/**
+ * @brief Initialize the main SPI bus, called during chip startup.
+ *
+ * @return always ESP_OK
+ */
+esp_err_t spi_bus_lock_init_main_bus(void);
+
+/// The lock for the main flash device
+extern const spi_bus_lock_dev_handle_t g_spi_lock_main_flash_dev;
 
 /**
  * @brief Initialize the main flash device, called during chip startup.

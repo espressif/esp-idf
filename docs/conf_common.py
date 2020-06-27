@@ -23,6 +23,8 @@ import re
 import subprocess
 from sanitize_version import sanitize_version
 from idf_extensions.util import download_file_if_missing
+from get_github_rev import get_github_rev
+
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -66,6 +68,9 @@ extensions = ['breathe',
               'idf_extensions.run_doxygen',
               'idf_extensions.gen_idf_tools_links',
               'idf_extensions.format_idf_target',
+              'idf_extensions.latex_builder',
+              'idf_extensions.gen_defines',
+              'idf_extensions.exclude_docs',
 
               # from https://github.com/pfalcon/sphinx_selective_exclude
               'sphinx_selective_exclude.eager_only',
@@ -120,48 +125,54 @@ print('Version: {0}  Release: {1}'.format(version, release))
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['**/inc/**', '_static', '**/_build']
+exclude_patterns = ['**/inc/**', '_static/', '_build/**']
 
 
-# Add target-specific excludes based on tags (for the IDF_TARGET). Haven't found any better way to do this yet
-def update_exclude_patterns(tags):
-    if "esp32" not in tags:
-        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
-        # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['api-guides/blufi.rst',
-                  'api-guides/build-system-legacy.rst',
-                  'api-guides/esp-ble-mesh/**',
-                  'api-guides/RF_calibration.rst',  # temporary until support re-added in esp_wifi
-                  'api-guides/ulp-legacy.rst',
-                  'api-guides/unit-tests-legacy.rst',
-                  'api-guides/ulp_instruction_set.rst',
-                  'api-guides/jtag-debugging/configure-wrover.rst',
-                  'api-reference/system/himem.rst',
-                  'api-reference/bluetooth/**',
-                  'api-reference/peripherals/sdio_slave.rst',
-                  'api-reference/peripherals/esp_slave_protocol.rst',
-                  'api-reference/peripherals/mcpwm.rst',
-                  'api-reference/peripherals/sd_pullup_requirements.rst',
-                  'api-reference/peripherals/sdmmc_host.rst',
-                  'api-reference/protocols/esp_serial_slave_link.rst',
-                  'api-reference/system/ipc.rst',
-                  'get-started-legacy/**',
-                  'security/secure-boot-v1.rst',
-                  'security/secure-boot-v2.rst',
-                  'gnu-make-legacy.rst',
-                  'hw-reference/esp32/**',
-                  ]:
-            exclude_patterns.append(e)
+BT_DOCS = ['api-guides/blufi.rst',
+           'api-guides/esp-ble-mesh/**',
+           'api-reference/bluetooth/**']
 
-    if "esp32s2" not in tags:
-        # Exclude ESP32-S2-only document pages so they aren't found in the initial search for .rst files
-        # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['esp32s2.rst',
-                  'hw-reference/esp32s2/**',
-                  'api-guides/ulps2_instruction_set.rst',
-                  'api-reference/peripherals/temp_sensor.rst']:
-            exclude_patterns.append(e)
+SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
+              'api-reference/peripherals/sd_pullup_requirements.rst']
 
+SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
+                   'api-reference/peripherals/esp_slave_protocol.rst',
+                   'api-reference/protocols/esp_serial_slave_link.rst']
+
+MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
+
+LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
+               'gnu-make-legacy.rst',
+               'api-guides/ulp-legacy.rst',
+               'api-guides/unit-tests-legacy.rst',
+               'get-started-legacy/**']
+
+ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
+              'api-guides/jtag-debugging/configure-wrover.rst',
+              'api-reference/system/himem.rst',
+              'api-guides/RF_calibration.rst',
+              'api-reference/system/ipc.rst',
+              'security/secure-boot-v1.rst',
+              'security/secure-boot-v2.rst',
+              'api-reference/peripherals/secure_element.rst',
+              'hw-reference/esp32/**'] + LEGACY_DOCS
+
+ESP32S2_DOCS = ['esp32s2.rst',
+                'hw-reference/esp32s2/**',
+                'api-guides/ulps2_instruction_set.rst',
+                'api-guides/dfu.rst',
+                'api-reference/peripherals/hmac.rst',
+                'api-reference/peripherals/ds.rst',
+                'api-reference/peripherals/temp_sensor.rst'
+                '']
+
+# format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
+conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
+                            'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
+                            'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
+                            'esp32':ESP32_DOCS,
+                            'esp32s2':ESP32S2_DOCS}
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -204,16 +215,24 @@ project_homepage = "https://github.com/espressif/esp-idf"
 # Redirects should be listed in page_redirects.xt
 #
 with open("../page_redirects.txt") as f:
-    lines = [re.sub(" +", " ", l.strip()) for l in f.readlines() if l.strip() != "" and not l.startswith("#")]
+    lines = [re.sub(" +", " ", line.strip()) for line in f.readlines() if line.strip() != "" and not line.startswith("#")]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
             raise RuntimeError("Invalid line in page_redirects.txt: %s" % line)
-html_redirect_pages = [tuple(l.split(' ')) for l in lines]
+html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
 html_theme = 'sphinx_idf_theme'
+
+# context used by sphinx_idf_theme
+html_context = {
+    "display_github": True,  # Add 'Edit on Github' link instead of 'View page source'
+    "github_user": "espressif",
+    "github_repo": "esp-idf",
+    "github_version": get_github_rev(),
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -233,6 +252,7 @@ html_theme = 'sphinx_idf_theme'
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 html_logo = "../_static/espressif-logo.svg"
+
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -293,48 +313,40 @@ html_static_path = ['../_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ReadtheDocsTemplatedoc'
 
-
 # -- Options for LaTeX output ---------------------------------------------
 
+latex_template_dir = os.path.join(config_dir, 'latex_templates')
+
+preamble = ''
+with open(os.path.join(latex_template_dir, 'preamble.tex')) as f:
+    preamble = f.read()
+
+titlepage = ''
+with open(os.path.join(latex_template_dir, 'titlepage.tex')) as f:
+    titlepage = f.read()
+
+
 latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    # 'papersize': 'letterpaper',
-    #
-    # The font size ('10pt', '11pt' or '12pt').
-    # 'pointsize': '10pt',
-    #
+    'papersize': 'a4paper',
+
+    # Latex figure (float) alignment
+    'figure_align':'htbp',
+
+    'pointsize': '10pt',
+
     # Additional stuff for the LaTeX preamble.
-    # 'preamble': '',
+    'fncychap': '\\usepackage[Sonny]{fncychap}',
+
+    'preamble': preamble,
+
+    'maketitle': titlepage,
 }
 
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    ('index', 'ReadtheDocsTemplate.tex', u'Read the Docs Template Documentation',
-     u'Read the Docs', 'manual'),
-]
-
-# The name of an image file (relative to this directory) to place at the top of
+# The name of an image file (relative to this directory) to place at the bottom of
 # the title page.
-# latex_logo = None
-
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-# latex_use_parts = False
-
-# If true, show page references after internal links.
-# latex_show_pagerefs = False
-
-# If true, show URL addresses after external links.
-# latex_show_urls = False
-
-# Documents to append as an appendix to all manuals.
-# latex_appendices = []
-
-# If false, no module index is generated.
-# latex_domain_indices = True
-
+latex_logo = "../_static/espressif2.pdf"
+latex_engine = 'xelatex'
+latex_use_xindy = False
 
 # -- Options for manual page output ---------------------------------------
 
@@ -383,12 +395,37 @@ def setup(app):
         app.add_config_value('idf_target', None, 'env')
         app.add_config_value('idf_targets', None, 'env')
 
+    app.add_config_value('conditional_include_dict', None, 'env')
+    app.add_config_value('docs_to_build', None, 'env')
+
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
     app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
     app.config.breathe_default_project = "esp32-idf"
 
     setup_diag_font(app)
+
+    # Config values pushed by -D using the cmdline is not available when setup is called
+    app.connect('config-inited',  setup_config_values)
+    app.connect('config-inited',  setup_html_context)
+
+
+def setup_config_values(app, config):
+    # Sets up global config values needed by other extensions
+    idf_target_title_dict = {
+        'esp32': 'ESP32',
+        'esp32s2': 'ESP32-S2'
+    }
+
+    app.add_config_value('idf_target_title_dict', idf_target_title_dict, 'env')
+
+    pdf_name = "esp-idf-{}-{}-{}".format(app.config.language, app.config.version, app.config.idf_target)
+    app.add_config_value('pdf_file', pdf_name, 'env')
+
+
+def setup_html_context(app, config):
+    # Setup path for 'edit on github'-link
+    config.html_context['conf_py_path'] = "/docs/{}/".format(app.config.language)
 
 
 def setup_diag_font(app):

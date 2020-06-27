@@ -12,11 +12,11 @@
         >
     },
     $<JOIN:$<TARGET_PROPERTY:flash,FLASH_ENTRY>,,
-    >,
+    >$<$<BOOL:$<TARGET_PROPERTY:flash,FLASH_ENTRY>>:,>
     "extra_esptool_args" : {
         "after"  : "${ESPTOOLPY_AFTER}",
         "before" : "${ESPTOOLPY_BEFORE}",
-        "stub"   : "${ESPTOOLPY_WITH_STUB}",
+        "stub"   : ${ESPTOOLPY_WITH_STUB},
         "chip"   : "${ESPTOOLPY_CHIP}"
     }
 }

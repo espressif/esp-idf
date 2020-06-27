@@ -65,16 +65,16 @@ static IRAM_ATTR esp_err_t end(void *arg)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t delay_ms(void *arg, unsigned ms)
+static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
 {
-    ets_delay_us(1000 * ms);
+    ets_delay_us(us);
     return ESP_OK;
 }
 
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .start = start,
     .end = end,
-    .delay_ms = delay_ms,
+    .delay_us = delay_us,
     .region_protected = NULL,
 };
 

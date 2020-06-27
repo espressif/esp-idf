@@ -334,6 +334,9 @@ void bta_dm_deinit_cb(void)
     }
 #endif
     memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+#if BTA_DYNAMIC_MEMORY
+    xSemaphoreGive(deinit_semaphore);
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 /*******************************************************************************
@@ -815,6 +818,13 @@ void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 #if (BLE_INCLUDED == TRUE)
     BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.add_wl_cb);
 #endif  ///BLE_INCLUDED == TRUE
+}
+
+void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED == TRUE)
+    BTM_BleClearWhitelist();
+#endif
 }
 
 void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)

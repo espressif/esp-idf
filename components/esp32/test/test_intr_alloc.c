@@ -4,11 +4,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -187,22 +183,22 @@ void local_timer_test(void)
 }
 
 
-TEST_CASE("Intr_alloc test, CPU-local int source", "[esp32]")
+TEST_CASE("Intr_alloc test, CPU-local int source", "[intr_alloc]")
 {
     local_timer_test();
 }
 
-TEST_CASE("Intr_alloc test, private ints", "[esp32]")
+TEST_CASE("Intr_alloc test, private ints", "[intr_alloc]")
 {
     timer_test(0);
 }
 
-TEST_CASE("Intr_alloc test, shared ints", "[esp32]")
+TEST_CASE("Intr_alloc test, shared ints", "[intr_alloc]")
 {
     timer_test(ESP_INTR_FLAG_SHARED);
 }
 
-TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
+TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[intr_alloc]")
 {
     void dummy(void* arg)
     {
@@ -261,7 +257,7 @@ void IRAM_ATTR int_handler2(void* arg)
     }
 }
 
-TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp32]")
+TEST_CASE("allocate 2 handlers for a same source and remove the later one","[intr_alloc]")
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
@@ -328,7 +324,7 @@ void isr_alloc_free_test(void)
     printf("test passed\n");
 }
 
-TEST_CASE("alloc and free isr handle on different core", "[esp32]")
+TEST_CASE("alloc and free isr handle on different core", "[intr_alloc]")
 {
     isr_alloc_free_test();
 }

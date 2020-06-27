@@ -223,7 +223,7 @@ static ssize_t vfs_semihost_write(void* ctx, int fd, const void * data, size_t s
     if (ret == -1) {
         errno = host_err;
     }
-    return (ssize_t)ret;
+    return size - (ssize_t)ret; /* Write syscall returns the number of bytes NOT written */
 }
 
 static ssize_t vfs_semihost_read(void* ctx, int fd, void* data, size_t size)
@@ -237,7 +237,7 @@ static ssize_t vfs_semihost_read(void* ctx, int fd, void* data, size_t size)
         errno = host_err;
         return ret;
     }
-    return size - (ssize_t)ret; /* Write syscall returns the number of bytes NOT written */
+    return size - (ssize_t)ret; /* Read syscall returns the number of bytes NOT read */
 
 }
 

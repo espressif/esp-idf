@@ -11,14 +11,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-
-#include "osi/thread.h"
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
+#include "mesh_kernel.h"
 #include "mesh.h"
 #include "mesh_hci.h"
 #include "mesh_common.h"
@@ -619,7 +614,7 @@ static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
 
     BT_DBG("Received adv pkt with flags: 0x%02x", flags);
 
-    /* Flags context will not be checked curently */
+    /* Flags context will not be checked currently */
     ((void) flags);
 
     return true;
@@ -1168,7 +1163,16 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
     front = (tx->param.priority == BLE_MESH_BLE_ADV_PRIO_HIGH) ? true : false;
     bt_mesh_ble_adv_send(buf, &ble_adv_send_cb, tx, front);
     if (param->count) {
-        k_delayed_work_init(&tx->resend, ble_adv_resend);
+        if (k_delayed_work_init(&tx->resend, ble_adv_resend)) {
+            /* If failed to create a timer, the BLE adv packet will be
+             * sent only once. Just give a warning here, and since the
+             * BLE adv packet can be sent, return 0 here.
+             */
+            BT_WARN("Send BLE adv packet only once");
+            tx->param.count = 0;
+            net_buf_unref(buf);
+            return 0;
+        }
         bt_mesh_atomic_set_bit(tx->flags, TIMER_INIT);
     } else {
         /* Send the BLE advertising packet only once */

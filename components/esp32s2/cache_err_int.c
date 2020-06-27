@@ -36,23 +36,17 @@
 void esp_cache_err_int_init(void)
 {
     uint32_t core_id = xPortGetCoreID();
-    ESP_INTR_DISABLE(ETS_CACHEERR_INUM);
+    ESP_INTR_DISABLE(ETS_MEMACCESS_ERR_INUM);
 
     // We do not register a handler for the interrupt because it is interrupt
     // level 4 which is not serviceable from C. Instead, xtensa_vectors.S has
     // a call to the panic handler for
     // this interrupt.
-    intr_matrix_set(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_CACHEERR_INUM);
+    intr_matrix_set(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_MEMACCESS_ERR_INUM);
 
     // Enable invalid cache access interrupt when the cache is disabled.
-    // When the interrupt happens, we can not determine the CPU where the
-    // invalid cache access has occurred. We enable the interrupt to catch
-    // invalid access on both CPUs, but the interrupt is connected to the
-    // CPU which happens to call this function.
-    // For this reason, panic handler backtrace will not be correct if the
-    // interrupt is connected to PRO CPU and invalid access happens on the APP
-    // CPU.
-
+    // The status bits are cleared first, in case we are restarting after
+    // a cache error has triggered.
     DPORT_SET_PERI_REG_MASK(EXTMEM_CACHE_DBG_INT_CLR_REG,
                             EXTMEM_MMU_ENTRY_FAULT_INT_CLR |
                             EXTMEM_DCACHE_REJECT_INT_CLR |
@@ -73,12 +67,14 @@ void esp_cache_err_int_init(void)
                             EXTMEM_IC_SYNC_SIZE_FAULT_INT_ENA |
                             EXTMEM_CACHE_DBG_EN);
 
-    ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
+    ESP_INTR_ENABLE(ETS_MEMACCESS_ERR_INUM);
 }
 
 int IRAM_ATTR esp_cache_err_get_cpuid(void)
 {
-    // TODO: The description for this seem to indicate that when cache is not in error
-    // state, return -1.
-    return PRO_CPU_NUM;
+    if (REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG) != 0 ||
+        REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG) != 0) {
+            return PRO_CPU_NUM;
+    }
+    return -1;
 }

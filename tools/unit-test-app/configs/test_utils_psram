@@ -1,3 +1,5 @@
+# This config is for esp32 only
+CONFIG_IDF_TARGET="esp32"
 # The test is isolated as it requires particular memory layout
 TEST_COMPONENTS=test_utils
 CONFIG_ESP_IPC_TASK_STACK_SIZE=2048

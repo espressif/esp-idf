@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table fc489601ff9b21658f4eb9c617ee072d
+// md5_digest_table d9cd89987a033ef74503daeb4dd8dd07
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -73,6 +73,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_HARD_DIS_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXT_PHY_ENABLE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK0_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_XPD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_TIEH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_FORCE[];
@@ -93,7 +94,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_LEGACY_SPI_BOOT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CHANNEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_DIS_TINY_BASIC[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[];
@@ -113,9 +113,12 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D5[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[];
-extern const esp_efuse_desc_t* ESP_EFUSE_CLK8M_FREQ[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY1[];

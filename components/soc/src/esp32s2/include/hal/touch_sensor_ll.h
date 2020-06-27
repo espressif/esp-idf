@@ -669,7 +669,7 @@ static inline void touch_ll_filter_reset_baseline(touch_pad_t touch_num)
  * Set filter mode. The input to the filter is raw data and the output is the baseline value.
  * Larger filter coefficients increase the stability of the baseline.
  *
- * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
  */
 static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
 {
@@ -679,7 +679,7 @@ static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
 /**
  * Get filter mode. The input to the filter is raw data and the output is the baseline value.
  *
- * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
  */
 static inline void touch_ll_filter_get_filter_mode(touch_filter_mode_t *mode)
 {
@@ -690,7 +690,7 @@ static inline void touch_ll_filter_get_filter_mode(touch_filter_mode_t *mode)
  * Set filter mode. The input to the filter is raw data and the output is the smooth data.
  * The smooth data is used to determine the touch status.
  *
- * @param mode Filter mode type. Refer to `touch_smooth_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_smooth_mode_t``.
  */
 static inline void touch_ll_filter_set_smooth_mode(touch_smooth_mode_t mode)
 {
@@ -700,7 +700,7 @@ static inline void touch_ll_filter_set_smooth_mode(touch_smooth_mode_t mode)
 /**
  * Get filter mode. The smooth data is used to determine the touch status.
  *
- * @param mode Filter mode type. Refer to `touch_smooth_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_smooth_mode_t``.
  */
 static inline void touch_ll_filter_get_smooth_mode(touch_smooth_mode_t *mode)
 {

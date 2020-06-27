@@ -11,6 +11,10 @@
 
 #include "net.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* bt_mesh_model.flags */
 enum {
     BLE_MESH_MOD_BIND_PENDING = BIT(0),
@@ -73,5 +77,9 @@ const u8_t *bt_mesh_rx_devkey_get(size_t index, u16_t src);
 size_t bt_mesh_rx_appkey_size(void);
 
 struct bt_mesh_app_key *bt_mesh_rx_appkey_get(size_t index);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ACCESS_H_ */

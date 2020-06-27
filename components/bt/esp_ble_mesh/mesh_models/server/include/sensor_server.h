@@ -17,6 +17,10 @@
 
 #include "server_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Sensor Property ID related */
 #define INVALID_SENSOR_PROPERTY_ID          0x0000
 
@@ -248,5 +252,9 @@ int bt_mesh_sensor_setup_srv_init(struct bt_mesh_model *model, bool primary);
 
 int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SENSOR_SERVER_H_ */

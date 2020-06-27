@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/param.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -9,12 +10,16 @@
 #include "driver/timer.h"
 #include "esp_intr_alloc.h"
 #include "test_utils.h"
+#include "ccomp_timer.h"
+#include "esp_log.h"
 
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
     SemaphoreHandle_t done;
 };
+
+static const char TAG[] = "test_spi_flash";
 
 /* Base offset in flash for tests. */
 static size_t start;
@@ -185,6 +190,135 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
     vSemaphoreDelete(read_arg.done);
     free(read_arg.buf);
 }
+
+typedef struct {
+    uint32_t us_start;
+    size_t len;
+    const char* name;
+} time_meas_ctx_t;
+
+static void time_measure_start(time_meas_ctx_t* ctx)
+{
+    ctx->us_start = esp_timer_get_time();
+    ccomp_timer_start();
+}
+
+static uint32_t time_measure_end(time_meas_ctx_t* ctx)
+{
+    uint32_t c_time_us = ccomp_timer_stop();
+    uint32_t time_us = esp_timer_get_time() - ctx->us_start;
+
+    ESP_LOGI(TAG, "%s: compensated: %.2lf kB/s, typical: %.2lf kB/s", ctx->name, ctx->len / (c_time_us/1000.), ctx->len / (time_us/1000.));
+    return ctx->len * 1000 / (c_time_us / 1000);
+}
+
+#define TEST_TIMES      20
+#define TEST_SECTORS    4
+
+static uint32_t measure_erase(const esp_partition_t* part)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE * TEST_SECTORS;
+    time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
+
+    time_measure_start(&time_ctx);
+    esp_err_t err = spi_flash_erase_range(part->address, total_len);
+    TEST_ESP_OK(err);
+    return time_measure_end(&time_ctx);
+}
+
+// should called after measure_erase
+static uint32_t measure_write(const char* name, const esp_partition_t* part, const uint8_t* data_to_write, int seg_len)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
+
+    time_measure_start(&time_ctx);
+    for (int i = 0; i < TEST_TIMES; i ++) {
+        // Erase one time, but write 100 times the same data
+        size_t len = total_len;
+        int offset = 0;
+
+        while (len) {
+            int len_write = MIN(seg_len, len);
+            esp_err_t err = spi_flash_write(part->address + offset, data_to_write + offset, len_write);
+            TEST_ESP_OK(err);
+
+            offset += len_write;
+            len -= len_write;
+        }
+    }
+    return time_measure_end(&time_ctx);
+}
+
+static uint32_t measure_read(const char* name, const esp_partition_t* part, uint8_t* data_read, int seg_len)
+{
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
+
+    time_measure_start(&time_ctx);
+    for (int i = 0; i < TEST_TIMES; i ++) {
+        size_t len = total_len;
+        int offset = 0;
+
+        while (len) {
+            int len_read = MIN(seg_len, len);
+            esp_err_t err = spi_flash_read(part->address + offset, data_read + offset, len_read);
+            TEST_ESP_OK(err);
+
+            offset += len_read;
+            len -= len_read;
+        }
+    }
+    return time_measure_end(&time_ctx);
+}
+
+#define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", part, data_to_write, n))
+#define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", part, data_read, n))
+
+TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
+{
+    const esp_partition_t *part = get_test_data_partition();
+
+    const int total_len = SPI_FLASH_SEC_SIZE;
+    uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
+    srand(777);
+    for (int i = 0; i < total_len; i++) {
+        data_to_write[i] = rand();
+    }
+
+    uint32_t erase_1 = measure_erase(part);
+    uint32_t speed_WR_4B = MEAS_WRITE(4);
+    uint32_t speed_RD_4B = MEAS_READ(4);
+    uint32_t erase_2 = measure_erase(part);
+    uint32_t speed_WR_2KB = MEAS_WRITE(2048);
+    uint32_t speed_RD_2KB = MEAS_READ(2048);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
+
+// Data checks are disabled when PSRAM is used or in Freertos compliance check test
+#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#  define CHECK_DATA(suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
+#  define CHECK_ERASE(var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
+#else
+#  define CHECK_DATA(suffix) ((void)speed_##suffix)
+#  define CHECK_ERASE(var) ((void)var)
+#endif
+
+    CHECK_DATA(WR_4B);
+    CHECK_DATA(RD_4B);
+    CHECK_DATA(WR_2KB);
+    CHECK_DATA(RD_2KB);
+
+    // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
+    CHECK_ERASE(erase_1);
+    CHECK_ERASE(erase_2);
+
+    free(data_to_write);
+    free(data_read);
+}
+
 
 
 #if portNUM_PROCESSORS > 1

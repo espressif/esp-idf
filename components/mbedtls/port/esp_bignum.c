@@ -56,8 +56,6 @@ static const __attribute__((unused)) char *TAG = "bignum";
 #define biL    (ciL << 3)                         /* bits  in limb  */
 
 
-static _lock_t mpi_lock;
-
 /* Convert bit count to word count
  */
 static inline size_t bits_to_words(size_t bits)
@@ -80,25 +78,6 @@ static size_t mpi_words(const mbedtls_mpi *mpi)
 }
 
 #endif //MBEDTLS_MPI_EXP_MOD_ALT
-
-void esp_mpi_acquire_hardware( void )
-{
-    /* newlib locks lazy initialize on ESP-IDF */
-    _lock_acquire(&mpi_lock);
-
-    /* Enable RSA hardware */
-    esp_mpi_enable_hardware_hw_op();
-}
-
-void esp_mpi_release_hardware( void )
-{
-    esp_mpi_disable_hardware_hw_op();
-
-    _lock_release(&mpi_lock);
-}
-
-
-
 
 /**
  *
@@ -137,7 +116,7 @@ static mbedtls_mpi_uint modular_inverse(const mbedtls_mpi *M)
  * This calculation is computationally expensive (mbedtls_mpi_mod_mpi)
  * so caller should cache the result where possible.
  *
- * DO NOT call this function while holding esp_mpi_acquire_hardware().
+ * DO NOT call this function while holding esp_mpi_enable_hardware_hw_op().
  *
  */
 static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words)
@@ -185,7 +164,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     MBEDTLS_MPI_CHK(calculate_rinv(&Rinv, M, hw_words));
     Mprime = modular_inverse(M);
 
-    esp_mpi_acquire_hardware();
+    esp_mpi_enable_hardware_hw_op();
     /* Load and start a (X * Y) mod M calculation */
     esp_mpi_mul_mpi_mod_hw_op(X, Y, M, &Rinv, Mprime, hw_words);
 
@@ -196,7 +175,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
 
 cleanup:
     mbedtls_mpi_free(&Rinv);
-    esp_mpi_release_hardware();
+    esp_mpi_disable_hardware_hw_op();
 
     return ret;
 }
@@ -247,7 +226,7 @@ static int mpi_montgomery_exp_calc( mbedtls_mpi *Z, const mbedtls_mpi *X, const 
         // 0 determine t (highest bit set in y)
         int t = mbedtls_mpi_msb(Y);
 
-        esp_mpi_acquire_hardware();
+        esp_mpi_enable_hardware_hw_op();
 
         // 1.1 x_ = mont(x, R^2 mod m)
         //        = mont(x, rb)
@@ -275,7 +254,7 @@ static int mpi_montgomery_exp_calc( mbedtls_mpi *Z, const mbedtls_mpi *X, const 
     }
 
 cleanup:
-    esp_mpi_release_hardware();
+    esp_mpi_disable_hardware_hw_op();
 
 cleanup2:
     mbedtls_mpi_free(&X_);
@@ -345,16 +324,16 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     ret = mpi_montgomery_exp_calc(Z, X, Y, M, Rinv, num_words, Mprime) ;
     MBEDTLS_MPI_CHK(ret);
 #else
-    esp_mpi_acquire_hardware();
+    esp_mpi_enable_hardware_hw_op();
 
     esp_mpi_exp_mpi_mod_hw_op(X, Y, M, Rinv, Mprime, num_words);
     ret = mbedtls_mpi_grow(Z, m_words);
     if (ret != 0) {
-        esp_mpi_release_hardware();
+        esp_mpi_disable_hardware_hw_op();
         goto cleanup;
     }
     esp_mpi_read_result_hw_op(Z, m_words);
-    esp_mpi_release_hardware();
+    esp_mpi_disable_hardware_hw_op();
 #endif
 
     // Compensate for negative X
@@ -442,12 +421,12 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     }
 
     /* Otherwise, we can use the (faster) multiply hardware unit */
-    esp_mpi_acquire_hardware();
+    esp_mpi_enable_hardware_hw_op();
 
     esp_mpi_mul_mpi_hw_op(X, Y, hw_words);
     esp_mpi_read_result_hw_op(Z, z_words);
 
-    esp_mpi_release_hardware();
+    esp_mpi_disable_hardware_hw_op();
 
     Z->s = X->s * Y->s;
 
@@ -535,7 +514,7 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
     int ret;
     size_t hw_words = esp_mpi_hardware_words(z_words);
 
-    esp_mpi_acquire_hardware();
+    esp_mpi_enable_hardware_hw_op();
 
     esp_mpi_mult_mpi_failover_mod_mult_hw_op(X, Y, hw_words );
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
@@ -543,7 +522,7 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
 
     Z->s = X->s * Y->s;
 cleanup:
-    esp_mpi_release_hardware();
+    esp_mpi_disable_hardware_hw_op();
     return ret;
 }
 

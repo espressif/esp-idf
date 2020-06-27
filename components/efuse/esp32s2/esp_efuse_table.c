@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table fc489601ff9b21658f4eb9c617ee072d
+// md5_digest_table d9cd89987a033ef74503daeb4dd8dd07
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -88,7 +88,7 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_3[] = {
-    {EFUSE_BLK0, 18, 1}, 	 // Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_TINY_BASIC DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION,
+    {EFUSE_BLK0, 18, 1}, 	 // Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLK1[] = {
@@ -219,6 +219,10 @@ static const esp_efuse_desc_t USB_EXT_PHY_ENABLE[] = {
     {EFUSE_BLK0, 57, 1}, 	 // Enable external PHY,
 };
 
+static const esp_efuse_desc_t BLOCK0_VERSION[] = {
+    {EFUSE_BLK0, 59, 2}, 	 // BLOCK0 efuse version,
+};
+
 static const esp_efuse_desc_t VDD_SPI_XPD[] = {
     {EFUSE_BLK0, 68, 1}, 	 // VDD_SPI regulator power up,
 };
@@ -297,10 +301,6 @@ static const esp_efuse_desc_t DIS_LEGACY_SPI_BOOT[] = {
 
 static const esp_efuse_desc_t UART_PRINT_CHANNEL[] = {
     {EFUSE_BLK0, 130, 1}, 	 // 0: UART0. 1: UART1,
-};
-
-static const esp_efuse_desc_t DIS_TINY_BASIC[] = {
-    {EFUSE_BLK0, 131, 1}, 	 // Disable tiny basic console in ROM,
 };
 
 static const esp_efuse_desc_t DIS_USB_DOWNLOAD_MODE[] = {
@@ -384,16 +384,28 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t CLK8M_FREQ[] = {
-    {EFUSE_BLK1, 114, 12}, 	 // The frequency of 8M CLK (0.01MHz),
+static const esp_efuse_desc_t WAFER_VERSION[] = {
+    {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 117, 4}, 	 // Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32,
+};
+
+static const esp_efuse_desc_t BLOCK1_VERSION[] = {
+    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
 };
 
 static const esp_efuse_desc_t SYS_DATA_PART0[] = {
     {EFUSE_BLK1, 126, 66}, 	 // System configuration,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART1[] = {
-    {EFUSE_BLK2, 0, 256}, 	 // System configuration,
+static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
+};
+
+static const esp_efuse_desc_t BLOCK2_VERSION[] = {
+    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -513,7 +525,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_3[] = {
-    &WR_DIS_GROUP_3[0],    		// Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_TINY_BASIC DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
+    &WR_DIS_GROUP_3[0],    		// Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
     NULL
 };
 
@@ -677,6 +689,11 @@ const esp_efuse_desc_t* ESP_EFUSE_USB_EXT_PHY_ENABLE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK0_VERSION[] = {
+    &BLOCK0_VERSION[0],    		// BLOCK0 efuse version
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_XPD[] = {
     &VDD_SPI_XPD[0],    		// VDD_SPI regulator power up
     NULL
@@ -774,11 +791,6 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_LEGACY_SPI_BOOT[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CHANNEL[] = {
     &UART_PRINT_CHANNEL[0],    		// 0: UART0. 1: UART1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_TINY_BASIC[] = {
-    &DIS_TINY_BASIC[0],    		// Disable tiny basic console in ROM
     NULL
 };
 
@@ -882,8 +894,18 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_CLK8M_FREQ[] = {
-    &CLK8M_FREQ[0],    		// The frequency of 8M CLK (0.01MHz)
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
+    &WAFER_VERSION[0],    		// WAFER version 0:A
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
+    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version 0:No calibration 1:With calibration
     NULL
 };
 
@@ -892,8 +914,13 @@ const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART1[] = {
-    &SYS_DATA_PART1[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
+    &OPTIONAL_UNIQUE_ID[0],    		// Optional unique 128-bit ID
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
+    &BLOCK2_VERSION[0],    		// Version of BLOCK2
     NULL
 };
 

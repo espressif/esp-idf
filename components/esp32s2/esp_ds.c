@@ -55,7 +55,9 @@ _Static_assert(sizeof(esp_digital_signature_length_t) == sizeof(unsigned),
         "The size of esp_digital_signature_length_t and unsigned has to be the same");
 
 static void ds_acquire_enable(void) {
-    esp_crypto_lock_acquire();
+    /* Lock AES, SHA and RSA peripheral */
+    esp_crypto_dma_lock_acquire();
+    esp_crypto_mpi_lock_acquire();
     ets_hmac_enable();
     ets_ds_enable();
 }
@@ -63,7 +65,8 @@ static void ds_acquire_enable(void) {
 static void ds_disable_release(void) {
     ets_ds_disable();
     ets_hmac_disable();
-    esp_crypto_lock_release();
+    esp_crypto_mpi_lock_release();
+    esp_crypto_dma_lock_release();
 }
 
 esp_err_t esp_ds_sign(const void *message,
@@ -177,7 +180,7 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
     esp_err_t result = ESP_OK;
 
-    esp_crypto_lock_acquire();
+    esp_crypto_dma_lock_acquire();
     ets_aes_enable();
     ets_sha_enable();
 
@@ -190,7 +193,7 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
     ets_sha_disable();
     ets_aes_disable();
-    esp_crypto_lock_release();
+    esp_crypto_dma_lock_release();
 
     return result;
 }

@@ -26,6 +26,7 @@
 #include "esp32s2/brownout.h"
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/spiram.h"
+#include "esp32s2/memprot.h"
 
 #include "soc/cpu.h"
 #include "soc/rtc.h"
@@ -49,7 +50,6 @@
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_spi_flash.h"
-#include "esp_ipc.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
@@ -200,6 +200,15 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    extern void instruction_flash_page_info_init(void);
+    instruction_flash_page_info_init();
+#endif
+#if CONFIG_SPIRAM_RODATA
+    extern void rodata_flash_page_info_init(void);
+    rodata_flash_page_info_init();
+#endif
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
@@ -283,9 +292,16 @@ void start_cpu0_default(void)
 #if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
+
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    err = esp_efuse_disable_rom_download_mode();
+    assert(err == ESP_OK && "Failed to disable ROM download mode");
 #endif
+#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
+    err = esp_efuse_enable_rom_secure_download_mode();
+    assert(err == ESP_OK && "Failed to enable Secure Download mode");
+#endif
+
     rtc_gpio_force_hold_dis_all();
 
 #ifdef CONFIG_VFS_SUPPORT_IO
@@ -316,6 +332,14 @@ void start_cpu0_default(void)
 #endif
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
+
+#if CONFIG_ESP32S2_MEMPROT_FEATURE
+#if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
+    esp_memprot_set_prot(true, true);
+#else
+    esp_memprot_set_prot(true, false);
+#endif
+#endif
 
     do_global_ctors();
 #if CONFIG_ESP_INT_WDT
@@ -353,6 +377,7 @@ void start_cpu0_default(void)
                         ESP_TASK_MAIN_STACK, NULL,
                         ESP_TASK_MAIN_PRIO, NULL, 0);
     assert(res == pdTRUE);
+
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
     abort(); /* Only get to here if not enough free heap to start scheduler */

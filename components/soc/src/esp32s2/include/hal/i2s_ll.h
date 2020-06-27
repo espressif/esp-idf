@@ -530,50 +530,6 @@ static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
 }
 
 /**
- * @brief Set I2S tx msb shift
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx msb shift
- */
-static inline void i2s_ll_set_tx_msb_shift(i2s_dev_t *hw, uint32_t val)
-{
-    hw->conf.tx_msb_shift = val;
-}
-
-/**
- * @brief Set I2S rx msb shift
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx msb shift
- */
-static inline void i2s_ll_set_rx_msb_shift(i2s_dev_t *hw, uint32_t val)
-{
-    hw->conf.rx_msb_shift = val;
-}
-
-/**
- * @brief Set I2S tx short sync
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx short sync
- */
-static inline void i2s_ll_set_tx_short_sync(i2s_dev_t *hw, uint32_t val)
-{
-    hw->conf.tx_short_sync = val;
-}
-
-/**
- * @brief Set I2S rx short sync
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx short sync
- */
-static inline void i2s_ll_set_rx_short_sync(i2s_dev_t *hw, uint32_t val)
-{
-    hw->conf.rx_short_sync = val;
-}
-
-/**
  * @brief Set I2S tx fifo mod force en
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -714,6 +670,94 @@ static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
 static inline void i2s_ll_set_sig_loopback(i2s_dev_t *hw, uint32_t val)
 {
     hw->conf.sig_loopback = val;
+}
+
+/**
+ * @brief Set I2S TX to philip standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_tx_format_philip(i2s_dev_t *hw)
+{
+    hw->conf.tx_short_sync = 0;
+    hw->conf.tx_msb_shift = 1;
+}
+
+/**
+ * @brief Set I2S RX to philip standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_rx_format_philip(i2s_dev_t *hw)
+{
+    hw->conf.rx_short_sync = 0;
+    hw->conf.rx_msb_shift = 1;
+}
+
+/**
+ * @brief Set I2S TX to MSB Alignment Standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_tx_format_msb_align(i2s_dev_t *hw)
+{
+    hw->conf.tx_short_sync = 0;
+    hw->conf.tx_msb_shift = 0;
+}
+
+/**
+ * @brief Set I2S RX to MSB Alignment Standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_rx_format_msb_align(i2s_dev_t *hw)
+{
+    hw->conf.rx_short_sync = 0;
+    hw->conf.rx_msb_shift = 0;
+}
+
+/**
+ * @brief Set I2S TX to PCM short standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_tx_pcm_short(i2s_dev_t *hw)
+{
+    hw->conf.tx_short_sync = 1;
+    hw->conf.tx_msb_shift = 0;
+}
+
+/**
+ * @brief Set I2S RX to PCM short standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_rx_pcm_short(i2s_dev_t *hw)
+{
+    hw->conf.rx_short_sync = 1;
+    hw->conf.rx_msb_shift = 0;
+}
+
+/**
+ * @brief Set I2S TX to PCM long standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_tx_pcm_long(i2s_dev_t *hw)
+{
+    hw->conf.tx_short_sync = 0;
+    hw->conf.tx_msb_shift = 0;
+}
+
+/**
+ * @brief Set I2S RX to PCM long standard
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_set_rx_pcm_long(i2s_dev_t *hw)
+{
+    hw->conf.rx_short_sync = 0;
+    hw->conf.rx_msb_shift = 0;
 }
 
 #ifdef __cplusplus

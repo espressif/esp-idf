@@ -97,14 +97,22 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
  */
 void esp_tls_conn_delete(esp_tls_t *tls)
 {
+    esp_tls_conn_destroy(tls);
+}
+
+int esp_tls_conn_destroy(esp_tls_t *tls)
+{
     if (tls != NULL) {
+        int ret = 0;
         _esp_tls_conn_delete(tls);
         if (tls->sockfd >= 0) {
-            close(tls->sockfd);
+            ret = close(tls->sockfd);
         }
-    free(tls->error_handle);
-    free(tls);
+        free(tls->error_handle);
+        free(tls);
+        return ret;
     }
+    return -1; // invalid argument
 }
 
 esp_tls_t *esp_tls_init(void)

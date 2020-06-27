@@ -36,6 +36,9 @@ Linenoise library does not need explicit initialization. However, some configura
 :cpp:func:`linenoiseSetMultiLine`
   Switch between single line and multi line editing modes. In single line mode, if the length of the command exceeds the width of the terminal, the command text is scrolled within the line to show the end of the text. In this case the beginning of the text is hidden. Single line needs less data to be sent to refresh screen on each key press, so exhibits less glitching compared to the multi line mode. On the flip side, editing commands and copying command text from terminal in single line mode is harder. Default is single line mode.
 
+:cpp:func:`linenoiseAllowEmpty`
+  Set whether linenoise library will return a zero-length string (if ``true``) or ``NULL`` (if ``false``) for empty lines. By default, zero-length strings are returned.
+
 
 Main loop
 ^^^^^^^^^

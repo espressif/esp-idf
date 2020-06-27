@@ -14,13 +14,13 @@
 #endif
 
 /**
- * @brief Enable the MPI hardware
+ * @brief Enable the MPI hardware and acquire the lock
  *
  */
 void esp_mpi_enable_hardware_hw_op( void );
 
 /**
- * @brief Disable the MPI hardware
+ * @brief Disable the MPI hardware and release the lock
  *
  */
 void esp_mpi_disable_hardware_hw_op( void );

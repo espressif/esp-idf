@@ -149,6 +149,14 @@
 #undef MBEDTLS_MPI_MUL_MPI_ALT
 #endif
 
+#ifdef CONFIG_MBEDTLS_ATCA_HW_ECDSA_SIGN
+#define MBEDTLS_ECDSA_SIGN_ALT
+#endif
+
+#ifdef CONFIG_MBEDTLS_ATCA_HW_ECDSA_VERIFY
+#define MBEDTLS_ECDSA_VERIFY_ALT
+#endif
+
 /**
  * \def MBEDTLS_ENTROPY_HARDWARE_ALT
  *
@@ -400,7 +408,11 @@
  *
  * Comment this macro to disable deterministic ECDSA.
  */
+#ifdef CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
 #define MBEDTLS_ECDSA_DETERMINISTIC
+#else
+#undef MBEDTLS_ECDSA_DETERMINISTIC
+#endif
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -682,6 +694,29 @@
 #define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 #else
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+#endif
+
+/**
+ * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+ *
+ * Enable the ECJPAKE based ciphersuite modes in SSL / TLS.
+ *
+ * \warning This is currently experimental. EC J-PAKE support is based on the
+ * Thread v1.0.0 specification; incompatible changes to the specification
+ * might still happen. For this reason, this is disabled by default.
+ *
+ * Requires: MBEDTLS_ECJPAKE_C
+ *           MBEDTLS_SHA256_C
+ *           MBEDTLS_ECP_DP_SECP256R1_ENABLED
+ *
+ * This enables the following ciphersuites (if other requisites are
+ * enabled as well):
+ *      MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
+ */
+#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECJPAKE
+#define MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+#else
+#undef MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 #endif
 
 /**
@@ -1429,24 +1464,28 @@
 /**
  * \def MBEDTLS_CHACHA20_C
  *
- * Disable the ChaCha20 stream cipher.
+ * Enable the ChaCha20 stream cipher.
  *
  * Module:  library/chacha20.c
  */
-#ifdef MBEDTLS_CHACHA20_C
+#ifdef CONFIG_MBEDTLS_CHACHA20_C
+#define MBEDTLS_CHACHA20_C
+#else
 #undef MBEDTLS_CHACHA20_C
 #endif
 
 /**
  * \def MBEDTLS_CHACHAPOLY_C
  *
- * Disable the ChaCha20-Poly1305 AEAD algorithm.
+ * Enable the ChaCha20-Poly1305 AEAD algorithm.
  *
  * Module:  library/chachapoly.c
  *
  * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
  */
-#ifdef MBEDTLS_CHACHAPOLY_C
+#ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
+#define MBEDTLS_CHACHAPOLY_C
+#else
 #undef MBEDTLS_CHACHAPOLY_C
 #endif
 
@@ -1594,7 +1633,11 @@
  *
  * Requires: MBEDTLS_ECP_C, MBEDTLS_MD_C
  */
-//#define MBEDTLS_ECJPAKE_C
+#ifdef CONFIG_MBEDTLS_ECJPAKE_C
+#define MBEDTLS_ECJPAKE_C
+#else
+#undef MBEDTLS_ECJPAKE_C
+#endif
 
 /**
  * \def MBEDTLS_ECP_C
@@ -1661,17 +1704,19 @@
 /**
  * \def MBEDTLS_HKDF_C
  *
- * Disable the HKDF algorithm (RFC 5869).
+ * Enable the HKDF algorithm (RFC 5869).
  *
  * Module:  library/hkdf.c
  * Caller:
  *
  * Requires: MBEDTLS_MD_C
  *
- * This module adds support for the Hashed Message Authentication Code
+ * This module enables support for the Hashed Message Authentication Code
  * (HMAC)-based key derivation function (HKDF).
  */
-#ifdef MBEDTLS_HKDF_C
+#ifdef CONFIG_MBEDTLS_HKDF_C
+#define MBEDTLS_HKDF_C
+#else
 #undef MBEDTLS_HKDF_C
 #endif
 
@@ -1905,12 +1950,14 @@
 /**
  * \def MBEDTLS_POLY1305_C
  *
- * Disable the Poly1305 MAC algorithm.
+ * Enable the Poly1305 MAC algorithm.
  *
  * Module:  library/poly1305.c
  * Caller:  library/chachapoly.c
  */
-#ifdef MBEDTLS_POLY1305_C
+#ifdef CONFIG_MBEDTLS_POLY1305_C
+#define MBEDTLS_POLY1305_C
+#else
 #undef MBEDTLS_POLY1305_C
 #endif
 
@@ -1993,7 +2040,11 @@
  *
  * This module adds support for SHA-384 and SHA-512.
  */
+#ifdef CONFIG_MBEDTLS_SHA512_C
 #define MBEDTLS_SHA512_C
+#else
+#undef MBEDTLS_SHA512_C
+#endif
 
 /**
  * \def MBEDTLS_SSL_CACHE_C
@@ -2334,6 +2385,62 @@
  * for compatibility with existing peers.
  */
 #define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_KEY_EXCHANGE
+
+/**
+ * \def MBEDTLS_THREADING_C
+ *
+ * Enable the threading abstraction layer.
+ * By default mbed TLS assumes it is used in a non-threaded environment or that
+ * contexts are not shared between threads. If you do intend to use contexts
+ * between threads, you will need to enable this layer to prevent race
+ * conditions. See also our Knowledge Base article about threading:
+ * https://tls.mbed.org/kb/development/thread-safety-and-multi-threading
+ *
+ * Module:  library/threading.c
+ *
+ * This allows different threading implementations (self-implemented or
+ * provided).
+ *
+ * You will have to enable either MBEDTLS_THREADING_ALT or
+ * MBEDTLS_THREADING_PTHREAD.
+ *
+ * Enable this layer to allow use of mutexes within mbed TLS
+ */
+#ifdef CONFIG_MBEDTLS_THREADING_C
+#define MBEDTLS_THREADING_C
+#else
+#undef MBEDTLS_THREADING_C
+#endif
+
+/**
+ * \def MBEDTLS_THREADING_ALT
+ *
+ * Provide your own alternate threading implementation.
+ *
+ * Requires: MBEDTLS_THREADING_C
+ *
+ * Uncomment this to allow your own alternate threading implementation.
+ */
+#ifdef CONFIG_MBEDTLS_THREADING_ALT
+#define MBEDTLS_THREADING_ALT
+#else
+#undef MBEDTLS_THREADING_ALT
+#endif
+
+/**
+ * \def MBEDTLS_THREADING_PTHREAD
+ *
+ * Enable the pthread wrapper layer for the threading layer.
+ *
+ * Requires: MBEDTLS_THREADING_C
+ *
+ * Uncomment this to enable pthread mutexes.
+ */
+#ifdef CONFIG_MBEDTLS_THREADING_PTHREAD
+#define MBEDTLS_THREADING_PTHREAD
+#else
+#undef MBEDTLS_THREADING_PTHREAD
+#endif
 
 /* \} name SECTION: Module configuration options */
 

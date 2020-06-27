@@ -11,26 +11,111 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
+import json
+import logging
 import os
 import re
 
 from tiny_test_fw import TinyFW, Utility
-from .IDFApp import IDFApp, Example, LoadableElfExample, UT, TestApp  # noqa: export all Apps for users
+from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp  # noqa: export all Apps for users
 from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
+from .DebugUtils import OCDProcess, GDBProcess, TelnetProcess, CustomProcess  # noqa: export DebugUtils for users
+
+# pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
+TARGET_DUT_CLS_DICT = {
+    'ESP32': ESP32DUT,
+    'ESP32S2': ESP32S2DUT,
+}
 
 
-def format_case_id(chip, case_name):
-    return "{}.{}".format(chip, case_name)
+def format_case_id(target, case_name):
+    return "{}.{}".format(target, case_name)
 
 
-def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", execution_time=1,
+try:
+    string_type = basestring
+except NameError:
+    string_type = str
+
+
+def upper_list_or_str(text):
+    """
+    Return the uppercase of list of string or string. Return itself for other
+    data types
+    :param text: list or string, other instance will be returned immediately
+    :return: uppercase of list of string
+    """
+    if isinstance(text, string_type):
+        return [text.upper()]
+    elif isinstance(text, list):
+        return [item.upper() for item in text]
+    else:
+        return text
+
+
+def local_test_check(decorator_target):
+    # Try to get the sdkconfig.json to read the IDF_TARGET value.
+    # If not set, will set to ESP32.
+    # For CI jobs, this is a fake procedure, the true target and dut will be
+    # overwritten by the job config YAML file.
+    idf_target = 'ESP32'  # default if sdkconfig not found or not readable
+    if os.getenv('CI_JOB_ID'):  # Only auto-detect target when running locally
+        return idf_target
+
+    expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
+    if os.path.exists(expected_json_path):
+        sdkconfig = json.load(open(expected_json_path))
+        try:
+            idf_target = sdkconfig['IDF_TARGET'].upper()
+        except KeyError:
+            logging.warning('IDF_TARGET not in {}. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
+        else:
+            logging.info('IDF_TARGET: {}'.format(idf_target))
+    else:
+        logging.warning('{} not found. IDF_TARGET set to esp32'.format(os.path.abspath(expected_json_path)))
+
+    if isinstance(decorator_target, list):
+        if idf_target not in decorator_target:
+            raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+    else:
+        if idf_target != decorator_target:
+            raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
+    return idf_target
+
+
+def get_dut_class(target, erase_nvs=None):
+    if target not in TARGET_DUT_CLS_DICT:
+        raise Exception('target can only be {%s} (case insensitive)' % ', '.join(TARGET_DUT_CLS_DICT.keys()))
+
+    dut = TARGET_DUT_CLS_DICT[target.upper()]
+    if erase_nvs:
+        dut.ERASE_NVS = 'erase_nvs'
+    return dut
+
+
+def ci_target_check(func):
+    @functools.wraps(func)
+    def wrapper(**kwargs):
+        target = upper_list_or_str(kwargs.get('target', []))
+        ci_target = upper_list_or_str(kwargs.get('ci_target', []))
+        if not set(ci_target).issubset(set(target)):
+            raise ValueError('ci_target must be a subset of target')
+
+        return func(**kwargs)
+
+    return wrapper
+
+
+@ci_target_check
+def idf_example_test(app=Example, target="ESP32", ci_target=None, module="examples", execution_time=1,
                      level="example", erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
     :param app: test application class
-    :param dut: dut class
-    :param chip: chip supported, string or tuple
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -39,31 +124,31 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", e
     :param kwargs: other keyword args
     :return: test method
     """
-    try:
-        # try to config the default behavior of erase nvs
-        dut.ERASE_NVS = erase_nvs
-    except AttributeError:
-        pass
-
-    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                                         execution_time=execution_time, level=level, **kwargs)
 
     def test(func):
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
 
     return test
 
 
-def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", execution_time=1,
+@ci_target_check
+def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", execution_time=1,
                   level="unit", erase_nvs=True, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 
     :param app: test application class
-    :param dut: dut class
-    :param chip: chip supported, string or tuple
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -71,32 +156,31 @@ def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", executio
     :param kwargs: other keyword args
     :return: test method
     """
-    try:
-        # try to config the default behavior of erase nvs
-        dut.ERASE_NVS = erase_nvs
-    except AttributeError:
-        pass
-
-    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                                         execution_time=execution_time, level=level, **kwargs)
 
     def test(func):
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
 
     return test
 
 
-def idf_custom_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", execution_time=1,
+@ci_target_check
+def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
                     level="integration", erase_nvs=True, config_name=None, group="test-apps", **kwargs):
-
     """
     decorator for idf custom tests (with default values for some keyword args).
 
     :param app: test application class
-    :param dut: dut class
-    :param chip: chip supported, string or tuple
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
     :param module: module, string
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
@@ -106,18 +190,20 @@ def idf_custom_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", execut
     :param kwargs: other keyword args
     :return: test method
     """
-    try:
-        # try to config the default behavior of erase nvs
-        dut.ERASE_NVS = erase_nvs
-    except AttributeError:
-        pass
-
-    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                                         execution_time=execution_time, level=level, **kwargs)
 
     def test(func):
+        test_target = local_test_check(target)
+        dut = get_dut_class(test_target, erase_nvs)
+        if 'dut' in kwargs:  # panic_test() will inject dut, resolve conflicts here
+            dut = kwargs['dut']
+            del kwargs['dut']
+        original_method = TinyFW.test_method(
+            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+        )
         test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
         return test_func
 
     return test

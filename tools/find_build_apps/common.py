@@ -1,11 +1,14 @@
 # coding=utf-8
-
+import re
+import shutil
 import sys
 import os
+from abc import abstractmethod
 from collections import namedtuple
 import logging
 import json
 import typing
+from io import open
 
 DEFAULT_TARGET = "esp32"
 
@@ -14,6 +17,16 @@ WILDCARD_PLACEHOLDER = "@w"
 NAME_PLACEHOLDER = "@n"
 FULL_NAME_PLACEHOLDER = "@f"
 INDEX_PLACEHOLDER = "@i"
+
+SDKCONFIG_LINE_REGEX = re.compile(r"^([^=]+)=\"?([^\"\n]*)\"?\n*$")
+
+# If these keys are present in sdkconfig.defaults, they will be extracted and passed to CMake
+SDKCONFIG_TEST_OPTS = [
+    "EXCLUDE_COMPONENTS",
+    "TEST_EXCLUDE_COMPONENTS",
+    "TEST_COMPONENTS",
+    "TEST_GROUPS"
+]
 
 # ConfigRule represents one --config argument of find_apps.py.
 # file_name is the name of the sdkconfig file fragment, optionally with a single wildcard ('*' character).
@@ -43,6 +56,7 @@ class BuildItem(object):
     Instance of this class represents one build of an application.
     The parameters which distinguish the build are passed to the constructor.
     """
+
     def __init__(
             self,
             app_path,
@@ -192,20 +206,153 @@ class BuildSystem(object):
     Derived classes implement the methods below.
     Objects of these classes aren't instantiated, instead the class (type object) is used.
     """
-
     NAME = "undefined"
+    SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
+
+    @classmethod
+    def build_prepare(cls, build_item):
+        app_path = build_item.app_dir
+        work_path = build_item.work_dir or app_path
+        if not build_item.build_dir:
+            build_path = os.path.join(work_path, "build")
+        elif os.path.isabs(build_item.build_dir):
+            build_path = build_item.build_dir
+        else:
+            build_path = os.path.join(work_path, build_item.build_dir)
+
+        if work_path != app_path:
+            if os.path.exists(work_path):
+                logging.debug("Work directory {} exists, removing".format(work_path))
+                if not build_item.dry_run:
+                    shutil.rmtree(work_path)
+            logging.debug("Copying app from {} to {}".format(app_path, work_path))
+            if not build_item.dry_run:
+                shutil.copytree(app_path, work_path)
+
+        if os.path.exists(build_path):
+            logging.debug("Build directory {} exists, removing".format(build_path))
+            if not build_item.dry_run:
+                shutil.rmtree(build_path)
+
+        if not build_item.dry_run:
+            os.makedirs(build_path)
+
+        # Prepare the sdkconfig file, from the contents of sdkconfig.defaults (if exists) and the contents of
+        # build_info.sdkconfig_path, i.e. the config-specific sdkconfig file.
+        #
+        # Note: the build system supports taking multiple sdkconfig.defaults files via SDKCONFIG_DEFAULTS
+        # CMake variable. However here we do this manually to perform environment variable expansion in the
+        # sdkconfig files.
+        sdkconfig_defaults_list = ["sdkconfig.defaults", "sdkconfig.defaults." + build_item.target]
+        if build_item.sdkconfig_path:
+            sdkconfig_defaults_list.append(build_item.sdkconfig_path)
+
+        sdkconfig_file = os.path.join(work_path, "sdkconfig")
+        if os.path.exists(sdkconfig_file):
+            logging.debug("Removing sdkconfig file: {}".format(sdkconfig_file))
+            if not build_item.dry_run:
+                os.unlink(sdkconfig_file)
+
+        logging.debug("Creating sdkconfig file: {}".format(sdkconfig_file))
+        extra_cmakecache_items = {}
+        if not build_item.dry_run:
+            with open(sdkconfig_file, "w") as f_out:
+                for sdkconfig_name in sdkconfig_defaults_list:
+                    sdkconfig_path = os.path.join(work_path, sdkconfig_name)
+                    if not sdkconfig_path or not os.path.exists(sdkconfig_path):
+                        continue
+                    logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
+                    with open(sdkconfig_path, "r") as f_in:
+                        for line in f_in:
+                            if not line.endswith("\n"):
+                                line += "\n"
+                            if cls.NAME == 'cmake':
+                                m = SDKCONFIG_LINE_REGEX.match(line)
+                                if m and m.group(1) in SDKCONFIG_TEST_OPTS:
+                                    extra_cmakecache_items[m.group(1)] = m.group(2)
+                                    continue
+                            f_out.write(os.path.expandvars(line))
+        else:
+            for sdkconfig_name in sdkconfig_defaults_list:
+                sdkconfig_path = os.path.join(app_path, sdkconfig_name)
+                if not sdkconfig_path:
+                    continue
+                logging.debug("Considering sdkconfig {}".format(sdkconfig_path))
+                if not os.path.exists(sdkconfig_path):
+                    continue
+                logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
+
+        # The preparation of build is finished. Implement the build part in sub classes.
+        if cls.NAME == 'cmake':
+            return build_path, work_path, extra_cmakecache_items
+        else:
+            return build_path, work_path
 
     @staticmethod
-    def build(self):
-        raise NotImplementedError()
+    @abstractmethod
+    def build(build_item):
+        pass
 
     @staticmethod
+    @abstractmethod
     def is_app(path):
-        raise NotImplementedError()
+        pass
+
+    @staticmethod
+    def _read_readme(app_path):
+        # Markdown supported targets should be:
+        # e.g. | Supported Targets | ESP32 |
+        #      | ----------------- | ----- |
+        # reStructuredText supported targets should be:
+        # e.g. ================= =====
+        #      Supported Targets ESP32
+        #      ================= =====
+        def get_md_or_rst(app_path):
+            readme_path = os.path.join(app_path, 'README.md')
+            if not os.path.exists(readme_path):
+                readme_path = os.path.join(app_path, 'README.rst')
+                if not os.path.exists(readme_path):
+                    return None
+            return readme_path
+
+        readme_path = get_md_or_rst(app_path)
+        # Handle sub apps situation, e.g. master-slave
+        if not readme_path:
+            readme_path = get_md_or_rst(os.path.dirname(app_path))
+        if not readme_path:
+            return None
+        with open(readme_path, "r", encoding='utf8') as readme_file:
+            return readme_file.read()
 
     @staticmethod
     def supported_targets(app_path):
-        raise NotImplementedError()
+        formal_to_usual = {
+            'ESP32': 'esp32',
+            'ESP32-S2': 'esp32s2',
+        }
+
+        readme_file_content = BuildSystem._read_readme(app_path)
+        if not readme_file_content:
+            return None
+        match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
+        if not match:
+            return None
+        if len(match) > 1:
+            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
+        support_str = match[0].strip()
+
+        targets = []
+        for part in support_str.split('|'):
+            for inner in part.split(' '):
+                inner = inner.strip()
+                if not inner:
+                    continue
+                elif inner in formal_to_usual:
+                    targets.append(formal_to_usual[inner])
+                else:
+                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
+                                              .format(inner, app_path, ', '.join(formal_to_usual.keys())))
+        return targets
 
 
 class BuildError(RuntimeError):

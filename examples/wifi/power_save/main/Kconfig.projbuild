@@ -70,13 +70,13 @@ menu "Example Configuration"
 
         config EXAMPLE_MIN_CPU_FREQ_40M
             bool "40 MHz (use with 40MHz XTAL)"
-            depends on ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_20M
             bool "20 MHz (use with 40MHz XTAL)"
-            depends on ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_10M
             bool "10 MHz (use with 40MHz XTAL)"
-            depends on ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_26M
             bool "26 MHz (use with 26MHz XTAL)"
             depends on ESP32_XTAL_FREQ_26 || ESP32_XTAL_FREQ_AUTO

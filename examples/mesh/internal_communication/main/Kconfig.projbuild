@@ -19,6 +19,78 @@ menu "Example Configuration"
         help
             Mesh Network Topology.
 
+    config MESH_ENABLE_PS
+        bool "Enable mesh PS (power save) function"
+        default y
+        help
+            Enable/Disable Power Save function.
+
+    choice
+        bool "Mesh PS device duty cycle type"
+        depends on MESH_ENABLE_PS
+        default MESH_PS_DEV_DUTY_TYPE_REQUEST
+        help
+            Mesh PS device duty cycle type.
+
+        config MESH_PS_DEV_DUTY_TYPE_REQUEST
+            bool "MESH_PS_DEV_DUTY_TYPE_REQUEST"
+        config MESH_PS_DEV_DUTY_TYPE_DEMAND
+            bool "MESH_PS_DEV_DUTY_TYPE_DEMAND"
+    endchoice
+
+    config MESH_PS_DEV_DUTY_TYPE
+        int
+        depends on MESH_ENABLE_PS
+        default 1 if MESH_PS_DEV_DUTY_TYPE_REQUEST
+        default 4 if MESH_PS_DEV_DUTY_TYPE_DEMAND
+        help
+            Mesh PS device duty cycle type.
+
+    config MESH_PS_DEV_DUTY
+        int "Mesh PS device duty cycle"
+        depends on MESH_ENABLE_PS
+        range 1 100
+        default 12
+        help
+            Mesh PS device duty cycle.
+
+    config MESH_PS_NWK_DUTY
+        int "Mesh PS network duty cycle"
+        depends on MESH_ENABLE_PS
+        range 1 100
+        default 12
+        help
+            Mesh PS network duty cycle.
+
+    config MESH_PS_NWK_DUTY_DURATION
+        int "Mesh PS network duty cycle duration (unit: minutes)"
+        depends on MESH_ENABLE_PS
+        range -1 100
+        default -1
+        help
+            Mesh PS network duty cycle duration.
+
+    choice
+        bool "Mesh PS network duty cycle rule"
+        depends on MESH_ENABLE_PS
+        default MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE
+        help
+            Mesh PS network duty cycle rule.
+
+        config MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE
+            bool "MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE"
+        config MESH_PS_NETWORK_DUTY_APPLIED_UPLINK
+            bool "MESH_PS_NETWORK_DUTY_APPLIED_UPLINK"
+    endchoice
+
+    config MESH_PS_NWK_DUTY_RULE
+        int
+        depends on MESH_ENABLE_PS
+        default 0 if MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE
+        default 1 if MESH_PS_NETWORK_DUTY_APPLIED_UPLINK
+        help
+            Mesh PS network duty cycle rule.
+
     config MESH_MAX_LAYER
         int "Mesh Max Layer"
         range 1 25 if MESH_TOPO_TREE

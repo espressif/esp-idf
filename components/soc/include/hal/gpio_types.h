@@ -26,6 +26,8 @@ typedef enum {
     GPIO_PORT_MAX,
 } gpio_port_t;
 
+/** @cond */    //Doxy command to hide preprocessor definitions from docs */
+
 #define GPIO_SEL_0              (BIT(0))                         /*!< Pin 0 selected */
 #define GPIO_SEL_1              (BIT(1))                         /*!< Pin 1 selected */
 #define GPIO_SEL_2              (BIT(2))                         /*!< Pin 2 selected */
@@ -129,6 +131,8 @@ typedef enum {
 #define GPIO_PIN_REG_45          IO_MUX_GPIO45_REG
 #define GPIO_PIN_REG_46          IO_MUX_GPIO46_REG
 #endif
+
+/** @endcond */
 
 typedef enum {
     GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */

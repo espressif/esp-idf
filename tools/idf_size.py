@@ -179,8 +179,9 @@ def format_json(json_object):
 
 def load_map_data(map_file):
     memory_config = load_memory_config(map_file)
-    sections  = load_sections(map_file)
-    return memory_config, sections
+    detected_chip = detect_target_chip(map_file)
+    sections = load_sections(map_file)
+    return detected_chip, memory_config, sections
 
 
 def load_memory_config(map_file):
@@ -206,6 +207,26 @@ def load_memory_config(map_file):
     raise RuntimeError("End of file while scanning memory configuration?")
 
 
+def detect_target_chip(map_file):
+    ''' Detect target chip based on the xtensa toolchain name in in the linker script part of the MAP file '''
+    scan_to_header(map_file, 'Linker script and memory map')
+
+    RE_TARGET = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
+
+    for line in map_file:
+        m = RE_TARGET.search(line)
+        if m:
+            return m.group(1)
+        line = line.strip()
+        # There could be empty line(s) between the "Linker script and memory map" header and "LOAD lines". Therefore,
+        # line stripping and length is checked as well. The "LOAD lines" are between START GROUP and END GROUP for
+        # older MAP files.
+        if not line.startswith(('LOAD', 'START GROUP')) and len(line) > 0:
+            # This break is a failsafe to not process anything load_sections() might want to analyze.
+            break
+    return None
+
+
 def load_sections(map_file):
     """ Load section size information from the MAP file.
 
@@ -213,8 +234,6 @@ def load_sections(map_file):
     is a dict with details about this section, including a "sources" key which holds a list of source file line
     information for each symbol linked into the section.
     """
-    scan_to_header(map_file, "Linker script and memory map")
-
     # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
     RE_SECTION_HEADER = re.compile(r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$")
 
@@ -318,7 +337,7 @@ def main():
         '--files', help='Print per-file sizes', action='store_true')
 
     parser.add_argument(
-        '--target', help='Set target chip', default='esp32')
+        '--target', help='Set target chip', default=None)
 
     parser.add_argument(
         '--diff', help='Show the differences in comparison with another MAP file',
@@ -335,16 +354,33 @@ def main():
 
     args = parser.parse_args()
 
-    memory_config, sections = load_map_data(args.map_file)
+    detected_target, memory_config, sections = load_map_data(args.map_file)
     args.map_file.close()
+
+    def check_target(target, map_file):
+        if target is None:
+            raise RuntimeError('The target chip cannot be detected for {}. '
+                               'Please report the issue.'.format(map_file.name))
+
+    check_target(detected_target, args.map_file)
+
+    if args.target is not None:
+        if args.target != detected_target:
+            print('WARNING: The detected chip target is {} but command line argument overwrites it to '
+                  '{}!'.format(detected_target, args.target))
+        detected_target = args.target
 
     if args.another_map_file:
         with open(args.another_map_file, 'r') as f:
-            memory_config_diff, sections_diff = load_map_data(f)
+            detected_target_diff, memory_config_diff, sections_diff = load_map_data(f)
+            check_target(detected_target_diff, f)
+            if detected_target_diff != detected_target:
+                print('WARNING: The target of the reference and other MAP files is {} and {}, respectively.'
+                      ''.format(detected_target, detected_target_diff))
     else:
         memory_config_diff, sections_diff = None, None
 
-    mem_regions = MemRegions(args.target)
+    mem_regions = MemRegions(detected_target)
     mem_reg = MemRegNames.get(mem_regions, memory_config, sections)
     mem_reg_diff = MemRegNames.get(mem_regions, memory_config_diff, sections_diff) if args.another_map_file else None
 

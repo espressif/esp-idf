@@ -27,14 +27,6 @@ void wpabuf_clear_free(struct wpabuf *buf)
     }
 }
 
-void bin_clear_free(void *bin, size_t len)
-{
-    if (bin) {
-        os_memset(bin, 0, len);
-        os_free(bin);
-    }
-}
-
 int sae_set_group(struct sae_data *sae, int group)
 {
 	struct sae_temporary_data *tmp;

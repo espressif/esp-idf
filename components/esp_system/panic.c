@@ -341,3 +341,16 @@ void __attribute__((noreturn)) panic_abort(const char *details)
     *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
     while(1);
 }
+
+/* Weak versions of reset reason hint functions.
+ * If these weren't provided, reset reason code would be linked into the app
+ * even if the app never called esp_reset_reason().
+ */
+void IRAM_ATTR __attribute__((weak)) esp_reset_reason_set_hint(esp_reset_reason_t hint)
+{
+}
+
+esp_reset_reason_t IRAM_ATTR  __attribute__((weak)) esp_reset_reason_get_hint(void)
+{
+    return ESP_RST_UNKNOWN;
+}

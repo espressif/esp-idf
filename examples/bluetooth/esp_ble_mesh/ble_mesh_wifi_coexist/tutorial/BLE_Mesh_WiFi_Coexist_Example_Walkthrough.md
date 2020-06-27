@@ -3,7 +3,7 @@
 This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi function while operating Bluetooth. In this demo, 
 
 * The Wi-Fi function is demonstrated by measuring its transfer rate, using the `iperf` protocol;
-* The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `ble_mesh_fast_prov_server`.
+* The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `fast_prov_server`.
 
 
 > Note: In this demo, you call wifi API and bluetooth API to achieve the functions you want. such as `wifi_get_local_ip` API and `esp_ble_mesh_provisioner_add_unprov_dev` API.
@@ -13,7 +13,7 @@ This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature 
 Download and flash the `ble_mesh_wifi_coexist` project to your ESP32 development board and then use the following commands to get started with this demo.
 
 1. Connect your development board to the Wi-Fi network by entering the `sta ssid password` command in your serial port tool.
-	- For example, you should enter `sta tset_wifi 12345678` if you want to connect your board to a network with a SSID of `tset_wifi` and a password of `12345678`.
+	- For example, you should enter `sta test_wifi 12345678` if you want to connect your board to a network with a SSID of `test_wifi` and a password of `12345678`.
 
 2. Start a TCP server by entering the `iperf -s -i 3 -t 1000` command in your serial port tool, which prints the current transfer rate of the Wi-Fi network the board connects to. 
 
@@ -46,9 +46,9 @@ $ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_wifi_coexist
 └── tutorial         /* More in-depth information about the demo */
 ```
 
-The `main` folder mainly implements the BLE Mesh feature.  Details can be seen in `ble_mesh_fast_prov_server`.
+The `main` folder mainly implements the BLE Mesh feature.  Details can be seen in `fast_prov_server`.
 
-The `components` folder mainly implements the Wi-Fi feature, which allows some basic commands and `iperf-relared` test commands.
+The `components` folder mainly implements the Wi-Fi feature, which allows some basic commands and `iperf-related` test commands.
 
 > Note: 
 > 
@@ -205,7 +205,7 @@ static esp_err_t ble_mesh_init(void)
     return ESP_OK;
 }
 ```
-2. Rregister the provisioning callback function in the BLE Mesh stack with `esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb)`, among which `esp_ble_mesh_prov_cb` is used to handle events thrown by protocol stations. This requires the user to implement it himself, and also needs to know the meaning of the event and how to trigger it. For example: The `ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT` event is triggered when the provisioner starts provisioning unprovisioned device, and is handled in the `example_ble_mesh_provisioning_cb` function. Note that you need to register this function with the BLE Mesh protocol stack by calling the `esp_ble_mesh_register_prov_callback` API.
+2. Register the provisioning callback function in the BLE Mesh stack with `esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb)`, among which `esp_ble_mesh_prov_cb` is used to handle events thrown by protocol stations. This requires the user to implement it himself, and also needs to know the meaning of the event and how to trigger it. For example: The `ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT` event is triggered when the provisioner starts provisioning unprovisioned device, and is handled in the `example_ble_mesh_provisioning_cb` function. Note that you need to register this function with the BLE Mesh protocol stack by calling the `esp_ble_mesh_register_prov_callback` API.
 
 	```c
 	ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT,                /*!< Provisioner establish a BLE Mesh link event */

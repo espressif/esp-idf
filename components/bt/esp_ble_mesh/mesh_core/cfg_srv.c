@@ -13,6 +13,8 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
+#include "btc_ble_mesh_config_model.h"
+
 #include "mesh.h"
 #include "adv.h"
 #include "lpn.h"
@@ -27,8 +29,6 @@
 #include "proxy_server.h"
 #include "mesh_main.h"
 #include "mesh_common.h"
-
-#include "btc_ble_mesh_config_model.h"
 
 #define DEFAULT_TTL 7
 
@@ -49,7 +49,7 @@ static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
     int i;
 
     if (net_buf_simple_tailroom(buf) <
-            4 + (elem->model_count * 2U) + (elem->vnd_model_count * 2U)) {
+            4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
         BT_ERR("%s, Too large device composition", __func__);
         return -E2BIG;
     }
@@ -821,30 +821,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_cfg();
     }
-
-    if (cfg->gatt_proxy == BLE_MESH_GATT_PROXY_DISABLED) {
-        int i;
-
-        /* Section 4.2.11.1: "When the GATT Proxy state is set to
-         * 0x00, the Node Identity state for all subnets shall be set
-         * to 0x00 and shall not be changed."
-         */
-        for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-            struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-
-            if (sub->net_idx != BLE_MESH_KEY_UNUSED) {
-                bt_mesh_proxy_identity_stop(sub);
-            }
-        }
-
-        /* Section 4.2.11: "Upon transition from GATT Proxy state 0x01
-         * to GATT Proxy state 0x00 the GATT Bearer Server shall
-         * disconnect all GATT Bearer Clients.
-         */
-        bt_mesh_proxy_gatt_disconnect();
-    }
-
-    bt_mesh_adv_update();
 
     if (cfg->hb_pub.feat & BLE_MESH_FEAT_PROXY) {
         bt_mesh_heartbeat_send();
@@ -2493,12 +2469,8 @@ static void node_identity_set(struct bt_mesh_model *model,
     } else  {
         net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
         net_buf_simple_add_le16(&msg, idx);
-        /* Section 4.2.11.1: "When the GATT Proxy state is set to
-         * 0x00, the Node Identity state for all subnets shall be set
-         * to 0x00 and shall not be changed."
-         */
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-                bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
             if (node_id) {
                 bt_mesh_proxy_identity_start(sub);
             } else {
@@ -2746,7 +2718,7 @@ static void node_reset(struct bt_mesh_model *model,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
-        bt_mesh_reset();
+        bt_mesh_node_reset();
     }
 }
 
@@ -2857,9 +2829,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
     timeout = k_delayed_work_remaining_get(&frnd->timer) / 100;
 
 send_rsp:
-    net_buf_simple_add_u8(&msg, timeout);
-    net_buf_simple_add_u8(&msg, timeout >> 8);
-    net_buf_simple_add_u8(&msg, timeout >> 16);
+    net_buf_simple_add_le24(&msg, timeout);
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("%s, Unable to send Config LPN PollTimeout Status", __func__);
@@ -3489,7 +3459,7 @@ void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
     struct bt_mesh_cfg_srv *cfg = conf;
 
     if (!cfg) {
-        BT_WARN("No configuaration server context available");
+        BT_WARN("No configuration server context available");
         return;
     }
 

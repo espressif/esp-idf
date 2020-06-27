@@ -30,13 +30,13 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     if (!message || !hmac) return ESP_ERR_INVALID_ARG;
     if (key_id >= HMAC_KEY_MAX) return ESP_ERR_INVALID_ARG;
 
-    esp_crypto_lock_acquire();
+    esp_crypto_dma_lock_acquire();
 
     ets_hmac_enable();
     hmac_ret = ets_hmac_calculate_message(convert_key_type(key_id), message, message_len, hmac);
     ets_hmac_disable();
 
-    esp_crypto_lock_release();
+    esp_crypto_dma_lock_release();
 
     if (hmac_ret != ETS_OK) {
         return ESP_FAIL;

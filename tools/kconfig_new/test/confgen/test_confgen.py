@@ -25,7 +25,7 @@ class ConfgenBaseTestCase(unittest.TestCase):
             # Python 2 fallback
             regex_func = self.assertRegexpMatches
         finally:
-            self.functions['regex'] = regex_func
+            self.functions['regex'] = lambda instance, s, expr: regex_func(instance, expr, s)  # reverse args order
 
     def setUp(self):
         with tempfile.NamedTemporaryFile(prefix='test_confgen_', delete=False) as f:
@@ -47,6 +47,16 @@ class ConfgenBaseTestCase(unittest.TestCase):
         subprocess.check_call(call_args)
 
     def invoke_and_test(self, in_text, out_text, test='in'):
+        """
+        Main utility function for testing confgen:
+
+        - Runs confgen via invoke_confgen(), using output method pre-set in test class setup
+        - in_text is the Kconfig file input content
+        - out_text is some expected output from confgen
+        - 'test' can be any function key from self.functions dict (see above). Default is 'in' to test if
+          out_text is a substring of the full confgen output.
+        """
+
         with tempfile.NamedTemporaryFile(mode='w+', prefix='test_confgen_', delete=False) as f:
             self.addCleanup(os.remove, f.name)
             f.write(textwrap.dedent(in_text))
@@ -58,10 +68,12 @@ class ConfgenBaseTestCase(unittest.TestCase):
         with open(self.output_file) as f_result:
             result = f_result.read()
 
-        if test == 'regex':  # need to reverse the argument order
-            self.functions[test](self, result, out_text)
-        else:
-            self.functions[test](self, textwrap.dedent(out_text), result)
+        try:
+            out_text = textwrap.dedent(out_text)
+        except TypeError:
+            pass  # probably a regex
+
+        self.functions[test](self, out_text, result)
 
 
 class CmakeTestCase(ConfgenBaseTestCase):
@@ -77,6 +89,10 @@ class CmakeTestCase(ConfgenBaseTestCase):
             default "\\\\~!@#$%^&*()\\\""
         """, 'set(CONFIG_PASSWORD "\\\\~!@#$%^&*()\\\"")')
 
+    def testHexPrefix(self):
+        self.invoke_and_test(HEXPREFIX_KCONFIG, 'set(CONFIG_HEX_NOPREFIX "0x33")')
+        self.invoke_and_test(HEXPREFIX_KCONFIG, 'set(CONFIG_HEX_PREFIX "0x77")')
+
 
 class JsonTestCase(ConfgenBaseTestCase):
     @classmethod
@@ -90,6 +106,11 @@ class JsonTestCase(ConfgenBaseTestCase):
             string "password"
             default "\\\\~!@#$%^&*()\\\""
         """, '"PASSWORD": "\\\\~!@#$%^&*()\\\""')
+
+    def testHexPrefix(self):
+        # hex values come out as integers in JSON, due to no hex type
+        self.invoke_and_test(HEXPREFIX_KCONFIG, '"HEX_NOPREFIX": %d' % 0x33)
+        self.invoke_and_test(HEXPREFIX_KCONFIG, '"HEX_PREFIX": %d' % 0x77)
 
 
 class JsonMenuTestCase(ConfgenBaseTestCase):
@@ -168,6 +189,10 @@ class MakefileTestCase(ConfgenBaseTestCase):
         with open(os.path.join(os.environ['IDF_PATH'], 'Kconfig')) as f:
             self.invoke_and_test(f.read(), 'CONFIG_IDF_TARGET="esp32"')
 
+    def testHexPrefix(self):
+        self.invoke_and_test(HEXPREFIX_KCONFIG, 'CONFIG_HEX_NOPREFIX=0x33')
+        self.invoke_and_test(HEXPREFIX_KCONFIG, 'CONFIG_HEX_PREFIX=0x77')
+
 
 class HeaderTestCase(ConfgenBaseTestCase):
     @classmethod
@@ -181,6 +206,10 @@ class HeaderTestCase(ConfgenBaseTestCase):
             string "password"
             default "\\\\~!@#$%^&*()\\\""
         """, '#define CONFIG_PASSWORD "\\\\~!@#$%^&*()\\\""')
+
+    def testHexPrefix(self):
+        self.invoke_and_test(HEXPREFIX_KCONFIG, '#define CONFIG_HEX_NOPREFIX 0x33')
+        self.invoke_and_test(HEXPREFIX_KCONFIG, '#define CONFIG_HEX_PREFIX 0x77')
 
 
 class DocsTestCase(ConfgenBaseTestCase):
@@ -229,6 +258,17 @@ class DocsTestCase(ConfgenBaseTestCase):
                 - option 2             (TYPES_OP2)
         """)  # this is more readable than regex
 
+
+# Used by multiple testHexPrefix() test cases to verify correct hex output for each format
+HEXPREFIX_KCONFIG = """
+config HEX_NOPREFIX
+hex "Hex Item default no prefix"
+default 33
+
+config HEX_PREFIX
+hex "Hex Item default prefix"
+default 0x77
+"""
 
 if __name__ == "__main__":
     unittest.main()

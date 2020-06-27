@@ -22,11 +22,20 @@
 #include "esp32s2/rom/cache.h"
 #include "hal/spi_flash_hal.h"
 #include "esp_flash.h"
+#include "esp_log.h"
+
+static const char *TAG = "spiflash_s2";
+
+#define SPICACHE SPIMEM0
+#define SPIFLASH SPIMEM1
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size)
 {
     const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
     esp_rom_spiflash_result_t rc;
+
+    assert((dest_addr % 16) == 0);
+    assert((size % 16) == 0);
 
     if (!esp_ptr_internal(src)) {
         uint8_t block[128]; // Need to buffer in RAM as we write
@@ -48,10 +57,13 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
         return ESP_ROM_SPIFLASH_RESULT_OK;
     }
     else { // Already in internal memory
-        rc = esp_rom_spiflash_unlock();
-        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-            return rc;
-        }
+        ESP_LOGV(TAG, "calling SPI_Encrypt_Write addr 0x%x src %p size 0x%x", dest_addr, src, size);
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+        /* The ROM function SPI_Encrypt_Write assumes ADDR_BITLEN is already set but new
+           implementation doesn't automatically set this to a usable value */
+        SPIFLASH.user1.usr_addr_bitlen = 23;
+#endif
 
         if (ops && ops->start) {
             ops->start();
@@ -64,8 +76,6 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
     }
 }
 
-#define SPICACHE SPIMEM0
-#define SPIFLASH SPIMEM1
 #define FLASH_WRAP_CMD   0x77
 esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
 {

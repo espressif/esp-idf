@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,14 @@ typedef int         bt_mesh_atomic_t;
 
 #ifndef true
 #define true        1
+#endif
+
+#ifndef PRIu64
+#define PRIu64      "llu"
+#endif
+
+#ifndef PRIx64
+#define PRIx64      "llx"
 #endif
 
 #ifdef __cplusplus

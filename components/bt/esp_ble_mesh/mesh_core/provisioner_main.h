@@ -18,6 +18,10 @@
 #include "net.h"
 #include "mesh_bearer_adapt.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_INVALID_NODE_INDEX     0xFFFF
 #define BLE_MESH_NODE_NAME_SIZE         31
 
@@ -38,7 +42,7 @@ struct bt_mesh_node {
     u8_t  dev_key[16];  /* Node device key */
 
     /* Additional information */
-    char  name[BLE_MESH_NODE_NAME_SIZE]; /* Node name */
+    char  name[BLE_MESH_NODE_NAME_SIZE + 1]; /* Node name */
     u16_t comp_length;  /* Length of Composition Data */
     u8_t *comp_data;    /* Value of Composition Data */
 } __packed;
@@ -51,25 +55,19 @@ int bt_mesh_provisioner_deinit(bool erase);
 
 bool bt_mesh_provisioner_check_is_addr_dup(u16_t addr, u8_t elem_num, bool comp_with_own);
 
-u16_t bt_mesh_provisioner_get_prov_node_count(void);
+u16_t bt_mesh_provisioner_get_node_count(void);
 
-u16_t bt_mesh_provisioner_get_all_node_count(void);
-
-int bt_mesh_provisioner_restore_node_info(struct bt_mesh_node *node, bool prov);
+int bt_mesh_provisioner_restore_node_info(struct bt_mesh_node *node);
 
 int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16], u16_t oob_info,
                                   u16_t unicast_addr, u8_t element_num, u16_t net_idx, u8_t flags,
                                   u32_t iv_index, const u8_t dev_key[16], u16_t *index);
 
-bool bt_mesh_provisioner_find_node_with_uuid(const u8_t uuid[16], bool reset);
-
-bool bt_mesh_provisioner_find_node_with_addr(const bt_mesh_addr_t *addr, bool reset);
-
 int bt_mesh_provisioner_remove_node(const u8_t uuid[16]);
 
 int bt_mesh_provisioner_restore_node_name(u16_t addr, const char *name);
 
-int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length, bool prov);
+int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length);
 
 struct bt_mesh_node *bt_mesh_provisioner_get_node_with_uuid(const u8_t uuid[16]);
 
@@ -77,7 +75,9 @@ struct bt_mesh_node *bt_mesh_provisioner_get_node_with_addr(u16_t unicast_addr);
 
 int bt_mesh_provisioner_delete_node_with_uuid(const u8_t uuid[16]);
 
-int bt_mesh_provisioner_delete_node_with_addr(u16_t unicast_addr);
+int bt_mesh_provisioner_delete_node_with_node_addr(u16_t unicast_addr);
+
+int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr);
 
 int bt_mesh_provisioner_set_node_name(u16_t index, const char *name);
 
@@ -137,5 +137,9 @@ u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16]);
 const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx);
 
 const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROVISIONER_MAIN_H_ */

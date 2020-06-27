@@ -21,6 +21,7 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/esp_efuse.h"
@@ -65,6 +66,23 @@ typedef struct esp_efuse_desc_s esp_efuse_desc_t;
  *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
  */
 esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, size_t dst_size_bits);
+
+
+/**
+ * @brief Read a single bit eFuse field as a boolean value.
+ *
+ * @note The value must exist and must be a single bit wide. If there is any possibility of an error
+ * in the provided arguments, call esp_efuse_read_field_blob() and check the returned value instead.
+ *
+ * @note If assertions are enabled and the parameter is invalid, execution will abort
+ *
+ * @param[in]  field          A pointer to the structure describing the fields of efuse.
+ * @return
+ *    - true: The field parameter is valid and the bit is set.
+ *    - false: The bit is not set, or the parameter is invalid and assertions are disabled.
+ *
+ */
+bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[]);
 
 /**
  * @brief   Reads bits from EFUSE field and returns number of bits programmed as "1".
@@ -113,6 +131,23 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
  *    - ESP_ERR_EFUSE_CNT_IS_FULL: Not all requested cnt bits is set.
  */
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt);
+
+/**
+ * @brief Write a single bit eFuse field to 1
+ *
+ * For use with eFuse fields that are a single bit. This function will write the bit to value 1 if
+ * it is not already set, or does nothing if the bit is already set.
+ *
+ * This is equivalent to calling esp_efuse_write_field_cnt() with the cnt parameter equal to 1,
+ * except that it will return ESP_OK if the field is already set to 1.
+ *
+ * @param[in] field Pointer to the structure describing the efuse field.
+ *
+ * @return
+ * - ESP_OK: The operation was successfully completed, or the bit was already set to value 1.
+ * - ESP_ERR_INVALID_ARG: Error in the passed arugments, including if the efuse field is not 1 bit wide.
+ */
+esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[]);
 
 /**
  * @brief   Sets a write protection for the whole block.
@@ -268,15 +303,53 @@ void esp_efuse_burn_new_values(void);
  */
 void esp_efuse_reset(void);
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 /* @brief Disable BASIC ROM Console via efuse
  *
  * By default, if booting from flash fails the ESP32 will boot a
  * BASIC console in ROM.
  *
- * Call this function (from bootloader or app) to permanently
- * disable the console on this chip.
+ * Call this function (from bootloader or app) to permanently disable the console on this chip.
+ *
  */
 void esp_efuse_disable_basic_rom_console(void);
+#endif
+
+
+/* @brief Disable ROM Download Mode via eFuse
+ *
+ * Permanently disables the ROM Download Mode feature. Once disabled, if the SoC is booted with
+ * strapping pins set for ROM Download Mode then an error is printed instead.
+ *
+ * @note Not all SoCs support this option. An error will be returned if called on an ESP32
+ * with a silicon revision lower than 3, as these revisions do not support this option.
+ *
+ * @note If ROM Download Mode is already disabled, this function does nothing and returns success.
+ *
+ * @return
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ * - ESP_ERR_NOT_SUPPORTED (ESP32 only) This SoC is not capable of disabling UART download mode
+ * - ESP_ERR_INVALID_STATE (ESP32 only) This eFuse is write protected and cannot be written
+ */
+esp_err_t esp_efuse_disable_rom_download_mode(void);
+
+#if SOC_SUPPORTS_SECURE_DL_MODE
+/* @brief Switch ROM Download Mode to Secure Download mode via eFuse
+ *
+ * Permanently enables Secure Download mode. This mode limits the use of ROM Download Mode functions
+ * to simple flash read, write and erase operations, plus a command to return a summary of currently
+ * enabled security features.
+ *
+ * @note If Secure Download mode is already enabled, this function does nothing and returns success.
+ *
+ * @note Disabling the ROM Download Mode also disables Secure Download Mode.
+ *
+ * @return
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ * - ESP_ERR_INVALID_STATE ROM Download Mode has been disabled via eFuse, so Secure Download mode is unavailable.
+ */
+esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
+#endif
 
 /* @brief Write random data to efuse key block write registers
  *

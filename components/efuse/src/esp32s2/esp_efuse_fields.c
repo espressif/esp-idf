@@ -32,6 +32,7 @@ const static char *TAG = "efuse";
 // Returns chip version from efuse
 uint8_t esp_efuse_get_chip_ver(void)
 {
+    // should return the same value as bootloader_common_get_chip_revision()
     uint32_t chip_ver = 0;
     // TODO: ESP32S2 does not have this field
     return chip_ver;
@@ -41,22 +42,8 @@ uint8_t esp_efuse_get_chip_ver(void)
 uint32_t esp_efuse_get_pkg_ver(void)
 {
     uint32_t pkg_ver = 0;
-    // TODO: ESP32S2 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_PKG_VERSION, &pkg_ver, 4);
     return pkg_ver;
-}
-
-// Disable BASIC ROM Console via efuse
-void esp_efuse_disable_basic_rom_console(void)
-{
-    uint8_t dis_tiny_basic = 0;
-    uint8_t dis_legacy_spi_boot = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_DIS_TINY_BASIC, &dis_tiny_basic, 1);
-    esp_efuse_read_field_blob(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, &dis_legacy_spi_boot, 1);
-    if (dis_tiny_basic == 0 || dis_legacy_spi_boot == 0) {
-        esp_efuse_write_field_cnt(ESP_EFUSE_DIS_TINY_BASIC, 1);
-        esp_efuse_write_field_cnt(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, 1);
-        ESP_EARLY_LOGI(TAG, "Disable tiny basic console in ROM and Disable_Legcy_SPI_boot mode...");
-    }
 }
 
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
@@ -74,3 +61,17 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
 }
+
+esp_err_t esp_efuse_disable_rom_download_mode(void)
+{
+    return esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
+}
+
+esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
+{
+    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
+}
+

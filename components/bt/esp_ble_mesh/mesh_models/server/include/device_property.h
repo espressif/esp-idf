@@ -17,6 +17,10 @@
 
 #include "mesh_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * BLE Mesh Device Properties.
  *
@@ -557,7 +561,7 @@ typedef struct __packed average_current {
 } bt_mesh_average_current_t;
 
 /* This characteristic aggregates the Voltage characteristic and instance of the Time
- * Exponential 8 characateristic.
+ * Exponential 8 characteristic.
  */
 typedef struct __packed average_voltage {
     bt_mesh_voltage_t            voltage;
@@ -1041,5 +1045,9 @@ typedef u16_t bt_mesh_volume_flow_t;
 /* Mesh Device Property related function */
 
 u8_t bt_mesh_get_dev_prop_len(u16_t prop_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _DEVICE_PROPERTY_H_ */

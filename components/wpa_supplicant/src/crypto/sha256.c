@@ -116,11 +116,11 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
  * @data_len: Length of the data area
  * @mac: Buffer for the hash (20 bytes)
  */
-void
+int
 hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
                  size_t data_len, u8 *mac)
 {
-        hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
+        return hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
 }
 
 /**

@@ -61,11 +61,11 @@ xt_highint4:
     /* Figure out reason, save into EXCCAUSE reg */
 
     rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_CACHEERR_INUM, 1 /* get cacheerr int bit */
+    extui   a0, a0, ETS_MEMACCESS_ERR_INUM, 1 /* get cacheerr int bit */
     beqz    a0, 1f
     /* Kill this interrupt; we cannot reset it. */
     rsr     a0, INTENABLE
-    movi    a4, ~(1<<ETS_CACHEERR_INUM)
+    movi    a4, ~(1<<ETS_MEMACCESS_ERR_INUM)
     and     a0, a4, a0
     wsr     a0, INTENABLE
     movi    a0, PANIC_RSN_CACHEERR

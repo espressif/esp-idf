@@ -15,8 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "btc/btc_manage.h"
-
 #include "esp_err.h"
 
 #include "btc_ble_mesh_prov.h"
@@ -71,9 +69,9 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
-        mic_len = 4;
+        mic_len = ESP_BLE_MESH_MIC_SHORT;
     } else {
-        mic_len = ctx->send_rel ? 8 : 4;
+        mic_len = ctx->send_rel ? ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
     }
 
     if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
@@ -181,9 +179,12 @@ esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
         uint16_t length, uint8_t *data)
 {
-    if (!model || !ctx) {
+    if (model == NULL || ctx == NULL ||
+        ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        ctx->app_idx == ESP_BLE_MESH_KEY_UNUSED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
                                    length, data, 0, false, ROLE_NODE);
 }
@@ -193,9 +194,12 @@ esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
         uint16_t length, uint8_t *data, int32_t msg_timeout,
         bool need_rsp, esp_ble_mesh_dev_role_t device_role)
 {
-    if (!model || !ctx) {
+    if (model == NULL || ctx == NULL ||
+        ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        ctx->app_idx == ESP_BLE_MESH_KEY_UNUSED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
                                    length, data, msg_timeout, need_rsp, device_role);
 }
@@ -204,9 +208,11 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
                                      uint16_t length, uint8_t *data,
                                      esp_ble_mesh_dev_role_t device_role)
 {
-    if (!model || !model->pub || !model->pub->msg) {
+    if (model == NULL || model->pub == NULL || model->pub->msg == NULL ||
+        model->pub->publish_addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, NULL, opcode, BTC_BLE_MESH_ACT_MODEL_PUBLISH,
                                    length, data, 0, false, device_role);
 }
@@ -268,7 +274,8 @@ esp_err_t esp_ble_mesh_provisioner_set_node_name(uint16_t index, const char *nam
 
     arg.set_node_name.index = index;
     memset(arg.set_node_name.name, 0, sizeof(arg.set_node_name.name));
-    memcpy(arg.set_node_name.name, name, strlen(name));
+    strncpy(arg.set_node_name.name, name, ESP_BLE_MESH_NODE_NAME_MAX_LEN);
+
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

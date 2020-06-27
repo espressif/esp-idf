@@ -978,6 +978,16 @@ esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
 esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda, esp_ble_wl_addr_type_t wl_addr_type);
 
 /**
+* @brief            Clear all white list
+*
+* @return
+*                     - ESP_OK : success
+*                     - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_clear_whitelist(void);
+
+/**
 * @brief            Get the whitelist size in the controller
 *
 * @param[out]       length: the white list length.

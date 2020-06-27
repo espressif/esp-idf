@@ -19,7 +19,6 @@
 /*******************************************************
  *                Macros
  *******************************************************/
-//#define MESH_ENABLE_POWER_SAVE
 
 /*******************************************************
  *                Constants
@@ -102,18 +101,12 @@ void esp_mesh_p2p_tx_main(void *arg)
         }
 
         for (i = 0; i < route_table_size; i++) {
-#ifdef MESH_ENABLE_POWER_SAVE
-            /* PS is enabled, it's better to check if the device is active now. */
-            while (!esp_mesh_is_network_active()) {
-                vTaskDelay(10 / portTICK_RATE_MS);
-            }
-#endif
             err = esp_mesh_send(&route_table[i], &data, MESH_DATA_P2P, NULL, 0);
             if (err) {
                 ESP_LOGE(MESH_TAG,
                          "[ROOT-2-UNICAST:%d][L:%d]parent:"MACSTR" to "MACSTR", heap:%d[err:0x%x, proto:%d, tos:%d]",
                          send_count, mesh_layer, MAC2STR(mesh_parent_addr.addr),
-                         MAC2STR(route_table[i].addr), esp_get_free_heap_size(),
+                         MAC2STR(route_table[i].addr), esp_get_minimum_free_heap_size(),
                          err, data.proto, data.tos);
             } else if (!(send_count % 100)) {
                 ESP_LOGW(MESH_TAG,
@@ -121,7 +114,7 @@ void esp_mesh_p2p_tx_main(void *arg)
                          send_count, mesh_layer,
                          esp_mesh_get_routing_table_size(),
                          MAC2STR(mesh_parent_addr.addr),
-                         MAC2STR(route_table[i].addr), esp_get_free_heap_size(),
+                         MAC2STR(route_table[i].addr), esp_get_minimum_free_heap_size(),
                          err, data.proto, data.tos);
             }
         }
@@ -165,7 +158,7 @@ void esp_mesh_p2p_rx_main(void *arg)
                      "[#RX:%d/%d][L:%d] parent:"MACSTR", receive from "MACSTR", size:%d, heap:%d, flag:%d[err:0x%x, proto:%d, tos:%d]",
                      recv_count, send_count, mesh_layer,
                      MAC2STR(mesh_parent_addr.addr), MAC2STR(from.addr),
-                     data.size, esp_get_free_heap_size(), flag, err, data.proto,
+                     data.size, esp_get_minimum_free_heap_size(), flag, err, data.proto,
                      data.tos);
         }
     }
@@ -187,7 +180,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
     mesh_addr_t id = {0,};
-    static uint8_t last_layer = 0;
+    static uint16_t last_layer = 0;
 
     switch (event_id) {
     case MESH_EVENT_STARTED: {
@@ -244,10 +237,10 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         mesh_layer = connected->self_layer;
         memcpy(&mesh_parent_addr.addr, connected->connected.bssid, 6);
         ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s, ID:"MACSTR"",
+                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s, ID:"MACSTR", duty:%d",
                  last_layer, mesh_layer, MAC2STR(mesh_parent_addr.addr),
                  esp_mesh_is_root() ? "<ROOT>" :
-                 (mesh_layer == 2) ? "<layer2>" : "", MAC2STR(id.addr));
+                 (mesh_layer == 2) ? "<layer2>" : "", MAC2STR(id.addr), connected->duty);
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         is_mesh_connected = true;
@@ -365,6 +358,17 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
                  router_switch->ssid, router_switch->channel, MAC2STR(router_switch->bssid));
     }
     break;
+    case MESH_EVENT_PS_PARENT_DUTY: {
+        mesh_event_ps_duty_t *ps_duty = (mesh_event_ps_duty_t *)event_data;
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_PS_PARENT_DUTY>duty:%d", ps_duty->duty);
+    }
+    break;
+    case MESH_EVENT_PS_CHILD_DUTY: {
+        mesh_event_ps_duty_t *ps_duty = (mesh_event_ps_duty_t *)event_data;
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_PS_CHILD_DUTY>cidx:%d, "MACSTR", duty:%d", ps_duty->child_connected.aid-1,
+                MAC2STR(ps_duty->child_connected.mac), ps_duty->duty);
+    }
+    break;
     default:
         ESP_LOGI(MESH_TAG, "unknown id:%d", event_id);
         break;
@@ -394,12 +398,6 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_init(&config));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
-#ifdef MESH_ENABLE_POWER_SAVE
-    /* enable the mesh PS function by setting WIFI_PS_MIN_MODEM for all mesh devices before mesh is started */
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
-#else
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-#endif
     ESP_ERROR_CHECK(esp_wifi_start());
     /*  mesh initialization */
     ESP_ERROR_CHECK(esp_mesh_init());
@@ -409,12 +407,17 @@ void app_main(void)
     /*  set mesh max layer according to the topology */
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(CONFIG_MESH_MAX_LAYER));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(1));
-#ifdef MESH_ENABLE_POWER_SAVE
-    /* PS is enabled, it's better to increase the associate expired time. */
+    ESP_ERROR_CHECK(esp_mesh_set_xon_qsize(128));
+#ifdef CONFIG_MESH_ENABLE_PS
+    /* Enable mesh PS function */
+    ESP_ERROR_CHECK(esp_mesh_enable_ps());
+    /* better to increase the associate expired time, if a small duty cycle is set. */
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(60));
-    /* PS is enabled, it's better to increase the announce interval. */
+    /* better to increase the announce interval to avoid too much management traffic, if a small duty cycle is set. */
     ESP_ERROR_CHECK(esp_mesh_set_announce_interval(600, 3300));
 #else
+    /* Disable mesh PS function */
+    ESP_ERROR_CHECK(esp_mesh_disable_ps());
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(10));
 #endif
     mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
@@ -432,13 +435,15 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
-#ifdef MESH_ENABLE_POWER_SAVE
-    /* PS is enabled, set the device active duty cycle. (default:12) */
-    ESP_ERROR_CHECK(esp_mesh_set_active_duty_cycle(15, MESH_PS_DEVICE_DUTY_REQUEST));
-#endif
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s<%d>%s\n",  esp_get_free_heap_size(),
+#ifdef CONFIG_MESH_ENABLE_PS
+    /* set the device active duty cycle. (default:12, MESH_PS_DEVICE_DUTY_REQUEST) */
+    ESP_ERROR_CHECK(esp_mesh_set_active_duty_cycle(CONFIG_MESH_PS_DEV_DUTY, CONFIG_MESH_PS_DEV_DUTY_TYPE));
+    /* set the network active duty cycle. (default:12, -1, MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE) */
+    ESP_ERROR_CHECK(esp_mesh_set_network_duty_cycle(CONFIG_MESH_PS_NWK_DUTY, CONFIG_MESH_PS_NWK_DUTY_DURATION, CONFIG_MESH_PS_NWK_DUTY_RULE));
+#endif
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s<%d>%s, ps:%d\n",  esp_get_minimum_free_heap_size(),
              esp_mesh_is_root_fixed() ? "root fixed" : "root not fixed",
-             esp_mesh_get_topology(), esp_mesh_get_topology() ? "(chain)":"(tree)");
+             esp_mesh_get_topology(), esp_mesh_get_topology() ? "(chain)":"(tree)", esp_mesh_is_ps_enabled());
 }

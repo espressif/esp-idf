@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 2e23344575b3d07f01ecb695294e9770
+// md5_digest_table 11b691b6fa8546a3862a7a876be5f758
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -36,9 +36,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ENCRYPT_CONFIG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_DL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_DL_DECRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_DL_CACHE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CONSOLE_DEBUG_DISABLE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CRYPT_CNT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_UART_DOWNLOAD_DIS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK2[];

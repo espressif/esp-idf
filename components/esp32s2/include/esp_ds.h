@@ -50,7 +50,8 @@ typedef enum {
  * @note This struct has to match to one from the ROM code! This documentation is mostly taken from there.
  */
 typedef struct esp_digital_signature_data {
-    /* RSA LENGTH register parameters
+    /**
+     * RSA LENGTH register parameters
      * (number of words in RSA key & operands, minus one).
      *
      * Max value 127 (for RSA 4096).
@@ -66,16 +67,19 @@ typedef struct esp_digital_signature_data {
      */
     esp_digital_signature_length_t rsa_length;
 
-    /* IV value used to encrypt 'c' */
+    /**
+     * IV value used to encrypt 'c'
+     */
     uint8_t iv[ESP_DS_IV_LEN];
 
-    /* Encrypted Digital Signature parameters. Result of AES-CBC encryption
-       of plaintext values. Includes an encrypted message digest.
-    */
+    /**
+     * Encrypted Digital Signature parameters. Result of AES-CBC encryption
+     * of plaintext values. Includes an encrypted message digest.
+     */
     uint8_t c[ESP_DS_C_LEN];
 } esp_ds_data_t;
 
-/* Plaintext parameters used by Digital Signature.
+/** Plaintext parameters used by Digital Signature.
  *
  * Not used for signing with DS peripheral, but can be encrypted
  * in-device by calling esp_ds_encrypt_params()
@@ -83,11 +87,11 @@ typedef struct esp_digital_signature_data {
  * @note This documentation is mostly taken from the ROM code.
  */
 typedef struct {
-    uint32_t Y[4096/32];
-    uint32_t M[4096/32];
-    uint32_t Rb[4096/32];
-    uint32_t M_prime;
-    esp_digital_signature_length_t length;
+    uint32_t Y[4096/32];                    //!< RSA exponent
+    uint32_t M[4096/32];                    //!< RSA modulus
+    uint32_t Rb[4096/32];                   //!< RSA r inverse operand
+    uint32_t M_prime;                       //!< RSA M prime operand
+    esp_digital_signature_length_t length;  //!< RSA length
 } esp_ds_p_data_t;
 
 /**
@@ -97,7 +101,7 @@ typedef struct {
  * in parallel.
  * It blocks until the signing is finished and then returns the signature.
  *
- * @note This function locks the HMAC, SHA and AES components during its entire execution time.
+ * @note This function locks the HMAC, SHA, AES and RSA components during its entire execution time.
  *
  * @param message the message to be signed; its length is determined by data->rsa_length
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
@@ -126,7 +130,7 @@ esp_err_t esp_ds_sign(const void *message,
  * This function yields a context object which needs to be passed to \c esp_ds_finish_sign() to finish the signing
  * process.
  *
- * @note This function locks the HMAC, SHA and AES components, so the user has to ensure to call
+ * @note This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
  *       \c esp_ds_finish_sign() in a timely manner.
  *
  * @param message the message to be signed; its length is determined by data->rsa_length

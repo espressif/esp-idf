@@ -1,2 +1,4 @@
-TEST_COMPONENTS=driver esp32 esp_timer spi_flash
+# This config is split between targets since different component needs to be included (esp32, esp32s2)
+CONFIG_IDF_TARGET="esp32"
+TEST_COMPONENTS=driver esp32 esp_ipc esp_timer spi_flash
 CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE=y

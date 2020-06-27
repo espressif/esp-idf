@@ -127,7 +127,8 @@ extern "C" {
 #define ESP_ERR_MESH_VOTING               (ESP_ERR_MESH_BASE + 22)   /**< vote in progress */
 #define ESP_ERR_MESH_XMIT                 (ESP_ERR_MESH_BASE + 23)   /**< XMIT */
 #define ESP_ERR_MESH_QUEUE_READ           (ESP_ERR_MESH_BASE + 24)   /**< error in reading queue */
-#define ESP_ERR_MESH_INACTIVE             (ESP_ERR_MESH_BASE + 25)   /**< mesh network is not active */
+#define ESP_ERR_MESH_PS                   (ESP_ERR_MESH_BASE + 25)   /**< mesh PS is not specified as enable or disable */
+#define ESP_ERR_MESH_RECV_RELEASE         (ESP_ERR_MESH_BASE + 26)   /**< release esp_mesh_recv_toDS */
 
 /**
  * @brief Flags bitmap for esp_mesh_send() and esp_mesh_recv()
@@ -158,7 +159,16 @@ extern "C" {
 /**
  * @brief Mesh PS (Power Save) duty cycle type
  */
-#define MESH_PS_DEVICE_DUTY_REQUEST         (0x01)    /**< requests to join a network PS without specifying a duty cycle */
+#define MESH_PS_DEVICE_DUTY_REQUEST         (0x01)    /**< requests to join a network PS without specifying a device duty cycle. After the
+                                                           device joins the network, a network duty cycle will be provided by the network */
+#define MESH_PS_DEVICE_DUTY_DEMAND          (0x04)    /**< requests to join a network PS and specifies a demanded device duty cycle */
+#define MESH_PS_NETWORK_DUTY_MASTER         (0x80)    /**< indicates the device is the NWK-DUTY-MASTER (network duty cycle master) */
+
+/**
+ * @brief Mesh PS (Power Save) duty cycle applied rule
+ */
+#define MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE         (0)    /** the specified network duty is applied to the entire network <*/
+#define MESH_PS_NETWORK_DUTY_APPLIED_UPLINK         (1)    /** the specified network duty is applied to only the up-link path <*/
 
 /*******************************************************
  *                Enumerations
@@ -200,6 +210,8 @@ typedef enum {
                                              after finding it. */
     MESH_EVENT_ROUTER_SWITCH,           /**< if users specify BSSID of the router in mesh configuration, when the root connects to another
                                              router with the same SSID, this event will be posted and the new router information is attached. */
+    MESH_EVENT_PS_PARENT_DUTY,          /**< parent duty */
+    MESH_EVENT_PS_CHILD_DUTY,           /**< child duty */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
 
@@ -214,6 +226,7 @@ typedef enum {
     MESH_ROOT,    /**< the only sink of the mesh network. Has the ability to access external IP network */
     MESH_NODE,    /**< intermediate device. Has the ability to forward packets over the mesh network */
     MESH_LEAF,    /**< has no forwarding ability */
+    MESH_STA,     /**< connect to router with a standlone Wi-Fi station mode, no network expansion capability */
 } mesh_type_t;
 
 /**
@@ -224,6 +237,8 @@ typedef enum {
     MESH_PROTO_HTTP,    /**< HTTP protocol */
     MESH_PROTO_JSON,    /**< JSON format */
     MESH_PROTO_MQTT,    /**< MQTT protocol */
+    MESH_PROTO_AP,      /**< IP network mesh communication of node's AP inteface */
+    MESH_PROTO_STA,     /**< IP network mesh communication of node's STA inteface */
 } mesh_proto_t;
 
 /**
@@ -300,7 +315,8 @@ typedef struct {
  */
 typedef struct {
     wifi_event_sta_connected_t connected; /**< parent information, same as Wi-Fi event SYSTEM_EVENT_STA_CONNECTED does */
-    uint8_t self_layer;                     /**< layer */
+    uint16_t self_layer;                  /**< layer */
+    uint8_t duty;                         /**< parent duty */
 } mesh_event_connected_t;
 
 /**
@@ -314,7 +330,7 @@ typedef struct {
  * @brief Layer change information
  */
 typedef struct {
-    uint8_t new_layer; /**< new layer */
+    uint16_t new_layer; /**< new layer */
 } mesh_event_layer_change_t;
 
 /**
@@ -414,6 +430,14 @@ typedef struct {
 typedef wifi_event_sta_connected_t mesh_event_router_switch_t;
 
 /**
+ * @brief PS duty information
+ */
+typedef struct {
+    uint8_t duty;                                 /**< parent or child duty */
+    mesh_event_child_connected_t child_connected; /**< child info */
+} mesh_event_ps_duty_t;
+
+/**
  * @brief Mesh event information
  */
 typedef union {
@@ -438,6 +462,7 @@ typedef union {
     mesh_event_network_state_t network_state;              /**< network state, such as whether current mesh network has a root. */
     mesh_event_find_network_t find_network;                /**< network found that can join */
     mesh_event_router_switch_t router_switch;              /**< new router information */
+    mesh_event_ps_duty_t ps_duty;                          /**< PS duty information */
 } mesh_event_info_t;
 
 /**
@@ -599,7 +624,7 @@ esp_err_t esp_mesh_start(void);
  *             - Delete TX and RX queues.
  *             - Release resources.
  *             - Restore Wi-Fi softAP to default settings if Wi-Fi dual mode is enabled.
- *             - Set Wi-Fi power save type to WIFI_PS_NONE.
+ *             - Set Wi-Fi Power Save type to WIFI_PS_NONE.
  *
  * @return
  *    - ESP_OK
@@ -730,6 +755,7 @@ esp_err_t esp_mesh_recv(mesh_addr_t *from, mesh_data_t *data, int timeout_ms,
  *    - ESP_ERR_MESH_NOT_START
  *    - ESP_ERR_MESH_TIMEOUT
  *    - ESP_ERR_MESH_DISCARD
+ *    - ESP_ERR_MESH_RECV_RELEASE
  */
 esp_err_t esp_mesh_recv_toDS(mesh_addr_t *from, mesh_addr_t *to,
                              mesh_data_t *data, int timeout_ms, int *flag, mesh_opt_t opt[],
@@ -825,8 +851,10 @@ esp_err_t esp_mesh_get_id(mesh_addr_t *id);
 
 /**
  * @brief      Designate device type over the mesh network
+ *            - MESH_IDLE: designates a device as a self-organized node for a mesh network
  *            - MESH_ROOT: designates the root node for a mesh network
- *            - MESH_LEAF: designates a device as a standalone Wi-Fi station
+ *            - MESH_LEAF: designates a device as a standalone Wi-Fi station that connects to a parent
+ *            - MESH_STA: designates a device as a standalone Wi-Fi station that connects to a router
  *
  * @param[in]  type  device type
  *
@@ -847,7 +875,9 @@ esp_err_t esp_mesh_set_type(mesh_type_t type);
 mesh_type_t esp_mesh_get_type(void);
 
 /**
- * @brief      Set network max layer value (max:25, default:25)
+ * @brief      Set network max layer value
+ *             - for tree topology, the max is 25.
+ *             - for chain topology, the max is 1000.
  *             - Network max layer limits the max hop count.
  *
  * @attention  This API shall be called before mesh is started.
@@ -1331,6 +1361,7 @@ bool esp_mesh_is_root_fixed(void);
  * @param[in]  parent_mesh_id  parent mesh ID,
  *             - If this value is not set, the original mesh ID is used.
  * @param[in]  my_type  mesh type
+ *             - MESH_STA is not supported.
  *             - If the parent set for the device is the same as the router in the network configuration,
  *            then my_type shall set MESH_ROOT and my_layer shall set MESH_ROOT_LAYER.
  * @param[in]  my_layer  mesh layer
@@ -1475,7 +1506,7 @@ int64_t esp_mesh_get_tsf_time(void);
  * @brief      Set mesh topology. The default value is MESH_TOPO_TREE
  *             - MESH_TOPO_CHAIN supports up to 1000 layers
  *
- * @attention  This API shall be called before mesh is started
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  topo  MESH_TOPO_TREE or MESH_TOPO_CHAIN
  *
@@ -1494,23 +1525,57 @@ esp_err_t esp_mesh_set_topology(esp_mesh_topology_t topo);
 esp_mesh_topology_t esp_mesh_get_topology(void);
 
 /**
- * @brief      Check whether the mesh network is in active state
- *             - If the mesh network is not in active state, mesh devices will neither transmit nor receive frames.
- *             - If power save mode of the mesh network is enabled, devices should check whether the network is active before
- *             sending any packets. (i.e. before calling esp_mesh_send()).
- *             - Power save mode is enabled by setting the PS type to WIFI_PS_MIN_MODEM for all devices before mesh is started.
+ * @brief      Enable mesh Power Save function
+ *
+ * @attention  This API shall be called before mesh is started.
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_WIFI_NOT_INIT
+ *    - ESP_ERR_MESH_NOT_ALLOWED
+ */
+esp_err_t esp_mesh_enable_ps(void);
+
+/**
+ * @brief      Disable mesh Power Save function
+ *
+ * @attention  This API shall be called before mesh is started.
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_WIFI_NOT_INIT
+ *    - ESP_ERR_MESH_NOT_ALLOWED
+ */
+esp_err_t esp_mesh_disable_ps(void);
+
+/**
+ * @brief      Check whether the mesh Power Save function is enabled
  *
  * @return     true/false
  */
-bool esp_mesh_is_network_active(void);
+bool esp_mesh_is_ps_enabled(void);
 
 /**
- * @brief      Set device duty cycle and type
+ * @brief      Check whether the device is in active state
+ *             - If the device is not in active state, it will neither transmit nor receive frames.
  *
- * @attention  This API can be called at any time after mesh is initialized.
+ * @return     true/false
+ */
+bool esp_mesh_is_device_active(void);
+
+/**
+ * @brief      Set the device duty cycle and type
+ *             - The range of dev_duty values is 1 to 100. The default value is 12.
+ *             - dev_duty = 100, the PS will be stopped.
+ *             - dev_duty is better to not less than 5.
+ *             - dev_duty_type could be MESH_PS_DEVICE_DUTY_REQUEST or MESH_PS_DEVICE_DUTY_DEMAND.
+ *             - If dev_duty_type is set to MESH_PS_DEVICE_DUTY_REQUEST, the device will use a nwk_duty provided by the network.
+ *             - If dev_duty_type is set to MESH_PS_DEVICE_DUTY_DEMAND, the device will use the specified dev_duty.
+ *
+ * @attention  This API can be called at any time after mesh is started.
  *
  * @param[in]  dev_duty  device duty cycle
- * @param[in]  dev_duty_type  device PS duty cycle type
+ * @param[in]  dev_duty_type  device PS duty cycle type, not accept MESH_PS_NETWORK_DUTY_MASTER
  *
  * @return
  *    - ESP_OK
@@ -1530,7 +1595,62 @@ esp_err_t esp_mesh_set_active_duty_cycle(int dev_duty, int dev_duty_type);
 esp_err_t esp_mesh_get_active_duty_cycle(int* dev_duty, int* dev_duty_type);
 
 /**
+ * @brief      Set the network duty cycle, duration and rule
+ *             - The range of nwk_duty values is 1 to 100. The default value is 12.
+ *             - nwk_duty is the network duty cycle the entire network or the up-link path will use. A device that successfully
+ *             sets the nwk_duty is known as a NWK-DUTY-MASTER.
+ *             - duration_mins specifies how long the specified nwk_duty will be used. Once duration_mins expires, the root will take
+ *             over as the NWK-DUTY-MASTER. If an existing NWK-DUTY-MASTER leaves the network, the root will take over as the
+ *             NWK-DUTY-MASTER again.
+ *             - duration_mins = (-1) represents nwk_duty will be used until a new NWK-DUTY-MASTER with a different nwk_duty appears.
+ *             - Only the root can set duration_mins to (-1).
+ *             - applied_rule could be MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE or MESH_PS_NETWORK_DUTY_APPLIED_UPLINK.
+ *             - If applied_rule is set to MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE, the nwk_duty will be used by the entire network.
+ *             - If applied_rule is set to MESH_PS_NETWORK_DUTY_APPLIED_UPLINK, the nwk_duty will only be used by the up-link path nodes.
+ *             - The root does not accept MESH_PS_NETWORK_DUTY_APPLIED_UPLINK.
+ *             - A nwk_duty with duration_mins(-1) set by the root is the default network duty cycle used by the entire network.
+ *
+ * @attention  This API can be called at any time after mesh is started.
+ *             - In self-organized network, if this API is called before mesh is started in all devices, (1)nwk_duty shall be set to the
+ *             same value for all devices; (2)duration_mins shall be set to (-1); (3)applied_rule shall be set to
+ *             MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE; after the voted root appears, the root will become the NWK-DUTY-MASTER and broadcast
+ *             the nwk_duty and its identity of NWK-DUTY-MASTER.
+ *             - If the root is specified (FIXED-ROOT), call this API in the root to provide a default nwk_duty for the entire network.
+ *             - After joins the network, any device can call this API to change the nwk_duty, duration_mins or applied_rule.
+ *
+ * @param[in]  nwk_duty  network duty cycle
+ * @param[in]  duration_mins  duration (unit: minutes)
+ * @param[in]  applied_rule  MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE or MESH_PS_NETWORK_DUTY_APPLIED_UPLINK
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_FAIL
+ */
+esp_err_t esp_mesh_set_network_duty_cycle(int nwk_duty, int duration_mins, int applied_rule);
+
+/**
+ * @brief      Get the network duty cycle, duration, type and rule
+ *
+ * @param[out] nwk_duty  current network duty cycle
+ * @param[out] duration_mins  the duration of current nwk_duty
+ * @param[out] dev_duty_type  if it includes MESH_PS_DEVICE_DUTY_MASTER, this device is the current NWK-DUTY-MASTER.
+ * @param[out] applied_rule  MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE or MESH_PS_NETWORK_DUTY_APPLIED_UPLINK
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_get_network_duty_cycle(int* nwk_duty, int* duration_mins, int* dev_duty_type, int* applied_rule);
+
+/**
  * @brief      Get the running active duty cycle
+ *          - The running active duty cycle of the root is 100.
+ *          - If duty type is set to MESH_PS_DEVICE_DUTY_REQUEST, the running active duty cycle is nwk_duty provided by the network.
+ *          - If duty type is set to MESH_PS_DEVICE_DUTY_DEMAND, the running active duty cycle is dev_duty specified by the users.
+ *          - In a mesh network, devices are typically working with a certain duty-cycle (transmitting, receiving and sleep) to
+ *            reduce the power consumption. The running active duty cycle decides the amount of awake time within a beacon interval.
+ *            At each start of beacon interval, all devices wake up, broadcast beacons, and transmit packets if they do have pending
+ *            packets for their parents or for their children. Note that Low-duty-cycle means devices may not be active in most of
+ *            the time, the latency of data transmission might be greater.
  *
  * @return     the running active duty cycle
  */

@@ -309,6 +309,21 @@ esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_clear_whitelist(void)
+{
+    btc_msg_t msg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gap_get_whitelist_size(uint16_t *length)
 {
     if (length == NULL) {

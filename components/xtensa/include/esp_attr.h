@@ -28,6 +28,18 @@
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+// Forces data into IRAM instead of DRAM
+#define IRAM_DATA_ATTR __attribute__((section(".iram.data")))
+
+// Forces bss into IRAM instead of DRAM
+#define IRAM_BSS_ATTR __attribute__((section(".iram.bss")))
+#else
+#define IRAM_DATA_ATTR
+
+#define IRAM_BSS_ATTR
+#endif
+
 // Forces data to be 4 bytes aligned
 #define WORD_ALIGNED_ATTR __attribute__((aligned(4)))
 

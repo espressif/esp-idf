@@ -1,4 +1,4 @@
-idf_component_register( REQUIRES esp_rom freertos soc)
+idf_component_register(REQUIRES esp_rom freertos soc driver)
 
 if(CONFIG_USB_ENABLED)
     idf_component_get_property( FREERTOS_ORIG_INCLUDE_PATH freertos ORIG_INCLUDE_PATH)

@@ -12,6 +12,7 @@ else()
     # Regular app build
 
     set(srcs "cache_err_int.c"
+             "memprot.c"
              "clk.c"
              "cpu_start.c"
              "crosscore_int.c"

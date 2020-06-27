@@ -108,3 +108,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/timer.inc
+.. include-build-file:: inc/timer_types.inc

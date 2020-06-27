@@ -17,6 +17,10 @@
 
 #include "server_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * 1. Mesh defines times based on International Atomic Time (TAI). The base
  *    representation of times is the number of seconds after 00:00:00 TAI
@@ -30,7 +34,7 @@
 #define UNKNOWN_TAI_SECONDS         0x0000000000
 #define UNKNOWN_TAI_ZONE_CHANGE     0x0000000000
 #define UNKNOWN_TAI_DELTA_CHANGE    0x0000000000
-#define TAI_UTC_DELAT_MAX_VALUE     0x7FFF
+#define TAI_UTC_DELTA_MAX_VALUE     0x7FFF
 #define TAI_SECONDS_LEN             0x05
 #define TAI_OF_ZONE_CHANGE_LEN      0x05
 #define TAI_OF_DELTA_CHANGE_LEN     0x05
@@ -394,5 +398,9 @@ int bt_mesh_scene_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_scene_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_scheduler_srv_deinit(struct bt_mesh_model *model, bool primary);
 int bt_mesh_scheduler_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TIME_SCENE_SERVER_H_ */

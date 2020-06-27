@@ -74,6 +74,30 @@ struct esp_eth_mac_s {
     esp_err_t (*deinit)(esp_eth_mac_t *mac);
 
     /**
+    * @brief Start Ethernet MAC
+    *
+    * @param[in] mac: Ethernet MAC instance
+    *
+    * @return
+    *      - ESP_OK: start Ethernet MAC successfully
+    *      - ESP_FAIL: start Ethernet MAC failed because some other error occurred
+    *
+    */
+    esp_err_t (*start)(esp_eth_mac_t *mac);
+
+    /**
+    * @brief Stop Ethernet MAC
+    *
+    * @param[in] mac: Ethernet MAC instance
+    *
+    * @return
+    *      - ESP_OK: stop Ethernet MAC successfully
+    *      - ESP_FAIL: stop Ethernet MAC failed because some error occurred
+    *
+    */
+    esp_err_t (*stop)(esp_eth_mac_t *mac);
+
+    /**
     * @brief Transmit packet from Ethernet MAC
     *
     * @param[in] mac: Ethernet MAC instance
@@ -255,6 +279,7 @@ typedef struct {
 } eth_mac_config_t;
 
 #define ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE (1 << 0) /*!< MAC driver can work when cache is disabled */
+#define ETH_MAC_FLAG_PIN_TO_CORE (1 << 1)             /*!< Pin MAC task to the CPU core where driver installation happened */
 
 /**
  * @brief Default configuration for Ethernet MAC object

@@ -6,13 +6,14 @@ API Guides
     :maxdepth: 1
 
     Application Level Tracing <app_trace>
-    :esp32: BluFi <blufi>
+    :SOC_BT_SUPPORTED: BluFi <blufi>
     Bootloader <bootloader>
     Build System <build-system>
     :esp32: Build System (Legacy GNU Make) <build-system-legacy>
     Deep Sleep Wake Stubs <deep-sleep-stub>
+    :esp32s2: Device Firmware Upgrade through USB <dfu>
     Error Handling <error-handling>
-    :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
     ESP-MESH (Wi-Fi) <mesh>
     Core Dump <core_dump>
     Event Handling <event-handling>
@@ -21,6 +22,7 @@ API Guides
     Flash Encryption <../security/flash-encryption>
     FreeRTOS SMP Changes <freertos-smp>
     General Notes <general-notes>
+    Hardware Abstraction <hardware-abstraction>
     High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>

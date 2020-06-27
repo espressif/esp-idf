@@ -63,12 +63,7 @@ struct bt_mesh_dev bt_mesh_dev;
 
 /* P-256 Variables */
 static u8_t bt_mesh_public_key[64];
-static u8_t bt_mesh_private_key[32] = {
-    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,
-    0x74, 0xc9, 0xb3, 0xe3, 0xd2, 0x10, 0x3f, 0x50,
-    0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
-    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
-};
+static u8_t bt_mesh_private_key[32];
 
 /* Scan related functions */
 static bt_mesh_scan_cb_t *bt_mesh_scan_dev_found_cb;
@@ -643,7 +638,7 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             /* This is for EspBleMesh Android app. When it tries to connect with the
              * device at the first time and it fails due to some reason. And after
              * the second connection, the device needs to send GATT service change
-             * indication to the phone manually to notify it dicovering service again.
+             * indication to the phone manually to notify it discovering service again.
              */
             ble_svc_gatt_changed(prov_svc_start_handle, 0xffff);
 
@@ -1411,7 +1406,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
                 (bt_mesh_gattc_info[i].service_uuid == 0x0000)) {
             memcpy(bt_mesh_gattc_info[i].addr.val, addr->val, BLE_MESH_ADDR_LEN);
             bt_mesh_gattc_info[i].addr.type = addr->type;
-            /* Service to be found after exhanging mtu size */
+            /* Service to be found after exchanging mtu size */
             bt_mesh_gattc_info[i].service_uuid = service_uuid;
             break;
         }
@@ -1758,8 +1753,17 @@ void ble_sm_alg_ecc_init(void);
 void bt_mesh_adapt_init(void)
 {
     BT_DBG("%s", __func__);
+
     /* initialization of P-256 parameters */
     ble_sm_alg_ecc_init();
+
+    /* Set "bt_mesh_dev.flags" to 0 (only the "BLE_MESH_DEV_HAS_PUB_KEY"
+     * flag is used) here, because we need to make sure each time after
+     * the private key is initialized, a corresponding public key must
+     * be generated.
+     */
+    bt_mesh_atomic_set(bt_mesh_dev.flags, 0);
+    bt_mesh_rand(bt_mesh_private_key, sizeof(bt_mesh_private_key));
 }
 
 int bt_mesh_rand(void *buf, size_t len)
@@ -1815,7 +1819,8 @@ const u8_t *bt_mesh_pub_key_get(void)
     memcpy(bt_mesh_private_key, pri_key, 32);
 
     bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY);
-    BT_DBG("gen the bt_mesh_public_key:%s", bt_hex(bt_mesh_public_key, sizeof(bt_mesh_public_key)));
+
+    BT_DBG("Public Key %s", bt_hex(bt_mesh_public_key, sizeof(bt_mesh_public_key)));
 
     return bt_mesh_public_key;
 }

@@ -228,7 +228,7 @@ def handle_set(config, error, to_set):
                 try:
                     if not isinstance(val, int):
                         val = int(val, 16)  # input can be a decimal JSON value or a string of hex digits
-                    sym.set_value("%x" % val)
+                    sym.set_value(hex(val))
                 except ValueError:
                     error.append("Hex symbol %s can accept a decimal integer or a string of hex digits, only")
             else:

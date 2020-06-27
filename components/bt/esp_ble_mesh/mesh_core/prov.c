@@ -98,7 +98,7 @@ enum {
     REMOTE_PUB_KEY,        /* Remote key has been received */
     OOB_PUB_KEY,           /* OOB public key is available */
     LINK_ACTIVE,           /* Link has been opened */
-    HAVE_DHKEY,            /* DHKey has been calcualted */
+    HAVE_DHKEY,            /* DHKey has been calculated */
     SEND_CONFIRM,          /* Waiting to send Confirm value */
     WAIT_NUMBER,           /* Waiting for number input from user */
     WAIT_STRING,           /* Waiting for string input from user */
@@ -1546,7 +1546,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
     if (link.rx.buf->len > link.rx.buf->size) {
         BT_ERR("%s, Too large provisioning PDU (%u bytes)",
                __func__, link.rx.buf->len);
-        /* Zephyr uses prov_send_fail_msg() here */
+        prov_send_fail_msg(PROV_ERR_NVAL_FMT);
         return;
     }
 
@@ -1742,6 +1742,15 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
         BT_ERR("%s, No provisioning context provided", __func__);
         return -EINVAL;
     }
+
+    if (prov_info->static_val_len > BLE_MESH_PROV_STATIC_OOB_MAX_LEN ||
+        prov_info->output_size > BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN ||
+        prov_info->input_size > BLE_MESH_PROV_INPUT_OOB_MAX_LEN) {
+        BT_ERR("%s, Invalid auth oob length", __func__);
+        return -EINVAL;
+    }
+
+    __ASSERT(prov_info->uuid, "%s, Device UUID is not initialized", __func__);
 
     /* Changed by Espressif. Use micro-ecc to generate public key now. */
     key = bt_mesh_pub_key_get();

@@ -12,6 +12,10 @@
 
 #include "mesh_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLE_MESH_NET_FLAG_KR       BIT(0)
 #define BLE_MESH_NET_FLAG_IVU      BIT(1)
 
@@ -42,11 +46,11 @@ struct bt_mesh_app_key {
 struct bt_mesh_subnet {
     u32_t beacon_sent;        /* Timestamp of last sent beacon */
     u8_t  beacons_last;       /* Number of beacons during last
-                   * observation window
-                   */
-    u8_t  beacons_cur;        /* Number of beaconds observed during
-                   * currently ongoing window.
-                   */
+                               * observation window
+                               */
+    u8_t  beacons_cur;        /* Number of beacons observed during
+                               * currently ongoing window.
+                               */
 
     u8_t  beacon_cache[21];   /* Cached last authenticated beacon */
 
@@ -416,5 +420,9 @@ static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
         cb->end(0, cb_data);
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NET_H_ */

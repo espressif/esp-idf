@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_LIGHT_LIGHTNESS_CLI
  *
  *  @brief  Define a new Light Lightness Client Model.
@@ -1061,7 +1065,7 @@ typedef struct {
      * Occupancy state upon receiving a Sensor Status message from an
      * occupancy sensor.
      */
-    uint32_t time_occupancy_delay;  /*!< The value of Light LC Time Occupany Delay state */
+    uint32_t time_occupancy_delay;  /*!< The value of Light LC Time Occupancy Delay state */
     /**
      * A timing state that determines the time the controlled lights fade
      * to the level determined by the Light LC Lightness On state.
@@ -1341,7 +1345,7 @@ typedef struct {
 
 /** Parameter of Light LC Occupancy Mode state change event */
 typedef struct {
-    uint8_t mode;       /*!< The value of Light LC Occupany Mode state */
+    uint8_t mode;       /*!< The value of Light LC Occupancy Mode state */
 } esp_ble_mesh_state_change_light_lc_om_set_t;
 
 /** Parameter of Light LC Light OnOff state change event */
@@ -1670,6 +1674,10 @@ typedef void (* esp_ble_mesh_lighting_server_cb_t)(esp_ble_mesh_lighting_server_
  *
  */
 esp_err_t esp_ble_mesh_register_lighting_server_callback(esp_ble_mesh_lighting_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_LIGHTING_MODEL_API_H_ */
 

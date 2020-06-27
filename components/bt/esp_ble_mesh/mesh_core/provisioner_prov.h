@@ -18,22 +18,17 @@
 #include "mesh_main.h"
 #include "mesh_bearer_adapt.h"
 
-#if !CONFIG_BLE_MESH_PROVISIONER
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#ifndef CONFIG_BLE_MESH_PBA_SAME_TIME
 #define CONFIG_BLE_MESH_PBA_SAME_TIME   0
+#endif
+
+#ifndef CONFIG_BLE_MESH_PBG_SAME_TIME
 #define CONFIG_BLE_MESH_PBG_SAME_TIME   0
-
-#else
-
-#if !defined(CONFIG_BLE_MESH_PB_ADV)
-#define CONFIG_BLE_MESH_PBA_SAME_TIME   0
-#endif /* !CONFIG_BLE_MESH_PB_ADV */
-
-#if !defined(CONFIG_BLE_MESH_PB_GATT)
-#define CONFIG_BLE_MESH_PBG_SAME_TIME   0
-#endif /* !CONFIG_BLE_MESH_PB_GATT */
-
-#endif /* !CONFIG_BLE_MESH_PROVISIONER */
+#endif
 
 #define RM_AFTER_PROV  BIT(0)
 #define START_PROV_NOW BIT(1)
@@ -148,7 +143,7 @@ int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_s
 int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
 
 /**
- * @brief This function deinitializes provisioner's PB-GATT and PB-ADV
+ * @brief This function de-initializes provisioner's PB-GATT and PB-ADV
  *        related information.
  *
  * @param[in] erase: Indicate if erasing provisioning information from flash.
@@ -178,7 +173,7 @@ void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_
  */
 const struct bt_mesh_prov *bt_mesh_provisioner_get_prov_info(void);
 
-void bt_mesh_provisoner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
+void bt_mesh_provisioner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
 
 /* The following APIs are for primary provisioner application use */
 
@@ -332,6 +327,18 @@ u16_t bt_mesh_provisioner_get_primary_elem_addr(void);
 int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr);
 
 /**
+ * @brief This function is used to update next allocated address by Provisioner.
+ *
+ * @note  This function is used for mesh internal test.
+ *
+ * @param[in] unicast_addr: unicast address of the node
+ * @param[in] element_num:  element count of the node
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element_num);
+
+/**
  * @brief This function is called to input number/string out-put by unprovisioned device.
  *
  * @param[in] idx       The provisioning link index
@@ -412,5 +419,9 @@ u8_t bt_mesh_set_fast_prov_unicast_addr_range(u16_t min, u16_t max);
  * @return None
  */
 void bt_mesh_set_fast_prov_flags_iv_index(u8_t flags, u32_t iv_index);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROVISIONER_PROV_H_ */

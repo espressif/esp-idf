@@ -6,35 +6,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BLE_MESH_BEARER_ADRPT_H_
-#define _BLE_MESH_BEARER_ADRPT_H_
+#ifndef _BLE_MESH_BEARER_ADAPT_H_
+#define _BLE_MESH_BEARER_ADAPT_H_
 
 #include <sys/types.h>
+#include "sdkconfig.h"
 #include "mesh_types.h"
 #include "mesh_util.h"
 #include "mesh_uuid.h"
 #include "mesh_buf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* BLE Mesh Max Connection Count */
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
-#define BLE_MESH_MAX_CONN   \
-    MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
-
-#define BLE_MESH_ADV_TASK_CORE  TASK_PINNED_TO_CORE
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
 #endif
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 #define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
-
-#ifdef CONFIG_BT_NIMBLE_PINNED_TO_CORE
-#define BLE_MESH_ADV_TASK_CORE  (CONFIG_BT_NIMBLE_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_NIMBLE_PINNED_TO_CORE : tskNO_AFFINITY)
-#else
-#define BLE_MESH_ADV_TASK_CORE  (0)
 #endif
-
-#endif
-
-#define BLE_MESH_ADV_TASK_STACK_SIZE    3072
 
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
 
@@ -672,7 +665,6 @@ struct bt_mesh_gatt_attr {
 }
 
 int bt_mesh_host_init(void);
-int bt_mesh_host_deinit(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
@@ -813,5 +805,9 @@ enum {
 
 int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info);
 
-#endif /* _BLE_MESH_BEARER_ADRPT_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _BLE_MESH_BEARER_ADAPT_H_ */
 

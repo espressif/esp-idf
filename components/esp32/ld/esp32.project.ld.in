@@ -142,6 +142,7 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
+    _invalid_pc_placeholder = ABSOLUTE(.);
     *(.*Vector.literal)
 
     *(.UserEnter.literal);
@@ -160,7 +161,6 @@ SECTIONS
 
     mapping[iram0_text]
 
-    _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
   .dram0.data :
@@ -276,7 +276,7 @@ SECTIONS
         Make a point of not including anything from crtbegin.o or crtend.o, as IDF doesn't use toolchain crt
       */
     __init_array_start = ABSOLUTE(.);
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors .ctors.*))
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
     __init_array_end = ABSOLUTE(.);
     KEEP (*crtbegin.*(.dtors))
     KEEP (*(EXCLUDE_FILE (*crtend.*) .dtors))
@@ -338,8 +338,30 @@ SECTIONS
   .iram0.text_end (NOLOAD) :
   {
     . = ALIGN (4);
-    _iram_end = ABSOLUTE(.);
+    _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
+
+  .iram0.data :
+  {
+    . = ALIGN(4);
+    _iram_data_start = ABSOLUTE(.);
+
+    mapping[iram0_data]
+
+    _iram_data_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  .iram0.bss (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _iram_bss_start = ABSOLUTE(.);
+
+    mapping[iram0_bss]
+
+    _iram_bss_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    _iram_end = ABSOLUTE(.);
+   } > iram0_0_seg
 
   /* Marks the end of data, bss and possibly rodata  */
   .dram0.heap_start (NOLOAD) :
@@ -349,7 +371,7 @@ SECTIONS
   } > dram0_0_seg
 }
 
-ASSERT(((_iram_text_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
 
 ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),

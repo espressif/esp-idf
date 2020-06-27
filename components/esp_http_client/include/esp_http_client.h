@@ -511,6 +511,33 @@ bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client);
 
 int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer, int len);
 
+/**
+ * @brief          Get URL from client
+ *
+ * @param[in]      client   The esp_http_client handle
+ * @param[inout]   url      The buffer to store URL
+ * @param[in]      len      The buffer length
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+
+esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, const int len);
+
+/**
+ * @brief          Get Chunk-Length from client
+ *
+ * @param[in]      client   The esp_http_client handle
+ * @param[out]     len      Variable to store length
+ *
+ * @return
+ *     - ESP_OK                 If successful, len will have length of current chunk
+ *     - ESP_FAIL               If the server is not a chunked server
+ *     - ESP_ERR_INVALID_ARG    If the client or len are NULL
+ */
+esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len);
+
 #ifdef __cplusplus
 }
 #endif

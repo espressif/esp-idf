@@ -120,7 +120,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
         dig_cfg.adc2_pattern_len = 1;
         dig_cfg.adc2_pattern = adc2_pattern;
     }
-
+    adc_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
     adc_hal_digi_init();
     adc_hal_digi_controller_config(&dig_cfg);
@@ -166,6 +166,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
     // set controller
     adc_hal_set_controller( ADC_NUM_1, ADC_CTRL_RTC );
     hall_value = adc_hal_hall_convert();
+    adc_hal_hall_disable();
     ADC_EXIT_CRITICAL();
 
     return hall_value;

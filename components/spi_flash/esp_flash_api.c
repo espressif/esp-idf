@@ -23,6 +23,8 @@
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "esp_flash_internal.h"
+#include <freertos/task.h>
+#include "esp_timer.h"
 
 static const char TAG[] = "spi_flash";
 
@@ -337,20 +339,27 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         err = spiflash_end(chip, err);
     }
 
-
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+    int64_t no_yield_time_us = 0;
+#endif
     while (err == ESP_OK && len >= sector_size) {
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+        int64_t start_time_us = esp_timer_get_time();
+#endif
         err = spiflash_start(chip);
         if (err != ESP_OK) {
             return err;
         }
 
+#ifndef CONFIG_SPI_FLASH_BYPASS_BLOCK_ERASE
         // If possible erase an entire multi-sector block
         if (block_erase_size > 0 && len >= block_erase_size && (start % block_erase_size) == 0) {
             err = chip->chip_drv->erase_block(chip, start);
             start += block_erase_size;
             len -= block_erase_size;
-        }
-        else {
+        } else
+#endif
+        {
             // Otherwise erase individual sector only
             err = chip->chip_drv->erase_sector(chip, start);
             start += sector_size;
@@ -358,6 +367,14 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         }
 
         err = spiflash_end(chip, err);
+
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+        no_yield_time_us += (esp_timer_get_time() - start_time_us);
+        if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
+            no_yield_time_us = 0;
+            vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+        }
+#endif
     }
     return err;
 }
@@ -687,7 +704,7 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
     if (disable) {
         return esp_flash_app_disable_os_functions(esp_flash_default_chip);
     } else {
-        return esp_flash_app_init_os_functions(esp_flash_default_chip);
+        return esp_flash_app_enable_os_functions(esp_flash_default_chip);
     }
 }
 #endif

@@ -22,6 +22,7 @@
 #include "nvs_flash.h"
 
 static const char* TAG = "example";
+#define PROMPT_STR CONFIG_IDF_TARGET
 
 /* Console command history can be stored to and loaded from a file.
  * The easiest way to do this is to use FATFS filesystem on top of
@@ -112,6 +113,9 @@ static void initialize_console(void)
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
+    /* Don't return empty lines */
+    linenoiseAllowEmpty(false);
+
 #if CONFIG_STORE_HISTORY
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
@@ -140,13 +144,14 @@ void app_main(void)
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
+    const char* prompt = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
 
     printf("\n"
            "This is an example of ESP-IDF console component.\n"
            "Type 'help' to get the list of commands.\n"
            "Use UP/DOWN arrows to navigate through command history.\n"
-           "Press TAB when typing command name to auto-complete.\n");
+           "Press TAB when typing command name to auto-complete.\n"
+           "Press Enter or Ctrl+C will terminate the console environment.\n");
 
     /* Figure out if the terminal supports escape sequences */
     int probe_status = linenoiseProbe();
@@ -160,7 +165,7 @@ void app_main(void)
         /* Since the terminal doesn't support escape sequences,
          * don't use color codes in the prompt.
          */
-        prompt = "esp32> ";
+        prompt = PROMPT_STR "> ";
 #endif //CONFIG_LOG_COLORS
     }
 
@@ -170,15 +175,17 @@ void app_main(void)
          * The line is returned when ENTER is pressed.
          */
         char* line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
+        if (line == NULL) { /* Break on EOF or error */
+            break;
         }
-        /* Add the command to the history */
-        linenoiseHistoryAdd(line);
+        /* Add the command to the history if not empty*/
+        if (strlen(line) > 0) {
+            linenoiseHistoryAdd(line);
 #if CONFIG_STORE_HISTORY
-        /* Save command history to filesystem */
-        linenoiseHistorySave(HISTORY_PATH);
+            /* Save command history to filesystem */
+            linenoiseHistorySave(HISTORY_PATH);
 #endif
+        }
 
         /* Try to run the command */
         int ret;
@@ -195,4 +202,7 @@ void app_main(void)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+
+    ESP_LOGE(TAG, "Error or end-of-input, terminating console");
+    esp_console_deinit();
 }

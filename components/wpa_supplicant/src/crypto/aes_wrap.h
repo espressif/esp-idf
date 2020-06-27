@@ -35,6 +35,8 @@ int __must_check omac1_aes_128(const u8 *key, const u8 *data, size_t data_len,
 int __must_check omac1_aes_256(const u8 *key, const u8 *data, size_t data_len,
                                u8 *mac);
 int __must_check aes_128_encrypt_block(const u8 *key, const u8 *in, u8 *out);
+int __must_check aes_ctr_encrypt(const u8 *key, size_t key_len, const u8 *nonce,
+                 u8 *data, size_t data_len);
 int __must_check aes_128_ctr_encrypt(const u8 *key, const u8 *nonce,
 				     u8 *data, size_t data_len);
 int __must_check aes_128_eax_encrypt(const u8 *key,

@@ -1,4 +1,5 @@
-TEST_EXCLUDE_COMPONENTS=libsodium bt app_update driver esp32 esp_timer mbedtls spi_flash test_utils heap pthread soc
+CONFIG_IDF_TARGET="esp32"
+TEST_EXCLUDE_COMPONENTS=libsodium bt app_update driver esp32 esp_ipc esp_timer mbedtls spi_flash test_utils heap pthread soc
 CONFIG_ESP32_SPIRAM_SUPPORT=y
 CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
 CONFIG_SPIRAM_OCCUPY_NO_HOST=y

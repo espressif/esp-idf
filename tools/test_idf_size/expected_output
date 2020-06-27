@@ -3043,7 +3043,31 @@ Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
 Total image size:~ 136039 bytes (.bin may be padded larger)
 
 ***
+Running idf_size.py for esp32s2 (target autodetected)...
+Total sizes:
+ DRAM .data size:    7152 bytes
+ DRAM .bss  size:    1936 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
+      Flash code:   74439 bytes
+    Flash rodata:   18580 bytes
+Total image size:~ 136039 bytes (.bin may be padded larger)
+
+***
 Running idf_size.py on bootloader for esp32s2...
+Total sizes:
+ DRAM .data size:       4 bytes
+ DRAM .bss  size:     264 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   12094 bytes (  30914 available, 28.1% used)
+      Flash code:       0 bytes
+    Flash rodata:       0 bytes
+Total image size:~  12094 bytes (.bin may be padded larger)
+
+***
+Running idf_size.py on bootloader for esp32s2 (target autodetected)...
 Total sizes:
  DRAM .data size:       4 bytes
  DRAM .bss  size:     264 bytes
@@ -3360,6 +3384,37 @@ Section total: 0
 
 Symbols from section: .rtc.text
 Section total: 0
+
+***
+Running idf_size.py diff with another app (different target)...
+WARNING: The target of the reference and other MAP files is esp32 and esp32s2, respectively.
+<CURRENT> MAP file: app.map
+<REFERENCE> MAP file: app_esp32s2.map
+Difference is counted as <CURRENT> - <REFERENCE>, i.e. a positive number means that <CURRENT> is larger.
+Total sizes of <CURRENT>:                                                 <REFERENCE>     Difference
+ DRAM .data size:    9324 bytes                                                  7152          +2172
+ DRAM .bss  size:    8296 bytes                                                  1936          +6360
+Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                   9088          +8532 ( -24404 available,  -15872 total)
+Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 74439         -35507 (+158387 available, +122880 total)
+      Flash code:  146944 bytes                                                 74439         +72505
+    Flash rodata:   39580 bytes                                                 18580         +21000
+Total image size:~ 243076 bytes (.bin may be padded larger)                    176546         +66530
+
+***
+Running idf_size.py diff with another app (wrong target)...
+WARNING: The detected chip target is esp32 but command line argument overwrites it to esp32s2!
+WARNING: The target of the reference and other MAP files is esp32s2 and esp32, respectively.
+<CURRENT> MAP file: app.map
+<REFERENCE> MAP file: app2.map
+Difference is counted as <CURRENT> - <REFERENCE>, i.e. a positive number means that <CURRENT> is larger.
+Total sizes of <CURRENT>:                                                 <REFERENCE>     Difference
+ DRAM .data size:       0 bytes                                                     0
+ DRAM .bss  size:    8296 bytes                                                  2024          +6272
+Used static DRAM:       0 bytes (      0 available, nan% used)                      0                (     +0 available,      +0 total)
+Used static IRAM:       0 bytes (      0 available, nan% used)                      0                (     +0 available,      +0 total)
+      Flash code:  146944 bytes                                                 77191         +69753
+    Flash rodata:   39580 bytes                                                 22360         +17220
+Total image size:~ 194820 bytes (.bin may be padded larger)                    101575         +93245
 
 ***
 Producing JSON output...

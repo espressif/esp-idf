@@ -26,6 +26,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "hal/emac.h"
 #include "soc/soc.h"
 #include "sdkconfig.h"
@@ -248,8 +249,8 @@ static void emac_esp32_rx_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        // block indefinitely until got notification from underlay event
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         do {
             length = ETH_MAX_PACKET_SIZE;
             buffer = malloc(length);
@@ -340,6 +341,20 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_start(&emac->hal);
+    return ESP_OK;
+}
+
+static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_stop(&emac->hal);
+    return ESP_OK;
+}
+
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
@@ -414,6 +429,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.set_mediator = emac_esp32_set_mediator;
     emac->parent.init = emac_esp32_init;
     emac->parent.deinit = emac_esp32_deinit;
+    emac->parent.start = emac_esp32_start;
+    emac->parent.stop = emac_esp32_stop;
     emac->parent.del = emac_esp32_del;
     emac->parent.write_phy_reg = emac_esp32_write_phy_reg;
     emac->parent.read_phy_reg = emac_esp32_read_phy_reg;
@@ -439,8 +456,12 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
               "create pm lock failed", err, NULL);
 #endif
     /* create rx task */
-    BaseType_t xReturned = xTaskCreate(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
+                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", err, NULL);
     return &(emac->parent);
 

@@ -24,7 +24,7 @@
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/gpio_reg.h"
-#include "soc/gpio_pins.h"
+#include "soc/gpio_caps.h"
 #endif
 
 #ifdef __cplusplus

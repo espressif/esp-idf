@@ -682,11 +682,10 @@ void app_main(void)
     i2s_config_t i2s_config = {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-        .communication_format = I2S_COMM_FORMAT_PCM,
 #else
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
-        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
 #endif
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels

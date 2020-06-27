@@ -26,7 +26,6 @@ import threading
 from tiny_test_fw import TinyFW, Utility, Env, DUT
 import ttfw_idf
 
-
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
 
 # matches e.g.: "rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)"
@@ -188,12 +187,11 @@ def reset_dut(dut):
 
 
 def log_test_case(description, test_case, ut_config):
-            Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
-            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in test_case.items() if k != "name" and v is not None), color="orange")
+    Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
+    Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k, v) for (k, v) in test_case.items() if k != "name" and v is not None), color="orange")
 
 
 def run_one_normal_case(dut, one_case, junit_test_case):
-
     reset_dut(dut)
 
     dut.start_capture_raw_data()
@@ -330,7 +328,6 @@ def run_unit_test_cases(env, extra_data):
 
 
 class Handler(threading.Thread):
-
     WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)]!')
     SEND_SIGNAL_PATTERN = re.compile(r'Send signal: \[([^]]+)](\[([^]]+)])?!')
     FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
@@ -691,7 +688,6 @@ def run_multiple_stage_cases(env, extra_data):
 
 
 def detect_update_unit_test_info(env, extra_data, app_bin):
-
     case_config = format_test_case_config(extra_data)
 
     for ut_config in case_config:
@@ -785,7 +781,7 @@ if __name__ == '__main__':
             if len(test_item) == 0:
                 continue
             pair = test_item.split(r':', 1)
-            if len(pair) == 1 or pair[0] is 'name':
+            if len(pair) == 1 or pair[0] == 'name':
                 test_dict['name'] = pair[0]
             elif len(pair) == 2:
                 if pair[0] == 'timeout' or pair[0] == 'child case num':

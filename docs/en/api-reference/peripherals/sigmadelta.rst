@@ -30,3 +30,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/sigmadelta.inc
+.. include-build-file:: inc/sigmadelta_types.inc

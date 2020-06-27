@@ -45,9 +45,6 @@ esp_err_t mesh_light_init(void)
         .timer_num = LEDC_TIMER_0,
         .clk_cfg = LEDC_AUTO_CLK,
     };
-#ifdef CONFIG_IDF_TARGET_ESP32
-    ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
-#endif
     ledc_timer_config(&ledc_timer);
 
     ledc_channel_config_t ledc_channel = {

@@ -12,10 +12,12 @@ API 指南
    严重错误 <fatal-errors>
    Event Handling <event-handling>
    Deep Sleep Wake Stubs <deep-sleep-stub>
+   :esp32s2: Device Firmware Upgrade through USB <dfu>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
    FreeRTOS SMP Changes <freertos-smp>
    Thread Local Storage <thread-local-storage>
+   硬件抽象层 <hardware-abstraction>
    High Level Interrupts <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
    引导加载程序 <bootloader>
@@ -30,9 +32,9 @@ API 指南
    ROM debug console <romconsole>
    :esp32: RF Calibration <RF_calibration>
    WiFi Driver <wifi>
-   :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+   :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
-   :esp32: BluFi <blufi>
+   :SOC_BT_SUPPORTED: BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>
    LwIP <lwip>

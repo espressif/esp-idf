@@ -21,6 +21,7 @@
 #ifdef CONFIG_WPA3_SAE
 
 void esp_wifi_register_wpa3_cb(struct wpa_funcs *wpa_cb);
+void esp_wpa3_free_sae_data(void);
 
 #else /* CONFIG_WPA3_SAE */
 

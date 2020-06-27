@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
 # Application Level Tracing Example (Logging to Host)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -9,36 +6,37 @@ This example demonstrates how to use the [Application Level Tracing Library](htt
 
 UART logs are time consuming and can significantly slow down the function that calls it. Therefore, it is generally a bad idea to use UART logs in time-critical functions. Logging to host via JTAG is significantly faster and can be used in time-critical functions. For more details regarding logging to host via JTAG, refer to the [Logging to Host Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#app-trace-logging-to-host).
 
-This example demonstrates JTAG logging to host in the context of polling for a [zero crossing](https://en.wikipedia.org/wiki/Zero_crossing). The ESP32 will continuously sample a 50 to 60 Hz sinusoidal signal (using the ADC) and log the sampled values (via JTAG). Due to the higher speed of JTAG logging, the polling rate of the ADC should be high enough to detect a zero crossing.
+This example demonstrates JTAG logging to host in the context of polling for a [zero crossing](https://en.wikipedia.org/wiki/Zero_crossing). The example app will continuously sample a 50 to 60 Hz sinusoidal signal (using the ADC) and log the sampled values (via JTAG). Due to the higher speed of JTAG logging, the polling rate of the ADC should be high enough to detect a zero crossing.
 
 This example utilizes the following ESP-IDF features:
 * [DAC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/dac.html) to generate the 50 Hz sinusoidal signal.
 * [ADC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/adc.html) to sample the sinusoidal signal.
 * [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#) to log ADC samples to host.
-* [OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#setup-of-openocd) to interface with the ESP32 and receive the log output over JTAG.
+* [OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#setup-of-openocd) to interface with the target and receive the log output over JTAG.
 
 ## How to use example
 
 ### Hardware Required
 
-To run this example, you need an ESP32 dev board connected to a JTAG adapter, which can come in the following forms:
+To run this example, you need a supported target dev board connected to a JTAG adapter, which can come in the following forms:
 
 * [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
-* ESP32 core board (e.g. ESP32-DevKitC) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
+* ESP32 or ESP32-S2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
 
 This example will assume that that an ESP-WROVER-KIT is used.
 
 #### Pin Assignment:
 
-The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `GPIO34` (`ADC1_CHANNEL_6`). Users may provide this signal themselves, our use the DAC generated signal by bridging GPIO34 with `GPIO25` (`DAC_CHANNEL_1`).
+The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHANNEL_1`. Listed below are the corresponding DAC/ADC channel pins for supported targets.
 
-| DAC Output         | ADC Input          |
-| ------------------ | ------------------ |
-| Channel 1 (GPIO25) | Channel 6 (GPIO34) |
+| Target             | DAC Output         | ADC Input          |
+| ------------------ | ------------------ | ------------------ |
+| ESP32              | Channel 1 (GPIO25) | Channel 6 (GPIO34) |
+| ESP32S2            | Channel 1 (GPIO17) | Channel 6 (GPIO7)  |
 
 #### Extra Connections:
 
-1. Connect the JTAG interface to ESP32 board, and power up both the JTAG and ESP32. For details about how to set up JTAG interface, please see [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html).
+1. Connect the JTAG interface to the target board. For details about how to set up JTAG interface, please see [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html). Power up both the JTAG debugger and target board.
 
 2. After connecting JTAG interface, you need to [Run OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#run-openocd).
 
@@ -68,7 +66,9 @@ idf.py -p PORT flash monitor
 
 (Replace PORT with the name of the serial port to use.)
 
-**Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the ESP32 by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
+**Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the target by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to the file `file://adc.log` (note `file://` depends on
+where OpenOCD was started). Assuming that OpenOCD was started in this example's directory, `adc.log` will be saved here as well.
+
 
 ```bash
 esp apptrace start file://adc.log 0 9000 5 0 0
@@ -102,7 +102,7 @@ I (4329) example: Collected 5 samples in 20 ms.
 To access the JTAG logs, the `adc.log` file should be decoded. This can be done by using the `logtrace_proc.py` script  as such:
 
 ```bash
-$IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
+$IDF_PATH/tools/esp_app_trace/logtrace_proc.py adc.log build/app_trace_to_host.elf
 ```
 
 The `logtrace_proc.py` script should produce the following output when decoding:
@@ -157,9 +157,9 @@ Log records count: 428
 
 ## Troubleshooting
 
-### Unable to flash when OpenOCD is connected to ESP32
+### Unable to flash when OpenOCD is connected to the target
 
-One likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose an ESP32 board/module with a 3.3 V powered SPI flash is being used, but the `board/esp32-wrover.cfg` configuration file is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the ESP32 as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash ESP32 when OpenOCD is connected.
+On ESP32 boards, one likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose a target board/module with a 3.3 V powered SPI flash is being used, but the configuration file (ex. `board/esp32-wrover.cfg` for ESP32) is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the target as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash to the target when OpenOCD is connected.
 
 To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
 

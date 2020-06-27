@@ -100,7 +100,7 @@ static inline bool valid_key_length(const esp_aes_context *ctx)
 void esp_aes_acquire_hardware( void )
 {
     /* Need to lock DMA since it is shared with SHA block */
-    esp_crypto_lock_acquire();
+    esp_crypto_dma_lock_acquire();
 
     /* Enable AES hardware */
     periph_module_enable(PERIPH_AES_DMA_MODULE);
@@ -112,7 +112,7 @@ void esp_aes_release_hardware( void )
     /* Disable AES hardware */
     periph_module_disable(PERIPH_AES_DMA_MODULE);
 
-    esp_crypto_lock_release();
+    esp_crypto_dma_lock_release();
 }
 
 
@@ -446,6 +446,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         /* DMA cannot access memory in the iCache range, copy input to internal ram */
         if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input)) {
             input_needs_realloc = true;
+        }
+
+        if (!esp_ptr_dma_ext_capable(output) && !esp_ptr_dma_capable(output)) {
+            output_needs_realloc = true;
         }
 
         /* If either input or output is unaccessible to the DMA then they need to be reallocated */

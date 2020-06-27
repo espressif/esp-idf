@@ -31,6 +31,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "openeth.h"
 
 static const char *TAG = "emac_opencores";
@@ -319,6 +320,18 @@ static esp_err_t emac_opencores_deinit(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+static esp_err_t emac_opencores_start(esp_eth_mac_t *mac)
+{
+    openeth_enable();
+    return ESP_OK;
+}
+
+static esp_err_t emac_opencores_stop(esp_eth_mac_t *mac)
+{
+    openeth_disable();
+    return ESP_OK;
+}
+
 static esp_err_t emac_opencores_del(esp_eth_mac_t *mac)
 {
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
@@ -366,6 +379,8 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.set_mediator = emac_opencores_set_mediator;
     emac->parent.init = emac_opencores_init;
     emac->parent.deinit = emac_opencores_deinit;
+    emac->parent.start = emac_opencores_start;
+    emac->parent.stop = emac_opencores_stop;
     emac->parent.del = emac_opencores_del;
     emac->parent.write_phy_reg = emac_opencores_write_phy_reg;
     emac->parent.read_phy_reg = emac_opencores_read_phy_reg;
@@ -384,8 +399,12 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
               "alloc emac interrupt failed", out, NULL);
 
     // Create the RX task
-    BaseType_t xReturned = xTaskCreate(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
+                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", out, NULL);
     return &(emac->parent);
 

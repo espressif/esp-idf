@@ -265,7 +265,7 @@ typedef struct touch_filter_config {
     uint32_t hysteresis_thr;    /*!<Hysteresis threshold coefficient. hysteresis = hysteresis coefficient * touch threshold.
                                     If (raw data - baseline) > (touch threshold + hysteresis), the touch channel be touched.
                                     If (raw data - baseline) < (touch threshold - hysteresis), the touch channel be released.
-                                    Range: 0 ~ 3. The coefficient is 0: 4/32;  1: 3/32;  2: 2/32;  3: OFF */
+                                    Range: 0 ~ 3. The coefficient is 0: 4/32;  1: 3/32;  2: 1/32;  3: OFF */
     uint32_t noise_thr;         /*!<Noise threshold coefficient. noise = noise coefficient * touch threshold.
                                     If (raw data - baseline) > (noise), the baseline stop updating.
                                     If (raw data - baseline) < (noise), the baseline start updating.

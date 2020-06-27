@@ -8,7 +8,12 @@
 #ifndef _FOUNDATION_H_
 #define _FOUNDATION_H_
 
+#include "mesh_byteorder.h"
 #include "net.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define OP_APP_KEY_ADD                     BLE_MESH_MODEL_OP_1(0x00)
 #define OP_APP_KEY_UPDATE                  BLE_MESH_MODEL_OP_1(0x01)
@@ -180,5 +185,9 @@ static inline void key_idx_unpack(struct net_buf_simple *buf,
     *idx2 = sys_get_le16(&buf->data[1]) >> 4;
     net_buf_simple_pull(buf, 3);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _FOUNDATION_H_ */

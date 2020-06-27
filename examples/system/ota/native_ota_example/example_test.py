@@ -1,8 +1,7 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
+import http.server
 from threading import Thread
 import ssl
 
@@ -95,10 +94,33 @@ def get_ca_cert(ota_image_dir):
     return server_file, key_file
 
 
+def https_request_handler():
+    """
+    Returns a request handler class that handles broken pipe exception
+    """
+    class RequestHandler(http.server.SimpleHTTPRequestHandler):
+        def finish(self):
+            try:
+                if not self.wfile.closed:
+                    self.wfile.flush()
+                    self.wfile.close()
+            except socket.error:
+                pass
+            self.rfile.close()
+
+        def handle(self):
+            try:
+                http.server.BaseHTTPRequestHandler.handle(self)
+            except socket.error:
+                pass
+
+    return RequestHandler
+
+
 def start_https_server(ota_image_dir, server_ip, server_port):
     server_file, key_file = get_ca_cert(ota_image_dir)
-    httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+    requestHandler = https_request_handler()
+    httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,

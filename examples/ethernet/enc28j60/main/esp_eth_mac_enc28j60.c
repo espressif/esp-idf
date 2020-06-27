@@ -24,6 +24,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "enc28j60.h"
 #include "sdkconfig.h"
 
@@ -574,10 +575,10 @@ out:
 /**
  * @brief Start enc28j60: enable interrupt and start receive
  */
-static esp_err_t enc28j60_start(emac_enc28j60_t *emac)
+static esp_err_t emac_enc28j60_start(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
-
+    emac_enc28j60_t *emac = __containerof(mac, emac_enc28j60_t, parent);
     /* enable interrupt */
     MAC_CHECK(enc28j60_do_bitwise_clr(emac, ENC28J60_EIR, 0xFF) == ESP_OK,
               "clear EIR failed", out, ESP_FAIL);
@@ -598,9 +599,10 @@ out:
 /**
  * @brief   Stop enc28j60: disable interrupt and stop receiving packets
  */
-static esp_err_t enc28j60_stop(emac_enc28j60_t *emac)
+static esp_err_t emac_enc28j60_stop(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
+    emac_enc28j60_t *emac = __containerof(mac, emac_enc28j60_t, parent);
     /* disable interrupt */
     MAC_CHECK(enc28j60_do_bitwise_clr(emac, ENC28J60_EIE, 0xFF) == ESP_OK,
               "clear EIE failed", out, ESP_FAIL);
@@ -681,13 +683,12 @@ static void emac_enc28j60_task(void *arg)
 static esp_err_t emac_enc28j60_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
-    emac_enc28j60_t *emac = __containerof(mac, emac_enc28j60_t, parent);
     switch (link) {
     case ETH_LINK_UP:
-        MAC_CHECK(enc28j60_start(emac) == ESP_OK, "enc28j60 start failed", out, ESP_FAIL);
+        MAC_CHECK(mac->start(mac) == ESP_OK, "enc28j60 start failed", out, ESP_FAIL);
         break;
     case ETH_LINK_DOWN:
-        MAC_CHECK(enc28j60_stop(emac) == ESP_OK, "enc28j60 stop failed", out, ESP_FAIL);
+        MAC_CHECK(mac->stop(mac) == ESP_OK, "enc28j60 stop failed", out, ESP_FAIL);
         break;
     default:
         MAC_CHECK(false, "unknown link status", out, ESP_ERR_INVALID_ARG);
@@ -867,7 +868,7 @@ static esp_err_t emac_enc28j60_deinit(esp_eth_mac_t *mac)
 {
     emac_enc28j60_t *emac = __containerof(mac, emac_enc28j60_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    enc28j60_stop(emac);
+    mac->stop(mac);
     gpio_isr_handler_remove(emac->int_gpio_num);
     gpio_reset_pin(emac->int_gpio_num);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
@@ -902,6 +903,8 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     emac->parent.set_mediator = emac_enc28j60_set_mediator;
     emac->parent.init = emac_enc28j60_init;
     emac->parent.deinit = emac_enc28j60_deinit;
+    emac->parent.start = emac_enc28j60_start;
+    emac->parent.stop = emac_enc28j60_stop;
     emac->parent.del = emac_enc28j60_del;
     emac->parent.write_phy_reg = emac_enc28j60_write_phy_reg;
     emac->parent.read_phy_reg = emac_enc28j60_read_phy_reg;
@@ -917,8 +920,12 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create enc28j60 task */
-    BaseType_t xReturned = xTaskCreate(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
-                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
+                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create enc28j60 task failed", err, NULL);
 
     return &(emac->parent);

@@ -88,6 +88,38 @@ SSL/TLS libraries and with all respective configurations set to default.
 
 .. note::    `These values are subject to change with change in configuration options and version of respective libraries`.
 
+ATECC608A (Secure Element) with ESP-TLS
+--------------------------------------------------
+
+ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE.
+Use of ATECC608A is supported only when ESP-TLS is used with mbedTLS as its underlying SSL/TLS stack.
+ESP-TLS uses mbedtls as its underlying TLS/SSL stack by default unless changed manually.
+
+.. note:: ATECC608A chip on ESP32-WROOM-32SE must be already configured and provisioned, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_
+
+To enable the secure element support, and use it in you project for TLS connection, you will have to follow below steps
+
+1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `esp-cryptoauthlib with ESP_IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_
+
+2) Enable following menuconfig option::
+
+    menuconfig->Component config->ESP-TLS->Use Secure Element (ATECC608A) with ESP-TLS
+
+3) Select type of ATECC608A chip with following option::
+
+    menuconfig->Component config->esp-cryptoauthlib->Choose Type of ATECC608A chip
+
+to know more about different types of ATECC608A chips and how to obtain type of ATECC608A connected to your ESP module please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_
+
+4) Enable use of ATECC608A in ESP-TLS by providing following config option in `esp_tls_cfg_t`
+
+.. code-block:: c
+
+        esp_tls_cfg_t cfg = {
+            /* other configurations options */
+            .use_secure_element = true,
+        };
+
 API Reference
 -------------
 

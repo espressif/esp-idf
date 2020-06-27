@@ -13,7 +13,7 @@ TCP/IP 适配器是在 IDF V4.1之前使用的网络接口抽象组件。本文�
 网络软件栈初始化
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-只需将 ``tcpip_adapter_init()`` 替换位 ``esp_netif_init()``。请注意，:doc:`/api-reference/network/esp_netif` 初始化 API 可返回标准错误代码，还可以使用 ``esp_netif_deinit()`` 进行去初始化。
+只需将 ``tcpip_adapter_init()`` 替换为 ``esp_netif_init()``。请注意，:doc:`/api-reference/network/esp_netif` 初始化 API 可返回标准错误代码，还可以使用 ``esp_netif_deinit()`` 进行去初始化。
 
 此外，还需将 ``#include "tcpip_adapter.h"`` 替换为 ``#include "esp_netif.h"``。
 

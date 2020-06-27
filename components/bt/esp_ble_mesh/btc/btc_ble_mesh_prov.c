@@ -15,10 +15,16 @@
 #include <string.h>
 #include <errno.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "btc_ble_mesh_prov.h"
+#include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_health_model.h"
+#include "btc_ble_mesh_generic_model.h"
+#include "btc_ble_mesh_time_scene_model.h"
+#include "btc_ble_mesh_sensor_model.h"
+#include "btc_ble_mesh_lighting_model.h"
 
 #include "adv.h"
+#include "mesh_kernel.h"
 #include "mesh_proxy.h"
 #include "mesh.h"
 #include "access.h"
@@ -38,16 +44,8 @@
 #include "time_scene_client.h"
 #include "client_common.h"
 #include "state_binding.h"
+#include "local_operation.h"
 
-#include "btc_ble_mesh_prov.h"
-#include "btc_ble_mesh_config_model.h"
-#include "btc_ble_mesh_health_model.h"
-#include "btc_ble_mesh_generic_model.h"
-#include "btc_ble_mesh_time_scene_model.h"
-#include "btc_ble_mesh_sensor_model.h"
-#include "btc_ble_mesh_lighting_model.h"
-
-#include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -560,7 +558,8 @@ static int btc_ble_mesh_output_string_cb(const char *str)
 
     BT_DBG("%s", __func__);
 
-    strncpy(mesh_param.node_prov_output_str.string, str, strlen(str));
+    strncpy(mesh_param.node_prov_output_str.string, str,
+        MIN(strlen(str), sizeof(mesh_param.node_prov_output_str.string)));
 
     ret = btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT);
     return (ret == BT_STATUS_SUCCESS) ? 0 : -1;
@@ -994,7 +993,7 @@ const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
 
 u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
 {
-    return bt_mesh_provisioner_get_prov_node_count();
+    return bt_mesh_provisioner_get_node_count();
 }
 
 /* Configuration Models */
@@ -1573,7 +1572,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     case BTC_BLE_MESH_ACT_NODE_RESET:
         BT_DBG("%s, BTC_BLE_MESH_ACT_NODE_RESET", __func__);
-        bt_mesh_reset();
+        bt_mesh_node_reset();
         return;
     case BTC_BLE_MESH_ACT_SET_OOB_PUB_KEY:
         act = ESP_BLE_MESH_NODE_PROV_SET_OOB_PUB_KEY_COMP_EVT;
@@ -1783,7 +1782,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT;
         param.provisioner_delete_node_with_addr_comp.unicast_addr = arg->delete_node_with_addr.unicast_addr;
         param.provisioner_delete_node_with_addr_comp.err_code =
-            bt_mesh_provisioner_delete_node_with_addr(arg->delete_node_with_addr.unicast_addr);
+            bt_mesh_provisioner_delete_node_with_node_addr(arg->delete_node_with_addr.unicast_addr);
         break;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV
@@ -1900,6 +1899,30 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             bt_mesh_stop_ble_advertising(arg->stop_ble_advertising.index);
         break;
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+    case BTC_BLE_MESH_ACT_MODEL_SUBSCRIBE_GROUP_ADDR:
+        act = ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT;
+        param.model_sub_group_addr_comp.element_addr = arg->model_sub_group_addr.element_addr;
+        param.model_sub_group_addr_comp.company_id = arg->model_sub_group_addr.company_id;
+        param.model_sub_group_addr_comp.model_id = arg->model_sub_group_addr.model_id;
+        param.model_sub_group_addr_comp.group_addr = arg->model_sub_group_addr.group_addr;
+        param.model_sub_group_addr_comp.err_code =
+            bt_mesh_model_subscribe_group_addr(arg->model_sub_group_addr.element_addr,
+                                               arg->model_sub_group_addr.company_id,
+                                               arg->model_sub_group_addr.model_id,
+                                               arg->model_sub_group_addr.group_addr);
+        break;
+    case BTC_BLE_MESH_ACT_MODEL_UNSUBSCRIBE_GROUP_ADDR:
+        act = ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT;
+        param.model_unsub_group_addr_comp.element_addr = arg->model_unsub_group_addr.element_addr;
+        param.model_unsub_group_addr_comp.company_id = arg->model_unsub_group_addr.company_id;
+        param.model_unsub_group_addr_comp.model_id = arg->model_unsub_group_addr.model_id;
+        param.model_unsub_group_addr_comp.group_addr = arg->model_unsub_group_addr.group_addr;
+        param.model_unsub_group_addr_comp.err_code =
+            bt_mesh_model_unsubscribe_group_addr(arg->model_unsub_group_addr.element_addr,
+                                                 arg->model_unsub_group_addr.company_id,
+                                                 arg->model_unsub_group_addr.model_id,
+                                                 arg->model_unsub_group_addr.group_addr);
+        break;
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
@@ -1964,8 +1987,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND: {
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & payload, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;
@@ -1982,8 +2005,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
         bt_mesh_role_param_t common = {0};
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & message, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;

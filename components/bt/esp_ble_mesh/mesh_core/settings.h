@@ -10,6 +10,10 @@
 #include "net.h"
 #include "provisioner_main.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int settings_core_init(void);
 int settings_core_load(void);
 int settings_core_commit(void);
@@ -49,13 +53,17 @@ void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_clear_p_subnet(struct bt_mesh_subnet *sub);
 void bt_mesh_clear_p_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_clear_rpl_single(u16_t src);
-void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov);
-void bt_mesh_clear_node_info(u16_t unicast_addr, bool prov);
-void bt_mesh_store_node_name(struct bt_mesh_node *node, bool prov);
-void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov);
+void bt_mesh_store_node_info(struct bt_mesh_node *node);
+void bt_mesh_clear_node_info(u16_t unicast_addr);
+void bt_mesh_store_node_name(struct bt_mesh_node *node);
+void bt_mesh_store_node_comp_data(struct bt_mesh_node *node);
 #endif
 
 int bt_mesh_settings_init(void);
 int bt_mesh_settings_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SETTINGS_H_ */

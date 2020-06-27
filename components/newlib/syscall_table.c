@@ -25,6 +25,7 @@
 #include "esp_vfs.h"
 #include "esp_newlib.h"
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -98,7 +99,7 @@ static struct syscall_stub_table s_stub_table = {
 void esp_setup_syscall_table(void)
 {
     syscall_table_ptr_pro = &s_stub_table;
-#if !CONFIG_FREERTOS_UNICORE
+#if SOC_CPU_CORES_NUM == 2
     syscall_table_ptr_app = &s_stub_table;
 #endif
     _GLOBAL_REENT = &s_reent;

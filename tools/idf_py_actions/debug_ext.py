@@ -18,7 +18,23 @@ def action_extensions(base_actions, project_path):
     OPENOCD_OUT_FILE = "openocd_out.txt"
     GDBGUI_OUT_FILE = "gdbgui_out.txt"
     # Internal dictionary of currently active processes, threads and their output files
-    processes = {"threads_to_join": []}
+    processes = {"threads_to_join": [], "openocd_issues": None}
+
+    def _check_for_common_openocd_issues(file_name, print_all=True):
+        if processes["openocd_issues"] is not None:
+            return processes["openocd_issues"]
+        try:
+            message = "Please check JTAG connection!"
+            with open(file_name, "r") as f:
+                content = f.read()
+                if print_all:
+                    print(content)
+                if re.search(r"Address already in use", content):
+                    message = ("Please check if another process uses the mentioned ports. OpenOCD already running, perhaps in the background?\n"
+                               "Please list all processes to check if OpenOCD is already running; if so, terminate it before starting OpenOCD from idf.py")
+        finally:
+            processes["openocd_issues"] = message
+            return message
 
     def _check_openocd_errors(fail_if_openocd_failed, target, ctx):
         if fail_if_openocd_failed:
@@ -41,9 +57,7 @@ def action_extensions(base_actions, project_path):
                 else:
                     return
                 # OpenOCD exited or error message detected -> print possible output and terminate
-                with open(name, "r") as f:
-                    print(f.read())
-                raise FatalError('Action "{}" failed due to errors in OpenOCD: Please check jtag connection!'.format(target), ctx)
+                raise FatalError('Action "{}" failed due to errors in OpenOCD:\n{}'.format(target, _check_for_common_openocd_issues(name)), ctx)
 
     def _terminate_async_target(target):
         if target in processes and processes[target] is not None:
@@ -61,6 +75,8 @@ def action_extensions(base_actions, project_path):
                     else:
                         p.kill()
                 if target + "_outfile_name" in processes:
+                    if target == "openocd":
+                        print(_check_for_common_openocd_issues(processes[target + "_outfile_name"], print_all=False))
                     os.unlink(processes[target + "_outfile_name"])
             except Exception as e:
                 print(e)
@@ -169,15 +185,16 @@ def action_extensions(base_actions, project_path):
         processes["openocd_outfile_name"] = openocd_out_name
         print("OpenOCD started as a background task {}".format(process.pid))
 
-    def gdbui(action, ctx, args, gdbgui_port, require_openocd):
+    def gdbui(action, ctx, args, gdbgui_port, gdbinit, require_openocd):
         """
         Asynchronous GDB-UI target
         """
         project_desc = get_project_desc(args, ctx)
         local_dir = project_desc["build_dir"]
         gdb = project_desc["monitor_toolprefix"] + "gdb"
-        gdbinit = os.path.join(local_dir, 'gdbinit')
-        create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc["app_elf"]))
+        if gdbinit is None:
+            gdbinit = os.path.join(local_dir, 'gdbinit')
+            create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc["app_elf"]))
         args = ["gdbgui", "-g", gdb, '--gdb-args="-x={}"'.format(gdbinit)]
         if gdbgui_port is not None:
             args += ["--port", gdbgui_port]
@@ -226,13 +243,13 @@ def action_extensions(base_actions, project_path):
         processes["gdb"] = p
         return p.wait()
 
-    def gdbtui(action, ctx, args, require_openocd):
+    def gdbtui(action, ctx, args, gdbinit, require_openocd):
         """
         Synchronous GDB target with text ui mode
         """
-        gdb(action, ctx, args, 1, require_openocd)
+        gdb(action, ctx, args, 1, gdbinit, require_openocd)
 
-    def gdb(action, ctx, args, gdb_tui, require_openocd):
+    def gdb(action, ctx, args, gdb_tui, gdbinit, require_openocd):
         """
         Synchronous GDB target
         """
@@ -250,8 +267,9 @@ def action_extensions(base_actions, project_path):
             raise FatalError("ELF file not found. You need to build & flash the project before running debug targets", ctx)
         gdb = project_desc["monitor_toolprefix"] + "gdb"
         local_dir = project_desc["build_dir"]
-        gdbinit = os.path.join(local_dir, 'gdbinit')
-        create_local_gdbinit(gdbinit, elf_file)
+        if gdbinit is None:
+            gdbinit = os.path.join(local_dir, 'gdbinit')
+            create_local_gdbinit(gdbinit, elf_file)
         args = [gdb, '-x={}'.format(gdbinit)]
         if gdb_tui is not None:
             args += ['-tui']
@@ -274,6 +292,11 @@ def action_extensions(base_actions, project_path):
         ("Fail this target if openocd (this targets dependency) failed.\n"),
         "is_flag": True,
         "default": False,
+    }
+    gdbinit = {
+        "names": ["--gdbinit"],
+        "help": ("Specify the name of gdbinit file to use\n"),
+        "default": None,
     }
     debug_actions = {
         "global_action_callbacks": [global_callback],
@@ -308,7 +331,7 @@ def action_extensions(base_actions, project_path):
                         ("run gdb in TUI mode\n"),
                         "default":
                         None,
-                    }, fail_if_openocd_failed
+                    }, gdbinit, fail_if_openocd_failed
                 ],
                 "order_dependencies": ["all", "flash"],
             },
@@ -322,14 +345,14 @@ def action_extensions(base_actions, project_path):
                         ("The port on which gdbgui will be hosted. Default: 5000\n"),
                         "default":
                         None,
-                    }, fail_if_openocd_failed
+                    }, gdbinit, fail_if_openocd_failed
                 ],
                 "order_dependencies": ["all", "flash"],
             },
             "gdbtui": {
                 "callback": gdbtui,
                 "help": "GDB TUI mode.",
-                "options": [fail_if_openocd_failed],
+                "options": [gdbinit, fail_if_openocd_failed],
                 "order_dependencies": ["all", "flash"],
             },
             "post_debug": {

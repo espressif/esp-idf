@@ -27,19 +27,25 @@ if(NOT BOOTLOADER_BUILD)
     set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
     set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
     set(ESPTOOLPY_CHIP "${target}")
-    set(ESPTOOLPY_WITH_STUB TRUE)
+    if(CONFIG_ESPTOOLPY_WITH_STUB)
+        set(ESPTOOLPY_WITH_STUB true)
+    else()
+        set(ESPTOOLPY_WITH_STUB false)
+    endif()
 
     if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
         set(ESPTOOLPY_AFTER "no_reset")
     endif()
 
-    file(READ "flasher_args.json.in" flasher_args_content)
-    string(CONFIGURE "${flasher_args_content}" flasher_args_content)
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        file(READ "flasher_args.json.in" flasher_args_content)
+        string(CONFIGURE "${flasher_args_content}" flasher_args_content)
 
-    file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in" 
-                  CONTENT "${flasher_args_content}")
-    file_generate("${CMAKE_BINARY_DIR}/flasher_args.json" 
-                  INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
+        file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in" 
+                    CONTENT "${flasher_args_content}")
+        file_generate("${CMAKE_BINARY_DIR}/flasher_args.json" 
+                    INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
+    endif()
 endif()
 

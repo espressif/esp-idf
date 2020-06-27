@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI
  *
  *  @brief  Define a new Generic OnOff Client Model.
@@ -256,7 +260,7 @@ typedef struct {
 /** Parameters of Generic Admin Property Set. */
 typedef struct {
     uint16_t property_id;   /*!< Property ID identifying a Generic Admin Property */
-    uint8_t  user_access;   /*!< Enumeration indicating user accessn */
+    uint8_t  user_access;   /*!< Enumeration indicating user access */
     struct net_buf_simple *property_value;  /*!< Raw value for the Admin Property */
 } esp_ble_mesh_gen_admin_property_set_t;
 
@@ -1292,6 +1296,10 @@ typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb
  *
  */
 esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_GENERIC_MODEL_API_H_ */
 

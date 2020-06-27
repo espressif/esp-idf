@@ -153,6 +153,9 @@ else()
     list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
 endif()
 
+if(NOT CONFIG_ESPTOOLPY_WITH_STUB)
+    list(APPEND esptool_flash_main_args "--no-stub")
+endif()
 
 idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
 idf_component_set_property(esptool_py FLASH_SUB_ARGS "${ESPTOOLPY_FLASH_OPTIONS}")
@@ -259,7 +262,7 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
 endfunction()
 
 if(NOT BOOTLOADER_BUILD)
-    set(flash_deps "partition_table")
+    set(flash_deps "partition_table_bin")
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
         list(APPEND flash_deps "app")

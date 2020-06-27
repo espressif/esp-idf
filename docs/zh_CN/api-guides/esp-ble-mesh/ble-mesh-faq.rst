@@ -550,7 +550,7 @@ ESP-BLE-MESH 常见问题手册
 
    通常而言，存在少量未配网设备时，用户可以逐个配置。但是如果有大量未配网设备（比如 100 个）时，逐个配置会耗费大量时间。通过快速配网，用户可以在约 50 秒内配网 100 个未配网设备。
 
-4.2 为什么会出现 EspBleMesh App 在快速配网期间长时等待或者一直等待的情况？
+4.2 为什么会出现 EspBleMesh App 在快速配网期间长时间等待的情况？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     快速配网期间，代理节点在配置完一个节点后会断开与 APP 的连接，待所有节点配网完成后再与 APP 重新建立连接。
@@ -565,7 +565,7 @@ ESP-BLE-MESH 常见问题手册
 
     此 **count** 值提供给 App 配置的代理节点，以决定何时提前开始 Proxy 广播信息。
 
-4.5 运行以下示例 :example:`ble_mesh_fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>` 的节点的 Configuration Client Model 何时开始工作？
+4.5 运行以下示例 :example:`fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server>` 的节点的 Configuration Client Model 何时开始工作？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     使能了 Temporary Provisioner 功能后，Configuration Client Model 会开始工作。

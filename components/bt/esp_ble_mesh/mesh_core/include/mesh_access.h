@@ -11,10 +11,9 @@
 #ifndef _BLE_MESH_ACCESS_H_
 #define _BLE_MESH_ACCESS_H_
 
-#include "mesh_types.h"
-#include "mesh_util.h"
+#include "sdkconfig.h"
 #include "mesh_buf.h"
-#include "mesh_kernel.h"
+#include "mesh_timer.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -22,6 +21,12 @@
  * @ingroup bt_mesh
  * @{
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define BLE_MESH_CID_NVAL          0xFFFF
 
 #define BLE_MESH_ADDR_UNASSIGNED   0x0000
 #define BLE_MESH_ADDR_ALL_NODES    0xffff
@@ -188,9 +193,9 @@ struct bt_mesh_model_op {
 #define BLE_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
 /** Length of a short Mesh MIC. */
-#define BLE_MESH_MIC_SHORT 4
+#define BLE_MESH_MIC_SHORT  4
 /** Length of a long Mesh MIC. */
-#define BLE_MESH_MIC_LONG 8
+#define BLE_MESH_MIC_LONG   8
 
 /** @def BLE_MESH_MODEL_OP_LEN
  *
@@ -310,7 +315,7 @@ struct bt_mesh_model_op {
 
 /** @def BLE_MESH_PUB_TRANSMIT_COUNT
  *
- *  @brief Decode Pubhlish Retransmit count from a given value.
+ *  @brief Decode Publish Retransmit count from a given value.
  *
  *  @param transmit Encoded Publish Retransmit count & interval value.
  *
@@ -335,7 +340,8 @@ struct bt_mesh_model_pub {
 
     u16_t addr;         /**< Publish Address. */
     u16_t key:12,       /**< Publish AppKey Index. */
-          cred:1;       /**< Friendship Credentials Flag. */
+          cred:1,       /**< Friendship Credentials Flag. */
+          send_rel:1;   /**< Force reliable sending (segment acks) */
 
     u8_t  ttl;          /**< Publish Time to Live. */
     u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
@@ -363,7 +369,10 @@ struct bt_mesh_model_pub {
      *  @ref bt_mesh_model_pub.msg with a valid publication
      *  message.
      *
-     *  @param mod The Model the Publication Context belogs to.
+     *  If the callback returns non-zero, the publication is skipped
+     *  and will resume on the next periodic publishing interval.
+     *
+     *  @param mod The Model the Publication Context belongs to.
      *
      *  @return Zero on success or (negative) error code otherwise.
      */
@@ -488,6 +497,10 @@ struct bt_mesh_comp {
     size_t elem_count;
     struct bt_mesh_elem *elem;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

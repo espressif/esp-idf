@@ -92,7 +92,7 @@ void app_main(void)
         .command_bits = 3,
         .address_bits = 5,
         .mode = 0,
-        .clock_speed_hz = 5 * 1000 * 1000,
+        .clock_speed_hz = CONFIG_EXAMPLE_ENC28J60_SPI_CLOCK_MHZ * 1000 * 1000,
         .spics_io_num = CONFIG_EXAMPLE_ENC28J60_CS_GPIO,
         .queue_size = 20
     };

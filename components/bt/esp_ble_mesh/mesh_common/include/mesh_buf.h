@@ -11,7 +11,9 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
+#include "sdkconfig.h"
 #include "mesh_slist.h"
+#include "mesh_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,6 +153,18 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
 }
 
 /**
+ * @brief Initialize a net_buf_simple object with data.
+ *
+ * Initialized buffer object with external data.
+ *
+ * @param buf Buffer to initialize.
+ * @param data External data pointer
+ * @param size Amount of data the pointed data buffer if able to fit.
+ */
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size);
+
+/**
  * @brief Reset buffer
  *
  * Reset buffer data so it can be reused for other purposes.
@@ -242,6 +256,30 @@ void net_buf_simple_add_le16(struct net_buf_simple *buf, u16_t val);
 void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val);
 
 /**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_le24(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_be24(struct net_buf_simple *buf, u32_t val);
+
+/**
  * @brief Add 32-bit value at the end of the buffer
  *
  * Adds 32-bit value in little endian format at the end of buffer.
@@ -264,6 +302,54 @@ void net_buf_simple_add_le32(struct net_buf_simple *buf, u32_t val);
  * @param val 32-bit value to be added.
  */
 void net_buf_simple_add_be32(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+void net_buf_simple_add_le48(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+void net_buf_simple_add_be48(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_le64(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_be64(struct net_buf_simple *buf, u64_t val);
 
 /**
  * @brief Push data to the beginning of the buffer.
@@ -309,6 +395,94 @@ void net_buf_simple_push_be16(struct net_buf_simple *buf, u16_t val);
  * @param val 8-bit value to be pushed to the buffer.
  */
 void net_buf_simple_push_u8(struct net_buf_simple *buf, u8_t val);
+
+/**
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le24(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be24(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le32(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be32(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le48(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be48(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le64(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be64(struct net_buf_simple *buf, u64_t val);
 
 /**
  * @brief Remove data from the beginning of the buffer.
@@ -373,6 +547,30 @@ u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
 u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
 
 /**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+u32_t net_buf_simple_pull_le24(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+u32_t net_buf_simple_pull_be24(struct net_buf_simple *buf);
+
+/**
  * @brief Remove and convert 32 bits from the beginning of the buffer.
  *
  * Same idea as with net_buf_simple_pull(), but a helper for operating
@@ -395,6 +593,54 @@ u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
  * @return 32-bit value converted from big endian to host endian.
  */
 u32_t net_buf_simple_pull_be32(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+u64_t net_buf_simple_pull_le48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+u64_t net_buf_simple_pull_be48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+u64_t net_buf_simple_pull_le64(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+u64_t net_buf_simple_pull_be64(struct net_buf_simple *buf);
 
 /**
  * @brief Get the tail pointer for a buffer.
@@ -883,6 +1129,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_add_be16(buf, val) net_buf_simple_add_be16(&(buf)->b, val)
 
 /**
+ * @def net_buf_add_le24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_le24(buf, val) net_buf_simple_add_le24(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_be24(buf, val) net_buf_simple_add_be24(&(buf)->b, val)
+
+/**
  *  @def net_buf_add_le32
  *  @brief Add 32-bit value at the end of the buffer
  *
@@ -907,6 +1179,58 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @param val 32-bit value to be added.
  */
 #define net_buf_add_be32(buf, val) net_buf_simple_add_be32(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_le48
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+#define net_buf_add_le48(buf, val) net_buf_simple_add_le48(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be48
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+#define net_buf_add_be48(buf, val) net_buf_simple_add_be48(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_le64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_le64(buf, val) net_buf_simple_add_le64(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_be64(buf, val) net_buf_simple_add_be64(&(buf)->b, val)
 
 /**
  *  @def net_buf_push
@@ -956,6 +1280,102 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @param val 8-bit value to be pushed to the buffer.
  */
 #define net_buf_push_u8(buf, val) net_buf_simple_push_u8(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le24
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le24(buf, val) net_buf_simple_push_le24(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be24
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be24(buf, val) net_buf_simple_push_be24(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le32
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le32(buf, val) net_buf_simple_push_le32(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be32
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be32(buf, val) net_buf_simple_push_be32(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le48
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le48(buf, val) net_buf_simple_push_le48(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be48
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be48(buf, val) net_buf_simple_push_be48(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le64
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le64(buf, val) net_buf_simple_push_le64(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be64
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be64(buf, val) net_buf_simple_push_be64(&(buf)->b, val)
 
 /**
  *  @def net_buf_pull
@@ -1025,6 +1445,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_pull_be16(buf) net_buf_simple_pull_be16(&(buf)->b)
 
 /**
+ * @def net_buf_pull_le24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le24(buf) net_buf_simple_pull_le24(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be24(buf) net_buf_simple_pull_be24(&(buf)->b)
+
+/**
  *  @def net_buf_pull_le32
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
@@ -1049,6 +1495,58 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return 32-bit value converted from big endian to host endian.
  */
 #define net_buf_pull_be32(buf) net_buf_simple_pull_be32(&(buf)->b)
+
+/**
+ * @def net_buf_pull_le48
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le48(buf) net_buf_simple_pull_le48(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be48
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be48(buf) net_buf_simple_pull_be48(&(buf)->b)
+
+/**
+ * @def net_buf_pull_le64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le64(buf) net_buf_simple_pull_le64(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be64(buf) net_buf_simple_pull_be64(&(buf)->b)
 
 /**
  *  @def net_buf_tailroom

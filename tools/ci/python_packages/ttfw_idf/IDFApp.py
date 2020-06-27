@@ -14,9 +14,10 @@
 
 """ IDF Test Applications """
 import subprocess
-
-import os
+import hashlib
 import json
+import os
+import sys
 
 from tiny_test_fw import App
 from . import CIAssignExampleTest
@@ -150,6 +151,7 @@ class IDFApp(App.BaseApp):
         self.idf_path = self.get_sdk_path()
         self.binary_path = self.get_binary_path(app_path, config_name, target)
         self.elf_file = self._get_elf_file_path(self.binary_path)
+        self._elf_file_sha256 = None
         assert os.path.exists(self.binary_path)
         if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
             if self.IDF_FLASH_ARGS_FILE not in os.listdir(self.binary_path):
@@ -266,20 +268,36 @@ class IDFApp(App.BaseApp):
                                       "gen_esp32part.py")
         assert os.path.exists(partition_tool)
 
-        for (_, path) in self.flash_files:
-            if "partition" in path:
+        errors = []
+        # self.flash_files is sorted based on offset in order to have a consistent result with different versions of
+        # Python
+        for (_, path) in sorted(self.flash_files, key=lambda elem: elem[0]):
+            if 'partition' in os.path.split(path)[1]:
                 partition_file = os.path.join(self.binary_path, path)
+
+                process = subprocess.Popen([sys.executable, partition_tool, partition_file],
+                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                (raw_data, raw_error) = process.communicate()
+                if isinstance(raw_error, bytes):
+                    raw_error = raw_error.decode()
+                if 'Traceback' in raw_error:
+                    # Some exception occured. It is possible that we've tried the wrong binary file.
+                    errors.append((path, raw_error))
+                    continue
+
+                if isinstance(raw_data, bytes):
+                    raw_data = raw_data.decode()
                 break
         else:
-            raise ValueError("No partition table found for IDF binary path: {}".format(self.binary_path))
+            traceback_msg = os.linesep.join(['{} {}:{}{}'.format(partition_tool,
+                                                                 p,
+                                                                 os.linesep,
+                                                                 msg) for p, msg in errors])
+            raise ValueError("No partition table found for IDF binary path: {}{}{}".format(self.binary_path,
+                                                                                           os.linesep,
+                                                                                           traceback_msg))
 
-        process = subprocess.Popen(["python", partition_tool, partition_file],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        raw_data = process.stdout.read()
-        if isinstance(raw_data, bytes):
-            raw_data = raw_data.decode()
         partition_table = dict()
-
         for line in raw_data.splitlines():
             if line[0] != "#":
                 try:
@@ -290,6 +308,7 @@ class IDFApp(App.BaseApp):
                         _size = int(_size[:-1]) * 1024 * 1024
                     else:
                         _size = int(_size)
+                    _offset = int(_offset, 0)
                 except ValueError:
                     continue
                 partition_table[_name] = {
@@ -301,6 +320,16 @@ class IDFApp(App.BaseApp):
                 }
 
         return partition_table
+
+    def get_elf_sha256(self):
+        if self._elf_file_sha256:
+            return self._elf_file_sha256
+
+        sha256 = hashlib.sha256()
+        with open(self.elf_file, 'rb') as f:
+            sha256.update(f.read())
+        self._elf_file_sha256 = sha256.hexdigest()
+        return self._elf_file_sha256
 
 
 class Example(IDFApp):
@@ -351,35 +380,6 @@ class Example(IDFApp):
                 raise OSError("Failed to find example binary")
 
 
-class LoadableElfExample(Example):
-    def __init__(self, app_path, app_files, config_name=None, target=None):
-        # add arg `app_files` for loadable elf example.
-        # Such examples only build elf files, so it doesn't generate flasher_args.json.
-        # So we can't get app files from config file. Test case should pass it to application.
-        super(IDFApp, self).__init__(app_path)
-        self.app_files = app_files
-        self.config_name = config_name
-        self.target = target
-        self.idf_path = self.get_sdk_path()
-        self.binary_path = self.get_binary_path(app_path, config_name, target)
-        self.elf_file = self._get_elf_file_path(self.binary_path)
-        assert os.path.exists(self.binary_path)
-
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        path = self._try_get_binary_from_local_fs(app_path, config_name, target)
-        if path:
-            return path
-        else:
-            artifacts = Artifacts(self.idf_path,
-                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.ExampleGroup),
-                                  app_path, config_name, target)
-            path = artifacts.download_artifact_files(self.app_files)
-            if path:
-                return os.path.join(self.idf_path, path)
-            else:
-                raise OSError("Failed to find example binary")
-
-
 class UT(IDFApp):
     def get_binary_path(self, app_path, config_name=None, target=None):
         if not config_name:
@@ -397,7 +397,7 @@ class UT(IDFApp):
             return path
 
         # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
-        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", config_name)
+        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", target, config_name)
         if os.path.exists(path):
             return path
 
@@ -418,6 +418,35 @@ class TestApp(Example):
                 return os.path.join(self.idf_path, path)
             else:
                 raise OSError("Failed to find example binary")
+
+
+class LoadableElfTestApp(TestApp):
+    def __init__(self, app_path, app_files, config_name=None, target=None):
+        # add arg `app_files` for loadable elf test_app.
+        # Such examples only build elf files, so it doesn't generate flasher_args.json.
+        # So we can't get app files from config file. Test case should pass it to application.
+        super(IDFApp, self).__init__(app_path)
+        self.app_files = app_files
+        self.config_name = config_name
+        self.target = target
+        self.idf_path = self.get_sdk_path()
+        self.binary_path = self.get_binary_path(app_path, config_name, target)
+        self.elf_file = self._get_elf_file_path(self.binary_path)
+        assert os.path.exists(self.binary_path)
+
+    def get_binary_path(self, app_path, config_name=None, target=None):
+        path = self._try_get_binary_from_local_fs(app_path, config_name, target, local_build_dir="build_test_apps")
+        if path:
+            return path
+        else:
+            artifacts = Artifacts(self.idf_path,
+                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.TestAppsGroup),
+                                  app_path, config_name, target)
+            path = artifacts.download_artifact_files(self.app_files)
+            if path:
+                return os.path.join(self.idf_path, path)
+            else:
+                raise OSError("Failed to find the loadable ELF file")
 
 
 class SSC(IDFApp):

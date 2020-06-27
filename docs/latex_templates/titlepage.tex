@@ -1,0 +1,39 @@
+\makeatletter
+\newgeometry{left=0cm,right=0cm,bottom=2cm}
+
+
+\cfoot{www.espressif.com}
+
+\renewcommand{\headrulewidth}{0pt}
+
+{\color{myred}\rule{30pt}{2.1cm}}
+    \hspace{0.2cm}
+    \begin{minipage}[b]{18cm}
+    {\fontsize{36pt}{48pt}\textbf{\idfTarget}}\\
+
+    {\fontsize{28pt}{18pt}\textbf{\color{mygrayy}\@title}}
+    \end{minipage}
+    \hspace{\stretch{1}}
+
+\vspace{48em}
+
+
+\begin{flushright}
+ \setlength\parindent{8em}
+    \begin{minipage}[b]{2cm}
+    \sphinxlogo
+    \end{minipage}
+    \hspace{0.2cm}
+    \rule{3pt}{1.9cm}
+    \hspace{0.2cm}
+    \begin{minipage}[b]{7cm}
+       {\large{\idfReleaseName}}\smallskip\newline
+        {\large{\@author}}\smallskip\newline
+         {\large{\@date}}\smallskip
+    \end{minipage}
+    {\color{myred}\rule{30pt}{1.9cm}}
+\end{flushright}
+
+
+\restoregeometry
+\makeatother

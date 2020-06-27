@@ -320,6 +320,11 @@ void esp_perip_clk_init(void)
     /* Enable WiFi MAC and POWER clocks */
     DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
 
+    /* Set WiFi light sleep clock source to RTC slow clock */
+    DPORT_REG_SET_FIELD(DPORT_BT_LPCK_DIV_INT_REG, DPORT_BT_LPCK_DIV_NUM, 0);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_8M);
+    DPORT_SET_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_RTC_SLOW);
+
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
 }

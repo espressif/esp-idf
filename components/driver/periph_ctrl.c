@@ -17,22 +17,33 @@
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
+static uint8_t ref_counts[PERIPH_MODULE_MAX] = {0};
+
 void periph_module_enable(periph_module_t periph)
 {
+    assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
-    periph_ll_enable_clk_clear_rst(periph);
+    if (ref_counts[periph] == 0) {
+        periph_ll_enable_clk_clear_rst(periph);
+    }
+    ref_counts[periph]++;
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 }
 
 void periph_module_disable(periph_module_t periph)
 {
+    assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
-    periph_ll_disable_clk_set_rst(periph);
+    ref_counts[periph]--;
+    if (ref_counts[periph] == 0) {
+        periph_ll_disable_clk_set_rst(periph);
+    }
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 }
 
 void periph_module_reset(periph_module_t periph)
 {
+    assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     periph_ll_reset(periph);
     portEXIT_CRITICAL_SAFE(&periph_spinlock);

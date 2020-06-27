@@ -73,12 +73,12 @@ esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t hand
 
 esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
 {
-#if CONFIG_LWIP_PPP_PAP_SUPPORT
+#if CONFIG_LWIP_PPP_PAP_SUPPORT && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME) && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD)
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_PAP;
-#elif CONFIG_LWIP_PPP_CHAP_SUPPORT
+#elif CONFIG_LWIP_PPP_CHAP_SUPPORT && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME) && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD)
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_CHAP;
-#else
-#error "Unsupported AUTH Negotiation"
+#elif defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME) && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD)
+#error "Unsupported AUTH Negotiation while AUTH_USERNAME and PASSWORD defined"
 #endif
     // Init netif object
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_PPP();
@@ -88,7 +88,9 @@ esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
     // event loop has to be created when using this API -- create and ignore failure if already created
     esp_event_loop_create_default();
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &on_ip_event, NULL));
+#if defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME) && defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD)
     esp_netif_ppp_set_auth(esp_netif, auth_type, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
+#endif
     void *modem_netif_adapter = esp_modem_netif_setup(dte);
     esp_modem_netif_set_default_handlers(modem_netif_adapter, esp_netif);
     /* attach the modem to the network interface */

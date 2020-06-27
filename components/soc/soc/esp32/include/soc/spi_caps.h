@@ -60,8 +60,8 @@
 //#define SOC_SPI_SUPPORT_CD_SIG
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)          1
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)          ({(void)spi_host; 1;})
 
 // Peripheral doesn't support output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    0
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_host)    ({(void)spi_host; 0;})
 
