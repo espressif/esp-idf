@@ -190,7 +190,11 @@
  * interfaces. If you are going to run lwIP on a device with only one network
  * interface, define this to 0.
  */
+#ifdef CONFIG_LWIP_IP_FORWARD
 #define IP_FORWARD                      CONFIG_LWIP_IP_FORWARD
+#else
+#define IP_FORWARD                      0
+#endif
 
 /**
  * IP_NAPT==1: Enables IPv4 Network Address and Port Translation.
