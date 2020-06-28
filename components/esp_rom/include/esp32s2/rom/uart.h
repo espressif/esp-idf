@@ -162,6 +162,14 @@ typedef struct {
     int              received;
 } UartDevice;
 
+typedef enum {
+    ROM_UART_0,
+    ROM_UART_1,
+    ROM_UART_USB
+} rom_uart_num_t;
+
+#define CDC_ACM_WORK_BUF_MIN 128
+
 /**
   * @brief Init uart device struct value and reset uart0/uart1 rx.
   *        Please do not call this function in SDK.
@@ -428,7 +436,8 @@ uint8_t UartConnCheck(uint8_t uart_no);
 
 /**
   * @brief Initialize the USB ACM UART
-  * Needs to be fed a buffer of at least 128 bytes, plus any rx buffer you may want to have.
+  * Needs to be fed a buffer of at least 128 bytes (CDC_ACM_WORK_BUF_MIN),
+  * plus any rx buffer you may want to have.
   *
   * @param cdc_acm_work_mem Pointer to work mem for CDC-ACM code
   * @param cdc_acm_work_mem_len Length of work mem

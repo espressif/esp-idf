@@ -39,3 +39,4 @@ API 指南
    链接脚本生成机制 <linker-script-generation>
    LwIP <lwip>
    Tools <tools/index>
+   :esp32s2: USB console <usb-console>

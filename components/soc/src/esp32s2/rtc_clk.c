@@ -41,7 +41,8 @@ static const char *TAG = "rtc_clk";
 #define RTC_PLL_FREQ_480M   480
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
-static int s_cur_pll_freq;
+// On the ESP32-S2, 480MHz PLL is enabled at reset.
+static int s_cur_pll_freq = RTC_PLL_FREQ_480M;
 
 static void rtc_clk_cpu_freq_to_8m(void);
 
@@ -374,7 +375,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
     if (soc_clk_sel != DPORT_SOC_CLK_SEL_XTAL) {
         rtc_clk_cpu_freq_to_xtal(xtal_freq, 1);
     }
-    if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) {
+    if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL && config->source_freq_mhz != s_cur_pll_freq) {
         rtc_clk_bbpll_disable();
     }
     if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
@@ -463,7 +464,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     int freq_mhz = (int) rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
-    rtc_clk_bbpll_disable();
+    /* BBPLL is kept enabled */
 }
 
 /**

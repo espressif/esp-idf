@@ -18,6 +18,8 @@ if(BOOTLOADER_BUILD)
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
     "src/bootloader_init.c"
+    "src/bootloader_console.c"
+    "src/bootloader_console_loader.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
     "src/${IDF_TARGET}/flash_encrypt.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"

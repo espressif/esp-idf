@@ -355,7 +355,7 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_perip_clk_init();
     intr_matrix_clear();
 
-#ifndef CONFIG_ESP_CONSOLE_UART_NONE
+#ifdef CONFIG_ESP_CONSOLE_UART
     const int uart_clk_freq = APB_CLK_FREQ;
     uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif

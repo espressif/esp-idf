@@ -132,7 +132,9 @@ void esp_clk_init(void)
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+        uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    }
 
     rtc_clk_cpu_freq_set_config(&new_config);
 
@@ -271,7 +273,9 @@ void esp_perip_clk_init(void)
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
                         DPORT_UART1_CLK_EN |
 #endif
+#ifndef CONFIG_ESP32S2_KEEP_USB_ALIVE
                         DPORT_USB_CLK_EN |
+#endif
                         DPORT_SPI2_CLK_EN |
                         DPORT_I2C_EXT0_CLK_EN |
                         DPORT_UHCI0_CLK_EN |

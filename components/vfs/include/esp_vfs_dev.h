@@ -15,19 +15,11 @@
 #pragma once
 
 #include "esp_vfs.h"
+#include "esp_vfs_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Line ending settings
- */
-typedef enum {
-    ESP_LINE_ENDINGS_CRLF,//!< CR + LF
-    ESP_LINE_ENDINGS_CR,  //!< CR
-    ESP_LINE_ENDINGS_LF,  //!< LF
-} esp_line_endings_t;
 
 /**
  * @brief add /dev/uart virtual filesystem driver

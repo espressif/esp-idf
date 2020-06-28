@@ -62,33 +62,45 @@ menu "Common ESP-related"
             with shared stack.
 
     choice ESP_CONSOLE_UART
-        prompt "UART for console output"
+        prompt "Channel for console output"
         default ESP_CONSOLE_UART_DEFAULT
         help
-            Select whether to use UART for console output (through stdout and stderr).
+            Select where to send console output (through stdout and stderr).
 
             - Default is to use UART0 on pre-defined GPIOs.
             - If "Custom" is selected, UART0 or UART1 can be chosen,
               and any pins can be selected.
             - If "None" is selected, there will be no console output on any UART, except
-              for initial output from ROM bootloader. This output can be further suppressed by
-              bootstrapping GPIO13 pin to low logic level.
-
+              for initial output from ROM bootloader. This ROM output can be suppressed by
+              GPIO strapping or EFUSE, refer to chip datasheet for details.
+            - On chips with USB peripheral, "USB CDC" option redirects output to the
+              CDC port. This option uses the CDC driver in the chip ROM.
+              This option is incompatible with TinyUSB stack.
         config ESP_CONSOLE_UART_DEFAULT
             bool "Default: UART0"
+        config ESP_CONSOLE_USB_CDC
+            bool "USB CDC"
+            # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
+            # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
+            depends on IDF_TARGET_ESP32S2 && !USB_ENABLED
         config ESP_CONSOLE_UART_CUSTOM
-            bool "Custom"
-        config ESP_CONSOLE_UART_NONE
+            bool "Custom UART"
+        config ESP_CONSOLE_NONE
             bool "None"
     endchoice
+
+    # Internal option, indicates that console UART is used (and not USB, for example)
+    config ESP_CONSOLE_UART
+        bool
+        default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
         depends on ESP_CONSOLE_UART_CUSTOM
         default ESP_CONSOLE_UART_CUSTOM_NUM_0
         help
-            Due of a ROM bug, UART2 is not supported for console output
-            via ets_printf.
+            Select which UART peripheral to use for console output.
+            On ESP32, UART2 is not supported for console output via ets_printf.
 
         config ESP_CONSOLE_UART_CUSTOM_NUM_0
             bool "UART0"
@@ -98,28 +110,48 @@ menu "Common ESP-related"
 
     config ESP_CONSOLE_UART_NUM
         int
-        default 0 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_NONE
+        default 0 if ESP_CONSOLE_UART_DEFAULT
         default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        default -1 if !ESP_CONSOLE_UART
 
     config ESP_CONSOLE_UART_TX_GPIO
         int "UART TX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 1 if IDF_TARGET_ESP32
         default 43 if IDF_TARGET_ESP32S2
 
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 3 if IDF_TARGET_ESP32
         default 44 if IDF_TARGET_ESP32S2
 
     config ESP_CONSOLE_UART_BAUDRATE
-        int "UART console baud rate"
-        depends on !ESP_CONSOLE_UART_NONE
+        int
+        prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
+        depends on ESP_CONSOLE_UART
         default 115200
         range 1200 4000000
 
+    config ESP_CONSOLE_USB_CDC_RX_BUF_SIZE
+        int "Size of USB CDC RX buffer"
+        depends on ESP_CONSOLE_USB_CDC
+        default 64
+        range 4 16384
+        help
+            Set the size of USB CDC RX buffer. Increase the buffer size if your application
+            is often receiving data over USB CDC.
+
+    config ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+        bool "Enable ets_printf / ESP_EARLY_LOG via USB CDC"
+        depends on ESP_CONSOLE_USB_CDC
+        default n
+        help
+            If enabled, ets_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
+            Disabling this option saves about 1kB or RAM.
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"

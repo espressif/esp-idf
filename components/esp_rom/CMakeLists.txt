@@ -2,7 +2,8 @@ idf_build_get_property(target IDF_TARGET)
 
 idf_component_register(SRCS "patches/esp_rom_crc.c"
                        INCLUDE_DIRS include
-                       PRIV_INCLUDE_DIRS "${target}")
+                       PRIV_INCLUDE_DIRS "${target}"
+                       PRIV_REQUIRES soc)
 
 if(BOOTLOADER_BUILD)
     set(scripts
@@ -82,4 +83,8 @@ else() # Regular app build
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 
+endif()
+
+if(target STREQUAL "esp32s2")
+    target_sources(${COMPONENT_LIB} PRIVATE "esp32s2/usb_descriptors.c")
 endif()
