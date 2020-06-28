@@ -416,6 +416,7 @@ static int btc_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param
     param.ctx.send_rel = params->ctx.send_rel;
     param.ctx.send_ttl = params->ctx.send_ttl;
     param.msg_timeout = params->msg_timeout;
+    param.msg_role = params->msg_role;
 
     switch (param.opcode) {
     case ESP_BLE_MESH_MODEL_OP_BEACON_GET:
@@ -495,6 +496,7 @@ static int btc_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param
     param.ctx.send_rel = params->ctx.send_rel;
     param.ctx.send_ttl = params->ctx.send_ttl;
     param.msg_timeout = params->msg_timeout;
+    param.msg_role = params->msg_role;
 
     switch (param.opcode) {
     case ESP_BLE_MESH_MODEL_OP_BEACON_SET:
@@ -623,7 +625,6 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
 {
     btc_ble_mesh_config_client_args_t *arg = NULL;
     esp_ble_mesh_cfg_client_cb_param_t cb = {0};
-    bt_mesh_role_param_t role_param = {0};
 
     if (!msg || !msg->arg) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -635,14 +636,6 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_CONFIG_CLIENT_GET_STATE: {
         cb.params = arg->cfg_client_get_state.params;
-
-        role_param.model = (struct bt_mesh_model *)cb.params->model;
-        role_param.role = cb.params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
-
         cb.error_code = btc_ble_mesh_config_client_get_state(arg->cfg_client_get_state.params,
                                                              arg->cfg_client_get_state.get_state);
         if (cb.error_code) {
@@ -652,14 +645,6 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_CONFIG_CLIENT_SET_STATE: {
         cb.params = arg->cfg_client_set_state.params;
-
-        role_param.model = (struct bt_mesh_model *)cb.params->model;
-        role_param.role = cb.params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
-
         cb.error_code = btc_ble_mesh_config_client_set_state(arg->cfg_client_set_state.params,
                                                              arg->cfg_client_set_state.set_state);
         if (cb.error_code) {
