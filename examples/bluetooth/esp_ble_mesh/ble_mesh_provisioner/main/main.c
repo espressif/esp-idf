@@ -21,6 +21,8 @@
 
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 #define LED_OFF             0x0
 #define LED_ON              0x1
 

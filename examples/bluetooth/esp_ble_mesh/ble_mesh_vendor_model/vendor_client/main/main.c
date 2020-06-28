@@ -23,6 +23,8 @@
 #include "ble_mesh_example_nvs.h"
 #include "board.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP             0x02E5
 
 #define PROV_OWN_ADDR       0x0001
