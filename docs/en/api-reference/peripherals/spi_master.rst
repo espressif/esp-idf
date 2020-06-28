@@ -316,16 +316,10 @@ speed a lot if small transactions are used.
        from the cost of FreeRTOS queues and the time switching between tasks and
        the ISR.
 
-            1. For **interrupt transactions**, the CPU can switched to other
-               tasks when the transaction is in flight. This save the cpu time
-               but increase the interval (See :ref:`interrupt_transactions`).
-               For
-               **polling transactions**, it does not block the task but do
-               polling when the transaction is in flight. (See
-               :ref:`polling_transactions`).
+            1.  For **interrupt transactions**, the CPU can switch to other tasks when a transaction is in progress. This saves the CPU time but increases the interval. See :ref:`interrupt_transactions`. 
+            For **polling transactions**, it does not block the task but allows to do polling when the transaction is in progress. For more information, see :ref:`polling_transactions`.
 
-            2.  When the DMA is enabled, it needs about 2us per transaction to setup the linked list. When the master is
-                transferring, it automatically read data from the linked list. If the DMA is not enabled,
+            2.  When the DMA is enabled, it needs about 2us per transaction to setup the linked list. When the master is transferring, it automatically read data from the linked list. If the DMA is not enabled,
                 CPU has to write/read each byte to/from the FIFO by itself. Usually this is faster than 2us, but the
                 transaction length is limited to 64 bytes for both write and read.
 
