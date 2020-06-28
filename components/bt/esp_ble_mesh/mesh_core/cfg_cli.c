@@ -20,10 +20,6 @@
 #include "mesh_common.h"
 #include "cfg_cli.h"
 
-s32_t config_msg_timeout;
-
-static bt_mesh_config_client_t *cli;
-
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
     { OP_BEACON_SET,           OP_BEACON_STATUS        },
@@ -1383,16 +1379,6 @@ int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, u8_t tran
     return send_msg_with_u8(param, OP_NET_TRANSMIT_SET, transmit);
 }
 
-s32_t bt_mesh_cfg_cli_timeout_get(void)
-{
-    return config_msg_timeout;
-}
-
-void bt_mesh_cfg_cli_timeout_set(s32_t timeout)
-{
-    config_msg_timeout = timeout;
-}
-
 int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
 {
     config_internal_data_t *internal = NULL;
@@ -1433,8 +1419,6 @@ int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
         bt_mesh_client_clear_list(client->internal_data);
     }
 
-    cli = client;
-
     /* Configuration Model security is device-key based */
     model->keys[0] = BLE_MESH_KEY_DEV;
 
@@ -1469,10 +1453,8 @@ int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary)
 
         /* Free the allocated internal data */
         bt_mesh_free(client->internal_data);
-        cli->internal_data = NULL;
+        client->internal_data = NULL;
     }
-
-    client = NULL;
 
     bt_mesh_cfg_client_mutex_free();
 

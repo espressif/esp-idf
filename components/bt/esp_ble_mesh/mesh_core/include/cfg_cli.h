@@ -135,9 +135,6 @@ int bt_mesh_cfg_hb_pub_get(bt_mesh_client_common_param_t *param);
 
 int bt_mesh_cfg_node_reset(bt_mesh_client_common_param_t *param);
 
-s32_t bt_mesh_cfg_cli_timeout_get(void);
-void bt_mesh_cfg_cli_timeout_set(s32_t timeout);
-
 /* Configuration Client Status Message Context */
 
 struct bt_mesh_cfg_comp_data_status {
