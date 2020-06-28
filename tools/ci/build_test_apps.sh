@@ -62,12 +62,9 @@ cd ${IDF_PATH}
 
 # If changing the work-dir or build-dir, remember to update the "artifacts" in gitlab-ci configs, and IDFApp.py.
 
-${IDF_PATH}/tools/find_apps.py tools/test_apps \
+${IDF_PATH}/tools/find_apps.py \
     -vv \
     --format json \
-    --build-system cmake \
-    --target ${IDF_TARGET} \
-    --recursive \
     --work-dir "${BUILD_PATH}/@f/@w/@t" \
     --build-dir build \
     --build-log "${LOG_PATH}/@f_@w.txt" \
@@ -75,7 +72,7 @@ ${IDF_PATH}/tools/find_apps.py tools/test_apps \
     --config 'sdkconfig.ci=default' \
     --config 'sdkconfig.ci.*=' \
     --config '=default' \
-    --scan-tests-json ${SCAN_CUSTOM_TEST_JSON}
+    --app-list ${SCAN_CUSTOM_TEST_JSON}
 
 # --config rules above explained:
 # 1. If sdkconfig.ci exists, use it build the example with configuration name "default"

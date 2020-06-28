@@ -5,12 +5,13 @@
 # Produces the list of builds. The list can be consumed by build_apps.py, which performs the actual builds.
 
 import argparse
-import json
-import os
-import sys
-import re
 import glob
+import json
 import logging
+import os
+import re
+import sys
+
 import typing
 
 from find_build_apps import (
@@ -197,7 +198,10 @@ def main():
         action="store_true",
         help="Look for apps in the specified directories recursively.",
     )
-    parser.add_argument("--build-system", choices=BUILD_SYSTEMS.keys(), default=BUILD_SYSTEM_CMAKE)
+    parser.add_argument(
+        "--build-system",
+        choices=BUILD_SYSTEMS.keys()
+    )
     parser.add_argument(
         "--work-dir",
         help="If set, the app is first copied into the specified directory, and then built." +
@@ -241,60 +245,77 @@ def main():
         help="Output the list of builds to the specified file",
     )
     parser.add_argument(
-        '-s',
-        '--scan-tests-json',
+        "--app-list",
         default=None,
-        help="Scan tests result. Restrict the build/architect behavior to apps need to be built.\n"
+        help="Scan tests results. Restrict the build/artifacts preservation behavior to apps need to be built. "
              "If the file does not exist, will build all apps and upload all artifacts."
     )
-    parser.add_argument("paths", nargs="+", help="One or more app paths.")
+    parser.add_argument(
+        "-p", "--paths",
+        nargs="+",
+        help="One or more app paths."
+    )
     args = parser.parse_args()
     setup_logging(args)
 
-    build_system_class = BUILD_SYSTEMS[args.build_system]
-
-    # If the build target is not set explicitly, get it from the environment or use the default one (esp32)
-    if not args.target:
-        env_target = os.environ.get("IDF_TARGET")
-        if env_target:
-            logging.info("--target argument not set, using IDF_TARGET={} from the environment".format(env_target))
-            args.target = env_target
-        else:
-            logging.info("--target argument not set, using IDF_TARGET={} as the default".format(DEFAULT_TARGET))
-            args.target = DEFAULT_TARGET
+    # Arguments Validation
+    if args.app_list:
+        conflict_args = [args.recursive, args.build_system, args.target, args.exclude, args.paths]
+        if any(conflict_args):
+            raise ValueError('Conflict settings. "recursive", "build_system", "target", "exclude", "paths" should not '
+                             'be specified with "app_list"')
+        if not os.path.exists(args.app_list):
+            raise OSError("File not found {}".format(args.app_list))
+    else:
+        # If the build target is not set explicitly, get it from the environment or use the default one (esp32)
+        if not args.target:
+            env_target = os.environ.get("IDF_TARGET")
+            if env_target:
+                logging.info("--target argument not set, using IDF_TARGET={} from the environment".format(env_target))
+                args.target = env_target
+            else:
+                logging.info("--target argument not set, using IDF_TARGET={} as the default".format(DEFAULT_TARGET))
+                args.target = DEFAULT_TARGET
+        if not args.build_system:
+            logging.info("--build-system argument not set, using {} as the default".format(BUILD_SYSTEM_CMAKE))
+            args.build_system = BUILD_SYSTEM_CMAKE
+        required_args = [args.build_system, args.target, args.paths]
+        if not all(required_args):
+            raise ValueError('If app_list not set, arguments "build_system", "target", "paths" are required.')
 
     # Prepare the list of app paths, try to read from the scan_tests result.
-    # If the file exists, then follow the file's app_dir and build/archifacts behavior, won't do find_apps() again.
+    # If the file exists, then follow the file's app_dir and build/artifacts behavior, won't do find_apps() again.
     # If the file not exists, will do find_apps() first, then build all apps and upload all artifacts.
-    if args.scan_tests_json and os.path.exists(args.scan_tests_json):
-        apps = [json.loads(line) for line in open(args.scan_tests_json)]
+    if args.app_list:
+        apps = [json.loads(line) for line in open(args.app_list)]
     else:
         app_dirs = []
+        build_system_class = BUILD_SYSTEMS[args.build_system]
         for path in args.paths:
             app_dirs += find_apps(build_system_class, path, args.recursive, args.exclude or [], args.target)
-        apps = [{'app_dir': app_dir, 'build': True, 'preserve': True} for app_dir in app_dirs]
+        apps = [{"app_dir": app_dir, "build": True, "preserve": True} for app_dir in app_dirs]
 
     if not apps:
-        logging.critical("No {} apps found".format(build_system_class.NAME))
+        logging.critical("No apps found")
         raise SystemExit(1)
     logging.info("Found {} apps".format(len(apps)))
 
-    apps.sort(key=lambda x: x['app_dir'])
+    apps.sort(key=lambda x: x["app_dir"])
 
     # Find compatible configurations of each app, collect them as BuildItems
     build_items = []  # type: typing.List[BuildItem]
     config_rules = config_rules_from_str(args.config or [])
     for app in apps:
         build_items += find_builds_for_app(
-            app['app_dir'],
+            app["app_dir"],
             args.work_dir,
             args.build_dir,
             args.build_log,
-            args.target,
-            args.build_system,
+            args.target or app["target"],
+            args.build_system or app["build_system"],
             config_rules,
-            app['build'],
-            app['preserve'],
+            app["build"],
+            app["preserve"],
         )
     logging.info("Found {} builds".format(len(build_items)))
 

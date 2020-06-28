@@ -6,11 +6,11 @@
 # log files for every build.
 # Exits with a non-zero exit code if any warning is found.
 
-import os
-import sys
 import argparse
 import logging
+import os
 import re
+import sys
 
 try:
     from find_build_apps import BuildItem, setup_logging
@@ -78,7 +78,7 @@ def main():
     found_warnings = 0
     for build_item in build_items:
         if not build_item.build:
-            logging.debug('Skipping build detected. Skipping checking...')
+            logging.debug("Skip checking build log for app {}".format(build_item.app_dir))
             continue
         if not build_item.build_log_path:
             logging.debug("No log file for {}".format(build_item.work_dir))

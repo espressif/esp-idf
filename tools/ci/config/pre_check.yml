@@ -203,6 +203,7 @@ scan_tests:
   extends: .scan_build_tests
   only:
     variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_CUSTOM_TEST
   artifacts:
@@ -215,6 +216,6 @@ scan_tests:
     TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
   script:
-    - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR

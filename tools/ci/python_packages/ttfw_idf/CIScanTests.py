@@ -52,13 +52,21 @@ def main():
     actions = parser.add_subparsers(dest='action')
 
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('paths', type=str, nargs='+',
+    common.add_argument('paths',
+                        nargs='+',
                         help="One or more app paths")
-    common.add_argument('-b', '--build-system', choices=BUILD_SYSTEMS.keys(), default=BUILD_SYSTEM_CMAKE)
-    common.add_argument('-c', '--ci-config-file', type=str, required=True,
+    common.add_argument('-b', '--build-system',
+                        choices=BUILD_SYSTEMS.keys(),
+                        default=BUILD_SYSTEM_CMAKE)
+    common.add_argument('-c', '--ci-config-file',
+                        required=True,
                         help="gitlab ci config target-test file")
-    common.add_argument('-o', '--output-path', type=str, required=True,
+    common.add_argument('-o', '--output-path',
+                        required=True,
                         help="output path of the scan result")
+    common.add_argument("--exclude",
+                        action="append",
+                        help="Ignore specified directory. Can be used multiple times.")
     common.add_argument('--preserve', action="store_true",
                         help='add this flag to preserve artifacts for all apps')
     common.add_argument('--build-all', action="store_true",
@@ -99,7 +107,8 @@ def main():
     '''
     scan_info_dict = defaultdict(dict)
     # store the test cases dir, exclude these folders when scan for standalone apps
-    exclude_apps = []
+    default_exclude = args.exclude if args.exclude else []
+    exclude_apps = default_exclude
 
     build_system = args.build_system.lower()
     build_system_class = BUILD_SYSTEMS[build_system]
@@ -112,7 +121,7 @@ def main():
             app_target = case.case_info['target']
             if app_target.lower() != target.lower():
                 continue
-            test_case_apps.update(find_apps(build_system_class, app_dir, True, [], target.lower()))
+            test_case_apps.update(find_apps(build_system_class, app_dir, True, default_exclude, target.lower()))
             exclude_apps.append(app_dir)
 
     for target in VALID_TARGETS:
@@ -130,18 +139,21 @@ def main():
             apps.append({
                 'app_dir': app_dir,
                 'build': True,
+                'build_system': args.build_system,
+                'target': target,
                 'preserve': args.preserve or test_case_apps_preserve_default
             })
         for app_dir in scan_info_dict[target]['standalone_apps']:
             apps.append({
                 'app_dir': app_dir,
                 'build': build_all if build_system == 'cmake' else True,
+                'build_system': args.build_system,
+                'target': target,
                 'preserve': (args.preserve and build_all) if build_system == 'cmake' else False
             })
         output_path = os.path.join(args.output_path, 'scan_{}_{}.json'.format(target.lower(), build_system))
-        if apps:
-            with open(output_path, 'w') as fw:
-                fw.writelines([json.dumps(app) + '\n' for app in apps])
+        with open(output_path, 'w') as fw:
+            fw.writelines([json.dumps(app) + '\n' for app in apps])
 
 
 if __name__ == '__main__':

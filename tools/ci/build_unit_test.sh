@@ -63,7 +63,8 @@ cd ${IDF_PATH}
 # This part of the script produces the same result for all the unit test app build jobs. It may be moved to a separate stage
 # (pre-build) later, then the build jobs will receive ${BUILD_LIST_JSON} file as an artifact.
 
-${IDF_PATH}/tools/find_apps.py tools/unit-test-app \
+${IDF_PATH}/tools/find_apps.py \
+    -p tools/unit-test-app \
     -vv \
     --format json \
     --build-system cmake \

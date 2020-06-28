@@ -5,9 +5,10 @@
 #
 
 import argparse
+import logging
 import shutil
 import sys
-import logging
+
 from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS
 
 
@@ -109,7 +110,7 @@ def main():
     failed_builds = []
     for build_info in builds_for_current_job:
         if not build_info.build:
-            logging.info('Skip build detected. Skipping...')
+            logging.info("Skip building app {}".format(build_info.app_dir))
             continue
 
         logging.info("Running build {}: {}".format(build_info.index, repr(build_info)))
@@ -124,9 +125,9 @@ def main():
                 raise SystemExit(1)
         else:
             if not build_info.preserve:
-                logging.info('NOT preserve artifacts detected. Deleting...')
+                logging.info("Removing build directory {}".format(build_info.build_dir))
                 # we only remove binaries here, log files are still needed by check_build_warnings.py
-                shutil.rmtree(build_info.work_dir, ignore_errors=True)
+                shutil.rmtree(build_info.build_dir, ignore_errors=True)
 
     if failed_builds:
         logging.error("The following build have failed:")

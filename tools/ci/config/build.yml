@@ -176,7 +176,8 @@ build_examples_cmake_esp32s2:
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_test_apps"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_test_apps"
-    SCAN_CUSTOM_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}.json
+    CUSTOM_TEST_BUILD_SYSTEM: "cmake"
+    SCAN_CUSTOM_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}_${CUSTOM_TEST_BUILD_SYSTEM}.json
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
