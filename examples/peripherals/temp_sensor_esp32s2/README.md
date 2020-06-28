@@ -1,3 +1,6 @@
+| Supported Targets | ESP32-S2 |
+| ----------------- | -------- |
+
 # ESP32-S2 Temperature Sensor Example
 
 The ESP32-S2 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.    
