@@ -390,9 +390,7 @@ static int time_scene_get_state(bt_mesh_client_common_param_t *common, void *val
         }
     }
 
-    err = bt_mesh_client_send_msg(common->model, common->opcode, &common->ctx, &msg,
-                                  timeout_handler, common->msg_timeout, true,
-                                  common->cb, common->cb_data);
+    err = bt_mesh_client_send_msg(common, &msg, true, timeout_handler);
     if (err) {
         BT_ERR("Failed to send Time Scene Get message (err %d)", err);
     }
@@ -485,9 +483,7 @@ static int time_scene_set_state(bt_mesh_client_common_param_t *common,
         goto end;
     }
 
-    err = bt_mesh_client_send_msg(common->model, common->opcode, &common->ctx, msg,
-                                  timeout_handler, common->msg_timeout, need_ack,
-                                  common->cb, common->cb_data);
+    err = bt_mesh_client_send_msg(common, msg, need_ack, timeout_handler);
     if (err) {
         BT_ERR("Failed to send Time Scene Set message (err %d)", err);
     }

@@ -104,13 +104,9 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
                                                           struct bt_mesh_msg_ctx *ctx,
                                                           struct net_buf_simple *buf, bool need_pub);
 
-int bt_mesh_client_send_msg(struct bt_mesh_model *model,
-                            u32_t opcode,
-                            struct bt_mesh_msg_ctx *ctx,
-                            struct net_buf_simple *msg,
-                            k_work_handler_t timer_handler,
-                            s32_t timeout, bool need_ack,
-                            const struct bt_mesh_send_cb *cb, void *cb_data);
+int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
+                            struct net_buf_simple *msg, bool need_ack,
+                            k_work_handler_t timer_handler);
 
 int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
