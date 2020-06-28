@@ -635,12 +635,14 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_CONFIG_CLIENT_GET_STATE: {
         cb.params = arg->cfg_client_get_state.params;
+
         role_param.model = (struct bt_mesh_model *)cb.params->model;
         role_param.role = cb.params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             BT_ERR("Failed to set model role");
             break;
         }
+
         cb.error_code = btc_ble_mesh_config_client_get_state(arg->cfg_client_get_state.params,
                                                              arg->cfg_client_get_state.get_state);
         if (cb.error_code) {
@@ -650,12 +652,14 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_CONFIG_CLIENT_SET_STATE: {
         cb.params = arg->cfg_client_set_state.params;
+
         role_param.model = (struct bt_mesh_model *)cb.params->model;
         role_param.role = cb.params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             BT_ERR("Failed to set model role");
             break;
         }
+
         cb.error_code = btc_ble_mesh_config_client_set_state(arg->cfg_client_set_state.params,
                                                              arg->cfg_client_set_state.set_state);
         if (cb.error_code) {

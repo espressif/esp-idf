@@ -493,8 +493,7 @@ end:
     return err;
 }
 
-int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common,
-                                        void *get, void *status)
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get)
 {
     bt_mesh_time_scene_client_t *client = NULL;
 
@@ -532,8 +531,7 @@ int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common,
     return time_scene_get_state(common, get);
 }
 
-int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common,
-                                        void *set, void *status)
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set)
 {
     bt_mesh_time_scene_client_t *client = NULL;
     u16_t length = 0U;

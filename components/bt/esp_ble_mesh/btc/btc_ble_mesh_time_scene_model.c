@@ -312,12 +312,14 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_GET_STATE: {
         params = arg->time_scene_client_get_state.params;
+
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             BT_ERR("Failed to set model role");
             break;
         }
+
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -328,8 +330,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         common.msg_timeout = params->msg_timeout;
 
         cb.params = arg->time_scene_client_get_state.params;
-        cb.error_code = bt_mesh_time_scene_client_get_state(&common,
-                        (void *)arg->time_scene_client_get_state.get_state, (void *)&cb.status_cb);
+        cb.error_code = bt_mesh_time_scene_client_get_state(&common, arg->time_scene_client_get_state.get_state);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_time_scene_client_callback(&cb, ESP_BLE_MESH_TIME_SCENE_CLIENT_GET_STATE_EVT);
@@ -338,12 +339,14 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_SET_STATE: {
         params = arg->time_scene_client_set_state.params;
+
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             BT_ERR("Failed to set model role");
             break;
         }
+
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -354,8 +357,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         common.msg_timeout = params->msg_timeout;
 
         cb.params = arg->time_scene_client_set_state.params;
-        cb.error_code = bt_mesh_time_scene_client_set_state(&common,
-                        (void *)arg->time_scene_client_set_state.set_state, (void *)&cb.status_cb);
+        cb.error_code = bt_mesh_time_scene_client_set_state(&common, arg->time_scene_client_set_state.set_state);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_time_scene_client_callback(&cb, ESP_BLE_MESH_TIME_SCENE_CLIENT_SET_STATE_EVT);
