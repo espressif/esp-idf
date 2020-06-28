@@ -1983,6 +1983,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
                                                 arg->model_publish.device_role);
             if (err) {
                 BT_ERR("Failed to set client role");
+                btc_ble_mesh_model_publish_comp_cb(arg->model_publish.model, err);
                 break;
             }
         }
@@ -1995,10 +1996,14 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Out of memory", __func__);
+            btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
+                                            arg->model_send.opcode, -ENOMEM);
             break;
         }
+
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
         arg->model_send.ctx->srv_send = true;
+
         err = bt_mesh_model_send((struct bt_mesh_model *)arg->model_send.model,
                                  (struct bt_mesh_msg_ctx *)arg->model_send.ctx,
                                  buf, NULL, NULL);
@@ -2012,8 +2017,11 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Out of memory", __func__);
+            btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
+                                            arg->model_send.opcode, -ENOMEM);
             break;
         }
+
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
         bt_mesh_client_common_param_t param = {
             .opcode = arg->model_send.opcode,
