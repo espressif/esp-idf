@@ -70,17 +70,17 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int cs_io_num = config->cs_io_num;
     int spics_in = spi_periph_signal[config->host_id].spics_in;
     int spics_out = spi_periph_signal[config->host_id].spics_out[config->cs_id];
+    int spics_func = spi_periph_signal[config->host_id].func;
     uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     if (use_iomux) {
-        GPIO.func_in_sel_cfg[spics_in].sig_in_sel = 0;
-        PIN_INPUT_ENABLE(iomux_reg);
-        GPIO.func_out_sel_cfg[spics_out].oen_sel = 0;
-        GPIO.func_out_sel_cfg[spics_out].oen_inv_sel = false;
-        PIN_FUNC_SELECT(iomux_reg, 1);
+        // This requires `gpio_iomux_in` and `gpio_iomux_out` to be in the IRAM.
+        // `linker.lf` is used fulfill this requirement.
+        gpio_iomux_in(cs_io_num, spics_in);
+        gpio_iomux_out(cs_io_num, spics_func, false);
     } else {
         PIN_INPUT_ENABLE(iomux_reg);
         if (cs_io_num < 32) {
@@ -112,17 +112,28 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     if (config->host_id == SPI_HOST) caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
     chip = (esp_flash_t*)heap_caps_malloc(sizeof(esp_flash_t), caps);
-    host = (spi_flash_host_driver_t*)heap_caps_malloc(sizeof(spi_flash_host_driver_t), caps);
-    host_data = (memspi_host_data_t*)heap_caps_malloc(sizeof(memspi_host_data_t), caps);
-    if (!chip || !host || !host_data) {
+    if (!chip) {
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
 
+    host = (spi_flash_host_driver_t*)heap_caps_malloc(sizeof(spi_flash_host_driver_t), caps);
     *chip = (esp_flash_t) {
         .read_mode = config->io_mode,
         .host = host,
     };
+    if (!host) {
+        ret = ESP_ERR_NO_MEM;
+        goto fail;
+    }
+
+    host_data = (memspi_host_data_t*)heap_caps_malloc(sizeof(memspi_host_data_t), caps);
+    host->driver_data = host_data;
+    if (!host_data) {
+        ret = ESP_ERR_NO_MEM;
+        goto fail;
+    }
+
     esp_err_t err = esp_flash_init_os_functions(chip, config->host_id);
     if (err != ESP_OK) {
         ret = err;
@@ -147,6 +158,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     *out_chip = chip;
     return ret;
 fail:
+    // The memory allocated are free'd in the `spi_bus_remove_flash_device`.
     spi_bus_remove_flash_device(chip);
     return ret;
 }
@@ -180,9 +192,10 @@ static DRAM_ATTR esp_flash_t default_chip = {
     .os_func = &esp_flash_noos_functions,
 };
 
-esp_err_t esp_flash_init_default_chip()
+esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
+
     //the host is already initialized, only do init for the data and load it to the host
     spi_flash_hal_init(&default_driver_data, &cfg);
     default_chip.host->driver_data = &default_driver_data;
@@ -206,7 +219,7 @@ esp_err_t esp_flash_init_default_chip()
     return ESP_OK;
 }
 
-esp_err_t esp_flash_app_init()
+esp_err_t esp_flash_app_init(void)
 {
     return esp_flash_app_init_os_functions(&default_chip);
 }
