@@ -127,7 +127,7 @@ static const char TAG[] = "adc";
 
 static inline void dac_output_set_enable(dac_channel_t channel, bool enable);
 static inline void adc1_hall_enable(bool enable);
-
+static inline void dac_rtc_sync_by_adc(bool enable);
 
 /*---------------------------------------------------------------
                         RTC IO
@@ -1459,6 +1459,9 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
     adc_gpio_init(ADC_UNIT_1, channel);
     adc_set_atten(ADC_UNIT_1, channel, atten);
+    /* Workaround: Disable the synchronization operation function of ADC1 and DAC.
+        If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage. */
+    dac_rtc_sync_by_adc(false);
     return ESP_OK;
 }
 
@@ -1787,6 +1790,18 @@ static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
     return ESP_OK;
 }
 
+/**
+ * Enable/disable the synchronization operation function of ADC1 and DAC.
+ *
+ * @note  If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage.
+ *
+ * @param enable Enable or disable adc and dac synchronization function.
+ */
+static inline void dac_rtc_sync_by_adc(bool enable)
+{
+    SENS.sar_meas_ctrl2.sar1_dac_xpd_fsm = enable;
+}
+
 static inline void dac_output_set_enable(dac_channel_t channel, bool enable)
 {
     RTCIO.pad_dac[channel-DAC_CHANNEL_1].dac_xpd_force = enable;
@@ -1799,6 +1814,7 @@ esp_err_t dac_output_enable(dac_channel_t channel)
     dac_rtc_pad_init(channel);
     portENTER_CRITICAL(&rtc_spinlock);
     dac_output_set_enable(channel, true);
+    dac_rtc_sync_by_adc(false);
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
