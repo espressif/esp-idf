@@ -52,6 +52,7 @@ static void send_sensor_descriptor_status(struct bt_mesh_model *model,
                 total_len += SENSOR_DESCRIPTOR_LEN;
                 if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
                     /* Add this in case the message is too long */
+                    BT_WARN("Too large sensor descriptor status");
                     break;
                 }
                 net_buf_simple_add_le16(msg, state->sensor_property_id);
@@ -67,6 +68,12 @@ static void send_sensor_descriptor_status(struct bt_mesh_model *model,
             state = &srv->states[i];
             if (state->sensor_property_id != INVALID_SENSOR_PROPERTY_ID &&
                     state->sensor_property_id == prop_id) {
+                total_len += SENSOR_DESCRIPTOR_LEN;
+                if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
+                    /* Add this in case the message is too long */
+                    BT_WARN("Too large sensor descriptor status");
+                    break;
+                }
                 net_buf_simple_add_le16(msg, state->sensor_property_id);
                 net_buf_simple_add_le32(msg, (state->descriptor.sample_function << 24) |
                                         (state->descriptor.negative_tolerance << 12) |
@@ -115,6 +122,7 @@ static void send_sensor_data_status(struct bt_mesh_model *model,
                                           state->sensor_data.raw_value->len : 0));
                 if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
                     /* Add this in case the message is too long */
+                    BT_WARN("Too large sensor status");
                     break;
                 }
                 if (state->sensor_data.format == SENSOR_DATA_FORMAT_A) {
@@ -136,6 +144,15 @@ static void send_sensor_data_status(struct bt_mesh_model *model,
             state = &srv->states[i];
             if (state->sensor_property_id != INVALID_SENSOR_PROPERTY_ID &&
                     state->sensor_property_id == prop_id) {
+                u8_t mpid_len = (state->sensor_data.format == SENSOR_DATA_FORMAT_A) ?
+                                SENSOR_DATA_FORMAT_A_MPID_LEN : SENSOR_DATA_FORMAT_B_MPID_LEN;
+                total_len += (mpid_len + (state->sensor_data.raw_value ?
+                                          state->sensor_data.raw_value->len : 0));
+                if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
+                    /* Add this in case the message is too long */
+                    BT_WARN("Too large sensor status");
+                    break;
+                }
                 if (state->sensor_data.format == SENSOR_DATA_FORMAT_A) {
                     u16_t mpid = ((state->sensor_property_id & BIT_MASK(11)) << 5) |
                                  ((state->sensor_data.length & BIT_MASK(4)) << 1) |
@@ -298,6 +315,7 @@ static void send_sensor_settings_status(struct bt_mesh_model *model,
                     total_len += SENSOR_SETTING_PROPERTY_ID_LEN;
                     if (total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) {
                         /* Add this in case the message is too long */
+                        BT_WARN("Too large sensor settings status");
                         break;
                     }
                     net_buf_simple_add_le16(msg, item->property_id);
