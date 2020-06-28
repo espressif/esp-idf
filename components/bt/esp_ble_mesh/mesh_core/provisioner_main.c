@@ -550,57 +550,57 @@ int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr)
     return -ENODEV;
 }
 
-static int provisioner_check_node_index(u16_t index)
+static struct bt_mesh_node **provisioner_find_node_with_name(const char *name)
 {
-    BT_DBG("%s", __func__);
-
-    if (index >= ARRAY_SIZE(mesh_nodes)) {
-        BT_ERR("%s, Too big node index %d", __func__, index);
-        return -EINVAL;
-    }
-
-    if (mesh_nodes[index] == NULL) {
-        BT_ERR("%s, Node not exists, index %d", __func__, index);
-        return -ENODEV;
-    }
-
-    return 0;
-}
-
-int bt_mesh_provisioner_set_node_name(u16_t index, const char *name)
-{
-    size_t length = 0U, name_len = 0U;
+    size_t length = 0U;
     int i;
 
-    BT_DBG("%s", __func__);
+    BT_DBG("node name %s", name);
 
-    if (!name) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return -EINVAL;
-    }
+    length = MIN(strlen(name), BLE_MESH_NODE_NAME_SIZE);
 
-    if (provisioner_check_node_index(index)) {
-        return -EINVAL;
-    }
+    bt_mesh_provisioner_lock();
 
-    BT_DBG("len %d, name %s", strlen(name), name);
-
-    length = (strlen(name) <= BLE_MESH_NODE_NAME_SIZE) ? strlen(name) : BLE_MESH_NODE_NAME_SIZE;
     for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
         if (mesh_nodes[i]) {
-            name_len = strlen(mesh_nodes[i]->name);
-            if (length != name_len) {
+            if (strlen(mesh_nodes[i]->name) != length) {
                 continue;
             }
             if (!strncmp(mesh_nodes[i]->name, name, length)) {
-                BT_WARN("Node name %s exists", name);
-                return -EEXIST;
+                bt_mesh_provisioner_unlock();
+                return &mesh_nodes[i];
             }
         }
     }
 
+    bt_mesh_provisioner_unlock();
+    return NULL;
+}
+
+int bt_mesh_provisioner_set_node_name(u16_t index, const char *name)
+{
+    if (index >= ARRAY_SIZE(mesh_nodes)) {
+        BT_ERR("Invalid node index %d", index);
+        return -EINVAL;
+    }
+
+    if (mesh_nodes[index] == NULL) {
+        BT_ERR("Node not exists, index %d", index);
+        return -EINVAL;
+    }
+
+    if (name == NULL) {
+        BT_ERR("Invalid node name");
+        return -EINVAL;
+    }
+
+    if (provisioner_find_node_with_name(name)) {
+        BT_WARN("Node name \"%s\" already exists", name);
+        return -EEXIST;
+    }
+
     memset(mesh_nodes[index]->name, 0, sizeof(mesh_nodes[index]->name));
-    strncpy(mesh_nodes[index]->name, name, length);
+    strncpy(mesh_nodes[index]->name, name, BLE_MESH_NODE_NAME_SIZE);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_node_name(mesh_nodes[index]);
@@ -611,9 +611,13 @@ int bt_mesh_provisioner_set_node_name(u16_t index, const char *name)
 
 const char *bt_mesh_provisioner_get_node_name(u16_t index)
 {
-    BT_DBG("%s", __func__);
+    if (index >= ARRAY_SIZE(mesh_nodes)) {
+        BT_ERR("Invalid node index %d", index);
+        return NULL;
+    }
 
-    if (provisioner_check_node_index(index)) {
+    if (mesh_nodes[index] == NULL) {
+        BT_ERR("Node not exists, index %d", index);
         return NULL;
     }
 
@@ -622,31 +626,43 @@ const char *bt_mesh_provisioner_get_node_name(u16_t index)
 
 u16_t bt_mesh_provisioner_get_node_index(const char *name)
 {
-    size_t length = 0U, name_len = 0U;
-    int i;
+    struct bt_mesh_node **node = NULL;
 
-    BT_DBG("%s", __func__);
-
-    if (!name) {
-        BT_ERR("%s, Invalid parameter", __func__);
+    if (name == NULL) {
+        BT_ERR("Invalid node name");
         return BLE_MESH_INVALID_NODE_INDEX;
     }
 
-    length = (strlen(name) <= BLE_MESH_NODE_NAME_SIZE) ? strlen(name) : BLE_MESH_NODE_NAME_SIZE;
-    for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
-        if (mesh_nodes[i]) {
-            name_len = strlen(mesh_nodes[i]->name);
-            if (length != name_len) {
-                continue;
-            }
-            if (!strncmp(mesh_nodes[i]->name, name, length)) {
-                return (u16_t)i;
-            }
-        }
+    node = provisioner_find_node_with_name(name);
+    if (node == NULL) {
+        BT_ERR("Node name \"%s\" not exists", name);
+        return BLE_MESH_INVALID_NODE_INDEX;
     }
 
-    BT_ERR("Node name %s not exists", name);
-    return BLE_MESH_INVALID_NODE_INDEX;
+    return (node - mesh_nodes);
+}
+
+struct bt_mesh_node *bt_mesh_provisioner_get_node_with_name(const char *name)
+{
+    struct bt_mesh_node **node = NULL;
+
+    if (name == NULL) {
+        BT_ERR("Invalid node name");
+        return NULL;
+    }
+
+    node = provisioner_find_node_with_name(name);
+    if (node == NULL) {
+        BT_ERR("Node name \"%s\" not exists", name);
+        return NULL;
+    }
+
+    return *node;
+}
+
+const struct bt_mesh_node **bt_mesh_provisioner_get_node_table_entry(void)
+{
+    return (const struct bt_mesh_node **)mesh_nodes;
 }
 
 #define COMP_DATA_PAGE_0_MIN_LEN    16
