@@ -282,6 +282,11 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
         return -EINVAL;
     }
 
+    if (bt_mesh_set_client_model_role(param->model, param->msg_role)) {
+        BT_ERR("Failed to set client role");
+        return -EIO;
+    }
+
     if (!need_ack) {
         /* If this is an unack message, send it directly. */
         return bt_mesh_model_send(param->model, &param->ctx, msg, param->cb, param->cb_data);
@@ -499,43 +504,26 @@ int bt_mesh_client_clear_list(void *data)
     return 0;
 }
 
-int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common)
+int bt_mesh_set_client_model_role(struct bt_mesh_model *model, u8_t role)
 {
     bt_mesh_client_user_data_t *client = NULL;
 
-    if (!common || !common->model || !common->model->user_data) {
-        BT_ERR("%s, Invalid parameter", __func__);
+    if (!model) {
+        BT_ERR("Invalid client model");
         return -EINVAL;
     }
 
-    client = (bt_mesh_client_user_data_t *)common->model->user_data;
-
-    switch (common->role) {
-#if CONFIG_BLE_MESH_NODE
-    case NODE:
-        /* no matter if provisioner is enabled/disabled , node role can be used to send messages */
-        client->msg_role = NODE;
-        break;
-#endif
-#if CONFIG_BLE_MESH_PROVISIONER
-    case PROVISIONER:
-        /* if provisioner is not enabled, provisioner role can't be used to send messages */
-        if (!bt_mesh_is_provisioner_en()) {
-            BT_ERR("Provisioner is disabled");
-            return -EINVAL;
-        }
-        client->msg_role = PROVISIONER;
-        break;
-#endif
-#if CONFIG_BLE_MESH_FAST_PROV
-    case FAST_PROV:
-        client->msg_role = FAST_PROV;
-        break;
-#endif
-    default:
-        BT_WARN("Unknown model role 0x%02x", common->role);
+    client = (bt_mesh_client_user_data_t *)model->user_data;
+    if (!client) {
+        BT_ERR("Invalid client user data");
         return -EINVAL;
     }
 
+    if (role >= ROLE_NVAL) {
+        BT_ERR("Invalid client role 0x%02x", role);
+        return -EINVAL;
+    }
+
+    client->msg_role = role;
     return 0;
 }
