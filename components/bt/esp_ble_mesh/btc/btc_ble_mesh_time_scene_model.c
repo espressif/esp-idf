@@ -300,7 +300,6 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
     esp_ble_mesh_client_common_param_t *params = NULL;
     esp_ble_mesh_time_scene_client_cb_param_t cb = {0};
     bt_mesh_client_common_param_t common = {0};
-    bt_mesh_role_param_t role_param = {0};
 
     if (!msg || !msg->arg) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -312,14 +311,6 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_GET_STATE: {
         params = arg->time_scene_client_get_state.params;
-
-        role_param.model = (struct bt_mesh_model *)params->model;
-        role_param.role = params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
-
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -328,6 +319,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         common.ctx.send_rel = params->ctx.send_rel;
         common.ctx.send_ttl = params->ctx.send_ttl;
         common.msg_timeout = params->msg_timeout;
+        common.msg_role = params->msg_role;
 
         cb.params = arg->time_scene_client_get_state.params;
         cb.error_code = bt_mesh_time_scene_client_get_state(&common, arg->time_scene_client_get_state.get_state);
@@ -339,14 +331,6 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_SET_STATE: {
         params = arg->time_scene_client_set_state.params;
-
-        role_param.model = (struct bt_mesh_model *)params->model;
-        role_param.role = params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
-
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -355,6 +339,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         common.ctx.send_rel = params->ctx.send_rel;
         common.ctx.send_ttl = params->ctx.send_ttl;
         common.msg_timeout = params->msg_timeout;
+        common.msg_role = params->msg_role;
 
         cb.params = arg->time_scene_client_set_state.params;
         cb.error_code = bt_mesh_time_scene_client_set_state(&common, arg->time_scene_client_set_state.set_state);
