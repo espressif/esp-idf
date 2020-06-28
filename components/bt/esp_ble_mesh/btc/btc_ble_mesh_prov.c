@@ -2016,18 +2016,25 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
             break;
         }
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
-        arg->model_send.ctx->srv_send = false;
         common.model = (struct bt_mesh_model *)(arg->model_send.model);
         common.role  = arg->model_send.device_role;
         if (bt_mesh_set_client_model_role(&common)) {
             BT_ERR("Failed to set model role");
             break;
         }
-        err = bt_mesh_client_send_msg((struct bt_mesh_model *)arg->model_send.model,
-                                      arg->model_send.opcode,
-                                      (struct bt_mesh_msg_ctx *)arg->model_send.ctx, buf,
-                                      btc_ble_mesh_client_model_timeout_cb, arg->model_send.msg_timeout,
-                                      arg->model_send.need_rsp, NULL, NULL);
+        bt_mesh_client_common_param_t param = {
+            .opcode = arg->model_send.opcode,
+            .model = (struct bt_mesh_model *)arg->model_send.model,
+            .ctx.net_idx = arg->model_send.ctx->net_idx,
+            .ctx.app_idx = arg->model_send.ctx->app_idx,
+            .ctx.addr = arg->model_send.ctx->addr,
+            .ctx.send_rel = arg->model_send.ctx->send_rel,
+            .ctx.send_ttl = arg->model_send.ctx->send_ttl,
+            .ctx.srv_send = false,
+            .msg_timeout = arg->model_send.msg_timeout,
+        };
+        err = bt_mesh_client_send_msg(&param, buf, arg->model_send.need_rsp,
+                                      btc_ble_mesh_client_model_timeout_cb);
         bt_mesh_free_buf(buf);
         btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
                                         arg->model_send.opcode, err);

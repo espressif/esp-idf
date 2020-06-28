@@ -21,8 +21,6 @@
 #include "health_cli.h"
 #include "esp_ble_mesh_health_model_api.h"
 
-extern s32_t health_msg_timeout;
-
 /* Health Client Model related functions */
 
 static inline void btc_ble_mesh_health_client_cb_to_app(esp_ble_mesh_health_client_cb_event_t event,
@@ -317,7 +315,7 @@ void btc_ble_mesh_health_publish_callback(u32_t opcode, struct bt_mesh_model *mo
 static int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_t *params,
                                                 esp_ble_mesh_health_client_get_state_t *get)
 {
-    struct bt_mesh_msg_ctx ctx = {0};
+    bt_mesh_client_common_param_t param = {0};
 
     if (params == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -329,23 +327,24 @@ static int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param
         return -EINVAL;
     }
 
-    ctx.net_idx = params->ctx.net_idx;
-    ctx.app_idx = params->ctx.app_idx;
-    ctx.addr = params->ctx.addr;
-    ctx.send_rel = params->ctx.send_rel;
-    ctx.send_ttl = params->ctx.send_ttl;
+    param.opcode = params->opcode;
+    param.model = (struct bt_mesh_model *)params->model;
+    param.ctx.net_idx = params->ctx.net_idx;
+    param.ctx.app_idx = params->ctx.app_idx;
+    param.ctx.addr = params->ctx.addr;
+    param.ctx.send_rel = params->ctx.send_rel;
+    param.ctx.send_ttl = params->ctx.send_ttl;
+    param.msg_timeout = params->msg_timeout;
 
-    health_msg_timeout = params->msg_timeout;
-
-    switch (params->opcode) {
+    switch (param.opcode) {
     case ESP_BLE_MESH_MODEL_OP_ATTENTION_GET:
-        return bt_mesh_health_attention_get(&ctx);
+        return bt_mesh_health_attention_get(&param);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_GET:
-        return bt_mesh_health_period_get(&ctx);
+        return bt_mesh_health_period_get(&param);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET:
-        return bt_mesh_health_fault_get(&ctx, get->fault_get.company_id);
+        return bt_mesh_health_fault_get(&param, get->fault_get.company_id);
     default:
-        BT_ERR("Invalid Health Get opcode 0x%04x", params->opcode);
+        BT_ERR("Invalid Health Get opcode 0x%04x", param.opcode);
         return -EINVAL;
     }
 
@@ -355,40 +354,41 @@ static int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param
 static int btc_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_t *params,
                                                 esp_ble_mesh_health_client_set_state_t *set)
 {
-    struct bt_mesh_msg_ctx ctx = {0};
+    bt_mesh_client_common_param_t param = {0};
 
     if (params == NULL || set == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
-    ctx.net_idx = params->ctx.net_idx;
-    ctx.app_idx = params->ctx.app_idx;
-    ctx.addr = params->ctx.addr;
-    ctx.send_rel = params->ctx.send_rel;
-    ctx.send_ttl = params->ctx.send_ttl;
+    param.opcode = params->opcode;
+    param.model = (struct bt_mesh_model *)params->model;
+    param.ctx.net_idx = params->ctx.net_idx;
+    param.ctx.app_idx = params->ctx.app_idx;
+    param.ctx.addr = params->ctx.addr;
+    param.ctx.send_rel = params->ctx.send_rel;
+    param.ctx.send_ttl = params->ctx.send_ttl;
+    param.msg_timeout = params->msg_timeout;
 
-    health_msg_timeout = params->msg_timeout;
-
-    switch (params->opcode) {
+    switch (param.opcode) {
     case ESP_BLE_MESH_MODEL_OP_ATTENTION_SET:
-        return bt_mesh_health_attention_set(&ctx, set->attention_set.attention, true);
+        return bt_mesh_health_attention_set(&param, set->attention_set.attention, true);
     case ESP_BLE_MESH_MODEL_OP_ATTENTION_SET_UNACK:
-        return bt_mesh_health_attention_set(&ctx, set->attention_set.attention, false);
+        return bt_mesh_health_attention_set(&param, set->attention_set.attention, false);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET:
-        return bt_mesh_health_period_set(&ctx, set->period_set.fast_period_divisor, true);
+        return bt_mesh_health_period_set(&param, set->period_set.fast_period_divisor, true);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET_UNACK:
-        return bt_mesh_health_period_set(&ctx, set->period_set.fast_period_divisor, false);
+        return bt_mesh_health_period_set(&param, set->period_set.fast_period_divisor, false);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST:
-        return bt_mesh_health_fault_test(&ctx, set->fault_test.company_id, set->fault_test.test_id, true);
+        return bt_mesh_health_fault_test(&param, set->fault_test.company_id, set->fault_test.test_id, true);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST_UNACK:
-        return bt_mesh_health_fault_test(&ctx, set->fault_test.company_id, set->fault_test.test_id, false);
+        return bt_mesh_health_fault_test(&param, set->fault_test.company_id, set->fault_test.test_id, false);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR:
-        return bt_mesh_health_fault_clear(&ctx, set->fault_clear.company_id, true);
+        return bt_mesh_health_fault_clear(&param, set->fault_clear.company_id, true);
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR_UNACK:
-        return bt_mesh_health_fault_clear(&ctx, set->fault_clear.company_id, false);
+        return bt_mesh_health_fault_clear(&param, set->fault_clear.company_id, false);
     default:
-        BT_ERR("Invalid Health Set opcode 0x%04x", params->opcode);
+        BT_ERR("Invalid Health Set opcode 0x%04x", param.opcode);
         return -EINVAL;
     }
 
