@@ -18,10 +18,6 @@
 #include "mesh_common.h"
 #include "health_cli.h"
 
-s32_t health_msg_timeout;
-
-static bt_mesh_health_client_t *health_cli;
-
 static const bt_mesh_client_op_pair_t health_op_pair[] = {
     { OP_HEALTH_FAULT_GET,   OP_HEALTH_FAULT_STATUS  },
     { OP_HEALTH_FAULT_CLEAR, OP_HEALTH_FAULT_STATUS  },
@@ -350,28 +346,6 @@ int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid)
     return err;
 }
 
-s32_t bt_mesh_health_cli_timeout_get(void)
-{
-    return health_msg_timeout;
-}
-
-void bt_mesh_health_cli_timeout_set(s32_t timeout)
-{
-    health_msg_timeout = timeout;
-}
-
-int bt_mesh_health_cli_set(struct bt_mesh_model *model)
-{
-    if (!model || !model->user_data) {
-        BT_ERR("No Health Client context for given model");
-        return -EINVAL;
-    }
-
-    health_cli = model->user_data;
-
-    return 0;
-}
-
 int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 {
     health_internal_data_t *internal = NULL;
@@ -409,11 +383,6 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 
     bt_mesh_health_client_mutex_new();
 
-    /* Set the default health client pointer */
-    if (!health_cli) {
-        health_cli = client;
-    }
-
     return 0;
 }
 
@@ -442,10 +411,6 @@ int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
     }
 
     bt_mesh_health_client_mutex_free();
-
-    if (health_cli) {
-        health_cli = NULL;
-    }
 
     return 0;
 }
