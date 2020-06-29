@@ -1254,7 +1254,7 @@ extern void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if);
 ** Function         BTA_GATTS_CreateService
 **
 ** Description      Create a service. When service creation is done, a callback
-**                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
+**                  event BTA_GATTS_CREATE_EVT is called to report status
 **                  and service ID to the profile. The service ID obtained in
 **                  the callback function needs to be used when adding included
 **                  service and characteristics/descriptors into the service.

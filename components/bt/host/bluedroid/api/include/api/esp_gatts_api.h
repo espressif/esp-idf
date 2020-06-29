@@ -326,7 +326,7 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if);
 
 /**
  * @brief           Create a service. When service creation is done, a callback
- *                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
+ *                  event ESP_GATTS_CREATE_EVT is called to report status
  *                  and service ID to the profile. The service ID obtained in
  *                  the callback function needs to be used when adding included
  *                  service and characteristics/descriptors into the service.
@@ -363,7 +363,7 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
 /**
  * @brief           This function is called to add an included service. This function have to be called between 
  *                  'esp_ble_gatts_create_service' and 'esp_ble_gatts_add_char'.  After included
- *                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
+ *                  service is included, a callback event ESP_GATTS_ADD_INCL_SRVC_EVT
  *                  is reported the included service ID.
  *
  * @param[in]       service_handle: service handle to which this included service is to
@@ -402,7 +402,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 
 /**
  * @brief           This function is called to add characteristic descriptor. When
- *                  it's done, a callback event BTA_GATTS_ADD_DESCR_EVT is called
+ *                  it's done, a callback event ESP_GATTS_ADD_DESCR_EVT is called
  *                  to report the status and an ID number for this descriptor.
  *
  * @param[in]       service_handle: service handle to which this characteristic descriptor is to
@@ -425,7 +425,7 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 
 /**
  * @brief           This function is called to delete a service. When this is done,
- *                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
+ *                  a callback event ESP_GATTS_DELETE_EVT is report with the status.
  *
  * @param[in]       service_handle: service_handle to be deleted.
  *
