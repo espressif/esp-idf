@@ -49,8 +49,8 @@ def dict_from_sdkconfig(path):
 
 
 def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
-                        build_system, config_rules, build_or_not=True, preserve_artifacts=True):
-    # type: (str, str, str, str, str, str, typing.List[ConfigRule], bool, bool) -> typing.List[BuildItem]
+                        build_system, config_rules, preserve_artifacts=True):
+    # type: (str, str, str, str, str, str, typing.List[ConfigRule], bool) -> typing.List[BuildItem]
     """
     Find configurations (sdkconfig file fragments) for the given app, return them as BuildItem objects
     :param app_path: app directory (can be / usually will be a relative path)
@@ -63,7 +63,6 @@ def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
                        a different CONFIG_IDF_TARGET value.
     :param build_system: name of the build system, index into BUILD_SYSTEMS dictionary
     :param config_rules: mapping of sdkconfig file name patterns to configuration names
-    :param build_or_not: determine if it will build in build_apps.py
     :param preserve_artifacts: determine if the built binary will be uploaded as artifacts.
     :return: list of BuildItems representing build configuration of the app
     """
@@ -109,7 +108,6 @@ def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
                     sdkconfig_path,
                     config_name,
                     build_system,
-                    build_or_not,
                     preserve_artifacts,
                 ))
 
@@ -125,7 +123,6 @@ def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
                 None,
                 default_config_name,
                 build_system,
-                build_or_not,
                 preserve_artifacts,
             )
         ]
@@ -296,10 +293,10 @@ def main():
         apps = [{"app_dir": app_dir, "build": True, "preserve": True} for app_dir in app_dirs]
 
     if not apps:
-        logging.critical("No apps found")
-        raise SystemExit(1)
-    logging.info("Found {} apps".format(len(apps)))
+        logging.warning("No apps found")
+        SystemExit(0)
 
+    logging.info("Found {} apps".format(len(apps)))
     apps.sort(key=lambda x: x["app_dir"])
 
     # Find compatible configurations of each app, collect them as BuildItems
@@ -314,7 +311,6 @@ def main():
             args.target or app["target"],
             args.build_system or app["build_system"],
             config_rules,
-            app["build"],
             app["preserve"],
         )
     logging.info("Found {} builds".format(len(build_items)))

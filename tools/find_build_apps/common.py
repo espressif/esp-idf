@@ -71,7 +71,6 @@ class BuildItem(object):
             sdkconfig_path,
             config_name,
             build_system,
-            build_or_not,
             preserve_artifacts,
     ):
         # These internal variables store the paths with environment variables and placeholders;
@@ -86,7 +85,6 @@ class BuildItem(object):
         self.target = target
         self.build_system = build_system
 
-        self.build = build_or_not
         self.preserve = preserve_artifacts
 
         self._app_name = os.path.basename(os.path.normpath(app_path))
@@ -160,7 +158,6 @@ class BuildItem(object):
             "config": self.config_name,
             "target": self.target,
             "verbose": self.verbose,
-            "build": self.build,
             "preserve": self.preserve,
         })
 
@@ -179,7 +176,6 @@ class BuildItem(object):
             config_name=d["config"],
             target=d["target"],
             build_system=d["build_system"],
-            build_or_not=d["build"],
             preserve_artifacts=d["preserve"]
         )
         result.verbose = d["verbose"]

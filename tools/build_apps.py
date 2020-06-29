@@ -77,10 +77,9 @@ def main():
     setup_logging(args)
 
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
-        logging.error("Empty build list!")
-        raise SystemExit(1)
+        logging.warning("Empty build list")
+        SystemExit(0)
 
     num_builds = len(build_items)
     num_jobs = args.parallel_count
@@ -109,10 +108,6 @@ def main():
 
     failed_builds = []
     for build_info in builds_for_current_job:
-        if not build_info.build:
-            logging.info("Skip building app {}".format(build_info.app_dir))
-            continue
-
         logging.info("Running build {}: {}".format(build_info.index, repr(build_info)))
         build_system_class = BUILD_SYSTEMS[build_info.build_system]
         try:

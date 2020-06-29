@@ -70,16 +70,12 @@ def main():
     setup_logging(args)
 
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
-        logging.error("Empty build list!")
-        raise SystemExit(1)
+        logging.warning("Empty build list")
+        SystemExit(0)
 
     found_warnings = 0
     for build_item in build_items:
-        if not build_item.build:
-            logging.debug("Skip checking build log for app {}".format(build_item.app_dir))
-            continue
         if not build_item.build_log_path:
             logging.debug("No log file for {}".format(build_item.work_dir))
             continue
