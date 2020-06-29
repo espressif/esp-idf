@@ -170,7 +170,6 @@ public class BLETransport implements Transport {
                 Log.e(TAG, "Disconnected from GATT server.");
                 EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
             }
-            // TODO check for 133 status
         }
 
         @Override

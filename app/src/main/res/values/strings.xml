@@ -90,6 +90,7 @@
     <string name="error_ssid_empty">Network name cannot be empty</string>
     <string name="error_password_empty">Password cannot be empty</string>
     <string name="error_provisioning">Reset your board to factory defaults and retry</string>
+    <string name="error_wifi_off">Please turn on Wi-Fi to connect with device.</string>
 
     <string name="prefix">Prefix :</string>
     <string name="hint_prefix">Enter Prefix</string>
@@ -97,6 +98,7 @@
     <string name="devices_title">Devices</string>
     <string name="enter_device_key">Enter Your Proof Of Possession PIN</string>
     <string name="app_version">App Version</string>
+    <string name="powered_by_esp">Powered by ESPRESSIF</string>
 
     <string name="join_other_network">Join Other Network</string>
     <string name="networks">Networks</string>

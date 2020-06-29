@@ -31,6 +31,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,6 +56,7 @@ public class EspMainActivity extends AppCompatActivity {
 
     private ESPProvisionManager provisionManager;
     private CardView btnAddDevice;
+    private ImageView ivEsp;
     private SharedPreferences sharedPreferences;
     private String deviceType;
 
@@ -69,6 +71,27 @@ public class EspMainActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+        if (deviceType.equals("wifi")) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+            editor.apply();
+        }
+
+        deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+        if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE)) {
+            ivEsp.setImageResource(R.drawable.ic_esp_ble);
+        } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
+            ivEsp.setImageResource(R.drawable.ic_esp_softap);
+        } else {
+            ivEsp.setImageResource(R.drawable.ic_esp);
+        }
     }
 
     @Override
@@ -121,6 +144,7 @@ public class EspMainActivity extends AppCompatActivity {
 
     private void initViews() {
 
+        ivEsp = findViewById(R.id.iv_esp);
         btnAddDevice = findViewById(R.id.btn_provision_device);
         btnAddDevice.findViewById(R.id.iv_arrow).setVisibility(View.GONE);
         btnAddDevice.setOnClickListener(addDeviceBtnClickListener);
@@ -162,8 +186,6 @@ public class EspMainActivity extends AppCompatActivity {
 
         } else {
 
-            deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
-
             if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE) || deviceType.equals(AppConstants.DEVICE_TYPE_BOTH)) {
 
                 final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -183,7 +205,7 @@ public class EspMainActivity extends AppCompatActivity {
 
     private void startProvisioningFlow() {
 
-        String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+        deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
         final boolean isSec1 = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
         Log.d(TAG, "Device Types : " + deviceType);
         Log.d(TAG, "isSec1 : " + isSec1);
@@ -212,7 +234,7 @@ public class EspMainActivity extends AppCompatActivity {
 
         } else {
 
-            final String[] deviceTypes = {"BLE", "Wi-Fi"};
+            final String[] deviceTypes = {"BLE", "SoftAP"};
             AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
             builder.setCancelable(true);
             builder.setTitle(R.string.dialog_msg_device_selection);

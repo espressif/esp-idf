@@ -143,7 +143,7 @@ public class ProvisionLanding extends AppCompatActivity {
 
                     } else {
 
-                        goToProvisionActivity();
+                        goToWiFiConfigActivity();
                     }
 
                 } else {
@@ -158,7 +158,7 @@ public class ProvisionLanding extends AppCompatActivity {
 
                     } else {
 
-                        goToProvisionActivity();
+                        goToWiFiConfigActivity();
                     }
                 }
                 break;
@@ -259,16 +259,14 @@ public class ProvisionLanding extends AppCompatActivity {
 
         finish();
         Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
-        wifiListIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, "");
         startActivity(wifiListIntent);
     }
 
-    private void goToProvisionActivity() {
+    private void goToWiFiConfigActivity() {
 
         finish();
-        Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
-        provisionIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, "");
-        startActivity(provisionIntent);
+        Intent wifiConfigIntent = new Intent(getApplicationContext(), WiFiConfigActivity.class);
+        startActivity(wifiConfigIntent);
     }
 
     private boolean hasPermissions() {

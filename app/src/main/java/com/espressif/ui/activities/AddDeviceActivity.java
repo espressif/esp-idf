@@ -356,38 +356,68 @@ public class AddDeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void deviceDetected(ESPDevice device) {
+        public void deviceDetected(final ESPDevice device) {
 
             Log.e(TAG, "Device detected");
             espDevice = device;
-            if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG, "Location Permission not granted.");
-                return;
-            }
+            final String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
 
-            String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
+            runOnUiThread(new Runnable() {
 
-            if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE)) {
+                @Override
+                public void run() {
 
-                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+                    if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(TAG, "Location Permission not granted.");
+                        return;
+                    }
 
-                    Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
-                    finish();
-                } else {
-                    device.connectToDevice();
+                    if (deviceType.equals(AppConstants.DEVICE_TYPE_BLE)) {
+
+                        if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
+
+                            Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
+                            finish();
+                        } else {
+                            device.connectToDevice();
+                        }
+                    } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
+
+                        if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_BLE)) {
+
+                            Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
+                            finish();
+                        } else {
+
+                            if (espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)
+                                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+                                if (!wifiManager.isWifiEnabled()) {
+                                    alertForWiFi();
+                                    return;
+                                }
+                            }
+
+                            device.connectToDevice();
+                        }
+                    } else {
+
+                        if (espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)
+                                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+                            if (!wifiManager.isWifiEnabled()) {
+                                alertForWiFi();
+                                return;
+                            }
+                        }
+                        device.connectToDevice();
+                    }
                 }
-            } else if (deviceType.equals(AppConstants.DEVICE_TYPE_SOFTAP)) {
-
-                if (espDevice != null && espDevice.getTransportType().equals(ESPConstants.TransportType.TRANSPORT_BLE)) {
-
-                    Toast.makeText(AddDeviceActivity.this, "Error! Device not supported", Toast.LENGTH_LONG).show();
-                    finish();
-                } else {
-                    device.connectToDevice();
-                }
-            } else {
-                device.connectToDevice();
-            }
+            });
         }
 
         @Override
@@ -419,6 +449,37 @@ public class AddDeviceActivity extends AppCompatActivity {
         finish();
         Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
         startActivity(provisionIntent);
+    }
+
+    private void alertForWiFi() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        builder.setCancelable(false);
+        builder.setMessage(R.string.error_wifi_off);
+
+        // Set up the buttons
+        builder.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+                espDevice = null;
+                hideLoading();
+                if (codeScanner != null) {
+                    codeScanner.releaseResources();
+                    codeScanner.startPreview();
+                    if (ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                            && ActivityCompat.checkSelfPermission(AddDeviceActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        provisionManager.scanQRCode(codeScanner, qrCodeScanListener);
+                    } else {
+                        Log.e(TAG, "Permissions are not granted");
+                    }
+                }
+            }
+        });
+
+        builder.show();
     }
 
     private void askForManualDeviceConnection() {
@@ -492,7 +553,7 @@ public class AddDeviceActivity extends AppCompatActivity {
 
         } else {
 
-            final String[] deviceTypes = {"BLE", "Wi-Fi"};
+            final String[] deviceTypes = {"BLE", "SoftAP"};
             AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
             builder.setCancelable(true);
             builder.setTitle(R.string.dialog_msg_device_selection);
@@ -550,7 +611,7 @@ public class AddDeviceActivity extends AppCompatActivity {
             wifiProvisioningIntent.putExtra(AppConstants.KEY_DEVICE_NAME, espDevice.getDeviceName());
             wifiProvisioningIntent.putExtra(AppConstants.KEY_PROOF_OF_POSSESSION, espDevice.getProofOfPossession());
         }
-        getApplicationContext().startActivity(wifiProvisioningIntent);
+        startActivity(wifiProvisioningIntent);
     }
 
     private String getWifiSsid() {
