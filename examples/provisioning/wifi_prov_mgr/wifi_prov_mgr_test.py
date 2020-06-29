@@ -17,7 +17,6 @@
 from __future__ import print_function
 import re
 import os
-import time
 
 import ttfw_idf
 import esp_prov
@@ -90,24 +89,7 @@ def test_examples_wifi_prov_mgr(env, extra_data):
     if not esp_prov.apply_wifi_config(transport, security):
         raise RuntimeError("Failed to send apply config")
 
-    success = False
-    retry = 0
-    while True:
-        time.sleep(5)
-        print("Wi-Fi connection state")
-        ret = esp_prov.get_wifi_config(transport, security)
-        if (ret == 1):
-            continue
-        elif (ret == 0):
-            print("Provisioning was successful")
-            success = True
-        elif (ret == 3 and retry < 3):
-            retry = retry + 1
-            print("Connection failed.. retry again...: ", ret)
-            continue
-        break
-
-    if not success:
+    if not esp_prov.wait_wifi_connected(transport, security):
         raise RuntimeError("Provisioning failed")
 
     # Check if BTDM memory is released after provisioning finishes
