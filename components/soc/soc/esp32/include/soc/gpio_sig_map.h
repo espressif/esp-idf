@@ -194,7 +194,8 @@
 #define RMT_SIG_OUT5_IDX			92
 #define EXT_ADC_START_IDX			93
 #define RMT_SIG_OUT6_IDX			93
-#define CAN_RX_IDX			94
+#define TWAI_RX_IDX			94
+#define CAN_RX_IDX			TWAI_RX_IDX
 #define RMT_SIG_OUT7_IDX			94
 #define I2CEXT1_SCL_IN_IDX			95
 #define I2CEXT1_SCL_OUT_IDX			95
@@ -252,10 +253,13 @@
 #define PWM2_OUT4L_IDX			121
 #define PWM3_CAP1_IN_IDX			122
 #define PWM3_CAP2_IN_IDX			123
-#define CAN_TX_IDX			123
+#define TWAI_TX_IDX			123
+#define CAN_TX_IDX			TWAI_TX_IDX
 #define PWM3_CAP3_IN_IDX			124
-#define CAN_BUS_OFF_ON_IDX			124
-#define CAN_CLKOUT_IDX			125
+#define TWAI_BUS_OFF_ON_IDX			124
+#define CAN_BUS_OFF_ON_IDX			TWAI_BUS_OFF_ON_IDX
+#define TWAI_CLKOUT_IDX			125
+#define CAN_CLKOUT_IDX			TWAI_CLKOUT_IDX
 #define SPID4_IN_IDX			128
 #define SPID4_OUT_IDX			128
 #define SPID5_IN_IDX			129

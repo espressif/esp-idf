@@ -18,21 +18,23 @@
 extern "C" {
 #endif
 
+#warning soc/can_caps.h is deprecated, please use soc/twai_caps.h instead
+
 #include "sdkconfig.h"
 
-#if __DOXYGEN__ || (CONFIG_ESP32_REV_MIN >= 2)
+/* ---------------------------- Compatibility ------------------------------- */
+
+#if (CONFIG_ESP32_REV_MIN >= 2)
 #define CAN_BRP_DIV_SUPPORTED       1
 #define CAN_BRP_DIV_THRESH          128
-//Any even number from 2 to 128, or multiples of 4 from 132 to 256
 #define CAN_BRP_IS_VALID(brp)       (((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0) || ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0))
+#define CAN_BRP_MAX                 256
 #else
-//Any even number from 2 to 128
 #define CAN_BRP_IS_VALID(brp)       ((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0)
+#define CAN_BRP_MAX                 128
 #endif
 
-//Todo: Add FIFO overrun errata workaround
-//Todo: Add ECC decode capabilities
-//Todo: Add ALC decode capability
+#define CAN_SUPPORT_MULTI_ADDRESS_LAYOUT    1
 
 #ifdef __cplusplus
 }

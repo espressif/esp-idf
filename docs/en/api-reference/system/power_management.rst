@@ -91,7 +91,7 @@ The following drivers will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the drive
 - **SPI slave**: between calls to :cpp:func:`spi_slave_initialize` and :cpp:func:`spi_slave_free`.
 - **Ethernet**: between calls to :cpp:func:`esp_eth_driver_install` and :cpp:func:`esp_eth_driver_uninstall`.
 - **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
-- **CAN**: between calls to :cpp:func:`can_driver_install` and :cpp:func:`can_driver_uninstall`.
+- **TWAI**: between calls to :cpp:func:`twai_driver_install` and :cpp:func:`twai_driver_uninstall`.
 
 .. only:: esp32
 
