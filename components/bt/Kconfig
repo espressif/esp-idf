@@ -84,21 +84,41 @@ menu "Bluetooth"
             depends on BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
             default y
 
-        config BTDM_CTRL_PCM_ROLE_CONFIG
-            int "PCM Role (0- PCM Master, 1 - PCM Slave)"
-            default 0
+        choice BTDM_CTRL_PCM_ROLE
+            prompt "PCM Role"
             depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
-            range 0 1
             help
-                0-Master Role, 1-Slave Role
+                PCM role can be configured as PCM master or PCM slave
 
-        config BTDM_CTRL_PCM_POLAR_CONFIG
-            int "PCM Polar (0 - Falling Edge, 1 - Rising Edge)"
-            default 0
+            config BTDM_CTRL_PCM_ROLE_MASTER
+                bool "PCM Master"
+            config BTDM_CTRL_PCM_ROLE_SLAVE
+                bool "PCM Slave"
+        endchoice
+
+        choice BTDM_CTRL_PCM_POLAR
+            prompt "PCM Polar"
             depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
-            range 0 1
             help
-                0-Falling CLK Edge Trig, 1-Rising CLK Edge Trig
+                PCM polarity can be configured as Falling Edge or Rising Edge
+
+            config BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+                bool "Falling Edge"
+            config BTDM_CTRL_PCM_POLAR_RISING_EDGE
+                bool "Rising Edge"
+        endchoice
+
+        config BTDM_CTRL_PCM_ROLE_EFF
+            int
+            default 0 if BTDM_CTRL_PCM_ROLE_MASTER
+            default 1 if BTDM_CTRL_PCM_ROLE_SLAVE
+            default 0
+
+        config BTDM_CTRL_PCM_POLAR_EFF
+            int
+            default 0 if BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+            default 1 if BTDM_CTRL_PCM_POLAR_RISING_EDGE
+            default 0
 
         config BTDM_CTRL_AUTO_LATENCY
             bool "Auto latency"

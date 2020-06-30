@@ -130,7 +130,6 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CONTROLLER_SCO_DATA_PATH_HCI           0   // SCO data is routed to HCI
 #define BTDM_CONTROLLER_SCO_DATA_PATH_PCM           1   // SCO data path is PCM
 
-#if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,            \
     .controller_task_prio = ESP_TASK_BT_CONTROLLER_PRIO,                   \
@@ -150,34 +149,10 @@ the adv packet will be discarded until the memory is restored. */
     .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
     .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
-    .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_CONFIG,                          \
-    .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_CONFIG,                        \
+    .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
+    .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
-#else
-#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
-    .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,            \
-    .controller_task_prio = ESP_TASK_BT_CONTROLLER_PRIO,                   \
-    .hci_uart_no = BT_HCI_UART_NO_DEFAULT,                                 \
-    .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,                     \
-    .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
-    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
-    .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
-    .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
-    .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
-    .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,                \
-    .mode = BTDM_CONTROLLER_MODE_EFF,                                      \
-    .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,                     \
-    .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
-    .bt_sco_datapath = CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF,          \
-    .auto_latency = BTDM_CTRL_AUTO_LATENCY_EFF,                            \
-    .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
-    .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
-    .pcm_role = 0,                                                         \
-    .pcm_polar = 0,                                                        \
-    .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
-};
-#endif
 
 #else
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
