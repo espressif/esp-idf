@@ -523,7 +523,9 @@ Known Issues
     2. Full-duplex transactions are not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy
     bit speed-up workaround <dummy_bit_workaround>`.
 
-    3. ``cs_ena_pretrans`` is not compatible with the command and address phases of full-duplex transactions.
+    3. ``dummy_bits`` in :cpp:type:`spi_device_interface_config_t` and :cpp:type:`spi_transaction_ext_t` are not available when SPI read and write phases are both enabled (regardless of full duplex or half duplex mode). 
+
+    4. ``cs_ena_pretrans`` is not compatible with the command and address phases of full-duplex transactions.
 
 
 Application Example
