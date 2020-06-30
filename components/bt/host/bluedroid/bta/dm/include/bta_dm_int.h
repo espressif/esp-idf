@@ -433,6 +433,7 @@ typedef struct {
     UINT8           new_role;
     BD_ADDR         bd_addr;
     UINT8           hci_status;
+    BOOLEAN         sc_downgrade;
 #if BLE_INCLUDED == TRUE
     UINT16          handle;
 #endif
@@ -474,6 +475,7 @@ typedef struct {
     BD_NAME             bd_name;
     UINT8               features[BTA_FEATURE_BYTES_PER_PAGE * (BTA_EXT_FEATURES_PAGE_MAX + 1)];
     UINT8               pin_length;
+    UINT8               sc_support;
 } tBTA_DM_API_ADD_DEVICE;
 
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */

@@ -303,6 +303,27 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 #endif  ///BLE_INCLUDED == TRUE
 #endif ///SMP_INCLUDED == TRUE
 
+static void btc_dm_link_up_evt(tBTA_DM_LINK_UP *p_link_up)
+{
+    BD_ADDR bd_addr;
+    bt_bdaddr_t bt_bdaddr;
+
+    memcpy(bd_addr, p_link_up->bd_addr, sizeof(BD_ADDR));
+    memcpy(bt_bdaddr.address, p_link_up->bd_addr, sizeof(BD_ADDR));
+
+    if (p_link_up->sc_downgrade == 1) {
+        if (btc_storage_remove_bonded_device(&bt_bdaddr) == BT_STATUS_SUCCESS) {
+            if (BTA_DmRemoveDevice(bd_addr, BT_TRANSPORT_BR_EDR) == BTA_SUCCESS) {
+                BTC_TRACE_EVENT(" %s() Bonding information removed.", __FUNCTION__);
+            } else {
+                BTC_TRACE_ERROR(" %s() BTA_DmRemoveDevice error", __FUNCTION__);
+            }
+        } else {
+            BTC_TRACE_ERROR(" %s() btc_storage_remove_bonded_device error", __FUNCTION__);
+        }
+    }
+}
+
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
@@ -326,7 +347,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                           __FUNCTION__, p_auth_cmpl->key_type);
                 ret = btc_storage_add_bonded_device(&bd_addr,
                                                     p_auth_cmpl->key, p_auth_cmpl->key_type,
-                                                    16);
+                                                    16, p_auth_cmpl->sc_support);
                 BTC_ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
             } else {
                 BTC_TRACE_DEBUG("%s: Temporary key. Not storing. key_type=0x%x",
@@ -678,6 +699,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         }
 #endif /* BTC_GAP_BT_INCLUDED  == TRUE */
     case BTA_DM_LINK_UP_EVT:
+        btc_dm_link_up_evt(&p_data->link_up);
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
         BTC_TRACE_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );

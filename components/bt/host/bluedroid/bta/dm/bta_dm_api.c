@@ -733,7 +733,8 @@ void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey)
 *******************************************************************************/
 void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class, LINK_KEY link_key,
                      tBTA_SERVICE_MASK trusted_mask, BOOLEAN is_trusted,
-                     UINT8 key_type, tBTA_IO_CAP io_cap, UINT8 pin_length)
+                     UINT8 key_type, tBTA_IO_CAP io_cap, UINT8 pin_length,
+                     UINT8 sc_support)
 {
 
     tBTA_DM_API_ADD_DEVICE *p_msg;
@@ -746,6 +747,7 @@ void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class, LINK_KEY link_key,
         p_msg->tm = trusted_mask;
         p_msg->is_trusted = is_trusted;
         p_msg->io_cap = io_cap;
+        p_msg->sc_support = sc_support;
 
         if (link_key) {
             p_msg->link_key_known = TRUE;
