@@ -25,6 +25,10 @@ SDKCONFIG_TEST_OPTS = [
     "EXCLUDE_COMPONENTS",
     "TEST_EXCLUDE_COMPONENTS",
     "TEST_COMPONENTS",
+]
+
+# These keys in sdkconfig.defaults are not propagated to the final sdkconfig file:
+SDKCONFIG_IGNORE_OPTS = [
     "TEST_GROUPS"
 ]
 
@@ -268,8 +272,11 @@ class BuildSystem(object):
                                 line += "\n"
                             if cls.NAME == 'cmake':
                                 m = SDKCONFIG_LINE_REGEX.match(line)
-                                if m and m.group(1) in SDKCONFIG_TEST_OPTS:
-                                    extra_cmakecache_items[m.group(1)] = m.group(2)
+                                key = m.group(1) if m else None
+                                if key in SDKCONFIG_TEST_OPTS:
+                                    extra_cmakecache_items[key] = m.group(2)
+                                    continue
+                                if key in SDKCONFIG_IGNORE_OPTS:
                                     continue
                             f_out.write(os.path.expandvars(line))
         else:

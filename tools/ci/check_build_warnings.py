@@ -18,7 +18,7 @@ except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     from find_build_apps import BuildItem, setup_logging
 
-WARNING_REGEX = re.compile(r"^\s*(?:error|warning)", re.MULTILINE | re.IGNORECASE)
+WARNING_REGEX = re.compile(r"(?:error|warning)", re.MULTILINE | re.IGNORECASE)
 
 IGNORE_WARNS = [
     re.compile(r_str) for r_str in [
