@@ -126,22 +126,6 @@ int bt_mesh_print_local_composition_data(void);
 
 int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node);
 
-/* The following APIs are for fast provisioning */
-
-const u8_t *bt_mesh_fast_prov_dev_key_get(u16_t dst);
-
-struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(u16_t net_idx);
-
-struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(u16_t app_idx);
-
-u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx);
-
-u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16]);
-
-const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx);
-
-const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx);
-
 #ifdef __cplusplus
 }
 #endif
