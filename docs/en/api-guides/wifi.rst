@@ -1012,13 +1012,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
 |                           |       |         | connection to the AP has failed.                            |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_CHANGED              |  206  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | disconnection has happened since AP has changed the         |
-|                           |       |         | authmode.                                                   |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-
-
 
 {IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
 ----------------------------------------------------------------------
