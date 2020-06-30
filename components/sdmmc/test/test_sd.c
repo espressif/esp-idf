@@ -388,6 +388,8 @@ TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT
 
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
+    // This test can only run under 20MHz on ESP32, because the runner connects the card to
+    // non-IOMUX pins of HSPI.
 
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
