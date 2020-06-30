@@ -12,21 +12,21 @@
 
 static const char *TAG = "TRANSPORT_WS";
 
-#define DEFAULT_WS_BUFFER (1024)
-#define WS_FIN            0x80
-#define WS_OPCODE_CONT    0x00
-#define WS_OPCODE_TEXT    0x01
-#define WS_OPCODE_BINARY  0x02
-#define WS_OPCODE_CLOSE   0x08
-#define WS_OPCODE_PING    0x09
-#define WS_OPCODE_PONG    0x0a
+#define WS_BUFFER_SIZE              CONFIG_WS_BUFFER_SIZE
+#define WS_FIN                      0x80
+#define WS_OPCODE_CONT              0x00
+#define WS_OPCODE_TEXT              0x01
+#define WS_OPCODE_BINARY            0x02
+#define WS_OPCODE_CLOSE             0x08
+#define WS_OPCODE_PING              0x09
+#define WS_OPCODE_PONG              0x0a
 
 // Second byte
-#define WS_MASK           0x80
-#define WS_SIZE16         126
-#define WS_SIZE64         127
-#define MAX_WEBSOCKET_HEADER_SIZE 16
-#define WS_RESPONSE_OK    101
+#define WS_MASK                     0x80
+#define WS_SIZE16                   126
+#define WS_SIZE64                   127
+#define MAX_WEBSOCKET_HEADER_SIZE   16
+#define WS_RESPONSE_OK              101
 
 
 typedef struct {
@@ -116,7 +116,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
 
     size_t outlen = 0;
     mbedtls_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
-    int len = snprintf(ws->buffer, DEFAULT_WS_BUFFER,
+    int len = snprintf(ws->buffer, WS_BUFFER_SIZE,
                          "GET %s HTTP/1.1\r\n"
                          "Connection: Upgrade\r\n"
                          "Host: %s:%d\r\n"
@@ -127,52 +127,52 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
                          ws->path,
                          host, port, user_agent_ptr,
                          client_key);
-    if (len <= 0 || len >= DEFAULT_WS_BUFFER) {
-        ESP_LOGE(TAG, "Error in request generation, %d", len);
+    if (len <= 0 || len >= WS_BUFFER_SIZE) {
+        ESP_LOGE(TAG, "Error in request generation, desired request len: %d, buffer size: %d", len, WS_BUFFER_SIZE);
         return -1;
     }
     if (ws->sub_protocol) {
         ESP_LOGD(TAG, "sub_protocol: %s", ws->sub_protocol);
-        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
+        int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
         len += r;
-        if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+        if (r <= 0 || len >= WS_BUFFER_SIZE) {
             ESP_LOGE(TAG, "Error in request generation"
-                          "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+                          "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
             return -1;
         }
     }
     if (ws->headers) {
         ESP_LOGD(TAG, "headers: %s", ws->headers);
-        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "%s", ws->headers);
+        int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "%s", ws->headers);
         len += r;
-        if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+        if (r <= 0 || len >= WS_BUFFER_SIZE) {
             ESP_LOGE(TAG, "Error in request generation"
-                          "(strncpy of headers returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+                          "(strncpy of headers returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
             return -1;
         }
     }
-    int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "\r\n");
+    int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "\r\n");
     len += r;
-    if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+    if (r <= 0 || len >= WS_BUFFER_SIZE) {
         ESP_LOGE(TAG, "Error in request generation"
-                       "(snprintf of header terminal returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+                       "(snprintf of header terminal returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
         return -1;
     }
-    ESP_LOGD(TAG, "Write upgrate request\r\n%s", ws->buffer);
+    ESP_LOGD(TAG, "Write upgrade request\r\n%s", ws->buffer);
     if (esp_transport_write(ws->parent, ws->buffer, len, timeout_ms) <= 0) {
         ESP_LOGE(TAG, "Error write Upgrade header %s", ws->buffer);
         return -1;
     }
     int header_len = 0;
     do {
-        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, DEFAULT_WS_BUFFER - header_len, timeout_ms)) <= 0) {
+        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - header_len, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
             return -1;
         }
         header_len += len;
         ws->buffer[header_len] = '\0';
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
-    } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < DEFAULT_WS_BUFFER);
+    } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < WS_BUFFER_SIZE);
 
     char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
     if (server_key == NULL) {
@@ -461,7 +461,7 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
         free(ws);
         return NULL;
     });
-    ws->buffer = malloc(DEFAULT_WS_BUFFER);
+    ws->buffer = malloc(WS_BUFFER_SIZE);
     ESP_TRANSPORT_MEM_CHECK(TAG, ws->buffer, {
         free(ws->path);
         free(ws);
