@@ -178,7 +178,7 @@ esp_err_t esp_timer_stop(esp_timer_handle_t timer);
  * @param timer timer handle allocated using esp_timer_create
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if the timer is not running
+ *      - ESP_ERR_INVALID_STATE if the timer is running
  */
 esp_err_t esp_timer_delete(esp_timer_handle_t timer);
 
