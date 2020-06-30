@@ -40,6 +40,8 @@
 #endif
 #endif
 
+#define ESP_VS_REM_LEGACY_AUTH_CMP 0x03
+
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 #endif
@@ -92,6 +94,13 @@ UINT8           lmp_version;
 BOOLEAN         in_use;
 UINT8           link_role;
 BOOLEAN         link_up_issued;     /* True if busy_level link up has been issued */
+BOOLEAN         sc_downgrade;       /* Store if security is downgraded or not. */
+
+#define BTM_ACL_LEGACY_AUTH_NONE                (0)
+#define BTM_ACL_LEGACY_AUTH_SELF                (1<<0)
+#define BTM_ACL_LEGACY_AUTH_REMOTE              (1<<1)
+#define BTM_ACL_LEGACY_AUTH_MUTUAL              (1<<2)
+UINT8           legacy_auth_state;
 
 #define BTM_ACL_SWKEY_STATE_IDLE                0
 #define BTM_ACL_SWKEY_STATE_MODE_CHANGE         1
@@ -592,6 +601,8 @@ typedef struct {
     /* "Secure Connections Only" mode and it receives */
     /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
     /* it knows peer's support for Secure Connections */
+    BOOLEAN     remote_secure_connection_previous_state;     /* Stores if peer ever supported
+    secure connection. This will be helpful to know when peer device downgrades it's security. */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
     UINT8               enc_key_size;           /* current link encryption key size */
@@ -1145,6 +1156,10 @@ void btm_sem_init(void);
 void btm_sem_free(void);
 
 void btm_lock_free(void);
+
+void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle);
+void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_state);
+BOOLEAN btm_sec_legacy_authentication_mutual (tBTM_SEC_DEV_REC *p_dev_rec);
 
 /*
 #ifdef __cplusplus

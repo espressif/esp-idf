@@ -769,6 +769,7 @@ typedef struct {
     tBLE_ADDR_TYPE  addr_type;          /* Peer device address type */
     tBT_DEVICE_TYPE dev_type;
     UINT8           auth_mode;
+    BOOLEAN           sc_support;         /* Denotes if peer device supported secure connection while bonding. */
 } tBTA_DM_AUTH_CMPL;
 
 
@@ -784,6 +785,7 @@ typedef struct {
 
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
+    BOOLEAN         sc_downgrade;       /* Security downgrade state. */
     BD_ADDR         bd_addr;            /* BD address peer device. */
 #if BLE_INCLUDED == TRUE
     tBTA_TRANSPORT  link_type;
@@ -1684,7 +1686,8 @@ extern void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passke
 extern void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class,
                             LINK_KEY link_key, tBTA_SERVICE_MASK trusted_mask,
                             BOOLEAN is_trusted, UINT8 key_type,
-                            tBTA_IO_CAP io_cap, UINT8 pin_length);
+                            tBTA_IO_CAP io_cap, UINT8 pin_length,
+                            UINT8 sc_support);
 
 /*******************************************************************************
 **
