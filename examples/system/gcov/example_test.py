@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 from pexpect import TIMEOUT
-from ttfw_idf import Utility
 import os
+import time
+
+from ttfw_idf import Utility
 import ttfw_idf
 
 
@@ -25,9 +27,9 @@ def test_examples_gcov(env, extra_data):
             expect_counter_output(0, timeout=20)
             dut.expect('Ready to dump GCOV data...', timeout=5)
 
-            def dump_coverage():
+            def dump_coverage(cmd):
                 try:
-                    telnet_p.pexpect_proc.sendline('esp gcov dump')
+                    telnet_p.pexpect_proc.sendline(cmd)
                     telnet_p.pexpect_proc.expect_exact('Targets connected.')
                     telnet_p.pexpect_proc.expect_exact('gcov_example_main.c.gcda')
                     telnet_p.pexpect_proc.expect_exact('gcov_example_func.c.gcda')
@@ -38,15 +40,20 @@ def test_examples_gcov(env, extra_data):
                     Utility.console_log(dut.read(size=1000))
                     raise
 
-            dump_coverage()
+            dump_coverage('esp gcov dump')
             dut.expect('GCOV data have been dumped.', timeout=5)
             expect_counter_output(1)
             dut.expect('Ready to dump GCOV data...', timeout=5)
-            dump_coverage()
+            dump_coverage('esp gcov dump')
             dut.expect('GCOV data have been dumped.', timeout=5)
 
             for i in range(2, 6):
                 expect_counter_output(i)
+
+            for _ in range(3):
+                time.sleep(1)
+                # Test instant run-time dump
+                dump_coverage('esp gcov')
 
 
 if __name__ == '__main__':
