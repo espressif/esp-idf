@@ -92,24 +92,20 @@ struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(u16_t app_idx)
 
 u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx)
 {
-    struct bt_mesh_subnet_keys *key = NULL;
-    struct bt_mesh_subnet *sub = NULL;
+    /* Set net_idx for fast provisioning */
+    bt_mesh_provisioner_set_fast_prov_net_idx(net_idx);
 
-    sub = bt_mesh_fast_prov_subnet_get(net_idx);
-    if (sub) {
-        key = BLE_MESH_KEY_REFRESH(sub->kr_flag) ? &sub->keys[1] : &sub->keys[0];
-        return bt_mesh_provisioner_set_fast_prov_net_idx(key->net, net_idx);
+    if (bt_mesh_fast_prov_subnet_get(net_idx) == NULL) {
+        /* If NetKey is not found, wait for NetKey to be added. */
+        BT_WARN("Wait for NetKey for fast provisioning");
+        return 0x01; /*status: Wait for NetKey */
     }
 
-    /* If NetKey is not found, set net_idx for fast provisioning,
-     * and wait for Primary Provisioner to add NetKey.
-     */
-    return bt_mesh_provisioner_set_fast_prov_net_idx(NULL, net_idx);
+    return 0x0; /* status: Succeed */
 }
 
-u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16])
+u8_t bt_mesh_fast_prov_net_key_add(const u8_t net_key[16])
 {
-    const u8_t *keys = NULL;
     u16_t net_idx = 0U;
     int err = 0;
 
@@ -118,18 +114,15 @@ u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16])
 
     err = bt_mesh_provisioner_local_net_key_add(net_key, &net_idx);
     if (err) {
-        return 0x01; /* status: add net_key fail */
+        BT_ERR("%s, Failed to add NetKey 0x%04x", __func__, net_idx);
+        return 0x01; /* status: Add NetKey failed */
     };
 
-    keys = bt_mesh_provisioner_local_net_key_get(net_idx);
-    if (!keys) {
-        return 0x01; /* status: add net_key fail */
-    }
-
-    return bt_mesh_provisioner_set_fast_prov_net_idx(keys, net_idx);
+    bt_mesh_provisioner_set_fast_prov_net_idx(net_idx);
+    return 0x0; /* status: Succeed */
 }
 
-const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx)
+const u8_t *bt_mesh_fast_prov_net_key_get(u16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
