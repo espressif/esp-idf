@@ -37,7 +37,8 @@
 bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
         LINK_KEY link_key,
         uint8_t key_type,
-        uint8_t pin_length)
+        uint8_t pin_length,
+        BOOLEAN sc_support)
 {
     bdstr_t bdstr;
 
@@ -48,6 +49,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     int ret = btc_config_set_int(bdstr, BTC_STORAGE_LINK_KEY_TYPE_STR, (int)key_type);
     ret &= btc_config_set_int(bdstr, BTC_STORAGE_PIN_LENGTH_STR, (int)pin_length);
     ret &= btc_config_set_bin(bdstr, BTC_STORAGE_LINK_KEY_STR, link_key, sizeof(LINK_KEY));
+    ret &= btc_config_set_bin(bdstr, BTC_STORAGE_SC_SUPPORT, (uint8_t *)&sc_support, sizeof(sc_support));
     /* write bonded info immediately */
     btc_config_flush();
     btc_config_unlock();
@@ -69,6 +71,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
 static bt_status_t btc_in_fetch_bonded_devices(int add)
 {
     BOOLEAN bt_linkkey_file_found = FALSE;
+    UINT8 sc_support = 0;
 
     btc_config_lock();
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end(); iter = btc_config_section_next(iter)) {
@@ -93,9 +96,11 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                         uint2devclass((UINT32)cod, dev_class);
                     }
                     btc_config_get_int(name, BTC_STORAGE_PIN_LENGTH_STR, &pin_length);
+                    size = sizeof(sc_support);
+                    btc_config_get_bin(name, BTC_STORAGE_SC_SUPPORT, &sc_support, &size);
 #if (SMP_INCLUDED == TRUE)
                     BTA_DmAddDevice(bd_addr.address, dev_class, link_key, 0, 0,
-                                    (UINT8)linkkey_type, 0, pin_length);
+                                    (UINT8)linkkey_type, 0, pin_length, (UINT8)sc_support);
 #endif  ///SMP_INCLUDED == TRUE
                 }
                 bt_linkkey_file_found = TRUE;
@@ -160,6 +165,9 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     if (btc_config_exist(bdstr, BTC_STORAGE_LINK_KEY_STR)) {
         ret &= btc_config_remove(bdstr, BTC_STORAGE_LINK_KEY_STR);
     }
+    if (btc_config_exist(bdstr, BTC_STORAGE_SC_SUPPORT)) {
+        ret &= btc_config_remove(bdstr, BTC_STORAGE_SC_SUPPORT);
+    }
     /* write bonded info immediately */
     btc_config_flush();
     btc_config_unlock();
@@ -187,6 +195,7 @@ int btc_storage_get_num_bt_bond_devices(void)
         if (string_is_bdaddr(name) &&
             btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
             btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_SC_SUPPORT) &&
             btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
             num_dev++;
         }
@@ -223,6 +232,7 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int de
         if (string_is_bdaddr(name) &&
             btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
             btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_SC_SUPPORT) &&
             btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
             string_to_bdaddr(name, &bd_addr);
             memcpy(bond_dev, &bd_addr, sizeof(bt_bdaddr_t));
