@@ -286,6 +286,7 @@ void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     params.ctx.recv_op = ctx->recv_op;
     params.ctx.recv_dst = ctx->recv_dst;
     params.ctx.recv_rssi = ctx->recv_rssi;
+    params.ctx.send_ttl = ctx->send_ttl;
 
     cb_params.error_code = 0;
     cb_params.params = &params;
