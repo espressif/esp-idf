@@ -61,6 +61,12 @@ typedef uint8_t esp_ble_mesh_octet8_t[ESP_BLE_MESH_OCTET8_LEN];
 /*!< Invalid Company ID */
 #define ESP_BLE_MESH_CID_NVAL                     0xFFFF
 
+/*!< Special TTL value to request using configured default TTL */
+#define ESP_BLE_MESH_TTL_DEFAULT                  0xFF
+
+/*!< Maximum allowed TTL value */
+#define ESP_BLE_MESH_TTL_MAX                      0x7F
+
 #define ESP_BLE_MESH_ADDR_UNASSIGNED              0x0000
 #define ESP_BLE_MESH_ADDR_ALL_NODES               0xFFFF
 #define ESP_BLE_MESH_ADDR_PROXIES                 0xFFFC
@@ -522,7 +528,7 @@ typedef struct {
     /** Force sending reliably by using segment acknowledgement */
     uint8_t  send_rel: 1;
 
-    /** TTL, or BLE_MESH_TTL_DEFAULT for default TTL. */
+    /** TTL, or ESP_BLE_MESH_TTL_DEFAULT for default TTL. */
     uint8_t  send_ttl;
 
     /** Opcode of a received message. Not used for sending message. */
