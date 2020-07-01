@@ -41,6 +41,8 @@
 #include "stack/sdp_api.h"
 #include "sdpint.h"
 
+#include "osi/list.h"
+
 #if (SDP_INCLUDED == TRUE)
 /********************************************************************************/
 /*                       G L O B A L      S D P       D A T A                   */
@@ -87,6 +89,7 @@ void sdp_init (void)
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
 
+    sdp_cb.server_db.p_record_list  = list_new(osi_free_func);
     /* Initialize the L2CAP configuration. We only care about MTU and flush */
     sdp_cb.l2cap_my_cfg.mtu_present       = TRUE;
     sdp_cb.l2cap_my_cfg.mtu               = SDP_MTU_SIZE;
@@ -140,6 +143,7 @@ void sdp_init (void)
 
 void sdp_deinit (void)
 {
+    list_free(sdp_cb.server_db.p_record_list);
 #if SDP_DYNAMIC_MEMORY
     osi_free(sdp_cb_ptr);
     sdp_cb_ptr = NULL;

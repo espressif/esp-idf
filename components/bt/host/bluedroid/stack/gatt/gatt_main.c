@@ -96,12 +96,15 @@ tGATT_DEFAULT gatt_default;
 void gatt_init (void)
 {
     tL2CAP_FIXED_CHNL_REG  fixed_reg;
+
 #if GATT_DYNAMIC_MEMORY
     gatt_cb_ptr = (tGATT_CB *)osi_malloc(sizeof(tGATT_CB));
 #endif /* #if GATT_DYNAMIC_MEMORY */
     memset (&gatt_cb, 0, sizeof(tGATT_CB));
     memset (&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
+    gatt_cb.p_clcb_list = list_new(osi_free_func);
+    gatt_cb.p_tcb_list  = list_new(osi_free_func);
 #if defined(GATT_INITIAL_TRACE_LEVEL)
     gatt_cb.trace_level = GATT_INITIAL_TRACE_LEVEL;
 #else
@@ -167,25 +170,31 @@ void gatt_free(void)
     fixed_queue_free(gatt_cb.pending_new_srv_start_q, NULL);
     gatt_cb.pending_new_srv_start_q = NULL;
 
-    for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++)
-    {
-        fixed_queue_free(gatt_cb.tcb[i].pending_enc_clcb, NULL);
-        gatt_cb.tcb[i].pending_enc_clcb = NULL;
+    list_node_t *p_node = NULL;
+    tGATT_TCB   *p_tcb  = NULL;
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+	p_tcb = list_node(p_node); 
+        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
+        p_tcb->pending_enc_clcb = NULL;
 
-        fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
-        gatt_cb.tcb[i].pending_ind_q = NULL;
+        fixed_queue_free(p_tcb->pending_ind_q, NULL);
+        p_tcb->pending_ind_q = NULL;
 
-        btu_free_timer(&gatt_cb.tcb[i].conf_timer_ent);
-        memset(&gatt_cb.tcb[i].conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+        btu_free_timer(&p_tcb->conf_timer_ent);
+        memset(&p_tcb->conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
 
-        btu_free_timer(&gatt_cb.tcb[i].ind_ack_timer_ent);
-        memset(&gatt_cb.tcb[i].ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+        btu_free_timer(&p_tcb->ind_ack_timer_ent);
+        memset(&p_tcb->ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
 
 #if (GATTS_INCLUDED == TRUE)
-        fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
-        gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;
+        fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
+        p_tcb->sr_cmd.multi_rsp_q = NULL;
 #endif /* #if (GATTS_INCLUDED == TRUE) */
     }
+    list_free(gatt_cb.p_tcb_list);
+#if (GATTC_INCLUDED == TRUE)
+    list_free(gatt_cb.p_clcb_list);
+#endif //(GATTC_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
     for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
@@ -392,7 +401,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_a
                 GATT_TRACE_ERROR("gatt_connect failed");
                 fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
                 fixed_queue_free(p_tcb->pending_ind_q, NULL);
-                memset(p_tcb, 0, sizeof(tGATT_TCB));
+		gatt_tcb_free(p_tcb);
             } else {
                 ret = TRUE;
             }
@@ -1146,8 +1155,8 @@ void gatt_proc_srv_chg (void)
         gatt_set_srv_chg();
         start_idx = 0;
         while (gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
-            p_tcb = &gatt_cb.tcb[found_idx];
-            srv_chg_ind_pending  = gatt_is_srv_chg_ind_pending(p_tcb);
+            p_tcb = gatt_get_tcb_by_idx(found_idx);
+	    srv_chg_ind_pending  = gatt_is_srv_chg_ind_pending(p_tcb);
 
             if (!srv_chg_ind_pending) {
                 gatt_send_srv_chg_ind(bda);

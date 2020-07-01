@@ -120,12 +120,11 @@ void L2CA_Deregister (UINT16 psm)
     tL2C_RCB    *p_rcb;
     tL2C_CCB    *p_ccb;
     tL2C_LCB    *p_lcb;
-    int         ii;
-
+    list_node_t *p_node = NULL;
 
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) != NULL) {
-        p_lcb = &l2cb.lcb_pool[0];
-        for (ii = 0; ii < MAX_L2CAP_LINKS; ii++, p_lcb++) {
+	for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+	    p_lcb = list_node(p_node);
             if (p_lcb->in_use) {
                 if (((p_ccb = p_lcb->ccb_queue.p_first_ccb) == NULL)
                         || (p_lcb->link_state == LST_DISCONNECTING)) {
@@ -403,7 +402,6 @@ BOOLEAN L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 re
         L2CAP_TRACE_WARNING ("L2CAP - no LCB for L2CA_conn_rsp");
         return (FALSE);
     }
-
     /* Now, find the channel control block */
     if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - no CCB for L2CA_conn_rsp");
@@ -815,6 +813,7 @@ BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout, BOOLEAN is_global)
 BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout, tBT_TRANSPORT transport)
 {
     tL2C_LCB        *p_lcb;
+    list_node_t     *p_node = NULL;
 
     if (memcmp (BT_BD_ANY, bd_addr, BD_ADDR_LEN)) {
         p_lcb = l2cu_find_lcb_by_bd_addr( bd_addr, transport);
@@ -828,10 +827,8 @@ BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout, tBT_TRANSPO
             return FALSE;
         }
     } else {
-        int         xx;
-        tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-        for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+	for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+	    p_lcb = list_node(p_node);
             if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
                 p_lcb->idle_timeout = timeout;
 
@@ -1188,10 +1185,9 @@ BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout)
             return (FALSE);
         }
     } else {
-        int   xx;
-        p_lcb = &l2cb.lcb_pool[0];
-
-        for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+        list_node_t *p_node = NULL;
+	for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+	    p_lcb = list_node(p_node);
             if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
                 if (p_lcb->link_flush_tout != flush_tout) {
                     p_lcb->link_flush_tout = flush_tout;
@@ -1397,9 +1393,10 @@ void L2CA_DeregisterLECoc(UINT16 psm)
         return;
     }
 
-    tL2C_LCB *p_lcb = &l2cb.lcb_pool[0];
-    for (int i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++)
-    {
+    tL2C_LCB *p_lcb = NULL;
+    list_node_t *p_node = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (!p_lcb->in_use || p_lcb->transport != BT_TRANSPORT_LE) {
             continue;
         }

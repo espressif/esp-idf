@@ -145,8 +145,12 @@ static void reset_complete(void)
     l2cu_device_reset ();
 #if (SMP_INCLUDED == TRUE)
     /* Clear current security state */
-    for (int devinx = 0; devinx < BTM_SEC_MAX_DEVICE_RECORDS; devinx++) {
-        btm_cb.sec_dev_rec[devinx].sec_state = BTM_SEC_STATE_IDLE;
+    {
+        list_node_t *p_node = NULL;
+        for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+            tBTM_SEC_DEV_REC *p_dev_rec = (tBTM_SEC_DEV_REC *) list_node(p_node);
+            p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+        }
     }
 #endif  ///SMP_INCLUDED == TRUE
     /* After the reset controller should restore all parameters to defaults. */

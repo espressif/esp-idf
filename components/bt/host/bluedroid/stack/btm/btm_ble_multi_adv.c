@@ -720,9 +720,9 @@ tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id)
 void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
 {
     UINT8   sub_event;
-    UINT8   adv_inst, idx;
+    UINT8   adv_inst;
     UINT16  conn_handle;
-
+    tACL_CONN *p_acl_cb = NULL;
     /* Check if this is a BLE RSSI vendor specific event */
     STREAM_TO_UINT8(sub_event, p);
     len--;
@@ -733,11 +733,11 @@ void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
         ++p;
         STREAM_TO_UINT16(conn_handle, p);
 
-        if ((idx = btm_handle_to_acl_index(conn_handle)) != MAX_L2CAP_LINKS) {
+        if ((p_acl_cb = btm_handle_to_acl(conn_handle)) != NULL) {
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE &&
                     adv_inst <= BTM_BLE_MULTI_ADV_MAX && adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD) {
-                memcpy(btm_cb.acl_db[idx].conn_addr, btm_multi_adv_cb.p_adv_inst[adv_inst - 1].rpa,
+                memcpy(p_acl_cb->conn_addr, btm_multi_adv_cb.p_adv_inst[adv_inst - 1].rpa,
                        BD_ADDR_LEN);
             }
 #endif

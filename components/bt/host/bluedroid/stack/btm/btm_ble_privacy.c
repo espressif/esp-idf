@@ -252,9 +252,12 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
         BTM_TRACE_DEBUG("%s resolving_list_avail_size=%d",
                         __func__, btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
-        for (UINT8 i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; ++i) {
-            btm_cb.sec_dev_rec[i].ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
-        }
+	list_node_t *p_node = NULL;
+        tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+        for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+	    p_dev_rec = list_node(p_node);
+            p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
+	}
     }
 }
 
@@ -932,9 +935,11 @@ void btm_ble_enable_resolving_list_for_platform (UINT8 rl_mask)
         return;
     }
 
-    tBTM_SEC_DEV_REC *p_dev = &btm_cb.sec_dev_rec[0];
-    for (UINT8 i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i ++, p_dev ++) {
-        if ((p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
+    tBTM_SEC_DEV_REC *p_dev = NULL;
+    list_node_t *p_node = NULL;
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev = list_node(p_node);
+	if ((p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
                 (p_dev->ble.in_controller_list & BTM_WHITE_LIST_BIT)) {
             btm_ble_enable_resolving_list(rl_mask);
             return;

@@ -245,6 +245,16 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
 **  Return value:   TRUE if successs
 **
 *******************************************************************************/
+BOOLEAN L2CA_UcdDeregister_In_CCB_List (void *p_ccb_node, void * context)
+{
+    p_ccb = (tL2C_CCB *)p_ccb_node;
+    if (( p_ccb->in_use )
+            && ( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID )) {
+        l2cu_release_ccb (p_ccb);
+    }
+    return false;
+}
+
 BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 {
     tL2C_CCB    *p_ccb;
@@ -275,15 +285,7 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
     }
 
     /* delete CCB for UCD */
-    p_ccb = l2cb.ccb_pool;
-    for ( xx = 0; xx < MAX_L2CAP_CHANNELS; xx++ ) {
-        if (( p_ccb->in_use )
-                && ( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID )) {
-            l2cu_release_ccb (p_ccb);
-        }
-        p_ccb++;
-    }
-
+    list_foreach(l2cb.p_ccb_pool, L2CA_UcdDeregister_In_CCB_List, NULL);
     return (TRUE);
 }
 

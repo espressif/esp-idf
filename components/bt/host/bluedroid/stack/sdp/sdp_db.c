@@ -37,6 +37,8 @@
 #include "stack/sdp_api.h"
 #include "sdpint.h"
 
+#include "osi/list.h"
+
 #if (SDP_INCLUDED == TRUE)
 
 #if SDP_SERVER_ENABLED == TRUE
@@ -62,18 +64,25 @@ tSDP_RECORD *sdp_db_service_search (tSDP_RECORD *p_rec, tSDP_UUID_SEQ *p_seq)
 {
     UINT16          xx, yy;
     tSDP_ATTRIBUTE *p_attr;
-    tSDP_RECORD     *p_end = &sdp_cb.server_db.record[sdp_cb.server_db.num_records];
-
+    list_node_t *p_node = NULL;
+    
     /* If NULL, start at the beginning, else start at the first specified record */
     if (!p_rec) {
-        p_rec = &sdp_cb.server_db.record[0];
+	p_node = list_begin(sdp_cb.server_db.p_record_list);
     } else {
-        p_rec++;
+	/* get node in the record list with given p_rec */
+        p_node = list_get_node(sdp_cb.server_db.p_record_list, p_rec);
+	if (p_node == NULL) {
+	    return NULL;
+	}
+	/* get next node */
+	p_node = list_next(p_node);
     }
 
     /* Look through the records. The spec says that a match occurs if */
     /* the record contains all the passed UUIDs in it.                */
-    for ( ; p_rec < p_end; p_rec++) {
+    for( ; p_node; p_node = list_next(p_node)) {
+        p_rec = list_node(p_node); 
         for (yy = 0; yy < p_seq->num_uids; yy++) {
             p_attr = &p_rec->attribute[0];
             for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++) {
@@ -161,11 +170,12 @@ static BOOLEAN find_uuid_in_seq (UINT8 *p , UINT32 seq_len, UINT8 *p_uuid,
 tSDP_RECORD *sdp_db_find_record (UINT32 handle)
 {
     tSDP_RECORD     *p_rec;
-    tSDP_RECORD     *p_end = &sdp_cb.server_db.record[sdp_cb.server_db.num_records];
+    list_node_t *p_node = NULL;
 
     /* Look through the records for the caller's handle */
-    for (p_rec = &sdp_cb.server_db.record[0]; p_rec < p_end; p_rec++) {
-        if (p_rec->record_handle == handle) {
+    for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+	p_rec = list_node(p_node);
+    	if (p_rec->record_handle == handle) {
             return (p_rec);
         }
     }
@@ -278,30 +288,42 @@ UINT32 SDP_CreateRecord (void)
     UINT32    handle;
     UINT8     buf[4];
     tSDP_DB  *p_db = &sdp_cb.server_db;
+    tSDP_RECORD *p_rec      = NULL;
+    tSDP_RECORD *p_rec_prev = NULL;
 
     /* First, check if there is a free record */
     if (p_db->num_records < SDP_MAX_RECORDS) {
-        memset (&p_db->record[p_db->num_records], 0,
-                sizeof (tSDP_RECORD));
-
-        /* We will use a handle of the first unreserved handle plus last record
-        ** number + 1 */
-        if (p_db->num_records) {
-            handle = p_db->record[p_db->num_records - 1].record_handle + 1;
-        } else {
-            handle = 0x10000;
-        }
-
-        p_db->record[p_db->num_records].record_handle = handle;
-
-        p_db->num_records++;
-        SDP_TRACE_DEBUG("SDP_CreateRecord ok, num_records:%d\n", p_db->num_records);
-        /* Add the first attribute (the handle) automatically */
-        UINT32_TO_BE_FIELD (buf, handle);
-        SDP_AddAttribute (handle, ATTR_ID_SERVICE_RECORD_HDL, UINT_DESC_TYPE,
-                          4, buf);
-
-        return (p_db->record[p_db->num_records - 1].record_handle);
+        p_rec =(tSDP_RECORD *)osi_malloc(sizeof(tSDP_RECORD));
+	if (p_rec) {
+    	    memset(p_rec, 0, sizeof(tSDP_RECORD));
+    	    /* Save previous rec */
+    	    if (p_db->num_records) {
+    	        p_rec_prev = list_back(p_db->p_record_list);
+    	    }
+    	    /* Append new record */
+    	    list_append(p_db->p_record_list, p_rec);
+    
+            /* We will use a handle of the first unreserved handle plus last record
+            ** number + 1 */
+            if (p_db->num_records) {
+                handle = p_rec_prev->record_handle + 1;
+            } else {
+                handle = 0x10000;
+            }
+    
+            p_rec->record_handle = handle;
+    
+            p_db->num_records++;
+            SDP_TRACE_DEBUG("SDP_CreateRecord ok, num_records:%d\n", p_db->num_records);
+            /* Add the first attribute (the handle) automatically */
+            UINT32_TO_BE_FIELD (buf, handle);
+            SDP_AddAttribute (handle, ATTR_ID_SERVICE_RECORD_HDL, UINT_DESC_TYPE,
+                              4, buf);
+    
+            return (p_rec->record_handle);
+	} else {
+            SDP_TRACE_ERROR("SDP_CreateRecord fail, memory allocation failed\n");
+	}
     } else {
         SDP_TRACE_ERROR("SDP_CreateRecord fail, exceed maximum records:%d\n", SDP_MAX_RECORDS);
     }
@@ -326,30 +348,26 @@ UINT32 SDP_CreateRecord (void)
 BOOLEAN SDP_DeleteRecord (UINT32 handle)
 {
 #if SDP_SERVER_ENABLED == TRUE
-    UINT16          xx, yy, zz;
-    tSDP_RECORD     *p_rec = &sdp_cb.server_db.record[0];
+    tSDP_RECORD     *p_rec  = NULL;
+    list_node_t     *p_node = NULL;
 
     if (handle == 0 || sdp_cb.server_db.num_records == 0) {
         /* Delete all records in the database */
         sdp_cb.server_db.num_records = 0;
-
+        for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+	    list_remove(sdp_cb.server_db.p_record_list, p_node);
+	}
         /* require new DI record to be created in SDP_SetLocalDiRecord */
         sdp_cb.server_db.di_primary_handle = 0;
 
         return (TRUE);
     } else {
         /* Find the record in the database */
-        for (xx = 0; xx < sdp_cb.server_db.num_records; xx++, p_rec++) {
+        for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+	    p_rec = list_node(p_node);
             if (p_rec->record_handle == handle) {
                 /* Found it. Shift everything up one */
-                for (yy = xx; yy < sdp_cb.server_db.num_records; yy++, p_rec++) {
-                    *p_rec = *(p_rec + 1);
-
-                    /* Adjust the attribute value pointer for each attribute */
-                    for (zz = 0; zz < p_rec->num_attributes; zz++) {
-                        p_rec->attribute[zz].value_ptr -= sizeof(tSDP_RECORD);
-                    }
-                }
+                list_remove(sdp_cb.server_db.p_record_list, p_rec);                
 
                 sdp_cb.server_db.num_records--;
 
@@ -387,8 +405,9 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
                           UINT32 attr_len, UINT8 *p_val)
 {
 #if SDP_SERVER_ENABLED == TRUE
-    UINT16          xx, yy, zz;
-    tSDP_RECORD     *p_rec = &sdp_cb.server_db.record[0];
+    UINT16          xx, yy;
+    tSDP_RECORD     *p_rec = NULL;
+    list_node_t     *p_node= NULL;
 
 #if (BT_TRACE_VERBOSE == TRUE)
     if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) {
@@ -418,7 +437,8 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
 #endif
 
     /* Find the record in the database */
-    for (zz = 0; zz < sdp_cb.server_db.num_records; zz++, p_rec++) {
+    for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+	p_rec= list_node(p_node);
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
 
@@ -850,12 +870,14 @@ BOOLEAN SDP_DeleteAttribute (UINT32 handle, UINT16 attr_id)
 {
 #if SDP_SERVER_ENABLED == TRUE
     UINT16          xx, yy;
-    tSDP_RECORD     *p_rec = &sdp_cb.server_db.record[0];
+    tSDP_RECORD     *p_rec = NULL;
+    list_node_t     *p_node= NULL;
     UINT8           *pad_ptr;
     UINT32  len;                        /* Number of bytes in the entry */
 
     /* Find the record in the database */
-    for (xx = 0; xx < sdp_cb.server_db.num_records; xx++, p_rec++) {
+    for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+	p_rec= list_node(p_node);
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
 
