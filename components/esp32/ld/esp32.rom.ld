@@ -686,6 +686,7 @@ PROVIDE ( ld_acl_sniff_frm_cbk = 0x4003482c );
 PROVIDE ( ld_inq_end = 0x4003ab48 );
 PROVIDE ( ld_inq_sched = 0x4003aba4 );
 PROVIDE ( ld_inq_frm_cbk = 0x4003ae4c );
+PROVIDE ( ld_pscan_frm_cbk = 0x4003ebe4 );
 PROVIDE ( r_ld_acl_active_hop_types_get = 0x40036e10 );
 PROVIDE ( r_ld_acl_afh_confirm = 0x40036d40 );
 PROVIDE ( r_ld_acl_afh_prepare = 0x40036c84 );
