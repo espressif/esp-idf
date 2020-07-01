@@ -278,6 +278,9 @@ char * ets_strdup(const char *s);
 #ifndef os_strstr
 #define os_strstr(h, n) strstr((h), (n))
 #endif
+#ifndef os_strlcpy
+#define os_strlcpy(d, s, n) strlcpy((d), (s), (n))
+#endif
 
 #ifndef os_snprintf
 #ifdef _MSC_VER
@@ -291,16 +294,4 @@ static inline int os_snprintf_error(size_t size, int res)
 {
         return res < 0 || (unsigned int) res >= size;
 }
-
-/**
- * os_strlcpy - Copy a string with size bound and NUL-termination
- * @dest: Destination
- * @src: Source
- * @siz: Size of the target buffer
- * Returns: Total length of the target string (length of src) (not including
- * NUL-termination)
- *
- * This function matches in behavior with the strlcpy(3) function in OpenBSD.
- */
-size_t os_strlcpy(char *dest, const char *src, size_t siz);
 #endif /* OS_H */
