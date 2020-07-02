@@ -18,7 +18,7 @@ This demo has only one element, where the following five Models are implemented:
 
 ## 2. Code Analysis
 
-Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial%20%20%20%20%20%20/ble_mesh_wifi_coexist.md)
+Code initialization part reference [Initializing Bluetooth and BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md).
 
 ### 2.1  Data Structure
 

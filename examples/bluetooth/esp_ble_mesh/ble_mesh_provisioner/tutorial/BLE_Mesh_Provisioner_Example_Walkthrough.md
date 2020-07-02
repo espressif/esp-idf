@@ -3,7 +3,7 @@
 
 ## 1. Introduction
 
-This demo shows how a BLE Mesh device can function as a Provisioner. If you are new to BLE Mesh, please start by checking [Demo for ESP BLE Mesh Node](../../ble_mesh_node/README.md).
+This example shows how a BLE Mesh device can function as a Provisioner. If you are new to BLE Mesh, please start by checking [BLE Mesh Node Example](../../ble_mesh_node/onoff_server/README.md).
 
 ## 2. Code Flow
 
