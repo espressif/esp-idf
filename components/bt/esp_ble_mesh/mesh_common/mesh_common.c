@@ -19,6 +19,37 @@
 #include "client_common.h"
 #include "mesh_common.h"
 
+IRAM_ATTR void *bt_mesh_malloc(size_t size)
+{
+#ifdef CONFIG_BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+    return heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_IRAM_8BIT
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#else
+    return malloc(size);
+#endif
+}
+
+IRAM_ATTR void *bt_mesh_calloc(size_t size)
+{
+#ifdef CONFIG_BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+    return heap_caps_calloc(1, size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
+    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_IRAM_8BIT
+    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#else
+    return calloc(1, size);
+#endif
+}
+
+IRAM_ATTR void bt_mesh_free(void *ptr)
+{
+    heap_caps_free(ptr);
+}
+
 struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
 {
     struct net_buf_simple *buf = NULL;
