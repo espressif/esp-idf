@@ -21,9 +21,11 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
+#include <tinycrypt/aes.h>
+#include <tinycrypt/constants.h>
+
 #include "mesh_hci.h"
 #include "mesh_common.h"
-#include "mesh_aes_encrypt.h"
 #include "provisioner_prov.h"
 
 /** @def BT_UUID_MESH_PROV

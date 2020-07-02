@@ -21,8 +21,10 @@
 #include "mbedtls/aes.h"
 #include "bt_common.h"
 
+#include <tinycrypt/aes.h>
+#include <tinycrypt/constants.h>
+
 #include "mesh_hci.h"
-#include "mesh_aes_encrypt.h"
 #include "mesh_bearer_adapt.h"
 #include "mesh_common.h"
 #include "provisioner_prov.h"
