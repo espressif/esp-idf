@@ -51,14 +51,13 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
         if (!task_is_valid) {
             write_cfg->bad_tasks_num++;
             continue;
-        } else {
-            data_len += (tcb_sz_padded + sizeof(core_dump_task_header_t));
         }
         uint32_t len = 0;
         task_is_valid = esp_core_dump_process_stack(&tasks[i], &len);
         if (task_is_valid) {
             // Increase core dump size by task stack size
             data_len += len;
+            data_len += (tcb_sz_padded + sizeof(core_dump_task_header_t));
         } else {
             // If task tcb is ok but stack is corrupted
             write_cfg->bad_tasks_num++;
