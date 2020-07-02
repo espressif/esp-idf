@@ -19,6 +19,7 @@
 #include "foundation.h"
 #include "mesh_main.h"
 #include "mesh_common.h"
+#include "fast_prov.h"
 #include "provisioner_main.h"
 
 #include "generic_client.h"
