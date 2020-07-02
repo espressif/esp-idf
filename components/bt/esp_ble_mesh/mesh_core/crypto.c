@@ -13,9 +13,12 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_CRYPTO)
 
-#include "mesh_common.h"
+#include <tinycrypt/aes.h>
+#include <tinycrypt/constants.h>
+#include <tinycrypt/cmac_mode.h>
+
 #include "crypto.h"
-#include "mesh_aes_encrypt.h"
+#include "mesh_common.h"
 #include "mesh_bearer_adapt.h"
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
