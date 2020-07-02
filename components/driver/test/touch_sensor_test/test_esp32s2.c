@@ -1408,13 +1408,19 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     uint32_t denoise_val[TOUCH_PAD_DENOISE_CAP_MAX];
 
     ESP_LOGI(TAG, "*********** touch filter denoise level test ********************");
-    TEST_ESP_OK( test_touch_denoise(val_1, NULL, TOUCH_PAD_DENOISE_BIT4, TOUCH_PAD_DENOISE_CAP_L0) );
+    TEST_ESP_OK( test_touch_denoise(val_1, &denoise_val[0], TOUCH_PAD_DENOISE_BIT4, TOUCH_PAD_DENOISE_CAP_L0) );
     TEST_ESP_OK( test_touch_denoise(val_2, NULL, TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0) );
     TEST_ESP_OK( test_touch_denoise(val_3, NULL, TOUCH_PAD_DENOISE_BIT12, TOUCH_PAD_DENOISE_CAP_L0) );
 
-    for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ASSERT_GREATER_OR_EQUAL(val_3[i], val_2[i]);
-        TEST_ASSERT_GREATER_OR_EQUAL(val_2[i], val_1[i]);
+    if ((denoise_val[0] & 0xFF) < (0xFF - 10) && (denoise_val[0] & 0xFF) > 10) {
+        for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
+            TEST_ASSERT_GREATER_OR_EQUAL(val_3[i], val_2[i]);
+            TEST_ASSERT_GREATER_OR_EQUAL(val_2[i], val_1[i]);
+        }
+    } else {
+        /* If the value of (denoise_val[0] & 0xFF) is approximately 0,
+        The difference between touch reading is very small. Should skip value test. */
+        ESP_LOGI(TAG, "denoise value is %d", denoise_val[0]);
     }
 
     ESP_LOGI(TAG, "*********** touch filter denoise cap level test ********************");
