@@ -48,3 +48,23 @@ void periph_module_reset(periph_module_t periph)
     periph_ll_reset(periph);
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 }
+
+IRAM_ATTR void wifi_bt_common_module_enable(void)
+{
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+    if (ref_counts[PERIPH_WIFI_BT_COMMON_MODULE] == 0) {
+        periph_ll_wifi_bt_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_WIFI_BT_COMMON_MODULE]++;
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+}
+
+IRAM_ATTR void wifi_bt_common_module_disable(void)
+{
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+    ref_counts[PERIPH_WIFI_BT_COMMON_MODULE]--;
+    if (ref_counts[PERIPH_WIFI_BT_COMMON_MODULE] == 0) {
+        periph_ll_wifi_bt_module_disable_clk_set_rst();
+    }
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+} 
