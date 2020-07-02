@@ -982,13 +982,6 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 |                           |       |         | connection to the AP has failed.                            |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_CHANGED              |  206  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | disconnection has happened since AP has changed the         |
-|                           |       |         | authmode.                                                   |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-
-
 
 ESP32 Wi-Fi Configuration
 ---------------------------
