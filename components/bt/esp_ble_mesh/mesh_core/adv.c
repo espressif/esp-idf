@@ -63,7 +63,7 @@ static struct bt_mesh_adv adv_pool[CONFIG_BLE_MESH_ADV_BUF_COUNT];
 
 struct bt_mesh_queue {
     QueueHandle_t queue;
-#if CONFIG_SPIRAM_USE_MALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     StaticQueue_t *buffer;
     u8_t *storage;
 #endif
@@ -121,7 +121,9 @@ static void bt_mesh_ble_adv_deinit(void);
 
 struct bt_mesh_adv_task {
     TaskHandle_t handle;
-#if CONFIG_SPIRAM_USE_MALLOC
+#if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
+     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+     CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     StaticTask_t *task;
     StackType_t *stack;
 #endif
@@ -795,54 +797,68 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 
 void bt_mesh_adv_init(void)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
+#if !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     xBleMeshQueue.queue = xQueueCreate(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
-    __ASSERT(xBleMeshQueue.queue, "%s, Failed to create queue", __func__);
-#else
-    xBleMeshQueue.buffer = heap_caps_calloc(1, sizeof(StaticQueue_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
-    __ASSERT(xBleMeshQueue.buffer, "%s, Failed to create queue buffer", __func__);
-    xBleMeshQueue.storage = heap_caps_calloc(1, (BLE_MESH_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
-    __ASSERT(xBleMeshQueue.storage, "%s, Failed to create queue storage", __func__);
-    xBleMeshQueue.queue = xQueueCreateStatic(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshQueue.storage, xBleMeshQueue.buffer);
-    __ASSERT(xBleMeshQueue.queue, "%s, Failed to create static queue", __func__);
+    __ASSERT(xBleMeshQueue.queue, "Failed to create queue");
+#else /* !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    xBleMeshQueue.buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    xBleMeshQueue.buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
 #endif
+    __ASSERT(xBleMeshQueue.buffer, "Failed to create queue buffer");
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    xBleMeshQueue.storage = heap_caps_calloc_prefer(1, (BLE_MESH_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    xBleMeshQueue.storage = heap_caps_calloc_prefer(1, (BLE_MESH_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(xBleMeshQueue.storage, "Failed to create queue storage");
+    xBleMeshQueue.queue = xQueueCreateStatic(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshQueue.storage, xBleMeshQueue.buffer);
+    __ASSERT(xBleMeshQueue.queue, "Failed to create static queue");
+#endif /* !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
-#if !CONFIG_SPIRAM_USE_MALLOC
+#if !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     xBleMeshRelayQueue.queue = xQueueCreate(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
-    __ASSERT(xBleMeshRelayQueue.queue, "%s, Failed to create relay queue", __func__);
-#else
-    xBleMeshRelayQueue.buffer = heap_caps_calloc(1, sizeof(StaticQueue_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
-    __ASSERT(xBleMeshRelayQueue.buffer, "%s, Failed to create relay queue buffer", __func__);
-    xBleMeshRelayQueue.storage = heap_caps_calloc(1, (BLE_MESH_RELAY_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
-    __ASSERT(xBleMeshRelayQueue.storage, "%s, Failed to create relay queue storage", __func__);
-    xBleMeshRelayQueue.queue = xQueueCreateStatic(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshRelayQueue.storage, xBleMeshRelayQueue.buffer);
-    __ASSERT(xBleMeshRelayQueue.queue, "%s, Failed to create static relay queue", __func__);
+    __ASSERT(xBleMeshRelayQueue.queue, "Failed to create relay queue");
+#else /* !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    xBleMeshRelayQueue.buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    xBleMeshRelayQueue.buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
 #endif
+    __ASSERT(xBleMeshRelayQueue.buffer, "Failed to create relay queue buffer");
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    xBleMeshRelayQueue.storage = heap_caps_calloc_prefer(1, (BLE_MESH_RELAY_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    xBleMeshRelayQueue.storage = heap_caps_calloc_prefer(1, (BLE_MESH_RELAY_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(xBleMeshRelayQueue.storage, "Failed to create relay queue storage");
+    xBleMeshRelayQueue.queue = xQueueCreateStatic(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshRelayQueue.storage, xBleMeshRelayQueue.buffer);
+    __ASSERT(xBleMeshRelayQueue.queue, "Failed to create static relay queue");
+#endif /* !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
 
     xBleMeshQueueSet = xQueueCreateSet(BLE_MESH_QUEUE_SET_SIZE);
-    __ASSERT(xBleMeshQueueSet, "%s, Failed to create queue set", __func__);
+    __ASSERT(xBleMeshQueueSet, "Failed to create queue set");
     xQueueAddToSet(xBleMeshQueue.queue, xBleMeshQueueSet);
     xQueueAddToSet(xBleMeshRelayQueue.queue, xBleMeshQueueSet);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
-#if !CONFIG_SPIRAM_USE_MALLOC
-    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
-                                      configMAX_PRIORITIES - 5, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
-    __ASSERT(ret == pdTRUE, "%s, Failed to create adv thread", __func__);
-#else
+#if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
+     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+     CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     adv_task.task = heap_caps_calloc(1, sizeof(StaticTask_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    __ASSERT(adv_task.task, "%s, Failed to create adv thread task", __func__);
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    adv_task.stack = heap_caps_calloc(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
-#else
-    adv_task.stack = heap_caps_calloc(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-#endif
-    __ASSERT(adv_task.stack, "%s, Failed to create adv thread stack", __func__);
+    __ASSERT(adv_task.task, "Failed to create adv thread task");
+    adv_task.stack = heap_caps_calloc_prefer(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    __ASSERT(adv_task.stack, "Failed to create adv thread stack");
     adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
                                   configMAX_PRIORITIES - 5, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
-    __ASSERT(adv_task.handle, "%s, Failed to create static adv thread", __func__);
-#endif
+    __ASSERT(adv_task.handle, "Failed to create static adv thread");
+#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
+                                      configMAX_PRIORITIES - 5, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
+    __ASSERT(ret == pdTRUE, "Failed to create adv thread");
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
 }
 
 void bt_mesh_adv_deinit(void)
@@ -853,7 +869,9 @@ void bt_mesh_adv_deinit(void)
 
     vTaskDelete(adv_task.handle);
     adv_task.handle = NULL;
-#if CONFIG_SPIRAM_USE_MALLOC
+#if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
+     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+     CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     heap_caps_free(adv_task.stack);
     adv_task.stack = NULL;
     heap_caps_free(adv_task.task);
@@ -866,7 +884,7 @@ void bt_mesh_adv_deinit(void)
 
     vQueueDelete(xBleMeshRelayQueue.queue);
     xBleMeshRelayQueue.queue = NULL;
-#if CONFIG_SPIRAM_USE_MALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     heap_caps_free(xBleMeshRelayQueue.buffer);
     xBleMeshRelayQueue.buffer = NULL;
     heap_caps_free(xBleMeshRelayQueue.storage);
@@ -882,7 +900,7 @@ void bt_mesh_adv_deinit(void)
 
     vQueueDelete(xBleMeshQueue.queue);
     xBleMeshQueue.queue = NULL;
-#if CONFIG_SPIRAM_USE_MALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     heap_caps_free(xBleMeshQueue.buffer);
     xBleMeshQueue.buffer = NULL;
     heap_caps_free(xBleMeshQueue.storage);
