@@ -144,35 +144,26 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 .. highlight:: bash
 
-Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS)::
+Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS):
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd
+   :end-before: ---
 
 .. note::
 
-    The files provided after ``-f`` above are specific for ESP-WROVER-KIT with esp32-wroom-32 module. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
+    The files provided after ``-f`` above are specific for |run-openocd-device-name|. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 .. highlight:: none
 
-You should now see similar output (this log is for ESP-WROVER-KIT)::
+You should now see similar output (this log is for ESP-WROVER-KIT):
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
-    Licensed under GNU GPL v2
-    For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
-    none separate
-    adapter speed: 20000 kHz
-    force hard breakpoints
-    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
-    Info : clock speed 20000 kHz
-    Info : JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : JTAG tap: esp32.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-    Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-output
+   :end-before: ---
 
 * If there is an error indicating permission problems, please see the "Permissions delegation" bit in the OpenOCD README file in ``~/esp/openocd-esp32`` directory.
-* In case there is an error finding configuration files, e.g. ``Can't find board/esp32-wrover-kit-3.3v.cfg``, check the path after ``-s``. This path is used by OpenOCD to look for the files specified after ``-f``. Also check if the file is indeed under provided path.
+* In case there is an error finding configuration files, e.g. |run-openocd-cfg-file-err|, check ``OPENOCD_SCRIPTS`` environment variable is set correctly. This variable is used by OpenOCD to look for the files specified after ``-f``. See :ref:`jtag-debugging-setup-openocd` section for details. Also check if the file is indeed under provided path.
 * If you see JTAG errors (...all ones/...all zeroes) please check your connections, whether no other signals are connected to JTAG besides {IDF_TARGET_NAME}'s pins, and see if everything is powered on.
 
 
@@ -183,9 +174,11 @@ Upload application for debugging
 
 Build and upload your application to {IDF_TARGET_NAME} as usual, see :ref:`get-started-build`.
 
-Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
+Another option is to write application image to flash using OpenOCD via JTAG with commands like this:
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-upload
+   :end-before: ---
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
@@ -251,26 +244,31 @@ Please refer to separate documents listed below, that describe build process.
 
 The examples of invoking OpenOCD in this document assume using pre-built binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
 
-.. highlight:: bash
+To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS:
 
-To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS::
+.. code-block:: bash
 
     cd ~/esp/openocd-esp32
     export OPENOCD_SCRIPTS=$PWD/tcl
 
-For Windows::
+For Windows:
+
+.. code-block:: batch
 
     cd %USERPROFILE%\esp\openocd-esp32
     set "OPENOCD_SCRIPTS=%CD%\tcl"
 
-Example of invoking OpenOCD build locally from sources, for Linux and macOS::
+Example of invoking OpenOCD build locally from sources, for Linux and macOS:
 
-    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-linux
+   :end-before: ---
 
-and Windows::
+and Windows:
 
-    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
-
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-win
+   :end-before: ---
 
 .. _jtag-debugging-tips-and-quirks:
 
