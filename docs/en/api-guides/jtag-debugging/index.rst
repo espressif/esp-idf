@@ -42,7 +42,7 @@ This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and d
 
 .. note::
 
-    Screenshots presented in this document have been made for Eclipse Neon 3 running on Ubuntu 16.04 LTE. There may be some small differences in what a particular user interface looks like, depending on whether you are using Windows, MacOS or Linux and / or a different release of Eclipse.
+    Screenshots presented in this document have been made for Eclipse Neon 3 running on Ubuntu 16.04 LTS. There may be some small differences in what a particular user interface looks like, depending on whether you are using Windows, MacOS or Linux and / or a different release of Eclipse.
 
 .. _jtag-debugging-how-it-works:
 
@@ -98,7 +98,7 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 
 The output should be as follows (although the version may be more recent than listed here)::
 
-    Open On-Chip Debugger  v0.10.0-{IDF_TARGET_TOOLCHAIN_NAME}-20190708 (2019-07-08-11:04)
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
         http://openocd.org/doc/doxygen/bugs.html
