@@ -127,7 +127,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 .. toctree::
     :maxdepth: 1
 
-    :esp32: configure-wrover
+    configure-ft2232h-jtag
     configure-other-jtag
 
 

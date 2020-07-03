@@ -25,6 +25,11 @@ GDB. The document is structured as follows:
     This section provides collection of tips and quirks related JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
 
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: devkit-defs
+   :end-before: ---
+
+
 .. _jtag-debugging-introduction:
 
 Introduction
@@ -62,9 +67,7 @@ Under "Application Loading and Monitoring" there is another software and hardwar
 
 Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
-.. only:: esp32
-
-    If the :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
+If the |devkit-name-with-link| is used, then connection from PC to {IDF_TARGET_NAME} is done effectively with a single USB cable. This is made possible by the FT2232H chip, which provides two USB channels, one for JTAG and the one for UART connection.
 
 Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
 
@@ -74,7 +77,7 @@ Depending on user preferences, both `debugger` and `idf.py build` can be operate
 Selecting JTAG Adapter
 ----------------------
 
-The quickest and most convenient way to start with JTAG debugging is by using :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>`. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}. WROVER KIT is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
+The quickest and most convenient way to start with JTAG debugging is by using |devkit-name-with-link|. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}. |devkit-name| is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
 
 If you decide to use separate JTAG adapter, look for one that is compatible with both the voltage levels on the {IDF_TARGET_NAME} as well as with the OpenOCD software. The JTAG port on the {IDF_TARGET_NAME} is an industry-standard JTAG port which lacks (and does not need) the TRST pin. The JTAG I/O pins all are powered from the VDD_3P3_RTC pin (which normally would be powered by a 3.3 V rail) so the JTAG adapter needs to be able to work with JTAG pins in that voltage range.
 
@@ -131,7 +134,7 @@ This step depends on JTAG and {IDF_TARGET_NAME} board you are using - see the tw
 .. toctree::
     :maxdepth: 1
 
-    :esp32: configure-wrover
+    configure-ft2232h-jtag
     configure-other-jtag
 
 
