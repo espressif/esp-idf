@@ -1047,13 +1047,13 @@ public class ESPDevice {
                             String cap = capabilities.getString(i);
                             deviceCapabilities.add(cap);
                         }
-                        deviceName = fetchWiFiSSID();
                         Log.d(TAG, "Capabilities : " + deviceCapabilities);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Log.d(TAG, "Capabilities JSON not available.");
                     }
+                    deviceName = fetchWiFiSSID();
                     handler.removeCallbacks(wifiConnectionFailedTask);
                     EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTED));
                 }

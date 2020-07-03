@@ -295,11 +295,14 @@ public class ESPProvisionManager {
                                 transportType = ESPConstants.TransportType.TRANSPORT_BLE;
 
                             } else {
-                                qrCodeScanListener.onFailure(new RuntimeException("Transport type not supported"));
+                                Log.e(TAG, "" + transport + " Transport type is not supported");
+                                qrCodeScanListener.onFailure(new RuntimeException("Transport type is not supported"));
+                                return;
                             }
-
                         } else {
-                            qrCodeScanListener.onFailure(new RuntimeException("Transport is not available"));
+                            Log.e(TAG, "Transport is not available in QR code data");
+                            qrCodeScanListener.onFailure(new RuntimeException("QR code is not valid"));
+                            return;
                         }
 
                         if (security == 0) {
@@ -326,8 +329,10 @@ public class ESPProvisionManager {
                     } catch (JSONException e) {
 
                         e.printStackTrace();
-                        qrCodeScanListener.onFailure(new RuntimeException("QR code not valid"));
+                        qrCodeScanListener.onFailure(new RuntimeException("QR code is not valid"));
                     }
+                } else {
+                    qrCodeScanListener.onFailure(new RuntimeException("QR code is not valid"));
                 }
             }
         });
