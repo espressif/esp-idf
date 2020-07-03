@@ -127,7 +127,7 @@ esp_spiram_size_t esp_spiram_get_chip_size(void)
 {
     if (!spiram_inited) {
         ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
-        return ESP_SPIRAM_SIZE_INVALID;
+        abort();
     }
     psram_size_t psram_size = psram_get_size();
     switch (psram_size) {
