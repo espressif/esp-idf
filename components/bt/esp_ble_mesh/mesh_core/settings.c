@@ -1338,7 +1338,7 @@ int settings_core_commit(void)
         }
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_proxy_prov_disable(true);
+            bt_mesh_proxy_server_prov_disable(true);
         }
 
         for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
