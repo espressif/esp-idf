@@ -410,6 +410,9 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         return ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED;
     }
 
+#ifdef CONFIG_MBEDTLS_SSL_RENEGOTIATION
+    mbedtls_ssl_conf_renegotiation(&tls->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+#endif
 
     if (cfg->alpn_protos) {
 #ifdef CONFIG_MBEDTLS_SSL_ALPN
