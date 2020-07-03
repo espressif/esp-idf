@@ -300,6 +300,7 @@ esp_err_t esp_spiram_init(void)
         return r;
     }
 
+    spiram_inited=true;
 #if (CONFIG_SPIRAM_SIZE != -1)
     if (esp_spiram_get_size()!=CONFIG_SPIRAM_SIZE) {
         ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, esp_spiram_get_size()/1024);
@@ -315,7 +316,6 @@ esp_err_t esp_spiram_init(void)
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_NORMAL)?"normal (1-core)":"ERROR");
-    spiram_inited=true;
     return ESP_OK;
 }
 
@@ -386,6 +386,11 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 
 size_t esp_spiram_get_size(void)
 {
+    if (!spiram_inited) {
+        ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
+        abort();
+    }
+
     psram_size_t size=psram_get_size();
     if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
     if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
