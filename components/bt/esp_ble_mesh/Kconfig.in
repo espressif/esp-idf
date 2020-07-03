@@ -59,6 +59,42 @@ if BLE_MESH
 
     endchoice # BLE_MESH_MEM_ALLOC_MODE
 
+    config BLE_MESH_FREERTOS_STATIC_ALLOC
+        bool "Enable FreeRTOS static allocation"
+        depends on FREERTOS_SUPPORT_STATIC_ALLOCATION && (ESP32_SPIRAM_SUPPORT || ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+        default n
+        help
+            Enable this option to use FreeRTOS static allocation APIs for BLE Mesh,
+            which provides the ability to use different dynamic memory (i.e. SPIRAM
+            or IRAM) for FreeRTOS objects.
+            If this option is disabled, the FreeRTOS static allocation APIs will not
+            be used, and internal DRAM will be allocated for FreeRTOS objects.
+
+    choice BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
+        prompt "Memory allocation for FreeRTOS objects"
+        depends on BLE_MESH_FREERTOS_STATIC_ALLOC
+        help
+            Choose the memory to be used for FreeRTOS objects.
+
+        config BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+            bool "External SPIRAM"
+            depends on ESP32_SPIRAM_SUPPORT
+            help
+                If enabled, BLE Mesh allocates dynamic memory from external SPIRAM for
+                FreeRTOS objects, i.e. mutex, queue, and task stack. External SPIRAM
+                can only be used for task stack when SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+                is enabled. See the SPIRAM options for more details.
+
+        config BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+            bool "Internal IRAM"
+            depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+            help
+                If enabled, BLE Mesh allocates dynamic memory from internal IRAM for
+                FreeRTOS objects, i.e. mutex, queue. Note: IRAM region cannot be used
+                as task stack.
+
+    endchoice # BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE
