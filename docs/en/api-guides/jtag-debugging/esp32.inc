@@ -161,3 +161,16 @@
     xtensa-esp32-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
 
 ---
+
+.. devkit-defs
+
+.. |devkit-name| replace:: ESP-WROVER-KIT
+.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>`
+
+---
+
+.. devkit-hw-config
+
+* Enable on-board JTAG functionality by setting JP8 according to :doc:`../../hw-reference/esp32/get-started-wrover-kit`, Section :ref:`get-started-esp-wrover-kit-v4.1-setup-options`.
+
+---

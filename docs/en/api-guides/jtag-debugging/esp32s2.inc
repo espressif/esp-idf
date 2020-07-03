@@ -145,3 +145,16 @@
     xtensa-esp32s2-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
 
 ---
+
+.. devkit-defs
+
+.. |devkit-name| replace:: ESP-S2-Kaluga-1
+.. |devkit-name-with-link| replace:: :doc:`ESP-S2-Kaluga-1 <../../hw-reference/modules-and-boards>`
+
+---
+
+.. devkit-hw-config
+
+* Out of the box, ESP32-S2-Kaluga-1 doesn't need any additional hardware configuration for JTAG debugging. However if you are experiencing issues, check that switches 2-5 of the "JTAG" DIP switch block are in "ON" position.
+
+---
