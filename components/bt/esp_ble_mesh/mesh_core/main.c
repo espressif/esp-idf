@@ -48,7 +48,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-        if (bt_mesh_proxy_prov_disable(false) == 0) {
+        if (bt_mesh_proxy_server_prov_disable(false) == 0) {
             pb_gatt_enabled = true;
         } else {
             pb_gatt_enabled = false;
@@ -62,7 +62,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
         bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_VALID);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) && pb_gatt_enabled) {
-            bt_mesh_proxy_prov_enable();
+            bt_mesh_proxy_server_prov_enable();
         }
 
         return err;
@@ -114,7 +114,7 @@ void bt_mesh_node_reset(void)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-        bt_mesh_proxy_gatt_disable();
+        bt_mesh_proxy_server_gatt_disable();
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
@@ -210,7 +210,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_proxy_prov_enable();
+        bt_mesh_proxy_server_prov_enable();
         bt_mesh_adv_update();
     }
 
@@ -241,7 +241,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_proxy_prov_disable(true);
+        bt_mesh_proxy_server_prov_disable(true);
     }
 
     return 0;
@@ -356,13 +356,13 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
         IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
         IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-        bt_mesh_proxy_init();
+        bt_mesh_proxy_server_init();
     }
 
     if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
         IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
         IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
-        bt_mesh_proxy_prov_client_init();
+        bt_mesh_proxy_client_init();
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
@@ -427,13 +427,13 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
         }
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_proxy_prov_disable(true);
+            bt_mesh_proxy_server_prov_disable(true);
         }
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_provisioner_pb_gatt_disable();
+            bt_mesh_proxy_client_prov_disable();
         }
 
         bt_mesh_scan_disable();
@@ -463,13 +463,13 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
         IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
         IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-        bt_mesh_proxy_deinit();
+        bt_mesh_proxy_server_deinit();
     }
 
     if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
         IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
         IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
-        bt_mesh_proxy_prov_client_deinit();
+        bt_mesh_proxy_client_deinit();
     }
 
     bt_mesh_gatt_deinit();
@@ -532,7 +532,7 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_provisioner_pb_gatt_enable();
+        bt_mesh_proxy_client_prov_enable();
     }
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
@@ -608,7 +608,7 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (enable & BLE_MESH_PROV_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_provisioner_pb_gatt_disable();
+        bt_mesh_proxy_client_prov_disable();
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
         bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
                                         BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);

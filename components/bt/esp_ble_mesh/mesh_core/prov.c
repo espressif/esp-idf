@@ -242,7 +242,7 @@ static void reset_state(void)
     link.rx.prev_id = XACT_NVAL;
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
-    link.rx.buf = bt_mesh_proxy_get_buf();
+    link.rx.buf = bt_mesh_proxy_server_get_buf();
 #else
     net_buf_simple_reset(&rx_buf);
     link.rx.buf = &rx_buf;
@@ -530,7 +530,7 @@ static int prov_send_gatt(struct net_buf_simple *msg)
     /* Changed by Espressif, add provisioning timeout timer operations.
      * When sending a provisioning PDU successfully, restart the 60s timer.
      */
-    err = bt_mesh_proxy_send(link.conn, BLE_MESH_PROXY_PROV, msg);
+    err = bt_mesh_proxy_server_send(link.conn, BLE_MESH_PROXY_PROV, msg);
     if (err) {
         BT_ERR("%s, Failed to send provisioning PDU", __func__);
         return err;
