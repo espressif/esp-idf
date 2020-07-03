@@ -20,6 +20,7 @@
 #include "mesh.h"
 #include "access.h"
 #include "settings.h"
+#include "fast_prov.h"
 #include "mesh_common.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
@@ -276,7 +277,6 @@ struct bt_mesh_prov_ctx {
     struct {
         bool  enable;
         u16_t net_idx;
-        const u8_t *net_key;
         u8_t  flags;
         u32_t iv_index;
         u16_t unicast_addr_min;
@@ -1280,17 +1280,9 @@ void bt_mesh_provisioner_fast_prov_enable(bool enable)
     prov_ctx.fast_prov.enable = enable;
 }
 
-u8_t bt_mesh_provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx)
+void bt_mesh_provisioner_set_fast_prov_net_idx(u16_t net_idx)
 {
     prov_ctx.fast_prov.net_idx = net_idx;
-    prov_ctx.fast_prov.net_key = net_key;
-
-    if (!net_key) {
-        BT_WARN("Wait for NetKey for fast provisioning");
-        return 0x01; /*status: wait for net_key */
-    }
-
-    return 0x0; /* status: success */
 }
 
 u16_t bt_mesh_provisioner_get_fast_prov_net_idx(void)
@@ -2456,10 +2448,10 @@ static void send_prov_data(const u8_t idx)
      * will be added to the primary subnet, and may add an API to choose to which
      * subnet will the device be provisioned later.
      */
-    if (FAST_PROV_ENABLE()) {
-        netkey = prov_ctx.fast_prov.net_key;
+    if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && FAST_PROV_ENABLE()) {
+        netkey = bt_mesh_fast_prov_net_key_get(prov_ctx.fast_prov.net_idx);
         if (!netkey) {
-            BT_ERR("%s, Failed to get NetKey for fast provisioning", __func__);
+            BT_ERR("No NetKey for fast provisioning");
             goto fail;
         }
         memcpy(pdu, netkey, 16);
@@ -2469,7 +2461,7 @@ static void send_prov_data(const u8_t idx)
     } else {
         netkey = bt_mesh_provisioner_net_key_get(prov_ctx.curr_net_idx);
         if (!netkey) {
-            BT_ERR("%s, Failed to get NetKey for provisioning data", __func__);
+            BT_ERR("No NetKey for provisioning data");
             goto fail;
         }
         memcpy(pdu, netkey, 16);
@@ -2580,7 +2572,7 @@ static void send_prov_data(const u8_t idx)
         }
     }
 
-    if (FAST_PROV_ENABLE()) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && FAST_PROV_ENABLE()) {
         link[idx].ki_flags = prov_ctx.fast_prov.flags;
         link[idx].iv_index = prov_ctx.fast_prov.iv_index;
     } else {
@@ -2668,7 +2660,7 @@ static void prov_complete(const u8_t idx, const u8_t *data)
         return;
     }
 
-    if (FAST_PROV_ENABLE()) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && FAST_PROV_ENABLE()) {
         net_idx = prov_ctx.fast_prov.net_idx;
     } else {
         net_idx = prov_ctx.curr_net_idx;

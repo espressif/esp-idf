@@ -359,17 +359,6 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers);
  */
 int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 
-/* The following API is for BLE Mesh Fast Provisioning */
-
-/** @brief Change the device action
- *
- *  @param[IN] action: role of device to be set
- *                     0x01 - enter, 0x02 - suspend, 0x03 - exit
- *
- *  @return status
- */
-u8_t bt_mesh_set_fast_prov_action(u8_t action);
-
 /* The following APIs are for BLE Mesh Provisioner */
 
 /** @brief Provide provisioning input OOB string.

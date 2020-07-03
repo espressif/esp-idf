@@ -18,6 +18,7 @@
 #include "btc/btc_manage.h"
 #include "mesh_byteorder.h"
 #include "mesh_main.h"
+#include "fast_prov.h"
 #include "provisioner_prov.h"
 #include "esp_ble_mesh_defs.h"
 
