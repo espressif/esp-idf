@@ -120,6 +120,9 @@ typedef enum {
 #define PICO_PSRAM_CLK_IO          6
 #define PICO_PSRAM_CS_IO           CONFIG_PICO_PSRAM_CS_IO   // Default value is 10
 
+#define PICO_V3_02_PSRAM_CLK_IO    10
+#define PICO_V3_02_PSRAM_CS_IO     9
+
 typedef struct {
     uint8_t flash_clk_io;
     uint8_t flash_cs_io;
@@ -821,6 +824,16 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         s_clk_mode = PSRAM_CLK_MODE_NORM;
         psram_io.psram_clk_io = PICO_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = PICO_PSRAM_CS_IO;
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
+        ESP_EARLY_LOGI(TAG, "This chip is ESP32-PICO-V3-02");
+        rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
+        if (cfg.tieh != RTC_VDDSDIO_TIEH_3_3V) {
+            ESP_EARLY_LOGE(TAG, "VDDSDIO is not 3.3V");
+            return ESP_FAIL;
+        }
+        s_clk_mode = PSRAM_CLK_MODE_NORM;
+        psram_io.psram_clk_io = PICO_V3_02_PSRAM_CLK_IO;
+        psram_io.psram_cs_io  = PICO_V3_02_PSRAM_CS_IO;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)){
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
