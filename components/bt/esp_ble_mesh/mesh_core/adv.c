@@ -258,11 +258,11 @@ static void adv_thread(void *p)
         while (!(*buf)) {
             s32_t timeout;
             BT_DBG("Mesh Proxy Advertising start");
-            timeout = bt_mesh_proxy_adv_start();
+            timeout = bt_mesh_proxy_server_adv_start();
             BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
             xQueueReceive(adv_queue.handle, &msg, timeout);
             BT_DBG("Mesh Proxy Advertising stop");
-            bt_mesh_proxy_adv_stop();
+            bt_mesh_proxy_server_adv_stop();
         }
 #else
         xQueueReceive(adv_queue.handle, &msg, portMAX_DELAY);
@@ -281,11 +281,11 @@ static void adv_thread(void *p)
             while (!(*buf)) {
                 s32_t timeout = 0;
                 BT_DBG("Mesh Proxy Advertising start");
-                timeout = bt_mesh_proxy_adv_start();
+                timeout = bt_mesh_proxy_server_adv_start();
                 BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
                 handle = xQueueSelectFromSet(mesh_queue_set, timeout);
                 BT_DBG("Mesh Proxy Advertising stop");
-                bt_mesh_proxy_adv_stop();
+                bt_mesh_proxy_server_adv_stop();
                 if (handle) {
                     if (uxQueueMessagesWaiting(adv_queue.handle)) {
                         xQueueReceive(adv_queue.handle, &msg, K_NO_WAIT);
@@ -590,14 +590,14 @@ u16_t bt_mesh_get_stored_relay_count(void)
 }
 #endif /* #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
-const bt_mesh_addr_t *bt_mesh_pba_get_addr(void)
+const bt_mesh_addr_t *bt_mesh_get_unprov_dev_addr(void)
 {
     return dev_addr;
 }
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
+static bool adv_flags_valid(struct net_buf_simple *buf)
 {
     u8_t flags = 0U;
 
@@ -616,7 +616,7 @@ static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
     return true;
 }
 
-static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uuid)
+static bool adv_service_uuid_valid(struct net_buf_simple *buf, u16_t *uuid)
 {
     if (buf->len != 2U) {
         BT_DBG("Length not match mesh service uuid");
@@ -649,7 +649,9 @@ static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uui
 #define BLE_MESH_PROXY_SRV_DATA_LEN1    0x09
 #define BLE_MESH_PROXY_SRV_DATA_LEN2    0x11
 
-static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid, s8_t rssi)
+static void handle_adv_service_data(struct net_buf_simple *buf,
+                                    const bt_mesh_addr_t *addr,
+                                    u16_t uuid, s8_t rssi)
 {
     u16_t type = 0U;
 
@@ -674,7 +676,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
             }
 
             BT_DBG("Start to handle Mesh Prov Service Data");
-            bt_mesh_provisioner_prov_adv_ind_recv(buf, addr, rssi);
+            bt_mesh_provisioner_prov_adv_recv(buf, addr, rssi);
         }
         break;
 #endif
@@ -687,7 +689,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
         }
 
         BT_DBG("Start to handle Mesh Proxy Service Data");
-        bt_mesh_proxy_client_adv_ind_recv(buf, addr, rssi);
+        bt_mesh_proxy_client_gatt_adv_recv(buf, addr, rssi);
         break;
 #endif
     default:
@@ -763,19 +765,19 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
         case BLE_MESH_DATA_FLAGS:
-            if (!bt_mesh_is_adv_flags_valid(buf)) {
+            if (!adv_flags_valid(buf)) {
                 BT_DBG("Adv Flags mismatch, ignore this adv pkt");
                 return;
             }
             break;
         case BLE_MESH_DATA_UUID16_ALL:
-            if (!bt_mesh_is_adv_srv_uuid_valid(buf, &uuid)) {
+            if (!adv_service_uuid_valid(buf, &uuid)) {
                 BT_DBG("Adv Service UUID mismatch, ignore this adv pkt");
                 return;
             }
             break;
         case BLE_MESH_DATA_SVC_DATA16:
-            bt_mesh_adv_srv_data_recv(buf, addr, uuid, rssi);
+            handle_adv_service_data(buf, addr, uuid, rssi);
             break;
 #endif
         default:
