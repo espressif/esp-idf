@@ -851,12 +851,12 @@ void bt_mesh_adv_init(void)
     __ASSERT(adv_task.task, "Failed to create adv thread task");
     adv_task.stack = heap_caps_calloc_prefer(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     __ASSERT(adv_task.stack, "Failed to create adv thread stack");
-    adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
-                                  configMAX_PRIORITIES - 5, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
+    adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, BLE_MESH_ADV_TASK_NAME, BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
+                                  BLE_MESH_ADV_TASK_PRIO, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
     __ASSERT(adv_task.handle, "Failed to create static adv thread");
 #else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
-    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
-                                      configMAX_PRIORITIES - 5, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
+    int ret = xTaskCreatePinnedToCore(adv_thread, BLE_MESH_ADV_TASK_NAME, BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
+                                      BLE_MESH_ADV_TASK_PRIO, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
     __ASSERT(ret == pdTRUE, "Failed to create adv thread");
 #endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
 }
