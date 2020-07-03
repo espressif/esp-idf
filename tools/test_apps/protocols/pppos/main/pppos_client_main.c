@@ -258,9 +258,11 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_modem_stop_ppp(dte));
     /* Wait for the PPP connection to terminate gracefully */
     xEventGroupWaitBits(event_group, DISCONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
-    /* Destroy the netif adapter withe events, which internally frees also the esp-netif instance */
+    /* Unregister events, destroy the netif adapter and destroy its esp-netif instance */
     esp_modem_netif_clear_default_handlers(modem_netif_adapter);
     esp_modem_netif_teardown(modem_netif_adapter);
+    esp_netif_destroy(esp_netif);
+
     xEventGroupWaitBits(event_group, STOP_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
     ESP_ERROR_CHECK(dce->deinit(dce));
     ESP_ERROR_CHECK(dte->deinit(dte));
