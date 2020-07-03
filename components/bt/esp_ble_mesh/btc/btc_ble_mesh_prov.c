@@ -1612,11 +1612,11 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     case BTC_BLE_MESH_ACT_PROXY_GATT_ENABLE:
         act = ESP_BLE_MESH_NODE_PROXY_GATT_ENABLE_COMP_EVT;
-        param.node_proxy_gatt_enable_comp.err_code = bt_mesh_proxy_gatt_enable();
+        param.node_proxy_gatt_enable_comp.err_code = bt_mesh_proxy_server_gatt_enable();
         break;
     case BTC_BLE_MESH_ACT_PROXY_GATT_DISABLE:
         act = ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT;
-        param.node_proxy_gatt_disable_comp.err_code = bt_mesh_proxy_gatt_disable();
+        param.node_proxy_gatt_disable_comp.err_code = bt_mesh_proxy_server_gatt_disable();
         break;
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
@@ -1855,7 +1855,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.proxy_client_set_filter_type_comp.conn_handle = arg->proxy_client_set_filter_type.conn_handle;
         param.proxy_client_set_filter_type_comp.net_idx = arg->proxy_client_set_filter_type.net_idx;
         param.proxy_client_set_filter_type_comp.err_code =
-            bt_mesh_proxy_client_send_cfg(arg->proxy_client_set_filter_type.conn_handle,
+            bt_mesh_proxy_client_cfg_send(arg->proxy_client_set_filter_type.conn_handle,
                                           arg->proxy_client_set_filter_type.net_idx, &pdu);
         break;
     }
@@ -1869,7 +1869,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.proxy_client_add_filter_addr_comp.conn_handle = arg->proxy_client_add_filter_addr.conn_handle;
         param.proxy_client_add_filter_addr_comp.net_idx = arg->proxy_client_add_filter_addr.net_idx;
         param.proxy_client_add_filter_addr_comp.err_code =
-            bt_mesh_proxy_client_send_cfg(arg->proxy_client_add_filter_addr.conn_handle,
+            bt_mesh_proxy_client_cfg_send(arg->proxy_client_add_filter_addr.conn_handle,
                                           arg->proxy_client_add_filter_addr.net_idx, &pdu);
         break;
     }
@@ -1883,7 +1883,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.proxy_client_remove_filter_addr_comp.conn_handle = arg->proxy_client_remove_filter_addr.conn_handle;
         param.proxy_client_remove_filter_addr_comp.net_idx = arg->proxy_client_remove_filter_addr.net_idx;
         param.proxy_client_remove_filter_addr_comp.err_code =
-            bt_mesh_proxy_client_send_cfg(arg->proxy_client_remove_filter_addr.conn_handle,
+            bt_mesh_proxy_client_cfg_send(arg->proxy_client_remove_filter_addr.conn_handle,
                                           arg->proxy_client_remove_filter_addr.net_idx, &pdu);
         break;
     }

@@ -370,7 +370,7 @@ static void proxy_send_beacons(struct k_work *work)
     }
 }
 
-void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
+void bt_mesh_proxy_server_beacon_send(struct bt_mesh_subnet *sub)
 {
     int i;
 
@@ -378,7 +378,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
         /* NULL means we send on all subnets */
         for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
             if (bt_mesh.sub[i].net_idx != BLE_MESH_KEY_UNUSED) {
-                bt_mesh_proxy_beacon_send(&bt_mesh.sub[i]);
+                bt_mesh_proxy_server_beacon_send(&bt_mesh.sub[i]);
             }
         }
 
@@ -392,7 +392,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
     }
 }
 
-void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
+void bt_mesh_proxy_server_identity_start(struct bt_mesh_subnet *sub)
 {
     sub->node_id = BLE_MESH_NODE_IDENTITY_RUNNING;
     sub->node_id_start = k_uptime_get_32();
@@ -401,7 +401,7 @@ void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
     next_idx = sub - bt_mesh.sub;
 }
 
-void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
+void bt_mesh_proxy_server_identity_stop(struct bt_mesh_subnet *sub)
 {
     sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
     sub->node_id_start = 0U;
@@ -428,7 +428,7 @@ int bt_mesh_proxy_identity_enable(void)
             continue;
         }
 
-        bt_mesh_proxy_identity_start(sub);
+        bt_mesh_proxy_server_identity_start(sub);
         count++;
     }
 
@@ -624,7 +624,7 @@ static void proxy_disconnected(struct bt_mesh_conn *conn, u8_t reason)
     bt_mesh_adv_update();
 }
 
-struct net_buf_simple *bt_mesh_proxy_get_buf(void)
+struct net_buf_simple *bt_mesh_proxy_server_get_buf(void)
 {
     struct net_buf_simple *buf = &clients[0].buf;
 
@@ -697,7 +697,7 @@ static struct bt_mesh_gatt_attr prov_attrs[] = {
 
 struct bt_mesh_gatt_service prov_svc = BLE_MESH_GATT_SERVICE(prov_attrs);
 
-int bt_mesh_proxy_prov_enable(void)
+int bt_mesh_proxy_server_prov_enable(void)
 {
     int i;
 
@@ -727,7 +727,7 @@ int bt_mesh_proxy_prov_enable(void)
     return 0;
 }
 
-int bt_mesh_proxy_prov_disable(bool disconnect)
+int bt_mesh_proxy_server_prov_disable(bool disconnect)
 {
     int i;
 
@@ -832,7 +832,7 @@ static struct bt_mesh_gatt_attr proxy_attrs[] = {
 
 struct bt_mesh_gatt_service proxy_svc = BLE_MESH_GATT_SERVICE(proxy_attrs);
 
-int bt_mesh_proxy_gatt_enable(void)
+int bt_mesh_proxy_server_gatt_enable(void)
 {
     int i;
 
@@ -860,7 +860,7 @@ int bt_mesh_proxy_gatt_enable(void)
     return 0;
 }
 
-void bt_mesh_proxy_gatt_disconnect(void)
+void bt_mesh_proxy_server_gatt_disconnect(void)
 {
     int i;
 
@@ -877,7 +877,7 @@ void bt_mesh_proxy_gatt_disconnect(void)
     }
 }
 
-int bt_mesh_proxy_gatt_disable(void)
+int bt_mesh_proxy_server_gatt_disable(void)
 {
     BT_DBG("%s", __func__);
 
@@ -891,7 +891,7 @@ int bt_mesh_proxy_gatt_disable(void)
         return -EBUSY;
     }
 
-    bt_mesh_proxy_gatt_disconnect();
+    bt_mesh_proxy_server_gatt_disconnect();
 
     bt_mesh_gatts_service_stop(&proxy_svc);
     gatt_svc = MESH_GATT_NONE;
@@ -899,7 +899,7 @@ int bt_mesh_proxy_gatt_disable(void)
     return 0;
 }
 
-void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, u16_t addr)
+void bt_mesh_proxy_server_addr_add(struct net_buf_simple *buf, u16_t addr)
 {
     struct bt_mesh_proxy_client *client =
         CONTAINER_OF(buf, struct bt_mesh_proxy_client, buf);
@@ -945,7 +945,7 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
     return false;
 }
 
-bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst)
+bool bt_mesh_proxy_server_relay(struct net_buf_simple *buf, u16_t dst)
 {
     bool relayed = false;
     int i;
@@ -970,7 +970,7 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst)
         net_buf_simple_reserve(&msg, 1);
         net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-        bt_mesh_proxy_send(client->conn, BLE_MESH_PROXY_NET_PDU, &msg);
+        bt_mesh_proxy_server_send(client->conn, BLE_MESH_PROXY_NET_PDU, &msg);
         relayed = true;
     }
 
@@ -1032,8 +1032,8 @@ static int proxy_segment_and_send(struct bt_mesh_conn *conn, u8_t type,
     return 0;
 }
 
-int bt_mesh_proxy_send(struct bt_mesh_conn *conn, u8_t type,
-                       struct net_buf_simple *msg)
+int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, u8_t type,
+                              struct net_buf_simple *msg)
 {
     struct bt_mesh_proxy_client *client = find_client(conn);
 
@@ -1251,7 +1251,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
                    active, remaining);
             node_id_adv(sub);
         } else {
-            bt_mesh_proxy_identity_stop(sub);
+            bt_mesh_proxy_server_identity_stop(sub);
             BT_DBG("Node ID stopped");
         }
     }
@@ -1330,7 +1330,7 @@ static size_t gatt_prov_adv_create(struct bt_mesh_adv_data prov_sd[2])
 }
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
-s32_t bt_mesh_proxy_adv_start(void)
+s32_t bt_mesh_proxy_server_adv_start(void)
 {
     BT_DBG("%s", __func__);
 
@@ -1374,7 +1374,7 @@ s32_t bt_mesh_proxy_adv_start(void)
     return K_FOREVER;
 }
 
-void bt_mesh_proxy_adv_stop(void)
+void bt_mesh_proxy_server_adv_stop(void)
 {
     int err = 0;
 
@@ -1397,7 +1397,7 @@ static struct bt_mesh_conn_cb conn_callbacks = {
     .disconnected = proxy_disconnected,
 };
 
-int bt_mesh_proxy_init(void)
+int bt_mesh_proxy_server_init(void)
 {
     int i;
 
@@ -1425,7 +1425,7 @@ int bt_mesh_proxy_init(void)
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
-int bt_mesh_proxy_deinit(void)
+int bt_mesh_proxy_server_deinit(void)
 {
     int i;
 

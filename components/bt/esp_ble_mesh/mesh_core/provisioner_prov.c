@@ -1698,7 +1698,7 @@ static int prov_send_gatt(const u8_t idx, struct net_buf_simple *msg)
         return -ENOTCONN;
     }
 
-    err = bt_mesh_proxy_prov_client_send(link[idx].conn, BLE_MESH_PROXY_PROV, msg);
+    err = bt_mesh_proxy_client_send(link[idx].conn, BLE_MESH_PROXY_PROV, msg);
     if (err) {
         BT_ERR("%s, Failed to send PB-GATT pdu", __func__);
         return err;
@@ -3453,7 +3453,7 @@ void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rss
         return;
     }
 
-    addr = bt_mesh_pba_get_addr();
+    addr = bt_mesh_get_unprov_dev_addr();
     uuid = buf->data;
     net_buf_simple_pull(buf, 16);
     /* Mesh beacon uses big-endian to send beacon data */
@@ -3472,7 +3472,8 @@ void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rss
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 }
 
-void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi)
+void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
+                                       const bt_mesh_addr_t *addr, s8_t rssi)
 {
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     const u8_t *uuid = NULL;
