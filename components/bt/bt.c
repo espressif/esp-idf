@@ -1432,7 +1432,7 @@ extern uint32_t bt_isr_count_arry[16];
 static bool check_bt_is_alive()
 {
     static int stop_times = 0;
-    static int64_t last_time = 0; 
+    static int64_t last_time = 0;
     static int last_clk_ts = -1;
     int stop_timeout = (connection_LinkSuperTimeout*625+5000000);
     stop_timeout = (stop_timeout > 20000000) ? stop_timeout : 20000000;
@@ -1440,14 +1440,14 @@ static bool check_bt_is_alive()
     if(last_clk_ts == currect_clkint_ts) {
         if(stop_times==0) {
             last_time = esp_timer_get_time();
-        } else if(esp_timer_get_time() - last_time > stop_timeout) { 
+        } else if(esp_timer_get_time() - last_time > stop_timeout) {
             return BT_NOT_ALIVE;
         }
         stop_times++;
     } else {
         stop_times = 0;
     }
-    
+
     last_clk_ts = currect_clkint_ts;
     return BT_IS_ALIVE;
 }
@@ -1461,7 +1461,7 @@ void esp_bt_check_need_restart()
     }
 }
 
-void bt_abort_with_coredump_log(void)
+void bt_abort_with_coredump_log(uint16_t error)
 {
     __asm__ __volatile__("ill\n");
 }

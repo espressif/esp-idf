@@ -33,7 +33,7 @@
 #include "osi/mutex.h"
 #include "osi/fixed_queue.h"
 
-void bt_abort_with_coredump_log(void);
+void bt_abort_with_coredump_log(uint16_t error);
 
 typedef struct {
     uint16_t opcode;
@@ -145,7 +145,7 @@ task_post_status_t hci_host_task_post(task_post_t timeout)
     if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
     #ifdef TASK_MONITOR_MODE
         ets_printf("!! HCI send fail.Timeout Abort !!");
-        bt_abort_with_coredump_log();
+        bt_abort_with_coredump_log(0);
     #endif
         HCI_TRACE_ERROR("xHciHostQueue failed\n");
         return TASK_POST_FAIL;
@@ -277,7 +277,7 @@ static void transmit_command(
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    
+
 #ifdef TASK_MONITOR_MODE
     hci_host_task_post(TASK_POST_BLOCKING_WITH_TO);
 #else
@@ -336,7 +336,7 @@ static void event_command_ready(fixed_queue_t *queue)
 
     wait_entry = fixed_queue_dequeue(queue);
 
-    if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE 
+    if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     || wait_entry->opcode == HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL
 #endif
@@ -432,7 +432,7 @@ static void command_timed_out(void *context)
         // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     {
         HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, wait_entry->opcode);
-        abort();
+        bt_abort_with_coredump_log(wait_entry->opcode);
     }
 }
 

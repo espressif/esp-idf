@@ -60,7 +60,7 @@
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
 
-void bt_abort_with_coredump_log(void);
+void bt_abort_with_coredump_log(uint16_t error);
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
@@ -156,7 +156,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
         BTC_TRACE_ERROR("Btc Post failed\n");
     #ifdef TASK_MONITOR_MODE
         ets_printf("!! Btc Post failed.Timeout Abort !!");
-        bt_abort_with_coredump_log();
+        bt_abort_with_coredump_log(0);
     #endif
         return BT_STATUS_BUSY;
     }
@@ -193,7 +193,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 #else
     return btc_task_post(&lmsg, TASK_POST_BLOCKING);
 #endif
-    
+
 }
 
 #if (CONFIG_SPIRAM_USE_MALLOC && CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST)
