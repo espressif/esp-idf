@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
+#include "sdkconfig.h"
 #include "mesh_types.h"
 
 #ifdef __cplusplus
@@ -36,6 +37,8 @@ extern "C" {
 #endif
 
 #define BLE_MESH_ADV_TASK_STACK_SIZE    3072
+#define BLE_MESH_ADV_TASK_NAME          "mesh_adv_task"
+#define BLE_MESH_ADV_TASK_PRIO          (configMAX_PRIORITIES - 5)
 
 /**
  * @brief Put the current thread to sleep.
