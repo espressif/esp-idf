@@ -10,41 +10,9 @@ Configure Hardware
 
 1.  Identify all pins / signals on JTAG interface and {IDF_TARGET_NAME} board, that should be connected to establish communication.
 
-.. only:: esp32
-
-    +---+-----------------------+-------------+
-    |   | ESP32 Pin             | JTAG Signal |
-    +===+=======================+=============+
-    | 1 | CHIP_PU               | TRST_N      |
-    +---+-----------------------+-------------+
-    | 2 | MTDO / GPIO15         | TDO         |
-    +---+-----------------------+-------------+
-    | 3 | MTDI / GPIO12         | TDI         |
-    +---+-----------------------+-------------+
-    | 4 | MTCK / GPIO13         | TCK         |
-    +---+-----------------------+-------------+
-    | 5 | MTMS / GPIO14         | TMS         |
-    +---+-----------------------+-------------+
-    | 6 | GND                   | GND         |
-    +---+-----------------------+-------------+
-
-.. only:: esp32s2
-
-    +---+-----------------------+-------------+
-    |   | ESP32-S2 Pin          | JTAG Signal |
-    +===+=======================+=============+
-    | 1 | CHIP_PU               | TRST_N      |
-    +---+-----------------------+-------------+
-    | 2 | MTDO / GPIO40         | TDO         |
-    +---+-----------------------+-------------+
-    | 3 | MTDI / GPIO41         | TDI         |
-    +---+-----------------------+-------------+
-    | 4 | MTCK / GPIO39         | TCK         |
-    +---+-----------------------+-------------+
-    | 5 | MTMS / GPIO42         | TMS         |
-    +---+-----------------------+-------------+
-    | 6 | GND                   | GND         |
-    +---+-----------------------+-------------+
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: jtag-pins
+        :end-before: ---
 
 2.  Verify if {IDF_TARGET_NAME} pins used for JTAG communication are not connected to some other h/w that may disturb JTAG operation.
 
