@@ -165,7 +165,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
             bt_mesh_beacon_disable();
         }
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_provisioner_pb_gatt_enable();
+            bt_mesh_proxy_client_prov_enable();
         }
         bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr());
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
@@ -173,7 +173,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));
     } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_provisioner_pb_gatt_disable();
+            bt_mesh_proxy_client_prov_disable();
         }
         if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
             bt_mesh_beacon_enable();

@@ -2211,7 +2211,7 @@ static void net_key_add(struct bt_mesh_model *model,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
-        bt_mesh_proxy_beacon_send(sub);
+        bt_mesh_proxy_server_beacon_send(sub);
         bt_mesh_adv_update();
     } else {
         sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
@@ -2472,9 +2472,9 @@ static void node_identity_set(struct bt_mesh_model *model,
 
         if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
             if (node_id) {
-                bt_mesh_proxy_identity_start(sub);
+                bt_mesh_proxy_server_identity_start(sub);
             } else {
-                bt_mesh_proxy_identity_stop(sub);
+                bt_mesh_proxy_server_identity_stop(sub);
             }
             bt_mesh_adv_update();
         }

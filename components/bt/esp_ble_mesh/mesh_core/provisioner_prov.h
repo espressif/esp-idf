@@ -164,7 +164,8 @@ int bt_mesh_provisioner_prov_deinit(bool erase);
  */
 void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rssi);
 
-void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi);
+void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
+                                       const bt_mesh_addr_t *addr, s8_t rssi);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
