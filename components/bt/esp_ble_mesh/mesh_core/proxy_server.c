@@ -119,7 +119,7 @@ int bt_mesh_set_device_name(const char *name)
     }
 
     if (strlen(name) > DEVICE_NAME_SIZE) {
-        BT_ERR("%s, Too long device name", __func__);
+        BT_ERR("Too long device name (len %d)", strlen(name));
         return -EINVAL;
     }
 
@@ -150,7 +150,7 @@ static void proxy_sar_timeout(struct k_work *work)
 
     client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer.work);
     if (!client || !client->conn) {
-        BT_ERR("%s, Invalid proxy client parameter", __func__);
+        BT_ERR("Invalid proxy client parameter");
         return;
     }
 
@@ -176,7 +176,7 @@ static int filter_set(struct bt_mesh_proxy_client *client,
     }
 
     type = net_buf_simple_pull_u8(buf);
-    BT_DBG("type 0x%02x", type);
+    BT_INFO("Set filter type 0x%02x", type);
 
     switch (type) {
     case 0x00:
@@ -214,9 +214,12 @@ static void filter_add(struct bt_mesh_proxy_client *client, u16_t addr)
     for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
         if (client->filter[i] == BLE_MESH_ADDR_UNASSIGNED) {
             client->filter[i] = addr;
+            BT_INFO("Add filter addr 0x%04x", addr);
             return;
         }
     }
+
+    BT_WARN("Proxy filter is full!");
 }
 
 static void filter_remove(struct bt_mesh_proxy_client *client, u16_t addr)
@@ -232,6 +235,7 @@ static void filter_remove(struct bt_mesh_proxy_client *client, u16_t addr)
     for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
         if (client->filter[i] == addr) {
             client->filter[i] = BLE_MESH_ADDR_UNASSIGNED;
+            BT_INFO("Remove filter addr 0x%04x", addr);
             return;
         }
     }
@@ -275,13 +279,13 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
     err = bt_mesh_net_encode(&tx, buf, true);
     if (err) {
-        BT_ERR("%s, Encoding Proxy cfg message failed (err %d)", __func__, err);
+        BT_ERR("Encoding proxy cfg message failed (err %d)", err);
         return;
     }
 
     err = proxy_segment_and_send(client->conn, BLE_MESH_PROXY_CONFIG, buf);
     if (err) {
-        BT_ERR("%s, Failed to send proxy cfg message (err %d)", __func__, err);
+        BT_ERR("Failed to send proxy cfg message (err %d)", err);
     }
 }
 
@@ -300,7 +304,7 @@ static void proxy_cfg(struct bt_mesh_proxy_client *client)
     err = bt_mesh_net_decode(&client->buf, BLE_MESH_NET_IF_PROXY_CFG,
                              &rx, &buf);
     if (err) {
-        BT_ERR("%s, Failed to decode Proxy Configuration (err %d)", __func__, err);
+        BT_ERR("Failed to decode Proxy Configuration (err %d)", err);
         return;
     }
 
@@ -585,7 +589,7 @@ static void proxy_connected(struct bt_mesh_conn *conn, u8_t err)
     }
 
     if (!client) {
-        BT_ERR("%s, No free Proxy Client objects", __func__);
+        BT_ERR("No free Proxy Client objects");
         return;
     }
 
@@ -904,7 +908,7 @@ void bt_mesh_proxy_server_addr_add(struct net_buf_simple *buf, u16_t addr)
     struct bt_mesh_proxy_client *client =
         CONTAINER_OF(buf, struct bt_mesh_proxy_client, buf);
 
-    BT_INFO("filter_type %u addr 0x%04x", client->filter_type, addr);
+    BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
     if (client->filter_type == WHITELIST) {
         filter_add(client, addr);
@@ -1038,12 +1042,12 @@ int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, u8_t type,
     struct bt_mesh_proxy_client *client = find_client(conn);
 
     if (!client) {
-        BT_ERR("%s, No Proxy Client found", __func__);
+        BT_ERR("No Proxy Client found");
         return -ENOTCONN;
     }
 
     if ((client->filter_type == PROV) != (type == BLE_MESH_PROXY_PROV)) {
-        BT_ERR("%s, Invalid PDU type for Proxy Client", __func__);
+        BT_ERR("Invalid PDU type for Proxy Client");
         return -EINVAL;
     }
 
@@ -1386,7 +1390,7 @@ void bt_mesh_proxy_server_adv_stop(void)
 
     err = bt_le_adv_stop();
     if (err) {
-        BT_ERR("%s, Failed to stop advertising (err %d)", __func__, err);
+        BT_ERR("Failed to stop advertising (err %d)", err);
     } else {
         proxy_adv_enabled = false;
     }

@@ -349,8 +349,8 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub);
 struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx);
 
 struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
-        u32_t iv_index, const u8_t auth[8],
-        bool *new_key);
+                                           u32_t iv_index, const u8_t auth[8],
+                                           bool *new_key);
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
                        bool proxy);

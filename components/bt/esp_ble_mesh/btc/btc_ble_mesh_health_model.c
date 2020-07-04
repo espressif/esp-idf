@@ -26,7 +26,7 @@ extern s32_t health_msg_timeout;
 /* Health Client Model related functions */
 
 static inline void btc_ble_mesh_health_client_cb_to_app(esp_ble_mesh_health_client_cb_event_t event,
-        esp_ble_mesh_health_client_cb_param_t *param)
+                                                        esp_ble_mesh_health_client_cb_param_t *param)
 {
     esp_ble_mesh_health_client_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_health_client_cb_t)btc_profile_cb_get(BTC_PID_HEALTH_CLIENT);
@@ -52,7 +52,7 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
             memcpy(dst->health_client_get_state.params, src->health_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
         } else {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             break;
         }
         if (src->health_client_get_state.get_state) {
@@ -61,7 +61,7 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
                 memcpy(dst->health_client_get_state.get_state, src->health_client_get_state.get_state,
                     sizeof(esp_ble_mesh_health_client_get_state_t));
             } else {
-                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             }
         }
         break;
@@ -75,12 +75,12 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
             memcpy(dst->health_client_set_state.set_state, src->health_client_set_state.set_state,
                    sizeof(esp_ble_mesh_health_client_set_state_t));
         } else {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
         }
         break;
     }
     default:
-        BT_DBG("%s, Unknown deep copy act %d", __func__, msg->act);
+        BT_DBG("%s, Unknown act %d", __func__, msg->act);
         break;
     }
 }
@@ -132,7 +132,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
     if (p_src_data->params) {
         p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;
         }
 
@@ -150,7 +150,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
                     length = p_src_data->status_cb.current_status.fault_array->len;
                     p_dest_data->status_cb.current_status.fault_array = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.current_status.fault_array) {
-                        BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.current_status.fault_array,
@@ -166,7 +166,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
                     length = p_src_data->status_cb.fault_status.fault_array->len;
                     p_dest_data->status_cb.fault_status.fault_array = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.fault_status.fault_array) {
-                        BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.fault_status.fault_array,
@@ -240,14 +240,14 @@ static void btc_ble_mesh_health_client_callback(esp_ble_mesh_health_client_cb_pa
     msg.pid = BTC_PID_HEALTH_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params,
-                         sizeof(esp_ble_mesh_health_client_cb_param_t), btc_ble_mesh_health_client_copy_req_data);
+    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_health_client_cb_param_t),
+                         btc_ble_mesh_health_client_copy_req_data);
 }
 
 void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
-        struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx,
-        const u8_t *val, u16_t len)
+                                         struct bt_mesh_model *model,
+                                         struct bt_mesh_msg_ctx *ctx,
+                                         const u8_t *val, u16_t len)
 {
     esp_ble_mesh_health_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
@@ -273,7 +273,7 @@ void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         act = ESP_BLE_MESH_HEALTH_CLIENT_TIMEOUT_EVT;
         break;
     default:
-        BT_ERR("%s, Unknown health client event type %d", __func__, evt_type);
+        BT_ERR("Unknown Health client event type %d", evt_type);
         return;
     }
 
@@ -300,18 +300,17 @@ void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     return;
 }
 
-void btc_ble_mesh_health_publish_callback(u32_t opcode,
-        struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx,
-        struct net_buf_simple *buf)
+void btc_ble_mesh_health_publish_callback(u32_t opcode, struct bt_mesh_model *model,
+                                          struct bt_mesh_msg_ctx *ctx,
+                                          struct net_buf_simple *buf)
 {
     if (!model || !ctx || !buf) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    bt_mesh_health_client_cb_evt_to_btc(opcode,
-                                        BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+    bt_mesh_health_client_cb_evt_to_btc(opcode, BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH,
+                                        model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -326,7 +325,7 @@ static int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param
     }
 
     if (params->opcode == ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET && get == NULL) {
-        BT_ERR("%s, Invalid health client get", __func__);
+        BT_ERR("Invalid Health Get");
         return -EINVAL;
     }
 
@@ -346,7 +345,7 @@ static int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET:
         return bt_mesh_health_fault_get(&ctx, get->fault_get.company_id);
     default:
-        BT_ERR("%s, Invalid opcode 0x%x", __func__, params->opcode);
+        BT_ERR("Invalid Health Get opcode 0x%04x", params->opcode);
         return -EINVAL;
     }
 
@@ -389,7 +388,7 @@ static int btc_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR_UNACK:
         return bt_mesh_health_fault_clear(&ctx, set->fault_clear.company_id, false);
     default:
-        BT_ERR("%s, Invalid opcode 0x%x", __func__, params->opcode);
+        BT_ERR("Invalid Health Set opcode 0x%04x", params->opcode);
         return -EINVAL;
     }
 
@@ -415,7 +414,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)cb.params->model;
         role_param.role = cb.params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("%s, Failed to set model role", __func__);
+            BT_ERR("Failed to set model role");
             break;
         }
         cb.error_code = btc_ble_mesh_health_client_get_state(arg->health_client_get_state.params,
@@ -431,7 +430,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)cb.params->model;
         role_param.role = cb.params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("%s, Failed to set model role", __func__);
+            BT_ERR("Failed to set model role");
             break;
         }
         cb.error_code = btc_ble_mesh_health_client_set_state(arg->health_client_set_state.params,
@@ -464,7 +463,7 @@ void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_HEALTH_CLIENT_EVT_MAX) {
         btc_ble_mesh_health_client_cb_to_app(msg->act, param);
     } else {
-        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown act %d", __func__, msg->act);
     }
 
     btc_ble_mesh_health_client_free_req_data(msg);
@@ -474,7 +473,7 @@ void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg)
 /* Health Server Model related functions */
 
 static inline void btc_ble_mesh_health_server_cb_to_app(esp_ble_mesh_health_server_cb_event_t event,
-        esp_ble_mesh_health_server_cb_param_t *param)
+                                                        esp_ble_mesh_health_server_cb_param_t *param)
 {
     esp_ble_mesh_health_server_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_health_server_cb_t)btc_profile_cb_get(BTC_PID_HEALTH_SERVER);
@@ -558,8 +557,8 @@ static void btc_ble_mesh_health_server_callback(esp_ble_mesh_health_server_cb_pa
     msg.pid = BTC_PID_HEALTH_SERVER;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params,
-                         sizeof(esp_ble_mesh_health_server_cb_param_t), btc_ble_mesh_health_server_copy_req_data);
+    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_health_server_cb_param_t),
+                         btc_ble_mesh_health_server_copy_req_data);
 }
 
 void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg)
@@ -603,7 +602,7 @@ void btc_ble_mesh_health_server_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_HEALTH_SERVER_EVT_MAX) {
         btc_ble_mesh_health_server_cb_to_app(msg->act, param);
     } else {
-        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown act %d", __func__, msg->act);
     }
 
     btc_ble_mesh_health_server_free_req_data(msg);
@@ -620,7 +619,8 @@ void btc_ble_mesh_health_server_fault_clear(struct bt_mesh_model *model, u16_t c
     btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_FAULT_CLEAR_EVT);
 }
 
-void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model, u8_t test_id, u16_t company_id)
+void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model,
+                                           u8_t test_id, u16_t company_id)
 {
     esp_ble_mesh_health_server_cb_param_t param = {0};
 
