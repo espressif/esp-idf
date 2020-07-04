@@ -190,7 +190,7 @@ static inline int adv_send(struct net_buf *buf)
         struct ble_adv_tx *tx = cb_data;
 
         if (tx == NULL) {
-            BT_ERR("%s, Invalid adv user data", __func__);
+            BT_ERR("Invalid adv user data");
             net_buf_unref(buf);
             return -EINVAL;
         }
@@ -218,7 +218,7 @@ static inline int adv_send(struct net_buf *buf)
     net_buf_unref(buf);
     adv_send_start(duration, err, cb, cb_data);
     if (err) {
-        BT_ERR("%s, Advertising failed: err %d", __func__, err);
+        BT_ERR("Start advertising failed: err %d", err);
         return err;
     }
 
@@ -229,7 +229,7 @@ static inline int adv_send(struct net_buf *buf)
     err = bt_le_adv_stop();
     adv_send_end(err, cb, cb_data);
     if (err) {
-        BT_ERR("%s, Stop advertising failed: err %d", __func__, err);
+        BT_ERR("Stop advertising failed: err %d", err);
         return 0;
     }
 
@@ -316,18 +316,18 @@ static void adv_thread(void *p)
             BLE_MESH_ADV(*buf)->busy = 0U;
 #if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
             if (adv_send(*buf)) {
-                BT_WARN("%s, Failed to send adv packet", __func__);
+                BT_WARN("Failed to send adv packet");
             }
 #else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
             if (msg.relay && ignore_relay_packet(msg.timestamp)) {
                 /* If the interval between "current time - msg.timestamp" is bigger than
                  * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
                  */
-                BT_INFO("%s, Ignore relay packet", __func__);
+                BT_INFO("Ignore relay packet");
                 net_buf_unref(*buf);
             } else {
                 if (adv_send(*buf)) {
-                    BT_WARN("%s, Failed to send adv packet", __func__);
+                    BT_WARN("Failed to send adv packet");
                 }
             }
 #endif
@@ -342,9 +342,9 @@ static void adv_thread(void *p)
 }
 
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
-        bt_mesh_adv_alloc_t get_id,
-        enum bt_mesh_adv_type type,
-        u8_t xmit, s32_t timeout)
+                                             bt_mesh_adv_alloc_t get_id,
+                                             enum bt_mesh_adv_type type,
+                                             u8_t xmit, s32_t timeout)
 {
     struct bt_mesh_adv *adv = NULL;
     struct net_buf *buf = NULL;
@@ -359,8 +359,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         return NULL;
     }
 
-    BT_DBG("%s, pool = %p, buf_count = %d, uinit_count = %d", __func__,
-           buf->pool, pool->buf_count, pool->uninit_count);
+    BT_DBG("pool %p, buf_count %d, uinit_count %d",
+            buf->pool, pool->buf_count, pool->uninit_count);
 
     adv = get_id(net_buf_id(buf));
     BLE_MESH_ADV(buf) = adv;
@@ -443,18 +443,18 @@ static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front)
     BT_DBG("%s", __func__);
 
     if (adv_queue.handle == NULL) {
-        BT_ERR("%s, Invalid queue", __func__);
+        BT_ERR("Invalid adv queue");
         return;
     }
 
     if (front) {
         if (xQueueSendToFront(adv_queue.handle, msg, timeout) != pdTRUE) {
-            BT_ERR("%s, Failed to send item to queue front", __func__);
+            BT_ERR("Failed to send item to adv queue front");
             bt_mesh_unref_buf(msg);
         }
     } else {
         if (xQueueSend(adv_queue.handle, msg, timeout) != pdTRUE) {
-            BT_ERR("%s, Failed to send item to queue back", __func__);
+            BT_ERR("Failed to send item to adv queue back");
             bt_mesh_unref_buf(msg);
         }
     }
@@ -513,7 +513,7 @@ static struct bt_mesh_adv *relay_adv_alloc(int id)
 }
 
 struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
-        s32_t timeout)
+                                         s32_t timeout)
 {
     return bt_mesh_adv_create_from_pool(&relay_adv_buf_pool, relay_adv_alloc, type,
                                         xmit, timeout);
@@ -527,7 +527,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
     BT_DBG("%s", __func__);
 
     if (relay_queue.handle == NULL) {
-        BT_ERR("%s, Invalid relay queue", __func__);
+        BT_ERR("Invalid relay queue");
         return;
     }
 
@@ -541,10 +541,10 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
      */
     handle = xQueueSelectFromSet(mesh_queue_set, K_NO_WAIT);
     if (handle && uxQueueMessagesWaiting(relay_queue.handle)) {
-        BT_INFO("%s, Full queue, remove the oldest relay packet", __func__);
+        BT_INFO("Full queue, remove the oldest relay packet");
         /* Remove the oldest relay packet from queue */
         if (xQueueReceive(relay_queue.handle, &old_msg, K_NO_WAIT) != pdTRUE) {
-            BT_ERR("%s, Failed to remove item from queue", __func__);
+            BT_ERR("Failed to remove item from queue");
             bt_mesh_unref_buf(msg);
             return;
         }
@@ -552,12 +552,12 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
         bt_mesh_unref_buf(&old_msg);
         /* Send the latest relay packet to queue */
         if (xQueueSend(relay_queue.handle, msg, K_NO_WAIT) != pdTRUE) {
-            BT_ERR("%s, Failed to send item to relay queue", __func__);
+            BT_ERR("Failed to send item to relay queue");
             bt_mesh_unref_buf(msg);
             return;
         }
     } else {
-        BT_WARN("%s, Empty queue, but failed to send the relay packet", __func__);
+        BT_WARN("Empty queue, but failed to send the relay packet");
         bt_mesh_unref_buf(msg);
     }
 }
@@ -602,7 +602,7 @@ static bool adv_flags_valid(struct net_buf_simple *buf)
     u8_t flags = 0U;
 
     if (buf->len != 1U) {
-        BT_DBG("%s, Unexpected flags length", __func__);
+        BT_DBG("Unexpected adv flags length %d", buf->len);
         return false;
     }
 
@@ -662,7 +662,7 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
 
     type = net_buf_simple_pull_le16(buf);
     if (type != uuid) {
-        BT_DBG("%s, Invalid Mesh Service Data UUID 0x%04x", __func__, type);
+        BT_DBG("Invalid Mesh Service Data UUID 0x%04x", type);
         return;
     }
 
@@ -671,7 +671,7 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
     case BLE_MESH_UUID_MESH_PROV_VAL:
         if (bt_mesh_is_provisioner_en()) {
             if (buf->len != BLE_MESH_PROV_SRV_DATA_LEN) {
-                BT_WARN("%s, Invalid Mesh Prov Service Data length %d", __func__, buf->len);
+                BT_WARN("Invalid Mesh Prov Service Data length %d", buf->len);
                 return;
             }
 
@@ -684,7 +684,7 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
     case BLE_MESH_UUID_MESH_PROXY_VAL:
         if (buf->len != BLE_MESH_PROXY_SRV_DATA_LEN1 &&
                 buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
-            BT_WARN("%s, Invalid Mesh Proxy Service Data length %d", __func__, buf->len);
+            BT_WARN("Invalid Mesh Proxy Service Data length %d", buf->len);
             return;
         }
 
@@ -710,7 +710,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
         return;
     }
 
-    BT_DBG("%s, len %u: %s", __func__, buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("scan, len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     dev_addr = addr;
 
@@ -1111,17 +1111,17 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
 
     if (param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
         (param->interval < 0x20 || param->interval > 0x4000)) {
-        BT_ERR("%s, Invalid adv interval 0x%04x", __func__, param->interval);
+        BT_ERR("Invalid adv interval 0x%04x", param->interval);
         return -EINVAL;
     }
 
     if (param->adv_type > BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
-        BT_ERR("%s, Invalid adv type 0x%02x", __func__, param->adv_type);
+        BT_ERR("Invalid adv type 0x%02x", param->adv_type);
         return -EINVAL;
     }
 
     if (param->own_addr_type > BLE_MESH_ADDR_RANDOM_ID) {
-        BT_ERR("%s, Invalid own addr type 0x%02x", __func__, param->own_addr_type);
+        BT_ERR("Invalid own addr type 0x%02x", param->own_addr_type);
         return -EINVAL;
     }
 
@@ -1130,29 +1130,29 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
         param->adv_type == BLE_MESH_ADV_DIRECT_IND ||
         param->adv_type == BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) &&
         param->peer_addr_type > BLE_MESH_ADDR_RANDOM) {
-        BT_ERR("%s, Invalid peer addr type 0x%02x", __func__, param->peer_addr_type);
+        BT_ERR("Invalid peer addr type 0x%02x", param->peer_addr_type);
         return -EINVAL;
     }
 
     if (data && (data->adv_data_len > 31 || data->scan_rsp_data_len > 31)) {
-        BT_ERR("%s, Invalid adv data length, %d %d", __func__,
-            data->adv_data_len, data->scan_rsp_data_len);
+        BT_ERR("Invalid adv data length (adv %d, scan rsp %d)",
+                data->adv_data_len, data->scan_rsp_data_len);
         return -EINVAL;
     }
 
     if (param->priority > BLE_MESH_BLE_ADV_PRIO_HIGH) {
-        BT_ERR("%s, Invalid adv priority %d", __func__, param->priority);
+        BT_ERR("Invalid adv priority %d", param->priority);
         return -EINVAL;
     }
 
     if (param->duration < ADV_SCAN_INT(param->interval)) {
-        BT_ERR("%s, Too small duration %dms", __func__, param->duration);
+        BT_ERR("Too small duration %dms", param->duration);
         return -EINVAL;
     }
 
     buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, 0U, K_NO_WAIT);
     if (!buf) {
-        BT_ERR("%s, Unable to allocate buffer", __func__);
+        BT_ERR("Unable to allocate buffer");
         return -ENOBUFS;
     }
 
@@ -1202,14 +1202,14 @@ int bt_mesh_stop_ble_advertising(u8_t index)
     bool unref = true;
 
     if (index >= ARRAY_SIZE(ble_adv_tx)) {
-        BT_ERR("%s, Invalid index %d", __func__, index);
+        BT_ERR("Invalid adv index %d", index);
         return -EINVAL;
     }
 
     tx = &ble_adv_tx[index];
 
     if (tx->buf == NULL) {
-        BT_WARN("%s, Already stopped, index %d", __func__, index);
+        BT_WARN("Already stopped, index %d", index);
         return 0;
     }
 

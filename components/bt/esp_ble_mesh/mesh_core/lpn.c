@@ -165,7 +165,7 @@ static void friend_clear_sent(int err, void *user_data)
     lpn->req_attempts++;
 
     if (err) {
-        BT_ERR("%s, Sending Friend Request failed (err %d)", __func__, err);
+        BT_ERR("Sending Friend Clear failed (err %d)", err);
         lpn_set_state(BLE_MESH_LPN_ENABLED);
         clear_friendship(false, lpn->disable);
         return;
@@ -277,7 +277,7 @@ static void friend_req_sent(u16_t duration, int err, void *user_data)
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
     if (err) {
-        BT_ERR("%s, Sending Friend Request failed (err %d)", __func__, err);
+        BT_ERR("Sending Friend Request failed (err %d)", err);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
             bt_mesh_scan_enable();
@@ -339,7 +339,7 @@ static void req_sent(u16_t duration, int err, void *user_data)
            lpn->sent_req, duration, err, state2str(lpn->state));
 
     if (err) {
-        BT_ERR("%s, Sending request failed (err %d)", __func__, err);
+        BT_ERR("Sending request failed (err %d)", err);
         lpn->sent_req = 0U;
         group_zero(lpn->pending);
         return;
@@ -699,7 +699,7 @@ static bool sub_update(u8_t op)
         }
 
         if (added_count + g >= lpn->queue_size) {
-            BT_WARN("%s, Friend Queue Size exceeded", __func__);
+            BT_WARN("Friend Queue Size exceeded");
             break;
         }
 

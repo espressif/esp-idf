@@ -271,7 +271,7 @@ int bt_mesh_suspend(void)
     err = bt_mesh_scan_disable();
     if (err) {
         bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_SUSPENDED);
-        BT_WARN("%s, Disabling scanning failed (err %d)", __func__, err);
+        BT_WARN("Disabling scanning failed (err %d)", err);
         return err;
     }
 
@@ -312,7 +312,7 @@ int bt_mesh_resume(void)
 
     err = bt_mesh_scan_enable();
     if (err) {
-        BT_WARN("%s, Re-enabling scanning failed (err %d)", __func__, err);
+        BT_WARN("Re-enabling scanning failed (err %d)", err);
         bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_SUSPENDED);
         return err;
     }
@@ -565,13 +565,13 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 
     err = bt_mesh_provisioner_set_prov_info();
     if (err) {
-        BT_ERR("%s, Failed to set provisioning info", __func__);
+        BT_ERR("Failed to set provisioning info");
         return err;
     }
 
     err = bt_mesh_provisioner_net_create();
     if (err) {
-        BT_ERR("%s, Failed to create network", __func__);
+        BT_ERR("Failed to create network");
         return err;
     }
 
