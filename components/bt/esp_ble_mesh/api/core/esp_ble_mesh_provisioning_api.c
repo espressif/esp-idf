@@ -35,10 +35,28 @@ bool esp_ble_mesh_node_is_provisioned(void)
     return bt_mesh_is_provisioned();
 }
 
+static bool prov_bearers_valid(esp_ble_mesh_prov_bearer_t bearers)
+{
+    if ((!(bearers & (ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT))) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            !IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & ESP_BLE_MESH_PROV_ADV)) ||
+        (!IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & ESP_BLE_MESH_PROV_GATT))) {
+        return false;
+    }
+    return true;
+}
+
 esp_err_t esp_ble_mesh_node_prov_enable(esp_ble_mesh_prov_bearer_t bearers)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
+
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
@@ -55,6 +73,10 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
+
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
@@ -232,6 +254,10 @@ esp_err_t esp_ble_mesh_provisioner_prov_enable(esp_ble_mesh_prov_bearer_t bearer
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -248,6 +274,10 @@ esp_err_t esp_ble_mesh_provisioner_prov_disable(esp_ble_mesh_prov_bearer_t beare
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
+
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
