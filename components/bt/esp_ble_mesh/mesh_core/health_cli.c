@@ -106,7 +106,7 @@ static void health_client_cancel(struct bt_mesh_model *model,
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
-        BT_DBG("Unexpected health status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected Health Status 0x%04x", ctx->recv_op);
     } else {
         switch (node->opcode) {
         case OP_HEALTH_FAULT_GET:
@@ -160,7 +160,7 @@ static void health_fault_status(struct bt_mesh_model *model,
     status.cid = net_buf_simple_pull_le16(buf);
     status.fault_array = bt_mesh_alloc_buf(buf->len);
     if (!status.fault_array) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
 
@@ -428,7 +428,7 @@ void bt_mesh_health_cli_timeout_set(s32_t timeout)
 int bt_mesh_health_cli_set(struct bt_mesh_model *model)
 {
     if (!model || !model->user_data) {
-        BT_ERR("%s, No Health Client context for given model", __func__);
+        BT_ERR("No Health Client context for given model");
         return -EINVAL;
     }
 
@@ -451,14 +451,14 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 
     client = (bt_mesh_health_client_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, No Health Client context provided", __func__);
+        BT_ERR("No Health Client context provided");
         return -EINVAL;
     }
 
     if (!client->internal_data) {
         internal = bt_mesh_calloc(sizeof(health_internal_data_t));
         if (!internal) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return -ENOMEM;
         }
 
@@ -493,7 +493,7 @@ int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
 
     client = (bt_mesh_health_client_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, No Health Client context provided", __func__);
+        BT_ERR("No Health Client context provided");
         return -EINVAL;
     }
 

@@ -57,7 +57,7 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
 
     buf = (struct net_buf_simple *)bt_mesh_calloc(sizeof(struct net_buf_simple) + size);
     if (!buf) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return NULL;
     }
 
@@ -83,7 +83,7 @@ u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
     bt_mesh_client_user_data_t *client = NULL;
 
     if (srv_send) {
-        BT_DBG("%s, Message is sent by a server model", __func__);
+        BT_DBG("Message is sent by a server model");
         return NODE;
     }
 

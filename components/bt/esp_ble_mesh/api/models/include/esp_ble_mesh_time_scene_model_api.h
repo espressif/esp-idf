@@ -276,7 +276,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_time_scene_client_cb_t)(esp_ble_mesh_time_scene_client_cb_event_t event,
-        esp_ble_mesh_time_scene_client_cb_param_t *param);
+                                                     esp_ble_mesh_time_scene_client_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Time Scene Client Model callback.
@@ -301,7 +301,7 @@ esp_err_t esp_ble_mesh_register_time_scene_client_callback(esp_ble_mesh_time_sce
  * @return      ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_time_scene_client_get_state_t *get_state);
+                                                   esp_ble_mesh_time_scene_client_get_state_t *get_state);
 
 /**
  * @brief       Set the value of Time Scene Server Model states using the Time Scene Client Model set messages.
@@ -316,7 +316,7 @@ esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_pa
  * @return      ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_time_scene_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_time_scene_client_set_state_t *set_state);
+                                                   esp_ble_mesh_time_scene_client_set_state_t *set_state);
 
 /**
  * @brief Time Scene Server Models related context.
@@ -900,7 +900,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_time_scene_server_cb_t)(esp_ble_mesh_time_scene_server_cb_event_t event,
-        esp_ble_mesh_time_scene_server_cb_param_t *param);
+                                                     esp_ble_mesh_time_scene_server_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Time and Scenes Server Model callback.

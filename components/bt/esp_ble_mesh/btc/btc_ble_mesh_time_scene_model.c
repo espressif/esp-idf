@@ -22,7 +22,7 @@
 /* Time and Scenes Client Models related functions */
 
 static inline void btc_ble_mesh_time_scene_client_cb_to_app(esp_ble_mesh_time_scene_client_cb_event_t event,
-        esp_ble_mesh_time_scene_client_cb_param_t *param)
+                                                            esp_ble_mesh_time_scene_client_cb_param_t *param)
 {
     esp_ble_mesh_time_scene_client_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_time_scene_client_cb_t)btc_profile_cb_get(BTC_PID_TIME_SCENE_CLIENT);
@@ -48,7 +48,7 @@ void btc_ble_mesh_time_scene_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, 
             memcpy(dst->time_scene_client_get_state.params, src->time_scene_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
         } else {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             break;
         }
         if (src->time_scene_client_get_state.get_state) {
@@ -57,7 +57,7 @@ void btc_ble_mesh_time_scene_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, 
                 memcpy(dst->time_scene_client_get_state.get_state, src->time_scene_client_get_state.get_state,
                     sizeof(esp_ble_mesh_time_scene_client_get_state_t));
             } else {
-                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             }
         }
         break;
@@ -71,12 +71,12 @@ void btc_ble_mesh_time_scene_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, 
             memcpy(dst->time_scene_client_set_state.set_state, src->time_scene_client_set_state.set_state,
                    sizeof(esp_ble_mesh_time_scene_client_set_state_t));
         } else {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
         }
         break;
     }
     default:
-        BT_DBG("%s, Unknown deep copy act %d", __func__, msg->act);
+        BT_DBG("%s, Unknown act %d", __func__, msg->act);
         break;
     }
 }
@@ -128,7 +128,7 @@ static void btc_ble_mesh_time_scene_client_copy_req_data(btc_msg_t *msg, void *p
     if (p_src_data->params) {
         p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
-            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;
         }
 
@@ -149,7 +149,7 @@ static void btc_ble_mesh_time_scene_client_copy_req_data(btc_msg_t *msg, void *p
                     length = p_src_data->status_cb.scene_register_status.scenes->len;
                     p_dest_data->status_cb.scene_register_status.scenes = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.scene_register_status.scenes) {
-                        BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.scene_register_status.scenes,
@@ -220,14 +220,14 @@ static void btc_ble_mesh_time_scene_client_callback(esp_ble_mesh_time_scene_clie
     msg.pid = BTC_PID_TIME_SCENE_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params,
-                         sizeof(esp_ble_mesh_time_scene_client_cb_param_t), btc_ble_mesh_time_scene_client_copy_req_data);
+    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_time_scene_client_cb_param_t),
+                         btc_ble_mesh_time_scene_client_copy_req_data);
 }
 
 void bt_mesh_time_scene_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
-        struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx,
-        const u8_t *val, size_t len)
+                                             struct bt_mesh_model *model,
+                                             struct bt_mesh_msg_ctx *ctx,
+                                             const u8_t *val, size_t len)
 {
     esp_ble_mesh_time_scene_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
@@ -253,7 +253,7 @@ void bt_mesh_time_scene_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         act = ESP_BLE_MESH_TIME_SCENE_CLIENT_TIMEOUT_EVT;
         break;
     default:
-        BT_ERR("%s, Unknown time scene client event type %d", __func__, evt_type);
+        BT_ERR("Unknown Time Scene client event type %d", evt_type);
         return;
     }
 
@@ -280,18 +280,17 @@ void bt_mesh_time_scene_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     return;
 }
 
-void btc_ble_mesh_time_scene_client_publish_callback(u32_t opcode,
-        struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx,
-        struct net_buf_simple *buf)
+void btc_ble_mesh_time_scene_client_publish_callback(u32_t opcode, struct bt_mesh_model *model,
+                                                     struct bt_mesh_msg_ctx *ctx,
+                                                     struct net_buf_simple *buf)
 {
     if (!model || !ctx || !buf) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    bt_mesh_time_scene_client_cb_evt_to_btc(opcode,
-                                            BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+    bt_mesh_time_scene_client_cb_evt_to_btc(opcode, BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_PUBLISH,
+                                            model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -316,7 +315,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("%s, Failed to set model role", __func__);
+            BT_ERR("Failed to set model role");
             break;
         }
         common.opcode = params->opcode;
@@ -342,7 +341,7 @@ void btc_ble_mesh_time_scene_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("%s, Failed to set model role", __func__);
+            BT_ERR("Failed to set model role");
             break;
         }
         common.opcode = params->opcode;
@@ -385,7 +384,7 @@ void btc_ble_mesh_time_scene_client_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_TIME_SCENE_CLIENT_EVT_MAX) {
         btc_ble_mesh_time_scene_client_cb_to_app(msg->act, param);
     } else {
-        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown act %d", __func__, msg->act);
     }
 
     btc_ble_mesh_time_scene_client_free_req_data(msg);
@@ -394,9 +393,8 @@ void btc_ble_mesh_time_scene_client_cb_handler(btc_msg_t *msg)
 
 /* Time and Scenes Server Models related functions */
 
-static inline void btc_ble_mesh_time_scene_server_cb_to_app(
-    esp_ble_mesh_time_scene_server_cb_event_t event,
-    esp_ble_mesh_time_scene_server_cb_param_t *param)
+static inline void btc_ble_mesh_time_scene_server_cb_to_app(esp_ble_mesh_time_scene_server_cb_event_t event,
+                                                            esp_ble_mesh_time_scene_server_cb_param_t *param)
 {
     esp_ble_mesh_time_scene_server_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_time_scene_server_cb_t)btc_profile_cb_get(BTC_PID_TIME_SCENE_SERVER);
@@ -420,14 +418,12 @@ static void btc_ble_mesh_time_scene_server_callback(esp_ble_mesh_time_scene_serv
     msg.pid = BTC_PID_TIME_SCENE_SERVER;
     msg.act = act;
 
-    btc_transfer_context(
-        &msg, cb_params, sizeof(esp_ble_mesh_time_scene_server_cb_param_t), NULL);
+    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_time_scene_server_cb_param_t), NULL);
 }
 
-void bt_mesh_time_scene_server_cb_evt_to_btc(u8_t evt_type,
-        struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx,
-        const u8_t *val, size_t len)
+void bt_mesh_time_scene_server_cb_evt_to_btc(u8_t evt_type, struct bt_mesh_model *model,
+                                             struct bt_mesh_msg_ctx *ctx,
+                                             const u8_t *val, size_t len)
 {
     esp_ble_mesh_time_scene_server_cb_param_t cb_params = {0};
     size_t length = 0U;
@@ -452,7 +448,7 @@ void bt_mesh_time_scene_server_cb_evt_to_btc(u8_t evt_type,
         act = ESP_BLE_MESH_TIME_SCENE_SERVER_RECV_STATUS_MSG_EVT;
         break;
     default:
-        BT_ERR("%s, Unknown Time Scene Server event type", __func__);
+        BT_ERR("Unknown Time Scene server event type %d", evt_type);
         return;
     }
 
@@ -489,7 +485,7 @@ void btc_ble_mesh_time_scene_server_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_TIME_SCENE_SERVER_EVT_MAX) {
         btc_ble_mesh_time_scene_server_cb_to_app(msg->act, param);
     } else {
-        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown act %d", __func__, msg->act);
     }
 
     return;

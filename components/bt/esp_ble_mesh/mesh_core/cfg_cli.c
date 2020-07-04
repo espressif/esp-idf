@@ -151,7 +151,7 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
-        BT_DBG("Unexpected config status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected Config Status 0x%04x", ctx->recv_op);
     } else {
         switch (node->opcode) {
         case OP_BEACON_GET:
@@ -266,7 +266,7 @@ static void comp_data_status(struct bt_mesh_model *model,
     status.page = net_buf_simple_pull_u8(buf);
     status.comp_data = bt_mesh_alloc_buf(buf->len);
     if (!status.comp_data) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
 
@@ -515,7 +515,7 @@ static void mod_sub_list(struct bt_mesh_model *model,
 
     list.addr = bt_mesh_alloc_buf(buf->len);
     if (!list.addr) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
     net_buf_simple_add_mem(list.addr, buf->data, buf->len);
@@ -535,7 +535,7 @@ static void net_key_list(struct bt_mesh_model *model,
 
     list.net_idx = bt_mesh_alloc_buf(buf->len);
     if (!list.net_idx) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
     net_buf_simple_add_mem(list.net_idx, buf->data, buf->len);
@@ -557,7 +557,7 @@ static void app_key_list(struct bt_mesh_model *model,
     list.net_idx = net_buf_simple_pull_le16(buf);
     list.app_idx = bt_mesh_alloc_buf(buf->len);
     if (!list.app_idx) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
@@ -603,7 +603,7 @@ static void mod_app_list(struct bt_mesh_model *model,
 
     list.app_idx = bt_mesh_alloc_buf(buf->len);
     if (!list.app_idx) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
