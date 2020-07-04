@@ -543,7 +543,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
         BT_INFO("Full queue, remove the oldest relay packet");
         /* Remove the oldest relay packet from queue */
         if (xQueueReceive(relay_queue.handle, &old_msg, K_NO_WAIT) != pdTRUE) {
-            BT_ERR("Failed to remove item from queue");
+            BT_ERR("Failed to remove item from relay queue");
             bt_mesh_unref_buf(msg);
             return;
         }
