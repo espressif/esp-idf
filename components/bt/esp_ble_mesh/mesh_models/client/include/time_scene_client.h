@@ -272,7 +272,8 @@ int bt_mesh_scheduler_cli_deinit(struct bt_mesh_model *model, bool primary);
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common,
+                                        void *get, void *status);
 
 /**
  * @brief This function is called to set scene states.
@@ -283,7 +284,8 @@ int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, v
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common,
+                                        void *set, void *status);
 
 #ifdef __cplusplus
 }

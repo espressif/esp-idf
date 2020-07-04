@@ -32,7 +32,8 @@ uint16_t esp_ble_mesh_get_primary_element_address(void)
     return btc_ble_mesh_get_primary_addr();
 }
 
-uint16_t *esp_ble_mesh_is_model_subscribed_to_group(esp_ble_mesh_model_t *model, uint16_t group_addr)
+uint16_t *esp_ble_mesh_is_model_subscribed_to_group(esp_ble_mesh_model_t *model,
+                                                    uint16_t group_addr)
 {
     if (model == NULL) {
         return NULL;
@@ -54,7 +55,7 @@ uint8_t esp_ble_mesh_get_element_count(void)
 }
 
 esp_ble_mesh_model_t *esp_ble_mesh_find_vendor_model(const esp_ble_mesh_elem_t *element,
-        uint16_t company_id, uint16_t model_id)
+                                                     uint16_t company_id, uint16_t model_id)
 {
     if (element == NULL) {
         return NULL;
@@ -62,7 +63,8 @@ esp_ble_mesh_model_t *esp_ble_mesh_find_vendor_model(const esp_ble_mesh_elem_t *
     return btc_ble_mesh_model_find_vnd(element, company_id, model_id);
 }
 
-esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *element, uint16_t model_id)
+esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *element,
+                                                  uint16_t model_id)
 {
     if (element == NULL) {
         return NULL;
