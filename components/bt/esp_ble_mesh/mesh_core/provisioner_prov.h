@@ -235,7 +235,7 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev);
  * @return Zero - success, otherwise - fail
  */
 int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
-        const u8_t *match, bool prov_flag);
+                                           const u8_t *match, bool prov_flag);
 
 /** @brief Callback for provisioner receiving advertising packet from unprovisioned devices which are
  *  not in the unprovisioned device queue.
@@ -360,7 +360,8 @@ int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag);
+int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num,
+                                            u8_t size, bool num_flag);
 
 /**
  * @brief This function is called to read unprovisioned device's oob public key.
@@ -371,7 +372,8 @@ int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32]);
+int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32],
+                                         const u8_t pub_key_y[32]);
 
 /* The following APIs are for fast provisioning */
 

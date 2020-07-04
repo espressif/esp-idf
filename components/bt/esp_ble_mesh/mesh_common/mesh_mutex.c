@@ -22,7 +22,7 @@ static bt_mesh_mutex_t atomic_lock;
 void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex)
 {
     if (!mutex) {
-        BT_ERR("%s, Invalid mutex", __func__);
+        BT_ERR("Create, invalid mutex");
         return;
     }
 
@@ -44,7 +44,7 @@ void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex)
 void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex)
 {
     if (!mutex) {
-        BT_ERR("%s, Invalid mutex", __func__);
+        BT_ERR("Free, invalid mutex");
         return;
     }
 
@@ -61,7 +61,7 @@ void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex)
 void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex)
 {
     if (!mutex) {
-        BT_ERR("%s, Invalid mutex", __func__);
+        BT_ERR("Lock, invalid mutex");
         return;
     }
 
@@ -73,7 +73,7 @@ void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex)
 void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex)
 {
     if (!mutex) {
-        BT_ERR("%s, Invalid mutex", __func__);
+        BT_ERR("Unlock, invalid mutex");
         return;
     }
 

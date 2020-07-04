@@ -33,7 +33,7 @@
 const u8_t *bt_mesh_fast_prov_dev_key_get(u16_t dst)
 {
     if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
-        BT_ERR("%s, Not a unicast address 0x%04x", __func__, dst);
+        BT_ERR("Invalid unicast address 0x%04x", dst);
         return NULL;
     }
 
@@ -114,7 +114,7 @@ u8_t bt_mesh_fast_prov_net_key_add(const u8_t net_key[16])
 
     err = bt_mesh_provisioner_local_net_key_add(net_key, &net_idx);
     if (err) {
-        BT_ERR("%s, Failed to add NetKey 0x%04x", __func__, net_idx);
+        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
         return 0x01; /* status: Add NetKey failed */
     };
 
@@ -128,7 +128,7 @@ const u8_t *bt_mesh_fast_prov_net_key_get(u16_t net_idx)
 
     sub = bt_mesh_fast_prov_subnet_get(net_idx);
     if (!sub) {
-        BT_ERR("%s, NetKey Index 0x%03x not exists", __func__, net_idx);
+        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
         return NULL;
     }
 
@@ -141,7 +141,7 @@ const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx)
 
     key = bt_mesh_fast_prov_app_key_find(app_idx);
     if (!key) {
-        BT_ERR("%s, AppKey Index 0x%03x not exists", __func__, app_idx);
+        BT_ERR("Invalid AppKeyIndex 0x%04x", app_idx);
         return NULL;
     }
 
