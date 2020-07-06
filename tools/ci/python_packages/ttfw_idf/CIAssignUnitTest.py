@@ -171,7 +171,6 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
             test_cases.extend(get_test_cases_from_yml(self.test_case_path))
         else:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
-            raise SystemExit(1)
 
         # filter keys are lower case. Do map lower case keys with original keys.
         try:
