@@ -584,7 +584,7 @@ static void example_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_ev
 static esp_err_t ble_mesh_init(void)
 {
     uint8_t match[2] = {0xdd, 0xdd};
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
 
     prov_key.net_idx = ESP_BLE_MESH_KEY_PRIMARY;
     prov_key.app_idx = APP_KEY_IDX;
@@ -594,18 +594,29 @@ static esp_err_t ble_mesh_init(void)
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
     esp_ble_mesh_register_generic_client_callback(example_ble_mesh_generic_client_cb);
 
-
     err = esp_ble_mesh_init(&provision, &composition);
-    if (err) {
-        ESP_LOGE(TAG, "Initializing mesh failed (err %d)", err);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize mesh stack (err %d)", err);
         return err;
     }
 
-    esp_ble_mesh_provisioner_set_dev_uuid_match(match, sizeof(match), 0x0, false);
+    err = esp_ble_mesh_provisioner_set_dev_uuid_match(match, sizeof(match), 0x0, false);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set matching device uuid (err %d)", err);
+        return err;
+    }
 
-    esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable mesh provisioner (err %d)", err);
+        return err;
+    }
 
-    esp_ble_mesh_provisioner_add_local_app_key(prov_key.app_key, prov_key.net_idx, prov_key.app_idx);
+    err = esp_ble_mesh_provisioner_add_local_app_key(prov_key.app_key, prov_key.net_idx, prov_key.app_idx);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add local AppKey (err %d)", err);
+        return err;
+    }
 
     ESP_LOGI(TAG, "BLE Mesh Provisioner initialized");
 
