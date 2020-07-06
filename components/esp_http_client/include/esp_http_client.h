@@ -142,7 +142,12 @@ typedef enum {
     HttpStatus_TemporaryRedirect = 307,
 
     /* 4xx - Client Error */
-    HttpStatus_Unauthorized      = 401
+    HttpStatus_Unauthorized      = 401,
+    HttpStatus_Forbidden         = 403,
+    HttpStatus_NotFound          = 404,
+
+    /* 5xx - Server Error */
+    HttpStatus_InternalError     = 500
 } HttpStatus_Code;
 
 #define ESP_ERR_HTTP_BASE               (0x7000)                    /*!< Starting number of HTTP error codes */
