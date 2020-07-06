@@ -49,6 +49,7 @@ typedef struct ota_ops_entry_ {
     uint32_t handle;
     const esp_partition_t *part;
     uint32_t wrote_size;
+    uint8_t need_erase;
     uint8_t partial_bytes;
     uint8_t partial_data[16];
     LIST_ENTRY(ota_ops_entry_) entries;
@@ -130,6 +131,7 @@ static esp_ota_img_states_t set_new_state_otadata(void)
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
     ota_ops_entry_t *new_entry;
+    esp_err_t ret = ESP_OK;
 
     if ((partition == NULL) || (out_handle == NULL)) {
         return ESP_ERR_INVALID_ARG;
@@ -159,6 +161,19 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     }
 #endif
 
+    if (image_size != OTA_WITH_SEQUENTIAL_WRITES) {
+		// If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
+		if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
+			ret = esp_partition_erase_range(partition, 0, partition->size);
+		} else {
+			ret = esp_partition_erase_range(partition, 0, (image_size / SPI_FLASH_SEC_SIZE + 1) * SPI_FLASH_SEC_SIZE);
+		}
+
+		if (ret != ESP_OK) {
+			return ret;
+		}
+	}
+
     new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
     if (new_entry == NULL) {
         return ESP_ERR_NO_MEM;
@@ -168,6 +183,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
 
     new_entry->part = partition;
     new_entry->handle = ++s_ota_ops_last_handle;
+    new_entry->need_erase = image_size == OTA_WITH_SEQUENTIAL_WRITES;
     *out_handle = new_entry->handle;
     return ESP_OK;
 }
@@ -186,19 +202,21 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
     // find ota handle in linked list
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
-            // must erase the partition before writing to it
-			uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE;
-			uint32_t last_sector = (it->wrote_size + size) / SPI_FLASH_SEC_SIZE;
+			if (it->need_erase) {
+				// must erase the partition before writing to it
+				uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE;
+				uint32_t last_sector = (it->wrote_size + size) / SPI_FLASH_SEC_SIZE;
 
-			ret = ESP_OK;
-			if (0 == (it->wrote_size % SPI_FLASH_SEC_SIZE)) {
-				ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * SPI_FLASH_SEC_SIZE);
-			}
-			else if (first_sector != last_sector) {
-				ret = esp_partition_erase_range(it->part, (first_sector + 1) * SPI_FLASH_SEC_SIZE, (last_sector - first_sector) * SPI_FLASH_SEC_SIZE);
-			}
-			if (ret != ESP_OK) {
-				return ret;
+				ret = ESP_OK;
+				if (0 == (it->wrote_size % SPI_FLASH_SEC_SIZE)) {
+					ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * SPI_FLASH_SEC_SIZE);
+				}
+				else if (first_sector != last_sector) {
+					ret = esp_partition_erase_range(it->part, (first_sector + 1) * SPI_FLASH_SEC_SIZE, (last_sector - first_sector) * SPI_FLASH_SEC_SIZE);
+				}
+				if (ret != ESP_OK) {
+					return ret;
+				}
 			}
 
             if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0 && data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
