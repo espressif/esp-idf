@@ -971,7 +971,7 @@ int bt_mesh_scan_with_wl_enable(void)
     BT_DBG("%s", __func__);
 
     err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
-    if (err) {
+    if (err && err != -EALREADY) {
         BT_ERR("starting scan failed (err %d)", err);
         return err;
     }
