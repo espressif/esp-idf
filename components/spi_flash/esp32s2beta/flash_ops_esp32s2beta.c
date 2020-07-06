@@ -28,6 +28,9 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
     const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
     esp_rom_spiflash_result_t rc;
 
+    assert((dest_addr % 16) == 0);
+    assert((size % 16) == 0);
+
     if (!esp_ptr_internal(src)) {
         uint8_t block[128]; // Need to buffer in RAM as we write
         while (size > 0) {
