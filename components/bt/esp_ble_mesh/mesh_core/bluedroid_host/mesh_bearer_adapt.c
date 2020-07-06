@@ -458,11 +458,10 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
 {
     int err = 0;
 
-#if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+        BT_INFO("Scan is already started");
         return -EALREADY;
     }
-#endif
 
     if (!valid_scan_param(param)) {
         return -EINVAL;
@@ -481,26 +480,24 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
         return err;
     }
 
-#if BLE_MESH_DEV
     bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
-#endif
-
     bt_mesh_scan_dev_found_cb = cb;
-    return err;
+
+    return 0;
 }
 
 int bt_le_scan_stop(void)
 {
-#if BLE_MESH_DEV
-    if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
-        bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
-        BLE_MESH_BTM_CHECK_STATUS(BTM_BleScan(false, 0, NULL, NULL, NULL));
+    if (!bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+        BT_INFO("Scan is already stopped");
+        return -EALREADY;
     }
-#else
-    BLE_MESH_BTM_CHECK_STATUS(BTM_BleScan(false, 0, NULL, NULL, NULL));
-#endif
 
+    BLE_MESH_BTM_CHECK_STATUS(BTM_BleScan(false, 0, NULL, NULL, NULL));
+
+    bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
     bt_mesh_scan_dev_found_cb = NULL;
+
     return 0;
 }
 
@@ -1197,13 +1194,10 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
         return -ENOMEM;
     }
 
-#if BLE_MESH_DEV
-    if (bt_mesh_atomic_test_and_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+    if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
         BLE_MESH_BTM_CHECK_STATUS(BTM_BleScan(false, 0, NULL, NULL, NULL));
+        bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
     }
-#else
-    BLE_MESH_BTM_CHECK_STATUS(BTM_BleScan(false, 0, NULL, NULL, NULL));
-#endif /* BLE_MESH_DEV */
 
     BT_DBG("%s, create conn with %s", __func__, bt_hex(addr->val, BLE_MESH_ADDR_LEN));
 
@@ -1607,30 +1601,20 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         break;
     case BTA_GATTC_EXEC_EVT:
         break;
-    case BTA_GATTC_OPEN_EVT: {
+    case BTA_GATTC_OPEN_EVT:
         BT_DBG("BTA_GATTC_OPEN_EVT");
-        /** After current connection is established, provisioner can
-         *  use BTA_DmBleScan() to re-enable scan.
+        /* After current connection is established, Provisioner can
+         * use BTM_BleScan() to re-enable scan.
          */
-        tBTM_STATUS status;
-#if BLE_MESH_DEV
         if (!bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
-            status = BTM_BleScan(true, 0, bt_mesh_scan_results_cb, NULL, NULL);
+            tBTM_STATUS status = BTM_BleScan(true, 0, bt_mesh_scan_results_cb, NULL, NULL);
             if (status != BTM_SUCCESS && status != BTM_CMD_STARTED) {
-                BT_ERR("%s, Invalid status %d", __func__, status);
+                BT_ERR("%s, Invalid scan status %d", __func__, status);
                 break;
             }
             bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
         }
-#else
-        status = BTM_BleScan(true, 0, bt_mesh_scan_results_cb, NULL, NULL);
-        if (status != BTM_SUCCESS && status != BTM_CMD_STARTED) {
-            BT_ERR("%s, Invalid status %d", __func__, status);
-            break;
-        }
-#endif /* BLE_MESH_DEV */
         break;
-    }
     case BTA_GATTC_CLOSE_EVT:
         BT_DBG("BTA_GATTC_CLOSE_EVT");
         break;

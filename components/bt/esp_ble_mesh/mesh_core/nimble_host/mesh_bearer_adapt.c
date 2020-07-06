@@ -418,22 +418,14 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                 }
             }
         }
-#if BLE_MESH_DEV
         if (!bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
             rc = ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER, &scan_param, disc_cb, NULL);
             if (rc != 0) {
-                BT_ERR("%s, Invalid status %d", __func__, rc);
+                BT_ERR("%s, Invalid scan status %d", __func__, rc);
                 break;
             }
             bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
         }
-#else
-        rc = ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER, &scan_param, disc_cb, NULL);
-        if (rc != 0) {
-            BT_ERR("%s, Invalid status %d", __func__, rc);
-            break;
-        }
-#endif /* BLE_MESH_DEV */
         break;
     case BLE_GAP_EVENT_DISCONNECT:
         if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->disconnected != NULL) {
@@ -937,11 +929,10 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
 {
     int err;
 
-#if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+        BT_INFO("Scan is already started");
         return -EALREADY;
     }
-#endif
 
 #if BLE_MESH_DEV
     if (param->filter_dup) {
@@ -956,26 +947,24 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
         return err;
     }
 
-#if BLE_MESH_DEV
     bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
-#endif
-
     bt_mesh_scan_dev_found_cb = cb;
-    return err;
+
+    return 0;
 }
 
 int bt_le_scan_stop(void)
 {
-#if BLE_MESH_DEV
-    if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
-        bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
-        ble_gap_disc_cancel();
+    if (!bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+        BT_INFO("Scan is already stopped");
+        return -EALREADY;
     }
-#else
-    ble_gap_disc_cancel();
-#endif
 
+    ble_gap_disc_cancel();
+
+    bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
     bt_mesh_scan_dev_found_cb = NULL;
+
     return 0;
 }
 
@@ -1419,19 +1408,13 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
         return -ENOMEM;
     }
 
-#if BLE_MESH_DEV
-    if (bt_mesh_atomic_test_and_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
+    if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
         rc = ble_gap_disc_cancel();
         if (rc != 0) {
             return -1;
         }
+        bt_mesh_atomic_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING);
     }
-#else
-    rc = ble_gap_disc_cancel();
-    if (rc != 0) {
-        return -1;
-    }
-#endif /* BLE_MESH_DEV */
 
     BT_DBG("%s, create conn with %s", __func__, bt_hex(addr->val, BLE_MESH_ADDR_LEN));
 

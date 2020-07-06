@@ -81,9 +81,6 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
         bt_mesh_store_iv(false);
     }
 
-    /* Add this to avoid "already active status" for bt_mesh_scan_enable() */
-    bt_mesh_scan_disable();
-
     bt_mesh_net_start();
 
     return 0;
