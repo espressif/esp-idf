@@ -292,6 +292,11 @@ static void proxy_cfg(struct bt_mesh_proxy_client *client)
     u8_t opcode = 0U;
     int err = 0;
 
+    if (client->buf.len > 29) {
+        BT_ERR("Too large proxy cfg pdu (len %d)", client->buf.len);
+        return;
+    }
+
     err = bt_mesh_net_decode(&client->buf, BLE_MESH_NET_IF_PROXY_CFG,
                              &rx, &buf);
     if (err) {
