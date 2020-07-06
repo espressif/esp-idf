@@ -204,7 +204,7 @@ int esp_mont_hw_op(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, c
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Y, hw_words);
 
     start_op(RSA_MULT_START_REG);
-
+    Z->s = 1; // The sign of Z will be = M->s (but M->s is always 1)
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
 
     wait_op_complete();
