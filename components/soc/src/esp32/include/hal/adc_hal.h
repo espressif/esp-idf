@@ -100,19 +100,6 @@ void adc_hal_digi_deinit(void);
  */
 int adc_hal_hall_convert(void);
 
-/**
- *  @brief Output ADC2 reference voltage to gpio
- *
- *  This function utilizes the testing mux exclusive to ADC2 to route the
- *  reference voltage one of ADC2's channels.
- *
- *  @param[in]  io    GPIO number
- *  @return
- *                  - true: v_ref successfully routed to selected gpio
- *                  - false: Unsupported gpio
- */
-#define adc_hal_vref_output(io) adc_ll_vref_output(io)
-
 #ifdef __cplusplus
 }
 #endif

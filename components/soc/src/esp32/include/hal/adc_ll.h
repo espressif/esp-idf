@@ -673,43 +673,43 @@ static inline void adc_ll_set_hall_controller(adc_ll_hall_controller_t hall_ctrl
 }
 
 /**
- *  Output ADC2 reference voltage to gpio 25 or 26 or 27
+ *  Output ADC internal reference voltage to channels, only available for ADC2 on ESP32.
  *
- *  This function utilizes the testing mux exclusive to ADC 2 to route the
- *  reference voltage one of ADC2's channels. Supported gpios are gpios
- *  25, 26, and 27. This refernce voltage can be manually read from the pin
- *  and used in the esp_adc_cal component.
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC2's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
  *
- *  @param[in]  io    GPIO number (gpios 25,26,27 supported)
- *
- *  @return
- *                  - true: v_ref successfully routed to selected gpio
- *                  - false: Unsupported gpio
+ *  @param[in]  adc ADC unit select
+ *  @param[in]  channel ADC2 channel number
+ *  @param[in]  en Enable/disable the reference voltage output
  */
-static inline bool adc_ll_vref_output(int io)
+static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
 {
-    int channel;
-    if (io == 25) {
-        channel = 8;    //Channel 8 bit
-    } else if (io == 26) {
-        channel = 9;    //Channel 9 bit
-    } else if (io == 27) {
-        channel = 7;    //Channel 7 bit
+    if (adc != ADC_NUM_2) return;
+
+    if (en) {
+        RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
+        //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
+        RTCCNTL.test_mux.dtest_rtc = 1;      //Config test mux to route v_ref to ADC2 Channels
+        //set ent
+        RTCCNTL.test_mux.ent_rtc = 1;
+        //set sar2_en_test
+        SENS.sar_start_force.sar2_en_test = 1;
+        //set sar2 en force
+        SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
+        //set en_pad for channels 7,8,9 (bits 0x380)
+        SENS.sar_meas_start2.sar2_en_pad = 1 << channel;
     } else {
-        return false;
+        RTCCNTL.test_mux.dtest_rtc = 0;      //Config test mux to route v_ref to ADC2 Channels
+        //set ent
+        RTCCNTL.test_mux.ent_rtc = 0;
+        //set sar2_en_test
+        SENS.sar_start_force.sar2_en_test = 0;
+        //set sar2 en force
+        SENS.sar_meas_start2.sar2_en_pad_force = 0;      //Pad bitmap controlled by SW
+        //set en_pad for channels 7,8,9 (bits 0x380)
+        SENS.sar_meas_start2.sar2_en_pad = 0;
     }
-    RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
-    //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
-    RTCCNTL.test_mux.dtest_rtc = 1;      //Config test mux to route v_ref to ADC2 Channels
-    //set ent
-    RTCCNTL.test_mux.ent_rtc = 1;
-    //set sar2_en_test
-    SENS.sar_start_force.sar2_en_test = 1;
-    //set sar2 en force
-    SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
-    //set en_pad for channels 7,8,9 (bits 0x380)
-    SENS.sar_meas_start2.sar2_en_pad = 1 << channel;
-    return true;
 }
 
 #ifdef __cplusplus
