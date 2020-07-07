@@ -71,6 +71,7 @@ class BuildItem(object):
             sdkconfig_path,
             config_name,
             build_system,
+            preserve_artifacts,
     ):
         # These internal variables store the paths with environment variables and placeholders;
         # Public properties with similar names use the _expand method to get the actual paths.
@@ -83,6 +84,8 @@ class BuildItem(object):
         self.config_name = config_name
         self.target = target
         self.build_system = build_system
+
+        self.preserve = preserve_artifacts
 
         self._app_name = os.path.basename(os.path.normpath(app_path))
 
@@ -155,6 +158,7 @@ class BuildItem(object):
             "config": self.config_name,
             "target": self.target,
             "verbose": self.verbose,
+            "preserve": self.preserve,
         })
 
     @staticmethod
@@ -172,6 +176,7 @@ class BuildItem(object):
             config_name=d["config"],
             target=d["target"],
             build_system=d["build_system"],
+            preserve_artifacts=d["preserve"]
         )
         result.verbose = d["verbose"]
         return result
@@ -332,34 +337,9 @@ class BuildSystem(object):
             return readme_file.read()
 
     @staticmethod
+    @abstractmethod
     def supported_targets(app_path):
-        formal_to_usual = {
-            'ESP32': 'esp32',
-            'ESP32-S2': 'esp32s2',
-        }
-
-        readme_file_content = BuildSystem._read_readme(app_path)
-        if not readme_file_content:
-            return None
-        match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
-        if not match:
-            return None
-        if len(match) > 1:
-            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
-        support_str = match[0].strip()
-
-        targets = []
-        for part in support_str.split('|'):
-            for inner in part.split(' '):
-                inner = inner.strip()
-                if not inner:
-                    continue
-                elif inner in formal_to_usual:
-                    targets.append(formal_to_usual[inner])
-                else:
-                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
-                                              .format(inner, app_path, ', '.join(formal_to_usual.keys())))
-        return targets
+        pass
 
 
 class BuildError(RuntimeError):

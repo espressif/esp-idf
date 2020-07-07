@@ -139,7 +139,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
     def __init__(self, test_case_path, ci_config_file):
         CIAssignTest.AssignTest.__init__(self, test_case_path, ci_config_file, case_group=Group)
 
-    def _search_cases(self, test_case_path, case_filter=None, test_case_file_pattern=None):
+    def search_cases(self, case_filter=None):
         """
         For unit test case, we don't search for test functions.
         The unit test cases is stored in a yaml file which is created in job build-idf-test.
@@ -164,11 +164,11 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
                 return test_cases
 
         test_cases = []
-        if os.path.isdir(test_case_path):
-            for yml_file in find_by_suffix('.yml', test_case_path):
+        if os.path.isdir(self.test_case_path):
+            for yml_file in find_by_suffix('.yml', self.test_case_path):
                 test_cases.extend(get_test_cases_from_yml(yml_file))
-        elif os.path.isfile(test_case_path):
-            test_cases.extend(get_test_cases_from_yml(test_case_path))
+        elif os.path.isfile(self.test_case_path):
+            test_cases.extend(get_test_cases_from_yml(self.test_case_path))
         else:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
 

@@ -93,3 +93,33 @@ class CMakeBuildSystem(BuildSystem):
         if CMAKE_PROJECT_LINE not in cmakelists_file_content:
             return False
         return True
+
+    @staticmethod
+    def supported_targets(app_path):
+        formal_to_usual = {
+            'ESP32': 'esp32',
+            'ESP32-S2': 'esp32s2',
+        }
+
+        readme_file_content = BuildSystem._read_readme(app_path)
+        if not readme_file_content:
+            return None
+        match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
+        if not match:
+            return None
+        if len(match) > 1:
+            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
+        support_str = match[0].strip()
+
+        targets = []
+        for part in support_str.split('|'):
+            for inner in part.split(' '):
+                inner = inner.strip()
+                if not inner:
+                    continue
+                elif inner in formal_to_usual:
+                    targets.append(formal_to_usual[inner])
+                else:
+                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
+                                              .format(inner, app_path, ', '.join(formal_to_usual.keys())))
+        return targets

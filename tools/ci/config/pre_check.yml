@@ -191,3 +191,33 @@ check_public_headers:
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
+.scan_build_tests:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - assign_test
+  variables:
+    CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
+    TEST_CONFIG_FILE: ${CI_PROJECT_DIR}/tools/ci/config/target-test.yml
+
+scan_tests:
+  extends: .scan_build_tests
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_CUSTOM_TEST
+  artifacts:
+    paths:
+      - $EXAMPLE_TEST_OUTPUT_DIR
+      - $TEST_APPS_OUTPUT_DIR
+  variables:
+    EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
+    EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
+    TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
+    TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
+  script:
+    - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR

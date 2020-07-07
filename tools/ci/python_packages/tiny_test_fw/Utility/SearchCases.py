@@ -50,6 +50,7 @@ class Search(object):
 
         for i, test_function in enumerate(test_functions_out):
             print("\t{}. ".format(i + 1) + test_function.case_info["name"])
+            test_function.case_info['app_dir'] = os.path.dirname(file_name)
         return test_functions_out
 
     @classmethod
@@ -124,6 +125,7 @@ class Search(object):
         search all test cases from a folder or file, and then do case replicate.
 
         :param test_case: test case file(s) path
+        :param test_case_file_pattern: unix filename pattern
         :return: a list of replicated test methods
         """
         test_case_files = cls._search_test_case_files(test_case, test_case_file_pattern or cls.TEST_CASE_FILE_PATTERN)

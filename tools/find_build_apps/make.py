@@ -1,8 +1,8 @@
 import logging
 import os
+import shlex
 import subprocess
 import sys
-import shlex
 
 from .common import BuildSystem, BuildError
 
@@ -58,3 +58,7 @@ class MakeBuildSystem(BuildSystem):
         if MAKE_PROJECT_LINE not in makefile_content:
             return False
         return True
+
+    @staticmethod
+    def supported_targets(app_path):
+        return ['esp32']

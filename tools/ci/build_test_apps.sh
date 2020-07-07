@@ -29,6 +29,7 @@ die() {
 [ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
 [ -z ${BUILD_PATH} ] && die "BUILD_PATH is not set"
 [ -z ${IDF_TARGET} ] && die "IDF_TARGET is not set"
+[ -z ${SCAN_CUSTOM_TEST_JSON} ] && die "SCAN_CUSTOM_TEST_JSON is not set"
 [ -d ${LOG_PATH} ] || mkdir -p ${LOG_PATH}
 [ -d ${BUILD_PATH} ] || mkdir -p ${BUILD_PATH}
 
@@ -61,12 +62,9 @@ cd ${IDF_PATH}
 
 # If changing the work-dir or build-dir, remember to update the "artifacts" in gitlab-ci configs, and IDFApp.py.
 
-${IDF_PATH}/tools/find_apps.py tools/test_apps \
+${IDF_PATH}/tools/find_apps.py \
     -vv \
     --format json \
-    --build-system cmake \
-    --target ${IDF_TARGET} \
-    --recursive \
     --work-dir "${BUILD_PATH}/@f/@w/@t" \
     --build-dir build \
     --build-log "${LOG_PATH}/@f_@w.txt" \
@@ -74,6 +72,7 @@ ${IDF_PATH}/tools/find_apps.py tools/test_apps \
     --config 'sdkconfig.ci=default' \
     --config 'sdkconfig.ci.*=' \
     --config '=default' \
+    --app-list ${SCAN_CUSTOM_TEST_JSON}
 
 # --config rules above explained:
 # 1. If sdkconfig.ci exists, use it build the example with configuration name "default"

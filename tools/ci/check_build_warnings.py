@@ -6,11 +6,11 @@
 # log files for every build.
 # Exits with a non-zero exit code if any warning is found.
 
-import os
-import sys
 import argparse
 import logging
+import os
 import re
+import sys
 
 try:
     from find_build_apps import BuildItem, setup_logging
@@ -70,10 +70,9 @@ def main():
     setup_logging(args)
 
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
-        logging.error("Empty build list!")
-        raise SystemExit(1)
+        logging.warning("Empty build list")
+        SystemExit(0)
 
     found_warnings = 0
     for build_item in build_items:

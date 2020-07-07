@@ -5,8 +5,10 @@
 #
 
 import argparse
-import sys
 import logging
+import shutil
+import sys
+
 from find_build_apps import BuildItem, BuildError, setup_logging, BUILD_SYSTEMS
 
 
@@ -33,8 +35,8 @@ def main():
         default=1,
         type=int,
         help="Number of parallel build jobs. Note that this script doesn't start the jobs, " +
-        "it needs to be executed multiple times with same value of --parallel-count and " +
-        "different values of --parallel-index.",
+             "it needs to be executed multiple times with same value of --parallel-count and " +
+             "different values of --parallel-index.",
     )
     parser.add_argument(
         "--parallel-index",
@@ -75,10 +77,9 @@ def main():
     setup_logging(args)
 
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
-        logging.error("Empty build list!")
-        raise SystemExit(1)
+        logging.warning("Empty build list")
+        SystemExit(0)
 
     num_builds = len(build_items)
     num_jobs = args.parallel_count
@@ -117,6 +118,11 @@ def main():
                 failed_builds.append(build_info)
             else:
                 raise SystemExit(1)
+        else:
+            if not build_info.preserve:
+                logging.info("Removing build directory {}".format(build_info.build_dir))
+                # we only remove binaries here, log files are still needed by check_build_warnings.py
+                shutil.rmtree(build_info.build_dir, ignore_errors=True)
 
     if failed_builds:
         logging.error("The following build have failed:")
