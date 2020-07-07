@@ -8,6 +8,7 @@ from collections import namedtuple
 import logging
 import json
 import typing
+from io import open
 
 DEFAULT_TARGET = "esp32"
 
@@ -320,7 +321,7 @@ class BuildSystem(object):
             readme_path = get_md_or_rst(os.path.dirname(app_path))
         if not readme_path:
             return None
-        with open(readme_path, "r") as readme_file:
+        with open(readme_path, "r", encoding='utf8') as readme_file:
             return readme_file.read()
 
     @staticmethod
