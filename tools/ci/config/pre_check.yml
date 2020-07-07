@@ -204,6 +204,7 @@ scan_tests:
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_CUSTOM_TEST
   artifacts:
