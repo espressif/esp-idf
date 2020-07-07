@@ -335,6 +335,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Enable this option if using GCC 6 or newer, and wanting to disable warnings which don't appear with
                 GCC 5.
 
+        config COMPILER_DUMP_RTL_FILES
+            bool "Dump RTL files during compilation"
+            help
+                If enabled, RTL files will be produced during compilation. These files
+                can be used by other tools, for example to calculate call graphs.
+
 
     endmenu # Compiler Options
 
