@@ -4,7 +4,7 @@
 1. This demo forwards the message sent by the nRF Mesh app.
 2. The user enters the address of the destination node and use it to forwarded packet.
 3. The types of the forwarded message include:
-	* `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET`, 
+	* `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET`,
 	* `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET`,
 	* `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK`.
 4. The destination node reports its Onoff state with the `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS` message.
@@ -38,7 +38,7 @@ You can choose from the 4 message sequences described below:
 
 ## 2. Code Analysis
 
-Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../ble_mesh_wifi_coexist/tutorial%20%20%20%20%20%20/ble_mesh_wifi_coexist.md)
+Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md)
 
 ### 2.1 Model Definition
 
@@ -47,7 +47,7 @@ Code initialization part reference [Initializing the Bluetooth and Initializing 
 ```c
 //Allocating memory for publishing messages.
 ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_srv_pub, 2 + 1, MSG_ROLE);
-//Registering the minimum length of messages. For example, the minimum length of the ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET message is registered as 2 octets. 
+//Registering the minimum length of messages. For example, the minimum length of the ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET message is registered as 2 octets.
 static esp_ble_mesh_model_op_t onoff_op[] = {
     { ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET, 0, 0},
     { ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET, 2, 0},
@@ -93,7 +93,7 @@ esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_cb);
 | ESP_BLE_MESH_GENERIC_CLIENT_SET_STATE_EVT   | ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET    | The event triggered when the Generic Onoff Client Model receives acknowledgment after sending the `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET` message  |
 | ESP_BLE_MESH_GENERIC_CLIENT_PUBLISH_EVT     | NA                         | The event triggered when the Generic Onoff Client Model receives publishing messages.    |
 | ESP_BLE_MESH_GENERIC_CLIENT_TIMEOUT_EVT     | ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET    | The event triggered when API (that send messages) calling times out   |
-  
+
 
 #### 2.2.2 The Callback function for the Generic Onoff Server Model
 
@@ -120,7 +120,7 @@ esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb);
 ### 2.3 Model that Sends Message
 #### 2.3.1 Message Control
 
-The `esp_ble_mesh_set_msg_common` function is used to set the message controlling parameters. 
+The `esp_ble_mesh_set_msg_common` function is used to set the message controlling parameters.
 
 | Parameter Name        |Description               |
 | ----------------------|------------------------- |
@@ -134,10 +134,10 @@ The `esp_ble_mesh_set_msg_common` function is used to set the message controllin
 | `msg_timeout` | The maximum time the Model will wait for an acknowledgement   |
 | `msg_role`    | The role of message (node/provisioner)  |
 
-> Note: 
-> 
+> Note:
+>
 > Please check the `ESP_BLE_MESH_MODEL_SEND_COMP_EVT` event to see if the message is sent successfully.
-> This event is just for sending sig Model and vendor Model messages, not for all Models. 
+> This event is just for sending sig Model and vendor Model messages, not for all Models.
 
 #### 2.3.2 The Generic Onoff Client sends message
 
@@ -196,15 +196,15 @@ Users can adjust the address of the destination node.
 #define UART1_RX_PIN  GPIO_NUM_17
 ```
 
-The `board_uart_task` task is used to receive commands sent via the serial port, among which, the`remote_addr` represents the address of destination node that the message is forwarded to. Please enters hexadecimal string, such as 5, for this parameter. The address will be converted to 0x05 automatically. 
-	
+The `board_uart_task` task is used to receive commands sent via the serial port, among which, the`remote_addr` represents the address of destination node that the message is forwarded to. Please enters hexadecimal string, such as 5, for this parameter. The address will be converted to 0x05 automatically.
+
 ```c
 static void board_uart_task(void *p)
-{   
+{
     uint8_t *data = calloc(1, UART_BUF_SIZE);
     uint32_t input;
-    
-    while (1) { 
+
+    while (1) {
         int len = uart_read_bytes(MESH_UART_NUM, data, UART_BUF_SIZE, 100 / portTICK_RATE_MS);
         if (len > 0) {
             input = strtoul((const char *)data, NULL, 16);
@@ -213,7 +213,7 @@ static void board_uart_task(void *p)
             memset(data, 0, UART_BUF_SIZE);
         }
     }
-    
+
     vTaskDelete(NULL);
 }
 ```
@@ -225,7 +225,7 @@ The steps for this demo:
 
 1. The nRF Mesh App provisionings the unprovisioned devices into nodes;
 2. The nRF Mesh App adds a Appkey to these nodes, and bind the Models of these nodes to this Appkey.
-3. The nRF Mesh App sends a controlling message to the Generic Onoff Client Model. Then the Client Model forwards this message to the server Model of the other node. 
+3. The nRF Mesh App sends a controlling message to the Generic Onoff Client Model. Then the Client Model forwards this message to the server Model of the other node.
 
 The timing sequence diagram of this demo is shown below：
 
@@ -233,7 +233,7 @@ The timing sequence diagram of this demo is shown below：
 
 >Note:
 >
->The node **only forwards the message after it receives the controlling message sent by the app**. That is said, the node will **not** forwards messages to the other nodes every time the user enters the address of the destination node through the serial port. 
+>The node **only forwards the message after it receives the controlling message sent by the app**. That is said, the node will **not** forwards messages to the other nodes every time the user enters the address of the destination node through the serial port.
 
 
 # 4. The nRF Mesh App
