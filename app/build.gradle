@@ -17,8 +17,8 @@ android {
         applicationId "com.espressif.wifi_provisioning"
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode 6
-        versionName "2.0.2 - ${getGitHash()}"
+        versionCode 8
+        versionName "2.0.3 - ${getGitHash()}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 

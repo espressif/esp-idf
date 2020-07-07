@@ -233,7 +233,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
                 } else {
 
-                    goToProvisionActivity();
+                    goToWiFiConfigActivity();
                 }
                 break;
 
@@ -559,11 +559,10 @@ public class BLEProvisionLanding extends AppCompatActivity {
         startActivity(wifiListIntent);
     }
 
-    private void goToProvisionActivity() {
+    private void goToWiFiConfigActivity() {
 
         finish();
-        Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
-        provisionIntent.putExtra(AppConstants.KEY_DEVICE_NAME, deviceList.get(position).getName());
-        startActivity(provisionIntent);
+        Intent wifiConfigIntent = new Intent(getApplicationContext(), WiFiConfigActivity.class);
+        startActivity(wifiConfigIntent);
     }
 }

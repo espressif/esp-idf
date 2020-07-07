@@ -203,7 +203,7 @@ public class AddDeviceActivity extends AppCompatActivity {
 
                 } else {
 
-                    goToProvisionActivity();
+                    goToWiFiConfigActivity();
                 }
                 break;
 
@@ -430,7 +430,8 @@ public class AddDeviceActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     hideLoading();
-                    Toast.makeText(AddDeviceActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    String msg = e.getMessage();
+                    Toast.makeText(AddDeviceActivity.this, msg, Toast.LENGTH_LONG).show();
                     finish();
                 }
             });
@@ -444,11 +445,11 @@ public class AddDeviceActivity extends AppCompatActivity {
         startActivity(wifiListIntent);
     }
 
-    private void goToProvisionActivity() {
+    private void goToWiFiConfigActivity() {
 
         finish();
-        Intent provisionIntent = new Intent(getApplicationContext(), ProvisionActivity.class);
-        startActivity(provisionIntent);
+        Intent wifiConfigIntent = new Intent(getApplicationContext(), WiFiConfigActivity.class);
+        startActivity(wifiConfigIntent);
     }
 
     private void alertForWiFi() {
