@@ -100,6 +100,7 @@ _Static_assert(BLE_MESH_MAX_CONN >= CONFIG_BLE_MESH_PBG_SAME_TIME,
 #define PROV_CONF_KEY_SIZE     0x10
 #define PROV_DH_KEY_SIZE       0x20
 #define PROV_CONFIRM_SIZE      0x10
+#define PROV_RANDOM_SIZE       0x10
 #define PROV_PROV_SALT_SIZE    0x10
 #define PROV_CONF_INPUTS_SIZE  0x91
 
@@ -219,12 +220,6 @@ struct bt_mesh_prov_ctx {
 
     /* Provisioning bearers used by Provisioner */
     bt_mesh_prov_bearer_t bearers;
-
-    /* If provisioning random have been generated, set BIT0 to 1 */
-    uint8_t  rand_gen_done;
-
-    /* Provisioner random */
-    uint8_t  random[16];
 
     /* Current number of PB-ADV provisioned devices simultaneously */
     uint8_t  pba_count;
@@ -1257,6 +1252,7 @@ static void prov_memory_free(const uint8_t idx)
 {
     PROV_FREE_MEM(idx, dhkey);
     PROV_FREE_MEM(idx, auth);
+    PROV_FREE_MEM(idx, rand);
     PROV_FREE_MEM(idx, conf);
     PROV_FREE_MEM(idx, local_conf);
     PROV_FREE_MEM(idx, conf_salt);
@@ -2031,20 +2027,15 @@ static void send_confirm(const uint8_t idx)
 
     BT_DBG("ConfirmationKey: %s", bt_hex(link[idx].conf_key, 16));
 
-    /** Provisioner use the same random number for each provisioning
-     *  device, if different random need to be used, here provisioner
-     *  should allocate memory for rand and call bt_mesh_rand() every time.
-     */
-    if (!(prov_ctx.rand_gen_done & BIT(0))) {
-        if (bt_mesh_rand(prov_ctx.random, 16)) {
-            BT_ERR("Failed to generate random number");
-            goto fail;
-        }
-        link[idx].rand = prov_ctx.random;
-        prov_ctx.rand_gen_done |= BIT(0);
-    } else {
-        /* Provisioner random has already been generated. */
-        link[idx].rand = prov_ctx.random;
+    link[idx].rand = bt_mesh_calloc(PROV_RANDOM_SIZE);
+    if (!link[idx].rand) {
+        BT_ERR("%s, Out of memory", __func__);
+        goto fail;
+    }
+
+    if (bt_mesh_rand(link[idx].rand, PROV_RANDOM_SIZE)) {
+        BT_ERR("Failed to generate random number");
+        goto fail;
     }
 
     BT_DBG("LocalRandom: %s", bt_hex(link[idx].rand, 16));
