@@ -26,7 +26,6 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
@@ -35,7 +34,6 @@
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/uart.h"
-#include "esp32s2/rom/gpio.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"

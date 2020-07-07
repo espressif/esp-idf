@@ -20,6 +20,7 @@
 
 #include "hal/spi_flash_hal.h"
 #include "ccomp_timer.h"
+#include "esp_rom_gpio.h"
 
 #define FUNC_SPI    1
 
@@ -192,7 +193,7 @@ static void setup_bus(spi_host_device_t host_id)
         ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
         //no need to initialize the bus, however the CLK may need one more output if it's on the usual place of PSRAM
 #ifdef EXTRA_SPI1_CLK_IO
-        gpio_matrix_out(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_out_signal(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
 #endif
 #if !DISABLED_FOR_TARGETS(ESP32)
     } else if (host_id == FSPI_HOST) {

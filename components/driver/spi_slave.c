@@ -20,6 +20,7 @@
 #include "driver/spi_common_internal.h"
 #include "driver/spi_slave.h"
 #include "soc/spi_periph.h"
+#include "soc/gpio_caps.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -33,6 +34,7 @@
 #include "soc/soc_memory_layout.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_gpio.h"
 
 static const char *SPI_TAG = "spi_slave";
 #define SPI_CHECK(a, str, ret_val) \
@@ -90,7 +92,7 @@ static inline bool bus_is_iomux(spi_slave_t *host)
 
 static void freeze_cs(spi_slave_t *host)
 {
-    gpio_matrix_in(GPIO_FUNC_IN_HIGH, spi_periph_signal[host->id].spics_in, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host->id].spics_in, false);
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
@@ -100,7 +102,7 @@ static inline void restore_cs(spi_slave_t *host)
     if (bus_is_iomux(host)) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
     } else {
-        gpio_matrix_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
+        esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
     }
 }
 

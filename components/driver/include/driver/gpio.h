@@ -22,6 +22,10 @@
 #include "soc/gpio_periph.h"
 #include "hal/gpio_types.h"
 
+// |================================= WARNING ====================================================== |
+// | Including ROM header file in a PUBLIC API file will be REMOVED in the next major release (5.x). |
+// | User should include "esp_rom_gpio.h" in their code if they have to use those ROM API.           |
+// |================================================================================================ |
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

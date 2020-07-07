@@ -13,6 +13,7 @@
 #include "driver/gpio.h"
 #include "unity.h"
 #include "math.h"
+#include "esp_rom_gpio.h"
 
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
@@ -52,32 +53,32 @@ static void i2s_test_io_config(int mode)
     switch (mode) {
 #if SOC_I2S_NUM > 1
         case I2S_TEST_MODE_SLAVE_TO_MAXTER: {
-            gpio_matrix_out(MASTER_BCK_IO, I2S0I_BCK_OUT_IDX, 0, 0);
-            gpio_matrix_in(MASTER_BCK_IO, I2S1O_BCK_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0I_BCK_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1O_BCK_IN_IDX, 0);
 
-            gpio_matrix_out(MASTER_WS_IO, I2S0I_WS_OUT_IDX, 0, 0);
-            gpio_matrix_in(MASTER_WS_IO, I2S1O_WS_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0I_WS_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1O_WS_IN_IDX, 0);
 
-            gpio_matrix_out(DATA_OUT_IO, I2S1O_DATA_OUT23_IDX, 0, 0);
-            gpio_matrix_in(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0);  
+            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S1O_DATA_OUT23_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0);
         }
         break;
 
         case I2S_TEST_MODE_MASTER_TO_SLAVE: {
-            gpio_matrix_out(MASTER_BCK_IO, I2S0O_BCK_OUT_IDX, 0, 0);
-            gpio_matrix_in(MASTER_BCK_IO, I2S1I_BCK_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0O_BCK_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1I_BCK_IN_IDX, 0);
 
-            gpio_matrix_out(MASTER_WS_IO, I2S0O_WS_OUT_IDX, 0, 0);
-            gpio_matrix_in(MASTER_WS_IO, I2S1I_WS_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0O_WS_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1I_WS_IN_IDX, 0);
 
-            gpio_matrix_out(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
-            gpio_matrix_in(DATA_OUT_IO, I2S1I_DATA_IN15_IDX, 0);  
+            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S1I_DATA_IN15_IDX, 0);
         }
         break;
 #endif
         case I2S_TEST_MODE_LOOPBACK: {
-            gpio_matrix_out(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
-            gpio_matrix_in(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0); 
+            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0);
         }
         break;
 

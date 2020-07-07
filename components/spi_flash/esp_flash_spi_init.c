@@ -18,6 +18,7 @@
 #include "esp_flash_spi_init.h"
 #include "driver/gpio.h"
 #include "esp32/rom/spi_flash.h"
+#include "esp_rom_gpio.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
@@ -100,9 +101,9 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
             GPIO.enable1_w1ts.data = (0x1 << (cs_io_num - 32));
         }
         GPIO.pin[cs_io_num].pad_driver = 0;
-        gpio_matrix_out(cs_io_num, spics_out, false, false);
+        esp_rom_gpio_connect_out_signal(cs_io_num, spics_out, false, false);
         if (cs_id == 0) {
-            gpio_matrix_in(cs_io_num, spics_in, false);
+            esp_rom_gpio_connect_in_signal(cs_io_num, spics_in, false);
         }
         PIN_FUNC_SELECT(iomux_reg, PIN_FUNC_GPIO);
     }

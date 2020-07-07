@@ -48,10 +48,11 @@ check_examples_cmake_make:
   script:
     - tools/ci/check_examples_cmake_make.sh
 
-check_examples_rom_header:
+check_rom_api_header:
   extends: .check_job_template_with_filter
   script:
     - tools/ci/check_examples_rom_header.sh
+    - tools/ci/check_rom_apis.sh
 
 check_python_style:
   extends: .python_lint_template

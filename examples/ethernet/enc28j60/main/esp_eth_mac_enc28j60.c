@@ -838,7 +838,7 @@ static esp_err_t emac_enc28j60_init(esp_eth_mac_t *mac)
     esp_eth_mediator_t *eth = emac->eth;
 
     /* init gpio used for reporting enc28j60 interrupt */
-    gpio_pad_select_gpio(emac->int_gpio_num);
+    gpio_reset_pin(emac->int_gpio_num);
     gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
     gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
     gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE);

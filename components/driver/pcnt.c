@@ -20,6 +20,7 @@
 #include "driver/periph_ctrl.h"
 #include "hal/pcnt_hal.h"
 #include "soc/pcnt_caps.h"
+#include "esp_rom_gpio.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
 #define PCNT_UNIT_ERR_STR  "PCNT UNIT ERROR"
@@ -98,14 +99,14 @@ static inline esp_err_t _pcnt_set_pin(pcnt_port_t pcnt_port, pcnt_unit_t unit, p
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pulse_io], PIN_FUNC_GPIO);
         gpio_set_direction(pulse_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(pulse_io, GPIO_PULLUP_ONLY);
-        gpio_matrix_in(pulse_io, input_sig_index, 0);
+        esp_rom_gpio_connect_in_signal(pulse_io, input_sig_index, 0);
     }
 
     if (ctrl_io >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[ctrl_io], PIN_FUNC_GPIO);
         gpio_set_direction(ctrl_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(ctrl_io, GPIO_PULLUP_ONLY);
-        gpio_matrix_in(ctrl_io, ctrl_sig_index, 0);
+        esp_rom_gpio_connect_in_signal(ctrl_io, ctrl_sig_index, 0);
     }
 
     return ESP_OK;

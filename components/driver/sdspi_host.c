@@ -252,7 +252,7 @@ static esp_err_t deinit_slot(slot_info_t *slot)
     gpio_config_t config = {
         .pin_bit_mask = pin_bit_mask,
         .mode = GPIO_MODE_INPUT,
-        .intr_type = GPIO_PIN_INTR_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&config);
 
@@ -334,7 +334,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
 
     // Configure CS pin
     gpio_config_t io_conf = {
-        .intr_type = GPIO_PIN_INTR_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << slot_config->gpio_cs,
     };
@@ -348,7 +348,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
 
     // Configure CD and WP pins
     io_conf = (gpio_config_t) {
-        .intr_type = GPIO_PIN_INTR_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = 0,
         .pull_up_en = true

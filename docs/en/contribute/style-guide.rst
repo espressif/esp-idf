@@ -91,10 +91,10 @@ No space is necessary around ``.`` and ``->`` operators.
 
 Sometimes adding horizontal space within a line can help make code more readable. For example, you can add space to align function arguments::
 
-    gpio_matrix_in(PIN_CAM_D6,   I2S0I_DATA_IN14_IDX, false);
-    gpio_matrix_in(PIN_CAM_D7,   I2S0I_DATA_IN15_IDX, false);
-    gpio_matrix_in(PIN_CAM_HREF, I2S0I_H_ENABLE_IDX,  false);
-    gpio_matrix_in(PIN_CAM_PCLK, I2S0I_DATA_IN15_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_D6,   I2S0I_DATA_IN14_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_D7,   I2S0I_DATA_IN15_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_HREF, I2S0I_H_ENABLE_IDX,  false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_PCLK, I2S0I_DATA_IN15_IDX, false);
 
 Note however that if someone goes to add new line with a longer identifier as first argument (e.g.  ``PIN_CAM_VSYNC``), it will not fit. So other lines would have to be realigned, adding meaningless changes to the commit.
 

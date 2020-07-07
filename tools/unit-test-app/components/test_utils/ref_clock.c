@@ -41,11 +41,7 @@
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/gpio.h"
-#endif
+#include "esp_rom_gpio.h"
 #include "sdkconfig.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
@@ -81,7 +77,7 @@ void ref_clock_init()
     assert(s_intr_handle == NULL && "already initialized");
 
     // Route RMT output to GPIO matrix
-    gpio_matrix_out(REF_CLOCK_GPIO, RMT_SIG_OUT0_IDX + REF_CLOCK_RMT_CHANNEL, false, false);
+    esp_rom_gpio_connect_out_signal(REF_CLOCK_GPIO, RMT_SIG_OUT0_IDX + REF_CLOCK_RMT_CHANNEL, false, false);
 
     // Initialize RMT
     periph_module_enable(PERIPH_RMT_MODULE);
@@ -106,7 +102,7 @@ void ref_clock_init()
 
     // Route signal to PCNT
     int pcnt_sig_idx = get_pcnt_sig();
-    gpio_matrix_in(REF_CLOCK_GPIO, pcnt_sig_idx, false);
+    esp_rom_gpio_connect_in_signal(REF_CLOCK_GPIO, pcnt_sig_idx, false);
     if (REF_CLOCK_GPIO != 20) {
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[REF_CLOCK_GPIO]);
     } else {

@@ -20,6 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "ip101";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -218,7 +219,7 @@ static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
     if (ip101->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(ip101->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(ip101->reset_gpio_num);
         gpio_set_direction(ip101->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(ip101->reset_gpio_num, 0);
         gpio_set_level(ip101->reset_gpio_num, 1);

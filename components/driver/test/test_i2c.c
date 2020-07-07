@@ -17,6 +17,7 @@
 #include "driver/pcnt.h"
 #include "soc/uart_struct.h"
 #include "driver/periph_ctrl.h"
+#include "esp_rom_gpio.h"
 
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
@@ -628,8 +629,8 @@ static void uart_aut_baud_det_init(int rxd_io_num)
 {
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
-    gpio_matrix_out(rxd_io_num, I2CEXT1_SCL_OUT_IDX, 0, 0);
-    gpio_matrix_in(rxd_io_num, U1RXD_IN_IDX, 0);
+    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT1_SCL_OUT_IDX, 0, 0);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);
     periph_module_enable(PERIPH_UART1_MODULE);
     UART1.int_ena.val = 0;
     UART1.int_clr.val = ~0;

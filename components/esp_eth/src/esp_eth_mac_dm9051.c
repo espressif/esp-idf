@@ -28,6 +28,7 @@
 #include "hal/cpu_hal.h"
 #include "dm9051.h"
 #include "sdkconfig.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "emac_dm9051";
 #define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -676,7 +677,7 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    gpio_pad_select_gpio(emac->int_gpio_num);
+    esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
     gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
     gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
     gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);

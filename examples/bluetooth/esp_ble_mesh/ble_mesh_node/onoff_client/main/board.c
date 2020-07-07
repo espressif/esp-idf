@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "driver/uart.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 
 #include "iot_button.h"
@@ -49,7 +50,7 @@ void board_led_operation(uint8_t pin, uint8_t onoff)
 static void board_led_init(void)
 {
     for (int i = 0; i < ARRAY_SIZE(led_state); i++) {
-        gpio_pad_select_gpio(led_state[i].pin);
+        gpio_reset_pin(led_state[i].pin);
         gpio_set_direction(led_state[i].pin, GPIO_MODE_OUTPUT);
         gpio_set_level(led_state[i].pin, LED_OFF);
         led_state[i].previous = LED_OFF;

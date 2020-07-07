@@ -10,6 +10,7 @@
 #include "ir_tools.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_rom_gpio.h"
 
 // CI ONLY: Don't connect any other signals to this GPIO
 #define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
@@ -61,8 +62,8 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     // Routing internal signals by IO Matrix (bind rmt tx and rx signal on the same GPIO)
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[RMT_DATA_IO], PIN_FUNC_GPIO);
     TEST_ESP_OK(gpio_set_direction(RMT_DATA_IO, GPIO_MODE_INPUT_OUTPUT));
-    gpio_matrix_out(RMT_DATA_IO, RMT_SIG_OUT0_IDX + tx_channel, 0, 0);
-    gpio_matrix_in(RMT_DATA_IO, RMT_SIG_IN0_IDX + rx_channel, 0);
+    esp_rom_gpio_connect_out_signal(RMT_DATA_IO, RMT_SIG_OUT0_IDX + tx_channel, 0, 0);
+    esp_rom_gpio_connect_in_signal(RMT_DATA_IO, RMT_SIG_IN0_IDX + rx_channel, 0);
 
     // install driver
     if (tx_channel >= 0) {

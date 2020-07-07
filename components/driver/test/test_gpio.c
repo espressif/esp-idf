@@ -56,7 +56,7 @@ static gpio_config_t init_io(gpio_num_t num)
 {
     TEST_ASSERT(num < TEST_GPIO_OUTPUT_MAX);
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << num);
     io_conf.pull_down_en = 0;
@@ -156,7 +156,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     //error param test
     //ESP32 test 41 bit, ESP32-S2 test 48 bit
     gpio_config_t io_config;
-    io_config.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_config.intr_type = GPIO_INTR_DISABLE;
     io_config.pin_bit_mask = ((uint64_t)1<<(GPIO_NUM_MAX+1));
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
@@ -379,7 +379,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
 TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
 {
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1<<TEST_GPIO_EXT_OUT_IO);
     io_conf.pull_down_en = 0;

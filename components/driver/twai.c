@@ -28,6 +28,7 @@
 #include "driver/twai.h"
 #include "soc/twai_periph.h"
 #include "hal/twai_hal.h"
+#include "esp_rom_gpio.h"
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
@@ -302,27 +303,27 @@ static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout,
 {
     //Set TX pin
     gpio_set_pull_mode(tx, GPIO_FLOATING);
-    gpio_matrix_out(tx, TWAI_TX_IDX, false, false);
-    gpio_pad_select_gpio(tx);
+    esp_rom_gpio_connect_out_signal(tx, TWAI_TX_IDX, false, false);
+    esp_rom_gpio_pad_select_gpio(tx);
 
     //Set RX pin
     gpio_set_pull_mode(rx, GPIO_FLOATING);
-    gpio_matrix_in(rx, TWAI_RX_IDX, false);
-    gpio_pad_select_gpio(rx);
+    esp_rom_gpio_connect_in_signal(rx, TWAI_RX_IDX, false);
+    esp_rom_gpio_pad_select_gpio(rx);
     gpio_set_direction(rx, GPIO_MODE_INPUT);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
         gpio_set_pull_mode(clkout, GPIO_FLOATING);
-        gpio_matrix_out(clkout, TWAI_CLKOUT_IDX, false, false);
-        gpio_pad_select_gpio(clkout);
+        esp_rom_gpio_connect_out_signal(clkout, TWAI_CLKOUT_IDX, false, false);
+        esp_rom_gpio_pad_select_gpio(clkout);
     }
 
     //Configure bus status pin (Optional)
     if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
         gpio_set_pull_mode(bus_status, GPIO_FLOATING);
-        gpio_matrix_out(bus_status, TWAI_BUS_OFF_ON_IDX, false, false);
-        gpio_pad_select_gpio(bus_status);
+        esp_rom_gpio_connect_out_signal(bus_status, TWAI_BUS_OFF_ON_IDX, false, false);
+        esp_rom_gpio_pad_select_gpio(bus_status);
     }
 }
 

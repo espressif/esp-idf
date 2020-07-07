@@ -249,7 +249,7 @@ static void ota_example_task(void *pvParameter)
 static bool diagnostic(void)
 {
     gpio_config_t io_conf;
-    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type    = GPIO_INTR_DISABLE;
     io_conf.mode         = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << CONFIG_EXAMPLE_GPIO_DIAGNOSTIC);
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;

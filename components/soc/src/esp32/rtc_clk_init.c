@@ -19,7 +19,6 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"

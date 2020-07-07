@@ -20,6 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "lan8720";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -263,7 +264,7 @@ static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
     if (lan8720->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(lan8720->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(lan8720->reset_gpio_num);
         gpio_set_direction(lan8720->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan8720->reset_gpio_num, 0);
         gpio_set_level(lan8720->reset_gpio_num, 1);

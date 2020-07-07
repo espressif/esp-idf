@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp32s2/rom/gpio.h"
 #include "soc/usb_periph.h"
-
+#include "soc/gpio_caps.h"
 
 const usb_iopin_dsc_t usb_periph_iopins[] = {
     {USBPHY_VP_NUM, USB_EXTPHY_VP_IDX, 0, 1},
@@ -23,11 +22,10 @@ const usb_iopin_dsc_t usb_periph_iopins[] = {
     {USBPHY_OEN_NUM, USB_EXTPHY_OEN_IDX, 1, 1},
     {USBPHY_VPO_NUM, USB_EXTPHY_VPO_IDX, 1, 1},
     {USBPHY_VMO_NUM, USB_EXTPHY_VMO_IDX, 1, 1},
-    {GPIO_FUNC_IN_HIGH, USB_OTG_IDDIG_IN_IDX, 0, 0},     //connected connector is mini-B
-    // {GPIO_FUNC_IN_LOW, USB_OTG_IDDIG_IN_IDX, 0, 0},
+    {GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_IDDIG_IN_IDX, 0, 0},     //connected connector is mini-B
     //connected connector is mini-B
-    {GPIO_FUNC_IN_HIGH, USB_SRP_BVALID_IN_IDX, 0, 0},    //HIGH to force USB device mode
-    {GPIO_FUNC_IN_HIGH, USB_OTG_VBUSVALID_IN_IDX, 0, 0}, //receiving a valid Vbus from host
-    {GPIO_FUNC_IN_LOW, USB_OTG_AVALID_IN_IDX, 0, 0},
+    {GPIO_MATRIX_CONST_ONE_INPUT, USB_SRP_BVALID_IN_IDX, 0, 0},    //HIGH to force USB device mode
+    {GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, 0, 0}, //receiving a valid Vbus from host
+    {GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_AVALID_IN_IDX, 0, 0},
     {-1, -1, 0, 0}
 };

@@ -279,7 +279,7 @@ static void set_output_pin(uint32_t num_pin)
     TEST_ESP_OK(gpio_hold_dis(num_pin));
 
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << num_pin);
     io_conf.pull_down_en = 0;
