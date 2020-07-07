@@ -36,6 +36,7 @@
 #include "driver/periph_ctrl.h"
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
+#include "bootloader_flash_config.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
@@ -864,14 +865,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         psram_io.psram_spiq_sd0_io  = EFUSE_SPICONFIG_RET_SPIQ(spiconfig);
         psram_io.psram_spid_sd1_io  = EFUSE_SPICONFIG_RET_SPID(spiconfig);
         psram_io.psram_spihd_sd2_io = EFUSE_SPICONFIG_RET_SPIHD(spiconfig);
-
-        // If flash mode is set to QIO or QOUT, the WP pin is equal the value configured in bootloader.
-        // If flash mode is set to DIO or DOUT, the WP pin should config it via menuconfig.
-        #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
-        psram_io.psram_spiwp_sd3_io = CONFIG_BOOTLOADER_SPI_WP_PIN;
-        #else
-        psram_io.psram_spiwp_sd3_io = CONFIG_SPIRAM_SPIWP_SD3_PIN;
-        #endif
+        psram_io.psram_spiwp_sd3_io = bootloader_flash_get_wp_pin();
     }
 
     assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");
