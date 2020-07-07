@@ -1155,7 +1155,7 @@ static void scheduler_act_set(struct bt_mesh_model *model,
 /* message handlers (End) */
 
 /* Mapping of message handlers for Time Server (0x1200) */
-const struct bt_mesh_model_op time_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_time_srv_op[] = {
     { BLE_MESH_MODEL_OP_TIME_GET,          0, time_get },
     { BLE_MESH_MODEL_OP_TIME_STATUS,       5, time_get },
     { BLE_MESH_MODEL_OP_TIME_ZONE_GET,     0, time_get },
@@ -1164,7 +1164,7 @@ const struct bt_mesh_model_op time_srv_op[] = {
 };
 
 /* Mapping of message handlers for Time Setup Server (0x1201) */
-const struct bt_mesh_model_op time_setup_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_time_setup_srv_op[] = {
     { BLE_MESH_MODEL_OP_TIME_SET,          10, time_set },
     { BLE_MESH_MODEL_OP_TIME_ZONE_SET,      6, time_set },
     { BLE_MESH_MODEL_OP_TAI_UTC_DELTA_SET,  7, time_set },
@@ -1174,7 +1174,7 @@ const struct bt_mesh_model_op time_setup_srv_op[] = {
 };
 
 /* Mapping of message handlers for Scene Server (0x1203) */
-const struct bt_mesh_model_op scene_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_scene_srv_op[] = {
     { BLE_MESH_MODEL_OP_SCENE_GET,          0, scene_get    },
     { BLE_MESH_MODEL_OP_SCENE_RECALL,       3, scene_recall },
     { BLE_MESH_MODEL_OP_SCENE_RECALL_UNACK, 3, scene_recall },
@@ -1183,7 +1183,7 @@ const struct bt_mesh_model_op scene_srv_op[] = {
 };
 
 /* Mapping of message handlers for Scene Setup Server (0x1204) */
-const struct bt_mesh_model_op scene_setup_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_scene_setup_srv_op[] = {
     { BLE_MESH_MODEL_OP_SCENE_STORE,        2, scene_action },
     { BLE_MESH_MODEL_OP_SCENE_STORE_UNACK,  2, scene_action },
     { BLE_MESH_MODEL_OP_SCENE_DELETE,       2, scene_action },
@@ -1192,14 +1192,14 @@ const struct bt_mesh_model_op scene_setup_srv_op[] = {
 };
 
 /* Mapping of message handlers for Scheduler Server (0x1206) */
-const struct bt_mesh_model_op scheduler_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_scheduler_srv_op[] = {
     { BLE_MESH_MODEL_OP_SCHEDULER_GET,     0, scheduler_get },
     { BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET, 1, scheduler_get },
     BLE_MESH_MODEL_OP_END,
 };
 
 /* Mapping of message handlers for Scheduler Setup Server (0x1207) */
-const struct bt_mesh_model_op scheduler_setup_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_scheduler_setup_srv_op[] = {
     { BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET,       10, scheduler_act_set },
     { BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET_UNACK, 10, scheduler_act_set },
     BLE_MESH_MODEL_OP_END,
@@ -1314,7 +1314,7 @@ static int time_scene_server_init(struct bt_mesh_model *model)
     return 0;
 }
 
-int bt_mesh_time_srv_init(struct bt_mesh_model *model, bool primary)
+static int time_srv_init(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Time Server has no publication support");
@@ -1333,7 +1333,7 @@ int bt_mesh_time_srv_init(struct bt_mesh_model *model, bool primary)
     return time_scene_server_init(model);
 }
 
-int bt_mesh_time_setup_srv_init(struct bt_mesh_model *model, bool primary)
+static int time_setup_srv_init(struct bt_mesh_model *model)
 {
     /* This model does not support subscribing nor publishing */
     if (model->pub) {
@@ -1344,7 +1344,7 @@ int bt_mesh_time_setup_srv_init(struct bt_mesh_model *model, bool primary)
     return time_scene_server_init(model);
 }
 
-int bt_mesh_scene_srv_init(struct bt_mesh_model *model, bool primary)
+static int scene_srv_init(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Scene Server has no publication support");
@@ -1352,7 +1352,7 @@ int bt_mesh_scene_srv_init(struct bt_mesh_model *model, bool primary)
     }
 
     /* The model may be present only on the Primary element of a node. */
-    if (primary == false) {
+    if (!bt_mesh_model_in_primary(model)) {
         BT_WARN("Scene Server not on the Primary element");
         /* Just give a warning here, continue with the initialization */
     }
@@ -1368,17 +1368,17 @@ int bt_mesh_scene_srv_init(struct bt_mesh_model *model, bool primary)
     return time_scene_server_init(model);
 }
 
-int bt_mesh_scene_setup_srv_init(struct bt_mesh_model *model, bool primary)
+static int scene_setup_srv_init(struct bt_mesh_model *model)
 {
     /* The model may be present only on the Primary element of a node. */
-    if (primary == false) {
+    if (!bt_mesh_model_in_primary(model)) {
         BT_WARN("Scene Setup Server not on the Primary element");
         /* Just give a warning here, continue with the initialization */
     }
     return time_scene_server_init(model);
 }
 
-int bt_mesh_scheduler_srv_init(struct bt_mesh_model *model, bool primary)
+static int scheduler_srv_init(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Scheduler Server has no publication support");
@@ -1386,7 +1386,7 @@ int bt_mesh_scheduler_srv_init(struct bt_mesh_model *model, bool primary)
     }
 
     /* The model may be present only on the Primary element of a node. */
-    if (primary == false) {
+    if (!bt_mesh_model_in_primary(model)) {
         BT_WARN("Scheduler Server not on the Primary element");
         /* Just give a warning here, continue with the initialization */
     }
@@ -1407,10 +1407,10 @@ int bt_mesh_scheduler_srv_init(struct bt_mesh_model *model, bool primary)
     return time_scene_server_init(model);
 }
 
-int bt_mesh_scheduler_setup_srv_init(struct bt_mesh_model *model, bool primary)
+static int scheduler_setup_srv_init(struct bt_mesh_model *model)
 {
     /* The model may be present only on the Primary element of a node. */
-    if (primary == false) {
+    if (!bt_mesh_model_in_primary(model)) {
         BT_WARN("Scheduler Setup Server not on the Primary element");
         /* Just give a warning here, continue with the initialization */
     }
@@ -1450,7 +1450,7 @@ static int time_scene_server_deinit(struct bt_mesh_model *model)
     return 0;
 }
 
-int bt_mesh_time_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int time_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Time Server has no publication support");
@@ -1460,7 +1460,7 @@ int bt_mesh_time_srv_deinit(struct bt_mesh_model *model, bool primary)
     return time_scene_server_deinit(model);
 }
 
-int bt_mesh_time_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int time_setup_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub) {
         BT_ERR("Time Setup Server shall not support publication");
@@ -1470,7 +1470,7 @@ int bt_mesh_time_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
     return time_scene_server_deinit(model);
 }
 
-int bt_mesh_scene_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int scene_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Scene Server has no publication support");
@@ -1480,12 +1480,12 @@ int bt_mesh_scene_srv_deinit(struct bt_mesh_model *model, bool primary)
     return time_scene_server_deinit(model);
 }
 
-int bt_mesh_scene_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int scene_setup_srv_deinit(struct bt_mesh_model *model)
 {
     return time_scene_server_deinit(model);
 }
 
-int bt_mesh_scheduler_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int scheduler_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Scheduler Server has no publication support");
@@ -1495,7 +1495,37 @@ int bt_mesh_scheduler_srv_deinit(struct bt_mesh_model *model, bool primary)
     return time_scene_server_deinit(model);
 }
 
-int bt_mesh_scheduler_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int scheduler_setup_srv_deinit(struct bt_mesh_model *model)
 {
     return time_scene_server_deinit(model);
 }
+
+const struct bt_mesh_model_cb bt_mesh_time_srv_cb = {
+    .init = time_srv_init,
+    .deinit = time_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_time_setup_srv_cb = {
+    .init = time_setup_srv_init,
+    .deinit = time_setup_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_scene_srv_cb = {
+    .init = scene_srv_init,
+    .deinit = scene_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_scene_setup_srv_cb = {
+    .init = scene_setup_srv_init,
+    .deinit = scene_setup_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_scheduler_srv_cb = {
+    .init = scheduler_srv_init,
+    .deinit = scheduler_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_scheduler_setup_srv_cb = {
+    .init = scheduler_setup_srv_init,
+    .deinit = scheduler_setup_srv_deinit,
+};

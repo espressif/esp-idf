@@ -247,12 +247,6 @@ typedef union {
     } sensor_setting_set;
 } bt_mesh_sensor_server_recv_set_msg_t;
 
-int bt_mesh_sensor_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_sensor_setup_srv_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-
 #ifdef __cplusplus
 }
 #endif

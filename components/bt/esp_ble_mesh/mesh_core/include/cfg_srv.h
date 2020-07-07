@@ -63,10 +63,11 @@ struct bt_mesh_cfg_srv {
 };
 
 extern const struct bt_mesh_model_op bt_mesh_cfg_srv_op[];
+extern const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb;
 
 #define BLE_MESH_MODEL_CFG_SRV(srv_data)            \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_CFG_SRV,   \
-            bt_mesh_cfg_srv_op, NULL, srv_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_CFG_SRV,   \
+            bt_mesh_cfg_srv_op, NULL, srv_data, &bt_mesh_cfg_srv_cb)
 
 typedef union {
     struct {
