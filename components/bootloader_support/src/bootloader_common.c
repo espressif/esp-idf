@@ -23,6 +23,7 @@
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
+#include "bootloader_utility.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
@@ -181,22 +182,7 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
         size = data.image_len;
     }
     // If image is type by data then hash is calculated for entire image.
-    const void *partition_bin = bootloader_mmap(address, size);
-    if (partition_bin == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", address, size);
-        return ESP_FAIL;
-    }
-    bootloader_sha256_handle_t sha_handle = bootloader_sha256_start();
-    if (sha_handle == NULL) {
-        bootloader_munmap(partition_bin);
-        return ESP_ERR_NO_MEM;
-    }
-    bootloader_sha256_data(sha_handle, partition_bin, size);
-    bootloader_sha256_finish(sha_handle, out_sha_256);
-
-    bootloader_munmap(partition_bin);
-
-    return ESP_OK;
+    return bootloader_sha256_flash_contents(address, size, out_sha_256);
 }
 
 int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max)
