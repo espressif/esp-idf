@@ -985,7 +985,7 @@ static void sensor_setting_set(struct bt_mesh_model *model,
 /* message handlers (End) */
 
 /* Mapping of message handlers for Sensor Server (0x1100) */
-const struct bt_mesh_model_op sensor_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_sensor_srv_op[] = {
     { BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET, 0, sensor_get },
     { BLE_MESH_MODEL_OP_SENSOR_GET,            0, sensor_get },
     { BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET,     2, sensor_get },
@@ -994,7 +994,7 @@ const struct bt_mesh_model_op sensor_srv_op[] = {
 };
 
 /* Mapping of message handlers for Sensor Setup Server (0x1101) */
-const struct bt_mesh_model_op sensor_setup_srv_op[] = {
+const struct bt_mesh_model_op bt_mesh_sensor_setup_srv_op[] = {
     { BLE_MESH_MODEL_OP_SENSOR_CADENCE_GET,       2, sensor_get         },
     { BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET,       4, sensor_cadence_set },
     { BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK, 4, sensor_cadence_set },
@@ -1099,7 +1099,7 @@ static int sensor_server_init(struct bt_mesh_model *model)
     return 0;
 }
 
-int bt_mesh_sensor_srv_init(struct bt_mesh_model *model, bool primary)
+static int sensor_srv_init(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Sensor Server has no publication support");
@@ -1117,7 +1117,7 @@ int bt_mesh_sensor_srv_init(struct bt_mesh_model *model, bool primary)
     return sensor_server_init(model);
 }
 
-int bt_mesh_sensor_setup_srv_init(struct bt_mesh_model *model, bool primary)
+static int sensor_setup_srv_init(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Sensor Setup Server has no publication support");
@@ -1137,7 +1137,7 @@ static int sensor_server_deinit(struct bt_mesh_model *model)
     return 0;
 }
 
-int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int sensor_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Sensor Server has no publication support");
@@ -1147,7 +1147,7 @@ int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary)
     return sensor_server_deinit(model);
 }
 
-int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int sensor_setup_srv_deinit(struct bt_mesh_model *model)
 {
     if (model->pub == NULL) {
         BT_ERR("Sensor Setup Server has no publication support");
@@ -1156,3 +1156,13 @@ int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
 
     return sensor_server_deinit(model);
 }
+
+const struct bt_mesh_model_cb bt_mesh_sensor_srv_cb = {
+    .init = sensor_srv_init,
+    .deinit = sensor_srv_deinit,
+};
+
+const struct bt_mesh_model_cb bt_mesh_sensor_setup_srv_cb = {
+    .init = sensor_setup_srv_init,
+    .deinit = sensor_setup_srv_deinit,
+};

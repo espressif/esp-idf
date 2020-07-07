@@ -29,10 +29,11 @@ typedef bt_mesh_client_user_data_t      bt_mesh_config_client_t;
 typedef bt_mesh_client_internal_data_t  config_internal_data_t;
 
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
+extern const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb;
 
 #define BLE_MESH_MODEL_CFG_CLI(cli_data)            \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_CFG_CLI,   \
-            bt_mesh_cfg_cli_op, NULL, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_CFG_CLI,   \
+            bt_mesh_cfg_cli_op, NULL, cli_data, &bt_mesh_cfg_cli_cb)
 
 int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, u8_t page);
 

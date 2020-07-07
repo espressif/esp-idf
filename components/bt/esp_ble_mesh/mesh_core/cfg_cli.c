@@ -1240,20 +1240,18 @@ int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, u8_t tran
     return send_msg_with_u8(param, OP_NET_TRANSMIT_SET, transmit);
 }
 
-int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
+static int cfg_cli_init(struct bt_mesh_model *model)
 {
     config_internal_data_t *internal = NULL;
     bt_mesh_config_client_t *client = NULL;
 
-    BT_DBG("primary %u", primary);
-
-    if (!primary) {
-        BT_ERR("Configuration Client only allowed in primary element");
+    if (!model) {
+        BT_ERR("Invalid Configuration Client model");
         return -EINVAL;
     }
 
-    if (!model) {
-        BT_ERR("Configuration Client model is NULL");
+    if (!bt_mesh_model_in_primary(model)) {
+        BT_ERR("Configuration Client only allowed in primary element");
         return -EINVAL;
     }
 
@@ -1288,17 +1286,17 @@ int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
     return 0;
 }
 
-int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary)
+static int cfg_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_config_client_t *client = NULL;
 
-    if (!primary) {
-        BT_ERR("Configuration Client only allowed in primary element");
+    if (!model) {
+        BT_ERR("Invalid Configuration Client model");
         return -EINVAL;
     }
 
-    if (!model) {
-        BT_ERR("Configuration Client model is NULL");
+    if (!bt_mesh_model_in_primary(model)) {
+        BT_ERR("Configuration Client only allowed in primary element");
         return -EINVAL;
     }
 
@@ -1321,3 +1319,8 @@ int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary)
 
     return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
+    .init = cfg_cli_init,
+    .deinit = cfg_cli_deinit,
+};

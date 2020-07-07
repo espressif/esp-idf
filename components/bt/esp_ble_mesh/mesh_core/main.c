@@ -501,6 +501,8 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
         return err;
     }
 
+    bt_mesh_comp_unprovision();
+
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         if (param->erase) {
             bt_mesh_clear_role();

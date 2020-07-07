@@ -385,20 +385,6 @@ void bt_mesh_time_scene_server_unlock(void);
 
 void scene_publish(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, u16_t opcode);
 
-int bt_mesh_time_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_time_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scene_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scene_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scheduler_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scheduler_setup_srv_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_time_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_time_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scene_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scene_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scheduler_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_scheduler_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-
 #ifdef __cplusplus
 }
 #endif

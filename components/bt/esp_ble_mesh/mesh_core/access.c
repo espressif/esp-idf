@@ -22,220 +22,10 @@
 #include "fast_prov.h"
 #include "provisioner_main.h"
 
-#include "generic_client.h"
-#include "sensor_client.h"
-#include "time_scene_client.h"
-#include "lighting_client.h"
-
-#include "generic_server.h"
-#include "sensor_server.h"
-#include "time_scene_server.h"
-#include "lighting_server.h"
-
 #define BLE_MESH_SDU_MAX_LEN    384
 
 static const struct bt_mesh_comp *dev_comp;
 static u16_t dev_primary_addr;
-
-static const struct {
-    const u16_t id;
-    int (*const init)(struct bt_mesh_model *model, bool primary);
-} model_init[] = {
-    { BLE_MESH_MODEL_ID_CFG_SRV,                   bt_mesh_cfg_srv_init                   },
-    { BLE_MESH_MODEL_ID_HEALTH_SRV,                bt_mesh_health_srv_init                },
-#if defined(CONFIG_BLE_MESH_CFG_CLI)
-    { BLE_MESH_MODEL_ID_CFG_CLI,                   bt_mesh_cfg_cli_init                   },
-#endif
-#if defined(CONFIG_BLE_MESH_HEALTH_CLI)
-    { BLE_MESH_MODEL_ID_HEALTH_CLI,                bt_mesh_health_cli_init                },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_ONOFF_CLI,             bt_mesh_gen_onoff_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LEVEL_CLI,             bt_mesh_gen_level_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI)
-    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI,    bt_mesh_gen_def_trans_time_cli_init    },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_POWER_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI,       bt_mesh_gen_pwr_onoff_cli_init         },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_POWER_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI,       bt_mesh_gen_pwr_level_cli_init         },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_BATTERY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_BATTERY_CLI,           bt_mesh_gen_battery_cli_init           },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_LOCATION_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_CLI,          bt_mesh_gen_location_cli_init          },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_PROPERTY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_PROP_CLI,              bt_mesh_gen_property_cli_init          },
-#endif
-#if defined(CONFIG_BLE_MESH_SENSOR_CLI)
-    { BLE_MESH_MODEL_ID_SENSOR_CLI,                bt_mesh_sensor_cli_init                },
-#endif
-#if defined(CONFIG_BLE_MESH_TIME_CLI)
-    { BLE_MESH_MODEL_ID_TIME_CLI,                  bt_mesh_time_cli_init                  },
-#endif
-#if defined(CONFIG_BLE_MESH_SCENE_CLI)
-    { BLE_MESH_MODEL_ID_SCENE_CLI,                 bt_mesh_scene_cli_init                 },
-#endif
-#if defined(CONFIG_BLE_MESH_SCHEDULER_CLI)
-    { BLE_MESH_MODEL_ID_SCHEDULER_CLI,             bt_mesh_scheduler_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_LIGHTNESS_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,       bt_mesh_light_lightness_cli_init       },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_CTL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,             bt_mesh_light_ctl_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_HSL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,             bt_mesh_light_hsl_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_XYL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,             bt_mesh_light_xyl_cli_init             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_LC_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LC_CLI,              bt_mesh_light_lc_cli_init              },
-#endif
-    { BLE_MESH_MODEL_ID_GEN_ONOFF_SRV,             bt_mesh_gen_onoff_srv_init             },
-    { BLE_MESH_MODEL_ID_GEN_LEVEL_SRV,             bt_mesh_gen_level_srv_init             },
-    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV,    bt_mesh_gen_def_trans_time_srv_init    },
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV,       bt_mesh_gen_power_onoff_srv_init       },
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV, bt_mesh_gen_power_onoff_setup_srv_init },
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV,       bt_mesh_gen_power_level_srv_init       },
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV, bt_mesh_gen_power_level_setup_srv_init },
-    { BLE_MESH_MODEL_ID_GEN_BATTERY_SRV,           bt_mesh_gen_battery_srv_init           },
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_SRV,          bt_mesh_gen_location_srv_init          },
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV,    bt_mesh_gen_location_setup_srv_init    },
-    { BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV,         bt_mesh_gen_user_prop_srv_init         },
-    { BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV,        bt_mesh_gen_admin_prop_srv_init        },
-    { BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV, bt_mesh_gen_manu_prop_srv_init         },
-    { BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV,       bt_mesh_gen_client_prop_srv_init       },
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV,       bt_mesh_light_lightness_srv_init       },
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, bt_mesh_light_lightness_setup_srv_init },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_SRV,             bt_mesh_light_ctl_srv_init             },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV,       bt_mesh_light_ctl_setup_srv_init       },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV,        bt_mesh_light_ctl_temp_srv_init        },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SRV,             bt_mesh_light_hsl_srv_init             },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV,         bt_mesh_light_hsl_hue_srv_init         },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV,         bt_mesh_light_hsl_sat_srv_init         },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV,       bt_mesh_light_hsl_setup_srv_init       },
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_SRV,             bt_mesh_light_xyl_srv_init             },
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV,       bt_mesh_light_xyl_setup_srv_init       },
-    { BLE_MESH_MODEL_ID_LIGHT_LC_SRV,              bt_mesh_light_lc_srv_init              },
-    { BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV,        bt_mesh_light_lc_setup_srv_init        },
-    { BLE_MESH_MODEL_ID_TIME_SRV,                  bt_mesh_time_srv_init                  },
-    { BLE_MESH_MODEL_ID_TIME_SETUP_SRV,            bt_mesh_time_setup_srv_init            },
-    { BLE_MESH_MODEL_ID_SCENE_SRV,                 bt_mesh_scene_srv_init                 },
-    { BLE_MESH_MODEL_ID_SCENE_SETUP_SRV,           bt_mesh_scene_setup_srv_init           },
-    { BLE_MESH_MODEL_ID_SCHEDULER_SRV,             bt_mesh_scheduler_srv_init             },
-    { BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV,       bt_mesh_scheduler_setup_srv_init       },
-    { BLE_MESH_MODEL_ID_SENSOR_SRV,                bt_mesh_sensor_srv_init                },
-    { BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV,          bt_mesh_sensor_setup_srv_init          },
-};
-
-static const struct {
-    const u16_t id;
-    int (*const deinit)(struct bt_mesh_model *model, bool primary);
-} model_deinit[] = {
-    { BLE_MESH_MODEL_ID_CFG_SRV,                   bt_mesh_cfg_srv_deinit                   },
-    { BLE_MESH_MODEL_ID_HEALTH_SRV,                bt_mesh_health_srv_deinit                },
-#if defined(CONFIG_BLE_MESH_CFG_CLI)
-    { BLE_MESH_MODEL_ID_CFG_CLI,                   bt_mesh_cfg_cli_deinit                   },
-#endif
-#if defined(CONFIG_BLE_MESH_HEALTH_CLI)
-    { BLE_MESH_MODEL_ID_HEALTH_CLI,                bt_mesh_health_cli_deinit                },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_ONOFF_CLI,             bt_mesh_gen_onoff_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LEVEL_CLI,             bt_mesh_gen_level_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI)
-    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI,    bt_mesh_gen_def_trans_time_cli_deinit    },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_POWER_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI,       bt_mesh_gen_pwr_onoff_cli_deinit         },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_POWER_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI,       bt_mesh_gen_pwr_level_cli_deinit         },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_BATTERY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_BATTERY_CLI,           bt_mesh_gen_battery_cli_deinit           },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_LOCATION_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_CLI,          bt_mesh_gen_location_cli_deinit          },
-#endif
-#if defined(CONFIG_BLE_MESH_GENERIC_PROPERTY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_PROP_CLI,              bt_mesh_gen_property_cli_deinit          },
-#endif
-#if defined(CONFIG_BLE_MESH_SENSOR_CLI)
-    { BLE_MESH_MODEL_ID_SENSOR_CLI,                bt_mesh_sensor_cli_deinit                },
-#endif
-#if defined(CONFIG_BLE_MESH_TIME_CLI)
-    { BLE_MESH_MODEL_ID_TIME_CLI,                  bt_mesh_time_cli_deinit                  },
-#endif
-#if defined(CONFIG_BLE_MESH_SCENE_CLI)
-    { BLE_MESH_MODEL_ID_SCENE_CLI,                 bt_mesh_scene_cli_deinit                 },
-#endif
-#if defined(CONFIG_BLE_MESH_SCHEDULER_CLI)
-    { BLE_MESH_MODEL_ID_SCHEDULER_CLI,             bt_mesh_scheduler_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_LIGHTNESS_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,       bt_mesh_light_lightness_cli_deinit       },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_CTL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,             bt_mesh_light_ctl_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_HSL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,             bt_mesh_light_hsl_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_XYL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,             bt_mesh_light_xyl_cli_deinit             },
-#endif
-#if defined(CONFIG_BLE_MESH_LIGHT_LC_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LC_CLI,              bt_mesh_light_lc_cli_deinit              },
-#endif
-    { BLE_MESH_MODEL_ID_GEN_ONOFF_SRV,             bt_mesh_gen_onoff_srv_deinit             },
-    { BLE_MESH_MODEL_ID_GEN_LEVEL_SRV,             bt_mesh_gen_level_srv_deinit             },
-    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV,    bt_mesh_gen_def_trans_time_srv_deinit    },
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV,       bt_mesh_gen_power_onoff_srv_deinit       },
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV, bt_mesh_gen_power_onoff_setup_srv_deinit },
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV,       bt_mesh_gen_power_level_srv_deinit       },
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV, bt_mesh_gen_power_level_setup_srv_deinit },
-    { BLE_MESH_MODEL_ID_GEN_BATTERY_SRV,           bt_mesh_gen_battery_srv_deinit           },
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_SRV,          bt_mesh_gen_location_srv_deinit          },
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV,    bt_mesh_gen_location_setup_srv_deinit    },
-    { BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV,         bt_mesh_gen_user_prop_srv_deinit         },
-    { BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV,        bt_mesh_gen_admin_prop_srv_deinit        },
-    { BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV, bt_mesh_gen_manu_prop_srv_deinit         },
-    { BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV,       bt_mesh_gen_client_prop_srv_deinit       },
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV,       bt_mesh_light_lightness_srv_deinit       },
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, bt_mesh_light_lightness_setup_srv_deinit },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_SRV,             bt_mesh_light_ctl_srv_deinit             },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV,       bt_mesh_light_ctl_setup_srv_deinit       },
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV,        bt_mesh_light_ctl_temp_srv_deinit        },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SRV,             bt_mesh_light_hsl_srv_deinit             },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV,         bt_mesh_light_hsl_hue_srv_deinit         },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV,         bt_mesh_light_hsl_sat_srv_deinit         },
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV,       bt_mesh_light_hsl_setup_srv_deinit       },
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_SRV,             bt_mesh_light_xyl_srv_deinit             },
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV,       bt_mesh_light_xyl_setup_srv_deinit       },
-    { BLE_MESH_MODEL_ID_LIGHT_LC_SRV,              bt_mesh_light_lc_srv_deinit              },
-    { BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV,        bt_mesh_light_lc_setup_srv_deinit        },
-    { BLE_MESH_MODEL_ID_TIME_SRV,                  bt_mesh_time_srv_deinit                  },
-    { BLE_MESH_MODEL_ID_TIME_SETUP_SRV,            bt_mesh_time_setup_srv_deinit            },
-    { BLE_MESH_MODEL_ID_SCENE_SRV,                 bt_mesh_scene_srv_deinit                 },
-    { BLE_MESH_MODEL_ID_SCENE_SETUP_SRV,           bt_mesh_scene_setup_srv_deinit           },
-    { BLE_MESH_MODEL_ID_SCHEDULER_SRV,             bt_mesh_scheduler_srv_deinit             },
-    { BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV,       bt_mesh_scheduler_setup_srv_deinit       },
-    { BLE_MESH_MODEL_ID_SENSOR_SRV,                bt_mesh_sensor_srv_deinit                },
-    { BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV,          bt_mesh_sensor_setup_srv_deinit          },
-};
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
                                         struct bt_mesh_elem *elem,
@@ -528,7 +318,18 @@ struct bt_mesh_model *bt_mesh_model_get(bool vnd, u8_t elem_idx, u8_t mod_idx)
 static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                      bool vnd, bool primary, void *user_data)
 {
+    int *err = user_data;
     int i;
+
+    if (!user_data) {
+        BT_ERR("Invalid model init user data");
+        return;
+    }
+
+    if (*err) {
+        BT_ERR("Model init failed (err %d)", *err);
+        return;
+    }
 
     mod->elem = elem;
 
@@ -553,17 +354,26 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
         return;
     }
 
-    for (i = 0; i < ARRAY_SIZE(model_init); i++) {
-        if (model_init[i].id == mod->id) {
-            model_init[i].init(mod, primary);
-        }
+    if (mod->cb && mod->cb->init) {
+        *err = mod->cb->init(mod);
     }
 }
 
 static void mod_deinit(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                        bool vnd, bool primary, void *user_data)
 {
+    int *err = user_data;
     int i;
+
+    if (!user_data) {
+        BT_ERR("Invalid model deinit user data");
+        return;
+    }
+
+    if (*err) {
+        BT_ERR("Model deinit failed (err %d)", *err);
+        return;
+    }
 
     mod->elem = NULL;
 
@@ -584,15 +394,15 @@ static void mod_deinit(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
         return;
     }
 
-    for (i = 0; i < ARRAY_SIZE(model_deinit); i++) {
-        if (model_deinit[i].id == mod->id) {
-            model_deinit[i].deinit(mod, primary);
-        }
+    if (mod->cb && mod->cb->deinit) {
+        *err = mod->cb->deinit(mod);
     }
 }
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 {
+    int err = 0;
+
     /* There must be at least one element */
     if (!comp->elem_count) {
         return -EINVAL;
@@ -600,23 +410,24 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 
     dev_comp = comp;
 
-    bt_mesh_model_foreach(mod_init, NULL);
+    bt_mesh_model_foreach(mod_init, &err);
 
-    return 0;
+    return err;
 }
 
 int bt_mesh_comp_deregister(void)
 {
+    int err = 0;
+
     if (dev_comp == NULL) {
         return -EINVAL;
     }
 
-    bt_mesh_model_foreach(mod_deinit, NULL);
+    bt_mesh_model_foreach(mod_deinit, &err);
 
-    dev_primary_addr = BLE_MESH_ADDR_UNASSIGNED;
     dev_comp = NULL;
 
-    return 0;
+    return err;
 }
 
 void bt_mesh_comp_provision(u16_t addr)
@@ -642,8 +453,6 @@ void bt_mesh_comp_unprovision(void)
     BT_DBG("%s", __func__);
 
     dev_primary_addr = BLE_MESH_ADDR_UNASSIGNED;
-
-    bt_mesh_model_foreach(mod_init, NULL);
 }
 
 u16_t bt_mesh_primary_addr(void)
@@ -665,7 +474,7 @@ u16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, u16_t addr)
 }
 
 static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
-        u16_t group_addr)
+                                                     u16_t group_addr)
 {
     struct bt_mesh_model *model = NULL;
     u16_t *match = NULL;
