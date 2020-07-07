@@ -66,7 +66,7 @@ typedef struct {
 } hci_host_env_t;
 
 // Using a define here, because it can be stringified for the property lookup
-static const uint32_t COMMAND_PENDING_TIMEOUT = 8000;
+static const uint32_t COMMAND_PENDING_TIMEOUT = 35000;
 
 // Our interface
 static bool interface_created;
