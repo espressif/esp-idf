@@ -1,6 +1,6 @@
 # OTA Tool Example
 
-This example demonstrates common operations the OTA tool [otatool.py](../../../components/app_update/otatool.py) allows the user to perform:
+This example demonstrates common operations the OTA tool [otatool.py](../../../../components/app_update/otatool.py) allows the user to perform:
 
 - reading, writing and erasing OTA partitions,
 - switching boot partitions, and
@@ -44,7 +44,7 @@ Shell script:
 ./otatool_example.sh
 ```
 
-The script searches for valid target devices connected to the host and performs the operations on the first one it finds. This could present problems if there 
+The script searches for valid target devices connected to the host and performs the operations on the first one it finds. This could present problems if there
 are multiple viable target devices attached to the host. To perform the operations on a specific device, specify the port it is attached to during script invocation ("/dev/ttyUSB2" for example):
 
 Python script:
