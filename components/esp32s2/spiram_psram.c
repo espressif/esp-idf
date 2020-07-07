@@ -376,15 +376,7 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
         psram_io.psram_spihd_sd2_io = EFUSE_SPICONFIG_RET_SPIHD(spiconfig);
         psram_io.psram_spiwp_sd3_io = ets_efuse_get_wp_pad();
     }
-
-    #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
-    // WP/HD already configured in bootloader.
-    psram_io.psram_spiwp_sd3_io = (psram_io.psram_spiwp_sd3_io <= MAX_PAD_GPIO_NUM ? psram_io.psram_spiwp_sd3_io : CONFIG_BOOTLOADER_SPI_WP_PIN);
-    #else
-    
-    psram_io.psram_spiwp_sd3_io = (psram_io.psram_spiwp_sd3_io <= MAX_PAD_GPIO_NUM ? psram_io.psram_spiwp_sd3_io : CONFIG_SPIRAM_SPIWP_SD3_PIN);
     esp_rom_spiflash_select_qio_pins(psram_io.psram_spiwp_sd3_io, spiconfig);
-    #endif
 }
 
 psram_size_t psram_get_size(void)
