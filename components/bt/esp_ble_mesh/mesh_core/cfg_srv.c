@@ -3344,9 +3344,14 @@ static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
     return true;
 }
 
-int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
+static int cfg_srv_init(struct bt_mesh_model *model)
 {
     struct bt_mesh_cfg_srv *cfg = model->user_data;
+
+    if (!bt_mesh_model_in_primary(model)) {
+        BT_ERR("Configuration Server only allowed in primary element");
+        return -EINVAL;
+    }
 
     if (!cfg) {
         BT_ERR("No Configuration Server context provided");
@@ -3384,9 +3389,14 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
     return 0;
 }
 
-int bt_mesh_cfg_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int cfg_srv_deinit(struct bt_mesh_model *model)
 {
     struct bt_mesh_cfg_srv *cfg = model->user_data;
+
+    if (!bt_mesh_model_in_primary(model)) {
+        BT_ERR("Configuration Server only allowed in primary element");
+        return -EINVAL;
+    }
 
     if (!cfg) {
         BT_ERR("No Configuration Server context provided");
@@ -3402,6 +3412,11 @@ int bt_mesh_cfg_srv_deinit(struct bt_mesh_model *model, bool primary)
 
     return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb = {
+    .init = cfg_srv_init,
+    .deinit = cfg_srv_deinit,
+};
 
 static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                       bool vnd, bool primary, void *user_data)

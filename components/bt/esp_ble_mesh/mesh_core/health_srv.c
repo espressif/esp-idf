@@ -429,7 +429,7 @@ static void attention_off(struct k_work *work)
     srv->attn_timer_start = false;
 }
 
-int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
+static int health_srv_init(struct bt_mesh_model *model)
 {
     struct bt_mesh_health_srv *srv = model->user_data;
 
@@ -438,11 +438,6 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
      */
 
     if (!srv) {
-        if (!primary) {
-            /* If Health Server is in the secondary element with NULL user_data. */
-            return 0;
-        }
-
         BT_ERR("No Health Server context provided");
         return -EINVAL;
     }
@@ -467,23 +462,18 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
     memset(srv->test.curr_faults, HEALTH_NO_FAULT, ARRAY_SIZE(srv->test.curr_faults));
     memset(srv->test.reg_faults, HEALTH_NO_FAULT, ARRAY_SIZE(srv->test.reg_faults));
 
-    if (primary) {
+    if (bt_mesh_model_in_primary(model)) {
         health_srv = srv;
     }
 
     return 0;
 }
 
-int bt_mesh_health_srv_deinit(struct bt_mesh_model *model, bool primary)
+static int health_srv_deinit(struct bt_mesh_model *model)
 {
     struct bt_mesh_health_srv *srv = model->user_data;
 
     if (!srv) {
-        if (!primary) {
-            /* If Health Server is in the secondary element with NULL user_data. */
-            return 0;
-        }
-
         BT_ERR("No Health Server context provided");
         return -EINVAL;
     }
@@ -503,12 +493,17 @@ int bt_mesh_health_srv_deinit(struct bt_mesh_model *model, bool primary)
 
     k_delayed_work_free(&srv->attn_timer);
 
-    if (primary) {
+    if (bt_mesh_model_in_primary(model)) {
         health_srv = NULL;
     }
 
     return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_health_srv_cb = {
+    .init = health_srv_init,
+    .deinit = health_srv_deinit,
+};
 
 void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 {
