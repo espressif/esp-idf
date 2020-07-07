@@ -88,7 +88,8 @@ enum {
    layers we might need to temporarily buffer up data */
 
 /* 18 frames is equivalent to 6.89*18*2.9 ~= 360 ms @ 44.1 khz, 20 ms mediatick */
-#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (18)
+#define JITTER_BUFFER_WATER_LEVEL (15)
+#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (18 + JITTER_BUFFER_WATER_LEVEL)
 
 typedef struct {
     UINT16 num_frames_to_be_processed;
@@ -458,7 +459,7 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
     tBT_SBC_HDR *p_msg;
 
     if (fixed_queue_is_empty(btc_aa_snk_cb.RxSbcQ)) {
-        APPL_TRACE_DEBUG("  QUE  EMPTY ");
+        APPL_TRACE_ERROR("  QUE  EMPTY ");
     } else {
         if (btc_aa_snk_cb.rx_flush == TRUE) {
             btc_a2dp_sink_flush_q(btc_aa_snk_cb.RxSbcQ);
@@ -775,8 +776,13 @@ UINT8 btc_a2dp_sink_enque_buf(BT_HDR *p_pkt)
                                             p_pkt->offset + p_pkt->len)) != NULL) {
         memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-        APPL_TRACE_VERBOSE("btc_a2dp_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
+        APPL_TRACE_DEBUG("btc_a2dp_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
         fixed_queue_enqueue(btc_aa_snk_cb.RxSbcQ, p_msg);
+
+        if (fixed_queue_length(btc_aa_snk_cb.RxSbcQ) < JITTER_BUFFER_WATER_LEVEL) {
+            return fixed_queue_length(btc_aa_snk_cb.RxSbcQ);
+        }
+
         btc_a2dp_sink_data_post(BTC_A2DP_SINK_DATA_EVT);
     } else {
         /* let caller deal with a failed allocation */
