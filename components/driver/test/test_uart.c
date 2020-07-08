@@ -255,7 +255,7 @@ TEST_CASE("uart read write test", "[uart]")
     vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
     TEST_ESP_OK(uart_flush_input(uart_num));
 
-    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, 5, NULL);
+    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, UNITY_FREERTOS_PRIORITY - 1, NULL);
     int len_tmp = 0;
     int rd_len = 1024;
     for (int i = 0; i < 1024; i++) {
