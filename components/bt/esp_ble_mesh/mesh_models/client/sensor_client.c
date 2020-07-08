@@ -448,13 +448,9 @@ static int sensor_act_state(bt_mesh_client_common_param_t *common,
     }
 
     err = bt_mesh_client_send_msg(common, msg, need_ack, timeout_handler);
-    if (err) {
-        BT_ERR("Failed to send Sensor client message (err %d)", err);
-    }
 
 end:
     bt_mesh_free_buf(msg);
-
     return err;
 }
 
