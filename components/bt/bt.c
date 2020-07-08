@@ -1408,6 +1408,10 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     return ESP_OK;
 }
 
+void IRAM_ATTR r_assert_with_log(uint32_t error_bit, uint32_t time_slot)
+{
+    __asm__ __volatile__("ill\n");
+}
 /**
  * This function re-write controller's function,
  * As coredump can not show paramerters in function which is in a .a file.
@@ -1416,7 +1420,13 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
  */
 void IRAM_ATTR r_assert(const char *condition, int param0, int param1, const char *file, int line)
 {
-    __asm__ __volatile__("ill\n");
+    extern uint32_t btdm_debug_error_get_bit();
+    extern uint32_t btdm_debug_error_get_time();
+
+    uint32_t error_bit = btdm_debug_error_get_bit();
+    uint32_t time_slot = btdm_debug_error_get_time();
+    r_assert_with_log(error_bit, time_slot);
+    //__asm__ __volatile__("ill\n");
 }
 
 
