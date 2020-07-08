@@ -56,60 +56,49 @@ typedef struct {
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
-    union {
-        struct {
-            int channel;        //!< UART channel
-            uint32_t baud_rate; //!< Comunication baud rate
-            int tx_gpio;        //!< GPIO number for TX path, -1 means using the default
-            int rx_gpio;        //!< GPIO number for RX path, -1 means using the default
-        } uart;                 //!< UART specific configuration
-    } device;                   //!< device configuration
 } esp_console_repl_config_t;
-
-#ifdef CONFIG_ESP_CONSOLE_UART_NUM
-#define CONSOLE_DEFAULT_UART_CHANNEL CONFIG_ESP_CONSOLE_UART_NUM
-#else
-#define CONSOLE_DEFAULT_UART_CHANNEL 0
-#endif
-
-#ifdef CONFIG_ESP_CONSOLE_UART_BAUDRATE
-#define CONSOLE_DEFAULT_UART_BAUDRATE CONFIG_ESP_CONSOLE_UART_BAUDRATE
-#else
-#define CONSOLE_DEFAULT_UART_BAUDRATE 115200
-#endif
-
-#ifdef CONFIG_ESP_CONSOLE_UART_TX_GPIO
-#define CONSOLE_DEFAULT_UART_TX_GPIO CONFIG_ESP_CONSOLE_UART_TX_GPIO
-#else
-#define CONSOLE_DEFAULT_UART_TX_GPIO 1
-#endif
-
-#ifdef CONFIG_ESP_CONSOLE_UART_RX_GPIO
-#define CONSOLE_DEFAULT_UART_RX_GPIO CONFIG_ESP_CONSOLE_UART_RX_GPIO
-#else
-#define CONSOLE_DEFAULT_UART_RX_GPIO 3
-#endif
 
 /**
  * @brief Default console repl configuration value
  *
  */
-#define ESP_CONSOLE_REPL_CONFIG_DEFAULT()                   \
-    {                                                       \
-        .max_history_len = 32,                              \
-        .history_save_path = NULL,                          \
-        .task_stack_size = 4096,                            \
-        .task_priority = 2,                                 \
-        .prompt = NULL,                                     \
-        .device = {                                         \
-            .uart = {                                       \
-                .channel = CONSOLE_DEFAULT_UART_CHANNEL,    \
-                .baud_rate = CONSOLE_DEFAULT_UART_BAUDRATE, \
-                .tx_gpio = CONSOLE_DEFAULT_UART_TX_GPIO,    \
-                .rx_gpio = CONSOLE_DEFAULT_UART_RX_GPIO,    \
-            }                                               \
-        }                                                   \
-    }
+#define ESP_CONSOLE_REPL_CONFIG_DEFAULT() \
+{                                         \
+        .max_history_len = 32,            \
+        .history_save_path = NULL,        \
+        .task_stack_size = 4096,          \
+        .task_priority = 2,               \
+        .prompt = NULL,                   \
+}
+
+/**
+ * @brief Parameters for console device: UART
+ *
+ */
+typedef struct {
+    int channel;     //!< UART channel number (count from zero)
+    int baud_rate;   //!< Comunication baud rate
+    int tx_gpio_num; //!< GPIO number for TX path, -1 means using default one
+    int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
+} esp_console_dev_uart_config_t;
+
+#ifdef CONFIG_ESP_CONSOLE_UART_CUSTOM
+#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()       \
+{                                                   \
+    .channel = CONFIG_ESP_CONSOLE_UART_NUM,         \
+    .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,  \
+    .tx_gpio_num = CONFIG_ESP_CONSOLE_UART_TX_GPIO, \
+    .rx_gpio_num = CONFIG_ESP_CONSOLE_UART_RX_GPIO, \
+}
+#else
+#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()      \
+{                                                  \
+    .channel = CONFIG_ESP_CONSOLE_UART_NUM,        \
+    .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE, \
+    .tx_gpio_num = -1,                             \
+    .rx_gpio_num = -1,                             \
+}
+#endif
 
 /**
  * @brief initialize console module
@@ -270,10 +259,34 @@ esp_err_t esp_console_register_help_command(void);
 /******************************************************************************
  *              Console REPL
  ******************************************************************************/
+
 /**
- * @brief Initialize console REPL environment
+ * @brief Type defined for console REPL
  *
- * @param config REPL configuration
+ */
+typedef struct esp_console_repl_s esp_console_repl_t;
+
+/**
+ * @brief Console REPL base structure
+ *
+ */
+struct esp_console_repl_s {
+    /**
+     * @brief Delete console REPL environment
+     * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
+     * @return
+     *      - ESP_OK on success
+     *      - ESP_FAIL on errors
+     */
+    esp_err_t (*del)(esp_console_repl_t *repl);
+};
+
+/**
+ * @brief Establish a console REPL environment over UART driver
+ *
+ * @param[in] dev_config UART device configuration
+ * @param[in] repl_config REPL configuration
+ * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
  *
  * @note This is a all-in-one function to establish the environment needed for REPL, includes:
  *       - Install the UART driver on the console UART (8n1, 115200, REF_TICK clock source)
@@ -289,27 +302,17 @@ esp_err_t esp_console_register_help_command(void);
  *      - ESP_OK on success
  *      - ESP_FAIL Parameter error
  */
-esp_err_t esp_console_repl_init(const esp_console_repl_config_t *config);
+esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
 
 /**
- * @brief Start REPL task
- *
+ * @brief Start REPL environment
+ * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
+ * @note Once the REPL got started, it won't be stopped until user call repl->del(repl) to destory the REPL environment.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if repl has started already
  */
-esp_err_t esp_console_repl_start(void);
-
-/**
- * @brief Register a 'quit' command
- *
- * Default 'quit' command will destory resources and exit REPL environment.
- *
- * @return
- *      - ESP_OK on success
- *      - others on failed
- */
-esp_err_t esp_console_register_quit_command(void);
+esp_err_t esp_console_start_repl(esp_console_repl_t *repl);
 
 #ifdef __cplusplus
 }
