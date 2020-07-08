@@ -46,7 +46,7 @@
 #include <string.h>
 
 static const char *TAG = "boot.esp32s2";
-void bootloader_configure_spi_pins(int drv)
+void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     uint8_t wp_pin = esp_rom_efuse_get_flash_wp_gpio();
@@ -274,18 +274,6 @@ static void bootloader_check_wdt_reset(void)
         wdt_reset_info_dump(0);
     }
     wdt_reset_cpu0_info_enable();
-}
-
-void abort(void)
-{
-#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-    esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
-#endif
-    if (esp_cpu_in_ocd_debug_mode()) {
-        __asm__("break 0,0");
-    }
-    while (1) {
-    }
 }
 
 static void bootloader_super_wdt_auto_feed(void)

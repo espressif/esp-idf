@@ -16,7 +16,11 @@ COMPONENT_SRCDIRS += src/$(IDF_TARGET)  # one sub-dir per chip
 endif
 
 ifndef IS_BOOTLOADER_BUILD
-COMPONENT_OBJEXCLUDE := src/bootloader_init.o
+COMPONENT_OBJEXCLUDE := src/bootloader_init.o \
+			src/bootloader_panic.o \
+			src/bootloader_clock_loader.o \
+			src/bootloader_console.o \
+			src/bootloader_console_loader.o
 endif
 
 COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2.o \

@@ -1,6 +1,7 @@
 set(srcs
-    "src/bootloader_clock.c"
     "src/bootloader_common.c"
+    "src/bootloader_common_loader.c"
+    "src/bootloader_clock_init.c"
     "src/bootloader_flash.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
@@ -18,8 +19,10 @@ if(BOOTLOADER_BUILD)
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
     "src/bootloader_init.c"
+    "src/bootloader_clock_loader.c"
     "src/bootloader_console.c"
     "src/bootloader_console_loader.c"
+    "src/bootloader_panic.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
     "src/${IDF_TARGET}/flash_encrypt.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
@@ -113,4 +116,8 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
         "${secure_boot_verification_key}")
+endif()
+
+if(BOOTLOADER_BUILD)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
 endif()

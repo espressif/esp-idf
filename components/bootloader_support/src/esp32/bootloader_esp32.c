@@ -351,18 +351,6 @@ static void bootloader_check_wdt_reset(void)
     wdt_reset_cpu0_info_enable();
 }
 
-void abort(void)
-{
-#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-    esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
-#endif
-    if (esp_cpu_in_ocd_debug_mode()) {
-        __asm__("break 0,0");
-    }
-    while (1) {
-    }
-}
-
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;

@@ -75,11 +75,4 @@ void bootloader_clock_configure(void)
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 }
 
-#ifdef BOOTLOADER_BUILD
 
-int esp_clk_apb_freq(void)
-{
-    return rtc_clk_apb_freq_get();
-}
-
-#endif // BOOTLOADER_BUILD

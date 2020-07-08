@@ -101,10 +101,3 @@ void bootloader_print_banner(void)
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
     ESP_LOGI(TAG, "compile time " __TIME__);
 }
-
-void __assert_func(const char *file, int line, const char *func, const char *expr)
-{
-    ESP_LOGE(TAG, "Assert failed in %s, %s:%d (%s)", func, file, line, expr);
-    while (1) {
-    }
-}
