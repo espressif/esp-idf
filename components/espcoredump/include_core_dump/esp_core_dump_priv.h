@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef ESP_CORE_DUMP_H_
-#define ESP_CORE_DUMP_H_
+#ifndef ESP_CORE_DUMP_PRIV_H_
+#define ESP_CORE_DUMP_PRIV_H_
 
 #ifdef __cplusplus
 extern "C" {
