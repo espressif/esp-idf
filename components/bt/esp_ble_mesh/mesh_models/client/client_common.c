@@ -287,18 +287,18 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
         return -EIO;
     }
 
-    if (!need_ack) {
-        /* If this is an unack message, send it directly. */
-        return bt_mesh_model_send(param->model, &param->ctx, msg, param->cb, param->cb_data);
-    }
-
-    if (!BLE_MESH_ADDR_IS_UNICAST(param->ctx.addr)) {
-        /* If an acknowledged message is not sent to a unicast address,
-         * for example to a group/virtual address, then all the
-         * corresponding responses will be treated as publish messages.
-         * And no timeout will be used for the message.
+    if (need_ack == false || !BLE_MESH_ADDR_IS_UNICAST(param->ctx.addr)) {
+        /* 1. If this is an unacknowledged message, send it directly.
+         * 2. If this is an acknowledged message, but the destination
+         *    is not a unicast address, e.g. a group/virtual address,
+         *    then all the corresponding responses will be treated as
+         *    publish messages, and no timeout will be used.
          */
-        return bt_mesh_model_send(param->model, &param->ctx, msg, param->cb, param->cb_data);
+        err = bt_mesh_model_send(param->model, &param->ctx, msg, param->cb, param->cb_data);
+        if (err) {
+            BT_ERR("Failed to send client message 0x%08x", param->opcode);
+        }
+        return err;
     }
 
     if (!timer_handler) {

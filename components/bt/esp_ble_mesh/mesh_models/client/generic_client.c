@@ -689,7 +689,6 @@ const struct bt_mesh_model_op gen_property_cli_op[] = {
 static int gen_get_state(bt_mesh_client_common_param_t *common, void *value)
 {
     NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_GET_STATE_MSG_LEN);
-    int err = 0;
 
     bt_mesh_model_msg_init(&msg, common->opcode);
 
@@ -725,12 +724,7 @@ static int gen_get_state(bt_mesh_client_common_param_t *common, void *value)
         }
     }
 
-    err = bt_mesh_client_send_msg(common, &msg, true, timeout_handler);
-    if (err) {
-        BT_ERR("Failed to send Generic Get message (err %d)", err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(common, &msg, true, timeout_handler);
 }
 
 static int gen_set_state(bt_mesh_client_common_param_t *common,
@@ -903,13 +897,9 @@ static int gen_set_state(bt_mesh_client_common_param_t *common,
     }
 
     err = bt_mesh_client_send_msg(common, msg, need_ack, timeout_handler);
-    if (err) {
-        BT_ERR("Failed to send Generic Set message (err %d)", err);
-    }
 
 end:
     bt_mesh_free_buf(msg);
-
     return err;
 }
 
