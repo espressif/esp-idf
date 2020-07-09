@@ -17,15 +17,23 @@ Introduction
 
 {IDF_TARGET_NAME} is a system on a chip that integrates the following features:
 
-.. list::
+.. only:: esp32
 
     * Wi-Fi (2.4 GHz band)
-    :SOC_BT_SUPPORTED: * Bluetooth
-    :CONFIG_FREERTOS_UNICORE: * Dual high performance cores
+    * Bluetooth
+    * Dual high performance cores
     * Ultra Low Power co-processor
     * Multiple peripherals
-    :esp32s2: * Built-in security hardware
-    :esp32s2: * USB OTG interface
+
+
+.. only:: esp32s2
+
+    * Wi-Fi (2.4 GHz band)
+    * High performance single-core
+    * Ultra Low Power co-processor running either RISC-V or FSM core
+    * Multiple peripherals
+    * Built-in security hardware
+    * USB OTG interface
 
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
