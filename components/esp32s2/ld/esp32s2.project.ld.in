@@ -46,7 +46,7 @@ SECTIONS
      named rtc_wake_stub*.c and the data marked with
      RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
      The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc.data :
   {
@@ -75,7 +75,7 @@ SECTIONS
      User data marked with RTC_NOINIT_ATTR will be placed
      into this section. See the file "esp_attr.h" for more information.
 	 The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc_noinit (NOLOAD):
   {
@@ -142,6 +142,7 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
+    _invalid_pc_placeholder = ABSOLUTE(.);
     *(.*Vector.literal)
 
     *(.UserEnter.literal);
@@ -250,6 +251,7 @@ SECTIONS
   /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
   .flash.rodata : ALIGN(0x10)
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
@@ -307,12 +309,14 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >default_rodata_seg
 
   .flash.text :
   {
     _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
@@ -323,6 +327,7 @@ SECTIONS
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is

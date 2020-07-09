@@ -41,8 +41,7 @@ void esp_flash_encryption_init_checks()
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
 #ifdef CONFIG_SECURE_BOOT
     if (esp_secure_boot_enabled() && esp_flash_encryption_enabled()) {
-        uint8_t flash_crypt_cnt_wr_dis = 0;
-        esp_efuse_read_field_blob(WR_DIS_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
+        bool flash_crypt_cnt_wr_dis = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
         if (!flash_crypt_cnt_wr_dis) {
             uint8_t flash_crypt_cnt = 0;
             esp_efuse_read_field_blob(CRYPT_CNT, &flash_crypt_cnt,  CRYPT_CNT[0]->bit_count);
@@ -51,7 +50,7 @@ void esp_flash_encryption_init_checks()
                 // (this distinction is important on ESP32 ECO3 where write-procted FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
                 return;
             }
-            ESP_EARLY_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
+            ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
             esp_flash_write_protect_crypt_cnt();
         }
     }
@@ -63,26 +62,20 @@ void esp_flash_encryption_init_checks()
     mode = esp_get_flash_encryption_mode();
     if (mode == ESP_FLASH_ENC_MODE_DEVELOPMENT) {
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-        ESP_EARLY_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
-        ESP_EARLY_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
+        ESP_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
+        ESP_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
 #else
-        ESP_EARLY_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
+        ESP_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
 #endif
     } else if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
-        ESP_EARLY_LOGI(TAG, "Flash encryption mode is RELEASE");
+        ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
     }
 }
 #endif
 
 void esp_flash_write_protect_crypt_cnt(void)
 {
-    uint8_t flash_crypt_cnt_wr_dis = 0;
-
-    esp_efuse_read_field_blob(WR_DIS_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
-
-    if (!flash_crypt_cnt_wr_dis) {
-        esp_efuse_write_field_cnt(WR_DIS_CRYPT_CNT, 1);
-    }
+    esp_efuse_write_field_bit(WR_DIS_CRYPT_CNT);
 }
 
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
@@ -101,27 +94,27 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 
     if (esp_flash_encryption_enabled()) {
         /* Check if FLASH CRYPT CNT is write protected */
-        esp_efuse_read_field_blob(WR_DIS_CRYPT_CNT, &efuse_flash_crypt_cnt_wr_protected, 1);
+        efuse_flash_crypt_cnt_wr_protected = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
 
         if (efuse_flash_crypt_cnt_wr_protected) {
 
 #if CONFIG_IDF_TARGET_ESP32
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_CACHE, &dis_dl_cache, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_ENCRYPT, &dis_dl_enc, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DISABLE_DL_DECRYPT, &dis_dl_dec, 1);
+            dis_dl_cache = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+            dis_dl_dec = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
             /* Check if DISABLE_DL_DECRYPT, DISABLE_DL_ENCRYPT & DISABLE_DL_CACHE are set */
             if ( dis_dl_cache && dis_dl_enc && dis_dl_dec ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
 #elif CONFIG_IDF_TARGET_ESP32S2
-            esp_efuse_read_field_blob(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT, &dis_dl_enc, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DIS_DOWNLOAD_ICACHE, &dis_dl_icache, 1);
-            esp_efuse_read_field_blob(ESP_EFUSE_DIS_DOWNLOAD_DCACHE, &dis_dl_dcache, 1);
+            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+            dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+            dis_dl_dcache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
 
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#endif            
+#endif
         }
     } else {
         mode = ESP_FLASH_ENC_MODE_DISABLED;

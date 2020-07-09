@@ -246,6 +246,8 @@ ADC driver
 
 .. include-build-file:: inc/adc.inc
 
+.. include-build-file:: inc/adc_types.inc
+
 .. _adc-api-reference-adc-calibration:
 
 ADC Calibration

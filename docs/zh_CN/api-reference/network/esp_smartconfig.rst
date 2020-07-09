@@ -1,9 +1,1 @@
-SmartConfig
-===========
-
-:link_to_translation:`en:[English]`
-
-API 参考
--------------
-
-.. include-build-file:: inc/esp_smartconfig.inc
+.. include:: ../../../en/api-reference/network/esp_smartconfig.rst

@@ -1,18 +1,11 @@
 menu "Example Connection Configuration"
-    choice EXAMPLE_CONNECT_INTERFACE
-        prompt "Connect using"
-        default EXAMPLE_CONNECT_WIFI
+
+    config EXAMPLE_CONNECT_WIFI
+        bool "connect using WiFi interface"
+        default y
         help
-            Protocol examples can use Wi-Fi or Ethernet to connect to the network.
-            Choose which interface to use.
-
-        config EXAMPLE_CONNECT_WIFI
-            bool "Wi-Fi"
-
-        config EXAMPLE_CONNECT_ETHERNET
-            bool "Ethernet"
-
-    endchoice
+            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Choose this option to connect with WiFi
 
     if EXAMPLE_CONNECT_WIFI
         config EXAMPLE_WIFI_SSID
@@ -28,6 +21,13 @@ menu "Example Connection Configuration"
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.
     endif
+
+    config EXAMPLE_CONNECT_ETHERNET
+        bool "connect using Ethernet interface"
+        default n
+        help
+            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Choose this option to connect with Ethernet
 
     if EXAMPLE_CONNECT_ETHERNET
         choice EXAMPLE_USE_ETHERNET

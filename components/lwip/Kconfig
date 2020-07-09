@@ -75,6 +75,20 @@ menu "LWIP"
             will be redirected to lwip_select(), therefore, select can be used
             for sockets only.
 
+    config LWIP_SO_LINGER
+        bool "Enable SO_LINGER processing"
+        default n
+        help
+            Enabling this option allows SO_LINGER processing.
+            l_onoff = 1,l_linger can set the timeout.
+
+            If l_linger=0, When a connection is closed, TCP will terminate the connection.
+            This means that TCP will discard any data packets stored in the socket send buffer
+            and send an RST to the peer.
+
+            If l_linger!=0,Then closesocket() calls to block the process until
+            the remaining data packets has been sent or timed out.
+
     config LWIP_SO_REUSE
         bool "Enable SO_REUSEADDR option"
         default y
@@ -482,6 +496,13 @@ menu "LWIP"
             default 0
             help
                 Enable this feature to support TCP window scaling.
+
+        config LWIP_TCP_RTO_TIME
+            int "Default TCP rto time"
+            default 3000
+            help
+                Set default TCP rto time for a reasonable initial rto.
+                In bad network environment, recommend set value of rto time to 1500.
 
     endmenu # TCP
 

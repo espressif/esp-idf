@@ -116,7 +116,7 @@ const static int_desc_t int_desc[32]={
     { 3, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //23
     { 4, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_NORMAL} }, //24
     { 4, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //25
-    { 5, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //26
+    { 5, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_RESVD } }, //26
     { 3, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //27
     { 4, INTTP_EDGE,  {INTDESC_NORMAL, INTDESC_NORMAL} }, //28
     { 3, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //29
@@ -487,7 +487,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 {
     vector_desc_t *vd=(vector_desc_t*)arg;
     shared_vector_desc_t *sh_vec=vd->shared_vec_info;
-    portENTER_CRITICAL(&spinlock);
+    portENTER_CRITICAL_ISR(&spinlock);
     while(sh_vec) {
         if (!sh_vec->disabled) {
             if ((sh_vec->statusreg == NULL) || (*sh_vec->statusreg & sh_vec->statusmask)) {
@@ -505,7 +505,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
         }
         sh_vec=sh_vec->next;
     }
-    portEXIT_CRITICAL(&spinlock);
+    portEXIT_CRITICAL_ISR(&spinlock);
 }
 
 #if CONFIG_SYSVIEW_ENABLE
@@ -513,7 +513,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 static void IRAM_ATTR non_shared_intr_isr(void *arg)
 {
     non_shared_isr_arg_t *ns_isr_arg=(non_shared_isr_arg_t*)arg;
-    portENTER_CRITICAL(&spinlock);
+    portENTER_CRITICAL_ISR(&spinlock);
     traceISR_ENTER(ns_isr_arg->source+ETS_INTERNAL_INTR_SOURCE_OFF);
     // FIXME: can we call ISR and check port_switch_flag after releasing spinlock?
     // when CONFIG_SYSVIEW_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
@@ -522,7 +522,7 @@ static void IRAM_ATTR non_shared_intr_isr(void *arg)
     if (!port_switch_flag[xPortGetCoreID()]) {
         traceISR_EXIT();
     }
-    portEXIT_CRITICAL(&spinlock);
+    portEXIT_CRITICAL_ISR(&spinlock);
 }
 #endif
 
@@ -729,11 +729,11 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         }
         //If nothing left, disable interrupt.
         if (handle->vector_desc->shared_vec_info==NULL) free_shared_vector=true;
-        ESP_LOGV(TAG, "esp_intr_free: Deleting shared int: %s. Shared int is %s", svd?"not found or last one":"deleted", free_shared_vector?"empty now.":"still in use");
+        ESP_EARLY_LOGV(TAG, "esp_intr_free: Deleting shared int: %s. Shared int is %s", svd?"not found or last one":"deleted", free_shared_vector?"empty now.":"still in use");
     }
 
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
-        ESP_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
+        ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
 #if CONFIG_SYSVIEW_ENABLE
         if (!free_shared_vector) {
             void *isr_arg = xt_get_interrupt_handler_arg(handle->vector_desc->intno);

@@ -9,7 +9,9 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#ifndef CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#endif
 
 #include "unity.h"
 

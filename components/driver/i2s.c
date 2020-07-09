@@ -25,6 +25,7 @@
 #include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
+
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/dac.h"
 #include "hal/i2s_hal.h"
@@ -351,10 +352,9 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
 
     if (bits != p_i2s_obj[i2s_num]->bits_per_sample) {
         p_i2s_obj[i2s_num]->bits_per_sample = bits;
-        p_i2s_obj[i2s_num]->bytes_per_sample = p_i2s_obj[i2s_num]->bits_per_sample / 8;
 
         // Round bytes_per_sample up to next multiple of 16 bits
-        int halfwords_per_sample = (p_i2s_obj[i2s_num]->bits_per_sample + 15) / 16;
+        int halfwords_per_sample = (bits + 15) / 16;
         p_i2s_obj[i2s_num]->bytes_per_sample = halfwords_per_sample * 2;
 
         // Because limited of DMA buffer is 4092 bytes
@@ -827,18 +827,31 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr)
 }
 #endif
 
+static esp_err_t i2s_check_cfg_static(i2s_port_t i2s_num, const i2s_config_t *cfg)
+{
+#if SOC_I2S_SUPPORTS_ADC_DAC
+    //We only check if the I2S number is invalid when set to build in ADC and DAC mode.
+    I2S_CHECK(!((cfg->mode & I2S_MODE_ADC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S ADC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((cfg->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
+    return ESP_OK;
+#endif
+#if SOC_I2S_SUPPORTS_PDM
+    //We only check if the I2S number is invalid when set to PDM mode.
+    I2S_CHECK(!((cfg->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
+    return ESP_OK;
+#endif
+
+    I2S_CHECK(cfg->communication_format && (cfg->communication_format < I2S_COMM_FORMAT_STAND_MAX), "invalid communication formats", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((cfg->communication_format & I2S_COMM_FORMAT_STAND_MSB) && (cfg->communication_format & I2S_COMM_FORMAT_STAND_PCM_LONG)), "multiple communication formats specified", ESP_ERR_INVALID_ARG);
+    return ESP_OK;
+}
+
 static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_config)
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_CHECK((i2s_config), "param null", ESP_ERR_INVALID_ARG);
-#if SOC_I2S_SUPPORTS_ADC_DAC
-    I2S_CHECK(!((i2s_config->mode & I2S_MODE_ADC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S ADC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
-    I2S_CHECK(!((i2s_config->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
-#endif
-    I2S_CHECK(((i2s_config->communication_format & I2S_COMM_FORMAT_I2S) || (i2s_config->communication_format & I2S_COMM_FORMAT_PCM)), "I2S communication format invalid.", ESP_ERR_INVALID_ARG);
-#if SOC_I2S_SUPPORTS_PDM
-    I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
-#endif
+    I2S_CHECK((i2s_check_cfg_static(i2s_num, i2s_config) == ESP_OK), "param check error", ESP_ERR_INVALID_ARG);
+
     periph_module_enable(i2s_periph_signal[i2s_num].module);
 
 #if SOC_I2S_SUPPORTS_ADC_DAC

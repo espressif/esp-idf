@@ -37,8 +37,12 @@ from collections import Counter, OrderedDict
 from importlib import import_module
 from pkgutil import iter_modules
 
-from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)
+# pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
+# idf.py extentions. Therefore, pyc file generation is turned off:
+sys.dont_write_bytecode = True
+
+from idf_py_actions.errors import FatalError  # noqa: E402
+from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)  # noqa: E402
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -200,7 +204,7 @@ def init_cli(verbose_output=None):
             self.action_args = action_args
             self.aliases = aliases
 
-        def run(self, context, global_args, action_args=None):
+        def __call__(self, context, global_args, action_args=None):
             if action_args is None:
                 action_args = self.action_args
 
@@ -611,7 +615,7 @@ def init_cli(verbose_output=None):
                         name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
 
                     print("Executing action: %s" % name_with_aliases)
-                    task.run(ctx, global_args, task.action_args)
+                    task(ctx, global_args, task.action_args)
 
                 self._print_closing_message(global_args, tasks_to_run.keys())
 
@@ -635,10 +639,15 @@ def init_cli(verbose_output=None):
     all_actions = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ["IDF_PATH"], "tools", "idf_py_actions")
-    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
-    extension_dirs = [idf_py_extensions_path] + extra_paths
-    extensions = {}
+    extension_dirs = [realpath(idf_py_extensions_path)]
+    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH")
+    if extra_paths is not None:
+        for path in extra_paths.split(';'):
+            path = realpath(path)
+            if path not in extension_dirs:
+                extension_dirs.append(path)
 
+    extensions = {}
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
             print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)

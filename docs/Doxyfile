@@ -111,6 +111,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
+    $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
     $(IDF_PATH)/components/soc/include/hal/spi_types.h \
     $(IDF_PATH)/components/soc/include/hal/pcnt_types.h \
@@ -232,7 +233,7 @@ INPUT = \
     ## Hooks
     $(IDF_PATH)/components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
-    $(IDF_PATH)/components/esp_common/include/esp_ipc.h \
+    $(IDF_PATH)/components/esp_ipc/include/esp_ipc.h \
     ## Call Function with External stack
     $(IDF_PATH)/components/esp_common/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)

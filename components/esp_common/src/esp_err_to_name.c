@@ -473,6 +473,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MESH_PS
     ERR_TBL_IT(ESP_ERR_MESH_PS),                                /* 16409 0x4019 */
 #   endif
+#   ifdef      ESP_ERR_MESH_RECV_RELEASE
+    ERR_TBL_IT(ESP_ERR_MESH_RECV_RELEASE),                      /* 16410 0x401a */
+#   endif
     // components/esp_netif/include/esp_netif_types.h
 #   ifdef      ESP_ERR_ESP_NETIF_BASE
     ERR_TBL_IT(ESP_ERR_ESP_NETIF_BASE),                         /* 20480 0x5000 */
@@ -640,6 +643,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
     ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32794 0x801a wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_ESP_TLS_SE_FAILED
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SE_FAILED),                      /* 32795 0x801b */
 #   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE

@@ -8,19 +8,7 @@ import subprocess
 from docutils import nodes
 from collections import namedtuple
 from sphinx.transforms.post_transforms import SphinxPostTransform
-
-
-def get_github_rev():
-    path = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip().decode('utf-8')
-    try:
-        tag = subprocess.check_output(['git', 'describe', '--exact-match']).strip().decode('utf-8')
-    except subprocess.CalledProcessError:
-        tag = None
-    print('Git commit ID: ', path)
-    if tag:
-        print('Git tag: ', tag)
-        return tag
-    return path
+from get_github_rev import get_github_rev
 
 
 # Creates a dict of all submodules with the format {submodule_path : (url relative to git root), commit)}
@@ -69,7 +57,8 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
         # Redirects to submodule repo if path is a submodule, else default to IDF repo
         def redirect_submodule(path, submods, rev):
             for key, value in submods.items():
-                if path.lstrip('/').startswith(key):
+                # Add path separator to end of submodule path to ensure we are matching a directory
+                if path.lstrip('/').startswith(os.path.join(key, '')):
                     return value.url.replace('.git', ''), value.rev, re.sub('^/{}/'.format(key), '', path)
 
             return IDF_REPO, rev, path
@@ -98,7 +87,7 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
             if line_no is None:
                 warning("Line number anchor in URL %s doesn't seem to be valid" % link)
             else:
-                line_no = tuple(int(l) for l in line_no.groups() if l)  # tuple of (nnn,) or (nnn, NNN) for ranges
+                line_no = tuple(int(ln_group) for ln_group in line_no.groups() if ln_group)  # tuple of (nnn,) or (nnn, NNN) for ranges
         elif '#' in abs_path:  # drop any other anchor from the line
             abs_path = abs_path.split('#')[0]
             warning("URL %s seems to contain an unusable anchor after the #, only line numbers are supported" % link)
@@ -121,7 +110,7 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
             elif os.path.exists(abs_path) and not os.path.isdir(abs_path):
                 with open(abs_path, "r") as f:
                     lines = len(f.readlines())
-                if any(True for l in line_no if l > lines):
+                if any(True for ln in line_no if ln > lines):
                     warning("URL %s specifies a range larger than file (file has %d lines)" % (rel_path, lines))
 
             if tuple(sorted(line_no)) != line_no:  # second line number comes before first one!

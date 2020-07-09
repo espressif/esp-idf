@@ -188,31 +188,28 @@ static esp_err_t initialise_flash_encryption(void)
 
 #ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
     ESP_LOGI(TAG, "Disable UART bootloader encryption...");
-    const uint8_t dis_manual_encrypt = 1;
-    esp_efuse_write_field_blob(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT, &dis_manual_encrypt, 1);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
 #endif
 
 #ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
     ESP_LOGI(TAG, "Disable UART bootloader cache...");
-    const uint8_t dis_download_caches = 1;
-    esp_efuse_write_field_blob(ESP_EFUSE_DIS_DOWNLOAD_DCACHE, &dis_download_caches, 1);
-    esp_efuse_write_field_blob(ESP_EFUSE_DIS_DOWNLOAD_ICACHE, &dis_download_caches, 1);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader cache - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable JTAG...");
-    const uint8_t dis_jtag = 1;
-    esp_efuse_write_field_blob(ESP_EFUSE_HARD_DIS_JTAG, &dis_jtag, 1);
+    esp_efuse_write_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
 
-    const uint8_t dis_boot_remap = 1;
-    esp_efuse_write_field_blob(ESP_EFUSE_DIS_BOOT_REMAP, &dis_boot_remap, 1);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
 
     esp_err_t err = esp_efuse_batch_write_commit();
 

@@ -128,15 +128,6 @@ Other Extensions
 :idf_file:`docs/idf_extensions/link_roles.py`
     This is an implementation of a custom `Sphinx Roles <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html>`_ to help linking from documentation to specific files and folders in `ESP-IDF`_. For description of implemented roles please see :ref:`link-custom-roles` and :ref:`link-language-versions`.
 
-:idf_file:`docs/idf_extensions/run_doxygen.py`
-    Subscribes to ``idf-info`` event and runs Doxygen (:idf_file:`docs/Doxyfile`) to generate XML files describing key headers, and then runs Breathe to convert these to ``.inc`` files which can be included directly into API reference pages.
-
-    Pushes a number of target-specific custom environment variables into Doxygen, including all macros defined in the project's default ``sdkconfig.h`` file and all macros defined in all ``soc`` component ``xxx_caps.h`` headers. This means that public API headers can depend on target-specific configuration options or ``soc`` capabilities headers options as ``#ifdef`` & ``#if`` preprocessor selections in the header.
-
-    This means we can generate different Doxygen files, depending on the target we are building docs for.
-
-    Please refer to :doc:`documenting-code` and :doc:`../api-reference/template`, section **API Reference** for additional details on this process.
-
 :idf_file:`docs/idf_extensions/esp_err_definitions.py`
     Small wrapper extension that calls ``gen_esp_err_to_name.py`` and updates the included .rst file if it has changed.
 
@@ -165,6 +156,29 @@ Other Extensions
     An extension for adding ESP-IDF specific functionality to the latex builder. Overrides the default Sphinx latex builder.
 
     Creates and adds the espidf.sty latex package to the output directory, which contains some macros for run-time variables such as IDF-Target.
+
+:idf_file:`docs/idf_extensions/gen_defines.py`
+    Sphinx extension to integrate defines from IDF into the Sphinx build, runs after the IDF dummy project has been built.
+
+    Parses defines and adds them as sphinx tags.
+
+    Emits the new 'idf-defines-generated' event which has a dictionary of raw text define values that other extensions can use to generate relevant data.
+
+:idf_file:`docs/idf_extensions/exclude_docs.py`
+    Sphinx extension that updates the excluded documents according to the conditional_include_dict {tag:documents}. If the tag is set, then the list of documents will be included.
+
+    Also responsible for excluding documents when building with the config value ``docs_to_build`` set. In these cases all documents not listed in ``docs_to_build`` will be excluded.
+
+    Subscribes to ``idf-defines-generated`` as it relies on the sphinx tags to determine which documents to exclude
+
+:idf_file:`docs/idf_extensions/run_doxygen.py`
+    Subscribes to ``idf-defines-generated`` event and runs Doxygen (:idf_file:`docs/Doxyfile`) to generate XML files describing key headers, and then runs Breathe to convert these to ``.inc`` files which can be included directly into API reference pages.
+
+    Pushes a number of target-specific custom environment variables into Doxygen, including all macros defined in the project's default ``sdkconfig.h`` file and all macros defined in all ``soc`` component ``xxx_caps.h`` headers. This means that public API headers can depend on target-specific configuration options or ``soc`` capabilities headers options as ``#ifdef`` & ``#if`` preprocessor selections in the header.
+
+    This means we can generate different Doxygen files, depending on the target we are building docs for.
+
+    Please refer to :doc:`documenting-code` and :doc:`../api-reference/template`, section **API Reference** for additional details on this process.
 
 Related Documents
 -----------------

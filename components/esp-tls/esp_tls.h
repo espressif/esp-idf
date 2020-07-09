@@ -64,6 +64,7 @@ extern "C" {
 #define ESP_ERR_WOLFSSL_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x19)  /*!< wolfSSL api returned failed */
 #define ESP_ERR_WOLFSSL_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< wolfSSL api returned failed */
 
+#define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*< esp-tls use Secure Element returned failed */
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #define ESP_TLS_ERR_SSL_WANT_READ                          MBEDTLS_ERR_SSL_WANT_READ
 #define ESP_TLS_ERR_SSL_WANT_WRITE                         MBEDTLS_ERR_SSL_WANT_WRITE
@@ -182,6 +183,9 @@ typedef struct esp_tls_cfg {
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
+
+    bool use_secure_element;                /*!< Enable this option to use secure element or
+                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds */
 

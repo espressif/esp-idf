@@ -1,0 +1,24 @@
+menu "Example Configuration"
+
+    config EXAMPLE_HOST_NAME
+        string "Host Name"
+        default "baidu.com"
+        help
+            host name
+
+    config EXAMPLE_HOST_PORT
+        int "Host Port"
+        default 80
+        range 0 65535
+        help
+            host port
+
+    config EXAMPLE_BIND_SOCKET_TO_NETIF_NAME
+        bool "Bind to interface by its name"
+        default y
+        help
+            By default example uses setsockopt() to bind the tcp-client's socket
+            to specific interface. Setting this option to true demonstrates binding
+            the socket to the local ip address of the network interface.
+
+endmenu

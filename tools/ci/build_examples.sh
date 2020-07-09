@@ -1,23 +1,9 @@
 #!/usr/bin/env bash
 #
-# Build all examples from the examples directory, out of tree to
+# Build all examples from the examples directory, in BUILD_PATH to
 # ensure they can run when copied to a new directory.
 #
 # Runs as part of CI process.
-#
-# Assumes PWD is an out-of-tree build directory, and will copy examples
-# to individual subdirectories, one by one.
-#
-#
-# Without arguments it just builds all examples
-#
-# With one argument <JOB_NAME> it builds part of the examples. This is a useful for
-#   parallel execution in CI.
-#   <JOB_NAME> must look like this:
-#               <some_text_label>_<num>
-#   It scans .gitlab-ci.yaml to count number of jobs which have name "<some_text_label>_<num>"
-#   It scans the filesystem to count all examples
-#   Based on this, it decides to run qa set of examples.
 #
 
 # -----------------------------------------------------------------------------
@@ -30,10 +16,8 @@ fi
 
 set -o errexit # Exit if command failed.
 set -o pipefail # Exit if pipe failed.
-set -o nounset # Exit if variable not set.
 
-# Remove the initial space and instead use '\n'.
-IFS=$'\n\t'
+export PATH="$IDF_PATH/tools/ci:$IDF_PATH/tools:$PATH"
 
 # -----------------------------------------------------------------------------
 
@@ -44,162 +28,80 @@ die() {
 
 [ -z ${IDF_PATH} ] && die "IDF_PATH is not set"
 [ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
+[ -z ${BUILD_PATH} ] && die "BUILD_PATH is not set"
+[ -z ${IDF_TARGET} ] && die "IDF_TARGET is not set"
+[ -z ${EXAMPLE_TEST_BUILD_SYSTEM} ] && die "EXAMPLE_TEST_BUILD_SYSTEM is not set"
 [ -d ${LOG_PATH} ] || mkdir -p ${LOG_PATH}
+[ -d ${BUILD_PATH} ] || mkdir -p ${BUILD_PATH}
 
-echo "build_examples running in ${PWD}"
-
-export BATCH_BUILD=1
-export V=0 # only build verbose if there's an error
-
-shopt -s lastpipe # Workaround for Bash to use variables in loops (http://mywiki.wooledge.org/BashFAQ/024)
-
-RESULT=0
-FAILED_EXAMPLES=""
-RESULT_ISSUES=22  # magic number result code for issues found
-LOG_SUSPECTED=${LOG_PATH}/common_log.txt
-touch ${LOG_SUSPECTED}
-SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
-
-EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
-
-if [ -z "${CI_NODE_TOTAL:-}" ]
-then
-    START_NUM=0
-    if [ "${1:-}" ]; then
-        START_NUM=$1
-    fi
-    END_NUM=999
-else
-    JOB_NUM=${CI_NODE_INDEX}
-    # count number of the jobs
-    NUM_OF_JOBS=${CI_NODE_TOTAL}
-
-    # count number of examples
-    NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
-    [ -z ${NUM_OF_EXAMPLES} ] && die "NUM_OF_EXAMPLES is bad"
-
-    # separate intervals
-    #57 / 5 == 12
-    NUM_OF_EX_PER_JOB=$(( (${NUM_OF_EXAMPLES} + ${NUM_OF_JOBS} - 1) / ${NUM_OF_JOBS} ))
-    [ -z ${NUM_OF_EX_PER_JOB} ] && die "NUM_OF_EX_PER_JOB is bad"
-
-    # ex.: [0; 12); [12; 24); [24; 36); [36; 48); [48; 60)
-    START_NUM=$(( (${JOB_NUM} - 1) * ${NUM_OF_EX_PER_JOB} ))
-    [ -z ${START_NUM} ] && die "START_NUM is bad"
-
-    END_NUM=$(( ${JOB_NUM} * ${NUM_OF_EX_PER_JOB} ))
-    [ -z ${END_NUM} ] && die "END_NUM is bad"
+if [ -z ${CI_NODE_TOTAL} ]; then
+    CI_NODE_TOTAL=1
+    echo "Assuming CI_NODE_TOTAL=${CI_NODE_TOTAL}"
+fi
+if [ -z ${CI_NODE_INDEX} ]; then
+    # Gitlab uses a 1-based index
+    CI_NODE_INDEX=1
+    echo "Assuming CI_NODE_INDEX=${CI_NODE_INDEX}"
 fi
 
-build_example () {
-    local ID=$1
-    shift
-    local MAKE_FILE=$1
-    shift
 
-    local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
-    local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
+export EXTRA_CFLAGS="${PEDANTIC_CFLAGS:-}"
+export EXTRA_CXXFLAGS="${PEDANTIC_CXXFLAGS:-}"
 
-    # Check if the example needs a different base directory.
-    # Path of the Makefile relative to $IDF_PATH
-    local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
-    # Look for it in build_example_dirs.txt:
-    local COPY_ROOT_REL=$(sed -n -E "s|${MAKE_FILE_REL}[[:space:]]+(.*)|\1|p" < ${IDF_PATH}/tools/ci/build_example_dirs.txt)
-    if [[ -n "${COPY_ROOT_REL}" && -d "${IDF_PATH}/${COPY_ROOT_REL}/" ]]; then
-        local COPY_ROOT=${IDF_PATH}/${COPY_ROOT_REL}
-    else
-        local COPY_ROOT=${EXAMPLE_DIR}
-    fi
+set -o nounset # Exit if variable not set.
 
-    echo "Building ${EXAMPLE_NAME} as ${ID}..."
-    mkdir -p "example_builds/${ID}"
-    cp -r "${COPY_ROOT}" "example_builds/${ID}"
-    local COPY_ROOT_PARENT=$(dirname ${COPY_ROOT})
-    local EXAMPLE_DIR_REL=${EXAMPLE_DIR#"${COPY_ROOT_PARENT}"}
-    pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
-        # be stricter in the CI build than the default IDF settings
-        export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+export REALPATH=realpath
+if [ "$(uname -s)" = "Darwin" ]; then
+    export REALPATH=grealpath
+fi
 
-        # sdkconfig files are normally not checked into git, but may be present when
-        # a developer runs this script locally
-        rm -f sdkconfig
+# Convert LOG_PATH and BUILD_PATH to relative, to make the json file less verbose.
+LOG_PATH=$(${REALPATH} --relative-to ${IDF_PATH} ${LOG_PATH})
+BUILD_PATH=$(${REALPATH} --relative-to ${IDF_PATH} ${BUILD_PATH})
 
-        # If sdkconfig.ci file is present, append it to sdkconfig.defaults,
-        # replacing environment variables
-        if [[ -f "$SDKCONFIG_DEFAULTS_CI" ]]; then
-            # Make sure that the last line of sdkconfig.defaults is terminated. Otherwise, the first line
-            # of $SDKCONFIG_DEFAULTS_CI will be joined with the last one of sdkconfig.defaults.
-            echo >> sdkconfig.defaults
-            cat $SDKCONFIG_DEFAULTS_CI | $IDF_PATH/tools/ci/envsubst.py >> sdkconfig.defaults
-        fi
+ALL_BUILD_LIST_JSON="${BUILD_PATH}/list.json"
+JOB_BUILD_LIST_JSON="${BUILD_PATH}/list_job_${CI_NODE_INDEX}.json"
 
-        # build non-verbose first
-        local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
-        touch ${BUILDLOG}
+echo "build_examples running for target $IDF_TARGET"
 
-        local FLASH_ARGS=build/download.config
+cd ${IDF_PATH}
 
-        make clean >>${BUILDLOG} 2>&1 &&
-        make defconfig >>${BUILDLOG} 2>&1 &&
-        make all >>${BUILDLOG} 2>&1 &&
-        make print_flash_cmd >${FLASH_ARGS}.full 2>>${BUILDLOG} ||
-        {
-            RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
-        }
+# This part of the script produces the same result for all the example build jobs. It may be moved to a separate stage
+# (pre-build) later, then the build jobs will receive ${BUILD_LIST_JSON} file as an artifact.
 
-        tail -n 1 ${FLASH_ARGS}.full > ${FLASH_ARGS} || :
-        test -s ${FLASH_ARGS} || die "Error: ${FLASH_ARGS} file is empty"
+# If changing the work-dir or build-dir format, remember to update the "artifacts" in gitlab-ci configs, and IDFApp.py.
 
-        cat ${BUILDLOG}
-    popd
+${IDF_PATH}/tools/find_apps.py examples \
+    -vv \
+    --format json \
+    --build-system ${EXAMPLE_TEST_BUILD_SYSTEM} \
+    --target ${IDF_TARGET} \
+    --recursive \
+    --exclude examples/build_system/idf_as_lib \
+    --work-dir "${BUILD_PATH}/@f/@w/@t" \
+    --build-dir build \
+    --build-log "${LOG_PATH}/@f_@w.txt" \
+    --output ${ALL_BUILD_LIST_JSON} \
+    --config 'sdkconfig.ci=default' \
+    --config 'sdkconfig.ci.*=' \
+    --config '=default' \
 
-    grep -i "error\|warning\|command not found" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
-}
+# --config rules above explained:
+# 1. If sdkconfig.ci exists, use it build the example with configuration name "default"
+# 2. If sdkconfig.ci.* exists, use it to build the "*" configuration
+# 3. If none of the above exist, build the default configuration under the name "default"
 
-EXAMPLE_NUM=0
+# The part below is where the actual builds happen
 
-echo "Current job will build example ${START_NUM} - ${END_NUM}"
+${IDF_PATH}/tools/build_apps.py \
+    -vv \
+    --format json \
+    --keep-going \
+    --parallel-count ${CI_NODE_TOTAL} \
+    --parallel-index ${CI_NODE_INDEX} \
+    --output-build-list ${JOB_BUILD_LIST_JSON} \
+    ${ALL_BUILD_LIST_JSON}\
 
-for EXAMPLE_PATH in ${EXAMPLE_PATHS}
-do
-    if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]
-    then
-        EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
-        continue
-    fi
-    echo ">>> example [ ${EXAMPLE_NUM} ] - $EXAMPLE_PATH"
 
-    build_example "${EXAMPLE_NUM}" "${EXAMPLE_PATH}"
-
-    EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
-done
-
-# show warnings
-echo -e "\nFound issues:"
-
-#       Ignore the next messages:
-# "error.o" or "-Werror" in compiler's command line
-# "reassigning to symbol" or "changes choice state" in sdkconfig
-# 'Compiler and toochain versions is not supported' from make/project.mk
-IGNORE_WARNS="\
-library/error\.o\
-\|\ -Werror\
-\|.*error.*\.o\
-\|.*error.*\.d\
-\|reassigning to symbol\
-\|changes choice state\
-\|Compiler version is not supported\
-\|Toolchain version is not supported\
-"
-
-sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \
-    && RESULT=$RESULT_ISSUES \
-    || echo -e "\tNone"
-
-[ -z ${FAILED_EXAMPLES} ] || echo -e "\nThere are errors in the next examples: $FAILED_EXAMPLES"
-[ $RESULT -eq 0 ] || echo -e "\nFix all warnings and errors above to pass the test!"
-
-echo -e "\nReturn code = $RESULT"
-
-exit $RESULT
+# Check for build warnings
+${IDF_PATH}/tools/ci/check_build_warnings.py -vv ${JOB_BUILD_LIST_JSON}

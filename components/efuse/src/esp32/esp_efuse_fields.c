@@ -70,12 +70,31 @@ uint32_t esp_efuse_get_pkg_ver(void)
 // Disable BASIC ROM Console via efuse
 void esp_efuse_disable_basic_rom_console(void)
 {
-    uint8_t console_debug_disable = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_CONSOLE_DEBUG_DISABLE, &console_debug_disable, 1);
-    if (console_debug_disable == 0) {
+    if (!esp_efuse_read_field_bit(ESP_EFUSE_CONSOLE_DEBUG_DISABLE)) {
         esp_efuse_write_field_cnt(ESP_EFUSE_CONSOLE_DEBUG_DISABLE, 1);
-        ESP_EARLY_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
+        ESP_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
     }
+}
+
+esp_err_t esp_efuse_disable_rom_download_mode(void)
+{
+#ifndef CONFIG_ESP32_REV_MIN_3
+    /* Check if we support this revision at all */
+    if(esp_efuse_get_chip_ver() < 3) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    if (esp_efuse_read_field_bit(ESP_EFUSE_UART_DOWNLOAD_DIS)) {
+        return ESP_OK;
+    }
+
+    /* WR_DIS_FLASH_CRYPT_CNT also covers UART_DOWNLOAD_DIS on ESP32 */
+    if(esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    return esp_efuse_write_field_bit(ESP_EFUSE_UART_DOWNLOAD_DIS);
 }
 
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)

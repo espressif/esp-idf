@@ -36,7 +36,7 @@
 #include "stack/btu.h"
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
-
+#include "gatt_int.h"
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
@@ -1836,7 +1836,7 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
 
     // If already congested, do not accept any more packets
     if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent) {
-        L2CAP_TRACE_DEBUG ("L2CAP - CID: 0x%04x cannot send, already congested\
+        L2CAP_TRACE_ERROR ("L2CAP - CID: 0x%04x cannot send, already congested\
             xmit_hold_q.count: %u buff_quota: %u", fixed_cid,
             fixed_queue_length(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q),
             p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->buff_quota);
@@ -1876,6 +1876,15 @@ BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle)
 UINT16 L2CA_GetFreePktBufferNum_LE(void)
 {
     return l2cb.controller_le_xmit_window;
+}
+UINT16 L2CA_GetCurFreePktBufferNum_LE(UINT16 conn_id)
+{
+    uint16_t num = 0;
+    tl2c_buff_param_t param;
+    param.conn_id = conn_id;
+    param.get_num = &num;
+    l2ble_update_att_acl_pkt_num(L2CA_GET_ATT_NUM, &param);
+    return num;
 }
 #endif
 
@@ -2265,3 +2274,89 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
     return (num_left);
 }
 
+
+/******************************************************************************
+**
+** Function         update_acl_pkt_num
+**
+** Description      Update the number of att acl packets to be sent in xmit_hold_q.
+**
+** Returns          None
+**
+*******************************************************************************/
+
+#if BLE_INCLUDED == TRUE
+void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
+{
+    static SemaphoreHandle_t buff_semaphore = NULL ;
+    static INT16 btc_buf;
+    static INT16 btu_buf;
+
+    if(buff_semaphore != NULL){
+        xSemaphoreTake(buff_semaphore, 10 / portTICK_PERIOD_MS);
+    }
+    switch (type)
+    {
+    case L2CA_ADD_BTC_NUM:{
+        btc_buf ++;
+        break;
+    }
+    case L2CA_DECREASE_BTC_NUM:{
+        btc_buf --;
+        break;
+    }
+    case L2CA_ADD_BTU_NUM:{
+        btu_buf ++;
+        break;
+    }
+    case L2CA_DECREASE_BTU_NUM:{
+        btu_buf --;
+        break;
+    }
+    case L2CA_GET_ATT_NUM:{
+        INT16 att_acl_pkt_num = 0;
+        INT16 att_max_num = 0;
+        *(param->get_num) = 0;
+        UINT8 tcb_idx = param->conn_id;
+        tGATT_TCB * p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+        if (p_tcb == NULL){
+            L2CAP_TRACE_ERROR("%s not found p_tcb", __func__);
+            break;
+        }
+        tL2C_LCB * p_lcb = l2cu_find_lcb_by_bd_addr (p_tcb->peer_bda, BT_TRANSPORT_LE);
+        if (p_lcb == NULL){
+            L2CAP_TRACE_ERROR("%s not found p_lcb", __func__);
+            break;
+        }
+        fixed_queue_t * queue = p_lcb->p_fixed_ccbs[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q;
+        att_max_num = MIN(p_lcb->link_xmit_quota, L2CAP_CACHE_ATT_ACL_NUM);
+        if (queue == NULL){
+            L2CAP_TRACE_ERROR("%s not found queue", __func__);
+            break;
+        }
+        att_acl_pkt_num = fixed_queue_length(queue);
+        if(att_acl_pkt_num < att_max_num){
+            if(btc_buf + btu_buf < att_max_num - att_acl_pkt_num){
+                *(param->get_num) = att_max_num - att_acl_pkt_num - (btc_buf + btu_buf);
+            }
+        }
+        break;
+    }
+    case L2CA_BUFF_INI:{
+        btc_buf = 0;
+        btu_buf = 0;
+        buff_semaphore = xSemaphoreCreateBinary();
+        xSemaphoreGive(buff_semaphore);
+        break;
+    }
+    case L2CA_BUFF_DEINIT:{
+        btc_buf = 0;
+        btu_buf = 0;
+        break;
+    }
+    default:
+        break;
+    }
+    xSemaphoreGive(buff_semaphore);
+}
+#endif

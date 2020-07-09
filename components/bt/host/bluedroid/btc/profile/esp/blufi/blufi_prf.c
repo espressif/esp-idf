@@ -433,11 +433,19 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
             blufi_env.aggr_buf = osi_malloc(blufi_env.total_len);
             if (blufi_env.aggr_buf == NULL) {
                 BTC_TRACE_ERROR("%s no mem, len %d\n", __func__, blufi_env.total_len);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
                 return;
             }
         }
-        memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, hdr->data_len  - 2);
-        blufi_env.offset += (hdr->data_len - 2);
+        if (blufi_env.offset + hdr->data_len  - 2 <= blufi_env.total_len){
+            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, hdr->data_len  - 2);
+            blufi_env.offset += (hdr->data_len - 2);
+        } else {
+            BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
+            btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+            return;
+        }
+
     } else {
         if (blufi_env.offset > 0) {   /* if previous pkt is frag */
             memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data, hdr->data_len);

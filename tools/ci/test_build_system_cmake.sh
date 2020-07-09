@@ -488,6 +488,17 @@ function run_tests()
         rm -r sdkconfig.defaults build
     done
 
+    print_status "Cleaning Python bytecode"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -eq 0 ]; then
+        failure "No Python bytecode in IDF!"
+    fi
+    idf.py python-clean
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -gt 0 ]; then
+        failure "Python bytecode isn't working!"
+    fi
+
     print_status "Displays partition table when executing target partition_table"
     idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
@@ -729,6 +740,19 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py reconfigure || failure "Couldn't configure for loadable ELF file"
     test -f build/flasher_args.json && failure "flasher_args.json should not be generated in a loadable ELF build"
     idf.py build || failure "Couldn't build a loadable ELF file"
+
+    print_status "Defaults set properly for unspecified idf_build_process args"
+    pushd $IDF_PATH/examples/build_system/cmake/idf_as_lib
+    cp CMakeLists.txt CMakeLists.txt.bak
+    echo -e "\nidf_build_get_property(project_dir PROJECT_DIR)" >> CMakeLists.txt
+    echo -e "\nmessage(\"Project directory: \${project_dir}\")" >> CMakeLists.txt
+    mkdir build && cd build
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32 &> log.txt
+    grep "Project directory: $IDF_PATH/examples/build_system/cmake/idf_as_lib" log.txt || failure "PROJECT_DIR default was not set"
+    cd ..
+    mv CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build
+    popd
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

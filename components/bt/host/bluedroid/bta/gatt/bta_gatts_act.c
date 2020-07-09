@@ -48,6 +48,7 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
         UINT32 trans_id,
         tGATTS_REQ_TYPE req_type, tGATTS_DATA *p_data);
 static void bta_gatts_cong_cback (UINT16 conn_id, BOOLEAN congested);
+extern void btc_congest_callback(tBTA_GATTS *param);
 
 static const tGATT_CBACK bta_gatts_cback = {
     bta_gatts_conn_cback,
@@ -673,6 +674,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                                       p_msg->api_indicate.len,
                                                       p_msg->api_indicate.value);
             } else {
+                l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
                 status = GATTS_HandleValueNotification (p_msg->api_indicate.hdr.layer_specific,
                                                         p_msg->api_indicate.attr_id,
                                                         p_msg->api_indicate.len,
@@ -1026,20 +1028,9 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 *******************************************************************************/
 static void bta_gatts_cong_cback (UINT16 conn_id, BOOLEAN congested)
 {
-    tBTA_GATTS_RCB *p_rcb;
-    tGATT_IF gatt_if;
-    tBTA_GATT_TRANSPORT transport;
     tBTA_GATTS cb_data;
-
-    if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda, &transport)) {
-        p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
-
-        if (p_rcb && p_rcb->p_cback) {
-            cb_data.congest.conn_id = conn_id;
-            cb_data.congest.congested = congested;
-
-            (*p_rcb->p_cback)(BTA_GATTS_CONGEST_EVT, &cb_data);
-        }
-    }
+    cb_data.congest.conn_id = conn_id;
+    cb_data.congest.congested = congested;
+    btc_congest_callback(&cb_data);
 }
 #endif /* GATTS_INCLUDED */

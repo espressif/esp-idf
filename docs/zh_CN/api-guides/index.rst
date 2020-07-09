@@ -31,9 +31,9 @@ API 指南
    ROM debug console <romconsole>
    :esp32: RF Calibration <RF_calibration>
    WiFi Driver <wifi>
-   :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+   :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
-   :esp32: BluFi <blufi>
+   :SOC_BT_SUPPORTED: BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>
    LwIP <lwip>

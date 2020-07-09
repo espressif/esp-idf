@@ -118,6 +118,29 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 
 /**
+ * @brief   Write OTA update data to partition
+ *
+ * This function can write data in non contiguous manner.
+ * If flash encryption is enabled, data should be 16 byte aligned.
+ *
+ * @param handle  Handle obtained from esp_ota_begin
+ * @param data    Data buffer to write
+ * @param size    Size of data buffer in bytes
+ * @param offset  Offset in flash partition
+ *
+ * @note While performing OTA, if the packets arrive out of order, esp_ota_write_with_offset() can be used to write data in non contiguous manner.
+ *       Use of esp_ota_write_with_offset() in combination with esp_ota_write() is not recommended.
+ *
+ * @return
+ *    - ESP_OK: Data was written to flash successfully.
+ *    - ESP_ERR_INVALID_ARG: handle is invalid.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
+ */
+esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset);
+
+/**
  * @brief Finish OTA update and validate newly written app image.
  *
  * @param handle  Handle obtained from esp_ota_begin().

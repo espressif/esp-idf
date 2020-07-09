@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,9 +34,6 @@ typedef enum {
     I2S_NUM_MAX,                   /*!< I2S port max */
 } i2s_port_t;
 
-
-#define I2S_PIN_NO_CHANGE (-1) /*!< Use in i2s_pin_config_t for pins which should not be changed */
-
 /**
  * @brief I2S bit width per sample.
  *
@@ -62,14 +59,21 @@ typedef enum {
  *
  */
 typedef enum {
-    I2S_COMM_FORMAT_I2S         = 0x01, /*!< I2S communication format I2S*/
-    I2S_COMM_FORMAT_I2S_MSB     = 0x02, /*!< I2S format MSB*/
-    I2S_COMM_FORMAT_I2S_LSB     = 0x04, /*!< I2S format LSB*/
-    I2S_COMM_FORMAT_PCM         = 0x08, /*!< I2S communication format PCM*/
-    I2S_COMM_FORMAT_PCM_SHORT   = 0x10, /*!< PCM Short*/
-    I2S_COMM_FORMAT_PCM_LONG    = 0x20, /*!< PCM Long*/
-} i2s_comm_format_t;
+    // In order to keep compatibility, remain the old definitions and introduce new definitions,
+    I2S_COMM_FORMAT_STAND_I2S   = 0X01, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
+    I2S_COMM_FORMAT_STAND_MSB   = 0X03, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
+    I2S_COMM_FORMAT_STAND_PCM_SHORT  = 0x04, /*!< PCM Short standard*/
+    I2S_COMM_FORMAT_STAND_PCM_LONG   = 0x0C, /*!< PCM Long standard*/
+    I2S_COMM_FORMAT_STAND_MAX, /*!< standard max*/
 
+    //old definition will be removed in the future.
+    I2S_COMM_FORMAT_I2S       __attribute__((deprecated)) = 0x01, /*!< I2S communication format I2S, correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_MSB   __attribute__((deprecated)) = 0x01, /*!< I2S format MSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_MSB) correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_LSB   __attribute__((deprecated)) = 0x02, /*!< I2S format LSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_LSB) correspond to `I2S_COMM_FORMAT_STAND_MSB`*/
+    I2S_COMM_FORMAT_PCM       __attribute__((deprecated)) = 0x04, /*!< I2S communication format PCM, correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_SHORT __attribute__((deprecated)) = 0x04, /*!< PCM Short, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_SHORT) correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_LONG  __attribute__((deprecated)) = 0x08, /*!< PCM Long, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_LONG) correspond to `I2S_COMM_FORMAT_STAND_PCM_LONG`*/
+} i2s_comm_format_t;
 
 /**
  * @brief I2S channel format type
@@ -82,26 +86,6 @@ typedef enum {
     I2S_CHANNEL_FMT_ONLY_LEFT,
 } i2s_channel_fmt_t;
 
-#if SOC_I2S_SUPPORTS_PDM
-/**
- * @brief PDM sample rate ratio, measured in Hz.
- *
- */
-typedef enum {
-    PDM_SAMPLE_RATE_RATIO_64,
-    PDM_SAMPLE_RATE_RATIO_128,
-} pdm_sample_rate_ratio_t;
-
-/**
- * @brief PDM PCM convter enable/disable.
- *
- */
-typedef enum {
-    PDM_PCM_CONV_ENABLE,
-    PDM_PCM_CONV_DISABLE,
-} pdm_pcm_conv_t;
-#endif
-
 /**
  * @brief I2S Mode, defaut is I2S_MODE_MASTER | I2S_MODE_TX
  *
@@ -109,18 +93,28 @@ typedef enum {
  *
  */
 typedef enum {
-    I2S_MODE_MASTER = 1,
-    I2S_MODE_SLAVE = 2,
-    I2S_MODE_TX = 4,
-    I2S_MODE_RX = 8,
+    I2S_MODE_MASTER = 1,              /*!< Master mode*/
+    I2S_MODE_SLAVE = 2,               /*!< Slave mode*/
+    I2S_MODE_TX = 4,                  /*!< TX mode*/
+    I2S_MODE_RX = 8,                  /*!< RX mode*/
 #if SOC_I2S_SUPPORTS_ADC_DAC
     I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
     I2S_MODE_ADC_BUILT_IN = 32,       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
 #endif
 #if SOC_I2S_SUPPORTS_PDM
-    I2S_MODE_PDM = 64,
+    I2S_MODE_PDM = 64,                /*!< PDM mode*/
 #endif
 } i2s_mode_t;
+
+/**
+ * @brief I2S source clock
+ *
+ */
+typedef enum {
+    I2S_CLK_D2CLK = 0,               /*!< Clock from PLL_D2_CLK(160M)*/
+    I2S_CLK_APLL,                    /*!< Clock from APLL*/
+} i2s_clock_src_t;
+
 
 /**
  * @brief I2S configuration parameters for i2s_param_config function
@@ -193,12 +187,16 @@ typedef enum {
     I2S_PDM_DSR_16S,     /*!< downsampling number is 16 for PDM RX mode*/
     I2S_PDM_DSR_MAX,
 } i2s_pdm_dsr_t;
-#endif
 
+/**
+ * @brief PDM PCM convter enable/disable.
+ *
+ */
 typedef enum {
-    I2S_CLK_D2CLK = 0,
-    I2S_CLK_APLL,
-} i2s_clock_src_t;
+    PDM_PCM_CONV_ENABLE,     /*!< Enable PDM PCM convert*/
+    PDM_PCM_CONV_DISABLE,    /*!< Disable PDM PCM convert*/
+} pdm_pcm_conv_t;
+#endif
 
 
 #ifdef __cplusplus

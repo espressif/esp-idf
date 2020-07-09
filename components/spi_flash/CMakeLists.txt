@@ -41,7 +41,7 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support app_update soc)
+    set(priv_requires bootloader_support app_update soc esp_ipc)
 endif()
 
 idf_component_register(SRCS "${srcs}"

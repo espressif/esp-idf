@@ -11,6 +11,7 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
+#include "sdkconfig.h"
 #include "mesh_slist.h"
 #include "mesh_compiler.h"
 
@@ -150,6 +151,18 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
     buf->data = buf->__buf + reserve_head;
     buf->len = 0;
 }
+
+/**
+ * @brief Initialize a net_buf_simple object with data.
+ *
+ * Initialized buffer object with external data.
+ *
+ * @param buf Buffer to initialize.
+ * @param data External data pointer
+ * @param size Amount of data the pointed data buffer if able to fit.
+ */
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size);
 
 /**
  * @brief Reset buffer

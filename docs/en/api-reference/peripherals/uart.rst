@@ -401,6 +401,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/uart.inc
+.. include-build-file:: inc/uart_types.inc
 
 
 GPIO Lookup Macros

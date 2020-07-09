@@ -10,7 +10,7 @@ Wi-Fi
     :maxdepth: 1
 
     Wi-Fi <esp_wifi>
-    Smart Config <esp_smartconfig>
+    SmartConfig <esp_smartconfig>
     ESP-NOW <esp_now>
     ESP Mesh <esp_mesh>
 

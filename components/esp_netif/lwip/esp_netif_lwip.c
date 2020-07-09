@@ -614,7 +614,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 #if ESP_GRATUITOUS_ARP
         netif_set_garp_flag(esp_netif->lwip_netif);
 #else
-        ESP_LOGW(TAG,"CONFIG_LWIP_ESP_GRATUITOUS_ARP not enabled, but esp-netif configured woth ESP_NETIF_FLAG_GARP")
+        ESP_LOGW(TAG,"CONFIG_LWIP_ESP_GRATUITOUS_ARP not enabled, but esp-netif configured with ESP_NETIF_FLAG_GARP");
 #endif
     }
     struct netif *p_netif = esp_netif->lwip_netif;
@@ -1446,7 +1446,7 @@ static esp_err_t esp_netif_create_ip6_linklocal_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
 
-    ESP_LOGD(TAG, "%s esp-netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp-netif:%p", __func__, esp_netif);
 
     struct netif *p_netif = esp_netif->lwip_netif;
     if (p_netif != NULL && netif_is_up(p_netif)) {
@@ -1462,7 +1462,7 @@ esp_err_t esp_netif_create_ip6_linklocal(esp_netif_t *esp_netif) _RUN_IN_LWIP_TA
 
 esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6)
 {
-    ESP_LOGD(TAG, "%s esp-netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp-netif:%p", __func__, esp_netif);
 
     if (esp_netif == NULL || if_ip6 == NULL || esp_netif->is_ppp_netif) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
@@ -1479,7 +1479,7 @@ esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if
 
 esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6)
 {
-    ESP_LOGD(TAG, "%s esp-netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp-netif:%p", __func__, esp_netif);
 
     if (esp_netif == NULL || if_ip6 == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
@@ -1496,8 +1496,29 @@ esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip
             }
         }
     }
-    
+
     return ESP_FAIL;
+}
+
+int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
+{
+    ESP_LOGV(TAG, "%s esp-netif:%p", __func__, esp_netif);
+
+    if (esp_netif == NULL || if_ip6 == NULL) {
+        return 0;
+    }
+
+    int addr_count = 0;
+    struct netif *p_netif = esp_netif->lwip_netif;
+
+    if (p_netif != NULL && netif_is_up(p_netif)) {
+        for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+            if (!ip_addr_cmp(&p_netif->ip6_addr[i], IP6_ADDR_ANY)) {
+                memcpy(&if_ip6[addr_count++], &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
+            }
+        }
+    }
+    return addr_count;
 }
 
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
@@ -1713,6 +1734,17 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif)
         return -1;
     }
     return netif_get_index(esp_netif->lwip_netif);
+}
+
+esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    netif_index_to_name(netif_get_index(esp_netif->lwip_netif), name);
+    return ESP_OK;
 }
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

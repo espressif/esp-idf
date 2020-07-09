@@ -51,6 +51,8 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 4: SPI SRAM data
     //TODO, in fact, part of them support EDMA, to be supported.
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
+    //Type 5: RTC Fast RAM
+    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, 0 }, false, false},
 };
 
 #ifdef CONFIG_ESP32S2_MEMPROT_FEATURE
@@ -68,6 +70,9 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
+#ifdef CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+    { SOC_RTC_DRAM_LOW, 0x2000, 5, 0}, //RTC Fast Memory
+#endif
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
 #endif
@@ -115,7 +120,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
 
 
 extern int _dram0_rtos_reserved_start;
-extern int _data_start, _heap_start, _iram_start, _iram_end;
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;
 
 /* Reserved memory regions
 
@@ -139,6 +144,15 @@ SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_dat
 // Blocks 19 and 20 may be reserved for the trace memory
 #if CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM > 0
 SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
+#endif
+
+// RTC Fast RAM region
+#ifdef CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+#ifdef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_data);
+#else
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_fast_end, rtcram_data);
+#endif
 #endif
 
 #endif // BOOTLOADER_BUILD

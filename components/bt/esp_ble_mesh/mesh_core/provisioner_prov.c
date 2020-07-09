@@ -3039,7 +3039,7 @@ static void gen_prov_start(const u8_t idx, struct prov_rx *rx, struct net_buf_si
     if (link[idx].rx.buf->len > link[idx].rx.buf->size) {
         BT_ERR("%s, Too large provisioning PDU (%u bytes)",
                __func__, link[idx].rx.buf->len);
-        // close_link(i, CLOSE_REASON_FAILED);
+        close_link(idx, CLOSE_REASON_FAILED);
         return;
     }
 

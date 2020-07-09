@@ -33,7 +33,6 @@ variables:
   # tell build system do not check submodule update as we download archive instead of clone
   IDF_SKIP_CHECK_SUBMODULES: 1
 
-  EXAMPLE_TEST_BUILD_SYSTEM: cmake
   IDF_PATH: "$CI_PROJECT_DIR"
   BATCH_BUILD: "1"
   V: "0"
@@ -78,7 +77,6 @@ before_script:
   # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
   - *setup_tools_unless_target_test
-
   - *fetch_submodules
 
 # used for check scripts which we want to run unconditionally
@@ -116,6 +114,13 @@ before_script:
     - host_test
   dependencies: []
   extends: .before_script_lesser
+
+.python_lint_template:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
 
 .macos_build_template:
   stage: build

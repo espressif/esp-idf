@@ -196,9 +196,10 @@ esp_err_t esp_crt_bundle_attach(void *conf)
          * This is only required so that the
          * cacert_ptr passes non-NULL check during handshake
          */
+        mbedtls_ssl_config *ssl_conf = (mbedtls_ssl_config *)conf;
         mbedtls_x509_crt_init(&s_dummy_crt);
-        ((mbedtls_ssl_config *)conf)->ca_chain = &s_dummy_crt;
-        mbedtls_ssl_conf_verify((mbedtls_ssl_config *)conf, esp_crt_verify_callback, NULL);
+        mbedtls_ssl_conf_ca_chain(ssl_conf, &s_dummy_crt, NULL);
+        mbedtls_ssl_conf_verify(ssl_conf, esp_crt_verify_callback, NULL);
     }
 
     return ret;

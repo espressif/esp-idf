@@ -51,11 +51,12 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     esp_flash_io_mode_t io_mode)
 {
     spi_dev_t *dev = get_spi_dev(host);
+    int host_id = spi_flash_ll_hw_get_id(dev);
 
-    if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(dev) && io_mode > SPI_FLASH_FASTRD) {
+    if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-    if (addr_bitlen > 24 && SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(dev)) {
+    if (addr_bitlen > 24 && SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(host_id)) {
         /*
          * The extra address bits (24-addr_bitlen) are used to control the M7-M0 bits right after
          * the address field, to avoid the flash going into continuous read mode.

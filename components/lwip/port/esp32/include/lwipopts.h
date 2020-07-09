@@ -400,6 +400,12 @@
 #define TCP_RCV_SCALE                   CONFIG_LWIP_TCP_RCV_SCALE
 #endif
 
+/**
+ * LWIP_TCP_RTO_TIME: TCP rto time.
+ * Default is 3 second.
+ */
+#define LWIP_TCP_RTO_TIME             CONFIG_LWIP_TCP_RTO_TIME
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
@@ -561,6 +567,11 @@
  * in seconds. (does not require sockets.c, and will affect tcp.c)
  */
 #define LWIP_TCP_KEEPALIVE              1
+
+/**
+ * LWIP_SO_LINGER==1: Enable SO_LINGER processing.
+ */
+#define LWIP_SO_LINGER                  CONFIG_LWIP_SO_LINGER
 
 /**
  * LWIP_SO_RCVBUF==1: Enable SO_RCVBUF processing.

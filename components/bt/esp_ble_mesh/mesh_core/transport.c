@@ -80,8 +80,8 @@ static struct seg_tx {
                              new_key:1;     /* New/old key */
     u8_t                     nack_count;    /* Number of unacked segs */
     u8_t                     ttl;
-    u8_t                     seg_pending:5, /* Number of segments pending */
-                             attempts:3;
+    u8_t                     seg_pending;   /* Number of segments pending */
+    u8_t                     attempts;      /* Transmit attempts */
     const struct bt_mesh_send_cb *cb;
     void                    *cb_data;
     struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -636,6 +636,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
                               tx->ctx->addr, bt_mesh.seq,
                               BLE_MESH_NET_IVI_TX);
     if (err) {
+        BT_ERR("%s, Encrypt failed", __func__);
         return err;
     }
 
@@ -698,17 +699,8 @@ static bool is_replay(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
                 return true;
             }
 
-#if !CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0
             if ((!rx->old_iv && rpl->old_iv) ||
                     rpl->seq < rx->seq) {
-#else /* CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0 */
-            /**
-             * Added 10 here to fix the bug of Silicon Lab Android App 1.1.0 when
-             * reconnection will cause its sequence number recounting from 0.
-             */
-            if ((!rx->old_iv && rpl->old_iv) ||
-                    (rpl->seq < rx->seq) || (rpl->seq > rx->seq + 10)) {
-#endif /* #if !CONFIG_BLE_MESH_PATCH_FOR_SLAB_APP_1_1_0 */
                 if (match) {
                     *match = rpl;
                 } else {
@@ -846,9 +838,11 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
         return 0;
     }
 
-    BT_WARN("%s, No matching AppKey", __func__);
+    if (rx->local_match) {
+        BT_WARN("%s, No matching AppKey", __func__);
+    }
     bt_mesh_free_buf(sdu);
-    return -EINVAL;
+    return 0;
 }
 
 static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
@@ -1974,7 +1968,7 @@ int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
 
     app_key = bt_mesh_tx_appkey_get(role, app_idx);
     if (!app_key) {
-        BT_ERR("%s, Failed to get AppKey", __func__);
+        BT_ERR("%s, AppKey 0x%04x not exists", __func__, app_idx);
         return -ENOENT;
     }
 

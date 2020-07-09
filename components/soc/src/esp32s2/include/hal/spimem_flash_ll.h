@@ -35,7 +35,8 @@
 extern "C" {
 #endif
 
-#define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
+#define spimem_flash_ll_get_hw(host_id) (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
+#define spimem_flash_ll_hw_get_id(dev)  ((dev) == (void*)&SPIMEM1? SPI1_HOST: -1)
 
 typedef typeof(SPIMEM1.clock) spimem_flash_ll_clock_reg_t;
 
@@ -324,10 +325,10 @@ static inline void spimem_flash_ll_set_command8(spi_mem_dev_t *dev, uint8_t comm
 
 /**
  * Get the address length that is set in register, in bits.
- * 
+ *
  * @param dev Beginning address of the peripheral registers.
- * 
- */ 
+ *
+ */
 static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
 {
     return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;

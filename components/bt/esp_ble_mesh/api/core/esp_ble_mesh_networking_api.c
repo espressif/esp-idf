@@ -179,9 +179,12 @@ esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
         uint16_t length, uint8_t *data)
 {
-    if (!model || !ctx) {
+    if (model == NULL || ctx == NULL ||
+        ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        ctx->app_idx == ESP_BLE_MESH_KEY_UNUSED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
                                    length, data, 0, false, ROLE_NODE);
 }
@@ -191,9 +194,12 @@ esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
         uint16_t length, uint8_t *data, int32_t msg_timeout,
         bool need_rsp, esp_ble_mesh_dev_role_t device_role)
 {
-    if (!model || !ctx) {
+    if (model == NULL || ctx == NULL ||
+        ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        ctx->app_idx == ESP_BLE_MESH_KEY_UNUSED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
                                    length, data, msg_timeout, need_rsp, device_role);
 }
@@ -202,9 +208,11 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
                                      uint16_t length, uint8_t *data,
                                      esp_ble_mesh_dev_role_t device_role)
 {
-    if (!model || !model->pub || !model->pub->msg) {
+    if (model == NULL || model->pub == NULL || model->pub->msg == NULL ||
+        model->pub->publish_addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
         return ESP_ERR_INVALID_ARG;
     }
+
     return ble_mesh_model_send_msg(model, NULL, opcode, BTC_BLE_MESH_ACT_MODEL_PUBLISH,
                                    length, data, 0, false, device_role);
 }
@@ -324,6 +332,25 @@ esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_addr(uint16_t unicas
     }
 
     return btc_ble_mesh_provisioner_get_node_with_addr(unicast_addr);
+}
+
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_name(const char *name)
+{
+    if (!name || (strlen(name) > ESP_BLE_MESH_NODE_NAME_MAX_LEN)) {
+        return NULL;
+    }
+
+    return btc_ble_mesh_provisioner_get_node_with_name(name);
+}
+
+uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return btc_ble_mesh_provisioner_get_prov_node_count();
+}
+
+const esp_ble_mesh_node_t **esp_ble_mesh_provisioner_get_node_table_entry(void)
+{
+    return btc_ble_mesh_provisioner_get_node_table_entry();
 }
 
 esp_err_t esp_ble_mesh_provisioner_delete_node_with_uuid(const uint8_t uuid[16])
@@ -493,12 +520,6 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
 {
     return bt_mesh_provisioner_local_net_key_get(net_idx);
 }
-
-uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
-{
-    return btc_ble_mesh_provisioner_get_prov_node_count();
-}
-
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)

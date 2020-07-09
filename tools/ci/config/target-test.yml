@@ -207,6 +207,11 @@ test_weekend_network:
 example_test_001A:
   extends: .example_test_template
   parallel: 5
+  artifacts:
+      when: always
+      paths:
+        - $CI_PROJECT_DIR/examples/*/*/*.log
+      expire_in: 1 week
   tags:
     - ESP32
     - Example_WIFI
@@ -300,31 +305,6 @@ example_test_010:
     - ESP32
     - Example_ExtFlash
 
-test_app_test_001:
-  extends: .test_app_template
-  tags:
-    - ESP32
-    - test_jtag_arm
-  artifacts:
-      when: always
-      paths:
-        - $CI_PROJECT_DIR/tools/test_apps/system/gdb_loadable_elf/*.log
-      expire_in: 1 week
-  variables:
-    SETUP_TOOLS: "1"
-
-test_app_test_002:
-  extends: .test_app_template
-  tags:
-    - ESP32
-    - Example_WIFI
-
-test_app_test_003:
-  extends: .test_app_template
-  tags:
-    - ESP32
-    - Example_PPP
-
 example_test_011:
   extends: .example_debug_template
   tags:
@@ -356,6 +336,43 @@ example_test_014:
   tags:
     - ESP32
     - 8Mpsram
+
+example_test_015:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_PPP
+  artifacts:
+      when: always
+      expire_in: 1 week
+      paths:
+        - $CI_PROJECT_DIR/examples/*/*/*.log
+        - $LOG_PATH
+
+test_app_test_001:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - test_jtag_arm
+  artifacts:
+      when: always
+      paths:
+        - $CI_PROJECT_DIR/tools/test_apps/system/gdb_loadable_elf/*.log
+      expire_in: 1 week
+  variables:
+    SETUP_TOOLS: "1"
+
+test_app_test_002:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - Example_WIFI
+
+test_app_test_003:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - Example_PPP
 
 UT_001:
   extends: .unit_test_template
@@ -522,7 +539,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_s2_template
-  parallel: 34
+  parallel: 36
   tags:
     - ESP32S2_IDF
     - UT_T1_1

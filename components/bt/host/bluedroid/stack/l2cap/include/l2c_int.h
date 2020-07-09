@@ -74,6 +74,8 @@
 #define L2CAP_DEFAULT_MONITOR_TOUT   12000        /* 12000 milliseconds */
 #define L2CAP_FCR_ACK_TOUT           200          /* 200 milliseconds */
 
+#define L2CAP_CACHE_ATT_ACL_NUM      10
+
 /* Define the possible L2CAP channel states. The names of
 ** the states may seem a bit strange, but they are taken from
 ** the Bluetooth specification.
@@ -165,6 +167,9 @@ typedef enum {
 
 #define L2CAP_MAX_FCR_CFG_TRIES         2       /* Config attempts before disconnecting */
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 typedef uint8_t tL2C_BLE_FIXED_CHNLS_MASK;
 
 typedef struct {
@@ -264,7 +269,7 @@ typedef struct
 }tL2CAP_SEC_DATA;
 
 #ifndef L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA
-#define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 100
+#define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 10
 #endif
 /* Define a channel control block (CCB). There may be many channel control blocks
 ** between the same two Bluetooth devices (i.e. on the same link).

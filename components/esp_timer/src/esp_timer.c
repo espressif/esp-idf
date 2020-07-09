@@ -281,7 +281,11 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     int64_t now = esp_timer_impl_get_time();
     esp_timer_handle_t it = LIST_FIRST(&s_timers);
     while (it != NULL &&
-            it->alarm < now) {
+            it->alarm < now) {  // NOLINT(clang-analyzer-unix.Malloc)
+            // Static analyser reports "Use of memory after it is freed" since the "it" variable
+            // is freed below (if EVENT_ID_DELETE_TIMER) and assigned to the (new) LIST_FIRST()
+            // so possibly (if the "it" hasn't been removed from the list) it might keep the same ptr.
+            // Ignoring this warning, as this couldn't happen if queue.h used to populate the list
         LIST_REMOVE(it, list_entry);
         if (it->event_id == EVENT_ID_DELETE_TIMER) {
             free(it);

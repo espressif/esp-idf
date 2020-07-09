@@ -11,7 +11,9 @@
 #include "freertos/task.h"
 #include <freertos/semphr.h>
 #include "driver/timer.h"
+#ifndef CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#endif
 #include "unity.h"
 #include "test_utils.h"
 
