@@ -352,6 +352,39 @@
 #define HCI_BLE_READ_RESOLVABLE_ADDR_LOCAL  (0x002C | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_SET_ADDR_RESOLUTION_ENABLE  (0x002D | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_SET_RAND_PRIV_ADDR_TIMOUT   (0x002E | HCI_GRP_BLE_CMDS)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCI_BLE_READ_PHY                    (0x0030 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_DEFAULT_PHY             (0x0031 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PHY                     (0x0032 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_ENH_RX_TEST                 (0x0033 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_ENH_TX_TEST                 (0x0034 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_ADV_RAND_ADDR           (0x0035 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_ADV_PARAM           (0x0036 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_ADV_DATA            (0x0037 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_SCAN_RSP_DATA       (0x0038 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_ADV_ENABLE          (0x0039 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_RD_MAX_ADV_DATA_LEN         (0x003A | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_RD_NUM_OF_ADV_SETS          (0x003B | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_REMOVE_ADV_SET              (0x003C | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_CLEAR_ADV_SETS              (0x003D | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_ADV_PARAMS       (0x003E | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_ADV_DATA         (0x003F | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_ADV_ENABLE       (0x0040 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_SCAN_PARAMS         (0x0041 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_EXT_SCAN_ENABLE         (0x0042 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_EXT_CREATE_CONN             (0x0043 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_PERIOD_ADV_CREATE_SYNC      (0x0044 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_PERIOD_ADV_CREATE_SYNC_CANCEL (0x0045 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_PERIOD_ADV_TERM_SYNC        (0x0046 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_ADV_DEV_TO_PERIOD_ADV_LIST  (0x0047 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_REMOVE_DEV_FROM_PERIOD_ADV_LIST (0x0048 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_CLEAR_PERIOD_ADV_LIST       (0x0049 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_RD_PERIOD_ADV_LIST_SIZE     (0x004A | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_RD_TRANSMIT_POWER           (0x004B | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_RD_RF_PATH_COMPENSATION     (0x004C | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_WR_RF_PATH_COMPENSATION     (0x004D | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PRIVACY_MODE            (0x004E | HCI_GRP_BLE_CMDS)
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 // Vendor OGF define
 #define HCI_VENDOR_OGF          0x3F
 
@@ -755,6 +788,17 @@
 #define HCI_BLE_DIRECT_ADV_EVT              0x0b
 /* ESP vendor BLE Event sub code */
 #define HCI_BLE_ADV_DISCARD_REPORT_EVT      0XF0
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCI_BLE_PHY_UPDATE_COMPLETE_EVT     0x0c
+#define HCI_BLE_EXT_ADV_REPORT_EVT          0x0d
+#define HCI_BLE_PERIOD_ADV_SYNC_ESTAB_EVT   0x0e
+#define HCI_BLE_PERIOD_ADV_REPORT_EVT       0x0f
+#define HCI_BLE_PERIOD_ADV_SYNC_LOST_EVT    0x10
+#define HCI_BLE_SCAN_TIMEOUT_EVT            0x11
+#define HCI_BLE_ADV_SET_TERMINATED_EVT      0x12
+#define HCI_BLE_SCAN_REQ_RECEIVED_EVT       0x13
+#define HCI_BLE_CHANNEL_SELECT_ALG          0x14
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 /* Definitions for LE Channel Map */
 #define HCI_BLE_CHNL_MAP_SIZE               5
@@ -845,6 +889,9 @@
 #define HCI_ERR_ESP_VENDOR_FAIL                         0xE0
 
 #define HCI_HINT_TO_RECREATE_AMP_PHYS_LINK              0xFF
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+typedef UINT8 tHCI_STATUS;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 /*
 ** Definitions for HCI enable event
@@ -913,6 +960,15 @@
     0x20000000 00000000 LE Meta Event
  */
 
+#define HCI_LE_ONLY_EVENT_MASK              "\x20\x00\x80\x00\x02\x00\x88\x90"
+/*  0x00000000 00000010 Disconnection complete event
+    0x00000000 00000080 Encryption change event
+    0x00000000 00000800 Read remote version information complete event
+    0x00000000 00008000 Hardware error event
+    0x00000000 02000000 Data buffer overflow event
+    0x00008000 00000000 Encryption key refresh complete event
+    0x20000000 00000000 LE Meta Event
+*/
 
 /* the event mask for AMP controllers */
 #define HCI_AMP_EVENT_MASK_3_0               "\x00\x00\x00\x00\x00\x00\x3F\xFF"

@@ -55,6 +55,11 @@ typedef struct {
         size_t supported_commands_length
     );
 
+    void (*parse_read_local_supported_features_response)(
+        BT_HDR *response,
+        bt_device_features_t *feature_pages
+    );
+
     void (*parse_read_local_extended_features_response)(
         BT_HDR *response,
         uint8_t *page_number_ptr,
@@ -89,7 +94,12 @@ typedef struct {
         BT_HDR *response,
         uint8_t *resolving_list_size_ptr
     );
-
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    void (*parse_ble_read_adv_max_len_response) (
+        BT_HDR *respone,
+        uint16_t *ble_ext_adv_data_max_len_ptr
+    );
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     void (*parse_ble_read_suggested_default_data_length_response)(
         BT_HDR *response,
         uint16_t *ble_default_packet_length_ptr,

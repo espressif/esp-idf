@@ -1,0 +1,432 @@
+choice BTDM_CTRL_MODE
+    prompt "Bluetooth controller mode (BR/EDR/BLE/DUALMODE)"
+    depends on BT_CTRL_ESP32
+    help
+        Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).
+
+    config BTDM_CTRL_MODE_BLE_ONLY
+        bool "BLE Only"
+
+    config BTDM_CTRL_MODE_BR_EDR_ONLY
+        bool "BR/EDR Only"
+
+    config BTDM_CTRL_MODE_BTDM
+        bool "Bluetooth Dual Mode"
+
+endchoice
+
+config BTDM_CTRL_BLE_MAX_CONN
+    int "BLE Max Connections"
+    depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+    default 3
+    range 1 9
+    help
+        BLE maximum connections of bluetooth controller.
+        Each connection uses 1KB static DRAM whenever the BT controller is enabled.
+
+config BTDM_CTRL_BR_EDR_MAX_ACL_CONN
+    int "BR/EDR ACL Max Connections"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 2
+    range 1 7
+    help
+        BR/EDR ACL maximum connections of bluetooth controller.
+        Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
+
+config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN
+    int "BR/EDR Sync(SCO/eSCO) Max Connections"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+    range 0 3
+    help
+        BR/EDR Synchronize maximum connections of bluetooth controller.
+        Each connection uses 2KB static DRAM whenever the BT controller is enabled.
+
+
+
+choice BTDM_CTRL_BR_EDR_SCO_DATA_PATH
+    prompt "BR/EDR Sync(SCO/eSCO) default data path"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+    help
+        SCO data path, i.e. HCI or PCM.
+        SCO data can be sent/received through HCI synchronous packets, or the data
+        can be routed to on-chip PCM module on ESP32. PCM input/output signals can
+        be "matrixed" to GPIOs. The default data path can also be set using API
+        "esp_bredr_sco_datapath_set"
+
+    config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+        bool "HCI"
+    config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+        bool "PCM"
+endchoice
+
+config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
+    int
+    default 0 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+    default 1 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+    default 0
+
+menuconfig BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+    bool "PCM Signal Config (Role and Polar)"
+    depends on BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+    default y
+
+choice BTDM_CTRL_PCM_ROLE
+    prompt "PCM Role"
+    depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+    help
+        PCM role can be configured as PCM master or PCM slave
+
+    config BTDM_CTRL_PCM_ROLE_MASTER
+        bool "PCM Master"
+    config BTDM_CTRL_PCM_ROLE_SLAVE
+        bool "PCM Slave"
+endchoice
+
+choice BTDM_CTRL_PCM_POLAR
+    prompt "PCM Polar"
+    depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+    help
+        PCM polarity can be configured as Falling Edge or Rising Edge
+
+    config BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+        bool "Falling Edge"
+    config BTDM_CTRL_PCM_POLAR_RISING_EDGE
+        bool "Rising Edge"
+endchoice
+
+config BTDM_CTRL_PCM_ROLE_EFF
+    int
+    default 0 if BTDM_CTRL_PCM_ROLE_MASTER
+    default 1 if BTDM_CTRL_PCM_ROLE_SLAVE
+    default 0
+
+config BTDM_CTRL_PCM_POLAR_EFF
+    int
+    default 0 if BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+    default 1 if BTDM_CTRL_PCM_POLAR_RISING_EDGE
+    default 0
+
+config BTDM_CTRL_AUTO_LATENCY
+    bool "Auto latency"
+    depends on BTDM_CTRL_MODE_BTDM
+    default n
+    help
+        BLE auto latency, used to enhance classic BT performance
+        while classic BT and BLE are enabled at the same time.
+
+config BTDM_CTRL_AUTO_LATENCY_EFF
+    bool
+    default BTDM_CTRL_AUTO_LATENCY if BTDM_CTRL_MODE_BTDM
+    default n
+
+config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT
+    bool "Legacy Authentication Vendor Specific Event Enable"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default y
+    help
+        To protect from BIAS attack during Legacy authentication,
+        Legacy authentication Vendor specific event should be enabled
+
+config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+    bool
+    default BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
+
+config BTDM_CTRL_BLE_MAX_CONN_EFF
+    int
+    default BTDM_CTRL_BLE_MAX_CONN if BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
+config BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF
+    int
+    default BTDM_CTRL_BR_EDR_MAX_ACL_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
+config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF
+    int
+    default BTDM_CTRL_BR_EDR_MAX_SYNC_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
+choice BTDM_CTRL_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which bluetooth controller run"
+    depends on BT_CTRL_ESP32 && !FREERTOS_UNICORE
+    help
+        Specify the cpu core to run bluetooth controller.
+        Can not specify no-affinity.
+
+    config BTDM_CTRL_PINNED_TO_CORE_0
+        bool "Core 0 (PRO CPU)"
+    config BTDM_CTRL_PINNED_TO_CORE_1
+        bool "Core 1 (APP CPU)"
+        depends on !FREERTOS_UNICORE
+endchoice
+
+config BTDM_CTRL_PINNED_TO_CORE
+    int
+    default 0 if BTDM_CTRL_PINNED_TO_CORE_0
+    default 1 if BTDM_CTRL_PINNED_TO_CORE_1
+    default 0
+
+choice BTDM_CTRL_HCI_MODE_CHOICE
+    prompt "HCI mode"
+    depends on BT_CTRL_ESP32
+    help
+        Speicify HCI mode as VHCI or UART(H4)
+
+    config BTDM_CTRL_HCI_MODE_VHCI
+        bool "VHCI"
+        help
+            Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32, too.
+
+    config BTDM_CTRL_HCI_MODE_UART_H4
+        bool "UART(H4)"
+        help
+            If use external bluetooth host which run on other hardware and use UART as the HCI interface,
+            choose this option.
+endchoice
+
+menu "HCI UART(H4) Options"
+    visible if BTDM_CTRL_HCI_MODE_UART_H4
+
+    config BTDM_CTRL_HCI_UART_NO
+        int "UART Number for HCI"
+        depends on BTDM_CTRL_HCI_MODE_UART_H4
+        range 1 2
+        default 1
+        help
+            Uart number for HCI. The available uart is UART1 and UART2.
+
+    config BTDM_CTRL_HCI_UART_BAUDRATE
+        int "UART Baudrate for HCI"
+        depends on BTDM_CTRL_HCI_MODE_UART_H4
+        range 115200 921600
+        default 921600
+        help
+            UART Baudrate for HCI. Please use standard baudrate.
+
+endmenu
+
+menu "MODEM SLEEP Options"
+    visible if BT_CTRL_ESP32
+
+    config BTDM_CTRL_MODEM_SLEEP
+        bool "Bluetooth modem sleep"
+        depends on BT_CTRL_ESP32
+        default y
+        help
+            Enable/disable bluetooth controller low power mode.
+
+    choice BTDM_CTRL_MODEM_SLEEP_MODE
+        prompt "Bluetooth Modem sleep mode"
+        depends on BTDM_CTRL_MODEM_SLEEP
+        help
+            To select which strategy to use for modem sleep
+
+        config BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+            bool "ORIG Mode(sleep with low power clock)"
+            help
+                ORIG mode is a bluetooth sleep mode that can be used for dual mode controller. In this mode,
+                bluetooth controller sleeps between BR/EDR frames and BLE events. A low power clock is used to
+                maintain bluetooth reference clock.
+
+        config BTDM_CTRL_MODEM_SLEEP_MODE_EVED
+            bool "EVED Mode(For internal test only)"
+            help
+                EVED mode is for BLE only and is only for internal test. Do not use it for production. this
+                mode is not compatible with DFS nor light sleep
+    endchoice
+
+    choice BTDM_CTRL_LOW_POWER_CLOCK
+        prompt "Bluetooth low power clock"
+        depends on BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+        help
+            Select the low power clock source for bluetooth controller. Bluetooth low power clock is
+            the clock source to maintain time in sleep mode.
+
+            - "Main crystal" option provides good accuracy and can support Dynamic Frequency Scaling
+              to be used with Bluetooth modem sleep. Light sleep is not supported.
+            - "External 32kHz crystal" option allows user to use a 32.768kHz crystal as Bluetooth low
+              power clock. This option is allowed as long as External 32kHz crystal is configured as
+              the system RTC clock source. This option provides good accuracy and supports Bluetooth
+              modem sleep to be used alongside Dynamic Frequency Scaling or light sleep.
+
+        config BTDM_CTRL_LPCLK_SEL_MAIN_XTAL
+            bool "Main crystal"
+            help
+                Main crystal can be used as low power clock for bluetooth modem sleep. If this option is
+                selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but
+                cannot work when light sleep is enabled. Main crystal has a good performance in accuracy as
+                the bluetooth low power clock source.
+
+        config BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
+            bool "External 32kHz crystal"
+            depends on ESP32_RTC_CLK_SRC_EXT_CRYS
+            help
+                External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
+                stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
+                modem sleep to be used with both DFS and light sleep.
+    endchoice
+
+endmenu
+
+choice BTDM_BLE_SLEEP_CLOCK_ACCURACY
+    prompt "BLE Sleep Clock Accuracy"
+    depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+    default BTDM_BLE_DEFAULT_SCA_250PPM
+    help
+        BLE Sleep Clock Accuracy(SCA) for the local device is used to estimate window widening in BLE
+        connection events. With a lower level of clock accuracy(e.g. 500ppm over 250ppm), the slave
+        needs a larger RX window to synchronize with master in each anchor point, thus resulting in an
+        increase of power consumption but a higher level of robustness in keeping connected. According
+        to the requirements of Bluetooth Core specification 4.2, the worst-case accuracy of Classic
+        Bluetooth low power oscialltor(LPO) is +/-250ppm in STANDBY and in low power modes such as
+        sniff. For BLE the worst-case SCA is +/-500ppm.
+
+        - "151ppm to 250ppm" option is the default value for Bluetooth Dual mode
+        - "251ppm to 500ppm" option can be used in BLE only mode when using external 32kHz crystal as
+           low power clock. This option is provided in case that BLE sleep clock has a lower level of
+           accuracy, or other error sources contribute to the inaccurate timing during sleep.
+
+    config BTDM_BLE_DEFAULT_SCA_500PPM
+        bool "251ppm to 500ppm"
+        depends on BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL && BTDM_CTRL_MODE_BLE_ONLY
+    config BTDM_BLE_DEFAULT_SCA_250PPM
+        bool "151ppm to 250ppm"
+endchoice
+config BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF
+    int
+    default 0 if BTDM_BLE_DEFAULT_SCA_500PPM
+    default 1 if BTDM_BLE_DEFAULT_SCA_250PPM
+    default 1
+
+config BTDM_BLE_SCAN_DUPL
+    bool "BLE Scan Duplicate Options"
+    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+choice BTDM_SCAN_DUPL_TYPE
+    prompt "Scan Duplicate Type"
+    default BTDM_SCAN_DUPL_TYPE_DEVICE
+    depends on BTDM_BLE_SCAN_DUPL
+    help
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use
+        advertiser address filtering. The adv packet of the same address is only allowed to be reported once.
+        Another way is "Scan Duplicate By Device Address And Advertising Data". This way is to use advertising
+        data and device address filtering. All different adv packets with the same address are allowed to be
+        reported. The last way is "Scan Duplicate By Advertising Data". This way is to use advertising data
+        filtering. All same advertising data only allow to be reported once even though they are from
+        different devices.
+
+    config BTDM_SCAN_DUPL_TYPE_DEVICE
+        bool "Scan Duplicate By Device Address"
+        help
+            This way is to use advertiser address filtering. The adv packet of the same address is only
+            allowed to be reported once
+
+    config BTDM_SCAN_DUPL_TYPE_DATA
+        bool "Scan Duplicate By Advertising Data"
+        help
+            This way is to use advertising data filtering. All same advertising data only allow to be reported
+            once even though they are from different devices.
+
+    config BTDM_SCAN_DUPL_TYPE_DATA_DEVICE
+        bool "Scan Duplicate By Device Address And Advertising Data"
+        help
+            This way is to use advertising data and device address filtering. All different adv packets with
+            the same address are allowed to be reported.
+endchoice
+
+config BTDM_SCAN_DUPL_TYPE
+    int
+    depends on BTDM_BLE_SCAN_DUPL
+    default 0 if BTDM_SCAN_DUPL_TYPE_DEVICE
+    default 1 if BTDM_SCAN_DUPL_TYPE_DATA
+    default 2 if BTDM_SCAN_DUPL_TYPE_DATA_DEVICE
+    default 0
+
+config BTDM_SCAN_DUPL_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BTDM_BLE_SCAN_DUPL
+    range 10 1000
+    default 200
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BTDM_BLE_MESH_SCAN_DUPL_EN
+    bool "Special duplicate scan mechanism for BLE Mesh scan"
+    depends on BTDM_BLE_SCAN_DUPL
+    default n
+    help
+        This enables the BLE scan duplicate for special BLE Mesh scan.
+
+config BTDM_MESH_DUPL_SCAN_CACHE_SIZE
+    int "Maximum number of Mesh adv packets in scan duplicate filter"
+    depends on BTDM_BLE_MESH_SCAN_DUPL_EN
+    range 10 1000
+    default 200
+    help
+        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BTDM_CTRL_FULL_SCAN_SUPPORTED
+    bool "BLE full scan feature supported"
+    depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+    default y
+    help
+        The full scan function is mainly used to provide BLE scan performance.
+        This is required for scenes with high scan performance requirements, such as BLE Mesh scenes.
+
+config BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    bool "BLE adv report flow control supported"
+    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    default y
+    help
+        The function is mainly used to enable flow control for advertising reports. When it is enabled,
+        advertising reports will be discarded by the controller if the number of unprocessed advertising
+        reports exceeds the size of BLE adv report flow control.
+
+config BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
+    int "BLE adv report flow control number"
+    depends on BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 50 1000
+    default 100
+    help
+        The number of unprocessed advertising report that Bluedroid can save.If you set
+        `BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a small value, this may cause adv packets lost.
+        If you set `BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a large value, Bluedroid may cache a
+        lot of adv packets and this may cause system memory run out. For example, if you set
+        it to 50, the maximum memory consumed by host is 35 * 50 bytes. Please set
+        `BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM` according to your system free memory and handle adv
+        packets as fast as possible, otherwise it will cause adv packets lost.
+
+config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
+    int "BLE adv lost event threshold value"
+    depends on BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 1 1000
+    default 20
+    help
+        When adv report flow control is enabled, The ADV lost event will be generated when the number
+        of ADV packets lost in the controller reaches this threshold. It is better to set a larger value.
+        If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
+        may cause adv packets lost more.
+
+menuconfig BTDM_COEX_BT_OPTIONS
+    bool "Coexistence Bluetooth Side Options"
+    depends on ESP32_WIFI_SW_COEXIST_ENABLE
+    default n
+    help
+        Options of Bluetooth Side of WiFi and bluetooth coexistence.
+
+config BTDM_COEX_BLE_ADV_HIGH_PRIORITY
+    bool "Improve BLE ADV priority for WiFi & BLE coexistence"
+    depends on BTDM_COEX_BT_OPTIONS
+    default n
+    help
+        Improve BLE ADV coexistence priority to make it better performance.
+        For example, BLE mesh need to enable this option to improve BLE adv performance.

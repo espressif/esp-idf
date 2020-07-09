@@ -1085,7 +1085,7 @@ extern BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_R
 **  Return value:   TRUE if connection started
 **
 *******************************************************************************/
-extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type);
+extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux);
 
 /*******************************************************************************
 **
@@ -1227,7 +1227,7 @@ extern UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr);
 *******************************************************************************/
 extern UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport);
 
-extern BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle);
+extern BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, BD_ADDR addr);
 
 #define  L2CA_GET_ATT_NUM      0
 #define  L2CA_ADD_BTC_NUM      1

@@ -463,7 +463,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT32 duration,
             /* assume observe always not using white list */
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             /* enable resolving list */
-            btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
+            //btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
 
             if (cmn_ble_gap_vsc_cb.extended_scan_support == 0) {
@@ -539,7 +539,7 @@ tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
             /* assume observe always not using white list */
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             /* enable resolving list */
-            btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
+            //btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
             // if not set scan params, set default scan params
             if (!p_inq->scan_params_set) {
@@ -874,6 +874,8 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
             (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
             random_cb->set_local_privacy_cback = NULL;
         }
+        // Disable RPA function
+        btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
     } else { /* privacy is turned on*/
         /* always set host random address, used when privacy 1.1 or priavcy 1.2 is disabled */
         btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
@@ -892,6 +894,8 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         } else { /* 4.1/4.0 controller */
             p_cb->privacy_mode = BTM_PRIVACY_1_1;
         }
+        // Disable RPA function
+        btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
     }
 
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
@@ -1193,7 +1197,7 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
                 /* only do so for bonded device */
                 if ((p_dev_rec = btm_find_or_alloc_dev (p_cb->direct_bda.bda)) != NULL &&
                         p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
-                    btm_ble_enable_resolving_list(BTM_BLE_RL_ADV);
+                    //btm_ble_enable_resolving_list(BTM_BLE_RL_ADV);
                     memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
                     *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
                     *p_own_addr_type = BLE_ADDR_RANDOM_ID;
@@ -2707,7 +2711,7 @@ tBTM_STATUS btm_ble_start_inquiry (UINT8 mode, UINT8   duration)
                                        SP_ADV_ALL);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         /* enable IRK list */
-        btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
+        //btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
         status = btm_ble_start_scan();
     } else if ((p_ble_cb->inq_var.scan_interval != BTM_BLE_LOW_LATENCY_SCAN_INT) ||
@@ -3443,9 +3447,11 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
     UINT8               data_len;
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
     BOOLEAN             match = FALSE;
+#if (!CONTROLLER_RPA_LIST_ENABLE)
     BD_ADDR             temp_bda;
     UINT8               temp_addr_type = 0;
-#endif
+#endif // (!CONTROLLER_RPA_LIST_ENABLE)
+#endif//(defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 
     /* Only process the results if the inquiry is still active */
     if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
@@ -3463,8 +3469,11 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         //BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
         //                              bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+
+#if (!CONTROLLER_RPA_LIST_ENABLE)
         temp_addr_type = addr_type;
         memcpy(temp_bda, bda, BD_ADDR_LEN);
+#endif // (!CONTROLLER_RPA_LIST_ENABLE)
 
         /* map address to security record */
         match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
@@ -3477,7 +3486,7 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         } else
 #endif
         btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, p);
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE && (!CONTROLLER_RPA_LIST_ENABLE))
         //save current adv addr information if p_dev_rec!= NULL
         tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
         if(p_dev_rec) {
@@ -3946,7 +3955,7 @@ tBTM_STATUS btm_ble_start_adv(void)
             p_cb->evt_type != BTM_BLE_CONNECT_DIR_EVT)
         /* enable resolving list is desired */
     {
-        btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_ADV);
+        //btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_ADV);
     }
 #endif
     if (p_cb->afp != AP_SCAN_CONN_ALL) {

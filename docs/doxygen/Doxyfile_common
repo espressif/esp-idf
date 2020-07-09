@@ -45,7 +45,7 @@ INPUT = \
     $(IDF_PATH)/components/esp_event/include/esp_event_legacy.h \
     ## Bluetooth - API Reference
     ## Controller && VHCI
-    $(IDF_PATH)/components/bt/include/esp_bt.h \
+    $(IDF_PATH)/components/bt/include/esp32/include/esp_bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \

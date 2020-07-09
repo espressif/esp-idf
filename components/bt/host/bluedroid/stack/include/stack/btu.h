@@ -274,6 +274,9 @@ void btu_check_bt_sleep (void);
 */
 void  btu_hcif_process_event (UINT8 controller_id, BT_HDR *p_buf);
 void  btu_hcif_send_cmd (UINT8 controller_id, BT_HDR *p_msg);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+UINT8  btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void  btu_hcif_send_host_rdy_for_data(void);
 void  btu_hcif_cmd_timeout (UINT8 controller_id);
 

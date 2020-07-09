@@ -220,6 +220,12 @@ IRAM_ATTR void esp_phy_enable(void)
 #if CONFIG_IDF_TARGET_ESP32
         coex_bt_high_prio();
 #endif
+
+#if CONFIG_BT_ENABLED && CONFIG_IDF_TARGET_ESP32C3
+    extern void coex_pti_v2(void);
+    coex_pti_v2();
+#endif
+
     }
     s_phy_access_ref++;
 

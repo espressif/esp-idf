@@ -467,10 +467,12 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name)
 #else
     p = (UINT8 *)p_name;
 #endif
-
+#if CLASSIC_BT_INCLUDED
     if (btsnd_hcic_change_name(p)) {
         return (BTM_CMD_STARTED);
-    } else {
+    } else
+#endif
+    {
         return (BTM_NO_RESOURCES);
     }
 }

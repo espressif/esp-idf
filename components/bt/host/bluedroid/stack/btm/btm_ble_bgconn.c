@@ -285,6 +285,15 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         }
         return FALSE;
     }
+
+    // look for public address information
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if(p_dev_rec) {
+        memcpy(bd_addr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+        addr_type = p_dev_rec->ble.static_addr_type;
+    }
+
+    // white list must be public address or static random address
     if(addr_type == BLE_ADDR_RANDOM) {
         /*
         A static address is a 48-bit randomly generated address and shall meet the following requirements:
@@ -624,7 +633,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
     BTM_TRACE_EVENT ("btm_ble_initiate_select_conn");
 
     /* use direct connection procedure to initiate connection */
-    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda, BLE_ADDR_UNKNOWN_TYPE)) {
+    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }

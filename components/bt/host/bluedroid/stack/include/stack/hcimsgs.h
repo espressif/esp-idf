@@ -657,6 +657,9 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_SET_USED_FEAT_CMD       8
 #define HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD    6
 #define HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS    15
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCIC_PARAM_SIZE_BLE_WRITE_EXT_ADV_PARAMS 25
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP      31
 #define HCIC_PARAM_SIZE_WRITE_ADV_ENABLE        1
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_PARAM    7
@@ -693,6 +696,44 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_SET_DATA_LENGTH             6
 #define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM  11
 #define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL    2
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCIC_PARAM_SIZE_BLE_READ_PHY                   2
+#define HCIC_PARAM_SIZE_BLE_SET_DEF_PHY                3
+#define HCIC_PARAM_SIZE_BLE_SET_PHY                    7
+#define HCIC_PARAM_SIZE_ENH_RX_TEST                    3
+#define HCIC_PARAM_SIZE_ENH_TX_TEST                    4
+#define HCIC_PARAM_SIZE_EXT_RAND_ADDR                  7
+#define HCIC_PARAM_SIZE_EXT_ADV_SET_PARAMS             25
+#define HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA             251
+#define HCIC_PARAM_SIZE_READ_MAX_ADV_SIZE              0
+#define HCIC_PARAM_SIZE_NUM_SUPPORT_ADV_SET            0
+#define HCIC_PARAM_SIZE_REMOVE_ADV_SET                 1
+#define HCIC_PARAM_SIZE_CLEAR_ADV_SET                  0
+#define HCIC_PARAM_SIZE_SET_PERIODIC_ADV_PARAMS        7
+#define HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA        252
+#define HCIC_PARAM_SIZE_PERIODIC_ADV_ENABLE            2
+#define HCIC_PARAM_SIZE_SET_EXT_SCAN_PARAMS            3
+#define HCIC_PARAM_SIZE_EXT_SCAN_ENABLE                6
+#define HCIC_PARAM_SIZE_EXT_CONN_CREATE_BASE           10
+#define HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC       12
+#define HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC_CANCEL 0
+#define HCIC_PARAM_SIZE_PERIODIC_ADV_TERM_SYNC         2
+#define HCIC_PARAM_SIZE_ADD_DEV_TO_PERIODIC_ADV_LIST   8
+#define HCIC_PARAM_SIZE_RM_DEV_FROM_PERIODIC_ADV_LIST  8
+#define HCIC_PARAM_SIZE_CLEAR_PERIODIC_ADV_LIST        0
+#define HCIC_PARAM_SIZE_READ_PERIODIC_ADV_LIST         0
+#define HCIC_PARAM_SIZE_READ_TRANS_POWER               0
+#define HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION      0
+#define HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION     4
+
+osi_sem_t *btsnd_hcic_ble_get_sync_sem(void);
+void btsnd_hcic_ble_sync_sem_init(void);
+void btsnd_hcic_ble_sync_sem_deinit(void);
+
+uint8_t btsnd_hcic_ble_get_status(void);
+
+void btsnd_hci_ble_set_status(UINT8 hci_status);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
@@ -809,14 +850,131 @@ BOOLEAN btsnd_hcic_ble_set_addr_resolution_enable (UINT8 addr_resolution_enable)
 BOOLEAN btsnd_hcic_ble_set_rand_priv_addr_timeout (UINT16 rpa_timout);
 
 #endif /* BLE_INCLUDED */
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+typedef struct {
+    UINT8 scan_type;
+    UINT16 scan_interval;
+    UINT16 scan_window;
+} tHCI_EXT_SCAN_PARAMS;
 
+typedef struct {
+    UINT16 scan_interval;
+    UINT16 scan_window;
+    UINT16 conn_interval_min;
+    UINT16 conn_interval_max;
+    UINT16 conn_latency;
+    UINT16 sup_timeout;
+    UINT16 min_ce_len;
+    UINT16 max_ce_len;
+} tHCI_ExtConnParams;
+
+typedef struct {
+    UINT8 filter_policy;
+    UINT8 own_addr_type;
+    UINT8 peer_addr_type;
+    BD_ADDR peer_addr;
+    UINT8 init_phy_mask;
+    tHCI_ExtConnParams params[3];
+} tHCI_CreatExtConn;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 BOOLEAN btsnd_hcic_read_authenticated_payload_tout(UINT16 handle);
 
 BOOLEAN btsnd_hcic_write_authenticated_payload_tout(UINT16 handle,
         UINT16 timeout);
 
 BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+BOOLEAN btsnd_hcic_ble_read_phy(UINT16 conn_handle);
 
+UINT8 btsnd_hcic_ble_set_prefered_default_phy(UINT8 all_phys,
+                                                              UINT8 tx_phys,
+                                                              UINT8 rx_phys);
+BOOLEAN btsnd_hcic_ble_set_phy(UINT16 conn_handle,
+                                           UINT8 all_phys, UINT8 tx_phys,
+                                           UINT8 rx_phys, UINT16 phy_options);
+
+UINT8 btsnd_hcic_ble_enhand_rx_test(UINT8 rx_channel, UINT8 phy,
+                                                         UINT8 modulation_idx);
+
+UINT8 btsnd_hcic_ble_enhand_tx_test(UINT8 tx_channel, UINT8 len,
+                                                         UINT8 packect,
+                                                         UINT8 phy);
+
+UINT8 btsnd_hcic_ble_set_extend_rand_address(UINT8 adv_handle, BD_ADDR rand_addr);
+
+UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,
+                                          UINT32 interval_max, UINT8 channel_map, UINT8 own_addr_type,
+                                          UINT8 peer_addr_type, BD_ADDR peer_addr,
+                                          UINT8 adv_filter_policy, UINT8 adv_tx_power,
+                                          UINT8 primary_adv_phy, UINT8 secondary_adv_max_skip,
+                                          UINT8 secondary_adv_phy,
+                                          UINT8 adv_sid, UINT8 scan_req_ntf_enable);
+
+UINT8 btsnd_hcic_ble_set_ext_adv_data(UINT8 adv_handle,
+                                                          UINT8 operation, UINT8 fragment_prefrence,
+                                                          UINT8 data_len, UINT8 *p_data);
+
+UINT8 btsnd_hcic_ble_set_ext_adv_scan_rsp_data(UINT8 adv_handle,
+                                                          UINT8 operation, UINT8 fragment_prefrence,
+                                                          UINT8 data_len, UINT8 *p_data);
+
+UINT8 btsnd_hcic_ble_ext_adv_enable(UINT8 enable, UINT8 num_of_sets, UINT8 *adv_handle,
+                                                       UINT16 *duration, UINT8 *max_adv_evt);
+
+UINT8 btsnd_hcic_ble_read_max_adv_len(void);
+
+UINT8 btsnd_hcic_ble_read_num_support_adv_set(void);
+
+UINT8 btsnd_hcic_ble_remove_adv_set(UINT8 adv_handle);
+
+UINT8 btsnd_hcic_ble_clear_adv_set(void);
+
+UINT8 btsnd_hcic_ble_set_periodic_adv_params(UINT8 adv_handle,
+                                                                     UINT16 interval_min,
+                                                                     UINT16 interval_max,
+                                                                     UINT8 propertics);
+
+UINT8 btsnd_hcic_ble_set_periodic_adv_data(UINT8 adv_handle,
+                                                                  UINT8 operation,
+                                                                  UINT8 len,
+                                                                  UINT8 *p_data);
+
+UINT8 btsnd_hcic_ble_periodic_adv_enable(UINT8 enable, UINT8 adv_handle);
+
+UINT8 btsnd_hcic_ble_set_ext_scan_params(UINT8 own_addr_type, UINT8 filter_policy,
+                                                               UINT8 phy_mask, UINT8 phy_count,
+                                                               tHCI_EXT_SCAN_PARAMS *params);
+
+UINT8 btsnd_hcic_ble_ext_scan_enable(UINT8 enable, UINT8 filter_dups,
+                                                         UINT16 duration, UINT16 period);
+
+
+BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn);
+
+BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
+                                                                       UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                       UINT16 sync_timeout, UINT8 unused);
+
+UINT8 btsnd_hcic_ble_periodic_adv_create_sync_cancel(void);
+
+
+UINT8 btsnd_hcic_ble_periodic_adv_term_sync(UINT16 sync_handle);
+
+UINT8 btsnd_hcic_ble_add_dev_to_periodic_adv_list(UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                             UINT8 adv_sid);
+UINT8 btsnd_hcic_ble_rm_dev_from_periodic_adv_list(UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                             UINT8 adv_sid);
+
+UINT8 btsnd_hcic_ble_clear_periodic_adv_list(void);
+
+UINT8 btsnd_hcic_ble_read_periodic_adv_list_size(void);
+
+UINT8 btsnd_hcic_ble_read_trans_power(void);
+
+UINT8 btsnd_hcic_ble_read_rf_path_compensation(void);
+
+UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT  4
 
 #define HCI__WRITE_AUTHENT_PAYLOAD_TOUT_HANDLE_OFF  0

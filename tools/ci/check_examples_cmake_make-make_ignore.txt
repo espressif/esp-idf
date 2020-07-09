@@ -1,2 +1,3 @@
 build_system/cmake
 temp_
+examples/bluetooth/bluedroid/ble_50/

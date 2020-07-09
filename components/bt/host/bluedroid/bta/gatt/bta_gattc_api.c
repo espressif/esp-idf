@@ -143,7 +143,7 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 **
 *******************************************************************************/
 void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport)
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux)
 {
     tBTA_GATTC_API_OPEN  *p_buf;
 
@@ -153,6 +153,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE 
         p_buf->client_if = client_if;
         p_buf->is_direct = is_direct;
         p_buf->transport = transport;
+        p_buf->is_aux = is_aux;
         p_buf->remote_addr_type = remote_addr_type;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 

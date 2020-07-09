@@ -29,13 +29,15 @@ extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 #define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
 
 typedef enum {
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
     BTC_GAP_BLE_ACT_SET_SCAN_PARAM,
     BTC_GAP_BLE_ACT_START_SCAN,
     BTC_GAP_BLE_ACT_STOP_SCAN,
     BTC_GAP_BLE_ACT_START_ADV,
     BTC_GAP_BLE_ACT_STOP_ADV,
-    BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM = 6,
     BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,
     BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
     BTC_GAP_BLE_ACT_CLEAR_RAND_ADDRESS,
@@ -43,11 +45,15 @@ typedef enum {
     BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,
     BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST,
     BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST,
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_SET_CONN_PARAMS,
-    BTC_GAP_BLE_ACT_SET_DEV_NAME,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_SET_DEV_NAME = 15,
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
-    BTC_GAP_BLE_ACT_READ_RSSI,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_READ_RSSI = 18,
     BTC_GAP_BLE_SET_ENCRYPTION_EVT,
     BTC_GAP_BLE_SET_SECURITY_PARAM_EVT,
     BTC_GAP_BLE_SECURITY_RSP_EVT,
@@ -58,10 +64,38 @@ typedef enum {
     BTC_GAP_BLE_OOB_REQ_REPLY_EVT,
     BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST,
     BTC_GAP_BLE_SET_AFH_CHANNELS,
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_READ_PHY,
+    BTC_GAP_BLE_SET_PREFERED_DEF_PHY,
+    BTC_GAP_BLE_SET_DEF_PHY,
+    BTC_GAP_BLE_SET_EXT_ADV_RAND_ADDR,
+    BTC_GAP_BLE_SET_EXT_ADV_PARAMS,
+    BTC_GAP_BLE_CFG_EXT_ADV_DATA_RAW,
+    BTC_GAP_BLE_CFG_EXT_SCAN_RSP_DATA_RAW,
+    BTC_GAP_BLE_EXT_ADV_START,
+    BTC_GAP_BLE_EXT_ADV_STOP,
+    BTC_GAP_BLE_EXT_ADV_SET_REMOVE,
+    BTC_GAP_BLE_EXT_ADV_SET_CLEAR,
+    BTC_GAP_BLE_SET_PERIODIC_ADV_PARAMS,
+    BTC_GAP_BLE_CFG_PERIODIC_ADV_DATA_RAW,
+    BTC_GAP_BLE_PERIODIC_ADV_START,
+    BTC_GAP_BLE_PERIODIC_ADV_STOP,
+    BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC,
+    BTC_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL,
+    BTC_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE,
+    BTC_GAP_BLE_PERIODIC_ADV_ADD_DEV_TO_LIST,
+    BTC_GAP_BLE_PERIODIC_REMOVE_ADD_DEV_FROM_LIST,
+    BTC_GAP_BLE_PERIODIC_CLEAR_DEV,
+    BTC_GAP_BLE_SET_EXT_SCAN_PARAMS,
+    BTC_GAP_BLE_START_EXT_SCAN,
+    BTC_GAP_BLE_STOP_EXT_SCAN,
+    BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
 typedef union {
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
     struct config_adv_data_args {
         esp_ble_adv_data_t adv_data;
@@ -80,6 +114,7 @@ typedef union {
         esp_ble_adv_params_t adv_params;
     } start_adv;
     //BTC_GAP_BLE_ACT_STOP_ADV, no args
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM,
     struct conn_update_params_args {
         esp_ble_conn_update_params_t conn_params;
@@ -107,6 +142,7 @@ typedef union {
         esp_bd_addr_t remote_bda;
         esp_ble_wl_addr_type_t wl_addr_type;
     } update_white_list;
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST
     struct update_duplicate_exceptional_list_args {
         uint8_t  subcode;
@@ -121,11 +157,13 @@ typedef union {
         uint16_t slave_latency;
         uint16_t supervision_tout;
     } set_conn_params;
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_SET_DEV_NAME,
     struct set_dev_name_args {
 #define ESP_GAP_DEVICE_NAME_MAX (32)
         char device_name[ESP_GAP_DEVICE_NAME_MAX + 1];
     } set_dev_name;
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     struct config_adv_data_raw_args {
         uint8_t *raw_adv;
@@ -136,6 +174,7 @@ typedef union {
         uint8_t *raw_scan_rsp;
         uint32_t raw_scan_rsp_len;
     } cfg_scan_rsp_data_raw;
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_SET_ENCRYPTION_EVT
     struct set_encryption_args {
         esp_bd_addr_t bd_addr;
@@ -186,6 +225,125 @@ typedef union {
        esp_gap_ble_channels channels;
     } set_channels;
 } btc_ble_gap_args_t;
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+typedef union {
+    struct read_phy_args {
+        esp_bd_addr_t bd_addr;
+    } read_phy;
+
+    struct set_perf_def_phy_args {
+        esp_ble_gap_phy_mask_t tx_phy_mask;
+        esp_ble_gap_phy_mask_t rx_phy_mask;
+    } set_perf_def_phy;
+
+    struct set_def_phy_args {
+        esp_bd_addr_t bd_addr;
+        esp_ble_gap_all_phys_t all_phys_mask;
+        esp_ble_gap_phy_mask_t tx_phy_mask;
+        esp_ble_gap_phy_mask_t rx_phy_mask;
+        uint16_t phy_options;
+    } set_def_phy;
+
+    struct ext_adv_set_rand_addr_args {
+        uint8_t instance;
+        esp_bd_addr_t rand_addr;
+    } ext_adv_set_rand_addr;
+
+    struct ext_adv_set_params_args {
+        uint8_t instance;
+        esp_ble_gap_ext_adv_params_t params;
+    } ext_adv_set_params;
+
+    struct ext_adv_cfg_data_args {
+        uint8_t instance;
+        uint16_t length;
+        uint8_t *data;
+    } ext_adv_cfg_data;
+
+    struct ext_adv_cfg_scan_rsp_args {
+        uint8_t instance;
+        uint16_t length;
+        uint8_t *data;
+    } cfg_scan_rsp;
+
+    struct ext_adv_start_args {
+        uint8_t num_adv;
+        esp_ble_gap_ext_adv_t *ext_adv;
+    } ext_adv_start;
+
+    struct ext_adv_stop_args {
+        uint8_t num_adv;
+        uint8_t *ext_adv_inst;
+    } ext_adv_stop;
+
+    struct ext_adv_set_remove_args {
+        uint8_t instance;
+    } ext_adv_set_remove;
+
+    struct peridic_adv_set_params_args {
+        uint8_t instance;
+        esp_ble_gap_periodic_adv_params_t params;
+    } peridic_adv_set_params;
+
+    struct periodic_adv_cfg_data_args {
+        uint8_t instance;
+        uint16_t len;
+        uint8_t *data;
+    } periodic_adv_cfg_data;
+
+    struct periodic_adv_start_args {
+        uint8_t instance;
+    } periodic_adv_start;
+
+    struct periodic_adv_stop_args {
+        uint8_t instance;
+    } periodic_adv_stop;
+
+    struct periodic_adv_create_sync_args {
+        esp_ble_gap_periodic_adv_sync_params_t params;
+    } periodic_adv_create_sync;
+
+    struct periodic_adv_sync_term_args {
+        uint16_t sync_handle;
+    } periodic_adv_sync_term;
+
+    struct periodic_adv_add_dev_args {
+        esp_ble_addr_type_t addr_type;
+        esp_bd_addr_t addr;
+        uint16_t sid;
+    } periodic_adv_add_dev;
+
+    struct periodic_adv_remove_dev_args {
+        esp_ble_addr_type_t addr_type;
+        esp_bd_addr_t addr;
+        uint16_t sid;
+    } periodic_adv_remove_dev;
+
+    struct set_ext_scan_params_args {
+        esp_ble_ext_scan_params_t params;
+    } set_ext_scan_params;
+
+    struct start_ext_scan_args {
+        uint32_t duration;
+        uint16_t period;
+    } start_ext_scan;
+
+    struct set_ext_conn_params_args {
+        esp_bd_addr_t addr;
+        uint8_t phy_mask;
+        esp_ble_gap_conn_params_t phy_1m_conn_params;
+        esp_ble_gap_conn_params_t phy_2m_conn_params;
+        esp_ble_gap_conn_params_t phy_coded_conn_params;
+    } set_ext_conn_params;
+
+    struct ext_conn_args {
+        esp_ble_addr_type_t own_addr_type;
+        esp_bd_addr_t peer_addr;
+    } ext_conn;
+
+} btc_ble_5_gap_args_t;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 void btc_gap_ble_call_handler(btc_msg_t *msg);
 void btc_gap_ble_cb_handler(btc_msg_t *msg);

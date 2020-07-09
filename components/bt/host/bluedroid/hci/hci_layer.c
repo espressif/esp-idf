@@ -16,7 +16,9 @@
  *
  ******************************************************************************/
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_bt.h"
+
 #include "common/bt_defs.h"
 #include "common/bt_trace.h"
 #include "stack/hcidefs.h"
@@ -178,6 +180,9 @@ static int hci_layer_init_env(void)
         HCI_TRACE_ERROR("%s unable to create command response timer.", __func__);
         return -1;
     }
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    btsnd_hcic_ble_sync_sem_init();
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
     return 0;
 }
@@ -198,6 +203,9 @@ static void hci_layer_deinit_env(void)
     osi_mutex_free(&cmd_wait_q->commands_pending_response_lock);
     osi_alarm_free(cmd_wait_q->command_response_timer);
     cmd_wait_q->command_response_timer = NULL;
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    btsnd_hcic_ble_sync_sem_deinit();
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 }
 
 static void hci_host_thread_handler(void *arg)
@@ -431,6 +439,11 @@ static bool filter_incoming_event(BT_HDR *packet)
             HCI_TRACE_WARNING("%s command complete event with no matching command. opcode: 0x%x.", __func__, opcode);
         } else if (wait_entry->complete_callback) {
             wait_entry->complete_callback(packet, wait_entry->context);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+            if (wait_entry->command->sem) {
+                osi_sem_give(&wait_entry->command->sem);
+            }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         } else if (wait_entry->complete_future) {
             future_ready(wait_entry->complete_future, packet);
         }

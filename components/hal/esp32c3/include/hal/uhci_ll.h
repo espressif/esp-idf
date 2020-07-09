@@ -19,8 +19,8 @@
 #pragma once
 #include <stdio.h>
 #include "uhci_types.h"
-#include "uhci_struct.h"
-#include "gdma_struct.h"
+#include "soc/uhci_struct.h"
+#include "soc/gdma_struct.h"
 
 #define UHCI_DMA_INDEX 0
 
@@ -93,15 +93,15 @@ static inline void uhci_ll_set_swflow_ctrl_sub_chr(uhci_dev_t *hw, uhci_swflow_c
 static inline void uhci_ll_dma_in_reset(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.conf0[UHCI_DMA_INDEX].in_rst = 1;
-    GDMA.conf0[UHCI_DMA_INDEX].in_rst = 0;
+    GDMA.channel[UHCI_DMA_INDEX].in.in_conf0.in_rst = 1;
+    GDMA.channel[UHCI_DMA_INDEX].in.in_conf0.in_rst = 0;
 }
 
 static inline void uhci_ll_dma_out_reset(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.conf0[UHCI_DMA_INDEX].out_rst = 1;
-    GDMA.conf0[UHCI_DMA_INDEX].out_rst = 0;
+    GDMA.channel[UHCI_DMA_INDEX].out.out_conf0.out_rst = 1;
+    GDMA.channel[UHCI_DMA_INDEX].out.out_conf0.out_rst = 0;
 }
 
 static inline void uhci_ll_enable_intr(uhci_dev_t *hw, uint32_t intr_mask)
@@ -127,37 +127,37 @@ static inline uint32_t uhci_ll_get_intr(uhci_dev_t *hw)
 static inline void uhci_ll_set_rx_dma(uhci_dev_t *hw, uint32_t addr)
 {
     (void)hw;
-    GDMA.in_link[UHCI_DMA_INDEX].addr = addr;
+    GDMA.channel[UHCI_DMA_INDEX].in.in_link.addr = addr;
 }
 
 static inline void uhci_ll_set_tx_dma(uhci_dev_t *hw, uint32_t addr)
 {
     (void)hw;
-    GDMA.out_link[UHCI_DMA_INDEX].addr = addr;
+    GDMA.channel[UHCI_DMA_INDEX].out.out_link.addr = addr;
 }
 
 static inline void uhci_ll_rx_dma_start(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.in_link[UHCI_DMA_INDEX].start = 1;
+    GDMA.channel[UHCI_DMA_INDEX].in.in_link.start = 1;
 }
 
 static inline void uhci_ll_tx_dma_start(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.out_link[UHCI_DMA_INDEX].start = 1;
+    GDMA.channel[UHCI_DMA_INDEX].out.out_link.start = 1;
 }
 
 static inline void uhci_ll_rx_dma_stop(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.in_link[UHCI_DMA_INDEX].stop = 1;
+    GDMA.channel[UHCI_DMA_INDEX].in.in_link.stop = 1;
 }
 
 static inline void uhci_ll_tx_dma_stop(uhci_dev_t *hw)
 {
     (void)hw;
-    GDMA.out_link[UHCI_DMA_INDEX].stop = 1;
+    GDMA.channel[UHCI_DMA_INDEX].out.out_link.stop = 1;
 }
 
 static inline void uhci_ll_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)

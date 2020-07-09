@@ -495,7 +495,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     }
     /* open/hold a connection */
     if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda, p_data->api_conn.remote_addr_type,
-                      TRUE, p_data->api_conn.transport)) {
+                      TRUE, p_data->api_conn.transport, p_data->api_conn.is_aux)) {
         APPL_TRACE_ERROR("Connection open failure");
 
         bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_OPEN_FAIL_EVT, p_data);
@@ -530,7 +530,9 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *p_clreg
 
     if (bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, TRUE, FALSE)) {
         /* always call open to hold a connection */
-        if (!GATT_Connect(p_data->client_if, p_data->remote_bda, p_data->remote_addr_type, FALSE, p_data->transport)) {
+        if (!GATT_Connect(p_data->client_if, p_data->remote_bda,
+                          p_data->remote_addr_type, FALSE,
+                          p_data->transport,  p_data->is_aux)) {
 #if (!CONFIG_BT_STACK_NO_LOG)
             uint8_t *bda = (uint8_t *)p_data->remote_bda;
 #endif

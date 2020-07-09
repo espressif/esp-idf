@@ -1111,7 +1111,7 @@ extern  void GATT_StartIf (tGATT_IF gatt_if);
 **
 *******************************************************************************/
 extern BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type,
-                             BOOLEAN is_direct, tBT_TRANSPORT transport);
+                             BOOLEAN is_direct, tBT_TRANSPORT transport, BOOLEAN is_aux);
 
 
 /*******************************************************************************

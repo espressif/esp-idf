@@ -42,7 +42,7 @@ config BT_BLUEDROID_MEM_DEBUG
 
 config BT_CLASSIC_ENABLED
     bool "Classic Bluetooth"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLUEDROID_ENABLED && BT_CTRL_ESP32
     default n
     help
         For now this option needs "SMP_ENABLE" to be set to yes
@@ -1001,6 +1001,27 @@ config BT_BLE_ESTAB_LINK_CONN_TOUT
     help
         Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
         establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
+
+config BT_BLE_RPA_SUPPORTED
+    bool "Update RPA to Controller"
+    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+    default y
+    help
+        This enables controller RPA list function.
+
+config BT_BLE_50_FEATURES_SUPPORTED
+    bool "Enable BLE 5.0 features"
+    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+    default y
+    help
+        This enables BLE 5.0 features, this option only support esp32c3/esp32s3 chip
+
+config BT_BLE_42_FEATURES_SUPPORTED
+    bool "Enable BLE 4.2 features"
+    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+    default n
+    help
+        This enables BLE 4.2 features.
 
 config BT_RESERVE_DRAM
     hex
