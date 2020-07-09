@@ -45,7 +45,7 @@ void app_main(void)
 
     //be sure to do the init before using adc2. 
     printf("adc2_init...\n");
-    adc2_config_channel_atten( ADC2_EXAMPLE_CHANNEL, ADC_ATTEN_0db );
+    adc2_config_channel_atten( ADC2_EXAMPLE_CHANNEL, ADC_ATTEN_11db );
 
     vTaskDelay(2 * portTICK_PERIOD_MS);
 

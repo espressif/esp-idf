@@ -1,6 +1,7 @@
 menu "ADC-Calibration"
 
     config ADC_CAL_EFUSE_TP_ENABLE
+        depends on IDF_TARGET_ESP32
         bool "Use Two Point Values"
         default "y"
         help
@@ -9,6 +10,7 @@ menu "ADC-Calibration"
             ADC-Voltage curve using Two Point values if they are available.
 
     config ADC_CAL_EFUSE_VREF_ENABLE
+        depends on IDF_TARGET_ESP32
         bool "Use eFuse Vref"
         default "y"
         help
@@ -17,11 +19,13 @@ menu "ADC-Calibration"
             eFuse Vref if it is available.
 
     config ADC_CAL_LUT_ENABLE
+        depends on IDF_TARGET_ESP32
         bool "Use Lookup Tables"
         default "y"
         help
             This option will allow the ADC calibration component to use Lookup Tables
             to correct for non-linear behavior in 11db attenuation. Other attenuations
             do not exhibit non-linear behavior hence will not be affected by this option.
+
 
 endmenu  # ADC-Calibration
