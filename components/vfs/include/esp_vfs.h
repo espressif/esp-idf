@@ -259,12 +259,16 @@ typedef struct
  * Register a virtual filesystem for given path prefix.
  *
  * @param base_path  file path prefix associated with the filesystem.
- *                   Must be a zero-terminated C string, up to ESP_VFS_PATH_MAX
+ *                   Must be a zero-terminated C string, may be empty.
+ *                   If not empty, must be up to ESP_VFS_PATH_MAX
  *                   characters long, and at least 2 characters long.
  *                   Name must start with a "/" and must not end with "/".
  *                   For example, "/data" or "/dev/spi" are valid.
  *                   These VFSes would then be called to handle file paths such as
  *                   "/data/myfile.txt" or "/dev/spi/0".
+ *                   In the special case of an empty base_path, a "fallback"
+ *                   VFS is registered. Such VFS will handle paths which are not
+ *                   matched by any other registered VFS.
  * @param vfs  Pointer to esp_vfs_t, a structure which maps syscalls to
  *             the filesystem driver functions. VFS component doesn't
  *             assume ownership of this pointer.
