@@ -1408,7 +1408,7 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     return ESP_OK;
 }
 
-void IRAM_ATTR r_assert_with_log(uint32_t error_bit, uint32_t time_slot)
+void IRAM_ATTR __attribute__((noinline)) r_assert_with_log(uint32_t error_bit, uint32_t time_slot)
 {
     __asm__ __volatile__("ill\n");
 }
@@ -1418,7 +1418,7 @@ void IRAM_ATTR r_assert_with_log(uint32_t error_bit, uint32_t time_slot)
  *
  * After coredump fixing this issue, just delete this function.
  */
-void IRAM_ATTR r_assert(const char *condition, int param0, int param1, const char *file, int line)
+void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int param0, int param1, const char *file, int line)
 {
     extern uint32_t btdm_debug_error_get_bit();
     extern uint32_t btdm_debug_error_get_time();
@@ -1437,7 +1437,6 @@ extern bool connection_is_alive();
 extern uint32_t real_bt_isr_count ;
 extern uint32_t connection_LinkSuperTimeout;
 extern uint32_t bt_isr_count_arry[16];
-
 
 static bool check_bt_is_alive()
 {
@@ -1467,6 +1466,7 @@ void esp_bt_check_need_restart()
     if(connection_is_alive() && (check_bt_is_alive()==false))
     {
         ets_printf("!! Check BT is not alive. Abort !!");
+        RMT_DBG_LOG_ERROR("BT not alive");
         abort();
     }
 }
