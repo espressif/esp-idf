@@ -26,9 +26,9 @@ extern void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void);
 #ifdef SOC_BT_SUPPORTED
 extern void bt_bb_init_cmplx_reg(void);
 extern void bt_track_pll_cap(void);
-#endif
 extern void force_wifi_mode(int);
 extern void unforce_wifi_mode(void);
+#endif
 
 static const char* TAG = "test_phy_rtc";
 
@@ -59,6 +59,7 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 {
     test_phy_rtc_init();
 
+#ifdef SOC_BT_SUPPORTED
     for (int i = 0; i < 2; i++) {
         ESP_LOGI(TAG, "Test force_wifi_mode(%d)...", i);
         spi_flash_disable_interrupts_caches_and_other_cpu();
@@ -71,7 +72,6 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
         spi_flash_enable_interrupts_caches_and_other_cpu();
     }
 
-#ifdef SOC_BT_SUPPORTED
     ESP_LOGI(TAG, "Test bt_bb_init_cmplx_reg()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();
     bt_bb_init_cmplx_reg();
