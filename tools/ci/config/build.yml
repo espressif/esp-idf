@@ -182,7 +182,6 @@ build_examples_cmake_esp32s2:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
-      - $BOT_LABEL_INTEGRATION_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_CUSTOM_TEST
       - $BOT_LABEL_WEEKEND_TEST
