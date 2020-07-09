@@ -20,6 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 
 static const char *TAG = "ksz8041";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -166,7 +167,7 @@ static esp_err_t ksz8041_reset_hw(esp_eth_phy_t *phy)
 {
     phy_ksz8041_t *ksz8041 = __containerof(phy, phy_ksz8041_t, parent);
     if (ksz8041->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(ksz8041->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(ksz8041->reset_gpio_num);
         gpio_set_direction(ksz8041->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(ksz8041->reset_gpio_num, 0);
         gpio_set_level(ksz8041->reset_gpio_num, 1);
