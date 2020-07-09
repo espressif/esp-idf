@@ -113,8 +113,6 @@ typedef struct _core_dump_write_config_t
     esp_core_dump_write_end_t           end;
     // this function is called to write data chunk
     esp_core_dump_flash_write_data_t    write;
-    // number of tasks with corrupted TCBs
-    uint32_t                            bad_tasks_num;
     // pointer to data which are specific for particular core dump emitter
     void *                              priv;
 } core_dump_write_config_t;

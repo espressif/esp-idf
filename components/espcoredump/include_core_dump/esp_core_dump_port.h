@@ -35,8 +35,6 @@ extern "C" {
 #define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32S2
 #endif
 
-#define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)
-
 typedef enum {
     COREDUMP_MEMORY_DRAM,
     COREDUMP_MEMORY_IRAM,
@@ -46,19 +44,30 @@ typedef enum {
     COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
 } coredump_region_t;
 
-// Gets RTOS tasks snapshot
-uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
-                        const uint32_t snapshot_size);
+// RTOS tasks snapshots walk API
+void esp_core_dump_reset_tasks_snapshots_iter(void);
+void *esp_core_dump_get_next_task(void *handle);
+bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task,
+                                    core_dump_mem_seg_header_t *interrupted_stack);
 
-// Checks TCB consistency
-bool esp_core_dump_tcb_addr_is_sane(uint32_t addr);
-// Checks stack address
-bool esp_core_dump_task_stack_end_is_sane(uint32_t sp);
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
 void *esp_core_dump_get_current_task_handle(void);
-bool esp_core_dump_check_task(panic_info_t *info, core_dump_task_header_t *task_snaphort, bool* is_current, bool* stack_is_valid);
-bool esp_core_dump_check_stack(uint32_t stack_start, uint32_t stack_end);
 uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot, uint32_t* stk_base, uint32_t* stk_len);
+
+static inline uint32_t esp_core_dump_get_tcb_len(void)
+{
+    if (sizeof(StaticTask_t) % sizeof(uint32_t)) {
+        return ((sizeof(StaticTask_t) / sizeof(uint32_t) + 1) * sizeof(uint32_t));
+    }
+    return sizeof(StaticTask_t);
+}
+
+static inline uint32_t esp_core_dump_get_memory_len(uint32_t start, uint32_t end)
+{
+    uint32_t len = end - start;
+    // Take stack padding into account
+    return (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+}
 
 uint16_t esp_core_dump_get_arch_id(void);
 uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **reg_dump);
@@ -82,8 +91,7 @@ int esp_core_dump_sha(mbedtls_sha256_context *ctx,
 #endif
 void esp_core_dump_print_checksum(const char* msg, const void* checksum);
 
-#define esp_core_dump_in_isr_context() xPortInterruptedFromISRContext()
-uint32_t esp_core_dump_get_isr_stack_end(void);
+void esp_core_dump_port_init(panic_info_t *info);
 
 #if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
 #if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
