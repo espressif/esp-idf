@@ -1412,13 +1412,13 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     TEST_ESP_OK( test_touch_denoise(val_2, NULL, TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0) );
     TEST_ESP_OK( test_touch_denoise(val_3, NULL, TOUCH_PAD_DENOISE_BIT12, TOUCH_PAD_DENOISE_CAP_L0) );
 
-    if ((denoise_val[0] & 0xFF) < (0xFF - 10) && (denoise_val[0] & 0xFF) > 10) {
+    /*`TOUCH_PAD_DENOISE_BIT4` has a small denoise value, which may be smaller than the noise amplitude of the touch reading, so no verification for it.*/
+    if ((((denoise_val[0] >> 4) & 0xF) != 0) && (((denoise_val[0] >> 8) & 0xF) != 0)) {
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ASSERT_GREATER_OR_EQUAL(val_3[i], val_2[i]);
-            TEST_ASSERT_GREATER_OR_EQUAL(val_2[i], val_1[i]);
+            TEST_ASSERT_GREATER_THAN(val_3[i], val_2[i]);
         }
     } else {
-        /* If the value of (denoise_val[0] & 0xFF) is approximately 0,
+        /* If the value of denoise is approximately 0,
         The difference between touch reading is very small. Should skip value test. */
         ESP_LOGI(TAG, "denoise value is %d", denoise_val[0]);
     }
