@@ -20,9 +20,9 @@
 #include "model_opcode.h"
 #include "time_scene_client.h"
 
-/** The following are the macro definitions of time and client
- *  scene model messages length, and a message is composed of
- *  three parts: Opcode + msg_value + MIC
+/* The followings are the macro definitions of Time Scene client
+ * model message length, and a message is composed of 3 parts:
+ * Opcode + Payload + MIC
  */
 /* Time client messages length */
 #define BLE_MESH_TIME_SET_MSG_LEN            (1 + 10 + 4)
@@ -125,18 +125,18 @@ static void time_scene_status(struct bt_mesh_model *model,
     u8_t evt = 0xFF;
     size_t len = 0U;
 
-    BT_DBG("%s, len %d, bytes %s", __func__, buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("len %d, bytes %s", buf->len, bt_hex(buf->data, buf->len));
 
     switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_TIME_STATUS: {
         struct bt_mesh_time_status *status = NULL;
         if (buf->len != 5 && buf->len != 10) {
-            BT_ERR("%s, Invalid Time Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Time Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_time_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         memcpy(status->tai_seconds, buf->data, 5);
@@ -154,12 +154,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_TIME_ZONE_STATUS: {
         struct bt_mesh_time_zone_status *status = NULL;
         if (buf->len != 7) {
-            BT_ERR("%s, Invalid Time Zone Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Time Zone Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_time_zone_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         status->time_zone_offset_curr = net_buf_simple_pull_u8(buf);
@@ -173,12 +173,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_TAI_UTC_DELTA_STATUS: {
         struct bt_mesh_tai_utc_delta_status *status = NULL;
         if (buf->len != 9) {
-            BT_ERR("%s, Invalid TAI UTC Delta Status length %d", __func__, buf->len);
+            BT_ERR("Invalid TAI UTC Delta Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_tai_utc_delta_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         u16_t temp = net_buf_simple_pull_le16(buf);
@@ -196,12 +196,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_TIME_ROLE_STATUS: {
         struct bt_mesh_time_role_status *status = NULL;
         if (buf->len != 1) {
-            BT_ERR("%s, Invalid Time Role Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Time Role Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_time_role_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         status->time_role = net_buf_simple_pull_u8(buf);
@@ -212,12 +212,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_SCENE_STATUS: {
         struct bt_mesh_scene_status *status = NULL;
         if (buf->len != 3 && buf->len != 6) {
-            BT_ERR("%s, Invalid Scene Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Scene Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_scene_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         status->status_code = net_buf_simple_pull_u8(buf);
@@ -235,14 +235,14 @@ static void time_scene_status(struct bt_mesh_model *model,
         struct bt_mesh_scene_register_status *status = NULL;
         status = bt_mesh_calloc(sizeof(struct bt_mesh_scene_register_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         status->status_code = net_buf_simple_pull_u8(buf);
         status->current_scene = net_buf_simple_pull_le16(buf);
         status->scenes = bt_mesh_alloc_buf(buf->len);
         if (!status->scenes) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             bt_mesh_free(status);
             return;
         }
@@ -254,12 +254,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_SCHEDULER_STATUS: {
         struct bt_mesh_scheduler_status *status = NULL;
         if (buf->len != 2) {
-            BT_ERR("%s, Invalid Scheduler Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Scheduler Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_scheduler_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         status->schedules = net_buf_simple_pull_le16(buf);
@@ -270,12 +270,12 @@ static void time_scene_status(struct bt_mesh_model *model,
     case BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS: {
         struct bt_mesh_scheduler_act_status *status = NULL;
         if (buf->len != 10) {
-            BT_ERR("%s, Invalid Scheduler Action Status length %d", __func__, buf->len);
+            BT_ERR("Invalid Scheduler Action Status length %d", buf->len);
             return;
         }
         status = bt_mesh_calloc(sizeof(struct bt_mesh_scheduler_act_status));
         if (!status) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return;
         }
         memcpy(status, buf->data, offsetof(struct bt_mesh_scheduler_act_status, scene_number));
@@ -286,7 +286,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         break;
     }
     default:
-        BT_ERR("%s, Not a Time Scene Status message opcode", __func__);
+        BT_ERR("Invalid Time Scene Status opcode 0x%04x", ctx->recv_op);
         return;
     }
 
@@ -297,7 +297,7 @@ static void time_scene_status(struct bt_mesh_model *model,
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
-        BT_DBG("Unexpected time scene status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected Time Scene Status 0x%04x", ctx->recv_op);
     } else {
         switch (node->opcode) {
         case BLE_MESH_MODEL_OP_TIME_GET:
@@ -385,7 +385,7 @@ static int time_scene_get_state(bt_mesh_client_common_param_t *common, void *val
             break;
         }
         default:
-            BT_DBG("This time scene message should be sent with NULL get pointer");
+            BT_DBG("No parameters for Time Scene Get 0x%04x", common->opcode);
             break;
         }
     }
@@ -394,7 +394,7 @@ static int time_scene_get_state(bt_mesh_client_common_param_t *common, void *val
                                   timeout_handler, common->msg_timeout, true,
                                   common->cb, common->cb_data);
     if (err) {
-        BT_ERR("%s, Failed to send Time Scene Get message (err %d)", __func__, err);
+        BT_ERR("Failed to send Time Scene Get message (err %d)", err);
     }
 
     return err;
@@ -408,7 +408,7 @@ static int time_scene_set_state(bt_mesh_client_common_param_t *common,
 
     msg = bt_mesh_alloc_buf(value_len);
     if (!msg) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return -ENOMEM;
     }
 
@@ -480,7 +480,7 @@ static int time_scene_set_state(bt_mesh_client_common_param_t *common,
         break;
     }
     default:
-        BT_ERR("%s, Not a Time Scene Client set message opcode", __func__);
+        BT_ERR("Invalid Time Scene Set opcode 0x%04x", common->opcode);
         err = -EINVAL;
         goto end;
     }
@@ -489,7 +489,7 @@ static int time_scene_set_state(bt_mesh_client_common_param_t *common,
                                   timeout_handler, common->msg_timeout, need_ack,
                                   common->cb, common->cb_data);
     if (err) {
-        BT_ERR("%s, Failed to send Time Scene Set message (err %d)", __func__, err);
+        BT_ERR("Failed to send Time Scene Set message (err %d)", err);
     }
 
 end:
@@ -497,7 +497,8 @@ end:
     return err;
 }
 
-int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common,
+                                        void *get, void *status)
 {
     bt_mesh_time_scene_client_t *client = NULL;
 
@@ -508,7 +509,7 @@ int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, v
 
     client = (bt_mesh_time_scene_client_t *)common->model->user_data;
     if (!client || !client->internal_data) {
-        BT_ERR("%s, Time Scene Client user data is NULL", __func__);
+        BT_ERR("Invalid Time Scene client data");
         return -EINVAL;
     }
 
@@ -523,19 +524,20 @@ int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, v
         break;
     case BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET:
         if (!get) {
-            BT_ERR("%s, Scheduler action index is NULL", __func__);
+            BT_ERR("Invalid Scheduler Action Get");
             return -EINVAL;
         }
         break;
     default:
-        BT_ERR("%s, Not a Time Scene Client Get message opcode", __func__);
+        BT_ERR("Invalid Time Scene Get opcode 0x%04x", common->opcode);
         return -EINVAL;
     }
 
     return time_scene_get_state(common, get);
 }
 
-int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common,
+                                        void *set, void *status)
 {
     bt_mesh_time_scene_client_t *client = NULL;
     u16_t length = 0U;
@@ -548,7 +550,7 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
 
     client = (bt_mesh_time_scene_client_t *)common->model->user_data;
     if (!client || !client->internal_data) {
-        BT_ERR("%s, Time Scene Client user data is NULL", __func__);
+        BT_ERR("Invalid Time Scene client data");
         return -EINVAL;
     }
 
@@ -565,7 +567,7 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
         struct bt_mesh_tai_utc_delta_set *value;
         value = (struct bt_mesh_tai_utc_delta_set *)set;
         if (value->padding) {
-            BT_ERR("%s, Non-zero padding value is prohibited", __func__);
+            BT_ERR("Non-zero padding value is prohibited");
             return -EINVAL;
         }
         need_ack = true;
@@ -576,7 +578,7 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
         struct bt_mesh_time_role_set *value;
         value = (struct bt_mesh_time_role_set *)set;
         if (value->time_role > 0x03) {
-            BT_ERR("%s, Time role value is prohibited", __func__);
+            BT_ERR("Time role 0x%02x is prohibited", value->time_role);
             return -EINVAL;
         }
         need_ack = true;
@@ -589,7 +591,7 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
         struct bt_mesh_scene_store *value;
         value = (struct bt_mesh_scene_store *)set;
         if (!value->scene_number) {
-            BT_ERR("%s, Scene store scene_number 0x0000 is prohibited", __func__);
+            BT_ERR("Scene Store scene number 0x0000 is prohibited");
             return -EINVAL;
         }
         length = BLE_MESH_SCENE_STORE_MSG_LEN;
@@ -601,12 +603,12 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
         struct bt_mesh_scene_recall *value;
         value = (struct bt_mesh_scene_recall *)set;
         if (!value->scene_number) {
-            BT_ERR("%s, Scene recall scene_number 0x0000 is prohibited", __func__);
+            BT_ERR("Scene Recall scene number 0x0000 is prohibited");
             return -EINVAL;
         }
         if (value->op_en) {
             if ((value->trans_time & 0x3F) > 0x3E) {
-                BT_ERR("%s, Invalid Scene Recall transition time", __func__);
+                BT_ERR("Invalid Scene Recall transition time");
                 return -EINVAL;
             }
         }
@@ -625,18 +627,18 @@ int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, v
         struct bt_mesh_scheduler_act_set *value;
         value = (struct bt_mesh_scheduler_act_set *)set;
         if (value->year > 0x64) {
-            BT_ERR("%s, Scheduler register year value is prohibited", __func__);
+            BT_ERR("Scheduler Register year 0x%02x is prohibited", value->year);
             return -EINVAL;
         }
         if (value->hour > 0x19) {
-            BT_ERR("%s, Scheduler register hour value is prohibited", __func__);
+            BT_ERR("Scheduler Register hour 0x%02x is prohibited", value->hour);
             return -EINVAL;
         }
         length = BLE_MESH_SCHEDULER_ACT_SET_MSG_LEN;
         break;
     }
     default:
-        BT_ERR("%s, Not a Time Scene Set message opcode", __func__);
+        BT_ERR("Invalid Time Scene Set opcode 0x%04x", common->opcode);
         return -EINVAL;
     }
 
@@ -657,14 +659,14 @@ static int time_scene_client_init(struct bt_mesh_model *model, bool primary)
 
     client = (bt_mesh_time_scene_client_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, Time Scene Client user_data is NULL", __func__);
+        BT_ERR("Invalid Time Scene client user data");
         return -EINVAL;
     }
 
     if (!client->internal_data) {
         internal = bt_mesh_calloc(sizeof(time_scene_internal_data_t));
         if (!internal) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return -ENOMEM;
         }
 
@@ -709,7 +711,7 @@ static int time_scene_client_deinit(struct bt_mesh_model *model, bool primary)
 
     client = (bt_mesh_time_scene_client_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, Time Scene Client user_data is NULL", __func__);
+        BT_ERR("Invalid Time Scene client user data");
         return -EINVAL;
     }
 

@@ -48,7 +48,7 @@ void bt_mesh_timer_init(void)
     bm_alarm_hash_map = hash_map_new(BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE,
                                      hash_function_pointer, NULL,
                                      (data_free_fn)osi_alarm_free, NULL);
-    __ASSERT(bm_alarm_hash_map, "%s, Failed to create hash map", __func__);
+    __ASSERT(bm_alarm_hash_map, "Failed to create hash map");
 }
 
 void bt_mesh_timer_deinit(void)
@@ -74,12 +74,12 @@ int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
     if (!hash_map_has_key(bm_alarm_hash_map, (void *)work)) {
         alarm = osi_alarm_new("bt_mesh", (osi_alarm_callback_t)handler, (void *)&work->work, 0);
         if (alarm == NULL) {
-            BT_ERR("%s, Alarm not created", __func__);
+            BT_ERR("Alarm not created");
             bt_mesh_alarm_unlock();
             return -EIO;
         }
         if (!hash_map_set(bm_alarm_hash_map, work, (void *)alarm)) {
-            BT_ERR("%s, Alarm not set", __func__);
+            BT_ERR("Alarm not set");
             bt_mesh_alarm_unlock();
             return -EIO;
         }
@@ -87,7 +87,7 @@ int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
     alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
-        BT_ERR("%s, Alarm not found", __func__);
+        BT_ERR("Init, alarm not found");
         bt_mesh_alarm_unlock();
         return -ENODEV;
     }
@@ -108,7 +108,7 @@ int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
     bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
-        BT_WARN("%s, Alarm not found", __func__);
+        BT_WARN("Submit, alarm not found");
         bt_mesh_alarm_unlock();
         return -EINVAL;
     }
@@ -130,7 +130,7 @@ int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
     bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
-        BT_WARN("%s, Alarm not found", __func__);
+        BT_WARN("Submit, alarm not found");
         bt_mesh_alarm_unlock();
         return -EINVAL;
     }
@@ -152,7 +152,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
     bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
-        BT_WARN("%s, Alarm not found", __func__);
+        BT_WARN("Cancel, alarm not found");
         bt_mesh_alarm_unlock();
         return -EINVAL;
     }
@@ -173,7 +173,7 @@ int k_delayed_work_free(struct k_delayed_work *work)
     bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
-        BT_WARN("%s, Alarm not found", __func__);
+        BT_WARN("Free, alarm not found");
         bt_mesh_alarm_unlock();
         return -EINVAL;
     }
@@ -196,7 +196,7 @@ s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
     bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
-        BT_WARN("%s, Alarm not found", __func__);
+        BT_WARN("Get time, alarm not found");
         bt_mesh_alarm_unlock();
         return 0;
     }

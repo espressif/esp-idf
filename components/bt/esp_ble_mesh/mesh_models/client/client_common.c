@@ -48,10 +48,9 @@ static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t 
     return NULL;
 }
 
-bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
-    struct bt_mesh_model *model,
-    struct bt_mesh_msg_ctx *ctx,
-    struct net_buf_simple *buf, bool need_pub)
+bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *model,
+                                                          struct bt_mesh_msg_ctx *ctx,
+                                                          struct net_buf_simple *buf, bool need_pub)
 {
     bt_mesh_client_internal_data_t *data = NULL;
     bt_mesh_client_user_data_t *cli = NULL;
@@ -64,7 +63,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
 
     cli = (bt_mesh_client_user_data_t *)model->user_data;
     if (!cli) {
-        BT_ERR("%s, Clinet user_data is NULL", __func__);
+        BT_ERR("Invalid client user data");
         return NULL;
     }
 
@@ -73,7 +72,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
      *  this message to the application layer.
      */
     if (!BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
-        BT_DBG("Unexpected status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected status message 0x%08x", ctx->recv_op);
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
         }
@@ -87,12 +86,12 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
      */
     data = (bt_mesh_client_internal_data_t *)cli->internal_data;
     if (!data) {
-        BT_ERR("%s, Client internal_data is NULL", __func__);
+        BT_ERR("Invalid client internal data");
         return NULL;
     }
 
     if ((node = bt_mesh_client_pick_node(&data->queue, ctx->addr)) == NULL) {
-        BT_DBG("Unexpected status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected status message 0x%08x", ctx->recv_op);
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
         }
@@ -100,7 +99,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
     }
 
     if (node->op_pending != ctx->recv_op) {
-        BT_DBG("Unexpected status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected status message 0x%08x", ctx->recv_op);
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
         }
@@ -108,7 +107,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
     }
 
     if (k_delayed_work_remaining_get(&node->timer) == 0) {
-        BT_DBG("Unexpected status message 0x%x", ctx->recv_op);
+        BT_DBG("Unexpected status message 0x%08x", ctx->recv_op);
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
         }
@@ -273,18 +272,18 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
 
     client = (bt_mesh_client_user_data_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, Invalid client user data", __func__);
+        BT_ERR("Invalid client user data");
         return -EINVAL;
     }
 
     internal = (bt_mesh_client_internal_data_t *)client->internal_data;
     if (!internal) {
-        BT_ERR("%s, Invalid client internal data", __func__);
+        BT_ERR("Invalid client internal data");
         return -EINVAL;
     }
 
     if (ctx->addr == BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("%s, Invalid DST 0x%04x", __func__, ctx->addr);
+        BT_ERR("Invalid DST 0x%04x", ctx->addr);
         return -EINVAL;
     }
 
@@ -303,19 +302,19 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     }
 
     if (!timer_handler) {
-        BT_ERR("%s, Invalid timeout handler", __func__);
+        BT_ERR("Invalid timeout handler");
         return -EINVAL;
     }
 
     if (bt_mesh_client_check_node_in_list(&internal->queue, ctx->addr)) {
-        BT_ERR("%s, Busy sending message to DST 0x%04x", __func__, ctx->addr);
+        BT_ERR("Busy sending message to DST 0x%04x", ctx->addr);
         return -EBUSY;
     }
 
     /* Don't forget to free the node in the timeout (timer_handler) function. */
     node = (bt_mesh_client_node_t *)bt_mesh_calloc(sizeof(bt_mesh_client_node_t));
     if (!node) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return -ENOMEM;
     }
 
@@ -331,7 +330,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     node->timeout = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
 
     if (k_delayed_work_init(&node->timer, timer_handler)) {
-        BT_ERR("%s, Failed to create a timer", __func__);
+        BT_ERR("Failed to create a timer");
         bt_mesh_free(node);
         return -EIO;
     }
@@ -389,20 +388,20 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     }
 
     if (!model->op) {
-        BT_ERR("%s, Client model op is NULL", __func__);
+        BT_ERR("Invalid vendor client model op");
         return -EINVAL;
     }
 
     cli = model->user_data;
     if (!cli) {
-        BT_ERR("%s, Client user_data is NULL", __func__);
+        BT_ERR("Invalid vendor client user data");
         return -EINVAL;
     }
 
     if (!cli->internal_data) {
         data = bt_mesh_calloc(sizeof(bt_mesh_client_internal_data_t));
         if (!data) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Out of memory", __func__);
             return -ENOMEM;
         }
 
@@ -431,7 +430,7 @@ int bt_mesh_client_deinit(struct bt_mesh_model *model)
 
     client = (bt_mesh_client_user_data_t *)model->user_data;
     if (!client) {
-        BT_ERR("%s, Client user_data is NULL", __func__);
+        BT_ERR("Invalid vendor client user data");
         return -EINVAL;
     }
 
@@ -455,19 +454,19 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     bt_mesh_client_user_data_t *client = NULL;
 
     if (!node || !node->ctx.model) {
-        BT_ERR("%s, Client model list item is NULL", __func__);
+        BT_ERR("Invalid client list item");
         return -EINVAL;
     }
 
     client = (bt_mesh_client_user_data_t *)node->ctx.model->user_data;
     if (!client) {
-        BT_ERR("%s, Client model user data is NULL", __func__);
+        BT_ERR("Invalid client user data");
         return -EINVAL;
     }
 
     internal = (bt_mesh_client_internal_data_t *)client->internal_data;
     if (!internal) {
-        BT_ERR("%s, Client model internal data is NULL", __func__);
+        BT_ERR("Invalid client internal data");
         return -EINVAL;
     }
 
@@ -526,7 +525,7 @@ int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common)
     case PROVISIONER:
         /* if provisioner is not enabled, provisioner role can't be used to send messages */
         if (!bt_mesh_is_provisioner_en()) {
-            BT_ERR("%s, Provisioner is disabled", __func__);
+            BT_ERR("Provisioner is disabled");
             return -EINVAL;
         }
         client->msg_role = PROVISIONER;
@@ -538,7 +537,7 @@ int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common)
         break;
 #endif
     default:
-        BT_WARN("%s, Unknown model role %x", __func__, common->role);
+        BT_WARN("Unknown model role 0x%02x", common->role);
         return -EINVAL;
     }
 
