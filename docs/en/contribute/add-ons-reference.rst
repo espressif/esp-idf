@@ -3,11 +3,11 @@ Documentation Add-ons and Extensions Reference
 
 This documentation is created using `Sphinx <http://www.sphinx-doc.org/>`_ application that renders text source files in `reStructuredText <https://en.wikipedia.org/wiki/ReStructuredText>`_ (``.rst``) format located in :idf:`docs` directory. For some more details on that process, please refer to section :doc:`documenting-code`.
 
-Besides Sphinx there are several other applications that help to provide nicely formatted and easy to navigate documentation. These applications are listed in section :ref:`setup-for-building-documentation` with the installed version numbers provided in file :idf_file:`docs/requirements.txt`.
+Besides Sphinx, there are several other applications that help to provide nicely formatted and easy to navigate documentation. These applications are listed in section :ref:`setup-for-building-documentation` with the installed version numbers provided in file :idf_file:`docs/requirements.txt`.
 
 We build ESP-IDF documentation for two languages (English, Simplified Chinese) and for multiple chips. Therefore we don't run ``sphinx`` directly, there is a wrapper Python program ``build_docs.py`` that runs Sphinx.
 
-On top of that we have created a couple of custom add-ons and extensions to help integrate documentation with underlining `ESP-IDF`_ repository and further improve navigation as well as maintenance of documentation.
+On top of that, we have created a couple of custom add-ons and extensions to help integrate documentation with underlining `ESP-IDF`_ repository and further improve navigation as well as maintenance of documentation.
 
 The purpose of this section is to provide a quick reference to the add-ons and the extensions.
 
@@ -17,9 +17,9 @@ Documentation Folder Structure
 
 * The ESP-IDF repository contains a dedicated documentation folder :idf:`docs` in the root.
 * The ``docs`` folder contains localized documentation in :idf:`docs/en` (English) and :idf:`docs/zh_CN` (simplified Chinese) subfolders.
-* Graphics files and fonts common to localized documentation are contained in :idf:`docs/_static` subfolder
+* Graphics files and fonts common to localized documentation are contained in :idf:`docs/_static` subfolder.
 * Remaining files in the root of ``docs`` as well as ``docs/en`` and ``docs/zh_CN`` provide configuration and scripts used to automate documentation processing including the add-ons and extensions.
-* Sphinx extensions are provided in two directories, ``extensions`` and ``idf_extensions``
+* Sphinx extensions are provided in two directories, ``extensions`` and ``idf_extensions``.
 * A ``_build`` directory is created in the ``docs`` folder by ``build_docs.py``. This directory is not added to the `ESP-IDF`_ repository.
 
 
@@ -33,7 +33,7 @@ Config Files
     This file contains configuration common to each localized documentation (e.g. English, Chinese). The contents of this file is imported to standard Sphinx configuration file ``conf.py`` located in respective language folders (e.g. ``docs/en``, ``docs/zh_CN``) during build for each language.
 
 :idf_file:`docs/sphinx-known-warnings.txt`
-    There are couple of spurious Sphinx warnings that cannot be resolved without doing update to the Sphinx source code itself. For such specific cases respective warnings are documented in ``sphinx-known-warnings.txt`` file, that is checked during documentation build, to ignore the spurious warnings.
+    There are couple of spurious Sphinx warnings that cannot be resolved without doing update to the Sphinx source code itself. For such specific cases, respective warnings are documented in ``sphinx-known-warnings.txt`` file, that is checked during documentation build, to ignore the spurious warnings.
 
 
 Scripts
@@ -75,14 +75,14 @@ These are Sphinx extensions developed for IDF that don't rely on any IDF-docs-sp
     Sphinx extensions that provides a ``.. list::`` directive that allows filtering of entries in lists based on whether a tag is set, as ``:tagname: - list content``. See the Python file for a more complete description.
 
 :idf_file:`docs/extensions/html_redirects.py`
-    During documentation lifetime some source files are moved between folders or renamed. This Sphinx extension adds a mechanism to redirect documentation pages that have changed URL by generating in the Sphinx output static HTML redirect pages. The script is used together with a redirection list ``html_redirect_pages``. ``conf_common.py`` builds this list from :idf_file:`docs/page_redirects.txt`
+    During documentation lifetime, some source files are moved between folders or renamed. This Sphinx extension adds a mechanism to redirect documentation pages that have changed URL by generating in the Sphinx output static HTML redirect pages. The script is used together with a redirection list ``html_redirect_pages``. ``conf_common.py`` builds this list from :idf_file:`docs/page_redirects.txt`.
 
 
 Third Party Extensions
 ^^^^^^^^^^^^^^^^^^^^^^
 
 - ``sphinxcontrib`` extensions for blockdiag, seqdiag, actdiag, nwdiag, rackdiag & packetdiag diagrams.
-- `Sphinx selective exclude`_ ``eager_only`` extension
+- `Sphinx selective exclude`_ ``eager_only`` extension.
 
 .. _idf-specific extensions:
 
@@ -94,9 +94,9 @@ Build System Integration
 
 :idf:`docs/idf_extensions/build_system/`
 
-Python package implementing a Sphinx extension to pull IDF build system information into the docs build
+Python package implementing a Sphinx extension to pull IDF build system information into the docs build.
 
-* Creates a dummy CMake IDF project and runs CMake to generate metadata
+* Creates a dummy CMake IDF project and runs CMake to generate metadata.
 * Registers some new configuration variables and emits a new Sphinx event, both for use by other extensions.
 
 Configuration Variables
@@ -112,7 +112,7 @@ New Event
 
 ``idf-info`` event is emitted early in the build, after the dummy project CMake run is complete.
 
-Arguments are ``(app, project_description)`` where ``project_description`` is a dict containing the values parsed from ``project_description.json`` in the CMake build directory.
+Arguments are ``(app, project_description)``, where ``project_description`` is a dict containing the values parsed from ``project_description.json`` in the CMake build directory.
 
 Other IDF-specific extensions subscribe to this event and use it to set up some docs parameters based on build system info.
 
@@ -126,7 +126,7 @@ Other Extensions
     Subscribes to ``idf-info`` event and uses confgen to generate ``kconfig.inc`` from the components included in the default project build. This file is then included into :doc:`/api-reference/kconfig`.
 
 :idf_file:`docs/idf_extensions/link_roles.py`
-    This is an implementation of a custom `Sphinx Roles <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html>`_ to help linking from documentation to specific files and folders in `ESP-IDF`_. For description of implemented roles please see :ref:`link-custom-roles` and :ref:`link-language-versions`.
+    This is an implementation of a custom `Sphinx Roles <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html>`_ to help linking from documentation to specific files and folders in `ESP-IDF`_. For description of implemented roles, please see :ref:`link-custom-roles` and :ref:`link-language-versions`.
 
 :idf_file:`docs/idf_extensions/esp_err_definitions.py`
     Small wrapper extension that calls ``gen_esp_err_to_name.py`` and updates the included .rst file if it has changed.

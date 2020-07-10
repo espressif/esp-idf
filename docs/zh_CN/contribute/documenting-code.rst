@@ -140,7 +140,7 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
 链接到示例
 ----------
 
-链接到 GitHub 上的示例时，请不要使用绝对 URLs 或硬编码 URLs。请使用 Docutils 自定义角色生成链接。自动生成的链接指向项目库中 git commit 编号（或标记）的 tree 或 blob。这种做法可以确保 master 分支上的文件移动或删除时，链接不会失效。
+链接到 GitHub 上的示例时，请不要使用绝对 URLs 或硬编码 URLs。请使用 Docutils 自定义角色生成链接。自动生成的链接指向项目库中 git commit 编号（或标记）的 tree 或 blob。这种做法可以确保 master 分支上的文件移动或删除时，链接不会失效。Docutils 自定义角色将以透明的方式处理子模块中的文件，并使用正确的 commit ID 链接到子模块目录中。
 
 有如下角色可以选择：
 
@@ -189,7 +189,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 请考虑使用图表和图片解释表述的概念。
 
-相比于长篇的表述，图例有时可以更好地描述复杂的理念、数据结构或算法。本项目库使用`blockdiag <http://blockdiag.com/en/index.html>`_ 工具包由简单的文本文件生成图表。
+相比于长篇的表述，图例有时可以更好地描述复杂的理念、数据结构或算法。本项目库使用 `blockdiag <http://blockdiag.com/en/index.html>`_ 工具包由简单的文本文件生成图表。
 
 工具包支持下列图表类型：
 
@@ -245,6 +245,132 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 更多关于扩展的信息，请参阅 `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ 的相关文档。
 
 
+为不同芯片书写通用文档
+----------------------
+
+乐鑫各芯片的文档是基于现有文档完成的。为提高文档写作效率，使所写文档可重复用于其它芯片（以下称“目标”）文档中，我们为您提供以下功能：
+
+
+依据目标类型排除内容
+"""""""""""""""""""""
+
+有时会出现某一内容只适用于一个目标的情况。这种情况下，你可以使用 ''.. only:: TAG'' 指令将这部分内容设为某个目标的专属内容，'TAG' 处替换为以下名称：
+
+芯片名称：
+
+* esp32
+* esp32s2
+
+从 'sdkconfig.h' 中定义标识符，标识符由目标的默认 menuconfig 设置生成，例如：
+
+* CONFIG_FREERTOS_UNICORE
+
+从 soc '\*_caps' 头文件中定义标识符，例如：
+
+* SOC_BT_SUPPORTED
+* SOC_CAN_SUPPORTED
+
+示例：
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        ESP32 specific content.
+
+该指令也支持布尔逻辑操作符 'and'、'or' 和 'not'。
+
+示例：
+
+.. code-block:: none
+
+    .. only:: SOC_BT_SUPPORTED and CONFIG_FREERTOS_UNICORE
+
+        BT specific content only relevant for single-core targets.
+
+该功能由 `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ 的扩展提供。
+
+这个扩展有一个缺点，当你想要排除某个章节时，而这个章节后直接跟着一个加了标签的新章节，此时该功能无法成功操作。这种情况下，章节的标签将无法正确链接到下一节，但其它内容都可正确渲染。如遇这一情况，可暂时使用以下应急方法：
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        .. _section_1_label:
+
+        Section 1
+        ^^^^^^^^^
+
+        Section one content
+
+        .. _section_2_label:
+
+    .. only:: esp32s2
+
+        _section_2_label:
+
+    Section 2
+    ^^^^^^^^^
+    Section 2 content
+
+':TAG:' 角色的作用为从树形目录中排除特定内容。例如：
+
+.. code-block:: none
+
+    .. toctree::
+        :maxdepth: 1
+
+        :esp32: configure-wrover
+        configure-other-jtag
+
+生成文档时，Sphinx 会使用上述提到的指令和角色，根据其被调用的目标标签来添加或排除某些内容。
+
+.. note::
+
+    如希望根据目标的标签从 toctree 中排除一整个文档，则需同时更新 :idf_file:`docs/conf_common.py` 中的 ``exclude_patterns`` 列表，为其它目标排除该文档。否则，Sphinx 将发出一条错误警报：WARNING: document isn't included in any toctree。
+
+    对此推荐的解决方案是：将这个文档添加到 :idf_file:`docs/conf_common.py` ``conditional_include_dict`` 中的一个列表里，例如，一个仅供支持蓝牙的目标可见的文档应被添加至 ``BT_DOCS``。此后，如果该文档未设置对应的标签，则 :idf_file:`docs/idf_extensions/exclude_docs.py` 会将其添加至 ``exclude_patterns``。
+
+
+如果你需要从一个列表或项目符号条目中排除某一内容，应通过在 ''.. list:: '' 指令中使用 '':TAG:'' 角色来完成。
+
+.. code-block:: none
+
+    .. list::
+
+        :esp32: - ESP32 specific content
+        :SOC_BT_SUPPORTED: - BT specific content
+        - Common bullet point
+        - Also common bullet point
+
+
+替代宏
+"""""""""""
+
+如果你需要指向根据目标类型定义的芯片名称、工具链名称、路径名称或其它通用名称，可以选择使用 :idf_file:`docs/idf_extensions/format_idf_target.py` 提供的替代宏。
+
+例如，以下 reStructuredText 内容：
+
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
+
+将在文档中渲染为：
+
+    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+这一扩展也支持定义本地（在单个源文件中）替代名称的标记。请在 RST 文件的一行中插入下示定义语言：
+
+    {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
+
+这样将在当前的 RST 文件中根据目标类型为 {\IDF_TARGET_SUFFIX} 标签定义一个替代名称。例如：
+
+    {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
+
+上例将为 {\IDF_TARGET_TX_PIN} 标签定义一个替代名称，当使用 esp32s2 标签调用 sphinx 时，{\IDF_TARGET_TX_PIN} 将被替代为 "IO5"。
+
+.. note::
+
+   这样的单个文档定义指令可置于 .rst 文档中的任意位置（单独一行），指令名须以 ``IDF_TARGET_`` 为开头。
+
 
 汇总文档
 --------
@@ -261,7 +387,7 @@ Sphinx 新手怎么办
 
 3. 想要查看在上传至 GitHub 前文档如何生成、呈现，有两种方式：
 
-    * 安装`Sphinx`_、 `Breathe`_、 `Blockdiag <http://blockdiag.com/en/index.html>`_ 和 `Doxygen <http://doxygen.nl/>`_ 本地生成文档，具体可查看下文。
+    * 安装`Sphinx`_、`Breathe`_、`Blockdiag <http://blockdiag.com/en/index.html>`_ 和 `Doxygen <http://doxygen.nl/>`_ 本地生成文档，具体可查看下文。
 
     * 在 `Read the Docs <https://readthedocs.org/>`_ 建立账号，在云端生成文档。 Read the Docs 免费提供文档生成和存储，且速度快、质量高。
 
@@ -272,6 +398,9 @@ Sphinx 新手怎么办
 
 搭建环境本地生成文档
 --------------------
+
+安装依赖项
+"""""""""""""
 
 您可以安装下列包，通过搭建环境在电脑上本地生成文档：
 
@@ -285,7 +414,12 @@ Sphinx 新手怎么办
 
 添加 "sphinx_idf_theme" 包之后，文档将与 `ESP-IDF 编程指南 <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ 的风格保持一致。
 
-不用担心需要安装太多包。除 Doxygen 和 sphinx_idf_theme 之外，其他包均使用纯 Python 语言，可一键安装。
+不用担心需要安装太多包。除 Doxygen 之外，其他包均使用纯 Python 语言，可一键安装。
+
+.. important:: 目前仅支持 Python 3 版本生成文档，无法使用 Python 2。
+
+Doxygen
+@@@@@@@
 
 Doxygen 的安装取决于操作系统：
 
@@ -309,7 +443,7 @@ Doxygen 的安装取决于操作系统：
 
 .. note::
 
-    如果您是在 Windows 系统上安装（Linux 和 MacOS 用户可以跳过此说明），在安装 **之前**，请完成以下两步。这是安装 :ref:`add-illustrations` 提到的 "blockdiag" 依赖项的必须步骤。
+    如果您是在 Windows MSYS2 系统上安装（Linux 和 MacOS 用户可以跳过此说明，不使用 MSYS2 的 Windows 用户需找到其它可替代系统），在安装 **之前**，请完成以下两步。这是安装 :ref:`add-illustrations` 提到的 "blockdiag" 依赖项的必须步骤。
 
     1.  更新所有系统包：
 
@@ -317,7 +451,7 @@ Doxygen 的安装取决于操作系统：
 
             $ pacman -Syu
 
-        该过程可能需要重启 MSYS2 MINGW32 控制台重复上述命令，直至更新完成。
+        该过程可能需要重启 MSYS2 MINGW32 控制台并重复上述命令，直至更新完成。
 
     2.  安装 *blockdiag* 的依赖项之一 *pillow*：
 
@@ -325,26 +459,14 @@ Doxygen 的安装取决于操作系统：
 
             $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        查看屏幕上的记录，确定 ``mingw-w64-i686-python-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
+        查看屏幕上的记录，确定 ``mingw-w64-i686-python-pillow-4.3.0-1`` 或更新的版本已安装。旧版本 *pillow* 无法运行。
 
     Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>`_ 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
 
 
-sphinx_idf_theme
-@@@@@@@@@@@@@@@@
+其它应用
+@@@@@@@@@@@
 
-编译 ``sphinx_idf_theme`` 需要同时使用 Python 和 JavaScript。因此，目前要进行本地编译还必须安装 `node.js <https://nodejs.org/en/download/>`_ ，命令如下：
-
-::
-
-   cd ~/esp
-   git clone https://github.com/espressif/sphinx_idf_theme.git
-   cd sphinx_idf_theme
-   npm install
-   python setup.py build
-   python setup.py install
-
-我们计划在不久的将来支持安装预编译 ``sphinx_idf_theme``，给您带来的暂时不便，敬请谅解。
 
 其他所有应用都是 `Python <https://www.python.org/>`_ 包，可以按照下列步骤一键安装：
 
@@ -357,16 +479,73 @@ sphinx_idf_theme
 
 	安装步骤设定将 ESP-IDF 放在 ``~/esp/esp-idf`` 目录下，这是文档中使用的 ESP-IDF 默认地址。
 
-更换到特定语言文件所在的目录::
+生成文档
+"""""""""
 
-    cd en
+::
+
+    cd ~/esp/esp-idf/docs
 
 现在可以调用如下命令生成文档::
 
-    make html
+    ./build_docs.py build
 
-这一步骤需要几分钟时间。完成后，文档会放置在 ``~/esp/esp-idf/docs/en/_build/html`` 文件夹下。您可以在网页浏览器中打开 ``index.html`` 查看。
+运行该命令后，系统将为 ESP-IDF 中所有可支持的语言和目标生成文档。这一过程将需要一些时间，但各文档会并行进行，速度取决于系统中 CPU 内核的个数（可通过 ``--sphinx-parallel-builds`` 选项修改该进程，详情可见 ``./build_docs.py --help``）。
 
+如需生成某一语言的单个文档，运行::
+
+    ./build_docs.py -l en -t esp32 build
+
+其中，语言 (``-l``) 可选择 ``en`` 和 ``zh_CN``；目标 (``-t``) 可选择 ESP-IDF 中任意可支持的构建目标（如 ``esp32`` 和 ``esp32s2``）。
+
+生成后的文档将位于 ``_build/<language>/<target>/html`` 文件夹中。如需查阅，请在网页浏览器中打开该目录里的 ``index.html``。
+
+
+生成文档子集
+""""""""""""""
+
+生成整个文档可能速度较慢，因此，也可以选择只生成你所需的某个子集。
+
+在指令中列出你需要生成的文档名称即可::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst build
+
+也可以同时生成多个文档::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst api-reference/peripherals/adc.rst build
+
+还可以生成通配文档::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/* build
+
+请注意，这一功能仅用于文档写作过程中的检查和测试。其生成的 HTML 页面并非渲染完成后的格式，比如，运行这一指令并不会生成一个列有所有文档的索引，而且如果其中涉及到任何还未生成的文档参考都将导致错误警报出现。
+
+
+生成 PDF 
+""""""""""""
+
+可以使用 ``build_docs.py`` 生成文档的 latex 和 PDF 格式，需安装以下 latex 工具包：
+
+ * latexmk
+ * texlive-latex-recommended
+ * texlive-fonts-recommended
+ * texlive-xetex
+
+同时，也需要安装以下字体：
+
+ * Freefont Serif、Sans 和 Mono OpenType fonts，类似于 Ubuntu 上的 ``fonts-freefont-otf`` 包
+ * Lmodern，类似于 Ubuntu 上的 ``fonts-lmodern`` 包
+ * Fandol，可从 `这里 <https://ctan.org/tex-archive/fonts/fandol>`_ 下载
+
+现在，可通过以下指令生成文档的 PDF 格式::
+
+    ./build_docs.py -bs latex -l en -t esp32 build
+
+或者，也可以同时生成 html 和 PDF 格式::
+
+    ./build_docs.py -bs html latex -l en -t esp32 build
+
+Latex 和 PDF 文件将位于 ``_build/<language>/<target>/latex`` 文件夹中。
 
 大功告成
 --------
