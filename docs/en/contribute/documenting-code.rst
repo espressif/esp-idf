@@ -122,7 +122,7 @@ There is couple of tips, how you can make your documentation even better and mor
 
    For practical example see :component_file:`nvs_flash/include/nvs.h`.
 
-4. You may want to go even further and skip some code like e.g. repetitive defines or enumerations. In such case enclose the code within ``/** @cond */`` and ``/** @endcond */`` commands. Example of such implementation is provided in :component_file:`driver/include/driver/gpio.h`.
+4. You may want to go even further and skip some code like repetitive defines or enumerations. In such case, enclose the code within ``/** @cond */`` and ``/** @endcond */`` commands. Example of such implementation is provided in :component_file:`driver/include/driver/gpio.h`.
 
 5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 
@@ -141,7 +141,7 @@ There is couple of tips, how you can make your documentation even better and mor
 Linking Examples
 ----------------
 
-When linking to examples on GitHub do not use absolute / hardcoded URLs. Instead, use docutils custom roles that will generate links for you. These auto-generated links point to the tree or blob for the git commit ID (or tag) of the repository. This is needed to ensure that links do not get broken when files in master branch are moved around or deleted. The roles will transparently handle files that are located in submodules and will link to the submodule's repository with the correct commit ID.
+When linking to examples on GitHub, do not use absolute/hardcoded URLs. Instead, use docutils custom roles that will generate links for you. These auto-generated links point to the tree or blob for the git commit ID (or tag) of the repository. This is needed to ensure that links do not get broken when files in master branch are moved around or deleted. The roles will transparently handle files that are located in submodules and will link to the submodule's repository with the correct commit ID.
 
 The following roles are provided:
 
@@ -199,9 +199,9 @@ The following types of diagrams are supported:
 * `Activity diagram <http://blockdiag.com/en/actdiag/index.html>`_
 * `Logical network diagram <http://blockdiag.com/en/nwdiag/index.html>`_
 
-With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents.
+With this suite of tools, it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents.
 
-For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image.
+For the diagram preparation, you can use an on-line `interactive shell`_ that instantly shows the rendered image.
 
 Below are couple of diagram examples:
 
@@ -327,7 +327,7 @@ When building the documents, Sphinx will use the above mentioned directive and r
 
     The recommended way of doing it is adding the document to one of the list that gets included in ``conditional_include_dict`` in :idf_file:`docs/conf_common.py`, e.g. a document which should only be shown for BT capable targets should be added to ``BT_DOCS``. :idf_file:`docs/idf_extensions/exclude_docs.py` will then take care of adding it to ``exclude_patterns`` if the corresponding tag is not set.
 
-If you need to exclude content inside a list or bullet points then this should be done by using the '':TAG:'' role inside the ''.. list:: '' directive.
+If you need to exclude content inside a list or bullet points, then this should be done by using the '':TAG:'' role inside the ''.. list:: '' directive.
 
 .. code-block:: none
 
@@ -351,11 +351,11 @@ Would render in the documentation as:
 
     This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
-This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file::
+This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file:
 
     {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
 
-This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example::
+This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example:
 
     {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
 
