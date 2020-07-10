@@ -33,12 +33,22 @@
  * The caller should ensure there is enough size to hold the array, by calling
  * ``lldesc_get_required_num``.
  *
- * @param out_desc_array Output of a descriptor array, the head should be fed to the DMA.
+ * @param[out] out_desc_array Output of a descriptor array, the head should be fed to the DMA.
  * @param buffer Buffer for the descriptors to point to.
  * @param size Size (or length for TX) of the buffer
  * @param isrx The RX DMA may require the buffer to be word-aligned, set to true for a RX link, otherwise false.
  */
 void lldesc_setup_link(lldesc_t *out_desc_array, const void *buffer, int size, bool isrx);
+
+/**
+ * @brief Get the received length of a linked list, until end of the link or eof.
+ *
+ * @param head      The head of the linked list.
+ * @param[out] out_next Output of the next descriptor of the EOF descriptor. Return NULL if there's no
+ *                 EOF. Can be set to NULL if next descriptor is not needed.
+ * @return The accumulation of the `len` field of all descriptors until EOF or the end of the link.
+ */
+int lldesc_get_received_len(lldesc_t* head, lldesc_t** out_next);
 
 /**
  * Get the number of descriptors required for a given buffer size.

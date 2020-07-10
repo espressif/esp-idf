@@ -5,6 +5,30 @@ This document describes the process of initialization of an ESP SDIO Slave devic
 
 The ESP SDIO Slave protocol was created to implement the communication between SDIO host and slave, because the SDIO specification only shows how to access the custom region of a card (by sending CMD52 and CMD53 to Functions 1-7) without any details regarding the underlying hardware implementation.
 
+.. _esp_sdio_slave_caps:
+
+SDIO Slave Capabilities of Espressif chips
+------------------------------------------
+
+The services provided by SDIO Slave peripherals of Espressif chips are different. See the table below:
+
++-----------------------------------------------------------+-------+----------+
+|                                                           | ESP32 | ESP32-S2 |
++===========================================================+=======+==========+
+| SDIO slave                                                | Y     | N        |
++-----------------------------------------------------------+-------+----------+
+| :ref:`Tohost intr <esp_sdio_slave_interrupts>`            | 8     |          |
++-----------------------------------------------------------+-------+----------+
+| :ref:`Frhost intr <esp_sdio_slave_interrupts>`            | 8     |          |
++-----------------------------------------------------------+-------+----------+
+| :ref:`TX DMA <esp_sdio_slave_send_fifo>`                  | Y     |          |
++-----------------------------------------------------------+-------+----------+
+| :ref:`RX DMA <esp_sdio_slave_rcv_fifo>`                   | Y     |          |
++-----------------------------------------------------------+-------+----------+
+| :ref:`Shared registers <esp_sdio_slave_shared_registers>` | 56\*  |          |
++-----------------------------------------------------------+-------+----------+
+
+- \* Not including the interrupt registers
 
 .. _esp_slave_init:
 
@@ -90,6 +114,7 @@ The :doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>
 
 .. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
+.. _esp_sdio_slave_shared_registers:
 
 Slave register table
 ^^^^^^^^^^^^^^^^^^^^
@@ -137,16 +162,18 @@ The slave will respond with data that has a length equal to the length field of 
     1. Send CMD53 in block mode, block count=2 (1024 bytes) to address 0x1F3F9=0x1F800-**1031**.
     2. Then send CMD53 in byte mode, byte count=8 (or 7 if your controller supports that) to address 0x1F7F9=0x1F800-**7**.
 
+.. _esp_sdio_slave_interrupts:
 
 Interrupts
 ^^^^^^^^^^
 
 SDIO interrupts are "level sensitive". For host interrupts, the slave sends an interrupt by pulling the DAT1 line down at a proper time. The host detects when the interrupt line is pulled down and reads the INT_ST register to determine the source of the interrupt. After that, the host can clear the interrupt bits by writing the INT_CLR register and process the interrupt. The host can also mask unneeded sources by clearing the bits in the INT_ENA register corresponding to the sources. If all the sources are cleared (or masked), the DAT1 line goes inactive.
 
-:cpp:type:`sdio_slave_hostint_t` (:doc:`sdio_slave`) shows the bit definition corresponding to host interrupt sources.
+On ESP32, the corresponding host_int bits are: bit 0 to bit 7.
 
 For slave interrupts, the host sends a transfer to write the SLAVE_INT register. Once a bit is set to 1, the slave hardware and the driver will detect it and inform the application.
 
+.. _esp_sdio_slave_rcv_fifo:
 
 Receiving FIFO
 ^^^^^^^^^^^^^^
@@ -158,6 +185,7 @@ To write to the slave's receiving FIFO, the host should complete the following s
 3. **Write to the FIFO address with CMD53**. Note that the *requested length* should not exceed the length calculated at Step 2, and the FIFO address is related to *requested length*.
 4. **Calculate used buffers**. Note that a partially used buffer at the tail is counted as used.
 
+.. _esp_sdio_slave_send_fifo:
 
 Sending FIFO
 ^^^^^^^^^^^^

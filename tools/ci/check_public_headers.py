@@ -259,6 +259,7 @@ class PublicHeaderChecker:
             if item.startswith("-D"):
                 include_dir_flags.append(item.replace('\\',''))  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
         include_dir_flags.append("-I" + os.path.join(project_dir, "build", "config"))
+        include_dir_flags.append("-DCI_HEADER_CHECK")
         sdkconfig_h = os.path.join(project_dir, "build", "config", "sdkconfig.h")
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
         with open(sdkconfig_h, "a") as f:

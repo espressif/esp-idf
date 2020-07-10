@@ -26,6 +26,7 @@ Peripherals API
     SPI Master <spi_master>
     SPI Slave <spi_slave>
     :esp32: Secure Element <secure_element>
+    :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
     Touch Sensor <touch_pad>

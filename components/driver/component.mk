@@ -2,6 +2,7 @@
 # Component Makefile
 #
 COMPONENT_SRCDIRS := . $(IDF_TARGET)
+COMPONENT_OBJEXCLUDE += spi_slave_hd.o
 
 COMPONENT_ADD_INCLUDEDIRS := include $(IDF_TARGET)/include $(IDF_TARGET)/include/driver
 

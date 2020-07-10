@@ -15,7 +15,9 @@
 #pragma once
 
 #include "soc/spi_caps.h"
+#include "esp_attr.h"
 #include "sdkconfig.h"
+#include <esp_bit_defs.h>
 
 /**
  * @brief Enum with the three SPI peripherals that are software-accessible in it
@@ -26,6 +28,19 @@ typedef enum {
     SPI2_HOST=1,    ///< SPI2
     SPI3_HOST=2,    ///< SPI3
 } spi_host_device_t;
+
+/// SPI Events
+typedef enum {
+    SPI_EV_BUF_TX = BIT(0), ///< The buffer has sent data to master, Slave HD only
+    SPI_EV_BUF_RX = BIT(1), ///< The buffer has received data from master, Slave HD only
+    SPI_EV_SEND =   BIT(2), ///< Has sent data to master through RDDMA, Slave HD only
+    SPI_EV_RECV =   BIT(3), ///< Has received data from master through WRDMA, Slave HD only
+    SPI_EV_CMD9 =   BIT(4), ///< Received CMD9 from master, Slave HD only
+    SPI_EV_CMDA =   BIT(5), ///< Received CMDA from master, Slave HD only
+    SPI_EV_TRANS =  BIT(6), ///< A transaction has done
+} spi_event_t;
+FLAG_ATTR(spi_event_t)
+
 
 /** @cond */    //Doxy command to hide preprocessor definitions from docs */
 

@@ -8,7 +8,7 @@
 
    ADC <adc>
    DAC <dac>
-   GPIO (including RTC low power I/O) <gpio>
+   GPIO (包括 RTC 低功耗 I/O) <gpio>
    :esp32s2: HMAC <hmac>
    :esp32s2: Digital Signature <ds>
    I2C <i2c>
@@ -24,6 +24,7 @@
    SPI Master <spi_master>
    SPI Slave <spi_slave>
    :esp32: Secure Element <secure_element>
+   :esp32s2: SPI Slave 半双工 (half duplex) <spi_slave_hd>
    :esp32s2: Temp sensor <temp_sensor>
    Timer <timer>
    Touch Sensor <touch_pad>
@@ -31,4 +32,3 @@
    UART <uart>
 
 本部分的 API 示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals` 目录下。
-

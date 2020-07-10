@@ -40,10 +40,11 @@ if(CONFIG_IDF_TARGET_ESP32)
                                             "src/hal/sdio_slave_hal.c")
 elseif(CONFIG_IDF_TARGET_ESP32S2)
     target_sources(${COMPONENT_LIB} PRIVATE "src/hal/spi_flash_hal_gpspi.c")
+    target_sources(${COMPONENT_LIB} PRIVATE "src/hal/spi_slave_hd_hal.c")
 endif()
 
-# Since there can be chip-specific HAL headers which can include the common 
-# HAL header via include_next, process the build scripts here first so that 
+# Since there can be chip-specific HAL headers which can include the common
+# HAL header via include_next, process the build scripts here first so that
 # include directories appear first in the compile command.
 add_subdirectory(src/${target})
 target_include_directories(${COMPONENT_LIB} PUBLIC include)

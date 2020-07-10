@@ -100,6 +100,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
+    $(IDF_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
     $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
@@ -157,6 +158,7 @@ INPUT = \
     ## ESP Serial Slave Link
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     ## ESP Certificate Bundle
     $(IDF_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     ##

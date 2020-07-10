@@ -62,11 +62,12 @@ extern "C"
 #define SPICOMMON_BUSFLAG_SLAVE         0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER        (1<<0)     ///< Initialize I/O in master mode
 #define SPICOMMON_BUSFLAG_IOMUX_PINS    (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
-#define SPICOMMON_BUSFLAG_SCLK          (1<<2)     ///< Check existing of SCLK pin. Or indicates CLK line initialized.
-#define SPICOMMON_BUSFLAG_MISO          (1<<3)     ///< Check existing of MISO pin. Or indicates MISO line initialized.
-#define SPICOMMON_BUSFLAG_MOSI          (1<<4)     ///< Check existing of MOSI pin. Or indicates CLK line initialized.
-#define SPICOMMON_BUSFLAG_DUAL          (1<<5)     ///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
-#define SPICOMMON_BUSFLAG_WPHD          (1<<6)     ///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
+#define SPICOMMON_BUSFLAG_GPIO_PINS     (1<<2)     ///< Force the signals to be routed through GPIO matrix. Or indicates the pins are routed through the GPIO matrix.
+#define SPICOMMON_BUSFLAG_SCLK          (1<<3)     ///< Check existing of SCLK pin. Or indicates CLK line initialized.
+#define SPICOMMON_BUSFLAG_MISO          (1<<4)     ///< Check existing of MISO pin. Or indicates MISO line initialized.
+#define SPICOMMON_BUSFLAG_MOSI          (1<<5)     ///< Check existing of MOSI pin. Or indicates MOSI line initialized.
+#define SPICOMMON_BUSFLAG_DUAL          (1<<6)     ///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
+#define SPICOMMON_BUSFLAG_WPHD          (1<<7)     ///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
 #define SPICOMMON_BUSFLAG_QUAD          (SPICOMMON_BUSFLAG_DUAL|SPICOMMON_BUSFLAG_WPHD)     ///< Check existing of MOSI/MISO/WP/HD pins as output. Or indicates bus able to work under QIO mode.
 
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
