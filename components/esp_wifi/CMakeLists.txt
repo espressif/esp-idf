@@ -41,17 +41,12 @@ if(link_binary_libs)
     set(blobs coexist core espnow mesh net80211 pp rtc smartconfig ${phy})
 
     foreach(blob ${blobs})
-        add_library(${blob} STATIC IMPORTED)
-        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a)
+        add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a" 
+                            REQUIRES ${COMPONENT_NAME})
+        set(blob_reqs ${blobs})
+        list(REMOVE_ITEM blob_reqs ${blob}) # remove itself from requirements
+        set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
-
-        foreach(_blob ${blobs})
-            if(NOT _blob STREQUAL ${blob})
-                set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${_blob})
-            endif()
-        endforeach()
-
-        set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${COMPONENT_LIB})
     endforeach()
 endif()
 
