@@ -462,7 +462,7 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 void esp_bt_check_need_restart();
 
-extern uint32_t* btdm_rmt_get_dbg_log_addr();
+#define IRAM_LOG_BUFFER_SIZE 8000
 extern uint32_t* btdm_rmt_get_fixed_log_addr();
 int btdm_rmt_dbg_printf_to_iram(const char* format, ...);
 
