@@ -409,7 +409,7 @@ You can setup environment to build documentation locally on your PC by installin
 
 The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
 
-Do not worry about being confronted with several packages to install. Besides Doxygen and sphinx_idf_theme, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
+Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
 
 .. important:: Docs building now supports Python 3 only. Python 2 installations will not work.
 
@@ -457,22 +457,6 @@ Installation of Doxygen is OS dependent:
         Check the log on the screen that ``mingw-w64-i686-python-pillow-4.3.0-1`` or newer is installed. Previous versions of *pillow* will not work.
 
     A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
-
-sphinx_idf_theme
-@@@@@@@@@@@@@@@@
-
-The ``sphinx_idf_theme`` needs a mixture of Python and JavaScript in order to build. So currently it's necessary install `node.js <https://nodejs.org/en/download/>`_ in order to build it locally.
-
-::
-
-   cd ~/esp
-   git clone https://github.com/espressif/sphinx_idf_theme.git
-   cd sphinx_idf_theme
-   npm install
-   python setup.py build
-   python setup.py install
-
-This is a temporary inconvenience. We plan to provide a way to install ``sphinx_idf_theme`` as a prebuilt package, soon.
 
 
 Remaining applications
