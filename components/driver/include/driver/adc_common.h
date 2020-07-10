@@ -158,7 +158,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
  *
- * @note Call adc1_config_width() before the first time this
+ * @note Call ``adc1_config_width()`` before the first time this
  *       function is called.
  *
  * @note For any given channel, adc1_config_channel_atten(channel)
@@ -230,9 +230,9 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit);
  * @brief Configure ADC1 to be usable by the ULP
  *
  * This function reconfigures ADC1 to be controlled by the ULP.
- * Effect of this function can be reverted using adc1_get_raw function.
+ * Effect of this function can be reverted using ``adc1_get_raw()`` function.
  *
- * Note that adc1_config_channel_atten, adc1_config_width functions need
+ * Note that adc1_config_channel_atten, ``adc1_config_width()`` functions need
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
  */
 void adc1_ulp_enable(void);
