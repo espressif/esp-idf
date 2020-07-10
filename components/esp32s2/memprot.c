@@ -30,6 +30,7 @@
 #include "hal/memprot_ll.h"
 #include "esp_fault.h"
 #include "esp_log.h"
+#include "soc/cpu.h"
 
 extern int _iram_text_end;
 extern int _data_start;
