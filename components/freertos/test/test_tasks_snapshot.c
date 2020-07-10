@@ -27,9 +27,6 @@ TEST_CASE("Tasks snapshot", "[freertos]")
     esp_cpu_stall(other_core_id);
 #endif
     UBaseType_t task_num = uxTaskGetSnapshotAll(tasks, TEST_MAX_TASKS_NUM, &tcb_sz);
-    for (uint32_t i = 0; i < task_num; i++) {
-        TEST_ASSERT_EQUAL(tasks[i].eState, eTaskGetState(tasks[i].pxTCB));
-    }
 #ifndef CONFIG_FREERTOS_UNICORE
     esp_cpu_unstall(other_core_id);
 #endif
