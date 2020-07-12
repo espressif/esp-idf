@@ -28,7 +28,7 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
@@ -322,7 +322,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
     bool efuse_key_read_protected = dis_reg & EFUSE_RD_DIS_BLK2;
     bool efuse_key_write_protected = dis_reg & EFUSE_WR_DIS_BLK2;
-    if (efuse_key_write_protected == false 
+    if (efuse_key_write_protected == false
         && efuse_key_read_protected == false
         && REG_READ(EFUSE_BLK2_RDATA0_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA1_REG) == 0

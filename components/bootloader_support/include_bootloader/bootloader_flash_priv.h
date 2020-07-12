@@ -20,6 +20,7 @@
 #include <esp_err.h>
 #include <esp_spi_flash.h> /* including in bootloader for error values */
 #include "sdkconfig.h"
+#include "bootloader_flash.h"
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 0x10000
@@ -166,15 +167,5 @@ uint32_t bootloader_execute_flash_command(uint8_t command, uint32_t mosi_data, u
  * @brief Enable the flash write protect (WEL bit).
  */
 void bootloader_enable_wp(void);
-
-#if CONFIG_IDF_TARGET_ESP32S2
-/**
- * @brief Set the burst mode setting command for specified wrap mode.
- *
- * @param mode The specified warp mode.
- * @return always ESP_OK
- */
-esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode);
-#endif
 
 #endif

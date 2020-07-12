@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "bootloader_flash_config.h"
 #include "flash_qio_mode.h"
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_rom_efuse.h"

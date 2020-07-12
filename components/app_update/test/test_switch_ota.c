@@ -23,7 +23,7 @@
 #include "unity.h"
 
 #include "bootloader_common.h"
-#include "../include_bootloader/bootloader_flash.h"
+#include "../include_bootloader/bootloader_flash_priv.h"
 
 #include "esp_log.h"
 #include "esp_ota_ops.h"
