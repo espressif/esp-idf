@@ -82,10 +82,12 @@ menu "ESP32S2-specific"
 
         choice ESP32S2_DATA_CACHE_SIZE
             prompt "Data cache size"
-            default ESP32S2_DATA_CACHE_8KB
+            default ESP32S2_DATA_CACHE_0KB if !ESP32S2_SPIRAM_SUPPORT
+            default ESP32S2_DATA_CACHE_8KB if ESP32S2_SPIRAM_SUPPORT
             help
                 Data cache size to be set on application startup.
-                If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap.
+                If you use 0KB data cache, the other 16KB will be added to the heap
+                If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap
 
             config ESP32S2_DATA_CACHE_0KB
                 depends on !ESP32S2_SPIRAM_SUPPORT
@@ -212,30 +214,11 @@ menu "ESP32S2-specific"
                 If SPIRAM_FETCH_INSTRUCTIONS also enabled,
                 you can run the instruction when erasing or programming the flash.
 
-        config SPIRAM_USE_AHB_DBUS3
-            bool "Enable AHB DBUS3 to access SPIRAM"
-            default n
-            help
-                If Enabled, if SPI_CONFIG_SIZE is bigger then 10MB+576KB,
-                then you can have 4MB more space to map the SPIRAM.
-                However, the AHB bus is slower than other data cache buses.
-
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
             default SPIRAM_SPEED_40M
             help
                 Select the speed for the SPI RAM chip.
-                If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
-
-                1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
-                2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
-                3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
-
-                Note: If the third mode(80Mhz+80Mhz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
-                will be occupied by the system. Which SPI host to use can be selected by the config item
-                SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
-                option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
-                (ESPTOOLPY_FLASHFREQ_80M is true)
 
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"
