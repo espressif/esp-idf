@@ -14,7 +14,7 @@
 
 #include <strings.h>
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_random.h"
 #include "bootloader_utility.h"
 #include "esp_image_format.h"

@@ -22,7 +22,7 @@
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"

@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <stddef.h>
 
-#include <bootloader_flash.h>
+#include <bootloader_flash_priv.h>
 #include <esp_log.h>
 #include <esp_flash_encrypt.h>
 #include "sdkconfig.h"

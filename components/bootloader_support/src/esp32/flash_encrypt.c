@@ -14,7 +14,7 @@
 
 #include <strings.h>
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "esp_image_format.h"
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
