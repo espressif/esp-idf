@@ -26,7 +26,7 @@
 #include "bootloader_clock.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/ets_sys.h"

@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "sdkconfig.h"
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
 #include "esp_log.h"
@@ -325,7 +325,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
                 break;
             }
     }
-    
+
     free(sig_be);
     free(buf);
 #if CONFIG_IDF_TARGET_ESP32

@@ -20,7 +20,7 @@
 #include <esp_log.h>
 #include <esp_attr.h>
 #include <esp_spi_flash.h>
-#include <bootloader_flash.h>
+#include <bootloader_flash_priv.h>
 #include <bootloader_random.h>
 #include <bootloader_sha.h>
 #include "bootloader_util.h"

@@ -15,7 +15,7 @@
 
 #include <string.h>
 #include "esp_fault.h"
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
 #include "esp_log.h"
