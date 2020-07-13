@@ -182,6 +182,7 @@ static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(dp83848->reset_gpio_num);
         gpio_set_direction(dp83848->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(dp83848->reset_gpio_num, 0);
+        ets_delay_us(100); // insert min input assert time
         gpio_set_level(dp83848->reset_gpio_num, 1);
     }
     return ESP_OK;

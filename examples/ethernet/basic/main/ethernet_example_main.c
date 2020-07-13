@@ -93,6 +93,8 @@ void app_main(void)
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_KSZ8041
+    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8041(&phy_config);
 #endif
 #elif CONFIG_EXAMPLE_USE_DM9051
     gpio_install_isr_service(0);
