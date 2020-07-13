@@ -31,6 +31,7 @@ Config file format is yaml. it's a set of key-value pair. The following is an ex
 It will first define the env tag for each environment, then add its key-value pairs.
 This will prevent test cases from getting configs from other env when there're configs for multiple env in one file.
 """
+import logging
 
 import yaml
 
@@ -60,6 +61,9 @@ class Config(object):
                 configs = yaml.load(f, Loader=Loader)[env_name]
         except (OSError, TypeError, IOError):
             configs = dict()
+        except KeyError:
+            logging.error('No config env "{}" in config file "{}"'.format(env_name, config_file))
+            raise
         return configs
 
     def get_variable(self, variable_name):
