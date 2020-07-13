@@ -634,7 +634,7 @@ class ESPCoreDumpLoader(object):
                 task_regs = self._get_registers_from_stack(data, stack_end > stack_top)
             except Exception as e:
                 print(e)
-                return None
+                return None, None
             prstatus = XtensaPrStatus()
             prstatus.pr_cursig = 0  # TODO: set sig only for current/failed task
             prstatus.pr_pid = i  # TODO: use pid assigned by OS
@@ -1014,7 +1014,7 @@ def info_corefile(args):
                 logging.error("Failed to create corefile!")
                 loader.cleanup()
                 return
-
+    print("prog %s" % (args.prog))
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf = ESPCoreDumpElfFile(core_fname)
     merged_segs = []
@@ -1100,7 +1100,12 @@ def info_corefile(args):
 
     if log_saved:
         print("\n====================== CORE DUMP LOG CONTENTS ========================")
-        print(log_saved)
+        raw_data = ':'.join(x.encode('hex') for x in log_saved[0:256])
+        str_data = log_saved[256:]
+        print('Raw Data:')
+        print(raw_data)
+        print('\nString Data:')
+        print(str_data)
 
     print("\n===================== ESP32 CORE DUMP END =====================")
     print("===============================================================")
