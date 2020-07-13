@@ -34,18 +34,22 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
         core_dump_header_t      hdr;
         core_dump_task_header_t task_hdr;
     } dump_data;
+    union {
+        uint32_t i32[128];
+        char     str[512];
+    } iram_str;
 
     task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM, &tcb_sz);
     ESP_COREDUMP_LOGI("Found tasks: (%d)!", task_num);
-  
+
     // Take TCB padding into account, actual TCB size will be stored in header
     if (tcb_sz % sizeof(uint32_t))
         tcb_sz_padded = (tcb_sz / sizeof(uint32_t) + 1) * sizeof(uint32_t);
     else
         tcb_sz_padded = tcb_sz;
-   
+
     // Verifies all tasks in the snapshot
-    for (i = 0; i < task_num; i++) {        
+    for (i = 0; i < task_num; i++) {
         task_is_valid = esp_core_dump_process_tcb(frame, &tasks[i], tcb_sz);
         // Check if task tcb is corrupted
         if (!task_is_valid) {
@@ -64,10 +68,16 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
             write_cfg->bad_tasks_num++;
         }
     }
+
+    core_dump_log_header_t logs = { 0 };
+    if (esp_core_dump_process_log(&logs) == true) {
+        data_len += (logs.len + sizeof(core_dump_log_header_t));
+    }
+
     // Add core dump header size
     data_len += sizeof(core_dump_header_t);
     ESP_COREDUMP_LOG_PROCESS("Core dump len = %lu (%d %d)", data_len, task_num, write_cfg->bad_tasks_num);
-   
+
     // Prepare write
     if (write_cfg->prepare) {
         err = write_cfg->prepare(write_cfg->priv, &data_len);
@@ -127,6 +137,28 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
         } else {
             ESP_COREDUMP_LOG_PROCESS("Skip corrupted task %x stack!", tasks[i].tcb_addr);
         }
+    }
+
+    err = write_cfg->write(write_cfg->priv, (void*)&logs, sizeof(core_dump_log_header_t));
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Failed to write LOG Header (%d)!", err);
+        return err;
+    }
+    if (logs.len > 0 && logs.start != NULL) {
+        for (int i = 0; i < logs.len / 512; i++) {
+            for (int j = 0; j < 128; j++) {
+                if (i * 128 + j < logs.len / 4) {
+                    iram_str.i32[j] = logs.start[i * 128+ j];
+                }
+            }
+            err = write_cfg->write(write_cfg->priv, (void*)iram_str.str, 512);
+        }
+
+        // err = write_cfg->write(write_cfg->priv, (void*)logs.start, logs.len);
+        // if (err != ESP_OK) {
+        //     ESP_COREDUMP_LOGE("Failed to write LOG (%d)!", err);
+        //     return err;
+        // }
     }
 
     // write end

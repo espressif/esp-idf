@@ -46,7 +46,7 @@ void esp_core_dump_init();
  * The structure of core dump data is described below in details.
  * 1) Core dump starts with header:
  * 1.1) TOTAL_LEN is total length of core dump data in flash including CRC. Size is 4 bytes.
- * 1.2) VERSION field keeps 4 byte version of core dump. 
+ * 1.2) VERSION field keeps 4 byte version of core dump.
  * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes.
  * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes.
  * 2) Core dump header is followed by the data for every task in the system.
@@ -85,5 +85,10 @@ void esp_core_dump_to_uart(XtExcFrame *frame);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
+
+typedef uint32_t (*log_dump_get_len_t)(void);
+typedef int * (*log_dump_get_ptr_t)(void);
+
+bool esp_log_dump_init(log_dump_get_len_t g_len, log_dump_get_ptr_t g_ptr);
 
 #endif

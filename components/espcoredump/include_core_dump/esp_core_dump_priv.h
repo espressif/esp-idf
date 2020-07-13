@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef ESP_CORE_DUMP_H_
-#define ESP_CORE_DUMP_H_
+#ifndef ESP_CORE_DUMP_PRIV_H_
+#define ESP_CORE_DUMP_PRIV_H_
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,7 +33,7 @@
 #endif
 
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
-#define COREDUMP_VERSION                    1
+#define COREDUMP_VERSION                    2
 
 typedef uint32_t core_dump_crc_t;
 
@@ -79,6 +79,12 @@ typedef struct _core_dump_task_header_t
     uint32_t stack_end;   // stack end address
 } core_dump_task_header_t;
 
+typedef struct _core_dump_log_header_t
+{
+    uint32_t len;   //bytes
+    int *   start;  //
+} core_dump_log_header_t;
+
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 
 //  Core dump flash init function
@@ -99,6 +105,8 @@ bool esp_tcb_addr_is_sane(uint32_t addr, uint32_t sz);
 bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, uint32_t tcb_sz);
 
 bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_t *length);
+
+bool esp_core_dump_process_log(core_dump_log_header_t *log);
 
 #endif
 

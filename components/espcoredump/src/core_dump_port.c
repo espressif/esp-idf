@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "esp_panic.h"
 #include "esp_core_dump_priv.h"
+#include "esp_core_dump.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
@@ -41,7 +42,7 @@ uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
 bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, uint32_t tcb_sz)
 {
     XtExcFrame *exc_frame = (XtExcFrame*)frame;
-     
+
     if (!esp_tcb_addr_is_sane((uint32_t)task_snaphort->tcb_addr, tcb_sz)) {
         ESP_COREDUMP_LOG_PROCESS("Bad TCB addr %x!", task_snaphort->tcb_addr);
         return false;
@@ -74,7 +75,7 @@ bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snapho
 }
 
 bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_t *length)
-{      
+{
     uint32_t len = 0;
     bool task_is_valid = false;
     len = (uint32_t)task_snaphort->stack_end - (uint32_t)task_snaphort->stack_start;
@@ -98,6 +99,28 @@ bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_
         task_is_valid = true;
     }
     return task_is_valid;
+}
+static log_dump_get_len_t get_len = NULL;
+static log_dump_get_ptr_t get_ptr = NULL;
+
+bool esp_log_dump_init(log_dump_get_len_t g_len, log_dump_get_ptr_t g_ptr)
+{
+    get_len = g_len;
+    get_ptr = g_ptr;
+    return true;
+}
+
+bool esp_core_dump_process_log(core_dump_log_header_t *log)
+{
+    if (get_len && get_ptr) {
+        log->len = get_len();
+        log->start = get_ptr();
+        return true;
+    } else {
+        log->len = 0;
+        log->start = NULL;
+        return false;
+    }
 }
 
 #endif

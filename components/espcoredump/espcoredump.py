@@ -458,11 +458,13 @@ class ESPCoreDumpLoaderError(ESPCoreDumpError):
 class ESPCoreDumpLoader(object):
     """Core dump loader base class
     """
-    ESP32_COREDUMP_VESION       = 1
+    ESP32_COREDUMP_VESION       = 2
     ESP32_COREDUMP_HDR_FMT      = '<4L'
     ESP32_COREDUMP_HDR_SZ       = struct.calcsize(ESP32_COREDUMP_HDR_FMT)
     ESP32_COREDUMP_TSK_HDR_FMT  = '<3L'
     ESP32_COREDUMP_TSK_HDR_SZ   = struct.calcsize(ESP32_COREDUMP_TSK_HDR_FMT)
+    ESP32_COREDUMP_LOG_HDR_FMT  = '<2L'
+    ESP32_COREDUMP_LOG_HDR_SZ   = struct.calcsize(ESP32_COREDUMP_LOG_HDR_FMT)
 
     def __init__(self):
         """Base constructor for core dump loader
@@ -639,6 +641,13 @@ class ESPCoreDumpLoader(object):
             note = Elf32NoteDesc("CORE", 1, prstatus.dump() + struct.pack("<%dL" % len(task_regs), *task_regs)).dump()
             notes += note
 
+        # read log
+        data = self.read_data(core_off, self.ESP32_COREDUMP_LOG_HDR_SZ)
+        core_off += self.ESP32_COREDUMP_LOG_HDR_SZ
+        log_len, log_start = struct.unpack_from(self.ESP32_COREDUMP_LOG_HDR_FMT, data)
+        log_saved = self.read_data(core_off, log_len)
+        core_off += log_len
+
         # add notes
         try:
             core_elf.add_program_segment(0, notes, ESPCoreDumpElfFile.PT_NOTE, 0)
@@ -662,7 +671,7 @@ class ESPCoreDumpLoader(object):
             fce = os.fdopen(fhnd, 'wb')
         core_elf.dump(fce)
         fce.close()
-        return core_fname
+        return core_fname, log_saved
 
     def read_data(self, off, sz):
         """Reads data from raw core dump got from flash or UART
@@ -900,7 +909,7 @@ def dbg_corefile(args):
     rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
     if not args.core:
         loader = ESPCoreDumpFlashLoader(args.off, port=args.port)
-        core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
+        core_fname, log_saved = loader.create_corefile(args.save_core, rom_elf=rom_elf)
         if not core_fname:
             logging.error("Failed to create corefile!")
             loader.cleanup()
@@ -909,7 +918,7 @@ def dbg_corefile(args):
         core_fname = args.core
         if args.core_format and args.core_format != 'elf':
             loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
+            core_fname, log_saved = loader.create_corefile(args.save_core, rom_elf=rom_elf)
             if not core_fname:
                 logging.error("Failed to create corefile!")
                 loader.cleanup()
@@ -991,7 +1000,7 @@ def info_corefile(args):
     rom_elf,rom_sym_cmd = load_aux_elf(args.rom_elf)
     if not args.core:
         loader = ESPCoreDumpFlashLoader(args.off, port=args.port)
-        core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
+        core_fname, log_saved = loader.create_corefile(args.save_core, rom_elf=rom_elf)
         if not core_fname:
             logging.error("Failed to create corefile!")
             loader.cleanup()
@@ -1000,7 +1009,7 @@ def info_corefile(args):
         core_fname = args.core
         if args.core_format and args.core_format != 'elf':
             loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
-            core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
+            core_fname, log_saved = loader.create_corefile(args.save_core, rom_elf=rom_elf)
             if not core_fname:
                 logging.error("Failed to create corefile!")
                 loader.cleanup()
@@ -1088,6 +1097,10 @@ def info_corefile(args):
                 seg_name = 'tasks.data'
             print(".coredump.%s 0x%x 0x%x %s" % (seg_name, cs.addr, len(cs.data), cs.attr_str()))
             p = gdbmi_getinfo(p, handlers, "x/%dx 0x%x" % (old_div(len(cs.data),4), cs.addr))
+
+    if log_saved:
+        print("\n====================== CORE DUMP LOG CONTENTS ========================")
+        print(log_saved)
 
     print("\n===================== ESP32 CORE DUMP END =====================")
     print("===============================================================")
