@@ -20,7 +20,6 @@
 #include "sdkconfig.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"

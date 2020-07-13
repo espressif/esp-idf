@@ -29,7 +29,7 @@
 #include "soc/usb_reg.h"
 #include "soc/spinlock.h"
 #include "hal/soc_hal.h"
-#include "esp32s2/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_dfu.h"
@@ -39,7 +39,7 @@
 #include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
 
 
-#define CDC_WORK_BUF_SIZE (CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
+#define CDC_WORK_BUF_SIZE (ESP_ROM_CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
 
 typedef enum {
     REBOOT_NONE,

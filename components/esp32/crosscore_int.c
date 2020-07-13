@@ -20,7 +20,6 @@
 #include "esp_debug_helpers.h"
 
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"

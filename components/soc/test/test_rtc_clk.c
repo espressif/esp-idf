@@ -13,13 +13,12 @@
 #include "freertos/semphr.h"
 #include "esp_rom_gpio.h"
 extern void rtc_clk_select_rtc_slow_clk(void); 
+#include "esp_rom_uart.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #include "esp32/clk.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
-
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
@@ -101,7 +100,7 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
 
 static void test_clock_switching(void (*switch_func)(const rtc_cpu_freq_config_t* config))
 {
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     const int test_duration_sec = 10;
     ref_clock_init();

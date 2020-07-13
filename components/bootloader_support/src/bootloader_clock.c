@@ -19,14 +19,13 @@
 #include "soc/rtc_cntl_reg.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
 #include "esp32/rom/rtc.h"
 #define CPU_RESET_REASON SW_CPU_RESET
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/rtc.h"
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 #endif
+#include "esp_rom_uart.h"
 
 void bootloader_clock_configure(void)
 {
@@ -35,7 +34,7 @@ void bootloader_clock_configure(void)
     // This is not needed on power on reset, when ROM bootloader is running at
     // 40 MHz. But in case of TG WDT reset, CPU may still be running at >80 MHZ,
     // and will be done with the bootloader much earlier than UART FIFO is empty.
-    uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(0);
 
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
     int cpu_freq_mhz = 80;

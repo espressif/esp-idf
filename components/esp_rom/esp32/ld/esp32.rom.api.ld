@@ -19,3 +19,10 @@ PROVIDE ( esp_rom_gpio_connect_out_signal = gpio_matrix_out );
 PROVIDE ( esp_rom_efuse_mac_address_crc8       = esp_crc8 );
 PROVIDE ( esp_rom_efuse_get_flash_gpio_info    = ets_efuse_get_spiconfig );
 PROVIDE ( esp_rom_efuse_is_secure_boot_enabled = ets_efuse_secure_boot_enabled );
+
+PROVIDE ( esp_rom_uart_flush_tx       = uart_tx_flush );
+PROVIDE ( esp_rom_uart_tx_one_char    = uart_tx_one_char );
+PROVIDE ( esp_rom_uart_tx_wait_idle   = uart_tx_wait_idle );
+PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
+PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
+PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );

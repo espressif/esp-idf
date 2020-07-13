@@ -10,7 +10,6 @@
 #include "soc/cpu.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "esp32/rom/uart.h"
 #include "esp32/rom/sha.h"
 #include "soc/uart_periph.h"
 #include "soc/dport_reg.h"

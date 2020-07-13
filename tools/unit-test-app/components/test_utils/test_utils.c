@@ -73,7 +73,7 @@ static void wait_user_control(char* parameter_buf, uint8_t buf_len)
         buffer = sign;
         buffer_len = sizeof(sign) - 1;
     }
-    // workaround that unity_gets (UartRxString) will not set '\0' correctly
+    // workaround that unity_gets (esp_rom_uart_rx_string) will not set '\0' correctly
     bzero(buffer, buffer_len);
 
     unity_gets(buffer, buffer_len);

@@ -21,12 +21,7 @@
 #include <reent.h>
 #include <sys/fcntl.h>
 #include "sdkconfig.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
-#endif
+#include "esp_rom_uart.h"
 
 static int syscall_not_implemented(void)
 {
@@ -44,7 +39,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
-            uart_tx_one_char(cdata[i]);
+            esp_rom_uart_tx_one_char(cdata[i]);
         }
         return size;
     }
@@ -58,7 +53,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
     if (fd == STDIN_FILENO) {
         size_t received;
         for (received = 0; received < size; ++received) {
-            int status = uart_rx_one_char((uint8_t*) &cdata[received]);
+            int status = esp_rom_uart_rx_one_char((uint8_t*) &cdata[received]);
             if (status != 0) {
                 break;
             }

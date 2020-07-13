@@ -35,14 +35,11 @@
 
 
 #include "sdkconfig.h"
-
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
 #include "esp32/dport_access.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/cache_err_int.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/memprot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"

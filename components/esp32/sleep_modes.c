@@ -24,7 +24,7 @@
 #include "esp_spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -151,7 +151,7 @@ void esp_deep_sleep(uint64_t time_in_us)
 static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < 3; ++i) {
-        uart_tx_wait_idle(i);
+        esp_rom_uart_tx_wait_idle(i);
     }
 }
 

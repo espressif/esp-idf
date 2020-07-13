@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_periph.h"
@@ -78,9 +78,9 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_enable(&wdt1_context);
 
     // Flush any data left in UART FIFOs
-    uart_tx_wait_idle(0);
-    uart_tx_wait_idle(1);
-    uart_tx_wait_idle(2);
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(2);
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     if (esp_ptr_external_ram(get_sp())) {

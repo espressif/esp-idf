@@ -24,8 +24,8 @@
 #include "esp_spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -145,7 +145,7 @@ static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
-            uart_tx_wait_idle(i);
+            esp_rom_uart_tx_wait_idle(i);
         }
     }
 }

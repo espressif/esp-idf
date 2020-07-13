@@ -20,12 +20,11 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "bootloader_console.h"
+#include "esp_rom_uart.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
@@ -33,7 +32,7 @@
 #endif
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
-/* The following functions replace ets_write_char_uart, uart_tx_one_char,
+/* The following functions replace ets_write_char_uart, esp_rom_uart_tx_one_char,
  * and uart_tx_one_char_uart ROM functions. The main difference is that
  * uart_tx_one_char_uart calls cdc_acm_fifo_fill for each byte passed to it,
  * which results in very slow console output. The version here uses a TX buffer.
@@ -73,7 +72,7 @@ void bootloader_console_deinit(void)
 {
 #ifdef CONFIG_ESP_CONSOLE_UART
     /* Ensure any buffered log output is displayed */
-    uart_tx_flush(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
