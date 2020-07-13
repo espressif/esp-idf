@@ -9,7 +9,9 @@ ESP32 application can do upgrading at runtime by downloading new image from spec
 - Using the native APIs provided by `app_update` component.
 - Using simplified APIs provided by  `esp_https_ota` component, which adds an abstraction layer over the native OTA APIs in order to upgrading with HTTPS protocol.
 
-Both methods are demonstrated in OTA Demos under `native_ota_example` and `simple_ota_example` respectively.
+Use of native APIs is demonstrated under `native_ota_example` while use of APIs provided by `esp_https_ota` component is demonstrated under `simple_ota_example` and `advanced_https_ota`.
+
+For information regarding APIs provided by `esp_https_ota` component, please refer to [ESP HTTPS OTA](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_https_ota.html).
 
 For simplicity, the OTA examples choose the pre-defined partition table by enabling `CONFIG_PARTITION_TABLE_TWO_OTA` option in menuconfig, which supports three app partitions: factory, OTA_0 and OTA_1. For more information about partition table, please refer to [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html).
 
