@@ -1100,10 +1100,18 @@ def info_corefile(args):
 
     if log_saved:
         print("\n====================== CORE DUMP LOG CONTENTS ========================")
-        raw_data = ':'.join(x.encode('hex') for x in log_saved[0:256])
-        str_data = log_saved[256:]
+
         print('Raw Data:')
-        print(raw_data)
+        step = 4
+        g_raw_data = [log_saved[i:i+step] for i in range(0,len(log_saved[:256]),step)]
+        # print(g_raw_data)
+        for type_i in range(0,20) :
+            print( "%02d" % (type_i) + ":" +
+             " Time:"+((g_raw_data[type_i*3])[::-1]).encode('hex') +
+             " count:" + ((g_raw_data[type_i*3+1])[::-1]).encode('hex') +
+             " data:"+ ((g_raw_data[type_i*3+1])[::-1]).encode('hex'))
+    
+        str_data = log_saved[:]
         print('\nString Data:')
         print(str_data)
 
