@@ -21,8 +21,6 @@
 
 #include "esp_ds.h"
 
-#if CONFIG_IDF_TARGET_ESP32S2
-
 #define NUM_RESULTS 10
 
 typedef struct {
@@ -379,5 +377,3 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto]")
 }
 
 #endif // CONFIG_IDF_ENV_FPGA
-
-#endif // CONFIG_IDF_TARGET_ESP32S2

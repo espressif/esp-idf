@@ -35,9 +35,9 @@
 #include "soc/spi_periph.h"
 
 #include "esp32/rom/cache.h"
-#include "esp32/rom/efuse.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"
@@ -72,8 +72,8 @@ void bootloader_configure_spi_pins(int drv)
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
-        const uint32_t spiconfig = ets_efuse_get_spiconfig();
-        if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
+        const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+        if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
             esp_rom_gpio_connect_out_signal(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_out_signal(FLASH_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_in_signal(FLASH_SPIQ_IO, SPIQ_IN_IDX, 0);
@@ -260,8 +260,8 @@ static esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    if (spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_SPI && spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
         ESP_LOGE(TAG, "SPI flash pins are overridden. Enable CONFIG_SPI_FLASH_ROM_DRIVER_PATCH in menuconfig");
         return ESP_FAIL;
     }

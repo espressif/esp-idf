@@ -13,15 +13,10 @@
 // limitations under the License.
 #include <string.h>
 #include "sdkconfig.h"
+#include "esp_rom_efuse.h"
 #include "esp_system.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/efuse.h"
-#endif
 
 /* esp_system.h APIs relating to MAC addresses */
 
@@ -74,7 +69,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
     uint8_t efuse_crc;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM, mac, 48);
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_CRC, &efuse_crc, 8);
-    uint8_t calc_crc = esp_crc8(mac, 6);
+    uint8_t calc_crc = esp_rom_efuse_mac_address_crc8(mac, 6);
 
     if (efuse_crc != calc_crc) {
         ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
@@ -94,7 +89,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 // Only ESP32 has MAC CRC in efuse, ESP32-S2 has internal efuse consistency checks
     uint8_t efuse_crc;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &efuse_crc, 8);
-    uint8_t calc_crc = esp_crc8(mac, 6);
+    uint8_t calc_crc = esp_rom_efuse_mac_address_crc8(mac, 6);
 
     if (efuse_crc != calc_crc) {
          // Small range of MAC addresses are accepted even if CRC is invalid.

@@ -17,7 +17,6 @@
 #include "esp_efuse_table.h"
 #include "stdlib.h"
 #include "esp_types.h"
-#include "esp32s2/rom/efuse.h"
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"

@@ -21,7 +21,7 @@ esp_err_t esp_secure_boot_permanently_enable(void)
 {
     uint8_t hash[32];
 
-    if (ets_efuse_secure_boot_enabled())
+    if (esp_rom_efuse_is_secure_boot_enabled())
     {
         ESP_LOGI(TAG, "secure boot is already enabled, continuing..");
         return ESP_OK;
@@ -45,7 +45,7 @@ esp_err_t esp_secure_boot_permanently_enable(void)
     esp_err_t err = esp_efuse_batch_write_commit();
 
     if (err == ESP_OK) {
-        assert(ets_efuse_secure_boot_enabled());
+        assert(esp_rom_efuse_is_secure_boot_enabled());
         ESP_LOGI(TAG, "Secure boot permanently enabled");
     }
 

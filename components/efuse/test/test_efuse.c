@@ -10,13 +10,13 @@
 #include "esp_efuse_table.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
-#include "esp32/rom/efuse.h"
 #include "bootloader_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_rom_efuse.h"
 
 static const char* TAG = "efuse_test";
 
@@ -37,7 +37,7 @@ static void test_read_blob(void)
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
-    TEST_ASSERT_EQUAL_HEX8(crc, esp_crc8(mac, sizeof(mac)));
+    TEST_ASSERT_EQUAL_HEX8(crc, esp_rom_efuse_mac_address_crc8(mac, sizeof(mac)));
 #endif // CONFIG_IDF_TARGET_ESP32
 
     ESP_LOGI(TAG, "3. Test check args");

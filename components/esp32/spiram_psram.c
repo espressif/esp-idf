@@ -27,6 +27,7 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
+#include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/spi_caps.h"
@@ -829,15 +830,15 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         abort();
     }
 
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
         psram_io.flash_clk_io       = SPI_IOMUX_PIN_NUM_CLK;
         psram_io.flash_cs_io        = SPI_IOMUX_PIN_NUM_CS;
         psram_io.psram_spiq_sd0_io  = PSRAM_SPIQ_SD0_IO;
         psram_io.psram_spid_sd1_io  = PSRAM_SPID_SD1_IO;
         psram_io.psram_spiwp_sd3_io = PSRAM_SPIWP_SD3_IO;
         psram_io.psram_spihd_sd2_io = PSRAM_SPIHD_SD2_IO;
-    } else if (spiconfig == EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+    } else if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
         psram_io.flash_clk_io       = FLASH_HSPI_CLK_IO;
         psram_io.flash_cs_io        = FLASH_HSPI_CS_IO;
         psram_io.psram_spiq_sd0_io  = PSRAM_HSPI_SPIQ_SD0_IO;

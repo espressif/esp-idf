@@ -17,8 +17,6 @@
 
 #if CONFIG_IDF_ENV_FPGA
 
-#if CONFIG_IDF_TARGET_ESP32S2
-
 #include "esp32s2/rom/efuse.h"
 
 /* Allow testing varying message lengths (truncating the same message)
@@ -971,7 +969,5 @@ TEST_CASE("HMAC key out of range", "[hw_crypto]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY0 - 1, message, 47, hmac));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY5 + 1, message, 47, hmac));
 }
-
-#endif // CONFIG_IDF_TARGET_ESP32S2
 
 #endif // CONFIG_IDF_ENV_FPGA

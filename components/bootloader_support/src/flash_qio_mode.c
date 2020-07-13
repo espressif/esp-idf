@@ -16,12 +16,11 @@
 #include "flash_qio_mode.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_rom_efuse.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/efuse.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/efuse.h"
 #include "soc/spi_mem_struct.h"
 #endif
 #include "soc/spi_struct.h"
@@ -222,10 +221,10 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                                  uint8_t status_qio_bit)
 {
     uint32_t status;
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
 
 #if CONFIG_IDF_TARGET_ESP32
-    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+    if (spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_SPI && spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
         // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP,
         // which is compiled into the bootloader instead.
         //
@@ -278,8 +277,8 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 #if CONFIG_IDF_TARGET_ESP32
     esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
 #elif CONFIG_IDF_TARGET_ESP32S2
-    if (ets_efuse_get_wp_pad() <= MAX_PAD_GPIO_NUM) {
-        esp_rom_spiflash_select_qio_pins(ets_efuse_get_wp_pad(), spiconfig);
+    if (esp_rom_efuse_get_flash_wp_gpio() <= MAX_PAD_GPIO_NUM) {
+        esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), spiconfig);
     } else {
         esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
     }

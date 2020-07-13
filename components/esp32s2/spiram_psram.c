@@ -29,6 +29,7 @@
 #include "esp32s2/rom/opi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/efuse.h"
+#include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/spi_caps.h"
@@ -362,8 +363,8 @@ static void psram_set_spi0_cache_cs_timing(psram_clk_mode_t clk_mode)
 static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 {
     psram_io_t psram_io = PSRAM_IO_CONF_DEFAULT();
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
         /* FLASH pins(except wp / hd) are all configured via IO_MUX in rom. */
     } else {
         // FLASH pins are all configured via GPIO matrix in ROM.
@@ -372,7 +373,7 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
         psram_io.psram_spiq_sd0_io  = EFUSE_SPICONFIG_RET_SPIQ(spiconfig);
         psram_io.psram_spid_sd1_io  = EFUSE_SPICONFIG_RET_SPID(spiconfig);
         psram_io.psram_spihd_sd2_io = EFUSE_SPICONFIG_RET_SPIHD(spiconfig);
-        psram_io.psram_spiwp_sd3_io = ets_efuse_get_wp_pad();
+        psram_io.psram_spiwp_sd3_io = esp_rom_efuse_get_flash_wp_gpio();
     }
 
     #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
