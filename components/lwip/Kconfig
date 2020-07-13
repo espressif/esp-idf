@@ -123,18 +123,31 @@ menu "LWIP"
             Enabling this option allows checking for the destination address
             of a received IPv4 Packet.
 
-    config LWIP_IP_FRAG
-        bool "Enable fragment outgoing IP packets"
+    config LWIP_IP4_FRAG
+        bool "Enable fragment outgoing IP4 packets"
         default y
         help
-            Enabling this option allows fragmenting outgoing IP packets if their size
+            Enabling this option allows fragmenting outgoing IP4 packets if their size
             exceeds MTU.
 
-    config LWIP_IP_REASSEMBLY
-        bool "Enable reassembly incoming fragmented IP packets"
+    config LWIP_IP6_FRAG
+        bool "Enable fragment outgoing IP6 packets"
+        default y
+        help
+            Enabling this option allows fragmenting outgoing IP6 packets if their size
+            exceeds MTU.
+
+    config LWIP_IP4_REASSEMBLY
+        bool "Enable reassembly incoming fragmented IP4 packets"
         default n
         help
-            Enabling this option allows reassemblying incoming fragmented IP packets.
+            Enabling this option allows reassemblying incoming fragmented IP4 packets.
+
+    config LWIP_IP6_REASSEMBLY
+        bool "Enable reassembly incoming fragmented IP6 packets"
+        default n
+        help
+            Enabling this option allows reassemblying incoming fragmented IP6 packets.
 
     config LWIP_IP_FORWARD
         bool "Enable IP forwarding"
