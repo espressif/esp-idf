@@ -496,6 +496,25 @@ menu "ESP32S2-specific"
             This option allows to place .rtc_data and .rtc_rodata sections into
             RTC fast memory segment to free the slow memory region for ULP programs.
 
+    config ESP32S2_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            If this option is disabled, the DRAM part of the heap starts right after the .bss section,
+            within the dram0_0 region. As a result, adding or removing some static variables
+            will change the available heap size.
+
+            If this option is enabled, the DRAM part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32S2_FIXED_STATIC_RAM_SIZE
+
+    config ESP32S2_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x10000
+        range 0 0x34000
+        depends on ESP32S2_USE_FIXED_STATIC_RAM_SIZE
+        help
+            RAM size dedicated for static variables (.data & .bss sections).
+
     config ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
         depends on !ESP32S2_MEMPROT_FEATURE
