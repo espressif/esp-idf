@@ -171,7 +171,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
     rtc_slow_freq_t selected_src_freq;
     stop_rtc_external_quartz();
 #ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    uint32_t bootstrap_cycles = CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES;
     printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
             bootstrap_cycles,
             CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
@@ -232,7 +232,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=UT_T1_32kXTAL
     uint32_t end_time;
     stop_rtc_external_quartz();
 #ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    uint32_t bootstrap_cycles = CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES;
     printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
             bootstrap_cycles,
             CONFIG_ESP32_RTC_CLK_CAL_CYCLES);

@@ -540,6 +540,7 @@ menu "ESP32-specific"
             bool "Internal 150kHz RC oscillator"
         config ESP32_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
+            select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
         config ESP32_RTC_CLK_SRC_INT_8MD256
@@ -590,23 +591,6 @@ menu "ESP32-specific"
             before giving up and switching to the internal RC.
             Increase this option if the 32k crystal oscillator
             does not start and switches to internal RC.
-
-    config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
-        int "Bootstrap cycles for external 32kHz crystal"
-        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
-        default 5
-        range 0 32768
-        help
-            To reduce the startup time of an external RTC crystal,
-            we bootstrap it with a 32kHz square wave for a fixed number of cycles.
-            Setting 0 will disable bootstrapping (if disabled, the crystal may take
-            longer to start up or fail to oscillate under some conditions).
-
-            If this value is too high, a faulty crystal may initially start and then fail.
-            If this value is too low, an otherwise good crystal may not start.
-
-            To accurately determine if the crystal has started,
-            set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
 
     config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         int "Extra delay in deep sleep wake stub (in us)"
