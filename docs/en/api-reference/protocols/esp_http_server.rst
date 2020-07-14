@@ -23,7 +23,7 @@ Application Example
         {
             /* Send a simple response */
             const char resp[] = "URI GET Response";
-            httpd_resp_send(req, resp, strlen(resp));
+            httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
             return ESP_OK;
         }
 
@@ -56,7 +56,7 @@ Application Example
 
             /* Send a simple response */
             const char resp[] = "URI POST Response";
-            httpd_resp_send(req, resp, strlen(resp));
+            httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
             return ESP_OK;
         }
 
