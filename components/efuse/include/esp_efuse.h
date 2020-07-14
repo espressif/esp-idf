@@ -355,6 +355,11 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
  */
 void esp_efuse_init(uint32_t offset, uint32_t size);
 
+inline static bool soc_has_cache_lock_bug(void)
+{
+    return (esp_efuse_get_chip_ver() == 3);
+}
+
 #ifdef __cplusplus
 }
 #endif
