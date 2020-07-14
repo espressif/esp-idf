@@ -86,7 +86,7 @@ typedef void (*flash_test_func_t)(esp_flash_t* chip);
 
    These tests run for all the flash chip configs shown in config_list, below (internal and external).
  */
-#if defined(CONFIG_SPIRAM_SUPPORT)
+#if defined(CONFIG_SPIRAM)
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else
@@ -695,7 +695,7 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
     test_permutations(&config_list[0]);
 }
 
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < TEST_CONFIG_NUM; i++) {
@@ -880,7 +880,7 @@ static void test_flash_read_write_performance(esp_flash_t* chip)
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
-#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #  define CHECK_DATA(bus, suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##suffix, "%d", speed_##suffix)
 #  define CHECK_ERASE(bus, var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##ERASE, "%d", var)
 #else
