@@ -32,6 +32,7 @@ static const char *TAG="httpd_ws";
  * Bit masks for WebSocket frames.
  * Please refer to RFC6455 Section 5.2 for more details.
  */
+#define HTTPD_WS_CONTINUE       0x00U
 #define HTTPD_WS_FIN_BIT        0x80U
 #define HTTPD_WS_OPCODE_BITS    0x0fU
 #define HTTPD_WS_MASK_BIT       0x80U
@@ -279,7 +280,8 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
     /* Prepare Tx buffer - maximum length is 14, which includes 2 bytes header, 8 bytes length, 4 bytes mask key */
     uint8_t tx_len = 0;
     uint8_t header_buf[10] = {0 };
-    header_buf[0] |= frame->final ? HTTPD_WS_FIN_BIT : 0; /* Final (FIN) bit */
+    /* Set the `FIN` bit by default if message is not fragmented. Else, set it as per the `final` field */
+    header_buf[0] |= (!frame->fragmented) ? HTTPD_WS_FIN_BIT : (frame->final? HTTPD_WS_FIN_BIT: HTTPD_WS_CONTINUE);
     header_buf[0] |= frame->type; /* Type (opcode): 4 bits */
 
     if (frame->len <= 125) {
