@@ -144,7 +144,6 @@ def init_cli(verbose_output=None):
 
     class Deprecation(object):
         """Construct deprecation notice for help messages"""
-
         def __init__(self, deprecated=False):
             self.deprecated = deprecated
             self.since = None
@@ -292,7 +291,6 @@ def init_cli(verbose_output=None):
 
         names - alias of 'param_decls'
         """
-
         def __init__(self, **kwargs):
             names = kwargs.pop("names")
             super(Argument, self).__init__(names, **kwargs)
@@ -331,7 +329,6 @@ def init_cli(verbose_output=None):
 
     class Option(click.Option):
         """Option that knows whether it should be global"""
-
         def __init__(self, scope=None, deprecated=False, hidden=False, **kwargs):
             """
             Keyword arguments additional to Click's Option class:
@@ -367,7 +364,6 @@ def init_cli(verbose_output=None):
 
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
-
         def __init__(self, all_actions=None, verbose_output=None, help=None):
             super(CLI, self).__init__(
                 chain=True,
@@ -518,6 +514,10 @@ def init_cli(verbose_output=None):
             ctx = click.get_current_context()
             global_args = PropertyDict(kwargs)
 
+            def _help_and_exit():
+                print(ctx.get_help())
+                ctx.exit()
+
             # Show warning if some tasks are present several times in the list
             dupplicated_tasks = sorted(
                 [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
@@ -528,9 +528,13 @@ def init_cli(verbose_output=None):
                     ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
                     "Only first occurence will be executed.")
 
-            # Set propagated global options.
-            # These options may be set on one subcommand, but available in the list of global arguments
             for task in tasks:
+                # Show help and exit if help is in the list of commands
+                if task.name == 'help':
+                    _help_and_exit()
+
+                # Set propagated global options.
+                # These options may be set on one subcommand, but available in the list of global arguments
                 for key in list(task.action_args):
                     option = next((o for o in ctx.command.params if o.name == key), None)
 
@@ -558,8 +562,7 @@ def init_cli(verbose_output=None):
 
             # Always show help when command is not provided
             if not tasks:
-                print(ctx.get_help())
-                ctx.exit()
+                _help_and_exit()
 
             # Build full list of tasks to and deal with dependencies and order dependencies
             tasks_to_run = OrderedDict()
