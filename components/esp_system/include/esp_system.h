@@ -28,8 +28,6 @@
 extern "C" {
 #endif
 
-typedef int64_t (*esp_system_time_fn_t)(void);
-
 typedef enum {
     ESP_MAC_WIFI_STA,
     ESP_MAC_WIFI_SOFTAP,

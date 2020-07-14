@@ -209,8 +209,6 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
     return result;
 }
 
-int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
-
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);

@@ -98,20 +98,8 @@ static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
 static volatile bool s_resume_cores;
 #endif
 
-uint64_t g_startup_time = 0;
-
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
-
-static int64_t default_system_time_fn(void)
-{
-    int64_t t = 0;
-    static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
-    t = (esp_rtc_get_time_us() - g_startup_time); 
-    spinlock_release(&s_time_lock);
-    return t;
-}
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void)
@@ -370,7 +358,6 @@ void IRAM_ATTR call_start_cpu0(void)
     // Now that the clocks have been set-up, set the startup time from RTC
     // and default RTC-backed system time provider.
     g_startup_time = esp_rtc_get_time_us();
-    esp_system_set_time_provider(default_system_time_fn, 1000000L / rtc_clk_slow_freq_get_hz());
 
     intr_matrix_clear();
 

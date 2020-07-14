@@ -62,13 +62,8 @@ void esp_reset_reason_set_hint(esp_reset_reason_t hint);
 esp_reset_reason_t esp_reset_reason_get_hint(void);
 
 /** 
- * @brief Set function which provides `esp_system_get_time`.
- *
- * @param time_fn function which provides system time
- * @param resolution resolution in microseconds of the time provider function specified
+ * @brief Get the time in microseconds since startup
  */
-void esp_system_set_time_provider(esp_system_time_fn_t time_fn, uint32_t resolution);
-
 
 
 #ifdef __cplusplus

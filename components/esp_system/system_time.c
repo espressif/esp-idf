@@ -15,27 +15,32 @@
 #include "esp_system.h"
 #include "esp_attr.h"
 
-typedef struct {
-    esp_system_time_fn_t fn;        // time provider function
-    uint32_t resolution;            // resolution in microseconds of the time provider
-} system_time_provider_t;
+#include "soc/spinlock.h"
+#include "soc/rtc.h"
 
-// This is expected to be modified only on startup, so
-// it should be safe to not put locks on it.
-static system_time_provider_t s_system_time_provider;
+#include "sdkconfig.h"
 
-int64_t IRAM_ATTR esp_system_get_time(void)
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rtc.h"
+#endif
+
+#include "esp_private/startup_internal.h"
+
+// A component in the build should provide strong implementations that make use of
+// and actual hardware timer to provide timekeeping functions.
+int64_t IRAM_ATTR __attribute__((weak)) esp_system_get_time(void)
 {
-    return (*s_system_time_provider.fn)();
+    int64_t t = 0;
+    static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
+    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    t = (esp_rtc_get_time_us() - g_startup_time); 
+    spinlock_release(&s_time_lock);
+    return t;
 }
 
-uint32_t IRAM_ATTR esp_system_get_time_resolution(void)
+uint32_t IRAM_ATTR __attribute__((weak)) esp_system_get_time_resolution(void)
 {
-    return s_system_time_provider.resolution;
-}
-
-void esp_system_set_time_provider(esp_system_time_fn_t time_fn, uint32_t resolution)
-{
-    s_system_time_provider.fn = time_fn;
-    s_system_time_provider.resolution = resolution;
+    return 1000000L / rtc_clk_slow_freq_get_hz();
 }

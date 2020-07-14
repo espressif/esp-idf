@@ -78,6 +78,8 @@
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
+uint64_t g_startup_time = 0;
+
 // App entry point for core 0
 extern void start_app(void);
 
