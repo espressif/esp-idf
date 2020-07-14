@@ -49,7 +49,7 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-esp_err_t spi_hal_get_clock_conf(const spi_hal_context_t *hal, int speed_hz, int duty_cycle, bool use_gpio, int input_delay_ns, int *out_freq, spi_hal_timing_conf_t *timing_conf)
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_context_t *hal, int speed_hz, int duty_cycle, bool use_gpio, int input_delay_ns, int *out_freq, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf;
 

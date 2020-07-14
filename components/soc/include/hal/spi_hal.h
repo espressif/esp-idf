@@ -169,7 +169,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal);
  * Utils
  * ---------------------------------------------------------*/
 /**
- * Get the configuration of clock and timing. The configuration will be used when ``spi_hal_setup_device``.
+ * Calculate the configuration of clock and timing. The configuration will be used when ``spi_hal_setup_device``.
  *
  * It is highly suggested to do this at initialization, since it takes long time.
  *
@@ -185,7 +185,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal);
  *
  * @return ESP_OK if desired is available, otherwise fail.
  */
-esp_err_t spi_hal_get_clock_conf(const spi_hal_context_t *hal, int speed_hz, int duty_cycle, bool use_gpio, int input_delay_ns, int *out_freq, spi_hal_timing_conf_t *timing_conf);
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_context_t *hal, int speed_hz, int duty_cycle, bool use_gpio, int input_delay_ns, int *out_freq, spi_hal_timing_conf_t *timing_conf);
 
 /**
  * Get the frequency actual used.

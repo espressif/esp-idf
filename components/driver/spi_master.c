@@ -352,7 +352,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     spi_hal_timing_conf_t temp_timing_conf;
 
-    esp_err_t ret = spi_hal_get_clock_conf(hal, dev_config->clock_speed_hz, duty_cycle,
+    esp_err_t ret = spi_hal_cal_clock_conf(hal, dev_config->clock_speed_hz, duty_cycle,
                                         !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
                                         dev_config->input_delay_ns, &freq,
                                         &temp_timing_conf);
