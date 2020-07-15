@@ -28,7 +28,7 @@ def verify_elf_sha256_embedding(dut):
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_GENERIC")
 def test_examples_blink(env, extra_data):
     dut = env.get_dut("blink", "examples/get-started/blink", dut_class=ttfw_idf.ESP32DUT)
     binary_file = os.path.join(dut.app.binary_path, "blink.bin")

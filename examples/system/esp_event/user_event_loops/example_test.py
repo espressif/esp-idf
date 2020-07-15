@@ -8,7 +8,7 @@ TASK_ITERATION_POSTING = "posting TASK_EVENTS:TASK_ITERATION_EVENT to {}, iterat
 TASK_ITERATION_HANDLING = "handling TASK_EVENTS:TASK_ITERATION_EVENT from {}, iteration {}"
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_user_event_loops_example(env, extra_data):
     dut = env.get_dut('user_event_loops', 'examples/system/esp_event/user_event_loops', dut_class=ttfw_idf.ESP32DUT)
 

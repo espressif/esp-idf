@@ -206,7 +206,7 @@ test_weekend_network:
 
 example_test_001A:
   extends: .example_test_template
-  parallel: 5
+  parallel: 4
   artifacts:
       when: always
       paths:
@@ -221,6 +221,13 @@ example_test_001B:
   tags:
     - ESP32
     - Example_EthKitV1
+
+example_test_001C:
+  extends: .example_test_template
+  parallel: 2
+  tags:
+    - ESP32
+    - Example_GENERIC
 
 example_test_002:
   extends: .example_test_template
