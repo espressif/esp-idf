@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "sim800.h"
 #include "bg96.h"
+#include "sim7600.h"
 
 #define BROKER_URL "mqtt://mqtt.eclipse.org"
 
@@ -261,6 +262,8 @@ void app_main(void)
         dce = sim800_init(dte);
 #elif CONFIG_EXAMPLE_MODEM_DEVICE_BG96
         dce = bg96_init(dte);
+#elif CONFIG_EXAMPLE_MODEM_DEVICE_SIM7600
+        dce = sim7600_init(dte);
 #else
 #error "Unsupported DCE"
 #endif

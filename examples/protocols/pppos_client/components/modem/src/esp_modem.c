@@ -62,6 +62,21 @@ typedef struct {
     int pattern_queue_size;                 /*!< UART pattern queue size */
 } esp_modem_dte_t;
 
+/**
+ * @brief Returns true if the supplied string contains only CR or LF
+ *
+ * @param str string to check
+ * @param len length of string
+ */
+static inline bool is_only_cr_lf(const char *str, uint32_t len)
+{
+    for (int i=0; i<len; ++i) {
+        if (str[i] != '\r' && str[i] != '\n') {
+            return false;
+        }
+    }
+    return true;
+}
 
 esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx)
 {
@@ -85,8 +100,9 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte)
     modem_dce_t *dce = esp_dte->parent.dce;
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
     const char *line = (const char *)(esp_dte->buffer);
+    size_t len = strlen(line);
     /* Skip pure "\r\n" lines */
-    if (strlen(line) > 2) {
+    if (len > 2 && !is_only_cr_lf(line, len)) {
         MODEM_CHECK(dce->handle_line, "no handler for line", err_handle);
         MODEM_CHECK(dce->handle_line(dce, line) == ESP_OK, "handle line failed", err_handle);
     }
