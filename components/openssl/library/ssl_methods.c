@@ -49,7 +49,7 @@ IMPLEMENT_TLS_METHOD(TLS1_1_VERSION, 1, TLS_method_func, TLSv1_1_server_method);
 
 IMPLEMENT_TLS_METHOD(TLS1_2_VERSION, 1, TLS_method_func, TLSv1_2_server_method);
 
-IMPLEMENT_TLS_METHOD(TLS1_VERSION, 0, TLS_method_func, TLSv1_server_method);
+IMPLEMENT_TLS_METHOD(TLS1_VERSION, 1, TLS_method_func, TLSv1_server_method);
 
 IMPLEMENT_SSL_METHOD(SSL3_VERSION, 1, TLS_method_func, SSLv3_server_method);
 
@@ -58,11 +58,11 @@ IMPLEMENT_SSL_METHOD(SSL3_VERSION, 1, TLS_method_func, SSLv3_server_method);
  */
 IMPLEMENT_TLS_METHOD(TLS_ANY_VERSION, -1, TLS_method_func, TLS_method);
 
-IMPLEMENT_SSL_METHOD(TLS1_2_VERSION, -1, TLS_method_func, TLSv1_2_method);
+IMPLEMENT_TLS_METHOD(TLS1_2_VERSION, -1, TLS_method_func, TLSv1_2_method);
 
-IMPLEMENT_SSL_METHOD(TLS1_1_VERSION, -1, TLS_method_func, TLSv1_1_method);
+IMPLEMENT_TLS_METHOD(TLS1_1_VERSION, -1, TLS_method_func, TLSv1_1_method);
 
-IMPLEMENT_SSL_METHOD(TLS1_VERSION, -1, TLS_method_func, TLSv1_method);
+IMPLEMENT_TLS_METHOD(TLS1_VERSION, -1, TLS_method_func, TLSv1_method);
 
 IMPLEMENT_SSL_METHOD(SSL3_VERSION, -1, TLS_method_func, SSLv3_method);
 
@@ -79,3 +79,33 @@ IMPLEMENT_X509_METHOD(X509_method,
 IMPLEMENT_PKEY_METHOD(EVP_PKEY_method,
             pkey_pm_new, pkey_pm_free,
             pkey_pm_load);
+
+/**
+ * @brief Generic SSL/TLS methods
+ */
+const SSL_METHOD *SSLv23_method(void)
+{
+    return TLS_method();
+}
+
+const SSL_METHOD *SSLv23_server_method(void)
+{
+    return TLS_server_method();
+}
+
+const SSL_METHOD *SSLv23_client_method(void)
+{
+    return TLS_client_method();
+}
+
+int SSL_CTX_set_min_proto_version(SSL_CTX *ctx, int version)
+{
+    ctx->min_version = version;
+    return 1;
+}
+
+int SSL_CTX_set_max_proto_version(SSL_CTX *ctx, int version)
+{
+    ctx->max_version = version;
+    return 1;
+}

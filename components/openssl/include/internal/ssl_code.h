@@ -23,6 +23,10 @@
 #include "tls1.h"
 #include "x509_vfy.h"
 
+/* Used in SSL_set_mode() -- supported mode when using BIO */
+#define SSL_MODE_ENABLE_PARTIAL_WRITE       0x00000001L
+#define SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER 0x00000002L
+
 /* Used in SSL_set_shutdown()/SSL_get_shutdown(); */
 # define SSL_SENT_SHUTDOWN       1
 # define SSL_RECEIVED_SHUTDOWN   2

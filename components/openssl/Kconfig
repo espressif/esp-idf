@@ -8,6 +8,12 @@ menu "OpenSSL"
 
             If the option is enabled, "SSL_DEBUG" works.
 
+    config OPENSSL_ERROR_STACK
+        bool "Enable OpenSSL error structure"
+        default y
+        help
+            Enable OpenSSL Error reporting
+
     config OPENSSL_DEBUG_LEVEL
         int "OpenSSL debugging level"
         default 0

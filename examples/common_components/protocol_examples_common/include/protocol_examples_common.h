@@ -24,6 +24,11 @@ extern "C" {
 #define EXAMPLE_INTERFACE get_example_netif()
 #endif
 
+#if !defined (CONFIG_EXAMPLE_CONNECT_ETHERNET) && !defined (CONFIG_EXAMPLE_CONNECT_WIFI)
+// This is useful for some tests which do not need a network connection
+#define EXAMPLE_INTERFACE NULL
+#endif
+
 /**
  * @brief Configure Wi-Fi or Ethernet, connect, wait for IP
  *

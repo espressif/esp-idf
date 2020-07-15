@@ -12,8 +12,8 @@ Chapter Introduction
 ====================
 
 - Chapter 1. SSL Context Method Create
-- Chapter 2. SSL Context Fucntion
-- Chapter 3. SSL Fucntion
+- Chapter 2. SSL Context Function
+- Chapter 3. SSL Function
 - Chapter 4. SSL X509 Certification and Private Key Function
 
 

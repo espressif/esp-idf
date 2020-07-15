@@ -42,7 +42,7 @@ X509* __X509_new(X509 *ix)
 
     x->ref_counter = 1;
 
-    if (ix)
+    if (ix &&  ix->method)
         x->method = ix->method;
     else
         x->method = X509_method();
@@ -205,6 +205,7 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
     X509_free(ctx->cert->x509);
 
     ctx->cert->x509 = x;
+    x->ref_counter++;
 
     return 1;
 }
@@ -225,6 +226,11 @@ int SSL_use_certificate(SSL *ssl, X509 *x)
     ssl->cert->x509 = x;
 
     return 1;
+}
+
+long SSL_CTX_add_extra_chain_cert(SSL_CTX *ctx, X509 *x)
+{
+    return SSL_CTX_use_certificate(ctx, x);
 }
 
 /**
@@ -252,12 +258,13 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
         goto failed1;
     }
 
-    ret = SSL_CTX_use_certificate(ctx, x);
+    ret = SSL_CTX_use_certificate(ctx, x);  // This uses the "x" so increments ref_count
     if (!ret) {
         SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "SSL_CTX_use_certificate() return %d", ret);
         goto failed2;
     }
 
+    X509_free(x); // decrements ref_count, so in case of happy flow doesn't free the "x"
     return 1;
 
 failed2:
@@ -345,40 +352,20 @@ int X509_STORE_add_cert(X509_STORE *store, X509 *x) {
 }
 
 /**
- * @brief create a BIO object
- */
-BIO *BIO_new(void  *method) {
-    BIO *b = (BIO *)malloc(sizeof(BIO));
-    return b;
-}
-
-/**
- * @brief load data into BIO.
- *
- * Normally BIO_write should append data but doesn't happen here, and
- * 'data' cannot be freed after the function is called, it should remain valid 
- * until BIO object is in use.
- */
-int BIO_write(BIO *b, const void * data, int dlen) {
-    b->data = data;
-    b->dlen = dlen;
-    return 1;
-}
-
-/**
  * @brief load a character certification context into system context.
  * 
  * If '*cert' is pointed to the certification, then load certification
  * into it, or create a new X509 certification object.
  */
-X509 * PEM_read_bio_X509(BIO *bp, X509 **cert, void *cb, void *u) {
+X509 * PEM_read_bio_X509(BIO *bp, X509 **cert, pem_password_cb cb, void *u) {
     int m = 0;
     int ret;
     X509 *x;
 
-    SSL_ASSERT2(bp->data);
-    SSL_ASSERT2(bp->dlen);
-
+    SSL_ASSERT2(BIO_method_type(bp) & BIO_TYPE_MEM);
+    if (bp->data == NULL || bp->dlen == 0) {
+        return NULL;
+    }
     if (cert && *cert) {
         x = *cert;
     } else {
@@ -396,6 +383,9 @@ X509 * PEM_read_bio_X509(BIO *bp, X509 **cert, void *cb, void *u) {
         goto failed;
     }
 
+    // If buffer successfully created a X509 from the bio, mark the buffer as consumed
+    bp->data = NULL;
+    bp->dlen = 0;
     return x;
 
 failed:
@@ -406,11 +396,9 @@ failed:
     return NULL;
 }
 
-/**
- * @brief get the memory BIO method function
- */
-void *BIO_s_mem(void) {
-    return NULL;
+X509 *PEM_read_bio_X509_AUX(BIO *bp, X509 **cert, pem_password_cb *cb, void *u)
+{
+    return PEM_read_bio_X509(bp, cert, cb, u);
 }
 
 /**
@@ -418,11 +406,4 @@ void *BIO_s_mem(void) {
  */
 X509_STORE *SSL_CTX_get_cert_store(const SSL_CTX *ctx) {
     return (X509_STORE *)ctx;
-}
-
-/**
- * @brief free a BIO object
- */
-void BIO_free(BIO *b) {
-    free(b);
 }

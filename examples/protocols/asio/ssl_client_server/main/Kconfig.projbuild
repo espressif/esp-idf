@@ -1,0 +1,36 @@
+menu "Example Configuration"
+
+    config EXAMPLE_CLIENT
+        bool "Enable TLS client"
+        default y
+        help
+            Choose this option to use ASIO TLS/SSL client functionality
+
+    config EXAMPLE_PORT
+        string "ASIO port number"
+        default "443"
+        help
+            Port number used by ASIO example.
+
+    config EXAMPLE_SERVER
+        bool "Enable TLS server"
+        default n
+        help
+            Choose this option to use ASIO TLS/SSL server functionality
+
+    config EXAMPLE_SERVER_NAME
+        string "ASIO server name or IP"
+        default "www.google.com"
+        depends on EXAMPLE_CLIENT
+        help
+            Asio example server ip for the ASIO client to connect to.
+
+    config EXAMPLE_CLIENT_VERIFY_PEER
+        bool "Client to verify peer"
+        default n
+        depends on EXAMPLE_CLIENT
+        help
+            This option sets client's mode to verify peer, default is
+            verify-none
+
+endmenu

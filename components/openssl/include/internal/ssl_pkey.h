@@ -56,6 +56,52 @@ EVP_PKEY* d2i_PrivateKey(int type,
                          long length);
 
 /**
+ * @brief decodes and load a buffer BIO into a EVP key context. If '*a' is pointed to the
+ *        private key, then load key into it. Or create a new private key object
+ *
+ * @param bp BIO object containing the key
+ * @param a Pointer to an existing EVP_KEY or NULL if a new key shall be created
+ *
+ * @return Created or updated EVP_PKEY
+ */
+EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
+
+/**
+ * @brief Same as d2i_PrivateKey_bio
+ *
+ * @param bp BIO object containing the key
+ * @param a Pointer to an existing EVP_KEY or NULL if a new key shall be created
+ *
+ * @return Created or updated EVP_PKEY
+ */
+RSA *d2i_RSAPrivateKey_bio(BIO *bp,RSA **rsa);
+
+/**
+ * @brief loads a private key in PEM format from BIO object
+ *
+ * @param bp BIO object containing the key
+ * @param x  Pointer to an existent PKEY or NULL if a new key shall be created
+ * @param cb Password callback (not used)
+ * @param u User context (not used)
+ *
+ * @return Created or updated EVP_PKEY
+ */
+EVP_PKEY *PEM_read_bio_PrivateKey(BIO *bp, EVP_PKEY **x, pem_password_cb *cb, void *u);
+
+/**
+ * @brief RSA key in PEM format from BIO object
+ *
+ * @param bp BIO object containing the key
+ * @param x  Pointer to an existent PKEY or NULL if a new key shall be created
+ * @param cb Password callback (not used)
+ * @param u User context (not used)
+ *
+ * @return Created or updated EVP_PKEY
+ */
+
+RSA *PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **rsa, pem_password_cb *cb, void *u);
+
+/**
  * @brief free a private key object
  *
  * @param pkey - private key object point
