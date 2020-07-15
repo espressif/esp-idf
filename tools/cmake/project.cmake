@@ -440,6 +440,10 @@ macro(project project_name)
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
 
+    if(__PROJECT_GROUP_LINK_COMPONENTS)
+        target_link_libraries(${project_elf} "-Wl,--start-group")
+    endif()
+
     if(test_components)
         target_link_libraries(${project_elf} "-Wl,--whole-archive")
         foreach(test_component ${test_components})
