@@ -74,7 +74,7 @@
 
 ::
 
-    openocd -f board/esp32s2-kaluga-1.cfg -c "init; halt; esp32 appimage_offset 0x210000"
+    openocd -f board/esp32s2-kaluga-1.cfg -c "init; halt; esp appimage_offset 0x210000"
 
 ---
 
@@ -105,7 +105,7 @@
 
 .. jtag-pins
 
-.. list-table:: OpenOCD configuration files for ESP32
+.. list-table:: ESP32-S2 pins and JTAG signals
     :widths: 25 75
     :header-rows: 1
 

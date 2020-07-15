@@ -28,7 +28,7 @@ Flash Mappings vs SW Flash Breakpoints
 
 In order to set/clear software breakpoints in flash, OpenOCD needs to know their flash addresses. To accomplish conversion from the {IDF_TARGET_NAME} address space to the flash one, OpenOCD uses mappings of program's code regions resided in flash. Those mappings are kept in the image header which is prepended to program binary data (code and data segments) and is specific to every application image written to the flash. So to support software flash breakpoints OpenOCD should know where application image under debugging is resided in the flash. By default OpenOCD reads partition table at 0x8000 and uses mappings from the first found application image, but there can be the cases when it will not work, e.g. partition table is not at standard flash location or even there can be multiple images: one factory and two OTA and you may want to debbug any of them. To cover all possible debugging scenarios OpenOCD supports special command which can be used to set arbitrary location of application image to debug. The command has the following format:
 
-``esp32 appimage_offset <offset>``
+``esp appimage_offset <offset>``
 
 Offset should be in hex format. To reset to the default behaviour you can specify ``-1`` as offset.
 
@@ -254,7 +254,7 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
 1.  In issue report provide details of your configuration:
 
-    a. JTAG adapter type.
+    a. JTAG adapter type, and the chip/module being debugged.
     b. Release of ESP-IDF used to compile and load application that is being debugged.
     c. Details of OS used for debugging.
     d. Is OS running natively on a PC or on a virtual machine?
