@@ -1022,10 +1022,6 @@ static void hli_queue_setup_pinned_to_core(int core_id)
     }
 }
 
-uint32_t get_rmt_log_len(){
-    return IRAM_LOG_BUFFER_SIZE;
-}
-
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
 
@@ -1146,7 +1142,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     
 #ifdef CONFIG_ESP32_ENABLE_COREDUMP
-    esp_log_dump_init(get_rmt_log_len, btdm_rmt_get_fixed_log_addr);
+    esp_log_dump_init(btdm_rmt_get_log_buffer_size, btdm_rmt_get_fixed_log_addr);
 #else 
     #warning "coredump function is not enabled"
 #endif
