@@ -176,7 +176,7 @@ deploy_test_result:
     - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
     # artifacts of job update_test_cases creates test-management folder
     # we need to remove it so we can clone test-management folder again
-    - rm -r test-management
+    - rm -rf test-management
     - git clone $TEST_MANAGEMENT_REPO
     - python3 $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
