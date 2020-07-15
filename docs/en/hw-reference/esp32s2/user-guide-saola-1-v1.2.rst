@@ -79,7 +79,7 @@ Description of Components
    * - USB to UART Bridge
      - Single USB-UART bridge chip provides transfer rates up to 3 Mbps.
    * - Boot Button
-     - Download button. Holding down Boot and then pressing Reset initiates Firmware Download mode for downloading firmware through the serial port.
+     - Download button. Holding down **Boot** and then pressing **Reset** initiates Firmware Download mode for downloading firmware through the serial port.
    * - Reset Button
      - Reset button.
    * - 3.3 V Power On LED
