@@ -1140,11 +1140,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
-    
+
+#ifdef RMT_DEBUG_LOG_EN
 #ifdef CONFIG_ESP32_ENABLE_COREDUMP
     esp_log_dump_init(btdm_rmt_get_log_buffer_size, btdm_rmt_get_fixed_log_addr);
 #else 
     #warning "coredump function is not enabled"
+#endif
 #endif
     return ESP_OK;
 
