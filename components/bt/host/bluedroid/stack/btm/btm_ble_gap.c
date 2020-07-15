@@ -1174,6 +1174,7 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
 #if BLE_PRIVACY_SPT == TRUE
     UINT8 i = BTM_SEC_MAX_DEVICE_RECORDS;
     tBTM_SEC_DEV_REC    *p_dev_rec;
+    list_node_t         *p_node = NULL;
 #endif  ///BLE_PRIVACY_SPT == TRUE
     evt_type = (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE) ? \
                ((p_cb->scan_rsp) ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT )\
@@ -1217,14 +1218,15 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
     if ((btm_cb.ble_ctr_cb.privacy_mode ==  BTM_PRIVACY_1_2 && p_cb->afp != AP_SCAN_CONN_ALL) ||
             btm_cb.ble_ctr_cb.privacy_mode ==  BTM_PRIVACY_MIXED) {
         /* if enhanced privacy is required, set Identity address and matching IRK peer */
-        for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i ++) {
-            if ((btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE) != 0 &&
-                    (btm_cb.sec_dev_rec[i].ble.in_controller_list & BTM_RESOLVING_LIST_BIT) != 0) {
-                memcpy(p_peer_addr_ptr, btm_cb.sec_dev_rec[i].ble.static_addr, BD_ADDR_LEN);
-                *p_peer_addr_type = btm_cb.sec_dev_rec[i].ble.static_addr_type;
+        for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+            p_dev_rec = list_node(p_node);
+            if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE) != 0 &&
+                    (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) != 0) {
+                memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+                *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
                 break;
-            }
-        }
+	    }
+	}
 
         if (i != BTM_SEC_MAX_DEVICE_RECORDS) {
             *p_own_addr_type = BLE_ADDR_RANDOM_ID;
@@ -4130,10 +4132,9 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 void btm_ble_read_remote_features_complete(UINT8 *p)
 {
-    tACL_CONN        *p_acl_cb = &btm_cb.acl_db[0];
+    tACL_CONN        *p_acl_cb = NULL;
     UINT16            handle;
     UINT8             status;
-    int               xx;
 
     BTM_TRACE_EVENT ("btm_ble_read_remote_features_complete ");
 
@@ -4145,8 +4146,9 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
         STREAM_TO_UINT16 (handle, p);
 
         /* Look up the connection by handle and copy features */
-        for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl_cb++) {
-            if ((p_acl_cb->in_use) && (p_acl_cb->hci_handle == handle)) {
+        p_acl_cb = btm_handle_to_acl(handle);
+	if (p_acl_cb) {
+	    {
                 STREAM_TO_ARRAY(p_acl_cb->peer_le_features, p, BD_FEATURES_LEN);
 #if BLE_INCLUDED == TRUE
                 /* In the original Bluedroid version, slave need to send LL_VERSION_IND(call btsnd_hcic_rmt_ver_req)
@@ -4167,7 +4169,6 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
                     }
                 }
 #endif
-                break;
             }
         }
     }

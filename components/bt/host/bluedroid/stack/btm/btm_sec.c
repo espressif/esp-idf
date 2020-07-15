@@ -2971,7 +2971,7 @@ static tBTM_STATUS btm_sec_dd_create_conn (tBTM_SEC_DEV_REC *p_dev_rec)
 #if (SMP_INCLUDED == TRUE)
 void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT8 status)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec;
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     int              i;
     DEV_CLASS        dev_class;
     UINT8            old_sec_state;
@@ -2987,19 +2987,18 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     if (p_bd_addr) {
         p_dev_rec = btm_find_dev (p_bd_addr);
     } else {
-        p_dev_rec = &btm_cb.sec_dev_rec[0];
-
-        for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++) {
+	list_node_t *p_node = NULL;
+        for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+            p_dev_rec = list_node(p_node);
             if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
                     && (p_dev_rec->sec_state == BTM_SEC_STATE_GETTING_NAME)) {
                 p_bd_addr = p_dev_rec->bd_addr;
                 break;
             }
-        }
-
-        if (i == BTM_SEC_MAX_DEVICE_RECORDS) {
-            p_dev_rec = NULL;
-        }
+	}
+        if (!p_bd_addr) {
+	    p_dev_rec = NULL;
+	}
     }
 
 
@@ -4051,7 +4050,6 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     tACL_CONN       *p_acl = NULL;
-    UINT8           acl_idx = btm_handle_to_acl_index(handle);
 #endif
     BTM_TRACE_EVENT ("Security Manager: encrypt_change status:%d State:%d, encr_enable = %d\n",
                      status, (p_dev_rec) ? p_dev_rec->sec_state : 0, encr_enable);
@@ -4096,9 +4094,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     BTM_TRACE_DEBUG ("after update p_dev_rec->sec_flags=0x%x\n", p_dev_rec->sec_flags );
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-    if (acl_idx != MAX_L2CAP_LINKS) {
-        p_acl = &btm_cb.acl_db[acl_idx];
-    }
+    p_acl = btm_handle_to_acl(handle);
 
     if (p_acl != NULL) {
         btm_sec_check_pending_enc_req(p_dev_rec, p_acl->transport, encr_enable);
@@ -5649,10 +5645,11 @@ static void btm_restore_mode(void)
 tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state)
 {
 #if (SMP_INCLUDED == TRUE)
-    tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
-
-    for (int i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++) {
-        if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+    list_node_t *p_node = NULL;
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
+	if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
                 && (p_dev_rec->sec_state == state)) {
             return (p_dev_rec);
         }
@@ -5660,7 +5657,6 @@ tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state)
 #endif  ///SMP_INCLUDED == TRUE
     return (NULL);
 }
-
 /*******************************************************************************
 **
 ** Function         btm_sec_change_pairing_state
@@ -6148,22 +6144,17 @@ BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda)
 **
 *******************************************************************************/
 #if (BLE_INCLUDED == TRUE)
-BOOLEAN btm_sec_find_bonded_dev (UINT8 start_idx, UINT8 *p_found_idx, tBTM_SEC_DEV_REC **p_rec)
+BOOLEAN btm_sec_find_bonded_dev (UINT8 start_idx, UINT16 *p_found_handle, tBTM_SEC_DEV_REC **p_rec)
 {
     BOOLEAN found = FALSE;
 
 #if (SMP_INCLUDED== TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
-    int i;
-    if (start_idx >= BTM_SEC_MAX_DEVICE_RECORDS) {
-        BTM_TRACE_DEBUG ("LE bonded device not found\n");
-        return found;
-    }
-
-    p_dev_rec = &btm_cb.sec_dev_rec[start_idx];
-    for (i = start_idx; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++) {
+    list_node_t *p_node  = NULL;
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
         if (p_dev_rec->ble.key_type || (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN)) {
-            *p_found_idx = i;
+            *p_found_handle = p_dev_rec->hci_handle;
             *p_rec = p_dev_rec;
             break;
         }

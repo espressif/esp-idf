@@ -192,7 +192,7 @@ typedef struct {
     BD_ADDR                     private_addr;
     BD_ADDR                     random_bda;
     BOOLEAN                     busy;
-    UINT16                       index;
+    tBTM_SEC_DEV_REC            *p_dev_rec;
     tBTM_BLE_RESOLVE_CBACK      *p_resolve_cback;
     tBTM_BLE_ADDR_CBACK         *p_generate_cback;
     void                        *p;
