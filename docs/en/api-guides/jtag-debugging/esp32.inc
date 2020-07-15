@@ -75,7 +75,7 @@
 
 ::
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "init; halt; esp32 appimage_offset 0x210000"
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "init; halt; esp appimage_offset 0x210000"
 
 ---
 

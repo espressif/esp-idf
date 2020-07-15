@@ -159,7 +159,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
 
 .. highlight:: none
 
-You should now see similar output (this log is for ESP-WROVER-KIT):
+You should now see similar output (this log is for |run-openocd-device-name|):
 
 .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
    :start-after: run-openocd-output
