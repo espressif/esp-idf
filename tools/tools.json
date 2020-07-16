@@ -22,36 +22,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "e6d47c1dbd8c8cbfe37271e5e2aac53ee88c9e347ae937e22bf0c73f530efbdf",
-            "size": 85459985,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-amd64.tar.gz"
+            "sha256": "6c73b9e9d252810a63ca5e94b497c6c09fb8c903fe9c477f385bdc2ab4d2187e",
+            "size": 85520229,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-linux-amd64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "54a199c28f591da2466b21741911bc2ba77ddf82d3d2b66c6ce03c1a0c6835f0",
-            "size": 83647538,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-armel.tar.gz"
+            "sha256": "51dd318c4f2ac1fe2b206d029e1d2080c922107cc56e4a3802b1acafd7b436db",
+            "size": 83672167,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-linux-armel.tar.gz"
           },
           "linux-i686": {
-            "sha256": "36a9648c414dbd1c518c687ce5587d9f8eaa94324f45d92e9ec31a1433a04df8",
-            "size": 87438500,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-i686.tar.gz"
+            "sha256": "a003c7bc9b9f0dd82170480aadd62c0586fc6e3d69119c637c957125164f40e5",
+            "size": 87467927,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "dc62be8dd16c6d9d28d64e2b3f831fa208f3548c2ca73cdbcbdf68f474d59521",
-            "size": 92150978,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-macos.tar.gz"
+            "sha256": "48b288e3e5c60623851616bf545b8e4fc5382dc980d6b9682373f11013fe5776",
+            "size": 92201363,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-macos.tar.gz"
           },
-          "name": "esp-2019r2-8.2.0",
+          "name": "esp-2020r2-8.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "c9d5776a22516f0825a7c68d835ffacc2392f913136893b7646e1288937cc65e",
-            "size": 103850448,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "f2ba6bdb1c4b2178955e5e7a204552bb754709e02eaf9d8febe770d46629db8f",
+            "size": 103885422,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-win32.zip"
           },
           "win64": {
-            "sha256": "c9d5776a22516f0825a7c68d835ffacc2392f913136893b7646e1288937cc65e",
-            "size": 103850448,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "036ae8c737e7a4ced7121881f10747cf7b18914648ef611c78b3d543a0f00d8f",
+            "size": 106505186,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r2-win64.zip"
           }
         }
       ]
