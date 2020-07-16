@@ -141,6 +141,11 @@ static void health_client_cancel(struct bt_mesh_model *model,
         bt_mesh_free_buf(val->fault_array);
         break;
     }
+    case OP_HEALTH_CURRENT_STATUS: {
+        struct bt_mesh_health_current_status *val = status;
+        bt_mesh_free_buf(val->fault_array);
+        break;
+    }
     default:
         break;
     }
@@ -173,27 +178,23 @@ static void health_current_status(struct bt_mesh_model *model,
                                   struct bt_mesh_msg_ctx *ctx,
                                   struct net_buf_simple *buf)
 {
-    bt_mesh_client_node_t *node = NULL;
-    u8_t test_id = 0U;
-    u16_t cid = 0U;
+    struct bt_mesh_health_current_status status = {0};
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
 
-    /* Health current status is a publish message, sent to the user directly. */
-    if (!(node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true))) {
+    status.test_id = net_buf_simple_pull_u8(buf);
+    status.cid = net_buf_simple_pull_le16(buf);
+    status.fault_array = bt_mesh_alloc_buf(buf->len);
+    if (!status.fault_array) {
+        BT_ERR("%s, Out of memory", __func__);
         return;
     }
 
-    test_id = net_buf_simple_pull_u8(buf);
-    cid = net_buf_simple_pull_le16(buf);
+    net_buf_simple_add_mem(status.fault_array, buf->data, buf->len);
 
-    BT_DBG("Test ID 0x%02x Company ID 0x%04x Fault Count %u",
-           test_id, cid, buf->len);
-
-    ((void) test_id);
-    ((void) cid);
+    health_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_health_current_status));
 }
 
 static void health_period_status(struct bt_mesh_model *model,
