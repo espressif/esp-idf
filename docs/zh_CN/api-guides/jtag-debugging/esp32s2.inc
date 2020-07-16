@@ -80,20 +80,20 @@
 
 .. openocd-cfg-files
 
-.. list-table:: OpenOCD configuration files for ESP32
+.. list-table:: ESP32-S2 相关的 OpenOCD 配置文件
     :widths: 25 75
     :header-rows: 1
 
-    * - Name
-      - Description
+    * - 名字
+      - 描述
     * - ``board/esp32s2-kaluga-1.cfg``
-      - Board configuration file for ESP32-S2-Kaluga-1, includes target and adapter configuration.
+      - ESP32-S2-Kaluga-1 开发板配置文件，内部已包含 ESP32-S2 目标配置和 JTAG 适配器配置
     * - ``target/esp32s2.cfg``
-      - ESP32-S2 target configuration file. Can be used together with one of the ``interface/`` configuration files.
+      - ESP32-S2 目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``interface/ftdi/esp32s2_kaluga_v1.cfg``
-      - JTAG adapter configuration file for ESP32-S2-Kaluga-1 board.
+      - 适用于 ESP32-S2-Kaluga-1 开发板的 JTAG 适配器配置文件
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - JTAG adapter configuration file for ESP-Prog boards.
+      - 适用于 ESP-Prog 板子的 JTAG 适配器配置文件
 
 ---
 
@@ -155,6 +155,6 @@
 
 .. devkit-hw-config
 
-* *开箱即用，ESP32-S2-Kaluga-1 不需要任何其他硬件配置即可进行 JTAG 调试。 但是，如果遇到问题，请检查 “JTAG” DIP 开关块的开关 2-5 是否在 “ON” 位置。
+* 开箱即用，ESP32-S2-Kaluga-1 不需要任何其他硬件配置即可进行 JTAG 调试。 但是，如果遇到问题，请检查 “JTAG” DIP 开关的 2～5 号是否在 “ON” 的位置。
 
 ---

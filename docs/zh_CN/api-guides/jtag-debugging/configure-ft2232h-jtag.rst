@@ -16,11 +16,11 @@
     :start-after: devkit-hw-config
     :end-before: ---
 
-2.  检查 {IDF_TARGET_NAME} 上用于 JTAG 通信的引脚是否被接到了其它硬件上，这可能会影响 JTAG 的工作。
+* 检查 {IDF_TARGET_NAME} 上用于 JTAG 通信的引脚是否被接到了其它硬件上，这可能会影响 JTAG 的工作。
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
-    :start-after: jtag-pins
-    :end-before: ---
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: jtag-pins
+        :end-before: ---
 
 配置 USB 驱动
 ^^^^^^^^^^^^^
@@ -118,7 +118,9 @@ MacOS
 
 4. 运行 OpenOCD::
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd
+        :end-before: ---
 
 5. 在另一个终端窗口，再一次加载 FTDI 串口驱动::
 

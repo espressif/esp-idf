@@ -14,7 +14,7 @@
 
     openocd -f board/esp32-wrover-kit-3.3v.cfg
 
-.. |run-openocd-device-name| replace:: ESP32-WROOM-32 模组的 ESP-WROVER-KIT 开发板
+.. |run-openocd-device-name| replace:: 板载 ESP32-WROOM-32 模组的 ESP-WROVER-KIT 开发板
 
 ---
 
@@ -81,39 +81,39 @@
 
 .. openocd-cfg-files
 
-.. list-table:: OpenOCD configuration files for ESP32
+.. list-table:: ESP32 相关的 OpenOCD 配置文件
     :widths: 25 75
     :header-rows: 1
 
-    * - Name
-      - Description
+    * - 名字
+      - 描述
     * - ``board/esp32-wrover-kit-3.3v.cfg``
-      - ESP-WROVER-KIT with a 3.3 V ESP32-WROOM-32 module or ESP32-WROVER-B / ESP32-WROVER-E module.
+      - 板载 3.3V 模组（ESP32-WROOM-32，ESP32-WROVER-B，ESP32-WROVER-E）的 ESP-WROVER-KIT 开发板配置文件
     * - ``board/esp32-wrover-kit-1.8v.cfg``
-      - ESP-WROVER-KIT with an 1.8 V ESP32-WROVER module.
+      - 板载 1.8V 模组（ESP32-WROVER）的 ESP-WROVER-KIT 开发板配置文件
     * - ``board/esp32-ethernet-kit-3.3v.cfg``
-      - ESP-Ethernet-KIT with a 3.3 V ESP32-WROVER-B / ESP32-WROVER-E module.
+      - 板载 3.3V 模组（ESP32-WROVER-B / ESP32-WROVER-E）的 ESP-Ethernet-KIT 开发板配置文件
     * - ``target/esp32.cfg``
-      - ESP32 target configuration file. Can be used together with one of the ``interface/`` configuration files.
+      - ESP32 的目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``target/esp32-solo-1.cfg``
-      - Target configuration file for ESP32-SOLO-1 module. Different from ``esp32.cfg`` in that it only configures one CPU.
+      - ESP32-SOLO-1 的目标配置文件，和 ``esp32.cfg`` 的差别在于它仅配置一个 CPU
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - JTAG adapter configuration file for ESP-WROVER-KIT and ESP-Prog boards.
+      - 适用于 ESP-WROVER-KIT 和 ESP-Prog 板子的 JTAG 适配器配置文件
 
 ---
 
 .. openocd-target-specific-config-vars
 
-.. list-table:: ESP32-specific OpenOCD variables
+.. list-table:: ESP32 相关的 OpenOCD 变量
     :widths: 25 75
     :header-rows: 1
 
-    * - Name
-      - Description
+    * - 名字
+      - 描述
     * - ``ESP32_FLASH_VOLTAGE``
-      - When using 1.8 V flash ESP32 based modules, set this variable to ``1.8``. Refer to :ref:`jtag-debugging-tip-code-flash-voltage`.
+      - 如果 ESP32 模组集成的是 1.8 V 的 Flash，将该变量设置为 ``1.8``，详情请参考 :ref:`jtag-debugging-tip-code-flash-voltage`
     * - ``ESP32_ONLYCPU``
-      - For multi-core targets, can be set to ``1`` to only enable single core debugging.
+      - 对于多核芯片，将该值设置为 ``1`` 可以仅启用单核调试功能
 
 ---
 

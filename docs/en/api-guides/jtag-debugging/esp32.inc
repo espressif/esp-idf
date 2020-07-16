@@ -88,11 +88,11 @@
     * - Name
       - Description
     * - ``board/esp32-wrover-kit-3.3v.cfg``
-      - ESP-WROVER-KIT with a 3.3 V ESP32-WROOM-32 module or ESP32-WROVER-B / ESP32-WROVER-E module.
+      - Board configuration file for ESP-WROVER-KIT with a 3.3 V ESP32-WROOM-32 module or ESP32-WROVER-B / ESP32-WROVER-E module.
     * - ``board/esp32-wrover-kit-1.8v.cfg``
-      - ESP-WROVER-KIT with an 1.8 V ESP32-WROVER module.
+      - Board configuration file for ESP-WROVER-KIT with an 1.8 V ESP32-WROVER module.
     * - ``board/esp32-ethernet-kit-3.3v.cfg``
-      - ESP-Ethernet-KIT with a 3.3 V ESP32-WROVER-B / ESP32-WROVER-E module.
+      - Board configuration file for ESP-Ethernet-KIT with a 3.3 V ESP32-WROVER-B / ESP32-WROVER-E module.
     * - ``target/esp32.cfg``
       - ESP32 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``target/esp32-solo-1.cfg``
