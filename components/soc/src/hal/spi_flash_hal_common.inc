@@ -19,32 +19,31 @@
 #include "sdkconfig.h"
 
 #define ADDRESS_MASK_24BIT 0xFFFFFF
-#define COMPUTE_DUMMY_CYCLELEN(host, base)    ((base) + ((spi_flash_memspi_data_t *)(host)->driver_data)->extra_dummy)
+#define COMPUTE_DUMMY_CYCLELEN(host, base)    ((base) + ((spi_flash_hal_context_t*)host)->extra_dummy)
 
-static inline spi_dev_t *get_spi_dev(spi_flash_host_driver_t *host)
+static inline spi_dev_t *get_spi_dev(spi_flash_host_inst_t *host)
 {
-    return ((spi_flash_memspi_data_t *)host->driver_data)->spi;
+    return ((spi_flash_hal_context_t*)host)->spi;
 }
 
-void spi_flash_hal_poll_cmd_done(spi_flash_host_driver_t *host)
+void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host)
 {
     while (!spi_flash_ll_cmd_is_done(get_spi_dev(host))) {
         //nop
     }
 }
 
-esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *host)
+esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
 {
-    spi_flash_memspi_data_t *drv_data = (spi_flash_memspi_data_t *)host->driver_data;
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_reset(dev);
-    spi_flash_ll_set_cs_pin(dev, drv_data->cs_num);
-    spi_flash_ll_set_clock(dev, &drv_data->clock_conf);
+    spi_flash_ll_set_cs_pin(dev, ((spi_flash_hal_context_t*)host)->cs_num);
+    spi_flash_ll_set_clock(dev, &((spi_flash_hal_context_t*)host)->clock_conf);
     return ESP_OK;
 }
 
 esp_err_t spi_flash_hal_configure_host_io_mode(
-    spi_flash_host_driver_t *host,
+    spi_flash_host_inst_t *host,
     uint32_t command,
     uint32_t addr_bitlen,
     int dummy_cyclelen_base,
@@ -89,9 +88,9 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     return ESP_OK;
 }
 
-esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *host, spi_flash_trans_t *trans)
+esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
 {
-    host->configure_host_io_mode(host, trans->command, trans->address_bitlen, 0, SPI_FLASH_FASTRD);
+    host->driver->configure_host_io_mode(host, trans->command, trans->address_bitlen, 0, SPI_FLASH_FASTRD);
 
     spi_dev_t *dev = get_spi_dev(host);
 
@@ -106,19 +105,19 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *host, spi_flash_
 
     spi_flash_ll_set_miso_bitlen(dev, trans->miso_len * 8);
     spi_flash_ll_user_start(dev);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
     spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
     return ESP_OK;
 }
 
-esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *host, void *buffer, uint32_t address, uint32_t read_len)
+esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len)
 {
     spi_dev_t *dev = get_spi_dev(host);
     int bitlen = spi_flash_ll_get_addr_bitlen(dev);
     spi_flash_ll_set_usr_address(dev, address << (bitlen - 24), bitlen);
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
     spi_flash_ll_get_buffer_data(dev, buffer, read_len);
     return ESP_OK;
 }

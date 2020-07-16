@@ -8,6 +8,7 @@
 #include "esp_flash.h"
 #include "driver/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
+#include "memspi_host_driver.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 
@@ -18,7 +19,6 @@
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
-#include "hal/spi_flash_hal.h"
 #include "ccomp_timer.h"
 #include "esp_rom_gpio.h"
 
@@ -175,9 +175,9 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
         host_id = SPI_HOST;
         cs_id = 0;
     } else {
-        spi_flash_memspi_data_t* driver_data = (spi_flash_memspi_data_t*)chip->host->driver_data;
-        host_id = spi_flash_ll_hw_get_id(driver_data->spi);
-        cs_id = driver_data->cs_num;
+        spi_flash_hal_context_t* host_data = (spi_flash_hal_context_t*)chip->host;
+        host_id = spi_flash_ll_hw_get_id(host_data->spi);
+        cs_id = host_data->cs_num;
     }
     if (out_host_id) {
         *out_host_id = host_id;
@@ -382,7 +382,8 @@ void test_simple_read_write(esp_flash_t *chip)
 
     srand(test_seed);
     for (int i = 0; i < sizeof(sector_buf); i++) {
-        TEST_ASSERT_EQUAL_HEX8(rand() & 0xFF, sector_buf[i]);
+        uint8_t data = rand();
+        TEST_ASSERT_EQUAL_HEX8(data, sector_buf[i]);
     }
 }
 
@@ -412,17 +413,22 @@ FLASH_TEST_CASE_3("SPI flash unaligned read/write", test_unaligned_read_write);
 
 void test_single_read_write(esp_flash_t* chip)
 {
+    const int seed = 699;
     ESP_LOGI(TAG, "Testing chip %p...", chip);
     uint32_t offs = erase_test_region(chip, 2);
 
+    srand(seed);
     for (unsigned v = 0; v < 512; v++) {
-        TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_flash_write(chip, &v, offs + v, 1) );
+        uint32_t data = rand();
+        TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_flash_write(chip, &data, offs + v, 1) );
     }
 
+    srand(seed);
     for (unsigned v = 0; v < 512; v++) {
         uint8_t readback;
+        uint32_t data = rand();
         TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_flash_read(chip, &readback, offs + v, 1) );
-        TEST_ASSERT_EQUAL_HEX8(v, readback);
+        TEST_ASSERT_EQUAL_HEX8(data, readback);
     }
 }
 
@@ -435,18 +441,23 @@ FLASH_TEST_CASE_3("SPI flash single byte reads/writes", test_single_read_write);
 */
 void test_three_byte_read_write(esp_flash_t *chip)
 {
+    const int seed = 700;
     ESP_LOGI(TAG, "Testing chip %p...", chip);
     uint32_t offs = erase_test_region(chip, 2);
     ets_printf("offs:%X\n", offs);
 
-    for (uint32_t v = 0; v < 2000; v++) {
-        TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write(chip, &v, offs + 3 * v, 3) );
+    srand(seed);
+    for (uint32_t v = 0; v < 86; v++) {
+        uint32_t data = rand();
+        TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write(chip, &data, offs + 3 * v, 3) );
     }
 
-    for (uint32_t v = 0; v < 2000; v++) {
+    srand(seed);
+    for (uint32_t v = 0; v < 1; v++) {
         uint32_t readback;
+        uint32_t data = rand();
         TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, offs + 3 * v, 3) );
-        TEST_ASSERT_EQUAL_HEX32(v & 0xFFFFFF, readback & 0xFFFFFF);
+        TEST_ASSERT_EQUAL_HEX32(data & 0xFFFFFF, readback & 0xFFFFFF);
     }
 }
 

@@ -116,8 +116,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         return ESP_ERR_INVALID_ARG;
     }
     esp_flash_t *chip = NULL;
-    spi_flash_host_driver_t *host = NULL;
-    memspi_host_data_t *host_data = NULL;
+    memspi_host_inst_t *host = NULL;
     esp_err_t ret = ESP_OK;
 
     uint32_t caps = MALLOC_CAP_DEFAULT;
@@ -129,19 +128,12 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         goto fail;
     }
 
-    host = (spi_flash_host_driver_t*)heap_caps_malloc(sizeof(spi_flash_host_driver_t), caps);
+    host = (memspi_host_inst_t*)heap_caps_malloc(sizeof(memspi_host_inst_t), caps);
     *chip = (esp_flash_t) {
         .read_mode = config->io_mode,
-        .host = host,
+        .host = (spi_flash_host_inst_t*)host,
     };
     if (!host) {
-        ret = ESP_ERR_NO_MEM;
-        goto fail;
-    }
-
-    host_data = (memspi_host_data_t*)heap_caps_malloc(sizeof(memspi_host_data_t), caps);
-    host->driver_data = host_data;
-    if (!host_data) {
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
@@ -173,7 +165,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         .input_delay_ns = config->input_delay_ns,
         .speed = config->speed,
     };
-    err = memspi_host_init_pointers(host, host_data, &host_cfg);
+    err = memspi_host_init_pointers(host, &host_cfg);
     if (err != ESP_OK) {
         ret = err;
         goto fail;
@@ -195,10 +187,7 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
         return ESP_ERR_INVALID_ARG;
     }
     esp_flash_deinit_os_functions(chip);
-    if (chip->host) {
-        free(chip->host->driver_data);
-        free(chip->host);
-    }
+    free(chip->host);
     free(chip);
     return ESP_OK;
 }
@@ -209,13 +198,11 @@ extern const esp_flash_os_functions_t esp_flash_noos_functions;
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
-static DRAM_ATTR memspi_host_data_t default_driver_data;
-static DRAM_ATTR spi_flash_host_driver_t esp_flash_default_host_drv = ESP_FLASH_DEFAULT_HOST_DRIVER();
-
+static DRAM_ATTR memspi_host_inst_t esp_flash_default_host;
 
 static DRAM_ATTR esp_flash_t default_chip = {
     .read_mode = DEFAULT_FLASH_MODE,
-    .host = &esp_flash_default_host_drv,
+    .host = (spi_flash_host_inst_t*)&esp_flash_default_host,
     .os_func = &esp_flash_noos_functions,
 };
 
@@ -229,12 +216,14 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
     //the host is already initialized, only do init for the data and load it to the host
-    spi_flash_hal_init(&default_driver_data, &cfg);
-    default_chip.host->driver_data = &default_driver_data;
+    esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
 
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
-    esp_err_t err = esp_flash_init(&default_chip);
+    err = esp_flash_init(&default_chip);
     if (err != ESP_OK) {
         return err;
     }

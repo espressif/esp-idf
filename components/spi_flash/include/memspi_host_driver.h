@@ -28,9 +28,9 @@
         .supports_direct_write = spi_flash_hal_supports_direct_write, \
         .supports_direct_read = spi_flash_hal_supports_direct_read, \
         .program_page = spi_flash_hal_program_page, \
-        .max_write_bytes = SPI_FLASH_HAL_MAX_WRITE_BYTES, \
+        .write_data_slicer = memspi_host_write_data_slicer, \
         .read = spi_flash_hal_read, \
-        .max_read_bytes = SPI_FLASH_HAL_MAX_READ_BYTES, \
+        .read_data_slicer = memspi_host_read_data_slicer, \
         .host_idle = spi_flash_hal_host_idle, \
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
@@ -38,20 +38,19 @@
 }
 
 /// configuration for the memspi host
-typedef spi_flash_memspi_config_t memspi_host_config_t;
+typedef spi_flash_hal_config_t memspi_host_config_t;
 /// context for the memspi host
-typedef spi_flash_memspi_data_t memspi_host_data_t;
+typedef spi_flash_hal_context_t memspi_host_inst_t;
 
 /**
  * Initialize the memory SPI host.
  *
  * @param host Pointer to the host structure.
- * @param data Pointer to allocated space to hold the context of host driver.
  * @param cfg Pointer to configuration structure
  *
  * @return always return ESP_OK
  */
-esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_data_t *data, const memspi_host_config_t *cfg);
+esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg);
 
 /*******************************************************************************
  * NOTICE
@@ -66,7 +65,7 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
  * High speed implementation of RDID through memspi interface relying on the
  * ``common_command``.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param id Output of the read ID from the slave.
  *
  * @return
@@ -74,69 +73,106 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
  *  - ESP_ERR_FLASH_NO_RESPONSE: if no response from chip
  *  - or other cases from ``spi_hal_common_command``
  */
-esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *driver, uint32_t *id);
+esp_err_t memspi_host_read_id_hs(spi_flash_host_inst_t *host, uint32_t *id);
 
 /**
  * High speed implementation of RDSR through memspi interface relying on the
  * ``common_command``.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param id Output of the read ID from the slave.
  *
  * @return
  *  - ESP_OK: if success
  *  - or other cases from ``spi_hal_common_command``
  */
-esp_err_t memspi_host_read_status_hs(spi_flash_host_driver_t *driver, uint8_t *out_sr);
+esp_err_t memspi_host_read_status_hs(spi_flash_host_inst_t *host, uint8_t *out_sr);
 
 /**
  * Flush the cache (if needed) after the contents are modified.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param addr Start address of the modified region
  * @param size Size of the region modified.
  *
  * @return always ESP_OK.
  */
-esp_err_t memspi_host_flush_cache(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
+esp_err_t memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, uint32_t size);
 
 /**
  *  Erase contents of entire chip.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  */
-void memspi_host_erase_chip(spi_flash_host_driver_t *driver);
+void memspi_host_erase_chip(spi_flash_host_inst_t *host);
 
 /**
  *  Erase a sector starting from a given address.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param start_address Starting address of the sector.
  */
-void memspi_host_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_address);
+void memspi_host_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
  *  Erase a block starting from a given address.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param start_address Starting address of the block.
  */
-void memspi_host_erase_block(spi_flash_host_driver_t *driver, uint32_t start_address);
+void memspi_host_erase_block(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
  * Program a page with contents of a buffer.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param buffer Buffer which contains the data to be flashed.
  * @param address Starting address of where to flash the data.
  * @param length The number of bytes to flash.
  */
-void memspi_host_program_page(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
+void memspi_host_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length);
 
 /**
  * Set ability to write to chip.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param wp Enable or disable write protect (true - enable, false - disable).
  */
-esp_err_t memspi_host_set_write_protect(spi_flash_host_driver_t *driver, bool wp);
+esp_err_t memspi_host_set_write_protect(spi_flash_host_inst_t *host, bool wp);
+
+/**
+ * Read data to buffer.
+ *
+ * @param host The driver context.
+ * @param buffer Buffer which contains the data to be read.
+ * @param address Starting address of where to read the data.
+ * @param length The number of bytes to read.
+ */
+esp_err_t memspi_host_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
+
+/**
+ * @brief Slicer for read data used in non-encrypted regions. This slicer does nothing but
+ *        limit the length to the maximum size the host supports.
+ *
+ * @param address Flash address to read
+ * @param len Length to read
+ * @param align_address Output of the address to read, should be equal to the input `address`
+ * @param page_size Physical SPI flash page size
+ *
+ * @return Length that can actually be read in one `read` call in `spi_flash_host_driver_t`.
+ */
+int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
+
+/**
+ * @brief Slicer for write data used in non-encrypted regions. This slicer limit the length to the
+ *        maximum size the host supports, and truncate if the write data lie accross the page boundary
+ *        (256 bytes)
+ *
+ * @param address Flash address to write
+ * @param len Length to write
+ * @param align_address Output of the address to write, should be equal to the input `address`
+ * @param page_size Physical SPI flash page size
+ *
+ * @return Length that can actually be written in one `program_page` call in `spi_flash_host_driver_t`.
+ */
+int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
