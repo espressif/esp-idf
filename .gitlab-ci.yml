@@ -1418,7 +1418,7 @@ UT_004_10:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - psram    
+    - psram
 
 UT_004_11:
   <<: *unit_test_template
@@ -1932,6 +1932,7 @@ IT_011_06:
 
 IT_011_07:
   <<: *test_template
+  allow_failure: true
   tags:
     - ESP32_IDF
     - SSC_T50_MESH1
