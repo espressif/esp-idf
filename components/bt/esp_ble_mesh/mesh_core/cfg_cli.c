@@ -214,8 +214,7 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
 
     switch (ctx->recv_op) {
     case OP_DEV_COMP_DATA_STATUS: {
-        struct bt_mesh_cfg_comp_data_status *val;
-        val = (struct bt_mesh_cfg_comp_data_status *)status;
+        struct bt_mesh_cfg_comp_data_status *val = status;
         bt_mesh_free_buf(val->comp_data);
         break;
     }

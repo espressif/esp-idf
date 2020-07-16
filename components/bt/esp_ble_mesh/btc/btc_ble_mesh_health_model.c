@@ -249,7 +249,6 @@ void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
 {
     esp_ble_mesh_health_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
-    size_t length = 0U;
     uint8_t act = 0U;
 
     if (!model || !ctx) {
@@ -290,8 +289,7 @@ void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     cb_params.params = &params;
 
     if (val && len) {
-        length = (len <= sizeof(cb_params.status_cb)) ? len : sizeof(cb_params.status_cb);
-        memcpy(&cb_params.status_cb, val, length);
+        memcpy(&cb_params.status_cb, val, MIN(len, sizeof(cb_params.status_cb)));
     }
 
     btc_ble_mesh_health_client_callback(&cb_params, act);
