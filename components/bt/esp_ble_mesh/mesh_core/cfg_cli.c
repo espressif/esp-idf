@@ -123,9 +123,9 @@ static void timeout_handler(struct k_work *work)
     return;
 }
 
-static void cfg_client_cancel(struct bt_mesh_model *model,
-                              struct bt_mesh_msg_ctx *ctx,
-                              void *status, size_t len)
+static void cfg_client_recv_status(struct bt_mesh_model *model,
+                                   struct bt_mesh_msg_ctx *ctx,
+                                   void *status, size_t len)
 {
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
@@ -265,7 +265,7 @@ static void comp_data_status(struct bt_mesh_model *model,
 
     net_buf_simple_add_mem(status.comp_data, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_comp_data_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_comp_data_status));
 }
 
 static void state_status_u8(struct bt_mesh_model *model,
@@ -280,7 +280,7 @@ static void state_status_u8(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(u8_t));
+    cfg_client_recv_status(model, ctx, &status, sizeof(u8_t));
 }
 
 static void beacon_status(struct bt_mesh_model *model,
@@ -324,7 +324,7 @@ static void relay_status(struct bt_mesh_model *model,
     status.relay      = net_buf_simple_pull_u8(buf);
     status.retransmit = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_relay_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_relay_status));
 }
 
 static void net_key_status(struct bt_mesh_model *model,
@@ -340,7 +340,7 @@ static void net_key_status(struct bt_mesh_model *model,
     status.status = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_netkey_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_netkey_status));
 }
 
 static void app_key_status(struct bt_mesh_model *model,
@@ -356,7 +356,7 @@ static void app_key_status(struct bt_mesh_model *model,
     status.status = net_buf_simple_pull_u8(buf);
     key_idx_unpack(buf, &status.net_idx, &status.app_idx);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_appkey_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_appkey_status));
 }
 
 static void mod_app_status(struct bt_mesh_model *model,
@@ -379,7 +379,7 @@ static void mod_app_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_app_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_app_status));
 }
 
 static void mod_pub_status(struct bt_mesh_model *model,
@@ -408,7 +408,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_pub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_pub_status));
 }
 
 static void mod_sub_status(struct bt_mesh_model *model,
@@ -431,7 +431,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_sub_status));
 }
 
 static void hb_sub_status(struct bt_mesh_model *model,
@@ -452,7 +452,7 @@ static void hb_sub_status(struct bt_mesh_model *model,
     status.min    = net_buf_simple_pull_u8(buf);
     status.max    = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
 }
 
 static void hb_pub_status(struct bt_mesh_model *model,
@@ -473,7 +473,7 @@ static void hb_pub_status(struct bt_mesh_model *model,
     status.feat    = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
 }
 
 static void node_reset_status(struct bt_mesh_model *model,
@@ -484,7 +484,7 @@ static void node_reset_status(struct bt_mesh_model *model,
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
 
-    cfg_client_cancel(model, ctx, NULL, 0);
+    cfg_client_recv_status(model, ctx, NULL, 0);
 }
 
 static void mod_sub_list(struct bt_mesh_model *model,
@@ -513,7 +513,7 @@ static void mod_sub_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.addr, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_sub_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_sub_list));
 }
 
 static void net_key_list(struct bt_mesh_model *model,
@@ -533,7 +533,7 @@ static void net_key_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.net_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_net_key_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_net_key_list));
 }
 
 static void app_key_list(struct bt_mesh_model *model,
@@ -555,7 +555,7 @@ static void app_key_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_app_key_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_app_key_list));
 }
 
 static void node_id_status(struct bt_mesh_model *model,
@@ -572,7 +572,7 @@ static void node_id_status(struct bt_mesh_model *model,
     status.net_idx = net_buf_simple_pull_le16(buf);
     status.identity = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_node_id_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_node_id_status));
 }
 
 static void mod_app_list(struct bt_mesh_model *model,
@@ -601,7 +601,7 @@ static void mod_app_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_app_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_app_list));
 }
 
 static void kr_phase_status(struct bt_mesh_model *model,
@@ -618,7 +618,7 @@ static void kr_phase_status(struct bt_mesh_model *model,
     status.net_idx = net_buf_simple_pull_le16(buf);
     status.phase = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_key_refresh_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_key_refresh_status));
 }
 
 static void lpn_pollto_status(struct bt_mesh_model *model,
@@ -636,7 +636,7 @@ static void lpn_pollto_status(struct bt_mesh_model *model,
     status.timeout |= net_buf_simple_pull_u8(buf) << 8;
     status.timeout |= net_buf_simple_pull_u8(buf) << 16;
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_lpn_pollto_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_lpn_pollto_status));
 }
 
 static void net_trans_status(struct bt_mesh_model *model,
