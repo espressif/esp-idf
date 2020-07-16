@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tinyusb.h"
-#include "hal/usb_hal.h"
-#include "soc/usb_periph.h"
-#include "soc/gpio_periph.h"
-#include "hal/gpio_ll.h"
-#include "esp_rom_gpio.h"
-#include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
+#include "driver/periph_ctrl.h"
+#include "esp_rom_gpio.h"
+#include "hal/gpio_ll.h"
+#include "hal/usb_hal.h"
+#include "soc/gpio_periph.h"
+#include "soc/usb_periph.h"
+#include "tinyusb.h"
 
 static void configure_pins(usb_hal_context_t *usb)
 {
@@ -34,7 +34,9 @@ static void configure_pins(usb_hal_context_t *usb)
                 esp_rom_gpio_connect_out_signal(iopin->pin, iopin->func, false, false);
             } else {
                 esp_rom_gpio_connect_in_signal(iopin->pin, iopin->func, false);
-                gpio_ll_input_enable(&GPIO, iopin->pin);
+                if ((iopin->pin != GPIO_MATRIX_CONST_ZERO_INPUT) && (iopin->pin != GPIO_MATRIX_CONST_ONE_INPUT)) {
+                    gpio_ll_input_enable(&GPIO, iopin->pin);
+                }
             }
             esp_rom_gpio_pad_unhold(iopin->pin);
         }
