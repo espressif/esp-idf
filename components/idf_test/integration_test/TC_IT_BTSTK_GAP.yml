@@ -1420,6 +1420,7 @@ test cases:
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_10001
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP master multi connection test
   summary: master connect to 3 slaves with different app and master do disconnect
   steps: |
@@ -1447,6 +1448,7 @@ test cases:
     - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10002
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP master multi connection test
   summary: master connect to 3 slaves with different app and slave do disconnect
   steps: |
@@ -1474,6 +1476,7 @@ test cases:
     - ['P SSC1 C +BLECONN:GapDisconnect,OK,001[0-2]', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10003
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP master multi connection test
   summary: master connect to 4 slaves with same app and master do disconnect
   steps: |
@@ -1501,6 +1504,7 @@ test cases:
     - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10004
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP master multi connection test
   summary: master connect to 4 slaves with same app and slave do disconnect
   steps: |
@@ -1528,6 +1532,7 @@ test cases:
     - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_11001
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP slave multi connection test
   summary: slave connected by 4 master and master do disconnect
   steps: |
@@ -1557,6 +1562,7 @@ test cases:
     - ['P SSC{%d} C +BLECONN:GapDisconnect,OK', 'P SSC1 C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_11002
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP slave multi connection test
   summary: slave connected by 4 master and slave do disconnect
   steps: |
@@ -1587,6 +1593,7 @@ test cases:
     - ['P SSC{%d} C +BLECONN:GapDisconnect,OK', 'P SSC1 C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_12001
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP multi connection as both master and slave role test
   summary:  connected by 2 masters and connect to 2 slaves and do disconnect
   steps: |
@@ -1623,6 +1630,7 @@ test cases:
     - ["P SSC[2-5] C Disconnect"]
 - ID: BTSTK_GAP_12002
   <<: *GAP_CASE
+  CI ready: 'No'
   test point 2: BLE GAP multi connection as both master and slave role test
   summary:  connected by 2 masters and connect to 2 slaves and be disconnected
   steps: |
