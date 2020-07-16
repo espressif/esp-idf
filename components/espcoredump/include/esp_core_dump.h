@@ -86,9 +86,6 @@ void esp_core_dump_to_uart(XtExcFrame *frame);
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
 
-typedef uint32_t (*log_dump_get_len_t)(void);
-typedef int * (*log_dump_get_ptr_t)(void);
-
-bool esp_log_dump_init(log_dump_get_len_t g_len, log_dump_get_ptr_t g_ptr);
+bool esp_log_dump_init(uint32_t (*get_len)(void), int * (*get_ptr)(void));
 
 #endif

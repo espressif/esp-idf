@@ -28,8 +28,11 @@
 #define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET + SPECREG_SIZE)
 
     .data
+    .global     _l4_intr_stack
+    .global     _l4_intr_stack_end
 _l4_intr_stack:
     .space      L4_INTR_STACK_SIZE
+_l4_intr_stack_end:
 
 _l4_save_ctx:
     .space      REG_SAVE_AREA_SIZE

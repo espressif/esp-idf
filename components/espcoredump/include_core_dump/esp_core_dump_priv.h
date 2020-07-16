@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef ESP_CORE_DUMP_PRIV_H_
-#define ESP_CORE_DUMP_PRIV_H_
+#ifndef ESP_CORE_DUMP_H_
+#define ESP_CORE_DUMP_H_
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
 #define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { ets_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
@@ -33,7 +34,7 @@
 #endif
 
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
-#define COREDUMP_VERSION                    2
+#define COREDUMP_VERSION                    0x0002
 
 typedef uint32_t core_dump_crc_t;
 
@@ -69,6 +70,7 @@ typedef struct _core_dump_header_t
     uint32_t version;   // core dump struct version
     uint32_t tasks_num; // number of tasks
     uint32_t tcb_sz;    // size of TCB
+    uint32_t mem_segs_num; // number of memory segments
 } core_dump_header_t;
 
 /** core dump task data header */
@@ -78,6 +80,13 @@ typedef struct _core_dump_task_header_t
     uint32_t stack_start; // stack start address
     uint32_t stack_end;   // stack end address
 } core_dump_task_header_t;
+
+/** core dump memory segment header */
+typedef struct _core_dump_mem_seg_header_t
+{
+    uint32_t start; // memory region start address
+    uint32_t size;  // memory region size
+} core_dump_mem_seg_header_t;
 
 typedef struct _core_dump_log_header_t
 {
@@ -97,14 +106,21 @@ void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg);
 
 // Gets RTOS tasks snapshot
 uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
-                        const uint32_t snapshot_size, uint32_t* const tcb_sz);
+                        const uint32_t snapshot_size);
 
 // Checks TCB consistency
-bool esp_tcb_addr_is_sane(uint32_t addr, uint32_t sz);
+bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
 
-bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, uint32_t tcb_sz);
+bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, bool *is_curr_task);
 
 bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_t *length);
+uint32_t esp_core_dump_get_stack(core_dump_task_header_t *task_snapshot, uint32_t *stk_len);
+bool esp_core_dump_check_in_bt_isr(int sp);
+
+#define esp_core_dump_in_isr_context() xPortInterruptedFromISRContext()
+uint32_t esp_core_dump_get_isr_stack_end(void);
+
+#define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)
 
 bool esp_core_dump_process_log(core_dump_log_header_t *log);
 
