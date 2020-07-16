@@ -651,14 +651,13 @@ IT_004:
 
 IT_005:
   extends: .test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_5
 
 IT_006:
   extends: .test_template
-  parallel: 8
+  parallel: 7
   tags:
     - ESP32_IDF
     - SSC_T1_6
@@ -728,7 +727,6 @@ IT_017:
 
 IT_018:
   extends: .test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_9

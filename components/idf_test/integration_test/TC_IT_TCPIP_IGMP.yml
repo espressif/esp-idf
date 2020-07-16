@@ -545,7 +545,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP API parameter check
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0201
   SDK: |-
     8266_RTOS
@@ -593,7 +593,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0202
   SDK: |-
     8266_RTOS
@@ -703,7 +703,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0204
   SDK: |-
     8266_RTOS
@@ -759,7 +759,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0301
   SDK: |-
     8266_RTOS
@@ -845,7 +845,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP API parameter check
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0303
   SDK: |-
     8266_RTOS
@@ -1151,7 +1151,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0402
   SDK: |-
     8266_RTOS
@@ -1377,7 +1377,7 @@ test cases:
   test point 1: basic function
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_IGMP_0406
   SDK: |-
     8266_RTOS
