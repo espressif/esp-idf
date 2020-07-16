@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200611
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
 
 /**
  * @brief Bluetooth mode for controller enable/disable
@@ -149,6 +149,8 @@ the adv packet will be discarded until the memory is restored. */
     .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
     .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
+    .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
+    .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -188,6 +190,8 @@ typedef struct {
      */
     uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
