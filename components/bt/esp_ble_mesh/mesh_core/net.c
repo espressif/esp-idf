@@ -171,7 +171,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
     err = bt_mesh_k2(key, p, sizeof(p), &nid, keys->enc, keys->privacy);
     if (err) {
-        BT_ERR("%s, Unable to generate NID, EncKey & PrivacyKey", __func__);
+        BT_ERR("Unable to generate NID, EncKey & PrivacyKey");
         return err;
     }
 
@@ -184,7 +184,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
     err = bt_mesh_k3(key, keys->net_id);
     if (err) {
-        BT_ERR("%s, Unable to generate Net ID", __func__);
+        BT_ERR("Unable to generate Net ID");
         return err;
     }
 
@@ -193,7 +193,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     err = bt_mesh_identity_key(key, keys->identity);
     if (err) {
-        BT_ERR("%s, Unable to generate IdentityKey", __func__);
+        BT_ERR("Unable to generate IdentityKey");
         return err;
     }
 
@@ -202,7 +202,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
     err = bt_mesh_beacon_key(key, keys->beacon);
     if (err) {
-        BT_ERR("%s, Unable to generate beacon key", __func__);
+        BT_ERR("Unable to generate beacon key");
         return err;
     }
 
@@ -245,7 +245,7 @@ int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16])
     err = bt_mesh_k2(net_key, p, sizeof(p), &cred->cred[idx].nid,
                      cred->cred[idx].enc, cred->cred[idx].privacy);
     if (err) {
-        BT_ERR("%s, Unable to generate NID, EncKey & PrivacyKey", __func__);
+        BT_ERR("Unable to generate NID, EncKey & PrivacyKey");
         return err;
     }
 
@@ -597,7 +597,7 @@ void bt_mesh_iv_update_test(bool enable)
 bool bt_mesh_iv_update(void)
 {
     if (!bt_mesh_is_provisioned()) {
-        BT_ERR("%s, Not yet provisioned", __func__);
+        BT_ERR("Not yet provisioned");
         return false;
     }
 
@@ -622,7 +622,7 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
-        bt_mesh_proxy_beacon_send(sub);
+        bt_mesh_proxy_server_beacon_send(sub);
     }
 }
 
@@ -778,13 +778,13 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
     err = bt_mesh_net_obfuscate(buf->data, BLE_MESH_NET_IVI_TX, priv);
     if (err) {
-        BT_ERR("%s, De-obfuscate failed (err %d)", __func__, err);
+        BT_ERR("De-obfuscate failed (err %d)", err);
         return err;
     }
 
     err = bt_mesh_net_decrypt(enc, &buf->b, BLE_MESH_NET_IVI_TX, false);
     if (err) {
-        BT_ERR("%s, Decrypt failed (err %d)", __func__, err);
+        BT_ERR("Decrypt failed (err %d)", err);
         return err;
     }
 
@@ -797,18 +797,18 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
     err = bt_mesh_net_encrypt(enc, &buf->b, BLE_MESH_NET_IVI_TX, false);
     if (err) {
-        BT_ERR("%s, Encrypt failed (err %d)", __func__, err);
+        BT_ERR("Encrypt failed (err %d)", err);
         return err;
     }
 
     err = bt_mesh_net_obfuscate(buf->data, BLE_MESH_NET_IVI_TX, priv);
     if (err) {
-        BT_ERR("%s, Obfuscate failed (err %d)", __func__, err);
+        BT_ERR("Obfuscate failed (err %d)", err);
         return err;
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        bt_mesh_proxy_relay(&buf->b, dst) &&
+        bt_mesh_proxy_server_relay(&buf->b, dst) &&
         BLE_MESH_ADDR_IS_UNICAST(dst)) {
         send_cb_finalize(cb, cb_data);
         return 0;
@@ -838,10 +838,10 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
     int err = 0;
 
     if (ctl && net_buf_simple_tailroom(buf) < BLE_MESH_MIC_LONG) {
-        BT_ERR("%s, Insufficient MIC space for CTL PDU", __func__);
+        BT_ERR("Insufficient MIC space for CTL PDU");
         return -EINVAL;
     } else if (net_buf_simple_tailroom(buf) < BLE_MESH_MIC_SHORT) {
-        BT_ERR("%s, Insufficient MIC space for PDU", __func__);
+        BT_ERR("Insufficient MIC space for PDU");
         return -EINVAL;
     }
 
@@ -913,7 +913,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
      */
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             tx->ctx->send_ttl != 1U) {
-        if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
+        if (bt_mesh_proxy_server_relay(&buf->b, tx->ctx->addr) &&
                 BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
             /* Notify completion if this only went
              * through the Mesh Proxy.
@@ -925,9 +925,9 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
         }
     }
 
-#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    if (tx->ctx->send_ttl != 1U) {
-        if (bt_mesh_proxy_client_send(&buf->b, tx->ctx->addr)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT) &&
+            tx->ctx->send_ttl != 1U) {
+        if (bt_mesh_proxy_client_relay(&buf->b, tx->ctx->addr)) {
             /* If Proxy Client succeeds to send messages with GATT bearer,
              * we can directly finish here. And if not, which means no
              * connection has been created with Proxy Client, here we will
@@ -939,7 +939,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
             goto done;
         }
     }
-#endif
 
     /* Deliver to local network interface if necessary */
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() &&
@@ -990,8 +989,8 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 }
 
 struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
-        u32_t iv_index, const u8_t auth[8],
-        bool *new_key)
+                                           u32_t iv_index, const u8_t auth[8],
+                                           bool *new_key)
 {
     size_t subnet_size = 0U;
     int i;
@@ -1116,7 +1115,7 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
     for (i = 0; i < array_size; i++) {
         sub = bt_mesh_rx_netkey_get(i);
         if (!sub) {
-            BT_DBG("%s, NULL subnet", __func__);
+            BT_DBG("Subnet not found");
             continue;
         }
 
@@ -1239,7 +1238,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 #endif
 
     if (!buf) {
-        BT_ERR("%s, Out of relay buffers", __func__);
+        BT_ERR("Out of relay buffers");
         return;
     }
 
@@ -1269,12 +1268,12 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
      * layer nonce includes the IVI.
      */
     if (bt_mesh_net_encrypt(enc, &buf->b, BLE_MESH_NET_IVI_RX(rx), false)) {
-        BT_ERR("%s, Re-encrypting failed", __func__);
+        BT_ERR("Re-encrypting failed");
         goto done;
     }
 
     if (bt_mesh_net_obfuscate(buf->data, BLE_MESH_NET_IVI_RX(rx), priv)) {
-        BT_ERR("%s, Re-obfuscating failed", __func__);
+        BT_ERR("Re-obfuscating failed");
         goto done;
     }
 
@@ -1284,7 +1283,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED ||
              rx->net_if == BLE_MESH_NET_IF_LOCAL)) {
-        if (bt_mesh_proxy_relay(&buf->b, rx->ctx.recv_dst) &&
+        if (bt_mesh_proxy_server_relay(&buf->b, rx->ctx.recv_dst) &&
                 BLE_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
             goto done;
         }
@@ -1355,12 +1354,12 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 
     if (net_if != BLE_MESH_NET_IF_PROXY_CFG &&
             rx->ctx.recv_dst == BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("%s, Destination address is unassigned; dropping packet", __func__);
+        BT_ERR("Destination address is unassigned; dropping packet");
         return -EBADMSG;
     }
 
     if (BLE_MESH_ADDR_IS_RFU(rx->ctx.recv_dst)) {
-        BT_ERR("%s, Destination address is RFU; dropping packet", __func__);
+        BT_ERR("Destination address is RFU; dropping packet");
         return -EBADMSG;
     }
 
@@ -1447,7 +1446,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             net_if == BLE_MESH_NET_IF_PROXY) {
-        bt_mesh_proxy_addr_add(data, rx.ctx.addr);
+        bt_mesh_proxy_server_addr_add(data, rx.ctx.addr);
 
         if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_DISABLED &&
             !rx.local_match) {
@@ -1516,7 +1515,7 @@ void bt_mesh_net_start(void)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
-        bt_mesh_proxy_gatt_enable();
+        bt_mesh_proxy_server_gatt_enable();
         bt_mesh_adv_update();
     }
 

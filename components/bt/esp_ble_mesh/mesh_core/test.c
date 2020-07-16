@@ -46,14 +46,14 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
     err = bt_mesh_provision(info->net_key, info->net_idx, info->flags, info->iv_index,
                             info->unicast_addr, info->dev_key);
     if (err) {
-        BT_ERR("%s, bt_mesh_provision() failed (err %d)", __func__, err);
+        BT_ERR("bt_mesh_provision() failed (err %d)", err);
         return err;
     }
 
     /* Adds application key to device */
     sub = bt_mesh_subnet_get(info->net_idx);
     if (!sub) {
-        BT_ERR("%s, Failed to find subnet 0x%04x", __func__, info->net_idx);
+        BT_ERR("Invalid NetKeyIndex 0x%04x", info->net_idx);
         return -ENODEV;
     }
 
@@ -64,14 +64,14 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
         }
     }
     if (i == ARRAY_SIZE(bt_mesh.app_keys)) {
-        BT_ERR("%s, Failed to allocate memory, AppKeyIndex 0x%04x", __func__, info->app_idx);
+        BT_ERR("Failed to allocate AppKey, 0x%04x", info->app_idx);
         return -ENOMEM;
     }
 
     keys = sub->kr_flag ? &key->keys[1] : &key->keys[0];
 
     if (bt_mesh_app_id(info->app_key, &keys->id)) {
-        BT_ERR("%s, Failed to calculate AID, AppKeyIndex 0x%04x", __func__, info->app_idx);
+        BT_ERR("Failed to calculate AID, 0x%04x", info->app_idx);
         return -EIO;
     }
 
@@ -82,7 +82,7 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
     /* Binds AppKey with all non-config models, adds group address to all these models */
     comp = bt_mesh_comp_get();
     if (!comp) {
-        BT_ERR("%s, Composition data is NULL", __func__);
+        BT_ERR("Invalid composition data");
         return -ENODEV;
     }
 

@@ -27,7 +27,7 @@ esp_err_t esp_ble_mesh_register_time_scene_client_callback(esp_ble_mesh_time_sce
 }
 
 esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_time_scene_client_get_state_t *get_state)
+                                                   esp_ble_mesh_time_scene_client_get_state_t *get_state)
 {
     btc_ble_mesh_time_scene_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -53,7 +53,7 @@ esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_pa
 }
 
 esp_err_t esp_ble_mesh_time_scene_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_time_scene_client_set_state_t *set_state)
+                                                   esp_ble_mesh_time_scene_client_set_state_t *set_state)
 {
     btc_ble_mesh_time_scene_client_args_t arg = {0};
     btc_msg_t msg = {0};

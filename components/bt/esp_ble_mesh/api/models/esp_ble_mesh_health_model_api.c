@@ -34,7 +34,7 @@ esp_err_t esp_ble_mesh_register_health_server_callback(esp_ble_mesh_health_serve
 }
 
 esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_get_state_t *get_state)
+                                               esp_ble_mesh_health_client_get_state_t *get_state)
 {
     btc_ble_mesh_health_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -60,7 +60,7 @@ esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_
 }
 
 esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_set_state_t *set_state)
+                                               esp_ble_mesh_health_client_set_state_t *set_state)
 {
     btc_ble_mesh_health_client_args_t arg = {0};
     btc_msg_t msg = {0};

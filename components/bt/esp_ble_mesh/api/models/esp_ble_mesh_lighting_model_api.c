@@ -27,7 +27,7 @@ esp_err_t esp_ble_mesh_register_light_client_callback(esp_ble_mesh_light_client_
 }
 
 esp_err_t esp_ble_mesh_light_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_light_client_get_state_t *get_state)
+                                              esp_ble_mesh_light_client_get_state_t *get_state)
 {
     btc_ble_mesh_lighting_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -53,7 +53,7 @@ esp_err_t esp_ble_mesh_light_client_get_state(esp_ble_mesh_client_common_param_t
 }
 
 esp_err_t esp_ble_mesh_light_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_light_client_set_state_t *set_state)
+                                              esp_ble_mesh_light_client_set_state_t *set_state)
 {
     btc_ble_mesh_lighting_client_args_t arg = {0};
     btc_msg_t msg = {0};
