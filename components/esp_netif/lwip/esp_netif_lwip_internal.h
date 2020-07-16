@@ -16,6 +16,7 @@
 
 #include "esp_netif.h"
 #include "esp_netif_ppp.h"
+#include "esp_netif_slip.h"
 #include "lwip/netif.h"
 
 struct esp_netif_netstack_lwip_vanilla_config {
@@ -26,6 +27,12 @@ struct esp_netif_netstack_lwip_vanilla_config {
 struct esp_netif_netstack_lwip_ppp_config {
     void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
     esp_netif_ppp_config_t ppp_events;
+};
+
+struct esp_netif_netstack_lwip_slip_config {
+    err_t (*init_fn)(struct netif*);
+    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
+    esp_netif_slip_config_t slip_config;
 };
 
 // LWIP netif specific network stack configuration
@@ -58,8 +65,28 @@ typedef struct esp_netif_ip_lost_timer_s {
     bool timer_running;
 } esp_netif_ip_lost_timer_t;
 
-// Forward declare the ppp context
-typedef struct lwip_ppp_ctx lwip_ppp_ctx_t;
+/**
+ * @brief Check the netif if of a specific P2P type
+ */
+#define _IS_NETIF_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
+
+/**
+ * @brief Additional netif types when related data are needed
+ */
+enum netif_types {
+    COMMON_LWIP_NETIF,
+    PPP_LWIP_NETIF,
+    SLIP_LWIP_NETIF
+};
+
+/**
+ * @brief Related data to esp-netif (additional data for some special types of netif
+ * (typically for point-point network types, such as PPP or SLIP)
+ */
+typedef struct netif_related_data {
+    bool is_point2point;
+    enum netif_types netif_type;
+} netif_related_data_t;
 
 /**
  * @brief Main esp-netif container with interface related information
@@ -72,11 +99,10 @@ struct esp_netif_obj {
 
     // lwip netif related
     struct netif *lwip_netif;
-    lwip_ppp_ctx_t *lwip_ppp_ctx;
     err_t (*lwip_init_fn)(struct netif*);
     void (*lwip_input_fn)(void *input_netif_handle, void *buffer, size_t len, void *eb);
     void * netif_handle;    // netif impl context (either vanilla lwip-netif or ppp_pcb)
-    bool is_ppp_netif;
+    netif_related_data_t *related_data; // holds additional data for specific netifs
 
     // io driver related
     void* driver_handle;

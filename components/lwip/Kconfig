@@ -647,6 +647,21 @@ menu "LWIP"
         help
             Enable PPP debug log output
 
+    menuconfig LWIP_SLIP_SUPPORT
+        bool "Enable SLIP support (new/experimental)"
+        default n
+        help
+            Enable SLIP stack. Now only SLIP over serial is possible.
+
+            SLIP over serial support is experimental and unsupported.
+
+    config LWIP_SLIP_DEBUG_ON
+        bool "Enable SLIP debug log output"
+        depends on LWIP_SLIP_SUPPORT
+        default n
+        help
+            Enable SLIP debug log output
+
     menu "ICMP"
 
         config LWIP_MULTICAST_PING
@@ -701,4 +716,43 @@ menu "LWIP"
             Enable this option allows lwip to check assert.
             It is recommended to keep it open, do not close it.
 
+    menu "Debug"
+
+        config LWIP_NETIF_DEBUG
+            bool "Enable netif debug messages"
+            default n
+
+        config LWIP_PBUF_DEBUG
+            bool "Enable pbuf debug messages"
+            default n
+
+        config LWIP_ETHARP_DEBUG
+            bool "Enable etharp debug messages"
+            default n
+
+        config LWIP_API_LIB_DEBUG
+            bool "Enable api lib debug messages"
+            default n
+
+        config LWIP_SOCKETS_DEBUG
+            bool "Enable socket debug messages"
+            default n
+
+        config LWIP_IP_DEBUG
+            bool "Enable IP debug messages"
+            default n
+
+        config LWIP_ICMP_DEBUG
+            bool "Enable ICMP debug messages"
+            default n
+
+        config LWIP_IP6_DEBUG
+            bool "Enable IP6 debug messages"
+            default n
+
+        config LWIP_ICMP6_DEBUG
+            bool "Enable ICMP6 debug messages"
+            default n
+
+    endmenu #debug
 endmenu

@@ -474,6 +474,34 @@
    ------------------------------------
 */
 
+#ifdef CONFIG_LWIP_SLIP_SUPPORT
+
+/**
+ * Enable SLIP receive from ISR functions and disable Rx thread
+ *
+ * This is the only supported mode of lwIP SLIP interface, so that
+ * - incoming packets are queued into pbufs
+ * - no thread is created from lwIP
+ * meaning it is the application responsibility to read data
+ * from IO driver and feed them to the slip interface
+ */
+#define SLIP_RX_FROM_ISR                 1
+#define SLIP_USE_RX_THREAD               0
+
+/**
+ * PPP_DEBUG: Enable debugging for PPP.
+ */
+#define SLIP_DEBUG_ON                    CONFIG_LWIP_SLIP_DEBUG_ON
+
+#if SLIP_DEBUG_ON
+#define SLIP_DEBUG                       LWIP_DBG_ON
+#else
+#define SLIP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+
+#endif
+
 /*
    ------------------------------------
    ---------- Thread options ----------
@@ -738,37 +766,82 @@
 /**
  * ETHARP_DEBUG: Enable debugging in etharp.c.
  */
-#define ETHARP_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_ETHARP_DEBUG
+#define ETHARP_DEBUG                     LWIP_DBG_ON
+#else
+#define ETHARP_DEBUG                     LWIP_DBG_OFF
+#endif
+
 
 /**
  * NETIF_DEBUG: Enable debugging in netif.c.
  */
+#ifdef CONFIG_LWIP_NETIF_DEBUG
+#define NETIF_DEBUG                     LWIP_DBG_ON
+#else
 #define NETIF_DEBUG                     LWIP_DBG_OFF
+#endif
 
 /**
  * PBUF_DEBUG: Enable debugging in pbuf.c.
  */
-#define PBUF_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_PBUF_DEBUG
+#define PBUF_DEBUG                     LWIP_DBG_ON
+#else
+#define PBUF_DEBUG                     LWIP_DBG_OFF
+#endif
 
 /**
  * API_LIB_DEBUG: Enable debugging in api_lib.c.
  */
-#define API_LIB_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_API_LIB_DEBUG
+#define API_LIB_DEBUG                     LWIP_DBG_ON
+#else
+#define API_LIB_DEBUG                     LWIP_DBG_OFF
+#endif
+
 
 /**
  * SOCKETS_DEBUG: Enable debugging in sockets.c.
  */
+#ifdef CONFIG_LWIP_SOCKETS_DEBUG
+#define SOCKETS_DEBUG                   LWIP_DBG_ON
+#else
 #define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#endif
 
 /**
  * ICMP_DEBUG: Enable debugging in icmp.c.
  */
+#ifdef CONFIG_LWIP_ICMP_DEBUG
+#define ICMP_DEBUG                      LWIP_DBG_ON
+#else
 #define ICMP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_LWIP_ICMP6_DEBUG
+#define ICMP6_DEBUG                      LWIP_DBG_ON
+#else
+#define ICMP6_DEBUG                      LWIP_DBG_OFF
+#endif
 
 /**
  * IP_DEBUG: Enable debugging for IP.
  */
+#ifdef CONFIG_LWIP_IP_DEBUG
+#define IP_DEBUG                        LWIP_DBG_ON
+#else
 #define IP_DEBUG                        LWIP_DBG_OFF
+#endif
+
+/**
+ * IP_DEBUG: Enable debugging for IP.
+ */
+#ifdef CONFIG_LWIP_IP6_DEBUG
+#define IP6_DEBUG                        LWIP_DBG_ON
+#else
+#define IP6_DEBUG                        LWIP_DBG_OFF
+#endif
 
 /**
  * MEMP_DEBUG: Enable debugging in memp.c.
