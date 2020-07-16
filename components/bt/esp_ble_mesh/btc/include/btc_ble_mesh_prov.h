@@ -320,10 +320,9 @@ esp_ble_mesh_elem_t *btc_ble_mesh_elem_find(u16_t addr);
 uint8_t btc_ble_mesh_elem_count(void);
 
 esp_ble_mesh_model_t *btc_ble_mesh_model_find_vnd(const esp_ble_mesh_elem_t *elem,
-        uint16_t company, uint16_t id);
+                                                  uint16_t company, uint16_t id);
 
-esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
-        uint16_t id);
+esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem, uint16_t id);
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 

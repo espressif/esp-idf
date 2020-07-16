@@ -23,13 +23,13 @@ static struct bt_mesh_model *find_model(u16_t elem_addr, u16_t cid, u16_t mod_id
     struct bt_mesh_elem *elem = NULL;
 
     if (!BLE_MESH_ADDR_IS_UNICAST(elem_addr)) {
-        BT_ERR("%s, Not a unicast address 0x%04x", __func__, elem_addr);
+        BT_ERR("Invalid unicast address 0x%04x", elem_addr);
         return NULL;
     }
 
     elem = bt_mesh_elem_find(elem_addr);
     if (elem == NULL) {
-        BT_ERR("%s, No element found, addr 0x%04x", __func__, elem_addr);
+        BT_ERR("No element found, addr 0x%04x", elem_addr);
         return NULL;
     }
 

@@ -32,7 +32,8 @@ const struct bt_mesh_prov *bt_mesh_prov_get(void);
 int bt_mesh_prov_init(const struct bt_mesh_prov *prov);
 int bt_mesh_prov_deinit(void);
 
-void bt_mesh_prov_complete(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index);
+void bt_mesh_prov_complete(u16_t net_idx, const u8_t net_key[16],
+                           u16_t addr, u8_t flags, u32_t iv_index);
 void bt_mesh_prov_reset(void);
 
 #ifdef __cplusplus

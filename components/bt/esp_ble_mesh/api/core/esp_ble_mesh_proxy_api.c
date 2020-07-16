@@ -60,7 +60,8 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
 }
 
 esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
-        esp_ble_mesh_addr_type_t addr_type, uint16_t net_idx)
+                                            esp_ble_mesh_addr_type_t addr_type,
+                                            uint16_t net_idx)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -100,8 +101,8 @@ esp_err_t esp_ble_mesh_proxy_client_disconnect(uint8_t conn_handle)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle,
-        uint16_t net_idx, esp_ble_mesh_proxy_filter_type_t filter_type)
+esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle, uint16_t net_idx,
+                                                    esp_ble_mesh_proxy_filter_type_t filter_type)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -124,8 +125,8 @@ esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle,
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle,
-        uint16_t net_idx, uint16_t *addr, uint16_t addr_num)
+esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle, uint16_t net_idx,
+                                                    uint16_t *addr, uint16_t addr_num)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -149,8 +150,8 @@ esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle,
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle,
-        uint16_t net_idx, uint16_t *addr, uint16_t addr_num)
+esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle, uint16_t net_idx,
+                                                       uint16_t *addr, uint16_t addr_num)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};

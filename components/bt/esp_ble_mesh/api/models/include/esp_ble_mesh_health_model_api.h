@@ -335,7 +335,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_health_client_cb_t)(esp_ble_mesh_health_client_cb_event_t event,
-        esp_ble_mesh_health_client_cb_param_t *param);
+                                                 esp_ble_mesh_health_client_cb_param_t *param);
 
 /**
  * @brief   Health Server Model callback function type
@@ -343,7 +343,7 @@ typedef void (* esp_ble_mesh_health_client_cb_t)(esp_ble_mesh_health_client_cb_e
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_health_server_cb_t)(esp_ble_mesh_health_server_cb_event_t event,
-        esp_ble_mesh_health_server_cb_param_t *param);
+                                                 esp_ble_mesh_health_server_cb_param_t *param);
 
 /**
  * @brief         Register BLE Mesh Health Model callback, the callback will report Health Client & Server Model events.
@@ -379,7 +379,7 @@ esp_err_t esp_ble_mesh_register_health_server_callback(esp_ble_mesh_health_serve
  *
  */
 esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_get_state_t *get_state);
+                                               esp_ble_mesh_health_client_get_state_t *get_state);
 
 /**
  * @brief         This function is called to set the Health Server states using the Health Client Model set messages.
@@ -395,7 +395,7 @@ esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_
  *
  */
 esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_set_state_t *set_state);
+                                               esp_ble_mesh_health_client_set_state_t *set_state);
 
 /**
  * @brief         This function is called by the Health Server Model to update the context of its Health Current status.

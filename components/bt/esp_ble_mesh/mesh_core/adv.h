@@ -69,19 +69,19 @@ void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
                                u8_t ref_cmp, bt_mesh_buf_ref_flag_t flag);
 
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
-        bt_mesh_adv_alloc_t get_id,
-        enum bt_mesh_adv_type type,
-        u8_t xmit, s32_t timeout);
+                                             bt_mesh_adv_alloc_t get_id,
+                                             enum bt_mesh_adv_type type,
+                                             u8_t xmit, s32_t timeout);
 
 void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
 
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
                       void *cb_data);
 
-const bt_mesh_addr_t *bt_mesh_pba_get_addr(void);
+const bt_mesh_addr_t *bt_mesh_get_unprov_dev_addr(void);
 
 struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
-        s32_t timeout);
+                                         s32_t timeout);
 
 void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
                             void *cb_data, u16_t src, u16_t dst);

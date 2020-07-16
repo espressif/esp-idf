@@ -483,7 +483,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_generic_client_cb_t)(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param);
+                                                  esp_ble_mesh_generic_client_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Generic Client Model callback.
@@ -509,7 +509,7 @@ esp_err_t esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_cli
  *
  */
 esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_generic_client_get_state_t *get_state);
+                                                esp_ble_mesh_generic_client_get_state_t *get_state);
 
 /**
  * @brief       Set the value of Generic Server Model states using the Generic Client Model set messages.
@@ -525,7 +525,7 @@ esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param
  *
  */
 esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_generic_client_set_state_t *set_state);
+                                                esp_ble_mesh_generic_client_set_state_t *set_state);
 
 /**
  * @brief Generic Server Models related context.
@@ -1285,7 +1285,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb_event_t event,
-        esp_ble_mesh_generic_server_cb_param_t *param);
+                                                  esp_ble_mesh_generic_server_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Generic Server Model callback.
