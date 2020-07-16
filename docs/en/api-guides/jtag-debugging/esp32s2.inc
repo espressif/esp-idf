@@ -80,7 +80,7 @@
 
 .. openocd-cfg-files
 
-.. list-table:: OpenOCD configuration files for ESP32
+.. list-table:: OpenOCD configuration files for ESP32-S2
     :widths: 25 75
     :header-rows: 1
 

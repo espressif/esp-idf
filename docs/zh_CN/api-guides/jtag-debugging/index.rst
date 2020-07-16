@@ -45,7 +45,7 @@ JTAG 调试
 本文将指导如何在 Linux，Windows 和 MacOS 环境下为 {IDF_TARGET_NAME} 安装 OpenOCD，并使用 GDB 进行软件调试。除了个别操作系统的安装过程有所差别以外，软件用户界面和使用流程都是一样的。
 
 .. note::
-    本文使用的图片素材来自于 Ubuntu 16.04 LTE 上 Eclipse Neon 3 软件的截图，不同的操作系统（Windows， MacOS 或者 Linux）和 Eclipse 软件版本在用户界面上可能会有细微的差别。
+    本文使用的图片素材来自于 Ubuntu 16.04 LTS 上 Eclipse Neon 3 软件的截图，不同的操作系统（Windows， MacOS 或者 Linux）和 Eclipse 软件版本在用户界面上可能会有细微的差别。
 
 .. _jtag-debugging-how-it-works:
 
@@ -148,13 +148,13 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）:
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
     :start-after: run-openocd
     :end-before: ---
 
 .. note::
 
-    上述命令中 ``-f`` 选项后跟的配置文件专用于板载 |run-openocd-device-name|。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
+    上述命令中 ``-f`` 选项后跟的配置文件专用于 |run-openocd-device-name|。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
 
 .. highlight:: none
 

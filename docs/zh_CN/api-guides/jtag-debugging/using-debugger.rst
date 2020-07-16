@@ -188,3 +188,47 @@
 注意上面日志的倒数第三行显示了调试器已经在 ``app_main()`` 函数的断点处停止，该断点在 ``gdbinit`` 文件中设定。由于处理器已经暂停运行，LED 也不会闪烁。如果这也是你看到的现象，你可以开始调试了。
 
 如果你不太了解 GDB 的常用方法，请查阅 :ref:`jtag-debugging-examples-command-line` 文章中的调试示例章节 :ref:`jtag-debugging-examples`。
+
+
+.. _jtag-debugging-with-idf-py:
+
+使用 idf.py 进行调试
+^^^^^^^^^^^^^^^^^^^^
+
+我们还可以使用 ``idf.py`` 更方便地执行上述提到的调试命令：
+
+1.  ``idf.py openocd``
+
+    在终端中运行 OpenOCD，其配置信息来源于环境变量或者命令行。默认会使用 ``OPENOCD_SCRIPTS`` 环境变量中指定的脚本路径，它是由 ESP-IDF 项目仓库中的导出脚本（``export.sh`` or ``export.bat``）添加到系统环境变量中的。
+    当然，我们可以在命令行中通过  ``--openocd-scripts`` 来覆盖这个变量的值。
+
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: idf-py-openocd-default-cfg
+        :end-before: ---
+
+    你可以定义 ``OPENOCD_COMMANDS`` 环境变量来指定当前开发板的 JTAG 配置，或者通过 ``--openocd-commands`` 传递该参数。如果这两者都没有被定义，那么 OpenOCD 会使用 |idf-py-def-cfg| 参数来启动。
+
+
+2.  ``idf.py gdb``
+
+    根据当前项目的 elf 文件自动生成 gdb 启动脚本， 然后会按照 :ref:`jtag-debugging-using-debugger-command-line` 中所描述的步骤启动 GDB。
+
+
+3.  ``idf.py gdbtui``
+
+    和步骤 2 相同，但是会在启动 GDB 的时候传递 ``tui`` 参数，这样可以方便在调试过程中查看源代码。
+
+
+4.  ``idf.py gdbgui``
+
+    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。
+
+
+    上述这些命令也可以合并到一起使用，``idf.py`` 会自动将后台进程（比如 openocd）最先运行，交互式进程（比图 gdb， monitor）最后运行。
+
+    常用的组合命令如下所示::
+
+        idf.py openocd gdbgui monitor
+
+
+    上述命令会将 OpenOCD 运行至后台，然后启动 `gdbgui <https://www.gdbgui.com>`_ 打开一个浏览器窗口，显示调试器的前端界面，最后在活动终端打开串口监视器。
