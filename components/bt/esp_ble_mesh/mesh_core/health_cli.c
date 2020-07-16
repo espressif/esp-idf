@@ -132,8 +132,7 @@ static void health_client_recv_status(struct bt_mesh_model *model,
 
     switch (ctx->recv_op) {
     case OP_HEALTH_FAULT_STATUS: {
-        struct bt_mesh_health_fault_status *val;
-        val = (struct bt_mesh_health_fault_status *)status;
+        struct bt_mesh_health_fault_status *val = status;
         bt_mesh_free_buf(val->fault_array);
         break;
     }
