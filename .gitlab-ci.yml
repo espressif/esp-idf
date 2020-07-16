@@ -1368,13 +1368,6 @@ IT_009:
     - ESP32_IDF
     - SSC_T1_3
 
-IT_010:
-  <<: *test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-
 IT_011:
   <<: *test_template
   tags:
