@@ -2167,7 +2167,7 @@ test cases:
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_TCP_0401
   SDK: |-
     8266_NonOS
