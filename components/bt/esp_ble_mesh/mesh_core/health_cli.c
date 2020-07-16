@@ -81,9 +81,9 @@ static void timeout_handler(struct k_work *work)
     return;
 }
 
-static void health_client_cancel(struct bt_mesh_model *model,
-                                 struct bt_mesh_msg_ctx *ctx,
-                                 void *status, size_t len)
+static void health_client_recv_status(struct bt_mesh_model *model,
+                                      struct bt_mesh_msg_ctx *ctx,
+                                      void *status, size_t len)
 {
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
@@ -167,7 +167,7 @@ static void health_fault_status(struct bt_mesh_model *model,
 
     net_buf_simple_add_mem(status.fault_array, buf->data, buf->len);
 
-    health_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_health_fault_status));
+    health_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_health_fault_status));
 }
 
 static void health_current_status(struct bt_mesh_model *model,
@@ -190,7 +190,7 @@ static void health_current_status(struct bt_mesh_model *model,
 
     net_buf_simple_add_mem(status.fault_array, buf->data, buf->len);
 
-    health_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_health_current_status));
+    health_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_health_current_status));
 }
 
 static void health_period_status(struct bt_mesh_model *model,
@@ -205,7 +205,7 @@ static void health_period_status(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    health_client_cancel(model, ctx, &status, sizeof(u8_t));
+    health_client_recv_status(model, ctx, &status, sizeof(u8_t));
 }
 
 static void health_attention_status(struct bt_mesh_model *model,
@@ -220,7 +220,7 @@ static void health_attention_status(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    health_client_cancel(model, ctx, &status, sizeof(u8_t));
+    health_client_recv_status(model, ctx, &status, sizeof(u8_t));
 }
 
 const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
