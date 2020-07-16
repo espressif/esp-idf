@@ -1118,6 +1118,7 @@ test cases:
     - ["R SSC1 C +GATTC:OK","P SSC[1-2] C ConfigMTU,OK,261"]
 - ID: BTSTK_GATT_30001
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection service discovery test
   summary: do primary service discovery when DUT1 role is master, connected with 4 slaves
   steps: |
@@ -1135,6 +1136,7 @@ test cases:
     - ["R SSC1 C +GATTC:Discover,OK"]
 - ID: BTSTK_GATT_30002
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection service discovery test
   summary: do primary service discovery when DUT1 is slave, connected by 4 masters
   steps: |
@@ -1150,6 +1152,7 @@ test cases:
     - ["R SSC[2-5] C +GATTC:Discover,OK"]
 - ID: BTSTK_GATT_30003
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection service discovery test
   summary: do primary service discovery when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
@@ -1171,6 +1174,7 @@ test cases:
     - ["R SSC[4-5] C +GATTC:Discover,OK"]
 - ID: BTSTK_GATT_31001
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection read test
   summary: do read when DUT1 role is master, connected with 4 slaves
   steps: |
@@ -1196,6 +1200,7 @@ test cases:
     - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C301,256"]
 - ID: BTSTK_GATT_31002
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection read test
   summary: do read when DUT1 is slave, connected by 4 masters
   steps: |
@@ -1215,6 +1220,7 @@ test cases:
     - ["R SSC[2-5] C +GATTC:ReadOnce,0010,A002,C301,256"]
 - ID: BTSTK_GATT_31003
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection read test
   summary: do read when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
@@ -1248,6 +1254,7 @@ test cases:
     - ["R SSC[4-5] C +GATTC:ReadOnce,0010,A002,C301,256"]
 - ID: BTSTK_GATT_32001
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection write test
   summary: do write when DUT1 role is master, connected with 4 slaves
   steps: |
@@ -1273,6 +1280,7 @@ test cases:
     - ["R SSC1 C +GATTC:Write,OK,0010,A002,C304"]
 - ID: BTSTK_GATT_32002
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection write test
   summary: do write when DUT1 is slave, connected by 4 masters
   steps: |
@@ -1292,6 +1300,7 @@ test cases:
     - ["R SSC[2-5] C +GATTC:Write,OK,0010,A002,C304"]
 - ID: BTSTK_GATT_32003
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection write test
   summary: do write when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
@@ -1325,6 +1334,7 @@ test cases:
     - ["R SSC[4-5] C +GATTC:Write,OK,0010,A002,C304"]
 - ID: BTSTK_GATT_33001
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection notify test
   summary: do notify when DUT1 role is master, connected with 4 slaves
   steps: |
@@ -1350,6 +1360,7 @@ test cases:
     - ['P SSC1 RE "\+GATTC:Notification,0010,A002,C305,1,%%s"%%(<dut{%d}_bt_mac>)']
 - ID: BTSTK_GATT_33002
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection notify test
   summary: do notify when DUT1 is slave, connected by 4 masters
   steps: |
@@ -1375,6 +1386,7 @@ test cases:
     - ['P SSC{%d} RE "\+GATTC:Notification,0010,A002,C305,1,%%s"%%(<dut1_bt_mac>)']
 - ID: BTSTK_GATT_33003
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection notify test
   summary: do notify when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
@@ -1414,6 +1426,7 @@ test cases:
     - ['P SSC{%d} RE "\+GATTC:Notification,0010,A002,C305,1,%%s"%%(<dut1_bt_mac>)']
 - ID: BTSTK_GATT_34001
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection indicate test
   summary: do indicate when DUT1 role is master, connected with 4 slaves
   steps: |
@@ -1439,6 +1452,7 @@ test cases:
     - ['P SSC1 RE "\+GATTC:Indication,0010,A002,C306,1,%%s"%%(<dut[2-5]_bt_mac>)']
 - ID: BTSTK_GATT_34002
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection indicate test
   summary: do indicate when DUT1 is slave, connected by 4 masters
   steps: |
@@ -1464,6 +1478,7 @@ test cases:
     - ['P SSC{%d} RE "\+GATTC:Indication,0010,A002,C306,1,%%s"%%(<dut1_bt_mac>)']
 - ID: BTSTK_GATT_34003
   <<: *GATT_CASE
+  CI ready: 'No'
   test point 2: BLE GATT multi connection indicate test
   summary: do indicate when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
