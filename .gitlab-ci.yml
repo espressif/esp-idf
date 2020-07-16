@@ -1414,6 +1414,7 @@ IT_015:
 
 IT_016:
   <<: *test_template
+  allow_failure: true
   tags:
     - ESP32_IDF
     - SSC_T50_MESH1
