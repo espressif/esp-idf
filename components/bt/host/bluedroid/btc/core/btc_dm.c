@@ -308,11 +308,11 @@ static void btc_dm_link_up_evt(tBTA_DM_LINK_UP *p_link_up)
     BD_ADDR bd_addr;
     bt_bdaddr_t bt_bdaddr;
 
-    memcpy(bd_addr, p_link_up->bd_addr, sizeof(BD_ADDR));
-    memcpy(bt_bdaddr.address, p_link_up->bd_addr, sizeof(BD_ADDR));
 
     if (p_link_up->sc_downgrade == 1) {
+        memcpy(bt_bdaddr.address, p_link_up->bd_addr, sizeof(BD_ADDR));
         if (btc_storage_remove_bonded_device(&bt_bdaddr) == BT_STATUS_SUCCESS) {
+            memcpy(bd_addr, p_link_up->bd_addr, sizeof(BD_ADDR));
             if (BTA_DmRemoveDevice(bd_addr, BT_TRANSPORT_BR_EDR) == BTA_SUCCESS) {
                 BTC_TRACE_EVENT(" %s() Bonding information removed.", __FUNCTION__);
             } else {
@@ -698,11 +698,12 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
         }
 #endif /* BTC_GAP_BT_INCLUDED  == TRUE */
-    case BTA_DM_LINK_UP_EVT:
-        btc_dm_link_up_evt(&p_data->link_up);
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
         BTC_TRACE_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        break;
+    case BTA_DM_LINK_UP_EVT:
+        btc_dm_link_up_evt(&p_data->link_up);
         break;
 #if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
