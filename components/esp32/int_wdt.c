@@ -35,8 +35,17 @@
 #if CONFIG_INT_WDT
 
 
-#define WDT_INT_NUM 24
+#define WDT_INT_NUM ETS_T1_WDT_INUM
 
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+/*
+ * This parameter is indicates the response time of tg1 watchdog to
+ * identify the live lock,
+ */
+#define TG1_WDT_LIVELOCK_TIMEOUT_MS    (20)
+
+extern uint32_t _l4_intr_livelock_counter, _l4_intr_livelock_max;
+#endif
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
 #if CONFIG_INT_WDT_CHECK_CPU1
@@ -50,7 +59,12 @@ static void IRAM_ATTR tick_hook(void) {
         //Only feed wdt if app cpu also ticked.
         if (int_wdt_app_cpu_ticked) {
             TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+            _l4_intr_livelock_counter = 0;
+            TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2/(_l4_intr_livelock_max+1);  //Set timeout before interrupt
+#else
             TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
+#endif
             TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
             TIMERG1.wdt_feed=1;
             TIMERG1.wdt_wprotect=0;
@@ -92,9 +106,21 @@ void esp_int_wdt_init() {
 
 void esp_int_wdt_cpu_init()
 {
+    assert((CONFIG_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS<<1)) && "Interrupt watchdog timeout needs to meet double SysTick period!");
     esp_register_freertos_tick_hook_for_cpu(tick_hook, xPortGetCoreID());
     ESP_INTR_DISABLE(WDT_INT_NUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    /*
+     * This is a workaround for issue 3.15 in "ESP32 ECO and Workarounds for Bugs" document.
+     */
+    _l4_intr_livelock_max = 0;
+    if (soc_has_cache_lock_bug()) {
+        assert((portTICK_PERIOD_MS<<1) <= TG1_WDT_LIVELOCK_TIMEOUT_MS);
+        assert(CONFIG_INT_WDT_TIMEOUT_MS >= (TG1_WDT_LIVELOCK_TIMEOUT_MS*3));
+        _l4_intr_livelock_max = CONFIG_INT_WDT_TIMEOUT_MS/TG1_WDT_LIVELOCK_TIMEOUT_MS - 1;
+    }
+#endif
     //We do not register a handler for the interrupt because it is interrupt level 4 which
     //is not servicable from C. Instead, xtensa_vectors.S has a call to the panic handler for
     //this interrupt.

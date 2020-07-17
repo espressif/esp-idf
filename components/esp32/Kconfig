@@ -1,5 +1,10 @@
 menu "ESP32-specific"
 
+config ESP32_ECO3_CACHE_LOCK_FIX
+    bool
+    default y
+    depends on !FREERTOS_UNICORE && SPIRAM_SUPPORT
+
 choice ESP32_REV_MIN
     prompt "Minimum Supported ESP32 Revision"
     default ESP32_REV_MIN_0
@@ -15,6 +20,7 @@ choice ESP32_REV_MIN
         bool "Rev 2"
     config ESP32_REV_MIN_3
         bool "Rev 3"
+        select INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
 endchoice
 
 config ESP32_REV_MIN
