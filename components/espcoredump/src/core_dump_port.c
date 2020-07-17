@@ -161,7 +161,7 @@ uint32_t esp_core_dump_get_stack(core_dump_task_header_t *task_snapshot, uint32_
 static uint32_t (*_get_len)(void) = NULL;
 static int * (*_get_ptr)(void) = NULL;
 
-bool esp_log_dump_init(uint32_t (*get_len)(void), int * (*get_ptr)(void))
+bool esp_log_dump_init(uint32_t (*get_len)(void), uint32_t * (*get_ptr)(void))
 {
     _get_len = get_len;
     _get_ptr = get_ptr;
