@@ -194,14 +194,14 @@ def action_extensions(base_actions, project_path):
                 "help": "Show IDF version and exit.",
                 "is_flag": True,
                 "expose_value": False,
-                "callback": idf_version_callback
+                "callback": idf_version_callback,
             },
             {
                 "names": ["--list-targets"],
                 "help": "Print list of supported targets and exit.",
                 "is_flag": True,
                 "expose_value": False,
-                "callback": list_targets_callback
+                "callback": list_targets_callback,
             },
             {
                 "names": ["-C", "--project-dir"],
@@ -227,7 +227,7 @@ def action_extensions(base_actions, project_path):
                 "is_flag": True,
                 "is_eager": True,
                 "default": False,
-                "callback": verbose_callback
+                "callback": verbose_callback,
             },
             {
                 "names": ["--preview"],
@@ -237,11 +237,10 @@ def action_extensions(base_actions, project_path):
             },
             {
                 "names": ["--ccache/--no-ccache"],
-                "help": (
-                    "Use ccache in build. Disabled by default, unless "
-                    "IDF_CCACHE_ENABLE environment variable is set to a non-zero value."),
+                "help": "Use ccache in build. Disabled by default.",
                 "is_flag": True,
-                "default": os.getenv("IDF_CCACHE_ENABLE") not in [None, "", "0"],
+                "envvar": "IDF_CCACHE_ENABLE",
+                "default": False,
             },
             {
                 "names": ["-G", "--generator"],
@@ -253,7 +252,7 @@ def action_extensions(base_actions, project_path):
                 "help": "Only process arguments, but don't execute actions.",
                 "is_flag": True,
                 "hidden": True,
-                "default": False
+                "default": False,
             },
         ],
         "global_action_callbacks": [validate_root_options],
@@ -291,14 +290,15 @@ def action_extensions(base_actions, project_path):
                         "names": ["--style", "--color-scheme", "style"],
                         "help": (
                             "Menuconfig style.\n"
-                            "Is it possible to customize the menuconfig style by either setting the MENUCONFIG_STYLE "
-                            "environment variable or through this option. The built-in styles include:\n\n"
+                            "The built-in styles include:\n\n"
                             "- default - a yellowish theme,\n\n"
-                            "- monochrome -  a black and white theme, or\n"
+                            "- monochrome -  a black and white theme, or\n\n"
                             "- aquatic - a blue theme.\n\n"
-                            "The default value is \"aquatic\". It is possible to customize these themes further "
-                            "as it is described in the Color schemes section of the kconfiglib documentation."),
-                        "default": os.environ.get('MENUCONFIG_STYLE', 'aquatic'),
+                            "It is possible to customize these themes further"
+                            " as it is described in the Color schemes section of the kconfiglib documentation.\n"
+                            'The default value is \"aquatic\".'),
+                        "envvar": "MENUCONFIG_STYLE",
+                        "default": "aquatic",
                     }
                 ],
             },

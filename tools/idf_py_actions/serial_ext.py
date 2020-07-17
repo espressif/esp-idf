@@ -134,7 +134,7 @@ def action_extensions(base_actions, project_path):
 
     baud_rate = {
         "names": ["-b", "--baud"],
-        "help": "Baud rate for flashing. The default value can be set with the ESPBAUD environment variable.",
+        "help": "Baud rate for flashing.",
         "scope": "global",
         "envvar": "ESPBAUD",
         "default": 460800,
@@ -142,7 +142,7 @@ def action_extensions(base_actions, project_path):
 
     port = {
         "names": ["-p", "--port"],
-        "help": "Serial port. The default value can be set with the ESPPORT environment variable.",
+        "help": "Serial port.",
         "scope": "global",
         "envvar": "ESPPORT",
         "default": None,
