@@ -23,6 +23,8 @@
 #include <http_parser.h>
 #include "esp_tls.h"
 #include <errno.h>
+#include "esp_heap_caps.h"
+
 
 static const char *TAG = "esp-tls";
 static mbedtls_x509_crt *global_cacert = NULL;
@@ -33,6 +35,17 @@ static mbedtls_x509_crt *global_cacert = NULL;
 #define ESP_LOGD(TAG, ...) //printf(__VA_ARGS__);
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
+
+static void *tls_calloc(size_t nmemb, size_t size)
+{
+    void *data =  NULL;
+    data = heap_caps_malloc(nmemb * size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (data) {
+        memset(data, 0, nmemb * size);
+    }
+    return data;
+}
+
 
 static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
@@ -64,7 +77,7 @@ static ssize_t tcp_read(esp_tls_t *tls, char *data, size_t datalen)
 
 static ssize_t tls_read(esp_tls_t *tls, char *data, size_t datalen)
 {
-    ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);   
+    ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
     if (ret < 0) {
         if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return 0;
@@ -144,7 +157,7 @@ err_freeaddr:
 esp_err_t esp_tls_init_global_ca_store()
 {
     if (global_cacert == NULL) {
-        global_cacert = (mbedtls_x509_crt *)calloc(1, sizeof(mbedtls_x509_crt));
+        global_cacert = (mbedtls_x509_crt *)tls_calloc(1, sizeof(mbedtls_x509_crt));
         if (global_cacert == NULL) {
             ESP_LOGE(TAG, "global_cacert not allocated");
             return ESP_ERR_NO_MEM;
@@ -206,7 +219,7 @@ static void verify_certificate(esp_tls_t *tls)
     }
 }
 
-static void mbedtls_cleanup(esp_tls_t *tls) 
+static void mbedtls_cleanup(esp_tls_t *tls)
 {
     if (!tls) {
         return;
@@ -228,20 +241,20 @@ static void mbedtls_cleanup(esp_tls_t *tls)
 static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostlen, const esp_tls_cfg_t *cfg)
 {
     int ret;
-    
+
     mbedtls_net_init(&tls->server_fd);
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
     mbedtls_entropy_init(&tls->entropy);
-    
-    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg, 
+
+    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
                     mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-        goto exit;        
+        goto exit;
     }
-    
+
     if (!cfg->skip_common_name) {
         char *use_host = NULL;
         if (cfg->common_name != NULL) {

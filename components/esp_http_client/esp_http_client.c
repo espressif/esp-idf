@@ -26,6 +26,7 @@
 #include "sdkconfig.h"
 #include "esp_http_client.h"
 #include "errno.h"
+#include "esp_heap_caps.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
@@ -151,6 +152,23 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "UNSUBSCRIBE",
     "OPTIONS"
 };
+
+static void *http_malloc(size_t size)
+{
+    void *data =  NULL;
+    data = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    return data;
+}
+
+static void *http_calloc(size_t nmemb, size_t size)
+{
+    void *data =  NULL;
+    data = heap_caps_malloc(nmemb * size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (data) {
+        memset(data, 0, nmemb * size);
+    }
+    return data;
+}
 
 static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
@@ -484,16 +502,16 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     bool _success;
 
     _success = (
-                   (client                         = calloc(1, sizeof(esp_http_client_t)))           &&
-                   (client->parser                 = calloc(1, sizeof(struct http_parser)))          &&
-                   (client->parser_settings        = calloc(1, sizeof(struct http_parser_settings))) &&
-                   (client->auth_data              = calloc(1, sizeof(esp_http_auth_data_t)))        &&
-                   (client->request                = calloc(1, sizeof(esp_http_data_t)))             &&
+                   (client                         = http_calloc(1, sizeof(esp_http_client_t)))           &&
+                   (client->parser                 = http_calloc(1, sizeof(struct http_parser)))          &&
+                   (client->parser_settings        = http_calloc(1, sizeof(struct http_parser_settings))) &&
+                   (client->auth_data              = http_calloc(1, sizeof(esp_http_auth_data_t)))        &&
+                   (client->request                = http_calloc(1, sizeof(esp_http_data_t)))             &&
                    (client->request->headers       = http_header_init())                             &&
-                   (client->request->buffer        = calloc(1, sizeof(esp_http_buffer_t)))           &&
-                   (client->response               = calloc(1, sizeof(esp_http_data_t)))             &&
+                   (client->request->buffer        = http_calloc(1, sizeof(esp_http_buffer_t)))           &&
+                   (client->response               = http_calloc(1, sizeof(esp_http_data_t)))             &&
                    (client->response->headers      = http_header_init())                             &&
-                   (client->response->buffer       = calloc(1, sizeof(esp_http_buffer_t)))
+                   (client->response->buffer       = http_calloc(1, sizeof(esp_http_buffer_t)))
                );
 
     if (!_success) {
@@ -548,8 +566,8 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
     _success = (
-                   (client->request->buffer->data  = malloc(client->buffer_size))  &&
-                   (client->response->buffer->data = malloc(client->buffer_size))
+                   (client->request->buffer->data  = http_malloc(client->buffer_size))  &&
+                   (client->response->buffer->data = http_malloc(client->buffer_size))
                );
 
     if (!_success) {
