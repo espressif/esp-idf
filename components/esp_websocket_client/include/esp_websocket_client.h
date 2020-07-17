@@ -188,6 +188,36 @@ int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const ch
 int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout);
 
 /**
+ * @brief      Close the WebSocket connection in a clean way
+ *
+ * Sequence of clean close initiated by client:
+ * * Client sends CLOSE frame
+ * * Client waits until server echos the CLOSE frame
+ * * Client waits until server closes the connection
+ * * Client is stopped the same way as by the `esp_websocket_client_stop()`
+ *
+ * @param[in]  client  The client
+ * @param[in]  timeout Timeout in RTOS ticks for waiting
+ *
+ * @return     esp_err_t
+ */
+esp_err_t esp_websocket_client_close(esp_websocket_client_handle_t client, TickType_t timeout);
+
+/**
+ * @brief      Close the WebSocket connection in a clean way with custom code/data
+ *             Closing sequence is the same as for esp_websocket_client_close()
+ *
+ * @param[in]  client  The client
+ * @param[in]  code    Close status code as defined in RFC6455 section-7.4
+ * @param[in]  data    Additional data to closing message
+ * @param[in]  len     The length of the additional data
+ * @param[in]  timeout Timeout in RTOS ticks for waiting
+ *
+ * @return     esp_err_t
+ */
+esp_err_t esp_websocket_client_close_with_code(esp_websocket_client_handle_t client, int code, const char *data, int len, TickType_t timeout);
+
+/**
  * @brief      Check the WebSocket client connection state
  *
  * @param[in]  client  The client handle
