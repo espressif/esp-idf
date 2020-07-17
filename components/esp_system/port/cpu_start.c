@@ -23,7 +23,7 @@
 #include "esp_system.h"
 
 #include "esp_clk_internal.h"
-
+#include "esp_rom_efuse.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -61,7 +61,6 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
-#include "esp32/rom/efuse.h"
 #include "esp32/rom/spi_flash.h"
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 #endif
@@ -385,7 +384,7 @@ void IRAM_ATTR call_start_cpu0(void)
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
-    esp_rom_spiflash_attach(ets_efuse_get_spiconfig(), false);
+    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
     esp_rom_spiflash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read

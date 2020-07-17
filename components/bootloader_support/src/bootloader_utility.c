@@ -21,7 +21,6 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#include "esp32/rom/efuse.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
@@ -29,7 +28,6 @@
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/efuse.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"

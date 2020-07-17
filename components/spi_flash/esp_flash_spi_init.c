@@ -19,6 +19,7 @@
 #include "driver/gpio.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
@@ -60,7 +61,6 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .input_delay_ns = 0,\
 }
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/efuse.h"
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
@@ -212,7 +212,7 @@ esp_err_t esp_flash_init_default_chip(void)
 
     #ifdef CONFIG_IDF_TARGET_ESP32S2
     // For esp32s2 spi IOs are configured as from IO MUX by default
-    cfg.iomux = ets_efuse_get_spiconfig() == 0 ?  true : false;
+    cfg.iomux = esp_rom_efuse_get_flash_gpio_info() == 0 ?  true : false;
     #endif
 
     //the host is already initialized, only do init for the data and load it to the host

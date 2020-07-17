@@ -20,7 +20,6 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp32/rom/efuse.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/uart.h"
 #include "soc/dport_reg.h"

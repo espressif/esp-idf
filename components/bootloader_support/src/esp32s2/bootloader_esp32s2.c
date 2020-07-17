@@ -18,8 +18,8 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
-#include "esp32s2/rom/efuse.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
 #include "esp32s2/rom/spi_flash.h"
 
 #include "bootloader_init.h"
@@ -48,8 +48,8 @@
 static const char *TAG = "boot.esp32s2";
 void bootloader_configure_spi_pins(int drv)
 {
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    uint8_t wp_pin = ets_efuse_get_wp_pad();
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    uint8_t wp_pin = esp_rom_efuse_get_flash_wp_gpio();
     uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
     uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
     uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
@@ -199,8 +199,8 @@ static esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-    const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    if (spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_SPI && spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
         ESP_LOGE(TAG, "SPI flash pins are overridden. Enable CONFIG_SPI_FLASH_ROM_DRIVER_PATCH in menuconfig");
         return ESP_FAIL;
     }

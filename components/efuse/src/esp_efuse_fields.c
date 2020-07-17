@@ -26,12 +26,6 @@
 #include "soc/apb_ctrl_reg.h"
 #include "sys/param.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/efuse.h"
-#endif
-
 static __attribute__((unused)) const char *TAG = "efuse";
 // Permanently update values written to the efuse write registers
 void esp_efuse_burn_new_values(void)
