@@ -21,32 +21,11 @@
 #include "esp_log.h"
 
 #include "esp_transport.h"
+#include "esp_transport_internal.h"
 #include "esp_transport_utils.h"
 
 static const char *TAG = "TRANSPORT";
 
-/**
- * Transport layer structure, which will provide functions, basic properties for transport types
- */
-struct esp_transport_item_t {
-    int             port;
-    int             socket;         /*!< Socket to use in this transport */
-    char            *scheme;        /*!< Tag name */
-    void            *context;       /*!< Context data */
-    void            *data;          /*!< Additional transport data */
-    connect_func    _connect;       /*!< Connect function of this transport */
-    io_read_func    _read;          /*!< Read */
-    io_func         _write;         /*!< Write */
-    trans_func      _close;         /*!< Close */
-    poll_func       _poll_read;     /*!< Poll and read */
-    poll_func       _poll_write;    /*!< Poll and write */
-    trans_func      _destroy;       /*!< Destroy and free transport */
-    connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
-    payload_transfer_func  _parent_transfer;        /*!< Function returning underlying transport layer */
-    esp_tls_error_handle_t     error_handle;            /*!< Pointer to esp-tls error handle */
-
-    STAILQ_ENTRY(esp_transport_item_t) next;
-};
 
 
 /**
@@ -305,4 +284,12 @@ void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_hand
     if (t)  {
         memcpy(t->error_handle, error_handle, sizeof(esp_tls_last_error_t));
     }
+}
+
+int esp_transport_get_socket(esp_transport_handle_t t)
+{
+    if (t && t->_get_socket)  {
+        return  t->_get_socket(t);
+    }
+    return -1;
 }

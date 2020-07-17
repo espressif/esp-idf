@@ -117,6 +117,21 @@ ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t
  */
 int esp_transport_ws_get_read_payload_len(esp_transport_handle_t t);
 
+/**
+ * @brief               Polls the active connection for termination
+ *
+ * This API is typically used by the client to wait for clean connection closure
+ * by websocket server
+ *
+ * @param t             Websocket transport handle
+ * @param[in] timeout_ms The timeout milliseconds
+ *
+ * @return
+ *      0 - no activity on read and error socket descriptor within timeout
+ *      1 - Success: either connection terminated by FIN or the most common RST err codes
+ *      -1 - Failure: Unexpected error code or socket is normally readable
+ */
+int esp_transport_ws_poll_connection_closed(esp_transport_handle_t t, int timeout_ms);
 
 #ifdef __cplusplus
 }

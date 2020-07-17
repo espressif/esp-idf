@@ -25,6 +25,7 @@
 #include "esp_transport_ssl.h"
 #include "esp_transport_utils.h"
 #include "esp_transport_ssl_internal.h"
+#include "esp_transport_internal.h"
 
 static const char *TAG = "TRANS_SSL";
 
@@ -288,6 +289,17 @@ void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
     }
 }
 
+static int ssl_get_socket(esp_transport_handle_t t)
+{
+    if (t) {
+        transport_ssl_t *ssl = t->data;
+        if (ssl && ssl->tls) {
+            return ssl->tls->sockfd;
+        }
+    }
+    return -1;
+}
+
 esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
@@ -296,6 +308,7 @@ esp_transport_handle_t esp_transport_ssl_init(void)
     esp_transport_set_context_data(t, ssl);
     esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
+    t->_get_socket = ssl_get_socket;
     return t;
 }
 

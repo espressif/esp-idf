@@ -310,7 +310,7 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
  * @return
  *            - valid pointer of esp_error_handle_t
  *            - NULL if invalid transport handle
-  */
+ */
 esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t);
 
 

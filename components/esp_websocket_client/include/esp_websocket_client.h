@@ -40,6 +40,7 @@ typedef enum {
     WEBSOCKET_EVENT_CONNECTED,      /*!< Once the Websocket has been connected to the server, no data exchange has been performed */
     WEBSOCKET_EVENT_DISCONNECTED,   /*!< The connection has been disconnected */
     WEBSOCKET_EVENT_DATA,           /*!< When receiving data from the server, possibly multiple portions of the packet */
+    WEBSOCKET_EVENT_CLOSED,         /*!< The connection has been closed cleanly */
     WEBSOCKET_EVENT_MAX
 } esp_websocket_event_id_t;
 
@@ -125,7 +126,11 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
 esp_err_t esp_websocket_client_start(esp_websocket_client_handle_t client);
 
 /**
- * @brief      Close the WebSocket connection
+ * @brief      Stops the WebSocket connection without websocket closing handshake
+ *
+ * This API stops ws client and closes TCP connection directly without sending
+ * close frames. It is a good practice to close the connection in a clean way
+ * using esp_websocket_client_close().
  *
  * @param[in]  client  The client
  *
