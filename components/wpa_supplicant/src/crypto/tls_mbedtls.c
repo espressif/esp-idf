@@ -384,7 +384,7 @@ static void tls_set_ciphersuite(tls_context_t *tls)
 	if (tls->ciphersuite[0]) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, tls->ciphersuite);
 	} else if (mbedtls_pk_get_bitlen(&tls->clientkey) > 2048 ||
-		 mbedtls_pk_get_bitlen(&tls->cacert_ptr->pk) > 2048) {
+		(tls->cacert_ptr && mbedtls_pk_get_bitlen(&tls->cacert_ptr->pk) > 2048)) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
 	}
 }
@@ -504,6 +504,7 @@ void tls_connection_deinit(void *tls_ctx, struct tls_connection *conn)
 {
 	/* Free ssl ctx and data */
 	tls_mbedtls_conn_delete((tls_context_t *) conn->tls);
+	os_free(conn->tls);
 	conn->tls = NULL;
 	/* Data in in ssl ctx, free connection */
 	os_free(conn);
