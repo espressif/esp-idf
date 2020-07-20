@@ -229,6 +229,8 @@ static void IRAM_ATTR do_core_init(void)
     esp_flash_encryption_init_checks();
 #endif
 
+    esp_err_t err;
+
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
     assert(err == ESP_OK && "Failed to disable ROM download mode");
@@ -242,8 +244,6 @@ static void IRAM_ATTR do_core_init(void)
 #if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
     esp_efuse_disable_basic_rom_console();
 #endif
-
-    esp_err_t err;
 
     esp_timer_init();
     esp_set_time_from_rtc();
