@@ -68,7 +68,7 @@
 typedef struct {
     esp_sleep_pd_option_t pd_options[ESP_PD_DOMAIN_MAX];
     uint64_t sleep_duration;
-    uint32_t wakeup_triggers : 11;
+    uint32_t wakeup_triggers : 15;
     uint32_t ext1_trigger_mode : 1;
     uint32_t ext1_rtc_gpio_mask : 18;
     uint32_t ext0_trigger_level : 1;
@@ -413,7 +413,8 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup(void)
 {
-    return ESP_ERR_NOT_SUPPORTED;
+    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+    return ESP_OK;
 }
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
@@ -633,6 +634,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_UART;
     } else if (wakeup_cause & RTC_WIFI_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_WIFI;
+    } else if (wakeup_cause & RTC_COCPU_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_ULP;
+    } else if (wakeup_cause & RTC_COCPU_TRAP_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG;
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }

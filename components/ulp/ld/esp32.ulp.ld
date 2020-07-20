@@ -29,7 +29,7 @@ SECTIONS
         . = ALIGN(4);
         *(.bss)
     } >ram
-    
+
     .header : AT(0)
     {
         LONG(ULP_BIN_MAGIC)

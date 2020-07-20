@@ -302,7 +302,7 @@ menu "ESP32S2-specific"
     config ESP32S2_ULP_COPROC_RESERVE_MEM
         int
         prompt "RTC slow memory reserved for coprocessor" if ESP32S2_ULP_COPROC_ENABLED
-        default 512 if ESP32S2_ULP_COPROC_ENABLED
+        default 2048 if ESP32S2_ULP_COPROC_ENABLED
         range 32 8192 if ESP32S2_ULP_COPROC_ENABLED
         default 0 if !ESP32S2_ULP_COPROC_ENABLED
         range 0 0 if !ESP32S2_ULP_COPROC_ENABLED
@@ -310,6 +310,13 @@ menu "ESP32S2-specific"
             Bytes of memory to reserve for ULP coprocessor firmware & data.
 
             Data is reserved at the beginning of RTC slow memory.
+
+    config ESP32S2_ULP_COPROC_RISCV
+        bool "Enable RISC-V as ULP coprocessor"
+        depends on ESP32S2_ULP_COPROC_ENABLED
+        default n
+        help
+            Set this to y to use the RISC-V coprocessor instead of the FSM-ULP.
 
     config ESP32S2_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"

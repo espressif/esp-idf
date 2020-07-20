@@ -59,6 +59,9 @@ build_ssc_esp32s2:
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
   script:
+    # RISC-V toolchain is optional but ULP may need it, so install:
+    - $IDF_PATH/tools/idf_tools.py install riscv-none-embed-gcc
+    - . $IDF_PATH/export.sh
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     - mkdir -p ${LOG_PATH}
@@ -93,6 +96,9 @@ build_esp_idf_tests_cmake_esp32s2:
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
   script:
+      # RISC-V toolchain is optional but ULP may need it, so install:
+    - $IDF_PATH/tools/idf_tools.py install riscv-none-embed-gcc
+    - . $IDF_PATH/export.sh
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
     - mkdir ${BUILD_PATH}

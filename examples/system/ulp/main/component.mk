@@ -1,5 +1,3 @@
-
-
 #
 # ULP support additions to component makefile.
 #
@@ -11,7 +9,8 @@ ULP_APP_NAME ?= ulp_$(COMPONENT_NAME)
 #    Files should be placed into a separate directory (in this case, ulp/),
 #    which should not be added to COMPONENT_SRCDIRS.
 ULP_S_SOURCES = $(addprefix $(COMPONENT_PATH)/ulp/, \
-	pulse_cnt.S wake_up.S\
+	pulse_cnt.S \
+	wake_up.S \
 	)
 #
 # 3. List all the component object files which include automatically
