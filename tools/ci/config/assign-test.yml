@@ -79,5 +79,6 @@ update_test_cases:
     - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT unity -d $UNIT_TEST_CASE_FILES -r $GIT_SHA
     # update example test cases
     - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT tiny_test_fw -d ${CI_PROJECT_DIR}/examples -r $GIT_SHA
+    - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT tiny_test_fw -d ${CI_PROJECT_DIR}/tools/test_apps -r $GIT_SHA
     # organize test cases
     - python OrganizeTestCases.py $JIRA_TEST_MANAGEMENT_PROJECT
