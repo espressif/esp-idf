@@ -47,6 +47,9 @@ static const char *TAG = "emac_esp32";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
 
+#define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
+#define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
+
 typedef struct {
     esp_eth_mac_t parent;
     esp_eth_mediator_t *eth;
@@ -55,12 +58,17 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     uint32_t frames_remain;
+    uint32_t free_rx_descriptor;
+    uint32_t flow_control_high_water_mark;
+    uint32_t flow_control_low_water_mark;
     int smi_mdc_gpio_num;
     int smi_mdio_gpio_num;
     uint8_t addr[6];
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
     bool isr_need_yield;
+    bool flow_ctrl_enabled; // indicates whether the user want to do flow control
+    bool do_flow_ctrl;  // indicates whether we need to do software flow control
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -217,6 +225,29 @@ static esp_err_t emac_esp32_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     return ESP_OK;
 }
 
+static esp_err_t emac_esp32_enable_flow_ctrl(esp_eth_mac_t *mac, bool enable)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac->flow_ctrl_enabled = enable;
+    return ESP_OK;
+}
+
+static esp_err_t emac_esp32_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t ability)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    // we want to enable flow control, and peer does support pause function
+    // then configure the MAC layer to enable flow control feature
+    if (emac->flow_ctrl_enabled && ability) {
+        emac_hal_enable_flow_ctrl(&emac->hal, true);
+        emac->do_flow_ctrl = true;
+    } else {
+        emac_hal_enable_flow_ctrl(&emac->hal, false);
+        emac->do_flow_ctrl = false;
+        ESP_LOGD(TAG, "Flow control not enabled for the link");
+    }
+    return ESP_OK;
+}
+
 static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -234,7 +265,7 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     uint32_t expected_len = *length;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
-    uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain);
+    uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
     ESP_LOGD(TAG, "receive len= %d", receive_len);
     MAC_CHECK(expected_len >= receive_len, "received buffer longer than expected", err, ESP_ERR_INVALID_SIZE);
@@ -267,6 +298,12 @@ static void emac_esp32_rx_task(void *arg)
                 }
             } else {
                 free(buffer);
+            }
+            // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
+            if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
+                emac_hal_send_pause_frame(&emac->hal, true);
+            } else if ((emac->free_rx_descriptor > emac->flow_control_high_water_mark) || !emac->frames_remain) {
+                emac_hal_send_pause_frame(&emac->hal, false);
             }
         } while (emac->frames_remain);
     }
@@ -428,6 +465,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
     emac->smi_mdc_gpio_num = config->smi_mdc_gpio_num;
     emac->smi_mdio_gpio_num = config->smi_mdio_gpio_num;
+    emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
+    emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;
     emac->parent.set_mediator = emac_esp32_set_mediator;
     emac->parent.init = emac_esp32_init;
     emac->parent.deinit = emac_esp32_deinit;
@@ -442,6 +481,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.set_duplex = emac_esp32_set_duplex;
     emac->parent.set_link = emac_esp32_set_link;
     emac->parent.set_promiscuous = emac_esp32_set_promiscuous;
+    emac->parent.set_peer_pause_ability = emac_esp32_set_peer_pause_ability;
+    emac->parent.enable_flow_ctrl = emac_esp32_enable_flow_ctrl;
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.receive = emac_esp32_receive;
     /* Interrupt configuration */

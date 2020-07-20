@@ -129,10 +129,14 @@ static esp_err_t ip101_update_link_duplex_speed(phy_ip101_t *ip101)
     esp_eth_mediator_t *eth = ip101->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    uint32_t peer_pause_ability = false;
     cssr_reg_t cssr;
+    anlpar_reg_t anlpar;
     PHY_CHECK(ip101_page_select(ip101, 16) == ESP_OK, "select page 16 failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_CSSR_REG_ADDR, &(cssr.val)) == ESP_OK,
               "read CSSR failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
+              "read ANLPAR failed", err);
     eth_link_t link = cssr.link_up ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (ip101->link_status != link) {
@@ -162,6 +166,14 @@ static esp_err_t ip101_update_link_duplex_speed(phy_ip101_t *ip101)
                       "change speed failed", err);
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
                       "change duplex failed", err);
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
+                      "change pause ability failed", err);
         }
         PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
                   "chagne link failed", err);
@@ -316,6 +328,28 @@ static esp_err_t ip101_del(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+static esp_err_t ip101_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    esp_eth_mediator_t *eth = ip101->eth;
+    /* Set PAUSE function ability */
+    anar_reg_t anar;
+    PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
+              "read ANAR failed", err);
+    if (ability) {
+        anar.asymmetric_pause = 1;
+        anar.symmetric_pause = 1;
+    } else {
+        anar.asymmetric_pause = 0;
+        anar.symmetric_pause = 0;
+    }
+    PHY_CHECK(eth->phy_reg_write(eth, ip101->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
+              "write ANAR failed", err);
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+
 static esp_err_t ip101_init(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
@@ -368,6 +402,7 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     ip101->parent.pwrctl = ip101_pwrctl;
     ip101->parent.get_addr = ip101_get_addr;
     ip101->parent.set_addr = ip101_set_addr;
+    ip101->parent.advertise_pause_ability = ip101_advertise_pause_ability;
     ip101->parent.del = ip101_del;
 
     return &(ip101->parent);

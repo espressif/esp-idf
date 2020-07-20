@@ -256,21 +256,28 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal)
     /* Disable Promiscuous Mode */
     macffr.pmode = EMAC_PROMISCUOUS_DISABLE;
     hal->mac_regs->gmacff = macffr;
+}
 
+void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable)
+{
     /* MACFCR Configuration */
     typeof(hal->mac_regs->gmacfc) macfcr = hal->mac_regs->gmacfc;
-    /* Pause time */
-    macfcr.pause_time = EMAC_PAUSE_TIME;
-    /* Enable generation of Zero-Quanta Pause Control frames */
-    macfcr.dzpq = EMAC_ZERO_QUANTA_PAUSE_ENABLE;
-    /* Threshold of the PAUSE to be checked for automatic retransmission of PAUSE Frame */
-    macfcr.plt = EMAC_PAUSE_LOW_THRESHOLD_MINUS_28;
-    /* Don't allow MAC detect Pause frames with MAC address0 unicast address and unique multicast address */
-    macfcr.upfd = EMAC_UNICAST_PAUSE_DETECT_DISABLE;
-    /* Enable MAC to decode the received Pause frame and disable its transmitter for a specific time */
-    macfcr.rfce = EMAC_RECEIVE_FLOW_CONTROL_ENABLE;
-    /* Enable MAC to transmit Pause frames in full duplex mode or the MAC back-pressure operation in half duplex mode */
-    macfcr.tfce = EMAC_TRANSMIT_FLOW_CONTROL_ENABLE;
+    if (enable) {
+        /* Pause time */
+        macfcr.pause_time = EMAC_PAUSE_TIME;
+        /* Enable generation of Zero-Quanta Pause Control frames */
+        macfcr.dzpq = EMAC_ZERO_QUANTA_PAUSE_ENABLE;
+        /* Threshold of the PAUSE to be checked for automatic retransmission of PAUSE Frame */
+        macfcr.plt = EMAC_PAUSE_LOW_THRESHOLD_MINUS_28;
+        /* Don't allow MAC detect Pause frames with MAC address0 unicast address and unique multicast address */
+        macfcr.upfd = EMAC_UNICAST_PAUSE_DETECT_DISABLE;
+        /* Enable MAC to decode the received Pause frame and disable its transmitter for a specific time */
+        macfcr.rfce = EMAC_RECEIVE_FLOW_CONTROL_ENABLE;
+        /* Enable MAC to transmit Pause frames in full duplex mode or the MAC back-pressure operation in half duplex mode */
+        macfcr.tfce = EMAC_TRANSMIT_FLOW_CONTROL_ENABLE;
+    } else {
+        macfcr.val = 0;
+    }
     hal->mac_regs->gmacfc = macfcr;
 }
 
@@ -338,6 +345,15 @@ void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable)
         hal->mac_regs->gmacff.pmode = 1;
     } else {
         hal->mac_regs->gmacff.pmode = 0;
+    }
+}
+
+void emac_hal_send_pause_frame(emac_hal_context_t *hal, bool enable)
+{
+    if (enable) {
+        hal->ext_regs->ex_phyinf_conf.sbd_flowctrl = 1;
+    } else {
+        hal->ext_regs->ex_phyinf_conf.sbd_flowctrl = 0;
     }
 }
 
@@ -491,11 +507,11 @@ err:
     return sentout;
 }
 
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain)
+uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc)
 {
     eth_dma_rx_descriptor_t *desc_iter = NULL;
     eth_dma_rx_descriptor_t *first_desc = NULL;
-    uint32_t iter = 0;
+    uint32_t used_descs = 0;
     uint32_t seg_count = 0;
     uint32_t ret_len = 0;
     uint32_t copy_len = 0;
@@ -505,8 +521,8 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
     first_desc = hal->rx_desc;
     desc_iter = hal->rx_desc;
     /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own != EMAC_DMADESC_OWNER_DMA) && (iter < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
-        iter++;
+    while ((desc_iter->RDES0.Own != EMAC_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
+        used_descs++;
         seg_count++;
         /* Last segment in frame */
         if (desc_iter->RDES0.LastDescriptor) {
@@ -527,8 +543,8 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
     /* there's at least one frame to process */
     if (frame_count) {
         /* check how many frames left to handle */
-        while ((desc_iter->RDES0.Own != EMAC_DMADESC_OWNER_DMA) && (iter < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
-            iter++;
+        while ((desc_iter->RDES0.Own != EMAC_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
+            used_descs++;
             if (desc_iter->RDES0.LastDescriptor) {
                 frame_count++;
             }
@@ -536,7 +552,8 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
             desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
         }
         desc_iter = first_desc;
-        for (iter = 0; iter < seg_count - 1; iter++) {
+        for (int i = 0; i < seg_count - 1; i++) {
+            used_descs--;
             write_len = copy_len < CONFIG_ETH_DMA_BUFFER_SIZE ? copy_len : CONFIG_ETH_DMA_BUFFER_SIZE;
             /* copy data to buffer */
             memcpy(buf, (void *)(desc_iter->Buffer1Addr), write_len);
@@ -553,8 +570,10 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
         /* poll rx demand */
         hal->dma_regs->dmarxpolldemand = 0;
         frame_count--;
+        used_descs--;
     }
     *frames_remain = frame_count;
+    *free_desc = CONFIG_ETH_DMA_RX_BUFFER_NUM - used_descs;
     return ret_len;
 }
 

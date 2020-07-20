@@ -340,6 +340,17 @@ The following functions should only be invoked after the Ethernet driver has bee
     esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr);
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
 
+.. _flow-control:
+
+Flow control
+------------
+
+Ethernet on MCU usually has a limitation in the number of frames it can handle during network congestion, because of the limitation in RAM size. A sending station might be transmitting data faster than the peer end can accept it. Ethernet flow control mechanism allows the receiving node to signal the sender requesting suspension of transmissions until the receiver catches up. The magic behind that is the pause frame, which was defined in IEEE 802.3x.
+
+Pause frame is a special Ethernet frame used to carry the pause command, whose EtherType field is 0x8808, with the Control opcode set to 0x0001. Only stations configured for full-duplex operation may send pause frames. When a station wishes to pause the other end of a link, it sends a pause frame to the 48-bit reserved multicast address of 01-80-C2-00-00-01. The pause frame also includes the period of pause time being requested, in the form of a two-byte integer, ranging from 0 to 65535.
+
+After Ethernet driver installation, the flow control feature is disabled by default. You can enable it by invoking `esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, true);`. One thing should be kept in mind, is that the pause frame ability will be advertised to peer end by PHY during auto negotiation. Ethernet driver sends pause frame only when both sides of the link support it.
+
 .. -------------------------------- Examples -----------------------------------
 
 Application Example

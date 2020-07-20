@@ -94,8 +94,10 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
     esp_eth_mediator_t *eth = dm9051->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    uint32_t peer_pause_ability = false;
     bmsr_reg_t bmsr;
     dscsr_reg_t dscsr;
+    anlpar_reg_t anlpar;
     // BMSR is a latch low register
     // after power up, the first latched value must be 0, which means down
     // to speed up power up link speed, double read this register as a workaround
@@ -103,6 +105,8 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
               "read BMSR failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
               "read BMSR failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
+              "read ANLPAR failed", err);
     eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (dm9051->link_status != link) {
@@ -124,6 +128,14 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
                       "change speed failed", err);
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
                       "change duplex failed", err);
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
+                      "change pause ability failed", err);
         }
         PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
                   "change link failed", err);
@@ -289,6 +301,28 @@ static esp_err_t dm9051_del(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+static esp_err_t dm9051_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    esp_eth_mediator_t *eth = dm9051->eth;
+    /* Set PAUSE function ability */
+    anar_reg_t anar;
+    PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
+              "read ANAR failed", err);
+    if (ability) {
+        anar.asymmetric_pause = 1;
+        anar.symmetric_pause = 1;
+    } else {
+        anar.asymmetric_pause = 0;
+        anar.symmetric_pause = 0;
+    }
+    PHY_CHECK(eth->phy_reg_write(eth, dm9051->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
+              "write ANAR failed", err);
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+
 static esp_err_t dm9051_init(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
@@ -344,6 +378,7 @@ esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
     dm9051->parent.pwrctl = dm9051_pwrctl;
     dm9051->parent.get_addr = dm9051_get_addr;
     dm9051->parent.set_addr = dm9051_set_addr;
+    dm9051->parent.advertise_pause_ability = dm9051_advertise_pause_ability;
     dm9051->parent.del = dm9051_del;
     return &(dm9051->parent);
 err:

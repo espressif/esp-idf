@@ -231,6 +231,18 @@ static esp_err_t emac_opencores_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     return ESP_OK;
 }
 
+static esp_err_t emac_opencores_enable_flow_ctrl(esp_eth_mac_t *mac, bool enable)
+{
+    /* QEMU doesn't emulate flow control function, so accept any value */
+    return ESP_OK;
+}
+
+static esp_err_t emac_opencores_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t ability)
+{
+    /* QEMU doesn't emulate PAUSE function, so accept any value */
+    return ESP_OK;
+}
+
 static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -390,6 +402,8 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.set_duplex = emac_opencores_set_duplex;
     emac->parent.set_link = emac_opencores_set_link;
     emac->parent.set_promiscuous = emac_opencores_set_promiscuous;
+    emac->parent.set_peer_pause_ability = emac_opencores_set_peer_pause_ability;
+    emac->parent.enable_flow_ctrl = emac_opencores_enable_flow_ctrl;
     emac->parent.transmit = emac_opencores_transmit;
     emac->parent.receive = emac_opencores_receive;
 

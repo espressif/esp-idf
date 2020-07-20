@@ -100,7 +100,11 @@ static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
     esp_eth_mediator_t *eth = dp83848->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    uint32_t peer_pause_ability = false;
+    anlpar_reg_t anlpar;
     physts_reg_t physts;
+    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
+              "read ANLPAR failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)) == ESP_OK,
               "read PHYSTS failed", err);
     eth_link_t link = physts.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
@@ -122,6 +126,14 @@ static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
                       "change speed failed", err);
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
                       "change duplex failed", err);
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
+                      "change pause ability failed", err);
         }
         PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
                   "change link failed", err);
@@ -279,6 +291,28 @@ static esp_err_t dp83848_del(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+static esp_err_t dp83848_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    esp_eth_mediator_t *eth = dp83848->eth;
+    /* Set PAUSE function ability */
+    anar_reg_t anar;
+    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
+              "read ANAR failed", err);
+    if (ability) {
+        anar.asymmetric_pause = 1;
+        anar.symmetric_pause = 1;
+    } else {
+        anar.asymmetric_pause = 0;
+        anar.symmetric_pause = 0;
+    }
+    PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
+              "write ANAR failed", err);
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+
 static esp_err_t dp83848_init(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
@@ -334,6 +368,7 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->parent.pwrctl = dp83848_pwrctl;
     dp83848->parent.get_addr = dp83848_get_addr;
     dp83848->parent.set_addr = dp83848_set_addr;
+    dp83848->parent.advertise_pause_ability = dp83848_advertise_pause_ability;
     dp83848->parent.del = dp83848_del;
 
     return &(dp83848->parent);

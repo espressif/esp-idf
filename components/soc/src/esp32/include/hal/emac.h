@@ -366,6 +366,11 @@ void emac_hal_set_duplex(emac_hal_context_t *hal, uint32_t duplex);
 
 void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable);
 
+/**
+ * @brief Send MAC-CTRL frames to peer (EtherType=0x8808, opcode=0x0001, dest_addr=MAC-specific-ctrl-proto-01 (01:80:c2:00:00:01))
+ */
+void emac_hal_send_pause_frame(emac_hal_context_t *hal, bool enable);
+
 bool emac_hal_is_mii_busy(emac_hal_context_t *hal);
 
 void emac_hal_set_phy_cmd(emac_hal_context_t *hal, uint32_t phy_addr, uint32_t phy_reg, bool write);
@@ -384,7 +389,9 @@ uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal);
 
 uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
 
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain);
+uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc);
+
+void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
 void emac_hal_isr(void *arg);
 
