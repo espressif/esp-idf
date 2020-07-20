@@ -113,7 +113,7 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 后续步骤
 ========
 
-继续设置开发环境，请前往 :ref:`get-started-get-esp-idf` 章节。
+继续设置开发环境，请前往 :ref:`get-started-set-up-tools` 章节。
 
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
