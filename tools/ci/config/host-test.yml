@@ -59,7 +59,7 @@ test_nvs_on_host:
   extends: .host_test_template
   script:
     - cd components/nvs_flash/test_nvs_host
-    - make test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh make test
 
 test_nvs_coverage:
   extends: .host_test_template
