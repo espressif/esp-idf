@@ -341,7 +341,4 @@ GENERATE_RTF    = NO
 ## Skip distracting progress messages
 ##
 QUIET = YES
-## Log warnings in a file for further review
-##
-WARN_LOGFILE = "doxygen-warning-log.txt"
 
