@@ -13,9 +13,8 @@ def test_examples_sysview_tracing(env, extra_data):
 
     rel_project_path = os.path.join('examples', 'system', 'sysview_tracing')
     dut = env.get_dut('sysview_tracing', rel_project_path)
-    idf_path = dut.app.get_sdk_path()
-    proj_path = os.path.join(idf_path, rel_project_path)
-    elf_path = os.path.join(dut.app.get_binary_path(rel_project_path), 'sysview_tracing.elf')
+    proj_path = os.path.join(dut.app.idf_path, rel_project_path)
+    elf_path = os.path.join(dut.app.binary_path, 'sysview_tracing.elf')
 
     def get_temp_file():
         with tempfile.NamedTemporaryFile(delete=False) as f:

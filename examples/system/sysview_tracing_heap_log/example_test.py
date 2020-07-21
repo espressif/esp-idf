@@ -12,9 +12,8 @@ def test_examples_sysview_tracing_heap_log(env, extra_data):
 
     rel_project_path = os.path.join('examples', 'system', 'sysview_tracing_heap_log')
     dut = env.get_dut('sysview_tracing_heap_log', rel_project_path)
-    idf_path = dut.app.get_sdk_path()
-    proj_path = os.path.join(idf_path, rel_project_path)
-    elf_path = os.path.join(dut.app.get_binary_path(rel_project_path), 'sysview_tracing_heap_log.elf')
+    proj_path = os.path.join(dut.app.idf_path, rel_project_path)
+    elf_path = os.path.join(dut.app.binary_path, 'sysview_tracing_heap_log.elf')
 
     def get_temp_file():
         with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -45,7 +44,7 @@ def test_examples_sysview_tracing_heap_log(env, extra_data):
                 # dut has been restarted by gdb since the last dut.expect()
                 dut.expect('esp_apptrace: Initialized TRAX on CPU0')
 
-        with ttfw_idf.CustomProcess(' '.join([os.path.join(idf_path, 'tools/esp_app_trace/sysviewtrace_proc.py'),
+        with ttfw_idf.CustomProcess(' '.join([os.path.join(dut.app.idf_path, 'tools/esp_app_trace/sysviewtrace_proc.py'),
                                               '-p',
                                               '-b', elf_path,
                                               tempfiles[1]]),

@@ -65,8 +65,8 @@ def test_monitor_ide_integration(env, extra_data):
     for name in config_names:
         Utility.console_log('Checking config "{}"... '.format(name), 'green', end='')
         dut = env.get_dut('panic', rel_proj_path, app_config_name=name)
-        monitor_path = os.path.join(dut.app.get_sdk_path(), 'tools/idf_monitor.py')
-        elf_path = os.path.join(dut.app.get_binary_path(rel_proj_path), 'panic.elf')
+        monitor_path = os.path.join(dut.app.idf_path, 'tools/idf_monitor.py')
+        elf_path = os.path.join(dut.app.binary_path, 'panic.elf')
         dut.start_app()
         # Closing the DUT because we will reconnect with IDF Monitor
         env.close_dut(dut.name)
