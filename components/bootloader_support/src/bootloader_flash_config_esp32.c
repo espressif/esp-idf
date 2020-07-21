@@ -25,6 +25,7 @@
 #include "soc/spi_reg.h"
 #include "soc/spi_caps.h"
 #include "flash_qio_mode.h"
+#include "bootloader_common.h"
 #include "bootloader_flash_config.h"
 
 void bootloader_flash_update_id(void)
@@ -75,18 +76,11 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
     uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
     uint32_t pkg_ver = chip_ver & 0x7;
 
-    if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
-        // For ESP32D2WD the SPI pins are already configured
-        // flash clock signal should come from IO MUX.
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
-        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
-    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) {
-        // For ESP32PICOD2 the SPI pins are already configured
-        // flash clock signal should come from IO MUX.
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
-        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
-    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
-        // For ESP32PICOD4 the SPI pins are already configured
+    if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
+        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||
+        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
+        // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
         // flash clock signal should come from IO MUX.
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
@@ -163,4 +157,33 @@ void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
 
     SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + g_rom_spiflash_dummy_len_plus[0],
             SPI_USR_DUMMY_CYCLELEN_S);
+}
+
+#define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD & ESP32-PICO-D4 has this GPIO wired to WP pin of flash */
+#define ESP32_PICO_V3_GPIO 18 /* ESP32-PICO-V3* use this GPIO for WP pin of flash */
+
+int bootloader_flash_get_wp_pin(void)
+{
+#if CONFIG_BOOTLOADER_SPI_CUSTOM_WP_PIN
+    return CONFIG_BOOTLOADER_SPI_WP_PIN; // can be set for bootloader when QIO or QOUT config in use
+#elif CONFIG_SPIRAM_CUSTOM_SPIWP_SD3_PIN
+    return CONFIG_SPIRAM_SPIWP_SD3_PIN; // can be set for app when DIO or DOUT config used for PSRAM only
+#else
+    // no custom value, find it based on the package eFuse value
+    uint8_t chip_ver;
+    uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
+    switch(pkg_ver) {
+    case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5:
+        return ESP32_D2WD_WP_GPIO;
+    case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2:
+    case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4:
+        /* Same package IDs are used for ESP32-PICO-V3 and ESP32-PICO-D4, silicon version differentiates */
+        chip_ver = bootloader_common_get_chip_revision();
+        return (chip_ver < 3) ? ESP32_D2WD_WP_GPIO : ESP32_PICO_V3_GPIO;
+    case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302:
+        return ESP32_PICO_V3_GPIO;
+    default:
+        return SPI_WP_GPIO_NUM;
+    }
+#endif
 }
