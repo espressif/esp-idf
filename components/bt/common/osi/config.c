@@ -267,6 +267,7 @@ bool config_remove_key(config_t *config, const char *section, const char *key)
     assert(config != NULL);
     assert(section != NULL);
     assert(key != NULL);
+    bool ret;
 
     section_t *sec = section_find(config, section);
     entry_t *entry = entry_find(config, section, key);
@@ -274,7 +275,12 @@ bool config_remove_key(config_t *config, const char *section, const char *key)
         return false;
     }
 
-    return list_remove(sec->entries, entry);
+    ret = list_remove(sec->entries, entry);
+    if (list_length(sec->entries) == 0) {
+        OSI_TRACE_DEBUG("%s remove section name:%s",__func__, section);
+        ret &= config_remove_section(config, section);
+    }
+    return ret;
 }
 
 const config_section_node_t *config_section_begin(const config_t *config)
