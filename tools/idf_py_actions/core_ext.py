@@ -13,7 +13,6 @@ from idf_py_actions.tools import ensure_build_directory, idf_version, merge_acti
 
 
 def action_extensions(base_actions, project_path):
-
     def build_target(target_name, ctx, args):
         """
         Execute the target build system to build target 'target_name'
@@ -23,6 +22,10 @@ def action_extensions(base_actions, project_path):
         """
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
+
+    def list_build_system_targets(target_name, ctx, args):
+        """Shows list of targets known to build sytem (make/ninja)"""
+        build_target('help', ctx, args)
 
     def menuconfig(target_name, ctx, args, style):
         """
@@ -137,8 +140,10 @@ def action_extensions(base_actions, project_path):
                 os.remove(file_to_delete)
 
     def set_target(action, ctx, args, idf_target):
-        if(not args["preview"] and idf_target in PREVIEW_TARGETS):
-            raise FatalError("%s is still in preview. You have to append '--preview' option after idf.py to use any preview feature." % idf_target)
+        if (not args["preview"] and idf_target in PREVIEW_TARGETS):
+            raise FatalError(
+                "%s is still in preview. You have to append '--preview' option after idf.py to use any preview feature."
+                % idf_target)
         args.define_cache_entry.append("IDF_TARGET=" + idf_target)
         sdkconfig_path = os.path.join(args.project_dir, 'sdkconfig')
         sdkconfig_old = sdkconfig_path + ".old"
@@ -370,10 +375,14 @@ def action_extensions(base_actions, project_path):
                 "help": "Read otadata partition.",
                 "options": global_options,
             },
+            "build-system-targets": {
+                "callback": list_build_system_targets,
+                "help": "Print list of build system targets.",
+            },
             "fallback": {
                 "callback": fallback_target,
                 "help": "Handle for targets not known for idf.py.",
-                "hidden": True
+                "hidden": True,
             }
         }
     }
