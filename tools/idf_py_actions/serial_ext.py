@@ -27,7 +27,7 @@ def action_extensions(base_actions, project_path):
                   ports[0].encode("ascii", "ignore"))
             return ports[0]
         except IndexError:
-            raise RuntimeError(
+            raise FatalError(
                 "No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
 
     def _get_esptool_args(args):
