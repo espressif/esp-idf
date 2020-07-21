@@ -1,5 +1,14 @@
 menu "Bootloader config"
 
+    config BOOTLOADER_OFFSET_IN_FLASH
+        hex
+        default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+        default 0x0
+        help
+            Offset address that 2nd bootloader will be flashed to.
+            The value is determined by the ROM bootloader.
+            It's not configurable in ESP-IDF.
+
     choice BOOTLOADER_COMPILER_OPTIMIZATION
         prompt "Bootloader optimization Level"
         default BOOTLOADER_COMPILER_OPTIMIZATION_SIZE

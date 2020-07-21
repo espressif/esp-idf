@@ -69,19 +69,11 @@ void bootloader_clock_configure(void)
         */
     }
 
-    /* TODO: move the clock option into esp_system, so that this doesn't have
-     * to continue:
-     */
-#if CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
+#if CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     if (!rtc_clk_32k_enabled()) {
-        rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+        rtc_clk_32k_bootstrap(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES);
     }
-#endif
-#if CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
-    if (!rtc_clk_32k_enabled()) {
-        rtc_clk_32k_bootstrap(0);
-    }
-#endif
+#endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 }
 
 #ifdef BOOTLOADER_BUILD

@@ -62,11 +62,6 @@ else()
     target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
-    #ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
-    #linker will ignore panic_highint_hdl.S as it has no other files depending on any
-    #symbols in it.
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_panic_highint_hdl")
-
     idf_build_get_property(config_dir CONFIG_DIR)
     # Preprocess esp32.ld linker script to include configuration, becomes esp32_out.ld
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
