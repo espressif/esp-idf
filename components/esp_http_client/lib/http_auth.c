@@ -19,7 +19,7 @@
 
 #include "esp_netif.h"
 #include "lwip/sockets.h"
-#include "esp32/rom/md5_hash.h"
+#include "esp_rom_md5.h"
 #include "mbedtls/base64.h"
 
 #include "esp_system.h"
@@ -54,9 +54,9 @@ static int md5_printf(char *md, const char *fmt, ...)
         return ESP_FAIL;
     }
 
-    MD5Init(&md5_ctx);
-    MD5Update(&md5_ctx, buf, len);
-    MD5Final(digest, &md5_ctx);
+    esp_rom_md5_init(&md5_ctx);
+    esp_rom_md5_update(&md5_ctx, buf, len);
+    esp_rom_md5_final(digest, &md5_ctx);
 
     for (i = 0; i < 16; ++i) {
         sprintf(&md[i * 2], "%02x", (unsigned int)digest[i]);

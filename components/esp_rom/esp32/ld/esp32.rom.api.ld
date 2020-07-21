@@ -26,3 +26,9 @@ PROVIDE ( esp_rom_uart_tx_wait_idle   = uart_tx_wait_idle );
 PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
 PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
+
+/* wpa_supplicant re-implements the MD5 functions: MD5Init, MD5Update, MD5Final */
+/* so here we directly assign the symbols with the ROM API address */
+PROVIDE ( esp_rom_md5_init   = 0x4005da7c );
+PROVIDE ( esp_rom_md5_update = 0x4005da9c );
+PROVIDE ( esp_rom_md5_final  = 0x4005db1c );
