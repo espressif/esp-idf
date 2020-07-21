@@ -57,6 +57,7 @@
 #define BTC_GAP_BT_INCLUDED         TRUE
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
+#define BTC_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
 
 #if (UC_BT_A2DP_ENABLED == TRUE)

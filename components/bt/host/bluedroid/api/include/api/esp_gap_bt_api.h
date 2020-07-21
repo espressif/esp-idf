@@ -155,6 +155,16 @@ typedef enum {
 #define ESP_BT_IO_CAP_NONE                     3        /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in stack/btm_api.h */
 typedef uint8_t esp_bt_io_cap_t;                        /*!< combination of the io capability */
 
+
+/* BTM Power manager modes */
+#define ESP_BT_PM_MD_ACTIVE                 0x00        /*!< Active mode */
+#define ESP_BT_PM_MD_HOLD                   0x01        /*!< Hold mode */
+#define ESP_BT_PM_MD_SNIFF                  0x02        /*!< Sniff mode */
+#define ESP_BT_PM_MD_PARK                   0x03        /*!< Park state */
+typedef uint8_t esp_bt_pm_mode_t;
+
+
+
 /// Bits of major service class field
 #define ESP_BT_COD_SRVC_BIT_MASK              (0xffe000) /*!< Major service bit mask */
 #define ESP_BT_COD_SRVC_BIT_OFFSET            (13)       /*!< Major service bit offset */
@@ -210,6 +220,7 @@ typedef enum {
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< config EIR data event */
     ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< set AFH channels event */
     ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
+    ESP_BT_GAP_MODE_CHG_EVT,
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -335,6 +346,14 @@ typedef union {
         esp_bt_status_t stat;                  /*!< read Remote Name status */
         uint8_t rmt_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< Remote device name */
     } read_rmt_name;                        /*!< read Remote Name parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_MODE_CHG_EVT
+     */
+    struct mode_chg_param {
+        esp_bd_addr_t bda;                      /*!< remote bluetooth device address*/
+        esp_bt_pm_mode_t mode;                  /*!< PM mode*/
+    } mode_chg;                                 /*!< mode change event parameter struct */
 
 } esp_bt_gap_cb_param_t;
 

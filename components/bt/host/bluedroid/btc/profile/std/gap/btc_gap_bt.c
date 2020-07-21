@@ -980,6 +980,9 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_KEY_NOTIF_EVT:
     case BTC_GAP_BT_KEY_REQ_EVT:
 #endif ///BT_SSP_INCLUDED == TRUE
+#if (BTC_DM_PM_INCLUDED == TRUE)
+    case BTC_GAP_BT_MODE_CHG_EVT:
+#endif /// BTC_DM_PM_INCLUDED == TRUE
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -1042,6 +1045,12 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
 #endif
+
+#if (BTC_DM_PM_INCLUDED == TRUE)
+    case BTC_GAP_BT_MODE_CHG_EVT:
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_MODE_CHG_EVT,(esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+#endif /// BTC_DM_PM_INCLUDED == TRUE
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;

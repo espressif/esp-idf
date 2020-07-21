@@ -510,6 +510,27 @@ static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
 }
 #endif /// BT_SSP_INCLUDED == TRUE
 
+#if (BTC_DM_PM_INCLUDED == TRUE)
+static void btc_dm_pm_mode_chg_evt(tBTA_DM_MODE_CHG *p_mode_chg)
+{
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_MODE_CHG_EVT;
+    memcpy(param.mode_chg.bda, p_mode_chg->bd_addr, ESP_BD_ADDR_LEN);
+    param.mode_chg.mode = p_mode_chg->mode;
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+#endif /// BTC_DM_PM_INCLUDED == TRUE
+
 tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
 {
     return btc_dm_cb.btc_enabled_services;
@@ -856,6 +877,13 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     }
 #endif
+
+#if (BTC_DM_PM_INCLUDED == TRUE)
+    case BTA_DM_PM_MODE_CHG_EVT:
+        BTC_TRACE_DEBUG("BTA_DM_PM_MODE_CHG_EVT mode:%d", p_data->mode_chg.mode);
+        btc_dm_pm_mode_chg_evt(&p_data->mode_chg);
+        break;
+#endif /// BTA_DM_PM_INCLUDED == TRUE
 
     case BTA_DM_AUTHORIZE_EVT:
     case BTA_DM_SIG_STRENGTH_EVT:
