@@ -177,8 +177,6 @@ esp_err_t esp_pm_lock_delete(esp_pm_lock_handle_t handle);
  */
 esp_err_t esp_pm_dump_locks(FILE* stream);
 
-
-
 #ifdef __cplusplus
 }
 #endif

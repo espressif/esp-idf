@@ -35,7 +35,7 @@ idf_component_register(SRCS "src/coexist.c"
                             "${idf_target}/esp_adapter.c"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     REQUIRES esp_event
-                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif ${extra_priv_requires}
+                    PRIV_REQUIRES esp_pm wpa_supplicant nvs_flash esp_netif ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)

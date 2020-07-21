@@ -20,8 +20,6 @@ else()
         "esp_himem.c"
         "hw_random.c"
         "intr_alloc.c"
-        "pm_esp32.c"
-        "pm_trace.c"
         "spiram.c"
         "spiram_psram.c"
         "system_api_esp32.c")

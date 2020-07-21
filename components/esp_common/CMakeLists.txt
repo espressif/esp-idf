@@ -18,15 +18,14 @@ else()
              "src/esp_err_to_name.c"
              "src/freertos_hooks.c"
              "src/mac_addr.c"
-             "src/pm_locks.c"
              "src/stack_check.c"
              "src/task_wdt.c"
              "src/int_wdt.c")
 
-    # Note: esp_ipc added as a public requirement to keep compatibility as to be located here.
+    # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
-                           REQUIRES ${target} espcoredump esp_timer esp_ipc
+                           REQUIRES ${target} espcoredump esp_timer esp_ipc esp_pm
                            PRIV_REQUIRES soc
                            LDFRAGMENTS "linker.lf")
 

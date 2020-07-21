@@ -18,8 +18,6 @@ else()
              "dport_access.c"
              "hw_random.c"
              "intr_alloc.c"
-             "pm_esp32s2.c"
-             "pm_trace.c"
              "spiram.c"
              "spiram_psram.c"
              "system_api_esp32s2.c"

@@ -26,6 +26,9 @@
 #include "esp_timer.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * This is an enum of possible power modes supported by the implementation
@@ -151,3 +154,7 @@ static inline pm_time_t IRAM_ATTR pm_get_time(void)
     return esp_timer_get_time();
 }
 #endif // WITH_PROFILING
+
+#ifdef __cplusplus
+}
+#endif

@@ -19,6 +19,8 @@
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
 
+#define MHZ (1000000)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -5,18 +5,24 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "esp_pm.h"
-#include "esp32/clk.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "driver/timer.h"
 #include "driver/rtc_io.h"
-#include "esp32/ulp.h"
 #include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
 
-#define MHZ     1000000
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#include "esp32s2/ulp.h"
+#endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {
@@ -28,7 +34,11 @@ TEST_CASE("Can dump power management lock stats", "[pm]")
 static void switch_freq(int mhz)
 {
     int xtal_freq = rtc_clk_xtal_freq_get();
+#if CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_pm_config_esp32s2_t pm_config = {
+#endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq),
     };
@@ -66,7 +76,11 @@ static void light_sleep_enable(void)
     int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
     int xtal_freq = (int) rtc_clk_xtal_freq_get();
 
-    const esp_pm_config_esp32_t pm_config = {
+#if CONFIG_IDF_TARGET_ESP32
+    esp_pm_config_esp32_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_pm_config_esp32s2_t pm_config = {
+#endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
         .light_sleep_enable = true
@@ -78,7 +92,11 @@ static void light_sleep_disable(void)
 {
     int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
 
-    const esp_pm_config_esp32_t pm_config = {
+#if CONFIG_IDF_TARGET_ESP32
+    esp_pm_config_esp32_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_pm_config_esp32s2_t pm_config = {
+#endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,
     };
@@ -125,10 +143,13 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     light_sleep_disable();
 }
 
-
 TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
 {
+#if CONFIG_IDF_TARGET_ESP32
     assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+#elif CONFIG_IDF_TARGET_ESP32S2
+    assert(CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+#endif
 
     /* Set up GPIO used to wake up RTC */
     const int ext1_wakeup_gpio = 25;
