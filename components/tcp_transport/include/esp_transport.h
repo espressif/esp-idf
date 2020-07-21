@@ -126,6 +126,29 @@ int esp_transport_get_default_port(esp_transport_handle_t t);
 esp_err_t esp_transport_set_default_port(esp_transport_handle_t t, int port);
 
 /**
+ *  @brief      Get Current socket errno
+ *
+ * @param[in]  t        The transport handle
+ *
+ * @return
+ *   - The current errno
+ *   - ESP_FAIL
+ */
+int esp_transport_get_errno(esp_transport_handle_t t);
+
+/**
+ * @brief      Set transport get errno functions for the transport handle
+ *
+ * @param[in]  t                The transport handle
+ * @param[in]  _get_errno_func  The get errno function pointer
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
++ */
+esp_err_t esp_transport_set_get_errno_func(esp_transport_handle_t t, trans_func _get_errno_func);
+
+/**
  * @brief      Transport connection function, to make a connection to server
  *
  * @param      t           The transport handle

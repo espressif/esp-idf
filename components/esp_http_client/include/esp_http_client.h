@@ -194,6 +194,17 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *url);
 
 /**
+* @brief    Get Current HTTP errno
+*
+* @param[in]  client  The client
+*
+* @return
+*   The current HTTP errno
+*   ESP_FAIL
+*/
+int esp_http_client_get_errno(esp_http_client_handle_t client);
+
+/**
  * @brief      Set post data, this function must be called before `esp_http_client_perform`.
  *             Note: The data parameter passed to this function is a pointer and this function will not copy the data
  *
@@ -202,8 +213,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
  * @param[in]  len     post length
  *
  * @return
- *  - ESP_OK
- *  - ESP_FAIL
+ *      - (-1) if any errors
+ *      - errno of current HTTP
  */
 esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const char *data, int len);
 

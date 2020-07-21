@@ -1166,6 +1166,14 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
     return ESP_OK;
 }
 
+int esp_http_client_get_errno(esp_http_client_handle_t client)
+{
+    if (client && client->transport) {
+        return esp_transport_get_errno(client->transport);
+    }
+    return ESP_FAIL;
+}
+
 static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client)
 {
     if (client->state != HTTP_STATE_REQ_COMPLETE_HEADER) {

@@ -198,6 +198,20 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     }
 }
 
+static int esp_transport_ssl_get_errno(esp_transport_handle_t t)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if ((ssl == NULL) || (ssl->tls == NULL)) {
+        ESP_LOGE(TAG, "tls connect failed");
+        return -1;
+    }
+    int sock_errno = 0;
+    uint32_t optlen = sizeof(sock_errno);
+    getsockopt(ssl->tls->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+    ESP_LOGD(TAG, "[socket = %d] errno is %d\n", ssl->tls->sockfd, sock_errno);
+    return sock_errno;
+}
+
 esp_transport_handle_t esp_transport_ssl_init()
 {
     esp_transport_handle_t t = esp_transport_init();
@@ -206,6 +220,7 @@ esp_transport_handle_t esp_transport_ssl_init()
     esp_transport_set_context_data(t, ssl);
     esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
+    esp_transport_set_get_errno_func(t, esp_transport_ssl_get_errno);
     return t;
 }
 

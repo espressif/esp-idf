@@ -674,6 +674,38 @@ is used in assert() statements. */
  */
 #if( portUSING_MPU_WRAPPERS == 1 )
 	BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition, TaskHandle_t *pxCreatedTask ) PRIVILEGED_FUNCTION;
+
+/** @cond */
+/**
+ * xTaskCreateRestrictedPinnedToCore() should only be used in systems that
+ * include an MPU implementation.
+ *
+ * Create a new task and add it to the list of tasks that are ready to run.
+ * The function parameters define the memory regions and associated access
+ * permissions allocated to the task.
+ *
+ * @param pxTaskDefinition Pointer to a structure that contains a member
+ * for each of the normal xTaskCreate() parameters (see the xTaskCreate() API
+ * documentation) plus an optional stack buffer and the memory region
+ * definitions.
+ *
+ * @param pxCreatedTask Used to pass back a handle by which the created task
+ * can be referenced.
+ *
+ * @param xCoreID If the value is tskNO_AFFINITY, the created task is not
+ * pinned to any CPU, and the scheduler can run it on any core available.
+ * Other values indicate the index number of the CPU which the task should
+ * be pinned to. Specifying values larger than (portNUM_PROCESSORS - 1) will
+ * cause the function to fail.
+ *
+ * @return pdPASS if the task was successfully created and added to a ready
+ * list, otherwise an error code defined in the file projdefs.h
+ *
+ * @endcode
+ * \ingroup Tasks
+ */
+	BaseType_t xTaskCreateRestrictedPinnedToCore( const TaskParameters_t * const pxTaskDefinition, TaskHandle_t *pxCreatedTask, const BaseType_t xCoreID) PRIVILEGED_FUNCTION;
+
 #endif
 
 

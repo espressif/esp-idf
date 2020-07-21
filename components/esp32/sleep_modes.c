@@ -213,6 +213,21 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
+
+    /**
+    *  This is only available in light sleep mode and esp32 is required to provide MCLK to i2c slave device
+    *  The current may be as large as 2mA to 3mA after enabling compared with light sleep when this is not added
+    */
+    REG_CLR_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
+    REG_SET_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PU);
+    REG_CLR_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_FORCE_SLEEP);
+    REG_SET_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_FORCE_NOSLEEP);
+    REG_CLR_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PD);
+    REG_SET_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PU);
+    REG_CLR_BIT(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
+    REG_SET_BIT(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU);
+    REG_CLR_BIT(RTC_CNTL_PWC_REG, RTC_CNTL_PD_EN);
+
     uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0);
 
     // Restore CPU frequency
