@@ -89,6 +89,34 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config);
 esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle);
 
 /**
+ * @brief    Start HTTPS OTA Firmware upgrade
+ *
+ * This function initializes ESP HTTPS OTA context and establishes HTTPS connection.
+ * This function must be invoked first. If this function returns successfully, then `esp_https_ota_perform` should be
+ * called to continue with the OTA process and there should be a call to `esp_https_ota_finish` on
+ * completion of OTA operation or on failure in subsequent operations.
+ * This API supports URL redirection, but if CA cert of URLs differ then it
+ * should be appended to `cert_pem` member of `http_config`, which is a part of `ota_config`.
+ * In case of error, this API explicitly sets `handle` to NULL.
+ *
+ * @param[in]   ota_config       pointer to esp_https_ota_config_t structure
+ * @param[out]  handle           pointer to an allocated data of type `esp_https_ota_handle_t`
+ *                               which will be initialised in this function
+ * @param[in]   offset           Start OTA based on the given URL offset corresponding length
+ *
+ * @note     This API is blocking, so setting `is_async` member of `http_config` structure will
+ *           result in an error.
+ *
+ * @return
+ *    - ESP_OK: HTTPS OTA Firmware upgrade context initialised and HTTPS connection established
+ *    - ESP_FAIL: For generic failure.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (missing/incorrect config, certificate, etc.)
+ *    - For other return codes, refer documentation in app_update component and esp_http_client 
+ *      component in esp-idf.
+ */
+esp_err_t esp_https_ota_begin_with_pos(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle, size_t offset);
+
+/**
  * @brief    Read image data from HTTP stream and write it to OTA partition 
  *
  * This function reads image data from HTTP stream and writes it to OTA partition. This function 

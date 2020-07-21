@@ -657,6 +657,24 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
         return ESP_ERR_INVALID_ARG;
     }
     ESP_LOGD(TAG, "Redirect to %s", client->location);
+    if (client->response->buffer->raw_len > 0) {
+        memset(client->response->buffer->raw_data, 0, client->response->buffer->raw_len);
+        client->response->buffer->raw_len = 0;
+    }
+    if (client->response->buffer->len > 0) {
+        memset(client->response->buffer->data, 0, client->response->buffer->len);
+        client->response->buffer->len = 0;
+    }
+    client->request->buffer->output_ptr = NULL;
+    if (client->request->buffer->raw_len > 0) {
+        memset(client->request->buffer->raw_data, 0, client->request->buffer->raw_len);
+        client->request->buffer->raw_len = 0;
+    }
+    if (client->request->buffer->len > 0) {
+        memset(client->request->buffer->data, 0, client->request->buffer->len);
+        client->request->buffer->len = 0;
+    }
+    client->request->buffer->output_ptr = NULL;
     return esp_http_client_set_url(client, client->location);
 }
 
@@ -871,7 +889,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            return ridx;
+            return rlen;
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);

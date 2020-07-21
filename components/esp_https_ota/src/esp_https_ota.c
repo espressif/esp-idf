@@ -209,6 +209,87 @@ failure:
     return err;
 }
 
+esp_err_t esp_https_ota_begin_with_pos(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle, size_t offset)
+{
+    esp_err_t err;
+
+    if (handle == NULL || ota_config == NULL || ota_config->http_config == NULL) {
+        ESP_LOGE(TAG, "esp_https_ota_begin: Invalid argument");
+        if (handle) {
+            *handle = NULL;
+        }
+        return ESP_ERR_INVALID_ARG;
+    }
+
+#if !CONFIG_OTA_ALLOW_HTTP
+    if (!ota_config->http_config->cert_pem) {
+        ESP_LOGE(TAG, "Server certificate not found in esp_http_client config");
+        *handle = NULL;
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
+
+    esp_https_ota_t *https_ota_handle = calloc(1, sizeof(esp_https_ota_t));
+    if (!https_ota_handle) {
+        ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
+        *handle = NULL;
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Initiate HTTP Connection */
+    https_ota_handle->http_client = esp_http_client_init(ota_config->http_config);
+    if (https_ota_handle->http_client == NULL) {
+        ESP_LOGE(TAG, "Failed to initialise HTTP connection");
+        err = ESP_FAIL;
+        goto failure;
+    }
+
+    if (offset > 0) {
+        char range_header[32];
+        snprintf(range_header, 32, "bytes=%d-", (int)offset);
+        esp_http_client_set_header(https_ota_handle->http_client, "Range", range_header);
+    }
+
+    err = _http_connect(https_ota_handle->http_client);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to establish HTTP connection");
+        goto http_cleanup;
+    }
+
+    https_ota_handle->update_partition = NULL;
+    ESP_LOGI(TAG, "Starting OTA...");
+    https_ota_handle->update_partition = esp_ota_get_next_update_partition(NULL);
+    if (https_ota_handle->update_partition == NULL) {
+        ESP_LOGE(TAG, "Passive OTA partition not found");
+        err = ESP_FAIL;
+        goto http_cleanup;
+    }
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
+        https_ota_handle->update_partition->subtype, https_ota_handle->update_partition->address);
+
+    const int alloc_size = (ota_config->http_config->buffer_size > DEFAULT_OTA_BUF_SIZE) ?
+                            ota_config->http_config->buffer_size : DEFAULT_OTA_BUF_SIZE;
+    https_ota_handle->ota_upgrade_buf = (char *)malloc(alloc_size);
+    if (!https_ota_handle->ota_upgrade_buf) {
+        ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
+        err = ESP_ERR_NO_MEM;
+        goto http_cleanup;
+    }
+    https_ota_handle->ota_upgrade_buf_size = alloc_size;
+
+    https_ota_handle->binary_file_len = 0;
+    *handle = (esp_https_ota_handle_t)https_ota_handle;
+    https_ota_handle->state = ESP_HTTPS_OTA_BEGIN;
+    return ESP_OK;
+
+http_cleanup:
+    _http_cleanup(https_ota_handle->http_client);
+failure:
+    free(https_ota_handle);
+    *handle = NULL;
+    return err;
+}
+
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
 {
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
