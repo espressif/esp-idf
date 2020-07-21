@@ -30,6 +30,7 @@ typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 typedef struct {
     const esp_http_client_config_t *http_config;   /*!< ESP HTTP client configuration */
     http_client_init_cb_t http_client_init_cb;     /*!< Callback after ESP HTTP client is initialised */
+    bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)

@@ -183,7 +183,7 @@ static void ota_example_task(void *pvParameter)
 
                     image_header_was_checked = true;
 
-                    err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
+                    err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
                     if (err != ESP_OK) {
                         ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
                         http_cleanup(client);
