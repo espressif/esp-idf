@@ -393,7 +393,8 @@ xMBASCIITransmitFSM( void )
     return xNeedPoll;
 }
 
-BOOL MB_PORT_ISR_ATTR xMBASCIITimerT1SExpired( void )
+BOOL MB_PORT_ISR_ATTR 
+xMBASCIITimerT1SExpired( void )
 {
     switch ( eRcvState )
     {

@@ -19,7 +19,6 @@
 #include "esp_modbus_common.h"      // for common defines
 #include "esp_modbus_slave.h"       // for public slave defines
 #include "esp_modbus_callbacks.h"   // for modbus callbacks function pointers declaration
-#include "mbc_serial_slave.h"       // for create function of serial port
 
 #ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
 
@@ -29,7 +28,7 @@
 #define MB_ID_BYTE3(id) ((uint8_t)(((uint32_t)(id) >> 24) & 0xFF))
 
 #define MB_CONTROLLER_SLAVE_ID (CONFIG_FMB_CONTROLLER_SLAVE_ID)
-#define MB_SLAVE_ID_SHORT      (MB_ID_BYTE3(CONFIG_FMB_CONTROLLER_SLAVE_ID))
+#define MB_SLAVE_ID_SHORT      (MB_ID_BYTE3(MB_CONTROLLER_SLAVE_ID))
 
 // Slave ID constant
 static uint8_t mb_slave_id[] = { MB_ID_BYTE0(MB_CONTROLLER_SLAVE_ID),
@@ -41,37 +40,9 @@ static uint8_t mb_slave_id[] = { MB_ID_BYTE0(MB_CONTROLLER_SLAVE_ID),
 // Common interface pointer for slave port
 static mb_slave_interface_t* slave_interface_ptr = NULL;
 
-/**
- * Initialization of Modbus slave controller
- */
-esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler)
+void mbc_slave_init_iface(void* handler)
 {
-    void* port_handler = NULL;
-    esp_err_t error = ESP_ERR_NOT_SUPPORTED;
-    switch(port_type)
-    {
-        case MB_PORT_SERIAL_SLAVE:
-            // Call constructor function of actual port implementation
-            error = mbc_serial_slave_create(port_type, &port_handler);
-            break;
-        case MB_PORT_TCP_SLAVE:
-            // Not yet supported
-            //error = mbc_tcp_slave_create(port_type, &port_handler);
-            return ESP_ERR_NOT_SUPPORTED;
-        default:
-            return ESP_ERR_NOT_SUPPORTED;
-    }
-    MB_SLAVE_CHECK((port_handler != NULL),
-                    ESP_ERR_INVALID_STATE,
-                    "Slave interface initialization failure, error=(0x%x), port type=(0x%x).",
-                    error, (uint16_t)port_type);
-
-    if ((port_handler != NULL) && (error == ESP_OK)) {
-        slave_interface_ptr = (mb_slave_interface_t*) port_handler;
-        *handler = port_handler;
-    }
-    
-    return error;
+    slave_interface_ptr = (mb_slave_interface_t*) handler;
 }
 
 /**
@@ -92,7 +63,8 @@ esp_err_t mbc_slave_destroy(void)
     error = slave_interface_ptr->destroy();
     MB_SLAVE_CHECK((error == ESP_OK), 
                     ESP_ERR_INVALID_STATE, 
-                    "SERIAL slave destroy failure error=(0x%x).", error);
+                    "Slave destroy failure error=(0x%x).",
+                    error);
     return error;
 }
 
@@ -111,7 +83,8 @@ esp_err_t mbc_slave_setup(void* comm_info)
     error = slave_interface_ptr->setup(comm_info);
     MB_SLAVE_CHECK((error == ESP_OK), 
                     ESP_ERR_INVALID_STATE, 
-                    "SERIAL slave setup failure error=(0x%x).", error);
+                    "Slave setup failure error=(0x%x).",
+                    error);
     return error;
 }
 
@@ -134,7 +107,9 @@ esp_err_t mbc_slave_start(void)
 #endif
     error = slave_interface_ptr->start();
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    error, "SERIAL slave start failure error=(0x%x).", error);
+                    ESP_ERR_INVALID_STATE, 
+                    "Slave start failure error=(0x%x).",
+                    error);
     return error;
 } 
 
@@ -167,7 +142,9 @@ esp_err_t mbc_slave_get_param_info(mb_param_info_t* reg_info, uint32_t timeout)
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->get_param_info(reg_info, timeout);
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    error, "SERIAL slave get parameter info failure error=(0x%x).", error);
+                    ESP_ERR_INVALID_STATE, 
+                    "Slave get parameter info failure error=(0x%x).",
+                    error);
     return error;
 }
 
@@ -185,7 +162,9 @@ esp_err_t mbc_slave_set_descriptor(mb_register_area_descriptor_t descr_data)
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->set_descriptor(descr_data);
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    error, "SERIAL slave set descriptor failure error=(0x%x).", error);
+                    ESP_ERR_INVALID_STATE, 
+                    "Slave set descriptor failure error=(0x%x).",
+                    (uint16_t)error);
     return error;
 }
 

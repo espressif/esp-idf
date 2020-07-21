@@ -39,6 +39,7 @@ typedef struct
     float input_data1;
     float input_data2;
     float input_data3;
+    uint16_t data[150];
 } input_reg_params_t;
 #pragma pack(pop)
 

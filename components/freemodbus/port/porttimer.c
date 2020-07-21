@@ -62,7 +62,7 @@
 #define MB_TIMER_DIVIDER        ((TIMER_BASE_CLK / 1000000UL) * MB_DISCR_TIME_US - 1) // divider for 50uS
 #define MB_TIMER_WITH_RELOAD    (1)
 
-static const USHORT usTimerIndex = CONFIG_FMB_TIMER_INDEX; // Modbus Timer index used by stack
+static const USHORT usTimerIndex = CONFIG_FMB_TIMER_INDEX;      // Modbus Timer index used by stack
 static const USHORT usTimerGroupIndex = CONFIG_FMB_TIMER_GROUP; // Modbus Timer group index used by stack
 static timer_isr_handle_t xTimerIntHandle;                      // Timer interrupt handle
 

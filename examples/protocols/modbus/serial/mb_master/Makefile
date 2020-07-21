@@ -5,7 +5,7 @@
 
 PROJECT_NAME := modbus_master
 
-EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/protocols/modbus/serial/mb_example_common
+EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/protocols/modbus/mb_example_common
 
 include $(IDF_PATH)/make/project.mk
 

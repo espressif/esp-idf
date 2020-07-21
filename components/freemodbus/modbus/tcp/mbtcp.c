@@ -42,7 +42,7 @@
 #include "mbframe.h"
 #include "mbport.h"
 
-#if MB_TCP_ENABLED > 0
+#if MB_TCP_ENABLED
 
 /* ----------------------- Defines ------------------------------------------*/
 
@@ -66,12 +66,6 @@
  * (1)  ... Modbus TCP/IP Application Data Unit
  * (1') ... Modbus Protocol Data Unit
  */
-
-#define MB_TCP_TID          0
-#define MB_TCP_PID          2
-#define MB_TCP_LEN          4
-#define MB_TCP_UID          6
-#define MB_TCP_FUNC         7
 
 #define MB_TCP_PROTOCOL_ID  0   /* 0 = Modbus Protocol */
 

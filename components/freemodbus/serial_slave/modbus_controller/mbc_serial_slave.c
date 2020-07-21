@@ -28,7 +28,7 @@
 #include "port_serial_slave.h"
 
 // Shared pointer to interface structure
-static mb_slave_interface_t* mbs_interface_ptr = NULL; // &default_interface_inst;
+static mb_slave_interface_t* mbs_interface_ptr = NULL;
 
 // Modbus task function
 static void modbus_slave_task(void *pvParameters)
@@ -36,7 +36,7 @@ static void modbus_slave_task(void *pvParameters)
     // Modbus interface must be initialized before start 
     MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    
+
     MB_SLAVE_ASSERT(mbs_opts != NULL);
     // Main Modbus stack processing cycle
     for (;;) {
@@ -133,6 +133,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
     MB_SLAVE_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbs_interface_ptr);
+    vMBPortSetMode((UCHAR)MB_PORT_INACTIVE);
     mbs_interface_ptr = NULL;
     return ESP_OK;
 }
@@ -451,17 +452,16 @@ eMBErrorCode eMBRegDiscreteCBSerialSlave(UCHAR* pucRegBuffer, USHORT usAddress,
 #pragma GCC diagnostic pop   // require GCC
 
 // Initialization of Modbus controller
-esp_err_t mbc_serial_slave_create(mb_port_type_t port_type, void** handler)
+esp_err_t mbc_serial_slave_create(void** handler)
 {
-    MB_SLAVE_CHECK((port_type == MB_PORT_SERIAL_SLAVE), 
-                    ESP_ERR_NOT_SUPPORTED, 
-                    "mb port not supported = %u.", (uint32_t)port_type);
     // Allocate space for options
     if (mbs_interface_ptr == NULL) {
         mbs_interface_ptr = malloc(sizeof(mb_slave_interface_t));
     }
     MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    vMBPortSetMode((UCHAR)port_type);
+
+    vMBPortSetMode((UCHAR)MB_PORT_SERIAL_SLAVE);
+
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
     mbs_opts->port_type = MB_PORT_SERIAL_SLAVE; // set interface port type
 

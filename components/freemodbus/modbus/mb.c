@@ -43,13 +43,13 @@
 #include "mbfunc.h"
 #include "mbport.h"
 
-#if MB_SLAVE_RTU_ENABLED == 1
+#if MB_SLAVE_RTU_ENABLED
 #include "mbrtu.h"
 #endif
-#if MB_SLAVE_ASCII_ENABLED == 1
+#if MB_SLAVE_ASCII_ENABLED
 #include "mbascii.h"
 #endif
-#if MB_TCP_ENABLED == 1
+#if MB_TCP_ENABLED
 #include "mbtcp.h"
 #endif
 

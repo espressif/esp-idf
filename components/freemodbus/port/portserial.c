@@ -55,6 +55,8 @@
 #include "sdkconfig.h"              // for KConfig options
 #include "port_serial_slave.h"
 
+// Note: This code uses mixed coding standard from legacy IDF code and used freemodbus stack
+
 // A queue to handle UART event.
 static QueueHandle_t xMbUartQueue;
 static TaskHandle_t  xMbTaskHandle;

@@ -50,12 +50,10 @@
 /* ----------------------- Modbus includes ----------------------------------*/
 #include "mb.h"
 #include "mbport.h"
-#include "port_serial_slave.h"
 
 /* ----------------------- Modbus includes ----------------------------------*/
 
 /* ----------------------- Variables ----------------------------------------*/
-static UCHAR ucPortMode = 0;
 
 /* ----------------------- Start implementation -----------------------------*/
 
@@ -64,22 +62,6 @@ bMBPortIsWithinException( void )
 {
     BOOL bIsWithinException = xPortInIsrContext();
     return bIsWithinException;
-}
-
-/* ----------------------- Start implementation -----------------------------*/
-
-UCHAR
-ucMBPortGetMode( void )
-{
-    return ucPortMode;
-}
-
-void
-vMBPortSetMode( UCHAR ucMode )
-{
-    ENTER_CRITICAL_SECTION();
-    ucPortMode = ucMode;
-    EXIT_CRITICAL_SECTION();
 }
 
 void

@@ -42,6 +42,7 @@
 
 /* ----------------------- Variables ----------------------------------------*/
 static _lock_t s_port_lock;
+static UCHAR ucPortMode = 0;
 
 /* ----------------------- Start implementation -----------------------------*/
 inline void
@@ -55,3 +56,91 @@ vMBPortExitCritical(void)
 {
     _lock_release(&s_port_lock);
 }
+
+UCHAR
+ucMBPortGetMode( void )
+{
+    return ucPortMode;
+}
+
+void
+vMBPortSetMode( UCHAR ucMode )
+{
+    ENTER_CRITICAL_SECTION();
+    ucPortMode = ucMode;
+    EXIT_CRITICAL_SECTION();
+}
+
+#if MB_TCP_DEBUG
+
+// This function is kept to realize legacy freemodbus frame logging functionality
+void
+prvvMBTCPLogFrame( const CHAR * pucMsg, UCHAR * pucFrame, USHORT usFrameLen )
+{
+    int             i;
+    int             res = 0;
+    int             iBufPos = 0;
+    size_t          iBufLeft = MB_TCP_FRAME_LOG_BUFSIZE;
+    static CHAR     arcBuffer[MB_TCP_FRAME_LOG_BUFSIZE];
+
+    assert( pucFrame != NULL );
+
+    for ( i = 0; i < usFrameLen; i++ ) {
+        // Print some additional frame information.
+        switch ( i )
+        {
+        case 0:
+            // TID = Transaction Identifier.
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, "| TID = " );
+            break;
+        case 2:
+            // PID = Protocol Identifier.
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, " | PID = " );
+            break;
+        case 4:
+            // Length
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, " | LEN = " );
+            break;
+        case 6:
+            // UID = Unit Identifier.
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, " | UID = " );
+            break;
+        case 7:
+            // MB Function Code.
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, " | FUNC = " );
+            break;
+        case 8:
+            // MB PDU rest.
+            res = snprintf( &arcBuffer[iBufPos], iBufLeft, " | DATA = " );
+            break;
+        default:
+            res = 0;
+            break;
+        }
+        if( res == -1 ) {
+            break;
+        }
+        else {
+            iBufPos += res;
+            iBufLeft -= res;
+        }
+
+        // Print the data.
+        res = snprintf( &arcBuffer[iBufPos], iBufLeft, "%02X", pucFrame[i] );
+        if( res == -1 ) {
+            break;
+        } else {
+            iBufPos += res;
+            iBufLeft -= res;
+        }
+    }
+
+    if( res != -1 ) {
+        // Append an end of frame string.
+        res = snprintf( &arcBuffer[iBufPos], iBufLeft, " |" );
+        if( res != -1 ) {
+            ESP_LOGD(pucMsg, "%s", arcBuffer);
+        }
+    }
+}
+#endif

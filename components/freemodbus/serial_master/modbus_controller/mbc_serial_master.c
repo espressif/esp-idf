@@ -81,7 +81,7 @@ static esp_err_t mbc_serial_master_setup(void* comm_info)
     MB_MASTER_CHECK(((comm_info_ptr->mode == MB_MODE_RTU) || (comm_info_ptr->mode == MB_MODE_ASCII)),
                 ESP_ERR_INVALID_ARG, "mb incorrect mode = (0x%x).",
                 (uint32_t)comm_info_ptr->mode);
-    MB_MASTER_CHECK((comm_info_ptr->port < UART_NUM_MAX), ESP_ERR_INVALID_ARG,
+    MB_MASTER_CHECK((comm_info_ptr->port <= UART_NUM_MAX), ESP_ERR_INVALID_ARG,
                 "mb wrong port to set = (0x%x).", (uint32_t)comm_info_ptr->port);
     MB_MASTER_CHECK((comm_info_ptr->parity <= UART_PARITY_EVEN), ESP_ERR_INVALID_ARG,
                 "mb wrong parity option = (0x%x).", (uint32_t)comm_info_ptr->parity);
@@ -101,7 +101,7 @@ static esp_err_t mbc_serial_master_start(void)
     const mb_communication_info_t* comm_info = (mb_communication_info_t*)&mbm_opts->mbm_comm;
 
     // Initialize Modbus stack using mbcontroller parameters
-    status = eMBMasterInit((eMBMode)comm_info->mode, (UCHAR)comm_info->port,
+    status = eMBMasterSerialInit((eMBMode)comm_info->mode, (UCHAR)comm_info->port,
                             (ULONG)comm_info->baudrate, (eMBParity)comm_info->parity);
     MB_MASTER_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack initialization failure, eMBInit() returns (0x%x).", status);
@@ -138,6 +138,7 @@ static esp_err_t mbc_serial_master_destroy(void)
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbm_interface_ptr); // free the memory allocated for options
+    vMBPortSetMode((UCHAR)MB_PORT_INACTIVE);
     mbm_interface_ptr = NULL;
     return ESP_OK;
 }
@@ -642,11 +643,8 @@ eMBErrorCode eMBRegDiscreteCBSerialMaster(UCHAR * pucRegBuffer, USHORT usAddress
 }
 
 // Initialization of resources for Modbus serial master controller
-esp_err_t mbc_serial_master_create(mb_port_type_t port_type, void** handler)
+esp_err_t mbc_serial_master_create(void** handler)
 {
-    MB_MASTER_CHECK((port_type == MB_PORT_SERIAL_MASTER), 
-                        ESP_ERR_INVALID_STATE, "mb incorrect port selected = %u.", 
-                        (uint32_t)port_type);
     // Allocate space for master interface structure
     if (mbm_interface_ptr == NULL) {
         mbm_interface_ptr = malloc(sizeof(mb_master_interface_t));
@@ -656,6 +654,8 @@ esp_err_t mbc_serial_master_create(mb_port_type_t port_type, void** handler)
     // Initialize interface properties
     mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
     mbm_opts->port_type = MB_PORT_SERIAL_MASTER;
+
+    vMBPortSetMode((UCHAR)MB_PORT_SERIAL_MASTER);
 
     mbm_opts->mbm_comm.mode = MB_MODE_RTU;
     mbm_opts->mbm_comm.port = MB_UART_PORT;

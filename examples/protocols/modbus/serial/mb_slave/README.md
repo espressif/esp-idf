@@ -1,10 +1,13 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Modbus Slave Example
 
-This example demonstrates using of FreeModbus stack port implementation for ESP32. The external Modbus host is able to read/write device parameters using Modbus protocol transport. The parameters accessible thorough Modbus are located in deviceparams.h/c files and can be updated by user. 
+This example demonstrates using of FreeModbus stack port implementation for ESP32. The external Modbus host is able to read/write device parameters using Modbus protocol transport. The parameters accessible thorough Modbus are located in `mb_example_common/modbus_params.h\c` files and can be updated by user. 
 These are represented in structures holding_reg_params, input_reg_params, coil_reg_params, discrete_reg_params for holding registers, input parameters, coils and discrete inputs accordingly. The app_main application demonstrates how to setup Modbus stack and use notifications about parameters change from host system. 
-The FreeModbus stack located in components\freemodbus\ folder and contain \port folder inside which contains FreeModbus stack port for ESP32. There are some parameters that can be configured in KConfig file to start stack correctly (See description below for more information).
+The FreeModbus stack located in `components/freemodbus` folder and contains the `/port` folder inside with FreeModbus stack port for ESP32. There are some parameters that can be configured in KConfig file to start stack correctly (See description below for more information).
 
-The slave example uses shared parameter structures defined in examples\protocols\modbus\serial\common_components folder.
+The slave example uses shared parameter structures defined in `examples/protocols/modbus/mb_example_common` folder.
 
 ## Hardware required :
 Option 1:
