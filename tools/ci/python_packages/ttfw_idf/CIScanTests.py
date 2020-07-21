@@ -3,12 +3,11 @@ import errno
 import json
 import logging
 import os
-import re
 from collections import defaultdict
 
 from find_apps import find_apps
 from find_build_apps import BUILD_SYSTEMS, BUILD_SYSTEM_CMAKE
-from ttfw_idf.CIAssignExampleTest import CIExampleAssignTest, TestAppsGroup, ExampleGroup
+from ttfw_idf.IDFAssignTest import ExampleAssignTest, TestAppsAssignTest
 
 VALID_TARGETS = [
     'esp32',
@@ -98,10 +97,9 @@ def main():
     test_cases = []
     for path in set(args.paths):
         if args.test_type == 'example_test':
-            assign = CIExampleAssignTest(path, args.ci_config_file, ExampleGroup)
+            assign = ExampleAssignTest(path, args.ci_config_file)
         elif args.test_type == 'test_apps':
-            CIExampleAssignTest.CI_TEST_JOB_PATTERN = re.compile(r'^test_app_test_.+')
-            assign = CIExampleAssignTest(path, args.ci_config_file, TestAppsGroup)
+            assign = TestAppsAssignTest(path, args.ci_config_file)
         else:
             raise SystemExit(1)  # which is impossible
 

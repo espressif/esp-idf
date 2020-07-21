@@ -109,7 +109,6 @@
   stage: target_test
   dependencies:
     - assign_test
-    - build_esp_idf_tests_cmake_esp32
   only:
     refs:
       - master
@@ -546,7 +545,6 @@ UT_034:
   extends: .unit_test_template
   dependencies:
     - assign_test
-    - build_esp_idf_tests_cmake_esp32s2
   only:
     refs:
       # Due to lack of runners, the tests are only done by manual trigger

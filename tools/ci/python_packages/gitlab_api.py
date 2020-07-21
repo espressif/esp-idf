@@ -109,7 +109,7 @@ class Gitlab(object):
             try:
                 data = job.artifact(a_path)
             except gitlab.GitlabGetError as e:
-                print("Failed to download '{}' form job {}".format(a_path, job_id))
+                print("Failed to download '{}' from job {}".format(a_path, job_id))
                 raise e
             raw_data_list.append(data)
             if destination:

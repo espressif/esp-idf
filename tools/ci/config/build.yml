@@ -45,7 +45,7 @@ build_ssc_esp32s2:
   artifacts:
     paths:
       - tools/unit-test-app/output/${IDF_TARGET}
-      - tools/unit-test-app/builds/${IDF_TARGET}/*.json
+      - tools/unit-test-app/builds/*.json
       - tools/unit-test-app/builds/${IDF_TARGET}/*/size.json
       - components/idf_test/unit_test/*.yml
       - $LOG_PATH

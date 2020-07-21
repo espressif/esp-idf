@@ -13,14 +13,16 @@
 # limitations under the License.
 
 """ IDF Test Applications """
-import subprocess
 import hashlib
 import json
 import os
+import re
+import subprocess
 import sys
+from abc import abstractmethod
 
 from tiny_test_fw import App
-from . import CIAssignExampleTest
+from .IDFAssignTest import ExampleGroup, TestAppsGroup, UnitTestGroup, IDFCaseGroup
 
 try:
     import gitlab_api
@@ -90,32 +92,46 @@ class Artifacts(object):
             ret = None
         return ret
 
-    def download_artifacts(self):
+    def _get_app_base_path(self):
         if self.artifact_info:
-            base_path = os.path.join(self.artifact_info["work_dir"], self.artifact_info["build_dir"])
-            job_id = self.artifact_info["ci_job_id"]
-
-            # 1. download flash args file
-            if self.artifact_info["build_system"] == "cmake":
-                flash_arg_file = os.path.join(base_path, "flasher_args.json")
-            else:
-                flash_arg_file = os.path.join(base_path, "download.config")
-
-            self.gitlab_inst.download_artifact(job_id, [flash_arg_file], self.dest_root_path)
-
-            # 2. download all binary files
-            flash_files, flash_settings, app_name = parse_flash_settings(os.path.join(self.dest_root_path,
-                                                                                      flash_arg_file))
-            artifact_files = [os.path.join(base_path, p[1]) for p in flash_files]
-            artifact_files.append(os.path.join(base_path, app_name + ".elf"))
-
-            self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
-
-            # 3. download sdkconfig file
-            self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), "sdkconfig")],
-                                               self.dest_root_path)
+            return os.path.join(self.artifact_info["work_dir"], self.artifact_info["build_dir"])
         else:
-            base_path = None
+            return None
+
+    def _get_flash_arg_file(self, base_path, job_id):
+        if self.artifact_info["build_system"] == "cmake":
+            flash_arg_file = os.path.join(base_path, "flasher_args.json")
+        else:
+            flash_arg_file = os.path.join(base_path, "download.config")
+
+        self.gitlab_inst.download_artifact(job_id, [flash_arg_file], self.dest_root_path)
+        return flash_arg_file
+
+    def _download_binary_files(self, base_path, job_id, flash_arg_file):
+        flash_files, flash_settings, app_name = parse_flash_settings(os.path.join(self.dest_root_path,
+                                                                                  flash_arg_file))
+        artifact_files = [os.path.join(base_path, p[1]) for p in flash_files]
+        artifact_files.append(os.path.join(base_path, app_name + ".elf"))
+
+        self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
+
+    def _download_sdkconfig_file(self, base_path, job_id):
+        self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), "sdkconfig")],
+                                           self.dest_root_path)
+
+    def download_artifacts(self):
+        if not self.artifact_info:
+            return None
+        base_path = self._get_app_base_path()
+        job_id = self.artifact_info["ci_job_id"]
+        # 1. download flash args file
+        flash_arg_file = self._get_flash_arg_file(base_path, job_id)
+
+        # 2. download all binary files
+        self._download_binary_files(base_path, job_id, flash_arg_file)
+
+        # 3. download sdkconfig file
+        self._download_sdkconfig_file(base_path, job_id)
         return base_path
 
     def download_artifact_files(self, file_names):
@@ -135,6 +151,20 @@ class Artifacts(object):
         return base_path
 
 
+class UnitTestArtifacts(Artifacts):
+    BUILDS_DIR_RE = re.compile(r'^builds/')
+
+    def _get_app_base_path(self):
+        if self.artifact_info:
+            output_dir = self.BUILDS_DIR_RE.sub('output/', self.artifact_info["build_dir"])
+            return os.path.join(self.artifact_info["app_dir"], output_dir)
+        else:
+            return None
+
+    def _download_sdkconfig_file(self, base_path, job_id):
+        self.gitlab_inst.download_artifact(job_id, [os.path.join(base_path, "sdkconfig")], self.dest_root_path)
+
+
 class IDFApp(App.BaseApp):
     """
     Implements common esp-idf application behavior.
@@ -144,13 +174,16 @@ class IDFApp(App.BaseApp):
     IDF_DOWNLOAD_CONFIG_FILE = "download.config"
     IDF_FLASH_ARGS_FILE = "flasher_args.json"
 
-    def __init__(self, app_path, config_name=None, target=None):
+    def __init__(self, app_path, config_name=None, target=None, case_group=IDFCaseGroup, artifact_cls=Artifacts):
         super(IDFApp, self).__init__(app_path)
+        self.app_path = app_path
         self.config_name = config_name
         self.target = target
         self.idf_path = self.get_sdk_path()
-        self.binary_path = self.get_binary_path(app_path, config_name, target)
-        self.elf_file = self._get_elf_file_path(self.binary_path)
+        self.case_group = case_group
+        self.artifact_cls = artifact_cls
+        self.binary_path = self.get_binary_path()
+        self.elf_file = self._get_elf_file_path()
         self._elf_file_sha256 = None
         assert os.path.exists(self.binary_path)
         if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
@@ -166,9 +199,16 @@ class IDFApp(App.BaseApp):
         self.flash_files, self.flash_settings = self._parse_flash_download_config()
         self.partition_table = self._parse_partition_table()
 
+    def __str__(self):
+        parts = ['app<{}>'.format(self.app_path)]
+        if self.config_name:
+            parts.extend('config<{}>'.format(self.config_name))
+        if self.target:
+            parts.extend('target<{}>'.format(self.target))
+        return ' '.join(parts)
+
     @classmethod
-    def get_sdk_path(cls):
-        # type: () -> str
+    def get_sdk_path(cls):  # type: () -> str
         idf_path = os.getenv("IDF_PATH")
         assert idf_path
         assert os.path.exists(idf_path)
@@ -184,7 +224,7 @@ class IDFApp(App.BaseApp):
 
     def get_sdkconfig(self):
         """
-        reads sdkconfig and returns a dictionary with all configuredvariables
+        reads sdkconfig and returns a dictionary with all configured variables
 
         :raise: AssertionError: if sdkconfig file does not exist in defined paths
         """
@@ -202,27 +242,35 @@ class IDFApp(App.BaseApp):
                     d[configs[0]] = configs[1].rstrip()
         return d
 
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        # type: (str, str, str) -> str
-        """
-        get binary path according to input app_path.
-
-        subclass must overwrite this method.
-
-        :param app_path: path of application
-        :param config_name: name of the application build config. Will match any config if None
-        :param target: target name. Will match for target if None
-        :return: abs app binary path
-        """
+    @abstractmethod
+    def _try_get_binary_from_local_fs(self):
         pass
 
-    @staticmethod
-    def _get_elf_file_path(binary_path):
+    def get_binary_path(self):
+        path = self._try_get_binary_from_local_fs()
+        if path:
+            return path
+
+        artifacts = self.artifact_cls(self.idf_path,
+                                      self.case_group.get_artifact_index_file(),
+                                      self.app_path, self.config_name, self.target)
+        if isinstance(self, LoadableElfTestApp):
+            assert self.app_files
+            path = artifacts.download_artifact_files(self.app_files)
+        else:
+            path = artifacts.download_artifacts()
+
+        if path:
+            return os.path.join(self.idf_path, path)
+        else:
+            raise OSError("Failed to get binary for {}".format(self))
+
+    def _get_elf_file_path(self):
         ret = ""
-        file_names = os.listdir(binary_path)
+        file_names = os.listdir(self.binary_path)
         for fn in file_names:
             if os.path.splitext(fn)[1] == ".elf":
-                ret = os.path.join(binary_path, fn)
+                ret = os.path.join(self.binary_path, fn)
         return ret
 
     def _parse_flash_download_config(self):
@@ -281,7 +329,7 @@ class IDFApp(App.BaseApp):
                 if isinstance(raw_error, bytes):
                     raw_error = raw_error.decode()
                 if 'Traceback' in raw_error:
-                    # Some exception occured. It is possible that we've tried the wrong binary file.
+                    # Some exception occurred. It is possible that we've tried the wrong binary file.
                     errors.append((path, raw_error))
                     continue
 
@@ -333,62 +381,52 @@ class IDFApp(App.BaseApp):
 
 
 class Example(IDFApp):
+    def __init__(self, app_path, config_name='default', target='esp32', case_group=ExampleGroup, artifacts_cls=Artifacts):
+        if not config_name:
+            config_name = 'default'
+        if not target:
+            target = 'esp32'
+        super(Example, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
+
     def _get_sdkconfig_paths(self):
         """
         overrides the parent method to provide exact path of sdkconfig for example tests
         """
         return [os.path.join(self.binary_path, "..", "sdkconfig")]
 
-    def _try_get_binary_from_local_fs(self, app_path, config_name=None, target=None, local_build_dir="build_examples"):
+    def _try_get_binary_from_local_fs(self):
         # build folder of example path
-        path = os.path.join(self.idf_path, app_path, "build")
+        path = os.path.join(self.idf_path, self.app_path, "build")
         if os.path.exists(path):
             return path
 
-        if not config_name:
-            config_name = "default"
-
-        if not target:
-            target = "esp32"
-
         # Search for CI build folders.
         # Path format: $IDF_PATH/build_examples/app_path_with_underscores/config/target
-        # (see tools/ci/build_examples_cmake.sh)
+        # (see tools/ci/build_examples.sh)
         # For example: $IDF_PATH/build_examples/examples_get-started_blink/default/esp32
-        app_path_underscored = app_path.replace(os.path.sep, "_")
-        example_path = os.path.join(self.idf_path, local_build_dir)
+        app_path_underscored = self.app_path.replace(os.path.sep, "_")
+        example_path = os.path.join(self.idf_path, self.case_group.LOCAL_BUILD_DIR)
         for dirpath in os.listdir(example_path):
             if os.path.basename(dirpath) == app_path_underscored:
-                path = os.path.join(example_path, dirpath, config_name, target, "build")
+                path = os.path.join(example_path, dirpath, self.config_name, self.target, "build")
                 if os.path.exists(path):
                     return path
                 else:
                     return None
 
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        path = self._try_get_binary_from_local_fs(app_path, config_name, target)
-        if path:
-            return path
-        else:
-            artifacts = Artifacts(self.idf_path,
-                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.ExampleGroup),
-                                  app_path, config_name, target)
-            path = artifacts.download_artifacts()
-            if path:
-                return os.path.join(self.idf_path, path)
-            else:
-                raise OSError("Failed to find example binary")
-
 
 class UT(IDFApp):
-    def get_binary_path(self, app_path, config_name=None, target=None):
+    def __init__(self, app_path, config_name='default', target='esp32', case_group=UnitTestGroup, artifacts_cls=UnitTestArtifacts):
         if not config_name:
-            config_name = "default"
+            config_name = 'default'
+        if not target:
+            target = 'esp32'
+        super(UT, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
 
-        path = os.path.join(self.idf_path, app_path)
-        default_build_path = os.path.join(path, "build")
-        if os.path.exists(default_build_path):
-            return default_build_path
+    def _try_get_binary_from_local_fs(self):
+        path = os.path.join(self.idf_path, self.app_path, "build")
+        if os.path.exists(path):
+            return path
 
         # first try to get from build folder of unit-test-app
         path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
@@ -396,66 +434,44 @@ class UT(IDFApp):
             # found, use bin in build path
             return path
 
-        # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
-        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", target, config_name)
+        # ``build_unit_test.sh`` will copy binary to output folder
+        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", self.target, self.config_name)
         if os.path.exists(path):
             return path
 
-        raise OSError("Failed to get unit-test-app binary path")
+        return None
 
 
 class TestApp(Example):
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        path = self._try_get_binary_from_local_fs(app_path, config_name, target, local_build_dir="build_test_apps")
-        if path:
-            return path
-        else:
-            artifacts = Artifacts(self.idf_path,
-                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.TestAppsGroup),
-                                  app_path, config_name, target)
-            path = artifacts.download_artifacts()
-            if path:
-                return os.path.join(self.idf_path, path)
-            else:
-                raise OSError("Failed to find example binary")
+    def __init__(self, app_path, config_name='default', target='esp32', case_group=TestAppsGroup, artifacts_cls=Artifacts):
+        super(TestApp, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
 
 
 class LoadableElfTestApp(TestApp):
-    def __init__(self, app_path, app_files, config_name=None, target=None):
+    def __init__(self, app_path, app_files, config_name='default', target='esp32', case_group=TestAppsGroup, artifacts_cls=Artifacts):
         # add arg `app_files` for loadable elf test_app.
         # Such examples only build elf files, so it doesn't generate flasher_args.json.
         # So we can't get app files from config file. Test case should pass it to application.
         super(IDFApp, self).__init__(app_path)
+        self.app_path = app_path
         self.app_files = app_files
-        self.config_name = config_name
-        self.target = target
+        self.config_name = config_name or 'default'
+        self.target = target or 'esp32'
         self.idf_path = self.get_sdk_path()
-        self.binary_path = self.get_binary_path(app_path, config_name, target)
-        self.elf_file = self._get_elf_file_path(self.binary_path)
+        self.case_group = case_group
+        self.artifact_cls = artifacts_cls
+        self.binary_path = self.get_binary_path()
+        self.elf_file = self._get_elf_file_path()
         assert os.path.exists(self.binary_path)
-
-    def get_binary_path(self, app_path, config_name=None, target=None):
-        path = self._try_get_binary_from_local_fs(app_path, config_name, target, local_build_dir="build_test_apps")
-        if path:
-            return path
-        else:
-            artifacts = Artifacts(self.idf_path,
-                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.TestAppsGroup),
-                                  app_path, config_name, target)
-            path = artifacts.download_artifact_files(self.app_files)
-            if path:
-                return os.path.join(self.idf_path, path)
-            else:
-                raise OSError("Failed to find the loadable ELF file")
 
 
 class SSC(IDFApp):
-    def get_binary_path(self, app_path, config_name=None, target=None):
+    def get_binary_path(self):
         # TODO: to implement SSC get binary path
-        return app_path
+        return self.app_path
 
 
 class AT(IDFApp):
-    def get_binary_path(self, app_path, config_name=None, target=None):
+    def get_binary_path(self):
         # TODO: to implement AT get binary path
-        return app_path
+        return self.app_path

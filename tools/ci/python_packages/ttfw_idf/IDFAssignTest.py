@@ -1,9 +1,11 @@
 """
-Command line tool to assign unit tests to CI test jobs.
+Command line tool to assign tests to CI test jobs.
 """
+import argparse
+import errno
+import json
 import os
 import re
-import argparse
 
 import yaml
 
@@ -12,16 +14,88 @@ try:
 except ImportError:
     from yaml import Loader as Loader
 
+import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
+IDF_PATH_FROM_ENV = os.getenv("IDF_PATH")
 
-class Group(CIAssignTest.Group):
+
+class IDFCaseGroup(CIAssignTest.Group):
+    LOCAL_BUILD_DIR = None
+    BUILD_JOB_NAMES = None
+
+    @classmethod
+    def get_artifact_index_file(cls):
+        assert cls.LOCAL_BUILD_DIR
+        if IDF_PATH_FROM_ENV:
+            artifact_index_file = os.path.join(IDF_PATH_FROM_ENV, cls.LOCAL_BUILD_DIR, "artifact_index.json")
+        else:
+            artifact_index_file = "artifact_index.json"
+        return artifact_index_file
+
+
+class IDFAssignTest(CIAssignTest.AssignTest):
+    def format_build_log_path(self, parallel_num):
+        return "{}/list_job_{}.json".format(self.case_group.LOCAL_BUILD_DIR, parallel_num)
+
+    def create_artifact_index_file(self, project_id=None, pipeline_id=None):
+        if project_id is None:
+            project_id = os.getenv("CI_PROJECT_ID")
+        if pipeline_id is None:
+            pipeline_id = os.getenv("CI_PIPELINE_ID")
+        gitlab_inst = gitlab_api.Gitlab(project_id)
+
+        artifact_index_list = []
+        for build_job_name in self.case_group.BUILD_JOB_NAMES:
+            job_info_list = gitlab_inst.find_job_id(build_job_name, pipeline_id=pipeline_id)
+            for job_info in job_info_list:
+                parallel_num = job_info["parallel_num"] or 1  # Could be None if "parallel_num" not defined for the job
+                raw_data = gitlab_inst.download_artifact(job_info["id"],
+                                                         [self.format_build_log_path(parallel_num)])[0]
+                build_info_list = [json.loads(line) for line in raw_data.decode().splitlines()]
+                for build_info in build_info_list:
+                    build_info["ci_job_id"] = job_info["id"]
+                    artifact_index_list.append(build_info)
+        artifact_index_file = self.case_group.get_artifact_index_file()
+        try:
+            os.makedirs(os.path.dirname(artifact_index_file))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise e
+
+        with open(artifact_index_file, "w") as f:
+            json.dump(artifact_index_list, f)
+
+
+SUPPORTED_TARGETS = [
+    'esp32',
+    'esp32s2',
+]
+
+
+class ExampleGroup(IDFCaseGroup):
+    SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "target"]
+
+    LOCAL_BUILD_DIR = "build_examples"
+    BUILD_JOB_NAMES = ["build_examples_cmake_{}".format(target) for target in SUPPORTED_TARGETS]
+
+
+class TestAppsGroup(ExampleGroup):
+    LOCAL_BUILD_DIR = "build_test_apps"
+    BUILD_JOB_NAMES = ["build_test_apps_{}".format(target) for target in SUPPORTED_TARGETS]
+
+
+class UnitTestGroup(IDFCaseGroup):
     SORT_KEYS = ["test environment", "tags", "chip_target"]
+    CI_JOB_MATCH_KEYS = ["test environment"]
+
+    LOCAL_BUILD_DIR = "tools/unit-test-app/builds"
+    BUILD_JOB_NAMES = ["build_esp_idf_tests_cmake_{}".format(target) for target in SUPPORTED_TARGETS]
+
     MAX_CASE = 50
     ATTR_CONVERT_TABLE = {
         "execution_time": "execution time"
     }
-    CI_JOB_MATCH_KEYS = ["test environment"]
     DUT_CLS_NAME = {
         "esp32": "ESP32DUT",
         "esp32s2": "ESP32S2DUT",
@@ -29,14 +103,14 @@ class Group(CIAssignTest.Group):
     }
 
     def __init__(self, case):
-        super(Group, self).__init__(case)
+        super(UnitTestGroup, self).__init__(case)
         for tag in self._get_case_attr(case, "tags"):
             self.ci_job_match_keys.add(tag)
 
     @staticmethod
     def _get_case_attr(case, attr):
-        if attr in Group.ATTR_CONVERT_TABLE:
-            attr = Group.ATTR_CONVERT_TABLE[attr]
+        if attr in UnitTestGroup.ATTR_CONVERT_TABLE:
+            attr = UnitTestGroup.ATTR_CONVERT_TABLE[attr]
         return case[attr]
 
     def add_extra_case(self, case):
@@ -133,11 +207,25 @@ class Group(CIAssignTest.Group):
         return output_data
 
 
-class UnitTestAssignTest(CIAssignTest.AssignTest):
-    CI_TEST_JOB_PATTERN = re.compile(r"^UT_.+")
+class ExampleAssignTest(IDFAssignTest):
+    CI_TEST_JOB_PATTERN = re.compile(r'^example_test_.+')
 
-    def __init__(self, test_case_path, ci_config_file):
-        CIAssignTest.AssignTest.__init__(self, test_case_path, ci_config_file, case_group=Group)
+    def __init__(self, est_case_path, ci_config_file):
+        super(ExampleAssignTest, self).__init__(est_case_path, ci_config_file, case_group=ExampleGroup)
+
+
+class TestAppsAssignTest(IDFAssignTest):
+    CI_TEST_JOB_PATTERN = re.compile(r'^test_app_test_.+')
+
+    def __init__(self, est_case_path, ci_config_file):
+        super(TestAppsAssignTest, self).__init__(est_case_path, ci_config_file, case_group=TestAppsGroup)
+
+
+class UnitTestAssignTest(IDFAssignTest):
+    CI_TEST_JOB_PATTERN = re.compile(r'^UT_.+')
+
+    def __init__(self, est_case_path, ci_config_file):
+        super(UnitTestAssignTest, self).__init__(est_case_path, ci_config_file, case_group=UnitTestGroup)
 
     def search_cases(self, case_filter=None):
         """
@@ -203,14 +291,27 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("test_case",
-                        help="test case folder or file")
-    parser.add_argument("ci_config_file",
-                        help="gitlab ci config file")
-    parser.add_argument("output_path",
-                        help="output path of config files")
+    parser.add_argument("case_group", choices=["example_test", "custom_test", "unit_test"])
+    parser.add_argument("test_case", help="test case folder or file")
+    parser.add_argument("ci_config_file", help="gitlab ci config file")
+    parser.add_argument("output_path", help="output path of config files")
+    parser.add_argument("--pipeline_id", "-p", type=int, default=None, help="pipeline_id")
+    parser.add_argument("--test-case-file-pattern", help="file name pattern used to find Python test case files")
     args = parser.parse_args()
 
-    assign_test = UnitTestAssignTest(args.test_case, args.ci_config_file)
-    assign_test.assign_cases()
-    assign_test.output_configs(args.output_path)
+    args_list = [args.test_case, args.ci_config_file]
+    if args.case_group == 'example_test':
+        assigner = ExampleAssignTest(*args_list)
+    elif args.case_group == 'custom_test':
+        assigner = TestAppsAssignTest(*args_list)
+    elif args.case_group == 'unit_test':
+        assigner = UnitTestAssignTest(*args_list)
+    else:
+        raise SystemExit(1)  # which is impossible
+
+    if args.test_case_file_pattern:
+        assigner.CI_TEST_JOB_PATTERN = re.compile(r'{}'.format(args.test_case_file_pattern))
+
+    assigner.assign_cases()
+    assigner.output_configs(args.output_path)
+    assigner.create_artifact_index_file()
