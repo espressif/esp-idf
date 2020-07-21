@@ -6,7 +6,7 @@
  * See README for more details.
  */
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h" // for ets_timer_disarm
 #endif
 #include "utils/includes.h"
 

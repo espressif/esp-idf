@@ -29,6 +29,7 @@
 #include "dm9051.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "emac_dm9051";
 #define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -450,7 +451,7 @@ static esp_err_t emac_dm9051_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(dm9051_register_read(emac, DM9051_EPCR, &epcr) == ESP_OK, "read EPCR failed", err, ESP_FAIL);
         to += 100;
     } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
@@ -476,7 +477,7 @@ static esp_err_t emac_dm9051_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(dm9051_register_read(emac, DM9051_EPCR, &epcr) == ESP_OK, "read EPCR failed", err, ESP_FAIL);
         to += 100;
     } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
@@ -641,7 +642,7 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
         /* reset rx fifo pointer */
         MAC_CHECK(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX) == ESP_OK,
                   "write MPTRCR failed", err, ESP_FAIL);
-        ets_delay_us(10);
+        esp_rom_delay_us(10);
         MAC_CHECK(mac->start(mac) == ESP_OK, "start dm9051 failed", err, ESP_FAIL);
         MAC_CHECK(false, "reset rx fifo pointer", err, ESP_FAIL);
     } else if (rxbyte) {

@@ -120,8 +120,9 @@ int xt_clock_freq(void) __attribute__((deprecated));
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
 #include <stdlib.h> /* for abort() */
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"  // will be removed in idf v5.0
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #endif
@@ -129,20 +130,20 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
 #define configASSERT(a) /* assertions disabled */
 #elif defined(CONFIG_FREERTOS_ASSERT_FAIL_PRINT_CONTINUE)
-#define configASSERT(a) if (unlikely(!(a))) {                                     \
-        ets_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
-                   __FUNCTION__);                                       \
+#define configASSERT(a) if (unlikely(!(a))) {                               \
+        esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
+                   __FUNCTION__);                                           \
     }
 #else /* CONFIG_FREERTOS_ASSERT_FAIL_ABORT */
-#define configASSERT(a) if (unlikely(!(a))) {                                     \
-        ets_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
-                   __FUNCTION__);                                       \
-        abort();                                                        \
+#define configASSERT(a) if (unlikely(!(a))) {                               \
+        esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
+                   __FUNCTION__);                                           \
+        abort();                                                            \
         }
 #endif
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { ets_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
 #define UNTESTED_FUNCTION()
 #endif

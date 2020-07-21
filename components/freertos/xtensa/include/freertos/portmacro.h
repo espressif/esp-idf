@@ -84,7 +84,7 @@ extern "C" {
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
 #include "soc/spinlock.h"
 #include <esp_heap_caps.h>
-
+#include "esp_rom_sys.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
@@ -225,22 +225,22 @@ static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(p
 {
     if(!xPortInIsrContext()) {                                                                  
         vPortEnterCritical(mux);                                                                
-    } else {                                                                                    
-        ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, 
-                    __FUNCTION__);                                                              
-        abort();                                                                                
-    }                                                                                           
+    } else {
+        esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
+                       __FILE__, __LINE__, __FUNCTION__);
+        abort();
+    }
 }
 
 static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(portMUX_TYPE *mux)
 {
     if(!xPortInIsrContext()) {                                                                  
         vPortExitCritical(mux);                                                                 
-    } else {                                                                                    
-        ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, 
-                    __FUNCTION__);                                                               
-        abort();                                                                                
-    }                                                                                               
+    } else {
+        esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
+                       __FILE__, __LINE__, __FUNCTION__);
+        abort();
+    }
 }
 
 #ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE

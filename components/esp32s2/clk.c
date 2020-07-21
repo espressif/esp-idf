@@ -41,6 +41,6 @@ int IRAM_ATTR esp_clk_xtal_freq(void)
 
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
-    /* Update scale factors used by ets_delay_us */
+    /* Update scale factors used by esp_rom_delay_us */
     g_ticks_per_us_pro = ticks_per_us;
 }

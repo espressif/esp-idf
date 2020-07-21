@@ -55,14 +55,13 @@
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
 
+#include "esp_rom_sys.h"
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
 #include "esp32/spiram.h"
 #include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/spiram.h"
 #include "esp32s2/brownout.h"
 #endif
@@ -156,7 +155,7 @@ static void IRAM_ATTR do_system_init_fn(void)
 static void IRAM_ATTR start_app_other_cores_default(void)
 {
     while (1) {
-        ets_delay_us(UINT32_MAX);
+        esp_rom_delay_us(UINT32_MAX);
     }
 }
 
@@ -165,7 +164,7 @@ static void IRAM_ATTR start_cpu_other_cores_default(void)
     do_system_init_fn();
 
     while (!s_system_full_inited) {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
     }
 
     start_app_other_cores();
@@ -295,7 +294,7 @@ static void IRAM_ATTR do_secondary_init(void)
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             system_inited &= s_system_inited[i];
         }
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
     }
 #endif
 }

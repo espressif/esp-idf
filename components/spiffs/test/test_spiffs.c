@@ -29,6 +29,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_partition.h"
+#include "esp_rom_sys.h"
 
 const char* spiffs_test_hello_str = "Hello, World!\n";
 const char* spiffs_test_partition_label = "flash_test";
@@ -367,7 +368,7 @@ static void read_write_task(void* param)
         if (args->write) {
             int cnt = fwrite(&val, sizeof(val), 1, f);
             if (cnt != 1) {
-                ets_printf("E(w): i=%d, cnt=%d val=%d\n\n", i, cnt, val);
+                esp_rom_printf("E(w): i=%d, cnt=%d val=%d\n\n", i, cnt, val);
                 args->result = ESP_FAIL;
                 goto close;
             }
@@ -375,7 +376,7 @@ static void read_write_task(void* param)
             uint32_t rval;
             int cnt = fread(&rval, sizeof(rval), 1, f);
             if (cnt != 1) {
-                ets_printf("E(r): i=%d, cnt=%d rval=%d\n\n", i, cnt, rval);
+                esp_rom_printf("E(r): i=%d, cnt=%d rval=%d\n\n", i, cnt, rval);
                 args->result = ESP_FAIL;
                 goto close;
             }

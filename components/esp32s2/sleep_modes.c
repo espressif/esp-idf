@@ -24,8 +24,8 @@
 #include "esp_spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -286,7 +286,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     // If SPI flash was powered down, wait for it to become ready
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
         // Wait for the flash chip to start up
-        ets_delay_us(flash_enable_time_us);
+        esp_rom_delay_us(flash_enable_time_us);
     }
     return err;
 }

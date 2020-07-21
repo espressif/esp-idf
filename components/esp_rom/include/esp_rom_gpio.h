@@ -20,7 +20,6 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 
 /**
  * @brief Configure IO Pad as General Purpose IO,

@@ -54,7 +54,7 @@
 #define FORCE_INLINE_ATTR static inline __attribute__((always_inline))
 
 // Forces a string into DRAM instead of flash
-// Use as ets_printf(DRAM_STR("Hello world!\n"));
+// Use as esp_rom_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
 
 // Forces code into RTC fast memory. See "docs/deep-sleep-stub.rst"

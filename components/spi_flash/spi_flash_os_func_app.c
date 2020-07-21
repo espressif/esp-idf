@@ -24,11 +24,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
+#include "esp_rom_sys.h"
 
 #include "driver/spi_common_internal.h"
 
@@ -102,7 +98,7 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 
 static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
 {
-    ets_delay_us(us);
+    esp_rom_delay_us(us);
     return ESP_OK;
 }
 static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg)

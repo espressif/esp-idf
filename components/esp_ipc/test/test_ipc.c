@@ -8,6 +8,7 @@
 #include "esp_ipc.h"
 #endif
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 #if !CONFIG_FREERTOS_UNICORE
 static void test_func_ipc_cb(void *arg)
@@ -30,7 +31,7 @@ static volatile bool exit_flag;
 static void task1(void *sema)
 {
     ESP_LOGI("task1", "start");
-    ets_delay_us(3000000);
+    esp_rom_delay_us(3000000);
     vTaskDelay(1);
     while (exit_flag == false) {
 
@@ -43,10 +44,10 @@ static UBaseType_t func_ipc_priority;
 
 static void test_func_ipc(void *sema)
 {
-    ets_delay_us(1000000 + xPortGetCoreID() * 100);
+    esp_rom_delay_us(1000000 + xPortGetCoreID() * 100);
     func_ipc_priority = uxTaskPriorityGet(NULL);
     xSemaphoreGive(*(xSemaphoreHandle *)sema);
-    ets_printf("test_func_ipc: [%d, %d]\n", func_ipc_priority, xPortGetCoreID());
+    esp_rom_printf("test_func_ipc: [%d, %d]\n", func_ipc_priority, xPortGetCoreID());
 }
 
 TEST_CASE("Test ipc_task works with the priority of the caller's task", "[ipc]")
@@ -77,9 +78,9 @@ TEST_CASE("Test ipc_task works with the priority of the caller's task", "[ipc]")
 static void test_func2_ipc(void *arg)
 {
     int callers_priority = *(int *)arg;
-    ets_delay_us(1000000 + xPortGetCoreID() * 100);
+    esp_rom_delay_us(1000000 + xPortGetCoreID() * 100);
     UBaseType_t priority = uxTaskPriorityGet(NULL);
-    ets_printf("test_func2_ipc: [callers_priority = %d, priority = %d, cpu = %d]\n", callers_priority, priority, xPortGetCoreID());
+    esp_rom_printf("test_func2_ipc: [callers_priority = %d, priority = %d, cpu = %d]\n", callers_priority, priority, xPortGetCoreID());
 }
 
 static void task(void *sema)

@@ -21,6 +21,7 @@
 
 #include "ccomp_timer.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 #define FUNC_SPI    1
 
@@ -444,7 +445,7 @@ void test_three_byte_read_write(esp_flash_t *chip)
     const int seed = 700;
     ESP_LOGI(TAG, "Testing chip %p...", chip);
     uint32_t offs = erase_test_region(chip, 2);
-    ets_printf("offs:%X\n", offs);
+    esp_rom_printf("offs:%X\n", offs);
 
     srand(seed);
     for (uint32_t v = 0; v < 86; v++) {

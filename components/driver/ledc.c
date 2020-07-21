@@ -23,6 +23,7 @@
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char* LEDC_TAG = "ledc";
 
@@ -97,7 +98,7 @@ static bool ledc_slow_clk_calibrate(void)
     //Enable CLK8M for LEDC
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
     //Waiting for CLK8M to turn on
-    ets_delay_us(DELAY_CLK8M_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_CLK8M_CLK_SWITCH);
     uint32_t cal_val = rtc_clk_cal(RTC_CAL_8MD256, SLOW_CLK_CYC_CALIBRATE);
     if(cal_val == 0) {
         ESP_LOGE(LEDC_TAG, "CLK8M_CLK calibration failed");

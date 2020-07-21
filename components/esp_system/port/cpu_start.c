@@ -26,6 +26,7 @@
 
 #include "esp_clk_internal.h"
 #include "esp_rom_efuse.h"
+#include "esp_rom_sys.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -33,12 +34,10 @@
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/spiram.h"
-#include "esp32/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/brownout.h"
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/spiram.h"
 #include "soc/periph_defs.h"
@@ -139,7 +138,7 @@ void IRAM_ATTR call_start_cpu1(void)
     s_cpu_inited[1] = true;
 
     while (!s_resume_cores) {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
     }
 
     SYS_STARTUP_FN();
@@ -175,7 +174,7 @@ static void start_other_core(void)
             for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
                 cpus_up &= s_cpu_up[i];
             }
-            ets_delay_us(100);
+            esp_rom_delay_us(100);
         }
     }
 }
@@ -408,7 +407,7 @@ void IRAM_ATTR call_start_cpu0(void)
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             cpus_inited &= s_cpu_inited[i];
         }
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
     }
 #endif
 

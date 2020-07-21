@@ -14,6 +14,7 @@
 #include "driver/rtc_io.h"
 #include "esp32/ulp.h"
 #include "soc/rtc_periph.h"
+#include "esp_rom_sys.h"
 
 #define MHZ     1000000
 
@@ -271,7 +272,7 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
         p_args->intervals[p_args->cur_interval++] = ms_diff;
         // Deliberately make timer handler run longer.
         // We check that this doesn't affect the result.
-        ets_delay_us(10*1000);
+        esp_rom_delay_us(10*1000);
         if (p_args->cur_interval == NUM_INTERVALS) {
             printf("done\n");
             TEST_ESP_OK(esp_timer_stop(p_args->timer));

@@ -18,6 +18,7 @@
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
@@ -101,7 +102,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 {
     void timer_func(void* arg)
     {
-        ets_delay_us(50);
+        esp_rom_delay_us(50);
     }
 
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);

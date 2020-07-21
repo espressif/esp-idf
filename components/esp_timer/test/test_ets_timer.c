@@ -8,7 +8,7 @@
 #include "freertos/semphr.h"
 #include "esp_spi_flash.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"  // for ETSTimer type
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #endif
@@ -69,7 +69,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
         p_args->intervals[p_args->cur_interval++] = ms_diff;
         // Deliberately make timer handler run longer.
         // We check that this doesn't affect the result.
-        ets_delay_us(10*1000);
+        esp_rom_delay_us(10*1000);
         if (p_args->cur_interval == NUM_INTERVALS) {
             printf("done\n");
             ets_timer_disarm(p_args->timer);

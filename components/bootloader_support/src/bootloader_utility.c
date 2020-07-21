@@ -19,15 +19,14 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
@@ -766,7 +765,7 @@ void bootloader_reset(void)
 {
 #ifdef BOOTLOADER_BUILD
     bootloader_atexit();
-    ets_delay_us(1000); /* Allow last byte to leave FIFO */
+    esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
     REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
     while (1) { }       /* This line will never be reached, used to keep gcc happy */
 #else

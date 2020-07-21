@@ -36,6 +36,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/apb_ctrl_reg.h"
 #include "driver/rtc_io.h"
+#include "esp_rom_sys.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32) // This testcase for ESP32S2
 
@@ -630,7 +631,7 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
                     if (BIT(i) & ch_mask) {
                         if (evt.pad_num == i) {
                             if (count == evt.slp_proxi_cnt) {
-                                ets_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
+                                esp_rom_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
                             }
                         }
                     }
@@ -672,7 +673,7 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
                     if (BIT(i) & ch_mask) {
                         if (evt.pad_num == i) {
                             if (count == evt.slp_proxi_cnt) {
-                                ets_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
+                                esp_rom_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
                             }
                         }
                     }
@@ -749,7 +750,7 @@ static esp_err_t test_touch_check_ch_intr_timeout(touch_pad_t pad_num)
                     touch_pad_timeout_resume();
                     break;
                 } else {
-                    ets_printf("-timeout %x T[%d] status %d, evt_msk %x -\n",
+                    esp_rom_printf("-timeout %x T[%d] status %d, evt_msk %x -\n",
                                s_touch_timeout_mask, evt.pad_num, evt.pad_status, evt.intr_mask);
                     touch_pad_timeout_resume();
                 }
@@ -775,7 +776,7 @@ static void test_touch_intr_cb(void *arg)
     evt.pad_num = touch_pad_get_current_meas_channel();
 
     if (!evt.intr_mask) {
-        ets_printf(".");
+        esp_rom_printf(".");
         return;
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
@@ -786,11 +787,10 @@ static void test_touch_intr_cb(void *arg)
         touch_pad_sleep_channel_read_proximity_cnt(slp_config.touch_num, &cnt);
         evt.slp_proxi_cnt = cnt;
         evt.slp_proxi_base = touch_value;
-        // ets_printf("[intr] base(%d) cnt(%d)\n", touch_value, cnt);
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         s_touch_timeout_mask |= (BIT(evt.pad_num));
-        ets_printf("-%dtout-", SENS.sar_touch_status0.touch_scan_curr);
+        esp_rom_printf("-%dtout-", SENS.sar_touch_status0.touch_scan_curr);
     }
 
     xQueueSendFromISR(que_touch, &evt, &task_awoken);

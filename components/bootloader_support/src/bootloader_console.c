@@ -21,21 +21,19 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
 #include "hal/clk_gate_ll.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 
 #ifdef CONFIG_ESP_CONSOLE_UART_NONE
 void bootloader_console_init(void)
 {
-    ets_install_putc1(NULL);
-    ets_install_putc2(NULL);
+    esp_rom_install_channel_putc(1, NULL);
+    esp_rom_install_channel_putc(2, NULL);
 }
 #endif // CONFIG_ESP_CONSOLE_UART_NONE
 
@@ -44,7 +42,7 @@ void bootloader_console_init(void)
 {
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
-    ets_install_uart_printf();
+    esp_rom_install_channel_putc(1, esp_rom_uart_putc);
 
     // Wait for UART FIFO to be empty.
     esp_rom_uart_tx_wait_idle(0);
@@ -53,8 +51,7 @@ void bootloader_console_init(void)
     // Some constants to make the following code less upper-case
     const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
-    // Switch to the new UART (this just changes UART number used for
-    // ets_printf in ROM code).
+    // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
     esp_rom_uart_set_as_console(uart_num);
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
@@ -96,6 +93,6 @@ void bootloader_console_init(void)
 
     esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
     esp_rom_uart_set_as_console(ESP_ROM_UART_USB);
-    ets_install_putc1(bootloader_console_write_char_usb);
+    esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC

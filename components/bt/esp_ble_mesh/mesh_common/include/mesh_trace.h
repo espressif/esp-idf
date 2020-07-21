@@ -11,6 +11,7 @@
 
 #include "esp_log.h"
 #include "mesh_util.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +66,7 @@ extern "C" {
 #define BLE_MESH_PRINT_D(tag, format, ...)   {esp_log_write(ESP_LOG_DEBUG,   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #define BLE_MESH_PRINT_V(tag, format, ...)   {esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 
-#define printk          ets_printf
+#define printk          esp_rom_printf
 
 #define _STRINGIFY(x)   #x
 #define STRINGIFY(s)    _STRINGIFY(s)

@@ -14,6 +14,7 @@
 #include "freertos/queue.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 
@@ -65,7 +66,7 @@ static gpio_config_t init_io(gpio_num_t num)
 static void gpio_isr_edge_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    ets_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
     edge_intr_times++;
 }
 
@@ -74,7 +75,7 @@ static void gpio_isr_level_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     disable_intr_times++;
-    ets_printf("GPIO[%d] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
     gpio_intr_disable(gpio_num);
 }
 
@@ -83,14 +84,14 @@ static void gpio_isr_level_handler2(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     level_intr_times++;
-    ets_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
     if(gpio_get_level(gpio_num)) {
         gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
     }else{
         gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
     }
-    ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
-    ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
 #endif
 
@@ -705,7 +706,7 @@ typedef struct {
 static void gpio_isr_handler(void* arg)
 {
     gpio_isr_param_t *param = (gpio_isr_param_t *)arg;
-    ets_printf("GPIO[%d] intr, val: %d\n", param->gpio_num, gpio_get_level(param->gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", param->gpio_num, gpio_get_level(param->gpio_num));
     param->isr_cnt++;
 }
 

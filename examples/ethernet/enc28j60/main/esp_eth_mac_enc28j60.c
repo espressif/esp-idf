@@ -21,6 +21,7 @@
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -300,7 +301,7 @@ static esp_err_t enc28j60_do_reset(emac_enc28j60_t *emac)
     }
 
     // After reset, wait at least 1ms for the device to be ready
-    ets_delay_us(ENC28J60_SYSTEM_RESET_ADDITION_TIME_US);
+    esp_rom_delay_us(ENC28J60_SYSTEM_RESET_ADDITION_TIME_US);
 
     return ret;
 }
@@ -392,7 +393,7 @@ static esp_err_t emac_enc28j60_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_ad
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(enc28j60_register_read(emac, ENC28J60_MISTAT, &mii_status) == ESP_OK,
                   "read MISTAT failed", out, ESP_FAIL);
         to += 100;
@@ -431,7 +432,7 @@ static esp_err_t emac_enc28j60_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_add
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(enc28j60_register_read(emac, ENC28J60_MISTAT, &mii_status) == ESP_OK,
                   "read MISTAT failed", out, ESP_FAIL);
         to += 100;

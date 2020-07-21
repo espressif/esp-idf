@@ -27,6 +27,7 @@
  */
 
 #include "device_controller_driver.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "TUSB:DCD";
 static intr_handle_t usb_ih;
@@ -155,9 +156,9 @@ void dcd_init(uint8_t rhport)
     //C. chip 7.2.2 hack
     ESP_LOGV(TAG, "DCD init - chip ESP32-S2 beta hack");
     USB0.gotgctl = (0 << USB_BVALIDOVVAL_S); //B override value
-    ets_delay_us(20);
+    esp_rom_delay_us(20);
     USB0.gotgctl = (0 << USB_BVALIDOVVAL_S) | (1 << USB_BVALIDOVEN_S); //B override value & enable
-    ets_delay_us(20);
+    esp_rom_delay_us(20);
 #endif
 
     // C. Setting SNAKs, then connect
@@ -180,7 +181,7 @@ void dcd_init(uint8_t rhport)
                    USB_ENUMDONEMSK_M |
                    USB_RESETDETMSK_M |
                    USB_DISCONNINTMSK_M;
-    ets_delay_us(100);
+    esp_rom_delay_us(100);
 }
 
 void dcd_set_address(uint8_t rhport, uint8_t dev_addr)

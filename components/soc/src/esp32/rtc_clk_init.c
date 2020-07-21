@@ -16,7 +16,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "esp_rom_uart.h"
 #include "soc/rtc.h"

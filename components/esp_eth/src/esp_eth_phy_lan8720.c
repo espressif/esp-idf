@@ -21,6 +21,7 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "lan8720";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -267,7 +268,7 @@ static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(lan8720->reset_gpio_num);
         gpio_set_direction(lan8720->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan8720->reset_gpio_num, 0);
-        ets_delay_us(100); // insert min input assert time
+        esp_rom_delay_us(100); // insert min input assert time
         gpio_set_level(lan8720->reset_gpio_num, 1);
     }
     return ESP_OK;

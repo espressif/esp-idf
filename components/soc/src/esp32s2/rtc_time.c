@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
@@ -92,7 +92,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
     /* Wait for calibration to finish up to another us_time_estimate */
-    ets_delay_us(us_time_estimate);
+    esp_rom_delay_us(us_time_estimate);
     uint32_t cal_val;
     while (true) {
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
@@ -151,7 +151,7 @@ uint64_t rtc_time_get(void)
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
 #if 0 // ToDo: Re-enable it in the future
     while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
-        ets_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
+        esp_rom_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
     }
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_TIME_VALID_INT_CLR);
 #endif
@@ -181,7 +181,7 @@ void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any mor
 {
     SET_PERI_REG_MASK(RTC_CNTL_SLOW_CLK_CONF_REG, RTC_CNTL_SLOW_CLK_NEXT_EDGE);
     while (GET_PERI_REG_MASK(RTC_CNTL_SLOW_CLK_CONF_REG, RTC_CNTL_SLOW_CLK_NEXT_EDGE)) {
-        ets_delay_us(1);
+        esp_rom_delay_us(1);
     }
 }
 

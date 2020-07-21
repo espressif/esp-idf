@@ -46,6 +46,8 @@
 #include "esp_ipc.h"
 #endif
 
+#include "esp_rom_sys.h"
+
 #if CONFIG_BT_ENABLED
 
 /* Macro definition
@@ -1433,7 +1435,7 @@ esp_err_t esp_bt_controller_disable(void)
             btdm_wakeup_request(false);
         }
         while (!btdm_power_state_active()) {
-            ets_delay_us(1000);
+            esp_rom_delay_us(1000);
         }
     }
 

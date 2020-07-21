@@ -28,8 +28,8 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 
+#include "esp_rom_sys.h"
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"
 
@@ -279,7 +279,7 @@ static void bootloader_check_wdt_reset(void)
 void abort(void)
 {
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-    ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
+    esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
     if (esp_cpu_in_ocd_debug_mode()) {
         __asm__("break 0,0");

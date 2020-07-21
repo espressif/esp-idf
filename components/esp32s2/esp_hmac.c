@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "esp32s2/rom/hmac.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp_hmac.h"
 #include "esp_crypto_lock.h"
 
@@ -38,7 +37,7 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
     esp_crypto_dma_lock_release();
 
-    if (hmac_ret != ETS_OK) {
+    if (hmac_ret != 0) {
         return ESP_FAIL;
     } else {
         return ESP_OK;

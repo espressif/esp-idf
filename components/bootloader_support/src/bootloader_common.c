@@ -21,10 +21,10 @@
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/ets_sys.h"
 #endif
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
@@ -259,7 +259,7 @@ void bootloader_common_vddsdio_configure(void)
         cfg.drefl = 3;
         cfg.force = 1;
         rtc_vddsdio_set_config(cfg);
-        ets_delay_us(10); // wait for regulator to become stable
+        esp_rom_delay_us(10); // wait for regulator to become stable
     }
 #endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
 }

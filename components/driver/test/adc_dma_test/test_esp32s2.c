@@ -35,6 +35,7 @@
 #include "soc/spi_reg.h"
 #include "soc/adc_periph.h"
 #include "test/test_common_adc.h"
+#include "esp_rom_sys.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32) // This testcase for ESP32S2
 
@@ -219,7 +220,7 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
     int unit_old = 1;
     int ch_cnt = 0;
     for (int cnt = 0; cnt < 2; cnt++) {
-        ets_printf("\n[%s] link_buf[%d]: \n", __func__, cnt % 2);
+        esp_rom_printf("\n[%s] link_buf[%d]: \n", __func__, cnt % 2);
         for (int i = 0; i < SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM); i += 2) {
             uint8_t h = link_buf[cnt % 2][i + 1], l = link_buf[cnt % 2][i];
             uint16_t temp = (h << 8 | l);
@@ -228,9 +229,9 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
             if (adc > ADC_UNIT_2) {  //ADC_ENCODE_11BIT
 #if DEBUG_PRINT_ENABLE
                 if (i % 16 == 0) {
-                    ets_printf("\n");
+                    esp_rom_printf("\n");
                 }
-                ets_printf("[%d_%d_%04x] ", data->type2.unit, data->type2.channel, data->type2.data);
+                esp_rom_printf("[%d_%d_%04x] ", data->type2.unit, data->type2.channel, data->type2.data);
 #endif
 #if DEBUG_CHECK_ENABLE
                 if (ideal_level >= 0) {
@@ -256,9 +257,9 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
             } else {        //ADC_ENCODE_12BIT
 #if DEBUG_PRINT_ENABLE
                 if (i % 16 == 0) {
-                    ets_printf("\n");
+                    esp_rom_printf("\n");
                 }
-                ets_printf("[%d_%04x] ", data->type1.channel, data->type1.data);
+                esp_rom_printf("[%d_%04x] ", data->type1.channel, data->type1.data);
 #endif
 #if DEBUG_CHECK_ENABLE
                 if (ideal_level >= 0) {
@@ -279,7 +280,7 @@ static esp_err_t adc_dma_data_check(adc_unit_t adc, int ideal_level)
             link_buf[cnt % 2][i] = 0;
             link_buf[cnt % 2][i + 1] = 0;
         }
-        ets_printf("\n");
+        esp_rom_printf("\n");
     }
     return ESP_OK;
 }
@@ -580,9 +581,9 @@ static void scope_output(int adc_num, int channel, int data)
 #if SCOPE_OUTPUT_UART
     static int icnt = 0;
     if (icnt++ % 8 == 0) {
-        ets_printf("\n");
+        esp_rom_printf("\n");
     }
-    ets_printf("[%d_%d_%04x] ", adc_num, channel, data);
+    esp_rom_printf("[%d_%d_%04x] ", adc_num, channel, data);
     return;
 #endif
 #if SCOPE_DEBUG_TYPE == 0
@@ -632,7 +633,7 @@ TEST_CASE("test_adc_digi_slope_debug", "[adc_dma][ignore]")
             dma_linker_restart();
             adc_digi_reset();
             for (int cnt = 0; cnt < 2; cnt++) {
-                ets_printf("cnt%d\n", cnt);
+                esp_rom_printf("cnt%d\n", cnt);
                 for (int i = 0; i < SAR_DMA_DATA_SIZE((adc > 2) ? 2 : 1, SAR_SIMPLE_NUM); i += 2) {
                     uint8_t h = link_buf[cnt % 2][i + 1], l = link_buf[cnt % 2][i];
                     uint16_t temp = (h << 8 | l);

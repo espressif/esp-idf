@@ -93,7 +93,7 @@ There are several limitations to the USB console feature. These may or may not b
 
 4. USB CDC driver reserves some amount of RAM and increases application code size. Keep this in mind if trying to optimize application memory usage.
 
-5. By default, the low-level ``ets_printf`` feature and ``ESP_EARLY_LOG`` are disabled when USB CDC is used. These can be enabled using :ref:`CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF` option. With this option enabled, ``ets_printf`` can be used, at the expense of increased IRAM usage. Keep in mind that the cost of ``ets_printf`` and ``ESP_EARLY_LOG`` over USB CDC is significantly higher than over UART. This makes these logging mechanisms much less suitable for "printf debugging", especially in the interrupt handlers.
+5. By default, the low-level ``esp_rom_printf`` feature and ``ESP_EARLY_LOG`` are disabled when USB CDC is used. These can be enabled using :ref:`CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF` option. With this option enabled, ``esp_rom_printf`` can be used, at the expense of increased IRAM usage. Keep in mind that the cost of ``esp_rom_printf`` and ``ESP_EARLY_LOG`` over USB CDC is significantly higher than over UART. This makes these logging mechanisms much less suitable for "printf debugging", especially in the interrupt handlers.
 
 6. If you are developing an application which uses the USB peripheral with the TinyUSB stack, this USB Console feature can not be used. This is mainly due to the following reasons:
 

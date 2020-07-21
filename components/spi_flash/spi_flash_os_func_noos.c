@@ -17,11 +17,10 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
 #include "esp32/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/cache.h"
 #endif
 
@@ -67,7 +66,7 @@ static IRAM_ATTR esp_err_t end(void *arg)
 
 static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
 {
-    ets_delay_us(us);
+    esp_rom_delay_us(us);
     return ESP_OK;
 }
 

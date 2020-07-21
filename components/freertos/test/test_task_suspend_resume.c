@@ -19,6 +19,7 @@
 #endif
 #include "esp_freertos_hooks.h"
 
+#include "esp_rom_sys.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define int_clr_timers int_clr
@@ -195,7 +196,7 @@ static void IRAM_ATTR suspend_scheduler_while_block_set(void* arg)
     vTaskSuspendAll();
 
     while (block) { };
-    ets_delay_us(1);
+    esp_rom_delay_us(1);
     xTaskResumeAll();
 }
 
@@ -236,12 +237,12 @@ static void waiting_task(void *pvParameters)
 static void control_task(void *pvParameters)
 {
     int cpu_id = xPortGetCoreID();
-    ets_delay_us(2000); // let to start the waiting_task first
+    esp_rom_delay_us(2000); // let to start the waiting_task first
     printf("Start control_task cpu=%d\n", cpu_id);
     int64_t start_time = esp_timer_get_time();
 
     suspend_scheduler_on_both_cpus();
-    ets_delay_us(waiting_ms * 1000 + delta_ms * 1000);
+    esp_rom_delay_us(waiting_ms * 1000 + delta_ms * 1000);
     resume_scheduler_on_both_cpus();
 
     duration_ctrl_task_ms = (esp_timer_get_time() - start_time) / 1000;

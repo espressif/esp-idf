@@ -27,20 +27,21 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 #include "ulp_private.h"
+#include "esp_rom_sys.h"
 
 esp_err_t ulp_riscv_run(void)
 {
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
-    ets_delay_us(20);
+    esp_rom_delay_us(20);
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
     /* Disable ULP timer */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     /* wait for at least 1 RTC_SLOW_CLK cycle */
-    ets_delay_us(20);
+    esp_rom_delay_us(20);
     /* Select RISC-V as the ULP_TIMER trigger target. */
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);
     /* Select ULP_TIMER sleep trigger source. 1: REG_COCPU_DONE; 0: ULP END.*/

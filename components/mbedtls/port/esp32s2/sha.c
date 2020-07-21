@@ -33,7 +33,6 @@
 #include "esp_crypto_lock.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/lldesc.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "soc/crypto_dma_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"

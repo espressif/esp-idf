@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "unity.h"
-#include "esp32/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 
@@ -12,9 +12,9 @@ TEST_CASE("can control TSENS using registers", "[rtc][ignore]")
     CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_DUMP_OUT);
     SET_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP_FORCE);
     SET_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP);
-    ets_delay_us(100);
+    esp_rom_delay_us(100);
     SET_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_DUMP_OUT);
-    ets_delay_us(5);
+    esp_rom_delay_us(5);
     int res = GET_PERI_REG_BITS2(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT, SENS_TSENS_OUT_S);
     printf("res=%d\n", res);
 }
