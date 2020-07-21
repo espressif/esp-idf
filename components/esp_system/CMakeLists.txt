@@ -17,3 +17,9 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app")
 if (NOT CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app_other_cores")
 endif()
+
+# Disable stack protection in files which are involved in initialization of that feature
+set_source_files_properties(
+    startup.c
+    PROPERTIES COMPILE_FLAGS
+    -fno-stack-protector)

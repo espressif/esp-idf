@@ -70,10 +70,4 @@ else()
 
     add_custom_target(esp32s2_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32s2_out.ld)
     add_dependencies(${COMPONENT_LIB} esp32s2_linker_script)
-
-    # disable stack protection in files which are involved in initialization of that feature
-    set_source_files_properties(
-        cpu_start.c
-        PROPERTIES COMPILE_FLAGS
-        -fno-stack-protector)
 endif()
