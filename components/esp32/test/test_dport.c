@@ -12,8 +12,9 @@
 #include "soc/cpu.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "esp32/rom/uart.h"
-#include "soc/uart_periph.h"
+#include "esp_rom_uart.h"
+#include "hal/uart_types.h"
+#include "hal/uart_ll.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "esp_intr_alloc.h"
@@ -127,9 +128,9 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
         bool res = rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &new_config);
         assert(res && "invalid frequency value");
 
-        uart_tx_wait_idle(uart_num);
+        esp_rom_uart_tx_wait_idle(uart_num);
         rtc_clk_cpu_freq_set_config(&new_config);
-        uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+        uart_ll_set_baudrate(UART_LL_GET_HW(uart_num), UART_SCLK_APB, uart_baud);
         /* adjust RTOS ticks */
         _xt_tick_divisor = cpu_freq_mhz * 1000000 / XT_TICK_PER_SEC;
         vTaskDelay(2);
@@ -139,9 +140,9 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000);
 
     // return old freq.
-    uart_tx_wait_idle(uart_num);
+    esp_rom_uart_tx_wait_idle(uart_num);
     rtc_clk_cpu_freq_set_config(&old_config);
-    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+    uart_ll_set_baudrate(UART_LL_GET_HW(uart_num), UART_SCLK_APB, uart_baud);
     _xt_tick_divisor = old_config.freq_mhz * 1000000 / XT_TICK_PER_SEC;
 }
 

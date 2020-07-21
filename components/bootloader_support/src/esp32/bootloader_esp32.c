@@ -40,7 +40,6 @@
 #include "esp_rom_efuse.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
 
 static const char *TAG = "boot.esp32";
 

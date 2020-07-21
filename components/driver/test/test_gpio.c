@@ -13,12 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "sdkconfig.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
-#endif
+#include "esp_rom_uart.h"
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 
@@ -130,10 +125,10 @@ static void prompt_to_continue(const char* str)
     char sign[5] = {0};
     while(strlen(sign) == 0) {
         /* Flush anything already in the RX buffer */
-        while(uart_rx_one_char((uint8_t *) sign) == OK) {
+        while(esp_rom_uart_rx_one_char((uint8_t *) sign) == ETS_OK) {
         }
         /* Read line */
-        UartRxString((uint8_t*) sign, sizeof(sign) - 1);
+        esp_rom_uart_rx_string((uint8_t*) sign, sizeof(sign) - 1);
     }
 }
 

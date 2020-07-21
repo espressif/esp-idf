@@ -22,6 +22,8 @@
 #include "esp_log.h"
 #include "esp_system.h"
 
+#include "esp_rom_uart.h"
+
 #include "esp_clk_internal.h"
 #include "esp_rom_efuse.h"
 #include "sdkconfig.h"
@@ -30,7 +32,6 @@
 #include "esp32/cache_err_int.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
 #include "esp32/spiram.h"
 #include "esp32/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -40,7 +41,6 @@
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/spiram.h"
-#include "esp32s2/rom/uart.h"
 #include "soc/periph_defs.h"
 #include "esp32s2/dport_access.h"
 #include "esp32s2/memprot.h"
@@ -116,9 +116,8 @@ void IRAM_ATTR call_start_cpu1(void)
     ets_install_putc1(NULL);
     ets_install_putc2(NULL);
 #else // CONFIG_ESP_CONSOLE_UART_NONE
-    uartAttach();
     ets_install_uart_printf();
-    uart_tx_switch(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
     DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
@@ -171,7 +170,7 @@ static void start_other_core(void)
 
         volatile bool cpus_up = false;
 
-        while (!cpus_up){
+        while (!cpus_up) {
             cpus_up = true;
             for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
                 cpus_up &= s_cpu_up[i];
@@ -218,9 +217,9 @@ void IRAM_ATTR call_start_cpu0(void)
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
+            || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
-    ) {
+       ) {
         wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);
@@ -339,11 +338,11 @@ void IRAM_ATTR call_start_cpu0(void)
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
 #if CONFIG_IDF_TARGET_ESP32
-    #if CONFIG_ESP32_TRAX_TWOBANKS
-        trax_enable(TRAX_ENA_PRO_APP);
-    #else
-        trax_enable(TRAX_ENA_PRO);
-    #endif
+#if CONFIG_ESP32_TRAX_TWOBANKS
+    trax_enable(TRAX_ENA_PRO_APP);
+#else
+    trax_enable(TRAX_ENA_PRO);
+#endif
 #elif CONFIG_IDF_TARGET_ESP32S2
     trax_enable(TRAX_ENA_PRO);
 #endif
@@ -355,8 +354,7 @@ void IRAM_ATTR call_start_cpu0(void)
     intr_matrix_clear();
 
 #ifdef CONFIG_ESP_CONSOLE_UART
-    const int uart_clk_freq = APB_CLK_FREQ;
-    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, APB_CLK_FREQ, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
     rtcio_hal_unhold_all();
@@ -389,7 +387,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
-    memcpy(&fhdr, (void*) SOC_DROM_LOW, sizeof(fhdr));
+    memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
     // If psram is uninitialized, we need to improve some flash configuration.

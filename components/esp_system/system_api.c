@@ -7,10 +7,8 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "panic_internal.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
+#include "esp_rom_uart.h"
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
 #endif
 
@@ -46,7 +44,7 @@ void IRAM_ATTR esp_restart_noos_dig(void)
 {
     // make sure all the panic handler output is sent from UART FIFO
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
     // switch to XTAL (otherwise we will keep running from the PLL)

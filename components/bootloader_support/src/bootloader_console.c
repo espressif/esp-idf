@@ -23,14 +23,13 @@
 #include "hal/clk_gate_ll.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
 #include "esp_rom_gpio.h"
+#include "esp_rom_uart.h"
 
 #ifdef CONFIG_ESP_CONSOLE_UART_NONE
 void bootloader_console_init(void)
@@ -48,7 +47,7 @@ void bootloader_console_init(void)
     ets_install_uart_printf();
 
     // Wait for UART FIFO to be empty.
-    uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(0);
 
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
@@ -56,7 +55,7 @@ void bootloader_console_init(void)
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
     // Switch to the new UART (this just changes UART number used for
     // ets_printf in ROM code).
-    uart_tx_switch(uart_num);
+    esp_rom_uart_set_as_console(uart_num);
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 ||
@@ -78,14 +77,13 @@ void bootloader_console_init(void)
 #endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 
     // Set configured UART console baud rate
-    const int uart_baud = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
-    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+    esp_rom_uart_set_clock_baudrate(uart_num, rtc_clk_apb_freq_get(), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 }
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
 /* Buffer for CDC data structures. No RX buffer allocated. */
-static char s_usb_cdc_buf[CDC_ACM_WORK_BUF_MIN];
+static char s_usb_cdc_buf[ESP_ROM_CDC_ACM_WORK_BUF_MIN];
 
 void bootloader_console_init(void)
 {
@@ -96,8 +94,8 @@ void bootloader_console_init(void)
     rom_usb_cdc_set_descriptor_patch();
 #endif
 
-    Uart_Init_USB(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
-    uart_tx_switch(ROM_UART_USB);
+    esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
+    esp_rom_uart_set_as_console(ESP_ROM_UART_USB);
     ets_install_putc1(bootloader_console_write_char_usb);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC

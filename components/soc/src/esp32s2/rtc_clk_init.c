@@ -16,9 +16,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
@@ -58,7 +57,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 

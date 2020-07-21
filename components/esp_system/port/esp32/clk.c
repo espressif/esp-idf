@@ -27,8 +27,8 @@
 #include "esp_log.h"
 
 #include "esp32/clk.h"
-#include "esp32/rom/uart.h"
 #include "esp32/rom/rtc.h"
+#include "esp_rom_uart.h"
 
 #include "sdkconfig.h"
 
@@ -188,7 +188,7 @@ void esp_clk_init(void)
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
     rtc_clk_cpu_freq_set_config(&new_config);

@@ -26,6 +26,8 @@
 
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
+#include "hal/uart_types.h"
+#include "hal/uart_ll.h"
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -56,12 +58,10 @@
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp32/spiram.h"
 #include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/spiram.h"
 #include "esp32s2/brownout.h"
@@ -355,10 +355,8 @@ void IRAM_ATTR start_cpu0_default(void)
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
 #if defined(CONFIG_PM_ENABLE) && defined(CONFIG_ESP_CONSOLE_UART)
-    const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
-    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
-    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_REF_TICK, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_ESP_CONSOLE_UART_NONE
 
 #ifdef CONFIG_PM_ENABLE

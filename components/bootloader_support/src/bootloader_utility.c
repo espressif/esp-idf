@@ -24,20 +24,19 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #else
 #error "Unsupported IDF_TARGET"
 #endif
+#include "esp_rom_uart.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -612,7 +611,7 @@ static void load_image(const esp_image_metadata_t *image_data)
            so issue a system reset to ensure flash encryption
            cache resets properly */
         ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
-        uart_tx_wait_idle(0);
+        esp_rom_uart_tx_wait_idle(0);
         bootloader_reset();
     }
 #endif
