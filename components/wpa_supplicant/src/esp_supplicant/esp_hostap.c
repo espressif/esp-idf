@@ -88,7 +88,7 @@ void *hostap_init(void)
     esp_wifi_get_macaddr_internal(WIFI_IF_AP, mac);
 
     hapd->wpa_auth = wpa_init(mac, auth_conf, NULL);
-    esp_wifi_set_appie_internal(WIFI_APPIE_WPA, hapd->wpa_auth->wpa_ie, (uint16_t)hapd->wpa_auth->wpa_ie_len, 0); //michael ML
+    esp_wifi_set_appie_internal(WIFI_APPIE_WPA, hapd->wpa_auth->wpa_ie, (uint16_t)hapd->wpa_auth->wpa_ie_len, 0);
     os_free(auth_conf);
 
     return (void *)hapd;
@@ -129,6 +129,8 @@ bool hostap_deinit(void *data)
     if (hapd != NULL) {
         os_free(hapd);
     }
+
+    esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
 
     return true;
 }
