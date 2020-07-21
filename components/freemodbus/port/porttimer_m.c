@@ -62,7 +62,6 @@ static const USHORT usTimerGroupIndex = MB_TIMER_GROUP; // Timer group index use
 static timer_isr_handle_t xTimerIntHandle;              // Timer interrupt handle
 
 /* ----------------------- static functions ---------------------------------*/
-
 static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     assert((int)param == usTimerIndex);

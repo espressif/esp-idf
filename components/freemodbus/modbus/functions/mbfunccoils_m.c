@@ -71,7 +71,7 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
-#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
+#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED || MB_MASTER_TCP_ENABLED
 
 #if MB_FUNC_READ_COILS_ENABLED
 

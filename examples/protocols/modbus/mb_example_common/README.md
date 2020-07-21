@@ -5,3 +5,6 @@ For more information please refer to Modbus example README.md files located in t
 
 * `examples/protocols/modbus/serial/mb_master` Modbus serial master implementation (RTU and ASCII)
 * `examples/protocols/modbus/serial/mb_slave` Modbus serial slave implementation (RTU and ASCII)
+* `examples/protocols/modbus/serial/mb_master` Modbus serial master implementation (RTU and ASCII)
+* `examples/protocols/modbus/tcp/mb_tcp_slave` Modbus serial slave implementation (TCP)
+* `examples/protocols/modbus/tcp/mb_tcp_master` Modbus serial master implementation (TCP)

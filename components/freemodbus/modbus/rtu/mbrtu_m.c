@@ -344,7 +344,8 @@ xMBMasterRTUTransmitFSM( void )
     return xNeedPoll;
 }
 
-BOOL MB_PORT_ISR_ATTR xMBMasterRTUTimerExpired(void)
+BOOL MB_PORT_ISR_ATTR
+xMBMasterRTUTimerExpired(void)
 {
     BOOL xNeedPoll = FALSE;
 

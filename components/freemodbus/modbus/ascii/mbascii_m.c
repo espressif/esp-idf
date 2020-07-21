@@ -47,7 +47,6 @@
 #if MB_MASTER_ASCII_ENABLED > 0
 
 /* ----------------------- Defines ------------------------------------------*/
-#define MB_TIMER_TICS_PER_MS    20UL
 
 /* ----------------------- Type definitions ---------------------------------*/
 typedef enum

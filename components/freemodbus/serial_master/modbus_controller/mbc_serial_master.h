@@ -32,7 +32,7 @@
  *     - ESP_OK   Success
  *     - ESP_ERR_NO_MEM Parameter error
  */
-esp_err_t mbc_serial_master_create(mb_port_type_t port_type, void** handler);
+esp_err_t mbc_serial_master_create(void** handler);
 
 #endif // _MODBUS_SERIAL_CONTROLLER_MASTER
 
