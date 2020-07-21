@@ -23,7 +23,6 @@
 
 #define EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT 0x00000001
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static const char* TAG = "test_wifi";
 static uint32_t wifi_event_handler_flag;
 
@@ -341,5 +340,3 @@ static void test_wifi_connection_softap(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_env=UT_T2_1][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
