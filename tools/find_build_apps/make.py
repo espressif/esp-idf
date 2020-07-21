@@ -48,6 +48,8 @@ class MakeBuildSystem(BuildSystem):
                     log_file.close()
                 raise BuildError("Build failed with exit code {}".format(e.returncode))
 
+        build_item.size_json_fp = build_item.get_size_json_fp()
+
     @staticmethod
     def is_app(path):
         makefile_path = os.path.join(path, "Makefile")

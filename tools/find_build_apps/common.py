@@ -1,14 +1,17 @@
 # coding=utf-8
+import fnmatch
+import json
+import logging
+import os
 import re
 import shutil
+import subprocess
 import sys
-import os
 from abc import abstractmethod
 from collections import namedtuple
-import logging
-import json
-import typing
 from io import open
+
+import typing
 
 DEFAULT_TARGET = "esp32"
 
@@ -17,6 +20,8 @@ WILDCARD_PLACEHOLDER = "@w"
 NAME_PLACEHOLDER = "@n"
 FULL_NAME_PLACEHOLDER = "@f"
 INDEX_PLACEHOLDER = "@i"
+
+IDF_SIZE_PY = os.path.join(os.environ["IDF_PATH"], "tools", "idf_size.py")
 
 SDKCONFIG_LINE_REGEX = re.compile(r"^([^=]+)=\"?([^\"\n]*)\"?\n*$")
 
@@ -55,6 +60,14 @@ def config_rules_from_str(rule_strings):  # type: (typing.List[str]) -> typing.L
     return rules
 
 
+def find_first_match(pattern, path):
+    for root, _, files in os.walk(path):
+        res = fnmatch.filter(files, pattern)
+        if res:
+            return os.path.join(root, res[0])
+    return None
+
+
 class BuildItem(object):
     """
     Instance of this class represents one build of an application.
@@ -88,12 +101,21 @@ class BuildItem(object):
         self.preserve = preserve_artifacts
 
         self._app_name = os.path.basename(os.path.normpath(app_path))
+        self.size_json_fp = None
 
         # Some miscellaneous build properties which are set later, at the build stage
         self.index = None
         self.verbose = False
         self.dry_run = False
         self.keep_going = False
+
+        self.work_path = self.work_dir or self.app_dir
+        if not self.build_dir:
+            self.build_path = os.path.join(self.work_path, "build")
+        elif os.path.isabs(self.build_dir):
+            self.build_path = self.build_dir
+        else:
+            self.build_path = os.path.normpath(os.path.join(self.work_path, self.build_dir))
 
     @property
     def app_dir(self):
@@ -208,6 +230,39 @@ class BuildItem(object):
         path = os.path.expandvars(path)
         return path
 
+    def get_size_json_fp(self):
+        if self.size_json_fp and os.path.exists(self.size_json_fp):
+            return self.size_json_fp
+
+        assert os.path.exists(self.build_path)
+        assert os.path.exists(self.work_path)
+
+        map_file = find_first_match('*.map', self.build_path)
+        if not map_file:
+            raise ValueError('.map file not found under "{}"'.format(self.build_path))
+
+        size_json_fp = os.path.join(self.build_path, 'size.json')
+        idf_size_args = [
+            sys.executable,
+            IDF_SIZE_PY,
+            '--json',
+            '-o', size_json_fp,
+            map_file
+        ]
+        subprocess.check_call(idf_size_args)
+        return size_json_fp
+
+    def write_size_info(self, size_info_fs):
+        if not self.size_json_fp or (not os.path.exists(self.size_json_fp)):
+            raise OSError('Run get_size_json_fp() for app {} after built binary'.format(self.app_dir))
+        size_info_dict = {
+            'app_name': self._app_name,
+            'config_name': self.config_name,
+            'target': self.target,
+            'path': self.size_json_fp,
+        }
+        size_info_fs.write(json.dumps(size_info_dict) + '\n')
+
 
 class BuildSystem(object):
     """
@@ -221,13 +276,8 @@ class BuildSystem(object):
     @classmethod
     def build_prepare(cls, build_item):
         app_path = build_item.app_dir
-        work_path = build_item.work_dir or app_path
-        if not build_item.build_dir:
-            build_path = os.path.join(work_path, "build")
-        elif os.path.isabs(build_item.build_dir):
-            build_path = build_item.build_dir
-        else:
-            build_path = os.path.join(work_path, build_item.build_dir)
+        work_path = build_item.work_path
+        build_path = build_item.build_path
 
         if work_path != app_path:
             if os.path.exists(work_path):

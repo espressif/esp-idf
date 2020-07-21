@@ -103,6 +103,8 @@ void app_main(void)
     //hook isr handler for specific gpio pin again
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 
+    printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
+
     int cnt = 0;
     while(1) {
         printf("cnt: %d\n", cnt++);

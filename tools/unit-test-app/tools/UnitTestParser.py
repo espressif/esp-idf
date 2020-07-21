@@ -1,10 +1,12 @@
 from __future__ import print_function
+
+import argparse
+
 import yaml
 import os
 import re
 import shutil
 import subprocess
-import sys
 
 from copy import deepcopy
 import CreateSectionTable
@@ -45,7 +47,6 @@ class Parser(object):
     CONFIG_DEPENDENCY_FILE = os.path.join("tools", "unit-test-app", "tools", "ConfigDependency.yml")
     MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
     TEST_CASE_FILE_DIR = os.path.join("components", "idf_test", "unit_test")
-    UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "output")
     UT_CONFIG_FOLDER = os.path.join("tools", "unit-test-app", "configs")
     ELF_FILE = "unit-test-app.elf"
     SDKCONFIG_FILE = "sdkconfig"
@@ -55,12 +56,15 @@ class Parser(object):
         "esp32s2": "xtensa-esp32s2-elf-",
     }
 
-    def __init__(self, idf_path=os.getenv("IDF_PATH"), idf_target=os.getenv("IDF_TARGET")):
+    def __init__(self, binary_folder):
+        idf_path = os.getenv('IDF_PATH')
+        idf_target = os.getenv('IDF_TARGET')
         self.test_env_tags = {}
         self.unit_jobs = {}
         self.file_name_cache = {}
         self.idf_path = idf_path
         self.idf_target = idf_target
+        self.ut_bin_folder = binary_folder
         self.objdump = Parser.TOOLCHAIN_FOR_TARGET.get(idf_target, "") + "objdump"
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"), Loader=Loader)
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"), Loader=Loader)
@@ -300,19 +304,19 @@ class Parser(object):
         """ parse test cases from multiple built unit test apps """
         test_cases = []
 
-        output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER, self.idf_target)
+        output_folder = os.path.join(self.idf_path, self.ut_bin_folder, self.idf_target)
         configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
         test_configs = os.listdir(output_folder)
         for config in test_configs:
-            config_output_folder = os.path.join(output_folder, config)
+            config_output_folder = os.path.join(output_folder, 'build', config)
             if os.path.exists(config_output_folder):
                 test_cases.extend(self.parse_test_cases_for_one_config(configs_folder, config_output_folder, config))
         test_cases.sort(key=lambda x: x["config"] + x["summary"])
         self.dump_test_cases(test_cases)
 
 
-def test_parser():
-    parser = Parser()
+def test_parser(binary_folder):
+    parser = Parser(binary_folder)
     # test parsing tags
     # parsing module only and module in module list
     prop = parser.parse_case_properities("[esp32]")
@@ -353,20 +357,12 @@ def test_parser():
     assert sorted(tags) == ['a', 'd', 'f']  # sorted is required for older Python3, e.g. 3.4.8
 
 
-def main():
-    test_parser()
+def main(binary_folder):
+    assert os.getenv('IDF_PATH'), 'IDF_PATH must be set to use this script'
+    assert os.getenv('IDF_TARGET'), 'IDF_TARGET must be set to use this script'
+    test_parser(binary_folder)
 
-    idf_path = os.getenv("IDF_PATH")
-    if not idf_path:
-        print("IDF_PATH must be set to use this script", file=sys.stderr)
-        raise SystemExit(1)
-
-    idf_target = os.getenv("IDF_TARGET")
-    if not idf_target:
-        print("IDF_TARGET must be set to use this script", file=sys.stderr)
-        raise SystemExit(1)
-
-    parser = Parser(idf_path, idf_target)
+    parser = Parser(binary_folder)
     parser.parse_test_cases()
     parser.copy_module_def_file()
     if len(parser.parsing_errors) > 0:
@@ -376,4 +372,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('bin_dir', help='Binary Folder')
+    args = parser.parse_args()
+    main(args.bin_dir)

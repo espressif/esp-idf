@@ -63,6 +63,7 @@ def local_test_check(decorator_target):
     if os.getenv('CI_JOB_ID'):  # Only auto-detect target when running locally
         return idf_target
 
+    decorator_target = upper_list_or_str(decorator_target)
     expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
     if os.path.exists(expected_json_path):
         sdkconfig = json.load(open(expected_json_path))
@@ -262,3 +263,22 @@ def check_performance(item, value, target):
         _check_perf(op, value)
         # if no exception was thrown then the performance is met and no need to continue
         break
+
+
+MINIMUM_FREE_HEAP_SIZE_RE = re.compile(r'Minimum free heap size: (\d+) bytes')
+
+
+def print_heap_size(app_name, config_name, target, minimum_free_heap_size):
+    """
+    Do not change the print output in case you really need to.
+    The result is parsed by ci-dashboard project
+    """
+    print('------ heap size info ------\n'
+          '[app_name] {}\n'
+          '[config_name] {}\n'
+          '[target] {}\n'
+          '[minimum_free_heap_size] {} Bytes\n'
+          '------ heap size end ------'.format(app_name,
+                                               '' if not config_name else config_name,
+                                               target,
+                                               minimum_free_heap_size))

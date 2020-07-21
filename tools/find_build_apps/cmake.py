@@ -1,14 +1,14 @@
-import os
-import sys
-import subprocess
 import logging
-import shutil
+import os
 import re
+import shutil
+import subprocess
+import sys
 
 from .common import BuildSystem, BuildItem, BuildError
 
 BUILD_SYSTEM_CMAKE = "cmake"
-IDF_PY = "idf.py"
+IDF_PY = os.path.join(os.environ["IDF_PATH"], "tools", "idf.py")
 
 # While ESP-IDF component CMakeLists files can be identified by the presence of 'idf_component_register' string,
 # there is no equivalent for the project CMakeLists files. This seems to be the best option...
@@ -30,8 +30,7 @@ class CMakeBuildSystem(BuildSystem):
         build_path, work_path, extra_cmakecache_items = cls.build_prepare(build_item)
         # Prepare the build arguments
         args = [
-            # Assume it is the responsibility of the caller to
-            # set up the environment (run . ./export.sh)
+            sys.executable,
             IDF_PY,
             "-B",
             build_path,
@@ -73,6 +72,7 @@ class CMakeBuildSystem(BuildSystem):
                 os.path.join(work_path, "sdkconfig"),
                 os.path.join(build_path, "sdkconfig"),
             )
+            build_item.size_json_fp = build_item.get_size_json_fp()
         finally:
             if log_file:
                 log_file.close()
