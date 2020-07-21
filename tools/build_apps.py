@@ -66,6 +66,11 @@ def main():
         help="If specified, the list of builds (with all the placeholders expanded) will be written to this file.",
     )
     parser.add_argument(
+        "--size-info",
+        type=argparse.FileType("a"),
+        help="If specified, the test case name and size info json will be written to this file"
+    )
+    parser.add_argument(
         "build_list",
         type=argparse.FileType("r"),
         nargs="?",
@@ -119,6 +124,8 @@ def main():
             else:
                 raise SystemExit(1)
         else:
+            if args.size_info:
+                build_info.write_size_info(args.size_info)
             if not build_info.preserve:
                 logging.info("Removing build directory {}".format(build_info.build_dir))
                 # we only remove binaries here, log files are still needed by check_build_warnings.py

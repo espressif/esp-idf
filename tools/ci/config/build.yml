@@ -6,6 +6,7 @@
   variables:
     BATCH_BUILD: "1"
     V: "0"
+    SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
 
 .build_ssc_template:
   extends: .build_template
@@ -45,8 +46,10 @@ build_ssc_esp32s2:
     paths:
       - tools/unit-test-app/output/${IDF_TARGET}
       - tools/unit-test-app/builds/${IDF_TARGET}/*.json
+      - tools/unit-test-app/builds/${IDF_TARGET}/*/size.json
       - components/idf_test/unit_test/*.yml
-      - ${LOG_PATH}
+      - $LOG_PATH
+      - $SIZE_INFO_LOCATION
     when: always
     expire_in: 4 days
   only:
@@ -58,16 +61,17 @@ build_ssc_esp32s2:
       - $BOT_LABEL_REGULAR_TEST
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
+    BUILD_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/builds
+    OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
+    BUILD_SYSTEM: "cmake"
+    TEST_TYPE: "unit_test"
   script:
     # RISC-V toolchain is optional but ULP may need it, so install:
     - $IDF_PATH/tools/idf_tools.py install riscv-none-embed-gcc
     - . $IDF_PATH/export.sh
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    - mkdir -p ${LOG_PATH}
-    - ${CI_PROJECT_DIR}/tools/ci/build_unit_test.sh
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
     - cd $CI_PROJECT_DIR/tools/unit-test-app
-    - python tools/UnitTestParser.py
+    - python tools/UnitTestParser.py ${BUILD_PATH}
 
 build_esp_idf_tests_cmake_esp32:
   extends: .build_esp_idf_tests_cmake
@@ -85,8 +89,6 @@ build_esp_idf_tests_cmake_esp32s2:
   artifacts:
     when: always
     expire_in: 4 days
-  variables:
-    SCAN_EXAMPLE_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}_${EXAMPLE_TEST_BUILD_SYSTEM}.json
   only:
     # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
     variables:
@@ -95,15 +97,16 @@ build_esp_idf_tests_cmake_esp32s2:
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
+  variables:
+    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
+    TEST_TYPE: "example_test"
   script:
-      # RISC-V toolchain is optional but ULP may need it, so install:
+    # RISC-V toolchain is optional but ULP may need it, so install:
     - $IDF_PATH/tools/idf_tools.py install riscv-none-embed-gcc
     - . $IDF_PATH/export.sh
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
-    - mkdir ${BUILD_PATH}
-    - mkdir -p ${LOG_PATH}
-    - ${IDF_PATH}/tools/ci/build_examples.sh
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
 build_examples_make:
   extends: .build_examples_template
@@ -113,10 +116,12 @@ build_examples_make:
   artifacts:
     paths:
       - $LOG_PATH
+      - build_examples/*/*/*/build/size.json
+      - $SIZE_INFO_LOCATION
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_examples_make"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples_make"
-    EXAMPLE_TEST_BUILD_SYSTEM: "make"
+    BUILD_SYSTEM: "make"
     IDF_TARGET: "esp32"  # currently we only support esp32
   only:
     refs:
@@ -138,6 +143,7 @@ build_examples_make:
       - build_examples/list.json
       - build_examples/list_job_*.json
       - build_examples/*/*/*/sdkconfig
+      - build_examples/*/*/*/build/size.json
       - build_examples/*/*/*/build/*.bin
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
@@ -145,10 +151,11 @@ build_examples_make:
       - build_examples/*/*/*/build/bootloader/*.bin
       - build_examples/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
+      - $SIZE_INFO_LOCATION
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_examples"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
-    EXAMPLE_TEST_BUILD_SYSTEM: "cmake"
+    BUILD_SYSTEM: "cmake"
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
@@ -170,20 +177,23 @@ build_examples_cmake_esp32s2:
     paths:
       - build_test_apps/list.json
       - build_test_apps/list_job_*.json
-      - build_test_apps/*/*/*/build/*.bin
       - build_test_apps/*/*/*/sdkconfig
+      - build_test_apps/*/*/*/build/size.json
+      - build_test_apps/*/*/*/build/*.bin
       - build_test_apps/*/*/*/build/*.elf
       - build_test_apps/*/*/*/build/*.map
       - build_test_apps/*/*/*/build/flasher_args.json
       - build_test_apps/*/*/*/build/bootloader/*.bin
       - build_test_apps/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
+      - $SIZE_INFO_LOCATION
     expire_in: 3 days
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_test_apps"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_test_apps"
-    CUSTOM_TEST_BUILD_SYSTEM: "cmake"
-    SCAN_CUSTOM_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}_${CUSTOM_TEST_BUILD_SYSTEM}.json
+    BUILD_SYSTEM: "cmake"
+    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
+    TEST_TYPE: custom_test
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -192,9 +202,7 @@ build_examples_cmake_esp32s2:
       - $BOT_LABEL_CUSTOM_TEST
       - $BOT_LABEL_WEEKEND_TEST
   script:
-    - mkdir -p ${BUILD_PATH}
-    - mkdir -p ${LOG_PATH}
-    - ${IDF_PATH}/tools/ci/build_test_apps.sh
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
 build_test_apps_esp32:
   extends: .build_test_apps
