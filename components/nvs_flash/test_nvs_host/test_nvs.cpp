@@ -2976,6 +2976,36 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
 }
 
+TEST_CASE("test decrypt functionality for encrypted data", "[nvs_part_gen]")
+{
+
+    //retrieving the temporary test data
+    int status = system("cp -rf ../nvs_partition_generator/testdata .");
+    CHECK(status == 0);
+
+    //encoding data from sample_multipage_blob.csv
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py generate ../nvs_partition_generator/sample_multipage_blob.csv partition_encoded.bin 0x5000 --outdir ../nvs_partition_generator");
+    CHECK(status == 0);
+
+    //encrypting data from sample_multipage_blob.csv
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py encrypt ../nvs_partition_generator/sample_multipage_blob.csv partition_encrypted.bin 0x5000 --inputkey ../nvs_partition_generator/testdata/sample_encryption_keys.bin --outdir ../nvs_partition_generator");
+    CHECK(status == 0);
+
+    //decrypting data from partition_encrypted.bin
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py decrypt ../nvs_partition_generator/partition_encrypted.bin ../nvs_partition_generator/testdata/sample_encryption_keys.bin ../nvs_partition_generator/partition_decrypted.bin");
+    CHECK(status == 0);
+
+    status = system("diff ../nvs_partition_generator/partition_decrypted.bin ../nvs_partition_generator/partition_encoded.bin");
+    CHECK(status == 0);
+    CHECK(WEXITSTATUS(status) == 0);
+
+
+    //cleaning up the temporary test data
+    status = system("rm -rf testdata");
+    CHECK(status == 0);
+
+}
+
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keygen", "[nvs_part_gen]")
 {
     int childpid = fork();
