@@ -76,6 +76,7 @@ Declarations of codec functions, data types, and macros.
 
 #define OI_SBC_SYNCWORD 0x9c
 #define OI_SBC_ENHANCED_SYNCWORD 0x9d
+#define OI_mSBC_SYNCWORD 0xad
 
 /**@name Sampling frequencies */
 /**@{*/

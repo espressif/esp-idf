@@ -79,7 +79,9 @@ PRIVATE OI_STATUS FindSyncword(OI_CODEC_SBC_DECODER_CONTEXT *context,
         return OI_CODEC_SBC_NO_SYNCWORD;
     }
 #else  // SBC_ENHANCED
-    while (*frameBytes && (**frameData != OI_SBC_SYNCWORD)) {
+
+    while (*frameBytes && (**frameData != OI_SBC_SYNCWORD)
+            && (**frameData != OI_mSBC_SYNCWORD)) {
         (*frameBytes)--;
         (*frameData)++;
     }

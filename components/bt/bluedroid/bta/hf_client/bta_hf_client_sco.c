@@ -428,21 +428,21 @@ static void bta_hf_client_sco_event(UINT8 event)
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     if (event == BTA_HF_CLIENT_SCO_CI_DATA_E) {
-        uint16_t pkt_offset = 1 + HCI_SCO_PREAMBLE_SIZE;
-        uint16_t len_to_send = 0;
+        UINT16 pkt_offset = 1 + HCI_SCO_PREAMBLE_SIZE;
+        UINT16 len_to_send = 0;
         while (true)
         {
-            p_buf = osi_malloc(sizeof(BT_HDR) + pkt_offset + BTM_SCO_DATA_SIZE_MAX);
+            p_buf = osi_calloc(sizeof(BT_HDR) + pkt_offset + BTM_SCO_DATA_SIZE_MAX);
             if (!p_buf) {
                 APPL_TRACE_WARNING("%s, no mem", __FUNCTION__);
                 break;
             }
 
             p_buf->offset = pkt_offset;
-            p_buf->len = BTM_SCO_DATA_SIZE_MAX;
-            len_to_send = bta_hf_client_sco_co_out_data(p_buf->data + pkt_offset, BTM_SCO_DATA_SIZE_MAX);
-            if (len_to_send == BTM_SCO_DATA_SIZE_MAX) {
+            len_to_send = bta_hf_client_sco_co_out_data(p_scb->sco_idx, p_buf->data + pkt_offset, BTM_SCO_DATA_SIZE_MAX);
+            if (len_to_send == BTM_SCO_DATA_SIZE_MAX || len_to_send == BTM_ESCO_DATA_SIZE_MAX) {
                 // expect to get the exact size of data from upper layer
+                p_buf->len = len_to_send;
                 if (bta_hf_client_cb.scb.sco_state == BTA_HF_CLIENT_SCO_OPEN_ST) {
                     tBTM_STATUS write_stat = BTM_WriteScoData(p_scb->sco_idx, p_buf);
                     if (write_stat != BTM_SUCCESS) {

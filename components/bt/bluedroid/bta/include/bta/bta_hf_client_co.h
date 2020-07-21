@@ -96,7 +96,7 @@ void bta_hf_client_sco_co_close(void);
 ** Returns          number of bytes got from application
 **
 *******************************************************************************/
-uint32_t bta_hf_client_sco_co_out_data(uint8_t *p_buf, uint32_t sz);
+uint32_t bta_hf_client_sco_co_out_data(UINT16 sco_index, UINT8 *p_buf, UINT32 sz);
 
 /*******************************************************************************
 **

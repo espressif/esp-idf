@@ -992,7 +992,7 @@ typedef UINT8 tBTM_SCO_AIR_MODE_TYPE;
 
 #define BTM_VOICE_SETTING_TRANS ((UINT16)  (HCI_INP_CODING_LINEAR          |   \
                                             HCI_INP_DATA_FMT_2S_COMPLEMENT |   \
-                                            HCI_INP_SAMPLE_SIZE_16BIT      |   \
+                                            HCI_INP_SAMPLE_SIZE_8BIT      |   \
                                             HCI_AIR_CODING_FORMAT_TRANSPNT))
 
 /*******************

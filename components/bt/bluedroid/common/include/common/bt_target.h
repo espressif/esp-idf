@@ -77,6 +77,7 @@
 #if CONFIG_HFP_CLIENT_ENABLE
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
+#define PLC_INCLUDED                TRUE
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             TRUE
 #endif
@@ -85,6 +86,12 @@
 #endif
 #ifndef BTM_MAX_SCO_LINKS
 #define BTM_MAX_SCO_LINKS           (1)
+#endif
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED            TRUE
+#endif
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED            TRUE
 #endif
 #endif  /* CONFIG_HFP_HF_ENABLE */
 
@@ -611,6 +618,16 @@
 /* max TX SCO data packet size */
 #ifndef BTM_SCO_DATA_SIZE_MAX
 #define BTM_SCO_DATA_SIZE_MAX       120 //240
+#endif
+
+/* max TX eSCO data packet size */
+#ifndef BTM_ESCO_DATA_SIZE_MAX
+#define BTM_ESCO_DATA_SIZE_MAX      60
+#endif
+
+/* TX eSCO data packet size */
+#ifndef BTM_ESCO_DATA_SIZE
+#define BTM_ESCO_DATA_SIZE          57
 #endif
 
 /* The size in bytes of the BTM inquiry database. 5 As Default */
