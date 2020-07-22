@@ -14,4 +14,10 @@ menu "ESP HTTP client"
             This option will enable HTTP Basic Authentication. It is disabled by default as Basic
             auth uses unencrypted encoding, so it introduces a vulnerability when not using TLS
 
+    config ESP_HTTP_CLIENT_USER_AGENT
+        string "User Agent"
+        default "ESP32 HTTP Client/1.0"
+        help
+            The User Agent string to send with Http requests.
+
 endmenu

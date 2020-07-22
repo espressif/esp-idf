@@ -136,7 +136,7 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 #define ASYNC_TRANS_CONNECTING 0
 #define ASYNC_TRANS_CONNECT_PASS 1
 
-static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
+static const char *DEFAULT_HTTP_USER_AGENT = CONFIG_ESP_HTTP_CLIENT_USER_AGENT;
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
 static const int DEFAULT_MAX_REDIRECT = 10;
