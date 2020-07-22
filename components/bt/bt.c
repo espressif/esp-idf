@@ -1491,6 +1491,9 @@ void esp_bt_check_need_restart()
 
 void bt_abort_with_coredump_log(uint16_t error)
 {
+    uint32_t intenable;
+    asm volatile ("rsr %0, INTENABLE\n" :"=r"(intenable));
+    RMT_DBG_LOG_ERROR("abort!INT R:0x%x EN 0x%x",*((uint32_t*)BT_INT_STA_REG),intenable);
     __asm__ __volatile__("ill\n");
 }
 
