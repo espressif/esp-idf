@@ -17,7 +17,7 @@
 
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
-	url = ../../obgm/libcoap.git
+	url = ../../elasticdotventures/libcoap.git
 
 [submodule "components/nghttp/nghttp2"]
 	path = components/nghttp/nghttp2
