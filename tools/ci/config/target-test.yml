@@ -446,14 +446,13 @@ IT_004:
 
 IT_005:
   extends: .test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_5
 
 IT_006:
   extends: .test_template
-  parallel: 8
+  parallel: 7
   tags:
     - ESP32_IDF
     - SSC_T1_6
@@ -476,13 +475,6 @@ IT_009:
   tags:
     - ESP32_IDF
     - SSC_T1_3
-
-IT_010:
-  extends: .test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
 
 IT_011:
   extends: .test_template
@@ -517,6 +509,7 @@ IT_015:
 
 IT_016:
   extends: .test_template
+  allow_failure: true
   tags:
     - ESP32_IDF
     - SSC_T50_MESH1
@@ -529,7 +522,6 @@ IT_017:
 
 IT_018:
   extends: .test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_9
