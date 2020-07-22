@@ -15,7 +15,7 @@
 #include "esp_flash_partitions.h"
 #include "esp_log.h"
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/md5_hash.h"
+#include "esp_rom_md5.h"
 
 static const char *TAG = "flash_parts";
 
@@ -48,9 +48,9 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
 
             struct MD5Context context;
             unsigned char digest[16];
-            MD5Init(&context);
-            MD5Update(&context, (unsigned char *) partition_table, num_parts * sizeof(esp_partition_info_t));
-            MD5Final(digest, &context);
+            esp_rom_md5_init(&context);
+            esp_rom_md5_update(&context, (unsigned char *) partition_table, num_parts * sizeof(esp_partition_info_t));
+            esp_rom_md5_final(digest, &context);
 
             unsigned char *md5sum = ((unsigned char *) part) + 16; // skip the 2B magic number and the 14B fillup bytes
 
