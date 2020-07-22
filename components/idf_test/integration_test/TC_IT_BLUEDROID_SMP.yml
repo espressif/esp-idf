@@ -477,6 +477,7 @@ test cases:
     - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut2_bt_mac>)']
 - ID: BLUEDROID_SMP_08003
   <<: *SMP_CASE
+  CI ready: 'No'
   test point 2: BLE SMP bond item management test
   summary: BLE SMP get bond list and number when pairing and after reboot for BLUEDROID
   steps: |
