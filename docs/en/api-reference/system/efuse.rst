@@ -16,7 +16,7 @@ Some of system parameters are using these eFuse bits directly by hardware module
 
 .. only:: esp32
 
-	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ in part 20 eFuse controller. Some eFuse bits are available for user applications.
+	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ in part 21 eFuse controller. Some eFuse bits are available for user applications.
 
 	ESP32 has 4 eFuse blocks each of the size of 256 bits (not all bits are available):
 
