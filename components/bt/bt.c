@@ -1144,7 +1144,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #ifdef RMT_DEBUG_LOG_EN
 #ifdef CONFIG_ESP32_ENABLE_COREDUMP
     esp_log_dump_init(btdm_rmt_get_log_buffer_size, btdm_rmt_get_fixed_log_addr);
-#else 
+#else
     #warning "coredump function is not enabled"
 #endif
 #endif
@@ -1416,8 +1416,10 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     return ESP_OK;
 }
 
-void IRAM_ATTR __attribute__((noinline)) r_assert_with_log(uint32_t error_bit, uint32_t time_slot)
+void IRAM_ATTR __attribute__((noinline)) r_assert_with_log(uint32_t error_bit_0, uint32_t error_bit_1, uint32_t error_bit_2, uint32_t error, uint32_t time_slot)
 {
+    ets_printf(DRAM_STR("ASSERT: 0x%x, 0x%x, 0x%x, %d, %d\n"),
+        error_bit_0, error_bit_1, error_bit_2, error, time_slot);
     __asm__ __volatile__("ill\n");
 }
 /**
@@ -1428,13 +1430,18 @@ void IRAM_ATTR __attribute__((noinline)) r_assert_with_log(uint32_t error_bit, u
  */
 void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int param0, int param1, const char *file, int line)
 {
-    extern uint32_t btdm_debug_error_get_bit();
+    ets_printf(DRAM_STR("ASSERT: %S, 0x%x, 0x%x in %s L %d\n"),
+        condition, param0, param1, file, line);
+
+    extern void btdm_debug_error_get_bit(uint32_t *error_bit);
     extern uint32_t btdm_debug_error_get_time();
 
-    uint32_t error_bit = btdm_debug_error_get_bit();
+    uint32_t error_bit[4] = {0, 0, 0, 0};
+    btdm_debug_error_get_bit(error_bit);
     uint32_t time_slot = btdm_debug_error_get_time();
-    r_assert_with_log(error_bit, time_slot);
+    r_assert_with_log(error_bit[0], error_bit[1], error_bit[2], error_bit[3], time_slot);
     //__asm__ __volatile__("ill\n");
+
 }
 
 
