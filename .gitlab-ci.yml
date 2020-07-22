@@ -1418,7 +1418,7 @@ UT_004_10:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - psram    
+    - psram
 
 UT_004_11:
   <<: *unit_test_template
@@ -1792,12 +1792,6 @@ IT_005_01:
     - ESP32_IDF
     - SSC_T1_5
 
-IT_005_02:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_5
-
 IT_006_01:
   <<: *test_template
   tags:
@@ -1870,30 +1864,6 @@ IT_009_01:
     - ESP32_IDF
     - SSC_T1_3
 
-IT_010_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-
-IT_010_02:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-
-IT_010_03:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-
-IT_010_04:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-
 IT_011_01:
   <<: *test_template
   tags:
@@ -1932,6 +1902,7 @@ IT_011_06:
 
 IT_011_07:
   <<: *test_template
+  allow_failure: true
   tags:
     - ESP32_IDF
     - SSC_T50_MESH1
