@@ -82,6 +82,15 @@ class OCDBackend(object):
     def cmd_exec(self, cmd):
         return self.oocd.cmd_exec(cmd)
 
+    def apptrace_start(self, trace_args):
+        self.oocd.apptrace_start(trace_args)
+
+    def apptrace_stop(self):
+        self.oocd.apptrace_stop()
+
+    def apptrace_wait_stop(self, tmo=10):
+        self.oocd.apptrace_wait_stop(tmo=tmo)
+
 
 class GDBBackend(object):
     def __init__(self, logfile_path, elffile_path, target, gdbinit_path=None, working_dir=None):

@@ -16,7 +16,6 @@ def test_examples_app_trace_to_host(env, extra_data):
         dut.start_app()
         dut.expect_all('example: Enabling ADC1 on channel 6 / GPIO34.',
                        'example: Enabling CW generator on DAC channel 1',
-                       'example: Custom divider of RTC 8 MHz clock has been set.',
                        'example: Sampling ADC and sending data to the host...',
                        re.compile(r'example: Collected \d+ samples in 20 ms.'),
                        'example: Sampling ADC and sending data to the UART...',
@@ -24,10 +23,8 @@ def test_examples_app_trace_to_host(env, extra_data):
                        re.compile(r'example: Collected \d+ samples in 20 ms.'),
                        timeout=20)
 
-        response = ocd.cmd_exec('esp apptrace start file://adc.log 0 9000 5 0 0')
-        with open(os.path.join(proj_path, 'telnet.log'), 'w') as f:
-            f.write(response)
-        assert('Data: blocks incomplete 0, lost bytes: 0' in response)
+        ocd.apptrace_start("file://adc.log 0 9000 5 0 0")
+        ocd.apptrace_wait_stop(tmo=30)
 
     with ttfw_idf.CustomProcess(' '.join([os.path.join(idf_path, 'tools/esp_app_trace/logtrace_proc.py'),
                                           'adc.log',
