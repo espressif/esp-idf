@@ -523,8 +523,10 @@ menu "ESP32-specific"
 
         config ESP32_TIME_SYSCALL_USE_RTC_FRC1
             bool "RTC and high-resolution timer"
+            select ESP_TIMER_RTC_USE
         config ESP32_TIME_SYSCALL_USE_RTC
             bool "RTC"
+            select ESP_TIMER_RTC_USE
         config ESP32_TIME_SYSCALL_USE_FRC1
             bool "High-resolution timer"
         config ESP32_TIME_SYSCALL_USE_NONE

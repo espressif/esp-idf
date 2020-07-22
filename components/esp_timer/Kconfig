@@ -9,6 +9,9 @@ menu "High resolution timer (esp_timer)"
             This option has some effect on timer performance and the amount of memory used for timer
             storage, and should only be used for debugging/testing purposes.
 
+    config ESP_TIMER_RTC_USE  # [refactor-todo] remove when timekeeping and persistence are separate
+        bool
+
     config ESP_TIMER_TASK_STACK_SIZE
         int "High-resolution timer task stack size"
         default 3584

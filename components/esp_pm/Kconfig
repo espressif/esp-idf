@@ -20,11 +20,10 @@ menu "Power Management"
             If disabled, DFS will not be active until the application
             configures it using esp_pm_configure function.
 
+
     config PM_USE_RTC_TIMER_REF
         bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
-        depends on PM_ENABLE && ESP_TIMER_IMPL_FRC2 && \
-                    (ESP32_TIME_SYSCALL_USE_RTC || ESP32_TIME_SYSCALL_USE_RTC_FRC1 || \
-                    ESP32S2_TIME_SYSCALL_USE_RTC || ESP32S2_TIME_SYSCALL_USE_RTC_FRC1)
+        depends on (PM_ENABLE && ESP_TIMER_IMPL_FRC2 && ESP_TIMER_RTC_USE)
         default n
         help
             When APB clock frequency changes, high-resolution timer (esp_timer)

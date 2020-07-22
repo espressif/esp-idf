@@ -5,6 +5,7 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "esp_pm.h"
+#include "esp_sleep.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -143,6 +144,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     light_sleep_disable();
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
 {
 #if CONFIG_IDF_TARGET_ESP32
@@ -213,8 +215,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
 
     light_sleep_disable();
 }
-
-
+#endif
 typedef struct {
     int delay_us;
     int result;
