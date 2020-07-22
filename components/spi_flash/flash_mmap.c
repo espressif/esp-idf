@@ -157,6 +157,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     uint32_t region_addr;  // base address of memory region
     get_mmu_region(memory,&region_begin,&region_size,&region_addr);
     if (region_size < page_count) {
+        spi_flash_enable_interrupts_caches_and_other_cpu();
         return ESP_ERR_NO_MEM;
     }
     // The following part searches for a range of MMU entries which can be used.
