@@ -587,7 +587,7 @@ test cases:
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: WIFI_SCAN_0303
   SDK: ESP32_IDF
   Test App: SSC
