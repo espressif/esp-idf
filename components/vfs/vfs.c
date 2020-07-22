@@ -75,10 +75,12 @@ static _lock_t s_fd_table_lock;
 static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
-        if ((len != 0 && len < 2) || (len > ESP_VFS_PATH_MAX)) {
+        /* empty prefix is allowed, "/" is not allowed */
+        if ((len == 1) || (len > ESP_VFS_PATH_MAX)) {
             return ESP_ERR_INVALID_ARG;
         }
-        if ((len > 0 && base_path[0] != '/') || base_path[len - 1] == '/') {
+        /* prefix has to start with "/" and not end with "/" */
+        if (len >= 2 && ((base_path[0] != '/') || (base_path[len - 1] == '/'))) {
             return ESP_ERR_INVALID_ARG;
         }
     }
