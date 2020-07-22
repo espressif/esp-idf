@@ -1651,6 +1651,7 @@ test cases:
   - *check_connection
 - ID: BTSTK_SMP_05003
   <<: *SMP_CASE
+  CI ready: 'No'
   test point 2: BLE SMP unsuccessful pair reply test
   summary: BLE SMP unsuccessful passkey entry on both side test
   steps: |
@@ -1766,6 +1767,7 @@ test cases:
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
 - ID: BTSTK_SMP_06004
   <<: *SMP_CASE
+  CI ready: 'No'
   test point 2: BLE SMP use API in abnormal state
   summary: BLE SMP master disconnect during pairing and repairing
   steps: |
