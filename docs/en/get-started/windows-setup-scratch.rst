@@ -104,7 +104,7 @@ Double-click the ``Path`` variable (either User or System Path, depending if you
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
+To carry on with development environment setup, proceed to :ref:`get-started-set-up-tools`.
 
 .. _CMake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
