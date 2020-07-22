@@ -18,7 +18,7 @@
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
 	url = ../../elasticdotventures/libcoap.git
-        branch = dtls
+        branch = release-4.2.0
 
 [submodule "components/nghttp/nghttp2"]
 	path = components/nghttp/nghttp2
