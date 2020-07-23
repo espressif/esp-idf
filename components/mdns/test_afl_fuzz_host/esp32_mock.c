@@ -10,7 +10,6 @@ int       g_queue_send_shall_fail = 0;
 int       g_size = 0;
 
 const char * WIFI_EVENT = "wifi_event";
-const char * IP_EVENT = "ip_event";
 const char * ETH_EVENT = "eth_event";
 
 esp_err_t esp_event_handler_register(const char * event_base,
