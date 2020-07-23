@@ -6,9 +6,9 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_wifi_netif.h"
-
-/* Fixme: re-add test_utils.h */
-static void test_case_uses_tcpip(void) {}
+#include "sdkconfig.h"
+#include "lwip/sockets.h"
+#include "test_utils.h"
 
 
 TEST_GROUP(esp_netif);
@@ -276,6 +276,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
     RUN_TEST_CASE(esp_netif, dhcp_client_state_transitions_wifi_sta)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_wifi_ap)
+    RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
     RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
     RUN_TEST_CASE(esp_netif, get_set_hostname)
 }

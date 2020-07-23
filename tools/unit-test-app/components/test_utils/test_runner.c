@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "unity_test_runner.h"
 #include "test_utils.h"
 #include "esp_newlib.h"
 
