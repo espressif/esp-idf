@@ -547,7 +547,9 @@ void start_app_other_cores(void)
 #endif
 
 	esp_crosscore_int_init();
+#if CONFIG_IDF_TARGET_ESP32
 	esp_dport_access_int_init();
+#endif
 
 	ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
 	xPortStartScheduler();
@@ -570,7 +572,9 @@ void start_app(void)
 	esp_crosscore_int_init();
 
 #ifndef CONFIG_FREERTOS_UNICORE
+#if CONFIG_IDF_TARGET_ESP32
 	esp_dport_access_int_init();
+#endif
 #endif
 
 	portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",

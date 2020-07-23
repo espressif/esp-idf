@@ -46,7 +46,7 @@ _Static_assert(sizeof(systimer_counter_value_t) == 8, "systimer_counter_value_t 
 typedef enum {
     SYSTIMER_COUNTER_0, /*!< systimer counter 0 */
 #if SOC_SYSTIMER_COUNTER_NUM > 1
-    SYSTIEMR_COUNTER_1, /*!< systimer counter 1 */
+    SYSTIMER_COUNTER_1, /*!< systimer counter 1 */
 #endif
 } systimer_counter_id_t;
 
