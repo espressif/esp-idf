@@ -146,9 +146,9 @@ class Parser(object):
 
         return test_cases
 
-    def parse_case_properities(self, tags_raw):
+    def parse_case_properties(self, tags_raw):
         """
-        parse test case tags (properities) with the following rules:
+        parse test case tags (properties) with the following rules:
             * first tag is always group of test cases, it's mandatory
             * the rest tags should be [type=value].
                 * if the type have default value, then [type] equal to [type=default_value].
@@ -260,7 +260,7 @@ class Parser(object):
         :param tags: tags to select runners
         :return: parsed test case
         """
-        prop = self.parse_case_properities(description)
+        prop = self.parse_case_properties(description)
 
         test_case = deepcopy(TEST_CASE_PATTERN)
         test_case.update({"config": config_name,
@@ -306,9 +306,10 @@ class Parser(object):
 
         output_folder = os.path.join(self.idf_path, self.ut_bin_folder, self.idf_target)
         configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
-        test_configs = os.listdir(output_folder)
+        test_configs = [item for item in os.listdir(output_folder)
+                        if os.path.isdir(os.path.join(output_folder, item))]
         for config in test_configs:
-            config_output_folder = os.path.join(output_folder, 'build', config)
+            config_output_folder = os.path.join(output_folder, config)
             if os.path.exists(config_output_folder):
                 test_cases.extend(self.parse_test_cases_for_one_config(configs_folder, config_output_folder, config))
         test_cases.sort(key=lambda x: x["config"] + x["summary"])
@@ -319,29 +320,29 @@ def test_parser(binary_folder):
     parser = Parser(binary_folder)
     # test parsing tags
     # parsing module only and module in module list
-    prop = parser.parse_case_properities("[esp32]")
+    prop = parser.parse_case_properties("[esp32]")
     assert prop["module"] == "esp32"
     # module not in module list
-    prop = parser.parse_case_properities("[not_in_list]")
+    prop = parser.parse_case_properties("[not_in_list]")
     assert prop["module"] == "misc"
     # parsing a default tag, a tag with assigned value
-    prop = parser.parse_case_properities("[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]")
+    prop = parser.parse_case_properties("[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]")
     assert prop["ignore"] == "Yes" and prop["test_env"] == "ABCD" \
-        and "not_support1" not in prop and "not_supported2" not in prop
+           and "not_support1" not in prop and "not_supported2" not in prop
     # parsing omitted value
-    prop = parser.parse_case_properities("[esp32]")
+    prop = parser.parse_case_properties("[esp32]")
     assert prop["ignore"] == "No" and prop["test_env"] == "UT_T1_1"
     # parsing with incorrect format
     try:
-        parser.parse_case_properities("abcd")
+        parser.parse_case_properties("abcd")
         assert False
     except AssertionError:
         pass
     # skip invalid data parse, [type=] assigns empty string to type
-    prop = parser.parse_case_properities("[esp32]abdc aaaa [ignore=]")
+    prop = parser.parse_case_properties("[esp32]abdc aaaa [ignore=]")
     assert prop["module"] == "esp32" and prop["ignore"] == ""
     # skip mis-paired []
-    prop = parser.parse_case_properities("[esp32][[ignore=b]][]][test_env=AAA]]")
+    prop = parser.parse_case_properties("[esp32][[ignore=b]][]][test_env=AAA]]")
     assert prop["module"] == "esp32" and prop["ignore"] == "b" and prop["test_env"] == "AAA"
 
     config_dependency = {
