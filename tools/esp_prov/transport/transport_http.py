@@ -31,10 +31,10 @@ class Transport_HTTP(Transport):
             raise RuntimeError("Unable to resolve hostname :" + hostname)
 
         if certfile is None:
-            self.conn = http.client.HTTPConnection(hostname, timeout=30)
+            self.conn = http.client.HTTPConnection(hostname, timeout=45)
         else:
             ssl_ctx = ssl.create_default_context(cafile=certfile)
-            self.conn = http.client.HTTPSConnection(hostname, context=ssl_ctx, timeout=30)
+            self.conn = http.client.HTTPSConnection(hostname, context=ssl_ctx, timeout=45)
         try:
             print("Connecting to " + hostname)
             self.conn.connect()

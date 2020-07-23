@@ -45,19 +45,24 @@ def config_get_status_response(security_ctx, response_data):
     cmd_resp1.ParseFromString(decrypted_message)
     print_verbose(security_ctx, "Response type " + str(cmd_resp1.msg))
     print_verbose(security_ctx, "Response status " + str(cmd_resp1.resp_get_status.status))
+
     if cmd_resp1.resp_get_status.sta_state == 0:
         print("++++ WiFi state: " + "connected ++++")
+        return "connected"
     elif cmd_resp1.resp_get_status.sta_state == 1:
         print("++++ WiFi state: " + "connecting... ++++")
+        return "connecting"
     elif cmd_resp1.resp_get_status.sta_state == 2:
         print("++++ WiFi state: " + "disconnected ++++")
+        return "disconnected"
     elif cmd_resp1.resp_get_status.sta_state == 3:
         print("++++ WiFi state: " + "connection failed ++++")
         if cmd_resp1.resp_get_status.fail_reason == 0:
             print("++++ Failure reason: " + "Incorrect Password ++++")
         elif cmd_resp1.resp_get_status.fail_reason == 1:
             print("++++ Failure reason: " + "Incorrect SSID ++++")
-    return cmd_resp1.resp_get_status.sta_state
+        return "failed"
+    return "unknown"
 
 
 def config_set_config_request(security_ctx, ssid, passphrase):
