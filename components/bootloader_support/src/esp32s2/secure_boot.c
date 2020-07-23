@@ -25,6 +25,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
+#include "esp32s2/rom/efuse.h"
 #include "esp32s2/rom/secure_boot.h"
 
 static const char *TAG = "secure_boot_v2";
@@ -37,19 +38,19 @@ static const char *TAG = "secure_boot_v2";
 #define DIGEST_LEN 32
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
-static esp_err_t validate_signature_block(int block_num, const ets_secure_boot_signature_t *sig_block, uint8_t *digest)
+static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)
 {
-    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)&sig_block->block[block_num], CRC_SIGN_BLOCK_LEN);
-    if (sig_block->block[block_num].magic_byte != SIG_BLOCK_MAGIC_BYTE) {
+    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN);
+    if (block->magic_byte != SIG_BLOCK_MAGIC_BYTE) {
         // All signature blocks have been parsed, no new signature block present.
         ESP_LOGD(TAG, "Signature block(%d) invalid/absent.", block_num);
         return ESP_FAIL;
     }
-    if (sig_block->block[block_num].block_crc != crc) {
+    if (block->block_crc != crc) {
         ESP_LOGE(TAG, "Magic byte correct but incorrect crc.");
         return ESP_FAIL;
     }
-    if (memcmp(digest, sig_block->block[block_num].image_digest, DIGEST_LEN)) {
+    if (memcmp(image_digest, block->image_digest, DIGEST_LEN)) {
         ESP_LOGE(TAG, "Magic byte & CRC correct but incorrect image digest.");
         return ESP_FAIL;
     } else {
@@ -60,86 +61,98 @@ static esp_err_t validate_signature_block(int block_num, const ets_secure_boot_s
     return ESP_FAIL;
 }
 
-// Inputs the flash_offset and length of an image(app or bootloader), validates & verifies its secure boot v2 signature.
-// Generates the public key digests of the valid public keys in a signature block and writes it into trusted_keys.
-// The key_digests in trusted keys whose signature blocks are invalid will be set to NULL.
-static esp_err_t secure_boot_v2_digest_generate(uint32_t flash_offset, uint32_t flash_size, ets_secure_boot_key_digests_t * const trusted_keys)
-{
-    int i = 0;
-    esp_err_t ret = ESP_FAIL;
+/* Structure to hold public key digests calculated from the signature blocks of a single image.
 
+   Each image can have one or more signature blocks (up to SECURE_BOOT_NUM_BLOCKS). Each signature block
+   includes a public key.
+
+   Different to the ROM ets_secure_boot_key_digests_t structure which holds pointers to eFuse data with digests,
+   in this data structure the digest data is included.
+*/
+typedef struct {
+    uint8_t key_digests[SECURE_BOOT_NUM_BLOCKS][DIGEST_LEN];
+    unsigned num_digests; /* Number of valid digests, starting at index 0 */
+} image_sig_public_key_digests_t;
+
+/* Generates the public key digests of the valid public keys in an image's
+   signature block, verifies each signature, and stores the key digests in the
+   public_key_digests structure.
+
+   @param flash_offset Image offset in flash
+   @param flash_size Image size in flash (not including signature block)
+   @param[out] public_key_digests Pointer to structure to hold the key digests for valid sig blocks
+
+
+   Note that this function doesn't read any eFuses, so it doesn't know if the
+   keys are ultimately trusted by the hardware or not
+
+   @return - ESP_OK if no signatures failed to verify, or if no valid signature blocks are found at all.
+           - ESP_FAIL if there's a valid signature block that doesn't verify using the included public key (unexpected!)
+*/
+static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uint32_t flash_size, image_sig_public_key_digests_t *public_key_digests)
+{
+    esp_err_t ret;
     uint8_t image_digest[DIGEST_LEN] = {0};
-    uint8_t public_key_digests[SECURE_BOOT_NUM_BLOCKS][DIGEST_LEN];
+    uint8_t __attribute__((aligned(4))) key_digest[DIGEST_LEN] = {0};
     size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
+
+    ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%x (sig block offset 0x%x)", flash_offset, sig_block_addr);
+
+    bzero(public_key_digests, sizeof(image_sig_public_key_digests_t));
+
     ret = bootloader_sha256_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "error generating image digest, %d", ret);
         return ret;
     }
 
-    ESP_LOGD(TAG, "reading signature block");
-    const ets_secure_boot_signature_t *sig_block = bootloader_mmap(sig_block_addr, sizeof(ets_secure_boot_signature_t));
-    if (sig_block == NULL) {
+    ESP_LOGD(TAG, "reading signatures");
+    const ets_secure_boot_signature_t *signatures = bootloader_mmap(sig_block_addr, sizeof(ets_secure_boot_signature_t));
+    if (signatures == NULL) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", sig_block_addr, sizeof(ets_secure_boot_signature_t));
         return ESP_FAIL;
     }
 
-    for (i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-        ret = validate_signature_block(i, sig_block, image_digest);
+    for (int i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        const ets_secure_boot_sig_block_t *block = &signatures->block[i];
+
+        ret = validate_signature_block(block, i, image_digest);
         if (ret != ESP_OK) {
+            ret = ESP_OK;  // past the last valid signature block
             break;
         }
 
         /* Generating the SHA of the public key components in the signature block */
         bootloader_sha256_handle_t sig_block_sha;
         sig_block_sha = bootloader_sha256_start();
-        bootloader_sha256_data(sig_block_sha, &sig_block->block[i].key, sizeof(sig_block->block[i].key));
-        bootloader_sha256_finish(sig_block_sha, public_key_digests[i]);
+        bootloader_sha256_data(sig_block_sha, &block->key, sizeof(block->key));
+        bootloader_sha256_finish(sig_block_sha, key_digest);
 
-        memcpy((uint8_t *)trusted_keys->key_digests[0], public_key_digests[i], DIGEST_LEN); // Overwriting 0th index to verify each valid signature block
-        /* A signature block is verified when it is valid and the signature in its signature block can be verified with a valid public key */
-        uint8_t verified_digest[DIGEST_LEN] = {0};
-        ets_secure_boot_status_t r = ets_secure_boot_verify_signature(sig_block, image_digest, trusted_keys, verified_digest);
-        if (r != SB_SUCCESS) {
-            ESP_LOGE(TAG, "Secure boot key (%d) verification failed.", i);
+        // Check we can verify the image using this signature and this key
+        uint8_t temp_verified_digest[DIGEST_LEN];
+        bool verified = ets_rsa_pss_verify(&block->key, block->signature, image_digest, temp_verified_digest);
+
+        if (!verified) {
+            /* We don't expect this: the signature blocks before we enable secure boot should all be verifiable or invalid,
+               so this is a fatal error
+            */
             ret = ESP_FAIL;
-            goto exit;
+            ESP_LOGE(TAG, "Secure boot key (%d) verification failed.", i);
+            break;
         }
+        ESP_LOGD(TAG, "Signature block (%d) is verified", i);
+        /* Copy the key digest to the buffer provided by the caller */
+        memcpy((void *)public_key_digests->key_digests[i], key_digest, DIGEST_LEN);
+        public_key_digests->num_digests++;
     }
 
-    // At least 1 verified signature block found.
-    if (i > 0) {
-        // validate_signature_block returns ESP_FAIL when a sig block is absent, which isn't an error.
-        while (--i) {
-            trusted_keys->key_digests[i] = public_key_digests[i];
-        }
-        ret = ESP_OK;
+    if (ret == ESP_OK && public_key_digests->num_digests > 0) {
+        ESP_LOGI(TAG, "Digests successfully calculated, %d valid signatures (image offset 0x%x)",
+                 public_key_digests->num_digests, flash_offset);
     }
 
-exit:
-    /* Set the pointer to an invalid/absent block to NULL */
-    while (i < SECURE_BOOT_NUM_BLOCKS) {
-        trusted_keys->key_digests[i] = NULL;
-        i++;
-    }
-    ESP_LOGI(TAG, "Secure boot verification success.");
-    bootloader_munmap(sig_block);
+    bootloader_munmap(signatures);
     return ret;
-}
-
-/* Traverses ets_secure_boot_key_digests_t to find the number of non-null key_digests */
-static uint8_t get_signature_block_count(ets_secure_boot_key_digests_t * const trusted_keys) {
-    uint8_t bootloader_sig_block_count = 0;
-    for (uint8_t i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-        if (trusted_keys->key_digests[i] != NULL) {
-            bootloader_sig_block_count++;
-
-            for (uint8_t j = 0; j < DIGEST_LEN ; j++) {
-                ESP_LOGD(TAG, "Secure Boot Digest %d: 0x%x", i, *(((uint8_t *)trusted_keys->key_digests[i]) + j));
-            }
-        }
-    }
-    return bootloader_sig_block_count;
 }
 
 esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *image_data)
@@ -166,93 +179,84 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     has_secure_boot_digest |= ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2, NULL);
     ESP_LOGI(TAG, "Secure boot digests %s", has_secure_boot_digest ? "already present":"absent, generating..");
 
-
     ets_efuse_clear_program_registers();
-    uint8_t i, j, bootloader_sig_block_count = 0;
     if (!has_secure_boot_digest) {
-        ets_secure_boot_key_digests_t boot_trusted_keys, app_trusted_keys;
-        uint8_t boot_trusted_key_data[SECURE_BOOT_NUM_BLOCKS][DIGEST_LEN] = {0}, app_trusted_key_data[SECURE_BOOT_NUM_BLOCKS][DIGEST_LEN] = {0};
-
-        for(i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-            boot_trusted_keys.key_digests[i] = boot_trusted_key_data[i];
-            app_trusted_keys.key_digests[i] = app_trusted_key_data[i];
-        }
+        image_sig_public_key_digests_t boot_key_digests = {0};
+        image_sig_public_key_digests_t app_key_digests = {0};
 
         /* Generate the bootloader public key digests */
-        ret = secure_boot_v2_digest_generate(bootloader_data.start_addr, bootloader_data.image_len - SIG_BLOCK_PADDING, &boot_trusted_keys);
+        ret = s_calculate_image_public_key_digests(bootloader_data.start_addr, bootloader_data.image_len - SIG_BLOCK_PADDING, &boot_key_digests);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Public key digest generation failed.");
+            ESP_LOGE(TAG, "Bootloader signature block is invalid");
             return ret;
         }
 
-        bootloader_sig_block_count = get_signature_block_count(&boot_trusted_keys);
-        if (bootloader_sig_block_count <= 0) {
-            ESP_LOGI(TAG, "No valid signature blocks found. %d signature block(s) found.", bootloader_sig_block_count);
+        if (boot_key_digests.num_digests == 0) {
+            ESP_LOGE(TAG, "No valid bootloader signature blocks found.");
             return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "%d signature block(s) found appended to the bootloader.", bootloader_sig_block_count);
+        ESP_LOGI(TAG, "%d signature block(s) found appended to the bootloader.", boot_key_digests.num_digests);
 
         int unused_key_slots = ets_efuse_count_unused_key_blocks();
-        if (bootloader_sig_block_count > unused_key_slots) {
-            ESP_LOGE(TAG, "Bootloader signatures(%d) more than available key slots(%d).", bootloader_sig_block_count, unused_key_slots);
+        if (boot_key_digests.num_digests > unused_key_slots) {
+            ESP_LOGE(TAG, "Bootloader signatures(%d) more than available key slots(%d).", boot_key_digests.num_digests, unused_key_slots);
             return ESP_FAIL;
         }
 
-        for (i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-            if (boot_trusted_keys.key_digests[i] == NULL)  {
-                break;
-            }
-
+        for (int i = 0; i < boot_key_digests.num_digests; i++) {
+            ets_efuse_block_t block;
             const uint32_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = { ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
                                 ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1, ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 };
 
-            ets_efuse_block_t block = ets_efuse_find_unused_key_block();
+            block = ets_efuse_find_unused_key_block();
             if (block == ETS_EFUSE_BLOCK_MAX) {
-                ESP_LOGE(TAG, "Key blocks not available.");
+                ESP_LOGE(TAG, "No more unused key blocks available.");
                 return ESP_FAIL;
             }
 
-            int r = ets_efuse_write_key(block, secure_boot_key_purpose[i], boot_trusted_keys.key_digests[i], DIGEST_LEN);
+            int r = ets_efuse_write_key(block, secure_boot_key_purpose[i], boot_key_digests.key_digests[i], DIGEST_LEN);
             if (r != 0) {
                 ESP_LOGE(TAG, "Failed to write efuse block %d with purpose %d. Can't continue.", block, secure_boot_key_purpose[i]);
                 return ESP_FAIL;
             }
 
-            r = esp_efuse_set_write_protect(block);
-            if (r != 0) {
-                ESP_LOGE(TAG, "Failed to write protect efuse block %d. Can't continue.", block);
-                return ESP_FAIL;
-            }
+            // Note: write key will write protect both the block and the purpose eFuse, always
         }
 
         /* Generate the application public key digests */
-        ret = secure_boot_v2_digest_generate(image_data->start_addr, image_data->image_len - SIG_BLOCK_PADDING, &app_trusted_keys);
+        ret = s_calculate_image_public_key_digests(image_data->start_addr, image_data->image_len - SIG_BLOCK_PADDING, &app_key_digests);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Application signature block is invalid.");
+            ESP_LOGE(TAG, "App signature block is invalid.");
             return ret;
         }
 
-        int app_sig_block_count = get_signature_block_count(&app_trusted_keys);
-        ESP_LOGI(TAG, "%d signature block(s) found appended to the application.", app_sig_block_count);
+        if (app_key_digests.num_digests == 0) {
+            ESP_LOGE(TAG, "No valid applications signature blocks found.");
+            return ESP_FAIL;
+        }
 
-        /* Confirm if atleast one the public key from the application matches a public key in the bootloader
-        (Also, ensure if that public revoke bit is not set for the matched key) */
+        ESP_LOGI(TAG, "%d signature block(s) found appended to the app.", app_key_digests.num_digests);
+        if (app_key_digests.num_digests > boot_key_digests.num_digests) {
+            ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?");
+        }
+
+        /* Confirm if at least one public key from the application matches a public key in the bootloader
+           (Also, ensure if that public revoke bit is not set for the matched key) */
         bool match = false;
         const uint32_t revoke_bits[SECURE_BOOT_NUM_BLOCKS] = { EFUSE_SECURE_BOOT_KEY_REVOKE0,
                                 EFUSE_SECURE_BOOT_KEY_REVOKE1, EFUSE_SECURE_BOOT_KEY_REVOKE2 };
 
-        for (i = 0; i < SECURE_BOOT_NUM_BLOCKS && match == false; i++) {
+        for (int i = 0; i < boot_key_digests.num_digests; i++) {
 
             if (REG_GET_BIT(EFUSE_RD_REPEAT_DATA1_REG, revoke_bits[i])) {
                 ESP_LOGI(TAG, "Key block(%d) has been revoked.", i);
                 continue; // skip if the key block is revoked
             }
 
-            for (j = 0; j < SECURE_BOOT_NUM_BLOCKS; j++) {
-                if (!memcmp(boot_trusted_key_data[i], app_trusted_key_data[j], DIGEST_LEN)) {
+            for (int j = 0; j < app_key_digests.num_digests; j++) {
+                if (!memcmp(boot_key_digests.key_digests[i], app_key_digests.key_digests[j], DIGEST_LEN)) {
                     ESP_LOGI(TAG, "Application key(%d) matches with bootloader key(%d).", j, i);
                     match = true;
-                    break;
                 }
             }
         }
@@ -263,9 +267,9 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         }
 
         /* Revoke the empty signature blocks */
-        if (bootloader_sig_block_count < SECURE_BOOT_NUM_BLOCKS) {
+        if (boot_key_digests.num_digests < SECURE_BOOT_NUM_BLOCKS) {
             /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
-            for (uint8_t i = bootloader_sig_block_count; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+            for (uint8_t i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
                 ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
                 ets_secure_boot_revoke_public_key_digest(i);
             }
