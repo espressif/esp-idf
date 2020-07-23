@@ -14,6 +14,8 @@ assign_test:
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
     TEST_APP_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/tools/test_apps/test_configs"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
+    # auto_test_script is compatible with Python 3 only
+    PYTHON_VER: 3
   artifacts:
     paths:
       - components/idf_test/*/CIConfigs

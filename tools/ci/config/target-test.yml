@@ -159,6 +159,8 @@
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
+    # auto_test_script is compatible with Python 3 only
+    PYTHON_VER: 3
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
