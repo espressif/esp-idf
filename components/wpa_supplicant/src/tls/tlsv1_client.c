@@ -706,18 +706,16 @@ int tlsv1_client_hello_ext(struct tlsv1_client *conn, int ext_type,
 	if (data == NULL || data_len == 0)
 		return 0;
 
-	pos = conn->client_hello_ext = os_malloc(6 + data_len);
+	pos = conn->client_hello_ext = os_malloc(4 + data_len);
 	if (pos == NULL)
 		return -1;
 
-	WPA_PUT_BE16(pos, 4 + data_len);
-	pos += 2;
 	WPA_PUT_BE16(pos, ext_type);
 	pos += 2;
 	WPA_PUT_BE16(pos, data_len);
 	pos += 2;
 	os_memcpy(pos, data, data_len);
-	conn->client_hello_ext_len = 6 + data_len;
+	conn->client_hello_ext_len = 4 + data_len;
 
 	if (ext_type == TLS_EXT_PAC_OPAQUE) {
 		conn->session_ticket_included = 1;
