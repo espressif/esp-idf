@@ -384,12 +384,12 @@ def check_docs(language, target, log_file, known_warnings_file, out_sanitized_lo
 
 
 def action_linkcheck(args):
+    args.builders = "linkcheck"
     return parallel_call(args, call_linkcheck)
 
 
 def call_linkcheck(entry):
-    # Remove the last entry which the buildername, since the linkcheck builder is not supplied through the builder list argument
-    return sphinx_call(*entry[:4], buildername="linkcheck")
+    return sphinx_call(*entry)
 
 
 # https://github.com/espressif/esp-idf/tree/
