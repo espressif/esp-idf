@@ -1115,6 +1115,19 @@ esp_err_t esp_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec);
   */
 esp_err_t esp_wifi_statis_dump(uint32_t modules);
 
+/**
+ * @brief      Get the TSF time
+ *             In Station mode or SoftAP+Station mode if station is not connected or station doesn't receive at least
+ *             one beacon after connected, will return 0
+ *
+ * @attention  Enabling power save may cause the return value inaccurate, except WiFi modem sleep
+ *
+ * @param      interface The interface whose tsf_time is to be retrieved.
+ *
+ * @return     0 or the TSF time
+ */
+int64_t esp_wifi_get_tsf_time(wifi_interface_t interface);
+
 #ifdef __cplusplus
 }
 #endif
