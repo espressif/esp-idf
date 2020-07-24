@@ -3753,10 +3753,12 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 				#if ( configUSE_MUTEXES == 1 )
 				{
 					pxTaskStatusArray[ uxTask ].uxBasePriority = pxNextTCB->uxBasePriority;
+					pxTaskStatusArray[ uxTask ].uxMutexesHeld = pxNextTCB->uxMutexesHeld;
 				}
 				#else
 				{
 					pxTaskStatusArray[ uxTask ].uxBasePriority = 0;
+					pxTaskStatusArray[ uxTask ].uxMutexesHeld = 0;
 				}
 				#endif
 
