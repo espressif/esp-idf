@@ -202,3 +202,8 @@ clang_tidy_check_all:
   variables:
     BOT_NEEDS_TRIGGER_BY_NAME: 1
     BOT_LABEL_STATIC_ANALYSIS_ALL: 1
+
+check_codeowners:
+  extends: .check_job_template
+  script:
+    - tools/codeowners.py ci-check
