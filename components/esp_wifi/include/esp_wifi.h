@@ -1128,6 +1128,20 @@ esp_err_t esp_wifi_statis_dump(uint32_t modules);
  */
 int64_t esp_wifi_get_tsf_time(wifi_interface_t interface);
 
+/**
+  * @brief      Set RSSI threshold below which APP will get an event
+  *
+  * @attention  This API needs to be called every time after WIFI_EVENT_STA_BSS_RSSI_LOW event is received.
+  *
+  * @param      rssi threshold value in dbm between -100 to 0
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
+
 #ifdef __cplusplus
 }
 #endif

@@ -365,4 +365,87 @@ void wpa_bin_clear_free(void *bin, size_t len)
 	}
 }
 
+/**
+ * hwaddr_aton2 - Convert ASCII string to MAC address (in any known format)
+ * @txt: MAC address as a string (e.g., 00:11:22:33:44:55 or 0011.2233.4455)
+ * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
+ * Returns: Characters used (> 0) on success, -1 on failure
+ */
+int hwaddr_aton2(const char *txt, u8 *addr)
+{
+	int i;
+	const char *pos = txt;
 
+	for (i = 0; i < 6; i++) {
+		int a, b;
+
+		while (*pos == ':' || *pos == '.' || *pos == '-')
+			pos++;
+
+		a = hex2num(*pos++);
+		if (a < 0)
+			return -1;
+		b = hex2num(*pos++);
+		if (b < 0)
+			return -1;
+		*addr++ = (a << 4) | b;
+	}
+
+	return pos - txt;
+}
+
+static inline int os_reltime_expired(struct os_time *now,
+				     struct os_time *ts,
+				     os_time_t timeout_secs)
+{
+	struct os_time age;
+
+	os_time_sub(now, ts, &age);
+	return (age.sec > timeout_secs) ||
+		(age.sec == timeout_secs && age.usec > 0);
+}
+
+int os_time_expired(struct os_time *now,
+		struct os_time *ts,
+		os_time_t timeout_secs)
+{
+	return os_reltime_expired(now, ts, timeout_secs);
+}
+
+u8 rssi_to_rcpi(int rssi)
+{
+	if (!rssi)
+		return 255; /* not available */
+	if (rssi < -110)
+		return 0;
+	if (rssi > 0)
+		return 220;
+	return (rssi + 110) * 2;
+}
+
+/**
+ * wpa_ssid_txt - Convert SSID to a printable string
+ * @ssid: SSID (32-octet string)
+ * @ssid_len: Length of ssid in octets
+ * Returns: Pointer to a printable string
+ *
+ * This function can be used to convert SSIDs into printable form. In most
+ * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
+ * does not limit the used character set, so anything could be used in an SSID.
+ *
+ * This function uses a static buffer, so only one call can be used at the
+ * time, i.e., this is not re-entrant and the returned buffer must be used
+ * before calling this again.
+ */
+const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
+{
+	static char ssid_txt[SSID_MAX_LEN * 4 + 1];
+
+	if (ssid == NULL) {
+		ssid_txt[0] = '\0';
+		return ssid_txt;
+	}
+
+	printf_encode(ssid_txt, sizeof(ssid_txt), ssid, ssid_len);
+	return ssid_txt;
+}

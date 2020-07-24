@@ -89,6 +89,9 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT_ARG(WIFI, AP_STADISCONNECTED, sta_disconnected);
         HANDLE_SYS_EVENT_ARG(WIFI, AP_PROBEREQRECVED, ap_probereqrecved);
 
+        /* Roaming */
+        HANDLE_SYS_EVENT_ARG(WIFI, STA_BSS_RSSI_LOW, bss_rssi_low);
+
         /* Ethernet events */
         /* Some extra defines to fit the old naming scheme... */
 #define ETH_EVENT_ETH_START ETHERNET_EVENT_START
@@ -271,6 +274,11 @@ static void esp_system_event_debug(const system_event_t* event)
         }
         case SYSTEM_EVENT_STA_BEACON_TIMEOUT: {
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_BEACON_TIMEOUT");
+            break;
+        }
+        case SYSTEM_EVENT_STA_BSS_RSSI_LOW: {
+            const wifi_event_bss_rssi_low_t *bss_rssi_low = &event->event_info.bss_rssi_low;
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_BSS_RSSI_LOW, rssi:%d", bss_rssi_low->rssi);
             break;
         }
         case SYSTEM_EVENT_GOT_IP6: {

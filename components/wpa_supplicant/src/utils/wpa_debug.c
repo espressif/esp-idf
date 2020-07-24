@@ -110,5 +110,9 @@ int  eloop_register_timeout(unsigned int secs, unsigned int usecs,
 {
     return 0;
 }
+
+void wpa_msg(void *ctx, int level, const char *fmt, ...)
+{
+}
 #endif // ESP_SUPPLICANT
 

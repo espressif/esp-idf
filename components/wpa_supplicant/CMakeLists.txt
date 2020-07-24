@@ -65,6 +65,7 @@ set(srcs "port/os_xtensa.c"
     "src/utils/uuid.c"
     "src/utils/wpabuf.c"
     "src/utils/wpa_debug.c"
+    "src/utils/bitfield.c"
     "src/wps/wps.c"
     "src/wps/wps_attr_build.c"
     "src/wps/wps_attr_parse.c"
@@ -99,7 +100,21 @@ else()
     )
 endif()
 
-idf_component_register(SRCS "${srcs}" "${tls_src}"
+if (CONFIG_WPA_11KV_SUPPORT)
+    set(roaming_src
+    "src/common/rrm.c"
+    "src/common/wnm_sta.c"
+    "src/common/bss.c"
+    "src/common/scan.c"
+    "src/common/ieee802_11_common.c"
+    "src/esp_supplicant/esp_common.c"
+    "src/esp_supplicant/esp_scan.c"
+    )
+else()
+    set(roaming_src "")
+endif()
+
+idf_component_register(SRCS "${srcs}" "${tls_src}" "${roaming_src}"
                     INCLUDE_DIRS include port/include include/esp_supplicant
                     PRIV_INCLUDE_DIRS src
                     PRIV_REQUIRES mbedtls)
@@ -123,6 +138,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_ECC
     CONFIG_SHA256
     CONFIG_IEEE80211W
+    CONFIG_WNM
     )
 
 if(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)

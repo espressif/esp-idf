@@ -28,4 +28,12 @@
 #define DEBUG_PRINT
 #endif
 
+#if CONFIG_WPA_11KV_SUPPORT
+#define ROAMING_SUPPORT 1
+#endif
+
+#if CONFIG_WPA_SCAN_CACHE
+#define SCAN_CACHE_SUPPORTED
+#endif
+
 #endif /* _SUPPLICANT_OPT_H */

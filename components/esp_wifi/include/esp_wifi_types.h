@@ -95,6 +95,7 @@ typedef enum {
     WIFI_REASON_HANDSHAKE_TIMEOUT        = 204,
     WIFI_REASON_CONNECTION_FAIL          = 205,
     WIFI_REASON_AP_TSF_RESET             = 206,
+    WIFI_REASON_ROAMING                  = 207,
 } wifi_err_reason_t;
 
 typedef enum {
@@ -235,6 +236,9 @@ typedef struct {
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
     wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
     wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
+    uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
+    uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
+    uint32_t reserved:30;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -519,10 +523,10 @@ typedef enum {
     WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
     WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
     WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
-
     WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
 
     WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+    WIFI_EVENT_STA_BSS_RSSI_LOW,         /**< AP's RSSI crossed configured threshold */
 } wifi_event_t;
 
 /** @cond **/
@@ -608,6 +612,11 @@ typedef struct {
 #define WIFI_STATIS_HW        (1<<2)
 #define WIFI_STATIS_DIAG      (1<<3)
 #define WIFI_STATIS_ALL       (-1)
+
+/** Argument structure for WIFI_EVENT_STA_BSS_RSSI_LOW event */
+typedef struct {
+    int32_t rssi;                 /**< RSSI value of bss */
+} wifi_event_bss_rssi_low_t;
 
 #ifdef __cplusplus
 }
