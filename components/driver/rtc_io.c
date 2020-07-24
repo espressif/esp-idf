@@ -23,12 +23,16 @@
 
 static const char *RTCIO_TAG = "RTCIO";
 
+#ifdef NDEBUG
+#define RTCIO_CHECK(a, str, ret_val)
+#else /* NDEBUG */
 #define RTCIO_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
         ESP_LOGE(RTCIO_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
         return (ret_val);                                                           \
     }                                                                               \
 })
+#endif /* NDEBUG */
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 #define RTCIO_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)

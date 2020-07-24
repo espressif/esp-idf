@@ -59,12 +59,17 @@ static SemaphoreHandle_t rtc_touch_mux = NULL;
 #define TOUCH_PAD_SHIFT_ROUND_DEFAULT     (8)   // ROUND = 2^(n-1); rounding off for fractional.
 
 static const char *TOUCH_TAG = "TOUCH_SENSOR";
+
+#ifdef NDEBUG
+#define TOUCH_CHECK(a, str, ret_val)
+#else /* NDEBUG */
 #define TOUCH_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
         ESP_LOGE(TOUCH_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
         return (ret_val);                                                           \
     }                                                                               \
 })
+#endif /* NDEBUG */
 #define TOUCH_CHANNEL_CHECK(channel) TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM, "Touch channel error", ESP_ERR_INVALID_ARG)
 #define TOUCH_PARAM_CHECK_STR(s)     ""s" parameter error"
 

@@ -41,10 +41,14 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_EVENT_QUEUE_SIZE      (1)
 #define WEBSOCKET_PINGPONG_TIMEOUT_SEC  (120)
 
+#ifdef NDEBUG
+#define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action)
+#else /* NDEBUG */
 #define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
         action;                                                                                     \
         }
+#endif /* NDEBUG */
 
 const static int STOPPED_BIT = BIT0;
 

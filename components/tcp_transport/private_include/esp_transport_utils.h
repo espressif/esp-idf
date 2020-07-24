@@ -24,10 +24,15 @@ extern "C" {
  * @brief      Utility macro to be used for NULL ptr check after malloc
  *
  */
+
+#ifdef NDEBUG
+#define ESP_TRANSPORT_MEM_CHECK(TAG, a, action)
+#else /* NDEBUG */
 #define ESP_TRANSPORT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
         action;                                                                                     \
         }
+#endif /* NDEBUG */
 
 /**
  * @brief      Convert milliseconds to timeval struct for valid timeouts, otherwise

@@ -33,10 +33,14 @@
 #include "esp_rom_gpio.h"
 
 static const char *I2C_TAG = "i2c";
+#ifdef NDEBUG
+#define I2C_CHECK(a, str, ret)
+#else /* NDEBUG */
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
         ESP_LOGE(I2C_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);      \
         return (ret);                                                                   \
         }
+#endif /* NDEBUG */
 
 /* DRAM_ATTR is required to avoid I2C array placed in flash, due to accessed from ISR */
 

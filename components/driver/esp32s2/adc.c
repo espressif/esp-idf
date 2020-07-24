@@ -42,12 +42,16 @@
 
 static const char *ADC_TAG = "ADC";
 
+#ifdef NDEBUG
+#define ADC_CHECK(a, str, ret_val)
+#else /* NDEBUG */
 #define ADC_CHECK(a, str, ret_val) ({                                               \
     if (!(a)) {                                                                     \
         ESP_LOGE(ADC_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
         return (ret_val);                                                           \
     }                                                                               \
 })
+#endif /* NDEBUG */
 
 #define ADC_GET_IO_NUM(periph, channel) (adc_channel_io_map[periph][channel])
 

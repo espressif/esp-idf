@@ -21,10 +21,15 @@
 
 static const char *TAG = "SIGMADELTA";
 
+
+#ifdef NDEBUG
+#define SIGMADELTA_CHECK(a,str,ret_val)
+#else /* NDEBUG */
 #define SIGMADELTA_CHECK(a,str,ret_val) if(!(a)) { \
         ESP_LOGE(TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
         return (ret_val); \
     }
+#endif /* NDEBUG */
 
 typedef struct {
     sigmadelta_hal_context_t hal;        /*!< SIGMADELTA hal context*/
@@ -40,7 +45,7 @@ static sigmadelta_obj_t *p_sigmadelta_obj[SIGMADELTA_PORT_MAX] = {0};
 static inline esp_err_t _sigmadelta_set_duty(sigmadelta_port_t sigmadelta_port, sigmadelta_channel_t channel, int8_t duty)
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
-    
+
     sigmadelta_hal_set_duty(&(p_sigmadelta_obj[sigmadelta_port]->hal), channel, duty);
     return ESP_OK;
 }

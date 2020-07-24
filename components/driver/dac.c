@@ -28,12 +28,16 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 static const char *DAC_TAG = "DAC";
 
+#ifdef NDEBUG
+#define DAC(a, str, ret_val)
+#else /* NDEBUG */
 #define DAC_CHECK(a, str, ret_val) ({                                               \
     if (!(a)) {                                                                     \
         ESP_LOGE(DAC_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
         return (ret_val);                                                           \
     }                                                                               \
 })
+#endif /* NDEBUG */
 
 /*---------------------------------------------------------------
                     DAC

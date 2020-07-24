@@ -42,10 +42,14 @@
 
 static const char* I2S_TAG = "I2S";
 
+#ifdef NDEBUG
+#define I2S_CHECK(a, str, ret)
+#else /* NDEBUG */
 #define I2S_CHECK(a, str, ret) if (!(a)) {                                              \
         ESP_LOGE(I2S_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);       \
         return (ret);                                                                   \
         }
+#endif /* NDEBUG */
 
 #define I2S_ENTER_CRITICAL_ISR()          portENTER_CRITICAL_ISR(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL_ISR()           portEXIT_CRITICAL_ISR(&i2s_spinlock[i2s_num])
@@ -493,7 +497,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         //Avoid spurious interrupt
         return;
     }
-    
+
     i2s_event_t i2s_event;
     int dummy;
 
@@ -919,7 +923,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         }
         memset(p_i2s_obj[i2s_num], 0, sizeof(i2s_obj_t));
 
-        portMUX_TYPE i2s_spinlock_unlocked[1] = {portMUX_INITIALIZER_UNLOCKED}; 
+        portMUX_TYPE i2s_spinlock_unlocked[1] = {portMUX_INITIALIZER_UNLOCKED};
         for (int x = 0; x < I2S_NUM_MAX; x++) {
             i2s_spinlock[x] = i2s_spinlock_unlocked[0];
         }

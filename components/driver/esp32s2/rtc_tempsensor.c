@@ -28,12 +28,16 @@
 
 static const char *TAG = "tsens";
 
+#ifdef NDEBUG
+#define TSENS_CHECK(res, ret_val)
+#else /* NDEBUG */
 #define TSENS_CHECK(res, ret_val) ({                                    \
     if (!(res)) {                                                       \
         ESP_LOGE(TAG, "%s:%d (%s)", __FILE__, __LINE__, __FUNCTION__);  \
         return (ret_val);                                               \
     }                                                                   \
 })
+#endif /* NDEBUG */
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)

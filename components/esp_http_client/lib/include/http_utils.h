@@ -80,9 +80,13 @@ char *http_utils_join_string(const char *first_str, int len_first, const char *s
 int http_utils_str_starts_with(const char *str, const char *start);
 
 
+#ifdef NDEBUG
+#define HTTP_MEM_CHECK(TAG, a, action)
+#else /* NDEBUG */
 #define HTTP_MEM_CHECK(TAG, a, action) if (!(a)) {                                                  \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
         action;                                                                                     \
         }
+#endif /* NDEBUG */
 
 #endif

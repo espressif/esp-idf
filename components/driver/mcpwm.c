@@ -41,10 +41,14 @@ typedef struct {
 
 static const char *MCPWM_TAG = "MCPWM";
 
+#ifdef NDEBUG
+#define MCPWM_CHECK(a, str, ret)
+#else /* NDEBUG */
 #define MCPWM_CHECK(a, str, ret_val) if (!(a)) {                       \
     ESP_LOGE(MCPWM_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
     return (ret_val);                                  \
     }
+#endif /* NDEBUG */
 
 #define MCPWM_DRIVER_INIT_ERROR "MCPWM DRIVER NOT INITIALIZED"
 #define MCPWM_UNIT_NUM_ERROR    "MCPWM UNIT NUM ERROR"

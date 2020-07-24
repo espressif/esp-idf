@@ -44,12 +44,17 @@
 #define TOUCH_PAD_MEASURE_WAIT_DEFAULT  (0xFF)  // The timer frequency is 8Mhz, the max value is 0xff
 
 static const char *TOUCH_TAG = "TOUCH_SENSOR";
+
+#ifdef NDEBUG
+#define TOUCH_CHECK(a, str, ret_val)
+#else /* NDEBUG */
 #define TOUCH_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
         ESP_LOGE(TOUCH_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
         return (ret_val);                                                           \
     }                                                                               \
 })
+#endif /* NDEBUG */
 #define TOUCH_CHANNEL_CHECK(channel) do { \
         TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
         TOUCH_CHECK(channel != SOC_TOUCH_DENOISE_CHANNEL, "TOUCH0 is internal denoise channel", ESP_ERR_INVALID_ARG); \
