@@ -30,28 +30,26 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
-#include "soc/twai_struct.h"
 #include "hal/hal_defs.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
-#define TWAI_LL_STATUS_RBS       (0x1 << 0)
-#define TWAI_LL_STATUS_DOS       (0x1 << 1)
-#define TWAI_LL_STATUS_TBS       (0x1 << 2)
-#define TWAI_LL_STATUS_TCS       (0x1 << 3)
-#define TWAI_LL_STATUS_RS        (0x1 << 4)
-#define TWAI_LL_STATUS_TS        (0x1 << 5)
-#define TWAI_LL_STATUS_ES        (0x1 << 6)
-#define TWAI_LL_STATUS_BS        (0x1 << 7)
-//Todo: Add Miss status support
+#define TWAI_LL_STATUS_RBS      (0x1 << 0)      //Receive Buffer Status
+#define TWAI_LL_STATUS_DOS      (0x1 << 1)      //Data Overrun Status
+#define TWAI_LL_STATUS_TBS      (0x1 << 2)      //Transmit Buffer Status
+#define TWAI_LL_STATUS_TCS      (0x1 << 3)      //Transmission Complete Status
+#define TWAI_LL_STATUS_RS       (0x1 << 4)      //Receive Status
+#define TWAI_LL_STATUS_TS       (0x1 << 5)      //Transmit Status
+#define TWAI_LL_STATUS_ES       (0x1 << 6)      //Error Status
+#define TWAI_LL_STATUS_BS       (0x1 << 7)      //Bus Status
 
-#define TWAI_LL_INTR_RI          (0x1 << 0)
-#define TWAI_LL_INTR_TI          (0x1 << 1)
-#define TWAI_LL_INTR_EI          (0x1 << 2)
+#define TWAI_LL_INTR_RI         (0x1 << 0)      //Receive Interrupt
+#define TWAI_LL_INTR_TI         (0x1 << 1)      //Transmit Interrupt
+#define TWAI_LL_INTR_EI         (0x1 << 2)      //Error Interrupt
 //Data overrun interrupt not supported in SW due to HW peculiarities
-#define TWAI_LL_INTR_EPI         (0x1 << 5)
-#define TWAI_LL_INTR_ALI         (0x1 << 6)
-#define TWAI_LL_INTR_BEI         (0x1 << 7)
+#define TWAI_LL_INTR_EPI        (0x1 << 5)      //Error Passive Interrupt
+#define TWAI_LL_INTR_ALI        (0x1 << 6)      //Arbitration Lost Interrupt
+#define TWAI_LL_INTR_BEI        (0x1 << 7)      //Bus Error Interrupt
 
 /*
  * The following frame structure has an NEARLY identical bit field layout to
@@ -97,14 +95,12 @@ _Static_assert(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should b
  * in order to write the majority of configuration registers.
  *
  * @param hw Start address of the TWAI registers
- * @return true if reset mode was entered successfully
  *
  * @note Reset mode is automatically entered on BUS OFF condition
  */
-static inline bool twai_ll_enter_reset_mode(twai_dev_t *hw)
+static inline void twai_ll_enter_reset_mode(twai_dev_t *hw)
 {
     hw->mode_reg.rm = 1;
-    return hw->mode_reg.rm;
 }
 
 /**
@@ -115,14 +111,12 @@ static inline bool twai_ll_enter_reset_mode(twai_dev_t *hw)
  * operating mode.
  *
  * @param hw Start address of the TWAI registers
- * @return true if reset mode was exit successfully
  *
  * @note Reset mode must be exit to initiate BUS OFF recovery
  */
-static inline bool twai_ll_exit_reset_mode(twai_dev_t *hw)
+static inline void twai_ll_exit_reset_mode(twai_dev_t *hw)
 {
     hw->mode_reg.rm = 0;
-    return !(hw->mode_reg.rm);
 }
 
 /**
@@ -137,10 +131,10 @@ static inline bool twai_ll_is_in_reset_mode(twai_dev_t *hw)
 
 /**
  * @brief   Set operating mode of TWAI controller
- * 
+ *
  * @param hw Start address of the TWAI registers
  * @param mode Operating mode
- * 
+ *
  * @note Must be called in reset mode
  */
 static inline void twai_ll_set_mode(twai_dev_t *hw, twai_mode_t mode)
@@ -309,8 +303,6 @@ static inline bool twai_ll_is_last_tx_successful(twai_dev_t *hw)
     return hw->status_reg.tcs;
 }
 
-//Todo: Add stand alone status bit check functions when necessary
-
 /* -------------------------- Interrupt Register ---------------------------- */
 
 /**
@@ -378,7 +370,6 @@ static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t
 static inline void twai_ll_clear_arb_lost_cap(twai_dev_t *hw)
 {
     (void)hw->arbitration_lost_captue_reg.val;
-    //Todo: Decode ALC register
 }
 
 /* ----------------------------- ECC Register ------------------------------- */
@@ -393,7 +384,6 @@ static inline void twai_ll_clear_arb_lost_cap(twai_dev_t *hw)
 static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
 {
     (void)hw->error_code_capture_reg.val;
-    //Todo: Decode error code capture
 }
 
 /* ----------------------------- EWL Register ------------------------------- */
@@ -541,7 +531,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  * This function encodes a message into a frame structure. The frame structure
  * has an identical layout to the TX buffer, allowing the frame structure to be
  * directly copied into TX buffer.
- * 
+ *
  * @param[in] 11bit or 29bit ID
  * @param[in] dlc Data length code
  * @param[in] data Pointer to an 8 byte array containing data. NULL if no data
@@ -652,8 +642,8 @@ static inline uint32_t twai_ll_get_rx_msg_count(twai_dev_t *hw)
  * @brief   Set CLKOUT Divider and enable/disable
  *
  * Configure CLKOUT. CLKOUT is a pre-scaled version of APB CLK. Divider can be
- * 1, or any even number from 2 to 490. Set the divider to 0 to disable CLKOUT. 
- * 
+ * 1, or any even number from 2 to 490. Set the divider to 0 to disable CLKOUT.
+ *
  * @param hw Start address of the TWAI registers
  * @param divider Divider for CLKOUT (any even number from 2 to 490). Set to 0 to disable CLKOUT
  */

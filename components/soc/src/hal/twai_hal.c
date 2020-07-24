@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//Todo: Place the implementation of all common HAL functions here
-
 #include <stddef.h>
 #include "hal/twai_hal.h"
 
@@ -22,12 +20,16 @@
 #define TWAI_HAL_INIT_REC    0
 #define TWAI_HAL_INIT_EWL    96
 
+/* ---------------------------- Init and Config ----------------------------- */
+
 bool twai_hal_init(twai_hal_context_t *hal_ctx)
 {
     //Initialize HAL context
     hal_ctx->dev = &TWAI;
+    hal_ctx->state_flags = 0;
     //Initialize TWAI controller, and set default values to registers
-    if (!twai_ll_enter_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
+    twai_ll_enter_reset_mode(hal_ctx->dev);
+    if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
         return false;
     }
 #ifdef TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
@@ -61,21 +63,22 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);    //Clear any latched interrupts
 }
 
-bool twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode)
+/* -------------------------------- Actions --------------------------------- */
+
+void twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode)
 {
     twai_ll_set_mode(hal_ctx->dev, mode);                //Set operating mode
-    //Todo: Check if this can be removed
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);    //Clear any latched interrupts
-    return twai_ll_exit_reset_mode(hal_ctx->dev);        //Return false if failed to exit reset mode
+    TWAI_HAL_SET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
+    twai_ll_exit_reset_mode(hal_ctx->dev); 
 }
 
-bool twai_hal_stop(twai_hal_context_t *hal_ctx)
+void twai_hal_stop(twai_hal_context_t *hal_ctx)
 {
-    if (!twai_ll_enter_reset_mode(hal_ctx->dev)) {
-        return false;
-    }
-    //Todo: Check if this can be removed
+    twai_ll_enter_reset_mode(hal_ctx->dev);
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);
     twai_ll_set_mode(hal_ctx->dev, TWAI_MODE_LISTEN_ONLY);    //Freeze REC by changing to LOM mode
-    return true;
+    //Any TX is immediately halted on entering reset mode
+    TWAI_HAL_RESET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
+    TWAI_HAL_RESET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
 }

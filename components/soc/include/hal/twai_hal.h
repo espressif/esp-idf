@@ -31,21 +31,33 @@ extern "C" {
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
+#define TWAI_HAL_SET_FLAG(var, flag)            ((var) |= (flag))
+#define TWAI_HAL_RESET_FLAG(var, flag)          ((var) &= ~(flag))
+
+//HAL state flags
+#define TWAI_HAL_STATE_FLAG_RUNNING             (1 << 0)    //Controller is active (not in reset mode)
+#define TWAI_HAL_STATE_FLAG_RECOVERING          (1 << 1)    //Bus is undergoing bus recovery
+#define TWAI_HAL_STATE_FLAG_ERR_WARN            (1 << 2)    //TEC or REC is >= error warning limit
+#define TWAI_HAL_STATE_FLAG_ERR_PASSIVE         (1 << 3)    //TEC or REC is >= 128
+#define TWAI_HAL_STATE_FLAG_BUS_OFF             (1 << 4)    //Bus-off due to TEC >= 256
+#define TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED    (1 << 5)    //Transmit buffer is occupied
+
 //Error active interrupt related
-#define TWAI_HAL_EVENT_BUS_OFF               (1 << 0)
-#define TWAI_HAL_EVENT_BUS_RECOV_CPLT        (1 << 1)
-#define TWAI_HAL_EVENT_BUS_RECOV_PROGRESS    (1 << 2)
-#define TWAI_HAL_EVENT_ABOVE_EWL             (1 << 3)
-#define TWAI_HAL_EVENT_BELOW_EWL             (1 << 4)
-#define TWAI_HAL_EVENT_ERROR_PASSIVE         (1 << 5)
-#define TWAI_HAL_EVENT_ERROR_ACTIVE          (1 << 6)
-#define TWAI_HAL_EVENT_BUS_ERR               (1 << 7)
-#define TWAI_HAL_EVENT_ARB_LOST              (1 << 8)
-#define TWAI_HAL_EVENT_RX_BUFF_FRAME         (1 << 9)
-#define TWAI_HAL_EVENT_TX_BUFF_FREE          (1 << 10)
+#define TWAI_HAL_EVENT_BUS_OFF                  (1 << 0)
+#define TWAI_HAL_EVENT_BUS_RECOV_CPLT           (1 << 1)
+#define TWAI_HAL_EVENT_BUS_RECOV_PROGRESS       (1 << 2)
+#define TWAI_HAL_EVENT_ABOVE_EWL                (1 << 3)
+#define TWAI_HAL_EVENT_BELOW_EWL                (1 << 4)
+#define TWAI_HAL_EVENT_ERROR_PASSIVE            (1 << 5)
+#define TWAI_HAL_EVENT_ERROR_ACTIVE             (1 << 6)
+#define TWAI_HAL_EVENT_BUS_ERR                  (1 << 7)
+#define TWAI_HAL_EVENT_ARB_LOST                 (1 << 8)
+#define TWAI_HAL_EVENT_RX_BUFF_FRAME            (1 << 9)
+#define TWAI_HAL_EVENT_TX_BUFF_FREE             (1 << 10)
 
 typedef struct {
     twai_dev_t *dev;
+    uint32_t state_flags;
 } twai_hal_context_t;
 
 typedef twai_ll_frame_buffer_t twai_hal_frame_t;
@@ -93,9 +105,8 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
  *
  * @param hal_ctx Context of the HAL layer
  * @param mode Operating mode
- * @return True if successfully started, false otherwise.
  */
-bool twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode);
+void twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode);
 
 /**
  * @brief Stop the TWAI peripheral
@@ -104,19 +115,18 @@ bool twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode);
  * setting the operating mode to Listen Only so that REC is frozen.
  *
  * @param hal_ctx Context of the HAL layer
- * @return True if successfully stopped, false otherwise.
  */
-bool twai_hal_stop(twai_hal_context_t *hal_ctx);
+void twai_hal_stop(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Start bus recovery
  *
  * @param hal_ctx Context of the HAL layer
- * @return True if successfully started bus recovery, false otherwise.
  */
-static inline bool twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
+static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 {
-    return twai_ll_exit_reset_mode(hal_ctx->dev);
+    TWAI_HAL_SET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
+    twai_ll_exit_reset_mode(hal_ctx->dev);
 }
 
 /**
@@ -163,73 +173,42 @@ static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx
     return twai_ll_is_last_tx_successful((hal_ctx)->dev);
 }
 
+/**
+ * @brief Check if certain HAL state flags are set
+ *
+ * The HAL will maintain a record of the controller's state via a set of flags.
+ * These flags are automatically maintained (i.e., set and reset) inside various
+ * HAL function calls. This function checks if certain flags are currently set.
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param check_flags Bit mask of flags to check
+ * @return True if one or more of the flags in check_flags are set
+ */
+
+static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint32_t check_flags)
+{
+    return hal_ctx->state_flags & check_flags;
+}
+
 /* ----------------------------- Event Handling ----------------------------- */
 
 /**
  * @brief Decode current events that triggered an interrupt
  *
- * This function should be called on every TWAI interrupt. It will read (and
- * thereby clear) the interrupt register, then determine what events have
- * occurred to trigger the interrupt.
+ * This function should be the called at the beginning of an ISR. This
+ * function will do the following:
+ * - Read and clear interrupts
+ * - Decode current events that triggered an interrupt
+ * - Respond to low latency interrupt events
+ *      - Bus off: Change to LOM to free TEC/REC
+ *      - Recovery complete: Enter reset mode
+ *      - Clear ECC and ALC
+ * - Update state flags based on events that have occurred.
  *
  * @param hal_ctx Context of the HAL layer
- * @param bus_recovering Whether the TWAI peripheral was previous undergoing bus recovery
  * @return Bit mask of events that have occurred
  */
-uint32_t twai_hal_decode_interrupt_events(twai_hal_context_t *hal_ctx, bool bus_recovering);
-
-/**
- * @brief Handle bus recovery complete
- *
- * This function should be called on an bus recovery complete event. It simply
- * enters reset mode to stop bus activity.
- *
- * @param hal_ctx Context of the HAL layer
- * @return True if successfully handled bus recovery completion, false otherwise.
- */
-static inline bool twai_hal_handle_bus_recov_cplt(twai_hal_context_t *hal_ctx)
-{
-    return twai_ll_enter_reset_mode((hal_ctx)->dev);
-}
-
-/**
- * @brief Handle arbitration lost
- *
- * This function should be called on an arbitration lost event. It simply clears
- * the clears the ALC register.
- *
- * @param hal_ctx Context of the HAL layer
- */
-static inline void twai_hal_handle_arb_lost(twai_hal_context_t *hal_ctx)
-{
-    twai_ll_clear_arb_lost_cap((hal_ctx)->dev);
-}
-
-/**
- * @brief Handle bus error
- *
- * This function should be called on an bus error event. It simply clears
- * the clears the ECC register.
- *
- * @param hal_ctx Context of the HAL layer
- */
-static inline void twai_hal_handle_bus_error(twai_hal_context_t *hal_ctx)
-{
-    twai_ll_clear_err_code_cap((hal_ctx)->dev);
-}
-
-/**
- * @brief Handle BUS OFF
- *
- * This function should be called on a BUS OFF event. It simply changes the
- * mode to LOM to freeze REC
- *
- * @param hal_ctx Context of the HAL layer
- */
-static inline void twai_hal_handle_bus_off(twai_hal_context_t *hal_ctx)
-{
-    twai_ll_set_mode((hal_ctx)->dev, TWAI_MODE_LISTEN_ONLY);
-}
+uint32_t twai_hal_decode_interrupt_events(twai_hal_context_t *hal_ctx);
 
 /* ------------------------------- TX and RX -------------------------------- */
 

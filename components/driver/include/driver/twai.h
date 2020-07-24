@@ -40,9 +40,9 @@ extern "C" {
  * configured. The other members of the general configuration structure are
  * assigned default values.
  */
-#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,       \
-                                                                    .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,       \
-                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                          \
+#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
+                                                                    .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
+                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
                                                                     .intr_flags = ESP_INTR_FLAG_LEVEL1}
 
@@ -168,9 +168,9 @@ esp_err_t twai_driver_uninstall(void);
  *
  * This function starts the TWAI driver, putting the TWAI driver into the running
  * state. This allows the TWAI driver to participate in TWAI bus activities such
- * as transmitting/receiving messages. The RX queue is reset in this function,
- * clearing any unread messages. This function can only be called when the TWAI
- * driver is in the stopped state.
+ * as transmitting/receiving messages. The TX and RX queue are reset in this function,
+ * clearing any messages that are unread or pending transmission. This function
+ * can only be called when the TWAI driver is in the stopped state.
  *
  * @return
  *      - ESP_OK: TWAI driver is now running
