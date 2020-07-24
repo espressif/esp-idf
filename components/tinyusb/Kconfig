@@ -9,75 +9,6 @@ menu "TinyUSB"
         help
             Adds support for TinyUSB
 
-    config USB_CDC_ENABLED
-        bool "Enable USB Serial (CDC) TinyUSB driver"
-        default n
-        depends on USB_ENABLED
-        help
-            Enable USB Serial (CDC) TinyUSB driver.
-
-    config USB_CDC_RX_BUFSIZE
-        int "CDC FIFO size of RX"
-        default 64
-        depends on USB_CDC_ENABLED
-        help
-            CDC FIFO size of RX
-
-    config USB_CDC_TX_BUFSIZE
-        int "CDC FIFO size of TX"
-        default 64
-        depends on USB_CDC_ENABLED
-        help
-            CDC FIFO size of TX
-
-    config USB_MSC_ENABLED
-        bool "Enable Mass Storage (MSC) TinyUSB driver"
-        default n
-        depends on USB_ENABLED
-        help
-            Enable MSC TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL and
-            .string_descriptor = NULL in the tinyusb_config_t structure).
-
-    config USB_MSC_BUFSIZE
-        int "MSC Buffer size of Device Mass storage"
-        default 512
-        depends on USB_MSC_ENABLED
-        help
-            MSC Buffer size of Device Mass storage
-
-
-    config USB_HID_ENABLED
-        bool "Enable HID TinyUSB driver"
-        default n
-        depends on USB_ENABLED
-        help
-            Enable HID TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL and
-            .string_descriptor = NULL in the tinyusb_config_t structure).
-
-    config USB_HID_BUFSIZE
-        int "HID buffer size Should be sufficient to hold ID (if any) + Data"
-        default 16
-        depends on USB_HID_ENABLED
-        help
-            HID buffer size Should be sufficient to hold ID (if any) + Data
-
-
-    config USB_MIDI_ENABLED
-        bool "Enable MIDI TinyUSB driver"
-        default n
-        depends on USB_ENABLED
-        help
-            Enable MIDI TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL
-            and .string_descriptor = NULL in the tinyusb_config_t structure).
-
-    config USB_CUSTOM_CLASS_ENABLED
-        bool "Enable a custom TinyUSB class"
-        default n
-        depends on USB_ENABLED
-        help
-            Enable a custom TinyUSB class. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL
-            and .string_descriptor = NULL in the tinyusb_config_t structure).
-
     config USB_DEBUG
         bool "Debug mode"
         default n
@@ -142,27 +73,6 @@ menu "TinyUSB"
             depends on USB_ENABLED
             help
                 Specify serial number of the USB device
-
-        config USB_DESC_CDC_STRING
-            string "CDC Device String"
-            default "Espressif CDC Device"
-            depends on USB_CDC_ENABLED
-            help
-                Specify name of the CDC device
-
-        config USB_DESC_MSC_STRING
-            string "MSC Device String"
-            default "Espressif MSC Device"
-            depends on USB_MSC_ENABLED
-            help
-                Specify name of the MSC device
-
-        config USB_DESC_HID_STRING
-            string "HID Device String"
-            default "Espressif HID Device"
-            depends on USB_HID_ENABLED
-            help
-                Specify name of the HID device
 
     endmenu
 
