@@ -127,9 +127,9 @@ def main():
             if args.size_info:
                 build_info.write_size_info(args.size_info)
             if not build_info.preserve:
-                logging.info("Removing build directory {}".format(build_info.build_dir))
+                logging.info("Removing build directory {}".format(build_info.build_path))
                 # we only remove binaries here, log files are still needed by check_build_warnings.py
-                shutil.rmtree(build_info.build_dir, ignore_errors=True)
+                shutil.rmtree(build_info.build_path, ignore_errors=True)
 
     if failed_builds:
         logging.error("The following build have failed:")
