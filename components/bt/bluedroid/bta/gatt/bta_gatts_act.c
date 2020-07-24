@@ -35,6 +35,7 @@
 #include "stack/btm_ble_api.h"
 #include <string.h>
 #include "osi/allocator.h"
+#include "stack/l2c_api.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -672,6 +673,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                                       p_msg->api_indicate.len,
                                                       p_msg->api_indicate.value);
             } else {
+                l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
                 status = GATTS_HandleValueNotification (p_msg->api_indicate.hdr.layer_specific,
                                                         p_msg->api_indicate.attr_id,
                                                         p_msg->api_indicate.len,
