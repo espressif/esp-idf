@@ -593,7 +593,12 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
         return EBUSY;
     }
 
+    // FreeRTOS mutex must not be deleted while taken (breaks priority inheritance):
+    vTaskSuspendAll();
+    pthread_mutex_unlock(mutex);
     vSemaphoreDelete(mux->sem);
+    xTaskResumeAll();
+
     free(mux);
 
     return 0;
