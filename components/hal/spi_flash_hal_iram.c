@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// HAL for
+//  - MEMSPI
+//  - SPI1~3 on ESP32
+// The common part is in spi_flash_hal_common.inc
+
 #include "spi_flash_hal_common.inc"
 
 void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
@@ -21,6 +26,7 @@ void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
     host->driver->poll_cmd_done(host);
 }
 
+// Only support 24bit address
 void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     spi_dev_t *dev = get_spi_dev(host);
@@ -30,6 +36,7 @@ void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_addr
     host->driver->poll_cmd_done(host);
 }
 
+// Only support 24bit address
 void spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     spi_dev_t *dev = get_spi_dev(host);
@@ -39,6 +46,7 @@ void spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_addre
     host->driver->poll_cmd_done(host);
 }
 
+// Only support 24bit address
 void spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length)
 {
     spi_dev_t *dev = get_spi_dev(host);

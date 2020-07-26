@@ -77,7 +77,6 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .get_chip_write_protect = spi_flash_chip_generic_get_write_protect,
     .set_chip_write_protect = spi_flash_chip_generic_set_write_protect,
 
-    // TODO support protected regions on ISSI flash
     .num_protectable_regions = 0,
     .protectable_regions = NULL,
     .get_protected_regions = NULL,
@@ -92,4 +91,6 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .wait_idle = spi_flash_chip_generic_wait_idle,
     .set_io_mode = spi_flash_chip_issi_set_io_mode,
     .get_io_mode = spi_flash_chip_issi_get_io_mode,
+
+    .read_reg = spi_flash_chip_generic_read_reg,
 };

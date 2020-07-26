@@ -275,17 +275,18 @@ static inline void gpspi_flash_ll_set_mosi_bitlen(spi_dev_t *dev, uint32_t bitle
 }
 
 /**
- * Set the command with fixed length (8 bits).
+ * Set the command.
  *
  * @param dev Beginning address of the peripheral registers.
  * @param command Command to send
+ * @param bitlen Length of the command
  */
-static inline void gpspi_flash_ll_set_command8(spi_dev_t *dev, uint8_t command)
+static inline void gpspi_flash_ll_set_command(spi_dev_t *dev, uint8_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
     typeof(dev->user2) user2 = {
         .usr_command_value = command,
-        .usr_command_bitlen = (8 - 1),
+        .usr_command_bitlen = (bitlen - 1),
     };
     dev->user2 = user2;
 }
@@ -321,7 +322,9 @@ static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitle
  */
 static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
-    dev->addr = (addr << (32 - bitlen));
+    // The blank region should be all ones
+    uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
+    dev->addr = (addr << (32 - bitlen)) | padding_ones;
 }
 
 /**
@@ -359,6 +362,12 @@ static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en,
     dev->ctrl.dummy_out = out_en;
     dev->ctrl.q_pol = out_lev;
     dev->ctrl.d_pol = out_lev;
+}
+
+static inline void gpspi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)
+{
+    dev->ctrl2.cs_hold_time = hold_n - 1;
+    dev->user.cs_hold = (hold_n > 0? 1: 0);
 }
 
 #ifdef __cplusplus

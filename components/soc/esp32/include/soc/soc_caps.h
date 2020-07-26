@@ -183,7 +183,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
 
 // Peripheral doesn't support output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_host)   ({(void)spi_host; 0;})
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT             0
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
 // No contents here

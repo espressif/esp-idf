@@ -190,6 +190,16 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
 
 #define ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT -1
 /**
+ * @brief Send commands to read one of the reg of the chip
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param reg_id     Type of the register to read
+ * @param out_reg    Output of the register value
+ * @return esp_err_t Error code passed from the ``read_status`` function of host driver.
+ */
+esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_t reg_id, uint32_t* out_reg);
+
+/**
  * @brief Read flash status via the RDSR command and wait for bit 0 (write in
  * progress bit) to be cleared.
  *
@@ -362,13 +372,14 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
  * transactions. Also prepare the command to be sent in read functions.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param addr_32bit Whether 32 bit commands will be used (Currently only W25Q256 is supported)
  *
  * @return
  *      - ESP_OK if success
  *      - ESP_ERR_FLASH_NOT_INITIALISED if chip not initialized properly
  *      - or other error passed from the ``configure_host_mode`` function of host driver
  */
-esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip);
+esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, bool addr_32bit);
 
 /// Default timeout configuration used by most chips
 const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;

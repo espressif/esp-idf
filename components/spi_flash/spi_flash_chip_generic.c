@@ -191,7 +191,7 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
     uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
 
     // Configure the host, and return
-    err = spi_flash_chip_generic_config_host_io_mode(chip);
+    err = spi_flash_chip_generic_config_host_io_mode(chip, false);
 
     if (err == ESP_ERR_NOT_SUPPORTED) {
         ESP_LOGE(TAG, "configure host io mode failed - unsupported");
@@ -313,6 +313,11 @@ esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_
     return ESP_OK;
 }
 
+esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_t reg_id, uint32_t* out_reg)
+{
+    return chip->host->driver->read_status(chip->host, (uint8_t*)out_reg);
+}
+
 esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_us)
 {
     bool timeout_en = (timeout_us != ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
@@ -330,10 +335,13 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
             return err;
         }
 
-        err = chip->host->driver->read_status(chip->host, &status);
+        uint32_t read;
+        err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &read);
         if (err != ESP_OK) {
             return err;
         }
+        status = read;
+
         if ((status & SR_WIP) == 0) {
             break; // Write in progress is complete
         }
@@ -349,51 +357,62 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
     return (timeout_us > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
 }
 
-esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
+esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, bool addr_32bit)
 {
     uint32_t dummy_cyclelen_base;
     uint32_t addr_bitlen;
     uint32_t read_command;
+    bool conf_required = false;
+    esp_flash_io_mode_t read_mode = chip->read_mode;
 
-    switch (chip->read_mode) {
+    switch (read_mode & 0xFFFF) {
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->qio_dummy_bitlen;
-        read_command = CMD_FASTRD_QIO;
+        read_command = (addr_32bit? CMD_FASTRD_QIO_4B: CMD_FASTRD_QIO);
+        conf_required = true;
         break;
     case SPI_FLASH_QOUT:
         addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->qout_dummy_bitlen;
-        read_command = CMD_FASTRD_QUAD;
+        read_command = (addr_32bit? CMD_FASTRD_QUAD_4B: CMD_FASTRD_QUAD);
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->dio_dummy_bitlen;
-        read_command = CMD_FASTRD_DIO;
+        read_command = (addr_32bit? CMD_FASTRD_DIO_4B: CMD_FASTRD_DIO);
+        conf_required = true;
         break;
     case SPI_FLASH_DOUT:
         addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->dout_dummy_bitlen;
-        read_command = CMD_FASTRD_DUAL;
+        read_command = (addr_32bit? CMD_FASTRD_DUAL_4B: CMD_FASTRD_DUAL);
         break;
     case SPI_FLASH_FASTRD:
         addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;
-        read_command = CMD_FASTRD;
+        read_command = (addr_32bit? CMD_FASTRD_4B: CMD_FASTRD);
         break;
     case SPI_FLASH_SLOWRD:
         addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
         dummy_cyclelen_base = rom_flash_chip_dummy->slowrd_dummy_bitlen;
-        read_command = CMD_READ;
+        read_command = (addr_32bit? CMD_READ_4B: CMD_READ);
         break;
     default:
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
+    //For W25Q256 chip, the only difference between 4-Byte address command and 3-Byte version is the command value and the address bit length.
+    if (addr_32bit) {
+        addr_bitlen += 8;
+    }
 
-    return chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
-                                                chip->read_mode);
+    if (conf_required) {
+        read_mode |= SPI_FLASH_CONFIG_CONF_BITS;
+    }
+
+    return chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base, read_mode);
 }
 
 esp_err_t spi_flash_chip_generic_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode)
@@ -455,6 +474,8 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .wait_idle = spi_flash_chip_generic_wait_idle,
     .set_io_mode = spi_flash_chip_generic_set_io_mode,
     .get_io_mode = spi_flash_chip_generic_get_io_mode,
+
+    .read_reg = spi_flash_chip_generic_read_reg,
 };
 
 /*******************************************************************************

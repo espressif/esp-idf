@@ -31,6 +31,7 @@ else()
         "spi_flash_chip_issi.c"
         "spi_flash_chip_mxic.c"
         "spi_flash_chip_gd.c"
+        "spi_flash_chip_winbond.c"
         "memspi_host_driver.c")
 
     list(APPEND cache_srcs
