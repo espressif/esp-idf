@@ -27,24 +27,62 @@ extern "C" {
 
 #define OS_SUCCESS ESP_OK
 #define OS_FAIL    ESP_FAIL
+#define HTTPD_OS_THREAD_CORE_ID (0)
 
 typedef TaskHandle_t othread_t;
+static StackType_t *httpd_os_thread_task_stack;
 
 static inline int httpd_os_thread_create(othread_t *thread,
                                  const char *name, uint16_t stacksize, int prio,
                                  void (*thread_routine)(void *arg), void *arg)
 {
-    int ret = xTaskCreate(thread_routine, name, stacksize, arg, prio, thread);
-    if (ret == pdPASS) {
-        return OS_SUCCESS;
+#if CONFIG_SPIRAM_BOOT_INIT
+    httpd_os_thread_task_stack = (StackType_t *)heap_caps_malloc(1 * stacksize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (httpd_os_thread_task_stack) {
+        memset(httpd_os_thread_task_stack, 0, 1 * stacksize);
+    } else {
+        return OS_FAIL;
     }
-    return OS_FAIL;
+
+    /*
+    * Note: Make sure selected the `CONFIG_SPIRAM_BOOT_INIT` and `CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` by `make menuconfig`
+    */
+    TaskParameters_t xRegParameters = {
+        .pvTaskCode = thread_routine,
+        .pcName = name,
+        .usStackDepth = stacksize,
+        .pvParameters = arg,
+        .uxPriority = prio | portPRIVILEGE_BIT,
+        .puxStackBuffer = httpd_os_thread_task_stack,
+        .xRegions = {{
+                .pvBaseAddress = 0x00,
+                .ulLengthInBytes = 0x00,
+                .ulParameters = 0x00,
+            }
+        }
+    };
+
+    if (xTaskCreateRestrictedPinnedToCore(&xRegParameters, (xTaskHandle)thread, HTTPD_OS_THREAD_CORE_ID) != pdPASS) {
+        return OS_FAIL;
+    }
+#else
+    int ret = xTaskCreate(thread_routine, name, stacksize, arg, prio, thread);
+    if (ret != pdPASS) {
+        return OS_FAIL;
+    }
+#endif
+
+    return OS_SUCCESS;
 }
 
 /* Only self delete is supported */
 static inline void httpd_os_thread_delete()
 {
     vTaskDelete(xTaskGetCurrentTaskHandle());
+    if (httpd_os_thread_task_stack) {
+        free(httpd_os_thread_task_stack);
+        httpd_os_thread_task_stack = NULL;
+    }
 }
 
 static inline void httpd_os_thread_sleep(int msecs)
