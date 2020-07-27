@@ -50,6 +50,7 @@
 #include "esp_flash_encrypt.h"
 
 #include "hal/rtc_io_hal.h"
+#include "hal/wdt_hal.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/cpu.h"
