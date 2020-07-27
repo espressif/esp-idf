@@ -46,12 +46,14 @@ void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 		wpa_printf(MSG_ERROR, "Memory allocation failed");
 		return;
 	}
+#ifdef CONFIG_WNM
 	if (wpa_s->wnm_mode) {
 		/* Use the same memory */
 		params->ssids[0].ssid = wpa_s->current_bss->ssid;
 		params->ssids[0].ssid_len = wpa_s->current_bss->ssid_len;
 		params->num_ssids = 1;
 	}
+#endif
 	if (!is_zero_ether_addr(wpa_s->next_scan_bssid)) {
 		/* Use the same memory */
 		params->bssid = wpa_s->next_scan_bssid;

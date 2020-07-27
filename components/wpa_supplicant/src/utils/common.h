@@ -370,6 +370,8 @@ typedef u64 __bitwise le64;
 #endif /* __GNUC__ */
 #endif /* __must_check */
 
+#define SSID_MAX_LEN 32
+
 int hwaddr_aton(const char *txt, u8 *addr);
 int hwaddr_masked_aton(const char *txt, u8 *addr, u8 *mask, u8 maskable);
 int hwaddr_compact_aton(const char *txt, u8 *addr);

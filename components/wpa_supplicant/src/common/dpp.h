@@ -25,7 +25,6 @@ struct dpp_global;
 
 #define DPP_HDR_LEN (4 + 2) /* OUI, OUI Type, Crypto Suite, DPP frame type */
 #define DPP_TCP_PORT 7871
-#define SSID_MAX_LEN 32
 #define PMKID_LEN 16
 #define PMK_LEN 32
 #define PMK_LEN_SUITE_B_192 48

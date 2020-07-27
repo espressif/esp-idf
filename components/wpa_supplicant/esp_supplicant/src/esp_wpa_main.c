@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,8 +66,10 @@ void  wpa_deauthenticate(u8 reason_code)
     esp_wifi_deauthenticate_internal(reason_code);
 }
 
-int  wpa_config_profile(void)
+int  wpa_config_profile(uint8_t *bssid)
 {
+    int ret = 0;
+
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
     } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
@@ -75,10 +77,10 @@ int  wpa_config_profile(void)
     } else if (esp_wifi_sta_prof_is_wapi_internal()) {
         wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
     } else {
-        /* do nothing */
-        return -1;
+        ret = -1;
     }
-    return 0;
+
+    return ret;
 }
 
 int wpa_config_bss(uint8_t *bssid)
@@ -116,7 +118,6 @@ bool  wpa_attach(void)
         ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
     }
     esp_set_scan_ie();
-    esp_set_assoc_ie();
     return ret;
 }
 
@@ -169,7 +170,7 @@ int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
     int ret = 0;
-    ret = wpa_config_profile();
+    ret = wpa_config_profile(bssid);
     if (ret == 0) {
         ret = wpa_config_bss(bssid);
         if (ret) {
@@ -184,7 +185,6 @@ int wpa_sta_connect(uint8_t *bssid)
 void wpa_config_done(void)
 {
     /* used in future for setting scan and assoc IEs */
-    esp_set_assoc_ie();
 }
 
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
@@ -224,19 +224,6 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
             break;
     }
 }
-
-#ifndef ROAMING_SUPPORT
-static inline int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
-{
-	wpa_cb->wpa_sta_rx_mgmt = NULL;
-	wpa_cb->wpa_sta_profile_match = NULL;
-
-	return 0;
-}
-static inline void esp_supplicant_common_deinit(void)
-{
-}
-#endif
 
 int esp_supplicant_init(void)
 {

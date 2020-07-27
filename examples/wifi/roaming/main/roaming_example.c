@@ -383,6 +383,7 @@ static void initialise_wifi(void)
 			.btm_enabled =1,
 			.mbo_enabled =1,
 			.pmf_cfg.capable = 1,
+			.ft_enabled =1,
 		},
 	};
 
