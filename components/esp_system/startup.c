@@ -120,7 +120,7 @@ static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char 
 
 static const char* TAG = "cpu_start";
 
-static void IRAM_ATTR do_global_ctors(void)
+static void do_global_ctors(void)
 {
     extern void (*__init_array_start)(void);
     extern void (*__init_array_end)(void);
@@ -140,7 +140,7 @@ static void IRAM_ATTR do_global_ctors(void)
     }
 }
 
-static void IRAM_ATTR do_system_init_fn(void)
+static void do_system_init_fn(void)
 {
     extern esp_system_init_fn_t _esp_system_init_fn_array_start;
     extern esp_system_init_fn_t _esp_system_init_fn_array_end;
@@ -166,7 +166,7 @@ static void IRAM_ATTR start_app_other_cores_default(void)
     }
 }
 
-static void IRAM_ATTR start_cpu_other_cores_default(void)
+static void start_cpu_other_cores_default(void)
 {
     do_system_init_fn();
 
@@ -178,7 +178,7 @@ static void IRAM_ATTR start_cpu_other_cores_default(void)
 }
 #endif
 
-static void IRAM_ATTR do_core_init(void)
+static void do_core_init(void)
 {
     /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
        If the heap allocator is initialized first, it will put free memory linked list items into
@@ -277,7 +277,7 @@ static void IRAM_ATTR do_core_init(void)
     assert(flash_ret == ESP_OK);
 }
 
-static void IRAM_ATTR do_secondary_init(void)
+static void do_secondary_init(void)
 {
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // The port layer transferred control to this function with other cores 'paused',
@@ -304,7 +304,7 @@ static void IRAM_ATTR do_secondary_init(void)
 #endif
 }
 
-void IRAM_ATTR start_cpu0_default(void)
+void start_cpu0_default(void)
 {
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
