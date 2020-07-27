@@ -581,70 +581,56 @@ IRAM_ATTR void emac_hal_isr(void *arg)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     typeof(hal->dma_regs->dmastatus) dma_status = hal->dma_regs->dmastatus;
+    hal->dma_regs->dmastatus.val = dma_status.val;
     /* DMA Normal Interrupt */
     if (dma_status.norm_int_summ) {
         /* Transmit Interrupt */
         if (dma_status.trans_int) {
             emac_hal_tx_complete_cb(arg);
-            hal->dma_regs->dmastatus.trans_int = 1;
         }
         /* Transmit Buffer Unavailable */
         if (dma_status.trans_buf_unavail) {
             emac_hal_tx_unavail_cb(arg);
-            hal->dma_regs->dmastatus.trans_buf_unavail = 1;
         }
         /* Receive Interrupt */
         if (dma_status.recv_int) {
             emac_hal_rx_complete_cb(arg);
-            hal->dma_regs->dmastatus.recv_int = 1;
         }
         /* Early Receive Interrupt */
         if (dma_status.early_recv_int) {
             emac_hal_rx_early_cb(arg);
-            hal->dma_regs->dmastatus.early_recv_int = 1;
         }
-        hal->dma_regs->dmastatus.norm_int_summ = 1;
     }
     /* DMA Abnormal Interrupt */
     if (dma_status.abn_int_summ) {
         /* Transmit Process Stopped */
         if (dma_status.trans_proc_stop) {
-            hal->dma_regs->dmastatus.trans_proc_stop = 1;
         }
         /* Transmit Jabber Timeout */
         if (dma_status.trans_jabber_to) {
-            hal->dma_regs->dmastatus.trans_jabber_to = 1;
         }
         /* Receive FIFO Overflow */
         if (dma_status.recv_ovflow) {
-            hal->dma_regs->dmastatus.recv_ovflow = 1;
         }
         /* Transmit Underflow */
         if (dma_status.trans_undflow) {
-            hal->dma_regs->dmastatus.trans_undflow = 1;
         }
         /* Receive Buffer Unavailable */
         if (dma_status.recv_buf_unavail) {
             emac_hal_rx_unavail_cb(arg);
-            hal->dma_regs->dmastatus.recv_buf_unavail = 1;
         }
         /* Receive Process Stopped */
         if (dma_status.recv_proc_stop) {
-            hal->dma_regs->dmastatus.recv_proc_stop = 1;
         }
         /* Receive Watchdog Timeout */
         if (dma_status.recv_wdt_to) {
-            hal->dma_regs->dmastatus.recv_wdt_to = 1;
         }
         /* Early Transmit Interrupt */
         if (dma_status.early_trans_int) {
-            hal->dma_regs->dmastatus.early_trans_int = 1;
         }
         /* Fatal Bus Error */
         if (dma_status.fatal_bus_err_int) {
-            hal->dma_regs->dmastatus.fatal_bus_err_int = 1;
         }
-        hal->dma_regs->dmastatus.abn_int_summ = 1;
     }
 }
 
