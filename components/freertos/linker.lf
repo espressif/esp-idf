@@ -112,3 +112,6 @@ entries:
         queue: xQueueAddToSet (default)
         queue: xQueueRemoveFromSet (default)
         queue: xQueueSelectFromSet (default)
+    port:start_app(default)
+    port:start_app_other_cores(default)
+
