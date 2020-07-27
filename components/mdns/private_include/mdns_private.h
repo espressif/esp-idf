@@ -236,6 +236,7 @@ typedef struct {
     uint8_t distributed;
     mdns_parsed_question_t * questions;
     mdns_parsed_record_t * records;
+    uint16_t id;
 } mdns_parsed_packet_t;
 
 typedef struct {
@@ -304,6 +305,7 @@ typedef struct mdns_tx_packet_s {
     mdns_out_answer_t * servers;
     mdns_out_answer_t * additional;
     bool queued;
+    uint16_t id;
 } mdns_tx_packet_t;
 
 typedef struct {
