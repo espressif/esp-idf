@@ -26,6 +26,9 @@
 
 #include "soc/rtc.h"
 
+#include "hal/uart_ll.h"
+#include "hal/uart_types.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_timer.h"
@@ -74,12 +77,9 @@
 #define DEFAULT_CPU_FREQ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #endif
 
-#define MHZ 1000000
-
 #ifdef CONFIG_PM_PROFILING
 #define WITH_PROFILING
 #endif
-
 
 static portMUX_TYPE s_switch_lock = portMUX_INITIALIZER_UNLOCKED;
 /* The following state variables are protected using s_switch_lock: */
@@ -200,7 +200,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
 #if CONFIG_IDF_TARGET_ESP32
     const esp_pm_config_esp32_t* config = (const esp_pm_config_esp32_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32S2
-    const esp_pm_config_esp32s2_t* config = (const esp_pm_config_esp32s_t*) vconfig;
+    const esp_pm_config_esp32s2_t* config = (const esp_pm_config_esp32s2_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -669,12 +669,20 @@ void esp_pm_impl_dump_stats(FILE* out)
 
 void esp_pm_impl_init(void)
 {
+#if defined(CONFIG_ESP_CONSOLE_UART)
+    while(!uart_ll_get_txfifo_len(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
+    /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_REF_TICK, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_ESP_CONSOLE_UART
+
 #ifdef CONFIG_PM_TRACE
     esp_pm_trace_init();
 #endif
+
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos0",
             &s_rtos_lock_handle[0]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[0]));
+
 #if portNUM_PROCESSORS == 2
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos1",
             &s_rtos_lock_handle[1]));
@@ -685,10 +693,24 @@ void esp_pm_impl_init(void)
      * This will be modified later by a call to esp_pm_configure.
      */
     rtc_cpu_freq_config_t default_config;
-    if (!rtc_clk_cpu_freq_mhz_to_config(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &default_config)) {
+    if (!rtc_clk_cpu_freq_mhz_to_config(DEFAULT_CPU_FREQ, &default_config)) {
         assert(false && "unsupported frequency");
     }
     for (size_t i = 0; i < PM_MODE_COUNT; ++i) {
         s_cpu_freq_by_mode[i] = default_config;
     }
+
+#ifdef CONFIG_PM_DFS_INIT_AUTO
+    int xtal_freq = (int) rtc_clk_xtal_freq_get();
+#if CONFIG_IDF_TARGET_ESP32
+    esp_pm_config_esp32_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_pm_config_esp32s2_t cfg = {
+#endif
+        .max_freq_mhz = DEFAULT_CPU_FREQ,
+        .min_freq_mhz = xtal_freq,
+    };
+
+    esp_pm_configure(&cfg);
+#endif //CONFIG_PM_DFS_INIT_AUTO
 }

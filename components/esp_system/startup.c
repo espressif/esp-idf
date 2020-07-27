@@ -369,29 +369,9 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
-#if defined(CONFIG_PM_ENABLE) && defined(CONFIG_ESP_CONSOLE_UART)
-    /* When DFS is enabled, use REFTICK as UART clock source */
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_REF_TICK, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
-#endif // CONFIG_ESP_CONSOLE_UART_NONE
-
-#ifdef CONFIG_PM_ENABLE
+#if defined(CONFIG_PM_ENABLE) 
     esp_pm_impl_init();
-#ifdef CONFIG_PM_DFS_INIT_AUTO
-    int xtal_freq = (int) rtc_clk_xtal_freq_get();
-#ifdef CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t cfg = {
-        .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
-        .min_freq_mhz = xtal_freq,
-    };
-#else
-esp_pm_config_esp32s2_t cfg = {
-        .max_freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ,
-        .min_freq_mhz = xtal_freq,
-    };
 #endif
-    esp_pm_configure(&cfg);
-#endif //CONFIG_PM_DFS_INIT_AUTO
-#endif //CONFIG_PM_ENABLE
 
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_ESP32_ENABLE_COREDUMP
