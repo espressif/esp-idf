@@ -150,7 +150,6 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'get-started-legacy/**']
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
-              'api-guides/jtag-debugging/configure-wrover.rst',
               'api-reference/system/himem.rst',
               'api-guides/RF_calibration.rst',
               'api-reference/system/ipc.rst',

@@ -155,16 +155,19 @@ def action_extensions(base_actions, project_path):
         """
         Execute openocd as external tool
         """
+        OPENOCD_TAGET_CONFIG = {
+            "esp32": "-f board/esp32-wrover-kit-3.3v.cfg",
+            "esp32s2": "-f board/esp32s2-kaluga-1.cfg",
+        }
         if os.getenv("OPENOCD_SCRIPTS") is None:
-            raise FatalError("OPENOCD_SCRIPTS not found in the environment: Please run export.sh/export.bin", ctx)
+            raise FatalError("OPENOCD_SCRIPTS not found in the environment: Please run export.sh/export.bat", ctx)
         openocd_arguments = os.getenv("OPENOCD_COMMANDS") if openocd_commands is None else openocd_commands
         project_desc = get_project_desc(args, ctx)
         if openocd_arguments is None:
             # use default value if commands not defined in the environment nor command line
-            if project_desc["target"] == "esp32":
-                openocd_arguments = "-f board/esp32-wrover-kit-3.3v.cfg"
-            else:
-                openocd_arguments = "-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{}.cfg".format(project_desc["target"])
+            target = project_desc["target"]
+            default_args = "-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{}.cfg".format(target)
+            openocd_arguments = OPENOCD_TAGET_CONFIG.get(target, default_args)
             print('Note: OpenOCD cfg not found (via env variable OPENOCD_COMMANDS nor as a --openocd-commands argument)\n'
                   'OpenOCD arguments default to: "{}"'.format(openocd_arguments))
         # script directory is taken from the environment by OpenOCD, update only if command line arguments to override
