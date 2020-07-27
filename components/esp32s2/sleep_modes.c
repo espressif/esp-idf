@@ -34,8 +34,8 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/uart_caps.h"
 #include "hal/wdt_hal.h"
+#include "hal/clk_gate_ll.h"
 #include "driver/rtc_io.h"
-#include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
@@ -144,21 +144,34 @@ void esp_deep_sleep(uint64_t time_in_us)
 static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
-        uart_tx_wait_idle(i);
+        if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
+            uart_tx_wait_idle(i);
+        }
     }
 }
 
 static void IRAM_ATTR suspend_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
-        uart_tx_wait_idle(i);
-        /* Note: Set `UART_FORCE_XOFF` can't stop new Tx request. */
+        if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
+            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
+            REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
+            while (REG_GET_FIELD(UART_FSM_STATUS_REG(i), UART_ST_UTX_OUT) != 0) {
+                ;
+            }
+        }
     }
 }
 
 static void IRAM_ATTR resume_uarts(void)
 {
-    /* Note: Set `UART_FORCE_XOFF` can't stop new Tx request. */
+    for (int i = 0; i < SOC_UART_NUM; ++i) {
+        if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
+            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
+            REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
+            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
+        }
+    }
 }
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
@@ -571,9 +584,9 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void)
 
 esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
 {
-    if (uart_num == UART_NUM_0) {
+    if (uart_num == 0) {
         s_config.wakeup_triggers |= RTC_UART0_TRIG_EN;
-    } else if (uart_num == UART_NUM_1) {
+    } else if (uart_num == 1) {
         s_config.wakeup_triggers |= RTC_UART1_TRIG_EN;
     } else {
         return ESP_ERR_INVALID_ARG;
