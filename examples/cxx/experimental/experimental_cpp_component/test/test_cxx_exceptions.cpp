@@ -11,7 +11,15 @@ using namespace idf;
 
 #define TAG "CXX Exception Test"
 
-TEST_CASE("TEST_THROW catches exception", "[cxx exception]")
+#if CONFIG_IDF_TARGET_ESP32
+#define LEAKS "300"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define LEAKS "800"
+#else
+#error "unknown target in CXX tests, can't set leaks threshold"
+#endif
+
+TEST_CASE("TEST_THROW catches exception", "[cxx exception][leaks=" LEAKS "]")
 {
     TEST_THROW(throw ESPException(ESP_FAIL);, ESPException);
 }
@@ -28,13 +36,13 @@ TEST_CASE("TEST_THROW asserts not catching any exception", "[cxx exception][igno
     TEST_THROW(printf(" ");, ESPException); // need statement with effect
 }
 
-TEST_CASE("CHECK_THROW continues on ESP_OK", "[cxx exception]")
+TEST_CASE("CHECK_THROW continues on ESP_OK", "[cxx exception][leaks=" LEAKS "]")
 {
     esp_err_t error = ESP_OK;
     CHECK_THROW(error);
 }
 
-TEST_CASE("CHECK_THROW throws", "[cxx exception]")
+TEST_CASE("CHECK_THROW throws", "[cxx exception][leaks=" LEAKS "]")
 {
     esp_err_t error = ESP_FAIL;
     TEST_THROW(CHECK_THROW(error), ESPException);

@@ -24,6 +24,10 @@
 /* include performance pass standards header file */
 #include "idf_performance.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* For performance check with unity test on IDF */
 /* These macros should only be used with ESP-IDF.
  * To use performance check, we need to first define pass standard in idf_performance.h.
@@ -36,12 +40,12 @@
 #define _PERFORMANCE_CON(a, b) a##b
 
 #define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
     TEST_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
 #define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
     TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
@@ -277,3 +281,7 @@ void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec);
  * @param[in] thandle    Handle of task to be deleted (should not be NULL or self handle)
  */
 void test_utils_task_delete(TaskHandle_t thandle);
+
+#ifdef __cplusplus
+}
+#endif
