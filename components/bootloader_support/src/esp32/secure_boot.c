@@ -391,6 +391,17 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
 #endif
 
+#ifdef CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    ESP_LOGI(TAG, "Disable ROM Download mode...");
+    esp_err_t err = esp_efuse_disable_rom_download_mode();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not disable ROM Download mode...");
+        return ESP_FAIL;
+    }
+#else
+    ESP_LOGW(TAG, "Not disabling ROM Download mode - SECURITY COMPROMISED");
+#endif
+
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
     bool rd_dis_now = true;
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
