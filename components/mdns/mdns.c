@@ -1313,6 +1313,17 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
                     _mdns_free_tx_packet(packet);
                     return;
                 }
+#ifdef MDNS_REPEAT_QUERY_IN_RESPONSE
+                mdns_out_question_t * out_question = malloc(sizeof(mdns_out_question_t));
+                if (out_question == NULL) {
+                    HOOK_MALLOC_FAILED;
+                    _mdns_free_tx_packet(packet);
+                    return;
+                }
+                memcpy(out_question, q, sizeof(mdns_out_question_t));
+                out_question->next = NULL;
+                queueToEnd(mdns_out_question_t, packet->questions, out_question);
+#endif // MDNS_REPEAT_QUERY_IN_RESPONSE
             } else if (!_mdns_alloc_answer(&packet->answers, q->type, NULL, send_flush, false)) {
                 _mdns_free_tx_packet(packet);
                 return;

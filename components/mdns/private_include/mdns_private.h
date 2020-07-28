@@ -23,6 +23,22 @@
 #define _mdns_dbg_printf(...) printf(__VA_ARGS__)
 #endif
 
+/** mDNS strict mode: Set this to 1 for the mDNS library to strictly follow the RFC6762:
+ * Strict features:
+ *   - to do not set original questions in response packets per RFC6762, sec 6
+ *
+ * The actual configuration is 0, i.e. non-strict mode, since some implementations,
+ * such as lwIP mdns resolver (used by standard POSIX API like getaddrinfo, gethostbyname)
+ * could not correctly resolve advertised names.
+ */
+#define MDNS_STRICT_MODE 0
+
+#if !MDNS_STRICT_MODE
+/* mDNS responders sometimes repeat queries in responses
+ * but according to RFC6762, sec 6: Responses MUST NOT contain
+ * any item in question field */
+#define  MDNS_REPEAT_QUERY_IN_RESPONSE 1
+#endif
 /** The maximum number of services */
 #define MDNS_MAX_SERVICES           CONFIG_MDNS_MAX_SERVICES
 
