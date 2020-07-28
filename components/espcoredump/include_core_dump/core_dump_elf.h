@@ -16,6 +16,6 @@
 
 #include "esp_core_dump_priv.h"
 
-esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_cfg);
+esp_err_t esp_core_dump_write_elf(panic_info_t *info, core_dump_write_config_t *write_cfg);
 
 #endif

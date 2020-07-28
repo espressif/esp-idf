@@ -15,10 +15,12 @@
 #pragma once
 
 #include <stdint.h>
-
-#include "port/panic_funcs.h"
-
+#include <stdbool.h>
 #include "sdkconfig.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern bool g_panic_abort;
 
@@ -49,6 +51,7 @@ typedef struct {
     panic_info_dump_fn_t state;             // processor state, usually the contents of the registers
     const void* addr;                       // instruction address that triggered the exception
     const void* frame;                      // reference to the frame
+    bool pseudo_excause;                    // flag indicating that exception cause has special meaning
 } panic_info_t;
 
 #define PANIC_INFO_DUMP(info, dump_fn)      {if ((info)->dump_fn) (*(info)->dump_fn)((info->frame));}
@@ -68,3 +71,7 @@ void panic_print_hex(int h);
 #endif
 
 void __attribute__((noreturn)) panic_abort(const char *details);
+
+#ifdef __cplusplus
+}
+#endif
