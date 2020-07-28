@@ -1,26 +1,17 @@
-ESP32-Ethernet-Kit V1.2 入门指南
+ESP32-Ethernet-Kit V1.1 入门指南
 =================================
 
 :link_to_translation:`en:[English]`
 
 本指南将介绍 ESP32-Ethernet-Kit 开发板的配置以及相关功能的使用。
 
-:ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-v1.2>` 是一款以太网转 Wi-Fi 开发板，可为以太网设备赋予 Wi-Fi 连接功能。为了提供更灵活的电源选项，ESP32-Ethernet-Kit 同时也支持以太网供电 (PoE)。
+:ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-v1.1>` 是一款以太网转 Wi-Fi 开发板，可为以太网设备赋予 Wi-Fi 连接功能。为了提供更灵活的电源选项，ESP32-Ethernet-Kit 同时也支持以太网供电 (PoE)。
 
-.. _get-started-esp32-ethernet-kit-v1.2-overview:
-
-.. figure:: ../../../_static/esp32-ethernet-kit-v1.2-overview.png
-    :align: center
-    :scale: 80%
-    :alt: ESP32-Ethernet-Kit V1.2
-    :figclass: align-center
-
-    ESP32-Ethernet-Kit V1.2 概图（点击放大）
 
 准备工作
 --------
 
-* :ref:`ESP32-Ethernet-Kit V1.2 开发板 <get-started-esp32-ethernet-kit-v1.2>`
+* :ref:`ESP32-Ethernet-Kit V1.1 开发板 <get-started-esp32-ethernet-kit-v1.1>`
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 Mac OS）
 
@@ -32,19 +23,18 @@ ESP32-Ethernet-Kit V1.2 入门指南
 
 ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板。
 
-它由 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 集成蓝牙/Wi-Fi 双模 ESP32-WROVER-E 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+它由 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 集成蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
-.. _get-started-esp32-ethernet-kit-v1.2:
+.. _get-started-esp32-ethernet-kit-v1.1:
 
-.. figure:: ../../../_static/esp32-ethernet-kit-v1.2.jpg
+.. figure:: ../../../_static/esp32-ethernet-kit-v1.1.png
     :align: center
-    :scale: 80%
-    :alt: ESP32-Ethernet-Kit V1.2
+    :alt: ESP32-Ethernet-Kit V1.1
     :figclass: align-center
 
-    ESP32-Ethernet-Kit V1.2（点击放大）
+    ESP32-Ethernet-Kit V1.1
 
-为了实现程序下载和监控，A 板还集成了一款先进多协议 USB 桥接器（FT2232H 芯片）。FT2232H 芯片使得开发人员无需额外的 JTAG 适配器，通过 USB 桥接器使用 JTAG 接口便可对 ESP32 直接进行调试。
+为了实现程序下载和监控，A 板还集成了一款先进多协议 USB 桥接器（FTDI FT2232H 芯片）。FTDI FT2232H 芯片使得开发人员无需额外的 JTAG 适配器，通过 USB 桥接器使用 JTAG 接口便可对 ESP32 直接进行调试。
 
 
 功能概述
@@ -66,19 +56,19 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
 
 有关 ESP32-Ethernet-Kit 开发板的主要组件、接口及控制方式，请见下方的图片和表格。
 
-.. _get-started-esp32-ethernet-kit-a-v1.2-layout:
+.. _get-started-esp32-ethernet-kit-a-v1.1-layout:
 
 
 以太网母板（A 板）
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: ../../../_static/esp32-ethernet-kit-a-v1.2-layout.jpg
+.. figure:: ../../../_static/esp32-ethernet-kit-a-v1.1-layout.png
     :align: center
     :scale: 80%
-    :alt: ESP32-Ethernet-Kit V1.2
+    :alt: ESP32-Ethernet-Kit - Ethernet board (A) layout
     :figclass: align-center
 
-    ESP32-Ethernet-Kit - 以太网母板（A 板）布局（点击放大）
+    ESP32-Ethernet-Kit - 以太网母板（A 板）布局（点击放大）（请更新图片）
 
 下表将从图片右上角开始，以顺时针顺序介绍图中的主要组件。
 
@@ -88,16 +78,16 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
 
   * - 主要组件
     - 基本介绍
-  * - ESP32-WROVER-E 模组
+  * - ESP32-WROVER-B 模组
     - 这款 ESP32 模组内置 64-Mbit PSRAM，可提供灵活的额外存储空间和数据处理能力。
   * - GPIO Header 2
     - 由 5 个未引出通孔组成，可连接至 ESP32 的部分 GPIO。具体介绍，请见 `GPIO Header 2`_。
   * - 功能选择开关
-    -  一个 4 位拨码开关，可配置 ESP32 部分 GPIO 的功能。具体介绍，请见 `功能选择开关`_。
+    -  一个 4 位拨码开关，可配置 ESP32 部分 GPIO 的功能。请注意，拨码开关旁边开发板的丝印层上的 GPIO 管脚标记的位置是不正确的。有关详细信息和正确的管脚分配，请见 `功能选择开关`_。
   * - Tx/Rx LEDs
     - 2 个 LED，可显示 UART 传输的状态。
   * - FT2232H
-    - FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
+    - FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_。
   * - USB 端口
     - USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
   * - 电源开关
@@ -125,9 +115,6 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
   * - GPIO Header 1
     - 由 6 个未引出通孔组成，可连接至 ESP32 的备用 GPIO。具体介绍，请见 `GPIO Header 1`_。
 
-.. note::
-
-    如果采用了固件自动下载模式，则无需对 BOOT 或 EN 按键进行任何操作。
 
 PoE 子板（B 板）
 ^^^^^^^^^^^^^^^^^^^
@@ -156,11 +143,11 @@ PoE 子板（B 板）具有以下特性：
   * - 主要组件
     - 基本介绍
   * - A 板连接器
-    - 4 个排针（左侧）和排母（右侧），用于将 PoE 子板（B 板）连接至 :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.2-layout>`。左侧的管脚接受来自 PoE 交换机的电源。右侧的管脚为 以太网母板（A 板）提供 5 V 电源。
+    - 4 个排针（左侧）和排母（右侧），用于将 PoE 子板（B 板）连接至 :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.1-layout>`。左侧的管脚接受来自 PoE 交换机的电源。右侧的管脚为 以太网母板（A 板）提供 5 V 电源。
   * - 外部电源终端
     - PoE 子板（B 板）可选电源 (26.6 ~ 54 V)。
 
-.. _get-started-esp32-ethernet-kit-v1.2-setup-options:
+.. _get-started-esp32-ethernet-kit-v1.1-setup-options:
 
 
 设置选项
@@ -183,21 +170,25 @@ PoE 子板（B 板）具有以下特性：
  4          GPIO14
 =========   ==========
 
+.. note::
+
+    拨码开关旁边开发板的丝印层上的 GPIO 管脚标记的位置是不正确的。请以表格中的顺序为准。
+
 
 RMII 时钟源选择
 ^^^^^^^^^^^^^^^^
 
-RMII 工作模式下的以太网 MAC 和 PHY 需要一个公共的 50MHz 同步时钟（即 RMII 时钟），它既可以由外部提供，也可以由内部的 ESP32 APLL 产生（不推荐）。
+RMII 工作模式下的以太网 MAC 和 PHY 需要一个公共的 50MHz 同步时钟（即 RMII 时钟），它既可以由外部提供，也可以由内部的 ESP32 APLL 产生。
 
 .. note::
 
-    有关 RMII 时钟源选择的更多信息，请参见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_，第 2 页的位置 D2。
+    有关 RMII 时钟源选择的更多信息，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_，第 2 页的位置 D2。
 
 
 PHY 侧提供 RMII 时钟
 """""""""""""""""""""""""""""
 
-ESP32-Ethernet-Kit 默认配置为 IP101GRI 的 50M_CLKO 信号线提供 RMII 时钟，该时钟信号由 PHY 外侧连接的 25 MHz 无源晶振经过倍频产生。详情请参见下图。
+ESP32-Ethernet-Kit 默认配置为 IP101GRI 的 50M_CLKO 信号线提供 RMII 时钟，该时钟信号由 PHY 外侧连接的 25MHz 无源晶振经过倍频产生。详情请参见下图。
 
 .. figure:: ../../../_static/esp32-ethernet-kit-rmii-clk-from-phy.png
     :align: center
@@ -223,7 +214,7 @@ ESP32 APLL 内部提供的 RMII 时钟
 
     ESP32 APLL 内部提供的 RMII 时钟
 
-要实现此选项，用户需要在板子上移除或添加一些阻容元器件。有关详细信息，请参见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_，第 2 页，位置 D2。请注意，如果 APLL 已经用于其他用途（如 I2S 外设），那么只能使用外部 RMII 时钟。
+要实现此选项，用户需要在板子上移除或添加一些阻容元器件。有关详细信息，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_，第 2 页，位置 D2。请注意，如果 APLL 已经用于其他用途（如 I2S 外设），那么只能使用外部 RMII 时钟。
 
 
 GPIO 分配
@@ -238,7 +229,7 @@ IP101GRI (PHY) 接口
 下表显示了 ESP32 (MAC) 与 IP101GRI (PHY) 的管脚对应关系。ESP32-Ethernet-Kit 的实现默认设置为简化媒体独立接口。
 
 ====  ================  ===============
-No.   ESP32 管脚 (MAC)   IP101GRI (PHY)
+.     ESP32 管脚 (MAC)   IP101GRI (PHY)
 ====  ================  ===============
 *RMII 接口*
 ---------------------------------------
@@ -262,7 +253,7 @@ No.   ESP32 管脚 (MAC)   IP101GRI (PHY)
 
 .. Note::
 
-    ESP32 的 *RMII 接口* 下的所有管脚分配都是固定的，不能通过 IOMUX 或 GPIO 矩阵进行更改。REF_CLK 仅可选择 GPIO0、GPIO16 或 GPIO17，且不可通过 GPIO 矩阵进行更改。
+    除了 REF_CLK 之外，ESP32 的 *RMII 接口* 下的所有管脚分配都是固定的，不能通过 IOMUX 或 GPIO 矩阵进行更改。
 
 
 GPIO Header 1
@@ -271,7 +262,7 @@ GPIO Header 1
 本连接器包括 ESP32-Ethernet-Kit 开发板上部分不用做他用的 GPIO。
 
 ====  ================
-No.   ESP32 管脚
+.     ESP32 管脚
 ====  ================
  1    GPIO32
  2    GPIO33
@@ -288,7 +279,7 @@ GPIO Header 2
 根据“说明"描述的不同情形，本连接器包含可用做他用的 GPIO。
 
 ====  ==========  ====================
-No.   ESP32 管脚   说明
+.     ESP32 管脚   说明
 ====  ==========  ====================
  1    GPIO17      见下方说明 1
  2    GPIO16      见下方说明 1
@@ -304,17 +295,17 @@ No.   ESP32 管脚   说明
 
 .. note::
 
-    1. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-E 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
+    1. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
 
-    2. 具体功能取决与 `功能选择开关`_ 的设置。
+    2. 具体功能取决于 `功能选择开关`_ 的设置。
 
 
 GPIO 管脚分配总结
 ^^^^^^^^^^^^^^^^^^^
 
 .. csv-table::
-    :header: ESP32-WROVER-E,IP101GRI,UART,JTAG,GPIO,Comments
+    :header: ESP32-WROVER-B,IP101GRI,UART,JTAG,GPIO,Comments
 
     S_VP,,,,IO36,
     S_VN,,,,IO39,
@@ -327,8 +318,8 @@ GPIO 管脚分配总结
     IO27,CRS_DV,,,,
     IO14,,,TMS,IO14,
     IO12,,,TDI,IO12,
-    IO13,,,TCK,IO13,
-    IO15,,,TDO,IO15,
+    IO13,,RTS,TCK,IO13,
+    IO15,,CTS,TDO,IO15,
     IO2,,,,IO2,
     IO0,REF_CLK,,,,See note 1
     IO4,,,,IO4,
@@ -345,10 +336,10 @@ GPIO 管脚分配总结
 
 .. note::
 
-    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，您可通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
+    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，您可通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_。
 
 
-    2. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-E 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
+    2. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
 
 应用程序开发
@@ -360,10 +351,10 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 初始设置
 ^^^^^^^^^^
 
-1. 首先，请将 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 上的所有开关均拨至 **ON** 状态，使 **功能选择开关** 处于默认状态。
+1. 首先，请将 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 上的所有开关均拨至 **ON** 状态，使 **功能选择开关** 处于默认状态。
 2. 为了方便应用程序的下载和测试，不要为开发板输入任何信号。
 3. 此时可以连接 `PoE 子板（B 板）`_ ，但不要向 B 板连接任何外部电源。
-4. 使用 USB 数据线将 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 连接至 PC。
+4. 使用 USB 数据线将 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 连接至 PC。
 5. 将 **电源开关** 从 GND 拨至 5V0 一侧。此时，**5V Power On LED** 应点亮。
 
 
@@ -378,43 +369,43 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 配置与加载以太网示例
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.2` 开发板使用的 **IP101GRI** 。
+在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.1` 开发板使用的 **IP101GRI** 。
 
 
-针对 ESP32-Ethernet-Kit V1.1 的主要修改：
+针对 ESP32-Ethernet-Kit V1.0 的主要修改：
 -----------------------------------------
 
-* 更正拨码开关周围 GPIO 编号丝印。 
-* C1、C2、C42 和 C43 更新为 20 pF。详细信息见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
-* 模组 ESP32-WROVER-B 替换为 ESP32-WROVER-E。
+* 原 GPIO0 反相后时钟提供给 PHY 方案改为由 PHY 侧外接无源晶振，提供时钟给 GPIO0。原用于控制有源晶振的 OSC_EN 的 IO2 释放，可用作其他用途。
+* 为防止 ESP32 侧 GPIO0 的上电状态受到 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，关闭 PHY 侧时钟输出。而后可通过 GPIO5 控制 RESET_N 打开该时钟输出。
+* 移除 FT2232H 芯片的外部 SPI Flash U6。
+* 移除流控的测试排针 J4。
+* 移除 nTRST JTAG信号，相应的 GPIO4 可用作其他用途。
+* GPIO15 线上的上拉电阻 R68 移至 JTAG 的 MTDO 侧。
+* 为了加强 A 板和 B 板连接间的防呆设计（减少反向插入 B 板的机会），将原先 A 板上的 2 排 4 针排针改为 1 排 4 针排母和 1 排 4 针排针。相应的 4 针排针排和排母排则安装在 B 板上。
 
 ESP32-Ethernet-Kit 的其他版本
 -------------------------------
 
 * :doc:`get-started-ethernet-kit-v1.0`
-* :doc:`get-started-ethernet-kit-v1.1`
 
 
 相关文档
 ----------
 
-* `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_ (PDF)
-* `ESP32-Ethernet-Kit PoE 子板（B 板）原理图`_ (PDF)
+* `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_ (PDF)
+* `ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图`_ (PDF)
 * `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
-* `ESP32-WROVER-E 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_ (PDF)
+* `ESP32-WROVER-B 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
 
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
 
 .. _ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.1_20190711.pdf
-.. _ESP32-Ethernet-Kit PoE 子板（B 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
+.. _ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 以太网母板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
-.. _ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf
 
 .. toctree::
     :hidden:
 
     get-started-ethernet-kit-v1.0.rst
-    get-started-ethernet-kit-v1.1.rst
-

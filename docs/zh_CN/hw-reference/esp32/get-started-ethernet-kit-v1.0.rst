@@ -20,7 +20,7 @@ ESP32-Ethernet-Kit V1.0 入门指南
 概述
 --------
 
-ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，由以太网子板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网子板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，由以太网母板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -56,16 +56,16 @@ ESP32-Ethernet-Kit 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp32-ethernet-kit-a-v1.0-layout:
 
-以太网子板（A 板）
+以太网母板（A 板）
 ^^^^^^^^^^^^^^^^^^
 
 .. figure:: ../../../_static/esp32-ethernet-kit-a-v1.0-layout.png
     :align: center
     :scale: 80%
-    :alt: ESP32-Ethernet-Kit - 以太网子板（A 板）布局
+    :alt: ESP32-Ethernet-Kit - 以太网母板（A 板）布局
     :figclass: align-center
 
-    ESP32-Ethernet-Kit - 以太网子板（A 板）布局（点击放大）
+    ESP32-Ethernet-Kit - 以太网母板（A 板）布局（点击放大）
 
 下表将从图片右上角开始，以顺时针顺序介绍图中的主要组件。
 
@@ -84,7 +84,7 @@ Tx/Rx LED                2 个 LED，可显示 UART 传输的状态。
 
 GPIO Header 3            可连接至 ESP32 的部分 GPIO，根据 `功能选择开关`_ 的位置有不同功能。
 
-FT2232H                    FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图`_。
+FT2232H                    FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.0 以太网母板（A 板）原理图`_。
 
 USB 端口                  USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
 
@@ -100,7 +100,7 @@ B 板连接器                 1 对 2 针排针，用于连接 :ref:`PoE 子板
 
 IP101GRI (PHY)            物理层 (PHY) 单端口10/100 快速以太网收发器 `IP101GRI`_ ，允许开发人员实现与以太网线缆的物理层连接。PHY 与 ESP32 通过简化媒体独立接口 (RMII) 实现连接。RMII 是 `媒体独立接口 (MII)`_ 的简化版本。PHY 可在 10/100 Mbps 速率下支持 IEEE 802.3 / 802.3u 标准。
 
-RJ45 端口                  以太网数据传输断口。
+RJ45 端口                  以太网数据传输端口。
 
 网络变压器                  网络变压器属于以太网物理层的一部分，可保护电路免受故障和电压瞬变影响，包括防止收发器芯片和线缆之间产生共模信号。同时它也可以在收发器与以太网设备之间提供电流隔绝。
 
@@ -118,14 +118,14 @@ GPIO Header 1              由 6 个未引出通孔组成，可连接至 ESP32 �
 PoE 子板（B 板）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PoE 子板通过以太网电缆传输电能 (PoE)，为以太网子板（A 板）提供电源。PoE 子板（B 板）的主要组件见 `功能概述`_ 中的功能框图。
+PoE 子板通过以太网电缆传输电能 (PoE)，为以太网母板（A 板）提供电源。PoE 子板（B 板）的主要组件见 `功能概述`_ 中的功能框图。
 
 PoE 子板（B 板）具有以下特性：
 
 * 支持 IEEE 802.3at
 * 电源输出：5 V，1.4 A
 
-如需使用 PoE 功能，请用以太网线缆将以太网子板（A 板）上的 **RJ45 端口** 连接至 PoE 的交换机。太网子板（A 板）检测到来自 PoE 子板（B 板）的 5 V 供电后，将从 USB 供电自动切换至 PoE 供电。
+如需使用 PoE 功能，请用以太网线缆将以太网母板（A 板）上的 **RJ45 端口** 连接至 PoE 的交换机。太网母板（A 板）检测到来自 PoE 子板（B 板）的 5 V 供电后，将从 USB 供电自动切换至 PoE 供电。
 
 .. figure:: ../../../_static/esp32-ethernet-kit-b-v1.0-layout.png
     :align: center
@@ -138,7 +138,7 @@ PoE 子板（B 板）具有以下特性：
 ==========================  =================================================================================================================================
 主要组件                      基本介绍
 ==========================  =================================================================================================================================
-A 板连接器                    1 个 4 针排母，用于将 B 板连接至 :ref:`以太网子板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>`。
+A 板连接器                    1 个 4 针排母，用于将 B 板连接至 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>`。
 外部电源终端                   PoE 子板（B 板）备用电源。
 ==========================  =================================================================================================================================
 
@@ -260,13 +260,13 @@ GPIO Header 2
 .. note::
 
     1. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 SPIRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
-    2. 具体功能取决与 `功能选择开关`_ 的设置。
+    2. 具体功能取决于 `功能选择开关`_ 的设置。
 
 
 GPIO Header 3
 ^^^^^^^^^^^^^
 
-本连接器中 GPIO 的功能取决与 `功能选择开关`_ 的设置。
+本连接器中 GPIO 的功能取决于 `功能选择开关`_ 的设置。
 
 ====  ===========
 .     ESP32 管脚
@@ -330,10 +330,10 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 初始设置
 ^^^^^^^^^^^^^
 
-1. 首先，请将 :ref:`以太网子板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 上的所有开关均拨至 **ON** 状态，即使 **功能选择开关** 处于默认状态。
-2. 为了方便应用程序的下载和测试，此时请不要在开发板安装任何条线帽，也不要为开发板接入任何信号。
+1. 首先，请将 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 上的所有开关均拨至 **ON** 状态，即使 **功能选择开关** 处于默认状态。
+2. 为了方便应用程序的下载和测试，此时请不要在开发板安装任何跳线帽，也不要为开发板接入任何信号。
 3. 此时可以连接 :ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>`，但不要向 B 板连接任何外部电源。
-4. 使用 USB 数据线将 :ref:`以太网子板（A 板） <get-started-esp32-ethernet-kit-a-v1.0-layout>` 连接至 PC。
+4. 使用 USB 数据线将 :ref:`以太网母板（A 板） <get-started-esp32-ethernet-kit-a-v1.0-layout>` 连接至 PC。
 5. 将 **电源开关** 从 GND 拨至 5V0 一侧。此时，**5V Power On LED** 应点亮。
 
 
@@ -356,14 +356,16 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 相关文档
 -----------------
 
-* `ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图`_ (PDF)
+* `ESP32-Ethernet-Kit V1.0 以太网母板（A 板）原理图`_ (PDF)
 * `ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图`_ (PDF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
 
-.. _ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
+有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
+
+.. _ESP32-Ethernet-Kit V1.0 以太网母板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
 .. _IP101GRI: http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf
 .. _媒体独立接口 (MII): https://en.wikipedia.org/wiki/Media-independent_interface

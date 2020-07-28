@@ -367,5 +367,7 @@ Related Documents
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
 
+For other design documentation for the board, please contact us at sales@espressif.com.
+
 .. _ESP32-Ethernet-Kit V1.0 Ethernet board (A) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 PoE board (B) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
