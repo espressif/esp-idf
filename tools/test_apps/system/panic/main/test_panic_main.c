@@ -102,7 +102,7 @@ static void IRAM_ATTR test_int_wdt_cache_disabled(void)
 
 static void test_stack_overflow(void)
 {
-    volatile uint8_t stuff[CONFIG_ESP_MAIN_TASK_STACK_SIZE * 2];
+    volatile uint8_t stuff[CONFIG_ESP_MAIN_TASK_STACK_SIZE + 1000];
     for (int i = 0; i < sizeof(stuff); ++i) {
         stuff[i] = rand();
     }
