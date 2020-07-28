@@ -30,6 +30,7 @@
 #include "soc/spinlock.h"
 #include "hal/soc_hal.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_dfu.h"
@@ -69,7 +70,7 @@ void esp_usb_console_write_char(char c);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
 
-/* Optional write lock routines; used only if ets_printf output via CDC is enabled */
+/* Optional write lock routines; used only if esp_rom_printf output via CDC is enabled */
 static inline void write_lock_acquire(void);
 static inline void write_lock_release(void);
 
@@ -103,7 +104,7 @@ int esp_usb_console_osglue_wait_proc(int delay_us)
 {
     if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING ||
             !xPortCanYield()) {
-        ets_delay_us(delay_us);
+        esp_rom_delay_us(delay_us);
         return delay_us;
     }
     if (delay_us == 0) {
@@ -257,7 +258,7 @@ esp_err_t esp_usb_console_init(void)
     esp_intr_enable(s_usb_int_handle);
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-    /* Install ets_printf handler */
+    /* Install esp_rom_printf handler */
     ets_install_putc1(&esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
@@ -387,8 +388,8 @@ bool esp_usb_console_write_available(void)
 
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-/* Used as an output function by ets_printf.
- * The LF->CRLF replacement logic replicates the one in ets_write_char_uart.
+/* Used as an output function by esp_rom_printf.
+ * The LF->CRLF replacement logic replicates the one in esp_rom_uart_putc.
  * Not static to allow placement into IRAM by ldgen.
  */
 void esp_usb_console_write_char(char c)

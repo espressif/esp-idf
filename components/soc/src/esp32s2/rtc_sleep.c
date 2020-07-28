@@ -25,7 +25,6 @@
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
-#include "esp32s2/rom/ets_sys.h"
 
 /**
  * Configure whether certain peripherals are powered down in deep sleep

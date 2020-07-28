@@ -20,6 +20,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_caps.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
@@ -96,7 +97,7 @@ static void sdmmc_host_set_clk_div(int div)
     SDMMC.clock.phase_din = 4;      // 180 degree phase on the input clock
     SDMMC.clock.phase_core = 0;
     // Wait for the clock to propagate
-    ets_delay_us(10);
+    esp_rom_delay_us(10);
 }
 
 static void sdmmc_host_input_clk_disable(void)

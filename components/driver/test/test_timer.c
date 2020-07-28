@@ -7,6 +7,7 @@
 #include "nvs_flash.h"
 #include "driver/timer.h"
 #include "soc/rtc.h"
+#include "esp_rom_sys.h"
 
 #define TIMER_DIVIDER  16
 #define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
@@ -51,13 +52,13 @@ static bool test_timer_group_isr_cb(void *arg)
     alarm_flag = true;
     if (timer_group_get_auto_reload_in_isr(timer_group, timer_idx)) { // For autoreload mode, the counter value has been cleared
         timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
-        ets_printf("This is TG%d timer[%d] reload-timer alarm!\n", timer_group, timer_idx);
+        esp_rom_printf("This is TG%d timer[%d] reload-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
         timer_get_counter_time_sec(timer_group, timer_idx, &time);
         evt.type = TIMER_AUTORELOAD_EN;
     } else {
         timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
-        ets_printf("This is TG%d timer[%d] count-up-timer alarm!\n", timer_group, timer_idx);
+        esp_rom_printf("This is TG%d timer[%d] count-up-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
         timer_get_counter_time_sec(timer_group, timer_idx, &time);
         timer_get_alarm_value(timer_group, timer_idx, &alarm_value);

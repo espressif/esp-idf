@@ -10,6 +10,7 @@
 #include "esp_spi_flash.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_rom_sys.h"
 
 //Definitions used in multiple test cases
 #define TIMEOUT_TICKS               10
@@ -572,7 +573,7 @@ static void rec_task(void *args)
 
 static void setup(void)
 {
-    ets_printf("Size of test data: %d\n", CONT_DATA_LEN);
+    esp_rom_printf("Size of test data: %d\n", CONT_DATA_LEN);
     tx_done = xSemaphoreCreateBinary();                 //Semaphore to indicate send is done for a particular iteration
     rx_done = xSemaphoreCreateBinary();                 //Semaphore to indicate receive is done for a particular iteration
     tasks_done = xSemaphoreCreateBinary();              //Semaphore used to to indicate send and receive tasks completed running
@@ -602,7 +603,7 @@ TEST_CASE("Test ring buffer SMP", "[esp_ringbuf]")
             //Test every permutation of core affinity
             for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
                 for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
-                    ets_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
+                    esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
                     xSemaphoreTake(tasks_done, portMAX_DELAY);
@@ -646,7 +647,7 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
             //Test every permutation of core affinity
             for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
                 for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
-                    ets_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
+                    esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
                     xSemaphoreTake(tasks_done, portMAX_DELAY);

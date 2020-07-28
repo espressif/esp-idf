@@ -17,21 +17,17 @@
 #include "esp_err.h"
 #include "esp_spi_flash.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
+#include "esp_rom_sys.h"
 
 static void esp_error_check_failed_print(const char *msg, esp_err_t rc, const char *file, int line, const char *function, const char *expression)
 {
-    ets_printf("%s failed: esp_err_t 0x%x", msg, rc);
+    esp_rom_printf("%s failed: esp_err_t 0x%x", msg, rc);
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
-    ets_printf(" (%s)", esp_err_to_name(rc));
+    esp_rom_printf(" (%s)", esp_err_to_name(rc));
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
-    ets_printf(" at 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
+    esp_rom_printf(" at 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
     if (spi_flash_cache_enabled()) { // strings may be in flash cache
-        ets_printf("file: \"%s\" line %d\nfunc: %s\nexpression: %s\n", file, line, function, expression);
+        esp_rom_printf("file: \"%s\" line %d\nfunc: %s\nexpression: %s\n", file, line, function, expression);
     }
 }
 

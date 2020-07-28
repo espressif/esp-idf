@@ -33,6 +33,7 @@
 #include "soc/sens_reg.h"
 
 #include "ulp_private.h"
+#include "esp_rom_sys.h"
 
 typedef struct {
     uint32_t magic;
@@ -52,7 +53,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
-    ets_delay_us(10);
+    esp_rom_delay_us(10);
     // set entry point
     REG_SET_FIELD(SENS_SAR_START_FORCE_REG, SENS_PC_INIT, entry_point);
     // disable force start
@@ -69,7 +70,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
-    ets_delay_us(10);
+    esp_rom_delay_us(10);
     // set entry point  
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_PC_INIT, entry_point);
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);         // Select ULP_TIMER trigger target for ULP.

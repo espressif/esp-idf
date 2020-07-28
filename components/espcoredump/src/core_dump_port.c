@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "freertos/xtensa_context.h" // for exception register stack structure
 #include "esp_core_dump_priv.h"
+#include "esp_rom_sys.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
@@ -192,11 +193,11 @@ exit:
 
 void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output)
 {
-    ets_printf(DRAM_STR("%s='"), msg);
+    esp_rom_printf(DRAM_STR("%s='"), msg);
     for (int i = 0; i < COREDUMP_SHA256_LEN; i++) {
-        ets_printf(DRAM_STR("%02x"), sha_output[i]);
+        esp_rom_printf(DRAM_STR("%02x"), sha_output[i]);
     }
-    ets_printf(DRAM_STR("'\r\n"));
+    esp_rom_printf(DRAM_STR("'\r\n"));
 }
 #endif
 

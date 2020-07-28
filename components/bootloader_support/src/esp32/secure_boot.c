@@ -19,7 +19,6 @@
 #include "esp_log.h"
 
 #include "esp32/rom/cache.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_rom_crc.h"
 
 #include "soc/efuse_periph.h"

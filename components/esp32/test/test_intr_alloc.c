@@ -4,7 +4,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "esp32/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -69,7 +69,6 @@ static void timer_isr(void *arg)
         timer_group_clr_intr_status_in_isr(TIMER_GROUP_1, TIMER_1);
         timer_group_enable_alarm_in_isr(TIMER_GROUP_1, TIMER_1);
     }
-//  ets_printf("int %d\n", timer_idx);
 }
 
 
@@ -237,7 +236,7 @@ typedef struct {
 void IRAM_ATTR int_handler1(void* arg)
 {
     intr_alloc_test_ctx_t* ctx=(intr_alloc_test_ctx_t*)arg;
-    ets_printf("handler 1 called.\n");
+    esp_rom_printf("handler 1 called.\n");
     if ( ctx->flag1 ) {
         ctx->flag3 = true;
     } else {
@@ -249,7 +248,7 @@ void IRAM_ATTR int_handler1(void* arg)
 void IRAM_ATTR int_handler2(void* arg)
 {
     intr_alloc_test_ctx_t* ctx = (intr_alloc_test_ctx_t*)arg;
-    ets_printf("handler 2 called.\n");
+    esp_rom_printf("handler 2 called.\n");
     if ( ctx->flag2 ) {
         ctx->flag4 = true;
     } else {

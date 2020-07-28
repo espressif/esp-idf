@@ -27,6 +27,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
+#include "esp_rom_sys.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2) // This testcase for ESP32
 
@@ -118,7 +119,7 @@ TEST_CASE("ADC DMA read", "[adc dma]")
         example_disp_buf((uint8_t *) i2s_read_buff, 64);
         //save original data from I2S(ADC) into flash.
         flash_wr_size += i2s_read_len;
-        ets_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
+        esp_rom_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
     }
     TEST_ESP_OK( i2s_adc_disable(EXAMPLE_I2S_NUM) );
     if (i2s_read_buff) {

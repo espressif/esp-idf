@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "sdkconfig.h"
+#include "esp_types.h"
 #include "esp_log.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
@@ -28,12 +29,6 @@
 #include "esp_intr_alloc.h"
 #include "sys/lock.h"
 #include "driver/rtc_cntl.h"
-#include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds

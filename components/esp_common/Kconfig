@@ -105,7 +105,7 @@ menu "Common ESP-related"
             is reconfigured after the bootloader exits and the app starts.
 
             Due to an ESP32 ROM bug, UART2 is not supported for console output
-            via ets_printf.
+            via esp_rom_printf.
 
         config ESP_CONSOLE_UART_CUSTOM_NUM_0
             bool "UART0"
@@ -179,11 +179,11 @@ menu "Common ESP-related"
             is often receiving data over USB CDC.
 
     config ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-        bool "Enable ets_printf / ESP_EARLY_LOG via USB CDC"
+        bool "Enable esp_rom_printf / ESP_EARLY_LOG via USB CDC"
         depends on ESP_CONSOLE_USB_CDC
         default n
         help
-            If enabled, ets_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
+            If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
             Disabling this option saves about 1kB or RAM.
 
     config ESP_INT_WDT

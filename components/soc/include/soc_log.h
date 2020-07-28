@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-
+#include "esp_rom_sys.h"
 /**
  * @file soc_log.h
  * @brief SOC library logging functions
@@ -33,14 +33,14 @@
 #else
 #include "sdkconfig.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"  // will be removed in idf v5.0
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #endif
 
-#define SOC_LOGE(tag, fmt, ...) ets_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
-#define SOC_LOGW(tag, fmt, ...) ets_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)
-#define SOC_LOGI(tag, fmt, ...) ets_printf("%s(info): " fmt, tag, ##__VA_ARGS__)
-#define SOC_LOGD(tag, fmt, ...) ets_printf("%s(dbg): " fmt, tag, ##__VA_ARGS__)
-#define SOC_LOGV(tag, fmt, ...) ets_printf("%s: " fmt, tag, ##__VA_ARGS__)
+#define SOC_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
+#define SOC_LOGW(tag, fmt, ...) esp_rom_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)
+#define SOC_LOGI(tag, fmt, ...) esp_rom_printf("%s(info): " fmt, tag, ##__VA_ARGS__)
+#define SOC_LOGD(tag, fmt, ...) esp_rom_printf("%s(dbg): " fmt, tag, ##__VA_ARGS__)
+#define SOC_LOGV(tag, fmt, ...) esp_rom_printf("%s: " fmt, tag, ##__VA_ARGS__)
 #endif //ESP_PLATFORM

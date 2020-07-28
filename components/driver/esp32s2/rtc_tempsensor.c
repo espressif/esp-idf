@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -24,7 +24,6 @@
 #include "soc/sens_reg.h"
 #include "soc/sens_struct.h"
 #include "driver/temp_sensor.h"
-#include "esp32s2/rom/ets_sys.h"
 
 static const char *TAG = "tsens";
 

@@ -31,6 +31,7 @@
 #include "driver/i2c.h"
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
@@ -529,16 +530,16 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     // a STOP condition.
     gpio_set_level(scl_io, 0);
     gpio_set_level(sda_io, 1);
-    ets_delay_us(scl_half_period);
+    esp_rom_delay_us(scl_half_period);
     while (!gpio_get_level(sda_io) && (i++ < I2C_CLR_BUS_SCL_NUM)) {
         gpio_set_level(scl_io, 1);
-        ets_delay_us(scl_half_period);
+        esp_rom_delay_us(scl_half_period);
         gpio_set_level(scl_io, 0);
-        ets_delay_us(scl_half_period);
+        esp_rom_delay_us(scl_half_period);
     }
     gpio_set_level(sda_io, 0); // setup for STOP
     gpio_set_level(scl_io, 1);
-    ets_delay_us(scl_half_period);
+    esp_rom_delay_us(scl_half_period);
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
 #else

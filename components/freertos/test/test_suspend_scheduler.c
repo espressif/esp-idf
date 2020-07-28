@@ -13,6 +13,8 @@
 #include "driver/timer.h"
 #include "sdkconfig.h"
 
+#include "esp_rom_sys.h"
+
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define int_clr_timers int_clr
 #define update update.update
@@ -102,7 +104,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
         unsigned no_sched_task = count_config.counter;
 
         // scheduler off on this CPU...
-        ets_delay_us(20 * 1000);
+        esp_rom_delay_us(20 * 1000);
 
         //TEST_ASSERT_NOT_EQUAL(no_sched_isr, isr_count);
         TEST_ASSERT_EQUAL(count_config.counter, no_sched_task);
@@ -171,12 +173,12 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
         }
    }
 
-    ets_delay_us(200); /* Let the other CPU do some things */
+    esp_rom_delay_us(200); /* Let the other CPU do some things */
 
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
         for (int t = 0; t < TASKS_PER_PROC; t++) {
             int expected = (p == UNITY_FREERTOS_CPU) ? 0 : 1; // Has run if it was on the other CPU
-            ets_printf("Checking CPU %d task %d (expected %d actual %d)\n", p, t, expected, counters[p][t].counter);
+            esp_rom_printf("Checking CPU %d task %d (expected %d actual %d)\n", p, t, expected, counters[p][t].counter);
             TEST_ASSERT_EQUAL(expected, counters[p][t].counter);
         }
     }
@@ -187,7 +189,7 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
     /* Now the tasks on both CPUs should have been woken once and counted once. */
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
         for (int t = 0; t < TASKS_PER_PROC; t++) {
-            ets_printf("Checking CPU %d task %d (expected 1 actual %d)\n", p, t, counters[p][t].counter);
+            esp_rom_printf("Checking CPU %d task %d (expected 1 actual %d)\n", p, t, counters[p][t].counter);
             TEST_ASSERT_EQUAL(1, counters[p][t].counter);
         }
     }
@@ -208,7 +210,7 @@ static void suspend_scheduler_5ms_task_fn(void *ignore)
     vTaskSuspendAll();
     sched_suspended = true;
     for (int i = 0; i <5; i++) {
-        ets_delay_us(1000);
+        esp_rom_delay_us(1000);
     }
     xTaskResumeAll();
     sched_suspended = false;
@@ -240,7 +242,7 @@ TEST_CASE("Scheduler disabled on CPU B, tasks on A can wake", "[freertos]")
     while(!sched_suspended) { }
 
     xSemaphoreGive(wake_sem);
-    ets_delay_us(1000);
+    esp_rom_delay_us(1000);
     // Bit of a race here if the other CPU resumes its scheduler, but 5ms is a long time... */
     TEST_ASSERT(sched_suspended);
     TEST_ASSERT_EQUAL(0, count_config.counter); // the other task hasn't woken yet, because scheduler is off
@@ -249,7 +251,7 @@ TEST_CASE("Scheduler disabled on CPU B, tasks on A can wake", "[freertos]")
     /* wait for the rest of the 5ms... */
     while(sched_suspended) { }
 
-    ets_delay_us(100);
+    esp_rom_delay_us(100);
     TEST_ASSERT_EQUAL(1, count_config.counter); // when scheduler resumes, counter task should immediately count
 
     vTaskDelete(counter_task);

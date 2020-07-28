@@ -28,7 +28,6 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
-#include "esp32s2/rom/ets_sys.h"
 #include "hal/touch_sensor_types.h"
 #include "hal/touch_sensor_hal.h"
 

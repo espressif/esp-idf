@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * This file is contains console-related functions which should be located in iram_loader_seg,
+ * This file contains console-related functions which should be located in iram_loader_seg,
  * to be available in the "loader" phase, when iram_seg may be overwritten.
  */
 #include <stdint.h>
@@ -21,10 +21,8 @@
 #include "sdkconfig.h"
 #include "bootloader_console.h"
 #include "esp_rom_uart.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
@@ -32,7 +30,7 @@
 #endif
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
-/* The following functions replace ets_write_char_uart, esp_rom_uart_tx_one_char,
+/* The following functions replace esp_rom_uart_putc, esp_rom_uart_tx_one_char,
  * and uart_tx_one_char_uart ROM functions. The main difference is that
  * uart_tx_one_char_uart calls cdc_acm_fifo_fill for each byte passed to it,
  * which results in very slow console output. The version here uses a TX buffer.
@@ -79,10 +77,10 @@ void bootloader_console_deinit(void)
     bootloader_console_flush_usb();
     usb_dc_prepare_persist();
     chip_usb_set_persist_flags(USBDC_PERSIST_ENA);
-    ets_delay_us(100);
+    esp_rom_delay_us(100);
     for (int i = 0; i < 10; i++) {
         usb_dc_check_poll_for_interrupts();
     }
-    ets_install_putc1(NULL);
+    esp_rom_install_channel_putc(1, NULL);
 #endif
 }

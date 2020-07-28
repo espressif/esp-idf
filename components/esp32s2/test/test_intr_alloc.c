@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "unity.h"
 #include "esp_types.h"
-#include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -234,7 +234,7 @@ typedef struct {
 void IRAM_ATTR int_handler1(void *arg)
 {
     intr_alloc_test_ctx_t *ctx = (intr_alloc_test_ctx_t *)arg;
-    ets_printf("handler 1 called.\n");
+    esp_rom_printf("handler 1 called.\n");
     if (ctx->flag1) {
         ctx->flag3 = true;
     } else {
@@ -246,7 +246,7 @@ void IRAM_ATTR int_handler1(void *arg)
 void IRAM_ATTR int_handler2(void *arg)
 {
     intr_alloc_test_ctx_t *ctx = (intr_alloc_test_ctx_t *)arg;
-    ets_printf("handler 2 called.\n");
+    esp_rom_printf("handler 2 called.\n");
     if (ctx->flag2) {
         ctx->flag4 = true;
     } else {

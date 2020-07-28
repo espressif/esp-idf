@@ -35,6 +35,7 @@
 
 
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
 #include "esp32/dport_access.h"
@@ -494,7 +495,7 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
         }
     }
 
-    ets_delay_us(1);
+    esp_rom_delay_us(1);
     SOC_HAL_STALL_OTHER_CORES();
 #endif
 

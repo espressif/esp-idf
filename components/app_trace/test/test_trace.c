@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "unity.h"
 #include "driver/timer.h"
+#include "esp_rom_sys.h"
 #include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -31,7 +32,7 @@ const static char *TAG = "esp_apptrace_test";
         else \
             ret = xSemaphoreTake(s_print_lock, portMAX_DELAY); \
         if (ret == pdTRUE) { \
-            ets_printf(format, ##__VA_ARGS__); \
+            esp_rom_printf(format, ##__VA_ARGS__); \
             if (xPortInIsrContext()) \
                 xSemaphoreGiveFromISR(s_print_lock, NULL); \
             else \
@@ -41,7 +42,7 @@ const static char *TAG = "esp_apptrace_test";
 #else
 #define ESP_APPTRACE_TEST_LOG( format, ... )   \
     do { \
-        ets_printf(format, ##__VA_ARGS__); \
+        esp_rom_printf(format, ##__VA_ARGS__); \
     } while(0)
 #endif
 
@@ -138,7 +139,7 @@ static void esp_apptrace_test_timer_isr(void *arg)
     if (res != ESP_OK) {
     } else {
         if (0) {
-            ets_printf("tim-%d-%d: Written chunk%d %d bytes, %x\n",
+            esp_rom_printf("tim-%d-%d: Written chunk%d %d bytes, %x\n",
                        tim_arg->group, tim_arg->id, tim_arg->data.wr_cnt, tim_arg->data.buf_sz, tim_arg->data.wr_cnt & tim_arg->data.mask);
         }
         tim_arg->data.wr_err = 0;
@@ -161,9 +162,9 @@ static void esp_apptrace_test_timer_isr_crash(void *arg)
         memset(tim_arg->data.buf + 2 * sizeof(uint32_t), tim_arg->data.wr_cnt & tim_arg->data.mask, tim_arg->data.buf_sz - 2 * sizeof(uint32_t));
         int res = ESP_APPTRACE_TEST_WRITE_FROM_ISR(tim_arg->data.buf, tim_arg->data.buf_sz);
         if (res != ESP_OK) {
-            ets_printf("tim-%d-%d: Failed to write trace %d %x!\n", tim_arg->group, tim_arg->id, res, tim_arg->data.wr_cnt & tim_arg->data.mask);
+            esp_rom_printf("tim-%d-%d: Failed to write trace %d %x!\n", tim_arg->group, tim_arg->id, res, tim_arg->data.wr_cnt & tim_arg->data.mask);
         } else {
-            ets_printf("tim-%d-%d: Written chunk%d %d bytes, %x\n",
+            esp_rom_printf("tim-%d-%d: Written chunk%d %d bytes, %x\n",
                        tim_arg->group, tim_arg->id, tim_arg->data.wr_cnt, tim_arg->data.buf_sz, tim_arg->data.wr_cnt & tim_arg->data.mask);
             tim_arg->data.wr_cnt++;
         }
@@ -404,7 +405,7 @@ static void esp_apptrace_test(esp_apptrace_test_cfg_t *test_cfg)
 #if ESP_APPTRACE_TEST_USE_PRINT_LOCK == 1
     s_print_lock = xSemaphoreCreateBinary();
     if (!s_print_lock) {
-        ets_printf("%s: Failed to create print lock!", TAG);
+        esp_rom_printf("%s: Failed to create print lock!", TAG);
         return;
     }
     xSemaphoreGive(s_print_lock);

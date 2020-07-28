@@ -13,6 +13,7 @@
 #include "esp32s2/clk.h"
 #endif
 #include "soc/cpu.h"
+#include "esp_rom_sys.h"
 
 TEST_CASE("wl_unmount doesn't leak memory", "[wear_levelling]")
 {
@@ -112,7 +113,7 @@ static void read_write_task(void* param)
             uint32_t rval;
             err = wl_read(args->handle, args->offset + i * sizeof(rval), &rval, sizeof(rval));
             if (err != ESP_OK || rval != val) {
-                ets_printf("E: i=%d, cnt=%d rval=%d val=%d\n\n", i, args->word_count, rval, val);
+                esp_rom_printf("E: i=%d, cnt=%d rval=%d val=%d\n\n", i, args->word_count, rval, val);
                 args->result = ESP_FAIL;
                 goto done;
             }

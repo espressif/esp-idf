@@ -35,7 +35,7 @@
 #include "hal/cpu_hal.h"
 
 #include "esp32s2/dport_access.h"
-#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/ets_sys.h"  // for intr_matrix_set
 
 #include "sdkconfig.h"
 

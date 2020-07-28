@@ -33,14 +33,13 @@
 #include "freertos/task.h"
 #include "limits.h"
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/ets_sys.h"
 #endif
 
 #ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
@@ -338,7 +337,7 @@ int usleep(useconds_t us)
 {
     const int us_per_tick = portTICK_PERIOD_MS * 1000;
     if (us < us_per_tick) {
-        ets_delay_us((uint32_t) us);
+        esp_rom_delay_us((uint32_t) us);
     } else {
         /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
          * round up to compensate.

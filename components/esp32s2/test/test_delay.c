@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-#include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -23,7 +23,7 @@ static void test_delay_task(void *p)
     uint64_t start = ref_clock_get();
     switch (arg->method) {
     case 0:
-        ets_delay_us(arg->delay_us);
+        esp_rom_delay_us(arg->delay_us);
         break;
     case 1:
         vTaskDelay(arg->delay_us / portTICK_PERIOD_MS / 1000);

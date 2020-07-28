@@ -42,6 +42,7 @@
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 #include "sdkconfig.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
@@ -127,7 +128,7 @@ void ref_clock_init()
     pcnt_ll_counter_resume(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
     pcnt_ll_counter_clear(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
 
-    ets_delay_us(10000);
+    esp_rom_delay_us(10000);
 
     // Enable interrupt
     s_milliseconds = 0;

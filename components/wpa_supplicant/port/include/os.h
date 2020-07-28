@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_err.h"
-// #include "esp32/rom/ets_sys.h"
 
 typedef time_t os_time_t;
 

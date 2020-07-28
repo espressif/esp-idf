@@ -16,6 +16,7 @@
 #include "soc/gpio_periph.h"
 #include "driver/gpio.h"
 #include "esp_core_dump_priv.h"
+#include "esp_rom_sys.h"
 // TODO: move chip dependent part to portable code
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
@@ -57,7 +58,7 @@ static esp_err_t esp_core_dump_uart_write_start(void *priv)
     esp_err_t err = ESP_OK;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_core_dump_checksum_init(wr_data);
-    ets_printf(DRAM_STR("================= CORE DUMP START =================\r\n"));
+    esp_rom_printf(DRAM_STR("================= CORE DUMP START =================\r\n"));
     return err;
 }
 
@@ -80,9 +81,9 @@ static esp_err_t esp_core_dump_uart_write_end(void *priv)
         size_t cs_len = esp_core_dump_checksum_finish(wr_data, &cs_addr);
         wr_data->off += cs_len;
         esp_core_dump_b64_encode((const uint8_t *)cs_addr, cs_len, (uint8_t*)&buf[0]);
-        ets_printf(DRAM_STR("%s\r\n"), buf);
+        esp_rom_printf(DRAM_STR("%s\r\n"), buf);
     }
-    ets_printf(DRAM_STR("================= CORE DUMP END =================\r\n"));
+    esp_rom_printf(DRAM_STR("================= CORE DUMP END =================\r\n"));
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
     if (cs_addr) {
         esp_core_dump_print_sha256(DRAM_STR("Coredump SHA256"), (uint8_t*)(cs_addr));
@@ -107,7 +108,7 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
         memcpy(tmp, addr, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
-        ets_printf(DRAM_STR("%s\r\n"), buf);
+        esp_rom_printf(DRAM_STR("%s\r\n"), buf);
     }
 
     if (wr_data) {

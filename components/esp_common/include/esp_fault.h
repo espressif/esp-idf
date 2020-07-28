@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "sdkconfig.h"
 #include "soc/rtc_cntl_reg.h"
+#include "esp_rom_sys.h"
 
 #pragma once
 
@@ -81,9 +82,9 @@ extern "C" {
 
 #warning "Enabling ESP_FAULT_ASSERT_DEBUG makes ESP_FAULT_ASSERT() less effective"
 
-#define _ESP_FAULT_RESET()  do {                                    \
-        ets_printf("ESP_FAULT_ASSERT %s:%d\n", __FILE__, __LINE__); \
-        asm volatile("ill;");                                       \
+#define _ESP_FAULT_RESET()  do {                                        \
+        esp_rom_printf("ESP_FAULT_ASSERT %s:%d\n", __FILE__, __LINE__); \
+        asm volatile("ill;");                                           \
     } while(0)
 
 #endif // ESP_FAULT_ASSERT_DEBUG

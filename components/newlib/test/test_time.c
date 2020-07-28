@@ -12,6 +12,7 @@
 #include "esp_system.h"
 #include "test_utils.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 #if portNUM_PROCESSORS == 2
 
@@ -270,7 +271,7 @@ static void measure_time_task(void *pvParameters)
         int64_t sys_time_us[2] = { main_sys_time_us[0], 0};
         // although exit flag is set in another task, checking (exit_flag == false) is safe
         while (exit_flag == false) {
-            ets_delay_us(2 * 1000000); // 2 sec
+            esp_rom_delay_us(2 * 1000000); // 2 sec
 
             start_measure(&sys_time_us[1], &real_time_us[1]);
             result_adjtime_correction_us[1] += calc_correction("measure", sys_time_us, real_time_us);

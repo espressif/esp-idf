@@ -28,6 +28,7 @@
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
 #include "crypto/ccmp.h"
+#include "esp_rom_sys.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -2292,7 +2293,7 @@ int wpa_michael_mic_failure(u16 isunicast)
          * Need to wait for completion of request frame. We do not get
          * any callback for the message completion, so just wait a
          * short while and hope for the best. */
-         ets_delay_us(10000);
+         esp_rom_delay_us(10000);
 
         /*deauthenticate AP*/ 
         

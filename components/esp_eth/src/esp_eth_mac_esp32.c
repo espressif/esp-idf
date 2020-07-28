@@ -31,6 +31,7 @@
 #include "soc/soc.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "emac_esp32";
 #define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -87,7 +88,7 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
     uint32_t to = 0;
     bool busy = true;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
@@ -108,7 +109,7 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
     uint32_t to = 0;
     bool busy = true;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);

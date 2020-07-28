@@ -12,6 +12,7 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 struct flash_test_ctx {
     uint32_t offset;
@@ -133,7 +134,7 @@ static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;
     timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
-    ets_delay_us(arg->delay_time_us);
+    esp_rom_delay_us(arg->delay_time_us);
     arg->repeat_count++;
 }
 

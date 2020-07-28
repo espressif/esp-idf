@@ -22,7 +22,6 @@
 #include "esp_log.h"
 #include "esp32s2/clk.h"
 #include "esp_clk_internal.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp_rom_uart.h"
 #include "soc/system_reg.h"
