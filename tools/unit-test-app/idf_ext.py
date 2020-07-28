@@ -138,7 +138,7 @@ def add_action_extensions(base_functions, base_actions):
 
                 set_config_build_variables("TEST_EXCLUDE_COMPONENTS","''")
 
-            with tempfile.NamedTemporaryFile() as sdkconfig_temp:
+            with tempfile.NamedTemporaryFile(delete=False) as sdkconfig_temp:
                 # Use values from the combined defaults and the values from
                 # config folder to build config
                 sdkconfig_default = os.path.join(PROJECT_PATH, "sdkconfig.defaults")
@@ -150,9 +150,7 @@ def add_action_extensions(base_functions, base_actions):
                 with open(sdkconfig_config, "rb") as sdkconfig_config_file:
                     sdkconfig_temp.write(b"\n")
                     sdkconfig_temp.write(sdkconfig_config_file.read())
-
-                sdkconfig_temp.flush()
-
+            try:
                 try:
                     args.define_cache_entry.append("SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name)
                 except AttributeError:
@@ -160,6 +158,11 @@ def add_action_extensions(base_functions, base_actions):
 
                 reconfigure = base_functions["reconfigure"]
                 reconfigure(None, args)
+            finally:
+                try:
+                    os.unlink(sdkconfig_temp.name)
+                except OSError:
+                    pass
         else:
             if not config_name == "all-configs":
                 print("unknown unit test app config for action '%s'" % ut_apply_config_name)
