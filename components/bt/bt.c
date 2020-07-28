@@ -1448,6 +1448,7 @@ void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int par
 #define BT_IS_ALIVE true
 #define BT_NOT_ALIVE false
 #define BT_INT_STA_REG (0x3FF7100C)
+#define BLE_INT_STA_REG (0x3FF71210)
 
 extern bool connection_is_alive();
 extern uint32_t real_bt_isr_count ;
@@ -1485,6 +1486,7 @@ void esp_bt_check_need_restart()
         asm volatile ("rsr %0, INTENABLE\n" :"=r"(intenable));
         ets_printf("!! Check BT is not alive. Abort !!");
         RMT_DBG_LOG_ERROR("BT not alive,INT R:0x%x EN 0x%x",*((uint32_t*)BT_INT_STA_REG),intenable);
+        RMT_DBG_LOG_ERROR("BLE INT R:0x%x",*((uint32_t*)BLE_INT_STA_REG));
         abort();
     }
 }
@@ -1493,7 +1495,8 @@ void bt_abort_with_coredump_log(uint16_t error)
 {
     uint32_t intenable;
     asm volatile ("rsr %0, INTENABLE\n" :"=r"(intenable));
-    RMT_DBG_LOG_ERROR("abort!INT R:0x%x EN 0x%x",*((uint32_t*)BT_INT_STA_REG),intenable);
+    RMT_DBG_LOG_ERROR("abort!0x%x INT R:0x%x EN 0x%x",error,*((uint32_t*)BT_INT_STA_REG),intenable);
+    RMT_DBG_LOG_ERROR("BLE INT R:0x%x",*((uint32_t*)BLE_INT_STA_REG));
     __asm__ __volatile__("ill\n");
 }
 
