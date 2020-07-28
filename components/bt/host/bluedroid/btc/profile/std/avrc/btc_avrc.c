@@ -1011,6 +1011,9 @@ static void btc_avrc_ct_init(void)
         return;
     }
 
+    // indicate that using A2DP with AVRC
+    av_with_rc = true;
+
     /// initialize CT-specific resources
     s_rc_ct_init = BTC_RC_CT_INIT_MAGIC;
 
@@ -1038,6 +1041,9 @@ static void btc_avrc_ct_deinit(void)
         BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
         return;
     }
+
+    // indicate that using A2DP with AVRC
+    av_with_rc = true;
 
     /// deinit CT-specific resources
     s_rc_ct_init = 0;
