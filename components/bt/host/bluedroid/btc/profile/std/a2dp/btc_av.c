@@ -101,7 +101,6 @@ typedef struct {
 **  Static variables
 ******************************************************************************/
 btc_av_open_t av_open;
-bool open_fail = false;
 
 #if A2D_DYNAMIC_MEMORY == FALSE
 static btc_av_cb_t btc_av_cb = {0};
@@ -327,6 +326,9 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
 
     case BTA_AV_REGISTER_EVT:
         btc_av_cb.bta_handle = ((tBTA_AV *)p_data)->registr.hndl;
+        // Init av_open struct and av_open_state
+        memset(&av_open, 0, sizeof(btc_av_open_t));
+        open_fail = false;
         break;
 
     case BTA_AV_PENDING_EVT:
@@ -334,14 +336,24 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         if (event == BTC_AV_CONNECT_REQ_EVT) {
             memcpy(&btc_av_cb.peer_bda, &((btc_av_connect_req_t *)p_data)->target_bda,
                    sizeof(bt_bdaddr_t));
-            BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
-                       TRUE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
+            if (av_with_rc) {
+                BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
+                        TRUE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
+            } else {
+                BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
+                        FALSE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
+            }
         } else if (event == BTA_AV_PENDING_EVT) {
             bdcpy(btc_av_cb.peer_bda.address, ((tBTA_AV *)p_data)->pend.bd_addr);
             UINT16 uuid = (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) ? UUID_SERVCLASS_AUDIO_SOURCE :
                 UUID_SERVCLASS_AUDIO_SINK;
-            BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
-                       TRUE, BTA_SEC_AUTHENTICATE, uuid);
+            if (av_with_rc) {
+                BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
+                        TRUE, BTA_SEC_AUTHENTICATE, uuid);
+            } else {
+                BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
+                       FALSE, BTA_SEC_AUTHENTICATE, uuid);
+            }
         }
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENING);
     } break;
@@ -353,15 +365,14 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
 
     case BTA_AV_RC_OPEN_EVT:
         /* IOP_FIX: Jabra 620 only does RC open without AV open whenever it connects. So
-         * as per the AV WP, an AVRC connection cannot exist without an AV connection. Therefore,
-         * we initiate an AV connection if an RC_OPEN_EVT is received when we are in AV_CLOSED state.
-         * We initiate the AV connection after a small 3s timeout to avoid any collisions from the
-         * headsets, as some headsets initiate the AVRC connection first and then
-         * immediately initiate the AV connection
-         *
-         * TODO: We may need to do this only on an AVRCP Play. FixMe
-         */
-
+        * as per the AV WP, an AVRC connection cannot exist without an AV connection. Therefore,
+        * we initiate an AV connection if an RC_OPEN_EVT is received when we are in AV_CLOSED state.
+        * We initiate the AV connection after a small 3s timeout to avoid any collisions from the
+        * headsets, as some headsets initiate the AVRC connection first and then
+        * immediately initiate the AV connection
+        *
+        * TODO: We may need to do this only on an AVRCP Play. FixMe
+        */
 #if BTC_AV_SRC_INCLUDED
         BTC_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
         btc_av_cb.tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
@@ -458,8 +469,12 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             */
         } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC &&
                    (p_bta_data->open.status == BTA_AV_SUCCESS)) {
-            /* Bring up AVRCP connection too */
-            BTA_AvOpenRc(btc_av_cb.bta_handle);
+            /* Bring up AVRCP connection too if AVRC Initialized */
+            if(av_with_rc) {
+                BTA_AvOpenRc(btc_av_cb.bta_handle);
+            } else {
+                BTC_TRACE_WARNING("AVRC not Init, not using it.");
+            }
         }
         btc_queue_advance();
     } break;
@@ -1273,11 +1288,16 @@ bt_status_t btc_av_execute_service(BOOLEAN b_enable, UINT8 tsep)
         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
          * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
          * be initiated by the app/audioflinger layers */
-        BTA_AvEnable(BTA_SEC_AUTHENTICATE, (BTA_AV_FEAT_NO_SCO_SSPD)
-                     | BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR
-                     | BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL,
-                     bte_av_callback);
-        BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTC_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos, &bta_avrc_cos, tsep);
+        if (av_with_rc) {
+            BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD |
+                        BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
+                        BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL,
+                        bte_av_callback);
+            BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTC_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos, &bta_avrc_cos, tsep);
+        } else {
+            BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD, bte_av_callback);
+            BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTC_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos, NULL, tsep);
+        }
     } else {
         BTA_AvDeregister(btc_av_cb.bta_handle);
         BTA_AvDisable();
