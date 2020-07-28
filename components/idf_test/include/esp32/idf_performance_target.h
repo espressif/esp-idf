@@ -18,6 +18,10 @@
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            30
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     27
 
+#ifndef IDF_PERFORMANCE_MIN_FLASH_SPEED_BYTE_PER_SEC_EXT_RD_2KB
+#define IDF_PERFORMANCE_MIN_FLASH_SPEED_BYTE_PER_SEC_EXT_RD_2KB                 (1697*1000)
+#endif
+
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_SQRT                                     140

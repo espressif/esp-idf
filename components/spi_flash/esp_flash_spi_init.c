@@ -88,13 +88,10 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
+    PIN_INPUT_ENABLE(iomux_reg);
     if (use_iomux) {
-        // This requires `gpio_iomux_in` and `gpio_iomux_out` to be in the IRAM.
-        // `linker.lf` is used fulfill this requirement.
-        gpio_iomux_in(cs_io_num, spics_in);
-        gpio_iomux_out(cs_io_num, spics_func, false);
+        PIN_FUNC_SELECT(iomux_reg, spics_func);
     } else {
-        PIN_INPUT_ENABLE(iomux_reg);
         if (cs_io_num < 32) {
             GPIO.enable_w1ts = (0x1 << cs_io_num);
         } else {

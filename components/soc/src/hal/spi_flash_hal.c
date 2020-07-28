@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
 #include "string.h"
+#include "soc/spi_caps.h"
 #include "hal/hal_defs.h"
 
 #define APB_CYCLE_NS   (1000*1000*1000LL/APB_CLK_FREQ)
@@ -66,6 +67,9 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
     if (!esp_ptr_internal(data_out)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cfg->cs_num >= SOC_SPI_PERIPH_CS_NUM(cfg->host_id)) {
         return ESP_ERR_INVALID_ARG;
     }
 

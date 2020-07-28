@@ -1,4 +1,3 @@
-
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
@@ -587,6 +586,13 @@ UT_037:
 #   tags:
 #     - ESP32S2_IDF
 #     - UT_T1_LEDC
+
+UT_038:
+  extends: .unit_test_s2_template
+  parallel: 2
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_ESP_FLASH
 
 UT_041:
   extends: .unit_test_template

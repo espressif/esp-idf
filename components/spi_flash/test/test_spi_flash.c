@@ -299,7 +299,7 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
 // Data checks are disabled when PSRAM is used or in Freertos compliance check test
-#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #  define CHECK_DATA(suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
 #  define CHECK_ERASE(var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
 #else

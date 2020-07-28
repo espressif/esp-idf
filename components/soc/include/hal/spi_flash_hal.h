@@ -48,7 +48,7 @@ typedef struct {
 /// Configuration structure for the SPI driver.
 typedef struct {
     spi_host_device_t host_id;            ///< SPI peripheral ID.
-    int cs_num;             ///< Which cs pin is used, 0-2.
+    int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock， used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.

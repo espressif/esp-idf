@@ -576,6 +576,9 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
     hw->misc.cs0_dis = (cs_id == 0) ? 0 : 1;
     hw->misc.cs1_dis = (cs_id == 1) ? 0 : 1;
     hw->misc.cs2_dis = (cs_id == 2) ? 0 : 1;
+    hw->misc.cs3_dis = (cs_id == 3) ? 0 : 1;
+    hw->misc.cs4_dis = (cs_id == 4) ? 0 : 1;
+    hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
 }
 
 /*------------------------------------------------------------------------------
