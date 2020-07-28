@@ -6,6 +6,7 @@ System API
 
     App image format <app_image_format>
     Application Level Tracing <app_trace>
+    :esp32s2: Async Memory Copy <async_memcpy>
     Console Component <console>
     eFuse Manager <efuse>
     Error Codes and Helper Functions <esp_err>
