@@ -130,7 +130,8 @@ static inline void twai_handle_bus_off(int *alert_req)
 static inline void twai_handle_recovery_complete(int *alert_req)
 {
     //Bus recovery complete.
-    assert(twai_hal_handle_bus_recov_cplt(&twai_context));
+    bool recov_cplt = twai_hal_handle_bus_recov_cplt(&twai_context);
+    assert(recov_cplt);
 
     //Reset and set flags to the equivalent of the stopped state
     TWAI_RESET_FLAG(p_twai_obj->control_flags, CTRL_FLAG_RECOVERING | CTRL_FLAG_ERR_WARN |
@@ -221,7 +222,7 @@ static inline void twai_handle_tx_buffer_frame(BaseType_t *task_woken, int *aler
 
     //Update TX message count
     p_twai_obj->tx_msg_count--;
-    assert(p_twai_obj->tx_msg_count >= 0);     //Sanity check
+    assert(p_twai_obj->tx_msg_count >= 0);      //Sanity check
 
     //Check if there are more frames to transmit
     if (p_twai_obj->tx_msg_count > 0 && p_twai_obj->tx_queue != NULL) {
@@ -381,7 +382,8 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     }
     periph_module_reset(PERIPH_TWAI_MODULE);
     periph_module_enable(PERIPH_TWAI_MODULE);            //Enable APB CLK to TWAI peripheral
-    assert(twai_hal_init(&twai_context));
+    bool init = twai_hal_init(&twai_context);
+    assert(init);
     twai_hal_configure(&twai_context, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
     //Todo: Allow interrupt to be registered to specified CPU
     TWAI_EXIT_CRITICAL();
@@ -467,7 +469,8 @@ esp_err_t twai_start(void)
     //Todo: Add assert to see if in reset mode. //Should already be in bus-off mode, set again to make sure
 
     //Currently in listen only mode, need to set to mode specified by configuration
-    assert(twai_hal_start(&twai_context, p_twai_obj->mode));
+    bool started = twai_hal_start(&twai_context, p_twai_obj->mode);
+    assert(started);
 
     TWAI_RESET_FLAG(p_twai_obj->control_flags, CTRL_FLAG_STOPPED);
     TWAI_EXIT_CRITICAL();
@@ -481,7 +484,8 @@ esp_err_t twai_stop(void)
     TWAI_CHECK_FROM_CRIT(p_twai_obj != NULL, ESP_ERR_INVALID_STATE);
     TWAI_CHECK_FROM_CRIT(!(p_twai_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)), ESP_ERR_INVALID_STATE);
 
-    assert(twai_hal_stop(&twai_context));
+    bool stopped = twai_hal_stop(&twai_context);
+    assert(stopped);
 
     TWAI_RESET_FLAG(p_twai_obj->control_flags, CTRL_FLAG_TX_BUFF_OCCUPIED);
     TWAI_SET_FLAG(p_twai_obj->control_flags, CTRL_FLAG_STOPPED);
@@ -630,7 +634,8 @@ esp_err_t twai_initiate_recovery(void)
     TWAI_SET_FLAG(p_twai_obj->control_flags, CTRL_FLAG_RECOVERING);
 
     //Trigger start of recovery process
-    assert(twai_hal_start_bus_recovery(&twai_context));
+    bool started = twai_hal_start_bus_recovery(&twai_context);
+    assert(started);
     TWAI_EXIT_CRITICAL();
 
     return ESP_OK;
