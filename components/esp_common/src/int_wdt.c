@@ -82,7 +82,7 @@ static void IRAM_ATTR tick_hook(void) {
 }
 #else
 static void IRAM_ATTR tick_hook(void) {
-#if CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_FREERTOS_UNICORE
     if (xPortGetCoreID()!=0) {
         return;
     }

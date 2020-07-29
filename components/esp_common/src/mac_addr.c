@@ -56,8 +56,8 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-    return ESP_ERR_NOT_SUPPORTED; // TODO: support custom MAC in efuse
+#if !CONFIG_IDF_TARGET_ESP32
+    return ESP_ERR_NOT_SUPPORTED;
 #else
     uint8_t version;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_VER, &version, 8);
@@ -76,7 +76,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
         return ESP_ERR_INVALID_CRC;
     }
     return ESP_OK;
-#endif // IDF_TARGET_ESP32S2
+#endif
 }
 
 esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
@@ -86,7 +86,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
         return err;
     }
 #ifdef CONFIG_IDF_TARGET_ESP32
-// Only ESP32 has MAC CRC in efuse, ESP32-S2 has internal efuse consistency checks
+// Only ESP32 has MAC CRC in efuse
     uint8_t efuse_crc;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &efuse_crc, 8);
     uint8_t calc_crc = esp_rom_efuse_mac_address_crc8(mac, 6);

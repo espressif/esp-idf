@@ -125,7 +125,7 @@ menu "Common ESP-related"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 1 if IDF_TARGET_ESP32
-        default 43 if IDF_TARGET_ESP32S2
+        default 43
         help
              This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
              boot log output and default standard output and standard error of the app).
@@ -138,7 +138,7 @@ menu "Common ESP-related"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 3 if IDF_TARGET_ESP32
-        default 44 if IDF_TARGET_ESP32S2
+        default 44
         help
             This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
             default default standard input of the app).
@@ -292,6 +292,7 @@ menu "Common ESP-related"
         int
         default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
         default 1 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+        default 1
 
     config ESP_MAC_ADDR_UNIVERSE_ETH
         bool

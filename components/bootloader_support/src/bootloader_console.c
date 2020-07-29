@@ -74,7 +74,11 @@ void bootloader_console_init(void)
 #endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 
     // Set configured UART console baud rate
-    esp_rom_uart_set_clock_baudrate(uart_num, rtc_clk_apb_freq_get(), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    uint32_t clock_hz = rtc_clk_apb_freq_get();
+#if CONFIG_IDF_TARGET_ESP32S3
+    clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
+#endif
+    esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 }
 #endif // CONFIG_ESP_CONSOLE_UART
 

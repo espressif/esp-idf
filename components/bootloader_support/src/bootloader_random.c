@@ -22,7 +22,7 @@
 #include "soc/i2s_periph.h"
 #include "esp_log.h"
 #include "soc/io_mux_reg.h"
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/apb_saradc_reg.h"
 #endif
 
@@ -30,13 +30,13 @@
 #include "esp_system.h"
 #include "driver/periph_ctrl.h"
 
-void bootloader_fill_random(void *buffer, size_t length)
+ __attribute__((weak)) void bootloader_fill_random(void *buffer, size_t length)
 {
     return esp_fill_random(buffer, length);
 }
 
 #else
-void bootloader_fill_random(void *buffer, size_t length)
+ __attribute__((weak)) void bootloader_fill_random(void *buffer, size_t length)
 {
     uint8_t *buffer_bytes = (uint8_t *)buffer;
     uint32_t random;
@@ -71,7 +71,11 @@ void bootloader_random_enable(void)
        never disabled while the CPU is running), this is a "belts and braces" type check.
      */
 #ifdef BOOTLOADER_BUILD
+#if CONFIG_IDF_TARGET_ESP32S3
+    SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_RNG_EN);
+#else
     DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_RNG_EN);
+#endif
 #else
     periph_module_enable(PERIPH_RNG_MODULE);
 #endif // BOOTLOADER_BUILD
@@ -105,6 +109,17 @@ void bootloader_random_enable(void)
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_START_TOP);
+#elif CONFIG_IDF_TARGET_ESP32S3
+    /* Disable IO1 digital function for random function. */
+    PIN_INPUT_DISABLE(PERIPHS_IO_MUX_GPIO1_U);
+    PIN_PULLDWN_DIS(PERIPHS_IO_MUX_GPIO1_U);
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO1_U);
+    WRITE_PERI_REG(APB_SARADC_SAR1_PATT_TAB1_REG, 0xFFFFFFFF);
+
+    SET_PERI_REG_MASK(SENS_SAR_MEAS2_CTRL1_REG, SENS_SAR2_EN_TEST);
+    SET_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_I2S0_CLK_EN);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_START_TOP);
 #endif
 
     // Test pattern configuration byte 0xAD:
@@ -119,7 +134,7 @@ void bootloader_random_enable(void)
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);
     SET_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR1_DIG_FORCE);
     SET_PERI_REG_MASK(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_DIG_FORCE);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     WRITE_PERI_REG(APB_SARADC_SAR2_PATT_TAB1_REG, 0xADADADAD);
     WRITE_PERI_REG(APB_SARADC_SAR2_PATT_TAB2_REG, 0xADADADAD);
     WRITE_PERI_REG(APB_SARADC_SAR2_PATT_TAB3_REG, 0xADADADAD);
@@ -147,15 +162,18 @@ void bootloader_random_enable(void)
     SET_PERI_REG_BITS(I2S_SAMPLE_RATE_CONF_REG(0), I2S_RX_BCK_DIV_NUM, 20, I2S_RX_BCK_DIV_NUM_S);
     SET_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_DATA_TO_I2S);
 #endif
+#if !CONFIG_IDF_TARGET_ESP32S3
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_CAMERA_EN);
     SET_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_LCD_EN);
     SET_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE);
     SET_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE_TEST_EN);
     SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);
+#endif
 }
 
 void bootloader_random_disable(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32S3
     /* Reset some i2s configuration (possibly redundant as we reset entire
        I2S peripheral further down). */
     CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);
@@ -165,10 +183,14 @@ void bootloader_random_disable(void)
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_LCD_EN);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE_TEST_EN);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE);
-
+#endif
     /* Disable i2s clock */
 #ifdef BOOTLOADER_BUILD
+#if CONFIG_IDF_TARGET_ESP32S3
+    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_I2S0_CLK_EN);
+#else
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+#endif
 #else
     periph_module_disable(PERIPH_I2S0_MODULE);
 #endif // BOOTLOADER_BUILD
@@ -177,7 +199,7 @@ void bootloader_random_disable(void)
 #if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR1_DIG_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_DIG_FORCE);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_MUX_REG, SENS_SAR1_DIG_FORCE);
 #endif
 
@@ -187,7 +209,7 @@ void bootloader_random_disable(void)
     CLEAR_PERI_REG_MASK(SYSCON_SARADC_CTRL_REG, SYSCON_SARADC_SAR2_MUX
                         | SYSCON_SARADC_SAR_SEL | SYSCON_SARADC_DATA_TO_I2S);
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     CLEAR_PERI_REG_MASK(SENS_SAR_MEAS2_CTRL1_REG, SENS_SAR2_EN_TEST);
     CLEAR_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_SAR_SEL | APB_SARADC_DATA_TO_I2S);
     SET_PERI_REG_BITS(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
@@ -199,8 +221,13 @@ void bootloader_random_disable(void)
 
     /* Reset i2s peripheral */
 #ifdef BOOTLOADER_BUILD
+#if CONFIG_IDF_TARGET_ESP32S3
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_I2S0_RST);
+    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_I2S0_RST);
+#else
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+#endif
 #else
     periph_module_reset(PERIPH_I2S0_MODULE);
 #endif

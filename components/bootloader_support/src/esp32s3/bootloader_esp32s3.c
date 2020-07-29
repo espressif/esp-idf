@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,29 @@
 // limitations under the License.
 #include <stdint.h>
 #include "sdkconfig.h"
-#include "bootloader_common.h"
+#include "esp_attr.h"
+#include "esp_log.h"
+#include "esp_image_format.h"
+#include "flash_qio_mode.h"
 #include "soc/efuse_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
+#include "soc/assist_debug_reg.h"
+#include "soc/cpu.h"
+#include "soc/dport_reg.h"
+#include "soc/rtc.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/spi_periph.h"
+#include "soc/extmem_reg.h"
 
+#include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
+#include "esp_rom_sys.h"
+#include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/cache.h"
+#include "esp32s3/rom/rtc.h"
+
+#include "bootloader_common.h"
 #include "bootloader_init.h"
 #include "bootloader_clock.h"
 #include "bootloader_flash_config.h"
@@ -26,26 +43,9 @@
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 
-#include "esp_rom_gpio.h"
-#include "esp_rom_efuse.h"
-#include "esp_rom_sys.h"
-#include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/rtc.h"
 
-#include "esp_attr.h"
-#include "esp_log.h"
-#include "esp_image_format.h"
-#include "flash_qio_mode.h"
-#include "soc/assist_debug_reg.h"
-#include "soc/cpu.h"
-#include "soc/dport_reg.h"
-#include "soc/extmem_reg.h"
-#include "soc/rtc.h"
-#include "soc/spi_periph.h"
-#include <string.h>
+static const char *TAG = "boot.esp32s3";
 
-static const char *TAG = "boot.esp32s2";
 void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
@@ -80,14 +80,14 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 
 static void bootloader_reset_mmu(void)
 {
-    //ToDo: save the autoload value
-    Cache_Suspend_ICache();
-    Cache_Invalidate_ICache_All();
+    Cache_Suspend_DCache();
+    Cache_Invalidate_DCache_All();
     Cache_MMU_Init();
 
-    /* normal ROM boot exits with DROM0 cache unmasked,
-    but serial bootloader exits with it masked. */
-    REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE0_BUS);
+#if !CONFIG_FREERTOS_UNICORE
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE1_BUS);
+#endif
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
@@ -112,12 +112,12 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    uint32_t autoload = Cache_Suspend_ICache();
+    uint32_t autoload = Cache_Suspend_DCache();
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    Cache_Resume_ICache(autoload);
+    Cache_Resume_DCache(autoload);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -221,10 +221,10 @@ static esp_err_t bootloader_init_spi_flash(void)
 
 static void wdt_reset_cpu0_info_enable(void)
 {
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
-    REG_WRITE(ASSIST_DEBUG_PRO_PDEBUGENABLE, 1);
-    REG_WRITE(ASSIST_DEBUG_PRO_RCD_RECORDING, 1);
+    REG_SET_BIT(SYSTEM_CPU_PERI_CLK_EN_REG, SYSTEM_CLK_EN_ASSIST_DEBUG);
+    REG_CLR_BIT(SYSTEM_CPU_PERI_RST_EN_REG, SYSTEM_RST_EN_ASSIST_DEBUG);
+    REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_PDEBUGENABLE_REG, 1);
+    REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_RECORDING_REG, 1);
 }
 
 static void wdt_reset_info_dump(int cpu)
@@ -235,20 +235,29 @@ static void wdt_reset_info_dump(int cpu)
 
     stat = 0xdeadbeef;
     pid = 0;
-    inst = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGINST);
-    dstat = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGSTATUS);
-    data = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGDATA);
-    pc = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGPC);
-    lsstat = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0STAT);
-    lsaddr = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0ADDR);
-    lsdata = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0DATA);
-
-    if (DPORT_RECORD_PDEBUGINST_SZ(inst) == 0 &&
-            DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
-        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x (waiti mode)", cpu_name, pc);
+    if (cpu == 0) {
+        inst    = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGINST_REG);
+        dstat   = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGSTATUS_REG);
+        data    = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGDATA_REG);
+        pc      = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG);
+        lsstat  = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGLS0STAT_REG);
+        lsaddr  = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGLS0ADDR_REG);
+        lsdata  = REG_READ(ASSIST_DEBUG_CORE_0_RCD_PDEBUGLS0DATA_REG);
     } else {
-        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x", cpu_name, pc);
+#if !CONFIG_FREERTOS_UNICORE
+        inst    = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGINST_REG);
+        dstat   = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGSTATUS_REG);
+        data    = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGDATA_REG);
+        pc      = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGPC_REG);
+        lsstat  = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGLS0STAT_REG);
+        lsaddr  = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGLS0ADDR_REG);
+        lsdata  = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGLS0DATA_REG);
+#else
+        ESP_LOGE(TAG, "WDT reset info: %s CPU not support!\n", cpu_name);
+        return;
+#endif
     }
+
     ESP_LOGD(TAG, "WDT reset info: %s CPU STATUS        0x%08x", cpu_name, stat);
     ESP_LOGD(TAG, "WDT reset info: %s CPU PID           0x%08x", cpu_name, pid);
     ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGINST    0x%08x", cpu_name, inst);
@@ -267,13 +276,14 @@ static void bootloader_check_wdt_reset(void)
 
     rst_reas[0] = rtc_get_reset_reason(0);
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-        rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+        wdt_reset_info_dump(1);
     }
     wdt_reset_cpu0_info_enable();
 }
@@ -288,9 +298,7 @@ esp_err_t bootloader_init(void)
     esp_err_t ret = ESP_OK;
     bootloader_super_wdt_auto_feed();
     // protect memory region
-
     bootloader_init_mem();
-
     /* check that static RAM is after the stack */
 #ifndef NDEBUG
     {

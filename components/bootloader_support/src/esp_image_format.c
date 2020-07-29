@@ -32,6 +32,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/rtc.h"
+#include "esp32s3/rom/secure_boot.h"
 #endif
 
 /* Checking signatures as part of verifying images is necessary:
@@ -209,7 +212,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         bool verify_sha;
 #if CONFIG_SECURE_BOOT_V2_ENABLED
         verify_sha = true;
-#else // ESP32, or ESP32S2 without secure boot enabled
+#else // Secure boot not enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
 #endif
 

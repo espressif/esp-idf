@@ -74,7 +74,7 @@ typedef enum {
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
-void esp_clk_init(void)
+ __attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
@@ -202,7 +202,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  * These peripheral clocks are enabled when the peripherals are initialized
  * and disabled when they are de-initialized.
  */
-void esp_perip_clk_init(void)
+__attribute__((weak)) void esp_perip_clk_init(void)
 {
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
     uint32_t common_perip_clk1 = 0;
@@ -252,7 +252,7 @@ void esp_perip_clk_init(void)
                            SYSTEM_SPI3_CLK_EN |
                            SYSTEM_SPI4_CLK_EN |
                            SYSTEM_PWM0_CLK_EN |
-                           SYSTEM_CAN_CLK_EN |
+                           SYSTEM_TWAI_CLK_EN |
                            SYSTEM_PWM1_CLK_EN |
                            SYSTEM_I2S1_CLK_EN |
                            SYSTEM_SPI2_DMA_CLK_EN |
@@ -294,12 +294,6 @@ void esp_perip_clk_init(void)
                         SYSTEM_SPI2_DMA_CLK_EN |
                         SYSTEM_SPI3_DMA_CLK_EN;
     common_perip_clk1 = 0;
-
-    /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
-     * the current is not reduced when disable I2S clock.
-     */
-    REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
-    REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
 
     /* Disable some peripheral clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);

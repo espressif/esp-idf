@@ -49,7 +49,7 @@ typedef enum {
  */
 static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void)
 {
-    uint32_t flash_crypt_cnt;
+    uint32_t flash_crypt_cnt = 0;
 #if CONFIG_IDF_TARGET_ESP32
     flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
 #elif CONFIG_IDF_TARGET_ESP32S2
