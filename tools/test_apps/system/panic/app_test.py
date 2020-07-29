@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import panic_tests as test
 from test_panic_util.test_panic_util import panic_test, run_all
 
@@ -247,4 +248,4 @@ def test_coredump_abort_flash_bin_crc(env, extra_data):
 
 
 if __name__ == '__main__':
-    run_all(__file__)
+    run_all(__file__, sys.argv[1:])
