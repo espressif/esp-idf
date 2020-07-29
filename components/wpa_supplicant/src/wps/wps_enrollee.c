@@ -652,7 +652,7 @@ static int wps_process_r_snonce2(struct wps_data *wps, const u8 *r_snonce2)
 
 
 static int wps_process_cred_e(struct wps_data *wps, const u8 *cred,
-			      size_t cred_len, int wps2)
+			      size_t cred_len, int cred_idx, int wps2)
 {
 	struct wps_parse_attr *attr;
 	struct wpabuf msg;
@@ -712,9 +712,8 @@ static int wps_process_cred_e(struct wps_data *wps, const u8 *cred,
 		goto _out;
 	}
 #endif /* CONFIG_WPS2 */
-
-	    wps_ssid_save(wps->cred.ssid, wps->cred.ssid_len);
-        wps_key_save((char *)wps->cred.key, wps->cred.key_len);
+    wps_ssid_save(wps->cred.ssid, wps->cred.ssid_len, cred_idx);
+    wps_key_save((char *)wps->cred.key, wps->cred.key_len, cred_idx);
 
 	if (wps->wps->cred_cb) {
 		wps->cred.cred_attr = cred - 4;
@@ -749,7 +748,7 @@ static int wps_process_creds(struct wps_data *wps, const u8 *cred[],
 
 	for (i = 0; i < num_cred; i++) {
 		int res;
-		res = wps_process_cred_e(wps, cred[i], cred_len[i], wps2);
+		res = wps_process_cred_e(wps, cred[i], cred_len[i], i, wps2);
 		if (res == 0)
 			ok++;
 		else if (res == -2) {
