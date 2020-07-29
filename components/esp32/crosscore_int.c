@@ -36,6 +36,7 @@
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
+#define REASON_GET_INT          BIT(2)
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[ portNUM_PROCESSORS ];
@@ -76,6 +77,10 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
          * to allow DFS features without the extra latency of the ISR hook.
          */
     }
+    if(my_reason_val & REASON_GET_INT) {
+        extern int _int_enable_flag;
+        asm volatile ("rsr %0, INTENABLE\n" :"=r"(_int_enable_flag));
+    }
 }
 
 //Initialize the crosscore interrupt on this core. Call this once
@@ -115,5 +120,10 @@ void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
 void IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_FREQ_SWITCH);
+}
+
+void IRAM_ATTR esp_crosscore_int_send_get_int(int core_id)
+{
+    esp_crosscore_int_send(core_id, REASON_GET_INT);
 }
 

@@ -1450,6 +1450,8 @@ void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int par
 #define BT_INT_STA_REG (0x3FF7100C)
 #define BLE_INT_STA_REG (0x3FF71210)
 
+int _int_enable_flag=0;
+
 extern bool connection_is_alive();
 extern uint32_t real_bt_isr_count ;
 extern uint32_t connection_LinkSuperTimeout;
@@ -1477,7 +1479,7 @@ static bool check_bt_is_alive()
     last_clk_ts = currect_clkint_ts;
     return BT_IS_ALIVE;
 }
-
+void esp_crosscore_int_send_get_int(int core_id);
 void esp_bt_check_need_restart()
 {
     if(connection_is_alive() && (check_bt_is_alive()==false))
@@ -1485,8 +1487,17 @@ void esp_bt_check_need_restart()
         uint32_t intenable;
         asm volatile ("rsr %0, INTENABLE\n" :"=r"(intenable));
         ets_printf("!! Check BT is not alive. Abort !!");
-        RMT_DBG_LOG_ERROR("BT not alive,INT R:0x%x EN 0x%x",*((uint32_t*)BT_INT_STA_REG),intenable);
+        RMT_DBG_LOG_ERROR("BT not alive,INT %d R:0x%x EN 0x%x",xPortGetCoreID(),*((uint32_t*)BT_INT_STA_REG),intenable);
         RMT_DBG_LOG_ERROR("BLE INT R:0x%x",*((uint32_t*)BLE_INT_STA_REG));
+        if (xPortGetCoreID()!=CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE){
+            int times_out = 5;
+            esp_crosscore_int_send_get_int(CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
+            while(times_out-- > 0 && _int_enable_flag == 0 )
+            {
+                vTaskDelay(100/portTICK_PERIOD_MS);
+            }
+            RMT_DBG_LOG_ERROR("BT not alive,INT Core %d EN 0x%x",CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE,_int_enable_flag);
+        }
         abort();
     }
 }
