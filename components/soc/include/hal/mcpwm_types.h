@@ -81,6 +81,7 @@ typedef enum {
  * @brief MCPWM select capture starts from which edge
  */
 typedef enum {
-    MCPWM_NEG_EDGE = BIT(0),  /*!<Capture the negative edge*/
-    MCPWM_POS_EDGE = BIT(1),  /*!<Capture the positive edge*/
+    MCPWM_NEG_EDGE = BIT(0),          /*!<Capture the negative edge*/
+    MCPWM_POS_EDGE = BIT(1),          /*!<Capture the positive edge*/
+    MCPWM_BOTH_EDGE = BIT(1)|BIT(0),  /*!<Capture both edges*/
 } mcpwm_capture_on_edge_t;
