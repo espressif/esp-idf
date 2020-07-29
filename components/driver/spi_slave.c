@@ -80,7 +80,7 @@ static inline bool is_valid_host(spi_host_device_t host)
 {
 #if CONFIG_IDF_TARGET_ESP32
     return host >= SPI1_HOST && host <= SPI3_HOST;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 // SPI_HOST (SPI1_HOST) is not supported by the SPI Slave driver on ESP32-S2
     return host >= SPI2_HOST && host <= SPI3_HOST;
 #endif

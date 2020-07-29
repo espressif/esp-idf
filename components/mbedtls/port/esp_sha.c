@@ -19,6 +19,8 @@
 #include "esp32/sha.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/sha.h"
 #endif
 
 #include <mbedtls/sha1.h>

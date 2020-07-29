@@ -498,7 +498,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
 
     portBASE_TYPE high_priority_task_awoken = 0;
 
-    lldesc_t *finish_desc;
+    lldesc_t *finish_desc = NULL;
 
     if ((status & I2S_INTR_OUT_DSCR_ERR) || (status & I2S_INTR_IN_DSCR_ERR)) {
         ESP_EARLY_LOGE(I2S_TAG, "dma error, interrupt status: 0x%08x", status);

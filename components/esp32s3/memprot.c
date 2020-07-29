@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 
-bool esp_memprot_is_assoc_intr_any()
+bool esp_memprot_is_assoc_intr_any(void)
 {
     return true;
 }

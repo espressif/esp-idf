@@ -26,7 +26,7 @@ menu "High resolution timer (esp_timer)"
     choice ESP_TIMER_IMPL
         prompt "Hardware timer to use for esp_timer"
         default ESP_TIMER_IMPL_TG0_LAC if IDF_TARGET_ESP32
-        default ESP_TIMER_IMPL_SYSTIMER if IDF_TARGET_ESP32S2
+        default ESP_TIMER_IMPL_SYSTIMER
         help
             esp_timer APIs can be implemented using different hardware timers.
 
@@ -47,7 +47,7 @@ menu "High resolution timer (esp_timer)"
 
         config ESP_TIMER_IMPL_SYSTIMER
             bool "SYSTIMER"
-            depends on IDF_TARGET_ESP32S2
+            depends on !IDF_TARGET_ESP32
 
     endchoice
 

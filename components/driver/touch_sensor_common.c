@@ -42,7 +42,7 @@ static const char *TOUCH_TAG = "TOUCH_SENSOR";
 #define TOUCH_CHANNEL_CHECK(channel) do { \
         TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
     } while (0);
-#elif defined CONFIG_IDF_TARGET_ESP32S2
+#elif defined CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define TOUCH_CHANNEL_CHECK(channel) do { \
         TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
         TOUCH_CHECK(channel != SOC_TOUCH_DENOISE_CHANNEL, "TOUCH0 is internal denoise channel", ESP_ERR_INVALID_ARG); \
@@ -194,7 +194,7 @@ esp_err_t touch_pad_set_thresh(touch_pad_t touch_num, uint16_t threshold)
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
-#elif defined CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 esp_err_t touch_pad_set_thresh(touch_pad_t touch_num, uint32_t threshold)
 {
     TOUCH_CHANNEL_CHECK(touch_num);
@@ -214,7 +214,7 @@ esp_err_t touch_pad_get_thresh(touch_pad_t touch_num, uint16_t *threshold)
     touch_hal_get_threshold(touch_num, threshold);
     return ESP_OK;
 }
-#elif defined CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 esp_err_t touch_pad_get_thresh(touch_pad_t touch_num, uint32_t *threshold)
 {
     TOUCH_CHANNEL_CHECK(touch_num);

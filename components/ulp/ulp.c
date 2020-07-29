@@ -25,6 +25,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
+#include "esp32s3/ulp.h"
 #endif
 
 #include "soc/soc.h"

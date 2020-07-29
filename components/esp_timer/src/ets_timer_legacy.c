@@ -24,7 +24,6 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
-#include "soc/frc_timer_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

@@ -59,12 +59,15 @@
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
 #include "esp32/spiram.h"
 #include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
 #include "esp32s2/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
 #include "esp32s3/brownout.h"
 #endif
@@ -311,6 +314,8 @@ static void start_cpu0_default(void)
 {
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
+    int cpu_freq = esp_clk_cpu_freq();
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d", cpu_freq);
 
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {

@@ -42,9 +42,18 @@
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/spiram.h"
-#include "soc/periph_defs.h"
 #include "esp32s2/dport_access.h"
 #include "esp32s2/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rtc.h"
+#include "esp32s3/brownout.h"
+#include "esp32s3/cache_err_int.h"
+#include "esp32s3/rom/cache.h"
+#include "esp32s3/rom/rtc.h"
+#include "esp32s3/spiram.h"
+#include "esp32s3/dport_access.h"
+#include "esp32s3/memprot.h"
+#include "soc/assist_debug_reg.h"
 #endif
 
 #include "bootloader_flash_config.h"
@@ -53,8 +62,10 @@
 
 #include "hal/rtc_io_hal.h"
 #include "hal/wdt_hal.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
+#include "soc/periph_defs.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
@@ -117,15 +128,20 @@ void IRAM_ATTR call_start_cpu1(void)
     bootloader_init_mem();
 
 #if CONFIG_ESP_CONSOLE_UART_NONE
-    ets_install_putc1(NULL);
-    ets_install_putc2(NULL);
+    esp_rom_install_channel_putc(1, NULL);
+    esp_rom_install_channel_putc(2, NULL);
 #else // CONFIG_ESP_CONSOLE_UART_NONE
     ets_install_uart_printf();
     esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
     DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+#else
+    REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_PDEBUGENABLE_REG, 1);
+    REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_RECORDING_REG, 1);
+#endif
 
     s_cpu_up[1] = true;
     ESP_EARLY_LOGI(TAG, "App cpu up.");
@@ -153,23 +169,38 @@ static void start_other_core(void)
 {
     // If not the single core variant of ESP32 - check this since there is
     // no separate soc_caps.h for the single core variant.
-    if (!REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+    bool is_single_core = false;
+#if CONFIG_IDF_TARGET_ESP32
+    is_single_core = REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU);
+#endif
+    if (!is_single_core) {
         ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
+#if CONFIG_IDF_TARGET_ESP32
         Cache_Flush(1);
         Cache_Read_Enable(1);
+#endif
         esp_cpu_unstall(1);
 
         // Enable clock and reset APP CPU. Note that OpenOCD may have already
         // enabled clock and taken APP CPU out of reset. In this case don't reset
         // APP CPU again, as that will clear the breakpoints which may have already
         // been set.
+#if CONFIG_IDF_TARGET_ESP32
         if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
             DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
             DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
             DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
             DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
         }
+#elif CONFIG_IDF_TARGET_ESP32S3
+        if (!REG_GET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN)) {
+            REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+            REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
+            REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
+            REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
+        }
+#endif
         ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
         volatile bool cpus_up = false;
@@ -206,8 +237,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     RESET_REASON rst_reas[1];
 #endif
-
-    bootloader_init_mem();
 
     // Move exception vectors to IRAM
     cpu_hal_set_vecbase(&_init_start);
@@ -259,6 +288,20 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32S3
+    /* Configure the mode of instruction cache : cache size, cache line size. */
+    extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
+    rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE, CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS, CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
+
+    /* If we need use SPIRAM, we should use data cache.
+       Configure the mode of data : cache size, cache line size.*/
+    Cache_Suspend_DCache();
+    extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
+    rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE, CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS, CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
+    Cache_Resume_DCache(0);
+#endif
+
+    bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_spiram_init() != ESP_OK) {
 #if CONFIG_IDF_TARGET_ESP32
@@ -282,11 +325,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;
 #endif
-#ifdef CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
-    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
-#else
-    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ);
-#endif
+
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors
@@ -294,7 +333,11 @@ void IRAM_ATTR call_start_cpu0(void)
     start_other_core();
 #else
     ESP_EARLY_LOGI(TAG, "Single core mode");
+#if CONFIG_IDF_TARGET_ESP32
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN); // stop the other core
+#elif CONFIG_IDF_TARGET_ESP32S3
+    REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+#endif
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif // SOC_CPU_CORES_NUM > 1
 
@@ -368,7 +411,11 @@ void IRAM_ATTR call_start_cpu0(void)
     intr_matrix_clear();
 
 #ifdef CONFIG_ESP_CONSOLE_UART
-    esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, APB_CLK_FREQ, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    uint32_t clock_hz = rtc_clk_apb_freq_get();
+#if CONFIG_IDF_TARGET_ESP32S3
+    clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
+#endif
+    esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
     rtcio_hal_unhold_all();

@@ -103,8 +103,13 @@ void esp_timer_impl_advance(int64_t time_us)
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
+#ifdef SOC_SYSTIMER_INT_LEVEL
+    int int_type = 0;
+#else
+    int int_type = ESP_INTR_FLAG_EDGE;
+#endif // SOC_SYSTIMER_INT_LEVEL
     esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,
-                                   ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_EDGE,
+                                   ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | int_type,
                                    &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {
@@ -112,9 +117,10 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         goto err_intr_alloc;
     }
 
-    systimer_hal_enable_counter(SYSTIMER_COUNTER_0);
     systimer_hal_init();
+    systimer_hal_enable_counter(SYSTIMER_COUNTER_0);
     systimer_hal_select_alarm_mode(SYSTIMER_ALARM_2, SYSTIMER_ALARM_MODE_ONESHOT);
+    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_2, SYSTIMER_COUNTER_0);
 
     /* TODO: if SYSTIMER is used for anything else, access to SYSTIMER_INT_ENA_REG has to be
     * protected by a shared spinlock. Since this code runs as part of early startup, this

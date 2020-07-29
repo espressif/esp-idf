@@ -138,6 +138,8 @@ static inline uint32_t get_dma_periph(int dma_chan)
     }
 #elif CONFIG_IDF_TARGET_ESP32
     return PERIPH_SPI_DMA_MODULE;
+#else
+    return 0;
 #endif
 }
 

@@ -17,4 +17,4 @@
 #include "soc.h"
 
 /* Hardware random number generator register */
-#define WDEV_RND_REG 0x60035110
+#define WDEV_RND_REG 0x6003507C

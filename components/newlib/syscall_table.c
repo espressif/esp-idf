@@ -31,6 +31,8 @@
 #include "esp32/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/libc_stubs.h"
 #endif
 
 static struct _reent s_reent;

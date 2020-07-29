@@ -113,6 +113,62 @@
       ]
     },
     {
+      "description": "Toolchain for Xtensa (ESP32-S3) based on GCC",
+      "export_paths": [
+        [
+          "xtensa-esp32s3-elf",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/crosstool-NG",
+      "install": "always",
+      "license": "GPL-3.0-with-GCC-exception",
+      "name": "xtensa-esp32s3-elf",
+      "version_cmd": [
+        "xtensa-esp32s3-elf-gcc",
+        "--version"
+      ],
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "22bf5e63baf3f3f5103ae21bcc35d80cd888d8032095e7b9e8f9631074ac462a",
+            "size": 86029457,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "27f423af3cfb9d8ed7a02173ccd8dc3b0fd3b3e76a92e9ba507121e73bfa5df3",
+            "size": 84120606,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "479a71cfb4b0c0b36371a1aaed2e6095dfc3241937a54f60a1ba115da73ddec5",
+            "size": 88015798,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+          },
+          "macos": {
+            "sha256": "c09b8fcbb840540a3f59429b1bbfbe5abfcacccf7a8a955e4e01e3f50b53a079",
+            "size": 93013216,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+          },
+          "name": "esp-2020r3-8.4.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "9591fc32896b13d7fe77310afbbff197cbbc20437d316e0e2460c5c50a10d7b5",
+            "size": 104536285,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-win32.zip"
+          },
+          "win64": {
+            "sha256": "1caf56e9588214d8f1bc17734680ebab2906da3b5f31095e60407dad170f1221",
+            "size": 107245907,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-win64.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for RISC-V",
       "export_paths": [
         [
