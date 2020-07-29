@@ -48,8 +48,8 @@ typedef struct {
     /** Called before any erase/write operations to check whether the region is limited by the OS */
     esp_err_t (*region_protected)(void* arg, size_t start_addr, size_t size);
 
-    /** Delay for at least 'ms' milliseconds. Called in between 'start' and 'end'. */
-    esp_err_t (*delay_ms)(void *arg, unsigned ms);
+    /** Delay for at least 'us' microseconds. Called in between 'start' and 'end'. */
+    esp_err_t (*delay_us)(void *arg, unsigned us);
 } esp_flash_os_functions_t;
 
 /** @brief Structure to describe a SPI flash chip connected to the system.
