@@ -646,9 +646,11 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
                 ((p_data->set_visibility.disc_mode & ~BTA_DM_IGNORE) | disc_mode);
         }
 
-        BTM_SetDiscoverability(p_data->set_visibility.disc_mode,
+        if (p_data->set_visibility.disc_mode != (le_disc_mode | disc_mode)) {
+            BTM_SetDiscoverability(p_data->set_visibility.disc_mode,
                                bta_dm_cb.inquiry_scan_window,
                                bta_dm_cb.inquiry_scan_interval);
+        }
     }
 
     if (p_data->set_visibility.conn_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
@@ -662,9 +664,11 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
                 ((p_data->set_visibility.conn_mode & ~BTA_DM_IGNORE) | conn_mode);
         }
 
-        BTM_SetConnectability(p_data->set_visibility.conn_mode,
+        if (p_data->set_visibility.conn_mode != (le_conn_mode | conn_mode)) {
+            BTM_SetConnectability(p_data->set_visibility.conn_mode,
                               bta_dm_cb.page_scan_window,
                               bta_dm_cb.page_scan_interval);
+        }
     }
 
     /* Send False or True if not ignore */
