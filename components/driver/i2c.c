@@ -35,8 +35,8 @@
 
 static const char *I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
-        ESP_LOGE(I2C_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);      \
-        return (ret);                                                                   \
+        ESP_LOGE(I2C_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                   \
+        return (ret);                                                                  \
         }
 
 /* DRAM_ATTR is required to avoid I2C array placed in flash, due to accessed from ISR */

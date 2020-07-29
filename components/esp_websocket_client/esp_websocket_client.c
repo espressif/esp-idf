@@ -42,7 +42,7 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_PINGPONG_TIMEOUT_SEC  (120)
 
 #define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
-        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
+        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, "Memory exhausted");                     \
         action;                                                                                     \
         }
 

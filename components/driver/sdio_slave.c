@@ -107,7 +107,7 @@ The driver of FIFOs works as below:
 
 static const char TAG[] = "sdio_slave";
 
-#define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s:%d (%s):"s, __FILE__,__LINE__,__FUNCTION__,##__VA_ARGS__)
+#define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s(%d): "s, __FUNCTION__,__LINE__,##__VA_ARGS__)
 #define SDIO_SLAVE_LOGW(s, ...) ESP_LOGW(TAG, "%s: "s, __FUNCTION__,##__VA_ARGS__)
 
 

@@ -21,9 +21,9 @@
 
 static const char *TAG = "SIGMADELTA";
 
-#define SIGMADELTA_CHECK(a,str,ret_val) if(!(a)) { \
-        ESP_LOGE(TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
-        return (ret_val); \
+#define SIGMADELTA_CHECK(a,str,ret_val) if(!(a)) {                 \
+        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);   \
+        return (ret_val);                                          \
     }
 
 typedef struct {
