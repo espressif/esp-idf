@@ -562,8 +562,10 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
 
     if (!direct_read) {
         size_t actual_len = 0;
-        temp_buffer = chip->os_func->get_temp_buffer(chip->os_func_data, read_chunk_size, &actual_len);
-        read_chunk_size = actual_len;
+        if (chip->os_func->get_temp_buffer != NULL) {
+            temp_buffer = chip->os_func->get_temp_buffer(chip->os_func_data, read_chunk_size, &actual_len);
+            read_chunk_size = actual_len;
+        }
         if (temp_buffer == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -600,7 +602,9 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
         buffer = (void*)((intptr_t)buffer + length_to_read);
     } while (err == ESP_OK && length > 0);
 
-    chip->os_func->release_temp_buffer(chip->os_func_data, temp_buffer);
+    if (chip->os_func->release_temp_buffer != NULL) {
+        chip->os_func->release_temp_buffer(chip->os_func_data, temp_buffer);
+    }
     return err;
 }
 

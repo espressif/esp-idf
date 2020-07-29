@@ -70,19 +70,14 @@ static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
     return ESP_OK;
 }
 
-// Currently when the os is not up yet, the caller is supposed to call esp_flash APIs with proper
-// buffers.
-IRAM_ATTR void* get_temp_buffer_not_supported(void* arg, size_t reqest_size, size_t* out_size)
-{
-    return NULL;
-}
-
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .start = start,
     .end = end,
     .delay_us = delay_us,
     .region_protected = NULL,
-    .get_temp_buffer = get_temp_buffer_not_supported,
+    /* the caller is supposed to call esp_flash_read/esp_flash_write APIs with buffers in DRAM */
+    .get_temp_buffer = NULL,
+    .release_temp_buffer = NULL,
     .yield = NULL,
 };
 
