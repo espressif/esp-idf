@@ -127,7 +127,7 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
 #endif
 
-#if CONFIG_ESP32_WIFI_CSI_ENABLED
+#ifdef CONFIG_ESP32_WIFI_CSI_ENABLED
 #define WIFI_CSI_ENABLED         1
 #else
 #define WIFI_CSI_ENABLED         0
@@ -151,7 +151,7 @@ typedef struct {
 #define WIFI_NVS_ENABLED          0
 #endif
 
-#if CONFIG_NEWLIB_NANO_FORMAT
+#ifdef CONFIG_NEWLIB_NANO_FORMAT
 #define WIFI_NANO_FORMAT_ENABLED  1
 #else
 #define WIFI_NANO_FORMAT_ENABLED  0
@@ -174,7 +174,7 @@ extern uint64_t g_wifi_feature_caps;
 #define WIFI_DEFAULT_RX_BA_WIN 0 /* unused if ampdu_rx_enable == false */
 #endif
 
-#if CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1
+#ifdef CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1
 #define WIFI_TASK_CORE_ID 1
 #else
 #define WIFI_TASK_CORE_ID 0
