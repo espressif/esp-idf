@@ -107,10 +107,7 @@ def instr_fetch_prohibited_inner(env, test_name):
     with get_dut(env, test_name, "test_instr_fetch_prohibited") as dut:
         dut.expect_gme("InstrFetchProhibited")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
-        # At the moment the backtrace is corrupted, need to jump over the first PC in case of InstrFetchProhibited.
-        # Fix this and change expect to expect_none.
-        dut.expect("CORRUPTED")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("Guru Meditation")
+        dut.expect_none("CORRUPTED", "Guru Meditation")
         test_common(dut, test_name)
