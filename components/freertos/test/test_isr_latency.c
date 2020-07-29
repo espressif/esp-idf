@@ -29,9 +29,7 @@ static void software_isr(void *arg) {
     xt_set_intclear(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
-    if(yield) {
-        portYIELD_FROM_ISR();
-    }
+    portYIELD_FROM_ISR(yield);
 
     cycle_before_exit = portGET_RUN_TIME_COUNTER_VALUE();
 }

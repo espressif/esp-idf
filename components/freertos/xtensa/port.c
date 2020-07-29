@@ -387,6 +387,30 @@ BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 	return (port_interruptNesting[xPortGetCoreID()] != 0);
 }
 
+void IRAM_ATTR xEvaluateYieldFromISR(int argc, ...)
+{
+    BaseType_t xYield; 
+    va_list ap;
+    va_start(ap, argc);
+
+    if(argc) {
+        xYield = (BaseType_t)va_arg(ap, int);
+        va_end(ap);  
+    } else {
+        //Yield does not exist, it is a empty vPortYieldFromISR macro:
+        va_end(ap);
+        traceISR_EXIT_TO_SCHEDULER();   
+        _frxt_setup_switch();
+        return;
+    }
+
+    //Yield exists, so need evaluate it first then switch:
+    if(xYield) {
+        traceISR_EXIT_TO_SCHEDULER();   
+        _frxt_setup_switch();
+    } 
+}
+
 void vPortAssertIfInISR(void)
 {
 	configASSERT(xPortInIsrContext());

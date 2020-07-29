@@ -76,5 +76,3 @@
 #else
 #define portVALID_STACK_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
 #endif
-
-
