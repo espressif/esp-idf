@@ -54,11 +54,7 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/sha.h"
-#endif
 
 inline static esp_sha_type sha_type(const mbedtls_sha512_context *ctx)
 {
