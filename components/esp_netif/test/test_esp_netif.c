@@ -84,8 +84,20 @@ TEST_CASE("esp_netif: test dhcp client state transitions for wifi station", "[es
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_INIT, state);
     esp_netif_action_connected(sta, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
-
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // test manual DHCP state transitions using dhcpc-start/stop API
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_stop(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STOPPED, state);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_start(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+    TEST_ASSERT_EQUAL(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED, esp_netif_dhcpc_start(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // stop the netif and test dhcp state update
     esp_netif_action_stop(sta, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
 
@@ -117,6 +129,18 @@ TEST_CASE("esp_netif: test dhcp server state transitions for wifi soft AP", "[es
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
 
+    // test manual DHCP state transitions using dhcps-start/stop API
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_stop(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STOPPED, state);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_start(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+    TEST_ASSERT_EQUAL(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED, esp_netif_dhcps_start(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // stop the netif and test dhcp state update
     esp_netif_action_stop(ap, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_INIT, state);
