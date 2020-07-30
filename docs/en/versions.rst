@@ -21,9 +21,17 @@ https://docs.espressif.com/projects/esp-idf/en/latest/
 
 The full history of releases can be found on the GitHub repository `Releases page`_. There you can find release notes, links to each version of the documentation, and instructions for obtaining each version.
 
-Another place to find documentation for all releases is the documentation page, where you can go to the bottom-left corner and click the versions dropup (a bar with a small triangle). You can also use this dropup to switch between versions of the documentation.
+.. only:: html
 
-.. image:: /../_static/choose_version.png
+    Another place to find documentation for all current releases is the documentation page, where you can go to the upper-left corner and click the version dropdown (between the target dropdown and the search bar). You can also use this dropdown to switch between versions of the documentation.
+
+    .. image:: /../_static/choose_version.png
+
+    Documentation for older versions are also still available:
+
+    .. raw:: html
+        :file: ../_static/version_table.html
+
 
 
 Which Version Should I Start With?
