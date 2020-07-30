@@ -183,8 +183,8 @@ typedef volatile struct twai_dev_s {
     //Misc Registers
     union {
         struct {
-            uint32_t rmc: 5;                    /* RMC[4:0] RX Message Counter */
-            uint32_t reserved27: 27;            /* Internal Reserved */
+            uint32_t rmc: 7;                    /* RMC[6:0] RX Message Counter */
+            uint32_t reserved25: 25;            /* Internal Reserved */
         };
         uint32_t val;
     } rx_message_counter_reg;                   /* Address 29 */
