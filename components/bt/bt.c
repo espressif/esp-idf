@@ -1450,7 +1450,7 @@ void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int par
 #define BT_INT_STA_REG (0x3FF7100C)
 #define BLE_INT_STA_REG (0x3FF71210)
 
-int _int_enable_flag=0;
+extern int _int_enable_flag;
 
 extern bool connection_is_alive();
 extern uint32_t real_bt_isr_count ;

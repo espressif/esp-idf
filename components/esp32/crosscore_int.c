@@ -40,6 +40,7 @@
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[ portNUM_PROCESSORS ];
+int _int_enable_flag = 0;
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
@@ -78,7 +79,6 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
          */
     }
     if(my_reason_val & REASON_GET_INT) {
-        extern int _int_enable_flag;
         asm volatile ("rsr %0, INTENABLE\n" :"=r"(_int_enable_flag));
     }
 }
