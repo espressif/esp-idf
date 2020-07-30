@@ -37,6 +37,7 @@ struct wpa_sm;
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 bool wpa_sta_is_cur_pmksa_set(void);
 bool wpa_sta_in_4way_handshake(void);
+bool wpa_sta_cur_pmksa_matches_akm(void);
 
 #define WPA_ASSERT  assert
 
