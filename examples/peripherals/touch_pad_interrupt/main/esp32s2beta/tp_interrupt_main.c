@@ -41,8 +41,8 @@ static const touch_pad_t button[TOUCH_BUTTON_NUM] = {
 /*
  * Touch threshold. The threshold determines the sensitivity of the touch.
  * This threshold is derived by testing changes in readings from different touch channels.
- * If (raw_data - baseline) > baseline * threshold, the pad be actived.
- * If (raw_data - baseline) < baseline * threshold, the pad be inactived.
+ * If (raw_data - benchmark) > benchmark * threshold, the pad be actived.
+ * If (raw_data - benchmark) < benchmark * threshold, the pad be inactived.
  */
 static const float button_threshold[TOUCH_BUTTON_NUM] = {
     0.2, // 20%.
@@ -65,7 +65,7 @@ static void touchsensor_interrupt_cb(void *arg)
     evt.pad_num = touch_pad_get_current_meas_channel();
 
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        touch_pad_filter_read_baseline(evt.pad_num, &evt.pad_val);
+        touch_pad_filter_read_benchmark(evt.pad_num, &evt.pad_val);
     }
     xQueueSendFromISR(que_touch, &evt, &task_awoken);
     if (task_awoken == pdTRUE) {
@@ -77,8 +77,8 @@ static void tp_example_set_thresholds(void)
 {
     uint32_t touch_value;
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
-        //read baseline value
-        touch_pad_filter_read_baseline(button[i], &touch_value);
+        //read benchmark value
+        touch_pad_filter_read_benchmark(button[i], &touch_value);
         //set interrupt threshold.
         touch_pad_set_thresh(button[i], touch_value * button_threshold[i]);
         ESP_LOGI(TAG, "test init: touch pad [%d] base %d, thresh %d", \
@@ -92,15 +92,12 @@ static void touchsensor_filter_set(touch_filter_mode_t mode)
     touch_filter_config_t filter_info = {
         .mode = mode,           // Test jitter and filter 1/4.
         .debounce_cnt = 1,      // 1 time count.
-        .hysteresis_thr = 3,    // 3%
         .noise_thr = 0,         // 50%
-        .noise_neg_thr = 0,     // 50%
-        .neg_noise_limit = 10,  // 10 time count.
         .jitter_step = 4,       // use for jitter mode.
     };
     touch_pad_filter_set_config(&filter_info);
     touch_pad_filter_enable();
-    touch_pad_filter_reset_baseline(TOUCH_PAD_MAX);
+    touch_pad_reset_benchmark(TOUCH_PAD_MAX);
     ESP_LOGI(TAG, "touch pad filter init");
 }
 

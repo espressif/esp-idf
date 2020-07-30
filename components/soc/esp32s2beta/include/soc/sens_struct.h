@@ -271,7 +271,7 @@ typedef volatile struct {
     } sar_touch_status0;
     union {
         struct {
-            uint32_t touch_pad_baseline: 22;
+            uint32_t touch_pad_benchmark: 22;
             uint32_t reserved22:          7;
             uint32_t touch_pad_debounce:  3;
         };
@@ -279,7 +279,7 @@ typedef volatile struct {
     } sar_touch_status[14];
     union {
         struct {
-            uint32_t touch_slp_baseline:22;
+            uint32_t touch_slp_benchmark:22;
             uint32_t reserved22:         7;
             uint32_t touch_slp_debounce: 3;
         };

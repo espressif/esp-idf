@@ -186,15 +186,12 @@ void app_main(void)
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_8,
         .debounce_cnt = 1,      // 1 time count.
-        .hysteresis_thr = 3,    // 3%
         .noise_thr = 0,         // 50%
-        .noise_neg_thr = 0,     // 50%
-        .neg_noise_limit = 10,  // 10 time count.
         .jitter_step = 4,       // use for jitter mode.
     };
     touch_pad_filter_set_config(&filter_info);
     touch_pad_filter_enable();
-    touch_pad_filter_reset_baseline(TOUCH_PAD_NUM9);
+    touch_pad_reset_benchmark(TOUCH_PAD_NUM9);
     printf("touch pad filter init %d\n", TOUCH_PAD_FILTER_IIR_8);
     /* Set sleep touch pad. */
     touch_pad_sleep_channel_t slp_config = {
@@ -209,7 +206,7 @@ void app_main(void)
     vTaskDelay(100 / portTICK_RATE_MS);
     /* read sleep touch pad value */
     uint32_t touch_value;
-    touch_pad_sleep_channel_read_baseline(&touch_value);
+    touch_pad_sleep_channel_read_benchmark(&touch_value);
     slp_config.sleep_pad_threshold = touch_value * 0.1;
     touch_pad_sleep_channel_config(&slp_config); //10%
     printf("test init: touch pad [%d] slp %d, thresh %d\n", 
