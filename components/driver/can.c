@@ -131,7 +131,8 @@ static inline void can_handle_bus_off(int *alert_req)
 static inline void can_handle_recovery_complete(int *alert_req)
 {
     //Bus recovery complete.
-    assert(can_hal_handle_bus_recov_cplt(&can_context));
+    bool recov_cplt = can_hal_handle_bus_recov_cplt(&can_context);
+    assert(recov_cplt);
 
     //Reset and set flags to the equivalent of the stopped state
     CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_RECOVERING | CTRL_FLAG_ERR_WARN |
@@ -222,7 +223,7 @@ static inline void can_handle_tx_buffer_frame(BaseType_t *task_woken, int *alert
 
     //Update TX message count
     p_can_obj->tx_msg_count--;
-    assert(p_can_obj->tx_msg_count >= 0);     //Sanity check
+    assert(p_can_obj->tx_msg_count >= 0);       //Sanity check
 
     //Check if there are more frames to transmit
     if (p_can_obj->tx_msg_count > 0 && p_can_obj->tx_queue != NULL) {
@@ -382,7 +383,8 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     }
     periph_module_reset(PERIPH_CAN_MODULE);
     periph_module_enable(PERIPH_CAN_MODULE);            //Enable APB CLK to CAN peripheral
-    assert(can_hal_init(&can_context));
+    bool init = can_hal_init(&can_context);
+    assert(init);
     can_hal_configure(&can_context, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
     //Todo: Allow interrupt to be registered to specified CPU
     CAN_EXIT_CRITICAL();
@@ -468,7 +470,8 @@ esp_err_t can_start(void)
     //Todo: Add assert to see if in reset mode. //Should already be in bus-off mode, set again to make sure
 
     //Currently in listen only mode, need to set to mode specified by configuration
-    assert(can_hal_start(&can_context, p_can_obj->mode));
+    bool started = can_hal_start(&can_context, p_can_obj->mode);
+    assert(started);
 
     CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_STOPPED);
     CAN_EXIT_CRITICAL();
@@ -482,7 +485,8 @@ esp_err_t can_stop(void)
     CAN_CHECK_FROM_CRIT(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
     CAN_CHECK_FROM_CRIT(!(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)), ESP_ERR_INVALID_STATE);
 
-    assert(can_hal_stop(&can_context));
+    bool stopped = can_hal_stop(&can_context);
+    assert(stopped);
 
     CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_TX_BUFF_OCCUPIED);
     CAN_SET_FLAG(p_can_obj->control_flags, CTRL_FLAG_STOPPED);
@@ -631,7 +635,8 @@ esp_err_t can_initiate_recovery(void)
     CAN_SET_FLAG(p_can_obj->control_flags, CTRL_FLAG_RECOVERING);
 
     //Trigger start of recovery process
-    assert(can_hal_start_bus_recovery(&can_context));
+    bool started = can_hal_start_bus_recovery(&can_context);
+    assert(started);
     CAN_EXIT_CRITICAL();
 
     return ESP_OK;
