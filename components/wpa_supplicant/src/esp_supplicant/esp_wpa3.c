@@ -32,7 +32,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid)
     u8 own_addr[ETH_ALEN];
     const u8 *pw;
 
-    if (wpa_sta_is_cur_pmksa_set()) {
+    if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
         return ESP_FAIL;
     }
@@ -189,7 +189,7 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
 static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
 {
     if (g_sae_data.state != SAE_CONFIRMED) {
-        wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE commit in state(%d)!",
+        wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE confirm in state(%d)!",
                    g_sae_data.state);
         return ESP_FAIL;
     }
@@ -201,7 +201,6 @@ static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
     g_sae_data.state = SAE_ACCEPTED;
 
     wpa_set_pmk(g_sae_data.pmk, g_sae_data.pmkid, true);
-    memcpy(esp_wifi_sta_get_ap_info_prof_pmk_internal(), g_sae_data.pmk, PMK_LEN);
 
     return ESP_OK;
 }

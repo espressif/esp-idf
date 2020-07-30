@@ -2140,6 +2140,9 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg);
         sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
         sm->mgmt_group_cipher = cipher_type_map_public_to_supp(esp_wifi_sta_get_mgmt_group_cipher());
+    } else {
+        memset(&sm->pmf_cfg, 0, sizeof(sm->pmf_cfg));
+        sm->mgmt_group_cipher = WPA_CIPHER_NONE;
     }
 #endif
     set_assoc_ie(assoc_ie_buf); /* use static buffer */
@@ -2370,6 +2373,15 @@ bool wpa_sta_in_4way_handshake(void)
 bool wpa_sta_is_cur_pmksa_set(void) {
     struct wpa_sm *sm = &gWpaSm;
     return (pmksa_cache_get_current(sm) != NULL);
+}
+
+bool wpa_sta_cur_pmksa_matches_akm(void) {
+    struct wpa_sm *sm = &gWpaSm;
+    struct rsn_pmksa_cache_entry *pmksa;
+
+    pmksa = pmksa_cache_get_current(sm);
+    return (pmksa != NULL  &&
+            sm->key_mgmt == pmksa->akmp);
 }
 
 void wpa_sta_clear_curr_pmksa(void) {

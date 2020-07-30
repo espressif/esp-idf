@@ -694,7 +694,8 @@ static int wpa2_start_eapol_internal(void)
     if (!sm) {
         return ESP_FAIL;
     }
-    if (wpa_sta_is_cur_pmksa_set()) {
+
+    if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_DEBUG,
                 "RSN: PMKSA caching - do not send EAPOL-Start");
         return ESP_FAIL;
