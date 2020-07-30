@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+
+#include "soc/soc.h"
 #include "soc/touch_sensor_caps.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"

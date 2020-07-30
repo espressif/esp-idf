@@ -16,6 +16,7 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_caps.h"
+#include "soc/rtc.h"
 
 #ifdef __cplusplus
 extern "C" {

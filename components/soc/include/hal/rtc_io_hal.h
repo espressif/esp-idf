@@ -220,6 +220,13 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 #define rtcio_hal_wakeup_disable(rtcio_num) rtcio_ll_wakeup_disable(rtcio_num)
 
 /**
+ * Disable wakeup function from light sleep status for rtcio.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTC_IO_PIN_COUNT.
+ */
+#define rtcio_hal_ext0_set_wakeup_pin(rtcio_num, level)     rtcio_ll_ext0_set_wakeup_pin(rtcio_num, level)
+
+/**
  * Helper function to disconnect internal circuits from an RTC IO
  * This function disables input, output, pullup, pulldown, and enables
  * hold feature for an RTC IO.
