@@ -190,14 +190,9 @@ def write_version_note(template, out_dir, version, ver_type, is_stable):
 
 def get_version():
     """
-    Returns a tuple of (name of branch/tag, type branch/tag, is_stable)
+    Returns a tuple of (name of branch/tag/commit-id, type branch/tag/commit, is_stable)
     """
-    # Trust what RTD says our version is, if it is set
-    version = os.environ.get("READTHEDOCS_VERSION", None)
-    if version == "latest":
-        return ("master", "branch", False)
-
-    # Otherwise, use git to look for a tag
+    # Use git to look for a tag
     try:
         tag = subprocess.check_output(["git", "describe", "--tags", "--exact-match"]).strip().decode('utf-8')
         is_stable = re.match(r"v[0-9\.]+$", tag) is not None
@@ -205,16 +200,16 @@ def get_version():
     except subprocess.CalledProcessError:
         pass
 
-    # No tag, look for a branch
-    refs = subprocess.check_output(["git", "for-each-ref", "--points-at", "HEAD", "--format", "%(refname)"]).decode('utf-8')
-    print("refs:\n%s" % refs)
-    refs = refs.split("\n")
-    # Note: this looks for branches in 'origin' because GitLab CI doesn't check out a local branch
-    branches = [r.replace("refs/remotes/origin/","").strip() for r in refs if r.startswith("refs/remotes/origin/")]
-    if len(branches) == 0:
-        # last resort, return the commit (may happen on Gitlab CI sometimes, unclear why)
-        return (subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip().decode('utf-8'), "commit", False)
-    if "master" in branches:
-        return ("master", "branch", False)
-    else:
-        return (branches[0], "branch", False)  # take whatever the first branch is
+    # No tag, look at branch name from CI, this will give the correct branch name even if the ref for the branch we
+    # merge into has moved forward before the pipeline runs
+    branch = os.environ.get("CI_COMMIT_REF_NAME", None)
+    if branch is not None:
+        return (branch, "branch", False)
+
+    # Try to find the branch name even if docs are built locally
+    branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode('utf-8')
+    if branch != "HEAD":
+        return (branch, "branch", False)
+
+    # As a last resort we return commit SHA-1, should never happen in CI/docs that should be published
+    return (subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip().decode('utf-8'), "commit", False)
