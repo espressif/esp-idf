@@ -64,6 +64,7 @@ xt_highint4:
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
     wsr     a0, INTENABLE
+    rsync
 1:
 #endif
 
@@ -98,6 +99,7 @@ xt_highint4:
     movi    a2, ~(1<<16)
     and     a0, a2, a0
     wsr     a0, INTENABLE
+    rsync
 #endif
 
     /* disable exception mode, window overflow */

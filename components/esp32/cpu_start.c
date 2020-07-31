@@ -253,11 +253,6 @@ void IRAM_ATTR call_start_cpu0()
        fail initializing it properly. */
     heap_caps_init();
 
-    for (int i = 0; i < 64; i++) {
-        ets_printf(((i+1)%8) ? DRAM_STR("%08x ") : DRAM_STR("%08x\n"), *(((volatile uint32_t *)SOC_RTC_DATA_LOW) + i));
-        *(((volatile uint32_t *)SOC_RTC_DATA_LOW) + i) = 0;
-    }
-
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();
 }

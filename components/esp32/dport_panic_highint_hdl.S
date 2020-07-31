@@ -206,7 +206,7 @@ xt_highint5:
     nop
     .endr
 
-    /* Disable Normally Mode */
+    /* Enable Normally Mode */
     movi    a2, ERI_ADDR(APB_ITCTRL)
     rer     a0, a2
     movi    a2, ~0x1
@@ -288,24 +288,6 @@ xt_highint5:
 
     .align      4
 .handle_livelock_int:
-
-    movi    a0, SOC_RTC_DATA_LOW
-    movi    a5, _l5_intr_livelock_sync
-    l32i    a5, a5, 0
-    s32i    a5, a0, 0
-    memw
-    movi    a5, _l5_intr_livelock_sync
-    l32i    a5, a5, 4
-    s32i    a5, a0, 4
-    memw
-    movi    a5, _l5_intr_livelock_app
-    l32i    a5, a5, 0
-    s32i    a5, a0, 8
-    memw
-    movi    a5, _l5_intr_livelock_counter
-    l32i    a5, a5, 0
-    s32i    a5, a0, 12
-    memw
 
     getcoreid   a5
 
