@@ -17,13 +17,12 @@ void adc_hal_init(void);
 void adc_hal_deinit(void);
 
 /**
- * Set adc sample cycle for digital controller.
+ * Set adc sample cycle.
  *
  * @note Normally, please use default value.
- * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
- *                     Range: 2 ~ 0xFF.
+ * @param sample_cycle The number of ADC sampling cycles. Range: 1 ~ 7.
  */
-#define adc_hal_digi_set_sample_cycle(sample_cycle) adc_ll_digi_set_sample_cycle(sample_cycle)
+#define adc_hal_set_sample_cycle(sample_cycle) adc_ll_set_sample_cycle(sample_cycle)
 
 /**
  * Set ADC module power management.

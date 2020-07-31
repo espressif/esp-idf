@@ -43,7 +43,7 @@ typedef struct {
     adc_hal_digi_pattern_table_t *adc1_pattern;   /*!<Pointer to pattern table for digital controller. The table size defined by `adc1_pattern_len`. */
     adc_hal_digi_pattern_table_t *adc2_pattern;   /*!<Refer to `adc1_pattern` */
     adc_hal_digi_convert_mode_t conv_mode;        /*!<ADC conversion mode for digital controller. ESP32 only support ADC1 single mode. */
-    adc_hal_digi_output_format_t format;      /*!<ADC output data format for digital controller. */
+    adc_digi_output_format_t format;      /*!<ADC output data format for digital controller. */
     uint32_t clk_div;           /*!< ADC module clock division factor. ADC clock divided from APB clock.*/
 } adc_hal_digi_config_t;
 

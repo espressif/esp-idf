@@ -202,7 +202,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
  * Set filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
  */
 #define touch_hal_filter_set_filter_mode(mode) touch_ll_filter_set_filter_mode(mode)
 
@@ -210,7 +210,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
  * Get filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
+ * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
  */
 #define touch_hal_filter_get_filter_mode(mode) touch_ll_filter_get_filter_mode(mode)
 
@@ -516,7 +516,7 @@ void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config);
  * After the sleep channel is configured, users should query the channel reading using a specific function.
  *
  * @note ESP32S2 only support one channel to be set sleep channel.
- * 
+ *
  * @param pad_num touch sleep pad number.
  * @param enable Enable/disable sleep pad function.
  */

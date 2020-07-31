@@ -9,14 +9,6 @@ extern "C" {
 #endif
 
 typedef enum {
-    ADC_DIGI_FORMAT_12BIT,   /*!< ADC to I2S data format, [15:12]-channel [11:0]-12 bits ADC data.
-                                 Note: In single convert mode. */
-    ADC_DIGI_FORMAT_11BIT,   /*!< ADC to I2S data format, [15]-adc unit [14:11]-channel [10:0]-11 bits ADC data.
-                                 Note: In multi convert mode. */
-    ADC_DIGI_FORMAT_MAX,
-} adc_hal_digi_output_format_t;
-
-typedef enum {
     ADC_CONV_SINGLE_UNIT_1 = 1, /*!< SAR ADC 1*/
     ADC_CONV_SINGLE_UNIT_2 = 2, /*!< SAR ADC 2, not supported yet*/
     ADC_CONV_BOTH_UNIT     = 3, /*!< SAR ADC 1 and 2, not supported yet */
@@ -94,13 +86,12 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
 }
 
 /**
- * Set adc sample cycle for digital controller.
+ * Set adc sample cycle.
  *
  * @note Normally, please use default value.
- * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
- *                     Range: 2 ~ 0xFF.
+ * @param sample_cycle The number of ADC sampling cycles. Range: 1 ~ 7.
  */
-static inline void adc_ll_digi_set_sample_cycle(uint32_t sample_cycle)
+static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
     SYSCON.saradc_fsm.sample_cycle = sample_cycle;
 }
@@ -119,9 +110,9 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 /**
  * Set adc output data format for digital controller.
  *
- * @param format Output data format, see ``adc_hal_digi_output_format_t``.
+ * @param format Output data format, see ``adc_digi_output_format_t``.
  */
-static inline void adc_ll_digi_set_output_format(adc_hal_digi_output_format_t format)
+static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format)
 {
     SYSCON.saradc_ctrl.data_sar_sel = format;
 }
