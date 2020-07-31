@@ -17,6 +17,9 @@ entries:
     if ESP32_WIFI_RX_IRAM_OPT = y:
         * (wifi_rx_iram)
 
+    if SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        * (extram_bss)
+
 [mapping:net80211]
 archive: libnet80211.a
 entries:
@@ -25,3 +28,6 @@ entries:
 
     if ESP32_WIFI_RX_IRAM_OPT = y:
         * (wifi_rx_iram)
+
+    if SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        * (extram_bss)

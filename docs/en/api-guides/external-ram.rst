@@ -95,6 +95,8 @@ If enabled, a region of the address space starting from 0x3F800000 will be used 
 
 Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
+It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
+
 This option reduces the internal static memory used by the BSS segment.
 
 Remaining external RAM can also be added to the capability heap allocator using the method shown above.

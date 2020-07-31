@@ -42,12 +42,6 @@ else()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
 
-
-    if(CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY)
-        # This has to be linked before esp32.project.ld
-        target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.extram.bss.ld")
-    endif()
-
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in"

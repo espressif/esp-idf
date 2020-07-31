@@ -232,12 +232,22 @@ SECTIONS
     _noinit_end = ABSOLUTE(.);
   } > dram0_0_seg
 
+   /* external memory bss, from any global variable with EXT_RAM_ATTR attribute*/
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+
+    mapping[extern_ram]
+
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.);
+  } > extern_ram_seg
+
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
     _bt_bss_start = ABSOLUTE(.);
     *libbt.a:(.bss .bss.* COMMON)
     . = ALIGN (4);
@@ -252,18 +262,6 @@ SECTIONS
     _nimble_bss_end = ABSOLUTE(.);
 
     mapping[dram0_bss]
-
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
 
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
