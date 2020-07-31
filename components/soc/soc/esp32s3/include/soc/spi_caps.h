@@ -51,3 +51,5 @@
 
 // Peripheral supports output given level during its "dummy phase"
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    ((void*)spi_dev == (void*)&SPIMEM1)
+
+#define SOC_MEMSPI_IS_INDEPENDENT 1

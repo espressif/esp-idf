@@ -49,7 +49,7 @@ FLAG_ATTR(spi_event_t)
 #define SPI_HOST    SPI1_HOST
 #define HSPI_HOST   SPI2_HOST
 #define VSPI_HOST   SPI3_HOST
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 // SPI_HOST (SPI1_HOST) is not supported by the SPI Master and SPI Slave driver on ESP32-S2
 #define SPI_HOST    SPI1_HOST
 #define FSPI_HOST   SPI2_HOST

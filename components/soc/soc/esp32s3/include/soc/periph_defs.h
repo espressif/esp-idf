@@ -80,15 +80,7 @@ typedef enum {
     ETS_UHCI0_INTR_SOURCE,                      /**< interrupt of UHCI0, level*/
     ETS_UHCI1_INTR_SOURCE,                      /**< interrupt of UHCI1, level*/
 
-    ETS_TG0_T0_LEVEL_INTR_SOURCE = 16,          /**< interrupt of TIMER_GROUP0, TIMER0, level, we would like use EDGE for timer if permission*/
-    ETS_TG0_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, TIMER1, level, we would like use EDGE for timer if permission*/
-    ETS_TG0_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, WATCHDOG, level*/
-    ETS_TG0_LACT_LEVEL_INTR_SOURCE,             /**< interrupt of TIMER_GROUP0, LACT, level*/
-    ETS_TG1_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER0, level, we would like use EDGE for timer if permission*/
-    ETS_TG1_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER1, level, we would like use EDGE for timer if permission*/
-    ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, level*/
-    ETS_TG1_LACT_LEVEL_INTR_SOURCE,             /**< interrupt of TIMER_GROUP1, LACT, level*/
-    ETS_GPIO_INTR_SOURCE,                       /**< interrupt of GPIO, level*/
+    ETS_GPIO_INTR_SOURCE = 16,                  /**< interrupt of GPIO, level*/
     ETS_GPIO_NMI_SOURCE,                        /**< interrupt of GPIO, NMI*/
     ETS_GPIO_INTR_SOURCE2,                      /**< interrupt of GPIO, level*/
     ETS_GPIO_NMI_SOURCE2,                       /**< interrupt of GPIO, NMI*/
@@ -96,8 +88,7 @@ typedef enum {
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
     ETS_SPI3_INTR_SOURCE,                       /**< interrupt of SPI3, level*/
     ETS_SPI4_INTR_SOURCE,                       /**< interrupt of SPI4, level*/
-
-    ETS_LCD_CAM_INTR_SOURCE = 32,               /**< interrupt of LCD camera, level*/
+    ETS_LCD_CAM_INTR_SOURCE,                    /**< interrupt of LCD camera, level*/
     ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
     ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
@@ -105,16 +96,16 @@ typedef enum {
     ETS_UART2_INTR_SOURCE,                      /**< interrupt of UART2, level*/
     ETS_SDIO_HOST_INTR_SOURCE,                  /**< interrupt of SD/SDIO/MMC HOST, level*/
     ETS_PWM0_INTR_SOURCE,                       /**< interrupt of PWM0, level, Reserved*/
-    ETS_PWM1_INTR_SOURCE,                       /**< interrupt of PWM1, level, Reserved*/
+
+    ETS_PWM1_INTR_SOURCE = 32,                  /**< interrupt of PWM1, level, Reserved*/
     ETS_PWM2_INTR_SOURCE,                       /**< interrupt of PWM2, level*/
     ETS_PWM3_INTR_SOURCE,                       /**< interruot of PWM3, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
-    ETS_TWAI_INTR_SOURCE,                       /**< interrupt of TWAI, level*/
+    ETS_TWAI_INTR_SOURCE ,                      /**< interrupt of can, level*/
     ETS_USB_INTR_SOURCE,                        /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
-
-    ETS_RMT_INTR_SOURCE = 48,                   /**< interrupt of remote controller, level*/
+    ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
     ETS_PCNT_INTR_SOURCE,                       /**< interrupt of pluse count, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/
     ETS_I2C_EXT1_INTR_SOURCE,                   /**< interrupt of I2C controller0, level*/
@@ -122,17 +113,15 @@ typedef enum {
     ETS_SPI3_DMA_INTR_SOURCE,                   /**< interrupt of SPI3 DMA, level*/
     ETS_SPI4_DMA_INTR_SOURCE,                   /**< interrupt of SPI4 DMA, level*/
     ETS_WDT_INTR_SOURCE,                        /**< will be cancelled*/
-    ETS_TIMER1_INTR_SOURCE,                     /**< will be cancelled*/
-    ETS_TIMER2_INTR_SOURCE,                     /**< will be cancelled*/
-    ETS_TG0_T0_EDGE_INTR_SOURCE,                /**< interrupt of TIMER_GROUP0, TIMER0, EDGE*/
-    ETS_TG0_T1_EDGE_INTR_SOURCE,                /**< interrupt of TIMER_GROUP0, TIMER1, EDGE*/
-    ETS_TG0_WDT_EDGE_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, WATCH DOG, EDGE*/
-    ETS_TG0_LACT_EDGE_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, LACT, EDGE*/
-    ETS_TG1_T0_EDGE_INTR_SOURCE,                /**< interrupt of TIMER_GROUP1, TIMER0, EDGE*/
-    ETS_TG1_T1_EDGE_INTR_SOURCE,                /**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
 
-    ETS_TG1_WDT_EDGE_INTR_SOURCE = 64,          /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
-    ETS_TG1_LACT_EDGE_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, LACT, EDGE*/
+    ETS_TIMER1_INTR_SOURCE = 48,
+    ETS_TIMER2_INTR_SOURCE,
+    ETS_TG0_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, TIMER0, EDGE*/
+    ETS_TG0_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, TIMER1, EDGE*/
+    ETS_TG0_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, WATCH DOG, EDGE*/
+    ETS_TG1_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER0, EDGE*/
+    ETS_TG1_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
+    ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
     ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
     ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,      /**< interrupt of system timer 0, EDGE*/
     ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE,      /**< interrupt of system timer 1, EDGE*/
@@ -143,23 +132,32 @@ typedef enum {
     ETS_DCACHE_SYNC0_INTR_SOURCE,               /**< interrupt of data cache sync done, LEVEL*/
     ETS_ICACHE_SYNC0_INTR_SOURCE,               /**< interrupt of instruction cache sync done, LEVEL*/
     ETS_APB_ADC_INTR_SOURCE,                    /**< interrupt of APB ADC, LEVEL*/
-    ETS_CRYPTO_DMA_INTR_SOURCE,                 /**< interrupt of encrypted DMA, LEVEL*/
-    ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
-    ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
-    ETS_AES_INTR_SOURCE,                        /**< interrupt of AES accelerator, level*/
 
-    ETS_FROM_CPU_INTR0_SOURCE = 80,             /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
+    ETS_CRYPTO_DMA_INTR_SOURCE = 66,            /**< interrupt of encrypted DMA, LEVEL*/
+    ETS_CRYPTO_DMA1_INTR_SOURCE,
+    ETS_CRYPTO_DMA2_INTR_SOURCE,
+    ETS_CRYPTO_DMA3_INTR_SOURCE,
+    ETS_CRYPTO_DMA4_INTR_SOURCE,
+    ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
+    ETS_AES_INTR_SOURCE,                        /**< interrupt of AES accelerator, level*/
+    ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
+    ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
     ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
-    ETS_DMA_COPY_INTR_SOURCE,                   /**< interrupt of DMA copy, LEVEL*/
     ETS_ASSIST_DEBUG_INTR_SOURCE,               /**< interrupt of Assist debug module, LEVEL*/
-    ETS_DEDICATED_GPIO_INTR_SOURCE,             /**< interrupt of dedicated GPIO, level*/
-    ETS_DCACHE_PRELOAD1_INTR_SOURCE,            /**< interrupt of DCache preload operation, LEVEL*/
-    ETS_ICACHE_PRELOAD1_INTR_SOURCE,            /**< interrupt of ICache perload operation, LEVEL*/
-    ETS_DCACHE_SYNC1_INTR_SOURCE,               /**< interrupt of data cache sync done, LEVEL*/
-    ETS_ICACHE_SYNC1_INTR_SOURCE,               /**< interrupt of instruction cache sync done, LEVEL*/
+    ETS_DMA_APBPERI_PMS_INTR_SOURCE,
+    ETS_CORE0_IRAM0_PMS_INTR_SOURCE,
+    ETS_CORE0_DRAM0_PMS_INTR_SOURCE,
+    ETS_CORE0_PIF_PMS_INTR_SOURCE,
+    ETS_CORE0_PIF_PMS_SIZE_INTR_SOURCE,
+    ETS_CORE1_IRAM0_PMS_INTR_SOURCE,
+    ETS_CORE1_DRAM0_PMS_INTR_SOURCE,
 
+    ETS_CORE1_PIF_PMS_INTR_SOURCE = 86,
+    ETS_CORE1_PIF_PMS_SIZE_INTR_SOURCE,
+    ETS_CACHE_CORE0_ACS_INTR_SOURCE,
+    ETS_CACHE_CORE1_ACS_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
 
 } periph_interrput_t;

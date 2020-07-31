@@ -107,12 +107,13 @@ void systimer_hal_counter_value_advance(systimer_counter_id_t counter_id, int64_
 
 void systimer_hal_enable_counter(systimer_counter_id_t counter_id)
 {
-    systimer_ll_enable_clock();
+    (void)counter_id;
 }
 
 void systimer_hal_init(void)
 {
     assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
+    systimer_ll_enable_clock();
     /* Configure the counter:
      * - increment by 1 when running from PLL (80 ticks per microsecond),
      * - increment by 2 when running from XTAL (40 ticks per microsecond).
@@ -137,4 +138,11 @@ void systimer_hal_select_alarm_mode(systimer_alarm_id_t alarm_id, systimer_alarm
     default:
         break;
     }
+}
+
+void systimer_hal_connect_alarm_counter(systimer_alarm_id_t alarm_id, systimer_counter_id_t counter_id)
+{
+    // esp32s2 only has one counter, so there's no need to connect alarm unit to counter
+    (void)alarm_id;
+    (void)counter_id;
 }

@@ -14,6 +14,7 @@
 
 #pragma once
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
 
@@ -22,8 +23,7 @@
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/gpio_sig_map.h"
-#include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_MEMSPI_IS_INDEPENDENT
 #include "soc/spi_mem_struct.h"
 #include "soc/spi_mem_reg.h"
 #endif

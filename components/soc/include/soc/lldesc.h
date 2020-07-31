@@ -20,6 +20,8 @@
 #include "esp32/rom/lldesc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/lldesc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/lldesc.h"
 #endif
 
 //the size field has 12 bits, but 0 not for 4096.

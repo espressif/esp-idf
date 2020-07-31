@@ -14,11 +14,16 @@
 
 #include "essl_sdio.h"
 #include "esp_log.h"
-#include "soc/host_reg.h"
 #include "freertos/task.h"
 #include "essl_internal.h"
+#include "soc/soc_caps.h"
+
+#if SOC_SDIO_SLAVE_SUPPORTED
+#include "soc/host_reg.h"
 
 static const char TAG[] = "essl_sdio";
+
+#define HOST_SLCHOST_CONF_W_REG(pos) (HOST_SLCHOST_CONF_W0_REG+pos+(pos>23?4:0)+(pos>31?12:0))
 
 #define ESSL_CMD53_END_ADDR    0x1f800
 
@@ -453,3 +458,5 @@ void essl_sdio_reset_cnt(void *arg)
     ctx->rx_got_bytes = 0;
     ctx->tx_sent_buffers = 0;
 }
+
+#endif // #if SOC_SDIO_SLAVE_SUPPORTED

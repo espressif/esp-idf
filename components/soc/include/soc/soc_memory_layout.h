@@ -211,10 +211,10 @@ inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
-#if !CONFIG_FREERTOS_UNICORE || CONFIG_IDF_TARGET_ESP32S2
-    return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
-#else
+#if CONFIG_IDF_TARGET_ESP32 && CONFIG_FREERTOS_UNICORE
     return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+#else
+    return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
 #endif
 }
 

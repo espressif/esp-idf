@@ -463,5 +463,3 @@ extern syscon_dev_t SYSCON;
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /* _SOC_SYSCON_STRUCT_H_ */

@@ -22,8 +22,7 @@ extern "C" {
 typedef volatile struct {
     union {
         struct {
-            uint8_t rw_byte;
-            uint8_t reserved[3];
+            uint32_t rw_byte;
         };
         uint32_t val;
     } ahb_fifo;
