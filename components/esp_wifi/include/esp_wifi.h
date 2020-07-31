@@ -145,7 +145,7 @@ typedef struct {
 #define WIFI_AMPDU_TX_ENABLED        0
 #endif
 
-#if CONFIG_ESP32_WIFI_NVS_ENABLED
+#ifdef CONFIG_ESP32_WIFI_NVS_ENABLED
 #define WIFI_NVS_ENABLED          1
 #else
 #define WIFI_NVS_ENABLED          0
