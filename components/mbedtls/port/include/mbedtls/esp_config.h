@@ -976,6 +976,8 @@
  */
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_1
 #define MBEDTLS_SSL_PROTO_TLS1_1
+#else
+#undef MBEDTLS_SSL_PROTO_TLS1_1
 #endif
 
 /**
