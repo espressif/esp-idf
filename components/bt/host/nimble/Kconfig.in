@@ -219,7 +219,7 @@ config BT_NIMBLE_SVC_GAP_APPEARANCE
 config BT_NIMBLE_ACL_BUF_COUNT
     int "ACL Buffer count"
     depends on BT_NIMBLE_ENABLED
-    default 12
+    default 20
     help
         The number of ACL data buffers.
 
@@ -234,9 +234,12 @@ config BT_NIMBLE_ACL_BUF_SIZE
 config BT_NIMBLE_HCI_EVT_BUF_SIZE
     int "HCI Event Buffer size"
     depends on BT_NIMBLE_ENABLED
+    default 257 if BT_NIMBLE_EXT_ADV
     default 70
     help
-        This is the size of each HCI event buffer in bytes
+        This is the size of each HCI event buffer in bytes. In case of
+        extended advertising, packets can be fragmented. 257 bytes is the
+        maximum size of a packet.
 
 config BT_NIMBLE_HCI_EVT_HI_BUF_COUNT
     int "High Priority HCI Event Buffer count"
@@ -271,6 +274,7 @@ config BT_NIMBLE_MSYS1_BLOCK_COUNT
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
     depends on BT_NIMBLE_ENABLED
+    default n if BT_SOC_SUPPORT_5_0
     default y
     help
         Enable Host Flow control
@@ -418,3 +422,60 @@ config BT_NIMBLE_HS_STOP_TIMEOUT_MS
     depends on BT_NIMBLE_ENABLED
     help
         BLE Host stop procedure timeout in milliseconds.
+
+config BT_NIMBLE_HOST_BASED_PRIVACY
+    bool "Enable host based privacy for random address."
+    default n
+    depends on BT_NIMBLE_ENABLED && !IDF_TARGET_ESP32
+    help
+        Use this option to do host based Random Private Address resolution.
+        If this option is disabled then controller based privacy is used.
+
+config BT_NIMBLE_EXT_ADV
+    bool "Enable extended advertising."
+    default y if BT_SOC_SUPPORT_5_0
+    default n
+    depends on BT_NIMBLE_ENABLED && BT_SOC_SUPPORT_5_0
+    help
+        Enable this option to do extended advertising. Extended advertising
+        will be supported from BLE 5.0 onwards.
+
+config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
+    int "Maximum number of extended advertising instances."
+    range 0 4
+    default 1 if BT_NIMBLE_EXT_ADV
+    default 0
+    depends on BT_NIMBLE_EXT_ADV
+    help
+        Change this option to set maximum number of extended advertising
+        instances. Minimum there is always one instance of
+        advertising. Enter how many more advertising instances you
+        want.
+
+config BT_NIMBLE_MAX_EXT_ADV_DATA_LEN
+    int "Maximum length of the advertising data."
+    range 0 1650
+    default 1650 if BT_NIMBLE_EXT_ADV
+    default 0
+    depends on BT_NIMBLE_EXT_ADV
+    help
+        Defines size of extended advertising data. Size should not increase
+        1650.
+
+config BT_NIMBLE_ENABLE_PERIODIC_ADV
+    bool "Enable periodic advertisement."
+    default y
+    depends on BT_NIMBLE_EXT_ADV
+    help
+        Enable this option to start periodic advertisement.
+
+config BT_NIMBLE_MAX_PERIODIC_SYNCS
+    int "Maximum number of periodic advertising syncs."
+    default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
+    default 0
+    depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+    range 1 8
+    help
+        Set this option to set the upper limit for number of periodic sync
+        connections. This should be less than maximum connections allowed by
+        controller.
