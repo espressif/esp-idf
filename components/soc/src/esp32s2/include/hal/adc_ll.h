@@ -110,6 +110,19 @@ typedef enum {
 #define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR 0x2
 #define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR_MSB 0x2
 #define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR_LSB 0x0
+
+#define ADC_LL_SARADC_DTEST_RTC_ADDR 0x7
+#define ADC_LL_SARADC_DTEST_RTC_ADDR_MSB 1
+#define ADC_LL_SARADC_DTEST_RTC_ADDR_LSB 0
+
+#define ADC_LL_SARADC_ENT_TSENS_ADDR 0x7
+#define ADC_LL_SARADC_ENT_TSENS_ADDR_MSB 2
+#define ADC_LL_SARADC_ENT_TSENS_ADDR_LSB 2
+
+#define ADC_LL_SARADC_ENT_RTC_ADDR 0x7
+#define ADC_LL_SARADC_ENT_RTC_ADDR_MSB 3
+#define ADC_LL_SARADC_ENT_RTC_ADDR_LSB 3
+
 /* ADC calibration defines end. */
 
 /*---------------------------------------------------------------
@@ -1247,6 +1260,59 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
     }
 }
 /* Temp code end. */
+
+/**
+ *  Output ADCn inter reference voltage to ADC2 channels.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC2's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @param[in]  adc ADC unit select
+ *  @param[in]  channel ADC2 channel number
+ *  @param[in]  en Enable/disable the reference voltage output
+ */
+static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
+{
+    /* Should be called before writing I2C registers. */
+    void phy_get_romfunc_addr(void);
+    phy_get_romfunc_addr();
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    SET_PERI_REG_MASK(ADC_LL_ANA_CONFIG2_REG, BIT(16));
+
+    if (en) {
+        if (adc == ADC_NUM_1) {
+            /* Config test mux to route v_ref to ADC1 Channels */
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_DTEST_RTC_ADDR, 1);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_TSENS_ADDR, 0);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_RTC_ADDR, 1);
+        } else {
+            /* Config test mux to route v_ref to ADC2 Channels */
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_DTEST_RTC_ADDR, 0);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_TSENS_ADDR, 1);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_RTC_ADDR, 0);
+        }
+        //in sleep force to use rtc to control ADC
+        SENS.sar_meas2_mux.sar2_rtc_force = 1;
+        //set sar2_en_test
+        SENS.sar_meas2_ctrl1.sar2_en_test = 1;
+        //set sar2 en force
+        SENS.sar_meas2_ctrl2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
+        //set en_pad for ADC2 channels (bits 0x380)
+        SENS.sar_meas2_ctrl2.sar2_en_pad = 1 << channel;
+    } else {
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_TSENS_ADDR, 0);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SARADC_ENT_RTC_ADDR, 0);
+        SENS.sar_meas2_mux.sar2_rtc_force = 0;
+        //set sar2_en_test
+        SENS.sar_meas2_ctrl1.sar2_en_test = 0;
+        //set sar2 en force
+        SENS.sar_meas2_ctrl2.sar2_en_pad_force = 0;      //Pad bitmap controlled by SW
+        //set en_pad for ADC2 channels (bits 0x380)
+        SENS.sar_meas2_ctrl2.sar2_en_pad = 0;
+    }
+}
 
 #ifdef __cplusplus
 }

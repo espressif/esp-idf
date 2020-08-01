@@ -535,3 +535,36 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     return ESP_OK;
 }
 
+esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
+{
+    return adc_vref_to_gpio(ADC_UNIT_2, gpio);
+}
+
+esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
+{
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (adc_unit & ADC_UNIT_1) return ESP_ERR_INVALID_ARG;
+#endif
+    adc2_channel_t ch = ADC2_CHANNEL_MAX;
+    /* Check if the GPIO supported. */
+    for (int i = 0; i < ADC2_CHANNEL_MAX; i++) {
+        if (gpio == ADC_GET_IO_NUM(ADC_NUM_2, i)) {
+            ch = i;
+            break;
+        }
+    }
+    if (ch == ADC2_CHANNEL_MAX) return ESP_ERR_INVALID_ARG;
+
+    ADC_ENTER_CRITICAL();
+    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    if (adc_unit & ADC_UNIT_1) {
+        adc_hal_vref_output(ADC_NUM_1, ch, true);
+    } else if (adc_unit & ADC_UNIT_2) {
+        adc_hal_vref_output(ADC_NUM_2, ch, true);
+    }
+    ADC_EXIT_CRITICAL();
+
+    //Configure RTC gpio, Only ADC2's channels IO are supported to output reference voltage.
+    adc_gpio_init(ADC_UNIT_2, ch);
+    return ESP_OK;
+}
