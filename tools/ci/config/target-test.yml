@@ -233,7 +233,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 9
+  parallel: 10
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -369,6 +369,12 @@ UT_033:
     - ESP32_IDF
     - UT_T2_Ethernet
     - psram
+
+UT_034:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_ESP_FLASH
 
 UT_035:
   extends: .unit_test_template
