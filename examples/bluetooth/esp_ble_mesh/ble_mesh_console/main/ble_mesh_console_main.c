@@ -63,11 +63,11 @@ static void initialize_console(void)
     esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK( uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
+    ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM,
                                          256, 0, 0, NULL, 0) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
 
     /* Initialize the console */
     esp_console_config_t console_config = {
@@ -127,7 +127,7 @@ esp_err_t bluetooth_init(void)
     }
 
     esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_node_console", ESP_LOG_INFO);
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
     return ret;
 }
 
@@ -154,9 +154,13 @@ void app_main(void)
     register_system();
     register_bluetooth();
     ble_mesh_register_mesh_node();
+    ble_mesh_register_mesh_test_performance_client();
     ble_mesh_register_server();
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
     ble_mesh_register_gen_onoff_client();
+#endif
+#if (CONFIG_BLE_MESH_CFG_CLI)
+    ble_mesh_register_configuration_client_model();
 #endif
 
     /* Prompt to be printed before each line.

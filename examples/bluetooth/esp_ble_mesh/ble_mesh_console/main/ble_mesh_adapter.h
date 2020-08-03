@@ -21,7 +21,7 @@
 #include "ble_mesh_console_lib.h"
 #include "ble_mesh_cfg_srv_model.h"
 
-#define TAG "ble_mesh_prov_console"
+#define TAG "ble_mesh_console"
 
 #define TRANS_TYPE_MESH_PERF 0x01
 #define TRANS_MESH_SEND_MESSAGE 0x01
@@ -63,48 +63,67 @@ typedef struct {
 } ble_mesh_performance_statistics_t;
 ble_mesh_performance_statistics_t test_perf_statistics;
 
+typedef struct {
+    uint32_t statistics;
+    uint32_t package_num;
+    uint16_t *package_index;
+    uint32_t total_package_num;
+} ble_mesh_node_statistics_t;
+ble_mesh_node_statistics_t ble_mesh_node_statistics;
+
+extern SemaphoreHandle_t ble_mesh_node_sema;
+
 #define SEND_MESSAGE_TIMEOUT (30000/portTICK_RATE_MS)
 
 #define arg_int_to_value(src_msg, dst_msg, message) do { \
     if (src_msg->count != 0) {\
+        ESP_LOGD(TAG, "\n%s, %s\n", __func__, message);\
         dst_msg = src_msg->ival[0];\
     } \
 } while(0) \
 
 #define ble_mesh_node_get_value(index, key, value) do { \
     uint16_t _index = 0; \
+    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
     for (_index = 0; _index < NODE_MAX_GROUP_CONFIG; _index) { \
         if (node_set_prestore_params[_index].key == value) { \
             break; \
         } \
     } \
     index = _index; \
+    xSemaphoreGive(ble_mesh_node_sema); \
 } while(0) \
 
 #define ble_mesh_node_set_state(status) do { \
+    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
     node_status.previous = node_status.current; \
     node_status.current = status; \
+    xSemaphoreGive(ble_mesh_node_sema); \
 }while(0) \
 
 #define ble_mesh_node_get_state(status) do { \
-    status = node_status.previous; \
+    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
+    status = node_status.current; \
+    xSemaphoreGive(ble_mesh_node_sema); \
 }while(0) \
 
 #define ble_mesh_callback_check_err_code(err_code, message) do { \
     if (err_code == ESP_OK) { \
         ESP_LOGI(TAG, "%s,OK\n", message); \
     } else { \
-        ESP_LOGI(TAG, "%s,Fail,%d\n", message, err_code); \
+        ESP_LOGE(TAG, "%s,Fail,%d\n", message, err_code); \
     } \
 }while(0) \
 
 void ble_mesh_node_init(void);
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr);
-
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id);
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id);
+void ble_mesh_node_statistics_get(void);
+int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t type);
+int ble_mesh_node_statistics_init(uint16_t package_num);
+void ble_mesh_node_statistics_destroy(void);
 void ble_mesh_create_send_data(char *data, uint16_t byte_num, uint16_t sequence_num, uint32_t opcode);
-
 void ble_mesh_test_performance_client_model_get(void);
 void ble_mesh_test_performance_client_model_get_received_percent(void);
 void ble_mesh_test_performance_client_model_accumulate_statistics(uint32_t value);
@@ -112,4 +131,4 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
 int ble_mesh_test_performance_client_model_init(uint16_t node_num, uint32_t test_num, uint8_t ttl);
 void ble_mesh_test_performance_client_model_destroy(void);
 
-#endif //_BLE_MESH_ADAPTER_H_
+#endif //_BLE_MESH_ADAOTER_H_
