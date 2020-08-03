@@ -33,6 +33,24 @@ Encrypted reads and writes use the old implementation, even if
 flash operations are only supported with the main flash chip (and not with
 other flash chips on SPI1 with different CS).
 
+Support for features of flash chips
+-----------------------------------
+
+Different chips need different supports, and we will progressively complete drivers for other types of chip in the future. We support the fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips, because they don't need any vendor-specific commands to enable. 
+
+For Quad mode (QIO/QOUT) the following 24-bit address chip types are supported:
+
+1. ISSI
+2. GD
+3. MXIC
+4. FM
+5. Winbond
+6. XMC
+
+We are continuing updating to support 32-bits address chips, here is the list of them:
+
+1. W25Q256
+
 Initializing a flash device
 ---------------------------
 
@@ -176,8 +194,8 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 
 Note that since memory mapping happens in 64KB blocks, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``.
 
-Implementation
---------------
+SPI Flash Implementation
+------------------------
 
 The ``esp_flash_t`` structure holds chip data as well as three important parts of this API:
 
