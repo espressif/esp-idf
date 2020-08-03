@@ -33,7 +33,6 @@ int main (void)
         if(gpio_level != gpio_level_previous) {
             gpio_level_previous = gpio_level;
             ulp_riscv_wakeup_main_processor();
-            break;
         }
 
     }
