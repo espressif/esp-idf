@@ -180,4 +180,16 @@ menu "FAT Filesystem support"
             Disable this option if optimizing for performance. Enable this option if
             optimizing for internal memory size.
 
+
+    config FATFS_USE_FASTSEEK
+        bool "Enable fast seek algorithm when using f_lseek function"
+        default n
+        help
+            The fast seek feature enables fast backward/long seek operations without
+            FAT access by using an in-memory CLMT (cluster link map table).
+            It is applied to f_read and f_write function as well, however,
+            the file size cannot be expanded by f_write.
+            f_lseek function while the file is at fast seek mode.
+
+
 endmenu
