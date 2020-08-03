@@ -462,7 +462,7 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 void esp_bt_check_need_restart();
 
-#define RMT_DEBUG_LOG_EN
+// #define RMT_DEBUG_LOG_EN
 
 #ifdef RMT_DEBUG_LOG_EN
 extern uint32_t* btdm_rmt_get_fixed_log_addr();
