@@ -2381,7 +2381,6 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
     default:
         break;
     }
-    xSemaphoreGive(buff_semaphore);
 }
 #endif
 
