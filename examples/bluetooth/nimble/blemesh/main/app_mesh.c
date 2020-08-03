@@ -331,14 +331,42 @@ static struct bt_mesh_model root_models[] = {
     BT_MESH_MODEL_CFG_SRV(&cfg_srv),
     BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
     BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op,
-    &gen_onoff_pub, NULL),
+              &gen_onoff_pub, NULL),
     BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_SRV, gen_level_op,
-    &gen_level_pub, NULL),
+              &gen_level_pub, NULL),
+};
+
+static struct bt_mesh_model_pub vnd_model_pub;
+
+static void vnd_model_recv(struct bt_mesh_model *model,
+                           struct bt_mesh_msg_ctx *ctx,
+                           struct os_mbuf *buf)
+{
+    struct os_mbuf *msg = NET_BUF_SIMPLE(3);
+
+    console_printf("#vendor-model-recv\n");
+
+    console_printf("data:%s len:%d\n", bt_hex(buf->om_data, buf->om_len),
+                   buf->om_len);
+
+    bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x01, CID_VENDOR));
+    os_mbuf_append(msg, buf->om_data, buf->om_len);
+
+    if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+        console_printf("#vendor-model-recv: send rsp failed\n");
+    }
+
+    os_mbuf_free_chain(msg);
+}
+
+static const struct bt_mesh_model_op vnd_model_op[] = {
+        { BT_MESH_MODEL_OP_3(0x01, CID_VENDOR), 0, vnd_model_recv },
+        BT_MESH_MODEL_OP_END,
 };
 
 static struct bt_mesh_model vnd_models[] = {
-    BT_MESH_MODEL_VND(CID_VENDOR, BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op,
-    &gen_onoff_pub, NULL),
+    BT_MESH_MODEL_VND(CID_VENDOR, BT_MESH_MODEL_ID_GEN_ONOFF_SRV, vnd_model_op,
+              &vnd_model_pub, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {

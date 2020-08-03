@@ -32,6 +32,8 @@
 #include "esp_compiler.h"
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
+#define BLE_HCI_EVENT_HDR_LEN               (2)
+#define BLE_HCI_CMD_HDR_LEN                 (3)
 
 static ble_hci_trans_rx_cmd_fn *ble_hci_rx_cmd_hs_cb;
 static void *ble_hci_rx_cmd_hs_arg;
