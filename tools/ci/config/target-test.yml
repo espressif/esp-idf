@@ -257,13 +257,13 @@ example_test_004A:
   extends: .example_test_template
   tags:
     - ESP32
-    - Example_CAN1
+    - Example_TWAI1
 
 example_test_004B:
   extends: .example_test_template
   tags:
     - ESP32
-    - Example_CAN2
+    - Example_TWAI2
 
 example_test_005:
   extends: .example_test_template
