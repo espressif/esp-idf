@@ -832,6 +832,24 @@ Place this line after the ``project()`` line in your project CMakeLists.txt file
 
 For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
 
+
+.. highlight:: cmake
+
+It is also possible embed a generated file::
+
+  add_custom_command(OUTPUT my_processed_file.bin
+                    COMMAND my_process_file_cmd my_unprocessed_file.bin)
+  target_add_binary_data(my_target "my_processed_file.bin" BINARY)
+
+In the example above, ``my_processed_file.bin`` is generated from ``my_unprocessed_file.bin`` through some command ``my_process_file_cmd``, then embedded into the target.
+
+To specify a dependence on a target, use the ``DEPENDS`` argument::
+
+  add_custom_target(my_process COMMAND ...)
+  target_add_binary_data(my_target "my_embed_file.bin" BINARY DEPENDS my_process)
+
+The ``DEPENDS`` argument to ``target_add_binary_data`` ensures that the target executes first.
+
 Code and Data Placements
 ------------------------
 
