@@ -484,6 +484,7 @@ static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
 
 static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
 {
+    assert(xPortGetCoreID() == CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
     return hli_semaphore_give(semphr);
 }
 
@@ -562,6 +563,7 @@ static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block
 
 static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw)
 {
+    assert(xPortGetCoreID() == CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
     return hli_queue_put(queue, item);
 }
 
