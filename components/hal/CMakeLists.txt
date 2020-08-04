@@ -31,6 +31,7 @@ if(NOT BOOTLOADER_BUILD)
                 "spi_flash_hal_iram.c"
                 "soc_hal.c"
                 "twai_hal.c"
+                "twai_hal_iram.c"
                 "interrupt_controller_hal.c"
                 "${target}/interrupt_descriptor_table.c")
 
