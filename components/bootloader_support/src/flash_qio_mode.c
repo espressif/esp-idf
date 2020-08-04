@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <stddef.h>
 #include <stdint.h>
+#include "bootloader_flash_config.h"
 #include "flash_qio_mode.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -83,12 +84,6 @@ static void write_status_16b_wrsr(unsigned new_status);
 static unsigned read_status_8b_xmc25qu64a(void);
 /* Write 8 bit status of XM25QU64A */
 static void write_status_8b_xmc25qu64a(unsigned new_status);
-
-#define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD has this GPIO wired to WP pin of flash */
-
-#ifndef CONFIG_BOOTLOADER_SPI_WP_PIN // Set in menuconfig if SPI flasher config is set to a quad mode
-#define CONFIG_BOOTLOADER_SPI_WP_PIN ESP32_D2WD_WP_GPIO
-#endif
 
 /* Array of known flash chips and data to enable Quad I/O mode
 
@@ -224,24 +219,6 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
     uint32_t status;
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
 
-#if CONFIG_IDF_TARGET_ESP32
-    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
-        // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP,
-        // which is compiled into the bootloader instead.
-        //
-        // Most commonly an overriden pin mapping means ESP32-D2WD or ESP32-PICOD4.
-        //Warn if chip is ESP32-D2WD/ESP32-PICOD4 but someone has changed the WP pin
-        //assignment from that chip's WP pin.
-        uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
-        if (CONFIG_BOOTLOADER_SPI_WP_PIN != ESP32_D2WD_WP_GPIO  &&
-                (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
-                 pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
-                 pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
-            ESP_LOGW(TAG, "Chip is ESP32-D2WD/ESP32-PICOD4 but flash WP pin is different value to internal flash");
-        }
-    }
-#endif
-
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     status = read_status_fn();
@@ -276,13 +253,10 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
     esp_rom_spiflash_config_readmode(mode);
 
 #if CONFIG_IDF_TARGET_ESP32
-    esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
+    int wp_pin = bootloader_flash_get_wp_pin();
+    esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
 #elif CONFIG_IDF_TARGET_ESP32S2
-    if (ets_efuse_get_wp_pad() <= MAX_PAD_GPIO_NUM) {
-        esp_rom_spiflash_select_qio_pins(ets_efuse_get_wp_pad(), spiconfig);
-    } else {
-        esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
-    }
+    esp_rom_spiflash_select_qio_pins(ets_efuse_get_wp_pad(), spiconfig);
 #endif
     return ESP_OK;
 }
