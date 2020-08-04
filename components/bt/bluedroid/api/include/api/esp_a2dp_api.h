@@ -89,6 +89,7 @@ typedef enum {
     ESP_A2D_AUDIO_STATE_EVT,                   /*!< audio stream transmission state changed event */
     ESP_A2D_AUDIO_CFG_EVT,                     /*!< audio codec is configured, only used for A2DP SINK */
     ESP_A2D_MEDIA_CTRL_ACK_EVT,                /*!< acknowledge event in response to media control commands */
+    ESP_A2D_PROF_STATE_EVT,                    /*!< indicate a2dp deinit complete */
 } esp_a2d_cb_event_t;
 
 /// A2DP state callback parameters
@@ -125,6 +126,13 @@ typedef union {
         esp_a2d_media_ctrl_t cmd;              /*!< media control commands to acknowledge */
         esp_a2d_media_ctrl_ack_t status;       /*!< acknowledgement to media control commands */
     } media_ctrl_stat;                         /*!< status in acknowledgement to media control commands */
+
+    /**
+     * @brief ESP_A2D_PROF_STATE_EVT
+     */
+    struct a2d_prof_stat_param {
+        int init_state;                         /*!< a2dp profile state param */
+    } a2d_prof_stat;                            /*!< status to indicate a2d prof init or deinit */
 } esp_a2d_cb_param_t;
 
 /**

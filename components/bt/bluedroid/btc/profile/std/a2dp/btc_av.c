@@ -989,7 +989,10 @@ static bt_status_t btc_av_init(int service_id)
         }
 
         btc_a2dp_on_init();
-
+        esp_a2d_cb_param_t param;
+        memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+        param.a2d_prof_stat.init_state = 1;
+        btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
         return BT_STATUS_SUCCESS;
     }
 
@@ -1056,6 +1059,11 @@ static void clean_up(int service_id)
     } else {
         BTC_TRACE_WARNING("AV sm handle already free\n");
     }
+
+    esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+    param.a2d_prof_stat.init_state = 0;
+    btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
 }
 
 /*******************************************************************************
