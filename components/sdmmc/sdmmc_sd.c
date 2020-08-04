@@ -225,24 +225,29 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
     /* HS mode has been enabled on the card.
      * Read CSD again, it should now indicate that the card supports
      * 50MHz clock.
-     * Since SEND_CSD is allowed only in standby mode, and the card is
-     * currently in data transfer more, deselect the card first, then
-     * get the CSD, then select the card again.
+     * Since SEND_CSD is allowed only in standby mode, and the card is currently in data transfer
+     * mode, deselect the card first, then get the CSD, then select the card again. This step is
+     * not required in SPI mode, since CMD7 (select_card) is not supported.
      */
-    err = sdmmc_send_cmd_select_card(card, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: select_card (1) returned 0x%x", __func__, err);
-        return err;
+    const bool is_spi = host_is_spi(card);
+    if (!is_spi) {
+        err = sdmmc_send_cmd_select_card(card, 0);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: select_card (1) returned 0x%x", __func__, err);
+            return err;
+        }
     }
     err = sdmmc_send_cmd_send_csd(card, &card->csd);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_csd returned 0x%x", __func__, err);
         return err;
     }
-    err = sdmmc_send_cmd_select_card(card, card->rca);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: select_card (2) returned 0x%x", __func__, err);
-        return err;
+    if (!is_spi) {
+        err = sdmmc_send_cmd_select_card(card, card->rca);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: select_card (2) returned 0x%x", __func__, err);
+            return err;
+        }
     }
 
     if (card->csd.tr_speed != 50000000) {
