@@ -322,16 +322,26 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
 #endif
 
 void vPortYield( void );
-void xEvaluateYieldFromISR(int argc, ...);
+void vPortEvaluateYieldFromISR(int argc, ...);
 void _frxt_setup_switch( void );
+/**
+ * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with, 
+ * or without arguments.
+ */ 
+#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
+#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
-//Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with, 
-//or without arguments.
-#define GET_ARGUMENT_COUNT(...) GET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
-#define GET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
+_Static_assert(portGET_ARGUMENT_COUNT() == 0, "portGET_ARGUMENT_COUNT() result does not match for 0 arguments");
+_Static_assert(portGET_ARGUMENT_COUNT(1) == 1, "portGET_ARGUMENT_COUNT() result does not match for 1 argument");
 
 #define portYIELD()	vPortYield()
-#define portYIELD_FROM_ISR(...) xEvaluateYieldFromISR(GET_ARGUMENT_COUNT(__VA_ARGS__), ##__VA_ARGS__)
+
+/**
+ * @note    The macro below could be used when passing a single argument, or without any argument, 
+ *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
+ *          might result in undesired behaviour
+ */
+#define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__), ##__VA_ARGS__)
 
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
    until interrupts are re-enabled.
