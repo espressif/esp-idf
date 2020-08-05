@@ -17,6 +17,7 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
+#include "bootloader_common.h"
 
 static const char* TAG = "efuse_test";
 
@@ -845,3 +846,15 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
     }
 }
 #endif  // CONFIG_IDF_ENV_FPGA
+
+TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
+{
+    esp_efuse_utility_update_virt_blocks();
+    TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), bootloader_common_get_chip_ver_pkg());
+}
+
+TEST_CASE("Test chip_revision APIs return the same value", "[efuse]")
+{
+    esp_efuse_utility_update_virt_blocks();
+    TEST_ASSERT_EQUAL_INT(esp_efuse_get_chip_ver(), bootloader_common_get_chip_revision());
+}

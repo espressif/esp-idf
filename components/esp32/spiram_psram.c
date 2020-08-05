@@ -23,6 +23,7 @@
 #include "esp_err.h"
 #include "esp_types.h"
 #include "esp_log.h"
+#include "esp_efuse.h"
 #include "spiram_psram.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
@@ -804,8 +805,7 @@ bool psram_is_32mbit_ver0(void)
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
     psram_io_t psram_io={0};
-    uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
-    uint32_t pkg_ver = chip_ver & 0x7;
+    uint32_t pkg_ver = esp_efuse_get_pkg_ver();
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D2WD");
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();

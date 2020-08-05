@@ -52,8 +52,7 @@ static const char *TAG = "boot.esp32";
 
 void bootloader_configure_spi_pins(int drv)
 {
-    uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
-    uint32_t pkg_ver = chip_ver & 0x7;
+    uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
 
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||

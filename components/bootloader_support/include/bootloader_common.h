@@ -168,6 +168,13 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
 uint8_t bootloader_common_get_chip_revision(void);
 
 /**
+ * @brief Get chip package
+ *
+ * @return Chip package number
+ */
+uint32_t bootloader_common_get_chip_ver_pkg(void);
+
+/**
  * @brief Query reset reason
  *
  * @param cpu_no CPU number
