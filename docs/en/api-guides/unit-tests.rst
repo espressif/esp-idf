@@ -304,5 +304,26 @@ of time spent on waiting for code/data in case of a cache miss, then subtract th
 
 
 One limitation of the cache compensated timer is that the task that benchmarked functions should be pinned to a core. This is due to each core having its own event counters that are independent of each other. For example, if ``ccomp_timer_start`` gets called on one core, put to sleep by the scheduler, wakes up, and gets rescheduled on the other core, then the corresponding ``ccomp_timer_stop`` will be invalid.
-invalid.
 
+Mocks
+-----------------------------------------
+
+ESP-IDF has a component which integrates the CMock mocking framework.
+CMock usually uses Unity as a submodule, but due to some Espressif-internal limitations with CI, we still have Unity as an ordinary module in ESP-IDF.
+To use the IDF-supplied Unity component which isn't a submodule, the build system needs to pass an environment variable ``UNITY_IDR`` to CMock.
+This variable simply contains the path to the Unity directory in IDF, e.g. ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``.
+Refer to :component_file:`cmock/CMock/lib/cmock_generator.rb` to see how the Unity directory is determined in CMock.
+
+An example cmake build command to create mocks of a component inside that component's CMakeLists.txt may look like this:
+
+  .. code-block:: cmake
+
+  add_custom_command(
+    OUTPUT ${MOCK_OUTPUT}
+    COMMAND ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
+    COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity" ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
+    )
+
+${MOCK_OUTPUT} contains all CMock generated output files, ${MOCK_HEADERS} contains all headers to be mocked and ${CMOCK_DIR} needs to be set to CMock directory inside IDF. ${CMAKE_COMMAND} is automatically set.
+
+Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on how CMock works and how to create and use mocks.

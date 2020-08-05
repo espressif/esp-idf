@@ -1,6 +1,6 @@
 idf_component_register(SRC_DIRS .
                        PRIV_INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
-                       PRIV_REQUIRES unity test_utils)
+                       PRIV_REQUIRES cmock test_utils)
 
 if(IDF_TARGET STREQUAL "esp32")
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"

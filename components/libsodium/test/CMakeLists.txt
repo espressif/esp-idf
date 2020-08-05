@@ -2,7 +2,7 @@ if(TESTS_ALL EQUAL 1)
     message("not linking libsodium tests, use '-T libsodium' to test it")
 else()
     get_filename_component(LS_TESTDIR "${CMAKE_CURRENT_LIST_DIR}/../libsodium/test/default" ABSOLUTE)
-    
+
     set(TEST_CASES "chacha20;aead_chacha20poly1305;box;box2;ed25519_convert;sign;hash")
 
     foreach(test_case ${TEST_CASES})
@@ -12,7 +12,7 @@ else()
 
     idf_component_register(SRCS "${TEST_CASES_FILES}" "test_sodium.c"
                         PRIV_INCLUDE_DIRS "." "${LS_TESTDIR}/../quirks"
-                        PRIV_REQUIRES unity libsodium)
+                        PRIV_REQUIRES cmock libsodium)
 
     # The libsodium test suite is designed to be run each test case as an executable on a desktop computer and uses
     # filesytem to write & then compare contents of each file.
