@@ -224,7 +224,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  * @brief Set UART line inverse mode
  *
  * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
- * @param inverse_mask Choose the wires that need to be inverted. Using the ORred mask of `uart_signal_inv_t` 
+ * @param inverse_mask Choose the wires that need to be inverted. Using the ORred mask of `uart_signal_inv_t`
  *
  * @return
  *     - ESP_OK   Success
@@ -601,7 +601,7 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  */
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
 
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
 /**
  * @brief UART enable pattern detect function.
  *        Designed for applications like 'AT commands'.

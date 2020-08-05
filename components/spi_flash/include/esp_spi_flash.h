@@ -382,7 +382,7 @@ typedef struct {
     spi_flash_guard_end_func_t          end;        /**< critical section end function. */
     spi_flash_op_lock_func_t            op_lock;    /**< flash access API lock function.*/
     spi_flash_op_unlock_func_t          op_unlock;  /**< flash access API unlock function.*/
-#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+#if !defined(CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED) || !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     spi_flash_is_safe_write_address_t   is_safe_write_address; /**< checks flash write addresses.*/
 #endif
     spi_flash_os_yield_t                yield;      /**< yield to the OS during flash erase */
@@ -419,7 +419,7 @@ extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
  */
 extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
 
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+#ifdef CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 /**
  * Structure holding statistics for one type of operation

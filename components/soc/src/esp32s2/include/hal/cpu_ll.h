@@ -49,7 +49,7 @@ static inline void* cpu_ll_get_sp(void)
 
 static inline void cpu_ll_init_hwloop(void)
 {
-#if XCHAL_ERRATUM_572
+#ifdef XCHAL_ERRATUM_572
     uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
     WSR(MEMCTL, memctl);
 #endif // XCHAL_ERRATUM_572
