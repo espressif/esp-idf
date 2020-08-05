@@ -156,7 +156,7 @@ menu "Common ESP-related"
     config ESP_INT_WDT_TIMEOUT_MS
         int "Interrupt watchdog timeout (ms)"
         depends on ESP_INT_WDT
-        default 300 if !ESP32_SPIRAM_SUPPORT
+        default 600 if !ESP32_SPIRAM_SUPPORT
         default 800 if ESP32_SPIRAM_SUPPORT
         range 10 10000
         help
