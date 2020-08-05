@@ -469,8 +469,8 @@ extern uint32_t* btdm_rmt_get_fixed_log_addr();
 uint32_t btdm_rmt_get_log_buffer_size();
 int btdm_rmt_dbg_printf_to_iram(const char* format, ...);
 
-#define RMT_DBG_LOG_ERROR(format, ... )  btdm_rmt_dbg_printf_to_iram(DRAM_STR("E(%d):"format"\n"),esp_log_timestamp(), ##__VA_ARGS__);
-#define RMT_DBG_LOG_DEBUG(format, ... )  btdm_rmt_dbg_printf_to_iram(DRAM_STR("D(%d):"format"\n"),esp_log_timestamp(), ##__VA_ARGS__);
+#define RMT_DBG_LOG_ERROR(format, ... )  btdm_rmt_dbg_printf_to_iram(DRAM_STR("E(%d):"format"\n"),(uint32_t)(esp_timer_get_time()/1000), ##__VA_ARGS__);
+#define RMT_DBG_LOG_DEBUG(format, ... )  btdm_rmt_dbg_printf_to_iram(DRAM_STR("D(%d):"format"\n"),(uint32_t)(esp_timer_get_time()/1000), ##__VA_ARGS__);
 #else
 #define  RMT_DBG_LOG_ERROR(...)
 #define  RMT_DBG_LOG_DEBUG(...)
