@@ -286,7 +286,7 @@ typedef struct {
  */
 void esp_chip_info(esp_chip_info_t* out_info);
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#ifdef CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 /**
  * @brief Cache lock bug exists or not
  *
