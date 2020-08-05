@@ -1242,6 +1242,8 @@ void GATT_Deregister (tGATT_IF gatt_if)
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
     tGATT_TCB       *p_tcb;
     tGATT_CLCB      *p_clcb;
+    list_node_t     *p_node = NULL;
+    list_node_t     *p_next = NULL;
 #if (GATTS_INCLUDED == TRUE)
     UINT8           ii;
     tGATT_SR_REG    *p_sreg;
@@ -1268,9 +1270,9 @@ void GATT_Deregister (tGATT_IF gatt_if)
 #endif  ///GATTS_INCLUDED == TRUE
     /* When an application deregisters, check remove the link associated with the app */
 
-    list_node_t *p_node = NULL;
-    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = p_next) {
+	p_tcb = list_node(p_node);
+	p_next = list_next(p_node);
         if (p_tcb->in_use) {
             if (gatt_get_ch_state(p_tcb) != GATT_CH_CLOSE) {
                 gatt_update_app_use_link_flag(gatt_if, p_tcb,  FALSE, FALSE);
@@ -1280,9 +1282,11 @@ void GATT_Deregister (tGATT_IF gatt_if)
                 }
             }
 
-            list_node_t *p_node = NULL;
-	    for(p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = list_next(p_node)) {
-                p_clcb = list_node(p_node);
+            list_node_t *p_node_clcb = NULL;
+            list_node_t *p_node_next = NULL;
+	    for(p_node_clcb = list_begin(gatt_cb.p_clcb_list); p_node_clcb; p_node_clcb = p_node_next) {
+                p_clcb = list_node(p_node_clcb);
+                p_node_next = list_next(p_node_clcb);
                 if (p_clcb->in_use &&
                         (p_clcb->p_reg->gatt_if == gatt_if) &&
                         (p_clcb->p_tcb->tcb_idx == p_tcb->tcb_idx)) {
