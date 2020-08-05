@@ -21,7 +21,7 @@
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
 
-#include "esp_rom_crc.h"
+#include "esp32s2/rom/crc.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
@@ -40,7 +40,7 @@ static const char *TAG = "secure_boot_v2";
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)
 {
-    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN);
+    uint32_t crc = crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN);
     if (block->magic_byte != SIG_BLOCK_MAGIC_BYTE) {
         // All signature blocks have been parsed, no new signature block present.
         ESP_LOGD(TAG, "Signature block(%d) invalid/absent.", block_num);
@@ -318,7 +318,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     assert(ets_efuse_secure_boot_aggressive_revoke_enabled());
 #endif
 
-    assert(esp_rom_efuse_is_secure_boot_enabled());
+    assert(ets_efuse_secure_boot_enabled());
     ESP_LOGI(TAG, "Secure boot permanently enabled");
 
     return ESP_OK;

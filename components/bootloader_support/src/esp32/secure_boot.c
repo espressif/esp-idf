@@ -319,7 +319,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
     bool efuse_key_read_protected = dis_reg & EFUSE_RD_DIS_BLK2;
     bool efuse_key_write_protected = dis_reg & EFUSE_WR_DIS_BLK2;
-    if (efuse_key_write_protected == false 
+    if (efuse_key_write_protected == false
         && efuse_key_read_protected == false
         && REG_READ(EFUSE_BLK2_RDATA0_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA1_REG) == 0
@@ -390,17 +390,6 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
 #else
     ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
-#endif
-
-#ifdef CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    ESP_LOGI(TAG, "Disable ROM Download mode...");
-    esp_err_t err = esp_efuse_disable_rom_download_mode();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Could not disable ROM Download mode...");
-        return ESP_FAIL;
-    }
-#else
-    ESP_LOGW(TAG, "Not disabling ROM Download mode - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
