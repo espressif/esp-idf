@@ -166,8 +166,8 @@ ESP32S2_DOCS = ['esp32s2.rst',
                 'api-reference/peripherals/hmac.rst',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/spi_slave_hd.rst',
-                'api-reference/peripherals/temp_sensor.rst'
-                '']
+                'api-reference/peripherals/temp_sensor.rst',
+                'api-reference/system/async_memcpy.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,

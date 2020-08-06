@@ -14,6 +14,7 @@ else()
     set(srcs "cache_err_int.c"
              "memprot.c"
              "clk.c"
+             "cp_dma.c"
              "crosscore_int.c"
              "dport_access.c"
              "hw_random.c"
