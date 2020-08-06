@@ -155,8 +155,6 @@ void IRAM_ATTR esp_spiram_init_cache(void)
 }
 
 static uint32_t pages_for_flash = 0;
-static uint32_t page0_mapped = 0;
-static uint32_t page0_page = INVALID_PHY_PAGE;
 static uint32_t instrcution_in_spiram = 0;
 static uint32_t rodata_in_spiram = 0;
 
@@ -170,6 +168,11 @@ static uint32_t instr_end_page = 0;
 static int rodata_flash2spiram_offs = 0;
 static uint32_t rodata_start_page = 0;
 static uint32_t rodata_end_page = 0;
+#endif
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+static uint32_t page0_mapped = 0;
+static uint32_t page0_page = INVALID_PHY_PAGE;
 #endif
 
 uint32_t esp_spiram_instruction_access_enabled(void)
