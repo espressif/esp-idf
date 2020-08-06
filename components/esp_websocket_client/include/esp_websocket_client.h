@@ -132,6 +132,9 @@ esp_err_t esp_websocket_client_start(esp_websocket_client_handle_t client);
  * close frames. It is a good practice to close the connection in a clean way
  * using esp_websocket_client_close().
  *
+ *  Notes:
+ *  - Cannot be called from the websocket event handler 
+ *
  * @param[in]  client  The client
  *
  * @return     esp_err_t
@@ -144,6 +147,9 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client);
  *             It is the opposite of the esp_websocket_client_init function and must be called with the same handle as input that a esp_websocket_client_init call returned.
  *             This might close all connections this handle has used.
  *
+ *  Notes:
+ *  - Cannot be called from the websocket event handler
+ * 
  * @param[in]  client  The client
  *
  * @return     esp_err_t
@@ -201,6 +207,9 @@ int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const c
  * * Client waits until server closes the connection
  * * Client is stopped the same way as by the `esp_websocket_client_stop()`
  *
+ *  Notes:
+ *  - Cannot be called from the websocket event handler 
+ *
  * @param[in]  client  The client
  * @param[in]  timeout Timeout in RTOS ticks for waiting
  *
@@ -211,6 +220,9 @@ esp_err_t esp_websocket_client_close(esp_websocket_client_handle_t client, TickT
 /**
  * @brief      Close the WebSocket connection in a clean way with custom code/data
  *             Closing sequence is the same as for esp_websocket_client_close()
+ *
+ *  Notes:
+ *  - Cannot be called from the websocket event handler 
  *
  * @param[in]  client  The client
  * @param[in]  code    Close status code as defined in RFC6455 section-7.4
