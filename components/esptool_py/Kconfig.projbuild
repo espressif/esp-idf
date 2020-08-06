@@ -57,7 +57,7 @@ menu "Serial flasher config"
     config ESPTOOLPY_WITH_STUB
         # Only real reason to disable this is when ESP32-S2 Secure Download Mode is set
         bool
-        default "y" if !IDF_ENV_FPGA
+        default "y" if !IDF_TARGET_ESP32S3
         depends on !SECURE_ENABLE_SECURE_ROM_DL_MODE
 
     choice ESPTOOLPY_FLASHMODE

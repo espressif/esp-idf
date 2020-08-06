@@ -33,7 +33,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_TARGET_ESP32S3
         bool
         default "y" if IDF_TARGET="esp32s3"
-        select IDF_ENV_FPGA
 
     config IDF_FIRMWARE_CHIP_ID
         hex
