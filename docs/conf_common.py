@@ -46,6 +46,7 @@ suppress_warnings = ['image.nonlocal_uri']
 extensions = ['breathe',
 
               'sphinx.ext.todo',
+              'sphinx_copybutton',
               'sphinx_idf_theme',
               'sphinxcontrib.blockdiag',
               'sphinxcontrib.seqdiag',
