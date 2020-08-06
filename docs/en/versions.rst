@@ -70,6 +70,8 @@ As a general guideline:
 - If possible, periodically update the project to a new major or minor ESP-IDF version (for example, once a year.) The update process should be straightforward for Minor updates, but may require some planning and checking of the release notes for Major updates.
 - Always plan to update to a newer release before the release you are using becomes End of Life.
 
+.. image:: ../chart.png
+
 
 Checking the Current Version
 ----------------------------
