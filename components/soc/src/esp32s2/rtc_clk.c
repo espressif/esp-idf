@@ -289,7 +289,8 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             abort();
         }
     }
-   s_cur_pll_freq = pll_freq;
+
+    s_cur_pll_freq = pll_freq;
 }
 
 /**
