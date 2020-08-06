@@ -6,7 +6,6 @@ import ttfw_idf
 
 @ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
 def test_examples_app_trace_to_host(env, extra_data):
-
     rel_project_path = os.path.join('examples', 'system', 'app_trace_to_host')
     dut = env.get_dut('app_trace_to_host', rel_project_path)
     idf_path = dut.app.get_sdk_path()
@@ -28,8 +27,7 @@ def test_examples_app_trace_to_host(env, extra_data):
 
     with ttfw_idf.CustomProcess(' '.join([os.path.join(idf_path, 'tools/esp_app_trace/logtrace_proc.py'),
                                           'adc.log',
-                                          os.path.join(dut.app.get_binary_path(rel_project_path),
-                                                       'app_trace_to_host.elf')]),
+                                          os.path.join(dut.app.binary_path, 'app_trace_to_host.elf')]),
                                 logfile='logtrace_proc.log') as logtrace:
         logtrace.pexpect_proc.expect_exact('Parse trace file')
         logtrace.pexpect_proc.expect_exact('Parsing completed.')

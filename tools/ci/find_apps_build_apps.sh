@@ -169,4 +169,7 @@ if [ "${TEST_TYPE}" = "unit_test" ]; then
     mkdir -p ${dst}/partition_table
     cp ${src}/partition_table/*.bin ${dst}/partition_table/
   done
+
+  # Copy app list json files to build path
+  mv ${BUILD_PATH}/${IDF_TARGET}/*.json ${BUILD_PATH}
 fi

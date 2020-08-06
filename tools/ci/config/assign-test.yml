@@ -24,6 +24,7 @@ assign_test:
       - $TEST_APP_CONFIG_OUTPUT_PATH
       - build_examples/artifact_index.json
       - build_test_apps/artifact_index.json
+      - tools/unit-test-app/builds/artifact_index.json
     expire_in: 1 week
   only:
     variables:
@@ -35,11 +36,11 @@ assign_test:
       - $BOT_LABEL_CUSTOM_TEST
   script:
     # assign example tests
-    - python tools/ci/python_packages/ttfw_idf/CIAssignExampleTest.py $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py example_test $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
     # assign test apps
-    - python tools/ci/python_packages/ttfw_idf/CIAssignExampleTest.py --custom-group test-apps --job-prefix test_app_test_ $IDF_PATH/tools/test_apps $CI_TARGET_TEST_CONFIG_FILE $TEST_APP_CONFIG_OUTPUT_PATH
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py custom_test  $IDF_PATH/tools/test_apps $CI_TARGET_TEST_CONFIG_FILE $TEST_APP_CONFIG_OUTPUT_PATH
     # assign unit test cases
-    - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py unit_test $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
     - ./tools/ci/retry_failed.sh git clone $TEST_SCRIPT_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
