@@ -46,7 +46,7 @@ check_examples_cmake_make:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   script:
-    - tools/ci/check_examples_cmake_make.sh
+    - python ${IDF_PATH}/tools/ci/check_examples_cmake_make.py
 
 check_rom_api_header:
   extends: .check_job_template_with_filter

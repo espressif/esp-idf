@@ -15,10 +15,11 @@
 #pragma once
 
 #include <stdbool.h>
-#include "descriptors_control.h"
-#include "board.h"
 #include "tusb.h"
+#include "tusb_option.h"
 #include "tusb_config.h"
+#include "tinyusb_types.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,9 @@ extern "C" {
 #   endif
 #endif
 
+/**
+ * @brief Configuration structure of the tinyUSB core
+ */
 typedef struct {
     tusb_desc_device_t *descriptor;
     char **string_descriptor;
@@ -74,6 +78,7 @@ typedef struct {
 
 esp_err_t tinyusb_driver_install(const tinyusb_config_t *config);
 // TODO esp_err_t tinyusb_driver_uninstall(void); (IDF-1474)
+
 
 #ifdef __cplusplus
 }

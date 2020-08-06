@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "esp_log.h"
+#include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp_rom_gpio.h"
+#include "esp32s2/rom/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "hal/gpio_ll.h"
 #include "hal/usb_hal.h"
 #include "soc/gpio_periph.h"
 #include "soc/usb_periph.h"
 #include "tinyusb.h"
+#include "descriptors_control.h"
+#include "tusb.h"
+#include "tusb_tasks.h"
+#include "sdkconfig.h"
+
+const static char *TAG = "TinyUSB";
 
 static void configure_pins(usb_hal_context_t *usb)
 {
@@ -34,7 +44,7 @@ static void configure_pins(usb_hal_context_t *usb)
                 esp_rom_gpio_connect_out_signal(iopin->pin, iopin->func, false, false);
             } else {
                 esp_rom_gpio_connect_in_signal(iopin->pin, iopin->func, false);
-                if ((iopin->pin != GPIO_MATRIX_CONST_ZERO_INPUT) && (iopin->pin != GPIO_MATRIX_CONST_ONE_INPUT)) {
+                if ((iopin->pin != GPIO_FUNC_IN_LOW) && (iopin->pin != GPIO_FUNC_IN_HIGH)) {
                     gpio_ll_input_enable(&GPIO, iopin->pin);
                 }
             }
@@ -62,7 +72,9 @@ static void configure_pins(usb_hal_context_t *usb)
 esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
 {
     tusb_desc_device_t *descriptor;
+    int res;
     char **string_descriptor;
+    ESP_LOGI(TAG, "Driver installation...");
 
     periph_module_reset(PERIPH_USB_MODULE);
     periph_module_enable(PERIPH_USB_MODULE);
@@ -90,6 +102,18 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
     tusb_set_descriptor(descriptor,
                         string_descriptor);
 
-    ESP_ERROR_CHECK(tusb_init());
+    res = tusb_init();
+    if (res != TUSB_ERROR_NONE) {
+        ESP_LOGE(TAG, "Can't initialize the TinyUSB stack. TinyUSB error: %d", res);
+        return res;
+    }
+#if !CONFIG_USB_DO_NOT_CREATE_TASK
+    res = tusb_run_task();
+    if (res != ESP_OK) {
+        ESP_LOGE(TAG, "Can't create the TinyUSB task.");
+        return res;
+    }
+#endif
+    ESP_LOGI(TAG, "Driver installed");
     return ESP_OK;
 }

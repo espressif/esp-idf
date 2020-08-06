@@ -9,19 +9,31 @@ menu "TinyUSB"
         help
             Adds support for TinyUSB
 
-    config USB_DEBUG
-        bool "Debug mode"
-        default n
+    menu "USB task configuration"
         depends on USB_ENABLED
-        help
-            Debug mode
+
+        config USB_DO_NOT_CREATE_TASK
+            bool "Do not create a TinyUSB task"
+            default n
+            help
+                This option allows to not create the FreeRTOS task during the driver initialization. User will have
+                 to handle TinyUSB events manually
+
+        config USB_TASK_PRIORITY
+            int "Set a priority of the TinyUSB task"
+            default 5
+            depends on !USB_DO_NOT_CREATE_TASK
+            help
+                User can change the priority of the main task according the application needs
+
+    endmenu
 
     menu "Descriptor configuration"
+        depends on USB_ENABLED
 
         config USB_DESC_USE_ESPRESSIF_VID
             bool "VID: Use an Espressif's default value"
             default y
-            depends on USB_ENABLED
             help
                 Long description
 
@@ -35,7 +47,6 @@ menu "TinyUSB"
         config USB_DESC_USE_DEFAULT_PID
             bool "PID: Use a default PID assigning"
             default y
-            depends on USB_ENABLED
             help
                 Default TinyUSB PID assigning uses values 0x4000...0x4007
 
@@ -49,31 +60,78 @@ menu "TinyUSB"
         config USB_DESC_BCDDEVICE
             hex "bcdDevice"
             default 0x0100
-            depends on USB_ENABLED
             help
                 Version of the firmware of the USB device
 
         config USB_DESC_MANUFACTURER_STRING
             string "Manufacturer"
             default "Espressif Systems"
-            depends on USB_ENABLED
             help
                 Name of the manufacturer of the USB device
 
         config USB_DESC_PRODUCT_STRING
             string "Product"
             default "Espressif Device"
-            depends on USB_ENABLED
             help
                 Name of the USB device
 
         config USB_DESC_SERIAL_STRING
             string "Serial string"
             default "123456"
-            depends on USB_ENABLED
             help
                 Specify serial number of the USB device
 
+        config USB_DESC_CDC_STRING
+            string "CDC Device String"
+            default "Espressif CDC Device"
+            depends on USB_CDC_ENABLED
+            help
+                Specify name of the CDC device
+
+        config USB_DESC_MSC_STRING
+            string "MSC Device String"
+            default "Espressif MSC Device"
+            depends on USB_MSC_ENABLED
+            help
+                Specify name of the MSC device
+
+        config USB_DESC_HID_STRING
+            string "HID Device String"
+            default "Espressif HID Device"
+            depends on USB_HID_ENABLED
+            help
+                Specify name of the HID device
+
     endmenu
+
+    config USB_CDC_ENABLED
+        bool "Enable USB Serial (CDC) TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable USB Serial (CDC) TinyUSB driver.
+
+    config USB_CDC_RX_BUFSIZE
+        int "CDC FIFO size of RX"
+        default 64
+        depends on USB_CDC_ENABLED
+        help
+            CDC FIFO size of RX
+
+    config USB_CDC_TX_BUFSIZE
+        int "CDC FIFO size of TX"
+        default 64
+        depends on USB_CDC_ENABLED
+        help
+            CDC FIFO size of TX
+
+
+    config USB_DEBUG_LEVEL
+        int "TinyUSB log level (0-3)"
+        default 0
+        range 0 3
+        depends on USB_ENABLED
+        help
+            Define amount of log output from TinyUSB
 
 endmenu

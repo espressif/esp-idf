@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "descriptors_control.h"
 #include "esp_log.h"
+#include "descriptors_control.h"
 
-static const char *TAG = "TUSB:descriptors_control";
+static const char *TAG = "tusb_desc";
 static tusb_desc_device_t s_descriptor;
 static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
-
+#define MAX_DESC_BUF_SIZE 32
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
@@ -29,7 +29,7 @@ uint8_t const desc_hid_report[] = {
 
 uint8_t const desc_configuration[] = {
     // interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
 #   if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
@@ -73,42 +73,41 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
     return desc_configuration;
 }
 
-static uint16_t _desc_str[32];
+static uint16_t _desc_str[MAX_DESC_BUF_SIZE];
 
-/**
- * @brief Invoked when received GET STRING DESCRIPTOR request.
- * Application returns pointer to descriptor, whose contents must exist long
- * enough for transfer to complete
- *
- * @param index
- * @return uint16_t const*
- */
-uint16_t const *tud_descriptor_string_cb(uint8_t index)
+// Invoked when received GET STRING DESCRIPTOR request
+// Application return pointer to descriptor, whose contents must exist long enough for transfer to complete
+uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
+    (void) langid;
+
     uint8_t chr_count;
 
-    if (index == 0) {
+    if ( index == 0) {
         memcpy(&_desc_str[1], s_str_descriptor[0], 2);
         chr_count = 1;
     } else {
         // Convert ASCII string into UTF-16
-        if (index >= sizeof(s_str_descriptor) /
-                sizeof(s_str_descriptor[0])) {
+
+        if ( index >= sizeof(s_str_descriptor) / sizeof(s_str_descriptor[0]) ) {
             return NULL;
         }
+
         const char *str = s_str_descriptor[index];
+
         // Cap at max char
         chr_count = strlen(str);
-        if (chr_count > 31) {
-            chr_count = 31;
+        if ( chr_count > MAX_DESC_BUF_SIZE - 1 ) {
+            chr_count = MAX_DESC_BUF_SIZE - 1;
         }
+
         for (uint8_t i = 0; i < chr_count; i++) {
             _desc_str[1 + i] = str[i];
         }
     }
 
-    // first byte is len, second byte is string type
-    _desc_str[0] = TUD_DESC_STR_HEADER(chr_count);
+    // first byte is length (including header), second byte is string type
+    _desc_str[0] = (TUSB_DESC_STRING << 8 ) | (2 * chr_count + 2);
 
     return _desc_str;
 }
