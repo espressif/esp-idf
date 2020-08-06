@@ -24,6 +24,7 @@
 #include <test_utils.h>
 #include <esp_partition.h>
 #include <esp_attr.h>
+#include "esp_log.h"
 
 TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
 {
