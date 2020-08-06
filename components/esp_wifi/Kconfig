@@ -323,6 +323,35 @@ menu "PHY"
             1.If your board is easy to be booted up with antenna disconnected.
             2.Because of your board design, each time when you do calibration, the result are too unstable.
             If unsure, choose 'y'.
+        
+    config ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC
+        bool "Keep PHY calibration data in RTC memory"
+        default y
+        help
+            Enabling this option keeps PHY calibration data in RTC memory where it will persist across deep sleep 
+            wakeup cycles, allowing optimization of WiFi initialization upon wakeup by avoiding the need to 
+            initialize NVS and load PHY data into memory.
+
+    choice ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC
+        depends on ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC
+        prompt "PHY calibration RTC memory location"
+        default ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC_SLOW
+        help
+            Select whether to keep PHY calibration data in RTC Slow Memory or RTC Fast Memory.
+
+            As RTC memory is limited, the region may be selected depending on the pressures of the particular 
+            application:
+
+            - Select RTC Slow Memory if available Fast Memory is low, or APP CPU may require access to PHY data.
+            
+            - Select RTC Fast Memory if available Slow Memory is low (eg. in use by ULP), and/or all accesses
+            (including WiFi initialization) are restricted to PRO CPU.
+
+        config ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC_SLOW
+            bool "RTC Slow Memory"
+        config ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC_FAST
+            bool "RTC Fast Memory"
+    endchoice
 
     menuconfig ESP32_PHY_INIT_DATA_IN_PARTITION
         bool "Use a partition to store PHY init data"

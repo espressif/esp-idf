@@ -147,6 +147,19 @@ static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
     {"US",  ESP_PHY_INIT_DATA_TYPE_FCC},
 };
 #endif
+
+#if CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC
+#if CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC_SLOW
+    #define PHY_RTC_DATA_ATTR    RTC_SLOW_ATTR
+#elif CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC_LOC_FAST
+    #define PHY_RTC_DATA_ATTR    RTC_FAST_ATTR
+#else
+    #error "undefined PHY RTC memory region"
+#endif
+static PHY_RTC_DATA_ATTR esp_phy_calibration_data_t s_rtc_cal_data;
+#endif // CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC
+
+
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
     if (xPortInIsrContext()) {
@@ -310,9 +323,10 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             else
 #endif
             if (ESP_CAL_DATA_CHECK_FAIL == register_chipv7_phy(init_data, calibration_data, mode)) {
-                ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", mode);
+                ESP_LOGW(TAG, "calibration data checksum failure, mode(%d)", mode);
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
                 if (mode != PHY_RF_CAL_FULL) {
+                    ESP_LOGD(TAG, "saving new calibration data");
                     esp_phy_store_cal_data_to_nvs(calibration_data);
                 }
 #endif
@@ -666,6 +680,31 @@ esp_err_t esp_phy_erase_cal_data_in_nvs(void)
     return err;
 }
 
+static esp_err_t phy_check_rf_cal_version(uint32_t *version)
+{
+    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
+    if (*version != cal_format_version) {
+        ESP_LOGD(TAG, "%s: expected calibration data format %d, found %d",
+                __func__, cal_format_version, *version);
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t phy_check_rf_cal_mac(uint8_t *mac)
+{
+    uint8_t sta_mac[6];
+    esp_efuse_mac_get_default(sta_mac);
+    if (memcmp(sta_mac, mac, sizeof(sta_mac)) != 0) {
+        ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
+                MACSTR ", found " MACSTR,
+                __func__, MAC2STR(sta_mac), MAC2STR(mac));
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         esp_phy_calibration_data_t* out_cal_data)
 {
@@ -677,11 +716,10 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         ESP_LOGD(TAG, "%s: failed to get cal_version (0x%x)", __func__, err);
         return err;
     }
-    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
-    if (cal_data_version != cal_format_version) {
-        ESP_LOGD(TAG, "%s: expected calibration data format %d, found %d",
-                __func__, cal_format_version, cal_data_version);
+    err = phy_check_rf_cal_version(&cal_data_version);
+    if(err != ESP_OK)
+    {
+        ESP_LOGD(TAG, "%s: invalid calibration data version", __func__);
         return ESP_FAIL;
     }
     uint8_t cal_data_mac[6];
@@ -695,12 +733,10 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         ESP_LOGD(TAG, "%s: invalid length of cal_mac (%d)", __func__, length);
         return ESP_ERR_INVALID_SIZE;
     }
-    uint8_t sta_mac[6];
-    esp_efuse_mac_get_default(sta_mac);
-    if (memcmp(sta_mac, cal_data_mac, sizeof(sta_mac)) != 0) {
-        ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
-                MACSTR ", found " MACSTR,
-                __func__, MAC2STR(sta_mac), MAC2STR(cal_data_mac));
+    err = phy_check_rf_cal_mac(cal_data_mac);
+    if(err != ESP_OK)
+    {
+        ESP_LOGD(TAG, "%s: calibration data MAC check failed", __func__);
         return ESP_FAIL;
     }
     length = sizeof(*out_cal_data);
@@ -766,12 +802,16 @@ static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* i
 
 void esp_phy_load_cal_and_init(phy_rf_module_t module)
 {
+#if (CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC)
+    esp_phy_calibration_data_t* cal_data = &s_rtc_cal_data;
+#else
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
     if (cal_data == NULL) {
         ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
         abort();
     }
+#endif
 
 #if CONFIG_ESP32_REDUCE_PHY_TX_POWER
     const esp_phy_init_data_t* phy_init_data = esp_phy_get_init_data();
@@ -801,7 +841,54 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     }
 #endif
 
+#ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC    // RTC (+/-NVS)
+    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_NONE;
+    uint8_t sta_mac[6];
+
+    bool rtc_cal_data_valid =   rtc_get_reset_reason(0) == DEEPSLEEP_RESET &&
+                                ESP_OK == phy_check_rf_cal_version(&cal_data->version) &&
+                                ESP_OK == phy_check_rf_cal_mac(cal_data->mac);
+    
+#ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE // RTC + NVS
+    esp_err_t err;
+    bool should_save = false;
+    if (!rtc_cal_data_valid)
+    {
+        err = esp_phy_load_cal_data_from_nvs(cal_data);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "RTC cal data invalid and NVS load failed (0x%x), falling back to full calibration", err);
+            calibration_mode = PHY_RF_CAL_FULL;
+            should_save = (err != ESP_ERR_NVS_NOT_INITIALIZED);
+        }
+        else
+        {
+            ESP_LOGD(TAG, "RTC cal data invalid, doing partial calibration on loaded data");
+            calibration_mode = PHY_RF_CAL_PARTIAL;
+            should_save = true;
+        }
+    }
+#else   // RTC only
+    if (!rtc_cal_data_valid) {
+        ESP_LOGD(TAG, "RTC cal data invalid, falling back to full calibration");
+        calibration_mode = PHY_RF_CAL_FULL;
+    }
+#endif
+
+    esp_efuse_mac_get_default(sta_mac);
+    memcpy(cal_data->mac, sta_mac, 6);
+    esp_phy_rf_init(init_data, calibration_mode, cal_data, module);
+
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+    if(should_save)
+    {
+        err = esp_phy_store_cal_data_to_nvs(cal_data);
+        if (err != ESP_OK)
+        {
+            ESP_LOGW(TAG, "cal data RTC->NVS failed (0x%x)", err);
+        }
+    }
+#endif
+#elif CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE //NVS only
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     uint8_t sta_mac[6];
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
@@ -819,8 +906,10 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
 
     if (calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) {
         err = esp_phy_store_cal_data_to_nvs(cal_data);
-    } else {
-        err = ESP_OK;
+        if (err != ESP_OK)
+        {
+            ESP_LOGW(TAG, "cal data store in NVS failed (0x%x)", err);
+        }
     }
 #else
     esp_phy_rf_init(init_data, PHY_RF_CAL_FULL, cal_data, module);
@@ -833,7 +922,9 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     esp_phy_release_init_data(init_data);
 #endif
 
+#if !(CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC)
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
+#endif
 }
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
