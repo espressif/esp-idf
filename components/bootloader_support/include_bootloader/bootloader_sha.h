@@ -26,7 +26,7 @@
 
 typedef void *bootloader_sha256_handle_t;
 
-bootloader_sha256_handle_t bootloader_sha256_start();
+bootloader_sha256_handle_t bootloader_sha256_start(void);
 
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len);
 
