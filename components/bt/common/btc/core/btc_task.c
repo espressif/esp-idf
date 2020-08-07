@@ -93,9 +93,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif  ///BLE_INCLUDED == TRUE
     [BTC_PID_BLE_HID]     = {NULL, NULL},
     [BTC_PID_SPPLIKE]     = {NULL, NULL},
-#if (GATTS_INCLUDED == TRUE)
+#if (BLUFI_INCLUDED == TRUE)
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
-#endif  ///GATTS_INCLUDED == TRUE
+#endif  ///BLUFI_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
 #endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
@@ -303,11 +303,12 @@ static void btc_deinit_mem(void) {
         osi_free(btc_creat_tab_env_ptr);
         btc_creat_tab_env_ptr = NULL;
     }
-
+#if (BLUFI_INCLUDED == TRUE)
     if (blufi_env_ptr) {
         osi_free(blufi_env_ptr);
         blufi_env_ptr = NULL;
     }
+#endif
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
@@ -357,11 +358,12 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)btc_creat_tab_env_ptr, 0, sizeof(esp_btc_creat_tab_t));
-
+#if (BLUFI_INCLUDED == TRUE)
     if ((blufi_env_ptr = (tBLUFI_ENV *)osi_malloc(sizeof(tBLUFI_ENV))) == NULL) {
         goto error_exit;
     }
     memset((void *)blufi_env_ptr, 0, sizeof(tBLUFI_ENV));
+#endif
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
