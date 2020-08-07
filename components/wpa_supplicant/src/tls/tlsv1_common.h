@@ -169,6 +169,7 @@ enum {
 #define TLS_EXT_TRUSTED_CA_KEYS			3 /* RFC 4366 */
 #define TLS_EXT_TRUNCATED_HMAC			4 /* RFC 4366 */
 #define TLS_EXT_STATUS_REQUEST			5 /* RFC 4366 */
+#define TLS_EXT_SIGNATURE_ALGORITHMS		13 /* RFC 5246 */
 #define TLS_EXT_SESSION_TICKET			35 /* RFC 4507 */
 
 #define TLS_EXT_PAC_OPAQUE TLS_EXT_SESSION_TICKET /* EAP-FAST terminology */
@@ -257,5 +258,17 @@ int tls_version_ok(u16 ver);
 const char * tls_version_str(u16 ver);
 int tls_prf(u16 ver, const u8 *secret, size_t secret_len, const char *label,
 	    const u8 *seed, size_t seed_len, u8 *out, size_t outlen);
+int tlsv12_key_x_server_params_hash(u16 tls_version, u8 hash_Alg,
+				    const u8 *client_random,
+				    const u8 *server_random,
+				    const u8 *server_params,
+				    size_t server_params_len, u8 *hash);
+int tls_key_x_server_params_hash(u16 tls_version, const u8 *client_random,
+				 const u8 *server_random,
+				 const u8 *server_params,
+				 size_t server_params_len, u8 *hash);
+int tls_verify_signature(u16 tls_version, struct crypto_public_key *pk,
+			 const u8 *data, size_t data_len,
+			 const u8 *pos, size_t len, u8 *alert);
 
 #endif /* TLSV1_COMMON_H */
