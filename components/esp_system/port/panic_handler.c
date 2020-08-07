@@ -156,7 +156,9 @@ static void print_backtrace(const void *f, int core)
 
     //Check if first frame is valid
     bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
-                       esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)));
+                       (esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)) ||
+                        /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+                        frame->exccause == EXCCAUSE_INSTR_PROHIBITED));
 
     uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
     while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
@@ -456,7 +458,7 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t *info, bool pseu
 
         info->description = "Exception was unhandled.";
 
-        if (info->reason == reason[0]) {
+        if (frame->exccause == EXCCAUSE_ILLEGAL) {
             info->details = print_illegal_instruction_details;
         }
     }

@@ -76,6 +76,10 @@ class PanicTestMixin(object):
         elf_sha256_len = int(sdkconfig.get("CONFIG_APP_RETRIEVE_LEN_ELF_SHA", "16"))
         self.expect("ELF file SHA256: " + elf_sha256[0:elf_sha256_len])
 
+    def expect_backtrace(self):
+        self.expect("Backtrace:")
+        self.expect_none("CORRUPTED")
+
     def __enter__(self):
         self._raw_data = None
         return self
@@ -155,14 +159,19 @@ def get_dut(env, app_config_name, test_name, qemu_wdt_enable=False):
     return dut
 
 
-def run_all(filename):
-    """ Helper function to run all test cases defined in a file; to be called from __main__. """
+def run_all(filename, case_filter=[]):
+    """ Helper function to run test cases defined in a file; to be called from __main__.
+        case_filter is an optional list of case names to run.
+        If not specified, all test cases are run.
+    """
     TinyFW.set_default_config(env_config_file=None, test_suite_name=TEST_SUITE)
     test_methods = SearchCases.Search.search_test_cases(filename)
     test_methods = filter(lambda m: not m.case_info["ignore"], test_methods)
     test_cases = CaseConfig.Parser.apply_config(test_methods, None)
     tests_failed = []
     for case in test_cases:
+        if case_filter and case.test_method.__name__ not in case_filter:
+            continue
         result = case.run()
         if not result:
             tests_failed.append(case)
