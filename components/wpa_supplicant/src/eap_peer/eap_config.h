@@ -26,8 +26,24 @@ struct eap_peer_config {
 	 */
 	size_t identity_len;
 
+	/**
+	 * anonymous_identity -  Anonymous EAP Identity
+	 *
+	 * This field is used for unencrypted use with EAP types that support
+	 * different tunnelled identity, e.g., EAP-TTLS, in order to reveal the
+	 * real identity (identity field) only to the authentication server.
+	 *
+	 * If not set, the identity field will be used for both unencrypted and
+	 * protected fields.
+	 *
+	 * This field can also be used with EAP-SIM/AKA/AKA' to store the
+	 * pseudonym identity.
+	 */
 	u8 *anonymous_identity;
 
+	/**
+	 * anonymous_identity_len - Length of anonymous_identity
+	 */
 	size_t anonymous_identity_len;
 
 	/**
@@ -148,23 +164,79 @@ struct eap_peer_config {
 	 */
 	u8 *ca_cert2;
 
+	/**
+	 * ca_path2 - Directory path for CA certificate files (PEM) (Phase 2)
+	 *
+	 * This path may contain multiple CA certificates in OpenSSL format.
+	 * Common use for this is to point to system trusted CA list which is
+	 * often installed into directory like /etc/ssl/certs. If configured,
+	 * these certificates are added to the list of trusted CAs. ca_cert
+	 * may also be included in that case, but it is not required.
+	 *
+	 * This field is like ca_path, but used for phase 2 (inside
+	 * EAP-TTLS/PEAP/FAST tunnel) authentication.
+	 */
 	u8 *ca_path2;
 
+	/**
+	 * client_cert2 - File path to client certificate file
+	 *
+	 * This field is like client_cert, but used for phase 2 (inside
+	 * EAP-TTLS/PEAP/FAST tunnel) authentication. Full path to the
+	 * file should be used since working directory may change when
+	 * wpa_supplicant is run in the background.
+	 *
+	 * Alternatively, a named configuration blob can be used by setting
+	 * this to blob://blob_name.
+	 */
 	u8 *client_cert2;
 
+	/**
+	 * private_key2 - File path to client private key file
+	 *
+	 * This field is like private_key, but used for phase 2 (inside
+	 * EAP-TTLS/PEAP/FAST tunnel) authentication. Full path to the
+	 * file should be used since working directory may change when
+	 * wpa_supplicant is run in the background.
+	 *
+	 * Alternatively, a named configuration blob can be used by setting
+	 * this to blob://blob_name.
+	 */
 	u8 *private_key2;
 
 	u8 *private_key2_password;
 
 	/**
 	 * eap_methods - Allowed EAP methods
+	 *
+	 * (vendor=EAP_VENDOR_IETF,method=EAP_TYPE_NONE) terminated list of
+	 * allowed EAP methods or %NULL if all methods are accepted.
 	 */
 	struct eap_method_type *eap_methods;
 
 
 	char *phase1;
 
+	/**
+	 * phase2 - Phase2 (inner authentication with TLS tunnel) parameters
+	 *
+	 * String with field-value pairs, e.g., "auth=MSCHAPV2" for EAP-PEAP or
+	 * "autheap=MSCHAPV2 autheap=MD5" for EAP-TTLS. "mschapv2_retry=0" can
+	 * be used to disable MSCHAPv2 password retry in authentication failure
+	 * cases.
+	 */
 	char *phase2;
+
+	/**
+	 * pcsc - Parameters for PC/SC smartcard interface for USIM and GSM SIM
+	 *
+	 * This field is used to configure PC/SC smartcard interface.
+	 * Currently, the only configuration is whether this field is %NULL (do
+	 * not use PC/SC) or non-NULL (e.g., "") to enable PC/SC.
+	 *
+	 * This field is used for EAP-SIM and EAP-AKA.
+	 */
+	char *pcsc;
 
 	/**
 	 * pin - PIN for USIM, GSM SIM, and smartcards
@@ -177,8 +249,80 @@ struct eap_peer_config {
 	 */
 	char *pin;
 
+	/**
+	 * pending_req_identity - Whether there is a pending identity request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_identity;
+
+	/**
+	 * pending_req_password - Whether there is a pending password request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_password;
+
+	/**
+	 * pending_req_pin - Whether there is a pending PIN request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_pin;
+
+	/**
+	 * pending_req_new_password - Pending password update request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_new_password;
+
+	/**
+	 * pending_req_passphrase - Pending passphrase request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_passphrase;
+
+	/**
+	 * pending_req_otp - Whether there is a pending OTP request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	char *pending_req_otp;
+
+	/**
+	 * mschapv2_retry - MSCHAPv2 retry in progress
+	 *
+	 * This field is used internally by EAP-MSCHAPv2 and should not be set
+	 * as part of configuration.
+	 */
 	int mschapv2_retry;
+
+	/**
+	 * new_password - New password for password update
+	 *
+	 * This field is used during MSCHAPv2 password update. This is normally
+	 * requested from the user through the control interface and not set
+	 * from configuration.
+	 */
 	u8 *new_password;
+
+	/**
+	 * new_password_len - Length of new_password field
+	 */
 	size_t new_password_len;
 
 	/**

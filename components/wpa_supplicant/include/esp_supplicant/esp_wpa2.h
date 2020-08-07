@@ -19,6 +19,14 @@
 
 #include "esp_err.h"
 
+typedef enum {
+    ESP_EAP_TTLS_PHASE2_EAP,
+    ESP_EAP_TTLS_PHASE2_MSCHAPV2,
+    ESP_EAP_TTLS_PHASE2_MSCHAP,
+    ESP_EAP_TTLS_PHASE2_PAP,
+    ESP_EAP_TTLS_PHASE2_CHAP
+} esp_eap_ttls_phase2_types ;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,6 +198,16 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_disable_time_check(bool disable);
   *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_get_disable_time_check(bool *disable);
+
+/**
+  * @brief  Set wpa2 enterprise ttls phase2 method
+  *
+  * @param  type: the type of phase 2 method to be used
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_sta_wpa2_ent_set_ttls_phase2_method(esp_eap_ttls_phase2_types type);
 
 #ifdef __cplusplus
 }

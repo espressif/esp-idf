@@ -27,6 +27,7 @@
 #include "rsn_supp/wpa.h"
 
 #include "crypto/crypto.h"
+#include "crypto/sha256.h"
 
 #include "utils/ext_password.h"
 #include "tls/tls.h"
@@ -191,6 +192,8 @@ void eap_peer_unregister_methods(void)
 	}
 }
 
+
+
 int eap_peer_register_methods(void)
 {
 	int ret = 0;
@@ -231,6 +234,90 @@ void eap_deinit_prev_method(struct eap_sm *sm, const char *txt)
 	sm->eap_method_priv = NULL;
 	sm->m = NULL;
 }
+
+static int eap_sm_set_scard_pin(struct eap_sm *sm,
+				struct eap_peer_config *conf)
+{
+	return -1;
+}
+
+static int eap_sm_get_scard_identity(struct eap_sm *sm,
+				     struct eap_peer_config *conf)
+{
+	return -1;
+}
+
+
+/**
+ * eap_sm_buildIdentity - Build EAP-Identity/Response for the current network
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @id: EAP identifier for the packet
+ * @encrypted: Whether the packet is for encrypted tunnel (EAP phase 2)
+ * Returns: Pointer to the allocated EAP-Identity/Response packet or %NULL on
+ * failure
+ *
+ * This function allocates and builds an EAP-Identity/Response packet for the
+ * current network. The caller is responsible for freeing the returned data.
+ */
+struct wpabuf * eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted)
+{
+	struct eap_peer_config *config = eap_get_config(sm);
+	struct wpabuf *resp;
+	const u8 *identity;
+	size_t identity_len;
+
+	if (config == NULL) {
+		wpa_printf(MSG_ERROR, "EAP: buildIdentity: configuration "
+			   "was not available");
+		return NULL;
+	}
+
+	if (sm->m && sm->m->get_identity &&
+	    (identity = sm->m->get_identity(sm, sm->eap_method_priv,
+					    &identity_len)) != NULL) {
+		wpa_hexdump_ascii(MSG_DEBUG, "EAP: using method re-auth "
+				  "identity", identity, identity_len);
+	} else if (!encrypted && config->anonymous_identity) {
+		identity = config->anonymous_identity;
+		identity_len = config->anonymous_identity_len;
+		wpa_hexdump_ascii(MSG_DEBUG, "EAP: using anonymous identity",
+				  identity, identity_len);
+	} else {
+		identity = config->identity;
+		identity_len = config->identity_len;
+		wpa_hexdump_ascii(MSG_DEBUG, "EAP: using real identity",
+				  identity, identity_len);
+	}
+
+	if (identity == NULL) {
+		wpa_printf(MSG_ERROR, "EAP: buildIdentity: identity "
+			   "configuration was not available");
+		if (config->pcsc) {
+			if (eap_sm_get_scard_identity(sm, config) < 0)
+				return NULL;
+			identity = config->identity;
+			identity_len = config->identity_len;
+			wpa_hexdump_ascii(MSG_DEBUG, "permanent identity from "
+					  "IMSI", identity, identity_len);
+		} else {
+			eap_sm_request_identity(sm);
+			return NULL;
+		}
+	} else if (config->pcsc) {
+		if (eap_sm_set_scard_pin(sm, config) < 0)
+			return NULL;
+	}
+
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY, identity_len,
+			     EAP_CODE_RESPONSE, id);
+	if (resp == NULL)
+		return NULL;
+
+	wpabuf_put_data(resp, identity, identity_len);
+
+	return resp;
+}
+
 
 struct wpabuf * eap_sm_build_identity_resp(struct eap_sm *sm, u8 id, int encrypted)
 {
@@ -389,6 +476,10 @@ int eap_peer_config_init(
 			  sm->config.new_password_len);
 	}
 
+    if (g_wpa_ttls_phase2_type) {
+        sm->config.phase2 = g_wpa_ttls_phase2_type;
+	}
+
 	return 0;
 	
 }
@@ -458,6 +549,65 @@ _out:
 	return ret;
 }
 
+#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
+static void eap_sm_request(struct eap_sm *sm, enum wpa_ctrl_req_type field,
+			   const char *msg, size_t msglen)
+{
+	struct eap_peer_config *config;
+
+	if (sm == NULL)
+		return;
+	config = eap_get_config(sm);
+	if (config == NULL)
+		return;
+
+	switch (field) {
+	case WPA_CTRL_REQ_EAP_IDENTITY:
+		config->pending_req_identity++;
+		break;
+	case WPA_CTRL_REQ_EAP_PASSWORD:
+		config->pending_req_password++;
+		break;
+	case WPA_CTRL_REQ_EAP_NEW_PASSWORD:
+		config->pending_req_new_password++;
+		break;
+	case WPA_CTRL_REQ_EAP_PIN:
+		config->pending_req_pin++;
+		break;
+	case WPA_CTRL_REQ_EAP_PASSPHRASE:
+		config->pending_req_passphrase++;
+		break;
+	default:
+		return;
+	}
+
+}
+#else /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+#define eap_sm_request(sm, type, msg, msglen) do { } while (0)
+#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+
+const char * eap_sm_get_method_name(struct eap_sm *sm)
+{
+	if (sm->m == NULL)
+		return "UNKNOWN";
+	return sm->m->name;
+}
+
+
+/**
+ * eap_sm_request_identity - Request identity from user (ctrl_iface)
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ *
+ * EAP methods can call this function to request identity information for the
+ * current network. This is normally called when the identity is not included
+ * in the network configuration. The request will be sent to monitor programs
+ * through the control interface.
+ */
+void eap_sm_request_identity(struct eap_sm *sm)
+{
+	eap_sm_request(sm, WPA_CTRL_REQ_EAP_IDENTITY, NULL, 0);
+}
+
 void eap_peer_blob_deinit(struct eap_sm *sm)
 {
 	int i;
@@ -495,6 +645,13 @@ struct eap_peer_config * eap_get_config(struct eap_sm *sm)
 	return &sm->config;
 }
 
+
+/**
+ * eap_get_config_identity - Get identity from the network configuration
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @len: Buffer for the length of the identity
+ * Returns: Pointer to the identity or %NULL if not found
+ */
 const u8 * eap_get_config_identity(struct eap_sm *sm, size_t *len)
 {
 	struct eap_peer_config *config = eap_get_config(sm);
@@ -504,6 +661,13 @@ const u8 * eap_get_config_identity(struct eap_sm *sm, size_t *len)
 	return config->identity;
 }
 
+
+/**
+ * eap_get_config_password - Get password from the network configuration
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @len: Buffer for the length of the password
+ * Returns: Pointer to the password or %NULL if not found
+ */
 const u8 * eap_get_config_password(struct eap_sm *sm, size_t *len)
 {
 	struct eap_peer_config *config = eap_get_config(sm);
@@ -513,6 +677,16 @@ const u8 * eap_get_config_password(struct eap_sm *sm, size_t *len)
 	return config->password;
 }
 
+
+/**
+ * eap_get_config_password2 - Get password from the network configuration
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @len: Buffer for the length of the password
+ * @hash: Buffer for returning whether the password is stored as a
+ * NtPasswordHash instead of plaintext password; can be %NULL if this
+ * information is not needed
+ * Returns: Pointer to the password or %NULL if not found
+ */
 const u8 * eap_get_config_password2(struct eap_sm *sm, size_t *len, int *hash)
 {
 	struct eap_peer_config *config = eap_get_config(sm);
@@ -525,6 +699,13 @@ const u8 * eap_get_config_password2(struct eap_sm *sm, size_t *len, int *hash)
 	return config->password;
 }
 
+
+/**
+ * eap_get_config_new_password - Get new password from network configuration
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @len: Buffer for the length of the new password
+ * Returns: Pointer to the new password or %NULL if not found
+ */
 const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len)
 {
 	struct eap_peer_config *config = eap_get_config(sm);

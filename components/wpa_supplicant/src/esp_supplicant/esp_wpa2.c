@@ -1148,3 +1148,28 @@ esp_err_t esp_wifi_sta_wpa2_ent_get_disable_time_check(bool *disable)
     return ESP_OK;
 }
 
+esp_err_t esp_wifi_sta_wpa2_ent_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
+{
+    switch (type) {
+        case ESP_EAP_TTLS_PHASE2_EAP:
+            g_wpa_ttls_phase2_type = "auth=EAP";
+            break;
+        case ESP_EAP_TTLS_PHASE2_MSCHAPV2:
+            g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
+            break;
+        case ESP_EAP_TTLS_PHASE2_MSCHAP:
+            g_wpa_ttls_phase2_type = "auth=MSCHAP";
+            break;
+        case ESP_EAP_TTLS_PHASE2_PAP:
+            g_wpa_ttls_phase2_type = "auth=PAP";
+            break;
+        case ESP_EAP_TTLS_PHASE2_CHAP:
+            g_wpa_ttls_phase2_type = "auth=CHAP";
+            break;
+        default:
+            g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
+            break;
+    }
+    return ESP_OK;
+}
+
