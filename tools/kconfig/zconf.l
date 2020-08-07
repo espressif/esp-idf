@@ -281,6 +281,7 @@ FILE *zconf_fopen(const char *name)
 	FILE *f;
 
 	f = fopen(name, "r");
+
 	if (!f && name != NULL && name[0] != '/') {
 		env = getenv(SRCTREE);
 		if (env) {
@@ -302,14 +303,14 @@ void zconf_initscan(const char *name)
 	current_buf = xmalloc(sizeof(*current_buf));
 	memset(current_buf, 0, sizeof(*current_buf));
 
-	current_file = file_lookup(name);
+	current_file = file_lookup(name, false);
 	current_file->lineno = 1;
 }
 
-void zconf_nextfile(const char *name)
+void zconf_nextfile(const char *name, bool relative)
 {
 	struct file *iter;
-	struct file *file = file_lookup(name);
+	struct file *file = file_lookup(name, relative);
 	struct buffer *buf = xmalloc(sizeof(*buf));
 	memset(buf, 0, sizeof(*buf));
 
@@ -348,7 +349,7 @@ void zconf_nextfile(const char *name)
 	current_file = file;
 }
 
-void zconf_nextfiles(const char *expression)
+void zconf_nextfiles(const char *expression, bool relative)
 {
 	/* Expand environment variables in 'expression' */
 	char* str = expand_environment(expression, zconf_curname(), zconf_lineno());
@@ -364,13 +365,13 @@ void zconf_nextfiles(const char *expression)
 			if(*pos == ' ') {
 				*pos = '\0'; // split buffer into multiple c-strings
 				if (strlen(pos + 1)) {
-					zconf_nextfile(pos + 1);
+					zconf_nextfile(pos + 1, relative);
 				}
 			}
 		}
 
 		if (strlen(str)) { // re-check as first character may have been a space
-			zconf_nextfile(str);
+			zconf_nextfile(str, relative);
 		}
 	}
 
