@@ -118,6 +118,13 @@ config BT_GATTS_ENABLE
     help
         This option can be disabled when the app work only on gatt client mode
 
+config BT_BLE_BLUFI_ENABLE
+    bool "Include blufi function"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option can be close when the app does not require blufi function.
+
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
     prompt "GATTS Service Change Mode"
     default BT_GATTS_SEND_SERVICE_CHANGE_AUTO
