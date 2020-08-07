@@ -71,6 +71,11 @@ void systimer_hal_counter_value_advance(systimer_counter_id_t counter_id, int64_
  */
 void systimer_hal_init(void);
 
+/**
+ * @brief  connect alarm unit to selected counter
+ */
+void systimer_hal_connect_alarm_counter(systimer_alarm_id_t alarm_id, systimer_counter_id_t counter_id);
+
 #ifdef __cplusplus
 }
 #endif

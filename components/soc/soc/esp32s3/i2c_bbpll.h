@@ -15,7 +15,7 @@
 #pragma once
 
 /**
- * @file i2c_apll.h
+ * @file i2c_bbpll.h
  * @brief Register definitions for digital PLL (BBPLL)
  *
  * This file lists register fields of BBPLL, located on an internal configuration
@@ -146,9 +146,9 @@
 #define I2C_BBPLL_OR_LOCK_MSB    7
 #define I2C_BBPLL_OR_LOCK_LSB    7
 
-#define I2C_BBPLL_BBADC_DELAY1        9
-#define I2C_BBPLL_BBADC_DELAY1_MSB    1
-#define I2C_BBPLL_BBADC_DELAY1_LSB    0
+#define I2C_BBPLL_OC_VCO_DBIAS        9
+#define I2C_BBPLL_OC_VCO_DBIAS_MSB    1
+#define I2C_BBPLL_OC_VCO_DBIAS_LSB    0
 
 #define I2C_BBPLL_BBADC_DELAY2        9
 #define I2C_BBPLL_BBADC_DELAY2_MSB    3

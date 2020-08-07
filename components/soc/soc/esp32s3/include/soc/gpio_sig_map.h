@@ -431,3 +431,4 @@
 #define RX_STATUS_IDX                 248
 #define CLK_GPIO_IDX                  249
 #define NBT_BLE_IDX                   250
+#define SIG_GPIO_OUT_IDX              256

@@ -1,8 +1,22 @@
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #pragma once
 
-#include "soc/adc_caps.h"
-#include "sdkconfig.h"
 #include <stdbool.h>
+#include <stdint.h>
+#include "sdkconfig.h"
+#include "soc/adc_caps.h"
 
 /**
  * @brief ADC units selected handle.
@@ -69,7 +83,7 @@ typedef enum {
     ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. Only ESP32 is supported. */
     ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. Only ESP32 is supported. */
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. Only ESP32 is supported. */
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if !CONFIG_IDF_TARGET_ESP32
     ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. Only ESP32S2 is supported. */
 #endif
     ADC_WIDTH_MAX,
@@ -112,7 +126,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if !CONFIG_IDF_TARGET_ESP32
 
 /**
  * @brief ADC digital controller (DMA mode) clock system setting.
@@ -338,4 +352,4 @@ typedef struct {
     uint32_t threshold;             /*!<Set monitor threshold of adc digital controller. */
 } adc_digi_monitor_t;
 
-#endif // CONFIG_IDF_TARGET_ESP32S2
+#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

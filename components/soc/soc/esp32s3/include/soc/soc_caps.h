@@ -5,4 +5,5 @@
 
 #pragma once
 
+#define SOC_TWAI_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 2

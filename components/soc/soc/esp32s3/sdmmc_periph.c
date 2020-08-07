@@ -26,9 +26,9 @@ const sdmmc_slot_info_t sdmmc_slot_info[2]  = {
         .d5_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D5,
         .d6_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D6,
         .d7_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D7,
-        .card_detect = HOST_CARD_DETECT_N_1_IDX,
-        .write_protect = HOST_CARD_WRITE_PRT_1_IDX,
-        .card_int = HOST_CARD_INT_N_1_IDX,
+        .card_detect = SDHOST_CARD_DETECT_N_1_IDX,
+        .write_protect = SDHOST_CARD_WRITE_PRT_1_IDX,
+        .card_int = SDHOST_CARD_INT_N_1_IDX,
         .width = 8
     },
     {
@@ -42,9 +42,9 @@ const sdmmc_slot_info_t sdmmc_slot_info[2]  = {
         .d5_gpio = -1,
         .d6_gpio = -1,
         .d7_gpio = -1,
-        .card_detect = HOST_CARD_DETECT_N_2_IDX,
-        .write_protect = HOST_CARD_WRITE_PRT_2_IDX,
-        .card_int = HOST_CARD_INT_N_2_IDX,
+        .card_detect = SDHOST_CARD_DETECT_N_2_IDX,
+        .write_protect = SDHOST_CARD_WRITE_PRT_2_IDX,
+        .card_int = SDHOST_CARD_INT_N_2_IDX,
         .width = 4
     }
 };

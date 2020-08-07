@@ -68,14 +68,14 @@ extern "C" {
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
-#define RTC_CNTL_DBIAS_0V90 0
-#define RTC_CNTL_DBIAS_0V95 1
-#define RTC_CNTL_DBIAS_1V00 2
-#define RTC_CNTL_DBIAS_1V05 3
-#define RTC_CNTL_DBIAS_1V10 4
-#define RTC_CNTL_DBIAS_1V15 5
-#define RTC_CNTL_DBIAS_1V20 6
-#define RTC_CNTL_DBIAS_1V25 7
+#define RTC_CNTL_DBIAS_0V90 0 //voltage is about 0.68v in fact
+#define RTC_CNTL_DBIAS_0V95 13
+#define RTC_CNTL_DBIAS_1V00 16
+#define RTC_CNTL_DBIAS_1V05 18
+#define RTC_CNTL_DBIAS_1V10 20
+#define RTC_CNTL_DBIAS_1V15 22
+#define RTC_CNTL_DBIAS_1V20 24
+#define RTC_CNTL_DBIAS_1V25 31 //voltage is about 1.34v in fact
 
 #define DELAY_FAST_CLK_SWITCH           3
 #define DELAY_SLOW_CLK_SWITCH           300
@@ -102,9 +102,9 @@ extern "C" {
 #define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
 #define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
-#define RTC_CK8M_ENABLE_WAIT_DEFAULT 1
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT 172
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
 /*
@@ -118,25 +118,13 @@ set sleep_init default param
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 
-#define APLL_SDM_STOP_VAL_1         0x09
-#define APLL_SDM_STOP_VAL_2_REV0    0x69
-#define APLL_SDM_STOP_VAL_2_REV1    0x49
-#define APLL_CAL_DELAY_1            0x0f
-#define APLL_CAL_DELAY_2            0x3f
-#define APLL_CAL_DELAY_3            0x1f
-
-#define i2c_ulp_block 0x61
-#define i2c_ulp_hostid 0x1
-#define i2c_ulp_ir_resetb 0
-#define i2c_ulp_ir_resetb_msb 0
-#define i2c_ulp_ir_resetb_lsb 0
-
 /**
  * @brief Possible main XTAL frequency values.
  *
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
+    RTC_XTAL_FREQ_32M = 32,
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
@@ -249,28 +237,6 @@ typedef struct {
     .dgm = 0, \
     .dbuf = 1, \
 }
-
-#if 0
-#define X32K_CONFIG_BOOTSTRAP_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 0, \
-}
-
-typedef struct {
-    x32k_config_t x32k_cfg;
-    uint32_t bt_lpck_div_num : 12;
-    uint32_t bt_lpck_div_a : 12;
-    uint32_t bt_lpck_div_b : 12;
-} x32k_bootstrap_config_t;
-
-#define X32K_BOOTSTRAP_CONFIG_DEFAULT() { \
-    .x32k_cfg = X32K_CONFIG_BOOTSTRAP_DEFAULT(), \
-    .bt_lpck_div_num = 2441, \
-    .bt_lpck_div_a = 32, \
-    .bt_lpck_div_b = 13, \
-}
-#endif
 
 typedef struct {
     uint16_t wifi_powerup_cycles : 7;
@@ -634,10 +600,10 @@ typedef struct {
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 3;         //!< set bias for digital domain, in active mode
-    uint32_t dig_dbias_slp : 3;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
-    uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
+    uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
+    uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
+    uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
+    uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t deep_slp_reject : 1;
     uint32_t light_slp_reject : 1;
@@ -661,9 +627,9 @@ typedef struct {
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DIG_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DIG_DBIAS_0V90, \
+    .dig_dbias_slp = RTC_CNTL_DIG_DBIAS_0V95, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_1V00, \
+    .rtc_dbias_slp = RTC_CNTL_DBIAS_0V95, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
@@ -757,6 +723,7 @@ typedef struct {
     uint32_t xtal_fpu : 1;
     uint32_t bbpll_fpu : 1;
     uint32_t cpu_waiti_clk_gate : 1;
+    uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
 } rtc_config_t;
 
 /**
@@ -774,7 +741,8 @@ typedef struct {
     .rtc_dboost_fpd = 1, \
     .xtal_fpu = 0, \
     .bbpll_fpu = 0, \
-    .cpu_waiti_clk_gate = 1\
+    .cpu_waiti_clk_gate = 1, \
+    .cali_ocode = 0 \
 }
 
 /**

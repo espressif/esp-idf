@@ -56,3 +56,4 @@
 // Only SPI1 supports this feature
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(host_id)    ((host_id) == 0)
 
+#define SOC_MEMSPI_IS_INDEPENDENT 1

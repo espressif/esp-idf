@@ -60,7 +60,6 @@ extern "C" {
 
 #define CACHE_DROM_MMU_MAX_END          0x400
 
-#define MMU_SIZE                        0x800
 #define ICACHE_MMU_SIZE                 0x800
 #define DCACHE_MMU_SIZE                 0x800
 

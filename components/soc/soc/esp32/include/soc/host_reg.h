@@ -812,8 +812,6 @@
 #define HOST_SLCHOST_STATE4_V  0xFF
 #define HOST_SLCHOST_STATE4_S  0
 
-#define HOST_SLCHOST_CONF_W_REG(pos) (HOST_SLCHOST_CONF_W0_REG+pos+(pos>23?4:0)+(pos>31?12:0))
-
 #define HOST_SLCHOST_CONF_W0_REG          (DR_REG_SLCHOST_BASE + 0x6C)
 /* HOST_SLCHOST_CONF3 : R/W ;bitpos:[31:24] ;default: 8'h0 ; */
 /*description: */
