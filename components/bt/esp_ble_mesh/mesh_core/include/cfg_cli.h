@@ -34,36 +34,39 @@ extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_CFG_CLI,   \
             bt_mesh_cfg_cli_op, NULL, cli_data)
 
-int bt_mesh_cfg_comp_data_get(struct bt_mesh_msg_ctx *ctx, u8_t page);
+int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, u8_t page);
 
-int bt_mesh_cfg_beacon_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_beacon_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_beacon_set(struct bt_mesh_msg_ctx *ctx, u8_t val);
+int bt_mesh_cfg_beacon_set(bt_mesh_client_common_param_t *param, u8_t val);
 
-int bt_mesh_cfg_ttl_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_ttl_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_ttl_set(struct bt_mesh_msg_ctx *ctx, u8_t val);
+int bt_mesh_cfg_ttl_set(bt_mesh_client_common_param_t *param, u8_t val);
 
-int bt_mesh_cfg_friend_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_friend_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_friend_set(struct bt_mesh_msg_ctx *ctx, u8_t val);
+int bt_mesh_cfg_friend_set(bt_mesh_client_common_param_t *param, u8_t val);
 
-int bt_mesh_cfg_gatt_proxy_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_gatt_proxy_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_gatt_proxy_set(struct bt_mesh_msg_ctx *ctx, u8_t val);
+int bt_mesh_cfg_gatt_proxy_set(bt_mesh_client_common_param_t *param, u8_t val);
 
-int bt_mesh_cfg_relay_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_relay_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_relay_set(struct bt_mesh_msg_ctx *ctx, u8_t new_relay, u8_t new_transmit);
+int bt_mesh_cfg_relay_set(bt_mesh_client_common_param_t *param,
+                          u8_t relay, u8_t retransmit);
 
-int bt_mesh_cfg_net_key_add(struct bt_mesh_msg_ctx *ctx, u16_t key_net_idx,
-                            const u8_t net_key[16]);
+int bt_mesh_cfg_net_key_add(bt_mesh_client_common_param_t *param,
+                            u16_t net_idx, const u8_t net_key[16]);
 
-int bt_mesh_cfg_app_key_add(struct bt_mesh_msg_ctx *ctx, u16_t key_net_idx,
-                            u16_t key_app_idx, const u8_t app_key[16]);
+int bt_mesh_cfg_app_key_add(bt_mesh_client_common_param_t *param,
+                            u16_t net_idx, u16_t app_idx,
+                            const u8_t app_key[16]);
 
-int bt_mesh_cfg_mod_app_bind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                             u16_t mod_app_idx, u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_app_bind(bt_mesh_client_common_param_t *param,
+                             u16_t elem_addr, u16_t app_idx,
+                             u16_t mod_id, u16_t cid);
 
 struct bt_mesh_cfg_mod_pub {
     u16_t addr;
@@ -74,30 +77,36 @@ struct bt_mesh_cfg_mod_pub {
     u8_t  transmit;
 };
 
-int bt_mesh_cfg_mod_pub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_pub_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_pub_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t mod_id, u16_t cid,
+int bt_mesh_cfg_mod_pub_set(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id, u16_t cid,
                             struct bt_mesh_cfg_mod_pub *pub);
 
-int bt_mesh_cfg_mod_sub_add(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t sub_addr, u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_add(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t sub_addr,
+                            u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_del(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t sub_addr, u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_del(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t sub_addr,
+                            u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_overwrite(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                  u16_t sub_addr, u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_overwrite(bt_mesh_client_common_param_t *param,
+                                  u16_t elem_addr, u16_t sub_addr,
+                                  u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_va_add(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               const u8_t label[16], u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_va_add(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, const u8_t label[16],
+                               u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_va_del(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               const u8_t label[16], u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_va_del(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, const u8_t label[16],
+                               u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_va_overwrite(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                     const u8_t label[16], u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_va_overwrite(bt_mesh_client_common_param_t *param,
+                                     u16_t elem_addr, const u8_t label[16],
+                                     u16_t mod_id, u16_t cid);
 
 struct bt_mesh_cfg_hb_sub {
     u16_t src;
@@ -105,10 +114,10 @@ struct bt_mesh_cfg_hb_sub {
     u8_t  period;
 };
 
-int bt_mesh_cfg_hb_sub_set(struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_cfg_hb_sub_set(bt_mesh_client_common_param_t *param,
                            struct bt_mesh_cfg_hb_sub *sub);
 
-int bt_mesh_cfg_hb_sub_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_hb_sub_get(bt_mesh_client_common_param_t *param);
 
 struct bt_mesh_cfg_hb_pub {
     u16_t dst;
@@ -119,15 +128,12 @@ struct bt_mesh_cfg_hb_pub {
     u16_t net_idx;
 };
 
-int bt_mesh_cfg_hb_pub_set(struct bt_mesh_msg_ctx *ctx,
-                           const struct bt_mesh_cfg_hb_pub *pub);
+int bt_mesh_cfg_hb_pub_set(bt_mesh_client_common_param_t *param,
+                           struct bt_mesh_cfg_hb_pub *pub);
 
-int bt_mesh_cfg_hb_pub_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_hb_pub_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_node_reset(struct bt_mesh_msg_ctx *ctx);
-
-s32_t bt_mesh_cfg_cli_timeout_get(void);
-void bt_mesh_cfg_cli_timeout_set(s32_t timeout);
+int bt_mesh_cfg_node_reset(bt_mesh_client_common_param_t *param);
 
 /* Configuration Client Status Message Context */
 
@@ -244,53 +250,61 @@ struct bt_mesh_cfg_lpn_pollto_status {
     s32_t timeout;
 };
 
-int bt_mesh_cfg_mod_pub_va_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               u16_t mod_id, u16_t cid, const u8_t label[16],
+int bt_mesh_cfg_mod_pub_va_set(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, u16_t mod_id,
+                               u16_t cid, const u8_t label[16],
                                struct bt_mesh_cfg_mod_pub *pub);
 
-int bt_mesh_cfg_mod_sub_del_all(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_del_all(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_sub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t mod_id);
+int bt_mesh_cfg_mod_sub_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id);
 
-int bt_mesh_cfg_mod_sub_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_sub_get_vnd(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_net_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
-                               const u8_t net_key[16]);
+int bt_mesh_cfg_net_key_update(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, const u8_t net_key[16]);
 
-int bt_mesh_cfg_net_key_delete(struct bt_mesh_msg_ctx *ctx, u16_t net_idx);
+int bt_mesh_cfg_net_key_delete(bt_mesh_client_common_param_t *param, u16_t net_idx);
 
-int bt_mesh_cfg_net_key_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_net_key_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_app_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
-                               u16_t app_idx, const u8_t app_key[16]);
+int bt_mesh_cfg_app_key_update(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, u16_t app_idx,
+                               const u8_t app_key[16]);
 
-int bt_mesh_cfg_app_key_delete(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u16_t app_idx);
+int bt_mesh_cfg_app_key_delete(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, u16_t app_idx);
 
-int bt_mesh_cfg_app_key_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx);
+int bt_mesh_cfg_app_key_get(bt_mesh_client_common_param_t *param, u16_t net_idx);
 
-int bt_mesh_cfg_node_identity_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx);
+int bt_mesh_cfg_node_identity_get(bt_mesh_client_common_param_t *param, u16_t net_idx);
 
-int bt_mesh_cfg_node_identity_set(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u8_t identity);
+int bt_mesh_cfg_node_identity_set(bt_mesh_client_common_param_t *param,
+                                  u16_t net_idx, u8_t identity);
 
-int bt_mesh_cfg_mod_app_unbind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               u16_t app_idx, u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_app_unbind(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, u16_t app_idx,
+                               u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_mod_app_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t mod_id);
+int bt_mesh_cfg_mod_app_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id);
 
-int bt_mesh_cfg_mod_app_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid);
+int bt_mesh_cfg_mod_app_get_vnd(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid);
 
-int bt_mesh_cfg_kr_phase_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx);
+int bt_mesh_cfg_kr_phase_get(bt_mesh_client_common_param_t *param, u16_t net_idx);
 
-int bt_mesh_cfg_kr_phase_set(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u8_t transition);
+int bt_mesh_cfg_kr_phase_set(bt_mesh_client_common_param_t *param,
+                             u16_t net_idx, u8_t transition);
 
-int bt_mesh_cfg_lpn_timeout_get(struct bt_mesh_msg_ctx *ctx, u16_t lpn_addr);
+int bt_mesh_cfg_lpn_timeout_get(bt_mesh_client_common_param_t *param, u16_t lpn_addr);
 
-int bt_mesh_cfg_net_transmit_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_cfg_net_transmit_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_cfg_net_transmit_set(struct bt_mesh_msg_ctx *ctx, u8_t transmit);
+int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, u8_t transmit);
 
 #ifdef __cplusplus
 }

@@ -268,24 +268,20 @@ int bt_mesh_scheduler_cli_deinit(struct bt_mesh_model *model, bool primary);
  *
  * @param[in]  common: Message common information structure
  * @param[in]  get:    Pointer of time scene get message value
- * @param[out] status: Pointer of time scene status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common,
-                                        void *get, void *status);
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get);
 
 /**
  * @brief This function is called to set scene states.
  *
  * @param[in]  common: Message common information structure
  * @param[in]  set:    Pointer of time scene set message value
- * @param[out] status: Pointer of time scene status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common,
-                                        void *set, void *status);
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set);
 
 #ifdef __cplusplus
 }
