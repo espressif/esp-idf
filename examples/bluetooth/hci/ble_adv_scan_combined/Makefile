@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_adv
+PROJECT_NAME := ble_adv_scan
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/bluetooth/hci/hci_common_component
 
