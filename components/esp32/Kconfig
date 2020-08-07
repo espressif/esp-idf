@@ -4,6 +4,11 @@ menu "ESP32-specific"
     # not working so we just hide all items here
     visible if IDF_TARGET_ESP32
 
+    config ESP32_ECO3_CACHE_LOCK_FIX
+        bool
+        default y
+        depends on !FREERTOS_UNICORE && ESP32_SPIRAM_SUPPORT
+
     choice ESP32_REV_MIN
         prompt "Minimum Supported ESP32 Revision"
         default ESP32_REV_MIN_0
@@ -19,6 +24,7 @@ menu "ESP32-specific"
             bool "Rev 2"
         config ESP32_REV_MIN_3
             bool "Rev 3"
+            select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
     endchoice
 
     config ESP32_REV_MIN
