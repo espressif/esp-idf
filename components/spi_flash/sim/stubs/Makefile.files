@@ -30,6 +30,7 @@ INCLUDE_DIRS := \
 	esp_timer/include \
 	bootloader_support/include \
 	app_update/include \
+	hal/include \
 	spi_flash/include \
 	)
 

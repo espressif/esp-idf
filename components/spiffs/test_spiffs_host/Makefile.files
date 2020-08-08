@@ -35,5 +35,6 @@ INCLUDE_DIRS := \
 	bootloader_support/include \
 	app_update/include \
 	spi_flash/include \
+	hal/include \
 	wear_levelling/include \
 	)

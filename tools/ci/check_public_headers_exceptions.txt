@@ -12,7 +12,7 @@ components/freertos/xtensa/include/freertos/
 
 components/log/include/esp_log_internal.h
 
-components/soc/include/hal/
+components/hal/
 components/soc/include/soc/
 
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
@@ -104,10 +104,6 @@ components/lwip/lwip/src/include/lwip/prot/nd6.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/soc/src/esp32/rtc_clk_common.h
 components/soc/src/esp32/i2c_rtc_clk.h
-components/soc/src/esp32/include/hal/cpu_ll.h
-components/soc/src/esp32/include/hal/timer_ll.h
-components/soc/src/esp32/include/hal/cpu_ll.h
-components/soc/src/esp32/include/hal/timer_ll.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/spi_flash.h

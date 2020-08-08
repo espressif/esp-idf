@@ -24,6 +24,7 @@ if(BOOTLOADER_BUILD)
     "src/${IDF_TARGET}/flash_encrypt.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
+    list(APPEND priv_requires hal)
 else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")

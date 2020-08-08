@@ -25,5 +25,5 @@ idf_component_register(SRCS ${srcs}
                     PRIV_REQUIRES ${priv_requires})
 
 if(NOT BOOTLOADER_BUILD)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libhal.a")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a")
 endif()
