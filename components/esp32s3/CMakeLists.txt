@@ -22,6 +22,8 @@ else()
              "pm_esp32s3.c"
              "pm_trace.c"
              "sleep_modes.c"
+             "spiram.c"
+             "spiram_psram.c"
              "system_api_esp32s3.c")
     set(include_dirs "include")
 

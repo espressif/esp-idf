@@ -64,6 +64,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/spiram.h"
 #include "esp32s2/brownout.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/spiram.h"
+#include "esp32s3/brownout.h"
 #endif
 /***********************************************/
 
