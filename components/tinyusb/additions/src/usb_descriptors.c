@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sdkconfig.h"
 #include "usb_descriptors.h"
+#include "sdkconfig.h"
 
 #define USB_TUSB_PID (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | _PID_MAP(MIDI, 3))
 
@@ -45,7 +45,8 @@ tusb_desc_device_t descriptor_tinyusb = {
     .iProduct = 0x02,
     .iSerialNumber = 0x03,
 
-    .bNumConfigurations = 0x01};
+    .bNumConfigurations = 0x01
+};
 
 tusb_desc_strarray_device_t descriptor_str_tinyusb = {
     // array of pointer to string descriptors
@@ -97,7 +98,8 @@ tusb_desc_device_t descriptor_kconfig = {
     .iProduct = 0x02,
     .iSerialNumber = 0x03,
 
-    .bNumConfigurations = 0x01};
+    .bNumConfigurations = 0x01
+};
 
 tusb_desc_strarray_device_t descriptor_str_kconfig = {
     // array of pointer to string descriptors

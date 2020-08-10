@@ -25,25 +25,19 @@
  */
 
 #pragma once
+#include "tusb_option.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-
-//--------------------------------------------------------------------
-// COMMON CONFIGURATION
-//--------------------------------------------------------------------
-#define OPT_MCU_ESP32_S2 900 // TODO remove after rebase to the last TUSB (IDF-1473)
-#define CFG_TUSB_MCU OPT_MCU_ESP32_S2
+/*                      */
+/* COMMON CONFIGURATION */
+/*                      */
 
 #define CFG_TUSB_RHPORT0_MODE       OPT_MODE_DEVICE
 #define CFG_TUSB_OS                 OPT_OS_FREERTOS
-
-// CFG_TUSB_DEBUG is defined by compiler in DEBUG build
-#define CFG_TUSB_DEBUG CONFIG_USB_DEBUG
 
 /* USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
  * Tinyusb use follows macros to declare transferring memory so that they can be put
@@ -60,15 +54,33 @@ extern "C" {
 #   define CFG_TUSB_MEM_ALIGN          TU_ATTR_ALIGNED(4)
 #endif
 
+/*                      */
+/* DRIVER CONFIGURATION */
+/*                      */
 
-
-//--------------------------------------------------------------------
-// DEVICE CONFIGURATION
-//--------------------------------------------------------------------
-
+#define CFG_TUD_MAINTASK_SIZE 4096
 #define CFG_TUD_ENDOINT0_SIZE 64
 
-//------kconfig adaptor part -------//
+// CDC FIFO size of TX and RX
+#define CFG_TUD_CDC_RX_BUFSIZE CONFIG_USB_CDC_RX_BUFSIZE
+#define CFG_TUD_CDC_TX_BUFSIZE CONFIG_USB_CDC_TX_BUFSIZE
+
+// MSC Buffer size of Device Mass storage:
+#define CFG_TUD_MSC_BUFSIZE CONFIG_USB_MSC_BUFSIZE
+
+// HID buffer size Should be sufficient to hold ID (if any) + Data
+#define CFG_TUD_HID_BUFSIZE CONFIG_USB_HID_BUFSIZE
+
+#define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
+#define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
+#define CFG_TUD_HID CONFIG_USB_HID_ENABLED
+#define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
+#define CFG_TUD_CUSTOM_CLASS CONFIG_USB_CUSTOM_CLASS_ENABLED
+
+/*         */
+/* KCONFIG */
+/*         */
+
 #ifndef CONFIG_USB_CDC_ENABLED
 #   define CONFIG_USB_CDC_ENABLED 0
 #endif
@@ -88,26 +100,6 @@ extern "C" {
 #ifndef CONFIG_USB_CUSTOM_CLASS_ENABLED
 #   define CONFIG_USB_CUSTOM_CLASS_ENABLED 0
 #endif
-
-//------------- CLASS -------------//
-#define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
-#define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
-#define CFG_TUD_HID CONFIG_USB_HID_ENABLED
-
-#define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
-#define CFG_TUD_CUSTOM_CLASS CONFIG_USB_CUSTOM_CLASS_ENABLED
-
-
-
-// CDC FIFO size of TX and RX
-#define CFG_TUD_CDC_RX_BUFSIZE CONFIG_USB_CDC_RX_BUFSIZE
-#define CFG_TUD_CDC_TX_BUFSIZE CONFIG_USB_CDC_TX_BUFSIZE
-
-// MSC Buffer size of Device Mass storage:
-#define CFG_TUD_MSC_BUFSIZE CONFIG_USB_MSC_BUFSIZE
-
-// HID buffer size Should be sufficient to hold ID (if any) + Data
-#define CFG_TUD_HID_BUFSIZE CONFIG_USB_HID_BUFSIZE
 
 #ifdef __cplusplus
 }

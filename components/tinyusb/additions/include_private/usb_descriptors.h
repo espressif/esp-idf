@@ -15,16 +15,20 @@
 #pragma once
 
 #include "tusb.h"
+#include "tinyusb_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
 
-#define USB_ESPRESSIF_VID 0x303A
+extern tusb_desc_device_t descriptor_tinyusb;
+extern tusb_desc_strarray_device_t descriptor_str_tinyusb;
 
-#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 7
-typedef char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
+extern tusb_desc_device_t descriptor_kconfig;
+extern tusb_desc_strarray_device_t descriptor_str_kconfig;
 
-tusb_desc_device_t descriptor_tinyusb;
-tusb_desc_strarray_device_t descriptor_str_tinyusb;
-
-tusb_desc_device_t descriptor_kconfig;
-tusb_desc_strarray_device_t descriptor_str_kconfig;
+#ifdef __cplusplus
+}
+#endif

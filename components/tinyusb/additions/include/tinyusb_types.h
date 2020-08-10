@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) Co. Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,32 +18,14 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
-#include <stdint.h>
-// Espressif
-#include "driver/periph_ctrl.h"
-#include "freertos/xtensa_api.h"
-#include "esp_intr_alloc.h"
-#include "esp_log.h"
-#include "soc/dport_reg.h"
-#include "soc/usb_periph.h"
-#include "tusb_config.h"
-// TinyUSB
-#include "tusb_option.h"
-#include "descriptors_control.h"
-#include "device/dcd.h"
+#define USB_ESPRESSIF_VID 0x303A
+#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 7
 
+typedef enum{
+    TINYUSB_USBDEV_0,
+} tinyusb_usbdev_t;
 
-#define USB_EP_DIRECTIONS 2
-#define USB_MAX_EP_NUM 16
-
-typedef struct {
-    uint8_t *buffer;
-    uint16_t total_len;
-    uint16_t queued_len;
-    uint16_t max_size;
-    bool short_packet;
-} xfer_ctl_t;
+typedef char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 
 #ifdef __cplusplus
 }
