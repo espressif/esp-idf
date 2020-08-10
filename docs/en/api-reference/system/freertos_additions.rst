@@ -210,6 +210,9 @@ using :cpp:func:`xRingbufferReceiveUpTo` and :cpp:func:`vRingbufferReturnItem`
 For ISR safe versions of the functions used above, call :cpp:func:`xRingbufferSendFromISR`, :cpp:func:`xRingbufferReceiveFromISR`,
 :cpp:func:`xRingbufferReceiveSplitFromISR`, :cpp:func:`xRingbufferReceiveUpToFromISR`, and :cpp:func:`vRingbufferReturnItemFromISR`
 
+.. note::
+
+    Two calls to RingbufferReceive[UpTo][FromISR]() are required if the bytes wraps around the end of the ring buffer.
 
 Sending to Ring Buffer
 ^^^^^^^^^^^^^^^^^^^^^^
