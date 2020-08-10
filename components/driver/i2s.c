@@ -43,7 +43,7 @@
 static const char* I2S_TAG = "I2S";
 
 #define I2S_CHECK(a, str, ret) if (!(a)) {                                              \
-        ESP_LOGE(I2S_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);       \
+        ESP_LOGE(I2S_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                    \
         return (ret);                                                                   \
         }
 

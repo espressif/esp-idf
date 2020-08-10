@@ -25,7 +25,7 @@ static const char *RTCIO_TAG = "RTCIO";
 
 #define RTCIO_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
-        ESP_LOGE(RTCIO_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
+        ESP_LOGE(RTCIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);              \
         return (ret_val);                                                           \
     }                                                                               \
 })

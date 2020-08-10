@@ -59,7 +59,7 @@ static SemaphoreHandle_t rtc_touch_mux = NULL;
 static const char *TOUCH_TAG = "TOUCH_SENSOR";
 #define TOUCH_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
-        ESP_LOGE(TOUCH_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
+        ESP_LOGE(TOUCH_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);              \
         return (ret_val);                                                           \
     }                                                                               \
 })
