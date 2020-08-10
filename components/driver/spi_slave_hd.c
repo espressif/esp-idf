@@ -222,7 +222,7 @@ static void rx_invoke(spi_slave_hd_slot_t* host)
 static inline IRAM_ATTR BaseType_t intr_check_clear_callback(spi_slave_hd_slot_t* host, spi_event_t ev, slave_cb_t cb)
 {
     BaseType_t cb_awoken = pdFALSE;
-    if (spi_slave_hd_hal_check_clear_event(&host->hal, ev)) {
+    if (spi_slave_hd_hal_check_clear_event(&host->hal, ev) && cb) {
         spi_slave_hd_event_t event = {.event = ev};
         cb(host->callback.arg, &event, &cb_awoken);
     }
