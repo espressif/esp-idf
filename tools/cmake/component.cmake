@@ -463,7 +463,9 @@ function(idf_component_register)
     idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
     add_compile_options("${compile_definitions}")
 
-    list(REMOVE_ITEM common_reqs ${component_lib})
+    if(common_reqs) # check whether common_reqs exists, this may be the case in minimalistic host unit test builds
+        list(REMOVE_ITEM common_reqs ${component_lib})
+    endif()
     link_libraries(${common_reqs})
 
     idf_build_get_property(config_dir CONFIG_DIR)
