@@ -846,7 +846,7 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     uint8_t sta_mac[6];
 
     bool rtc_cal_data_valid =   rtc_get_reset_reason(0) == DEEPSLEEP_RESET &&
-                                ESP_OK == phy_check_rf_cal_version(&cal_data->version) &&
+                                ESP_OK == phy_check_rf_cal_version((uint32_t*)&cal_data->version) &&
                                 ESP_OK == phy_check_rf_cal_mac(cal_data->mac);
     
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE // RTC + NVS
