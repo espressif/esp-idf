@@ -1360,7 +1360,7 @@
 
 /* The maximum number of ports supported. */
 #ifndef MAX_RFC_PORTS
-#define MAX_RFC_PORTS               16 /*max is 30*/
+#define MAX_RFC_PORTS               8 /*max is 30*/
 #endif
 
 /* The maximum simultaneous links to different devices. */

@@ -2257,7 +2257,7 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
             }
         } else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4)) {
             /* the remote features are not known yet */
-            BTM_TRACE_DEBUG("%s: (%s) remote features unknown!!sec_flags:0x%02x\n", __FUNCTION__,
+            BTM_TRACE_ERROR("%s: (%s) remote features unknown!!sec_flags:0x%02x\n", __FUNCTION__,
                             (is_originator) ? "initiator" : "acceptor", p_dev_rec->sec_flags);
 
             p_dev_rec->sm4 |= BTM_SM4_REQ_PEND;
