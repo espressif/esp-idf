@@ -326,7 +326,7 @@ menu "PHY"
         
     config ESP32_PHY_CALIBRATION_AND_DATA_IN_RTC
         bool "Keep PHY calibration data in RTC memory"
-        default y
+        default n
         help
             Enabling this option keeps PHY calibration data in RTC memory where it will persist across deep sleep 
             wakeup cycles, allowing optimization of WiFi initialization upon wakeup by avoiding the need to 
