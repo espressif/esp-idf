@@ -772,7 +772,6 @@ const struct bt_mesh_model_op light_lc_cli_op[] = {
 static int light_get_state(bt_mesh_client_common_param_t *common, void *value)
 {
     NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_LIGHT_GET_STATE_MSG_LEN);
-    int err = 0;
 
     bt_mesh_model_msg_init(&msg, common->opcode);
 
@@ -790,14 +789,7 @@ static int light_get_state(bt_mesh_client_common_param_t *common, void *value)
         }
     }
 
-    err = bt_mesh_client_send_msg(common->model, common->opcode, &common->ctx, &msg,
-                                  timeout_handler, common->msg_timeout, true,
-                                  common->cb, common->cb_data);
-    if (err) {
-        BT_ERR("Failed to send Lighting Get message (err %d)", err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(common, &msg, true, timeout_handler);
 }
 
 static int light_set_state(bt_mesh_client_common_param_t *common,
@@ -1028,21 +1020,14 @@ static int light_set_state(bt_mesh_client_common_param_t *common,
         goto end;
     }
 
-    err = bt_mesh_client_send_msg(common->model, common->opcode, &common->ctx, msg,
-                                  timeout_handler, common->msg_timeout, need_ack,
-                                  common->cb, common->cb_data);
-    if (err) {
-        BT_ERR("Failed to send Lighting Set message (err %d)", err);
-    }
+    err = bt_mesh_client_send_msg(common, msg, need_ack, timeout_handler);
 
 end:
     bt_mesh_free_buf(msg);
-
     return err;
 }
 
-int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common,
-                                   void *get, void *status)
+int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *get)
 {
     bt_mesh_light_client_t *client = NULL;
 
@@ -1095,8 +1080,7 @@ int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common,
     return light_get_state(common, get);
 }
 
-int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common,
-                                   void *set, void *status)
+int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set)
 {
     bt_mesh_light_client_t *client = NULL;
     u16_t length = 0U;
