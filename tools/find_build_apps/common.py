@@ -147,7 +147,8 @@ class BuildItem(object):
         return self._expand(self._build_log_path)
 
     def __repr__(self):
-        return "Build app {} for target {}, sdkconfig {} in {}".format(
+        return "({}) Build app {} for target {}, sdkconfig {} in {}".format(
+            self.build_system,
             self.app_dir,
             self.target,
             self.sdkconfig_path or "(default)",

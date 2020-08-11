@@ -35,6 +35,7 @@ tools/build_apps.py
 tools/check_kconfigs.py
 tools/check_python_dependencies.py
 tools/ci/apply_bot_filter.py
+tools/ci/build_template_app.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/check_build_warnings.py

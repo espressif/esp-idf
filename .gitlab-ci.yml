@@ -142,6 +142,48 @@ before_script:
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
     - *fetch_submodules
 
+.build_template_app_template:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
+    SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+    BUILD_DIR: "@t/@w"
+    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
+    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
+    BUILD_COMMAND_ARGS: ""
+  artifacts:
+    when: always
+    paths:
+      - log_template_app/*
+      - size_info.txt
+      - build_template_app/**/size.json
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - ./tools/ci/retry_failed.sh git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
+    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - cd components/esp_wifi/lib
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
+
 include:
   - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
