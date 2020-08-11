@@ -30,6 +30,7 @@
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/esp_timer_private.h"
+#include "esp_private/system_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rtc.h"

@@ -21,6 +21,8 @@
 #include "soc/rtc.h"
 #include "esp_rom_sys.h"
 
+#include "esp_private/system_internal.h"
+
 #include "esp_time_impl.h"
 
 #include "sdkconfig.h"

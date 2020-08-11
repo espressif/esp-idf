@@ -28,6 +28,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_private/system_internal.h"
+
 #include "soc/spinlock.h"
 #include "soc/rtc.h"
 
