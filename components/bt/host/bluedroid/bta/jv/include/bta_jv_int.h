@@ -80,6 +80,12 @@ typedef struct {
     tBTA_JV_DM_CBACK   *p_cback;
 } tBTA_JV_API_ENABLE;
 
+/* data type for BTA_JV_API_DISABLE_EVT */
+typedef struct {
+    BT_HDR          hdr;
+    tBTA_JV_RFCOMM_CBACK   *p_cback;
+} tBTA_JV_API_DISABLE;
+
 /* data type for BTA_JV_API_START_DISCOVERY_EVT */
 typedef struct {
     BT_HDR      hdr;
@@ -300,6 +306,7 @@ typedef struct {
     UINT32          handle;
     tBTA_JV_RFC_CB  *p_cb;
     tBTA_JV_PCB     *p_pcb;
+    tBTA_JV_RFCOMM_CBACK *p_cback;
     void            *user_data;
 } tBTA_JV_API_RFCOMM_CLOSE;
 
@@ -326,6 +333,8 @@ typedef struct {
     BT_HDR      hdr;
     INT32       type;       /* One of BTA_JV_CONN_TYPE_ */
     UINT16      scn;
+    tBTA_JV_RFCOMM_CBACK *p_cback;
+    void        *user_data;
 } tBTA_JV_API_FREE_CHANNEL;
 
 /* data type for BTA_JV_API_ALLOC_CHANNEL_EVT */
@@ -340,6 +349,7 @@ typedef union {
     /* GKI event buffer header */
     BT_HDR                          hdr;
     tBTA_JV_API_ENABLE              enable;
+    tBTA_JV_API_DISABLE             disable;
     tBTA_JV_API_START_DISCOVERY     start_discovery;
     tBTA_JV_API_ALLOC_CHANNEL       alloc_channel;
     tBTA_JV_API_FREE_CHANNEL        free_channel;
