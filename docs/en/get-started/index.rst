@@ -145,6 +145,10 @@ Some tools need to be installed on the computer before proceeding to the next st
 .. _Linux: ../get-started/linux-setup.html
 .. _Mac OS: ../get-started/macos-setup.html
 
+.. note::
+
+    This guide uses the directory ``~/esp`` on Linux and macOS or ``%userprofile%\esp`` on Windows as an installation folder for ESP-IDF. You can use any directory, but you will need to adjust paths for the commands respectively. Keep in mind that ESP-IDF does not support spaces in paths.
+
 .. _get-started-get-esp-idf:
 
 Step 2. Get ESP-IDF
@@ -153,10 +157,6 @@ Step 2. Get ESP-IDF
 To build applications for the {IDF_TARGET_NAME}, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
 To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``, following instructions below specific to your operating system.
-
-.. note::
-
-    This guide uses the directory ``~/esp`` on Linux and macOS or ``%userprofile%\esp`` on Windows as an installation folder for ESP-IDF. You can use any directory, but you will need to adjust paths for the commands respectively. Keep in mind that ESP-IDF does not support spaces in paths.
 
 Linux and macOS
 ~~~~~~~~~~~~~~~

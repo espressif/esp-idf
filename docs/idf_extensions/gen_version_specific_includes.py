@@ -17,6 +17,7 @@ TEMPLATES = {
         "git-clone-bash": """
 .. code-block:: bash
 
+    mkdir -p ~/esp
     cd ~/esp
     git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
         """,
@@ -70,6 +71,7 @@ TEMPLATES = {
         "git-clone-bash": """
 .. code-block:: bash
 
+    mkdir -p ~/esp
     cd ~/esp
     git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
             """,
