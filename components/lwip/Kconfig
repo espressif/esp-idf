@@ -55,6 +55,20 @@ config USE_ONLY_LWIP_SELECT
         will be redirected to lwip_select(), therefore, select can be used
         for sockets only.
 
+config LWIP_SO_LINGER
+    bool "Enable SO_LINGER processing"
+    default n
+    help
+        Enabling this option allows SO_LINGER processing.
+        l_onoff = 1,l_linger can set the timeout.
+
+        If l_linger=0, When a connection is closed, TCP will terminate the connection.
+        This means that TCP will discard any data packets stored in the socket send buffer
+        and send an RST to the peer.
+
+        If l_linger!=0,Then closesocket() calls to block the process until
+        the remaining data packets has been sent or timed out.
+
 config LWIP_SO_REUSE
     bool "Enable SO_REUSEADDR option"
     default y
@@ -91,18 +105,31 @@ config LWIP_DHCP_MAX_NTP_SERVERS
         First argument of sntp_setserver/sntp_setservername functions
         is limited to this value.
 
-config LWIP_IP_FRAG
-    bool "Enable fragment outgoing IP packets"
+config LWIP_IP4_FRAG
+    bool "Enable fragment outgoing IP4 packets"
     default y
     help
-        Enabling this option allows fragmenting outgoing IP packets if their size
+        Enabling this option allows fragmenting outgoing IP4 packets if their size
         exceeds MTU.
 
-config LWIP_IP_REASSEMBLY
-    bool "Enable reassembly incoming fragmented IP packets"
+config LWIP_IP6_FRAG
+    bool "Enable fragment outgoing IP6 packets"
+    default y
+    help
+        Enabling this option allows fragmenting outgoing IP6 packets if their size
+        exceeds MTU.
+
+config LWIP_IP4_REASSEMBLY
+    bool "Enable reassembly incoming fragmented IP4 packets"
     default n
     help
-        Enabling this option allows reassemblying incoming fragmented IP packets.
+        Enabling this option allows reassemblying incoming fragmented IP4 packets.
+
+config LWIP_IP6_REASSEMBLY
+    bool "Enable reassembly incoming fragmented IP6 packets"
+    default n
+    help
+        Enabling this option allows reassemblying incoming fragmented IP6 packets.
 
 config LWIP_STATS
     bool "Enable LWIP statistics"
