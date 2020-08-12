@@ -417,7 +417,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
 
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
-    //connect io18 and io5
+    //connect io18 and io19
     gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
     gpio_config_t input_io = init_io(GPIO_INPUT_IO);
     gpio_config(&output_io);
@@ -456,18 +456,12 @@ TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), 0, "direction GPIO_MODE_OUTPUT set error, it can't output");
 
     // GPIO_MODE_INPUT_OUTPUT mode
-    // output test
-    level = gpio_get_level(GPIO_INPUT_IO);
     gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT);
-    gpio_set_level(GPIO_OUTPUT_IO, !level);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
-    // input test
-    gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT_OUTPUT);
-    level = gpio_get_level(GPIO_INPUT_IO);
-    gpio_set_level(GPIO_OUTPUT_IO, !level);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
+    gpio_set_level(GPIO_OUTPUT_IO, 1);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_OUTPUT_IO), 1, "direction set error, it can't output");
+    gpio_set_level(GPIO_OUTPUT_IO, 0);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_OUTPUT_IO), 0, "direction set error, it can't output");
 }
 
 TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][test_env=UT_T1_GPIO][timeout=90]")
