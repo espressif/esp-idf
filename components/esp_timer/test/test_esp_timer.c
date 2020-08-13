@@ -6,7 +6,6 @@
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
 #include "unity.h"
-#include "soc/frc_timer_reg.h"
 #include "soc/timer_group_reg.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
@@ -15,6 +14,10 @@
 #include "test_utils.h"
 #include "esp_freertos_hooks.h"
 #include "esp_rom_sys.h"
+
+#if CONFIG_ESP_TIMER_IMPL_FRC2
+#include "soc/frc_timer_reg.h"
+#endif
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
@@ -855,6 +858,7 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
 
+#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
 TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow value", "[esp_timer]")
 {
     for (int i = 0; i < 1024; ++i) {
@@ -864,3 +868,4 @@ TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow va
         esp_timer_impl_set_alarm(1); // timestamp is expired
     }
 }
+#endif

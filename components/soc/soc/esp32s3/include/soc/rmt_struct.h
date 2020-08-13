@@ -17,314 +17,322 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 typedef volatile struct {
-    uint32_t data_ch[8];                                   /**/
+    uint32_t data_ch[8];
     union {
         struct {
-            uint32_t mem_raddr_ex:      10;
-            uint32_t reserved10:         1;
-            uint32_t waddr:             10;
-            uint32_t reserved21:         1;
-            uint32_t state:              3;
-            uint32_t mem_empty:          1;
-            uint32_t apb_mem_wr_err:     1;
-            uint32_t reserved27:         5;
+            uint32_t tx_start : 1;
+            uint32_t mem_rd_rst : 1;
+            uint32_t apb_mem_rst : 1;
+            uint32_t tx_conti_mode : 1;
+            uint32_t mem_tx_wrap_en : 1;
+            uint32_t idle_out_lv : 1;
+            uint32_t idle_out_en : 1;
+            uint32_t tx_stop : 1;
+            uint32_t div_cnt : 8;
+            uint32_t mem_size : 4;
+            uint32_t carrier_eff_en : 1;
+            uint32_t carrier_en : 1;
+            uint32_t carrier_out_lv : 1;
+            uint32_t afifo_rst : 1;
+            uint32_t conf_update : 1;
+            uint32_t reserved25 : 7;
         };
         uint32_t val;
-    } status_ch[8];
+    } tx_conf[4];
+    struct {
+        union {
+            struct {
+                uint32_t div_cnt : 8;
+                uint32_t idle_thres : 15;
+                uint32_t reserved23 : 1;
+                uint32_t mem_size : 4;
+                uint32_t carrier_en : 1;
+                uint32_t carrier_out_lv : 1;
+                uint32_t reserved30 : 2;
+            };
+            uint32_t val;
+        } conf0;
+        union {
+            struct {
+                uint32_t rx_en : 1;
+                uint32_t mem_wr_rst : 1;
+                uint32_t apb_mem_rst : 1;
+                uint32_t mem_owner : 1;
+                uint32_t rx_filter_en : 1;
+                uint32_t rx_filter_thres : 8;
+                uint32_t mem_rx_wrap_en : 1;
+                uint32_t afifo_rst : 1;
+                uint32_t conf_update : 1;
+                uint32_t reserved16 : 16;
+            };
+            uint32_t val;
+        } conf1;
+    } rx_conf[4];
     union {
         struct {
-            uint32_t ch0_tx_end:               1;
-            uint32_t ch1_tx_end:               1;
-            uint32_t ch2_tx_end:               1;
-            uint32_t ch3_tx_end:               1;
-            uint32_t ch0_err:                  1;
-            uint32_t ch1_err:                  1;
-            uint32_t ch2_err:                  1;
-            uint32_t ch3_err:                  1;
-            uint32_t ch0_tx_thr_event:         1;
-            uint32_t ch1_tx_thr_event:         1;
-            uint32_t ch2_tx_thr_event:         1;
-            uint32_t ch3_tx_thr_event:         1;
-            uint32_t ch0_tx_loop:              1;
-            uint32_t ch1_tx_loop:              1;
-            uint32_t ch2_tx_loop:              1;
-            uint32_t ch3_tx_loop:              1;
-            uint32_t ch4_rx_end:               1;
-            uint32_t ch5_rx_end:               1;
-            uint32_t ch6_rx_end:               1;
-            uint32_t ch7_rx_end:               1;
-            uint32_t ch4_err:                  1;
-            uint32_t ch5_err:                  1;
-            uint32_t ch6_err:                  1;
-            uint32_t ch7_err:                  1;
-            uint32_t ch4_rx_thr_event:         1;
-            uint32_t ch5_rx_thr_event:         1;
-            uint32_t ch6_rx_thr_event:         1;
-            uint32_t ch7_rx_thr_event:         1;
-            uint32_t reserved28:               4;
+            uint32_t mem_raddr_ex : 10;
+            uint32_t reserved10 : 1;
+            uint32_t apb_mem_waddr : 10;
+            uint32_t reserved21 : 1;
+            uint32_t state : 3;
+            uint32_t mem_empty : 1;
+            uint32_t apb_mem_wr_err : 1;
+            uint32_t reserved27 : 5;
+        };
+        uint32_t val;
+    } tx_status[4];
+    union {
+        struct {
+            uint32_t mem_waddr_ex : 10;
+            uint32_t reserved10 : 1;
+            uint32_t apb_mem_raddr : 10;
+            uint32_t reserved21 : 1;
+            uint32_t state : 3;
+            uint32_t mem_owner_err : 1;
+            uint32_t mem_full : 1;
+            uint32_t apb_mem_rd_err : 1;
+            uint32_t reserved27 : 4;
+        };
+        uint32_t val;
+    } rx_status[4];
+    union {
+        struct {
+            uint32_t ch0_tx_end : 1;
+            uint32_t ch1_tx_end : 1;
+            uint32_t ch2_tx_end : 1;
+            uint32_t ch3_tx_end : 1;
+            uint32_t ch0_err : 1;
+            uint32_t ch1_err : 1;
+            uint32_t ch2_err : 1;
+            uint32_t ch3_err : 1;
+            uint32_t ch0_tx_thr_event : 1;
+            uint32_t ch1_tx_thr_event : 1;
+            uint32_t ch2_tx_thr_event : 1;
+            uint32_t ch3_tx_thr_event : 1;
+            uint32_t ch0_tx_loop : 1;
+            uint32_t ch1_tx_loop : 1;
+            uint32_t ch2_tx_loop : 1;
+            uint32_t ch3_tx_loop : 1;
+            uint32_t ch4_rx_end : 1;
+            uint32_t ch5_rx_end : 1;
+            uint32_t ch6_rx_end : 1;
+            uint32_t ch7_rx_end : 1;
+            uint32_t ch4_err : 1;
+            uint32_t ch5_err : 1;
+            uint32_t ch6_err : 1;
+            uint32_t ch7_err : 1;
+            uint32_t ch4_rx_thr_event : 1;
+            uint32_t ch5_rx_thr_event : 1;
+            uint32_t ch6_rx_thr_event : 1;
+            uint32_t ch7_rx_thr_event : 1;
+            uint32_t reserved28 : 4;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t ch0_tx_end:              1;
-            uint32_t ch1_tx_end:              1;
-            uint32_t ch2_tx_end:              1;
-            uint32_t ch3_tx_end:              1;
-            uint32_t ch0_err:                 1;
-            uint32_t ch1_err:                 1;
-            uint32_t ch2_err:                 1;
-            uint32_t ch3_err:                 1;
-            uint32_t ch0_tx_thr_event:        1;
-            uint32_t ch1_tx_thr_event:        1;
-            uint32_t ch2_tx_thr_event:        1;
-            uint32_t ch3_tx_thr_event:        1;
-            uint32_t ch0_tx_loop:             1;
-            uint32_t ch1_tx_loop:             1;
-            uint32_t ch2_tx_loop:             1;
-            uint32_t ch3_tx_loop:             1;
-            uint32_t ch4_rx_end:              1;
-            uint32_t ch5_rx_end:              1;
-            uint32_t ch6_rx_end:              1;
-            uint32_t ch7_rx_end:              1;
-            uint32_t ch4_err:                 1;
-            uint32_t ch5_err:                 1;
-            uint32_t ch6_err:                 1;
-            uint32_t ch7_err:                 1;
-            uint32_t ch4_rx_thr_event:        1;
-            uint32_t ch5_rx_thr_event:        1;
-            uint32_t ch6_rx_thr_event:        1;
-            uint32_t ch7_rx_thr_event:        1;
-            uint32_t reserved28:              4;
+            uint32_t ch0_tx_end : 1;
+            uint32_t ch1_tx_end : 1;
+            uint32_t ch2_tx_end : 1;
+            uint32_t ch3_tx_end : 1;
+            uint32_t ch0_err : 1;
+            uint32_t ch1_err : 1;
+            uint32_t ch2_err : 1;
+            uint32_t ch3_err : 1;
+            uint32_t ch0_tx_thr_event : 1;
+            uint32_t ch1_tx_thr_event : 1;
+            uint32_t ch2_tx_thr_event : 1;
+            uint32_t ch3_tx_thr_event : 1;
+            uint32_t ch0_tx_loop : 1;
+            uint32_t ch1_tx_loop : 1;
+            uint32_t ch2_tx_loop : 1;
+            uint32_t ch3_tx_loop : 1;
+            uint32_t ch4_rx_end : 1;
+            uint32_t ch5_rx_end : 1;
+            uint32_t ch6_rx_end : 1;
+            uint32_t ch7_rx_end : 1;
+            uint32_t ch4_err : 1;
+            uint32_t ch5_err : 1;
+            uint32_t ch6_err : 1;
+            uint32_t ch7_err : 1;
+            uint32_t ch4_rx_thr_event : 1;
+            uint32_t ch5_rx_thr_event : 1;
+            uint32_t ch6_rx_thr_event : 1;
+            uint32_t ch7_rx_thr_event : 1;
+            uint32_t reserved28 : 4;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t ch0_tx_end:               1;
-            uint32_t ch1_tx_end:               1;
-            uint32_t ch2_tx_end:               1;
-            uint32_t ch3_tx_end:               1;
-            uint32_t ch0_err:                  1;
-            uint32_t ch1_err:                  1;
-            uint32_t ch2_err:                  1;
-            uint32_t ch3_err:                  1;
-            uint32_t ch0_tx_thr_event:         1;
-            uint32_t ch1_tx_thr_event:         1;
-            uint32_t ch2_tx_thr_event:         1;
-            uint32_t ch3_tx_thr_event:         1;
-            uint32_t ch0_tx_loop:              1;
-            uint32_t ch1_tx_loop:              1;
-            uint32_t ch2_tx_loop:              1;
-            uint32_t ch3_tx_loop:              1;
-            uint32_t ch4_rx_end:               1;
-            uint32_t ch5_rx_end:               1;
-            uint32_t ch6_rx_end:               1;
-            uint32_t ch7_rx_end:               1;
-            uint32_t ch4_err:                  1;
-            uint32_t ch5_err:                  1;
-            uint32_t ch6_err:                  1;
-            uint32_t ch7_err:                  1;
-            uint32_t ch4_rx_thr_event:         1;
-            uint32_t ch5_rx_thr_event:         1;
-            uint32_t ch6_rx_thr_event:         1;
-            uint32_t ch7_rx_thr_event:         1;
-            uint32_t reserved28:               4;
+            uint32_t ch0_tx_end : 1;
+            uint32_t ch1_tx_end : 1;
+            uint32_t ch2_tx_end : 1;
+            uint32_t ch3_tx_end : 1;
+            uint32_t ch0_err : 1;
+            uint32_t ch1_err : 1;
+            uint32_t ch2_err : 1;
+            uint32_t ch3_err : 1;
+            uint32_t ch0_tx_thr_event : 1;
+            uint32_t ch1_tx_thr_event : 1;
+            uint32_t ch2_tx_thr_event : 1;
+            uint32_t ch3_tx_thr_event : 1;
+            uint32_t ch0_tx_loop : 1;
+            uint32_t ch1_tx_loop : 1;
+            uint32_t ch2_tx_loop : 1;
+            uint32_t ch3_tx_loop : 1;
+            uint32_t ch4_rx_end : 1;
+            uint32_t ch5_rx_end : 1;
+            uint32_t ch6_rx_end : 1;
+            uint32_t ch7_rx_end : 1;
+            uint32_t ch4_err : 1;
+            uint32_t ch5_err : 1;
+            uint32_t ch6_err : 1;
+            uint32_t ch7_err : 1;
+            uint32_t ch4_rx_thr_event : 1;
+            uint32_t ch5_rx_thr_event : 1;
+            uint32_t ch6_rx_thr_event : 1;
+            uint32_t ch7_rx_thr_event : 1;
+            uint32_t reserved28 : 4;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t ch0_tx_end:               1;
-            uint32_t ch1_tx_end:               1;
-            uint32_t ch2_tx_end:               1;
-            uint32_t ch3_tx_end:               1;
-            uint32_t ch0_err:                  1;
-            uint32_t ch1_err:                  1;
-            uint32_t ch2_err:                  1;
-            uint32_t ch3_err:                  1;
-            uint32_t ch0_tx_thr_event:         1;
-            uint32_t ch1_tx_thr_event:         1;
-            uint32_t ch2_tx_thr_event:         1;
-            uint32_t ch3_tx_thr_event:         1;
-            uint32_t ch0_tx_loop:              1;
-            uint32_t ch1_tx_loop:              1;
-            uint32_t ch2_tx_loop:              1;
-            uint32_t ch3_tx_loop:              1;
-            uint32_t ch4_rx_end:               1;
-            uint32_t ch5_rx_end:               1;
-            uint32_t ch6_rx_end:               1;
-            uint32_t ch7_rx_end:               1;
-            uint32_t ch4_err:                  1;
-            uint32_t ch5_err:                  1;
-            uint32_t ch6_err:                  1;
-            uint32_t ch7_err:                  1;
-            uint32_t ch4_rx_thr_event:         1;
-            uint32_t ch5_rx_thr_event:         1;
-            uint32_t ch6_rx_thr_event:         1;
-            uint32_t ch7_rx_thr_event:         1;
-            uint32_t reserved28:               4;
+            uint32_t ch0_tx_end : 1;
+            uint32_t ch1_tx_end : 1;
+            uint32_t ch2_tx_end : 1;
+            uint32_t ch3_tx_end : 1;
+            uint32_t ch0_err : 1;
+            uint32_t ch1_err : 1;
+            uint32_t ch2_err : 1;
+            uint32_t ch3_err : 1;
+            uint32_t ch0_tx_thr_event : 1;
+            uint32_t ch1_tx_thr_event : 1;
+            uint32_t ch2_tx_thr_event : 1;
+            uint32_t ch3_tx_thr_event : 1;
+            uint32_t ch0_tx_loop : 1;
+            uint32_t ch1_tx_loop : 1;
+            uint32_t ch2_tx_loop : 1;
+            uint32_t ch3_tx_loop : 1;
+            uint32_t ch4_rx_end : 1;
+            uint32_t ch5_rx_end : 1;
+            uint32_t ch6_rx_end : 1;
+            uint32_t ch7_rx_end : 1;
+            uint32_t ch4_err : 1;
+            uint32_t ch5_err : 1;
+            uint32_t ch6_err : 1;
+            uint32_t ch7_err : 1;
+            uint32_t ch4_rx_thr_event : 1;
+            uint32_t ch5_rx_thr_event : 1;
+            uint32_t ch6_rx_thr_event : 1;
+            uint32_t ch7_rx_thr_event : 1;
+            uint32_t reserved28 : 4;
         };
         uint32_t val;
     } int_clr;
     union {
         struct {
-            uint32_t low:             16;
-            uint32_t high:            16;
+            uint32_t low : 16;
+            uint32_t high : 16;
         };
         uint32_t val;
-    } carrier_duty_ch[8];
+    } tx_carrier[4];
     union {
         struct {
-            uint32_t carrier_low_thres_ch4: 16;
-            uint32_t carrier_high_thres_ch4: 16;
+            uint32_t low_thres : 16;
+            uint32_t high_thres : 16;
         };
         uint32_t val;
-    } ch4_rx_carrier_rm;
+    } rx_carrier[4];
     union {
         struct {
-            uint32_t carrier_low_thres_ch5: 16;
-            uint32_t carrier_high_thres_ch5: 16;
+            uint32_t limit : 9;
+            uint32_t tx_loop_num : 10;
+            uint32_t tx_loop_cnt_en : 1;
+            uint32_t loop_count_reset : 1;
+            uint32_t reserved21 : 11;
         };
         uint32_t val;
-    } ch5_rx_carrier_rm;
+    } tx_lim[4];
     union {
         struct {
-            uint32_t carrier_low_thres_ch6: 16;
-            uint32_t carrier_high_thres_ch6: 16;
+            uint32_t rx_lim : 9;
+            uint32_t reserved9 : 23;
         };
         uint32_t val;
-    } ch6_rx_carrier_rm;
+    } rx_lim[4];
     union {
         struct {
-            uint32_t carrier_low_thres_ch7: 16;
-            uint32_t carrier_high_thres_ch7: 16;
-        };
-        uint32_t val;
-    } ch7_rx_carrier_rm;
-    union {
-        struct {
-            uint32_t limit:                9;
-            uint32_t tx_loop_num:         10;
-            uint32_t tx_loop_cnt_en:       1;
-            uint32_t loop_count_reset:     1;
-            uint32_t reserved21:          11;
-        };
-        uint32_t val;
-    } tx_lim_ch[8];
-    union {
-        struct {
-            uint32_t rx_lim_ch4: 9;
-            uint32_t reserved9: 23;
-        };
-        uint32_t val;
-    } ch4_rx_lim;
-    union {
-        struct {
-            uint32_t rx_lim_ch5: 9;
-            uint32_t reserved9: 23;
-        };
-        uint32_t val;
-    } ch5_rx_lim;
-    union {
-        struct {
-            uint32_t rx_lim_ch6: 9;
-            uint32_t reserved9: 23;
-        };
-        uint32_t val;
-    } ch6_rx_lim;
-    union {
-        struct {
-            uint32_t rx_lim_ch7: 9;
-            uint32_t reserved9: 23;
-        };
-        uint32_t val;
-    } ch7_rx_lim;
-    union {
-        struct {
-            uint32_t fifo_mask:        1;
-            uint32_t mem_clk_force_on: 1;
-            uint32_t mem_force_pd:     1;
-            uint32_t mem_force_pu:     1;
-            uint32_t sclk_div_num:     8;
-            uint32_t sclk_div_a:       6;
-            uint32_t sclk_div_b:       6;
-            uint32_t sclk_sel:         2;
-            uint32_t sclk_active:      1;
-            uint32_t reserved27:       4;
-            uint32_t clk_en:           1;
+            uint32_t fifo_mask : 1;
+            uint32_t mem_clk_force_on : 1;
+            uint32_t mem_force_pd : 1;
+            uint32_t mem_force_pu : 1;
+            uint32_t sclk_div_num : 8;
+            uint32_t sclk_div_a : 6;
+            uint32_t sclk_div_b : 6;
+            uint32_t sclk_sel : 2;
+            uint32_t sclk_active : 1;
+            uint32_t reserved27 : 4;
+            uint32_t clk_en : 1;
         };
         uint32_t val;
     } sys_conf;
     union {
         struct {
-            uint32_t ch0:        1;
-            uint32_t ch1:        1;
-            uint32_t ch2:        1;
-            uint32_t ch3:        1;
-            uint32_t en:         1;
-            uint32_t reserved5: 27;
+            uint32_t tx_sim_ch0 : 1;
+            uint32_t tx_sim_ch1 : 1;
+            uint32_t tx_sim_ch2 : 1;
+            uint32_t tx_sim_ch3 : 1;
+            uint32_t tx_sim_en : 1;
+            uint32_t reserved5 : 27;
         };
         uint32_t val;
     } tx_sim;
     union {
         struct {
-            uint32_t ch0:             1;
-            uint32_t ch1:             1;
-            uint32_t ch2:             1;
-            uint32_t ch3:             1;
-            uint32_t ch4:             1;
-            uint32_t ch5:             1;
-            uint32_t ch6:             1;
-            uint32_t ch7:             1;
-            uint32_t reserved8:      24;
+            uint32_t ref_cnt_rst_ch0 : 1;
+            uint32_t ref_cnt_rst_ch1 : 1;
+            uint32_t ref_cnt_rst_ch2 : 1;
+            uint32_t ref_cnt_rst_ch3 : 1;
+            uint32_t ref_cnt_rst_ch4 : 1;
+            uint32_t ref_cnt_rst_ch5 : 1;
+            uint32_t ref_cnt_rst_ch6 : 1;
+            uint32_t ref_cnt_rst_ch7 : 1;
+            uint32_t reserved8 : 24;
         };
         uint32_t val;
     } ref_cnt_rst;
     union {
         struct {
-            uint32_t date:      28;
-            uint32_t reserved28: 4;
+            uint32_t date : 28;
+            uint32_t reserved28 : 4;
         };
         uint32_t val;
     } date;
 } rmt_dev_t;
 
-extern rmt_dev_t RMT;
-
 typedef struct {
     union {
         struct {
-            uint32_t duration0 :15;
-            uint32_t level0 :1;
-            uint32_t duration1 :15;
-            uint32_t level1 :1;
+            uint32_t duration0 : 15;
+            uint32_t level0 : 1;
+            uint32_t duration1 : 15;
+            uint32_t level1 : 1;
         };
         uint32_t val;
     };
 } rmt_item32_t;
 
-typedef struct {
-    union {
-        struct {
-            uint16_t duration :15;
-            uint16_t level :1;
-        };
-        uint16_t val;
-    };
-} rmt_item16_t;
+extern rmt_dev_t RMT;
 
-//Allow access to RMT memory using RMTMEM.chan[0].data32[8]
 typedef volatile struct {
     struct {
         union {
-            rmt_item32_t data32[64];
-            rmt_item16_t data16[128];
+            rmt_item32_t data32[48];
         };
-    } chan[4];
+    } chan[8];
 } rmt_mem_t;
 
 extern rmt_mem_t RMTMEM;
