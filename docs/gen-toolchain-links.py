@@ -51,7 +51,7 @@ def main():
 
     platform_info = [["linux64", "tar.gz", "z", unpack_code_linux_macos],
                      ["linux32", "tar.gz", "z", unpack_code_linux_macos],
-                     ["osx", "tar.gz", "z", unpack_code_linux_macos],
+                     ["macos", "tar.gz", "z", unpack_code_linux_macos],
                      ["win32", "zip", None, None]]
 
     with open(os.path.join(out_dir, 'download-links.inc'), "w") as links_file:
