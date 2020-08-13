@@ -35,6 +35,7 @@
 
 ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 
+extern uint8_t esp_wifi_get_user_init_flag_internal(void);
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
@@ -113,6 +114,11 @@ static void esp_wifi_set_debug_log(void)
 esp_err_t esp_wifi_deinit(void)
 {
     esp_err_t err = ESP_OK;
+
+    if (esp_wifi_get_user_init_flag_internal()) {
+        ESP_LOGE(TAG, "Wi-Fi not stop");
+        return ESP_FAIL; 
+    }
 
     esp_supplicant_deinit();
     err = esp_wifi_deinit_internal();
