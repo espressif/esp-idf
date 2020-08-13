@@ -1,9 +1,9 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,8 +14,21 @@
 
 #pragma once
 
-#include "sha/sha_dma.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#warning esp32s2/sha.h is deprecated, please use sha/sha_dma.h instead
+#define SOC_SHA_SUPPORT_DMA             (0)
 
+/* ESP32 style SHA engine, where multiple states can be stored in parallel */
+#define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
 
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+
+#ifdef __cplusplus
+}
+#endif

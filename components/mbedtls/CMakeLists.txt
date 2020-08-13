@@ -81,13 +81,20 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
+# Choose perihperal type
+if(CONFIG_IDF_TARGET_ESP32)
+    set(SHA_PERIPHERAL_TYPE "parallel_engine")
+else()
+    set(SHA_PERIPHERAL_TYPE "dma")
+endif()
+
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
-                                  "${COMPONENT_DIR}/port/esp_sha.c"
+                                  "${COMPONENT_DIR}/port/sha/esp_sha.c"
                                   "${COMPONENT_DIR}/port/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/${idf_target}/aes.c"
-                                  "${COMPONENT_DIR}/port/${idf_target}/sha.c"
+                                  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
 )
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
@@ -108,9 +115,9 @@ if(CONFIG_MBEDTLS_HARDWARE_MPI)
 endif()
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA)
-    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/${idf_target}/esp_sha1.c"
-                                       "${COMPONENT_DIR}/port/${idf_target}/esp_sha256.c"
-                                       "${COMPONENT_DIR}/port/${idf_target}/esp_sha512.c"
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha1.c"
+                                       "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha256.c"
+                                       "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha512.c"
     )
 endif()
 

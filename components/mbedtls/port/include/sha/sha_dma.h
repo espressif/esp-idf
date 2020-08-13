@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_SHA_H_
-#define _ESP_SHA_H_
+#pragma once
 
-#include "esp32s3/rom/sha.h"
+#include "hal/sha_types.h"
 
 /** @brief Low-level support functions for the hardware SHA engine using DMA
  *
@@ -36,8 +35,6 @@
 extern "C" {
 #endif
 
-/* Defined in rom/sha.h */
-typedef SHA_TYPE esp_sha_type;
 
 /** @brief Calculate SHA1 or SHA2 sum of some data, using hardware SHA engine
  *
@@ -161,5 +158,4 @@ int esp_sha_512_t_init_hash(uint16_t t);
 }
 #endif
 
-#endif
 

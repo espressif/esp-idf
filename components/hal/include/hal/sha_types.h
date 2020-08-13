@@ -1,4 +1,4 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,25 @@
 
 #pragma once
 
-#include "sha/sha_dma.h"
+#include "sdkconfig.h"
 
-#warning esp32s2/sha.h is deprecated, please use sha/sha_dma.h instead
+/* Use enum from rom for backwards compatibility */
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/sha.h"
+typedef enum SHA_TYPE esp_sha_type;
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/sha.h"
+typedef SHA_TYPE esp_sha_type;
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/sha.h"
+typedef SHA_TYPE esp_sha_type;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
+#ifdef __cplusplus
+}
+#endif

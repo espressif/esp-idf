@@ -33,27 +33,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "esp32/sha.h"
+#include "hal/sha_hal.h"
+#include "hal/sha_types.h"
+#include "sha/sha_parallel_engine.h"
 #include "soc/hwcrypto_periph.h"
 #include "driver/periph_ctrl.h"
 
-inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
-    return SHA_1_LOAD_REG + sha_type * 0x10;
-}
-
-inline static uint32_t SHA_BUSY_REG(esp_sha_type sha_type) {
-    return SHA_1_BUSY_REG + sha_type * 0x10;
-}
-
-inline static uint32_t SHA_START_REG(esp_sha_type sha_type) {
-    return SHA_1_START_REG + sha_type * 0x10;
-}
-
-inline static uint32_t SHA_CONTINUE_REG(esp_sha_type sha_type) {
-    return SHA_1_CONTINUE_REG + sha_type * 0x10;
-}
-
-/* Single spinlock for SHA engine memory block
+/*
+     Single spinlock for SHA engine memory block
 */
 static portMUX_TYPE memory_block_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -76,45 +63,31 @@ static uint8_t engines_in_use;
 */
 static portMUX_TYPE engines_in_use_lock = portMUX_INITIALIZER_UNLOCKED;
 
+/* Return block size (in words) for a given SHA type */
+inline static size_t block_length(esp_sha_type type)
+{
+    switch (type) {
+    case SHA1:
+    case SHA2_256:
+        return 64 / 4;
+    case SHA2_384:
+    case SHA2_512:
+        return 128 / 4;
+    default:
+        return 0;
+    }
+}
+
 /* Index into the engine_states array */
-inline static size_t sha_engine_index(esp_sha_type type) {
-    switch(type) {
+inline static size_t sha_engine_index(esp_sha_type type)
+{
+    switch (type) {
     case SHA1:
         return 0;
     case SHA2_256:
         return 1;
     default:
         return 2;
-    }
-}
-
-/* Return digest length (in bytes) for a given SHA type */
-inline static size_t sha_length(esp_sha_type type) {
-    switch(type) {
-    case SHA1:
-        return 20;
-    case SHA2_256:
-        return 32;
-    case SHA2_384:
-        return 48;
-    case SHA2_512:
-        return 64;
-    default:
-        return 0;
-    }
-}
-
-/* Return block size (in bytes) for a given SHA type */
-inline static size_t block_length(esp_sha_type type) {
-    switch(type) {
-    case SHA1:
-    case SHA2_256:
-        return 64;
-    case SHA2_384:
-    case SHA2_512:
-        return 128;
-    default:
-        return 0;
     }
 }
 
@@ -211,23 +184,8 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
     xSemaphoreGive(engine_state);
 }
 
-void esp_sha_wait_idle(void)
-{
-    while(1) {
-        if(DPORT_REG_READ(SHA_1_BUSY_REG) == 0
-           && DPORT_REG_READ(SHA_256_BUSY_REG) == 0
-           && DPORT_REG_READ(SHA_384_BUSY_REG) == 0
-           && DPORT_REG_READ(SHA_512_BUSY_REG) == 0) {
-            break;
-        }
-    }
-}
-
 void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 {
-    uint32_t *digest_state_words = NULL;
-    uint32_t *reg_addr_buf = NULL;
-    uint32_t word_len = sha_length(sha_type)/4;
 #ifndef NDEBUG
     {
         SemaphoreHandle_t engine_state = sha_get_engine_state(sha_type);
@@ -237,44 +195,17 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 #endif
 
     // preemptively do this before entering the critical section, then re-check once in it
-    esp_sha_wait_idle();
+    sha_hal_wait_idle();
 
     esp_sha_lock_memory_block();
 
-    esp_sha_wait_idle();
+    sha_hal_read_digest(sha_type, digest_state);
 
-    DPORT_REG_WRITE(SHA_LOAD_REG(sha_type), 1);
-    while(DPORT_REG_READ(SHA_BUSY_REG(sha_type)) == 1) { }
-    digest_state_words = (uint32_t *)digest_state;
-    reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
-    if(sha_type == SHA2_384 || sha_type == SHA2_512) {
-        /* for these ciphers using 64-bit states, swap each pair of words */
-        DPORT_INTERRUPT_DISABLE(); // Disable interrupt only on current CPU.
-        for(int i = 0; i < word_len; i += 2) {
-            digest_state_words[i+1] = DPORT_SEQUENCE_REG_READ((uint32_t)&reg_addr_buf[i]);
-            digest_state_words[i]   = DPORT_SEQUENCE_REG_READ((uint32_t)&reg_addr_buf[i+1]);
-        }
-        DPORT_INTERRUPT_RESTORE(); // restore the previous interrupt level
-    } else {
-        esp_dport_access_read_buffer(digest_state_words, (uint32_t)&reg_addr_buf[0], word_len);
-    }
     esp_sha_unlock_memory_block();
-
-    /* Fault injection check: verify SHA engine actually ran,
-       state is not all zeroes.
-    */
-    for (int i = 0; i < word_len; i++) {
-        if (digest_state_words[i] != 0) {
-            return;
-        }
-    }
-    abort(); // SHA peripheral returned all zero state, probably due to fault injection
 }
 
-void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
+void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool first_block)
 {
-    uint32_t *reg_addr_buf = NULL;
-    uint32_t *data_words = NULL;
 #ifndef NDEBUG
     {
         SemaphoreHandle_t engine_state = sha_get_engine_state(sha_type);
@@ -284,30 +215,10 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
 #endif
 
     // preemptively do this before entering the critical section, then re-check once in it
-    esp_sha_wait_idle();
-
+    sha_hal_wait_idle();
     esp_sha_lock_memory_block();
 
-    esp_sha_wait_idle();
-
-    /* Fill the data block */
-    reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
-    data_words = (uint32_t *)data_block;
-    for (int i = 0; i < block_length(sha_type) / 4; i++) {
-        reg_addr_buf[i] = __builtin_bswap32(data_words[i]);
-    }
-    asm volatile ("memw");
-
-    if(is_first_block) {
-        DPORT_REG_WRITE(SHA_START_REG(sha_type), 1);
-    } else {
-        DPORT_REG_WRITE(SHA_CONTINUE_REG(sha_type), 1);
-    }
+    sha_hal_hash_block(sha_type, data_block, block_length(sha_type), first_block);
 
     esp_sha_unlock_memory_block();
-
-    /* Note: deliberately not waiting for this operation to complete,
-       as a performance tweak - delay waiting until the next time we need the SHA
-       unit, instead.
-    */
 }

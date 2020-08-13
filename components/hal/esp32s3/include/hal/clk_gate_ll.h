@@ -230,6 +230,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SDMMC_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_AES_MODULE:
+    case PERIPH_SHA_MODULE:
     case PERIPH_RSA_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
     default:

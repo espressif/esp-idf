@@ -16,6 +16,7 @@ else()
              "clk.c"
              "crosscore_int.c"
              "dport_access.c"
+             "esp_crypto_lock.c"
              "hw_random.c"
             
              "memprot.c"
