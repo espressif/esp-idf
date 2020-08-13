@@ -18,12 +18,15 @@
 extern "C" {
 #endif
 
-#define SOC_RMT_CHANNEL_MEM_WORDS (64)       /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
-#define SOC_RMT_CHANNELS_NUM (4)             /*!< Total 4 channels */
-#define SOC_RMT_SUPPORT_RX_PINGPONG (1)      /*!< Support Ping-Pong mode on RX path */
-#define SOC_RMT_SUPPORT_RX_DEMODULATION  (1) /*!< Support signal demodulation on RX path (i.e. remove carrier) */
-#define SOC_RMT_SUPPORT_TX_LOOP_COUNT (1)    /*!< Support transmit specified number of cycles in loop mode */
-#define SOC_RMT_SUPPORT_TX_GROUP (1)         /*!< Support a group of TX channels to transmit simultaneously */
+#define SOC_RMT_CHANNEL_MEM_WORDS (48)        /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
+#define SOC_RMT_CHANNELS_NUM (8)              /*!< Total 8 channels */
+#define SOC_RMT_TX_RX_CHANNEL_INDEPENDENT (1) /*!< TX channels and RX channels are independent, channel0~3 transmit only and channel4~8 receive only */
+#define SOC_RMT_SUPPORT_RX_PINGPONG (1)       /*!< Support Ping-Pong mode on RX path */
+#define SOC_RMT_SUPPORT_RX_DEMODULATION  (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
+#define SOC_RMT_SUPPORT_TX_LOOP_COUNT (1)     /*!< Support transmit specified number of cycles in loop mode */
+#define SOC_RMT_SUPPORT_TX_GROUP (1)          /*!< Support a group of TX channels to transmit simultaneously */
+#define SOC_RMT_SUPPORT_RTC8M_CLOCK (1)       /*!< Support set RTC 8M clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_XTAL_CLOCK (1)        /*!< Support set XTAL clock as the RMT clock source */
 
 #ifdef __cplusplus
 }

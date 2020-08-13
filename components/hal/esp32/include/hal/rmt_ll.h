@@ -96,7 +96,7 @@ static inline uint32_t rmt_ll_get_counter_clock_div(rmt_dev_t *dev, uint32_t cha
     return div == 0 ? 256 : div;
 }
 
-static inline void rmt_ll_enable_tx_pingpong(rmt_dev_t *dev, bool enable)
+static inline void rmt_ll_enable_tx_pingpong(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->apb_conf.mem_tx_wrap_en = enable;
 }

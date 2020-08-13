@@ -24,6 +24,7 @@
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 #include "soc/soc_memory_layout.h"
+#include "soc/rtc.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 #include "esp_rom_gpio.h"
@@ -490,7 +491,11 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
         esp_rom_gpio_connect_out_signal(gpio_num, RMT_SIG_OUT0_IDX + channel, 0, 0);
     } else {
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
+#if SOC_RMT_TX_RX_CHANNEL_INDEPENDENT
+        esp_rom_gpio_connect_in_signal(gpio_num, RMT_SIG_IN0_IDX + channel - RMT_LL_TX_CHAN_NUM, 0);
+#else
         esp_rom_gpio_connect_in_signal(gpio_num, RMT_SIG_IN0_IDX + channel, 0);
+#endif
     }
     return ESP_OK;
 }
@@ -520,14 +525,21 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     rmt_ll_reset_tx_pointer(dev, channel);
     rmt_ll_reset_rx_pointer(dev, channel);
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_ALWAYS_ON) {
+#ifdef SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
         rmt_source_clk_hz = REF_CLK_FREQ;
         rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_REF);
+#elif defined SOC_RMT_SUPPORT_XTAL_CLOCK
+        // clock src: XTAL_CLK
+        rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
+        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_XTAL);
+#endif
     } else {
         // clock src: APB_CLK
         rmt_source_clk_hz = APB_CLK_FREQ;
         rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_APB);
     }
+    esp_rom_printf("rmt_source_clk_hz: %d\n", rmt_source_clk_hz);
     rmt_ll_set_mem_blocks(dev, channel, mem_cnt);
     rmt_ll_set_mem_owner(dev, channel, RMT_MEM_OWNER_HW);
     RMT_EXIT_CRITICAL();
@@ -545,7 +557,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         }
 #endif
         /* always enable tx ping-pong */
-        rmt_ll_enable_tx_pingpong(dev, true);
+        rmt_ll_enable_tx_pingpong(dev, channel, true);
         /*Set idle level */
         rmt_ll_enable_tx_idle(dev, channel, rmt_param->tx_config.idle_output_en);
         rmt_ll_set_tx_idle_level(dev, channel, idle_level);
@@ -1189,11 +1201,21 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(clock_hz, "parameter clock_hz can't be null", ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    if (rmt_ll_get_counter_clock_src(rmt_contex.hal.regs, channel) == RMT_BASECLK_REF) {
-        *clock_hz = rmt_hal_get_counter_clock(&rmt_contex.hal, channel, REF_CLK_FREQ);
-    } else {
-        *clock_hz = rmt_hal_get_counter_clock(&rmt_contex.hal, channel, APB_CLK_FREQ);
+    uint32_t rmt_source_clk_hz = 0;
+    if (rmt_ll_get_counter_clock_src(rmt_contex.hal.regs, channel) == RMT_BASECLK_APB) {
+        rmt_source_clk_hz = APB_CLK_FREQ;
     }
+#ifdef SOC_RMT_SUPPORT_REF_TICK
+    else if (rmt_ll_get_counter_clock_src(rmt_contex.hal.regs, channel) == RMT_BASECLK_REF) {
+        rmt_source_clk_hz = REF_CLK_FREQ;
+    }
+#endif
+#ifdef SOC_RMT_SUPPORT_XTAL_CLOCK
+    else if (rmt_ll_get_counter_clock_src(rmt_contex.hal.regs, channel) == RMT_BASECLK_XTAL) {
+        rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
+    }
+#endif
+    *clock_hz = rmt_hal_get_counter_clock(&rmt_contex.hal, channel, rmt_source_clk_hz);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }

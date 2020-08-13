@@ -53,8 +53,16 @@ typedef enum {
  *
  */
 typedef enum {
-    RMT_BASECLK_REF, /*!< RMT source clock is REF_TICK, 1MHz by default */
-    RMT_BASECLK_APB, /*!< RMT source clock is APB CLK, 80Mhz by default */
+#ifdef SOC_RMT_SUPPORT_REF_TICK
+    RMT_BASECLK_REF = 0, /*!< RMT source clock is REF_TICK, 1MHz by default */
+#endif
+    RMT_BASECLK_APB = 1, /*!< RMT source clock is APB CLK, 80Mhz by default */
+#ifdef SOC_RMT_SUPPORT_RTC8M_CLOCK
+    RMT_BASECLK_RTC8M = 2, /*!< RMT source clock is RTC 8M clock, 8Mhz by default */
+#endif
+#ifdef SOC_RMT_SUPPORT_XTAL_CLOCK
+    RMT_BASECLK_XTAL = 3, /*!< RMT source clock is XTAL clock, 40Mhz by default */
+#endif
     RMT_BASECLK_MAX,
 } rmt_source_clk_t;
 

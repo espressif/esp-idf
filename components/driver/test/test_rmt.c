@@ -141,9 +141,17 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
     TEST_ESP_OK(rmt_get_clk_div(channel, &div_cnt));
     TEST_ASSERT_EQUAL_UINT8(160, div_cnt);
 
+#if SOC_RMT_SUPPORT_REF_TICK
     TEST_ESP_OK(rmt_set_source_clk(channel, RMT_BASECLK_REF));
     TEST_ESP_OK(rmt_get_source_clk(channel, &src_clk));
     TEST_ASSERT_EQUAL_INT(RMT_BASECLK_REF, src_clk);
+#endif
+
+#if SOC_RMT_SUPPORT_XTAL_CLOCK
+    TEST_ESP_OK(rmt_set_source_clk(channel, RMT_BASECLK_XTAL));
+    TEST_ESP_OK(rmt_get_source_clk(channel, &src_clk));
+    TEST_ASSERT_EQUAL_INT(RMT_BASECLK_XTAL, src_clk);
+#endif
 
     TEST_ESP_OK(rmt_set_memory_owner(channel, RMT_MEM_OWNER_RX));
     TEST_ESP_OK(rmt_get_memory_owner(channel, &owner));
@@ -205,7 +213,11 @@ static void do_nec_tx_rx(uint32_t flags)
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    int rx_channel = 4;
+#else
     int rx_channel = 1;
+#endif
 
     // test on different flags combinations
     rmt_setup_testbench(tx_channel, rx_channel, flags);
@@ -302,7 +314,11 @@ TEST_CASE("RMT TX stop", "[rmt]")
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    int rx_channel = 4;
+#else
     int rx_channel = 1;
+#endif
 
     rmt_setup_testbench(tx_channel, rx_channel, 0);
 
@@ -361,7 +377,11 @@ TEST_CASE("RMT TX stop", "[rmt]")
 TEST_CASE("RMT Ping-Pong operation", "[rmt]")
 {
     int tx_channel = 0;
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    int rx_channel = 4;
+#else
     int rx_channel = 1;
+#endif
     rmt_item32_t frames[SOC_RMT_CHANNEL_MEM_WORDS * 2]; // send two block data using ping-pong
     RingbufHandle_t rb = NULL;
     uint32_t size = sizeof(frames) / sizeof(frames[0]);
@@ -478,7 +498,11 @@ TEST_CASE("RMT TX loop", "[rmt]")
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    int rx_channel = 4;
+#else
     int rx_channel = 1;
+#endif
     uint32_t count = 0;
 
     rmt_setup_testbench(tx_channel, rx_channel, RMT_TESTBENCH_FLAGS_LOOP_ON);
