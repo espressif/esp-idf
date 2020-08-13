@@ -149,7 +149,7 @@ flashtest_config_t config_list[] = {
     //     .speed = TEST_SPI_SPEED,
     //     .host_id = HSPI_HOST,
     //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
+    //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
     //     .cs_io_num = HSPI_PIN_NUM_CS,
     //     .input_delay_ns = 20,
     // },
@@ -174,16 +174,15 @@ flashtest_config_t config_list[] = {
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
-    // /* current runner doesn't have a flash on HSPI */
-    // {
-    //     .io_mode = TEST_SPI_READ_MODE,
-    //     .speed = TEST_SPI_SPEED,
-    //     .host_id = HSPI_HOST,
-    //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
-    //     .cs_io_num = HSPI_PIN_NUM_CS,
-    //     .input_delay_ns = 20,
-    // },
+    {
+        .io_mode = TEST_SPI_READ_MODE,
+        .speed = TEST_SPI_SPEED,
+        .host_id = HSPI_HOST,
+        .cs_id = 0,
+        // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
+        .cs_io_num = HSPI_PIN_NUM_CS,
+        .input_delay_ns = 0,
+    },
 };
 #elif CONFIG_IDF_TARGET_ESP32S3
 flashtest_config_t config_list[] = {
@@ -203,7 +202,7 @@ flashtest_config_t config_list[] = {
     //     .speed = TEST_SPI_SPEED,
     //     .host_id = HSPI_HOST,
     //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
+    //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
     //     .cs_io_num = HSPI_PIN_NUM_CS,
     //     .input_delay_ns = 20,
     // },
@@ -697,7 +696,6 @@ void test_permutations(flashtest_config_t* config)
     write_large_buffer(chip, part, source_buf, length);
     read_and_check(chip, part, source_buf, length);
     teardown_test_chip(chip, cfg->host_id);
-
     if (config->host_id != -1) {
         esp_flash_speed_t speed = ESP_FLASH_SPEED_MIN;
         while (speed != ESP_FLASH_SPEED_MAX) {
@@ -707,16 +705,13 @@ void test_permutations(flashtest_config_t* config)
             while (io_mode != SPI_FLASH_READ_MODE_MAX) {
                 cfg->io_mode = io_mode;
                 cfg->speed = speed;
-                setup_new_chip(cfg, &chip);
-
-                spi_host_device_t host_id;
-                get_chip_host(chip, &host_id, NULL);
-
-                if (io_mode > SPI_FLASH_FASTRD
-                    && !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)) {
+                if (io_mode > SPI_FLASH_FASTRD\
+                && !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(cfg->host_id)) {
+                    io_mode++;
                     continue;
                 }
 
+                setup_new_chip(cfg, &chip);
                 ESP_LOGI(TAG, "test flash io mode: %d, speed: %d", io_mode, speed);
 
                 read_and_check(chip, part, source_buf, length);
