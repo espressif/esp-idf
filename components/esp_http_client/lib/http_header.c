@@ -86,10 +86,10 @@ static esp_err_t http_header_new_item(http_header_handle_t header, const char *k
 
     item = calloc(1, sizeof(http_header_item_t));
     HTTP_MEM_CHECK(TAG, item, return ESP_ERR_NO_MEM);
-    http_utils_assign_string(&item->key, key, 0);
+    http_utils_assign_string(&item->key, key, -1);
     HTTP_MEM_CHECK(TAG, item->key, goto _header_new_item_exit);
     http_utils_trim_whitespace(&item->key);
-    http_utils_assign_string(&item->value, value, 0);
+    http_utils_assign_string(&item->value, value, -1);
     HTTP_MEM_CHECK(TAG, item->value, goto _header_new_item_exit);
     http_utils_trim_whitespace(&item->value);
     STAILQ_INSERT_TAIL(header, item, next);
