@@ -1142,6 +1142,17 @@ esp_err_t esp_wifi_set_inactive_time(wifi_interface_t ifx, uint16_t sec);
   */
 esp_err_t esp_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec);
 
+/**
+  * @brief     Dump WiFi statistics
+  *
+  * @param     modules statistic modules to be dumped
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_statis_dump(uint32_t modules);
+
 #ifdef __cplusplus
 }
 #endif
