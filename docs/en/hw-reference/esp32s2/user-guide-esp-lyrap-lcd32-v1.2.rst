@@ -1,5 +1,5 @@
 ====================
-ESP-LyraP-LCD32 v1.1
+ESP-LyraP-LCD32 v1.2
 ====================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -8,9 +8,11 @@ This user guide provides information on the ESP-LyraP-LCD32 extension board.
 
 This extension board cannot be bought separately and is usually sold together with other Espressif development boards (e.g., ESP32-S2-Kaluga-1), which will be referred to as *main boards* below.
 
-Currently, ESP-LyraP-LCD32 v1.1 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`.
+Currently, ESP-LyraP-LCD32 v1.2 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit`.
 
 The ESP-LyraP-LCD32 extends the functionality of your main board by adding an LCD graphic display.
+
+.. Image of v1.1 is used as there are no visual changes
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-3d.png
     :align: center
@@ -39,15 +41,25 @@ This extension board adds a 3.2" LCD graphic display with the resolution of 320x
 Description of Components
 -------------------------
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-layout-front.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.2-layout-front.png
     :align: center
     :width: 934px
-    :height: 600px
+    :height: 489px
     :scale: 70%
     :alt: ESP-LyraP-LCD32 - front
     :figclass: align-center
 
     ESP-LyraP-LCD32 - front (click to enlarge)
+
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.2-layout-back.png
+    :align: center
+    :width: 934px
+    :height: 600px
+    :scale: 70%
+    :alt: ESP-LyraP-LCD32 - back
+    :figclass: align-center
+
+    ESP-LyraP-LCD32 - back (click to enlarge)
 
 
 In the description of components below, **Reserved** means that the functionality is available, but the current version of the kit does not use it.
@@ -61,8 +73,8 @@ In the description of components below, **Reserved** means that the functionalit
      - Description
    * - Extension Header
      - Male Extension Header for mounting onto a female Extension Header
-   * - LCD display
-     - This version has a 3.2" 320x240 SPI LCD display module; the display driver/controller is Sitronix ST7789V
+   * - LCD Display
+     - This version has a 3.2" 320x240 SPI LCD display module; the display driver/controller is either Sitronix ST7789V or Ilitek ILI9341
    * - Touch Screen Switch
      - No support for touch screens, keep the switches to OFF to make the pins available for other uses
    * - Main Board 3.2" LCD FPC Connector
@@ -98,7 +110,7 @@ To mount your ESP-LyraP-LCD32 onto the board with a female Extension Header:
 Software Setup
 ^^^^^^^^^^^^^^
 
-See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` of the ESP32-S2-Kaluga-1 kit user guide.
+See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-S2-Kaluga-1 kit user guide.
 
 
 Hardware Reference
@@ -109,7 +121,7 @@ Block Diagram
 
 A block diagram below shows the components of the ESP-LyraP-LCD32 and their interconnections.
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-block-diagram.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.2-block-diagram.png
     :align: center
     :alt: ESP-LyraP-LCD32 block diagram
     :figclass: align-center
@@ -120,13 +132,23 @@ A block diagram below shows the components of the ESP-LyraP-LCD32 and their inte
 Hardware Revision Details
 =========================
 
-No previous versions available.
+ESP-LyraP-LCD32 v1.2
+--------------------
+
+* LCD backlight default ON, cannot be controlled by MCU
+* Touch Driver and related switch removed for major limitations caused by multiplexed pins
+
+
+ESP-LyraP-LCD32 v1.1
+--------------------
+
+:doc:`Initial release <user-guide-esp-lyrap-lcd32-v1.1>`
 
 
 Related Documents
 =================
 
-- `ESP-LyraP-LCD32 Schematic <https://dl.espressif.com/dl/schematics/ESP-LyraP-LCD32_V1_1_SCH_20200324A.pdf>`_ (PDF)
-- `ESP-LyraP-LCD32 PCB Layout <https://dl.espressif.com/dl/schematics/ESP-LyraP-LCD32_V1_1_PCB_20200324AC.pdf>`_ (PDF)
+- `ESP-LyraP-LCD32 Schematic <https://dl.espressif.com/dl/schematics/ESP-LyraP-LCD32_V1_2_SCH_20200522A.pdf>`_ (PDF)
+- `ESP-LyraP-LCD32 PCB Layout <https://dl.espressif.com/dl/schematics/ESP-LyraP-LCD32_V1_2_PCB_20200522AA.pdf>`_ (PDF)
 
 For other design documentation for the board, please contact us at sales@espressif.com.
