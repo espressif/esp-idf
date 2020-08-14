@@ -2,6 +2,7 @@
  Tests for the dac device driver
 */
 #include "esp_system.h"
+
 #include "driver/adc.h"
 #include "driver/dac.h"
 #include "unity.h"
@@ -12,6 +13,8 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 #include "driver/i2s.h"
+
+#include "esp_adc_cal.h"
 
 static const char *TAG = "test_dac";
 
@@ -119,3 +122,58 @@ TEST_CASE("DAC cw generator output (RTC) check by adc", "[dac]")
     TEST_ESP_OK( dac_cw_generator_disable() );
     TEST_ESP_OK( dac_output_disable( DAC_TEST_CHANNEL_NUM ) );
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2
+static int helper_calc_dac_output(int mV)
+{
+    return mV * 0.07722;
+}
+static bool subtest_adc_dac(int mV_ref, esp_adc_cal_characteristics_t * chars)
+{
+    dac_output_voltage(DAC_TEST_CHANNEL_NUM, helper_calc_dac_output(mV_ref));
+    vTaskDelay(pdMS_TO_TICKS(80));
+    int raw;
+    adc2_get_raw((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_WIDTH_BIT_13, &raw);
+    uint32_t voltage = esp_adc_cal_raw_to_voltage(raw, chars);
+    TEST_ASSERT_INT_WITHIN( 120, mV_ref, voltage ); // 120 mV error allowance, because both DAC and ADC have error
+    return true;
+}
+
+TEST_CASE("esp32s2 adc2-dac with adc2 calibration", "[adc-dac]")
+{
+    gpio_num_t adc_gpio_num, dac_gpio_num;
+    TEST_ESP_OK( adc2_pad_get_io_num( ADC_TEST_CHANNEL_NUM, &adc_gpio_num ) );
+    TEST_ESP_OK( dac_pad_get_io_num( DAC_TEST_CHANNEL_NUM, &dac_gpio_num ) );
+    printf("Please connect ADC2 CH%d-GPIO%d <--> DAC CH%d-GPIO%d.\n", ADC_TEST_CHANNEL_NUM, adc_gpio_num,
+           DAC_TEST_CHANNEL_NUM + 1, dac_gpio_num );
+    TEST_ESP_OK( dac_output_enable( DAC_TEST_CHANNEL_NUM ) );
+
+    esp_adc_cal_characteristics_t chars;
+
+    printf("Test 0dB atten...\n");
+    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_0);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_0, ADC_WIDTH_BIT_13, 0, &chars);
+    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    subtest_adc_dac(750, &chars);
+
+    printf("Test 2.5dB atten...\n");
+    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_2_5);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_13, 0, &chars);
+    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+     subtest_adc_dac(1100, &chars);
+
+    printf("Test 6dB atten...\n");
+    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_6);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_6, ADC_WIDTH_BIT_13, 0, &chars);
+    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    subtest_adc_dac(800, &chars);
+    subtest_adc_dac(1250, &chars);
+
+    printf("Test 11dB atten...\n");
+    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_11);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_13, 0, &chars);
+    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    subtest_adc_dac(1500, &chars);
+    subtest_adc_dac(2500, &chars);
+}
+#endif
