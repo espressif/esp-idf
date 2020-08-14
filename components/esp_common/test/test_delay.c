@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include "unity.h"
 #include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "unity.h"
 #include "test_utils.h"
 
 typedef struct {
@@ -38,7 +38,7 @@ static void test_delay_task(void *p)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("ets_delay produces correct delay", "[delay]")
+TEST_CASE("esp_rom_delay_us produces correct delay on CPUs", "[delay]")
 {
     int delay_ms = 50;
     const delay_test_arg_t args = {
@@ -51,11 +51,17 @@ TEST_CASE("ets_delay produces correct delay", "[delay]")
     TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * 2 / portTICK_PERIOD_MS));
     TEST_ASSERT_INT32_WITHIN(1000, args.delay_us, args.result);
 
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *)&args, 3, NULL, 1);
+    TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * 2 / portTICK_PERIOD_MS));
+    TEST_ASSERT_INT32_WITHIN(1000, args.delay_us, args.result);
+#endif
+
     ref_clock_deinit();
     vSemaphoreDelete(args.done);
 }
 
-TEST_CASE("vTaskDelay produces correct delay", "[delay]")
+TEST_CASE("vTaskDelay produces correct delay on CPUs", "[delay]")
 {
     int delay_ms = 50;
     const delay_test_arg_t args = {
@@ -67,6 +73,12 @@ TEST_CASE("vTaskDelay produces correct delay", "[delay]")
     xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *)&args, 3, NULL, 0);
     TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * 2 / portTICK_PERIOD_MS));
     TEST_ASSERT_INT32_WITHIN(1000, args.delay_us, args.result);
+
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *)&args, 3, NULL, 1);
+    TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * 2 / portTICK_PERIOD_MS));
+    TEST_ASSERT_INT32_WITHIN(1000, args.delay_us, args.result);
+#endif
 
     ref_clock_deinit();
     vSemaphoreDelete(args.done);
