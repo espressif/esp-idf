@@ -120,15 +120,6 @@ esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);
 esp_err_t esp_wifi_deinit_internal(void);
 
 /**
-  * @brief  get whether the wifi driver is allowed to transmit data or not
-  *
-  * @return
-  *     - true  : upper layer should stop to transmit data to wifi driver
-  *     - false : upper layer can transmit data to wifi driver
-  */
-bool esp_wifi_internal_tx_is_stop(void);
-
-/**
   * @brief  free the rx buffer which allocated by wifi driver
   *
   * @param  void* buffer: rx buffer pointer
@@ -138,17 +129,78 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
 /**
   * @brief  transmit the buffer via wifi driver
   *
+  * This API makes a copy of the input buffer and then forwards the buffer
+  * copy to WiFi driver.
+  *
   * @param  wifi_interface_t wifi_if : wifi interface id
   * @param  void *buffer : the buffer to be tansmit
   * @param  uint16_t len : the length of buffer
   *
   * @return
-  *    - ERR_OK  : Successfully transmit the buffer to wifi driver
-  *    - ERR_MEM : Out of memory
-  *    - ERR_IF : WiFi driver error
-  *    - ERR_ARG : Invalid argument
+  *    - ESP_OK  : Successfully transmit the buffer to wifi driver
+  *    - ESP_ERR_NO_MEM: out of memory
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  *    - ESP_ERR_WIFI_IF : WiFi interface is invalid
+  *    - ESP_ERR_WIFI_CONN : WiFi interface is not created, e.g. send the data to STA while WiFi mode is AP mode
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started
+  *    - ESP_ERR_WIFI_STATE : WiFi internal state is not ready, e.g. WiFi is not started
+  *    - ESP_ERR_WIFI_NOT_ASSOC : WiFi is not associated
+  *    - ESP_ERR_WIFI_TX_DISALLOW : WiFi TX is disallowed, e.g. WiFi hasn't pass the authentication 
+  *    - ESP_ERR_WIFI_POST : caller fails to post event to WiFi task
   */
 int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, uint16_t len);
+
+/**
+  * @brief     The net stack buffer reference counter callback function
+  *
+  */
+typedef void (*wifi_netstack_buf_ref_cb_t)(void *netstack_buf);
+
+/**
+  * @brief     The net stack buffer free callback function
+  *
+  */
+typedef void (*wifi_netstack_buf_free_cb_t)(void *netstack_buf);
+
+/**
+  * @brief  transmit the buffer by reference via wifi driver
+  *
+  * This API firstly increases the reference counter of the input buffer and
+  * then forwards the buffer to WiFi driver. The WiFi driver will free the buffer
+  * after processing it. Use esp_wifi_internal_tx() if the uplayer buffer doesn't
+  * supports reference counter.
+  * 
+  * @param  wifi_if : wifi interface id
+  * @param  buffer : the buffer to be tansmit
+  * @param  len : the length of buffer
+  * @param  netstack_buf : the netstack buffer related to bufffer
+  *
+  * @return
+  *    - ESP_OK  : Successfully transmit the buffer to wifi driver
+  *    - ESP_ERR_NO_MEM: out of memory
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  *    - ESP_ERR_WIFI_IF : WiFi interface is invalid
+  *    - ESP_ERR_WIFI_CONN : WiFi interface is not created, e.g. send the data to STA while WiFi mode is AP mode
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started
+  *    - ESP_ERR_WIFI_STATE : WiFi internal state is not ready, e.g. WiFi is not started
+  *    - ESP_ERR_WIFI_NOT_ASSOC : WiFi is not associated
+  *    - ESP_ERR_WIFI_TX_DISALLOW : WiFi TX is disallowed, e.g. WiFi hasn't pass the authentication 
+  *    - ESP_ERR_WIFI_POST : caller fails to post event to WiFi task
+  */
+esp_err_t esp_wifi_internal_tx_by_ref(wifi_interface_t ifx, void *buffer, size_t len, void *netstack_buf);
+
+/**
+  * @brief  register the net stack buffer reference increasing and free callback
+  *
+  * @param  ref : net stack buffer reference callback
+  * @param  free: net stack buffer free callback
+  *
+  * @return
+  *    - ESP_OK  : Successfully transmit the buffer to wifi driver
+  *    - others  : failed to register the callback
+  */
+esp_err_t esp_wifi_internal_reg_netstack_buf_cb(wifi_netstack_buf_ref_cb_t ref, wifi_netstack_buf_free_cb_t free);
+
 
 /**
   * @brief     The WiFi RX callback function

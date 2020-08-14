@@ -816,6 +816,22 @@ esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
 size_t esp_netif_get_nr_of_ifs(void);
 
 /**
+ * @brief increase the reference counter of net stack buffer
+ *
+ * @param[in]  netstack_buf the net stack buffer
+ *
+ */
+void esp_netif_netstack_buf_ref(void *netstack_buf);
+
+/**
+ * @brief free the netstack buffer
+ *
+ * @param[in]  netstack_buf the net stack buffer
+ *
+ */
+void esp_netif_netstack_buf_free(void *netstack_buf);
+
+/**
  * @}
  */
 

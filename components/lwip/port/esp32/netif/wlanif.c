@@ -131,10 +131,10 @@ low_level_output(struct netif *netif, struct pbuf *p)
   }
 
   struct pbuf *q = p;
-  err_t ret;
+  esp_err_t ret;
 
   if(q->next == NULL) {
-    ret = esp_netif_transmit(esp_netif, q->payload, q->len);
+    ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
 
   } else {
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
@@ -145,12 +145,20 @@ low_level_output(struct netif *netif, struct pbuf *p)
     } else {
       return ERR_MEM;
     }
-    ret = esp_netif_transmit(esp_netif, q->payload, q->len);
+    ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
 
     pbuf_free(q);
   }
 
-  return ret;
+  if (ret == ESP_OK) {
+    return ERR_OK;
+  } else if (ret == ESP_ERR_NO_MEM) {
+    return ERR_MEM;
+  } else if (ret == ESP_ERR_INVALID_ARG) {
+    return ERR_ARG;
+  } else {
+    return ERR_IF;
+  }
 }
 
 /**
