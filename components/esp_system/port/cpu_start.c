@@ -278,6 +278,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;
 #endif
+#ifdef CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+#else
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ);
+#endif
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors

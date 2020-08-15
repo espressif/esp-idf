@@ -142,6 +142,35 @@ esp_err_t esp_wifi_deinit(void)
     return err;
 }
 
+static void esp_wifi_config_info(void)
+{
+#ifdef CONFIG_ESP32_WIFI_RX_BA_WIN
+    ESP_LOGI(TAG, "rx ba win: %d", CONFIG_ESP32_WIFI_RX_BA_WIN);
+#endif
+    ESP_LOGI(TAG, "tcpip mbox: %d", CONFIG_LWIP_TCPIP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "udp mbox: %d", CONFIG_LWIP_UDP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "tcp mbox: %d", CONFIG_LWIP_TCP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "tcp tx win: %d", CONFIG_LWIP_TCP_SND_BUF_DEFAULT);
+    ESP_LOGI(TAG, "tcp rx win: %d", CONFIG_LWIP_TCP_WND_DEFAULT);
+    ESP_LOGI(TAG, "tcp mss: %d", CONFIG_LWIP_TCP_MSS);
+
+#ifdef CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    ESP_LOGI(TAG, "WiFi/LWIP prefer SPIRAM");
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_IRAM_OPT
+    ESP_LOGI(TAG, "WiFi IRAM OP enabled");
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_RX_IRAM_OPT
+    ESP_LOGI(TAG, "WiFi RX IRAM OP enabled");
+#endif
+
+#ifdef CONFIG_LWIP_IRAM_OPTIMIZATION
+    ESP_LOGI(TAG, "LWIP IRAM OP enabled");
+#endif
+}
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
@@ -190,6 +219,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #if CONFIG_IDF_TARGET_ESP32S2
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 #endif
+    esp_wifi_config_info();
     return result;
 }
 
