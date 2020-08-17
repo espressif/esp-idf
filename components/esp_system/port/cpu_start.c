@@ -30,11 +30,13 @@
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rtc.h"
 #include "esp32/cache_err_int.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rtc.h"
 #include "esp32s2/brownout.h"
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/rom/cache.h"
@@ -54,6 +56,8 @@
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
+#include "soc/spinlock.h"
 
 #include "trax.h"
 
@@ -66,6 +70,7 @@
 #endif
 
 #include "esp_private/startup_internal.h"
+#include "esp_private/system_internal.h"
 
 extern int _bss_start;
 extern int _bss_end;
@@ -102,7 +107,6 @@ void startup_resume_other_cores(void)
 {
     s_resume_cores = true;
 }
-
 
 void IRAM_ATTR call_start_cpu1(void)
 {
@@ -356,6 +360,11 @@ void IRAM_ATTR call_start_cpu0(void)
 
     esp_clk_init();
     esp_perip_clk_init();
+
+    // Now that the clocks have been set-up, set the startup time from RTC
+    // and default RTC-backed system time provider.
+    g_startup_time = esp_rtc_get_time_us();
+
     intr_matrix_clear();
 
 #ifdef CONFIG_ESP_CONSOLE_UART

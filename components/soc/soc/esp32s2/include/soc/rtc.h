@@ -809,6 +809,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
  */
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
+
 #ifdef __cplusplus
 }
 #endif

@@ -13,6 +13,13 @@
 #include "test_utils.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "esp_system.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#endif
 
 #if portNUM_PROCESSORS == 2
 
@@ -379,8 +386,8 @@ void test_posix_timers_clock (void)
     ts.tv_nsec = 100000000L;
     TEST_ASSERT(clock_settime(CLOCK_REALTIME, &ts) == 0);
     TEST_ASSERT(gettimeofday(&now, NULL) == 0);
-    TEST_ASSERT(now.tv_sec == ts.tv_sec);
-    TEST_ASSERT_INT_WITHIN(5000L, now.tv_usec,  ts.tv_nsec / 1000L);
+    TEST_ASSERT_EQUAL(ts.tv_sec, now.tv_sec);
+    TEST_ASSERT_INT_WITHIN(5000L, ts.tv_nsec / 1000L, now.tv_usec);
 
     TEST_ASSERT(clock_settime(CLOCK_MONOTONIC, &ts) == -1);
 
