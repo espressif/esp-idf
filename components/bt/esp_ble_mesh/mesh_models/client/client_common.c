@@ -359,6 +359,7 @@ int bt_mesh_client_clear_list(void *data)
     bt_mesh_list_lock();
     while (!sys_slist_is_empty(&internal->queue)) {
         node = (void *)sys_slist_get_not_empty(&internal->queue);
+        k_delayed_work_free(&node->timer);
         bt_mesh_free(node);
     }
     bt_mesh_list_unlock();
