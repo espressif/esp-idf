@@ -69,9 +69,13 @@ def main():
     # functions and this way makes Python 2 compatibility really tough if there is any code that assumes text files contain strings (kconfiglib assumes this).
     # The reason for that is that you need to import io.open() to support the encoding argument on Python 2, and this function always uses Py2's unicode
     # type not the str type.
-    if 'UTF-8' not in locale.getlocale():
-        raise RuntimeError("build_docs.py requires the default locale's encoding to be UTF-8. " +
-                           "Setting environment variable LC_ALL=C.UTF-8 when running build_docs.py may be enough to fix this.")
+    if ('UTF-8' not in locale.getlocale()) and ('utf8' not in locale.getlocale()):
+        raise RuntimeError("build_docs.py requires the default locale's encoding to be UTF-8.\n" +
+                           " - Linux. Setting environment variable LC_ALL=C.UTF-8 when running build_docs.py may be " +
+                           "enough to fix this.\n"
+                           " - Windows. Possible solution for the Windows 10 starting version 1803. Go to " +
+                           "Control Panel->Clock and Region->Region->Administrative->Change system locale...; " +
+                           "Check `Beta: Use Unicode UTF-8 for worldwide language support` and reboot")
 
     parser = argparse.ArgumentParser(description='build_docs.py: Build IDF docs', prog='build_docs.py')
 
