@@ -280,6 +280,8 @@ int bt_mesh_provisioner_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb);
  */
 int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info);
 
+int bt_mesh_provisioner_init_primary_addr(void);
+
 /**
  * @brief This function sets the provisioning information needed by Provisioner,
  *        including unicast address, IV Index, etc.

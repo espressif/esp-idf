@@ -1128,7 +1128,7 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info)
     return 0;
 }
 
-int bt_mesh_provisioner_init_prov_info(void)
+int bt_mesh_provisioner_init_primary_addr(void)
 {
     const struct bt_mesh_comp *comp = NULL;
 
@@ -1167,6 +1167,12 @@ int bt_mesh_provisioner_init_prov_info(void)
             bt_mesh_store_prov_info(prov_ctx.primary_addr, prov_ctx.curr_alloc_addr);
         }
     }
+
+    return 0;
+}
+
+int bt_mesh_provisioner_init_prov_info(void)
+{
     prov_ctx.curr_net_idx = BLE_MESH_KEY_PRIMARY;
     struct bt_mesh_subnet *sub = bt_mesh_provisioner_subnet_get(BLE_MESH_KEY_PRIMARY);
     prov_ctx.curr_flags = bt_mesh_net_flags(sub);

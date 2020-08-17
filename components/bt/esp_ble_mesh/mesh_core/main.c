@@ -538,6 +538,12 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
         return -EALREADY;
     }
 
+    err = bt_mesh_provisioner_init_primary_addr();
+    if (err) {
+        BT_ERR("%s, Failed to init primary addr", __func__);
+        return err;
+    }
+
     err = bt_mesh_provisioner_net_create();
     if (err) {
         BT_ERR("%s, Failed to create network", __func__);
