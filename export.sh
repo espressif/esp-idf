@@ -118,17 +118,6 @@ idf_export_main() {
         echo "  ${PATH}"
     fi
 
-    # Clean up
-    unset old_path
-    unset paths
-    unset path_prefix
-    unset path_entry
-    unset IDF_ADD_PATHS_EXTRAS
-    unset idf_exports
-
-    # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
-    # to check whether we are using a private Python environment
-
     echo "Done! You can now compile ESP-IDF projects."
     echo "Go to the project directory and run:"
     echo ""
@@ -136,7 +125,24 @@ idf_export_main() {
     echo ""
 }
 
+cleanup()
+{
+    unset old_path
+    unset paths
+    unset path_prefix
+    unset path_entry
+    unset IDF_ADD_PATHS_EXTRAS
+    unset idf_exports
+    unset realpath_int
+    unset idf_export_main
+    unset cleanup
+
+    # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
+    # to check whether we are using a private Python environment
+
+    return $1
+}
+
 idf_export_main
 
-unset realpath_int
-unset idf_export_main
+cleanup $?
