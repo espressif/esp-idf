@@ -33,7 +33,7 @@ typedef enum {
     OSI_ALARM_ERR_INVALID_STATE = -3,
 } osi_alarm_err_t;
 
-#define ALARM_CBS_NUM   80  //ble mesh will use 30+node timers, so change it from 50 to 80
+#define ALARM_CBS_NUM   120  //ble mesh will use 30+node timers, so change it from 50 to 120
 #define ALARM_ID_BASE   1000
 
 int osi_alarm_create_mux(void);
