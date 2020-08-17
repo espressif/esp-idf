@@ -512,9 +512,40 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 }
 
 #if defined(CONFIG_BLE_MESH_PROVISIONER)
-int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
+int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 {
+    int err = 0;
+
+    if (bt_mesh_is_provisioner_en()) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
+    if (prov_bearers_valid(bearers) == false) {
+        return -EINVAL;
+    }
+
+    err = bt_mesh_provisioner_net_create();
+    if (err) {
+        BT_ERR("Failed to create network");
+        return err;
+    }
+
+    err = bt_mesh_provisioner_init_prov_info();
+    if (err) {
+        BT_ERR("Failed to init prov info");
+        return err;
+    }
+
     bt_mesh_provisioner_set_prov_bearer(bearers, false);
+
+    bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
+
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_role();
+    }
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
@@ -548,40 +579,6 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
     bt_mesh_scan_enable();
 
     return 0;
-}
-
-int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
-{
-    int err = 0;
-
-    if (bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Already", __func__);
-        return -EALREADY;
-    }
-
-    if (prov_bearers_valid(bearers) == false) {
-        return -EINVAL;
-    }
-
-    err = bt_mesh_provisioner_set_prov_info();
-    if (err) {
-        BT_ERR("Failed to set provisioning info");
-        return err;
-    }
-
-    err = bt_mesh_provisioner_net_create();
-    if (err) {
-        BT_ERR("Failed to create network");
-        return err;
-    }
-
-    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_store_role();
-    }
-
-    return bt_mesh_provisioner_net_start(bearers);
 }
 
 int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
