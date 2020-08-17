@@ -655,6 +655,7 @@ typedef UINT8 tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_ENER_INFO_READ           28      /* Energy info read */
 #define BTA_DM_BLE_DEV_UNPAIRED_EVT     29      /* BLE unpair event */
 #define BTA_DM_SP_KEY_REQ_EVT           30      /* Simple Pairing Passkey request */
+#define BTA_DM_PM_MODE_CHG_EVT          31      /* Mode changed event */
 
 typedef UINT8 tBTA_DM_SEC_EVT;
 
@@ -877,6 +878,12 @@ typedef tBTM_LE_AUTH_REQ       tBTA_LE_AUTH_REQ;       /* combination of the abo
 #endif
 typedef tBTM_OOB_DATA   tBTA_OOB_DATA;
 
+#define BTA_PM_MD_ACTIVE    BTM_PM_MD_ACTIVE    /* 0 Active mode */
+#define BTA_PM_MD_HOLD      BTM_PM_MD_HOLD      /* 1 Hold mode */
+#define BTA_PM_MD_SNIFF     BTM_PM_MD_SNIFF     /* 2 Sniff mode */
+#define BTA_PM_MD_PARK      BTM_PM_MD_PARK      /* 3 Park state */
+typedef tBTM_PM_MODE tBTA_PM_MODE;
+
 /* Structure associated with BTA_DM_SP_CFM_REQ_EVT */
 typedef struct {
     /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in order */
@@ -935,6 +942,13 @@ typedef struct {
     tBTA_STATUS     result;    /* TRUE of bond cancel succeeded, FALSE if failed. */
 } tBTA_DM_BOND_CANCEL_CMPL;
 
+/* Structure associated with BTA_DM_PM_MODE_CHG_EVT */
+typedef struct {
+    BD_ADDR         bd_addr;            /* BD address peer device. */
+    tBTA_PM_MODE    mode;               /* the new connection role */
+} tBTA_DM_MODE_CHG;
+
+
 /* Union of all security callback structures */
 typedef union {
     tBTA_DM_ENABLE              enable;             /* BTA enabled */
@@ -955,6 +969,9 @@ typedef union {
     tBTA_DM_BLE_KEY             ble_key;            /* BLE SMP keys used when pairing */
     tBTA_BLE_LOCAL_ID_KEYS      ble_id_keys;        /* IR event */
     BT_OCTET16                  ble_er;             /* ER event data */
+#if BTA_DM_PM_INCLUDED
+    tBTA_DM_MODE_CHG            mode_chg;           /* mode change event */
+#endif ///BTA_DM_PM_INCLUDED
 } tBTA_DM_SEC;
 
 /* Security callback */

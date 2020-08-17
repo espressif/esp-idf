@@ -36,6 +36,7 @@ typedef enum {
     BTC_GAP_BT_CONFIG_EIR_DATA_EVT,
     BTC_GAP_BT_SET_AFH_CHANNELS_EVT,
     BTC_GAP_BT_READ_REMOTE_NAME_EVT,
+    BTC_GAP_BT_MODE_CHG_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {

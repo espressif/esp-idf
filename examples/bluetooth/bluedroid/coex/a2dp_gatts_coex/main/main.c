@@ -624,6 +624,10 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
         break;
 #endif
+    case ESP_BT_GAP_MODE_CHG_EVT:
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode:%d", param->mode_chg.mode);
+        break;
+
     default: {
         ESP_LOGI(BT_BLE_COEX_TAG, "event: %d", event);
         break;
