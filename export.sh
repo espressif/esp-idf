@@ -126,7 +126,15 @@ __main() {
         __verbose "  ${PATH}"
     fi
 
-    # Clean up
+
+    __verbose "Done! You can now compile ESP-IDF projects."
+    __verbose "Go to the project directory and run:"
+    __verbose ""
+    __verbose "  idf.py build"
+    __verbose ""
+}
+
+__cleanup() {
     unset old_path
     unset paths
     unset path_prefix
@@ -135,15 +143,18 @@ __main() {
     unset idf_exports
     unset ESP_PYTHON
 
+    unset __realpath
+    unset __main
+    unset __verbose
+    unset __enable_autocomplete
+    unset __cleanup
+
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment
 
-    __verbose "Done! You can now compile ESP-IDF projects."
-    __verbose "Go to the project directory and run:"
-    __verbose ""
-    __verbose "  idf.py build"
-    __verbose ""
+    return $1
 }
+
 
 __enable_autocomplete() {
     click_version="$(python -c 'import click; print(click.__version__.split(".")[0])')"
@@ -171,8 +182,4 @@ __enable_autocomplete() {
 
 __main
 __enable_autocomplete
-
-unset __realpath
-unset __main
-unset __verbose
-unset __enable_autocomplete
+__cleanup $?
