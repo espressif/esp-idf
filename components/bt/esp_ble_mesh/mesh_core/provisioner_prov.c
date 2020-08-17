@@ -236,7 +236,7 @@ struct bt_mesh_prov_ctx {
     u16_t curr_net_idx;
 
     /* Current flags going to be used in provisioning data */
-    u16_t curr_flags;
+    u8_t  curr_flags;
 
     /* Current iv_index going to be used in provisioning data */
     u16_t curr_iv_index;
@@ -1128,7 +1128,7 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info)
     return 0;
 }
 
-int bt_mesh_provisioner_set_prov_info(void)
+int bt_mesh_provisioner_init_prov_info(void)
 {
     const struct bt_mesh_comp *comp = NULL;
 
@@ -1168,8 +1168,9 @@ int bt_mesh_provisioner_set_prov_info(void)
         }
     }
     prov_ctx.curr_net_idx = BLE_MESH_KEY_PRIMARY;
-    prov_ctx.curr_flags = prov->flags;
-    prov_ctx.curr_iv_index = prov->iv_index;
+    struct bt_mesh_subnet *sub = bt_mesh_provisioner_subnet_get(BLE_MESH_KEY_PRIMARY);
+    prov_ctx.curr_flags = bt_mesh_net_flags(sub);
+    prov_ctx.curr_iv_index = bt_mesh.iv_index;
 
     return 0;
 }

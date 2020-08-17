@@ -538,15 +538,15 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
         return -EALREADY;
     }
 
-    err = bt_mesh_provisioner_set_prov_info();
-    if (err) {
-        BT_ERR("%s, Failed to set provisioning info", __func__);
-        return err;
-    }
-
     err = bt_mesh_provisioner_net_create();
     if (err) {
         BT_ERR("%s, Failed to create network", __func__);
+        return err;
+    }
+
+    err = bt_mesh_provisioner_init_prov_info();
+    if (err) {
+        BT_ERR("%s, Failed to init provisioning info", __func__);
         return err;
     }
 
