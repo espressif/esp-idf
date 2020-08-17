@@ -18,7 +18,7 @@
 static const char *TAG = "TUSB:descriptors_control";
 static tusb_desc_device_t s_descriptor;
 static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
-
+bool tusb_desc_set;
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
@@ -78,6 +78,7 @@ uint8_t const *tud_descriptor_device_cb(void)
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
 {
     (void)index; // for multiple configurations
+    ESP_LOG_BUFFER_HEX("", desc_configuration, 100);
     return desc_configuration;
 }
 
