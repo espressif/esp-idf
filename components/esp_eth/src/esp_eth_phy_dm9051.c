@@ -20,6 +20,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "dm9051";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -189,9 +191,10 @@ static esp_err_t dm9051_reset_hw(esp_eth_phy_t *phy)
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
     // set reset_gpio_num minus zero can skip hardware reset phy chip
     if (dm9051->reset_gpio_num >= 0) {
-        gpio_pad_select_gpio(dm9051->reset_gpio_num);
+        esp_rom_gpio_pad_select_gpio(dm9051->reset_gpio_num);
         gpio_set_direction(dm9051->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(dm9051->reset_gpio_num, 0);
+        esp_rom_delay_us(100); // insert min input assert time
         gpio_set_level(dm9051->reset_gpio_num, 1);
     }
     return ESP_OK;

@@ -827,7 +827,6 @@ void l2c_process_held_packets(BOOLEAN timed_out)
 *******************************************************************************/
 void l2c_init (void)
 {
-    INT16  xx;
 #if L2C_DYNAMIC_MEMORY
     l2c_cb_ptr = (tL2C_CB *)osi_malloc(sizeof(tL2C_CB));
 #endif /* #if L2C_DYNAMIC_MEMORY */
@@ -835,9 +834,13 @@ void l2c_init (void)
     /* the psm is increased by 2 before being used */
     l2cb.dyn_psm = 0xFFF;
 
-    /* Put all the channel control blocks on the free queue */
-    for (xx = 0; xx < MAX_L2CAP_CHANNELS - 1; xx++) {
-        l2cb.ccb_pool[xx].p_next_ccb = &l2cb.ccb_pool[xx + 1];
+    l2cb.p_ccb_pool = list_new(osi_free_func);
+    if (l2cb.p_ccb_pool == NULL) {
+        L2CAP_TRACE_ERROR("%s unable to allocate memory for L2CAP channel control block", __func__);
+    }
+    l2cb.p_lcb_pool = list_new(osi_free_func);
+    if (l2cb.p_lcb_pool == NULL) {
+        L2CAP_TRACE_ERROR("%s unable to allocate memory for L2CAP Link control block", __func__);
     }
 
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
@@ -846,8 +849,6 @@ void l2c_init (void)
 #endif
 
 
-    l2cb.p_free_ccb_first = &l2cb.ccb_pool[0];
-    l2cb.p_free_ccb_last  = &l2cb.ccb_pool[MAX_L2CAP_CHANNELS - 1];
 
 #ifdef L2CAP_DESIRED_LINK_ROLE
     l2cb.desire_role      = L2CAP_DESIRED_LINK_ROLE;
@@ -883,14 +884,22 @@ void l2c_init (void)
     if (l2cb.rcv_pending_q == NULL) {
         L2CAP_TRACE_ERROR("%s unable to allocate memory for link layer control block", __func__);
     }
+#if BLE_INCLUDED == TRUE
+    l2ble_update_att_acl_pkt_num(L2CA_BUFF_INI, NULL);
+#endif
 }
 
 void l2c_free(void)
 {
     list_free(l2cb.rcv_pending_q);
     l2cb.rcv_pending_q = NULL;
+    list_free(l2cb.p_lcb_pool);
+    list_free(l2cb.p_ccb_pool);
 #if L2C_DYNAMIC_MEMORY
     FREE_AND_RESET(l2c_cb_ptr);
+#endif
+#if BLE_INCLUDED == TRUE
+    l2ble_update_att_acl_pkt_num(L2CA_BUFF_DEINIT, NULL);
 #endif
 }
 

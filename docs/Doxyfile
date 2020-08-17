@@ -86,8 +86,6 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
-    $(IDF_PATH)/components/driver/include/driver/can.h \
-    $(IDF_PATH)/components/soc/include/hal/can_types.h \
     $(IDF_PATH)/components/driver/include/driver/dac.h \
     $(IDF_PATH)/components/driver/include/driver/gpio.h \
     $(IDF_PATH)/components/driver/include/driver/rtc_io.h \
@@ -102,15 +100,18 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
+    $(IDF_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
     $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(IDF_PATH)/components/driver/include/driver/twai.h \
     $(IDF_PATH)/components/driver/include/driver/adc_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
+    $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
     $(IDF_PATH)/components/soc/include/hal/spi_types.h \
     $(IDF_PATH)/components/soc/include/hal/pcnt_types.h \
@@ -124,6 +125,7 @@ INPUT = \
     $(IDF_PATH)/components/soc/include/hal/adc_types.h \
     $(IDF_PATH)/components/soc/include/hal/gpio_types.h \
     $(IDF_PATH)/components/soc/include/hal/uart_types.h \
+    $(IDF_PATH)/components/soc/include/hal/twai_types.h \
     $(IDF_PATH)/components/soc/include/hal/touch_sensor_types.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/adc_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/dac_channel.h \
@@ -156,6 +158,7 @@ INPUT = \
     ## ESP Serial Slave Link
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     ## ESP Certificate Bundle
     $(IDF_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     ##
@@ -229,10 +232,11 @@ INPUT = \
     ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \
     $(IDF_PATH)/components/esp_common/include/esp_task_wdt.h \
+    $(IDF_PATH)/components/esp_common/include/esp_crc.h \
     ## Hooks
     $(IDF_PATH)/components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
-    $(IDF_PATH)/components/esp_common/include/esp_ipc.h \
+    $(IDF_PATH)/components/esp_ipc/include/esp_ipc.h \
     ## Call Function with External stack
     $(IDF_PATH)/components/esp_common/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)
@@ -253,7 +257,8 @@ INPUT = \
     ##
     ## NOTE: for line below header_file.inc is not used
     $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
-    $(IDF_PATH)/components/ulp/include/ulp_common.h \
+    $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
+    $(IDF_PATH)/components/ulp/include/ulp_common.h \  
     ##
     ## Application Level Tracing - API Reference
     ##
@@ -340,7 +345,4 @@ GENERATE_RTF    = NO
 ## Skip distracting progress messages
 ##
 QUIET = YES
-## Log warnings in a file for further review
-##
-WARN_LOGFILE = "doxygen-warning-log.txt"
 

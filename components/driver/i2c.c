@@ -30,6 +30,8 @@
 #include "soc/i2c_periph.h"
 #include "driver/i2c.h"
 #include "driver/periph_ctrl.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
@@ -528,16 +530,16 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     // a STOP condition.
     gpio_set_level(scl_io, 0);
     gpio_set_level(sda_io, 1);
-    ets_delay_us(scl_half_period);
+    esp_rom_delay_us(scl_half_period);
     while (!gpio_get_level(sda_io) && (i++ < I2C_CLR_BUS_SCL_NUM)) {
         gpio_set_level(scl_io, 1);
-        ets_delay_us(scl_half_period);
+        esp_rom_delay_us(scl_half_period);
         gpio_set_level(scl_io, 0);
-        ets_delay_us(scl_half_period);
+        esp_rom_delay_us(scl_half_period);
     }
     gpio_set_level(sda_io, 0); // setup for STOP
     gpio_set_level(scl_io, 1);
-    ets_delay_us(scl_half_period);
+    esp_rom_delay_us(scl_half_period);
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
 #else
@@ -788,15 +790,15 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
         } else {
             gpio_set_pull_mode(sda_io_num, GPIO_FLOATING);
         }
-        gpio_matrix_out(sda_io_num, sda_out_sig, 0, 0);
-        gpio_matrix_in(sda_io_num, sda_in_sig, 0);
+        esp_rom_gpio_connect_out_signal(sda_io_num, sda_out_sig, 0, 0);
+        esp_rom_gpio_connect_in_signal(sda_io_num, sda_in_sig, 0);
     }
     if (scl_io_num >= 0) {
         gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
-        gpio_matrix_out(scl_io_num, scl_out_sig, 0, 0);
-        gpio_matrix_in(scl_io_num, scl_in_sig, 0);
+        esp_rom_gpio_connect_out_signal(scl_io_num, scl_out_sig, 0, 0);
+        esp_rom_gpio_connect_in_signal(scl_io_num, scl_in_sig, 0);
         if (scl_pullup_en == GPIO_PULLUP_ENABLE) {
             gpio_set_pull_mode(scl_io_num, GPIO_PULLUP_ONLY);
         } else {
@@ -899,7 +901,7 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle)
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
-esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, bool ack_en)
+esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, size_t data_len, bool ack_en)
 {
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
@@ -916,7 +918,7 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t da
         cmd.hw_cmd.ack_val = 0;
         cmd.hw_cmd.op_code = I2C_CMD_WRITE;
         cmd.hw_cmd.byte_num = len_tmp;
-        cmd.data = data + data_offset;
+        cmd.data = (uint8_t*) data + data_offset;
         ret = i2c_cmd_link_append(cmd_handle, &cmd);
         data_offset += len_tmp;
         if (ret != ESP_OK) {

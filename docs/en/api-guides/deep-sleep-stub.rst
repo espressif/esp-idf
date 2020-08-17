@@ -66,7 +66,7 @@ The first way is to use the ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` to specify
     void RTC_IRAM_ATTR esp_wake_deep_sleep(void) {
         esp_default_wake_deep_sleep();
         static RTC_RODATA_ATTR const char fmt_str[] = "Wake count %d\n";
-        ets_printf(fmt_str, wake_count++);
+        esp_rom_printf(fmt_str, wake_count++);
     }
 
 .. only:: esp32
@@ -85,7 +85,7 @@ For example, the equivalent example in ``rtc_wake_stub_counter.c``::
 
     void RTC_IRAM_ATTR esp_wake_deep_sleep(void) {
         esp_default_wake_deep_sleep();
-        ets_printf("Wake count %d\n", wake_count++);
+        esp_rom_printf("Wake count %d\n", wake_count++);
     }
 
 The second way is a better option if you need to use strings, or write other more complex code.

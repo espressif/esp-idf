@@ -23,6 +23,8 @@ import re
 import subprocess
 from sanitize_version import sanitize_version
 from idf_extensions.util import download_file_if_missing
+from get_github_rev import get_github_rev
+
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -56,6 +58,10 @@ extensions = ['breathe',
               'extensions.toctree_filter',
               'extensions.list_filter',
 
+              # Note: order is important here, events must
+              # be registered by one extension before they can be
+              # connected to another extension
+
               'idf_extensions.include_build_file',
               'idf_extensions.link_roles',
               'idf_extensions.build_system',
@@ -63,11 +69,11 @@ extensions = ['breathe',
               'idf_extensions.gen_toolchain_links',
               'idf_extensions.gen_version_specific_includes',
               'idf_extensions.kconfig_reference',
+              'idf_extensions.gen_defines',
               'idf_extensions.run_doxygen',
               'idf_extensions.gen_idf_tools_links',
               'idf_extensions.format_idf_target',
               'idf_extensions.latex_builder',
-              'idf_extensions.gen_defines',
               'idf_extensions.exclude_docs',
 
               # from https://github.com/pfalcon/sphinx_selective_exclude
@@ -123,7 +129,7 @@ print('Version: {0}  Release: {1}'.format(version, release))
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['**/inc/**', '_static', '**/_build']
+exclude_patterns = ['**/inc/**', '_static/', '_build/**']
 
 
 BT_DOCS = ['api-guides/blufi.rst',
@@ -133,9 +139,7 @@ BT_DOCS = ['api-guides/blufi.rst',
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
 
-SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
-                   'api-reference/peripherals/esp_slave_protocol.rst',
-                   'api-reference/protocols/esp_serial_slave_link.rst']
+SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst']
 
 MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
@@ -146,12 +150,10 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'get-started-legacy/**']
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
-              'api-guides/jtag-debugging/configure-wrover.rst',
               'api-reference/system/himem.rst',
               'api-guides/RF_calibration.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
-              'security/secure-boot-v2.rst',
               'api-reference/peripherals/secure_element.rst',
               'hw-reference/esp32/**'] + LEGACY_DOCS
 
@@ -159,7 +161,11 @@ ESP32S2_DOCS = ['esp32s2.rst',
                 'hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
                 'api-guides/dfu.rst',
+                'api-guides/usb-console.rst',
+                'api-guides/ulp-risc-v.rst',
                 'api-reference/peripherals/hmac.rst',
+                'api-reference/peripherals/ds.rst',
+                'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst'
                 '']
 
@@ -223,6 +229,14 @@ html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_theme = 'sphinx_idf_theme'
 
+# context used by sphinx_idf_theme
+html_context = {
+    "display_github": True,  # Add 'Edit on Github' link instead of 'View page source'
+    "github_user": "espressif",
+    "github_repo": "esp-idf",
+    "github_version": get_github_rev(),
+}
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -241,6 +255,7 @@ html_theme = 'sphinx_idf_theme'
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 html_logo = "../_static/espressif-logo.svg"
+
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -384,6 +399,7 @@ def setup(app):
         app.add_config_value('idf_targets', None, 'env')
 
     app.add_config_value('conditional_include_dict', None, 'env')
+    app.add_config_value('docs_to_build', None, 'env')
 
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
@@ -394,6 +410,7 @@ def setup(app):
 
     # Config values pushed by -D using the cmdline is not available when setup is called
     app.connect('config-inited',  setup_config_values)
+    app.connect('config-inited',  setup_html_context)
 
 
 def setup_config_values(app, config):
@@ -407,6 +424,11 @@ def setup_config_values(app, config):
 
     pdf_name = "esp-idf-{}-{}-{}".format(app.config.language, app.config.version, app.config.idf_target)
     app.add_config_value('pdf_file', pdf_name, 'env')
+
+
+def setup_html_context(app, config):
+    # Setup path for 'edit on github'-link
+    config.html_context['conf_py_path'] = "/docs/{}/".format(app.config.language)
 
 
 def setup_diag_font(app):

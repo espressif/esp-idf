@@ -25,6 +25,29 @@
 /**
  * @brief create a openssl stack object
  */
+typedef struct stack_st_tag {
+    size_t num;
+    void **data;
+} _STACK;
+
+
+GENERAL_NAME *sk_GENERAL_NAME_value(const struct stack_st_GENERAL_NAME *sk, size_t i)
+{
+    if (!sk || i >= ((_STACK*)sk)->num) {
+        return NULL;
+    }
+    return ((_STACK*)sk)->data[i];
+}
+
+
+size_t sk_GENERAL_NAME_num(const struct stack_st_GENERAL_NAME *sk)
+{
+    if (sk == NULL) {
+        return 0;
+    }
+    return ((_STACK*)sk)->num;
+}
+
 OPENSSL_STACK* OPENSSL_sk_new(OPENSSL_sk_compfunc c)
 {
     OPENSSL_STACK *stack;

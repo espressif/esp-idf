@@ -20,7 +20,7 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -70,8 +70,8 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_enable(&wdt1_context);
 
     // Flush any data left in UART FIFOs
-    uart_tx_wait_idle(0);
-    uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
     // Disable cache
     Cache_Disable_ICache();
     Cache_Disable_DCache();

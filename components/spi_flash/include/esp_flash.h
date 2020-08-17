@@ -34,7 +34,15 @@ typedef struct {
     uint32_t size;      ///< Size of the region
 } esp_flash_region_t;
 
-/** OS-level integration hooks for accessing flash chips inside a running OS */
+/** @brief OS-level integration hooks for accessing flash chips inside a running OS
+ *
+ * It's in the public header because some instances should be allocated statically in the startup
+ * code. May be updated according to hardware version and new flash chip feature requirements,
+ * shouldn't be treated as public API.
+ *
+ *  For advanced developers, you may replace some of them with your implementations at your own
+ *  risk.
+*/
 typedef struct {
     /**
      * Called before commencing any flash operation. Does not need to be
@@ -50,14 +58,29 @@ typedef struct {
 
     /** Delay for at least 'us' microseconds. Called in between 'start' and 'end'. */
     esp_err_t (*delay_us)(void *arg, unsigned us);
+
+    /** Called for get temp buffer when buffer from application cannot be directly read into/write from. */
+    void *(*get_temp_buffer)(void* arg, size_t reqest_size, size_t* out_size);
+
+    /** Called for release temp buffer. */
+    void (*release_temp_buffer)(void* arg, void *temp_buf);
+
+    /** Yield to other tasks. Called during erase operations. */
+    esp_err_t (*yield)(void *arg);
 } esp_flash_os_functions_t;
 
 /** @brief Structure to describe a SPI flash chip connected to the system.
 
-    Structure must be initialized before use (passed to esp_flash_init()).
+    Structure must be initialized before use (passed to esp_flash_init()). It's in the public
+    header because some instances should be allocated statically in the startup code. May be
+    updated according to hardware version and new flash chip feature requirements, shouldn't be
+    treated as public API.
+
+    For advanced developers, you may replace some of them with your implementations at your own
+    risk.
 */
 struct esp_flash_t {
-    spi_flash_host_driver_t *host;      ///< Pointer to hardware-specific "host_driver" structure. Must be initialized before used.
+    spi_flash_host_inst_t* host;   ///< Pointer to hardware-specific "host_driver" structure. Must be initialized before used.
     const spi_flash_chip_t *chip_drv;   ///< Pointer to chip-model-specific "adapter" structure. If NULL, will be detected during initialisation.
 
     const esp_flash_os_functions_t *os_func;    ///< Pointer to os-specific hook structure. Call ``esp_flash_init_os_functions()`` to setup this field, after the host is properly initialized.

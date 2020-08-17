@@ -26,8 +26,8 @@
  * This function is used to derive new, cryptographically separate keys from a
  * given key in TLS. This PRF is defined in RFC 2246, Chapter 5.
  */
-void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
-		    const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
+int tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
+		   const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
 {
 	size_t clen;
 	u8 A[SHA256_MAC_LEN];
@@ -50,12 +50,15 @@ void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
 	 * PRF(secret, label, seed) = P_SHA256(secret, label + seed)
 	 */
 
-	hmac_sha256_vector(secret, secret_len, 2, &addr[1], &len[1], A);
+	if (hmac_sha256_vector(secret, secret_len, 2, &addr[1], &len[1], A) < 0)
+		return -1;
 
 	pos = 0;
 	while (pos < outlen) {
-		hmac_sha256_vector(secret, secret_len, 3, addr, len, P);
-		hmac_sha256(secret, secret_len, A, SHA256_MAC_LEN, A);
+		if (hmac_sha256_vector(secret, secret_len, 3, addr, len, P) <
+		    0 ||
+		    hmac_sha256(secret, secret_len, A, SHA256_MAC_LEN, A) < 0)
+			return -1;
 
 		clen = outlen - pos;
 		if (clen > SHA256_MAC_LEN)
@@ -63,4 +66,6 @@ void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
 		os_memcpy(out + pos, P, clen);
 		pos += clen;
 	}
+
+	return 0;
 }

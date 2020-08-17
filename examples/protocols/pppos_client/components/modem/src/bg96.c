@@ -15,32 +15,11 @@
 #include <string.h>
 #include "esp_log.h"
 #include "bg96.h"
+#include "bg96_private.h"
 
 #define MODEM_RESULT_CODE_POWERDOWN "POWERED DOWN"
 
-/**
- * @brief Macro defined for error checking
- *
- */
 static const char *DCE_TAG = "bg96";
-#define DCE_CHECK(a, str, goto_tag, ...)                                              \
-    do                                                                                \
-    {                                                                                 \
-        if (!(a))                                                                     \
-        {                                                                             \
-            ESP_LOGE(DCE_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            goto goto_tag;                                                            \
-        }                                                                             \
-    } while (0)
-
-/**
- * @brief BG96 Modem
- *
- */
-typedef struct {
-    void *priv_resource; /*!< Private resource */
-    modem_dce_t parent;  /*!< DCE parent class */
-} bg96_modem_dce_t;
 
 /**
  * @brief Handle response from AT+CSQ

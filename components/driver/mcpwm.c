@@ -24,7 +24,7 @@
 #include "driver/periph_ctrl.h"
 #include "sdkconfig.h"
 #include "hal/mcpwm_hal.h"
-
+#include "esp_rom_gpio.h"
 
 typedef struct {
     mcpwm_hal_context_t hal;
@@ -115,22 +115,22 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
         if (mcpwm_gpio_sig) {
             MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
             gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(gpio_num, PWM0_OUT0A_IDX + io_signal, 0, 0);
+            esp_rom_gpio_connect_out_signal(gpio_num, PWM0_OUT0A_IDX + io_signal, 0, 0);
         } else {
             gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            gpio_matrix_in(gpio_num, PWM0_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
+            esp_rom_gpio_connect_in_signal(gpio_num, PWM0_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
         }
     } else { //MCPWM_UNIT_1
         if (mcpwm_gpio_sig) {
             MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
             gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(gpio_num, PWM1_OUT0A_IDX + io_signal, 0, 0);
+            esp_rom_gpio_connect_out_signal(gpio_num, PWM1_OUT0A_IDX + io_signal, 0, 0);
         } else if (io_signal >= MCPWM_SYNC_0 && io_signal <= MCPWM_FAULT_2) {
             gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            gpio_matrix_in(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
+            esp_rom_gpio_connect_in_signal(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
         } else {
             gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            gpio_matrix_in(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_2, 0);
+            esp_rom_gpio_connect_in_signal(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_2, 0);
         }
     }
     return ESP_OK;
@@ -149,8 +149,8 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
     mcpwm_gpio_init(mcpwm_num, MCPWM_SYNC_1,  mcpwm_pin->mcpwm_sync1_in_num);   //SYNC1
     mcpwm_gpio_init(mcpwm_num, MCPWM_SYNC_2,  mcpwm_pin->mcpwm_sync2_in_num);   //SYNC2
     mcpwm_gpio_init(mcpwm_num, MCPWM_FAULT_0, mcpwm_pin->mcpwm_fault0_in_num);  //FAULT0
-    mcpwm_gpio_init(mcpwm_num, MCPWM_FAULT_0, mcpwm_pin->mcpwm_fault1_in_num);  //FAULT1
-    mcpwm_gpio_init(mcpwm_num, MCPWM_FAULT_0, mcpwm_pin->mcpwm_fault2_in_num);  //FAULT2
+    mcpwm_gpio_init(mcpwm_num, MCPWM_FAULT_1, mcpwm_pin->mcpwm_fault1_in_num);  //FAULT1
+    mcpwm_gpio_init(mcpwm_num, MCPWM_FAULT_2, mcpwm_pin->mcpwm_fault2_in_num);  //FAULT2
     mcpwm_gpio_init(mcpwm_num, MCPWM_CAP_0,   mcpwm_pin->mcpwm_cap0_in_num);    //CAP0
     mcpwm_gpio_init(mcpwm_num, MCPWM_CAP_1,   mcpwm_pin->mcpwm_cap1_in_num);    //CAP1
     mcpwm_gpio_init(mcpwm_num, MCPWM_CAP_2,   mcpwm_pin->mcpwm_cap2_in_num);    //CAP2

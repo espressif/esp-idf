@@ -17,14 +17,10 @@ else()
              "src/task_wdt.c"
              "src/int_wdt.c")
 
-    # IPC framework is not applicable if freertos unicore config is selected
-    if(NOT CONFIG_FREERTOS_UNICORE)
-        list(APPEND srcs "src/ipc.c")
-    endif()
-
+    # Note: esp_ipc added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
-                           REQUIRES ${target} espcoredump esp_timer
+                           REQUIRES ${target} espcoredump esp_timer esp_ipc
                            PRIV_REQUIRES soc
                            LDFRAGMENTS "linker.lf")
 
@@ -32,6 +28,7 @@ else()
         "src/stack_check.c"
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
+
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_LIBRARIES "-Wl,--gc-sections")
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 4)

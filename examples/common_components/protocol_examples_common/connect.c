@@ -43,9 +43,10 @@
 #define NR_OF_IP_ADDRESSES_TO_WAIT_FOR (s_active_interfaces)
 #endif
 
+#define EXAMPLE_DO_CONNECT CONFIG_EXAMPLE_CONNECT_WIFI || CONFIG_EXAMPLE_CONNECT_ETHERNET
+
 static int s_active_interfaces = 0;
 static xSemaphoreHandle s_semph_get_ip_addrs;
-static esp_ip4_addr_t s_ip_addr;
 static esp_netif_t *s_example_esp_netif = NULL;
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
@@ -102,7 +103,11 @@ static void start(void)
     s_example_esp_netif = NULL;
 #endif
 
+#if EXAMPLE_DO_CONNECT
+    /* create semaphore if at least one interface is active */
     s_semph_get_ip_addrs = xSemaphoreCreateCounting(NR_OF_IP_ADDRESSES_TO_WAIT_FOR, 0);
+#endif
+
 }
 
 /* tear down connection, release resources */
@@ -119,6 +124,9 @@ static void stop(void)
 #endif
 }
 
+#if EXAMPLE_DO_CONNECT
+static esp_ip4_addr_t s_ip_addr;
+
 static void on_got_ip(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data)
 {
@@ -131,6 +139,7 @@ static void on_got_ip(void *arg, esp_event_base_t event_base,
     memcpy(&s_ip_addr, &event->ip_info.ip, sizeof(s_ip_addr));
     xSemaphoreGive(s_semph_get_ip_addrs);
 }
+#endif
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 
@@ -155,9 +164,11 @@ static void on_got_ipv6(void *arg, esp_event_base_t event_base,
 
 esp_err_t example_connect(void)
 {
+#if EXAMPLE_DO_CONNECT
     if (s_semph_get_ip_addrs != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
+#endif
     start();
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&stop));
     ESP_LOGI(TAG, "Waiting for IP(s)");
@@ -167,7 +178,6 @@ esp_err_t example_connect(void)
     // iterate over active interfaces, and print out IPs of "our" netifs
     esp_netif_t *netif = NULL;
     esp_netif_ip_info_t ip;
-    esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
     for (int i=0; i<esp_netif_get_nr_of_ifs(); ++i) {
         netif = esp_netif_next(netif);
         if (is_our_netif(TAG, netif)) {
@@ -176,6 +186,7 @@ esp_err_t example_connect(void)
 
             ESP_LOGI(TAG, "- IPv4 address: " IPSTR, IP2STR(&ip.ip));
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
+            esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
             int ip6_addrs = esp_netif_get_all_ip6(netif, ip6);
             for (int j=0; j< ip6_addrs; ++j) {
                 esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));

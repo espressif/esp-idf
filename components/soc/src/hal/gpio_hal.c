@@ -17,7 +17,6 @@
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_hal.h"
-#include "esp32/rom/gpio.h"
 
 void gpio_hal_intr_enable_on_core(gpio_hal_context_t *hal, gpio_num_t gpio_num, uint32_t core_id)
 {

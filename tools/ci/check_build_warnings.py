@@ -6,11 +6,11 @@
 # log files for every build.
 # Exits with a non-zero exit code if any warning is found.
 
-import os
-import sys
 import argparse
 import logging
+import os
 import re
+import sys
 
 try:
     from find_build_apps import BuildItem, setup_logging
@@ -18,7 +18,7 @@ except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     from find_build_apps import BuildItem, setup_logging
 
-WARNING_REGEX = r"error|warning"
+WARNING_REGEX = re.compile(r"(?:error|warning)[^\w]", re.MULTILINE | re.IGNORECASE)
 
 IGNORE_WARNS = [
     re.compile(r_str) for r_str in [
@@ -34,7 +34,7 @@ IGNORE_WARNS = [
 
 
 def line_has_warnings(line):  # type: (str) -> bool
-    if not re.search(WARNING_REGEX, line):
+    if not WARNING_REGEX.search(line):
         return False
 
     has_warnings = True
@@ -70,10 +70,9 @@ def main():
     setup_logging(args)
 
     build_items = [BuildItem.from_json(line) for line in args.build_list]
-
     if not build_items:
-        logging.error("Empty build list!")
-        raise SystemExit(1)
+        logging.warning("Empty build list")
+        SystemExit(0)
 
     found_warnings = 0
     for build_item in build_items:

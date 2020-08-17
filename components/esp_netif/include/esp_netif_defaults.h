@@ -70,7 +70,19 @@ extern "C" {
         .lost_ip_event = IP_EVENT_PPP_LOST_IP,  \
         .if_key = "PPP_DEF",    \
         .if_desc = "ppp",   \
-        .route_prio = 128   \
+        .route_prio = 20   \
+};
+
+#define ESP_NETIF_INHERENT_DEFAULT_SLIP() \
+    {   \
+        .flags = ESP_NETIF_FLAG_IS_SLIP, \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = 0,    \
+        .lost_ip_event = 0,   \
+        .if_key = "SLP_DEF",  \
+        .if_desc = "slip",    \
+        .route_prio = 16      \
 };
 
 /**
@@ -112,6 +124,18 @@ extern "C" {
         .driver = NULL,                               \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_PPP,      \
     }
+
+/**
+* @brief  Default configuration reference of SLIP client
+*/
+#define ESP_NETIF_DEFAULT_SLIP()                       \
+    {                                                  \
+        .base = ESP_NETIF_BASE_DEFAULT_SLIP,           \
+        .driver = NULL,                                \
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_SLIP,      \
+    }
+    
+
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA
  */
@@ -132,11 +156,18 @@ extern "C" {
  */
 #define ESP_NETIF_BASE_DEFAULT_PPP             &_g_esp_netif_inherent_ppp_config
 
+/**
+ * @brief  Default base config (esp-netif inherent) of slip interface
+ */
+#define ESP_NETIF_BASE_DEFAULT_SLIP             &_g_esp_netif_inherent_slip_config
+
+
 
 #define ESP_NETIF_NETSTACK_DEFAULT_ETH          _g_esp_netif_netstack_default_eth
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA     _g_esp_netif_netstack_default_wifi_sta
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
+#define ESP_NETIF_NETSTACK_DEFAULT_SLIP         _g_esp_netif_netstack_default_slip
 
 //
 // Include default network stacks configs
@@ -148,6 +179,7 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_eth;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
+extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_slip;
 
 //
 // Include default common configs inherent to esp-netif
@@ -158,6 +190,7 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config;
+extern const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config;
 
 extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
 

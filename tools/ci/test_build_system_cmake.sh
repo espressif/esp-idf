@@ -72,9 +72,9 @@ function run_tests()
     print_status "Updating component source file rebuilds component"
     # touch a file & do a build
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/cpu_start.c
+    touch ${IDF_PATH}/components/esp_system/port/cpu_start.c
     idf.py build || failure "Failed to partial build"
-    assert_rebuilt ${APP_BINS} esp-idf/esp32/libesp32.a esp-idf/esp32/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp32.dir/cpu_start.c.obj
+    assert_rebuilt ${APP_BINS} esp-idf/esp_system/libesp_system.a esp-idf/esp_system/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp_system.dir/port/cpu_start.c.obj
     assert_not_rebuilt esp-idf/lwip/liblwip.a esp-idf/freertos/libfreertos.a ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "Bootloader source file rebuilds bootloader"
@@ -109,12 +109,12 @@ function run_tests()
 	echo "project-version-2.0(012345678901234567890123456789)" > ${TESTDIR}/template/version.txt
 	idf.py build || failure "Failed to rebuild with changed app version"
     assert_rebuilt ${APP_BINS}
-    assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp_system/libesp_system.a
 
     print_status "Re-building does not change app.bin"
     take_build_snapshot
     idf.py build
-    assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp_system/libesp_system.a
     rm -f ${IDF_PATH}/version.txt
     rm -f ${TESTDIR}/template/version.txt
 
@@ -488,6 +488,17 @@ function run_tests()
         rm -r sdkconfig.defaults build
     done
 
+    print_status "Cleaning Python bytecode"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -eq 0 ]; then
+        failure "No Python bytecode in IDF!"
+    fi
+    idf.py python-clean
+    if [ "$(find $IDF_PATH -name "*.py[co]" | wc -l)" -gt 0 ]; then
+        failure "Python bytecode isn't working!"
+    fi
+
     print_status "Displays partition table when executing target partition_table"
     idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
@@ -742,6 +753,19 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf build
     popd
+
+    print_status "Getting component overriden dir"
+    clean_build_dir
+    mkdir -p components/esp32
+    echo "idf_component_get_property(overriden_dir \${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)" >> components/esp32/CMakeLists.txt
+    echo "message(STATUS overriden_dir:\${overriden_dir})" >> components/esp32/CMakeLists.txt 
+    (idf.py reconfigure | grep "overriden_dir:$IDF_PATH/components/esp32") || failure  "Failed to get overriden dir" # no registration, overrides registration as well
+    print_status "Overriding Kconfig"
+    echo "idf_component_register(KCONFIG \${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
+    echo "idf_component_get_property(kconfig \${COMPONENT_NAME} KCONFIG)" >> components/esp32/CMakeLists.txt
+    echo "message(STATUS kconfig:\${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
+    (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/esp32/Kconfig") || failure  "Failed to verify original `main` directory"
+    rm -rf components
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

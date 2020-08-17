@@ -136,6 +136,7 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
     p_lcb->waiting_update_conn_max_interval = max_int;
     p_lcb->waiting_update_conn_latency = latency;
     p_lcb->waiting_update_conn_timeout = timeout;
+
     p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
 
     if(l2cble_start_conn_update(p_lcb) == TRUE) {
@@ -586,7 +587,6 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
 
     p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
     p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
-
     btu_stop_timer(&p_lcb->upda_con_timer);
 
     if (conn_param_update_cb.update_conn_param_cb != NULL) {
@@ -922,13 +922,14 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
 *******************************************************************************/
 void l2c_ble_link_adjust_allocation (void)
 {
-    UINT16      qq, yy, qq_remainder;
+    UINT16      qq, yy = 0, qq_remainder;
     tL2C_LCB    *p_lcb;
     UINT16      hi_quota, low_quota;
     UINT16      num_lowpri_links = 0;
     UINT16      num_hipri_links  = 0;
     UINT16      controller_xmit_quota = l2cb.num_lm_ble_bufs;
     UINT16      high_pri_link_quota = L2CAP_HIGH_PRI_MIN_XMIT_QUOTA_A;
+    list_node_t *p_node = NULL;
 
     /* If no links active, reset buffer quotas and controller buffers */
     if (l2cb.num_ble_links_active == 0) {
@@ -938,7 +939,8 @@ void l2c_ble_link_adjust_allocation (void)
     }
 
     /* First, count the links */
-    for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) {
                 num_hipri_links++;
@@ -984,7 +986,9 @@ void l2c_ble_link_adjust_allocation (void)
                        l2cb.ble_round_robin_quota, qq);
 
     /* Now, assign the quotas to each link */
-    for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
+    p_node = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) {
                 p_lcb->link_xmit_quota   = high_pri_link_quota;

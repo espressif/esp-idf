@@ -22,6 +22,8 @@
 #include "soc/rtc.h"
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char* LEDC_TAG = "ledc";
 
@@ -96,7 +98,7 @@ static bool ledc_slow_clk_calibrate(void)
     //Enable CLK8M for LEDC
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
     //Waiting for CLK8M to turn on
-    ets_delay_us(DELAY_CLK8M_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_CLK8M_CLK_SWITCH);
     uint32_t cal_val = rtc_clk_cal(RTC_CAL_8MD256, SLOW_CLK_CYC_CALIBRATE);
     if(cal_val == 0) {
         ESP_LOGE(LEDC_TAG, "CLK8M_CLK calibration failed");
@@ -361,7 +363,7 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    gpio_matrix_out(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
+    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
     return ESP_OK;
 }
 
@@ -403,7 +405,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     /*set LEDC signal in gpio matrix*/
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    gpio_matrix_out(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
+    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
 
     return ret;
 }

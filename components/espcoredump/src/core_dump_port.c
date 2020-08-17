@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "freertos/xtensa_context.h" // for exception register stack structure
 #include "esp_core_dump_priv.h"
+#include "esp_rom_sys.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
@@ -36,6 +37,8 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port"
 
 #define COREDUMP_GET_EPS(reg, ptr) \
     if (reg - EPS_2 + 2 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
+
+#define COREDUMP_GET_MEMORY_SIZE(end, start) (end - start)
 
 // Enumeration of registers of exception stack frame
 // and solicited stack frame
@@ -190,11 +193,11 @@ exit:
 
 void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output)
 {
-    ets_printf(DRAM_STR("%s='"), msg);
+    esp_rom_printf(DRAM_STR("%s='"), msg);
     for (int i = 0; i < COREDUMP_SHA256_LEN; i++) {
-        ets_printf(DRAM_STR("%02x"), sha_output[i]);
+        esp_rom_printf(DRAM_STR("%02x"), sha_output[i]);
     }
-    ets_printf(DRAM_STR("'\r\n"));
+    esp_rom_printf(DRAM_STR("'\r\n"));
 }
 #endif
 
@@ -215,7 +218,7 @@ void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, 
 {
     if (wr_data && data) {
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
-        wr_data->crc = crc32_le(wr_data->crc, data, data_len);
+        wr_data->crc = esp_rom_crc32_le(wr_data->crc, data, data_len);
 #elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
 #if CONFIG_MBEDTLS_HARDWARE_SHA
         // set software mode of SHA calculation
@@ -260,8 +263,14 @@ inline uint16_t esp_core_dump_get_arch_id()
 
 inline bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz)
 {
-    //TODO: currently core dump supports memory segments in DRAM only, external SRAM not supported yet
-    return esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr+sz-1));
+    //TODO: external SRAM not supported yet
+    return (esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr+sz-1))) ||
+            (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr+sz-1))) ||
+            (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr+sz-1)))
+#if CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+            || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr+sz-1)))
+#endif
+    ;
 }
 
 inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
@@ -446,12 +455,12 @@ inline void* esp_core_dump_get_current_task_handle()
     return (void*)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
 }
 
-bool esp_core_dump_check_task(void *frame,
+bool esp_core_dump_check_task(panic_info_t *info,
                                 core_dump_task_header_t *task,
                                 bool* is_current,
                                 bool* stack_is_valid)
 {
-    XtExcFrame *exc_frame = frame;
+    XtExcFrame *exc_frame = (XtExcFrame *)info->frame;
     bool is_curr_task = false;
     bool stack_is_sane = false;
     uint32_t stk_size = 0;
@@ -469,6 +478,9 @@ bool esp_core_dump_check_task(void *frame,
             task->stack_start = (uint32_t)exc_frame;
         }
         exc_frame->exit = COREDUMP_CURR_TASK_MARKER;
+        if (info->pseudo_excause) {
+            exc_frame->exccause += XCHAL_EXCCAUSE_NUM;
+        }
         s_extra_info.crashed_task_tcb = (uint32_t)task->tcb_addr;
     }
 
@@ -566,6 +578,63 @@ uint32_t esp_core_dump_get_extra_info(void **info)
 {
     *info = &s_extra_info;
     return sizeof(s_extra_info);
+}
+
+uint32_t esp_core_dump_get_user_ram_segments(void)
+{
+    uint32_t total_sz = 0;
+    
+    // count number of memory segments to insert into ELF structure
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start) > 0 ? 1 : 0;
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start) > 0 ? 1 : 0;
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start) > 0 ? 1 : 0;
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start) > 0 ? 1 : 0;
+    
+    return total_sz;
+}
+
+uint32_t esp_core_dump_get_user_ram_size(void)
+{
+    uint32_t total_sz = 0;
+
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start);
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start);
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start);
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start);
+    
+    return total_sz;
+}
+
+int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start) {
+
+    int total_sz = -1;
+
+    switch (region) {
+        case COREDUMP_MEMORY_DRAM:
+            *start = (uint32_t)&_coredump_dram_start;
+            total_sz = (uint8_t *)&_coredump_dram_end - (uint8_t *)&_coredump_dram_start;
+            break;
+
+        case COREDUMP_MEMORY_IRAM:
+            *start = (uint32_t)&_coredump_iram_start;
+            total_sz = (uint8_t *)&_coredump_iram_end - (uint8_t *)&_coredump_iram_start;
+            break;
+
+        case COREDUMP_MEMORY_RTC:
+            *start = (uint32_t)&_coredump_rtc_start;
+            total_sz = (uint8_t *)&_coredump_rtc_end - (uint8_t *)&_coredump_rtc_start;
+            break;
+
+        case COREDUMP_MEMORY_RTC_FAST:
+            *start = (uint32_t)&_coredump_rtc_fast_start;
+            total_sz = (uint8_t *)&_coredump_rtc_fast_end - (uint8_t *)&_coredump_rtc_fast_start;
+            break;
+
+        default:
+            break;
+    }
+
+    return total_sz;
 }
 
 #endif

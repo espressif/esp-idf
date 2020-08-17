@@ -17,11 +17,10 @@
 #include <esp_err.h>
 #include "soc/efuse_periph.h"
 #include "esp_image_format.h"
-
+#include "esp_rom_efuse.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/efuse.h"
-#else
+
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
 #endif
 
@@ -57,8 +56,8 @@ static inline bool esp_secure_boot_enabled(void)
     #elif CONFIG_SECURE_BOOT_V2_ENABLED
         return ets_use_secure_boot_v2();
     #endif
-#elif CONFIG_IDF_TARGET_ESP32S2
-    return ets_efuse_secure_boot_enabled();
+#else
+    return esp_rom_efuse_is_secure_boot_enabled();
 #endif
     return false; /* Secure Boot not enabled in menuconfig */
 }

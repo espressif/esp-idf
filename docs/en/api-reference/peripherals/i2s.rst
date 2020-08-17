@@ -73,7 +73,7 @@ Configuration example:
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0, // default interrupt priority
         .dma_buf_count = 8,
         .dma_buf_len = 64,
@@ -152,7 +152,7 @@ I2S configuration
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0, // default interrupt priority
         .dma_buf_count = 8,
         .dma_buf_len = 64,
@@ -192,7 +192,6 @@ Configuring I2S to use internal DAC for analog output
         .sample_rate = 44100,
         .bits_per_sample = 16, /* the DAC module will only take the 8bits from MSB */
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_I2S_MSB,
         .intr_alloc_flags = 0, // default interrupt priority
         .dma_buf_count = 8,
         .dma_buf_len = 64,
@@ -204,7 +203,7 @@ Configuring I2S to use internal DAC for analog output
         i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
 
         i2s_set_pin(i2s_num, NULL); //for internal DAC, this will enable both of the internal channels
-    
+
         //You can call i2s_set_dac_mode to set built-in DAC output mode.
         //i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
 
@@ -217,4 +216,5 @@ API Reference
 -------------
 
 .. include-build-file:: inc/i2s.inc
+.. include-build-file:: inc/i2s_types.inc
 

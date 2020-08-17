@@ -22,8 +22,9 @@
 #include "ble_mesh_example_init.h"
 #include "board.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP             0x02E5
-#define CID_NVAL            0xFFFF
 
 #define PROV_OWN_ADDR       0x0001
 
@@ -225,7 +226,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         if (param->provisioner_add_app_key_comp.err_code == 0) {
             prov_key.app_idx = param->provisioner_add_app_key_comp.app_idx;
             esp_err_t err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(PROV_OWN_ADDR, prov_key.app_idx,
-                                ESP_BLE_MESH_MODEL_ID_SENSOR_CLI, CID_NVAL);
+                                ESP_BLE_MESH_MODEL_ID_SENSOR_CLI, ESP_BLE_MESH_CID_NVAL);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to bind AppKey to sensor client");
             }
@@ -334,31 +335,31 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
             set.model_app_bind.element_addr = node->unicast_addr;
             set.model_app_bind.model_app_idx = prov_key.app_idx;
             set.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_SENSOR_SRV;
-            set.model_app_bind.company_id = CID_NVAL;
+            set.model_app_bind.company_id = ESP_BLE_MESH_CID_NVAL;
             err = esp_ble_mesh_config_client_set_state(&common, &set);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to send Config Model App Bind");
                 return;
             }
             wait_model_id = ESP_BLE_MESH_MODEL_ID_SENSOR_SRV;
-            wait_cid = CID_NVAL;
+            wait_cid = ESP_BLE_MESH_CID_NVAL;
         } else if (param->params->opcode == ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND) {
             if (param->status_cb.model_app_status.model_id == ESP_BLE_MESH_MODEL_ID_SENSOR_SRV &&
-                param->status_cb.model_app_status.company_id == CID_NVAL) {
+                param->status_cb.model_app_status.company_id == ESP_BLE_MESH_CID_NVAL) {
                 example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
                 set.model_app_bind.element_addr = node->unicast_addr;
                 set.model_app_bind.model_app_idx = prov_key.app_idx;
                 set.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV;
-                set.model_app_bind.company_id = CID_NVAL;
+                set.model_app_bind.company_id = ESP_BLE_MESH_CID_NVAL;
                 err = esp_ble_mesh_config_client_set_state(&common, &set);
                 if (err) {
                     ESP_LOGE(TAG, "Failed to send Config Model App Bind");
                     return;
                 }
                 wait_model_id = ESP_BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV;
-                wait_cid = CID_NVAL;
+                wait_cid = ESP_BLE_MESH_CID_NVAL;
             } else if (param->status_cb.model_app_status.model_id == ESP_BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV &&
-                param->status_cb.model_app_status.company_id == CID_NVAL) {
+                param->status_cb.model_app_status.company_id == ESP_BLE_MESH_CID_NVAL) {
                 ESP_LOGW(TAG, "Provision and config successfully");
             }
         }

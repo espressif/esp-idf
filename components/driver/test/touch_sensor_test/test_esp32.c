@@ -32,6 +32,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
+#include "esp_rom_sys.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2) // This testcase for ESP32
 
@@ -298,7 +299,7 @@ static bool s_pad_activated[TOUCH_PAD_MAX];
 static void test_touch_intr_cb(void *arg)
 {
     uint32_t pad_intr = touch_pad_get_status();
-    ets_printf("T%x ", pad_intr);
+    esp_rom_printf("T%x ", pad_intr);
     //clear interrupt
     touch_pad_clear_status();
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {

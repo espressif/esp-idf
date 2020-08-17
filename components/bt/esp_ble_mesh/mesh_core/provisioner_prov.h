@@ -164,7 +164,8 @@ int bt_mesh_provisioner_prov_deinit(bool erase);
  */
 void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rssi);
 
-void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi);
+void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
+                                       const bt_mesh_addr_t *addr, s8_t rssi);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
@@ -234,7 +235,7 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev);
  * @return Zero - success, otherwise - fail
  */
 int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
-        const u8_t *match, bool prov_flag);
+                                           const u8_t *match, bool prov_flag);
 
 /** @brief Callback for provisioner receiving advertising packet from unprovisioned devices which are
  *  not in the unprovisioned device queue.
@@ -359,7 +360,8 @@ int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag);
+int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num,
+                                            u8_t size, bool num_flag);
 
 /**
  * @brief This function is called to read unprovisioned device's oob public key.
@@ -370,7 +372,8 @@ int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32]);
+int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32],
+                                         const u8_t pub_key_y[32]);
 
 /* The following APIs are for fast provisioning */
 
@@ -386,12 +389,11 @@ void bt_mesh_provisioner_fast_prov_enable(bool enable);
 /**
  * @brief This function is called to set netkey index used for fast provisioning.
  *
- * @param[in] net_key: Netkey value
  * @param[in] net_idx: Netkey index
  *
- * @return status for set netkey index msg
+ * @return None
  */
-u8_t bt_mesh_provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx);
+void bt_mesh_provisioner_set_fast_prov_net_idx(u16_t net_idx);
 
 /**
  * @brief This function is called to get netkey index used for fast provisioning.

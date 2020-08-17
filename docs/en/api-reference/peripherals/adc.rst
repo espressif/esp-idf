@@ -22,14 +22,19 @@ Overview
 
 .. only:: esp32s2
 
-    The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 20 measurement channels (analog enabled pins).
+    The {IDF_TARGET_NAME} integrates two 13-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 20 measurement channels (analog enabled pins).
 
     The ADC driver API supports ADC1 (10 channels, attached to GPIOs 1 - 10), and ADC2 (10 channels, attached to GPIOs 11 - 20). However, the usage of ADC2 has some restrictions for the application:
 
-    1. ADC2 is used by the Wi-Fi driver. Therefore the application can only use ADC2 when the Wi-Fi driver has not started.
+    1. Different from ADC1, the hardware arbiter function is added to ADC2, so when using the API of ADC2 to obtain the sampling voltage, you need to judge whether the result is successfully arbitrated.
 
 Configuration and Reading ADC
 -----------------------------
+
+Each ADC unit supports two work modes, ADC-RTC or ADC-DMA mode. ADC-RTC is controlled by the RTC controller and is suitable for low-frequency sampling operations. ADC-DMA is controlled by a digital controller and is suitable for high-frequency continuous sampling actions.
+
+ADC-RTC mode
+^^^^^^^^^^^^
 
 The ADC should be configured before reading is taken.
 
@@ -48,7 +53,12 @@ Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` 
 
 This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-guides/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
 
-There is another specific function :cpp:func:`adc2_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc-api-adc-calibration`.
+There is another specific function :cpp:func:`adc_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc-api-adc-calibration`.
+
+.. todo::
+
+    1. Add `ADC-DMA mode` configuration after ADC-DMA driver done.
+    2. Add table for ADC-DMA clock system.
 
 Application Examples
 --------------------
@@ -97,8 +107,13 @@ An example using the ADC2 driver to read the output of DAC is available in esp-i
             int val = hall_sensor_read();
 
 
+.. only:: esp32
 
-The value read in both these examples is 12 bits wide (range 0-4095).
+    The value read in both these examples is 12 bits wide (range 0-4095).
+
+.. only:: esp32s2
+
+    The value read in both these examples is 13 bits wide (range 0-8191).
 
 .. _adc-api-adc-calibration:
 
@@ -213,7 +228,7 @@ Routing ADC reference voltage to GPIO, so it can be manually measured (for **Def
 
     ...
 
-        esp_err_t status = adc2_vref_to_gpio(GPIO_NUM_25);
+        esp_err_t status = adc_vref_to_gpio(ADC_UNIT_1, GPIO_NUM_25);
         if (status == ESP_OK) {
             printf("v_ref routed to GPIO\n");
         } else {
@@ -245,6 +260,10 @@ ADC driver
 ^^^^^^^^^^
 
 .. include-build-file:: inc/adc.inc
+
+.. include-build-file:: inc/adc_types.inc
+
+.. include-build-file:: inc/adc_common.inc
 
 .. _adc-api-reference-adc-calibration:
 

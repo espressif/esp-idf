@@ -171,6 +171,9 @@ function(__component_add component_dir prefix)
             add_library(${component_target} STATIC IMPORTED)
         endif()
         idf_build_set_property(__COMPONENT_TARGETS ${component_target} APPEND)
+    else()
+        __component_get_property(dir ${component_target} COMPONENT_DIR)
+        __component_set_property(${component_target} COMPONENT_OVERRIDEN_DIR ${dir})
     endif()
 
     set(component_lib __${prefix}_${component_name})
@@ -413,9 +416,11 @@ endfunction()
 # @param[in, optional] REQUIRED_IDF_TARGETS (multivalue) the list of IDF build targets that the component only supports
 # @param[in, optional] EMBED_FILES (multivalue) list of binary files to embed with the component
 # @param[in, optional] EMBED_TXTFILES (multivalue) list of text files to embed with the component
+# @param[in, optional] KCONFIG (single value) override the default Kconfig
+# @param[in, optional] KCONFIG_PROJBUILD (single value) override the default Kconfig
 function(idf_component_register)
     set(options)
-    set(single_value)
+    set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
                     PRIV_REQUIRES REQUIRED_IDF_TARGETS EMBED_FILES EMBED_TXTFILES)

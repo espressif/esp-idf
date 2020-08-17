@@ -5,16 +5,27 @@ Espressif IoT Development Framework Style Guide
 About This Guide
 ----------------
 
-Purpose of this style guide is to encourage use of common coding practices within the ESP-IDF. 
+Purpose of this style guide is to encourage use of common coding practices within the ESP-IDF.
 
 Style guide is a set of rules which are aimed to help create readable, maintainable, and robust code. By writing code which looks the same way across the code base we help others read and comprehend the code. By using same conventions for spaces and newlines we reduce chances that future changes will produce huge unreadable diffs. By following common patterns for module structure and by using language features consistently we help others understand code behavior.
 
 We try to keep rules simple enough, which means that they can not cover all potential cases. In some cases one has to bend these simple rules to achieve readability, maintainability, or robustness.
 
-When doing modifications to third-party code used in ESP-IDF, follow the way that particular project is written. That will help propose useful changes for merging into upstream project. 
+When doing modifications to third-party code used in ESP-IDF, follow the way that particular project is written. That will help propose useful changes for merging into upstream project.
 
 C Code Formatting
 -----------------
+
+.. _style-guide-naming:
+
+Naming
+^^^^^^
+
+* Any variable or function which is only used in a single source file should be declared ``static``.
+* Public names (non-static variables and functions) should be namespaced with a per-component or per-unit prefix, to avoid naming collisions. ie ``esp_vfs_register()`` or ``esp_console_run()``. Starting the prefix with ``esp_`` for Espressif-specific names is optional, but should be consistent with any other names in the same component.
+* Static variables should be prefixed with ``s_`` for easy identification. For example, ``static bool s_invert``.
+* Avoid unnecessary abbreviations (ie shortening ``data`` to ``dat``), unless the resulting name would otherwise be very long.
+
 
 Indentation
 ^^^^^^^^^^^
@@ -49,7 +60,7 @@ Horizontal Space
 ^^^^^^^^^^^^^^^^
 
 Always add single space after conditional and loop keywords::
-    
+
     if (condition) {    // correct
         // ...
     }
@@ -60,11 +71,11 @@ Always add single space after conditional and loop keywords::
     }
 
     for(int i = 0; i < CONST; ++i) {    // INCORRECT
-        // ... 
+        // ...
     }
 
 Add single space around binary operators. No space is necessary for unary operators. It is okay to drop space around multiply and divide operators::
-    
+
     const int y = y0 + (x - x0) * (y1 - y0) / (x1 - x0);    // correct
 
     const int y = y0 + (x - x0)*(y1 - y0)/(x1 - x0);        // also okay
@@ -80,12 +91,12 @@ No space is necessary around ``.`` and ``->`` operators.
 
 Sometimes adding horizontal space within a line can help make code more readable. For example, you can add space to align function arguments::
 
-    gpio_matrix_in(PIN_CAM_D6,   I2S0I_DATA_IN14_IDX, false);
-    gpio_matrix_in(PIN_CAM_D7,   I2S0I_DATA_IN15_IDX, false);
-    gpio_matrix_in(PIN_CAM_HREF, I2S0I_H_ENABLE_IDX,  false);
-    gpio_matrix_in(PIN_CAM_PCLK, I2S0I_DATA_IN15_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_D6,   I2S0I_DATA_IN14_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_D7,   I2S0I_DATA_IN15_IDX, false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_HREF, I2S0I_H_ENABLE_IDX,  false);
+    esp_rom_gpio_connect_in_signal(PIN_CAM_PCLK, I2S0I_DATA_IN15_IDX, false);
 
-Note however that if someone goes to add new line with a longer identifier as first argument (e.g.  ``PIN_CAM_VSYNC``), it will not fit. So other lines would have to be realigned, adding meaningless changes to the commit. 
+Note however that if someone goes to add new line with a longer identifier as first argument (e.g.  ``PIN_CAM_VSYNC``), it will not fit. So other lines would have to be realigned, adding meaningless changes to the commit.
 
 Therefore, use horizontal alignment sparingly, especially if you expect new lines to be added to the list later.
 
@@ -111,7 +122,7 @@ Braces
     }
 
 - Within a function, place opening brace on the same line with conditional and loop statements::
-    
+
     if (condition) {
         do_one();
     } else if (other_condition) {
@@ -186,6 +197,25 @@ To re-format a file, run::
 
     tools/format.sh components/my_component/file.c
 
+
+Type Definitions
+^^^^^^^^^^^^^^^^
+
+Should be snake_case, ending with _t suffix::
+
+    typedef int signed_32_bit_t;
+
+Enum
+^^^^
+
+Enums should be defined through the `typedef` and be namespaced::
+
+    typedef enum
+    {
+        MODULE_FOO_ONE,
+        MODULE_FOO_TWO,
+        MODULE_FOO_THREE
+    } module_foo_t;
 
 C++ Code Formatting
 -------------------
@@ -340,19 +370,6 @@ Documenting Code
 ----------------
 
 Please see the guide here: :doc:`documenting-code`.
-
-.. _style-guide-naming:
-
-Naming
-------
-
-- Any variable or function which is only used in a single source file should be declared ``static``.
-
-- Public names (non-static variables and functions) should be namespaced with a per-component or per-unit prefix, to avoid naming collisions. ie ``esp_vfs_register()`` or ``esp_console_run()``. Starting the prefix with ``esp_`` for Espressif-specific names is optional, but should be consistent with any other names in the same component.
-
-- Static variables should be prefixed with ``s_`` for easy identification. For example, ``static bool s_invert``.
-
-- Avoid unnecessary abbreviations (ie shortening ``data`` to ``dat``), unless the resulting name would otherwise be very long.
 
 Structure
 ---------

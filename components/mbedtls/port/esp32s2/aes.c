@@ -448,6 +448,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
             input_needs_realloc = true;
         }
 
+        if (!esp_ptr_dma_ext_capable(output) && !esp_ptr_dma_capable(output)) {
+            output_needs_realloc = true;
+        }
+
         /* If either input or output is unaccessible to the DMA then they need to be reallocated */
         if (input_needs_realloc || output_needs_realloc) {
             return esp_aes_process_dma_ext_ram(ctx, input, output, len, stream_out, input_needs_realloc, output_needs_realloc);

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_system.h"
@@ -39,17 +40,27 @@ static void register_light_sleep(void);
 static void register_tasks(void);
 #endif
 
-void register_system(void)
+void register_system_common(void)
 {
     register_free();
     register_heap();
     register_version();
     register_restart();
-    register_deep_sleep();
-    register_light_sleep();
 #if WITH_TASKS_INFO
     register_tasks();
 #endif
+}
+
+void register_system_sleep(void)
+{
+    register_deep_sleep();
+    register_light_sleep();
+}
+
+void register_system(void)
+{
+    register_system_common();
+    register_system_sleep();
 }
 
 /* 'version' command */
@@ -124,7 +135,7 @@ static void register_free(void)
 static int heap_size(int argc, char **argv)
 {
     uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "min heap size: %u", heap_size);
+    printf("min heap size: %u\n", heap_size);
     return 0;
 }
 
@@ -285,13 +296,13 @@ static int light_sleep(int argc, char **argv)
     if (io_count > 0) {
         ESP_ERROR_CHECK( esp_sleep_enable_gpio_wakeup() );
     }
-    if (CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0 && CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
         ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
-    uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
+    fsync(fileno(stdout));
     esp_light_sleep_start();
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     const char *cause_str;

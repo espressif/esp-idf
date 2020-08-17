@@ -107,17 +107,38 @@ typedef struct {
     uint16_t reg_size;              /*!< Modbus number of registers */
 } mb_param_request_t;
 
-// Master interface public functions
 /**
- * @brief Initialize Modbus controller and stack
+ * @brief Initialize Modbus controller and stack for TCP port
  *
  * @param[out] handler handler(pointer) to master data structure
- * @param[in] port_type the type of port
  * @return
- *     - ESP_OK   Success
- *     - ESP_ERR_NO_MEM Parameter error
+ *     - ESP_OK                 Success
+ *     - ESP_ERR_NO_MEM         Parameter error
+ *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
+ *     - ESP_ERR_INVALID_STATE  Initialization failure
+ */
+esp_err_t mbc_master_init_tcp(void** handler);
+
+/**
+ * @brief Initialize Modbus Master controller and stack for Serial port
+ *
+ * @param[out] handler handler(pointer) to master data structure
+ * @param[in] port_type type of stack
+ * @return
+ *     - ESP_OK                 Success
+ *     - ESP_ERR_NO_MEM         Parameter error
+ *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
+ *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
 esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler);
+
+/**
+ * @brief Initialize Modbus Master controller interface handle
+ *
+ * @param[in] handler - pointer to master data structure
+ * @return None
+ */
+void mbc_master_init_iface(void* handler);
 
 /**
  * @brief Destroy Modbus controller and stack

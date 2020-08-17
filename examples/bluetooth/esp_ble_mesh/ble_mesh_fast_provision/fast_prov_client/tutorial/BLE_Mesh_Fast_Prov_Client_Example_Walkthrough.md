@@ -24,7 +24,7 @@ This demo has only one element, in which the following four models are implement
 
 ## 2. Code Analysis
 
-Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial%20%20%20%20%20%20/ble_mesh_wifi_coexist.md)
+Code initialization part reference [Initializing Bluetooth and BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md).
 
 ### 2.1  Data Structure
 
@@ -101,7 +101,7 @@ To control the server model, the client model uses messages to control the serve
 ```c
 prov_info.app_idx = param->provisioner_add_app_key_comp.app_idx;
 err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(PROV_OWN_ADDR, prov_info.app_idx,
-                                              ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, CID_NVAL);
+                                              ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, ESP_BLE_MESH_CID_NVAL);
 if (err != ESP_OK) {
     ESP_LOGE(TAG, "%s: Failed to bind AppKey with OnOff Client Model", __func__);
     return;

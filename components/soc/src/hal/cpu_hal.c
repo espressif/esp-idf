@@ -15,12 +15,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "sdkconfig.h"
 #include "esp_err.h"
 
 #include "hal/cpu_hal.h"
 #include "hal/cpu_types.h"
 
 #include "soc/cpu_caps.h"
+
 
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 void cpu_hal_set_breakpoint(int id, const void* addr)

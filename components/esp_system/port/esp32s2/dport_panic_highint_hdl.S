@@ -71,16 +71,6 @@ xt_highint4:
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
 1:
-#if CONFIG_INT_WDT_CHECK_CPU1
-    /* Check if the cause is the app cpu failing to tick.*/
-    movi    a0, int_wdt_app_cpu_ticked
-    l32i    a0, a0, 0
-    bnez    a0, 2f
-    /* It is. Modify cause. */
-    movi    a0,PANIC_RSN_INTWDT_CPU1
-    j 9f
-2:
-#endif
     /* Set EXCCAUSE to reflect cause of the wdt int trigger */
     movi    a0,PANIC_RSN_INTWDT_CPU0
 9:

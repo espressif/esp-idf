@@ -12,6 +12,7 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 struct flash_test_ctx {
     uint32_t offset;
@@ -133,7 +134,7 @@ static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;
     timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
-    ets_delay_us(arg->delay_time_us);
+    esp_rom_delay_us(arg->delay_time_us);
     arg->repeat_count++;
 }
 
@@ -298,7 +299,7 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
 // Data checks are disabled when PSRAM is used or in Freertos compliance check test
-#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #  define CHECK_DATA(suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
 #  define CHECK_ERASE(var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
 #else

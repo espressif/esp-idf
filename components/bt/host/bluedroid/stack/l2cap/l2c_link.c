@@ -56,7 +56,6 @@ BOOLEAN l2c_link_hci_conn_req (BD_ADDR bd_addr)
 {
     tL2C_LCB        *p_lcb;
     tL2C_LCB        *p_lcb_cur;
-    int             xx;
     BOOLEAN         no_links;
 
     /* See if we have a link control block for the remote device */
@@ -74,7 +73,9 @@ BOOLEAN l2c_link_hci_conn_req (BD_ADDR bd_addr)
         no_links = TRUE;
 
         /* If we already have connection, accept as a master */
-        for (xx = 0, p_lcb_cur = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb_cur++) {
+        list_node_t *p_node = NULL;
+        for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+            p_lcb_cur = list_node(p_node);
             if (p_lcb_cur == p_lcb) {
                 continue;
             }
@@ -682,13 +683,14 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2c_link_adjust_allocation (void)
 {
-    UINT16      qq, yy, qq_remainder;
+    UINT16      qq, yy = 0, qq_remainder;
     tL2C_LCB    *p_lcb;
     UINT16      hi_quota, low_quota;
     UINT16      num_lowpri_links = 0;
     UINT16      num_hipri_links  = 0;
     UINT16      controller_xmit_quota = l2cb.num_lm_acl_bufs;
     UINT16      high_pri_link_quota = L2CAP_HIGH_PRI_MIN_XMIT_QUOTA_A;
+    list_node_t *p_node = NULL;
 
     /* If no links active, reset buffer quotas and controller buffers */
     if (l2cb.num_links_active == 0) {
@@ -698,7 +700,8 @@ void l2c_link_adjust_allocation (void)
     }
 
     /* First, count the links */
-    for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (p_lcb->in_use) {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) {
                 num_hipri_links++;
@@ -744,7 +747,9 @@ void l2c_link_adjust_allocation (void)
                        l2cb.round_robin_quota, qq);
 
     /* Now, assign the quotas to each link */
-    for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
+    p_node = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (p_lcb->in_use) {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) {
                 p_lcb->link_xmit_quota   = high_pri_link_quota;
@@ -796,32 +801,31 @@ void l2c_link_adjust_allocation (void)
 ** Returns          void
 **
 *******************************************************************************/
-void l2c_link_adjust_chnl_allocation (void)
+
+bool l2c_chnl_allocation_in_ccb_list (void *p_ccb_node, void *context)
 {
-    UINT8       xx;
-
-
-    L2CAP_TRACE_DEBUG ("l2c_link_adjust_chnl_allocation");
-
-    /* assign buffer quota to each channel based on its data rate requirement */
-    for (xx = 0; xx < MAX_L2CAP_CHANNELS; xx++)
-    {
-        tL2C_CCB *p_ccb = l2cb.ccb_pool + xx;
-
-        if (!p_ccb->in_use) {
-            continue;
-		}
-
+    UNUSED(context);
+    tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
+    if (p_ccb->in_use) {
         tL2CAP_CHNL_DATA_RATE data_rate = p_ccb->tx_data_rate + p_ccb->rx_data_rate;
         p_ccb->buff_quota = L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA * data_rate;
         L2CAP_TRACE_EVENT("CID:0x%04x FCR Mode:%u Priority:%u TxDataRate:%u RxDataRate:%u Quota:%u",
-                          p_ccb->local_cid, p_ccb->peer_cfg.fcr.mode,
-                          p_ccb->ccb_priority, p_ccb->tx_data_rate,
-                          p_ccb->rx_data_rate, p_ccb->buff_quota);
+                      p_ccb->local_cid, p_ccb->peer_cfg.fcr.mode,
+                      p_ccb->ccb_priority, p_ccb->tx_data_rate,
+                      p_ccb->rx_data_rate, p_ccb->buff_quota);
 
         /* quota may be change so check congestion */
         l2cu_check_channel_congestion (p_ccb);
     }
+    return false;
+}
+void l2c_link_adjust_chnl_allocation (void)
+{
+
+    L2CAP_TRACE_DEBUG ("l2c_link_adjust_chnl_allocation");
+
+    /* assign buffer quota to each channel based on its data rate requirement */
+    list_foreach(l2cb.p_ccb_pool, l2c_chnl_allocation_in_ccb_list, NULL);
 }
 
 /*******************************************************************************
@@ -876,7 +880,6 @@ UINT8 l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles)
 void l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status)
 {
     tL2C_LCB *p_lcb;
-    int      xx;
 
     /* Make sure not called from HCI Command Status (bd_addr and new_role are invalid) */
     if (bd_addr) {
@@ -893,7 +896,9 @@ void l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status)
     }
 
     /* Check if any LCB was waiting for switch to be completed */
-    for (xx = 0, p_lcb = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    list_node_t *p_node = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTING_WAIT_SWITCH)) {
             l2cu_create_conn_after_switch (p_lcb);
         }
@@ -981,7 +986,6 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 {
-    int         xx;
     BOOLEAN     single_write = FALSE;
     L2CAP_TRACE_DEBUG("%s",__func__);
     /* Save the channel ID for faster counting */
@@ -1020,14 +1024,25 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
     ** have at least 1, then do a round-robin for all the LCBs
     */
     if ( (p_lcb == NULL) || (p_lcb->link_xmit_quota == 0) ) {
+        list_node_t *p_node   = NULL;
+	tL2C_LCB    *p_lcb_cur = NULL;
         if (p_lcb == NULL) {
-            p_lcb = l2cb.lcb_pool;
+            p_node = list_begin(l2cb.p_lcb_pool);
+	    p_lcb = list_node(p_node);
         } else if (!single_write) {
-            p_lcb++;
+	    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+	        p_lcb_cur = list_node(p_node);
+		if (p_lcb_cur == p_lcb) {
+		    p_node = list_next(p_node);
+		    p_lcb = list_node(p_node);
+		    break;
+		}
+	    } 
         }
 
         /* Loop through, starting at the next */
-        for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+        for ( ; p_node; p_node = list_next(p_node)) {
+	    p_lcb = list_node(p_node);
 #if (BLE_INCLUDED == TRUE)
             L2CAP_TRACE_DEBUG("window = %d,robin_unacked = %d,robin_quota=%d",l2cb.controller_le_xmit_window,l2cb.ble_round_robin_unacked,l2cb.ble_round_robin_quota);
 #endif  ///BLE_INCLUDED == TRUE
@@ -1047,9 +1062,10 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
 
             /* Check for wraparound */
-            if (p_lcb == &l2cb.lcb_pool[MAX_L2CAP_LINKS]) {
-                p_lcb = &l2cb.lcb_pool[0];
-            }
+	    if (p_node == list_end(l2cb.p_lcb_pool)) {
+                p_node = list_begin(l2cb.p_lcb_pool);
+		p_lcb = list_node(p_node);
+	    }
             L2CAP_TRACE_DEBUG("in_use=%d,segment_being_sent=%d,link_state=%d,link_xmit_quota=%d",p_lcb->in_use,p_lcb->partial_segment_being_sent,p_lcb->link_state,p_lcb->link_xmit_quota);
             if ( (!p_lcb->in_use)
                     || (p_lcb->partial_segment_being_sent)
@@ -1131,6 +1147,12 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             while ((l2cb.controller_xmit_window != 0) && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
 #endif
             {
+                //need check flag: partial_segment_being_sent
+                if ( (p_lcb->partial_segment_being_sent)
+                        || (p_lcb->link_state != LST_CONNECTED)
+                        || (L2C_LINK_CHECK_POWER_MODE (p_lcb)) ) {
+                    break;
+                }
                 //L2CAP_TRACE_DEBUG("l2cu_get_next_buffer_to_send = %p",l2cu_get_next_buffer_to_send(p_lcb));
                 if ((p_buf = l2cu_get_next_buffer_to_send (p_lcb)) == NULL) {
                     break;

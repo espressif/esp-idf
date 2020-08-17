@@ -1,0 +1,9 @@
+menu "TCP Transport"
+
+    config WS_BUFFER_SIZE
+        int "Websocket transport buffer size"
+        default 1024
+        help
+            Size of the buffer used for constructing the HTTP Upgrade request during connect
+
+endmenu

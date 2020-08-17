@@ -1,10 +1,13 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # Modbus Master Example
 
 This example demonstrates using of FreeModbus stack port implementation for ESP32 as a master device. 
 This implementation is able to read/write values of slave devices connected into Modbus segment. All parameters to be accessed are defined in data dictionary of the modbus master example source file.
 The values represented as characteristics with its name and characteristic CID which are linked into registers of slave devices connected into Modbus segment. 
 The example implements simple control algorithm and checks parameters from slave device and gets alarm (relay in the slave device) when value of holding_data0 parameter exceeded limit.
-The instances for the modbus parameters are common for master and slave examples and located in examples\protocols\modbus\serial\common_components folder.
+The instances for the modbus parameters are common for master and slave examples and located in `examples/protocols/modbus/mb_example_common` folder.
 
 Example parameters definition:
 --------------------------------------------------------------------------------------------------

@@ -138,7 +138,8 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_AUTOUP = 1 << 2,
     ESP_NETIF_FLAG_GARP   = 1 << 3,
     ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4,
-    ESP_NETIF_FLAG_IS_PPP = 1 << 5
+    ESP_NETIF_FLAG_IS_PPP = 1 << 5,
+    ESP_NETIF_FLAG_IS_SLIP = 1 << 6,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
@@ -163,7 +164,9 @@ typedef struct esp_netif_inherent_config {
     const char * if_key;             /*!< string identifier of the interface */
     const char * if_desc;            /*!< textual description of the interface */
     int route_prio;                  /*!< numeric priority of this interface to become a default
-                                          routing if (if other netifs are up) */
+                                          routing if (if other netifs are up). 
+                                          A higher value of route_prio indicates
+                                          a higher priority */
 } esp_netif_inherent_config_t;
 
 typedef struct esp_netif_config esp_netif_config_t;

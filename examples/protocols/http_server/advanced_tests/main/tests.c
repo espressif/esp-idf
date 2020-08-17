@@ -22,7 +22,7 @@ static esp_err_t hello_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     ESP_LOGI(TAG, "Free Stack for server task: '%d'", uxTaskGetStackHighWaterMark(NULL));
-    httpd_resp_send(req, STR, strlen(STR));
+    httpd_resp_send(req, STR, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 #undef STR
 }
@@ -107,7 +107,7 @@ static esp_err_t test_header_get_handler(httpd_req_t *req)
     }
     if (httpd_req_get_hdr_value_str(req, "Header2", buf, buf_len) == ESP_OK) {
         ESP_LOGI(TAG, "Header2 content: %s", buf);
-        httpd_resp_send(req, buf, strlen(buf));
+        httpd_resp_send(req, buf, HTTPD_RESP_USE_STRLEN);
     } else {
         ESP_LOGE(TAG, "Header2 not found");
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header2 not found");
@@ -121,7 +121,7 @@ static esp_err_t hello_type_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
-    httpd_resp_send(req, STR, strlen(STR));
+    httpd_resp_send(req, STR, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 #undef STR
 }
@@ -130,7 +130,7 @@ static esp_err_t hello_status_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_status(req, HTTPD_500);
-    httpd_resp_send(req, STR, strlen(STR));
+    httpd_resp_send(req, STR, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 #undef STR
 }
@@ -228,7 +228,7 @@ static esp_err_t adder_post_handler(httpd_req_t *req)
     *adder += val;
 
     snprintf(outbuf, sizeof(outbuf),"%d", *adder);
-    httpd_resp_send(req, outbuf, strlen(outbuf));
+    httpd_resp_send(req, outbuf, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -251,11 +251,9 @@ static esp_err_t leftover_data_post_handler(httpd_req_t *req)
 
     buf[ret] = '\0';
     ESP_LOGI(TAG, "leftover data handler read %s", buf);
-    httpd_resp_send(req, buf, strlen(buf));
+    httpd_resp_send(req, buf, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
-
-extern int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
 
 static void generate_async_resp(void *arg)
 {
@@ -272,10 +270,10 @@ static void generate_async_resp(void *arg)
 
     snprintf(buf, sizeof(buf), HTTPD_HDR_STR,
          strlen(STR));
-    httpd_default_send(hd, fd, buf, strlen(buf), 0);
+    httpd_socket_send(hd, fd, buf, strlen(buf), 0);
     /* Space for sending additional headers based on set_header */
-    httpd_default_send(hd, fd, "\r\n", strlen("\r\n"), 0);
-    httpd_default_send(hd, fd, STR, strlen(STR), 0);
+    httpd_socket_send(hd, fd, "\r\n", strlen("\r\n"), 0);
+    httpd_socket_send(hd, fd, STR, strlen(STR), 0);
 #undef STR
     free(arg);
 }
@@ -283,7 +281,7 @@ static void generate_async_resp(void *arg)
 static esp_err_t async_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
-    httpd_resp_send(req, STR, strlen(STR));
+    httpd_resp_send(req, STR, HTTPD_RESP_USE_STRLEN);
     /* Also register a HTTPD Work which sends the same data on the same
      * socket again
      */

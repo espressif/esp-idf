@@ -11,6 +11,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_ENV_FPGA
         # This option is for internal use only
         bool
+        option env="IDF_ENV_FPGA"
 
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
@@ -29,10 +30,16 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32s2"
         select FREERTOS_UNICORE
 
+    config IDF_TARGET_ESP32S3
+        bool
+        default "y" if IDF_TARGET="esp32s3"
+        select IDF_ENV_FPGA
+
     config IDF_FIRMWARE_CHIP_ID
         hex
         default 0x0000 if IDF_TARGET_ESP32
         default 0x0002 if IDF_TARGET_ESP32S2
+        default 0x0004 if IDF_TARGET_ESP32S3
         default 0xFFFF
 
     menu "SDK tool configuration"
@@ -40,6 +47,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             string "Compiler toolchain path/prefix"
             default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
             default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2
+            default "xtensa-esp32s3-elf-" if IDF_TARGET_ESP32S3
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.

@@ -76,10 +76,6 @@ PR_BEGIN_EXTERN_C
 #define MB_FUNC_CODE_MAX 127
 
 /* ----------------------- Type definitions ---------------------------------*/
-#ifndef _MB_M_H
-
-#define MB_FUNC_CODE_MAX 127
-
 /*! \ingroup modbus
  * \brief Modbus serial transmission modes (RTU/ASCII).
  *
@@ -125,8 +121,6 @@ typedef enum
     MB_EILLSTATE,               /*!< protocol stack in illegal state. */
     MB_ETIMEDOUT                /*!< timeout error occurred. */
 } eMBErrorCode;
-
-#endif
 
 /* ----------------------- Function prototypes ------------------------------*/
 /*! \ingroup modbus

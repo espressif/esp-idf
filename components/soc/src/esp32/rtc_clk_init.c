@@ -16,10 +16,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
+#include "esp_rom_uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
@@ -105,7 +103,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
                     xtal_freq, est_xtal_freq);
         }
     }
-    uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 

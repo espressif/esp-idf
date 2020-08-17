@@ -10,6 +10,7 @@ api-reference/ethernet/index              api-reference/network/index
 api-reference/ethernet/esp_eth            api-reference/network/esp_eth
 api-reference/mesh/index                  api-reference/network/index
 api-reference/mesh/esp_mesh               api-reference/network/esp_mesh
+api-reference/peripherals/can             api-reference/peripherals/twai
 api-reference/wifi/index                  api-reference/network/index
 api-reference/wifi/esp_now                api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig        api-reference/network/esp_smartconfig
@@ -46,9 +47,9 @@ get-started-cmake/get-started-wrover-kit-v3    hw-reference/esp32/get-started-wr
 get-started-cmake/get-started-pico-kit         hw-reference/esp32/get-started-pico-kit
 get-started-cmake/get-started-pico-kit-v3      hw-reference/esp32/get-started-pico-kit-v3
 
-api-guide/build-system-cmake                   api-guide/build-system
-api-guide/ulp-cmake                            api-guide/ulp
-api-guide/unit-tests-cmake                     api-guide/unit-tests
+api-guides/build-system-cmake                   api-guides/build-system
+api-guides/ulp-cmake                            api-guides/ulp
+api-guides/unit-tests-cmake                     api-guides/unit-tests
 
 api-reference/network/tcpip_adapter            api-reference/network/esp_netif
 
@@ -66,3 +67,5 @@ hw-reference/get-started-pico-kit-v3       hw-reference/esp32/get-started-pico-k
 hw-reference/get-started-ethernet-kit-v1.0 hw-reference/esp32/get-started-ethernet-kit-v1.0
 hw-reference/get-started-ethernet-kit      hw-reference/esp32/get-started-ethernet-kit
 hw-reference/esp32s2/user-guide-kaluga-1-v1.2  hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit
+
+api-guides/jtag-debugging/configure-wrover  api-guides/jtag-debugging/configure-ft2232h-jtag

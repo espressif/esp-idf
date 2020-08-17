@@ -20,6 +20,7 @@
 #include "spi_flash_emulation.h"
 
 #include <iostream>
+#include <string>
 
 using namespace std;
 using namespace nvs;
@@ -112,5 +113,168 @@ TEST_CASE("nvshandle readonly fails", "[partition_mgr]")
     CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 0);
     // without deinit it affects "nvs api tests"
     CHECK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple set/get char", "[partition_mgr]")
+{
+    enum class TestEnum : char {
+        FOO = -1,
+        BEER,
+        BAR
+    };
+
+    SpiFlashEmulator emu(10);
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    NVSHandleSimple *handle;
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle(NVS_DEFAULT_PART_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    char test_e = 'a';
+    char test_e_read = 'z';
+
+    CHECK(handle->set_item("key", test_e) == ESP_OK);
+
+    CHECK(handle->get_item("key", test_e_read) == ESP_OK);
+    CHECK(test_e == test_e_read);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets int enum", "[partition_mgr]")
+{
+    enum class TestEnum : int {
+        FOO,
+        BAR
+    };
+
+    SpiFlashEmulator emu(10);
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    NVSHandleSimple *handle;
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle(NVS_DEFAULT_PART_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    TestEnum test_e = TestEnum::BAR;
+    TestEnum test_e_read = TestEnum::FOO;
+
+    CHECK(handle->set_item("key", test_e) == ESP_OK);
+
+    CHECK(handle->get_item("key", test_e_read) == ESP_OK);
+    CHECK(test_e == test_e_read);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets int enum with negative values", "[partition_mgr]")
+{
+    enum class TestEnum : int {
+        FOO = -1,
+        BEER,
+        BAR
+    };
+
+    SpiFlashEmulator emu(10);
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    NVSHandleSimple *handle;
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle(NVS_DEFAULT_PART_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    TestEnum test_e = TestEnum::FOO;
+    TestEnum test_e_read = TestEnum::BEER;
+
+    CHECK(handle->set_item("key", test_e) == ESP_OK);
+
+    CHECK(handle->get_item("key", test_e_read) == ESP_OK);
+    CHECK(test_e == test_e_read);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets uint8_t enum", "[partition_mgr]")
+{
+    enum class TestEnum : uint8_t {
+        FOO,
+        BAR
+    };
+
+    SpiFlashEmulator emu(10);
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    NVSHandleSimple *handle;
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle(NVS_DEFAULT_PART_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    TestEnum test_e = TestEnum::BAR;
+    TestEnum test_e_read = TestEnum::FOO;
+
+    CHECK(handle->set_item("key", test_e) == ESP_OK);
+
+    CHECK(handle->get_item("key", test_e_read) == ESP_OK);
+    CHECK(test_e == test_e_read);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets char enum", "[partition_mgr]")
+{
+    enum class TestEnum : char {
+        FOO = -1,
+        BEER,
+        BAR
+    };
+
+    SpiFlashEmulator emu(10);
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    NVSHandleSimple *handle;
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle(NVS_DEFAULT_PART_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    TestEnum test_e = TestEnum::BAR;
+    TestEnum test_e_read = TestEnum::FOO;
+
+    CHECK(handle->set_item("key", test_e) == ESP_OK);
+
+    CHECK(handle->get_item("key", test_e_read) == ESP_OK);
+    CHECK(test_e == test_e_read);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
 }
 

@@ -44,6 +44,8 @@
 #include "ble_mesh_fast_prov_server_model.h"
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 extern struct _led_state led_state[3];
 extern struct k_delayed_work send_self_prov_node_addr_timer;
 extern bt_mesh_atomic_t fast_prov_cli_flags;
@@ -139,9 +141,9 @@ static esp_ble_mesh_model_t root_models[] = {
 
 static esp_ble_mesh_model_t vnd_models[] = {
     ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_SRV,
-    fast_prov_srv_op, NULL, &fast_prov_server),
+                              fast_prov_srv_op, NULL, &fast_prov_server),
     ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI,
-    fast_prov_cli_op, NULL, &fast_prov_client),
+                              fast_prov_cli_op, NULL, &fast_prov_client),
 };
 
 static esp_ble_mesh_elem_t elements[] = {
@@ -247,7 +249,7 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
             return;
         }
         if (fast_prov_server.node_addr_cnt != FAST_PROV_NODE_COUNT_MIN &&
-            fast_prov_server.node_addr_cnt <= fast_prov_server.max_node_num) {
+                fast_prov_server.node_addr_cnt <= fast_prov_server.max_node_num) {
             if (bt_mesh_atomic_test_and_clear_bit(fast_prov_server.srv_flags, GATT_PROXY_ENABLE_START)) {
                 k_delayed_work_cancel(&fast_prov_server.gatt_proxy_enable_timer);
             }
@@ -353,7 +355,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     case ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT");
         node_prov_complete(param->node_prov_complete.net_idx, param->node_prov_complete.addr,
-            param->node_prov_complete.flags, param->node_prov_complete.iv_index);
+                           param->node_prov_complete.flags, param->node_prov_complete.iv_index);
         break;
     case ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT");
@@ -663,7 +665,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
             err = example_handle_config_app_key_add_evt(param->value.state_change.appkey_add.app_idx);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to bind app_idx 0x%04x with non-config models",
-                    __func__, param->value.state_change.appkey_add.app_idx);
+                         __func__, param->value.state_change.appkey_add.app_idx);
                 return;
             }
             break;
@@ -677,16 +679,16 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 }
 
 static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event,
-                                               esp_ble_mesh_generic_server_cb_param_t *param)
+        esp_ble_mesh_generic_server_cb_param_t *param)
 {
     ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
-        event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
+             event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
     switch (event) {
     case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT");
         if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET ||
-            param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+                param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
             ESP_LOGI(TAG, "onoff 0x%02x", param->value.state_change.onoff_set.onoff);
             example_change_led_state(param->value.state_change.onoff_set.onoff);
         }
@@ -746,9 +748,11 @@ static void wifi_console_init(void)
 {
     initialise_wifi();
 
+    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     // init console REPL environment
-    ESP_ERROR_CHECK(esp_console_repl_init(&repl_config));
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     /* Register commands */
     register_wifi();
@@ -764,7 +768,7 @@ static void wifi_console_init(void)
     printf(" =================================================\n\n");
 
     // start console REPL
-    ESP_ERROR_CHECK(esp_console_repl_start());
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
 
 void app_main(void)

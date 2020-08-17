@@ -13,11 +13,14 @@ Overview
 ESP-IDF provides support to generate core dumps on unrecoverable software errors. This useful technique allows post-mortem analysis of software state at the moment of failure.
 Upon the crash system enters panic state, prints some information and halts or reboots depending configuration. User can choose to generate core dump in order to analyse
 the reason of failure on PC later on. Core dump contains snapshots of all tasks in the system at the moment of failure. Snapshots include tasks control blocks (TCB) and stacks.
-So it is possible to find out what task, at what instruction (line of code) and what callstack of that task lead to the crash.
+So it is possible to find out what task, at what instruction (line of code) and what callstack of that task lead to the crash. It is also possible dumping variables content on
+demand if previously attributed accordingly.
 ESP-IDF provides special script `espcoredump.py` to help users to retrieve and analyse core dumps. This tool provides two commands for core dumps analysis:
 
 * info_corefile - prints crashed task's registers, callstack, list of available tasks in the system, memory regions and contents of memory stored in core dump (TCBs and stacks)
 * dbg_corefile - creates core dump ELF file and runs GDB debug session with this file. User can examine memory, variables and tasks states manually. Note that since not all memory is saved in core dump only values of variables allocated on stack will be meaningfull
+
+For more information about core dump internals see the - :doc:`Core dump internals <core_dump_internals>`
 
 Configuration
 -------------
@@ -92,8 +95,63 @@ ROM Functions in Backtraces
 It is possible situation that at the moment of crash some tasks or/and crashed task itself have one or more ROM functions in their callstacks.
 Since ROM is not part of the program ELF it will be impossible for GDB to parse such callstacks, because it tries to analyse functions' prologues to acomplish that.
 In that case callstack printing will be broken with error message at the first ROM function.
-To overcome this issue you can use ROM ELF provided by Espressif (https://dl.espressif.com/dl/esp32_rom.elf) and pass it to 'espcoredump.py'.
+To overcome this issue you can use ROM ELF provided by Espressif (https://dl.espressif.com/dl/{IDF_TARGET_PATH_NAME}_rom.elf) and pass it to 'espcoredump.py'.
 
+Dumping variables on demand
+---------------------------
+
+Sometimes you want to read the last value of a variable to understand the root cause of a crash.
+Core dump supports retrieving variable data over GDB by attributing special notations declared variables.
+
+Supported notations and RAM regions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: esp32
+
+  - ``COREDUMP_DRAM_ATTR`` places variable into DRAM area which will be included into dump.
+  - ``COREDUMP_RTC_ATTR`` places variable into RTC area which will be included into dump.
+  - ``COREDUMP_RTC_FAST_ATTR`` places variable into RTC_FAST area which will be included into dump.
+  - ``COREDUMP_IRAM_ATTR`` places variable into IRAM area which will be included into dump when :ref:`Enable IRAM as 8 bit accessible memory <CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY>` is set.
+
+.. only:: esp32s2
+
+  - ``COREDUMP_DRAM_ATTR`` places variable into DRAM area which will be included into dump.
+  - ``COREDUMP_RTC_ATTR`` places variable into RTC area which will be included into dump.
+  - ``COREDUMP_RTC_FAST_ATTR`` places variable into RTC_FAST area which will be included into dump.
+
+Example
+^^^^^^^
+
+1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP32_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
+
+2. In your project, create a global variable in DRAM area as such as:
+
+  .. code-block:: bash
+      
+      // uint8_t global_var;
+      COREDUMP_DRAM_ATTR uint8_t global_var;
+
+3. In main application, set the variable to any value and `assert(0)` to cause a crash.
+  
+  .. code-block:: bash
+      
+      global_var = 25;
+      assert(0);
+
+4. Build, flash and run the application on a target device and wait for the dumping information.
+
+5. Run the command below to start core dumping in GDB, where ``PORT`` is the device USB port:
+
+  .. code-block:: bash
+      
+      espcoredump.py -p PORT dbg_corefile <path/to/elf>
+
+6. In GDB shell, type ``p global_var`` to get the variable content:
+
+  .. code-block:: bash
+      
+      (gdb) p global_var
+      $1 = 25 '\031'
 
 Running 'espcoredump.py'
 ------------------------
@@ -103,7 +161,6 @@ Generic command syntax:
 `espcoredump.py [options] command [args]`
 
 :Script Options:
-    * --chip,-c {auto,esp32}. Target chip type. Supported values are `auto` and `esp32`.
     * --port,-p PORT. Serial port device.
     * --baud,-b BAUD. Serial port baud rate used when flashing/reading.
 :Commands:

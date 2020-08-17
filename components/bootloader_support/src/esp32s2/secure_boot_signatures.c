@@ -13,29 +13,32 @@
 // limitations under the License.
 #include "sdkconfig.h"
 
+#include <string.h>
+#include "esp_fault.h"
 #include "bootloader_flash.h"
 #include "bootloader_sha.h"
+#include "bootloader_utility.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
+#include "esp_secure_boot.h"
 #include "esp32s2/rom/secure_boot.h"
 
 static const char* TAG = "secure_boot";
 
 #define DIGEST_LEN 32
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
-    ets_secure_boot_key_digests_t trusted_keys = { 0 };
     uint8_t digest[DIGEST_LEN];
     uint8_t verified_digest[DIGEST_LEN] = { 0 }; /* Note: this function doesn't do any anti-FI checks on this buffer */
     const uint8_t *data;
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
-    if ((src_addr + length) % 4096 != 0) {
-        ESP_LOGE(TAG, "addr 0x%x length 0x%x doesn't end on a sector boundary", src_addr, length);
-        return ESP_ERR_INVALID_ARG;
-    }
+    /* Padding to round off the input to the nearest 4k boundary */
+    int padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
+    ESP_LOGD(TAG, "verifying src_addr 0x%x length", src_addr, padded_length);
 
     data = bootloader_mmap(src_addr, length + sizeof(struct ets_secure_boot_sig_block));
     if (data == NULL) {
@@ -43,23 +46,16 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    // Calculate digest of main image
-#ifdef BOOTLOADER_BUILD
-    bootloader_sha256_handle_t handle = bootloader_sha256_start();
-    bootloader_sha256_data(handle, data, length);
-    bootloader_sha256_finish(handle, digest);
-#else
-    /* Use thread-safe esp-idf SHA function */
-    esp_sha(SHA2_256, data, length, digest);
-#endif
-
-    int r = ets_secure_boot_read_key_digests(&trusted_keys);
-
-    if (r == ETS_OK) {
-        const ets_secure_boot_signature_t *sig = (const ets_secure_boot_signature_t *)(data + length);
-        // TODO: calling this function in IDF app context is unsafe
-        r = ets_secure_boot_verify_signature(sig, digest, &trusted_keys, verified_digest);
+    /* Calculate digest of main image */
+    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Digest calculation failed 0x%x, 0x%x", src_addr, padded_length);
+        bootloader_munmap(data);
+        return err;
     }
+
+    const ets_secure_boot_signature_t *sig = (const ets_secure_boot_signature_t *)(data + length);
+    int r = esp_secure_boot_verify_rsa_signature_block(sig, digest, verified_digest);
     bootloader_munmap(data);
 
     return (r == ETS_OK) ? ESP_OK : ESP_FAIL;
@@ -68,15 +64,30 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     ets_secure_boot_key_digests_t trusted_keys;
+    ets_secure_boot_key_digests_t trusted_key_copies[2];
+    ETS_STATUS r;
+    ets_secure_boot_status_t sb_result;
 
-    int r = ets_secure_boot_read_key_digests(&trusted_keys);
-    if (r != 0) {
-        ESP_LOGE(TAG, "No trusted key digests were found in efuse!");
-    } else {
-        ESP_LOGD(TAG, "Verifying with RSA-PSS...");
-        // TODO: calling this function in IDF app context is unsafe
-        r = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys, verified_digest);
+    memset(&trusted_keys, 0, sizeof(ets_secure_boot_key_digests_t));
+    memset(trusted_key_copies, 0, 2 * sizeof(ets_secure_boot_key_digests_t));
+
+    if (!esp_secure_boot_enabled()) {
+        return ESP_OK;
     }
 
-    return (r == 0) ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+    r = ets_secure_boot_read_key_digests(&trusted_keys);
+    if (r != ETS_OK) {
+        ESP_LOGI(TAG, "Could not read secure boot digests!");
+        return ESP_FAIL;
+    }
+
+    // Create the copies for FI checks (assuming result is ETS_OK, if it's not then it'll fail the fault check anyhow)
+    ets_secure_boot_read_key_digests(&trusted_key_copies[0]);
+    ets_secure_boot_read_key_digests(&trusted_key_copies[1]);
+    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[0], sizeof(ets_secure_boot_key_digests_t)) == 0);
+    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[1], sizeof(ets_secure_boot_key_digests_t)) == 0);
+
+    ESP_LOGI(TAG, "Verifying with RSA-PSS boot...");
+    sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys, verified_digest);
+    return (sb_result == SB_SUCCESS) ? ESP_OK : ESP_FAIL;
 }

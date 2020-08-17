@@ -8,19 +8,7 @@ import subprocess
 from docutils import nodes
 from collections import namedtuple
 from sphinx.transforms.post_transforms import SphinxPostTransform
-
-
-def get_github_rev():
-    path = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip().decode('utf-8')
-    try:
-        tag = subprocess.check_output(['git', 'describe', '--exact-match']).strip().decode('utf-8')
-    except subprocess.CalledProcessError:
-        tag = None
-    print('Git commit ID: ', path)
-    if tag:
-        print('Git tag: ', tag)
-        return tag
-    return path
+from get_github_rev import get_github_rev
 
 
 # Creates a dict of all submodules with the format {submodule_path : (url relative to git root), commit)}
@@ -69,7 +57,8 @@ def github_link(link_type, idf_rev, submods, root_path, app_config):
         # Redirects to submodule repo if path is a submodule, else default to IDF repo
         def redirect_submodule(path, submods, rev):
             for key, value in submods.items():
-                if path.lstrip('/').startswith(key):
+                # Add path separator to end of submodule path to ensure we are matching a directory
+                if path.lstrip('/').startswith(os.path.join(key, '')):
                     return value.url.replace('.git', ''), value.rev, re.sub('^/{}/'.format(key), '', path)
 
             return IDF_REPO, rev, path

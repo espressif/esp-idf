@@ -296,4 +296,5 @@ API Reference
 -------------
 
 .. include-build-file:: inc/rmt.inc
+.. include-build-file:: inc/rmt_types.inc
 

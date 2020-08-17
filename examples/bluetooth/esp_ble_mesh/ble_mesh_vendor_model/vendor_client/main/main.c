@@ -20,10 +20,12 @@
 #include "esp_ble_mesh_config_model_api.h"
 
 #include "ble_mesh_example_init.h"
+#include "ble_mesh_example_nvs.h"
 #include "board.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP             0x02E5
-#define CID_NVAL            0xFFFF
 
 #define PROV_OWN_ADDR       0x0001
 
@@ -46,10 +48,18 @@
 #define ESP_BLE_MESH_VND_MODEL_OP_SEND      ESP_BLE_MESH_MODEL_OP_3(0x00, CID_ESP)
 #define ESP_BLE_MESH_VND_MODEL_OP_STATUS    ESP_BLE_MESH_MODEL_OP_3(0x01, CID_ESP)
 
-static uint8_t  dev_uuid[ESP_BLE_MESH_OCTET16_LEN];
-static uint16_t server_address = ESP_BLE_MESH_ADDR_UNASSIGNED;
-static uint16_t vnd_tid;
-static int64_t  start_time;
+static uint8_t dev_uuid[ESP_BLE_MESH_OCTET16_LEN];
+
+static struct example_info_store {
+    uint16_t server_addr;   /* Vendor server unicast address */
+    uint16_t vnd_tid;       /* TID contained in the vendor message */
+} store = {
+    .server_addr = ESP_BLE_MESH_ADDR_UNASSIGNED,
+    .vnd_tid = 0,
+};
+
+static nvs_handle_t NVS_HANDLE;
+static const char * NVS_KEY = "vendor_client";
 
 static struct esp_ble_mesh_key {
     uint16_t net_idx;
@@ -112,6 +122,26 @@ static esp_ble_mesh_prov_t provision = {
     .prov_start_address = 0x0005,
 };
 
+static void mesh_example_info_store(void)
+{
+    ble_mesh_nvs_store(NVS_HANDLE, NVS_KEY, &store, sizeof(store));
+}
+
+static void mesh_example_info_restore(void)
+{
+    esp_err_t err = ESP_OK;
+    bool exist = false;
+
+    err = ble_mesh_nvs_restore(NVS_HANDLE, NVS_KEY, &store, sizeof(store), &exist);
+    if (err != ESP_OK) {
+        return;
+    }
+
+    if (exist) {
+        ESP_LOGI(TAG, "Restore, server_addr 0x%04x, vnd_tid 0x%04x", store.server_addr, store.vnd_tid);
+    }
+}
+
 static void example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *common,
                                             esp_ble_mesh_node_t *node,
                                             esp_ble_mesh_model_t *model, uint32_t opcode)
@@ -140,7 +170,8 @@ static esp_err_t prov_complete(uint16_t node_index, const esp_ble_mesh_octet16_t
         node_index, primary_addr, element_num, net_idx);
     ESP_LOG_BUFFER_HEX("uuid", uuid, ESP_BLE_MESH_OCTET16_LEN);
 
-    server_address = primary_addr;
+    store.server_addr = primary_addr;
+    mesh_example_info_store(); /* Store proper mesh example info */
 
     sprintf(name, "%s%02x", "NODE-", node_index);
     err = esp_ble_mesh_provisioner_set_node_name(node_index, name);
@@ -203,6 +234,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROV_REGISTER_COMP_EVT, err_code %d", param->prov_register_comp.err_code);
+        mesh_example_info_restore(); /* Restore proper mesh example info */
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code %d", param->provisioner_prov_enable_comp.err_code);
@@ -423,31 +455,36 @@ void example_ble_mesh_send_vendor_message(bool resend)
 
     ctx.net_idx = prov_key.net_idx;
     ctx.app_idx = prov_key.app_idx;
-    ctx.addr = server_address;
+    ctx.addr = store.server_addr;
     ctx.send_ttl = MSG_SEND_TTL;
     ctx.send_rel = MSG_SEND_REL;
     opcode = ESP_BLE_MESH_VND_MODEL_OP_SEND;
 
     if (resend == false) {
-        vnd_tid++;
+        store.vnd_tid++;
     }
 
     err = esp_ble_mesh_client_model_send_msg(vendor_client.model, &ctx, opcode,
-            sizeof(vnd_tid), (uint8_t *)&vnd_tid, MSG_TIMEOUT, true, MSG_ROLE);
+            sizeof(store.vnd_tid), (uint8_t *)&store.vnd_tid, MSG_TIMEOUT, true, MSG_ROLE);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send vendor message 0x%06x", opcode);
+        return;
     }
+
+    mesh_example_info_store(); /* Store proper mesh example info */
 }
 
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
+    static int64_t start_time;
+
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_STATUS) {
             int64_t end_time = esp_timer_get_time();
             ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x, time %lldus",
-                param->model_operation.opcode, vnd_tid, end_time - start_time);
+                param->model_operation.opcode, store.vnd_tid, end_time - start_time);
         }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
@@ -536,6 +573,12 @@ void app_main(void)
     err = bluetooth_init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
+        return;
+    }
+
+    /* Open nvs namespace for storing/restoring mesh example info */
+    err = ble_mesh_nvs_open(&NVS_HANDLE);
+    if (err) {
         return;
     }
 

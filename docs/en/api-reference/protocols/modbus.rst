@@ -13,15 +13,24 @@ There are many variants of Modbus protocols, some of them are:
     * ``Modbus ASCII`` — This is used in serial communication and makes use of ASCII characters for protocol communication. The ASCII format uses a longitudinal redundancy check checksum. Modbus ASCII messages are framed by leading colon (":") and trailing newline (CR/LF).
     * ``Modbus TCP/IP or Modbus TCP`` — This is a Modbus variant used for communications over TCP/IP networks, connecting over port 502. It does not require a checksum calculation, as lower layers already provide checksum protection.
 
-    
-Modbus common interface API overview
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Modbus port specific API overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-The API functions below provide common functionality to setup Modbus stack for slave and master implementation accordingly. ISP-IDF supports Modbus serial slave and master protocol stacks and provides modbus_controller interface API to interact with user application.
+ESP-IDF supports Modbus Serial/TCP slave and master protocol stacks (port) and provides Modbus controller interface API to interact with user application.
+
+The functions below are used to create and then initialize actual Modbus controller interface for Serial/TCP port accordingly:
 
 .. doxygenfunction:: mbc_slave_init
 .. doxygenfunction:: mbc_master_init
+.. doxygenfunction:: mbc_slave_init_tcp
+.. doxygenfunction:: mbc_master_init_tcp
+
+
+Modbus common interface API overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 The function initializes the Modbus controller interface and its active context (tasks, RTOS objects and other resources).
 
@@ -29,12 +38,13 @@ The function initializes the Modbus controller interface and its active context 
 .. doxygenfunction:: mbc_master_setup
 
 The function is used to setup communication parameters of the Modbus stack. See the Modbus controller API documentation for more information.
+Note: The communication structure provided as a parameter is different for serial and TCP communication mode.
 
 :cpp:func:`mbc_slave_set_descriptor`: Initialization of slave descriptor.
 
 :cpp:func:`mbc_master_set_descriptor`: Initialization of master descriptor.
 
-The Modbus stack uses parameter description tables (descriptors) for communication. These are different for master and slave implementation of stack and should be assigned by the API call before start of communication.
+The Modbus stack uses parameter description tables (descriptors) for communication. These are different for master and slave implementation of stack and should be assigned by the API call before start of communication. 
 
 .. doxygenfunction:: mbc_slave_start
 .. doxygenfunction:: mbc_master_start
@@ -46,11 +56,11 @@ Modbus controller start function. Starts stack and interface and allows communic
 
 This function stops Modbus communication stack and destroys controller interface.  
 
-There are some configurable parameters of modbus_controller interface and Modbus stack that can be configured using KConfig values in "Modbus configuration" menu. The most important option in KConfig menu is "Selection of Modbus stack support mode" that allows to select master or slave stack for implementation. See the examples for more information about how to use these API functions.
+There are some configurable parameters of modbus_controller interface and Modbus stack that can be configured using KConfig values in "Modbus configuration" menu. The most important option in KConfig menu is "Enable Modbus stack support ..." for appropriate communication mode that allows to select master or slave stack for implementation. See the examples for more information about how to use these API functions.
     
 
-Modbus serial slave interface API overview
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Modbus slave interface API overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 The slave stack requires the user defined structures which represent Modbus parameters accessed by stack. These structures should be prepared by user and be assigned to the modbus_controller interface using :cpp:func:`mbc_slave_set_descriptor()` API call before start of communication.
@@ -69,8 +79,8 @@ The blocking call to function waits for event specified in the input parameter a
 The function gets information about accessed parameters from modbus controller event queue. The KConfig 'CONFIG_FMB_CONTROLLER_NOTIFY_QUEUE_SIZE' key can be used to configure the notification queue size. The timeout parameter allows to specify timeout for waiting notification. The :cpp:type:`mb_param_info_t` structure contain information about accessed parameter.
 
 
-Modbus serial master interface API overview
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Modbus master interface API overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 The Modbus master implementation requires parameter description table be defined before start of stack. This table describes characteristics (physical parameters like temperature, humidity, etc.) and links them to Modbus registers in specific slave device in the Modbus segment. The table has to be assigned to the modbus_controller interface using :cpp:func:`mbc_master_set_descriptor()` API call before start of communication.
@@ -79,7 +89,8 @@ Below are the interface API functions that are used to setup and use Modbus mast
 
 .. doxygenfunction:: mbc_master_set_descriptor
 
-Assigns parameter description table for Modbus controller interface. The table has to be prepared by user according to particular 
+Assigns parameter description table for Modbus controller interface. The table has to be prepared by user according to particular implementation.
+Note: TCP communication stack requires to setup additional information about modbus slaves that corresponds to each address(index) used in description table. This information with IP addresses of the slaves is assigned using communication structure and interface setup call.
 
 .. doxygenfunction:: mbc_master_send_request
 
@@ -97,15 +108,20 @@ The function reads data of characteristic defined in parameters from Modbus slav
 
 The function writes characteristic's value defined as a name and cid parameter in corresponded slave device. The additional data for parameter request is taken from master parameter description table.
 
+
 Application Example
 -------------------
 
 
-The examples below use the FreeModbus library port for serial slave and master implementation accordingly. The selection of stack is performed through KConfig menu "Selection of Modbus stack support mode" and related configuration keys.
+The examples below use the FreeModbus library port for serial TCP slave and master implementations accordingly. The selection of stack is performed through KConfig menu option "Enable Modbus stack support ..." for appropriate communication mode and related configuration keys.
 
 :example:`protocols/modbus/serial/mb_slave`
 
 :example:`protocols/modbus/serial/mb_master`
+
+:example:`protocols/modbus/tcp/mb_tcp_slave`
+
+:example:`protocols/modbus/tcp/mb_tcp_master`
 
 Please refer to the specific example README.md for details.
 

@@ -6,6 +6,6 @@ idf_component_register(SRCS "ccomp_timer.c"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES spi_flash idf_test unity
-                    PRIV_REQUIRES perfmon)
+                    PRIV_REQUIRES perfmon esp_ipc)
 
 

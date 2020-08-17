@@ -3,8 +3,14 @@
 
 function(__add_dfu_targets)
     idf_build_get_property(target IDF_TARGET)
-    if(NOT "${target}" STREQUAL "esp32s2")
+    if("${target}" STREQUAL "esp32")
         return()
+    elseif("${target}" STREQUAL "esp32s2")
+        set(dfu_pid "2")
+    elseif("${target}" STREQUAL "esp32s3")
+        set(dfu_pid "4")
+    else()
+        message(FATAL_ERROR "DFU PID unknown for ${target}")
     endif()
 
     idf_build_get_property(python PYTHON)
@@ -14,13 +20,21 @@ function(__add_dfu_targets)
         COMMAND ${python} ${idf_path}/tools/mkdfu.py write
         -o "${CMAKE_CURRENT_BINARY_DIR}/dfu.bin"
         --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json"
+        --pid "${dfu_pid}"
         DEPENDS gen_project_binary bootloader
         VERBATIM
         USES_TERMINAL)
 
+    add_custom_target(dfu-list
+        COMMAND ${CMAKE_COMMAND}
+        -D ESP_DFU_LIST="1"
+        -P ${idf_path}/tools/cmake/run_dfu_util.cmake
+        USES_TERMINAL)
+
     add_custom_target(dfu-flash
-        COMMAND dfu-util
-        -D "${CMAKE_CURRENT_BINARY_DIR}/dfu.bin"
-        VERBATIM
+        COMMAND ${CMAKE_COMMAND}
+        -D ESP_DFU_BIN="${CMAKE_CURRENT_BINARY_DIR}/dfu.bin"
+        -D ESP_DFU_PID="${dfu_pid}"
+        -P ${idf_path}/tools/cmake/run_dfu_util.cmake
         USES_TERMINAL)
 endfunction()

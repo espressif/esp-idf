@@ -16,16 +16,17 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h" // for ets_update_cpu_frequency
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
+#include "esp_rom_gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
+#include "soc/gpio_struct.h"
+#include "hal/gpio_ll.h"
 #include "i2c_rtc_clk.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
@@ -174,27 +175,32 @@ void rtc_clk_32k_bootstrap(uint32_t cycle)
     if (cycle){
         const uint32_t pin_32 = 32;
         const uint32_t pin_33 = 33;
-        const uint32_t mask_32 = (1 << (pin_32 - 32));
-        const uint32_t mask_33 = (1 << (pin_33 - 32));
 
-        gpio_pad_select_gpio(pin_32);
-        gpio_pad_select_gpio(pin_33);
-        gpio_output_set_high(mask_32, mask_33, mask_32 | mask_33, 0);
+        esp_rom_gpio_pad_select_gpio(pin_32);
+        esp_rom_gpio_pad_select_gpio(pin_33);
+        gpio_ll_output_enable(&GPIO, pin_32);
+        gpio_ll_output_enable(&GPIO, pin_33);
+        gpio_ll_set_level(&GPIO, pin_32, 1);
+        gpio_ll_set_level(&GPIO, pin_33, 0);
 
         const uint32_t delay_us = (1000000 / RTC_SLOW_CLK_FREQ_32K / 2);
         while(cycle){
-            gpio_output_set_high(mask_32, mask_33, mask_32 | mask_33, 0);
-            ets_delay_us(delay_us);
-            gpio_output_set_high(mask_33, mask_32, mask_32 | mask_33, 0);
-            ets_delay_us(delay_us);
+            gpio_ll_set_level(&GPIO, pin_32, 1);
+            gpio_ll_set_level(&GPIO, pin_33, 0);
+            esp_rom_delay_us(delay_us);
+            gpio_ll_set_level(&GPIO, pin_33, 1);
+            gpio_ll_set_level(&GPIO, pin_32, 0);
+            esp_rom_delay_us(delay_us);
             cycle--;
         }
-        gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
+        // disable pins
+        gpio_ll_output_disable(&GPIO, pin_32);
+        gpio_ll_output_disable(&GPIO, pin_33);
     }
 
     CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE | RTC_IO_X32N_RDE);
-    ets_delay_us(XTAL_32K_BOOTSTRAP_TIME_US);
+    esp_rom_delay_us(XTAL_32K_BOOTSTRAP_TIME_US);
 
     rtc_clk_32k_enable_common(XTAL_32K_BOOTSTRAP_DAC_VAL,
             XTAL_32K_BOOTSTRAP_DRES_VAL, XTAL_32K_BOOTSTRAP_DBIAS_VAL);
@@ -216,7 +222,7 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
         } else {
             SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
         }
-        ets_delay_us(DELAY_8M_ENABLE);
+        esp_rom_delay_us(DELAY_8M_ENABLE);
     } else {
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
@@ -267,8 +273,8 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
 
         /* wait for calibration end */
         while (!(I2C_READREG_MASK_RTC(I2C_APLL, I2C_APLL_OR_CAL_END))) {
-            /* use ets_delay_us so the RTC bus doesn't get flooded */
-            ets_delay_us(1);
+            /* use esp_rom_delay_us so the RTC bus doesn't get flooded */
+            esp_rom_delay_us(1);
         }
     }
 }
@@ -280,7 +286,7 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN,
             (slow_freq == RTC_SLOW_FREQ_32K_XTAL) ? 1 : 0);
 
-    ets_delay_us(DELAY_SLOW_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
 rtc_slow_freq_t rtc_clk_slow_freq_get(void)
@@ -301,7 +307,7 @@ uint32_t rtc_clk_slow_freq_get_hz(void)
 void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq)
 {
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_FAST_CLK_RTC_SEL, fast_freq);
-    ets_delay_us(DELAY_FAST_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_FAST_CLK_SWITCH);
 }
 
 rtc_fast_freq_t rtc_clk_fast_freq_get(void)
@@ -361,7 +367,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     } else {
         /* Raise the voltage */
         REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
-        ets_delay_us(DELAY_PLL_DBIAS_RAISE);
+        esp_rom_delay_us(DELAY_PLL_DBIAS_RAISE);
         /* Configure 480M PLL */
         switch (xtal_freq) {
             case RTC_XTAL_FREQ_40M:
@@ -409,7 +415,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
     uint32_t delay_pll_en = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
             DELAY_PLL_ENABLE_WITH_150K : DELAY_PLL_ENABLE_WITH_32K;
-    ets_delay_us(delay_pll_en);
+    esp_rom_delay_us(delay_pll_en);
     s_cur_pll_freq = pll_freq;
 }
 

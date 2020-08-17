@@ -33,6 +33,7 @@
 #include "driver/rtc_io.h"
 
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 
 static void hexdump(const uint32_t* src, size_t count) {
     for (size_t i = 0; i < count; ++i) {
@@ -60,7 +61,7 @@ TEST_CASE("ulp add test", "[ulp]")
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
-    ets_delay_us(1000);
+    esp_rom_delay_us(1000);
     hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
     TEST_ASSERT_EQUAL(10 + 11, RTC_SLOW_MEM[18] & 0xffff);
 }

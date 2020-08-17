@@ -158,7 +158,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
  *
- * @note Call adc1_config_width() before the first time this
+ * @note Call ``adc1_config_width()`` before the first time this
  *       function is called.
  *
  * @note For any given channel, adc1_config_channel_atten(channel)
@@ -230,9 +230,9 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit);
  * @brief Configure ADC1 to be usable by the ULP
  *
  * This function reconfigures ADC1 to be controlled by the ULP.
- * Effect of this function can be reverted using adc1_get_raw function.
+ * Effect of this function can be reverted using ``adc1_get_raw()`` function.
  *
- * Note that adc1_config_channel_atten, adc1_config_width functions need
+ * Note that adc1_config_channel_atten, ``adc1_config_width()`` functions need
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
  */
 void adc1_ulp_enable(void);
@@ -311,6 +311,40 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  *     - ESP_ERR_INVALID_STATE The controller status is invalid. Please try again.
  */
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out);
+
+/**
+ *  @brief Output ADC1 or ADC2's reference voltage to ``adc2_channe_t``'s IO.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC2's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @note  ESP32 only supports output of ADC2's internal reference voltage.
+ *  @param[in]  adc_unit ADC unit index
+ *  @param[in]  gpio     GPIO number (Only ADC2's channels IO are supported)
+ *
+ *  @return
+ *                  - ESP_OK: v_ref successfully routed to selected GPIO
+ *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
+ */
+esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
+
+/**
+ *  @brief Output ADC2 reference voltage to ``adc2_channe_t``'s IO.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC2's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @deprecated Use ``adc_vref_to_gpio`` instead.
+ *
+ *  @param[in]  gpio    GPIO number (ADC2's channels are supported)
+ *
+ *  @return
+ *                  - ESP_OK: v_ref successfully routed to selected GPIO
+ *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
+ */
+esp_err_t adc2_vref_to_gpio(gpio_num_t gpio) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }

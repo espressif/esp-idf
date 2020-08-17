@@ -12,6 +12,7 @@
 #include "esp_system.h"
 #include "test_utils.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 
 #if portNUM_PROCESSORS == 2
 
@@ -81,25 +82,27 @@ TEST_CASE("test adjtime function", "[newlib]")
     tv_delta.tv_sec = 0;
     tv_delta.tv_usec = -900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
-
-    tv_delta.tv_sec = 0;
-    tv_delta.tv_usec = 900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
 
     tv_delta.tv_sec = -4;
     tv_delta.tv_usec = -900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  -4);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
 
     // after settimeofday() adjtime() is stopped
     tv_delta.tv_sec = 15;
     tv_delta.tv_usec = 900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, -4);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
     TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
@@ -112,21 +115,24 @@ TEST_CASE("test adjtime function", "[newlib]")
     tv_delta.tv_sec = 15;
     tv_delta.tv_usec = 900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
 
     TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     tv_delta.tv_sec = 1;
     tv_delta.tv_usec = 0;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_sec == 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
     // the correction will be equal to (1_000_000us >> 6) = 15_625 us.
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec >= 15600);
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec <= 15650);
@@ -265,7 +271,7 @@ static void measure_time_task(void *pvParameters)
         int64_t sys_time_us[2] = { main_sys_time_us[0], 0};
         // although exit flag is set in another task, checking (exit_flag == false) is safe
         while (exit_flag == false) {
-            ets_delay_us(2 * 1000000); // 2 sec
+            esp_rom_delay_us(2 * 1000000); // 2 sec
 
             start_measure(&sys_time_us[1], &real_time_us[1]);
             result_adjtime_correction_us[1] += calc_correction("measure", sys_time_us, real_time_us);

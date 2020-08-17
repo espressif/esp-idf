@@ -32,4 +32,34 @@ menu "ESP System Settings"
                 of the crash.
     endchoice
 
+    config ESP_SYSTEM_SINGLE_CORE_MODE
+        bool
+        default n
+        help
+            Only initialize and use the main core.
+
+    config ESP_SYSTEM_RTC_EXT_XTAL
+        # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
+        # e.g. It will be selected on when ESP32_RTC_CLK_SRC_EXT_CRYS is on
+        bool
+        default n
+
+    config ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES
+        int "Bootstrap cycles for external 32kHz crystal"
+        depends on ESP_SYSTEM_RTC_EXT_XTAL
+        default 5 if IDF_TARGET_ESP32
+        default 0
+        range 0 32768
+        help
+            To reduce the startup time of an external RTC crystal,
+            we bootstrap it with a 32kHz square wave for a fixed number of cycles.
+            Setting 0 will disable bootstrapping (if disabled, the crystal may take
+            longer to start up or fail to oscillate under some conditions).
+
+            If this value is too high, a faulty crystal may initially start and then fail.
+            If this value is too low, an otherwise good crystal may not start.
+
+            To accurately determine if the crystal has started,
+            set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
+
 endmenu  # ESP System Settings

@@ -4,12 +4,13 @@
 #include "esp_sleep.h"
 #include "esp32/clk.h"
 #include "driver/rtc_io.h"
-#include "esp32/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "soc/gpio_periph.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_types.h"
+#include "hal/uart_ll.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
@@ -17,6 +18,7 @@
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
@@ -100,7 +102,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 {
     void timer_func(void* arg)
     {
-        ets_delay_us(50);
+        esp_rom_delay_us(50);
     }
 
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
@@ -175,9 +177,7 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
 TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
-    const int uart_clk_freq = REF_CLK_FREQ;
-    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
-    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_REF_TICK, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
     rtc_cpu_freq_config_t config_xtal, config_default;
@@ -359,7 +359,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
 
     // Setup timer to wakeup with timeout
-     esp_sleep_enable_timer_wakeup(2000000);
+    esp_sleep_enable_timer_wakeup(2000000);
 
     // Save start time
     gettimeofday(&tv_start, NULL);
@@ -412,6 +412,9 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     // Check error message when source is already disabled
     esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
+
+    // Disable ext0 wakeup source, as this might interfere with other tests
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
 
 static RTC_DATA_ATTR struct timeval start;

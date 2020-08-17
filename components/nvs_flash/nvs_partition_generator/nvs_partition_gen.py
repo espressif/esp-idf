@@ -797,7 +797,7 @@ def decrypt(args):
     page_num = 0
     page_max_size = 4096
     start_entry_offset = 0
-    empty_data_entry = bytearray('\xff') * 32
+    empty_data_entry = bytearray(b'\xff') * nvs_read_bytes
 
     # Check if key file has .bin extension
     input_files = [args.input, args.key, args.output]

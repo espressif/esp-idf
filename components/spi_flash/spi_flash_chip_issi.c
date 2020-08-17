@@ -64,6 +64,7 @@ static const char chip_name[] = "issi";
 // So we only replace these two functions.
 const spi_flash_chip_t esp_flash_chip_issi = {
     .name = chip_name,
+    .timeout = &spi_flash_chip_generic_timeout,
     .probe = spi_flash_chip_issi_probe,
     .reset = spi_flash_chip_generic_reset,
     .detect_size = spi_flash_chip_generic_detect_size,

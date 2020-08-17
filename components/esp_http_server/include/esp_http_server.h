@@ -1047,7 +1047,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
 static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
-    return httpd_resp_send(r, str, (str == NULL) ? 0 : strlen(str));
+    return httpd_resp_send(r, str, (str == NULL) ? 0 : HTTPD_RESP_USE_STRLEN);
 }
 
 /**
@@ -1068,7 +1068,7 @@ static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
 static inline esp_err_t httpd_resp_sendstr_chunk(httpd_req_t *r, const char *str) {
-    return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : strlen(str));
+    return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : HTTPD_RESP_USE_STRLEN);
 }
 
 /* Some commonly used status codes */
@@ -1292,6 +1292,53 @@ static inline esp_err_t httpd_resp_send_500(httpd_req_t *r) {
  */
 int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len);
 
+/**
+ * A low level API to send data on a given socket
+ *
+ * @note This API is not recommended to be used in any request handler.
+ * Use this only for advanced use cases, wherein some asynchronous
+ * data is to be sent over a socket.
+ *
+ * This internally calls the default send function, or the function registered by
+ * httpd_sess_set_send_override().
+ *
+ * @param[in] hd        server instance
+ * @param[in] sockfd    session socket file descriptor
+ * @param[in] buf       buffer with bytes to send
+ * @param[in] buf_len   data size
+ * @param[in] flags     flags for the send() function
+ * @return
+ *  - Bytes : The number of bytes sent successfully
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket send()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket send()
+ */
+int httpd_socket_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags);
+
+/**
+ * A low level API to receive data from a given socket
+ *
+ * @note This API is not recommended to be used in any request handler.
+ * Use this only for advanced use cases, wherein some asynchronous
+ * communication is required.
+ *
+ * This internally calls the default recv function, or the function registered by
+ * httpd_sess_set_recv_override().
+ *
+ * @param[in] hd        server instance
+ * @param[in] sockfd    session socket file descriptor
+ * @param[in] buf       buffer with bytes to send
+ * @param[in] buf_len   data size
+ * @param[in] flags     flags for the send() function
+ * @return
+ *  - Bytes : The number of bytes received successfully
+ *  - 0     : Buffer length parameter is zero / connection closed by peer
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()
+ */
+int httpd_socket_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags);
+
 /** End of Request / Response
  * @}
  */
@@ -1483,7 +1530,15 @@ typedef enum {
  * @brief WebSocket frame format
  */
 typedef struct httpd_ws_frame {
-    bool final;                 /*!< Final frame */
+    bool final;                 /*!< Final frame:
+                                     For received frames this field indicates whether the `FIN` flag was set.
+                                     For frames to be transmitted, this field is only used if the `fragmented`
+                                         option is set as well. If `fragmented` is false, the `FIN` flag is set
+                                         by default, marking the ws_frame as a complete/unfragmented message
+                                         (esp_http_server doesn't automatically fragment messages) */
+    bool fragmented;            /*!< Indication that the frame allocated for transmission is a message fragment,
+                                     so the `FIN` flag is set manually according to the `final` option.
+                                     This flag is never set for received messages */
     httpd_ws_type_t type;       /*!< WebSocket frame type */
     uint8_t *payload;           /*!< Pre-allocated data buffer */
     size_t len;                 /*!< Length of the WebSocket data */

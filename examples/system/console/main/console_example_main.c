@@ -21,6 +21,10 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+#error This example is incompatible with USB CDC console. Please try "console_usb" example instead.
+#endif // CONFIG_ESP_CONSOLE_USB_CDC
+
 static const char* TAG = "example";
 #define PROMPT_STR CONFIG_IDF_TARGET
 
@@ -68,9 +72,9 @@ static void initialize_console(void)
     setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode.

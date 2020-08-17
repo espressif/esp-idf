@@ -79,6 +79,47 @@ menu "Bluetooth"
             default 1 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
             default 0
 
+        menuconfig BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+            bool "PCM Signal Config (Role and Polar)"
+            depends on BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+            default y
+
+        choice BTDM_CTRL_PCM_ROLE
+            prompt "PCM Role"
+            depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+            help
+                PCM role can be configured as PCM master or PCM slave
+
+            config BTDM_CTRL_PCM_ROLE_MASTER
+                bool "PCM Master"
+            config BTDM_CTRL_PCM_ROLE_SLAVE
+                bool "PCM Slave"
+        endchoice
+
+        choice BTDM_CTRL_PCM_POLAR
+            prompt "PCM Polar"
+            depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+            help
+                PCM polarity can be configured as Falling Edge or Rising Edge
+
+            config BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+                bool "Falling Edge"
+            config BTDM_CTRL_PCM_POLAR_RISING_EDGE
+                bool "Rising Edge"
+        endchoice
+
+        config BTDM_CTRL_PCM_ROLE_EFF
+            int
+            default 0 if BTDM_CTRL_PCM_ROLE_MASTER
+            default 1 if BTDM_CTRL_PCM_ROLE_SLAVE
+            default 0
+
+        config BTDM_CTRL_PCM_POLAR_EFF
+            int
+            default 0 if BTDM_CTRL_PCM_POLAR_FALLING_EDGE
+            default 1 if BTDM_CTRL_PCM_POLAR_RISING_EDGE
+            default 0
+
         config BTDM_CTRL_AUTO_LATENCY
             bool "Auto latency"
             depends on BTDM_CTRL_MODE_BTDM
@@ -91,6 +132,19 @@ menu "Bluetooth"
             bool
             default BTDM_CTRL_AUTO_LATENCY if BTDM_CTRL_MODE_BTDM
             default n
+
+        config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT
+            bool "Legacy Authentication Vendor Specific Event Enable"
+            depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+            default y
+            help
+                To protect from BIAS attack during Legacy authentication,
+                Legacy authentication Vendor specific event should be enabled
+
+        config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+            bool
+            default BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+            default 0
 
 
         config BTDM_CTRL_BLE_MAX_CONN_EFF

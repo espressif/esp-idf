@@ -17,7 +17,6 @@
 from __future__ import print_function
 import re
 import os
-import time
 
 import ttfw_idf
 import esp_prov
@@ -52,64 +51,55 @@ def test_examples_provisioning_softap(env, extra_data):
     print("SoftAP SSID     : " + ssid)
     print("SoftAP Password : " + password)
 
-    ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
-    print("Connecting to DUT SoftAP...")
-    ip = ctrl.connect(ssid, password)
-    got_ip = dut1.expect(re.compile(r"DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
-    if ip != got_ip:
-        raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
-    print("Connected to DUT SoftAP")
+    try:
+        ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
+        print("Connecting to DUT SoftAP...")
+        ip = ctrl.connect(ssid, password)
+        got_ip = dut1.expect(re.compile(r"DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)"), timeout=60)[0]
+        if ip != got_ip:
+            raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
+        print("Connected to DUT SoftAP")
 
-    print("Starting Provisioning")
-    verbose = False
-    protover = "V0.1"
-    secver = 1
-    pop = "abcd1234"
-    provmode = "softap"
-    ap_ssid = "myssid"
-    ap_password = "mypassword"
-    softap_endpoint = ip.split('.')[0] + "." + ip.split('.')[1] + "." + ip.split('.')[2] + ".1:80"
+        print("Starting Provisioning")
+        verbose = False
+        protover = "V0.1"
+        secver = 1
+        pop = "abcd1234"
+        provmode = "softap"
+        ap_ssid = "myssid"
+        ap_password = "mypassword"
+        softap_endpoint = ip.split('.')[0] + "." + ip.split('.')[1] + "." + ip.split('.')[2] + ".1:80"
 
-    print("Getting security")
-    security = esp_prov.get_security(secver, pop, verbose)
-    if security is None:
-        raise RuntimeError("Failed to get security")
+        print("Getting security")
+        security = esp_prov.get_security(secver, pop, verbose)
+        if security is None:
+            raise RuntimeError("Failed to get security")
 
-    print("Getting transport")
-    transport = esp_prov.get_transport(provmode, softap_endpoint)
-    if transport is None:
-        raise RuntimeError("Failed to get transport")
+        print("Getting transport")
+        transport = esp_prov.get_transport(provmode, softap_endpoint)
+        if transport is None:
+            raise RuntimeError("Failed to get transport")
 
-    print("Verifying protocol version")
-    if not esp_prov.version_match(transport, protover):
-        raise RuntimeError("Mismatch in protocol version")
+        print("Verifying protocol version")
+        if not esp_prov.version_match(transport, protover):
+            raise RuntimeError("Mismatch in protocol version")
 
-    print("Starting Session")
-    if not esp_prov.establish_session(transport, security):
-        raise RuntimeError("Failed to start session")
+        print("Starting Session")
+        if not esp_prov.establish_session(transport, security):
+            raise RuntimeError("Failed to start session")
 
-    print("Sending Wifi credential to DUT")
-    if not esp_prov.send_wifi_config(transport, security, ap_ssid, ap_password):
-        raise RuntimeError("Failed to send Wi-Fi config")
+        print("Sending Wifi credential to DUT")
+        if not esp_prov.send_wifi_config(transport, security, ap_ssid, ap_password):
+            raise RuntimeError("Failed to send Wi-Fi config")
 
-    print("Applying config")
-    if not esp_prov.apply_wifi_config(transport, security):
-        raise RuntimeError("Failed to send apply config")
+        print("Applying config")
+        if not esp_prov.apply_wifi_config(transport, security):
+            raise RuntimeError("Failed to send apply config")
 
-    success = False
-    while True:
-        time.sleep(5)
-        print("Wi-Fi connection state")
-        ret = esp_prov.get_wifi_config(transport, security)
-        if (ret == 1):
-            continue
-        elif (ret == 0):
-            print("Provisioning was successful")
-            success = True
-        break
-
-    if not success:
-        raise RuntimeError("Provisioning failed")
+        if not esp_prov.wait_wifi_connected(transport, security):
+            raise RuntimeError("Provisioning failed")
+    finally:
+        ctrl.reset()
 
 
 if __name__ == '__main__':

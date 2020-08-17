@@ -1,12 +1,11 @@
 from __future__ import unicode_literals
+from tiny_test_fw import Utility
+import debug_backend
 import os
-import threading
-import time
-
 import pexpect
 import serial
-
-from tiny_test_fw import Utility
+import threading
+import time
 import ttfw_idf
 
 
@@ -48,26 +47,22 @@ def test_app_loadable_elf(env, extra_data):
     with SerialThread(esp_log_path):
         openocd_log = os.path.join(proj_path, 'openocd.log')
         gdb_log = os.path.join(proj_path, 'gdb.log')
-        gdb_args = '-x {} --directory={}'.format(os.path.join(proj_path, '.gdbinit.ci'),
-                                                 os.path.join(proj_path, 'main'))
+        gdb_init = os.path.join(proj_path, 'gdbinit')
+        gdb_dir = os.path.join(proj_path, 'main')
 
-        with ttfw_idf.OCDProcess(openocd_log), ttfw_idf.GDBProcess(gdb_log, elf_path, app.target, gdb_args) as gdb:
-            i = gdb.pexpect_proc.expect_exact(['Thread 1 hit Temporary breakpoint 2, app_main ()',
-                                               'Load failed'])
-            if i == 0:
-                Utility.console_log('gdb is at breakpoint')
-            elif i == 1:
-                raise RuntimeError('Load has failed. Please examine the logs.')
-            else:
-                Utility.console_log('i = {}'.format(i))
-                Utility.console_log(str(gdb.pexpect_proc))
-                # This really should not happen. TIMEOUT and EOF failures are exceptions.
-                raise RuntimeError('An unknown error has occurred. Please examine the logs.')
+        with ttfw_idf.OCDBackend(openocd_log, app.target):
+            with ttfw_idf.GDBBackend(gdb_log, elf_path, app.target, gdb_init, gdb_dir) as p:
+                def wait_for_breakpoint():
+                    p.gdb.wait_target_state(debug_backend.TARGET_STATE_RUNNING)
+                    stop_reason = p.gdb.wait_target_state(debug_backend.TARGET_STATE_STOPPED)
+                    assert stop_reason == debug_backend.TARGET_STOP_REASON_BP, 'STOP reason: {}'.format(stop_reason)
 
-            gdb.pexpect_proc.expect_exact('(gdb)')
-            gdb.pexpect_proc.sendline('b esp_restart')
-            gdb.pexpect_proc.sendline('c')
-            gdb.pexpect_proc.expect_exact('Thread 1 hit Breakpoint 3, esp_restart ()')
+                wait_for_breakpoint()
+
+                p.gdb.add_bp('esp_restart')
+                p.gdb.exec_continue()
+
+                wait_for_breakpoint()
 
     if pexpect.run('grep "Restarting now." {}'.format(esp_log_path), withexitstatus=True)[1]:
         raise RuntimeError('Expected output from ESP was not received')

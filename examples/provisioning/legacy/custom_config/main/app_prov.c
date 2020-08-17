@@ -211,8 +211,8 @@ static void app_prov_event_handler(void* handler_arg, esp_event_base_t event_bas
             /* If none of the expected reasons,
              * retry connecting to host SSID */
             g_prov->wifi_state = WIFI_PROV_STA_CONNECTING;
-            esp_wifi_connect();
         }
+        esp_wifi_connect();
     }
 }
 

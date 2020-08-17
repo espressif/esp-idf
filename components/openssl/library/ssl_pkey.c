@@ -16,6 +16,7 @@
 #include "ssl_methods.h"
 #include "ssl_dbg.h"
 #include "ssl_port.h"
+#include "openssl/bio.h"
 
 /**
  * @brief create a private key object according to input private key
@@ -30,6 +31,8 @@ EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
         SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "no enough memory > (pkey)");
         goto no_mem;
     }
+
+    pkey->ref_counter = 1;
 
     if (ipk) {
         pkey->method = ipk->method;
@@ -65,6 +68,10 @@ EVP_PKEY* EVP_PKEY_new(void)
 void EVP_PKEY_free(EVP_PKEY *pkey)
 {
     SSL_ASSERT3(pkey);
+
+    if (--pkey->ref_counter > 0) {
+        return;
+    }
 
     EVP_PKEY_METHOD_CALL(free, pkey);
 
@@ -118,6 +125,60 @@ failed1:
     return NULL;
 }
 
+EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a)
+{
+    return d2i_PrivateKey(0, a, (const unsigned char **)&bp->data, bp->dlen);
+}
+
+RSA *d2i_RSAPrivateKey_bio(BIO *bp,RSA **a)
+{
+    return d2i_PrivateKey_bio(bp, (EVP_PKEY**)a);
+}
+
+RSA *PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **x, pem_password_cb *cb, void *u)
+{
+    return PEM_read_bio_PrivateKey(bp, (EVP_PKEY**)x, cb, u);
+}
+
+EVP_PKEY *PEM_read_bio_PrivateKey(BIO *bp, EVP_PKEY **pk, pem_password_cb *cb, void *u)
+{
+
+    int m = 0;
+    int ret;
+    EVP_PKEY *x;
+
+    SSL_ASSERT2(BIO_method_type(bp) &  BIO_TYPE_MEM);
+    if (bp->data == NULL || bp->dlen == 0) {
+        return NULL;
+    }
+    if (pk && *pk) {
+        x = *pk;
+    } else {
+        x = EVP_PKEY_new();
+        if (!x) {
+            SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "EVP_PKEY_new() return NULL");
+            goto failed;
+        }
+        m = 1;
+    }
+
+    ret = EVP_PKEY_METHOD_CALL(load, x, bp->data, bp->dlen);
+    if (ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "EVP_PKEY_METHOD_CALL(load) return %d", ret);
+        goto failed;
+    }
+
+    // If buffer successfully created a EVP_PKEY from the bio, mark the buffer as consumed
+    bp->data = NULL;
+    bp->dlen = 0;
+    return x;
+
+    failed:
+    if (m) {
+        EVP_PKEY_free(x);
+    }
+
+    return NULL;}
 /**
  * @brief set the SSL context private key
  */
@@ -132,6 +193,7 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
     if (ctx->cert->pkey)
         EVP_PKEY_free(ctx->cert->pkey);
 
+    pkey->ref_counter++;
     ctx->cert->pkey = pkey;
 
     return 1;
@@ -214,12 +276,15 @@ failed1:
     return 0;
 }
 
+#define ESP_OPENSSL_FILES_IS_SUPPORTED 0
 /**
  * @brief load the private key file into SSL context
  */
 int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
-    return 0;
+    // Using file name as private key is discouraged
+    SSL_ASSERT1(ESP_OPENSSL_FILES_IS_SUPPORTED);
+    return -1;
 }
 
 /**
@@ -227,7 +292,9 @@ int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
  */
 int SSL_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
-    return 0;
+    // Using file name as private key is discouraged
+    SSL_ASSERT1(ESP_OPENSSL_FILES_IS_SUPPORTED);
+    return -1;
 }
 
 /**
@@ -236,4 +303,9 @@ int SSL_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d, long len)
 {
     return SSL_CTX_use_PrivateKey_ASN1(0, ctx, d, len);
+}
+
+void RSA_free (RSA *r)
+{
+    EVP_PKEY_free(r);
 }

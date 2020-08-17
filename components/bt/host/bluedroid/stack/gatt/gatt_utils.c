@@ -78,6 +78,7 @@ static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x0
                                                0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
                                               };
 
+static UINT32 gatt_tcb_id;
 
 /*******************************************************************************
 **
@@ -779,25 +780,28 @@ BOOLEAN gatt_remove_an_item_from_list(tGATT_HDL_LIST_INFO *p_list, tGATT_HDL_LIS
 BOOLEAN gatt_find_the_connected_bda(UINT8 start_idx, BD_ADDR bda, UINT8 *p_found_idx,
                                     tBT_TRANSPORT *p_transport)
 {
-    UINT8 i;
     BOOLEAN found = FALSE;
     GATT_TRACE_DEBUG("gatt_find_the_connected_bda start_idx=%d", start_idx);
-
-    for (i = start_idx ; i < GATT_MAX_PHY_CHANNEL; i ++) {
-        if (gatt_cb.tcb[i].in_use && gatt_cb.tcb[i].ch_state == GATT_CH_OPEN) {
-            memcpy( bda, gatt_cb.tcb[i].peer_bda, BD_ADDR_LEN);
-            *p_found_idx = i;
-            *p_transport = gatt_cb.tcb[i].transport;
-            found = TRUE;
-            GATT_TRACE_DEBUG("gatt_find_the_connected_bda bda :%02x-%02x-%02x-%02x-%02x-%02x",
-                             bda[0],  bda[1], bda[2],  bda[3], bda[4],  bda[5]);
-            break;
+    tGATT_TCB   *p_tcb  = NULL;
+    list_node_t *p_node = NULL;
+    p_tcb = gatt_get_tcb_by_idx(start_idx);
+    if (p_tcb) {
+        for(p_node = list_get_node(gatt_cb.p_tcb_list, p_tcb); p_node; p_node = list_next(p_node)) {
+	    p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                memcpy( bda, p_tcb->peer_bda, BD_ADDR_LEN);
+                *p_found_idx = p_tcb->tcb_idx;
+                *p_transport = p_tcb->transport;
+                found = TRUE;
+                GATT_TRACE_DEBUG("gatt_find_the_connected_bda bda :%02x-%02x-%02x-%02x-%02x-%02x",
+                                 bda[0],  bda[1], bda[2],  bda[3], bda[4],  bda[5]);
+                break;
+            }
         }
+        GATT_TRACE_DEBUG("gatt_find_the_connected_bda found=%d found_idx=%d", found, p_tcb->tcb_idx);
     }
-    GATT_TRACE_DEBUG("gatt_find_the_connected_bda found=%d found_idx=%d", found, i);
     return found;
 }
-
 
 
 /*******************************************************************************
@@ -883,19 +887,19 @@ tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda)
 *******************************************************************************/
 BOOLEAN gatt_is_bda_connected(BD_ADDR bda)
 {
-    UINT8 i = 0;
     BOOLEAN connected = FALSE;
-
-    for ( i = 0; i < GATT_MAX_PHY_CHANNEL; i ++) {
-        if (gatt_cb.tcb[i].in_use &&
-                !memcmp(gatt_cb.tcb[i].peer_bda, bda, BD_ADDR_LEN)) {
+    tGATT_TCB   *p_tcb  = NULL;
+    list_node_t *p_node = NULL;
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+	p_tcb = list_node(p_node); 
+        if (p_tcb->in_use &&
+                !memcmp(p_tcb->peer_bda, bda, BD_ADDR_LEN)) {
             connected = TRUE;
             break;
         }
     }
     return connected;
 }
-
 /*******************************************************************************
 **
 ** Function         gatt_find_i_tcb_by_addr
@@ -908,16 +912,18 @@ BOOLEAN gatt_is_bda_connected(BD_ADDR bda)
 UINT8 gatt_find_i_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport)
 {
     UINT8 i = 0;
-
-    for ( ; i < GATT_MAX_PHY_CHANNEL; i ++) {
-        if (!memcmp(gatt_cb.tcb[i].peer_bda, bda, BD_ADDR_LEN) &&
-                gatt_cb.tcb[i].transport == transport) {
+    list_node_t *p_node = NULL;
+    tGATT_TCB   *p_tcb  = NULL;
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+	p_tcb = list_node(p_node); 
+        if (!memcmp(p_tcb->peer_bda, bda, BD_ADDR_LEN) &&
+                p_tcb->transport == transport) {
+	    i = p_tcb->tcb_idx;
             return i;
         }
     }
     return GATT_INDEX_INVALID;
 }
-
 
 /*******************************************************************************
 **
@@ -930,10 +936,15 @@ UINT8 gatt_find_i_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport)
 *******************************************************************************/
 tGATT_TCB *gatt_get_tcb_by_idx(UINT8 tcb_idx)
 {
-    tGATT_TCB   *p_tcb = NULL;
-
-    if ( (tcb_idx < GATT_MAX_PHY_CHANNEL) && gatt_cb.tcb[tcb_idx].in_use) {
-        p_tcb = &gatt_cb.tcb[tcb_idx];
+    tGATT_TCB   *p_tcb  = NULL;
+    list_node_t *p_node = NULL;
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+	p_tcb = list_node(p_node); 
+        if ( (tcb_idx < GATT_MAX_PHY_CHANNEL) && p_tcb->in_use && p_tcb->tcb_idx == tcb_idx ) {
+            break;
+        } else {
+	    p_tcb = NULL;
+	}
     }
 
     return p_tcb;
@@ -954,7 +965,7 @@ tGATT_TCB *gatt_find_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport)
     UINT8 i = 0;
 
     if ((i = gatt_find_i_tcb_by_addr(bda, transport)) != GATT_INDEX_INVALID) {
-        p_tcb = &gatt_cb.tcb[i];
+        p_tcb = gatt_get_tcb_by_idx(i);
     }
 
     return p_tcb;
@@ -973,12 +984,54 @@ UINT8 gatt_find_i_tcb_free(void)
     UINT8 i = 0, j = GATT_INDEX_INVALID;
 
     for (i = 0; i < GATT_MAX_PHY_CHANNEL; i ++) {
-        if (!gatt_cb.tcb[i].in_use) {
+        if (!((1 << i) & gatt_tcb_id)) {
             j = i;
             break;
         }
     }
     return j;
+}
+/*******************************************************************************
+**
+** Function         gatt_tcb_alloc
+**
+** Description      The function allocates tcb for given tcb_idx and update tcb_id
+**
+** Returns          Allocated tcb block
+**
+*******************************************************************************/
+tGATT_TCB *gatt_tcb_alloc(UINT8 tcb_idx)
+{
+    /* Allocate tcb block */
+    tGATT_TCB *p_tcb = (tGATT_TCB *)osi_malloc(sizeof(tGATT_TCB));
+    if (p_tcb && list_length(gatt_cb.p_tcb_list) < GATT_MAX_PHY_CHANNEL) {
+        memset(p_tcb, 0, sizeof(tGATT_TCB));
+        /* Add tcb  block to list in gatt_cb */
+        list_append(gatt_cb.p_tcb_list, p_tcb);
+        /*  Update tcb id */
+        gatt_tcb_id |= 1 << tcb_idx;
+    } else if(p_tcb) {
+	osi_free(p_tcb);
+        p_tcb = NULL;
+    }
+    return p_tcb;
+}
+
+/*******************************************************************************
+**
+** Function         gatt_tcb_free
+**
+** Description      The function free the given tcb block and update tcb id
+**
+** Returns          void
+**
+*******************************************************************************/
+void gatt_tcb_free( tGATT_TCB *p_tcb)
+{
+    UINT8 tcb_idx = p_tcb->tcb_idx;
+    if (list_remove(gatt_cb.p_tcb_list, p_tcb)) {
+        gatt_tcb_id &= ~(1 << tcb_idx);
+    }
 }
 /*******************************************************************************
 **
@@ -1003,8 +1056,10 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
         allocated = TRUE;
     }
     if (i != GATT_INDEX_INVALID) {
-        p_tcb = &gatt_cb.tcb[i];
-
+        p_tcb = gatt_tcb_alloc(i);
+	if (!p_tcb) {
+	    return NULL;
+	}
         if (allocated) {
             memset(p_tcb, 0, sizeof(tGATT_TCB));
             p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
@@ -1216,7 +1271,7 @@ BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid_rec, UINT16 uuid_size, UINT8 *
 *******************************************************************************/
 void gatt_start_rsp_timer(UINT16 clcb_idx)
 {
-    tGATT_CLCB *p_clcb = &gatt_cb.clcb[clcb_idx];
+    tGATT_CLCB *p_clcb = gatt_clcb_find_by_idx(clcb_idx);
     UINT32 timeout = GATT_WAIT_FOR_RSP_TOUT;
     p_clcb->rsp_timer_ent.param  = (TIMER_PARAM_TYPE)p_clcb;
     if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
@@ -1625,17 +1680,63 @@ tGATT_REG *gatt_get_regcb (tGATT_IF gatt_if)
 
 BOOLEAN gatt_is_clcb_allocated (UINT16 conn_id)
 {
-    UINT8         i = 0;
     BOOLEAN       is_allocated = FALSE;
 
-    for (i = 0; i < GATT_CL_MAX_LCB; i++) {
-        if (gatt_cb.clcb[i].in_use && (gatt_cb.clcb[i].conn_id == conn_id)) {
-            is_allocated = TRUE;
-            break;
-        }
+    tGATT_CLCB  *p_clcb = gatt_clcb_find_by_conn_id(conn_id);
+    if (p_clcb) {
+        is_allocated = TRUE;
     }
-
     return is_allocated;
+}
+
+/*******************************************************************************
+**
+** Function         gatt_clcb_find_by_conn_id
+**
+** Description      Find clcb block using clcb_idx stored at the time of alloc
+**
+** Returns          pointer to clcb corresponding to conn_id
+**
+*******************************************************************************/
+
+tGATT_CLCB *gatt_clcb_find_by_conn_id(UINT16 conn_id)
+{
+    list_node_t *p_node     = NULL;
+    tGATT_CLCB  *p_clcb     = NULL;
+    tGATT_CLCB  *p_clcb_ret = NULL;
+    for(p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = list_next(p_node)) {
+        p_clcb = list_node(p_node);
+	if (p_clcb->conn_id == conn_id) {
+	    p_clcb_ret = p_clcb;
+	    break;
+	}
+    }
+    return p_clcb_ret;
+}
+
+/*******************************************************************************
+**
+** Function         gatt_clcb_find_by_idx
+**
+** Description      Find clcb block using clcb_idx stored at the time of alloc
+**
+** Returns          pointer to clcb corresponding to clcb_idx
+**
+*******************************************************************************/
+
+tGATT_CLCB *gatt_clcb_find_by_idx(UINT16 clcb_idx)
+{
+    list_node_t *p_node     = NULL;
+    tGATT_CLCB  *p_clcb     = NULL;
+    tGATT_CLCB  *p_clcb_ret = NULL;
+    for(p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = list_next(p_node)) {
+        p_clcb = list_node(p_node);
+	if (p_clcb->clcb_idx == clcb_idx) {
+	    p_clcb_ret = p_clcb;
+	    break;
+	}
+    }
+    return p_clcb_ret;
 }
 
 /*******************************************************************************
@@ -1649,24 +1750,24 @@ BOOLEAN gatt_is_clcb_allocated (UINT16 conn_id)
 *******************************************************************************/
 tGATT_CLCB *gatt_clcb_alloc (UINT16 conn_id)
 {
-    UINT8           i = 0;
     tGATT_CLCB      *p_clcb = NULL;
     tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
     UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
 
-    for (i = 0; i < GATT_CL_MAX_LCB; i++) {
-        if (!gatt_cb.clcb[i].in_use) {
-            p_clcb = &gatt_cb.clcb[i];
-
-            p_clcb->in_use      = TRUE;
-            p_clcb->conn_id     = conn_id;
-            p_clcb->clcb_idx    = i;
-            p_clcb->p_reg       = p_reg;
-            p_clcb->p_tcb       = p_tcb;
-            break;
-        }
+    if (list_length(gatt_cb.p_clcb_list) < GATT_CL_MAX_LCB) {	
+	p_clcb = (tGATT_CLCB *)osi_malloc(sizeof(tGATT_CLCB));
+	if (p_clcb) {
+	   list_append(gatt_cb.p_clcb_list, p_clcb);
+    	   memset(p_clcb, 0, sizeof(tGATT_CLCB));
+           p_clcb->in_use      = TRUE;
+           p_clcb->conn_id     = conn_id;
+    	   //Add index of the clcb same as conn_id
+           p_clcb->clcb_idx    = conn_id;
+           p_clcb->p_reg       = p_reg;
+           p_clcb->p_tcb       = p_tcb;
+	}
     }
     return p_clcb;
 }
@@ -1685,6 +1786,8 @@ void gatt_clcb_dealloc (tGATT_CLCB *p_clcb)
     if (p_clcb && p_clcb->in_use) {
         btu_free_timer(&p_clcb->rsp_timer_ent);
         memset(p_clcb, 0, sizeof(tGATT_CLCB));
+        list_remove(gatt_cb.p_clcb_list, p_clcb);
+	p_clcb = NULL;
     }
 }
 
@@ -1702,18 +1805,16 @@ void gatt_clcb_dealloc (tGATT_CLCB *p_clcb)
 *******************************************************************************/
 tGATT_TCB *gatt_find_tcb_by_cid (UINT16 lcid)
 {
-    UINT16       xx = 0;
-    tGATT_TCB    *p_tcb = NULL;
-
-    for (xx = 0; xx < GATT_MAX_PHY_CHANNEL; xx++) {
-        if (gatt_cb.tcb[xx].in_use && gatt_cb.tcb[xx].att_lcid == lcid) {
-            p_tcb = &gatt_cb.tcb[xx];
+    tGATT_TCB   *p_tcb  = NULL;
+    list_node_t *p_node = NULL;
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+	p_tcb = list_node(p_node); 
+        if (p_tcb->in_use && p_tcb->att_lcid == lcid) {
             break;
         }
     }
     return p_tcb;
 }
-
 
 /*******************************************************************************
 **
@@ -1750,12 +1851,15 @@ UINT8 gatt_num_apps_hold_link(tGATT_TCB *p_tcb)
 *******************************************************************************/
 UINT8 gatt_num_clcb_by_bd_addr(BD_ADDR bda)
 {
-    UINT8 i, num = 0;
+    UINT8 num = 0;
 
-    for (i = 0; i < GATT_CL_MAX_LCB; i ++) {
-        if (gatt_cb.clcb[i].in_use && memcmp(gatt_cb.clcb[i].p_tcb->peer_bda, bda, BD_ADDR_LEN) == 0) {
-            num ++;
-        }
+    list_node_t *p_node = NULL;
+    tGATT_CLCB  *p_clcb = NULL;
+    for(p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = list_next(p_node)) {
+        p_clcb = list_node(p_node);
+	if (memcmp(p_clcb->p_tcb->peer_bda, bda, BD_ADDR_LEN) == 0) {
+	    num++;
+	}
     }
     return num;
 }
@@ -1989,7 +2093,7 @@ BOOLEAN gatt_find_app_hold_link(tGATT_TCB *p_tcb, UINT8 start_idx, UINT8 *p_foun
 
     for (i = start_idx; i < GATT_MAX_APPS; i ++) {
         if (p_tcb->app_hold_link[i]) {
-            *p_gatt_if = gatt_cb.clcb[i].p_reg->gatt_if;
+            *p_gatt_if = p_tcb->app_hold_link[i];
             *p_found_idx = i;
             found = TRUE;
             break;
@@ -2064,7 +2168,7 @@ tGATT_CLCB *gatt_cmd_dequeue(tGATT_TCB *p_tcb, UINT8 *p_op_code)
     tGATT_CLCB *p_clcb = NULL;
 
     if (p_tcb->pending_cl_req != p_tcb->next_slot_inq) {
-        p_clcb = &gatt_cb.clcb[p_cmd->clcb_idx];
+        p_clcb = gatt_clcb_find_by_idx(p_cmd->clcb_idx);
 
         *p_op_code = p_cmd->op_code;
 
@@ -2227,17 +2331,18 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
     if ((p_tcb = gatt_find_tcb_by_addr(bda, transport)) != NULL) {
         GATT_TRACE_DEBUG ("found p_tcb ");
         gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
-        for (i = 0; i < GATT_CL_MAX_LCB; i ++) {
-            p_clcb = &gatt_cb.clcb[i];
+        list_node_t *p_node = NULL;
+        list_node_t *p_node_next = NULL;
+	for(p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = p_node_next) {
+            p_clcb = list_node(p_node);
+            p_node_next = list_next(p_node);
             if (p_clcb->in_use && p_clcb->p_tcb == p_tcb) {
                 btu_stop_timer(&p_clcb->rsp_timer_ent);
                 GATT_TRACE_DEBUG ("found p_clcb conn_id=%d clcb_idx=%d", p_clcb->conn_id, p_clcb->clcb_idx);
                 if (p_clcb->operation != GATTC_OPTYPE_NONE) {
                     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
                 }
-
                 gatt_clcb_dealloc(p_clcb);
-
             }
         }
 
@@ -2258,8 +2363,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
                 (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if,  bda, conn_id, FALSE, reason, transport);
             }
         }
-        memset(p_tcb, 0, sizeof(tGATT_TCB));
-
+        gatt_tcb_free(p_tcb);
     } else {
         GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
         BTM_Recovery_Pre_State();

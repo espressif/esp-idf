@@ -17,8 +17,9 @@
 
 #include <freertos/FreeRTOS.h>
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h" // will be removed in idf v5.0
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #endif
@@ -50,8 +51,8 @@ typedef portMUX_TYPE multi_heap_lock_t;
 /* Not safe to use std i/o while in a portmux critical section,
    can deadlock, so we use the ROM equivalent functions. */
 
-#define MULTI_HEAP_PRINTF ets_printf
-#define MULTI_HEAP_STDERR_PRINTF(MSG, ...) ets_printf(MSG, __VA_ARGS__)
+#define MULTI_HEAP_PRINTF esp_rom_printf
+#define MULTI_HEAP_STDERR_PRINTF(MSG, ...) esp_rom_printf(MSG, __VA_ARGS__)
 
 inline static void multi_heap_assert(bool condition, const char *format, int line, intptr_t address)
 {
@@ -62,7 +63,7 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 #ifndef NDEBUG
     if(!condition) {
 #ifndef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
-        ets_printf(format, line, address);
+        esp_rom_printf(format, line, address);
 #endif  // CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
         abort();
     }

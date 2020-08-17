@@ -10,13 +10,13 @@
 #include "esp_efuse_table.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
-#include "esp32/rom/efuse.h"
 #include "bootloader_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_rom_efuse.h"
 
 static const char* TAG = "efuse_test";
 
@@ -37,7 +37,7 @@ static void test_read_blob(void)
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
-    TEST_ASSERT_EQUAL_HEX8(crc, esp_crc8(mac, sizeof(mac)));
+    TEST_ASSERT_EQUAL_HEX8(crc, esp_rom_efuse_mac_address_crc8(mac, sizeof(mac)));
 #endif // CONFIG_IDF_TARGET_ESP32
 
     ESP_LOGI(TAG, "3. Test check args");
@@ -265,6 +265,32 @@ static void test_write_cnt(void)
 TEST_CASE("efuse test write_field_cnt", "[efuse]")
 {
     test_write_cnt();
+}
+
+TEST_CASE("efuse test single bit functions", "[efuse]")
+{
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    uint8_t test_bit;
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST5_LEN_1, &test_bit, 1));
+    TEST_ASSERT_EQUAL_HEX8(0, test_bit);
+
+    test_bit = esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1);
+    TEST_ASSERT_EQUAL_HEX8(0, test_bit);
+
+    TEST_ESP_OK(esp_efuse_write_field_bit(ESP_EFUSE_TEST5_LEN_1));
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST5_LEN_1, &test_bit, 1));
+    TEST_ASSERT_EQUAL_HEX8(1, test_bit);
+
+    test_bit = esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1);
+    TEST_ASSERT_EQUAL_HEX8(1, test_bit);
+
+    // Can write the bit again and it's a no-op
+    TEST_ESP_OK(esp_efuse_write_field_bit(ESP_EFUSE_TEST5_LEN_1));
+    TEST_ASSERT_EQUAL_HEX8(1, esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1));
+
+    esp_efuse_utility_debug_dump_blocks();
 }
 
 void cut_tail_arr(uint8_t *arr, int num_used_bits, size_t count_bits)

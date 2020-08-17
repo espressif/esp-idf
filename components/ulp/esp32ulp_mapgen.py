@@ -19,7 +19,22 @@ def gen_ld_h_from_sym(f_sym, f_ld, f_h):
     f_h.write("#pragma once\n\n")
 
     for line in f_sym:
-        name, _, addr_str = line.split()
+        name, _, addr_str = line.split(" ", 2)
+        addr = int(addr_str, 16) + BASE_ADDR
+        f_h.write("extern uint32_t ulp_{0};\n".format(name))
+        f_ld.write("PROVIDE ( ulp_{0} = 0x{1:08x} );\n".format(name, addr))
+
+
+def gen_ld_h_from_sym_riscv(f_sym, f_ld, f_h):
+    f_ld.write("/* Variable definitions for ESP32ULP linker\n")
+    f_ld.write(" * This file is generated automatically by esp32ulp_mapgen.py utility.\n")
+    f_ld.write(" */\n\n")
+    f_h.write("// Variable definitions for ESP32ULP\n")
+    f_h.write("// This file is generated automatically by esp32ulp_mapgen.py utility\n\n")
+    f_h.write("#pragma once\n\n")
+
+    for line in f_sym:
+        addr_str, _, name = line.split()
         addr = int(addr_str, 16) + BASE_ADDR
         f_h.write("extern uint32_t ulp_{0};\n".format(name))
         f_ld.write("PROVIDE ( ulp_{0} = 0x{1:08x} );\n".format(name, addr))
@@ -36,6 +51,8 @@ def main():
     parser.add_option("-o", "--outputfile", dest="outputfile",
                       help="destination .h and .ld files name prefix", metavar="OUTFILE")
 
+    parser.add_option("--riscv", action="store_true", help="use format for ulp riscv .sym file")
+
     (options, args) = parser.parse_args()
     if options.symfile is None:
         parser.print_help()
@@ -44,6 +61,11 @@ def main():
     if options.outputfile is None:
         parser.print_help()
         return 1
+
+    if options.riscv:
+        with open(options.outputfile + ".h", 'w') as f_h, open(options.outputfile + ".ld", 'w') as f_ld, open(options.symfile) as f_sym:
+            gen_ld_h_from_sym_riscv(f_sym, f_ld, f_h)
+        return 0
 
     with open(options.outputfile + ".h", 'w') as f_h, open(options.outputfile + ".ld", 'w') as f_ld, open(options.symfile) as f_sym:
         gen_ld_h_from_sym(f_sym, f_ld, f_h)

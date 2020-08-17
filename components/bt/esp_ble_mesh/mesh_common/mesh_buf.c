@@ -383,6 +383,15 @@ void net_buf_reset(struct net_buf *buf)
     net_buf_simple_reset(&buf->b);
 }
 
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size)
+{
+    buf->__buf = data;
+    buf->data  = data;
+    buf->size  = size;
+    buf->len   = size;
+}
+
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
     NET_BUF_ASSERT(buf);
@@ -484,7 +493,7 @@ void net_buf_unref(struct net_buf *buf)
         pool->uninit_count++;
 #if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
         pool->avail_count++;
-        NET_BUF_DBG("%s, pool %p, avail_count %d, uninit_count %d", __func__,
+        NET_BUF_DBG("Unref, pool %p, avail_count %d, uninit_count %d",
                     pool, pool->avail_count, pool->uninit_count);
         NET_BUF_ASSERT(pool->avail_count <= pool->buf_count);
 #endif
@@ -537,7 +546,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
     NET_BUF_ASSERT(pool);
 
-    NET_BUF_DBG("%s, pool %p, uninit_count %d, buf_count %d", __func__,
+    NET_BUF_DBG("Alloc, pool %p, uninit_count %d, buf_count %d",
                 pool, pool->uninit_count, pool->buf_count);
 
     /* We need to lock interrupts temporarily to prevent race conditions
@@ -561,7 +570,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
     bt_mesh_buf_unlock();
 
-    NET_BUF_ERR("%s, Failed to get free buffer", __func__);
+    NET_BUF_ERR("Out of free buffer, pool %p", pool);
     return NULL;
 
 success:
@@ -570,11 +579,11 @@ success:
     if (size) {
         buf->__buf = data_alloc(buf, &size, timeout);
         if (!buf->__buf) {
-            NET_BUF_ERR("%s, Failed to allocate data", __func__);
+            NET_BUF_ERR("Out of data, buf %p", buf);
             return NULL;
         }
     } else {
-        NET_BUF_WARN("%s, Zero data size", __func__);
+        NET_BUF_WARN("Zero data size, buf %p", buf);
         buf->__buf = NULL;
     }
 

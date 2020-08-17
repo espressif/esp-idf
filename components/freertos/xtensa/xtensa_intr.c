@@ -34,6 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "freertos/xtensa_api.h"
 #include "freertos/portable.h"
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 
 #if XCHAL_HAVE_EXCEPTIONS
 
@@ -99,7 +100,7 @@ extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS*portNUM_P
 */
 void xt_unhandled_interrupt(void * arg)
 {
-	ets_printf("Unhandled interrupt %d on cpu %d!\n", (int)arg, xPortGetCoreID());
+	esp_rom_printf("Unhandled interrupt %d on cpu %d!\n", (int)arg, xPortGetCoreID());
 }
 
 

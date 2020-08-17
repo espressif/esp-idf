@@ -18,17 +18,9 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "sdkconfig.h"
 
-#if defined(CONFIG_IDF_TARGET_ESP32)
-#include "esp32/rom/crc.h"
-#endif
-
-/******************* Polynomials Used in the CRC APIs ****************************
-* CRC-8        x8+x2+x1+1                                              0x07
-* CRC16-CCITT  x16+x12+x5+1                                            0x1021
-* CRC32        x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x1+1     0x04c11db7
-********************************************************************************/
+// This header is only a wrapper on ROM CRC API
+#include "esp_rom_crc.h"
 
 /**
 * @brief CRC32 value in little endian.
@@ -40,7 +32,7 @@ extern "C" {
 */
 static inline uint32_t esp_crc32_le(uint32_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc32_le(crc, buf, len);
+    return esp_rom_crc32_le(crc, buf, len);
 }
 
 /**
@@ -53,7 +45,7 @@ static inline uint32_t esp_crc32_le(uint32_t crc, uint8_t const *buf, uint32_t l
 */
 static inline uint32_t esp_crc32_be(uint32_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc32_be(crc, buf, len);
+    return esp_rom_crc32_be(crc, buf, len);
 }
 
 /**
@@ -66,7 +58,7 @@ static inline uint32_t esp_crc32_be(uint32_t crc, uint8_t const *buf, uint32_t l
 */
 static inline uint16_t esp_crc16_le(uint16_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc16_le(crc, buf, len);
+    return esp_rom_crc16_le(crc, buf, len);
 }
 
 /**
@@ -79,7 +71,7 @@ static inline uint16_t esp_crc16_le(uint16_t crc, uint8_t const *buf, uint32_t l
 */
 static inline uint16_t esp_crc16_be(uint16_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc16_be(crc, buf, len);
+    return esp_rom_crc16_be(crc, buf, len);
 }
 
 /**
@@ -92,7 +84,7 @@ static inline uint16_t esp_crc16_be(uint16_t crc, uint8_t const *buf, uint32_t l
 */
 static inline uint8_t esp_crc8_le(uint8_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc8_le(crc, buf, len);
+    return esp_rom_crc8_le(crc, buf, len);
 }
 
 /**
@@ -105,7 +97,7 @@ static inline uint8_t esp_crc8_le(uint8_t crc, uint8_t const *buf, uint32_t len)
 */
 static inline uint8_t esp_crc8_be(uint8_t crc, uint8_t const *buf, uint32_t len)
 {
-    return crc8_be(crc, buf, len);
+    return esp_rom_crc8_be(crc, buf, len);
 }
 
 #ifdef __cplusplus

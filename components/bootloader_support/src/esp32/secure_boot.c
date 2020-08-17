@@ -19,8 +19,7 @@
 #include "esp_log.h"
 
 #include "esp32/rom/cache.h"
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/crc.h"
+#include "esp_rom_crc.h"
 
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
@@ -231,7 +230,7 @@ static const char *TAG = "secure_boot_v2";
 
 static esp_err_t validate_signature_block(const ets_secure_boot_signature_t *sig_block, uint8_t *digest)
 {
-    uint32_t crc = crc32_le(0, (uint8_t *)sig_block, CRC_SIGN_BLOCK_LEN);
+    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)sig_block, CRC_SIGN_BLOCK_LEN);
     if (sig_block->block[0].magic_byte == SIG_BLOCK_MAGIC_BYTE && sig_block->block[0].block_crc == crc && !memcmp(digest, sig_block->block[0].image_digest, DIGEST_LEN)) {
         ESP_LOGI(TAG, "valid signature block found");
         return ESP_OK;
@@ -390,6 +389,17 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
 #else
     ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
+#endif
+
+#ifdef CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    ESP_LOGI(TAG, "Disable ROM Download mode...");
+    esp_err_t err = esp_efuse_disable_rom_download_mode();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not disable ROM Download mode...");
+        return ESP_FAIL;
+    }
+#else
+    ESP_LOGW(TAG, "Not disabling ROM Download mode - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS

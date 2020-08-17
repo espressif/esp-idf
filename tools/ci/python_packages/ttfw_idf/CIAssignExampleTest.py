@@ -29,7 +29,7 @@ IDF_PATH_FROM_ENV = os.getenv("IDF_PATH")
 
 
 class ExampleGroup(CIAssignTest.Group):
-    SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "chip"]
+    SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "target"]
     BUILD_LOCAL_DIR = "build_examples"
     BUILD_JOB_NAMES = ["build_examples_cmake_esp32", "build_examples_cmake_esp32s2"]
 
@@ -61,14 +61,14 @@ def create_artifact_index_file(project_id=None, pipeline_id=None, case_group=Exa
     artifact_index_list = []
 
     def format_build_log_path():
-        parallel = job_info["parallel_num"]    # Could be None if "parallel_num" not defined for the job
+        parallel = job_info["parallel_num"]  # Could be None if "parallel_num" not defined for the job
         return "{}/list_job_{}.json".format(case_group.BUILD_LOCAL_DIR, parallel or 1)
 
     for build_job_name in case_group.BUILD_JOB_NAMES:
         job_info_list = gitlab_inst.find_job_id(build_job_name, pipeline_id=pipeline_id)
         for job_info in job_info_list:
             raw_data = gitlab_inst.download_artifact(job_info["id"], [format_build_log_path()])[0]
-            build_info_list = [json.loads(line) for line in raw_data.splitlines()]
+            build_info_list = [json.loads(line) for line in raw_data.decode().splitlines()]
             for build_info in build_info_list:
                 build_info["ci_job_id"] = job_info["id"]
                 artifact_index_list.append(build_info)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         help="file name pattern used to find Python test case files")
     parser.add_argument('--custom-group',
                         help='select custom-group for the test cases, if other than ExampleTest',
-                        choices=['example','test-apps'], default='example')
+                        choices=['example', 'test-apps'], default='example')
 
     args = parser.parse_args()
 

@@ -44,7 +44,7 @@ Tutorials
 ~~~~~~~~~
 
 - `ESP-IDF and ESP32-DevKitC: debugging, unit testing, project analysis
-  <https://docs.platformio.org/en/latest/tutorials/espressif32/espidf_debugging_unit_testing_inspect.html?utm_source=docs.espressif.com>`__
+  <https://docs.platformio.org/en/latest/tutorials/espressif32/espidf_debugging_unit_testing_analysis.html?utm_source=docs.espressif.com>`__
 
 Project Examples
 ~~~~~~~~~~~~~~~~

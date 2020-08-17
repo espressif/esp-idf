@@ -47,7 +47,6 @@
 #if MB_MASTER_ASCII_ENABLED > 0
 
 /* ----------------------- Defines ------------------------------------------*/
-#define MB_TIMER_TICS_PER_MS    20UL
 
 /* ----------------------- Type definitions ---------------------------------*/
 typedef enum
@@ -320,13 +319,14 @@ xMBMasterASCIIReceiveFSM( void )
         {
             /* Disable character timeout timer because all characters are
              * received. */
-            vMBPortTimersDisable(  );
+            vMBMasterPortTimersDisable(  );
             /* Receiver is again in idle state. */
             eRcvState = STATE_M_RX_IDLE;
 
             /* Notify the caller of eMBMasterASCIIReceive that a new frame
              * was received. */
             (void)xMBMasterPortEventPost( EV_MASTER_FRAME_RECEIVED );
+            xNeedPoll = FALSE;
         }
         else if( ucByte == ':' )
         {
@@ -355,7 +355,7 @@ xMBMasterASCIITransmitFSM( void )
 {
     BOOL            xNeedPoll = TRUE;
     UCHAR           ucByte;
-    BOOL xFrameIsBroadcast = FALSE;
+    BOOL            xFrameIsBroadcast = FALSE;
 
     assert( eRcvState == STATE_M_RX_IDLE );
     

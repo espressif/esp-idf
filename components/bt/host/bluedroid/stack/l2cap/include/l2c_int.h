@@ -25,7 +25,6 @@
 #define L2C_INT_H
 
 #include <stdbool.h>
-
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
@@ -73,6 +72,8 @@
 #define L2CAP_DEFAULT_RETRANS_TOUT   2000         /* 2000 milliseconds */
 #define L2CAP_DEFAULT_MONITOR_TOUT   12000        /* 12000 milliseconds */
 #define L2CAP_FCR_ACK_TOUT           200          /* 200 milliseconds */
+
+#define L2CAP_CACHE_ATT_ACL_NUM      10
 
 /* Define the possible L2CAP channel states. The names of
 ** the states may seem a bit strange, but they are taken from
@@ -165,6 +166,9 @@ typedef enum {
 
 #define L2CAP_MAX_FCR_CFG_TRIES         2       /* Config attempts before disconnecting */
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 typedef uint8_t tL2C_BLE_FIXED_CHNLS_MASK;
 
 typedef struct {
@@ -367,6 +371,7 @@ typedef struct {
 
 #endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
 
+
 /* Define a link control block. There is one link control block between
 ** this device and any other device (i.e. BD ADDR).
 */
@@ -461,6 +466,7 @@ typedef struct t_l2c_linkcb {
 
 } tL2C_LCB;
 
+
 /* Define the L2CAP control structure
 */
 typedef struct {
@@ -473,12 +479,10 @@ typedef struct {
 
     BOOLEAN         is_cong_cback_context;
 
-    tL2C_LCB        lcb_pool[MAX_L2CAP_LINKS];      /* Link Control Block pool          */
-    tL2C_CCB        ccb_pool[MAX_L2CAP_CHANNELS];   /* Channel Control Block pool       */
+    list_t          *p_lcb_pool;                    /* Link Control Block pool          */
+    list_t          *p_ccb_pool;                    /* Channel Control Block pool       */
     tL2C_RCB        rcb_pool[MAX_L2CAP_CLIENTS];    /* Registration info pool           */
 
-    tL2C_CCB        *p_free_ccb_first;              /* Pointer to first free CCB        */
-    tL2C_CCB        *p_free_ccb_last;               /* Pointer to last  free CCB        */
 
     UINT8           desire_role;                    /* desire to be master/slave when accepting a connection */
     BOOLEAN         disallow_switch;                /* FALSE, to allow switch at create conn */

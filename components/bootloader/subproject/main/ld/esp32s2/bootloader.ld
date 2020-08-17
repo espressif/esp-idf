@@ -5,9 +5,9 @@
 
 MEMORY
 {
-  iram_seg (RWX) :                  org = 0x40050000, len = 0x4000  /* 16KB, SRAM Block_14 */
-  iram_loader_seg (RWX) :           org = 0x40054000, len = 0x4000  /* 16KB, SRAM Block_15 */
-  dram_seg (RW) :                   org = 0x3FFE8000, len = 0x2800  /* 10KB, Top of SRAM Block_16, and before ROM data and stack */
+  iram_seg (RWX) :                  org = 0x4004c000, len = 0x4000  /* SRAM Block 13 */
+  iram_loader_seg (RWX) :           org = 0x40050000, len = 0x6000  /* SRAM Block 14 & part of 15 */
+  dram_seg (RW) :                   org = 0x3FFE6000, len = 0x4B00  /* Part SRAM Blocks 15 & 16, ROM static buffer starts at end of this region (reclaimed after app runs) */
 }
 
 /*  Default entry point:  */
@@ -31,6 +31,7 @@ SECTIONS
     *libbootloader_support.a:bootloader_efuse_esp32s2.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*)

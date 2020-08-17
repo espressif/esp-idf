@@ -33,14 +33,13 @@
 #include "freertos/task.h"
 #include "limits.h"
 #include "sdkconfig.h"
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/ets_sys.h"
 #endif
 
 #ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
@@ -193,6 +192,18 @@ static void adjtime_corr_stop (void)
 int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if defined( WITH_FRC ) || defined( WITH_RTC )
+    if(outdelta != NULL){
+        _lock_acquire(&s_adjust_time_lock);
+        adjust_boot_time();
+        if (adjtime_start != 0) {
+            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
+            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
+        } else {
+            outdelta->tv_sec    = 0;
+            outdelta->tv_usec   = 0;
+        }
+        _lock_release(&s_adjust_time_lock);
+    }
     if(delta != NULL){
         int64_t sec  = delta->tv_sec;
         int64_t usec = delta->tv_usec;
@@ -209,18 +220,6 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         adjust_boot_time();
         adjtime_start = get_time_since_boot();
         adjtime_total_correction = sec * 1000000L + usec;
-        _lock_release(&s_adjust_time_lock);
-    }
-    if(outdelta != NULL){
-        _lock_acquire(&s_adjust_time_lock);
-        adjust_boot_time();
-        if (adjtime_start != 0) {
-            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
-            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
-        } else {
-            outdelta->tv_sec    = 0;
-            outdelta->tv_usec   = 0;
-        }
         _lock_release(&s_adjust_time_lock);
     }
   return 0;
@@ -338,7 +337,7 @@ int usleep(useconds_t us)
 {
     const int us_per_tick = portTICK_PERIOD_MS * 1000;
     if (us < us_per_tick) {
-        ets_delay_us((uint32_t) us);
+        esp_rom_delay_us((uint32_t) us);
     } else {
         /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
          * round up to compensate.

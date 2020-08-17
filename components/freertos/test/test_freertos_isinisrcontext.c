@@ -13,13 +13,14 @@
 #include "unity.h"
 #include "esp_intr_alloc.h"
 #include "xtensa/hal.h"
+#include "esp_rom_sys.h"
 
 static volatile int in_int_context, int_handled;
 
 
 static void testint(void *arg) {
     xthal_set_ccompare(1, xthal_get_ccount()+8000000000);
-    ets_printf("INT!\n");
+    esp_rom_printf("INT!\n");
     if (xPortInIsrContext()) in_int_context++;
     int_handled++;
 }

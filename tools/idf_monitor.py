@@ -57,6 +57,13 @@ from distutils.version import StrictVersion
 from io import open
 import textwrap
 import tempfile
+import json
+
+try:
+    import websocket
+except ImportError:
+    # This is needed for IDE integration only.
+    pass
 
 key_description = miniterm.key_description
 
@@ -375,7 +382,24 @@ class SerialReader(StoppableThread):
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
             while self.alive:
-                data = self.serial.read(self.serial.in_waiting or 1)
+                try:
+                    data = self.serial.read(self.serial.in_waiting or 1)
+                except (serial.serialutil.SerialException, IOError) as e:
+                    data = b''
+                    # self.serial.open() was successful before, therefore, this is an issue related to
+                    # the disapperence of the device
+                    red_print(e)
+                    yellow_print('Waiting for the device to reconnect', newline='')
+                    self.serial.close()
+                    while self.alive:  # so that exiting monitor works while waiting
+                        try:
+                            time.sleep(0.5)
+                            self.serial.open()
+                            break  # device connected
+                        except serial.serialutil.SerialException:
+                            yellow_print('.', newline='')
+                            sys.stderr.flush()
+                    yellow_print('')  # go to new line
                 if len(data):
                     self.event_queue.put((TAG_SERIAL, data), False)
         finally:
@@ -461,7 +485,8 @@ class Monitor(object):
     """
     def __init__(self, serial_instance, elf_file, print_filter, make="make", encrypted=False,
                  toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF",
-                 decode_coredumps=COREDUMP_DECODE_INFO):
+                 decode_coredumps=COREDUMP_DECODE_INFO,
+                 websocket_client=None):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
@@ -493,6 +518,7 @@ class Monitor(object):
             self.make = make
         self.encrypted = encrypted
         self.toolchain_prefix = toolchain_prefix
+        self.websocket_client = websocket_client
 
         # internal state
         self._last_line_part = b""
@@ -680,7 +706,16 @@ class Monitor(object):
             except ValueError:
                 return  # payload wasn't valid hex digits
             if chsum == calc_chsum:
-                self.run_gdb()
+                if self.websocket_client:
+                    yellow_print('Communicating through WebSocket')
+                    self.websocket_client.send({'event': 'gdb_stub',
+                                                'port': self.serial.port,
+                                                'prog': self.elf_file})
+                    yellow_print('Waiting for debug finished event')
+                    self.websocket_client.wait([('event', 'debug_finished')])
+                    yellow_print('Communications through WebSocket is finished')
+                else:
+                    self.run_gdb()
             else:
                 red_print("Malformed gdb message... calculated checksum %02x received %02x" % (chsum, calc_chsum))
 
@@ -737,19 +772,29 @@ class Monitor(object):
                 coredump_file.write(self._coredump_buffer)
                 coredump_file.flush()
 
-            cmd = [sys.executable,
-                   coredump_script,
-                   "info_corefile",
-                   "--core", coredump_file.name,
-                   "--core-format", "b64",
-                   self.elf_file
-                   ]
-            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-            self._output_enabled = True
-            self._print(output)
-            self._output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
+            if self.websocket_client:
+                self._output_enabled = True
+                yellow_print('Communicating through WebSocket')
+                self.websocket_client.send({'event': 'coredump',
+                                            'file': coredump_file.name,
+                                            'prog': self.elf_file})
+                yellow_print('Waiting for debug finished event')
+                self.websocket_client.wait([('event', 'debug_finished')])
+                yellow_print('Communications through WebSocket is finished')
+            else:
+                cmd = [sys.executable,
+                       coredump_script,
+                       "info_corefile",
+                       "--core", coredump_file.name,
+                       "--core-format", "b64",
+                       self.elf_file
+                       ]
+                output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+                self._output_enabled = True
+                self._print(output)
+                self._output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
         except subprocess.CalledProcessError as e:
-            yellow_print("Failed to run espcoredump script: {}\n\n".format(e))
+            yellow_print("Failed to run espcoredump script: {}\n{}\n\n".format(e, e.output))
             self._output_enabled = True
             self._print(COREDUMP_UART_START + b'\n')
             self._print(self._coredump_buffer)
@@ -936,6 +981,12 @@ def main():
         help="Handling of core dumps found in serial output"
     )
 
+    parser.add_argument(
+        '--ws',
+        default=os.environ.get('ESP_IDF_MONITOR_WS', None),
+        help="WebSocket URL for communicating with IDE tools for debugging purposes"
+    )
+
     args = parser.parse_args()
 
     # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
@@ -974,21 +1025,112 @@ def main():
     espport_val = str(args.port)
     os.environ.update({espport_key: espport_val})
 
-    monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
-                      args.toolchain_prefix, args.eol,
-                      args.decode_coredumps)
+    ws = WebSocketClient(args.ws) if args.ws else None
+    try:
+        monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
+                          args.toolchain_prefix, args.eol,
+                          args.decode_coredumps,
+                          ws)
 
-    yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
-        p=serial_instance))
-    yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
-        key_description(monitor.console_parser.exit_key),
-        key_description(monitor.console_parser.menu_key),
-        key_description(monitor.console_parser.menu_key),
-        key_description(CTRL_H)))
-    if args.print_filter != DEFAULT_PRINT_FILTER:
-        yellow_print('--- Print filter: {} ---'.format(args.print_filter))
+        yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
+            p=serial_instance))
+        yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
+            key_description(monitor.console_parser.exit_key),
+            key_description(monitor.console_parser.menu_key),
+            key_description(monitor.console_parser.menu_key),
+            key_description(CTRL_H)))
+        if args.print_filter != DEFAULT_PRINT_FILTER:
+            yellow_print('--- Print filter: {} ---'.format(args.print_filter))
 
-    monitor.main_loop()
+        monitor.main_loop()
+    finally:
+        if ws:
+            ws.close()
+
+
+class WebSocketClient(object):
+    """
+    WebSocket client used to advertise debug events to WebSocket server by sending and receiving JSON-serialized
+    dictionaries.
+
+    Advertisement of debug event:
+    {'event': 'gdb_stub', 'port': '/dev/ttyUSB1', 'prog': 'build/elf_file'} for GDB Stub, or
+    {'event': 'coredump', 'file': '/tmp/xy', 'prog': 'build/elf_file'} for coredump,
+    where 'port' is the port for the connected device, 'prog' is the full path to the ELF file and 'file' is the
+    generated coredump file.
+
+    Expected end of external debugging:
+    {'event': 'debug_finished'}
+    """
+
+    RETRIES = 3
+    CONNECTION_RETRY_DELAY = 1
+
+    def __init__(self, url):
+        self.url = url
+        self._connect()
+
+    def _connect(self):
+        """
+        Connect to WebSocket server at url
+        """
+        self.close()
+
+        for _ in range(self.RETRIES):
+            try:
+                self.ws = websocket.create_connection(self.url)
+                break  # success
+            except NameError:
+                raise RuntimeError('Please install the websocket_client package for IDE integration!')
+            except Exception as e:
+                red_print('WebSocket connection error: {}'.format(e))
+            time.sleep(self.CONNECTION_RETRY_DELAY)
+        else:
+            raise RuntimeError('Cannot connect to WebSocket server')
+
+    def close(self):
+        try:
+            self.ws.close()
+        except AttributeError:
+            # Not yet connected
+            pass
+        except Exception as e:
+            red_print('WebSocket close error: {}'.format(e))
+
+    def send(self, payload_dict):
+        """
+        Serialize payload_dict in JSON format and send it to the server
+        """
+        for _ in range(self.RETRIES):
+            try:
+                self.ws.send(json.dumps(payload_dict))
+                yellow_print('WebSocket sent: {}'.format(payload_dict))
+                break
+            except Exception as e:
+                red_print('WebSocket send error: {}'.format(e))
+                self._connect()
+        else:
+            raise RuntimeError('Cannot send to WebSocket server')
+
+    def wait(self, expect_iterable):
+        """
+        Wait until a dictionary in JSON format is received from the server with all (key, value) tuples from
+        expect_iterable.
+        """
+        for _ in range(self.RETRIES):
+            try:
+                r = self.ws.recv()
+            except Exception as e:
+                red_print('WebSocket receive error: {}'.format(e))
+                self._connect()
+                continue
+            obj = json.loads(r)
+            if all([k in obj and obj[k] == v for k, v in expect_iterable]):
+                yellow_print('WebSocket received: {}'.format(obj))
+                break
+            red_print('WebSocket expected: {}, received: {}'.format(dict(expect_iterable), obj))
+        else:
+            raise RuntimeError('Cannot receive from WebSocket server')
 
 
 if os.name == 'nt':

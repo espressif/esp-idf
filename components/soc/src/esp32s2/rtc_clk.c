@@ -18,10 +18,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
-#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/ets_sys.h" // for ets_update_cpu_frequency
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
-#include "esp32s2/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
@@ -41,7 +39,8 @@ static const char *TAG = "rtc_clk";
 #define RTC_PLL_FREQ_480M   480
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
-static int s_cur_pll_freq;
+// On the ESP32-S2, 480MHz PLL is enabled at reset.
+static int s_cur_pll_freq = RTC_PLL_FREQ_480M;
 
 static void rtc_clk_cpu_freq_to_8m(void);
 
@@ -102,7 +101,7 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
         CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
         /* no need to wait once enabled by software */
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
-        ets_delay_us(DELAY_8M_ENABLE);
+        esp_rom_delay_us(DELAY_8M_ENABLE);
     } else {
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
@@ -147,8 +146,8 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
 
         /* wait for calibration end */
         while (!(I2C_READREG_MASK_RTC(I2C_APLL, I2C_APLL_OR_CAL_END))) {
-            /* use ets_delay_us so the RTC bus doesn't get flooded */
-            ets_delay_us(1);
+            /* use esp_rom_delay_us so the RTC bus doesn't get flooded */
+            esp_rom_delay_us(1);
         }
     }
 }
@@ -191,7 +190,7 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     */
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU, (slow_freq == RTC_SLOW_FREQ_8MD256) ? 1 : 0);
     rtc_clk_set_xtal_wait();
-    ets_delay_us(DELAY_SLOW_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
 rtc_slow_freq_t rtc_clk_slow_freq_get(void)
@@ -212,7 +211,7 @@ uint32_t rtc_clk_slow_freq_get_hz(void)
 void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq)
 {
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_FAST_CLK_RTC_SEL, fast_freq);
-    ets_delay_us(DELAY_FAST_CLK_SWITCH);
+    esp_rom_delay_us(DELAY_FAST_CLK_SWITCH);
 }
 
 rtc_fast_freq_t rtc_clk_fast_freq_get(void)
@@ -374,7 +373,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
     if (soc_clk_sel != DPORT_SOC_CLK_SEL_XTAL) {
         rtc_clk_cpu_freq_to_xtal(xtal_freq, 1);
     }
-    if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) {
+    if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL && config->source_freq_mhz != s_cur_pll_freq) {
         rtc_clk_bbpll_disable();
     }
     if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
@@ -463,7 +462,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     int freq_mhz = (int) rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
-    rtc_clk_bbpll_disable();
+    /* BBPLL is kept enabled */
 }
 
 /**

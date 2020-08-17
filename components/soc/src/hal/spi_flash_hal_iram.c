@@ -14,51 +14,51 @@
 
 #include "spi_flash_hal_common.inc"
 
-void spi_flash_hal_erase_chip(spi_flash_host_driver_t *host)
+void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
 {
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_erase_chip(dev);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
 }
 
-void spi_flash_hal_erase_sector(spi_flash_host_driver_t *host, uint32_t start_address)
+void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_set_addr_bitlen(dev, 24);
     spi_flash_ll_set_address(dev, start_address & ADDRESS_MASK_24BIT);
     spi_flash_ll_erase_sector(dev);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
 }
 
-void spi_flash_hal_erase_block(spi_flash_host_driver_t *host, uint32_t start_address)
+void spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_set_addr_bitlen(dev, 24);
     spi_flash_ll_set_address(dev, start_address & ADDRESS_MASK_24BIT);
     spi_flash_ll_erase_block(dev);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
 }
 
-void spi_flash_hal_program_page(spi_flash_host_driver_t *host, const void *buffer, uint32_t address, uint32_t length)
+void spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length)
 {
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_set_addr_bitlen(dev, 24);
     spi_flash_ll_set_address(dev, (address & ADDRESS_MASK_24BIT) | (length << 24));
     spi_flash_ll_program_page(dev, buffer, length);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
 }
 
-esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_driver_t *host, bool wp)
+esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
 {
     spi_dev_t *dev = get_spi_dev(host);
     spi_flash_ll_set_write_protect(dev, wp);
-    host->poll_cmd_done(host);
+    host->driver->poll_cmd_done(host);
     return ESP_OK;
 }
 
-bool spi_flash_hal_host_idle(spi_flash_host_driver_t *chip_drv)
+bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host)
 {
-    spi_dev_t *dev = get_spi_dev(chip_drv);
+    spi_dev_t *dev = get_spi_dev(host);
     bool idle = spi_flash_ll_host_idle(dev);
 
     // Not clear if this is necessary, or only necessary if

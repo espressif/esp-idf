@@ -71,6 +71,7 @@ def run_tool(tool_name, args, cwd, env=dict()):
             return "'" + arg + "'"
         return arg
 
+    args = [str(arg) for arg in args]
     display_args = " ".join(quote_arg(arg) for arg in args)
     print("Running %s in directory %s" % (tool_name, quote_arg(cwd)))
     print('Executing "%s"...' % str(display_args))

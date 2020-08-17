@@ -34,7 +34,6 @@
 #include "freertos/semphr.h"
 
 #include "esp32/sha.h"
-#include "esp32/rom/ets_sys.h"
 #include "soc/hwcrypto_periph.h"
 #include "driver/periph_ctrl.h"
 

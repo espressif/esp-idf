@@ -9,6 +9,8 @@
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
 #include "esp_intr_alloc.h"
+#include "esp_rom_sys.h"
+#include "esp_rom_uart.h"
 
 #define SW_ISR_LEVEL_1          7
 #define SW_ISR_LEVEL_3          29
@@ -72,12 +74,12 @@ TEST_CASE("Test backtrace from interrupt watchdog timeout", "[reset_reason][rese
 
 static void write_char_crash(char c)
 {
-    ets_write_char_uart(c);
+    esp_rom_uart_putc(c);
     *(char*) 0x00000001 = 0;
 }
 
 TEST_CASE("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]")
 {
     ets_install_putc1(&write_char_crash);
-    ets_printf("foo");
+    esp_rom_printf("foo");
 }

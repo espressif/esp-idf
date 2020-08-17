@@ -19,6 +19,7 @@
 #include "esp_spi_flash.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/gdbstub.h"
+#include "esp_private/usb_console.h"
 #include "esp_ota_ops.h"
 
 #if CONFIG_APPTRACE_ENABLE
@@ -42,7 +43,7 @@
 #include "hal/uart_hal.h"
 #endif
 
-#include "panic_internal.h"
+#include "esp_private/panic_internal.h"
 #include "port/panic_funcs.h"
 
 #include "sdkconfig.h"
@@ -62,6 +63,7 @@ static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
+#if CONFIG_ESP_CONSOLE_UART
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 : &UART1 };
 
 void panic_print_char(const char c)
@@ -70,6 +72,23 @@ void panic_print_char(const char c)
     while(!uart_hal_get_txfifo_len(&s_panic_uart));
     uart_hal_write_txfifo(&s_panic_uart, (uint8_t*) &c, 1, &sz);
 }
+#endif // CONFIG_ESP_CONSOLE_UART
+
+
+#if CONFIG_ESP_CONSOLE_USB_CDC
+void panic_print_char(const char c)
+{
+    esp_usb_console_write_buf(&c, 1);
+    /* result ignored */
+}
+#endif // CONFIG_ESP_CONSOLE_USB_CDC
+
+#if CONFIG_ESP_CONSOLE_NONE
+void panic_print_char(const char c)
+{
+    /* no-op */
+}
+#endif // CONFIG_ESP_CONSOLE_NONE
 
 void panic_print_str(const char *str)
 {
@@ -185,7 +204,7 @@ void esp_panic_handler(panic_info_t *info)
      * description - a short description regarding the exception that occured
      * details - more details about the exception
      * state - processor state like register contents, and backtrace
-     * elf_info - details about the image currently running 
+     * elf_info - details about the image currently running
      *
      * NULL fields in panic_info_t are not printed.
      *
@@ -283,10 +302,10 @@ void esp_panic_handler(panic_info_t *info)
         disable_all_wdts();
         s_dumping_core = true;
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
-        esp_core_dump_to_flash((XtExcFrame*) info->frame);
+        esp_core_dump_to_flash(info);
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-        esp_core_dump_to_uart((XtExcFrame*) info->frame);
+        esp_core_dump_to_uart(info);
 #endif
         s_dumping_core = false;
         reconfigure_all_wdts();
@@ -313,7 +332,7 @@ void esp_panic_handler(panic_info_t *info)
             break; // do not touch the previously set reset reason hint
         }
     }
-    
+
     panic_print_str("Rebooting...\r\n");
     panic_restart();
 #else

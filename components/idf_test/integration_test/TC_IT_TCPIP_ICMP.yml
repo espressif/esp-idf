@@ -1,5 +1,5 @@
 test cases:
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: TCPIP_ICMP_0101
   SDK: |-
     8266_NonOS

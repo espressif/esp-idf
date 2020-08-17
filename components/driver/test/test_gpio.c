@@ -13,12 +13,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "sdkconfig.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
-#endif
+#include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 
@@ -56,7 +52,7 @@ static gpio_config_t init_io(gpio_num_t num)
 {
     TEST_ASSERT(num < TEST_GPIO_OUTPUT_MAX);
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << num);
     io_conf.pull_down_en = 0;
@@ -70,7 +66,7 @@ static gpio_config_t init_io(gpio_num_t num)
 static void gpio_isr_edge_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    ets_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
     edge_intr_times++;
 }
 
@@ -79,7 +75,7 @@ static void gpio_isr_level_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     disable_intr_times++;
-    ets_printf("GPIO[%d] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
     gpio_intr_disable(gpio_num);
 }
 
@@ -88,14 +84,14 @@ static void gpio_isr_level_handler2(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     level_intr_times++;
-    ets_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", gpio_num, gpio_get_level(gpio_num));
     if(gpio_get_level(gpio_num)) {
         gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
     }else{
         gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
     }
-    ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
-    ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
+    esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
 #endif
 
@@ -130,10 +126,10 @@ static void prompt_to_continue(const char* str)
     char sign[5] = {0};
     while(strlen(sign) == 0) {
         /* Flush anything already in the RX buffer */
-        while(uart_rx_one_char((uint8_t *) sign) == OK) {
+        while(esp_rom_uart_rx_one_char((uint8_t *) sign) == ETS_OK) {
         }
         /* Read line */
-        UartRxString((uint8_t*) sign, sizeof(sign) - 1);
+        esp_rom_uart_rx_string((uint8_t*) sign, sizeof(sign) - 1);
     }
 }
 
@@ -156,7 +152,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     //error param test
     //ESP32 test 41 bit, ESP32-S2 test 48 bit
     gpio_config_t io_config;
-    io_config.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_config.intr_type = GPIO_INTR_DISABLE;
     io_config.pin_bit_mask = ((uint64_t)1<<(GPIO_NUM_MAX+1));
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
@@ -379,7 +375,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
 TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
 {
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1<<TEST_GPIO_EXT_OUT_IO);
     io_conf.pull_down_en = 0;
@@ -710,7 +706,7 @@ typedef struct {
 static void gpio_isr_handler(void* arg)
 {
     gpio_isr_param_t *param = (gpio_isr_param_t *)arg;
-    ets_printf("GPIO[%d] intr, val: %d\n", param->gpio_num, gpio_get_level(param->gpio_num));
+    esp_rom_printf("GPIO[%d] intr, val: %d\n", param->gpio_num, gpio_get_level(param->gpio_num));
     param->isr_cnt++;
 }
 

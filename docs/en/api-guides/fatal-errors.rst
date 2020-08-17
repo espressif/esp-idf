@@ -62,9 +62,7 @@ Behavior of panic handler is affected by two other configuration options.
 
 - If :doc:`Core Dump <core_dump>` feature is enabled, then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
 
-.. only:: esp32
-
-    - If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
+- If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
 
   If this option is enabled, the panic handler code is placed in IRAM. This allows the panic handler to run without needing to re-enable cache first. This may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash).
 
@@ -186,7 +184,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     36      *((int*) 0) = 0;
     (gdb)
 
-GDB prompt can be used to inspect CPU registers, local and static variables, state of created tasks by issuing "info thread" command on the GDB prompt, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
+GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
 
 Guru Meditation Errors
 ----------------------

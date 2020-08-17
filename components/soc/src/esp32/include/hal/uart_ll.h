@@ -219,14 +219,20 @@ static inline void uart_ll_rxfifo_rst(uart_dev_t *hw)
 /**
  * @brief  Reset the UART hw txfifo.
  *
+ * Note:   Due to hardware issue, reset UART1's txfifo will also reset UART2's txfifo.
+ *         So reserve this function for UART1 and UART2. Please do DPORT reset for UART and its memory at chip startup
+ *         to ensure the TX FIFO is reset correctly at the beginning.
+ *
  * @param  hw Beginning address of the peripheral registers.
  *
  * @return None
  */
 static inline void uart_ll_txfifo_rst(uart_dev_t *hw)
 {
-    hw->conf0.txfifo_rst = 1;
-    hw->conf0.txfifo_rst = 0;
+    if (hw == &UART0) {
+        hw->conf0.txfifo_rst = 1;
+        hw->conf0.txfifo_rst = 0;
+    }
 }
 
 /**
@@ -238,7 +244,21 @@ static inline void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 static inline uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return hw->status.rxfifo_cnt;
+    uint32_t fifo_cnt = hw->status.rxfifo_cnt;
+    typeof(hw->mem_rx_status) rx_status = hw->mem_rx_status;
+    uint32_t len = 0;
+    
+    // When using DPort to read fifo, fifo_cnt is not credible, we need to calculate the real cnt based on the fifo read and write pointer. 
+    // When using AHB to read FIFO, we can use fifo_cnt to indicate the data length in fifo.
+    if (rx_status.wr_addr > rx_status.rd_addr) {
+        len = rx_status.wr_addr - rx_status.rd_addr;
+    } else if (rx_status.wr_addr < rx_status.rd_addr) {
+        len = (rx_status.wr_addr + 128) - rx_status.rd_addr;
+    } else {
+        len = fifo_cnt > 0 ? 128 : 0;
+    }
+
+    return len;
 }
 
 /**

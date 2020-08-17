@@ -30,11 +30,30 @@ TEST_CASE("esp console init/deinit test", "[console]")
     TEST_ESP_OK(esp_console_deinit());
 }
 
+static esp_console_repl_t *s_repl = NULL;
+
+/* handle 'quit' command */
+static int do_cmd_quit(int argc, char **argv)
+{
+    printf("ByeBye\r\n");
+    s_repl->del(s_repl);
+    return 0;
+}
+
 // Enter "quit" to exit REPL environment
 TEST_CASE("esp console repl test", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_repl_init(&repl_config));
-    TEST_ESP_OK(esp_console_repl_start());
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    esp_console_cmd_t cmd = {
+        .command = "quit",
+        .help = "Quit REPL environment",
+        .func = &do_cmd_quit
+    };
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(2000));
 }

@@ -107,7 +107,7 @@ void ets_secure_boot_verify_boot_bootloader(void);
  * @return true if is Secure boot v2 has been enabled
  * False if Secure boot v2 has not been enabled.
  */
-bool ets_use_secure_boot_v2();
+bool ets_use_secure_boot_v2(void);
 
 #endif /* CONFIG_ESP32_REV_MIN_3 */
 

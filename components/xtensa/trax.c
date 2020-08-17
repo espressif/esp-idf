@@ -30,12 +30,12 @@ static const char* TAG = "trax";
 int trax_start_trace(trax_downcount_unit_t units_until_stop) 
 {
 #if !WITH_TRAX
-    ESP_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
+    ESP_EARLY_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
     uint32_t v;
     if (eri_read(ERI_TRAX_TRAXSTAT)&TRAXSTAT_TRACT) {
-        ESP_LOGI(TAG, "Stopping active trace first.");
+        ESP_EARLY_LOGI(TAG, "Stopping active trace first.");
         //Trace is active. Stop trace.
         eri_write(ERI_TRAX_DELAYCNT, 0);
         eri_write(ERI_TRAX_TRAXCTRL, eri_read(ERI_TRAX_TRAXCTRL)|TRAXCTRL_TRSTP);
@@ -54,7 +54,7 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop)
 int trax_trigger_traceend_after_delay(int delay) 
 {
 #if !WITH_TRAX
-    ESP_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");
+    ESP_EARLY_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
     eri_write(ERI_TRAX_DELAYCNT, delay);

@@ -4,7 +4,7 @@
 ESP BLE Mesh and WiFi Coexist example
 ========================
 
-此demo是用来测试当BLE Mesh实现正常的配网和收发消息的正常功能时，WiFi 所能达到的最大throughput值。用户可以根据此demo中的throughput值来实现自己需要的应用场景。如果用户对ESP32 BLE Mesh使用方法还不熟悉的话， 可以参考[BLE Mesh brief introduction](../ble_mesh_node/README.md)
+此 example 是用来测试当 BLE Mesh 实现正常的配网和收发消息的正常功能时，Wi-Fi 所能达到的最大 throughput 值。用户可以根据此 example 中的 throughput 值来实现自己需要的应用场景。如果用户对 ESP32 BLE Mesh 的使用方法还不熟悉，请参考[BLE Mesh Node Example](../ble_mesh_node/onoff_server/README.md).
 
 此demo主要分为两个部分：
 

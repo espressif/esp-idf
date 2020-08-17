@@ -255,7 +255,7 @@ TEST_CASE("uart read write test", "[uart]")
     vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
     TEST_ESP_OK(uart_flush_input(uart_num));
 
-    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, 5, NULL);
+    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, UNITY_FREERTOS_PRIORITY - 1, NULL);
     int len_tmp = 0;
     int rd_len = 1024;
     for (int i = 0; i < 1024; i++) {
@@ -292,9 +292,11 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+        .rx_flow_ctrl_thresh = 120,
         .source_clk = UART_SCLK_APB,
     };
+    uart_wait_tx_idle_polling(uart_num);
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
     TEST_ESP_OK(uart_driver_install(uart_num, 1024 * 2, 1024 *2, 20, NULL, 0));
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));

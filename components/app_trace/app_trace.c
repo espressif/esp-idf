@@ -166,6 +166,7 @@
 #include "soc/timer_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"
+#include "esp_rom_sys.h"
 
 #if CONFIG_APPTRACE_ENABLE
 #define ESP_APPTRACE_MAX_VPRINTF_ARGS           256
@@ -180,13 +181,13 @@ const static char *TAG = "esp_apptrace";
 #define ESP_APPTRACE_LOG( format, ... )   \
     do { \
         esp_apptrace_log_lock(); \
-        ets_printf(format, ##__VA_ARGS__); \
+        esp_rom_printf(format, ##__VA_ARGS__); \
         esp_apptrace_log_unlock(); \
     } while(0)
 #else
 #define ESP_APPTRACE_LOG( format, ... )   \
     do { \
-        ets_printf(format, ##__VA_ARGS__); \
+        esp_rom_printf(format, ##__VA_ARGS__); \
     } while(0)
 #endif
 

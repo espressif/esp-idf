@@ -50,16 +50,37 @@ typedef struct {
 } mb_register_area_descriptor_t;
 
 /**
- * @brief Initialize Modbus controller and stack
+ * @brief Initialize Modbus Slave controller and stack for TCP port
  *
  * @param[out] handler handler(pointer) to master data structure
- * @param[in] port_type type of stack
  * @return
- *     - ESP_OK   Success
- *     - ESP_ERR_NO_MEM Parameter error
+ *     - ESP_OK                 Success
+ *     - ESP_ERR_NO_MEM         Parameter error
+ *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
+ *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
-//esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler);
+esp_err_t mbc_slave_init_tcp(void** handler);
+
+/**
+ * @brief Initialize Modbus Slave controller and stack for Serial port
+ *
+ * @param[out] handler handler(pointer) to master data structure
+ * @param[in] port_type the type of port
+ * @return
+ *     - ESP_OK                 Success
+ *     - ESP_ERR_NO_MEM         Parameter error
+ *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
+ *     - ESP_ERR_INVALID_STATE  Initialization failure
+ */
 esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler);
+
+/**
+ * @brief Initialize Modbus Slave controller interface handle
+ *
+ * @param[in] handler - pointer to slave interface data structure
+ * @return None
+ */
+void mbc_slave_init_iface(void* handler);
 
 /**
  * @brief Destroy Modbus controller and stack

@@ -10,6 +10,7 @@
 #include "driver/adc.h"
 #include "audio_example_file.h"
 #include "esp_adc_cal.h"
+#include "esp_rom_sys.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 
@@ -65,7 +66,7 @@ void example_i2s_init(void)
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
-        .communication_format = I2S_COMM_FORMAT_PCM,
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
@@ -222,7 +223,7 @@ void example_i2s_adc_dac(void*arg)
         //save original data from I2S(ADC) into flash.
         esp_partition_write(data_partition, flash_wr_size, i2s_read_buff, i2s_read_len);
         flash_wr_size += i2s_read_len;
-        ets_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
+        esp_rom_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
     }
     i2s_adc_disable(EXAMPLE_I2S_NUM);
     free(i2s_read_buff);

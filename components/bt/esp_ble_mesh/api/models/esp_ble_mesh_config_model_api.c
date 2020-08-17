@@ -53,13 +53,15 @@ static bool config_client_get_need_param(esp_ble_mesh_opcode_t opcode)
 }
 
 esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_cfg_client_get_state_t *get_state)
+                                               esp_ble_mesh_cfg_client_get_state_t *get_state)
 {
     btc_ble_mesh_config_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
-        (config_client_get_need_param(params->opcode) && !get_state)) {
+    if (params == NULL || params->model == NULL ||
+        params->ctx.net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
+        (config_client_get_need_param(params->opcode) && get_state == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -76,13 +78,15 @@ esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_
 }
 
 esp_err_t esp_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_cfg_client_set_state_t *set_state)
+                                               esp_ble_mesh_cfg_client_set_state_t *set_state)
 {
     btc_ble_mesh_config_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
-        (params->opcode != ESP_BLE_MESH_MODEL_OP_NODE_RESET && !set_state)) {
+    if (params == NULL || params->model == NULL ||
+        params->ctx.net_idx == ESP_BLE_MESH_KEY_UNUSED ||
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
+        (params->opcode != ESP_BLE_MESH_MODEL_OP_NODE_RESET && set_state == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -19,6 +19,16 @@ struct esp_flash_t;
 typedef struct esp_flash_t esp_flash_t;
 
 typedef struct spi_flash_chip_t spi_flash_chip_t;
+
+/** Timeout configurations for flash operations, all in us */
+typedef struct {
+    uint32_t chip_erase_timeout;    ///< Timeout for chip erase operation
+    uint32_t block_erase_timeout;   ///< Timeout for block erase operation
+    uint32_t sector_erase_timeout;  ///< Timeout for sector erase operation
+    uint32_t idle_timeout;          ///< Default timeout for other commands to be sent by host and get done by flash
+    uint32_t page_program_timeout;  ///< Timeout for page program operation
+} flash_chip_op_timeout_t;
+
 /** @brief SPI flash chip driver definition structure.
  *
  * The chip driver structure contains chip-specific pointers to functions to perform SPI flash operations, and some
@@ -38,6 +48,7 @@ typedef struct spi_flash_chip_t spi_flash_chip_t;
  */
 struct spi_flash_chip_t {
     const char *name; ///< Name of the chip driver
+    const flash_chip_op_timeout_t *timeout; ///< Timeout configuration for this chip
     /* Probe to detect if a supported SPI flash chip is found.
      *
      * Attempts to configure 'chip' with these operations and probes for a matching SPI flash chip.

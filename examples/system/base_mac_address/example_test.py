@@ -4,7 +4,7 @@ import re
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_base_mac_address(env, extra_data):
 
     dut = env.get_dut('base_mac_address', 'examples/system/base_mac_address')

@@ -182,10 +182,6 @@ Another thing deserves our attention is that the default behavior of LwIP is to 
 
 In above scenario, ideally, the application sockets and the network layer should not be affected, since the Wi-Fi connection only fails temporarily and recovers very quickly. The application can enable "Keep TCP connections when IP changed" via LwIP menuconfig.
 
-WIFI_EVENT_STA_AUTHMODE_CHANGE
-++++++++++++++++++++++++++++++++++++
-This event arises when the AP to which the station is connected changes its authentication mode, e.g., from no auth to WPA. Upon receiving this event, the event task will do nothing. Generally, the application event callback does not need to handle this either.
-
 IP_EVENT_STA_GOT_IP
 ++++++++++++++++++++++++++++++++++++
 This event arises when the DHCP client successfully gets the IPV4 address from the DHCP server, or when the IPV4 address is changed. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
@@ -1012,6 +1008,10 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
 |                           |       |         | WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.                         |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
+| CONNECTION_FAIL           |  205  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
+|                           |       |         | connection to the AP has failed.                            |
+|                           |       |         |                                                             |
++---------------------------+-------+---------+-------------------------------------------------------------+
 
 {IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
 ----------------------------------------------------------------------
@@ -1141,6 +1141,8 @@ API esp_wifi_set_config() can be used to configure the station. The table below 
 |                  | threshold is open.                                           |
 +------------------+--------------------------------------------------------------+
 
+.. attention::
+    WEP/WPA security modes are deprecated in IEEE802.11-2016 specifications and are recommended not to be used. These modes can be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as WIFI_AUTH_WPA2_PSK.
 
 AP Basic Configuration
 +++++++++++++++++++++++++++++++++++++

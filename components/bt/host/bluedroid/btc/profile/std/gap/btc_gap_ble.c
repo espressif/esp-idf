@@ -1153,6 +1153,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
         BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, arg->update_white_list.wl_addr_type, btc_add_whitelist_complete_callback);
         break;
+    case BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST:
+        BTA_DmClearWhiteList();
+        break;
     case BTC_GAP_BLE_ACT_READ_RSSI:
         BTA_DmBleReadRSSI(arg->read_rssi.remote_addr, BTA_TRANSPORT_LE, btc_read_ble_rssi_cmpl_callback);
         break;

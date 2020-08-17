@@ -157,18 +157,32 @@
    --------------------------------
 */
 /**
- * IP_REASSEMBLY==1: Reassemble incoming fragmented IP packets. Note that
+ * IP_REASSEMBLY==1: Reassemble incoming fragmented IP4 packets. Note that
  * this option does not affect outgoing packet sizes, which can be controlled
  * via IP_FRAG.
  */
-#define IP_REASSEMBLY                   CONFIG_LWIP_IP_REASSEMBLY
+#define IP_REASSEMBLY                   CONFIG_LWIP_IP4_REASSEMBLY
 
 /**
- * IP_FRAG==1: Fragment outgoing IP packets if their size exceeds MTU. Note
+ * LWIP_IPV6_REASS==1: reassemble incoming IP6 packets that fragmented. Note that
+ * this option does not affect outgoing packet sizes, which can be controlled
+ * via LWIP_IPV6_FRAG.
+ */
+#define LWIP_IPV6_REASS                 CONFIG_LWIP_IP6_REASSEMBLY
+
+/**
+ * IP_FRAG==1: Fragment outgoing IP4 packets if their size exceeds MTU. Note
  * that this option does not affect incoming packet sizes, which can be
  * controlled via IP_REASSEMBLY.
  */
-#define IP_FRAG                         CONFIG_LWIP_IP_FRAG
+#define IP_FRAG                         CONFIG_LWIP_IP4_FRAG
+
+/**
+ * LWIP_IPV6_FRAG==1: Fragment outgoing IP6 packets if their size exceeds MTU. Note
+ * that this option does not affect incoming packet sizes, which can be
+ * controlled via IP_REASSEMBLY.
+ */
+#define LWIP_IPV6_FRAG                  CONFIG_LWIP_IP6_FRAG
 
 /**
  * IP_REASS_MAXAGE: Maximum time (in multiples of IP_TMR_INTERVAL - so seconds, normally)
@@ -400,6 +414,12 @@
 #define TCP_RCV_SCALE                   CONFIG_LWIP_TCP_RCV_SCALE
 #endif
 
+/**
+ * LWIP_TCP_RTO_TIME: TCP rto time.
+ * Default is 3 second.
+ */
+#define LWIP_TCP_RTO_TIME             CONFIG_LWIP_TCP_RTO_TIME
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
@@ -453,6 +473,34 @@
    ---------- SLIPIF options ----------
    ------------------------------------
 */
+
+#ifdef CONFIG_LWIP_SLIP_SUPPORT
+
+/**
+ * Enable SLIP receive from ISR functions and disable Rx thread
+ *
+ * This is the only supported mode of lwIP SLIP interface, so that
+ * - incoming packets are queued into pbufs
+ * - no thread is created from lwIP
+ * meaning it is the application responsibility to read data
+ * from IO driver and feed them to the slip interface
+ */
+#define SLIP_RX_FROM_ISR                 1
+#define SLIP_USE_RX_THREAD               0
+
+/**
+ * PPP_DEBUG: Enable debugging for PPP.
+ */
+#define SLIP_DEBUG_ON                    CONFIG_LWIP_SLIP_DEBUG_ON
+
+#if SLIP_DEBUG_ON
+#define SLIP_DEBUG                       LWIP_DBG_ON
+#else
+#define SLIP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+
+#endif
 
 /*
    ------------------------------------
@@ -561,6 +609,11 @@
  * in seconds. (does not require sockets.c, and will affect tcp.c)
  */
 #define LWIP_TCP_KEEPALIVE              1
+
+/**
+ * LWIP_SO_LINGER==1: Enable SO_LINGER processing.
+ */
+#define LWIP_SO_LINGER                  CONFIG_LWIP_SO_LINGER
 
 /**
  * LWIP_SO_RCVBUF==1: Enable SO_RCVBUF processing.
@@ -713,37 +766,82 @@
 /**
  * ETHARP_DEBUG: Enable debugging in etharp.c.
  */
-#define ETHARP_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_ETHARP_DEBUG
+#define ETHARP_DEBUG                     LWIP_DBG_ON
+#else
+#define ETHARP_DEBUG                     LWIP_DBG_OFF
+#endif
+
 
 /**
  * NETIF_DEBUG: Enable debugging in netif.c.
  */
+#ifdef CONFIG_LWIP_NETIF_DEBUG
+#define NETIF_DEBUG                     LWIP_DBG_ON
+#else
 #define NETIF_DEBUG                     LWIP_DBG_OFF
+#endif
 
 /**
  * PBUF_DEBUG: Enable debugging in pbuf.c.
  */
-#define PBUF_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_PBUF_DEBUG
+#define PBUF_DEBUG                     LWIP_DBG_ON
+#else
+#define PBUF_DEBUG                     LWIP_DBG_OFF
+#endif
 
 /**
  * API_LIB_DEBUG: Enable debugging in api_lib.c.
  */
-#define API_LIB_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_API_LIB_DEBUG
+#define API_LIB_DEBUG                     LWIP_DBG_ON
+#else
+#define API_LIB_DEBUG                     LWIP_DBG_OFF
+#endif
+
 
 /**
  * SOCKETS_DEBUG: Enable debugging in sockets.c.
  */
+#ifdef CONFIG_LWIP_SOCKETS_DEBUG
+#define SOCKETS_DEBUG                   LWIP_DBG_ON
+#else
 #define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#endif
 
 /**
  * ICMP_DEBUG: Enable debugging in icmp.c.
  */
+#ifdef CONFIG_LWIP_ICMP_DEBUG
+#define ICMP_DEBUG                      LWIP_DBG_ON
+#else
 #define ICMP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_LWIP_ICMP6_DEBUG
+#define ICMP6_DEBUG                      LWIP_DBG_ON
+#else
+#define ICMP6_DEBUG                      LWIP_DBG_OFF
+#endif
 
 /**
  * IP_DEBUG: Enable debugging for IP.
  */
+#ifdef CONFIG_LWIP_IP_DEBUG
+#define IP_DEBUG                        LWIP_DBG_ON
+#else
 #define IP_DEBUG                        LWIP_DBG_OFF
+#endif
+
+/**
+ * IP_DEBUG: Enable debugging for IP.
+ */
+#ifdef CONFIG_LWIP_IP6_DEBUG
+#define IP6_DEBUG                        LWIP_DBG_ON
+#else
+#define IP6_DEBUG                        LWIP_DBG_OFF
+#endif
 
 /**
  * MEMP_DEBUG: Enable debugging in memp.c.

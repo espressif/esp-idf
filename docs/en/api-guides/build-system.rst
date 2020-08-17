@@ -308,6 +308,8 @@ The list of directories in ``COMPONENT_DIRS`` is searched for the project's comp
 
 When CMake runs to configure the project, it logs the components included in the build. This list can be useful for debugging the inclusion/exclusion of certain components.
 
+.. _cmake-components-same-name:
+
 Multiple components with the same name
 --------------------------------------
 
@@ -1266,7 +1268,9 @@ the first element/member instead.
                          [LDFRAGMENTS ldfragment1 ldfragment2 ...]
                          [REQUIRED_IDF_TARGETS target1 target2 ...]
                          [EMBED_FILES file1 file2 ...]
-                         [EMBED_TXTFILES file1 file2 ...])
+                         [EMBED_TXTFILES file1 file2 ...]
+                         [KCONFIG kconfig]
+                         [KCONFIG_PROJBUILD kconfig_projbuild])
 
 Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's 
 CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some
@@ -1289,6 +1293,8 @@ The arguments for ``idf_component_register`` include:
   - PRIV_REQUIRES - private component requirements for the component; ignored on config-only components
   - LDFRAGMENTS - component linker fragment files
   - REQUIRED_IDF_TARGETS - specify the only target the component supports
+  - KCONFIG - override the default Kconfig file
+  - KCONFIG_PROJBUILD - override the default Kconfig.projbuild file
 
 The following are used for :ref:`embedding data into the component<cmake_embed_data>`, and is considered as source files
 when determining if a component is config-only. This means that even if the component does not specify source files, a static library is still
@@ -1313,6 +1319,7 @@ For example, to get the directory of the ``freertos`` component:
 - COMPONENT_ALIAS - alias for COMPONENT_LIB used for linking the component to external targets; set by ``idf_build_component`` and alias library itself
   is created by ``idf_component_register``
 - COMPONENT_DIR - component directory; set by ``idf_build_component``
+- COMPONENT_OVERRIDEN_DIR - contains the directory of the original component if ref:`this component overrides another component<cmake-components-same-name>`
 - COMPONENT_LIB - name for created component static/interface library; set by ``idf_build_component`` and library itself
   is created by ``idf_component_register``
 - COMPONENT_NAME - name of the component; set by ``idf_build_component`` based on the component directory name

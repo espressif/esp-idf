@@ -17,7 +17,6 @@
 #include "esp_efuse_table.h"
 #include "stdlib.h"
 #include "esp_types.h"
-#include "esp32s2/rom/efuse.h"
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -32,6 +31,7 @@ const static char *TAG = "efuse";
 // Returns chip version from efuse
 uint8_t esp_efuse_get_chip_ver(void)
 {
+    // should return the same value as bootloader_common_get_chip_revision()
     uint32_t chip_ver = 0;
     // TODO: ESP32S2 does not have this field
     return chip_ver;
@@ -41,7 +41,7 @@ uint8_t esp_efuse_get_chip_ver(void)
 uint32_t esp_efuse_get_pkg_ver(void)
 {
     uint32_t pkg_ver = 0;
-    // TODO: ESP32S2 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_PKG_VERSION, &pkg_ver, 4);
     return pkg_ver;
 }
 
@@ -60,3 +60,17 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
 }
+
+esp_err_t esp_efuse_disable_rom_download_mode(void)
+{
+    return esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
+}
+
+esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
+{
+    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
+}
+

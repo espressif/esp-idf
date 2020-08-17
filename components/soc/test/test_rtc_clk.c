@@ -5,19 +5,21 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/gpio_periph.h"
+#include "hal/gpio_ll.h"
 #include "driver/rtc_io.h"
 #include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "../esp_clk_internal.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
+#include "esp_rom_uart.h"
+
+extern void rtc_clk_select_rtc_slow_clk(void);
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #include "esp32/clk.h"
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
-
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
@@ -99,7 +101,7 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
 
 static void test_clock_switching(void (*switch_func)(const rtc_cpu_freq_config_t* config))
 {
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     const int test_duration_sec = 10;
     ref_clock_init();
@@ -147,16 +149,18 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 void stop_rtc_external_quartz(void){
     const uint8_t pin_32 = 32;
     const uint8_t pin_33 = 33;
-    const uint8_t mask_32 = (1 << (pin_32 - 32));
-    const uint8_t mask_33 = (1 << (pin_33 - 32));
 
     rtc_clk_32k_enable(false);
 
-    gpio_pad_select_gpio(pin_32);
-    gpio_pad_select_gpio(pin_33);
-    gpio_output_set_high(0, mask_32 | mask_33, mask_32 | mask_33, 0);
-    ets_delay_us(500000);
-    gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
+    esp_rom_gpio_pad_select_gpio(pin_32);
+    esp_rom_gpio_pad_select_gpio(pin_33);
+    gpio_ll_output_enable(&GPIO, pin_32);
+    gpio_ll_output_enable(&GPIO, pin_33);
+    gpio_ll_set_level(&GPIO, pin_32, 0);
+    gpio_ll_set_level(&GPIO, pin_33, 0);
+    esp_rom_delay_us(500000);
+    gpio_ll_output_disable(&GPIO, pin_32);
+    gpio_ll_output_disable(&GPIO, pin_33);
 }
 
 static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_ms)
@@ -167,7 +171,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
     rtc_slow_freq_t selected_src_freq;
     stop_rtc_external_quartz();
 #ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    uint32_t bootstrap_cycles = CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES;
     printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
             bootstrap_cycles,
             CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
@@ -186,7 +190,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
         i++;
         printf("attempt #%d/%d...", i, COUNT_TEST);
         rtc_clk_32k_bootstrap(bootstrap_cycles);
-        ets_delay_us(start_delay_ms * 1000);
+        esp_rom_delay_us(start_delay_ms * 1000);
         rtc_clk_select_rtc_slow_clk();
         selected_src_freq = rtc_clk_slow_freq_get();
         end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
@@ -201,7 +205,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
         uint32_t fail_measure = 0;
         for (int j = 0; j < 3; ++j) {
             clk_rtc_time = esp_clk_rtc_time();
-            ets_delay_us(1000000);
+            esp_rom_delay_us(1000000);
             uint64_t delta = esp_clk_rtc_time() - clk_rtc_time;
             if (delta < 900000LL || delta > 1100000){
                 printf("FAIL");
@@ -215,7 +219,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
         }
         printf(" [calibration val = %d] \n", esp_clk_slowclk_cal_get());
         stop_rtc_external_quartz();
-        ets_delay_us(500000);
+        esp_rom_delay_us(500000);
     }
     TEST_ASSERT_MESSAGE(fail == 0, "Test failed");
     printf("Test passed successfully\n");
@@ -228,7 +232,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=UT_T1_32kXTAL
     uint32_t end_time;
     stop_rtc_external_quartz();
 #ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    uint32_t bootstrap_cycles = CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES;
     printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
             bootstrap_cycles,
             CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
@@ -256,7 +260,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=UT_T1_32kXTAL
             printf("PASS\n");
         }
         stop_rtc_external_quartz();
-        ets_delay_us(100000);
+        esp_rom_delay_us(100000);
     }
     TEST_ASSERT_MESSAGE(fail == 0, "Test failed");
     printf("Test passed successfully\n");

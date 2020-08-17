@@ -36,30 +36,39 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
 
         if(IDF_TARGET STREQUAL "esp32")
             set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32-ulp.cmake)
+            set(ULP_IS_RISCV OFF)
         endif()
+
         if(IDF_TARGET STREQUAL "esp32s2")
-            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp.cmake)
+            if(CONFIG_ESP32S2_ULP_COPROC_RISCV STREQUAL "y")
+                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp-riscv.cmake)
+                set(ULP_IS_RISCV ON)
+            else()
+                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp.cmake)
+                set(ULP_IS_RISCV OFF)
+            endif()
         endif()
 
         externalproject_add(${app_name}
-            SOURCE_DIR ${idf_path}/components/ulp/cmake
-            BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
-            INSTALL_COMMAND ""
-            CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
-                        -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
-                        -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
-                        -DULP_APP_NAME=${app_name}
-                        -DCOMPONENT_DIR=${COMPONENT_DIR}
-                        -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
-                        -DIDF_PATH=${idf_path}
-                        -DSDKCONFIG=${SDKCONFIG_HEADER}
-                        -DPYTHON=${python}
-                        ${extra_cmake_args}
-            BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
-            BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
-                            ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
-            BUILD_ALWAYS 1
-            )
+                SOURCE_DIR ${idf_path}/components/ulp/cmake
+                BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
+                INSTALL_COMMAND ""
+                CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                            -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
+                            -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
+                            -DULP_APP_NAME=${app_name}
+                            -DCOMPONENT_DIR=${COMPONENT_DIR}
+                            -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
+                            -DIDF_PATH=${idf_path}
+                            -DSDKCONFIG=${SDKCONFIG_HEADER}
+                            -DPYTHON=${python}
+                            -DULP_COCPU_IS_RISCV=${ULP_IS_RISCV}
+                            ${extra_cmake_args}
+                BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
+                BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
+                                ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
+                BUILD_ALWAYS 1
+                )
 
         set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 

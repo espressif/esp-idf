@@ -55,16 +55,18 @@ typedef enum {
  * @brief Sleep wakeup cause
  */
 typedef enum {
-    ESP_SLEEP_WAKEUP_UNDEFINED,    //!< In case of deep sleep, reset was not caused by exit from deep sleep
-    ESP_SLEEP_WAKEUP_ALL,          //!< Not a wakeup cause, used to disable all wakeup sources with esp_sleep_disable_wakeup_source
-    ESP_SLEEP_WAKEUP_EXT0,         //!< Wakeup caused by external signal using RTC_IO
-    ESP_SLEEP_WAKEUP_EXT1,         //!< Wakeup caused by external signal using RTC_CNTL
-    ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
-    ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
-    ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only)
-    ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
-    ESP_SLEEP_WAKEUP_WIFI,         //!< Wakeup caused by WIFI (light sleep only)
+    ESP_SLEEP_WAKEUP_UNDEFINED,         //!< In case of deep sleep, reset was not caused by exit from deep sleep
+    ESP_SLEEP_WAKEUP_ALL,               //!< Not a wakeup cause, used to disable all wakeup sources with esp_sleep_disable_wakeup_source
+    ESP_SLEEP_WAKEUP_EXT0,              //!< Wakeup caused by external signal using RTC_IO
+    ESP_SLEEP_WAKEUP_EXT1,              //!< Wakeup caused by external signal using RTC_CNTL
+    ESP_SLEEP_WAKEUP_TIMER,             //!< Wakeup caused by timer
+    ESP_SLEEP_WAKEUP_TOUCHPAD,          //!< Wakeup caused by touchpad
+    ESP_SLEEP_WAKEUP_ULP,               //!< Wakeup caused by ULP program
+    ESP_SLEEP_WAKEUP_GPIO,              //!< Wakeup caused by GPIO (light sleep only)
+    ESP_SLEEP_WAKEUP_UART,              //!< Wakeup caused by UART (light sleep only)
+    ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
+    ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
+    ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
 } esp_sleep_source_t;
 
 /* Leave this type define for compatibility */
@@ -90,14 +92,9 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 
 /**
  * @brief Enable wakeup by ULP coprocessor
- * @note In revisions 0 and 1 of the ESP32, ULP wakeup source
- *       can not be used when RTC_PERIPH power domain is forced
- *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup
- *       source is used.
+ *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
- *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ulp_wakeup(void);
 

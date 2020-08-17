@@ -198,6 +198,8 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
 
 static void IRAM_ATTR timer_isr_default(void *arg)
 {
+    bool is_awoken = false;
+
     timer_obj_t *timer_obj = (timer_obj_t *)arg;
     if (timer_obj == NULL) {
         return;
@@ -211,7 +213,7 @@ static void IRAM_ATTR timer_isr_default(void *arg)
         uint32_t intr_status = 0;
         timer_hal_get_intr_status(&(timer_obj->hal), &intr_status);
         if (intr_status & BIT(timer_obj->hal.idx)) {
-            timer_obj->timer_isr_fun.fn(timer_obj->timer_isr_fun.args);
+            is_awoken = timer_obj->timer_isr_fun.fn(timer_obj->timer_isr_fun.args);
             //Clear intrrupt status
             timer_hal_clear_intr_status(&(timer_obj->hal));
             //After the alarm has been triggered, we need enable it again, so it is triggered the next time.
@@ -219,6 +221,10 @@ static void IRAM_ATTR timer_isr_default(void *arg)
         }
     }
     TIMER_EXIT_CRITICAL(&timer_spinlock[timer_obj->timer_isr_fun.isr_timer_group]);
+
+    if (is_awoken) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 esp_err_t timer_isr_callback_add(timer_group_t group_num, timer_idx_t timer_num, timer_isr_t isr_handler, void *args, int intr_alloc_flags)

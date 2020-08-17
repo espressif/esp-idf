@@ -13,12 +13,4 @@ nwdiag==2.0.0
 recommonmark
 future>=0.16.0 # for ../tools/gen_esp_err_to_name.py
 sphinx_selective_exclude==1.0.3
-
-
-# note: this package is not available on pypi, install by
-# downloading from https://github.com/espressif/sphinx_idf_theme then build and
-# install (requires node.js also).
-#
-# See docs/en/contribute/documenting-code.rst, 'sphinx_idf_theme' section
-# for full setup instructions.
 sphinx_idf_theme==0.2

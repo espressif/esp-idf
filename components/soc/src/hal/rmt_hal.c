@@ -20,11 +20,6 @@ void rmt_hal_init(rmt_hal_context_t *hal)
     hal->mem = &RMTMEM;
 }
 
-void rmt_hal_reset(rmt_hal_context_t *hal)
-{
-
-}
-
 void rmt_hal_channel_reset(rmt_hal_context_t *hal, uint32_t channel)
 {
     rmt_ll_reset_tx_pointer(hal->regs, channel);

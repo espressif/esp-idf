@@ -161,6 +161,18 @@ static uint32_t page0_page = INVALID_PHY_PAGE;
 static uint32_t instrcution_in_spiram = 0;
 static uint32_t rodata_in_spiram = 0;
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+static int instr_flash2spiram_offs = 0;
+static uint32_t instr_start_page = 0;
+static uint32_t instr_end_page = 0;
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+static int rodata_flash2spiram_offs = 0;
+static uint32_t rodata_start_page = 0;
+static uint32_t rodata_end_page = 0;
+#endif
+
 uint32_t esp_spiram_instruction_access_enabled(void)
 {
     return instrcution_in_spiram;
@@ -171,6 +183,7 @@ uint32_t esp_spiram_rodata_access_enabled(void)
     return rodata_in_spiram;
 }
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 esp_err_t esp_spiram_enable_instruction_access(void)
 {
     uint32_t pages_in_flash = 0;
@@ -181,12 +194,19 @@ esp_err_t esp_spiram_enable_instruction_access(void)
         return ESP_FAIL;
     }
     ESP_EARLY_LOGI(TAG, "Instructions copied and mapped to SPIRAM");
+    uint32_t instr_mmu_offset = ((uint32_t)&_instruction_reserved_start & 0xFFFFFF)/MMU_PAGE_SIZE;
+    uint32_t mmu_value = *(volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS0_MMU_START + instr_mmu_offset*sizeof(uint32_t));
+    mmu_value &= MMU_ADDRESS_MASK;
+    instr_flash2spiram_offs = mmu_value - pages_for_flash;
+    ESP_EARLY_LOGV(TAG, "Instructions from flash page%d copy to SPIRAM page%d, Offset: %d", mmu_value, pages_for_flash, instr_flash2spiram_offs);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(PRO_CACHE_IBUS0, IRAM0_ADDRESS_LOW, pages_for_flash, &page0_page);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(PRO_CACHE_IBUS1, IRAM1_ADDRESS_LOW, pages_for_flash, &page0_page);
     instrcution_in_spiram = 1;
     return ESP_OK;
 }
+#endif
 
+#if CONFIG_SPIRAM_RODATA
 esp_err_t esp_spiram_enable_rodata_access(void)
 {
     uint32_t pages_in_flash = 0;
@@ -201,6 +221,11 @@ esp_err_t esp_spiram_enable_rodata_access(void)
     }
 
     ESP_EARLY_LOGI(TAG, "Read only data copied and mapped to SPIRAM");
+    uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & 0xFFFFFF)/MMU_PAGE_SIZE;
+    uint32_t mmu_value = *(volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS2_MMU_START + rodata_mmu_offset*sizeof(uint32_t));
+    mmu_value &= MMU_ADDRESS_MASK;
+    rodata_flash2spiram_offs = mmu_value - pages_for_flash;
+    ESP_EARLY_LOGV(TAG, "Rodata from flash page%d copy to SPIRAM page%d, Offset: %d", mmu_value, pages_for_flash, rodata_flash2spiram_offs);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(PRO_CACHE_IBUS2, DROM0_ADDRESS_LOW, pages_for_flash, &page0_page);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(PRO_CACHE_DBUS0, DRAM0_ADDRESS_LOW, pages_for_flash, &page0_page);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(PRO_CACHE_DBUS1, DRAM1_ADDRESS_LOW, pages_for_flash, &page0_page);
@@ -208,6 +233,61 @@ esp_err_t esp_spiram_enable_rodata_access(void)
     rodata_in_spiram = 1;
     return ESP_OK;
 }
+#endif
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+void instruction_flash_page_info_init(void)
+{
+    uint32_t instr_page_cnt = ((uint32_t)&_instruction_reserved_end - SOC_IROM_LOW + MMU_PAGE_SIZE - 1)/MMU_PAGE_SIZE;
+    uint32_t instr_mmu_offset = ((uint32_t)&_instruction_reserved_start & 0xFFFFFF)/MMU_PAGE_SIZE;
+
+    instr_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS0_MMU_START + instr_mmu_offset*sizeof(uint32_t));
+    instr_start_page &= MMU_ADDRESS_MASK;
+    instr_end_page = instr_start_page + instr_page_cnt - 1;
+}
+
+uint32_t IRAM_ATTR instruction_flash_start_page_get(void)
+{
+    return instr_start_page;
+}
+
+uint32_t IRAM_ATTR instruction_flash_end_page_get(void)
+{
+    return instr_end_page;
+}
+
+int IRAM_ATTR instruction_flash2spiram_offset(void)
+{
+    return instr_flash2spiram_offs;
+}
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+void rodata_flash_page_info_init(void)
+{
+    uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - SOC_DROM_LOW + MMU_PAGE_SIZE - 1)/MMU_PAGE_SIZE;
+    uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & 0xFFFFFF)/MMU_PAGE_SIZE;
+
+    rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS2_MMU_START + rodata_mmu_offset*sizeof(uint32_t));
+    rodata_start_page &= MMU_ADDRESS_MASK;
+    rodata_end_page = rodata_start_page + rodata_page_cnt - 1;
+}
+
+uint32_t IRAM_ATTR rodata_flash_start_page_get(void)
+{
+    return rodata_start_page;
+}
+
+uint32_t IRAM_ATTR rodata_flash_end_page_get(void)
+{
+    return rodata_end_page;
+}
+
+int IRAM_ATTR rodata_flash2spiram_offset(void)
+{
+    return rodata_flash2spiram_offs;
+}
+#endif
 
 esp_err_t esp_spiram_init(void)
 {
@@ -220,6 +300,7 @@ esp_err_t esp_spiram_init(void)
         return r;
     }
 
+    spiram_inited=true;
 #if (CONFIG_SPIRAM_SIZE != -1)
     if (esp_spiram_get_size()!=CONFIG_SPIRAM_SIZE) {
         ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, esp_spiram_get_size()/1024);
@@ -235,7 +316,6 @@ esp_err_t esp_spiram_init(void)
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_NORMAL)?"normal (1-core)":"ERROR");
-    spiram_inited=true;
     return ESP_OK;
 }
 
@@ -306,6 +386,11 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 
 size_t esp_spiram_get_size(void)
 {
+    if (!spiram_inited) {
+        ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
+        abort();
+    }
+
     psram_size_t size=psram_get_size();
     if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
     if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/param.h>
 #include <esp_system.h>
 #include "mbedtls/bignum.h"
 #include "freertos/FreeRTOS.h"
@@ -23,7 +24,7 @@ void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X)
     memset(buf, 0, sizeof(buf));
     mbedtls_mpi_write_string(X, 16, buf, sizeof(buf)-1, &n);
     if(n) {
-        printf("%s = 0x%s\n", name, buf);
+        printf("%s = (s=%d) 0x%s\n", name, X->s, buf);
     } else {
         printf("%s = TOOLONG\n", name);
     }
@@ -147,14 +148,14 @@ TEST_CASE("test MPI multiplication", "[bignum]")
 
 static bool test_bignum_modexp(const char *z_str, const char *x_str, const char *y_str, const char *m_str, int ret_error)
 {
-    mbedtls_mpi Z, X, Y, M;
+    mbedtls_mpi Z = {0}; // Z is non-initialized (the sign Z.s=0)
+    mbedtls_mpi X, Y, M;
     char z_buf[400] = { 0 };
     size_t z_buf_len = 0;
     bool fail = false;
 
     printf("%s = (%s ^ %s) mod %s  ret=%d ... ", z_str, x_str, y_str, m_str, ret_error);
 
-    mbedtls_mpi_init(&Z);
     mbedtls_mpi_init(&X);
     mbedtls_mpi_init(&Y);
     mbedtls_mpi_init(&M);
@@ -163,19 +164,24 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     TEST_ASSERT_FALSE(mbedtls_mpi_read_string(&Y, 16, y_str));
     TEST_ASSERT_FALSE(mbedtls_mpi_read_string(&M, 16, m_str));
 
-    //mbedtls_mpi_printf("X", &X);
-    //mbedtls_mpi_printf("X", &Y);
-    //mbedtls_mpi_printf("M", &M);
-
     /* Z = (X ^ Y) mod M */
-    if (ret_error != mbedtls_mpi_exp_mod(&Z, &X, &Y, &M, NULL)) {
+    // (Z is passed to mbedtls_mpi_exp_mod() as a non-initialized with the sign s=0)
+    int err = mbedtls_mpi_exp_mod(&Z, &X, &Y, &M, NULL);
+    if (ret_error != err) {
+        printf("\nExpected ret_error %d, Was %d \n", ret_error, err);
         fail = true;
     }
 
     if (ret_error == MBEDTLS_OK) {
         mbedtls_mpi_write_string(&Z, 16, z_buf, sizeof(z_buf)-1, &z_buf_len);
-        if (memcmp(z_str, z_buf, strlen(z_str)) != 0) {
-            printf("\n Expected '%s' Was '%s' \n", z_str, z_buf);
+        if (strlen(z_str) != z_buf_len - 1 || memcmp(z_str, z_buf, strlen(z_str)) != 0) {
+            printf("\n");
+            mbedtls_mpi_printf("Z", &Z);
+            mbedtls_mpi_printf("X", &X);
+            mbedtls_mpi_printf("Y", &Y);
+            mbedtls_mpi_printf("M", &M);
+            printf("\nsize: Expected %d, Was %d \n", strlen(z_str), z_buf_len - 1);
+            printf("Expected '%s' Was '%s' \n", z_str, z_buf);
             fail = true;
         }
     }
@@ -186,7 +192,7 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     mbedtls_mpi_free(&M);
 
     if (fail == true) {
-        printf(" FAIL\n");
+        printf(" FAIL\n\n");
     } else {
         printf(" PASS\n");
     }
@@ -233,6 +239,32 @@ TEST_CASE("test MPI modexp", "[bignum]")
     test_error |= test_bignum_modexp("05",  "5",  "7",  "7",  MBEDTLS_OK);
     test_error |= test_bignum_modexp("02", "-5",  "7",  "7",  MBEDTLS_OK);
     test_error |= test_bignum_modexp("01", "-5",  "7",  "3",  MBEDTLS_OK);
+
+    test_error |= test_bignum_modexp("00", "123456789", "123456789", "123456789", MBEDTLS_OK);
+    test_error |= test_bignum_modexp("01", "123456788", "123456788", "123456789", MBEDTLS_OK);
+    test_error |= test_bignum_modexp("01", "12345678A", "12345678A", "123456789", MBEDTLS_OK);
+    test_error |= test_bignum_modexp("06", "-32", "03E9", "07", MBEDTLS_OK);
+
+    test_error |= test_bignum_modexp(
+        "5FA6CB1F76A157EC6CB02835DAD05B207DF883AB90CE4180277AB525801C9B5AF0C89B5C5E9DB2BB20CD0B86A308F006D19D4B1FBF355F2A8024B012A49ED483F5DF3FD77EFB40C221B6D67F28B5313F18728EFDF204C903A247A4A2CEE9542A15AD27F9EFB6AC0940D71BBCC4CB31B4D0372FAC26937A8CBA541503E0B8C80B",
+        "02",
+        "471CC5F6A82CCAB3B4FED79ADA3DEAF532166B1F0A5F2DA4CF364770CB883A85884C0E32029A256A3617251A1ACF4CB1E9FFD47A62699C3454444D193E2B0C1D3E6071E0D15C29A736E4EE76F6C63D3D157F8BE2CDFF05BD11C88A9691537869BF8DE4ED103E8EB9DB42B4E733F2D8FB1684435DC529B67305AB4A0FA9E42102",
+        "CF5CF5C38419A724957FF5DD323B9C45C3CDD261EB740F69AA94B8BB1A5C96409153BD76B24222D03274E4725A5406092E9E82E9135C643CAE98132B0D95F7D65347C68AFC1E677DA90E51BBAB5F5CF429C291B4BA39C6B2DC5E8C7231E46AA7728E87664532CDF547BE20C9A3FA8342BE6E34371A27C06F7DC0EDDDD2F86373",
+        MBEDTLS_OK);
+
+    test_error |= test_bignum_modexp(
+        "368A32291EA9B22B11BE9D23636C4AB69C1936527AE70A33B8240556F886BD3E242A381FB752845287ED74EF2AE01E9736C374897A6DD910FC607769A66745368E683E34222DA242DD4C5B68A5B817C10F3BC207F9354188E70A90F64DF3A6156B7569069D459304EB85C9FEFA1D0AEDB1279B89633131980A05C37472837FBB",
+        "02",
+        "31FBCFDDC81A8696DA8A33798AF97F041D4C659AC82C0D5C608386013E84EBC3229E03B509F7FC81B2A2DE08659AC8699D109034B22D47A0C5D34DC6B90D3299AEE0F18E321E02FE53793857F73A0E3DC1D9A7CE3E0FC930185D67C02C08454EA5CB53285EB67C32C94C1E56DC34FBA796BC54898B4CDBF76A920E46C0AC270D",
+        "CF5CF5C38419A724957FF5DD323B9C45C3CDD261EB740F69AA94B8BB1A5C96409153BD76B24222D03274E4725A5406092E9E82E9135C643CAE98132B0D95F7D65347C68AFC1E677DA90E51BBAB5F5CF429C291B4BA39C6B2DC5E8C7231E46AA7728E87664532CDF547BE20C9A3FA8342BE6E34371A27C06F7DC0EDDDD2F86373",
+        MBEDTLS_OK);
+
+    test_error |= test_bignum_modexp(
+        "631B2A9124600E91C030E6650284AE120CBAEFCB24083905F17B5B758A32CA071CA4BB109CDBA411F3136A009186E5E4F59A8DD481EDFD23FC95437749E971EB4C28E076FA3EC8E3E81A5A33E2B04598B987D7B11D74077E7B6F5C965A52558F5495D3FC518193132844E745D6C67C287C3239083A34DCB9F77F5348E0FC973D",
+        "BDAD66C8632D9E50A7EFDF9EC1465FFF445D45F1F2B57C8A18084E6743658BC45DCFD1F9F10ED6C2DDC0B14F1546D7DDE6624AE89722DB6B7BBE3AFBB26C5B2406E583834034C1F2162DD5BA5165B72C876EB7EE834268F1400F8FD8E88187B5264A452A5D795C6090CA02284E2E5CA136BED5AA05DAF5689136FA85F17D532D",
+        "471CC5F6A82CCAB3B4FED79ADA3DEAF532166B1F0A5F2DA4CF364770CB883A85884C0E32029A256A3617251A1ACF4CB1E9FFD47A62699C3454444D193E2B0C1D3E6071E0D15C29A736E4EE76F6C63D3D157F8BE2CDFF05BD11C88A9691537869BF8DE4ED103E8EB9DB42B4E733F2D8FB1684435DC529B67305AB4A0FA9E42102",
+        "CF5CF5C38419A724957FF5DD323B9C45C3CDD261EB740F69AA94B8BB1A5C96409153BD76B24222D03274E4725A5406092E9E82E9135C643CAE98132B0D95F7D65347C68AFC1E677DA90E51BBAB5F5CF429C291B4BA39C6B2DC5E8C7231E46AA7728E87664532CDF547BE20C9A3FA8342BE6E34371A27C06F7DC0EDDDD2F86373",
+        MBEDTLS_OK);
 
     TEST_ASSERT_FALSE_MESSAGE(test_error, "mbedtls_mpi_exp_mod incorrect for some tests\n");
 }

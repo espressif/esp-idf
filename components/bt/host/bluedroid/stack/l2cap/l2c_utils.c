@@ -37,6 +37,7 @@
 #include "btm_int.h"
 #include "stack/hcidefs.h"
 #include "osi/allocator.h"
+#include "osi/list.h"
 
 /*******************************************************************************
 **
@@ -49,11 +50,19 @@
 *******************************************************************************/
 tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPORT transport)
 {
-    int         xx;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
-        if (!p_lcb->in_use) {
+    tL2C_LCB    *p_lcb   = NULL;
+    bool        list_ret = false;
+    if (list_length(l2cb.p_lcb_pool) < MAX_L2CAP_LINKS) {
+        p_lcb = (tL2C_LCB *)osi_malloc(sizeof(tL2C_LCB));
+	if (p_lcb) {
+	    memset (p_lcb, 0, sizeof(tL2C_LCB));
+            list_ret = list_append(l2cb.p_lcb_pool, p_lcb);
+	}else {
+	    L2CAP_TRACE_ERROR("Error in allocating L2CAP Link Control Block");
+	}
+    }
+    if (list_ret) {
+        if (p_lcb) {
             btu_free_timer(&p_lcb->timer_entry);
             btu_free_timer(&p_lcb->info_timer_entry);
             btu_free_timer(&p_lcb->upda_con_timer);
@@ -263,7 +272,14 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
     p_lcb->completed_packets = 0;
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
-
+    {
+	if (list_remove(l2cb.p_lcb_pool, p_lcb)) {
+	    p_lcb = NULL;
+	}
+        else {
+	    L2CAP_TRACE_ERROR("Error in removing L2CAP Link Control Block");
+	}
+    }
 }
 
 
@@ -279,10 +295,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 *******************************************************************************/
 tL2C_LCB  *l2cu_find_lcb_by_bd_addr (BD_ADDR p_bd_addr, tBT_TRANSPORT transport)
 {
-    int         xx;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) &&
 #if BLE_INCLUDED == TRUE
                 p_lcb->transport == transport &&
@@ -1419,52 +1435,27 @@ void l2cu_change_pri_ccb (tL2C_CCB *p_ccb, tL2CAP_CHNL_PRIORITY priority)
 *******************************************************************************/
 tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 {
-    tL2C_CCB    *p_ccb;
-    tL2C_CCB    *p_prev;
-
+    tL2C_CCB    *p_ccb = NULL;
     L2CAP_TRACE_DEBUG ("l2cu_allocate_ccb: cid 0x%04x", cid);
 
-    if (!l2cb.p_free_ccb_first) {
-        return (NULL);
+
+    if (list_length(l2cb.p_ccb_pool) < MAX_L2CAP_CHANNELS) {
+        p_ccb = (tL2C_CCB *)osi_malloc(sizeof(tL2C_CCB));
+        if (p_ccb) {
+            memset (p_ccb, 0, sizeof(tL2C_CCB));
+            list_append(l2cb.p_ccb_pool, p_ccb);
+	}
     }
-
-    /* If a CID was passed in, use that, else take the first free one */
-    if (cid == 0) {
-        p_ccb = l2cb.p_free_ccb_first;
-        l2cb.p_free_ccb_first = p_ccb->p_next_ccb;
-    } else {
-        p_prev = NULL;
-
-        p_ccb = &l2cb.ccb_pool[cid - L2CAP_BASE_APPL_CID];
-
-        if (p_ccb == l2cb.p_free_ccb_first) {
-            l2cb.p_free_ccb_first = p_ccb->p_next_ccb;
-        } else {
-            for (p_prev = l2cb.p_free_ccb_first; p_prev != NULL; p_prev = p_prev->p_next_ccb) {
-                if (p_prev->p_next_ccb == p_ccb) {
-                    p_prev->p_next_ccb = p_ccb->p_next_ccb;
-
-                    if (p_ccb == l2cb.p_free_ccb_last) {
-                        l2cb.p_free_ccb_last = p_prev;
-                    }
-
-                    break;
-                }
-            }
-            if (p_prev == NULL) {
-                L2CAP_TRACE_ERROR ("l2cu_allocate_ccb: could not find CCB for CID 0x%04x in the free list", cid);
-                return NULL;
-            }
-        }
+    if (p_ccb == NULL) {
+        return (NULL);
     }
 
     p_ccb->p_next_ccb = p_ccb->p_prev_ccb = NULL;
 
     p_ccb->in_use = TRUE;
-
+   
     /* Get a CID for the connection */
-    p_ccb->local_cid = L2CAP_BASE_APPL_CID + (UINT16)(p_ccb - l2cb.ccb_pool);
-
+    p_ccb->local_cid = L2CAP_BASE_APPL_CID + (list_length(l2cb.p_ccb_pool) - 1);
     p_ccb->p_lcb = p_lcb;
     p_ccb->p_rcb = NULL;
     p_ccb->should_free_rcb = false;
@@ -1628,7 +1619,6 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
 {
     tL2C_LCB    *p_lcb = p_ccb->p_lcb;
     tL2C_RCB    *p_rcb = p_ccb->p_rcb;
-
     L2CAP_TRACE_DEBUG ("l2cu_release_ccb: cid 0x%04x  in_use: %u", p_ccb->local_cid, p_ccb->in_use);
 
     /* If already released, could be race condition */
@@ -1645,7 +1635,6 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         p_ccb->p_rcb = NULL;
         p_ccb->should_free_rcb = false;
     }
-
     if (p_lcb) {
         btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
     }
@@ -1682,22 +1671,17 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         p_ccb->p_lcb = NULL;
     }
 
-    /* Put the CCB back on the free pool */
-    if (!l2cb.p_free_ccb_first) {
-        l2cb.p_free_ccb_first = p_ccb;
-        l2cb.p_free_ccb_last  = p_ccb;
-        p_ccb->p_next_ccb     = NULL;
-        p_ccb->p_prev_ccb     = NULL;
-    } else {
-        p_ccb->p_next_ccb  = NULL;
-        p_ccb->p_prev_ccb  = l2cb.p_free_ccb_last;
-        l2cb.p_free_ccb_last->p_next_ccb = p_ccb;
-        l2cb.p_free_ccb_last  = p_ccb;
-    }
 
     /* Flag as not in use */
     p_ccb->in_use = FALSE;
-
+    {
+	if (list_remove(l2cb.p_ccb_pool, p_ccb)) {
+    	    p_ccb = NULL;
+	}
+        else {
+	    L2CAP_TRACE_ERROR("Error in removing L2CAP Channel Control Block");
+	}
+    }
     /* If no channels on the connection, start idle timeout */
     if ((p_lcb) && p_lcb->in_use && (p_lcb->link_state == LST_CONNECTED)) {
         if (!p_lcb->ccb_queue.p_first_ccb) {
@@ -2188,10 +2172,10 @@ void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 *******************************************************************************/
 void l2cu_device_reset (void)
 {
-    int         xx;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->handle != HCI_INVALID_HANDLE)) {
             l2c_link_hci_disc_comp (p_lcb->handle, (UINT8) - 1);
         }
@@ -2212,11 +2196,11 @@ void l2cu_device_reset (void)
 *******************************************************************************/
 BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 {
-    int             xx;
-    tL2C_LCB        *p_lcb_cur = &l2cb.lcb_pool[0];
 #if BTM_SCO_INCLUDED == TRUE
     BOOLEAN         is_sco_active;
 #endif
+    list_node_t *p_node     = NULL;
+    tL2C_LCB    *p_lcb_cur  = NULL;
 
 #if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE     dev_type;
@@ -2241,7 +2225,8 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 
     /* If there is a connection where we perform as a slave, try to switch roles
        for this connection */
-    for (xx = 0, p_lcb_cur = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb_cur++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb_cur = list_node(p_node);
         if (p_lcb_cur == p_lcb) {
             continue;
         }
@@ -2295,10 +2280,11 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 UINT8 l2cu_get_num_hi_priority (void)
 {
     UINT8       no_hi = 0;
-    int         xx;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb = NULL;
 
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)) {
             no_hi++;
         }
@@ -2395,10 +2381,11 @@ BOOLEAN l2cu_create_conn_after_switch (tL2C_LCB *p_lcb)
 *******************************************************************************/
 tL2C_LCB *l2cu_find_lcb_by_state (tL2C_LINK_STATE state)
 {
-    UINT16      i;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb = NULL;
 
-    for (i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->link_state == state)) {
             return (p_lcb);
         }
@@ -2425,12 +2412,11 @@ BOOLEAN l2cu_lcb_disconnecting (void)
 {
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb;
-    UINT16      i;
     BOOLEAN     status = FALSE;
+    list_node_t *p_node = NULL;
 
-    p_lcb = &l2cb.lcb_pool[0];
-
-    for (i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if (p_lcb->in_use) {
             /* no ccbs on lcb, or lcb is in disconnecting state */
             if ((!p_lcb->ccb_queue.p_first_ccb) || (p_lcb->link_state == LST_DISCONNECTING)) {
@@ -2541,8 +2527,8 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
     tL2C_LCB        *p_lcb;
     tL2C_CCB        *p_ccb;
     tL2C_CCB        *p_next_ccb;
-    int             xx;
     L2CAP_TRACE_DEBUG ("l2cu_resubmit_pending_sec_req  p_bda: %p", p_bda);
+    list_node_t     *p_node = NULL;
 
     /* If we are called with a BDA, only resubmit for that BDA */
     if (p_bda) {
@@ -2559,7 +2545,8 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
         }
     } else {
         /* No BDA pasesed in, so check all links */
-        for (xx = 0, p_lcb = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
             if (p_lcb->in_use) {
                 /* For all channels, send the event through their FSMs */
                 for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_next_ccb) {
@@ -3179,11 +3166,11 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb)
 *******************************************************************************/
 UINT8 l2cu_find_completed_packets(UINT16 *handles, UINT16 *num_packets)
 {
-    int         xx;
     UINT8       num = 0;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->completed_packets > 0)) {
             *(handles++) = p_lcb->handle;
             *(num_packets++) = p_lcb->completed_packets;
@@ -3212,10 +3199,10 @@ UINT8 l2cu_find_completed_packets(UINT16 *handles, UINT16 *num_packets)
 *******************************************************************************/
 tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
 {
-    int         xx;
-    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->handle == handle)) {
             return (p_lcb);
         }
@@ -3236,50 +3223,35 @@ tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
 ** Returns          pointer to matched CCB, or NULL if no match
 **
 *******************************************************************************/
+bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid)
+{
+    tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
+    uint8_t local_cid = *((uint8_t *)p_local_cid);
+
+    if (p_ccb->local_cid == local_cid && p_ccb->in_use) {
+        return FALSE;
+    }
+    return TRUE;
+}	
+
 tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid)
 {
     tL2C_CCB    *p_ccb = NULL;
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    UINT8 xx;
-#endif
-
-    if (local_cid >= L2CAP_BASE_APPL_CID) {
-        /* find the associated CCB by "index" */
-        local_cid -= L2CAP_BASE_APPL_CID;
-
-        if (local_cid >= MAX_L2CAP_CHANNELS) {
-            return NULL;
-        }
-
-        p_ccb = l2cb.ccb_pool + local_cid;
-
-        /* make sure the CCB is in use */
-        if (!p_ccb->in_use) {
-            p_ccb = NULL;
-        }
-        /* make sure it's for the same LCB */
-        else if (p_lcb && p_lcb != p_ccb->p_lcb) {
-            p_ccb = NULL;
-        }
+#if (L2CAP_UCD_INCLUDED == FALSE)
+    if (local_cid < L2CAP_BASE_APPL_CID) {
+        return NULL;
     }
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    else {
-        /* searching fixed channel */
-        p_ccb = l2cb.ccb_pool;
-        for ( xx = 0; xx < MAX_L2CAP_CHANNELS; xx++ ) {
-            if ((p_ccb->local_cid == local_cid)
-                    && (p_ccb->in_use)
-                    && (p_lcb == p_ccb->p_lcb)) {
-                break;
-            } else {
-                p_ccb++;
-            }
-        }
-        if ( xx >= MAX_L2CAP_CHANNELS ) {
-            return NULL;
-        }
+#endif //(L2CAP_UCD_INCLUDED == FALSE)
+    list_node_t *p_node = NULL;
+
+    p_node = (list_foreach(l2cb.p_ccb_pool, l2cu_find_ccb_in_list, &local_cid));
+    if (p_node) {
+	p_ccb = (tL2C_CCB *)list_node(p_node);
+ 
+	if (p_lcb && p_lcb != p_ccb->p_lcb) {
+	    p_ccb = NULL;
+ 	}
     }
-#endif
 
     return (p_ccb);
 }
@@ -3662,7 +3634,7 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
         } else {
             tL2C_LCB *p_lcb = p_ccb->p_lcb;
             /* If this channel was not congested but it is congested now, tell the app */
-            if ((q_count > p_ccb->buff_quota) || (p_lcb && (p_ccb->local_cid == L2CAP_ATT_CID) && (p_lcb->link_xmit_quota > 0) && (p_lcb->link_xmit_quota <= p_lcb->sent_not_acked))) {
+            if (q_count > p_ccb->buff_quota || (p_lcb && (p_lcb->link_xmit_data_q) && (list_length(p_lcb->link_xmit_data_q) + q_count) > p_ccb->buff_quota)) {
                 p_ccb->cong_sent = TRUE;
                 if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
                     L2CAP_TRACE_DEBUG ("L2CAP - Calling CongestionStatus_Cb (TRUE),CID:0x%04x,XmitQ:%u,Quota:%u",

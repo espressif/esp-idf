@@ -248,52 +248,20 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
 u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 			     const char *label, size_t len)
 {
-	struct tls_keys keys;
-	u8 *rnd = NULL, *out;
+	u8 *out;
 
 	out = os_malloc(len);
 	if (out == NULL)
 		return NULL;
 
-	/* First, try to use TLS library function for PRF, if available. */
-	if (tls_connection_prf(data->ssl_ctx, data->conn, label, 0, out, len)
-	    == 0)
-		return out;
-
-	/*
-	 * TLS library did not support key generation, so get the needed TLS
-	 * session parameters and use an internal implementation of TLS PRF to
-	 * derive the key.
-	 */
-	if (tls_connection_get_keys(data->ssl_ctx, data->conn, &keys))
-		goto fail;
-
-	if (keys.client_random == NULL || keys.server_random == NULL ||
-	    keys.master_key == NULL)
-		goto fail;
-
-	rnd = os_malloc(keys.client_random_len + keys.server_random_len);
-	if (rnd == NULL)
-		goto fail;
-	os_memcpy(rnd, keys.client_random, keys.client_random_len);
-	os_memcpy(rnd + keys.client_random_len, keys.server_random,
-		  keys.server_random_len);
-
-	if (tls_prf_sha1_md5(keys.master_key, keys.master_key_len,
-			     label, rnd, keys.client_random_len +
-			     keys.server_random_len, out, len)) {
-		goto fail;
+	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, out,
+				len)) {
+		os_free(out);
+		return NULL;
 	}
 
-	os_free(rnd);
 	return out;
-
-fail:
-	os_free(out);
-	os_free(rnd);
-	return NULL;
 }
-
 
 /**
  * eap_peer_tls_derive_session_id - Derive a Session-Id based on TLS data
@@ -312,18 +280,17 @@ u8 * eap_peer_tls_derive_session_id(struct eap_sm *sm,
 				    struct eap_ssl_data *data, u8 eap_type,
 				    size_t *len)
 {
-	struct tls_keys keys;
+	struct tls_random keys;
 	u8 *out;
 
 	/*
 	 * TLS library did not support session ID generation,
 	 * so get the needed TLS session parameters
 	 */
-	if (tls_connection_get_keys(sm->ssl_ctx, data->conn, &keys))
+	if (tls_connection_get_random(sm->ssl_ctx, data->conn, &keys))
 		return NULL;
 
-	if (keys.client_random == NULL || keys.server_random == NULL ||
-	    keys.master_key == NULL)
+	if (keys.client_random == NULL || keys.server_random == NULL)
 		return NULL;
 
 	*len = 1 + keys.client_random_len + keys.server_random_len;

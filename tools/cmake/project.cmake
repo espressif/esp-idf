@@ -10,6 +10,7 @@ set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
 # Internally, the Python interpreter is already set to 'python'. Re-set here
 # to be absolutely sure.
 set_default(PYTHON "python")
+file(TO_CMAKE_PATH ${PYTHON} PYTHON)
 idf_build_set_property(PYTHON ${PYTHON})
 
 # On processing, checking Python required modules can be turned off if it was
@@ -217,18 +218,18 @@ function(__project_init components_var test_components_var)
                     "but component manager is not enabled. Please set IDF_COMPONENT_MANAGER environment variable.")
         endif()
 
+        spaces2list(EXTRA_COMPONENT_DIRS)
+        foreach(component_dir ${EXTRA_COMPONENT_DIRS})
+            __project_component_dir("${component_dir}")
+        endforeach()
+
+        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
+
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
         # CMAKE_CURRENT_LIST_DIR/components, and the extra component dirs
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main")
             __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main")
         endif()
-
-        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
-
-        spaces2list(EXTRA_COMPONENT_DIRS)
-        foreach(component_dir ${EXTRA_COMPONENT_DIRS})
-            __project_component_dir("${component_dir}")
-        endforeach()
     endif()
 
     spaces2list(COMPONENTS)
@@ -438,6 +439,10 @@ macro(project project_name)
     add_custom_target(_project_elf_src DEPENDS "${project_elf_src}")
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
+
+    if(__PROJECT_GROUP_LINK_COMPONENTS)
+        target_link_libraries(${project_elf} "-Wl,--start-group")
+    endif()
 
     if(test_components)
         target_link_libraries(${project_elf} "-Wl,--whole-archive")

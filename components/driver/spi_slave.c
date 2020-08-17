@@ -20,6 +20,7 @@
 #include "driver/spi_common_internal.h"
 #include "driver/spi_slave.h"
 #include "soc/spi_periph.h"
+#include "soc/gpio_caps.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -33,6 +34,8 @@
 #include "soc/soc_memory_layout.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *SPI_TAG = "spi_slave";
 #define SPI_CHECK(a, str, ret_val) \
@@ -90,7 +93,7 @@ static inline bool bus_is_iomux(spi_slave_t *host)
 
 static void freeze_cs(spi_slave_t *host)
 {
-    gpio_matrix_in(GPIO_FUNC_IN_HIGH, spi_periph_signal[host->id].spics_in, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host->id].spics_in, false);
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
@@ -100,7 +103,7 @@ static inline void restore_cs(spi_slave_t *host)
     if (bus_is_iomux(host)) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
     } else {
-        gpio_matrix_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
+        esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
     }
 }
 
@@ -300,24 +303,24 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
 #ifdef DEBUG_SLAVE
 static void dumpregs(spi_dev_t *hw)
 {
-    ets_printf("***REG DUMP ***\n");
-    ets_printf("mosi_dlen         : %08X\n", hw->mosi_dlen.val);
-    ets_printf("miso_dlen         : %08X\n", hw->miso_dlen.val);
-    ets_printf("slv_wrbuf_dlen    : %08X\n", hw->slv_wrbuf_dlen.val);
-    ets_printf("slv_rdbuf_dlen    : %08X\n", hw->slv_rdbuf_dlen.val);
-    ets_printf("slave             : %08X\n", hw->slave.val);
-    ets_printf("slv_rdata_bit     : %x\n", hw->slv_rd_bit.slv_rdata_bit);
-    ets_printf("dma_rx_status     : %08X\n", hw->dma_rx_status);
-    ets_printf("dma_tx_status     : %08X\n", hw->dma_tx_status);
+    esp_rom_printf("***REG DUMP ***\n");
+    esp_rom_printf("mosi_dlen         : %08X\n", hw->mosi_dlen.val);
+    esp_rom_printf("miso_dlen         : %08X\n", hw->miso_dlen.val);
+    esp_rom_printf("slv_wrbuf_dlen    : %08X\n", hw->slv_wrbuf_dlen.val);
+    esp_rom_printf("slv_rdbuf_dlen    : %08X\n", hw->slv_rdbuf_dlen.val);
+    esp_rom_printf("slave             : %08X\n", hw->slave.val);
+    esp_rom_printf("slv_rdata_bit     : %x\n", hw->slv_rd_bit.slv_rdata_bit);
+    esp_rom_printf("dma_rx_status     : %08X\n", hw->dma_rx_status);
+    esp_rom_printf("dma_tx_status     : %08X\n", hw->dma_tx_status);
 }
 
 
 static void dumpll(lldesc_t *ll)
 {
-    ets_printf("****LL DUMP****\n");
-    ets_printf("Size %d\n", ll->size);
-    ets_printf("Len: %d\n", ll->length);
-    ets_printf("Owner: %s\n", ll->owner ? "dma" : "cpu");
+    esp_rom_printf("****LL DUMP****\n");
+    esp_rom_printf("Size %d\n", ll->size);
+    esp_rom_printf("Len: %d\n", ll->length);
+    esp_rom_printf("Owner: %s\n", ll->owner ? "dma" : "cpu");
 }
 #endif
 

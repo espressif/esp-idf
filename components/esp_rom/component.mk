@@ -1,10 +1,15 @@
+COMPONENT_ADD_INCLUDEDIRS := include
+COMPONENT_SRCDIRS := patches
+COMPONENT_PRIV_INCLUDEDIRS := esp32
+
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
 LINKER_SCRIPTS += esp32.rom.ld \
                   esp32.rom.libgcc.ld \
                   esp32.rom.syscalls.ld \
-                  esp32.rom.newlib-data.ld
+                  esp32.rom.newlib-data.ld \
+                  esp32.rom.api.ld
 
 #SPI-RAM incompatible functions can be used in when the SPI RAM
 #workaround is not enabled.

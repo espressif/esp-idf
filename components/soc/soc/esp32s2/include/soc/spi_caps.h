@@ -16,7 +16,7 @@
 
 #define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    3
-#define SOC_SPI_PERIPH_CS_NUM(i)    3
+#define SOC_SPI_PERIPH_CS_NUM(i)    (((i)==0)? 2: (((i)==1)? 6: 3))
 
 #define SPI_FUNC_NUM            0
 #define SPI_IOMUX_PIN_NUM_HD    27
@@ -45,7 +45,8 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-
+/// The SPI Slave half duplex mode has been updated greatly in ESP32-S2
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // VSPI (SPI3) only support 1-bit mode

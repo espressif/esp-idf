@@ -1,5 +1,40 @@
 menu "Modbus configuration"
 
+    config FMB_COMM_MODE_TCP_EN
+        bool "Enable Modbus stack support for TCP communication mode"
+        default y
+        help
+                Enable Modbus TCP option for stack.
+
+    config FMB_TCP_PORT_DEFAULT
+        int "Modbus TCP port number"
+        range 0 65535
+        default 502
+        depends on FMB_COMM_MODE_TCP_EN
+        help
+                Modbus default port number used by Modbus TCP stack
+
+    config FMB_TCP_PORT_MAX_CONN
+        int "Maximum allowed connections for TCP stack"
+        range 1 6
+        default 5
+        depends on FMB_COMM_MODE_TCP_EN
+        help
+                Maximum allowed connections number for Modbus TCP stack.
+                This is used by Modbus master and slave port layer to establish connections.
+                This parameter may decrease performance of Modbus stack and can cause
+                increasing of processing time (increase only if absolutely necessary).
+
+    config FMB_TCP_CONNECTION_TOUT_SEC
+        int "Modbus TCP connection timeout"
+        range 1 3600
+        default 20
+        depends on FMB_COMM_MODE_TCP_EN
+        help
+                Modbus TCP connection timeout in seconds.
+                Once expired the current connection with the client will be closed
+                and Modbus slave will be waiting for new connection to accept.
+
     config FMB_COMM_MODE_RTU_EN
         bool "Enable Modbus stack support for RTU mode"
         default y
@@ -15,7 +50,7 @@ menu "Modbus configuration"
     config FMB_MASTER_TIMEOUT_MS_RESPOND
         int "Slave respond timeout (Milliseconds)"
         default 150
-        range 50 400
+        range 50 3000
         help
                 If master sends a frame which is not broadcast, it has to wait sometime for slave response.
                 if slave is not respond in this time, the master will process timeout error.
@@ -36,12 +71,12 @@ menu "Modbus configuration"
                 Modbus serial driver queue length. It is used by event queue task.
                 See the serial driver API for more information.
 
-    config FMB_SERIAL_TASK_STACK_SIZE
-        int "Modbus serial task stack size"
-        range 768 8192
-        default 2048
+    config FMB_PORT_TASK_STACK_SIZE
+        int "Modbus port task stack size"
+        range 2048 8192
+        default 4096
         help
-                Modbus serial task stack size for event queue task.
+                Modbus port task stack size for rx/tx event processing.
                 It may be adjusted when debugging is enabled (for example).
 
     config FMB_SERIAL_BUF_SIZE
@@ -68,19 +103,19 @@ menu "Modbus configuration"
         depends on FMB_COMM_MODE_ASCII_EN
         help
                 This option defines response timeout of slave in milliseconds for ASCII communication mode.
-                Thus the timeout will expire and allow the master’s program to handle the error.
+                Thus the timeout will expire and allow the master program to handle the error.
 
-    config FMB_SERIAL_TASK_PRIO
-        int "Modbus serial task priority"
+    config FMB_PORT_TASK_PRIO
+        int "Modbus port task priority"
         range 3 10
         default 10
         help
-                Modbus UART driver event task priority.
-                The priority of Modbus controller task is equal to (CONFIG_FMB_SERIAL_TASK_PRIO - 1).
+                Modbus port data processing task priority.
+                The priority of Modbus controller task is equal to (CONFIG_FMB_PORT_TASK_PRIO - 1).
 
     config FMB_CONTROLLER_SLAVE_ID_SUPPORT
         bool "Modbus controller slave ID support"
-        default n
+        default y
         help
                 Modbus slave ID support enable.
                 When enabled the Modbus <Report Slave ID> command is supported by stack.

@@ -16,8 +16,11 @@
 #include "soc/sens_periph.h"
 #include "driver/adc.h"
 #include "driver/dac.h"
+#include "soc/adc_channel.h"
+#include "soc/dac_channel.h"
 
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_6)
+
 #define TEST_SAMPLING_PERIOD 20
 
 /*
@@ -41,7 +44,7 @@ static const char *TAG = "example";
 
 /*
  * Enable cosine waveform generator (CW)
- * on channel 1 / GPIO25 to provide sinusoidal signal
+ * on DAC channel 1 to provide sinusoidal signal
  * It can be used instead of a live signal for testing
  * of speed of logging to the host
  * sequentially with data retrieval from ADC
@@ -65,7 +68,7 @@ static void enable_cosine_generator(void)
 }
 
 /*
- * Sample data an ADC1 channel 6 / GPIO34
+ * Sample data an ADC1 channel 6
  * over specific 'sampling_period' in milliseconds.
  * Print out sampling result using standard ESP_LOGI() function.
  * Return the number of samples collected.
@@ -87,7 +90,7 @@ static int adc1_sample_and_show(int sampling_period)
  */
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO34.");
+    ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO%d.", ADC1_CHANNEL_6_GPIO_NUM);
 #if CONFIG_IDF_TARGET_ESP32
     adc1_config_width(ADC_WIDTH_BIT_12);
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -95,7 +98,7 @@ void app_main(void)
 #endif
     adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
 
-    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO25.");
+    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO%d.", DAC_CHANNEL_1_GPIO_NUM);
     enable_cosine_generator();
 
     while (1) {

@@ -37,20 +37,22 @@
  * implementations that also use the SPI peripheral.
  */
 typedef struct {
+    spi_flash_host_inst_t inst; ///< Host instance, containing host data and function pointer table. May update with the host (hardware version).
     spi_dev_t *spi;             ///< Pointer to SPI peripheral registers (SP1, SPI2 or SPI3). Set before initialisation.
     int cs_num;                 ///< Which cs pin is used, 0-2.
-    int extra_dummy;
-    spi_flash_ll_clock_reg_t clock_conf;
-} spi_flash_memspi_data_t;
+    int extra_dummy;            ///< Pre-calculated extra dummy used for compensation
+    spi_flash_ll_clock_reg_t clock_conf;    ///< Pre-calculated clock configuration value
+    uint32_t reserved_config[2];            ///< The ROM has reserved some memory for configurations with one set of driver code. (e.g. QPI mode, 64-bit address mode, etc.)
+} spi_flash_hal_context_t;
 
 /// Configuration structure for the SPI driver.
 typedef struct {
     spi_host_device_t host_id;            ///< SPI peripheral ID.
-    int cs_num;             ///< Which cs pin is used, 0-2.
+    int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock， used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.
-} spi_flash_memspi_config_t;
+} spi_flash_hal_config_t;
 
 /**
  * Configure SPI flash hal settings.
@@ -62,16 +64,16 @@ typedef struct {
  *      - ESP_OK: success
  *      - ESP_ERR_INVALID_ARG: the data buffer is not in the DRAM.
  */
-esp_err_t spi_flash_hal_init(spi_flash_memspi_data_t *data_out, const spi_flash_memspi_config_t *cfg);
+esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg);
 
 /**
  * Configure the device-related register before transactions.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver);
+esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host);
 
 /**
  * Send an user-defined spi transaction to the device.
@@ -80,60 +82,60 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver);
  *      particular commands. Since this function supports timing compensation, it is
  *      also used to receive some data when the frequency is high.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param trans The transaction to send, also holds the received data.
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *driver, spi_flash_trans_t *trans);
+esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans);
 
 /**
  * Erase whole flash chip by using the erase chip (C7h) command.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  */
-void spi_flash_hal_erase_chip(spi_flash_host_driver_t *driver);
+void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host);
 
 /**
  * Erase a specific sector by its start address through the sector erase (20h)
  * command.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param start_address Start address of the sector to erase.
  */
-void spi_flash_hal_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_address);
+void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
  * Erase a specific 64KB block by its start address through the 64KB block
  * erase (D8h) command.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param start_address Start address of the block to erase.
  */
-void spi_flash_hal_erase_block(spi_flash_host_driver_t *driver, uint32_t start_address);
+void spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
  * Program a page of the flash using the page program (02h) command.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param address Address of the page to program
  * @param buffer Data to program
  * @param length Size of the buffer in bytes, no larger than ``SPI_FLASH_HAL_MAX_WRITE_BYTES`` (64) bytes.
  */
-void spi_flash_hal_program_page(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
+void spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length);
 
 /**
  * Read from the flash. Call ``spi_flash_hal_configure_host_read_mode`` to
  * configure the read command before calling this function.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  * @param buffer Buffer to store the read data
  * @param address Address to read
  * @param length Length to read, no larger than ``SPI_FLASH_HAL_MAX_READ_BYTES`` (64) bytes.
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *driver, void *buffer, uint32_t address, uint32_t read_len);
+esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
 
 /**
  * @brief Send the write enable (06h) or write disable (04h) command to the flash chip.
@@ -143,16 +145,16 @@ esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *driver, void *buffer, uint
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_driver_t *chip_drv, bool wp);
+esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp);
 
 /**
  * Check whether the SPI host is idle and can perform other operations.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  *
  * @return ture if idle, otherwise false.
  */
-bool spi_flash_hal_host_idle(spi_flash_host_driver_t *driver);
+bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host);
 
 /**
  * @brief Configure the SPI host hardware registers for the specified io mode.
@@ -177,7 +179,7 @@ bool spi_flash_hal_host_idle(spi_flash_host_driver_t *driver);
  *  - Common write: set command value, address value (or length to 0 if not
  *    used), disable dummy phase, and set output data.
  *
- * @param driver The driver context
+ * @param host The driver context
  * @param io_mode The HW read mode to use
  * @param addr_bitlen Length of the address phase, in bits
  * @param dummy_cyclelen_base Base cycles of the dummy phase, some extra dummy cycles may be appended to compensate the timing.
@@ -185,34 +187,34 @@ bool spi_flash_hal_host_idle(spi_flash_host_driver_t *driver);
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_driver_t *driver, uint32_t command, uint32_t addr_bitlen,
+esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_inst_t *host, uint32_t command, uint32_t addr_bitlen,
                                                int dummy_cyclelen_base, esp_flash_io_mode_t io_mode);
 
 /**
  * Poll until the last operation is done.
  *
- * @param driver The driver context.
+ * @param host The driver context.
  */
-void spi_flash_hal_poll_cmd_done(spi_flash_host_driver_t *driver);
+void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host);
 
 /**
  * Check whether the given buffer can be used as the write buffer directly. If 'chip' is connected to the main SPI bus, we can only write directly from
  * regions that are accessible ith cache disabled. *
  *
- * @param driver The driver context
+ * @param host The driver context
  * @param p The buffer holding data to send.
  *
  * @return True if the buffer can be used to send data, otherwise false.
  */
-bool spi_flash_hal_supports_direct_write(spi_flash_host_driver_t *driver, const void *p);
+bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p);
 
 /**
  * Check whether the given buffer can be used as the read buffer directly. If 'chip' is connected to the main SPI bus, we can only read directly from
  * regions that are accessible ith cache disabled. *
  *
- * @param driver The driver context
+ * @param host The driver context
  * @param p The buffer to hold the received data.
  *
  * @return True if the buffer can be used to receive data, otherwise false.
  */
-bool spi_flash_hal_supports_direct_read(spi_flash_host_driver_t *driver, const void *p);
+bool spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p);

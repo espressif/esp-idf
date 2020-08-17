@@ -19,9 +19,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 
-#include "esp32s2/rom/ets_sys.h"
-#include "esp32s2/rom/uart.h"
-
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"

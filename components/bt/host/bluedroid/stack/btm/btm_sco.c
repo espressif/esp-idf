@@ -481,7 +481,6 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
         tBTM_ESCO_PARAMS *p_setup)
 {
     UINT16 temp_pkt_types;
-    UINT8 xx;
     tACL_CONN *p_acl;
 
     /* Send connect request depending on version of spec */
@@ -499,9 +498,8 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
 
         /* Finally, remove EDR eSCO if the remote device doesn't support it */
         /* UPF25:  Only SCO was brought up in this case */
-        btm_handle_to_acl_index(acl_handle);
-        if ((xx = btm_handle_to_acl_index(acl_handle)) < MAX_L2CAP_LINKS) {
-            p_acl = &btm_cb.acl_db[xx];
+        p_acl = btm_handle_to_acl(acl_handle);
+        if (p_acl) {	
             if (!HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
 
                 BTM_TRACE_WARNING("BTM Remote does not support 2-EDR eSCO");

@@ -1,10 +1,12 @@
 from __future__ import print_function
+
+import argparse
+
 import yaml
 import os
 import re
 import shutil
 import subprocess
-import sys
 
 from copy import deepcopy
 import CreateSectionTable
@@ -45,7 +47,6 @@ class Parser(object):
     CONFIG_DEPENDENCY_FILE = os.path.join("tools", "unit-test-app", "tools", "ConfigDependency.yml")
     MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
     TEST_CASE_FILE_DIR = os.path.join("components", "idf_test", "unit_test")
-    UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "output")
     UT_CONFIG_FOLDER = os.path.join("tools", "unit-test-app", "configs")
     ELF_FILE = "unit-test-app.elf"
     SDKCONFIG_FILE = "sdkconfig"
@@ -55,12 +56,15 @@ class Parser(object):
         "esp32s2": "xtensa-esp32s2-elf-",
     }
 
-    def __init__(self, idf_path=os.getenv("IDF_PATH"), idf_target=os.getenv("IDF_TARGET")):
+    def __init__(self, binary_folder):
+        idf_path = os.getenv('IDF_PATH')
+        idf_target = os.getenv('IDF_TARGET')
         self.test_env_tags = {}
         self.unit_jobs = {}
         self.file_name_cache = {}
         self.idf_path = idf_path
         self.idf_target = idf_target
+        self.ut_bin_folder = binary_folder
         self.objdump = Parser.TOOLCHAIN_FOR_TARGET.get(idf_target, "") + "objdump"
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"), Loader=Loader)
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"), Loader=Loader)
@@ -142,9 +146,9 @@ class Parser(object):
 
         return test_cases
 
-    def parse_case_properities(self, tags_raw):
+    def parse_case_properties(self, tags_raw):
         """
-        parse test case tags (properities) with the following rules:
+        parse test case tags (properties) with the following rules:
             * first tag is always group of test cases, it's mandatory
             * the rest tags should be [type=value].
                 * if the type have default value, then [type] equal to [type=default_value].
@@ -256,7 +260,7 @@ class Parser(object):
         :param tags: tags to select runners
         :return: parsed test case
         """
-        prop = self.parse_case_properities(description)
+        prop = self.parse_case_properties(description)
 
         test_case = deepcopy(TEST_CASE_PATTERN)
         test_case.update({"config": config_name,
@@ -300,9 +304,10 @@ class Parser(object):
         """ parse test cases from multiple built unit test apps """
         test_cases = []
 
-        output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER, self.idf_target)
+        output_folder = os.path.join(self.idf_path, self.ut_bin_folder, self.idf_target)
         configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
-        test_configs = os.listdir(output_folder)
+        test_configs = [item for item in os.listdir(output_folder)
+                        if os.path.isdir(os.path.join(output_folder, item))]
         for config in test_configs:
             config_output_folder = os.path.join(output_folder, config)
             if os.path.exists(config_output_folder):
@@ -311,33 +316,33 @@ class Parser(object):
         self.dump_test_cases(test_cases)
 
 
-def test_parser():
-    parser = Parser()
+def test_parser(binary_folder):
+    parser = Parser(binary_folder)
     # test parsing tags
     # parsing module only and module in module list
-    prop = parser.parse_case_properities("[esp32]")
+    prop = parser.parse_case_properties("[esp32]")
     assert prop["module"] == "esp32"
     # module not in module list
-    prop = parser.parse_case_properities("[not_in_list]")
+    prop = parser.parse_case_properties("[not_in_list]")
     assert prop["module"] == "misc"
     # parsing a default tag, a tag with assigned value
-    prop = parser.parse_case_properities("[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]")
+    prop = parser.parse_case_properties("[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]")
     assert prop["ignore"] == "Yes" and prop["test_env"] == "ABCD" \
-        and "not_support1" not in prop and "not_supported2" not in prop
+           and "not_support1" not in prop and "not_supported2" not in prop
     # parsing omitted value
-    prop = parser.parse_case_properities("[esp32]")
+    prop = parser.parse_case_properties("[esp32]")
     assert prop["ignore"] == "No" and prop["test_env"] == "UT_T1_1"
     # parsing with incorrect format
     try:
-        parser.parse_case_properities("abcd")
+        parser.parse_case_properties("abcd")
         assert False
     except AssertionError:
         pass
     # skip invalid data parse, [type=] assigns empty string to type
-    prop = parser.parse_case_properities("[esp32]abdc aaaa [ignore=]")
+    prop = parser.parse_case_properties("[esp32]abdc aaaa [ignore=]")
     assert prop["module"] == "esp32" and prop["ignore"] == ""
     # skip mis-paired []
-    prop = parser.parse_case_properities("[esp32][[ignore=b]][]][test_env=AAA]]")
+    prop = parser.parse_case_properties("[esp32][[ignore=b]][]][test_env=AAA]]")
     assert prop["module"] == "esp32" and prop["ignore"] == "b" and prop["test_env"] == "AAA"
 
     config_dependency = {
@@ -353,20 +358,12 @@ def test_parser():
     assert sorted(tags) == ['a', 'd', 'f']  # sorted is required for older Python3, e.g. 3.4.8
 
 
-def main():
-    test_parser()
+def main(binary_folder):
+    assert os.getenv('IDF_PATH'), 'IDF_PATH must be set to use this script'
+    assert os.getenv('IDF_TARGET'), 'IDF_TARGET must be set to use this script'
+    test_parser(binary_folder)
 
-    idf_path = os.getenv("IDF_PATH")
-    if not idf_path:
-        print("IDF_PATH must be set to use this script", file=sys.stderr)
-        raise SystemExit(1)
-
-    idf_target = os.getenv("IDF_TARGET")
-    if not idf_target:
-        print("IDF_TARGET must be set to use this script", file=sys.stderr)
-        raise SystemExit(1)
-
-    parser = Parser(idf_path, idf_target)
+    parser = Parser(binary_folder)
     parser.parse_test_cases()
     parser.copy_module_def_file()
     if len(parser.parsing_errors) > 0:
@@ -376,4 +373,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('bin_dir', help='Binary Folder')
+    args = parser.parse_args()
+    main(args.bin_dir)

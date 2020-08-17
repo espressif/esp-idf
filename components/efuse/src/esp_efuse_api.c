@@ -24,15 +24,15 @@ const static char *TAG = "efuse";
 #if defined(BOOTLOADER_BUILD)
 #define EFUSE_LOCK_ACQUIRE()
 #define EFUSE_LOCK_RELEASE()
-#define EFUSE_LOCK_ACQUIRE_RUCURSIVE()
-#define EFUSE_LOCK_RELEASE_RUCURSIVE()
+#define EFUSE_LOCK_ACQUIRE_RECURSIVE()
+#define EFUSE_LOCK_RELEASE_RECURSIVE()
 #else
 #include <sys/lock.h>
 static _lock_t s_efuse_lock;
 #define EFUSE_LOCK_ACQUIRE() _lock_acquire(&s_efuse_lock)
 #define EFUSE_LOCK_RELEASE() _lock_release(&s_efuse_lock)
-#define EFUSE_LOCK_ACQUIRE_RUCURSIVE() _lock_acquire_recursive(&s_efuse_lock)
-#define EFUSE_LOCK_RELEASE_RUCURSIVE() _lock_release_recursive(&s_efuse_lock)
+#define EFUSE_LOCK_ACQUIRE_RECURSIVE() _lock_acquire_recursive(&s_efuse_lock)
+#define EFUSE_LOCK_RELEASE_RECURSIVE() _lock_release_recursive(&s_efuse_lock)
 #endif
 
 static bool s_batch_writing_mode = false;
@@ -54,6 +54,14 @@ esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, 
     return err;
 }
 
+bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[])
+{
+    uint8_t value = 0;
+    esp_err_t err = esp_efuse_read_field_blob(field, &value, 1);
+    assert(err == ESP_OK);
+    return (err == ESP_OK) && value;
+}
+
 // read number of bits programmed as "1" in the particular field
 esp_err_t esp_efuse_read_field_cnt(const esp_efuse_desc_t* field[], size_t* out_cnt)
 {
@@ -72,7 +80,7 @@ esp_err_t esp_efuse_read_field_cnt(const esp_efuse_desc_t* field[], size_t* out_
 // write array to EFUSE
 esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void* src, size_t src_size_bits)
 {
-    EFUSE_LOCK_ACQUIRE_RUCURSIVE();
+    EFUSE_LOCK_ACQUIRE_RECURSIVE();
     esp_err_t err = ESP_OK;
     if (field == NULL || src == NULL || src_size_bits == 0) {
         err = ESP_ERR_INVALID_ARG;
@@ -92,14 +100,14 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
             esp_efuse_utility_reset();
         }
     }
-    EFUSE_LOCK_RELEASE_RUCURSIVE();
+    EFUSE_LOCK_RELEASE_RECURSIVE();
     return err;
 }
 
 // program cnt bits to "1"
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
 {
-    EFUSE_LOCK_ACQUIRE_RUCURSIVE();
+    EFUSE_LOCK_ACQUIRE_RECURSIVE();
     esp_err_t err = ESP_OK;
     if (field == NULL || cnt == 0) {
         err = ESP_ERR_INVALID_ARG;
@@ -127,8 +135,27 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
             esp_efuse_utility_reset();
         }
     }
-    EFUSE_LOCK_RELEASE_RUCURSIVE();
+    EFUSE_LOCK_RELEASE_RECURSIVE();
     return err;
+}
+
+esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[])
+{
+    esp_err_t err;
+    uint8_t existing = 0;
+    const uint8_t one = 1;
+
+    if (field == NULL || field[0]->bit_count != 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Check existing value. esp_efuse_write_field_blob() also checks this, but will log an error */
+    err = esp_efuse_read_field_blob(field, &existing, 1);
+    if (err != ESP_OK || existing) {
+        return err; // Error reading, or the bit is already written and we can no-op this
+    }
+
+    return esp_efuse_write_field_blob(field, &one, 1);
 }
 
 // get the length of the field in bits
@@ -157,7 +184,7 @@ uint32_t esp_efuse_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 // writing efuse register.
 esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t val)
 {
-    EFUSE_LOCK_ACQUIRE_RUCURSIVE();
+    EFUSE_LOCK_ACQUIRE_RECURSIVE();
     if (s_batch_writing_mode == false) {
         esp_efuse_utility_reset();
     }
@@ -171,7 +198,7 @@ esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint3
         }
         esp_efuse_utility_reset();
     }
-    EFUSE_LOCK_RELEASE_RUCURSIVE();
+    EFUSE_LOCK_RELEASE_RECURSIVE();
     return err;
 }
 

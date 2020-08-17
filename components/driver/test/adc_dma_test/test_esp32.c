@@ -27,6 +27,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
+#include "esp_rom_sys.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2) // This testcase for ESP32
 
@@ -52,22 +53,13 @@
 //I2S built-in ADC unit
 #define I2S_ADC_UNIT              ADC_UNIT_1
 //I2S built-in ADC channel
-//#define I2S_ADC_CHANNEL           //adc1_ch[0]
+#define I2S_ADC_CHANNEL           ADC1_CHANNEL_4
 
 //flash record size, for recording 5 seconds' data
 #define FLASH_RECORD_SIZE         (EXAMPLE_I2S_CHANNEL_NUM * EXAMPLE_I2S_SAMPLE_RATE * EXAMPLE_I2S_SAMPLE_BITS / 8 * 5)
 #define FLASH_ERASE_SIZE          (FLASH_RECORD_SIZE % FLASH_SECTOR_SIZE == 0) ? FLASH_RECORD_SIZE : FLASH_RECORD_SIZE + (FLASH_SECTOR_SIZE - FLASH_RECORD_SIZE % FLASH_SECTOR_SIZE)
 //sector size of flash
 #define FLASH_SECTOR_SIZE         (0x1000)
-
-#define ADC1_TEST_CHANNEL_NUM   3
-#define ADC2_TEST_CHANNEL_NUM   3
-
-static const int adc1_ch[ADC1_TEST_CHANNEL_NUM] = {
-    ADC1_CHANNEL_2,
-    ADC1_CHANNEL_3,
-    ADC1_CHANNEL_4,
-};
 
 /**
  * @brief I2S ADC/DAC mode init.
@@ -79,7 +71,6 @@ static void example_i2s_init(void)
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
-        .communication_format = I2S_COMM_FORMAT_PCM,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
@@ -89,7 +80,7 @@ static void example_i2s_init(void)
     //install and start i2s driver
     TEST_ESP_OK( i2s_driver_install(i2s_num, &i2s_config, 0, NULL) );
     //init ADC pad
-    TEST_ESP_OK( i2s_set_adc_mode(I2S_ADC_UNIT, adc1_ch[0]) );
+    TEST_ESP_OK( i2s_set_adc_mode(I2S_ADC_UNIT, I2S_ADC_CHANNEL) );
 }
 
 static void example_i2s_deinit(void)
@@ -128,7 +119,7 @@ TEST_CASE("ADC DMA read", "[adc dma]")
         example_disp_buf((uint8_t *) i2s_read_buff, 64);
         //save original data from I2S(ADC) into flash.
         flash_wr_size += i2s_read_len;
-        ets_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
+        esp_rom_printf("Sound recording %u%%\n", flash_wr_size * 100 / FLASH_RECORD_SIZE);
     }
     TEST_ESP_OK( i2s_adc_disable(EXAMPLE_I2S_NUM) );
     if (i2s_read_buff) {

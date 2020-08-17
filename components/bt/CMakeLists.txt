@@ -315,6 +315,7 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_BLE_MESH)
         list(APPEND include_dirs
                     "esp_ble_mesh/mesh_common/include"
+                    "esp_ble_mesh/mesh_common/tinycrypt/include"
                     "esp_ble_mesh/mesh_core"
                     "esp_ble_mesh/mesh_core/include"
                     "esp_ble_mesh/mesh_core/storage"
@@ -346,7 +347,21 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/btc/btc_ble_mesh_prov.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_sensor_model.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_time_scene_model.c"
-                    "esp_ble_mesh/mesh_common/mesh_aes_encrypt.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/aes_decrypt.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/aes_encrypt.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/cbc_mode.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ccm_mode.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/cmac_mode.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ctr_mode.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ctr_prng.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ecc_dh.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ecc_dsa.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ecc_platform_specific.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/ecc.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/hmac_prng.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/hmac.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/sha256.c"
+                    "esp_ble_mesh/mesh_common/tinycrypt/src/utils.c"
                     "esp_ble_mesh/mesh_common/mesh_atomic.c"
                     "esp_ble_mesh/mesh_common/mesh_buf.c"
                     "esp_ble_mesh/mesh_common/mesh_common.c"
@@ -361,9 +376,11 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/cfg_cli.c"
                     "esp_ble_mesh/mesh_core/cfg_srv.c"
                     "esp_ble_mesh/mesh_core/crypto.c"
+                    "esp_ble_mesh/mesh_core/fast_prov.c"
                     "esp_ble_mesh/mesh_core/friend.c"
                     "esp_ble_mesh/mesh_core/health_cli.c"
                     "esp_ble_mesh/mesh_core/health_srv.c"
+                    "esp_ble_mesh/mesh_core/local_operation.c"
                     "esp_ble_mesh/mesh_core/lpn.c"
                     "esp_ble_mesh/mesh_core/main.c"
                     "esp_ble_mesh/mesh_core/net.c"
@@ -539,13 +556,15 @@ if(CONFIG_BT_ENABLED)
 
         endif()
     endif()
+
 endif()
 
 # requirements can't depend on config
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer)
+                REQUIRES nvs_flash soc esp_timer
+                PRIV_REQUIRES esp_ipc)
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

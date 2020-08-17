@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "sdkconfig.h"
+#include "esp_types.h"
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/rtc.h"
@@ -28,9 +29,6 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
-#include "sdkconfig.h"
-
-#include "esp32/rom/ets_sys.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -120,7 +118,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
         dig_cfg.adc2_pattern_len = 1;
         dig_cfg.adc2_pattern = adc2_pattern;
     }
-
+    adc_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
     adc_hal_digi_init();
     adc_hal_digi_controller_config(&dig_cfg);
@@ -132,22 +130,6 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
-
-esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
-{
-    ADC_ENTER_CRITICAL();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
-    ADC_EXIT_CRITICAL();
-    if (adc_hal_vref_output(gpio) != true) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    //Configure RTC gpio
-    rtc_gpio_init(gpio);
-    rtc_gpio_set_direction(gpio, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pullup_dis(gpio);
-    rtc_gpio_pulldown_dis(gpio);
-    return ESP_OK;
-}
 
 /*---------------------------------------------------------------
                         HALL SENSOR
@@ -166,6 +148,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
     // set controller
     adc_hal_set_controller( ADC_NUM_1, ADC_CTRL_RTC );
     hall_value = adc_hal_hall_convert();
+    adc_hal_hall_disable();
     ADC_EXIT_CRITICAL();
 
     return hall_value;

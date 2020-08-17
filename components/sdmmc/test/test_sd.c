@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include "unity.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
@@ -26,9 +29,7 @@
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
-#include <time.h>
-#include <sys/time.h>
-#include <unistd.h>
+#include "esp_rom_gpio.h"
 
 // Can't test eMMC (slot 0) and PSRAM together
 #ifndef CONFIG_SPIRAM
@@ -388,6 +389,8 @@ TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT
 
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
+    // This test can only run under 20MHz on ESP32, because the runner connects the card to
+    // non-IOMUX pins of HSPI.
 
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -448,7 +451,7 @@ __attribute__((unused)) static void test_cd_input(int gpio_cd_num, const sdmmc_h
     // SDMMC host should have configured CD as input.
     // Enable output as well (not using the driver, to avoid touching input
     // enable bits).
-    gpio_matrix_out(gpio_cd_num, SIG_GPIO_OUT_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(gpio_cd_num, SIG_GPIO_OUT_IDX, false, false);
     REG_WRITE(GPIO_ENABLE_W1TS_REG, BIT(gpio_cd_num));
 
     // Check that card initialization fails if CD is high
@@ -513,7 +516,7 @@ __attribute__((unused)) static void test_wp_input(int gpio_wp_num, const sdmmc_h
     // SDMMC host should have configured WP as input.
     // Enable output as well (not using the driver, to avoid touching input
     // enable bits).
-    gpio_matrix_out(gpio_wp_num, SIG_GPIO_OUT_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(gpio_wp_num, SIG_GPIO_OUT_IDX, false, false);
     REG_WRITE(GPIO_ENABLE_W1TS_REG, BIT(gpio_wp_num));
 
     // Check that the card can be initialized with WP low

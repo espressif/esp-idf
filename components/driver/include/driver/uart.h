@@ -514,7 +514,7 @@ int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
  *     - (-1) Parameter error
  *     - OTHERS (>=0) The number of bytes pushed to the TX FIFO
  */
-int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
+int uart_write_bytes(uart_port_t uart_num, const void* src, size_t size);
 
 /**
  * @brief Send data to the UART port from a given buffer and length,
@@ -536,7 +536,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
  *     - (-1) Parameter error
  *     - OTHERS (>=0) The number of bytes pushed to the TX FIFO
  */
-int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
+int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t size, int brk_len);
 
 /**
  * @brief UART read bytes from UART buffer
@@ -550,7 +550,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t si
  *     - (-1) Error
  *     - OTHERS (>=0) The number of bytes read from UART FIFO
  */
-int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickType_t ticks_to_wait);
+int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait);
 
 /**
  * @brief Alias of uart_flush_input.
@@ -858,7 +858,6 @@ esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en);
   * @param always_rx_timeout_en Set to false enable the default behavior of timeout interrupt,
   *                             set it to true to always trigger timeout interrupt.
   *
-  * * @return None
   */
 void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout_en);
 

@@ -33,14 +33,6 @@
  * File: $Id: portserial.c,v 1.60 2013/08/13 15:07:05 Armink add Master Functions $
  */
 
-#include "port.h"
-
-/* ----------------------- Modbus includes ----------------------------------*/
-#include "mb_m.h"
-#include "mbport.h"
-#include "mbrtu.h"
-#include "mbconfig.h"
-
 #include <string.h>
 #include "driver/uart.h"
 #include "soc/dport_access.h"
@@ -49,7 +41,16 @@
 #include "freertos/queue.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+
+/* ----------------------- Modbus includes ----------------------------------*/
+#include "port.h"
+#include "mbport.h"
+#include "mb_m.h"
+#include "mbrtu.h"
+#include "mbconfig.h"
 #include "port_serial_master.h"
+
+/* ----------------------- Defines ------------------------------------------*/
 
 /* ----------------------- Static variables ---------------------------------*/
 static const CHAR *TAG = "MB_MASTER_SERIAL";
@@ -139,6 +140,8 @@ static void vUartTask(void* pvParameters)
                         // Read received data and send it to modbus stack
                         usResult = usMBMasterPortSerialRxPoll(xEvent.size);
                         ESP_LOGD(TAG,"Timeout occured, processed: %d bytes", usResult);
+                        // Block receiver task until data is not processed
+                        vTaskSuspend(NULL);
                     }
                     break;
                 //Event of HW FIFO overflow detected

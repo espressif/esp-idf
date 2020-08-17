@@ -8,10 +8,10 @@ Peripherals API
 
 
     ADC <adc>
-    CAN <can>
     DAC <dac>
     GPIO (including RTC low power I/O) <gpio>
     :esp32s2: HMAC <hmac>
+    :esp32s2: Digital Signature <ds>
     I2C <i2c>
     I2S <i2s>
     LED Control <ledc>
@@ -26,9 +26,11 @@ Peripherals API
     SPI Master <spi_master>
     SPI Slave <spi_slave>
     :esp32: Secure Element <secure_element>
+    :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
     Touch Sensor <touch_pad>
+    TWAI <twai>
     UART <uart>
 
 

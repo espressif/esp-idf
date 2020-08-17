@@ -31,6 +31,7 @@
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/dac_hal.h"
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \
@@ -148,21 +149,45 @@ esp_err_t adc_set_clk_div(uint8_t clk_div)
     return ESP_OK;
 }
 
+static void adc_rtc_chan_init(adc_unit_t adc_unit)
+{
+    if (adc_unit & ADC_UNIT_1) {
+        /* Workaround: Disable the synchronization operation function of ADC1 and DAC.
+           If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage. */
+        dac_hal_rtc_sync_by_adc(false);
+        adc_hal_rtc_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
+        adc_hal_set_sar_clk_div(ADC_NUM_1, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_1));
+#ifdef CONFIG_IDF_TARGET_ESP32
+        adc_hal_hall_disable(); //Disable other peripherals.
+        adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
+#endif
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
+        adc_hal_rtc_output_invert(ADC_NUM_2, SOC_ADC2_DATA_INVERT_DEFAULT);
+        adc_hal_set_sar_clk_div(ADC_NUM_2, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_2));
+    }
+}
+
 esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
     if (adc_unit & ADC_UNIT_1) {
         ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_NUM_1, channel);
+        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     }
     if (adc_unit & ADC_UNIT_2) {
         ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_NUM_2, channel);
+        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
+        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     }
-    ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-    ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-    ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
-    ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     return ESP_OK;
 }
 
@@ -194,7 +219,6 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
     }
     if (adc_unit & ADC_UNIT_2) {
         adc_hal_rtc_set_output_format(ADC_NUM_2, bits);
-        adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
     }
     ADC_EXIT_CRITICAL();
 
@@ -249,6 +273,7 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
     adc_gpio_init(ADC_UNIT_1, channel);
     ADC_ENTER_CRITICAL();
+    adc_rtc_chan_init(ADC_UNIT_1);
     adc_hal_set_atten(ADC_NUM_1, channel, atten);
     ADC_EXIT_CRITICAL();
 
@@ -265,8 +290,6 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 
     ADC_ENTER_CRITICAL();
     adc_hal_rtc_set_output_format(ADC_NUM_1, width_bit);
-    adc_hal_rtc_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
-    adc_hal_set_sar_clk_div(ADC_NUM_1, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_1));
     ADC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -318,10 +341,6 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_power_on();
 
     ADC_ENTER_CRITICAL();
-#ifdef CONFIG_IDF_TARGET_ESP32
-    adc_hal_hall_disable(); //Disable other peripherals.
-    adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
-#endif
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     adc_set_init_code(ADC_NUM_1, channel);             // calibration for adc
 #endif
@@ -392,23 +411,12 @@ esp_err_t adc2_wifi_release(void)
     return ESP_OK;
 }
 
-static esp_err_t adc2_pad_init(adc2_channel_t channel)
-{
-    gpio_num_t gpio_num = 0;
-    ADC_CHECK_RET(adc2_pad_get_io_num(channel, &gpio_num));
-    ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-    ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-    ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
-    ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
-    return ESP_OK;
-}
-
 esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 {
     ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
     ADC_CHECK(atten <= ADC_ATTEN_11db, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
 
-    adc2_pad_init(channel);
+    adc_gpio_init(ADC_UNIT_2, channel);
     ADC2_ENTER_CRITICAL();
     //avoid collision with other tasks
     if ( ADC2_WIFI_LOCK_TRY_ACQUIRE() == -1 ) {
@@ -416,6 +424,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
         ADC2_EXIT_CRITICAL();
         return ESP_ERR_TIMEOUT;
     }
+    adc_rtc_chan_init(ADC_UNIT_2);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     ADC2_WIFI_LOCK_RELEASE();
     ADC2_EXIT_CRITICAL();
@@ -435,9 +444,6 @@ static inline void adc2_config_width(adc_bits_width_t width_bit)
 #endif  //CONFIG_IDF_TARGET_ESP32S2
     ADC_ENTER_CRITICAL();
     adc_hal_rtc_set_output_format(ADC_NUM_2, width_bit);
-    adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
-    adc_hal_rtc_output_invert(ADC_NUM_2, SOC_ADC2_DATA_INVERT_DEFAULT);
-    adc_hal_set_sar_clk_div(ADC_NUM_2, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_2));
     ADC_EXIT_CRITICAL();
 }
 
@@ -529,3 +535,36 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     return ESP_OK;
 }
 
+esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
+{
+    return adc_vref_to_gpio(ADC_UNIT_2, gpio);
+}
+
+esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
+{
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (adc_unit & ADC_UNIT_1) return ESP_ERR_INVALID_ARG;
+#endif
+    adc2_channel_t ch = ADC2_CHANNEL_MAX;
+    /* Check if the GPIO supported. */
+    for (int i = 0; i < ADC2_CHANNEL_MAX; i++) {
+        if (gpio == ADC_GET_IO_NUM(ADC_NUM_2, i)) {
+            ch = i;
+            break;
+        }
+    }
+    if (ch == ADC2_CHANNEL_MAX) return ESP_ERR_INVALID_ARG;
+
+    ADC_ENTER_CRITICAL();
+    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    if (adc_unit & ADC_UNIT_1) {
+        adc_hal_vref_output(ADC_NUM_1, ch, true);
+    } else if (adc_unit & ADC_UNIT_2) {
+        adc_hal_vref_output(ADC_NUM_2, ch, true);
+    }
+    ADC_EXIT_CRITICAL();
+
+    //Configure RTC gpio, Only ADC2's channels IO are supported to output reference voltage.
+    adc_gpio_init(ADC_UNIT_2, ch);
+    return ESP_OK;
+}

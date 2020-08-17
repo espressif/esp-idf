@@ -185,8 +185,12 @@ static inline void gpspi_flash_ll_read_phase(spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
 {
-    dev->misc.cs0_dis = (pin == 0) ? 0 : 1;
-    dev->misc.cs1_dis = (pin == 1) ? 0 : 1;
+    dev->misc.cs0_dis = (pin != 0);
+    dev->misc.cs1_dis = (pin != 1);
+    dev->misc.cs2_dis = (pin != 2);
+    dev->misc.cs3_dis = (pin != 3);
+    dev->misc.cs4_dis = (pin != 4);
+    dev->misc.cs5_dis = (pin != 5);
 }
 
 /**
@@ -203,10 +207,10 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
     ctrl.val &= ~(SPI_FCMD_QUAD_M | SPI_FADDR_QUAD_M | SPI_FREAD_QUAD_M | SPI_FCMD_DUAL_M | SPI_FADDR_DUAL_M | SPI_FREAD_DUAL_M);
     user.val &= ~(SPI_FWRITE_QUAD_M | SPI_FWRITE_DUAL_M);
 
-    // ctrl.val |= SPI_FAST_RD_MODE_M;
     switch (read_mode) {
     case SPI_FLASH_FASTRD:
         //the default option
+    case SPI_FLASH_SLOWRD:
         break;
     case SPI_FLASH_QIO:
         ctrl.fread_quad = 1;
@@ -226,9 +230,6 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
         ctrl.fread_dual = 1;
         user.fwrite_dual = 1;
         break;
-    // case SPI_FLASH_SLOWRD:
-    //     ctrl.fast_rd_mode = 0;
-    //     break;
     default:
         abort();
     }

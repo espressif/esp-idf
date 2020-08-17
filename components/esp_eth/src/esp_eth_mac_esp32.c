@@ -26,9 +26,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "hal/emac.h"
 #include "soc/soc.h"
 #include "sdkconfig.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "emac_esp32";
 #define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -85,7 +88,7 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
     uint32_t to = 0;
     bool busy = true;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
@@ -106,7 +109,7 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
     uint32_t to = 0;
     bool busy = true;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
@@ -274,12 +277,12 @@ static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
 {
     /* Setup SMI MDC GPIO */
     gpio_set_direction(emac->smi_mdc_gpio_num, GPIO_MODE_OUTPUT);
-    gpio_matrix_out(emac->smi_mdc_gpio_num, EMAC_MDC_O_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(emac->smi_mdc_gpio_num, EMAC_MDC_O_IDX, false, false);
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdc_gpio_num], PIN_FUNC_GPIO);
     /* Setup SMI MDIO GPIO */
     gpio_set_direction(emac->smi_mdio_gpio_num, GPIO_MODE_INPUT_OUTPUT);
-    gpio_matrix_out(emac->smi_mdio_gpio_num, EMAC_MDO_O_IDX, false, false);
-    gpio_matrix_in(emac->smi_mdio_gpio_num, EMAC_MDI_I_IDX, false);
+    esp_rom_gpio_connect_out_signal(emac->smi_mdio_gpio_num, EMAC_MDO_O_IDX, false, false);
+    esp_rom_gpio_connect_in_signal(emac->smi_mdio_gpio_num, EMAC_MDI_I_IDX, false);
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdio_gpio_num], PIN_FUNC_GPIO);
 }
 
@@ -455,8 +458,12 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
               "create pm lock failed", err, NULL);
 #endif
     /* create rx task */
-    BaseType_t xReturned = xTaskCreate(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
+                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", err, NULL);
     return &(emac->parent);
 

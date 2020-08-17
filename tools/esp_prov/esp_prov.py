@@ -276,6 +276,32 @@ def get_wifi_config(tp, sec):
         return None
 
 
+def wait_wifi_connected(tp, sec):
+    """
+    Wait for provisioning to report Wi-Fi is connected
+
+    Returns True if Wi-Fi connection succeeded, False if connection consistently failed
+    """
+    TIME_PER_POLL = 5
+    retry = 3
+
+    while True:
+        time.sleep(TIME_PER_POLL)
+        print("\n==== Wi-Fi connection state  ====")
+        ret = get_wifi_config(tp, sec)
+        if ret == "connecting":
+            continue
+        elif ret == "connected":
+            print("==== Provisioning was successful ====")
+            return True
+        elif retry > 0:
+            retry -= 1
+            print("Waiting to poll status again (status %s, %d tries left)..." % (ret, retry))
+        else:
+            print("---- Provisioning failed ----")
+            return False
+
+
 def desc_format(*args):
     desc = ''
     for arg in args:
@@ -471,14 +497,4 @@ if __name__ == '__main__':
         exit(7)
     print("==== Apply config sent successfully ====")
 
-    while True:
-        time.sleep(5)
-        print("\n==== Wi-Fi connection state  ====")
-        ret = get_wifi_config(obj_transport, obj_security)
-        if (ret == 1):
-            continue
-        elif (ret == 0):
-            print("==== Provisioning was successful ====")
-        else:
-            print("---- Provisioning failed ----")
-        break
+    wait_wifi_connected(obj_transport, obj_security)

@@ -82,10 +82,12 @@ menu "ESP32S2-specific"
 
         choice ESP32S2_DATA_CACHE_SIZE
             prompt "Data cache size"
-            default ESP32S2_DATA_CACHE_8KB
+            default ESP32S2_DATA_CACHE_0KB if !ESP32S2_SPIRAM_SUPPORT
+            default ESP32S2_DATA_CACHE_8KB if ESP32S2_SPIRAM_SUPPORT
             help
                 Data cache size to be set on application startup.
-                If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap.
+                If you use 0KB data cache, the other 16KB will be added to the heap
+                If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap
 
             config ESP32S2_DATA_CACHE_0KB
                 depends on !ESP32S2_SPIRAM_SUPPORT
@@ -180,22 +182,6 @@ menu "ESP32S2-specific"
                 help
                     The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
         endmenu
-        config SPIRAM_SPIWP_SD3_PIN
-            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
-            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
-            range 0 33
-            default 28
-            help
-                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
-                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
-
-                Different from esp32 chip, on esp32s2, the WP pin would also be defined in efuse. This value would only
-                be used if the WP pin recorded in efuse SPI_PAD_CONFIG_xxx is invalid.
-
-                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
-                bootloader.
-
-
         config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"
             default n
@@ -212,30 +198,11 @@ menu "ESP32S2-specific"
                 If SPIRAM_FETCH_INSTRUCTIONS also enabled,
                 you can run the instruction when erasing or programming the flash.
 
-        config SPIRAM_USE_AHB_DBUS3
-            bool "Enable AHB DBUS3 to access SPIRAM"
-            default n
-            help
-                If Enabled, if SPI_CONFIG_SIZE is bigger then 10MB+576KB,
-                then you can have 4MB more space to map the SPIRAM.
-                However, the AHB bus is slower than other data cache buses.
-
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
             default SPIRAM_SPEED_40M
             help
                 Select the speed for the SPI RAM chip.
-                If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
-
-                1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
-                2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
-                3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
-
-                Note: If the third mode(80Mhz+80Mhz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
-                will be occupied by the system. Which SPI host to use can be selected by the config item
-                SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
-                option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
-                (ESPTOOLPY_FLASHFREQ_80M is true)
 
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"
@@ -319,7 +286,7 @@ menu "ESP32S2-specific"
     config ESP32S2_ULP_COPROC_RESERVE_MEM
         int
         prompt "RTC slow memory reserved for coprocessor" if ESP32S2_ULP_COPROC_ENABLED
-        default 512 if ESP32S2_ULP_COPROC_ENABLED
+        default 2048 if ESP32S2_ULP_COPROC_ENABLED
         range 32 8192 if ESP32S2_ULP_COPROC_ENABLED
         default 0 if !ESP32S2_ULP_COPROC_ENABLED
         range 0 0 if !ESP32S2_ULP_COPROC_ENABLED
@@ -327,6 +294,13 @@ menu "ESP32S2-specific"
             Bytes of memory to reserve for ULP coprocessor firmware & data.
 
             Data is reserved at the beginning of RTC slow memory.
+
+    config ESP32S2_ULP_COPROC_RISCV
+        bool "Enable RISC-V as ULP coprocessor"
+        depends on ESP32S2_ULP_COPROC_ENABLED
+        default n
+        help
+            Set this to y to use the RISC-V coprocessor instead of the FSM-ULP.
 
     config ESP32S2_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
@@ -453,6 +427,7 @@ menu "ESP32S2-specific"
             bool "Internal 90kHz RC oscillator"
         config ESP32S2_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
+            select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32S2_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
         config ESP32S2_RTC_CLK_SRC_INT_8MD256
@@ -498,6 +473,50 @@ menu "ESP32S2-specific"
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
 
+    config ESP32S2_KEEP_USB_ALIVE
+        bool "Keep USB peripheral enabled at start up" if !ESP_CONSOLE_USB_CDC
+        default y if ESP_CONSOLE_USB_CDC
+        help
+            During the application initialization process, all the peripherals except UARTs and timers
+            are reset. Enable this option to keep USB peripheral enabled.
+            This option is automatically enabled if "USB CDC" console is selected.
+
+    config ESP32S2_RTCDATA_IN_FAST_MEM
+        bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+        default n
+        help
+            This option allows to place .rtc_data and .rtc_rodata sections into
+            RTC fast memory segment to free the slow memory region for ULP programs.
+
+    config ESP32S2_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            If this option is disabled, the DRAM part of the heap starts right after the .bss section,
+            within the dram0_0 region. As a result, adding or removing some static variables
+            will change the available heap size.
+
+            If this option is enabled, the DRAM part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32S2_FIXED_STATIC_RAM_SIZE
+
+    config ESP32S2_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x10000
+        range 0 0x34000
+        depends on ESP32S2_USE_FIXED_STATIC_RAM_SIZE
+        help
+            RAM size dedicated for static variables (.data & .bss sections).
+
+    config ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+        bool "Enable RTC fast memory for dynamic allocations"
+        depends on !ESP32S2_MEMPROT_FEATURE
+        default y
+        help
+            This config option allows to add RTC fast memory region to system heap with capability
+            similar to that of DRAM region but without DMA. This memory will be consumed first per
+            heap initialization order by early startup services and scheduler related code. Speed
+            wise RTC fast memory operates on APB clock and hence does not have much performance impact.
+
 endmenu  # ESP32S2-Specific
 
 menu "Power Management"
@@ -526,19 +545,6 @@ menu "Power Management"
             min frequency is set to XTAL frequency.
             If disabled, DFS will not be active until the application
             configures it using esp_pm_configure function.
-
-    config PM_USE_RTC_TIMER_REF
-        bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
-        depends on PM_ENABLE && (ESP32S2_TIME_SYSCALL_USE_RTC || ESP32S2_TIME_SYSCALL_USE_RTC_FRC1)
-        default n
-        help
-            When APB clock frequency changes, high-resolution timer (esp_timer)
-            scale and base value need to be adjusted. Each adjustment may cause
-            small error, and over time such small errors may cause time drift.
-            If this option is enabled, RTC timer will be used as a reference to
-            compensate for the drift.
-            It is recommended that this option is only used if 32k XTAL is selected
-            as RTC clock source.
 
     config PM_PROFILING
         bool "Enable profiling counters for PM locks"

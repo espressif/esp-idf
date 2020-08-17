@@ -28,7 +28,7 @@ Flash Mappings vs SW Flash Breakpoints
 
 In order to set/clear software breakpoints in flash, OpenOCD needs to know their flash addresses. To accomplish conversion from the {IDF_TARGET_NAME} address space to the flash one, OpenOCD uses mappings of program's code regions resided in flash. Those mappings are kept in the image header which is prepended to program binary data (code and data segments) and is specific to every application image written to the flash. So to support software flash breakpoints OpenOCD should know where application image under debugging is resided in the flash. By default OpenOCD reads partition table at 0x8000 and uses mappings from the first found application image, but there can be the cases when it will not work, e.g. partition table is not at standard flash location or even there can be multiple images: one factory and two OTA and you may want to debbug any of them. To cover all possible debugging scenarios OpenOCD supports special command which can be used to set arbitrary location of application image to debug. The command has the following format:
 
-``esp32 appimage_offset <offset>``
+``esp appimage_offset <offset>``
 
 Offset should be in hex format. To reset to the default behaviour you can specify ``-1`` as offset.
 
@@ -36,7 +36,11 @@ Offset should be in hex format. To reset to the default behaviour you can specif
 
     Since GDB requests memory map from OpenOCD only once when connecting to it, this command should be specified in one of the TCL configuration files, or passed to OpenOCD via its command line. In the latter case command line should look like below:
 
-    ``openocd -f board/esp32-wrover-kit-3.3v.cfg.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
+    .. highlight:: bash
+
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-appimage-offset
+        :end-before: ---
 
     Another option is to execute that command via OpenOCD telnet session and then connect GDB, but it seems to be less handy.
 
@@ -79,9 +83,9 @@ OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS task
 
     The MTDI pin of ESP32, being among four pins used for JTAG communication, is also one of ESP32's bootstrapping pins. On power up ESP32 is sampling binary level on MTDI to set it's internal voltage regulator used to supply power to external SPI flash chip. If binary level on MDTI pin on power up is low, the voltage regulator is set to deliver 3.3 V, if it is high, then the voltage is set to 1.8 V. The MTDI pin should have a pull-up or may rely on internal weak pull down resistor (see `ESP32 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ for details), depending on the type of SPI chip used. Once JTAG is connected, it overrides the pull-up or pull-down resistor that is supposed to do the bootstrapping.
 
-    To handle this issue OpenOCD's board configuration file (e.g. ``boards\esp-wroom-32.cfg`` for ESP32-WROOM-32 module) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
+    To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
 
-    Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash, while WROVER modules use 1.8 V flash.
+    Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash. WROVER earlier than ESP32-WROVER-B use 1.8 V flash, while ESP32-WROVER-B and -E modules use 3.3 V flash.
 
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
@@ -120,88 +124,65 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 Configuration of OpenOCD for specific target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenOCD needs to be told what JTAG adapter to use and processor the JTAG adapter is connected to. To do so, use existing **board** configuration files located in OpenOCD's ``share/openocd/scripts/board`` folder.
+There are several kinds of OpenOCD configuration files (``*.cfg``). All configuration files are located in subdirectories of ``share/openocd/scripts`` directory of OpenOCD distribution (or ``tcl/scripts`` directory of the source repository). For the purposes of this guide, the most important ones are ``board``, ``interface`` and ``target``.
 
-For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed, use the following configuration files:
+* ``interface`` configuration files describe the JTAG adapter. Examples of JTAG adapters are ESP-Prog and J-Link.
+* ``target`` configuration files describe specific chips, or in some cases, modules.
+* ``board`` configuration files are provided for development boards with a built-in JTAG adapter. Such files include an ``interface`` configuration file to choose the adapter, and ``target`` configuration file to choose the chip/module.
 
-* ``board/esp32-wrover-kit-3.3v.cfg``
+The following configuration files are available for {IDF_TARGET_NAME}:
 
-Optionally prepare configuration by yourself. To do so, you can check existing files and modify them to match you specific hardware. Below is the summary of available configuration parameters for **board** configuration.
-
-
-.. highlight:: none
-
-Adapter's clock speed
-""""""""""""""""""""""
-
-::
-
-    adapter_khz 20000
-
-See :ref:`jtag-debugging-tip-optimize-jtag-speed` for guidance how to set this value.
-
-.. only:: esp32
-
-    Single core debugging
-    """""""""""""""""""""
-
-    ::
-
-        set ESP32_ONLYCPU 1
-
-    Comment out this line for dual core debugging.
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: openocd-cfg-files
+    :end-before: ---
 
 
-Disable RTOS support
-""""""""""""""""""""
+If you are using one of the boards which have a pre-defined configuration file, you only need to pass one ``-f`` argument to OpenOCD, specifying that file.
 
-::
+If you are using a board not listed here, you need to specify both the interface configuration file and target configuration file.
 
-    set ESP32_RTOS none
+Custom configuration files
+""""""""""""""""""""""""""
 
-Comment out this line to have RTOS support.
+OpenOCD configuration files are written in TCL, and include a variety of choices for customization and scripting. This can be useful for non-standard debugging situations. Please refer to `OpenOCD Manual`_ for the TCL scripting reference.
 
-.. only:: esp32
+.. _jtag-debugging-tip-openocd-config-vars:
 
-    Power supply voltage of ESP32's SPI flash chip
-    """"""""""""""""""""""""""""""""""""""""""""""
+OpenOCD configuration variables
+"""""""""""""""""""""""""""""""
 
-    ::
+The following variables can be optionally set before including the ESP-specific target configuration file. This can be done either in a custom configuration file, or from the command line.
 
-        set ESP32_FLASH_VOLTAGE 1.8
+The syntax for setting a variable in TCL is:
 
-    Comment out this line to set 3.3 V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
+.. code-block:: tcl
 
+    set VARIABLE_NAME value
 
-    Configuration file for ESP32 targets
-    """"""""""""""""""""""""""""""""""""
+To set a variable from the command line (replace the name of .cfg file with the correct file for your board):
 
-    ::
+.. code-block:: bash
 
-        source [find target/esp32.cfg]
+    openocd -c 'set VARIABLE_NAME value' -f board/esp-xxxxx-kit.cfg
 
-    .. note::
+It is important to set the variable before including the ESP-specific configuration file, otherwise the variable will not have effect. You can set multiple variables by repeating the ``-c`` option.
 
-        Do not change ``source [find target/esp32.cfg]`` line unless you are familiar with OpenOCD internals.
+.. list-table:: Common ESP-related OpenOCD variables
+    :widths: 25 75
+    :header-rows: 1
 
-    Currently ``target/esp32.cfg`` remains the only configuration file for ESP32 targets (esp108 and esp32). The matrix of supported configurations is as follows:
+    * - Variable
+      - Description
+    * - ``ESP_RTOS``
+      - Set to ``none`` to disable RTOS support. In this case, thread list will not be available in GDB. Can be useful when debugging FreeRTOS itself, and stepping through the scheduler code.
+    * - ``ESP_FLASH_SIZE``
+      - Set to ``0`` to disable Flash breakpoints support.
+    * - ``ESP_SEMIHOST_BASEDIR``
+      - Set to the path (on the host) which will be the default directory for semihosting functions.
 
-        +---------------+---------------+---------------+
-        | Dual/single   | RTOS          | Target used   |
-        +===============+===============+===============+
-        | dual          | FreeRTOS      | esp32         |
-        +---------------+---------------+---------------+
-        | single        | FreeRTOS      | esp108 (*)    |
-        +---------------+---------------+---------------+
-        | dual          | none          | esp108        |
-        +---------------+---------------+---------------+
-        | single        | none          | esp108        |
-        +---------------+---------------+---------------+
-
-        (*) — we plan to fix this and add support for single core debugging with esp32 target in a subsequent commits.
-
-    Look inside ``board/esp-wroom-32.cfg`` for additional information provided in comments besides each configuration parameter.
-
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: openocd-target-specific-config-vars
+    :end-before: ---
 
 .. _jtag-debugging-tip-reset-by-debugger:
 
@@ -218,39 +199,15 @@ Do not use JTAG pins for something else
 
 Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG us using the following pins:
 
-.. only:: esp32
-
-    +---+-----------------------+-------------+
-    |   | ESP32 Pin             | JTAG Signal |
-    +===+=======================+=============+
-    | 1 | MTDO / GPIO15         | TDO         |
-    +---+-----------------------+-------------+
-    | 2 | MTDI / GPIO12         | TDI         |
-    +---+-----------------------+-------------+
-    | 3 | MTCK / GPIO13         | TCK         |
-    +---+-----------------------+-------------+
-    | 4 | MTMS / GPIO14         | TMS         |
-    +---+-----------------------+-------------+
-
-.. only:: esp32s2
-
-    +---+-----------------------+-------------+
-    |   | ESP32-S2 Pin          | JTAG Signal |
-    +===+=======================+=============+
-    | 1 | MTDO / GPIO40         | TDO         |
-    +---+-----------------------+-------------+
-    | 2 | MTDI / GPIO41         | TDI         |
-    +---+-----------------------+-------------+
-    | 3 | MTCK / GPIO39         | TCK         |
-    +---+-----------------------+-------------+
-    | 4 | MTMS / GPIO42         | TMS         |
-    +---+-----------------------+-------------+
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: jtag-pins
+    :end-before: ---
 
 JTAG communication will likely fail, if configuration of JTAG pins is changed by user application. If OpenOCD initializes correctly (detects the two Tensilica cores), but loses sync and spews out a lot of DTR/DIR errors when the program is ran, it is likely that the application reconfigures the JTAG pins to something else, or the user forgot to connect Vtar to a JTAG adapter that needed it.
 
 .. highlight:: none
 
-Below is an excerpt from series of errors reported by GDB after the application stepped into the code that reconfigured MTDO / GPIO15 to be an input::
+Below is an excerpt from series of errors reported by GDB after the application stepped into the code that reconfigured MTDO pin to be an input::
 
     cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
     cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
@@ -273,9 +230,7 @@ However, OpenOCD may attempt to automatically read and write the flash in order 
 - Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
 - If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
 
-To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line. For example::
-
-    openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
+To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line, see :ref:`jtag-debugging-tip-openocd-config-vars`.
 
 .. note::
 
@@ -299,7 +254,7 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
 1.  In issue report provide details of your configuration:
 
-    a. JTAG adapter type.
+    a. JTAG adapter type, and the chip/module being debugged.
     b. Release of ESP-IDF used to compile and load application that is being debugged.
     c. Details of OS used for debugging.
     d. Is OS running natively on a PC or on a virtual machine?
@@ -312,23 +267,26 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
     OpenOCD:
 
-        ::
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-d3
+        :end-before: ---
 
-            openocd -l openocd_log.txt -d3 -f board/esp32-wrover-kit-3.3v.cfg
+    Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d3`` is set. If you still like to see the log on the screen, then use another command instead:
 
-        Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d3`` is set. If you still like to see the log on the screen, then use another command instead:
-
-        ::
-
-            openocd -d3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-d3-tee
+        :end-before: ---
 
     Debugger:
 
-        ::
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-gdb-remotelog
+        :end-before: ---
 
-           xtensa-esp32-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
-
-        Optionally add command ``remotelogfile gdb_log.txt`` to the ``gdbinit`` file.
+    Optionally add command ``remotelogfile gdb_log.txt`` to the ``gdbinit`` file.
 
 
 4.  Attach both ``openocd_log.txt`` and ``gdb_log.txt`` files to your issue report.
+
+
+.. _OpenOCD Manual: http://openocd.org/doc/html/index.html

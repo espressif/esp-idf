@@ -20,9 +20,8 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp32/rom/efuse.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_periph.h"
@@ -33,12 +32,7 @@
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
 
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/cache_err_int.h"
-#endif
-
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -84,9 +78,19 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_enable(&wdt1_context);
 
     // Flush any data left in UART FIFOs
-    uart_tx_wait_idle(0);
-    uart_tx_wait_idle(1);
-    uart_tx_wait_idle(2);
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(2);
+
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    if (esp_ptr_external_ram(get_sp())) {
+        // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
+        // then need to switch SP to Internal Memory otherwise
+        // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
+        uint32_t new_sp = SOC_DRAM_LOW + (SOC_DRAM_HIGH - SOC_DRAM_LOW) / 2;
+        SET_STACK(new_sp);
+    }
+#endif
 
     // Disable cache
     Cache_Read_Disable(0);
@@ -111,7 +115,8 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
-            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST);
+            //UART TX FIFO cannot be reset correctly on ESP32, so reset the UART memory by DPORT here.
+            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST | DPORT_UART_MEM_RST); 
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
@@ -157,7 +162,15 @@ void esp_chip_info(esp_chip_info_t* out_info)
     int package = (efuse_rd3 & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
-        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+inline bool soc_has_cache_lock_bug(void)
+{
+    return (esp_efuse_get_chip_ver() == 3);
+}
+#endif

@@ -18,15 +18,14 @@
 extern "C" {
 #endif
 
-
+#include <stdbool.h>
+#include <stdint.h>
 // Espressif
 #include "driver/periph_ctrl.h"
 #include "freertos/xtensa_api.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
-#include "esp32s2/rom/gpio.h"
 #include "soc/dport_reg.h"
-#include "soc/gpio_sig_map.h"
 #include "soc/usb_periph.h"
 #include "tusb_config.h"
 // TinyUSB

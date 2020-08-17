@@ -10,6 +10,7 @@
     when: always
     paths:
       - docs/_build/*/*/*.txt
+      - docs/_build/*/*/linkcheck/*.txt
     expire_in: 1 week
   allow_failure: true
   dependencies: []

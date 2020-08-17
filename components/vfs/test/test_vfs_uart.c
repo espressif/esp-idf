@@ -19,11 +19,7 @@
 #include <sys/termios.h>
 #include <sys/errno.h>
 #include "unity.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/uart.h"
-#endif
+#include "esp_rom_uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -35,11 +31,11 @@
 
 static void fwrite_str_loopback(const char* str, size_t size)
 {
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     UART0.conf0.loopback = 1;
     fwrite(str, 1, size, stdout);
     fflush(stdout);
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     vTaskDelay(2 / portTICK_PERIOD_MS);
     UART0.conf0.loopback = 0;
 }
@@ -52,7 +48,7 @@ static void flush_stdin_stdout(void)
         ;
     }
     fflush(stdout);
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
 TEST_CASE("can read from stdin", "[vfs]")
@@ -81,8 +77,8 @@ TEST_CASE("can read from stdin", "[vfs]")
 
 TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
 {
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     flush_stdin_stdout();
     const char* send_str = "1234567890\n\r123\r\n4\n";

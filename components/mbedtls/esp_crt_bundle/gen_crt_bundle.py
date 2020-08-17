@@ -30,6 +30,7 @@ import struct
 import argparse
 import csv
 import re
+from io import open
 
 try:
     from cryptography import x509
@@ -80,7 +81,7 @@ class CertificateBundle:
         try:
             if file_path.endswith('.pem'):
                 status("Parsing certificates from %s" % file_path)
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     crt_str = f.read()
                     self.add_from_pem(crt_str)
                     return True
@@ -153,7 +154,7 @@ class CertificateBundle:
     def add_with_filter(self, crts_path, filter_path):
 
         filter_set = set()
-        with open(filter_path, 'r') as f:
+        with open(filter_path, 'r', encoding='utf-8') as f:
             csv_reader = csv.reader(f, delimiter=',')
 
             # Skip header
@@ -163,7 +164,7 @@ class CertificateBundle:
 
         status("Parsing certificates from %s" % crts_path)
         crt_str = []
-        with open(crts_path, 'r') as f:
+        with open(crts_path, 'r', encoding='utf-8') as f:
             crt_str = f.read()
 
             # Split all certs into a list of (name, certificate string) tuples

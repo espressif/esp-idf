@@ -20,6 +20,8 @@
 #endif
 
 #include "ssl_code.h"
+#include <stddef.h>
+#include <stdint.h>
 
 typedef void SSL_CIPHER;
 
@@ -30,6 +32,8 @@ typedef void RSA;
 
 typedef void STACK;
 
+typedef void DH;
+
 #define ossl_inline inline
 
 #define SSL_METHOD_CALL(f, s, ...)        s->method->func->ssl_##f(s, ##__VA_ARGS__)
@@ -37,7 +41,7 @@ typedef void STACK;
 #define EVP_PKEY_METHOD_CALL(f, k, ...)   k->method->pkey_##f(k, ##__VA_ARGS__)
 
 typedef int (*OPENSSL_sk_compfunc)(const void *, const void *);
-
+typedef int (*openssl_verify_callback)(int, X509_STORE_CTX *);
 struct stack_st;
 typedef struct stack_st OPENSSL_STACK;
 
@@ -100,6 +104,8 @@ struct evp_pkey_st {
     void *pkey_pm;
 
     const PKEY_METHOD *method;
+
+    int ref_counter;
 };
 
 struct x509_st {
@@ -152,8 +158,16 @@ struct X509_VERIFY_PARAM_st {
 };
 
 struct bio_st {
-    const unsigned char * data;
+
+    unsigned char * data;
     int dlen;
+    BIO* peer;
+    size_t offset;
+    size_t roffset;
+    size_t size;
+    size_t flags;
+    size_t type;
+
 };
 
 typedef enum { ALPN_INIT, ALPN_ENABLE, ALPN_DISABLE, ALPN_ERROR } ALPN_STATUS;
@@ -165,6 +179,9 @@ struct ssl_alpn_st {
 #define ALPN_LIST_MAX 10
      const char *alpn_list[ALPN_LIST_MAX];
 };
+
+typedef int pem_password_cb(char *buf, int size, int rwflag, void *userdata);
+
 
 struct ssl_ctx_st
 {
@@ -193,6 +210,16 @@ struct ssl_ctx_st
     int read_buffer_len;
 
     X509_VERIFY_PARAM param;
+
+    void *default_passwd_callback_userdata;
+
+    pem_password_cb *default_passwd_callback;
+
+    struct stack_st_X509 *extra_certs;
+
+    int max_version;
+    int min_version;
+
 };
 
 struct ssl_st
@@ -230,12 +257,13 @@ struct ssl_st
 
     X509_VERIFY_PARAM param;
 
-    int err;
+    uint32_t mode;
 
     void (*info_callback) (const SSL *ssl, int type, int val);
 
     /* SSL low-level system arch point */
     void *ssl_pm;
+    void *bio;
 };
 
 struct ssl_method_st {
@@ -297,6 +325,13 @@ struct pkey_method_st {
     void (*pkey_free)(EVP_PKEY *pkey);
 
     int (*pkey_load)(EVP_PKEY *pkey, const unsigned char *buf, int len);
+};
+
+struct bio_method_st {
+
+    unsigned type;
+
+    unsigned size;
 };
 
 

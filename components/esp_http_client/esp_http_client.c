@@ -52,6 +52,7 @@ typedef struct {
     esp_http_buffer_t   *buffer;        /*!< data buffer as linked list */
     int                 status_code;    /*!< status code (integer) */
     int                 content_length; /*!< data length */
+    int                 chunk_length;   /*!< chunk length */
     int                 data_offset;    /*!< offset to http data (Skip header) */
     int                 data_process;   /*!< data processed */
     int                 method;         /*!< http method */
@@ -90,6 +91,7 @@ typedef enum {
 struct esp_http_client {
     int                         redirect_counter;
     int                         max_redirection_count;
+    int                         max_authorization_retries;
     int                         process_again;
     struct http_parser          *parser;
     struct http_parser_settings *parser_settings;
@@ -137,8 +139,9 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
-static int DEFAULT_MAX_REDIRECT = 10;
-static int DEFAULT_TIMEOUT_MS = 5000;
+static const int DEFAULT_MAX_REDIRECT = 10;
+static const int DEFAULT_MAX_AUTH_RETRIES = 10;
+static const int DEFAULT_TIMEOUT_MS = 5000;
 
 static const char *HTTP_METHOD_MAPPING[] = {
     "GET",
@@ -150,7 +153,14 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "NOTIFY",
     "SUBSCRIBE",
     "UNSUBSCRIBE",
-    "OPTIONS"
+    "OPTIONS",
+    "COPY",
+    "MOVE",
+    "LOCK",
+    "UNLOCK",
+    "PROPFIND",
+    "PROPPATCH",
+    "MKCOL"
 };
 
 static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
@@ -269,6 +279,14 @@ static int http_on_chunk_complete(http_parser *parser)
     return 0;
 }
 
+static int http_on_chunk_header(http_parser *parser)
+{
+    esp_http_client_handle_t client = parser->data;
+    client->response->chunk_length = parser->content_length;
+    ESP_LOGD(TAG, "http_on_chunk_header, chunk_length");
+    return 0;
+}
+
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value)
 {
     return http_header_set(client->request->headers, key, value);
@@ -349,6 +367,7 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->event_handler = config->event_handler;
     client->timeout_ms = config->timeout_ms;
     client->max_redirection_count = config->max_redirection_count;
+    client->max_authorization_retries = config->max_authorization_retries;
     client->user_data = config->user_data;
     client->buffer_size_rx = config->buffer_size;
     client->buffer_size_tx = config->buffer_size_tx;
@@ -364,6 +383,12 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
 
     if (client->max_redirection_count == 0) {
         client->max_redirection_count = DEFAULT_MAX_REDIRECT;
+    }
+
+    if (client->max_authorization_retries == 0) {
+        client->max_authorization_retries = DEFAULT_MAX_AUTH_RETRIES;
+    } else if (client->max_authorization_retries == -1) {
+        client->max_authorization_retries = 0;
     }
 
     if (config->path) {
@@ -604,6 +629,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     client->parser_settings->on_body = http_on_body;
     client->parser_settings->on_message_complete = http_on_message_complete;
     client->parser_settings->on_chunk_complete = http_on_chunk_complete;
+    client->parser_settings->on_chunk_header = http_on_chunk_header;
     client->parser->data = client;
     client->event.client = client;
 
@@ -621,14 +647,22 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
     }
     esp_http_client_close(client);
     esp_transport_list_destroy(client->transport_list);
-    http_header_destroy(client->request->headers);
-    free(client->request->buffer->data);
-    free(client->request->buffer);
-    free(client->request);
-    http_header_destroy(client->response->headers);
-    free(client->response->buffer->data);
-    free(client->response->buffer);
-    free(client->response);
+    if (client->request) {
+        http_header_destroy(client->request->headers);
+        if (client->request->buffer) {
+            free(client->request->buffer->data);
+        }
+        free(client->request->buffer);
+        free(client->request);
+    }
+    if (client->response) {
+        http_header_destroy(client->response->headers);
+        if (client->response->buffer) {
+            free(client->response->buffer->data);
+        }
+        free(client->response->buffer);
+        free(client->response);
+    }
 
     free(client->parser);
     free(client->parser_settings);
@@ -700,7 +734,10 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
     if (purl.field_data[UF_HOST].len) {
         http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
-        HTTP_MEM_CHECK(TAG, client->connection_info.host, return ESP_ERR_NO_MEM);
+        HTTP_MEM_CHECK(TAG, client->connection_info.host, {
+            free(old_host);
+            return ESP_ERR_NO_MEM;
+        });
     }
     // Close the connection if host was changed
     if (old_host && client->connection_info.host
@@ -1283,6 +1320,10 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
     if (client->state != HTTP_STATE_RES_COMPLETE_HEADER) {
         return;
     }
+    if (client->redirect_counter >= client->max_authorization_retries) {
+        ESP_LOGE(TAG, "Error, reached max_authorization_retries count=%d", client->redirect_counter);
+        return;
+    }
 
     char *auth_header = client->auth_header;
     if (auth_header) {
@@ -1345,4 +1386,18 @@ esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, co
         ESP_LOGE(TAG, "Failed to get URL");
     }
     return ESP_FAIL;
+}
+
+esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len)
+{
+    if (client == NULL || len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (esp_http_client_is_chunked_response(client)) {
+        *len = client->response->chunk_length;
+    } else {
+        ESP_LOGE(TAG, "Response is not chunked");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }

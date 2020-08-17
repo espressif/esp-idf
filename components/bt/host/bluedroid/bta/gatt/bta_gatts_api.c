@@ -31,6 +31,7 @@
 #include "bta/bta_gatt_api.h"
 #include "bta_gatts_int.h"
 #include "osi/allocator.h"
+#include "stack/l2c_api.h"
 
 /*****************************************************************************
 **  Constants
@@ -135,7 +136,7 @@ void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if)
 ** Function         BTA_GATTS_CreateService
 **
 ** Description      Create a service. When service creation is done, a callback
-**                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
+**                  event BTA_GATTS_CREATE_EVT is called to report status
 **                  and service ID to the profile. The service ID obtained in
 **                  the callback function needs to be used when adding included
 **                  service and characteristics/descriptors into the service.
@@ -425,6 +426,10 @@ void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 dat
             p_buf->len = data_len;
             memcpy(p_buf->value, p_data, data_len);
 
+        }
+        if(need_confirm == false){
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
         }
         bta_sys_sendmsg(p_buf);
     }

@@ -27,6 +27,13 @@ macro(__target_init)
 
     # Finally, set IDF_TARGET in cache
     set(IDF_TARGET ${env_idf_target} CACHE STRING "IDF Build Target")
+
+    # Check if IDF_ENV_FPGA environment is set
+    set(env_idf_env_fpga $ENV{IDF_ENV_FPGA})
+    if(${env_idf_env_fpga})
+        idf_build_set_property(__IDF_ENV_FPGA "y")
+        message(STATUS "IDF_ENV_FPGA is set, building for FPGA environment")
+    endif()
 endmacro()
 
 #

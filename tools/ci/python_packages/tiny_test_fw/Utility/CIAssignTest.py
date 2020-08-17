@@ -44,6 +44,7 @@ import re
 import json
 
 import yaml
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -67,13 +68,23 @@ class Group(object):
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
         # we use ci_job_match_keys to match CI job tags. It's a set of required tags.
-        self.ci_job_match_keys = set([self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS])
+        self.ci_job_match_keys = self._get_match_keys(case)
 
     @staticmethod
     def _get_case_attr(case, attr):
         # we might use different type for case (dict or test_func)
         # this method will do get attribute form cases
         return case.case_info[attr]
+
+    def _get_match_keys(self, case):
+        keys = []
+        for attr in self.CI_JOB_MATCH_KEYS:
+            val = self._get_case_attr(case, attr)
+            if isinstance(val, list):
+                keys.extend(val)
+            else:
+                keys.append(val)
+        return set(keys)
 
     def accept_new_case(self):
         """
@@ -143,6 +154,7 @@ class AssignTest(object):
     DEFAULT_FILTER = {
         "category": "function",
         "ignore": False,
+        "supported_in_ci": True,
     }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
@@ -177,16 +189,15 @@ class AssignTest(object):
         job_list.sort(key=lambda x: x["name"])
         return job_list
 
-    def _search_cases(self, test_case_path, case_filter=None, test_case_file_pattern=None):
+    def search_cases(self, case_filter=None):
         """
-        :param test_case_path: path contains test case folder
         :param case_filter: filter for test cases. the filter to use is default filter updated with case_filter param.
         :return: filtered test case list
         """
         _case_filter = self.DEFAULT_FILTER.copy()
         if case_filter:
             _case_filter.update(case_filter)
-        test_methods = SearchCases.Search.search_test_cases(test_case_path, test_case_file_pattern)
+        test_methods = SearchCases.Search.search_test_cases(self.test_case_path, self.test_case_file_pattern)
         return CaseConfig.filter_test_cases(test_methods, _case_filter)
 
     def _group_cases(self):
@@ -234,12 +245,11 @@ class AssignTest(object):
 
         :return: filter for search test cases
         """
-        bot_filter = os.getenv("BOT_CASE_FILTER")
-        if bot_filter:
-            bot_filter = json.loads(bot_filter)
-        else:
-            bot_filter = dict()
-        return bot_filter
+        res = dict()
+        for bot_filter in [os.getenv('BOT_CASE_FILTER'), os.getenv('BOT_TARGET_FILTER')]:
+            if bot_filter:
+                res.update(json.loads(bot_filter))
+        return res
 
     def _apply_bot_test_count(self):
         """
@@ -276,7 +286,7 @@ class AssignTest(object):
         failed_to_assign = []
         assigned_groups = []
         case_filter = self._apply_bot_filter()
-        self.test_cases = self._search_cases(self.test_case_path, case_filter, self.test_case_file_pattern)
+        self.test_cases = self.search_cases(case_filter)
         self._apply_bot_test_count()
         test_groups = self._group_cases()
 

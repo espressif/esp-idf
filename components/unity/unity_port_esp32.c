@@ -15,12 +15,11 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "soc/cpu.h"
+#include "esp_rom_uart.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
-#include "esp32s2/rom/uart.h"
 #endif
 
 static uint32_t s_test_start, s_test_stop;
@@ -28,17 +27,17 @@ static uint32_t s_test_start, s_test_stop;
 void unity_putc(int c)
 {
     if (c == '\n') {
-        uart_tx_one_char('\r');
-        uart_tx_one_char('\n');
+        esp_rom_uart_tx_one_char('\r');
+        esp_rom_uart_tx_one_char('\n');
     } else if (c == '\r') {
     } else {
-        uart_tx_one_char(c);
+        esp_rom_uart_tx_one_char(c);
     }
 }
 
 void unity_flush(void)
 {
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
 /* To start a unit test from a GDB session without console input,
@@ -60,16 +59,16 @@ void unity_gets(char *dst, size_t len)
         memset(unity_input_from_gdb, 0, sizeof(unity_input_from_gdb));
         return;
     }
-    /* UartRxString length argument is uint8_t */
+    /* esp_rom_uart_rx_string length argument is uint8_t */
     if (len >= UINT8_MAX) {
         len = UINT8_MAX;
     }
     /* Flush anything already in the RX buffer */
     uint8_t ignore;
-    while (uart_rx_one_char(&ignore) == OK) {
+    while (esp_rom_uart_rx_one_char(&ignore) == 0) {
     }
     /* Read input */
-    UartRxString((uint8_t *) dst, len);
+    esp_rom_uart_rx_string((uint8_t *) dst, len);
 }
 
 void unity_exec_time_start(void)

@@ -428,7 +428,8 @@ uint8_t UartConnCheck(uint8_t uart_no);
 
 /**
   * @brief Initialize the USB ACM UART
-  * Needs to be fed a buffer of at least 128 bytes, plus any rx buffer you may want to have.
+  * Needs to be fed a buffer of at least 128 bytes (ESP_ROM_CDC_ACM_WORK_BUF_MIN),
+  * plus any rx buffer you may want to have.
   *
   * @param cdc_acm_work_mem Pointer to work mem for CDC-ACM code
   * @param cdc_acm_work_mem_len Length of work mem

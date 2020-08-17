@@ -40,7 +40,7 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
-#if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED
+#if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED || MB_TCP_ENABLED
 
 #if MB_FUNC_READ_COILS_ENABLED
 
@@ -124,4 +124,3 @@ eMBFuncReadDiscreteInputs( UCHAR * pucFrame, USHORT * usLen )
 #endif
 
 #endif
-

@@ -33,7 +33,6 @@
 
 #include "esp_ota_ops.h"
 #include "sys/queue.h"
-#include "esp32/rom/crc.h"
 #include "esp_log.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_common.h"
@@ -41,6 +40,12 @@
 #include "esp_system.h"
 #include "esp_efuse.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/crc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/rom/secure_boot.h"
+#endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
@@ -247,6 +252,43 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
 
     //if go to here ,means don't find the handle
     ESP_LOGE(TAG,"not found the handle");
+    return ESP_ERR_INVALID_ARG;
+}
+
+esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset)
+{
+    const uint8_t *data_bytes = (const uint8_t *)data;
+    esp_err_t ret;
+    ota_ops_entry_t *it;
+
+    if (data == NULL) {
+        ESP_LOGE(TAG, "write data is invalid");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // find ota handle in linked list
+    for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
+        if (it->handle == handle) {
+            // must erase the partition before writing to it
+            assert(it->erased_size > 0 && "must erase the partition before writing to it");
+
+            /* esp_ota_write_with_offset is used to write data in non contiguous manner.
+             * Hence, unaligned data(less than 16 bytes) cannot be cached if flash encryption is enabled.
+             */
+            if (esp_flash_encryption_enabled() && (size % 16)) {
+                ESP_LOGE(TAG, "Size should be 16byte aligned for flash encryption case");
+                return ESP_ERR_INVALID_ARG;
+            }
+            ret = esp_partition_write(it->part, offset, data_bytes, size);
+            if (ret == ESP_OK) {
+                it->wrote_size += size;
+            }
+            return ret;
+        }
+    }
+
+    // OTA handle is not found in linked list
+    ESP_LOGE(TAG,"OTA handle not found");
     return ESP_ERR_INVALID_ARG;
 }
 
@@ -821,3 +863,24 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
 
     return ESP_OK;
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SECURE_BOOT_V2_ENABLED
+esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index) {
+
+    if (!esp_secure_boot_enabled()) {
+        ESP_LOGE(TAG, "Secure boot v2 has not been enabled.");
+        return ESP_FAIL;
+    }
+
+    if (index != SECURE_BOOT_PUBLIC_KEY_INDEX_0 &&
+         index != SECURE_BOOT_PUBLIC_KEY_INDEX_1 &&
+         index != SECURE_BOOT_PUBLIC_KEY_INDEX_2) {
+        ESP_LOGE(TAG, "Invalid Index found for public key revocation %d.", index);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ets_secure_boot_revoke_public_key_digest(index);
+    ESP_LOGI(TAG, "Revoked signature block %d.", index);
+    return ESP_OK;
+}
+#endif

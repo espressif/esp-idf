@@ -21,17 +21,28 @@
 
 #include "board.h"
 #include "ble_mesh_example_init.h"
+#include "ble_mesh_example_nvs.h"
+
+#define TAG "EXAMPLE"
 
 #define CID_ESP 0x02E5
 
 static uint8_t dev_uuid[16] = { 0xdd, 0xdd };
-static uint16_t node_net_idx = ESP_BLE_MESH_KEY_UNUSED;
-static uint16_t node_app_idx = ESP_BLE_MESH_KEY_UNUSED;
-static uint8_t remote_onoff = LED_OFF;
-static uint8_t msg_tid = 0x0;
 
-/* The remote node address shall be input through UART1, see board.c */
-uint16_t remote_addr = ESP_BLE_MESH_ADDR_UNASSIGNED;
+static struct example_info_store {
+    uint16_t net_idx;   /* NetKey Index */
+    uint16_t app_idx;   /* AppKey Index */
+    uint8_t  onoff;     /* Remote OnOff */
+    uint8_t  tid;       /* Message TID */
+} __attribute__((packed)) store = {
+    .net_idx = ESP_BLE_MESH_KEY_UNUSED,
+    .app_idx = ESP_BLE_MESH_KEY_UNUSED,
+    .onoff = LED_OFF,
+    .tid = 0x0,
+};
+
+static nvs_handle_t NVS_HANDLE;
+static const char * NVS_KEY = "onoff_client";
 
 static esp_ble_mesh_client_t onoff_client;
 
@@ -85,20 +96,51 @@ static esp_ble_mesh_prov_t provision = {
 #endif
 };
 
+static void mesh_example_info_store(void)
+{
+    ble_mesh_nvs_store(NVS_HANDLE, NVS_KEY, &store, sizeof(store));
+}
+
+static void mesh_example_info_restore(void)
+{
+    esp_err_t err = ESP_OK;
+    bool exist = false;
+
+    err = ble_mesh_nvs_restore(NVS_HANDLE, NVS_KEY, &store, sizeof(store), &exist);
+    if (err != ESP_OK) {
+        return;
+    }
+
+    if (exist) {
+        ESP_LOGI(TAG, "Restore, net_idx 0x%04x, app_idx 0x%04x, onoff %u, tid 0x%02x",
+            store.net_idx, store.app_idx, store.onoff, store.tid);
+    }
+}
+
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, addr: 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08x", flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
-    node_net_idx = net_idx;
+    store.net_idx = net_idx;
+    /* mesh_example_info_store() shall not be invoked here, because if the device
+     * is restarted and goes into a provisioned state, then the following events
+     * will come:
+     * 1st: ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT
+     * 2nd: ESP_BLE_MESH_PROV_REGISTER_COMP_EVT
+     * So the store.net_idx will be updated here, and if we store the mesh example
+     * info here, the wrong app_idx (initialized with 0xFFFF) will be stored in nvs
+     * just before restoring it.
+     */
 }
 
 static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
-                                 esp_ble_mesh_prov_cb_param_t *param)
+                                             esp_ble_mesh_prov_cb_param_t *param)
 {
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROV_REGISTER_COMP_EVT, err_code %d", param->prov_register_comp.err_code);
+        mesh_example_info_restore(); /* Restore proper mesh example info */
         break;
     case ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT, err_code %d", param->node_prov_enable_comp.err_code);
@@ -130,12 +172,12 @@ void example_ble_mesh_send_gen_onoff_set(void)
 {
     esp_ble_mesh_generic_client_set_state_t set = {0};
     esp_ble_mesh_client_common_param_t common = {0};
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
 
     common.opcode = ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK;
     common.model = onoff_client.model;
-    common.ctx.net_idx = node_net_idx;
-    common.ctx.app_idx = node_app_idx;
+    common.ctx.net_idx = store.net_idx;
+    common.ctx.app_idx = store.app_idx;
     common.ctx.addr = 0xFFFF;   /* to all nodes */
     common.ctx.send_ttl = 3;
     common.ctx.send_rel = false;
@@ -143,22 +185,24 @@ void example_ble_mesh_send_gen_onoff_set(void)
     common.msg_role = ROLE_NODE;
 
     set.onoff_set.op_en = false;
-    set.onoff_set.onoff = remote_onoff;
-    set.onoff_set.tid = msg_tid++;
+    set.onoff_set.onoff = store.onoff;
+    set.onoff_set.tid = store.tid++;
 
     err = esp_ble_mesh_generic_client_set_state(&common, &set);
     if (err) {
-        ESP_LOGE(TAG, "%s: Generic OnOff Set failed", __func__);
-    } else {
-        remote_onoff = !remote_onoff;
+        ESP_LOGE(TAG, "Send Generic OnOff Set Unack failed");
+        return;
     }
+
+    store.onoff = !store.onoff;
+    mesh_example_info_store(); /* Store proper mesh example info */
 }
 
 static void example_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_t event,
                                                esp_ble_mesh_generic_client_cb_param_t *param)
 {
-    ESP_LOGI(TAG, "%s: event is %d, error code is %d, opcode is 0x%x",
-        __func__, event, param->error_code, param->params->opcode);
+    ESP_LOGI(TAG, "Generic client, event %u, error code %d, opcode is 0x%04x",
+        event, param->error_code, param->params->opcode);
 
     switch (event) {
     case ESP_BLE_MESH_GENERIC_CLIENT_GET_STATE_EVT:
@@ -209,7 +253,8 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
                 param->value.state_change.mod_app_bind.model_id);
             if (param->value.state_change.mod_app_bind.company_id == 0xFFFF &&
                 param->value.state_change.mod_app_bind.model_id == ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI) {
-                node_app_idx = param->value.state_change.mod_app_bind.app_idx;
+                store.app_idx = param->value.state_change.mod_app_bind.app_idx;
+                mesh_example_info_store(); /* Store proper mesh example info */
             }
             break;
         default:
@@ -220,19 +265,23 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 
 static esp_err_t ble_mesh_init(void)
 {
-    esp_err_t err = 0;
+    esp_err_t err = ESP_OK;
 
     esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
     esp_ble_mesh_register_generic_client_callback(example_ble_mesh_generic_client_cb);
     esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
 
     err = esp_ble_mesh_init(&provision, &composition);
-    if (err) {
-        ESP_LOGE(TAG, "Initializing mesh failed (err %d)", err);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize mesh stack (err %d)", err);
         return err;
     }
 
-    esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable mesh node (err %d)", err);
+        return err;
+    }
 
     ESP_LOGI(TAG, "BLE Mesh Node initialized");
 
@@ -259,6 +308,12 @@ void app_main(void)
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
+        return;
+    }
+
+    /* Open nvs namespace for storing/restoring mesh example info */
+    err = ble_mesh_nvs_open(&NVS_HANDLE);
+    if (err) {
         return;
     }
 

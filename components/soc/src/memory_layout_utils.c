@@ -68,7 +68,7 @@ static void s_prepare_reserved_regions(soc_reserved_region_t *reserved, size_t c
                        reserved[i].start, reserved[i].end);
         reserved[i].start = reserved[i].start & ~3; /* expand all reserved areas to word boundaries */
         reserved[i].end = (reserved[i].end + 3) & ~3;
-        assert(reserved[i].start < reserved[i].end);
+        assert(reserved[i].start <= reserved[i].end);
         if (i < count - 1) {
             assert(reserved[i + 1].start > reserved[i].start);
             if (reserved[i].end > reserved[i + 1].start) {

@@ -1,8 +1,7 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
+import http.server
 from threading import Thread
 import ssl
 
@@ -86,8 +85,7 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     key_file_handle.write(server_key)
     key_file_handle.close()
 
-    httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+    httpd = http.server.HTTPServer((server_ip, server_port), http.server.SimpleHTTPRequestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
@@ -130,5 +128,41 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
     dut1.expect("Starting OTA example", timeout=30)
 
 
+@ttfw_idf.idf_example_test(env_tag="Example_EthKitV1")
+def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(env, extra_data):
+    """
+    steps: |
+      1. join AP
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    dut1 = env.get_dut("simple_ota_example", "examples/system/ota/simple_ota_example", dut_class=ttfw_idf.ESP32DUT, app_config_name='spiram')
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, "simple_ota.bin")
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance("simple_ota_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("simple_ota_bin_size", bin_size // 1024, dut1.TARGET)
+    # start test
+    host_ip = get_my_ip()
+    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
+    thread1.daemon = True
+    thread1.start()
+    dut1.start_app()
+    dut1.expect("Loaded app from partition at offset 0x10000", timeout=30)
+    try:
+        ip_address = dut1.expect(re.compile(r" eth ip: ([^,]+),"), timeout=30)
+        print("Connected to AP with IP: {}".format(ip_address))
+    except DUT.ExpectTimeout:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        thread1.close()
+    dut1.expect("Starting OTA example", timeout=30)
+
+    print("writing to device: {}".format("https://" + host_ip + ":8000/simple_ota.bin"))
+    dut1.write("https://" + host_ip + ":8000/simple_ota.bin")
+    dut1.expect("Loaded app from partition at offset 0x110000", timeout=60)
+    dut1.expect("Starting OTA example", timeout=30)
+
+
 if __name__ == '__main__':
     test_examples_protocol_simple_ota_example()
+    test_examples_protocol_simple_ota_example_ethernet_with_spiram_config()

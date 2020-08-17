@@ -13,12 +13,37 @@
 // limitations under the License.
 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/param.h> // For MIN/MAX
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
 #include "esp_log.h"
+#include "esp_attr.h"
+
 
 static const char TAG[] = "chip_generic";
+
+
+typedef struct flash_chip_dummy {
+    uint8_t dio_dummy_bitlen;
+    uint8_t qio_dummy_bitlen;
+    uint8_t qout_dummy_bitlen;
+    uint8_t dout_dummy_bitlen;
+    uint8_t fastrd_dummy_bitlen;
+    uint8_t slowrd_dummy_bitlen;
+} flash_chip_dummy_t;
+
+// These parameters can be placed in the ROM. For now we use the code in IDF.
+DRAM_ATTR const static flash_chip_dummy_t default_flash_chip_dummy = {
+    .dio_dummy_bitlen = SPI_FLASH_DIO_DUMMY_BITLEN,
+    .qio_dummy_bitlen = SPI_FLASH_QIO_DUMMY_BITLEN,
+    .qout_dummy_bitlen = SPI_FLASH_QOUT_DUMMY_BITLEN,
+    .dout_dummy_bitlen = SPI_FLASH_DOUT_DUMMY_BITLEN,
+    .fastrd_dummy_bitlen = SPI_FLASH_FASTRD_DUMMY_BITLEN,
+    .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
+};
+
+DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&default_flash_chip_dummy;
 
 #define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200
 #define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS     4000
@@ -29,6 +54,13 @@ static const char TAG[] = "chip_generic";
 #define HOST_DELAY_INTERVAL_US                      1
 #define CHIP_WAIT_IDLE_INTERVAL_US                  20
 
+const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
+    .chip_erase_timeout = SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS * 1000,
+    .block_erase_timeout = SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS * 1000,
+    .sector_erase_timeout = SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS * 1000,
+    .idle_timeout = SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000,
+    .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
+};
 
 esp_err_t spi_flash_chip_generic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -44,7 +76,7 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
     t = (spi_flash_trans_t) {
         .command = CMD_RST_EN,
     };
-    esp_err_t err = chip->host->common_command(chip->host, &t);
+    esp_err_t err = chip->host->driver->common_command(chip->host, &t);
     if (err != ESP_OK) {
         return err;
     }
@@ -52,12 +84,12 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
     t = (spi_flash_trans_t) {
         .command = CMD_RST_DEV,
     };
-    err = chip->host->common_command(chip->host, &t);
+    err = chip->host->driver->common_command(chip->host, &t);
     if (err != ESP_OK) {
         return err;
     }
 
-    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+    err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     return err;
 }
 
@@ -68,7 +100,7 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
 
     /* Can't detect size unless the high byte of the product ID matches the same convention, which is usually 0x40 or
      * 0xC0 or similar. */
-    if ((id & 0x0F00) != 0) {
+    if (((id & 0xFFFF) == 0x0000) || ((id & 0xFFFF) == 0xFFFF)) {
         return ESP_ERR_FLASH_UNSUPPORTED_CHIP;
     }
 
@@ -83,18 +115,18 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
 
     err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_chip(chip->host);
+        chip->host->driver->erase_chip(chip->host);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, 0, chip->size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, 0, chip->size);
             if (err != ESP_OK) {
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->chip_erase_timeout);
     }
     return err;
 }
@@ -103,18 +135,18 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
 {
     esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_sector(chip->host, start_address);
+        chip->host->driver->erase_sector(chip->host, start_address);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
             if (err != ESP_OK) {
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->sector_erase_timeout);
     }
     return err;
 }
@@ -123,18 +155,18 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
 {
     esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
     if (err == ESP_OK) {
-        chip->host->erase_block(chip->host, start_address);
+        chip->host->driver->erase_block(chip->host, start_address);
         //to save time, flush cache here
-        if (chip->host->flush_cache) {
-            err = chip->host->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
+        if (chip->host->driver->flush_cache) {
+            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
             if (err != ESP_OK) {
                 return err;
             }
         }
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->block_erase_timeout);
     }
     return err;
 }
@@ -142,6 +174,10 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
 esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
 {
     esp_err_t err = ESP_OK;
+    const uint32_t page_size = chip->chip_drv->page_size;
+    uint32_t align_address;
+    uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
+
     // Configure the host, and return
     err = spi_flash_chip_generic_config_host_io_mode(chip);
 
@@ -151,12 +187,17 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
     }
 
     while (err == ESP_OK && length > 0) {
-        uint32_t read_len = MIN(length, chip->host->max_read_bytes);
-        err = chip->host->read(chip->host, buffer, address, read_len);
+        memset(temp_buffer, 0xFF, sizeof(temp_buffer));
+        uint32_t read_len = chip->host->driver->read_data_slicer(chip->host, address, length, &align_address, page_size);
+        uint32_t left_off = address - align_address;
+        uint32_t data_len = MIN(align_address + read_len, address + length) - address;
+        err = chip->host->driver->read(chip->host, temp_buffer, align_address, read_len);
 
-        buffer += read_len;
-        length -= read_len;
-        address += read_len;
+        memcpy(buffer, temp_buffer + left_off, data_len);
+
+        address += data_len;
+        buffer = (void *)((intptr_t)buffer + data_len);
+        length = length - data_len;
     }
 
     return err;
@@ -166,13 +207,13 @@ esp_err_t spi_flash_chip_generic_page_program(esp_flash_t *chip, const void *buf
 {
     esp_err_t err;
 
-    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+    err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
 
     if (err == ESP_OK) {
         // Perform the actual Page Program command
-        chip->host->program_page(chip->host, buffer, address, length);
+        chip->host->driver->program_page(chip->host, buffer, address, length);
 
-        err = chip->chip_drv->wait_idle(chip, SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000);
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
     }
     return err;
 }
@@ -181,25 +222,27 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
 {
     esp_err_t err = ESP_OK;
     const uint32_t page_size = chip->chip_drv->page_size;
+    uint32_t align_address;
+    uint8_t temp_buffer[64]; //spiflash hal max length of write no longer than 64byte
 
     while (err == ESP_OK && length > 0) {
-        uint32_t page_len = MIN(chip->host->max_write_bytes, MIN(page_size, length));
-        if ((address + page_len) / page_size != address / page_size) {
-            // Most flash chips can't page write across a page boundary
-            page_len = page_size - (address % page_size);
-        }
+        memset(temp_buffer, 0xFF, sizeof(temp_buffer));
+        uint32_t page_len = chip->host->driver->write_data_slicer(chip->host, address, length, &align_address, page_size);
+        uint32_t left_off = address - align_address;
+        uint32_t write_len = MIN(align_address + page_len, address + length) - address;
+        memcpy(temp_buffer + left_off, buffer, write_len);
 
         err = chip->chip_drv->set_chip_write_protect(chip, false);
+        if (err == ESP_OK && length > 0) {
+            err = chip->chip_drv->program_page(chip, temp_buffer, align_address, page_len);
 
-        if (err == ESP_OK) {
-            err = chip->chip_drv->program_page(chip, buffer, address, page_len);
-            address += page_len;
-            buffer = (void *)((intptr_t)buffer + page_len);
-            length -= page_len;
+            address += write_len;
+            buffer = (void *)((intptr_t)buffer + write_len);
+            length -= write_len;
         }
     }
-    if (err == ESP_OK && chip->host->flush_cache) {
-        err = chip->host->flush_cache(chip->host, address, length);
+    if (err == ESP_OK && chip->host->driver->flush_cache) {
+        err = chip->host->driver->flush_cache(chip->host, address, length);
     }
     return err;
 }
@@ -213,10 +256,10 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
 {
     esp_err_t err = ESP_OK;
 
-    err = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+    err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
 
     if (err == ESP_OK) {
-        chip->host->set_write_protect(chip->host, write_protect);
+        chip->host->driver->set_write_protect(chip->host, write_protect);
     }
 
     bool wp_read;
@@ -233,7 +276,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
     esp_err_t err = ESP_OK;
     uint8_t status;
     assert(out_write_protect!=NULL);
-    err = chip->host->read_status(chip->host, &status);
+    err = chip->host->driver->read_status(chip->host, &status);
     if (err != ESP_OK) {
         return err;
     }
@@ -244,7 +287,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
 
 esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_us)
 {
-    while (chip->host->host_idle(chip->host) && *timeout_us > 0) {
+    while (chip->host->driver->host_idle(chip->host) && *timeout_us > 0) {
 #if HOST_DELAY_INTERVAL_US > 0
         if (*timeout_us > 1) {
             int delay = MIN(HOST_DELAY_INTERVAL_US, *timeout_us);
@@ -271,7 +314,7 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
             return err;
         }
 
-        err = chip->host->read_status(chip->host, &status);
+        err = chip->host->driver->read_status(chip->host, &status);
         if (err != ESP_OK) {
             return err;
         }
@@ -298,40 +341,40 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_QIO_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->qio_dummy_bitlen;
         read_command = CMD_FASTRD_QIO;
         break;
     case SPI_FLASH_QOUT:
         addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_QOUT_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->qout_dummy_bitlen;
         read_command = CMD_FASTRD_QUAD;
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_DIO_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->dio_dummy_bitlen;
         read_command = CMD_FASTRD_DIO;
         break;
     case SPI_FLASH_DOUT:
         addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_DOUT_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->dout_dummy_bitlen;
         read_command = CMD_FASTRD_DUAL;
         break;
     case SPI_FLASH_FASTRD:
         addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_FASTRD_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;
         read_command = CMD_FASTRD;
         break;
     case SPI_FLASH_SLOWRD:
         addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
-        dummy_cyclelen_base = SPI_FLASH_SLOWRD_DUMMY_BITLEN;
+        dummy_cyclelen_base = rom_flash_chip_dummy->slowrd_dummy_bitlen;
         read_command = CMD_READ;
         break;
     default:
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
 
-    return chip->host->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
+    return chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
                                                 chip->read_mode);
 }
 
@@ -364,6 +407,7 @@ static const char chip_name[] = "generic";
 
 const spi_flash_chip_t esp_flash_chip_generic = {
     .name = chip_name,
+    .timeout = &spi_flash_chip_generic_timeout,
     .probe = spi_flash_chip_generic_probe,
     .reset = spi_flash_chip_generic_reset,
     .detect_size = spi_flash_chip_generic_detect_size,
@@ -407,7 +451,7 @@ static esp_err_t spi_flash_common_read_qe_sr(esp_flash_t *chip, uint8_t qe_rdsr_
         .miso_data = (uint8_t*) &sr_buf,
         .miso_len = qe_sr_bitwidth / 8,
     };
-    esp_err_t ret = chip->host->common_command(chip->host, &t);
+    esp_err_t ret = chip->host->driver->common_command(chip->host, &t);
     *sr = sr_buf;
     return ret;
 }
@@ -420,7 +464,7 @@ static esp_err_t spi_flash_common_write_qe_sr(esp_flash_t *chip, uint8_t qe_wrsr
         .mosi_len = qe_sr_bitwidth / 8,
         .miso_len = 0,
     };
-    return chip->host->common_command(chip->host, &t);
+    return chip->host->driver->common_command(chip->host, &t);
 }
 
 esp_err_t spi_flash_common_read_status_16b_rdsr_rdsr2(esp_flash_t* chip, uint32_t* out_sr)
@@ -505,7 +549,7 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
             return ret;
         }
 
-        ret = chip->chip_drv->wait_idle(chip, SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000);
+        ret = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
         if (ret != ESP_OK) {
             return ret;
         }

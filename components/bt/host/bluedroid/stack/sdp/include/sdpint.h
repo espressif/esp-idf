@@ -29,6 +29,7 @@
 #include "common/bt_defs.h"
 #include "stack/sdp_api.h"
 #include "stack/l2c_api.h"
+#include "osi/list.h"
 
 #if (SDP_INCLUDED == TRUE)
 /* Continuation length - we use a 2-byte offset */
@@ -136,7 +137,7 @@ typedef struct {
 typedef struct {
     UINT32         di_primary_handle;       /* Device ID Primary record or NULL if nonexistent */
     UINT16         num_records;
-    tSDP_RECORD    record[SDP_MAX_RECORDS];
+    list_t         *p_record_list;
 } tSDP_DB;
 
 enum {

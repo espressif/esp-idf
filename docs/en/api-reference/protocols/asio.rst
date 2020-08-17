@@ -13,7 +13,18 @@ Asio also comes with a number of examples which could be find under Documentatio
 
 Supported features
 ^^^^^^^^^^^^^^^^^^
-ESP platform port currently supports only network asynchronous socket operations; does not support serial port and ssl.
+ESP platform port currently supports only network asynchronous socket operations; does not support serial port.
+SSL/TLS support is disabled by default and could be enabled in component configuration menu by choosing TLS library from
+
+- mbedTLS with OpenSSL translation layer (default option)
+- wolfSSL
+
+SSL support is very basic at this stage and it does include following features:
+
+- Verification callbacks
+- DH property files
+- Certificates/private keys file APIs
+
 Internal asio settings for ESP include
 
 - EXCEPTIONS are enabled in ASIO if enabled in menuconfig
@@ -27,5 +38,6 @@ ESP examples are based on standard asio :example:`protocols/asio`:
 - :example:`protocols/asio/tcp_echo_server`
 - :example:`protocols/asio/chat_client`
 - :example:`protocols/asio/chat_server`
+- :example:`protocols/asio/ssl_client_server`
 
 Please refer to the specific example README.md for details

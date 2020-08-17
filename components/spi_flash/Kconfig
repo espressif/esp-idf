@@ -130,6 +130,16 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
+    config SPI_FLASH_WRITE_CHUNK_SIZE
+        int "Flash write chunk size"
+        default 8192
+        range 256 8192
+        help
+            Flash write is broken down in terms of multiple (smaller) write operations.
+            This configuration options helps to set individual write chunk size, smaller
+            value here ensures that cache (and non-IRAM resident interrupts) remains
+            disabled for shorter duration.
+
     menu "Auto-detect flash chips"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP

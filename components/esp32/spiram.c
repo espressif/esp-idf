@@ -114,12 +114,14 @@ bool esp_spiram_test(void)
 
 void IRAM_ATTR esp_spiram_init_cache(void)
 {
+    int size = esp_spiram_get_size();
+    if (size > 4 * 1024 * 1024) size = 4 * 1024 * 1024; // we can map at most 4MByte
     //Enable external RAM in MMU
-    cache_sram_mmu_set( 0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128 );
+    cache_sram_mmu_set(0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, (size / 1024 / 32));
     //Flush and enable icache for APP CPU
 #if !CONFIG_FREERTOS_UNICORE
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1);
-    cache_sram_mmu_set( 1, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128 );
+    cache_sram_mmu_set(1, 0, SOC_EXTRAM_DATA_LOW, 0, 32, (size / 1024 / 32));
 #endif
 }
 
@@ -127,7 +129,7 @@ esp_spiram_size_t esp_spiram_get_chip_size(void)
 {
     if (!spiram_inited) {
         ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
-        return ESP_SPIRAM_SIZE_INVALID;
+        abort();
     }
     psram_size_t psram_size = psram_get_size();
     switch (psram_size) {

@@ -47,9 +47,11 @@ public:
      * @param[in]  key     Key name. Maximal length is determined by the underlying
      *                     implementation, but is guaranteed to be at least
      *                     15 characters. Shouldn't be empty.
-     * @param[in]  value   The value to set. Allowed types are the ones declared in ItemType.
+     * @param[in]  value   The value to set. Allowed types are the ones declared in ItemType as well as enums.
      *                     For strings, the maximum length (including null character) is
      *                     4000 bytes.
+     *                     Note that enums loose their type information when stored in NVS. Ensure that the correct
+     *                     enum type is used during retrieval with \ref get_item!
      *
      * @return
      *             - ESP_OK if value was set successfully
@@ -80,7 +82,9 @@ public:
      * @param[in]     key        Key name. Maximal length is determined by the underlying
      *                           implementation, but is guaranteed to be at least
      *                           15 characters. Shouldn't be empty.
-     * @param         value      The output value.
+     * @param         value      The output value. All integral types which are declared in ItemType as well as enums
+     *                           are allowed. Note however that enums lost their type information when stored in NVS.
+     *                           Ensure that the correct enum type is used during retrieval with \ref get_item!
      *
      * @return
      *             - ESP_OK if the value was retrieved successfully
@@ -233,7 +237,19 @@ std::unique_ptr<NVSHandle> open_nvs_handle(const char *ns_name,
         esp_err_t *err = nullptr);
 
 // Helper functions for template usage
+/**
+ * Help to translate all integral types into ItemType.
+ */
 template<typename T, typename std::enable_if<std::is_integral<T>::value, void*>::type = nullptr>
+constexpr ItemType itemTypeOf()
+{
+    return static_cast<ItemType>(((std::is_signed<T>::value)?0x10:0x00) | sizeof(T));
+}
+
+/**
+ * Help to translate all enum types into integral ItemType.
+ */
+template<typename T, typename std::enable_if<std::is_enum<T>::value, int>::type = 0>
 constexpr ItemType itemTypeOf()
 {
     return static_cast<ItemType>(((std::is_signed<T>::value)?0x10:0x00) | sizeof(T));

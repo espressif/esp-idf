@@ -610,12 +610,12 @@ KConfig.projbuild
     endif()
 
 
-硬件目标的的条件判断
+硬件目标的条件判断
 --------------------
 
 CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
-此外，如果当前的硬件目标是 ``xyz``（即 ``IDF_TARGET=xyz``），那么 Kconfig 变量 ``CONFIG_IDF_TARGET_XYZ`` 同样也会被设置。
+此外，如果当前的硬件目标是 ``xyz`` （即 ``IDF_TARGET=xyz``），那么 Kconfig 变量 ``CONFIG_IDF_TARGET_XYZ`` 同样也会被设置。
 
 请注意，组件可以依赖 ``IDF_TARGET`` 变量，但不能依赖这个 Kconfig 变量。同样也不可在 CMake 文件的 ``include`` 语句中使用 Kconfig 变量，在这种上下文中可以使用 ``IDF_TARGET``。
 

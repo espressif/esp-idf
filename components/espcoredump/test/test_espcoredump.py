@@ -28,24 +28,14 @@ except ImportError:
 
 
 class TestESPCoreDumpFileLoader(unittest.TestCase):
-    def setUp(self):
-        self.tmp_file = 'tmp'
-        self.dloader = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=True)
-        self.assertIsInstance(self.dloader, espcoredump.ESPCoreDumpFileLoader)
-
-    def tearDown(self):
-        self.dloader.cleanup()
-
     def testESPCoreDumpFileLoaderWithoutB64(self):
-        t = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=False)
-        self.assertIsInstance(t, espcoredump.ESPCoreDumpFileLoader)  # invoke for coverage of open()
-        t.cleanup()
-
-    def test_cannot_remove_dir(self):
-        self.dloader.remove_tmp_file(fname='.')  # silent failure (but covers exception inside)
+        loader = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=False)
+        loader.cleanup()
 
     def test_create_corefile(self):
-        self.assertEqual(self.dloader.create_corefile(core_fname=self.tmp_file, off=0, rom_elf=None), self.tmp_file)
+        loader = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=True)
+        loader.create_corefile()
+        loader.cleanup()
 
 
 if __name__ == '__main__':

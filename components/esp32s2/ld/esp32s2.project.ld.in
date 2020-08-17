@@ -36,6 +36,11 @@ SECTIONS
   {
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
+    
+    _coredump_rtc_fast_start = ABSOLUTE(.);
+    mapping[rtc_fast_coredump]
+    _coredump_rtc_fast_end = ABSOLUTE(.);
+
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4) ;
     _rtc_force_fast_end = ABSOLUTE(.);
@@ -46,12 +51,18 @@ SECTIONS
      named rtc_wake_stub*.c and the data marked with
      RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
      The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc.data :
   {
     _rtc_data_start = ABSOLUTE(.);
 
+    /* coredump mapping */
+    _coredump_rtc_start = ABSOLUTE(.);
+    mapping[rtc_coredump]
+    _coredump_rtc_end = ABSOLUTE(.);
+    
+    /* should be placed after coredump mapping */
     mapping[rtc_data]
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
@@ -75,7 +86,7 @@ SECTIONS
      User data marked with RTC_NOINIT_ATTR will be placed
      into this section. See the file "esp_attr.h" for more information.
 	 The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc_noinit (NOLOAD):
   {
@@ -161,6 +172,10 @@ SECTIONS
 
     mapping[iram0_text]
 
+    /* added to maintain compability */
+    _coredump_iram_start = 0;
+    _coredump_iram_end = 0;
+
     /* align + add 16B for the possibly overlapping instructions */
     . = ALIGN(4) + 16;
     _iram_text_end = ABSOLUTE(.);
@@ -175,14 +190,6 @@ SECTIONS
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
-    _bt_data_start = ABSOLUTE(.);
-    *libbt.a:(.data .data.*)
-    . = ALIGN (4);
-    _bt_data_end = ABSOLUTE(.);
-    _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
-    . = ALIGN (4);
-    _btdm_data_end = ABSOLUTE(.);
     *(.gnu.linkonce.d.*)
     *(.data1)
     *(.sdata)
@@ -192,6 +199,16 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
+
+    /* coredump mapping */
+    _coredump_dram_start = ABSOLUTE(.);
+    mapping[dram_coredump]
+    _coredump_dram_end = ABSOLUTE(.);
+    
+    /* should be placed after coredump mapping */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
 
     mapping[dram0_data]
 
@@ -219,14 +236,6 @@ SECTIONS
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
-    _bt_bss_start = ABSOLUTE(.);
-    *libbt.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _bt_bss_end = ABSOLUTE(.);
-    _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
 
     mapping[dram0_bss]
 
@@ -244,13 +253,12 @@ SECTIONS
 
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-    /* The heap starts right after end of this section */
-    _heap_start = ABSOLUTE(.);
   } > dram0_0_seg
 
   /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
   .flash.rodata : ALIGN(0x10)
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
@@ -308,12 +316,14 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >default_rodata_seg
 
   .flash.text :
   {
     _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
@@ -324,6 +334,7 @@ SECTIONS
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is

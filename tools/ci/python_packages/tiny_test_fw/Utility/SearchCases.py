@@ -23,6 +23,7 @@ from . import load_source
 
 class Search(object):
     TEST_CASE_FILE_PATTERN = "*_test.py"
+    SUPPORT_REPLICATE_CASES_KEY = ['target']
 
     @classmethod
     def _search_cases_from_file(cls, file_name):
@@ -42,9 +43,15 @@ class Search(object):
                     continue
         except ImportError as e:
             print("ImportError: \r\n\tFile:" + file_name + "\r\n\tError:" + str(e))
-        for i, test_function in enumerate(test_functions):
+
+        test_functions_out = []
+        for case in test_functions:
+            test_functions_out += cls.replicate_case(case)
+
+        for i, test_function in enumerate(test_functions_out):
             print("\t{}. ".format(i + 1) + test_function.case_info["name"])
-        return test_functions
+            test_function.case_info['app_dir'] = os.path.dirname(file_name)
+        return test_functions_out
 
     @classmethod
     def _search_test_case_files(cls, test_case, file_pattern):
@@ -74,21 +81,41 @@ class Search(object):
         """
         replicate_config = []
         for key in case.case_info:
+            if key == 'ci_target':  # ci_target is used to filter target, should not be duplicated.
+                continue
             if isinstance(case.case_info[key], (list, tuple)):
                 replicate_config.append(key)
 
-        def _replicate_for_key(case_list, replicate_key, replicate_list):
+        def _replicate_for_key(cases, replicate_key, replicate_list):
+            def deepcopy_func(f, name=None):
+                fn = types.FunctionType(f.__code__, f.__globals__, name if name else f.__name__,
+                                        f.__defaults__, f.__closure__)
+                fn.__dict__.update(copy.deepcopy(f.__dict__))
+                return fn
+
             case_out = []
-            for _case in case_list:
+            for inner_case in cases:
                 for value in replicate_list:
-                    new_case = copy.deepcopy(_case)
+                    new_case = deepcopy_func(inner_case)
                     new_case.case_info[replicate_key] = value
                     case_out.append(new_case)
             return case_out
 
         replicated_cases = [case]
-        for key in replicate_config:
-            replicated_cases = _replicate_for_key(replicated_cases, key, case.case_info[key])
+        while replicate_config:
+            if not replicate_config:
+                break
+            key = replicate_config.pop()
+            if key in cls.SUPPORT_REPLICATE_CASES_KEY:
+                replicated_cases = _replicate_for_key(replicated_cases, key, case.case_info[key])
+
+        # mark the cases with targets not in ci_target
+        for case in replicated_cases:
+            ci_target = case.case_info['ci_target']
+            if not ci_target or case.case_info['target'] in ci_target:
+                case.case_info['supported_in_ci'] = True
+            else:
+                case.case_info['supported_in_ci'] = False
 
         return replicated_cases
 
@@ -98,14 +125,11 @@ class Search(object):
         search all test cases from a folder or file, and then do case replicate.
 
         :param test_case: test case file(s) path
+        :param test_case_file_pattern: unix filename pattern
         :return: a list of replicated test methods
         """
         test_case_files = cls._search_test_case_files(test_case, test_case_file_pattern or cls.TEST_CASE_FILE_PATTERN)
         test_cases = []
         for test_case_file in test_case_files:
             test_cases += cls._search_cases_from_file(test_case_file)
-        # handle replicate cases
-        test_case_out = []
-        for case in test_cases:
-            test_case_out += cls.replicate_case(case)
-        return test_case_out
+        return test_cases

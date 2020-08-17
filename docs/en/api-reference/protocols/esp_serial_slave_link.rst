@@ -12,7 +12,16 @@ bus drivers.
 After an `esp_serial_slave_link` device is initialized properly, the application can use it to communicate with the ESP
 slave devices conveniently.
 
-For more details about ESP32 SDIO slave protocol, see document :doc:`/api-reference/peripherals/esp_slave_protocol`.
+Espressif Device protocols
+--------------------------
+
+For more details about Espressif device protocols, see the following documents.
+
+.. toctree::
+    :maxdepth: 1
+
+    esp_sdio_slave_protocol
+    esp_spi_slave_protocol
 
 Terminology
 -----------
@@ -51,7 +60,7 @@ Services provided by ESP slave
 
 There are some common services provided by the Espressif slaves:
 
-1. Tohost Interrupts: The slave can inform the master about certain events by the interrupt line.
+1. Tohost Interrupts: The slave can inform the master about certain events by the interrupt line. (optional)
 
 2. Frhost Interrupts: The master can inform the slave about certain events.
 
@@ -71,12 +80,20 @@ There are some common services provided by the Espressif slaves:
 5. Shared registers: the master can read some part of the registers on the slave, and also write
    these registers to let the slave read.
 
+The services provided by the slave depends on the slave's model. See
+:ref:`esp_sdio_slave_caps` and :ref:`esp_spi_slave_caps` for more details.
 
-Initialization of ESP SDIO Slave Link
--------------------------------------
+Initialization of ESP Serial Slave Link
+---------------------------------------
 
-The ESP SDIO slave link (ESSL SDIO) devices relies on the sdmmc component. The ESSL device should
-be initialized as below:
+.. _essl_sdio_slave_init:
+
+ESP SDIO Slave
+^^^^^^^^^^^^^^
+
+The ESP SDIO slave link (ESSL SDIO) devices relies on the sdmmc component. It includes the usage
+of communicating with ESP SDIO Slave device via SDSPI feature. The ESSL device should be
+initialized as below:
 
 1. Initialize a sdmmc card (see :doc:` Document of SDMMC driver </api-reference/storage/sdmmc>`)
    structure.
@@ -91,14 +108,23 @@ be initialized as below:
 
 5. Call :cpp:func:`essl_wait_for_ready` to wait for the slave to be ready.
 
+ESP SPI Slave
+^^^^^^^^^^^^^
+
+.. note::
+    If you are communicating with the ESP SDIO Slave device through SPI interface, you should use
+    the :ref:`SDIO interface <essl_sdio_slave_init>` instead.
+
+Hasn't been supported yet.
+
 APIs
 ----
 
 After the initialization process above is performed, you can call the APIs below to make use of
 the services provided by the slave:
 
-Interrupts
-^^^^^^^^^^
+Tohost Interrupts (optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Call :cpp:func:`essl_get_intr_ena` to know which events will trigger the interrupts to the master.
 
@@ -109,7 +135,10 @@ Interrupts
 4. When interrupt is triggered, call :cpp:func:`essl_get_intr` to know which events are active,
    and call :cpp:func:`essl_clear_intr` to clear them.
 
-5. Call :cpp:func:`essl_send_slave_intr` to trigger general purpose interrupt of the slave.
+Frhost Interrupts
+^^^^^^^^^^^^^^^^^
+
+1. Call :cpp:func:`essl_send_slave_intr` to trigger general purpose interrupt of the slave.
 
 TX FIFO
 ^^^^^^^
@@ -152,3 +181,4 @@ API Reference
 
 .. include-build-file:: inc/essl.inc
 .. include-build-file:: inc/essl_sdio.inc
+.. include-build-file:: inc/essl_spi.inc

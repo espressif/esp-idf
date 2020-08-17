@@ -227,12 +227,12 @@ static inline void spimem_flash_ll_read_phase(spi_mem_dev_t *dev)
  * Select which pin to use for the flash
  *
  * @param dev Beginning address of the peripheral registers.
- * @param pin Pin ID to use, 0-2. Set to other values to disable all the CS pins.
+ * @param pin Pin ID to use, 0-1. Set to other values to disable all the CS pins.
  */
 static inline void spimem_flash_ll_set_cs_pin(spi_mem_dev_t *dev, int pin)
 {
-    dev->misc.cs0_dis = (pin == 0) ? 0 : 1;
-    dev->misc.cs1_dis = (pin == 1) ? 0 : 1;
+    dev->misc.cs0_dis = (pin != 0);
+    dev->misc.cs1_dis = (pin != 1);
 }
 
 /**

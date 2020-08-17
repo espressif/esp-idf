@@ -68,6 +68,21 @@ bool list_contains(const list_t *list, const void *data)
   return false;
 }
 
+list_node_t *list_get_node(const list_t *list, const void *data)
+{
+  assert(list != NULL);
+  assert(data != NULL);
+  list_node_t *p_node_ret = NULL;
+  for (list_node_t *node = list_begin(list); node != list_end(list); node = list_next(node)) {
+    if (list_node(node) == data) {
+      p_node_ret = node;
+      break;
+    }
+  }
+
+  return p_node_ret;
+}
+
 size_t list_length(const list_t *list)
 {
     assert(list != NULL);

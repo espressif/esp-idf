@@ -44,7 +44,7 @@ extern "C" {
 
 /* Pre-partition table fixed flash offsets */
 #define ESP_BOOTLOADER_DIGEST_OFFSET 0x0
-#define ESP_BOOTLOADER_OFFSET 0x1000 /* Offset of bootloader image. Has matching value in bootloader KConfig.projbuild file. */
+#define ESP_BOOTLOADER_OFFSET CONFIG_BOOTLOADER_OFFSET_IN_FLASH  /* Offset of bootloader image. Has matching value in bootloader KConfig.projbuild file. */
 #define ESP_PARTITION_TABLE_OFFSET CONFIG_PARTITION_TABLE_OFFSET /* Offset of partition table. Backwards-compatible name.*/
 
 #define ESP_PARTITION_TABLE_MAX_LEN 0xC00 /* Maximum length of partition table data */

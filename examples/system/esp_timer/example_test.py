@@ -25,7 +25,7 @@ LIGHT_SLEEP_TIME = 500000
 ONE_SHOT_TIMER_PERIOD = 5000000
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_system_esp_timer(env, extra_data):
     dut = env.get_dut('esp_timer_example', 'examples/system/esp_timer', dut_class=ttfw_idf.ESP32DUT)
     # start test
@@ -50,7 +50,7 @@ def test_examples_system_esp_timer(env, extra_data):
     one_shot_timer_time = int(groups[0])
     diff = start_time + ONE_SHOT_TIMER_PERIOD - one_shot_timer_time
     print('One-shot timer, time: {} us, diff: {}'.format(one_shot_timer_time, diff))
-    assert(abs(diff) < 200)
+    assert(abs(diff) < 220)
 
     groups = dut.expect(RESTART_REGEX, timeout=3)
     start_time = int(groups[0])

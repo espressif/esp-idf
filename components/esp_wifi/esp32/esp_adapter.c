@@ -211,6 +211,11 @@ static void IRAM_ATTR wifi_int_restore_wrapper(void *wifi_int_mux, uint32_t tmp)
     }
 }
 
+static bool IRAM_ATTR is_from_isr_wrapper(void)
+{
+    return xPortInIsrContext();
+}
+
 static void IRAM_ATTR task_yield_from_isr_wrapper(void)
 {
     portYIELD_FROM_ISR();
@@ -581,7 +586,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._malloc = malloc,
     ._free = free,
     ._event_post = esp_event_post_wrapper,
-    ._get_free_heap_size = esp_get_free_heap_size,
+    ._get_free_heap_size = esp_get_free_internal_heap_size,
     ._rand = esp_random,
     ._dport_access_stall_other_cpu_start_wrap = s_esp_dport_access_stall_other_cpu_start,
     ._dport_access_stall_other_cpu_end_wrap = s_esp_dport_access_stall_other_cpu_end,
@@ -636,6 +641,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_condition_set = coex_condition_set_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,
     ._coex_wifi_release = coex_wifi_release_wrapper,
+    ._is_from_isr = is_from_isr_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
 

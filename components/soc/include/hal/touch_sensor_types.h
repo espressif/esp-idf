@@ -193,6 +193,7 @@ typedef struct touch_pad_denoise {
                                             from the reading of denoise channel. */
 } touch_pad_denoise_t;
 
+/** Touch sensor shield channel drive capability level */
 typedef enum {
     TOUCH_PAD_SHIELD_DRV_L0 = 0,/*!<The max equivalent capacitance in shield channel is 40pf */
     TOUCH_PAD_SHIELD_DRV_L1,    /*!<The max equivalent capacitance in shield channel is 80pf */
@@ -207,10 +208,13 @@ typedef enum {
 
 /** Touch sensor waterproof configuration */
 typedef struct touch_pad_waterproof {
-    touch_pad_t guard_ring_pad;             /*!<Waterproof. Select touch channel use for guard pad */
-    touch_pad_shield_driver_t shield_driver;/*!<Waterproof. Select max equivalent capacitance for shield pad
-                                                Config the Touch14 to the touch sensor and compare the measured
-                                                reading to the Touch0 reading to estimate the equivalent capacitance.*/
+    touch_pad_t guard_ring_pad;             /*!<Waterproof. Select touch channel use for guard pad.
+                                                Guard pad is used to detect the large area of water covering the touch panel. */
+    touch_pad_shield_driver_t shield_driver;/*!<Waterproof. Shield channel drive capability configuration.
+                                                Shield pad is used to shield the influence of water droplets covering the touch panel.
+                                                When the waterproof function is enabled, Touch14 is set as shield channel by default.
+                                                The larger the parasitic capacitance on the shielding channel, the higher the drive capability needs to be set.
+                                                The equivalent capacitance of the shield channel can be estimated through the reading value of the denoise channel(Touch0).*/
 } touch_pad_waterproof_t;
 
 /** Touch sensor proximity detection configuration */
@@ -257,33 +261,18 @@ typedef enum {
 
 /** Touch sensor filter configuration */
 typedef struct touch_filter_config {
-    touch_filter_mode_t mode;   /*!<Set filter mode. The input to the filter is raw data and the output is the baseline value.
-                                    Larger filter coefficients increase the stability of the baseline. */
+    touch_filter_mode_t mode;   /*!<Set filter mode. The input of the filter is the raw value of touch reading,
+                                    and the output of the filter is involved in the judgment of the touch state. */
     uint32_t debounce_cnt;      /*!<Set debounce count, such as `n`. If the measured values continue to exceed
                                     the threshold for `n+1` times, the touch sensor state changes.
                                     Range: 0 ~ 7 */
-    uint32_t hysteresis_thr;    /*!<Hysteresis threshold coefficient. hysteresis = hysteresis coefficient * touch threshold.
-                                    If (raw data - baseline) > (touch threshold + hysteresis), the touch channel be touched.
-                                    If (raw data - baseline) < (touch threshold - hysteresis), the touch channel be released.
-                                    Range: 0 ~ 3. The coefficient is 0: 4/32;  1: 3/32;  2: 2/32;  3: OFF */
-    uint32_t noise_thr;         /*!<Noise threshold coefficient. noise = noise coefficient * touch threshold.
-                                    If (raw data - baseline) > (noise), the baseline stop updating.
-                                    If (raw data - baseline) < (noise), the baseline start updating.
+    uint32_t noise_thr;         /*!<Noise threshold coefficient. Higher = More noise resistance.
+                                    The actual noise should be less than (noise coefficient * touch threshold).
                                     Range: 0 ~ 3. The coefficient is 0: 4/8;  1: 3/8;   2: 2/8;   3: 1; */
-    uint32_t noise_neg_thr;     /*!<Negative noise threshold coefficient. negative noise = noise coefficient * touch threshold.
-                                    If (baseline - raw data) > (negative noise), the baseline restart reset process(refer to `baseline_reset`).
-                                    If (baseline - raw data) < (negative noise), the baseline stop reset process(refer to `baseline_reset`).
-                                    Range: 0 ~ 3. The coefficient is 0: 4/8;  1: 3/8;   2: 2/8;   3: 1/8; */
-    uint32_t neg_noise_limit;   /*!<Set the cumulative number of baseline reset processes. such as `n`. If the measured values continue to exceed
-                                    the negative noise threshold for `n+1` times, the baseline reset to raw data.
-                                    Range: 0 ~ 15 */
     uint32_t jitter_step;       /*!<Set jitter filter step size. Range: 0 ~ 15 */
     touch_smooth_mode_t smh_lvl;/*!<Level of filter applied on the original data against large noise interference. */
 #define TOUCH_DEBOUNCE_CNT_MAX      (7)
-#define TOUCH_HYSTERESIS_THR_MAX    (3)
 #define TOUCH_NOISE_THR_MAX         (3)
-#define TOUCH_NOISE_NEG_THR_MAX     (3)
-#define TOUCH_NEG_NOISE_CNT_LIMIT   (15)
 #define TOUCH_JITTER_STEP_MAX       (15)
 } touch_filter_config_t;
 

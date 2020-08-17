@@ -16,11 +16,7 @@
 
 #include "freertos/FreeRTOS.h"
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/crc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/crc.h"
-#endif
+#include "esp_rom_crc.h"
 #elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
 #include "mbedtls/sha256.h"
 #endif
@@ -41,6 +37,15 @@ extern "C" {
 
 #define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)
 
+typedef enum {
+    COREDUMP_MEMORY_DRAM,
+    COREDUMP_MEMORY_IRAM,
+    COREDUMP_MEMORY_RTC,
+    COREDUMP_MEMORY_RTC_FAST,
+    COREDUMP_MEMORY_MAX,
+    COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
+} coredump_region_t;
+
 // Gets RTOS tasks snapshot
 uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
                         const uint32_t snapshot_size);
@@ -51,7 +56,7 @@ bool esp_core_dump_tcb_addr_is_sane(uint32_t addr);
 bool esp_core_dump_task_stack_end_is_sane(uint32_t sp);
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
 void *esp_core_dump_get_current_task_handle(void);
-bool esp_core_dump_check_task(void *frame, core_dump_task_header_t *task_snaphort, bool* is_current, bool* stack_is_valid);
+bool esp_core_dump_check_task(panic_info_t *info, core_dump_task_header_t *task_snaphort, bool* is_current, bool* stack_is_valid);
 bool esp_core_dump_check_stack(uint32_t stack_start, uint32_t stack_end);
 uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot, uint32_t* stk_base, uint32_t* stk_len);
 
@@ -59,6 +64,10 @@ uint16_t esp_core_dump_get_arch_id(void);
 uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **reg_dump);
 void esp_core_dump_init_extra_info(void);
 uint32_t esp_core_dump_get_extra_info(void **info);
+
+uint32_t esp_core_dump_get_user_ram_segments(void);
+uint32_t esp_core_dump_get_user_ram_size(void);
+int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
 
 // Data integrity check functions
 void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data);
@@ -121,6 +130,16 @@ extern uint8_t *s_core_dump_sp;
     } \
 }
 #endif
+
+// coredump memory regions defined during compile timing
+extern int _coredump_dram_start;
+extern int _coredump_dram_end;
+extern int _coredump_iram_start;
+extern int _coredump_iram_end;
+extern int _coredump_rtc_start;
+extern int _coredump_rtc_end;
+extern int _coredump_rtc_fast_start;
+extern int _coredump_rtc_fast_end;
 
 #ifdef __cplusplus
 }

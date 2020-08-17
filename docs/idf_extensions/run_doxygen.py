@@ -21,27 +21,9 @@ ALL_KINDS = [
 
 
 def setup(app):
-    # The idf_build_system extension will emit this event once it
-    app.connect('idf-info', generate_doxygen)
-
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
-
-
-def _parse_defines(header_path, sdk_config_path):
-    defines = {}
-    # Note: we run C preprocessor here without any -I arguments (except "sdkconfig.h"), so assumption is
-    # that these headers are all self-contained and don't include any other headers
-    # not in the same directory
-    print("Reading macros from %s..." % (header_path))
-    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-I", sdk_config_path,
-                                                "-dM", "-E", header_path]).decode()
-    for line in processed_output.split("\n"):
-        line = line.strip()
-        m = re.search("#define ([^ ]+) ?(.*)", line)
-        if m and not m.group(1).startswith("_"):
-            defines[m.group(1)] = m.group(2)
-
-    return defines
+    # The idf_build_system extension will emit this event once it has generated documentation macro definitions
+    app.connect('idf-defines-generated', generate_doxygen)
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
 
 
 def generate_doxygen(app, defines):
@@ -57,8 +39,16 @@ def generate_doxygen(app, defines):
     })
     doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
     print("Running doxygen with doxyfile {}".format(doxyfile))
-    # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
-    subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir)
+
+    # It's possible to have doxygen log warnings to a file using WARN_LOGFILE directive,
+    # but in some cases it will still log an error to stderr and return success!
+    #
+    # So take all of stderr and redirect it to a logfile (will contain warnings and errors)
+    logfile = os.path.join(build_dir, "doxygen-warning-log.txt")
+
+    with open(logfile, "w") as f:
+        # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
+        subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir, stderr=f)
 
     # Doxygen has generated XML files in 'xml' directory.
     # Copy them to 'xml_in', only touching the files which have changed.

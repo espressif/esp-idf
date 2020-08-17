@@ -20,6 +20,7 @@
 #include "driver/gpio.h"
 #include "iot_button.h"
 #include "esp_timer.h"
+#include "esp_rom_sys.h"
 
 #define USE_ESP_TIMER   CONFIG_BUTTON_USE_ESP_TIMER
 #if USE_ESP_TIMER
@@ -275,7 +276,7 @@ esp_err_t iot_button_delete(button_handle_t btn_handle)
 button_handle_t iot_button_create(gpio_num_t gpio_num, button_active_t active_level)
 {
     #if USE_ESP_TIMER
-    ets_printf("use esp timer !!!\n");
+    esp_rom_printf("use esp timer !!!\n");
     esp_timer_init();
     #endif
 

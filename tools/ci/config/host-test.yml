@@ -50,7 +50,7 @@
       - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
     expire_in: 1 day
   script:
-    - git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
+    - ./tools/ci/retry_failed.sh git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
     # Setup parameters of triggered/regular job
     - export TRIGGERED_RELATIVE=${BOT_LABEL_STATIC_ANALYSIS-} && export TRIGGERED_ABSOLUTE=${BOT_LABEL_STATIC_ANALYSIS_ALL-} && export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
     - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
@@ -59,7 +59,7 @@ test_nvs_on_host:
   extends: .host_test_template
   script:
     - cd components/nvs_flash/test_nvs_host
-    - make test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh make test
 
 test_nvs_coverage:
   extends: .host_test_template
@@ -312,3 +312,26 @@ test_mkdfu:
   script:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
+
+test_docs:
+  stage: host_test
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  tags:
+    - host_test
+  dependencies: []
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_HOST_TEST
+      - $BOT_LABEL_REGULAR_TEST
+  artifacts:
+    when: on_failure
+    paths:
+        - docs/test/_build/*/*/*/html/*
+    expire_in: 1 week
+  script:
+  - cd ${IDF_PATH}/docs/test
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r ${IDF_PATH}/docs/requirements.txt
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
+  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
+

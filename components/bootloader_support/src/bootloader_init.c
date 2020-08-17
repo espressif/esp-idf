@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "sdkconfig.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include "bootloader_init.h"
 #include "bootloader_flash.h"
@@ -28,7 +29,7 @@
 
 static const char *TAG = "boot";
 
-esp_image_header_t bootloader_image_hdr;
+esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 
 void bootloader_clear_bss_section(void)
 {

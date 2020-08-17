@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200106
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
 
 /**
  * @brief Bluetooth mode for controller enable/disable
@@ -117,6 +117,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_AUTO_LATENCY_EFF false
 #endif
 
+#ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#else
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF false
+#endif
+
 #define BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT          9   //Maximum BLE connection limitation
 #define BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_LIMIT   7   //Maximum ACL connection limitation
 #define BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_LIMIT  3   //Maximum SCO/eSCO connection limitation
@@ -140,8 +146,11 @@ the adv packet will be discarded until the memory is restored. */
     .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
     .bt_sco_datapath = CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF,          \
     .auto_latency = BTDM_CTRL_AUTO_LATENCY_EFF,                            \
+    .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
     .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
+    .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
+    .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -173,6 +182,7 @@ typedef struct {
     uint8_t bt_max_acl_conn;                /*!< BR/EDR maximum ACL connection numbers */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
     bool auto_latency;                      /*!< BLE auto latency, used to enhance classic BT performance */
+    bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
     /*
      * Following parameters can not be configured runtime when call esp_bt_controller_init()
      * It will be overwrite with a constant value which in menuconfig or from a macro.
@@ -180,6 +190,8 @@ typedef struct {
      */
     uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 

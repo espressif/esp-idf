@@ -17,13 +17,12 @@ void adc_hal_init(void);
 void adc_hal_deinit(void);
 
 /**
- * Set adc sample cycle for digital controller.
+ * Set adc sample cycle.
  *
  * @note Normally, please use default value.
- * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
- *                     Range: 2 ~ 0xFF.
+ * @param sample_cycle The number of ADC sampling cycles. Range: 1 ~ 7.
  */
-#define adc_hal_digi_set_sample_cycle(sample_cycle) adc_ll_digi_set_sample_cycle(sample_cycle)
+#define adc_hal_set_sample_cycle(sample_cycle) adc_ll_set_sample_cycle(sample_cycle)
 
 /**
  * Set ADC module power management.
@@ -168,6 +167,20 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+
+/**
+ *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC2's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @note  ESP32 only supports output of ADC2's internal reference voltage.
+ *  @param[in]  adc ADC unit select
+ *  @param[in]  channel ADC2 channel number
+ *  @param[in]  en Enable/disable the reference voltage output
+ */
+#define adc_hal_vref_output(adc, channel, en) adc_ll_vref_output(adc, channel, en)
 
 /*---------------------------------------------------------------
                     Digital controller setting

@@ -19,31 +19,23 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#include "esp32/rom/efuse.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/crc.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
-#include "esp32/rom/gpio.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/efuse.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/crc.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/uart.h"
-#include "esp32s2/rom/gpio.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #else
 #error "Unsupported IDF_TARGET"
 #endif
+#include "esp_rom_uart.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -65,6 +57,7 @@
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
+#include "bootloader_console.h"
 #include "esp_efuse.h"
 
 static const char *TAG = "boot";
@@ -617,7 +610,7 @@ static void load_image(const esp_image_metadata_t *image_data)
            so issue a system reset to ensure flash encryption
            cache resets properly */
         ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
-        uart_tx_wait_idle(0);
+        esp_rom_uart_tx_wait_idle(0);
         bootloader_reset();
     }
 #endif
@@ -759,6 +752,7 @@ static void set_cache_and_start_app(
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
 
     ESP_LOGD(TAG, "start: 0x%08x", entry_addr);
+    bootloader_atexit();
     typedef void (*entry_t)(void) __attribute__((noreturn));
     entry_t entry = ((entry_t) entry_addr);
 
@@ -770,14 +764,18 @@ static void set_cache_and_start_app(
 void bootloader_reset(void)
 {
 #ifdef BOOTLOADER_BUILD
-    uart_tx_flush(0);    /* Ensure any buffered log output is displayed */
-    uart_tx_flush(1);
-    ets_delay_us(1000); /* Allow last byte to leave FIFO */
+    bootloader_atexit();
+    esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
     REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
     while (1) { }       /* This line will never be reached, used to keep gcc happy */
 #else
     abort();            /* This function should really not be called from application code */
 #endif
+}
+
+void bootloader_atexit(void)
+{
+    bootloader_console_deinit();
 }
 
 esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
@@ -821,6 +819,7 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
 
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
 {
+
     if (digest == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -837,7 +836,7 @@ esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, 
     while (len > 0) {
         uint32_t mmu_page_offset = ((flash_offset & MMAP_ALIGNED_MASK) != 0) ? 1 : 0; /* Skip 1st MMU Page if it is already populated */
         uint32_t partial_image_len = MIN(len, ((mmu_free_pages_count - mmu_page_offset) * SPI_FLASH_MMU_PAGE_SIZE)); /* Read the image that fits in the free MMU pages */
-        
+
         const void * image = bootloader_mmap(flash_offset, partial_image_len);
         if (image == NULL) {
             bootloader_sha256_finish(sha_handle, NULL);

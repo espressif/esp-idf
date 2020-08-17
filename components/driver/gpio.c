@@ -28,6 +28,7 @@
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
 #include "hal/gpio_hal.h"
+#include "esp_rom_gpio.h"
 
 static const char *GPIO_TAG = "gpio";
 #define GPIO_CHECK(a, str, ret_val) \
@@ -192,7 +193,7 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_enable(gpio_context.gpio_hal, gpio_num);
-    gpio_matrix_out(gpio_num, SIG_GPIO_OUT_IDX, false, false);
+    esp_rom_gpio_connect_out_signal(gpio_num, SIG_GPIO_OUT_IDX, false, false);
     return ESP_OK;
 }
 

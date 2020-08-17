@@ -254,7 +254,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     struct bt_mesh_ctl_friend_clear_confirm cfm = {0};
 
     if (buf->len < sizeof(*msg)) {
-        BT_WARN("%s, Too short Friend Clear", __func__);
+        BT_WARN("Too short Friend Clear (len %d)", buf->len);
         return -EINVAL;
     }
 
@@ -265,7 +265,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
     frnd = bt_mesh_friend_find(rx->sub->net_idx, lpn_addr, false, false);
     if (!frnd) {
-        BT_WARN("%s, No matching LPN addr 0x%04x", __func__, lpn_addr);
+        BT_WARN("No matching LPN addr 0x%04x", lpn_addr);
         return 0;
     }
 
@@ -276,8 +276,8 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
      * 65536, is in the range 0 to 255 inclusive.
      */
     if (lpn_counter - frnd->lpn_counter > 255) {
-        BT_WARN("%s, LPN Counter out of range (old %u new %u)",
-                __func__, frnd->lpn_counter, lpn_counter);
+        BT_WARN("LPN Counter out of range (old %u new %u)",
+                frnd->lpn_counter, lpn_counter);
         return 0;
     }
 
@@ -305,7 +305,7 @@ static void friend_sub_add(struct bt_mesh_friend *frnd, u16_t addr)
         }
     }
 
-    BT_WARN("%s, No space in friend subscription list", __func__);
+    BT_WARN("No space in friend subscription list");
 }
 
 static void friend_sub_rem(struct bt_mesh_friend *frnd, u16_t addr)
@@ -588,7 +588,7 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
 
     buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, &sdu);
     if (!buf) {
-        BT_ERR("%s, Unable to encode Subscription List Confirmation", __func__);
+        BT_ERR("Unable to encode Subscription List Confirmation");
         return;
     }
 
@@ -619,18 +619,18 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
     u8_t xact = 0U;
 
     if (buf->len < BLE_MESH_FRIEND_SUB_MIN_LEN) {
-        BT_WARN("%s, Too short Friend Subscription Add", __func__);
+        BT_WARN("Too short Friend Subscription Add (len %d)", buf->len);
         return -EINVAL;
     }
 
     frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
     if (!frnd) {
-        BT_WARN("%s, No matching LPN addr 0x%04x", __func__, rx->ctx.addr);
+        BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
         return 0;
     }
 
     if (frnd->pending_buf) {
-        BT_WARN("%s, Previous buffer not yet sent!", __func__);
+        BT_WARN("Previous buffer not yet sent!");
         return 0;
     }
 
@@ -654,18 +654,18 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
     u8_t xact = 0U;
 
     if (buf->len < BLE_MESH_FRIEND_SUB_MIN_LEN) {
-        BT_WARN("%s, Too short Friend Subscription Remove", __func__);
+        BT_WARN("Too short Friend Subscription Remove (len %d)", buf->len);
         return -EINVAL;
     }
 
     frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
     if (!frnd) {
-        BT_WARN("%s, No matching LPN addr 0x%04x", __func__, rx->ctx.addr);
+        BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
         return 0;
     }
 
     if (frnd->pending_buf) {
-        BT_WARN("%s, Previous buffer not yet sent!", __func__);
+        BT_WARN("Previous buffer not yet sent!");
         return 0;
     }
 
@@ -694,7 +694,7 @@ static void enqueue_update(struct bt_mesh_friend *frnd, u8_t md)
 
     buf = encode_update(frnd, md);
     if (!buf) {
-        BT_ERR("%s, Unable to encode Friend Update", __func__);
+        BT_ERR("Unable to encode Friend Update");
         return;
     }
 
@@ -708,23 +708,23 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     struct bt_mesh_friend *frnd = NULL;
 
     if (buf->len < sizeof(*msg)) {
-        BT_WARN("%s, Too short Friend Poll", __func__);
+        BT_WARN("Too short Friend Poll (len %d)", buf->len);
         return -EINVAL;
     }
 
     frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
     if (!frnd) {
-        BT_WARN("%s, No matching LPN addr 0x%04x", __func__, rx->ctx.addr);
+        BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
         return 0;
     }
 
     if (msg->fsn & ~1) {
-        BT_WARN("%s, Prohibited (non-zero) padding bits", __func__);
+        BT_WARN("Prohibited (non-zero) padding bits");
         return -EINVAL;
     }
 
     if (frnd->pending_buf) {
-        BT_WARN("%s, Previous buffer not yet sent!", __func__);
+        BT_WARN("Previous buffer not yet sent!");
         return 0;
     }
 
@@ -856,27 +856,27 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
     BT_DBG("%s", __func__);
 
     if (buf->len < sizeof(*msg)) {
-        BT_WARN("%s, Too short Friend Clear Confirm", __func__);
+        BT_WARN("Too short Friend Clear Confirm (len %d)", buf->len);
         return -EINVAL;
     }
 
     frnd = find_clear(rx->ctx.addr);
     if (!frnd) {
-        BT_WARN("%s, No pending clear procedure for 0x%02x", __func__, rx->ctx.addr);
+        BT_WARN("No pending clear procedure for 0x%02x", rx->ctx.addr);
         return 0;
     }
 
     lpn_addr = sys_be16_to_cpu(msg->lpn_addr);
     if (lpn_addr != frnd->lpn) {
-        BT_WARN("%s, LPN address mismatch (0x%04x != 0x%04x)",
-                __func__, lpn_addr, frnd->lpn);
+        BT_WARN("LPN address mismatch (0x%04x != 0x%04x)",
+                lpn_addr, frnd->lpn);
         return 0;
     }
 
     lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
     if (lpn_counter != frnd->lpn_counter) {
-        BT_WARN("%s, LPN counter mismatch (0x%04x != 0x%04x)",
-                __func__, lpn_counter, frnd->lpn_counter);
+        BT_WARN("LPN counter mismatch (0x%04x != 0x%04x)",
+                lpn_counter, frnd->lpn_counter);
         return 0;
     }
 
@@ -906,7 +906,7 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
 
     buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
     if (!buf) {
-        BT_ERR("%s, Unable to encode Friend Offer", __func__);
+        BT_ERR("Unable to encode Friend Offer");
         return;
     }
 
@@ -964,47 +964,47 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     int i;
 
     if (buf->len < sizeof(*msg)) {
-        BT_WARN("%s, Too short Friend Request", __func__);
+        BT_WARN("Too short Friend Request (len %d)", buf->len);
         return -EINVAL;
     }
 
     if (msg->recv_delay <= 0x09) {
-        BT_WARN("%s, Prohibited ReceiveDelay (0x%02x)", __func__, msg->recv_delay);
+        BT_WARN("Prohibited ReceiveDelay (0x%02x)", msg->recv_delay);
         return -EINVAL;
     }
 
     poll_to = sys_get_be24(msg->poll_to);
 
     if (poll_to <= 0x000009 || poll_to >= 0x34bc00) {
-        BT_WARN("%s, Prohibited PollTimeout (0x%06x)", __func__, poll_to);
+        BT_WARN("Prohibited PollTimeout (0x%06x)", poll_to);
         return -EINVAL;
     }
 
     if (msg->num_elem == 0x00) {
-        BT_WARN("%s, Prohibited NumElements value (0x00)", __func__);
+        BT_WARN("Prohibited NumElements value (0x00)");
         return -EINVAL;
     }
 
     if (!BLE_MESH_ADDR_IS_UNICAST(rx->ctx.addr + msg->num_elem - 1)) {
-        BT_WARN("%s, LPN elements stretch outside of unicast range", __func__);
+        BT_WARN("LPN elements stretch outside of unicast range");
         return -EINVAL;
     }
 
     if (!MIN_QUEUE_SIZE_LOG(msg->criteria)) {
-        BT_WARN("%s, Prohibited Minimum Queue Size in Friend Request", __func__);
+        BT_WARN("Prohibited Minimum Queue Size in Friend Request");
         return -EINVAL;
     }
 
     if (CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE < MIN_QUEUE_SIZE(msg->criteria)) {
-        BT_WARN("%s, We have a too small Friend Queue size (%u < %u)",
-                __func__, CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE,
+        BT_WARN("We have a too small Friend Queue size (%u < %u)",
+                CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE,
                 MIN_QUEUE_SIZE(msg->criteria));
         return 0;
     }
 
     frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
     if (frnd) {
-        BT_WARN("%s, Existing LPN re-requesting Friendship", __func__);
+        BT_WARN("Existing LPN re-requesting Friendship");
         friend_clear(frnd, BLE_MESH_FRIENDSHIP_TERMINATE_RECV_FRND_REQ);
         goto init_friend;
     }
@@ -1018,7 +1018,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     }
 
     if (!frnd) {
-        BT_WARN("%s, No free Friend contexts for new LPN", __func__);
+        BT_WARN("No free Friend contexts for new LPN");
         return -ENOMEM;
     }
 
@@ -1206,14 +1206,14 @@ static void friend_timeout(struct k_work *work)
     }
 
     if (frnd->established && !frnd->pending_req) {
-        BT_WARN("%s, Friendship lost with 0x%04x", __func__, frnd->lpn);
+        BT_WARN("Friendship lost with 0x%04x", frnd->lpn);
         friend_clear(frnd, BLE_MESH_FRIENDSHIP_TERMINATE_POLL_TIMEOUT);
         return;
     }
 
     frnd->last = (void *)sys_slist_get(&frnd->queue);
     if (!frnd->last) {
-        BT_WARN("%s, Friendship not established with 0x%04x", __func__, frnd->lpn);
+        BT_WARN("Friendship not established with 0x%04x", frnd->lpn);
         friend_clear(frnd, BLE_MESH_FRIENDSHIP_TERMINATE_ESTABLISH_FAIL);
         return;
     }
@@ -1400,7 +1400,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 
     buf = create_friend_pdu(frnd, &info, sbuf);
     if (!buf) {
-        BT_ERR("%s, Failed to encode Friend buffer", __func__);
+        BT_ERR("Failed to encode Friend buffer");
         return;
     }
 
@@ -1437,7 +1437,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 
     buf = create_friend_pdu(frnd, &info, sbuf);
     if (!buf) {
-        BT_ERR("%s, Failed to encode Friend buffer", __func__);
+        BT_ERR("Failed to encode Friend buffer");
         return;
     }
 
@@ -1695,7 +1695,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, u16_t src,
                 continue;
             }
 
-            BT_WARN("%s, Clearing incomplete segments for 0x%04x", __func__, src);
+            BT_WARN("Clearing incomplete segments for 0x%04x", src);
 
             purge_buffers(&seg->queue);
             seg->seg_count = 0U;

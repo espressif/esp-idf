@@ -21,9 +21,11 @@
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "enc28j60.h"
 #include "sdkconfig.h"
 
@@ -299,7 +301,7 @@ static esp_err_t enc28j60_do_reset(emac_enc28j60_t *emac)
     }
 
     // After reset, wait at least 1ms for the device to be ready
-    ets_delay_us(ENC28J60_SYSTEM_RESET_ADDITION_TIME_US);
+    esp_rom_delay_us(ENC28J60_SYSTEM_RESET_ADDITION_TIME_US);
 
     return ret;
 }
@@ -391,7 +393,7 @@ static esp_err_t emac_enc28j60_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_ad
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(enc28j60_register_read(emac, ENC28J60_MISTAT, &mii_status) == ESP_OK,
                   "read MISTAT failed", out, ESP_FAIL);
         to += 100;
@@ -430,7 +432,7 @@ static esp_err_t emac_enc28j60_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_add
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(enc28j60_register_read(emac, ENC28J60_MISTAT, &mii_status) == ESP_OK,
                   "read MISTAT failed", out, ESP_FAIL);
         to += 100;
@@ -837,7 +839,7 @@ static esp_err_t emac_enc28j60_init(esp_eth_mac_t *mac)
     esp_eth_mediator_t *eth = emac->eth;
 
     /* init gpio used for reporting enc28j60 interrupt */
-    gpio_pad_select_gpio(emac->int_gpio_num);
+    gpio_reset_pin(emac->int_gpio_num);
     gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
     gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
     gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE);
@@ -919,8 +921,12 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create enc28j60 task */
-    BaseType_t xReturned = xTaskCreate(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
-                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
+                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create enc28j60 task failed", err, NULL);
 
     return &(emac->parent);

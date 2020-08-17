@@ -1,4 +1,3 @@
-
 .clang_tidy_deploy_template:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
@@ -26,6 +25,8 @@
 
 clang_tidy_deploy:
   extends: .clang_tidy_deploy_template
+  # Override default stage to happen before the post_check
+  stage: test_deploy
   dependencies:
     - clang_tidy_check
     - clang_tidy_check_all
@@ -53,9 +54,12 @@ push_to_github:
   tags:
     - deploy
   only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
   when: on_success
   dependencies: []
   extends: .before_script_lesser
@@ -100,6 +104,8 @@ push_to_github:
 # deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
 deploy_docs_preview:
   extends: .deploy_docs_template
+  # Override default stage to happen before the post_check
+  stage: test_deploy
   only:
     refs:
       - triggers
@@ -124,6 +130,8 @@ deploy_docs_production:
       - master
       - /^release\/v/
       - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
   variables:
     TYPE: "preview"
     DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
@@ -168,8 +176,8 @@ deploy_test_result:
     - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
     # artifacts of job update_test_cases creates test-management folder
     # we need to remove it so we can clone test-management folder again
-    - rm -r test-management
-    - git clone $TEST_MANAGEMENT_REPO
+    - rm -rf test-management
+    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
     - python3 $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}

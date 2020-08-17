@@ -28,3 +28,19 @@ void lldesc_setup_link(lldesc_t *dmadesc, const void *data, int len, bool isrx)
     dmadesc[n - 1].eof = 1; //Mark last DMA desc as end of stream.
     dmadesc[n - 1].qe.stqe_next = NULL;
 }
+
+int lldesc_get_received_len(lldesc_t* head, lldesc_t** out_next)
+{
+    lldesc_t* desc = head;
+    int len = 0;
+    while(desc) {
+        len += desc->length;
+        bool eof = desc->eof;
+        desc = STAILQ_NEXT(desc, qe);
+        if (eof) break;
+    }
+    if (out_next) {
+        *out_next = desc;
+    }
+    return len;
+}

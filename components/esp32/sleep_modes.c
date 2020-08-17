@@ -22,9 +22,10 @@
 #include "esp32/clk.h"
 #include "esp_newlib.h"
 #include "esp_spi_flash.h"
+#include "esp_rom_sys.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
+#include "esp_rom_uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -132,11 +133,11 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
             _DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG) & (~DPORT_PRO_CACHE_MMU_IA_CLR));
 #if CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY > 0
     // ROM code has not started yet, so we need to set delay factor
-    // used by ets_delay_us first.
+    // used by esp_rom_delay_us first.
     ets_update_cpu_frequency_rom(ets_get_detected_xtal_freq() / 1000000);
     // This delay is configured in menuconfig, it can be used to give
     // the flash chip some time to become ready.
-    ets_delay_us(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY);
+    esp_rom_delay_us(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY);
 #endif
 }
 
@@ -151,7 +152,7 @@ void esp_deep_sleep(uint64_t time_in_us)
 static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < 3; ++i) {
-        uart_tx_wait_idle(i);
+        esp_rom_uart_tx_wait_idle(i);
     }
 }
 
@@ -202,6 +203,14 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
     }
 
+    uint32_t reject_triggers = 0;
+    if ((pd_flags & RTC_SLEEP_PD_DIG) == 0 && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
+        /* Light sleep, enable sleep reject for faster return from this function,
+         * in case the wakeup is already triggerred.
+         */
+        reject_triggers = RTC_CNTL_LIGHT_SLP_REJECT_EN_M | RTC_CNTL_GPIO_REJECT_EN_M;
+    }
+
     // Enter sleep
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
@@ -211,7 +220,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
-    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0);
+    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
@@ -272,7 +281,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     // If SPI flash was powered down, wait for it to become ready
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
         // Wait for the flash chip to start up
-        ets_delay_us(flash_enable_time_us);
+        esp_rom_delay_us(flash_enable_time_us);
     }
     return err;
 }

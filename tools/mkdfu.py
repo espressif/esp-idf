@@ -107,8 +107,6 @@ DFUSuffix = namedtuple(
     "DFUSuffix", ["bcd_device", "pid", "vid", "bcd_dfu", "sig", "len"]
 )
 ESPRESSIF_VID = 12346
-# TODO: set PID based on the chip type (add a command line argument)
-DFUSUFFIX_DEFAULT = DFUSuffix(0xFFFF, 0xFFFF, ESPRESSIF_VID, 0x0100, b"UFD", 16)
 # This CRC32 gets added after DFUSUFFIX_STRUCT
 DFUCRC_STRUCT = b"<I"
 
@@ -126,8 +124,9 @@ def pad_bytes(b, multiple, padding=b"\x00"):  # type: (bytes, int, bytes) -> byt
 
 
 class EspDfuWriter(object):
-    def __init__(self, dest_file):  # type: (typing.BinaryIO) -> None
+    def __init__(self, dest_file, pid):  # type: (typing.BinaryIO) -> None
         self.dest = dest_file
+        self.pid = pid
         self.entries = []  # type: typing.List[bytes]
         self.index = []  # type: typing.List[DFUInfo]
 
@@ -151,7 +150,8 @@ class EspDfuWriter(object):
         out_data = pad_bytes(out_data, cpio_block_size)
 
         # Add DFU suffix and CRC
-        out_data += struct.pack(DFUSUFFIX_STRUCT, *DFUSUFFIX_DEFAULT)
+        dfu_suffix = DFUSuffix(0xFFFF, self.pid, ESPRESSIF_VID, 0x0100, b"UFD", 16)
+        out_data += struct.pack(DFUSUFFIX_STRUCT, *dfu_suffix)
         out_data += struct.pack(DFUCRC_STRUCT, dfu_crc(out_data))
 
         # Finally write the entire binary
@@ -187,7 +187,7 @@ class EspDfuWriter(object):
 
 
 def action_write(args):
-    writer = EspDfuWriter(args['output_file'])
+    writer = EspDfuWriter(args['output_file'], args['pid'])
     for addr, f in args['files']:
         print('Adding {} at {:#x}'.format(f, addr))
         writer.add_file(addr, f)
@@ -205,6 +205,10 @@ def main():
                               help='Filename for storing the output DFU image',
                               required=True,
                               type=argparse.FileType("wb"))
+    write_parser.add_argument("--pid",
+                              required=True,
+                              type=lambda h: int(h, 16),
+                              help='Hexa-decimal product indentificator')
     write_parser.add_argument("--json",
                               help='Optional file for loading "flash_files" dictionary with <address> <file> items')
     write_parser.add_argument("files",
@@ -241,6 +245,7 @@ def main():
 
     cmd_args = {'output_file': args.output_file,
                 'files': files,
+                'pid': args.pid,
                 }
 
     {'write': action_write

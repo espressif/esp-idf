@@ -17,13 +17,6 @@
 
 #include <stdint.h>
 
-#define ESP_ROM_HAS_CRC8LE      1
-#define ESP_ROM_HAS_CRC16LE     1
-#define ESP_ROM_HAS_CRC32LE     1
-#define ESP_ROM_HAS_CRC8BE      1
-#define ESP_ROM_HAS_CRC16BE     1
-#define ESP_ROM_HAS_CRC32BE     1
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -145,8 +145,12 @@ static void reset_complete(void)
     l2cu_device_reset ();
 #if (SMP_INCLUDED == TRUE)
     /* Clear current security state */
-    for (int devinx = 0; devinx < BTM_SEC_MAX_DEVICE_RECORDS; devinx++) {
-        btm_cb.sec_dev_rec[devinx].sec_state = BTM_SEC_STATE_IDLE;
+    {
+        list_node_t *p_node = NULL;
+        for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+            tBTM_SEC_DEV_REC *p_dev_rec = (tBTM_SEC_DEV_REC *) list_node(p_node);
+            p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+        }
     }
 #endif  ///SMP_INCLUDED == TRUE
     /* After the reset controller should restore all parameters to defaults. */
@@ -792,13 +796,24 @@ void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len)
 {
     UINT8 i;
 
-    BTM_TRACE_DEBUG ("BTM Event: Vendor Specific event from controller");
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    UINT8 sub_event;
+    UINT8 *p_evt = p;
 
+    STREAM_TO_UINT8(sub_event, p_evt);
+    /* Check in subevent if authentication is through Legacy Authentication. */
+    if (sub_event == ESP_VS_REM_LEGACY_AUTH_CMP) {
+        UINT16 hci_handle;
+        STREAM_TO_UINT16(hci_handle, p_evt);
+        btm_sec_handle_remote_legacy_auth_cmp(hci_handle);
+    }
+#endif /// (CLASSIC_BT_INCLUDED == TRUE)
     for (i = 0; i < BTM_MAX_VSE_CALLBACKS; i++) {
         if (btm_cb.devcb.p_vend_spec_cb[i]) {
             (*btm_cb.devcb.p_vend_spec_cb[i])(evt_len, p);
         }
     }
+    BTM_TRACE_DEBUG ("BTM Event: Vendor Specific event from controller");
 }
 
 

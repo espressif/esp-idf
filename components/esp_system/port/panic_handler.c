@@ -35,21 +35,19 @@
 
 
 #include "sdkconfig.h"
-
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
 #include "esp32/dport_access.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/cache_err_int.h"
-#include "esp32s2/rom/uart.h"
 #include "esp32s2/memprot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
 #endif
 
-#include "panic_internal.h"
+#include "esp_private/panic_internal.h"
 
 extern int _invalid_pc_placeholder;
 
@@ -111,7 +109,7 @@ static void print_debug_exception_details(const void *f)
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
             int core = 0;
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
             if (f == xt_exc_frames[1]) {
                 core = 1;
             }
@@ -209,11 +207,11 @@ static void print_registers(const void *f, int core)
 
     // If the core which triggers the interrupt watchpoint was in ISR context, dump the epc registers.
     if (xPortInterruptedFromISRContext()
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
             && ((core == 0 && frame->exccause == PANIC_RSN_INTWDT_CPU0) ||
                 (core == 1 && frame->exccause == PANIC_RSN_INTWDT_CPU1))
-#endif //!CONFIG_FREERTOS_UNICORE
-       ) {
+#endif //!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        ) {
 
         panic_print_str("\r\n");
 
@@ -251,7 +249,7 @@ static void print_state_for_core(const void *f, int core)
 
 static void print_state(const void *f)
 {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     int err_core = f == xt_exc_frames[0] ? 0 : 1;
 #else
     int err_core = 0;
@@ -261,7 +259,7 @@ static void print_state(const void *f)
 
     panic_print_str("\r\n");
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // If there are other frame info, print them as well
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         // `f` is the frame for the offending core, see note above.
@@ -386,6 +384,7 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t *info, bool pseu
     info->exception = PANIC_EXCEPTION_FAULT;
     info->details = NULL;
 
+    info->pseudo_excause = pseudo_excause;
     if (pseudo_excause) {
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
             info->core = 0;
@@ -478,7 +477,7 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
     // If multiple cores arrive at panic handler, save frames for all of them
     xt_exc_frames[core_id] = frame;
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // These are cases where both CPUs both go into panic handler. The following code ensures
     // only one core proceeds to the system panic handler.
     if (pseudo_excause) {
@@ -497,7 +496,7 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
         }
     }
 
-    ets_delay_us(1);
+    esp_rom_delay_us(1);
     SOC_HAL_STALL_OTHER_CORES();
 #endif
 

@@ -4,6 +4,11 @@ menu "ESP32-specific"
     # not working so we just hide all items here
     visible if IDF_TARGET_ESP32
 
+    config ESP32_ECO3_CACHE_LOCK_FIX
+        bool
+        default y
+        depends on !FREERTOS_UNICORE && ESP32_SPIRAM_SUPPORT
+
     choice ESP32_REV_MIN
         prompt "Minimum Supported ESP32 Revision"
         default ESP32_REV_MIN_0
@@ -19,6 +24,7 @@ menu "ESP32-specific"
             bool "Rev 2"
         config ESP32_REV_MIN_3
             bool "Rev 3"
+            select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
     endchoice
 
     config ESP32_REV_MIN
@@ -72,6 +78,9 @@ menu "ESP32-specific"
             config SPIRAM_TYPE_AUTO
                 bool "Auto-detect"
 
+            config SPIRAM_TYPE_ESPPSRAM16
+                bool "ESP-PSRAM16 or APS1604"
+
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
 
@@ -83,6 +92,7 @@ menu "ESP32-specific"
         config SPIRAM_SIZE
             int
             default -1 if SPIRAM_TYPE_AUTO
+            default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
@@ -279,23 +289,37 @@ menu "ESP32-specific"
 
         endmenu
 
+        config SPIRAM_CUSTOM_SPIWP_SD3_PIN
+            bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
+            depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT)
+            default y if SPIRAM_SPIWP_SD3_PIN != 7  # backwards compatibility, can remove in IDF 5
+            default n
+            help
+                This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+                SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.
+
+                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The psram only has QPI
+                mode, so a WP pin setting is necessary.
+
+                If this config item is set to N (default), the correct WP pin will be automatically used for any
+                Espressif chip or module with integrated flash. If a custom setting is needed, set this config item
+                to Y and specify the GPIO number connected to the WP pin.
+
+                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set the same as the SPI Flash WP pin
+                configured in the bootloader.
+
         config SPIRAM_SPIWP_SD3_PIN
-            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
-            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
+            int "Custom SPI PSRAM WP(SD3) Pin"
+            depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT)
+            #depends on SPIRAM_CUSTOM_SPIWP_SD3_PIN  # backwards compatibility, can uncomment in IDF 5
             range 0 33
             default 7
             help
-                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
-                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
+                The option "Use custom SPI PSRAM WP(SD3) pin" must be set or this value is ignored
 
-                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
-                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. And the psram only has QPI
-                mode, the WP pin is necessary, so we need to configure this value here.
-
-                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
-                bootloader.
-
-                For ESP32-PICO chip, the default value of this config should be 7.
+                If burning a customized set of SPI flash pins in eFuse and using DIO or DOUT mode for flash, set this
+                value to the GPIO number of the SPIRAM WP pin.
 
         config SPIRAM_2T_MODE
             bool "Enable SPI PSRAM 2T mode"
@@ -534,6 +558,7 @@ menu "ESP32-specific"
             bool "Internal 150kHz RC oscillator"
         config ESP32_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
+            select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
         config ESP32_RTC_CLK_SRC_INT_8MD256
@@ -584,23 +609,6 @@ menu "ESP32-specific"
             before giving up and switching to the internal RC.
             Increase this option if the 32k crystal oscillator
             does not start and switches to internal RC.
-
-    config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
-        int "Bootstrap cycles for external 32kHz crystal"
-        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
-        default 5
-        range 0 32768
-        help
-            To reduce the startup time of an external RTC crystal,
-            we bootstrap it with a 32kHz square wave for a fixed number of cycles.
-            Setting 0 will disable bootstrapping (if disabled, the crystal may take
-            longer to start up or fail to oscillate under some conditions).
-
-            If this value is too high, a faulty crystal may initially start and then fail.
-            If this value is too low, an otherwise good crystal may not start.
-
-            To accurately determine if the crystal has started,
-            set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
 
     config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         int "Extra delay in deep sleep wake stub (in us)"
@@ -738,6 +746,18 @@ menu "ESP32-specific"
 
             This is possible due to handling of exceptions `LoadStoreError (3)` and `LoadStoreAlignmentError (9)`
             Each unaligned read/write access will incur a penalty of maximum of 167 CPU cycles.
+
+    config ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+        bool "Enable RTC fast memory for dynamic allocations"
+        default y
+        depends on FREERTOS_UNICORE
+        help
+            This config option allows to add RTC fast memory region to system heap with capability
+            similar to that of DRAM region but without DMA. This memory will be consumed first per
+            heap initialization order by early startup services and scheduler related code. Speed
+            wise RTC fast memory operates on APB clock and hence does not have much performance impact.
+            RTC fast memory is accessible to PRO cpu only and hence this is allowed for single core
+            configuration only for ESP32.
 
 endmenu  # ESP32-Specific
 

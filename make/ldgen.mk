@@ -44,6 +44,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_librarie
 		--env           "COMPONENT_KCONFIGS_SOURCE_FILE=$(COMPONENT_KCONFIGS_SOURCE_FILE)" \
 		--env           "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=$(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)" \
 		--env           "IDF_CMAKE=n" \
+		--env           "IDF_ENV_FPGA=n" \
 		--objdump		$(OBJDUMP)
 endef
 endif # Windows_NT

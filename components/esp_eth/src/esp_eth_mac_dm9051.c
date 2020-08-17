@@ -25,8 +25,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "dm9051.h"
 #include "sdkconfig.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "emac_dm9051";
 #define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -448,7 +451,7 @@ static esp_err_t emac_dm9051_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(dm9051_register_read(emac, DM9051_EPCR, &epcr) == ESP_OK, "read EPCR failed", err, ESP_FAIL);
         to += 100;
     } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
@@ -474,7 +477,7 @@ static esp_err_t emac_dm9051_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
     /* polling the busy flag */
     uint32_t to = 0;
     do {
-        ets_delay_us(100);
+        esp_rom_delay_us(100);
         MAC_CHECK(dm9051_register_read(emac, DM9051_EPCR, &epcr) == ESP_OK, "read EPCR failed", err, ESP_FAIL);
         to += 100;
     } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
@@ -639,7 +642,7 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
         /* reset rx fifo pointer */
         MAC_CHECK(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX) == ESP_OK,
                   "write MPTRCR failed", err, ESP_FAIL);
-        ets_delay_us(10);
+        esp_rom_delay_us(10);
         MAC_CHECK(mac->start(mac) == ESP_OK, "start dm9051 failed", err, ESP_FAIL);
         MAC_CHECK(false, "reset rx fifo pointer", err, ESP_FAIL);
     } else if (rxbyte) {
@@ -675,7 +678,7 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    gpio_pad_select_gpio(emac->int_gpio_num);
+    esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
     gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
     gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
     gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
@@ -754,8 +757,12 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create dm9051 task */
-    BaseType_t xReturned = xTaskCreate(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
-                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
+                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create dm9051 task failed", err, NULL);
     return &(emac->parent);
 

@@ -76,6 +76,11 @@ void bootloader_utility_load_boot_image_from_deep_sleep(void);
 __attribute__((noreturn)) void bootloader_reset(void);
 
 /**
+ * @brief Do any cleanup before exiting the bootloader, before starting the app or resetting
+ */
+void bootloader_atexit(void);
+
+/**
  * @brief Converts an array to a printable string.
  *
  * This function is useful for printing SHA-256 digest.

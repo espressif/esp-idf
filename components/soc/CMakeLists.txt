@@ -31,19 +31,20 @@ idf_component_register(SRCS "src/cpu_util.c"
                             "src/hal/soc_hal.c"
                             "src/hal/wdt_hal_iram.c"
                             "src/compare_set.c"
+                            "src/hal/twai_hal.c"
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_IDF_TARGET_ESP32)
-    target_sources(${COMPONENT_LIB} PRIVATE "src/hal/can_hal.c"
-                                            "src/hal/mcpwm_hal.c"
+    target_sources(${COMPONENT_LIB} PRIVATE "src/hal/mcpwm_hal.c"
                                             "src/hal/sdio_slave_hal.c")
 elseif(CONFIG_IDF_TARGET_ESP32S2)
     target_sources(${COMPONENT_LIB} PRIVATE "src/hal/spi_flash_hal_gpspi.c")
+    target_sources(${COMPONENT_LIB} PRIVATE "src/hal/spi_slave_hd_hal.c")
 endif()
 
-# Since there can be chip-specific HAL headers which can include the common 
-# HAL header via include_next, process the build scripts here first so that 
+# Since there can be chip-specific HAL headers which can include the common
+# HAL header via include_next, process the build scripts here first so that
 # include directories appear first in the compile command.
 add_subdirectory(src/${target})
 target_include_directories(${COMPONENT_LIB} PUBLIC include)

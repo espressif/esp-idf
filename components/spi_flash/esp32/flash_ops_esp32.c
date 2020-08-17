@@ -35,15 +35,11 @@ static inline void IRAM_ATTR spi_flash_guard_end(void)
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size)
 {
     const uint8_t *ssrc = (const uint8_t *)src;
-    esp_rom_spiflash_result_t rc;
+    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
 
     assert((dest_addr % 16) == 0);
     assert((size % 16) == 0);
 
-    rc = esp_rom_spiflash_unlock();
-    if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-        return rc;
-    }
     /* esp_rom_spiflash_write_encrypted encrypts data in RAM as it writes,
        so copy to a temporary buffer - 32 bytes at a time.
 

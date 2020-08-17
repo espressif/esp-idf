@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ESP_EXCEPTION_HPP_
-#define ESP_EXCEPTION_HPP_
+#pragma once
 
 #ifdef __cpp_exceptions
 
@@ -35,10 +34,21 @@ struct ESPException : public std::exception {
 /**
  * Convenience macro to help converting IDF error codes into ESPException.
  */
-#define CHECK_THROW(error_) if (error_ != ESP_OK) throw idf::ESPException(error_);
+#define CHECK_THROW(error_)                                         \
+    do {                                                            \
+        esp_err_t result = error_;                                  \
+        if (result != ESP_OK) throw idf::ESPException(result);      \
+    } while (0)
+
+/**
+ * Convenience macro to help converting IDF error codes into a child of ESPException.
+ */
+#define CHECK_THROW_SPECIFIC(error_, exception_type_)               \
+    do {                                                            \
+        esp_err_t result = error_;                                  \
+        if (result != ESP_OK) throw idf::exception_type_(result);   \
+    } while (0)
 
 } // namespace idf
 
 #endif // __cpp_exceptions
-
-#endif // ESP_EXCEPTION_HPP_

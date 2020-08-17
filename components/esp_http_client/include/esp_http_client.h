@@ -83,6 +83,13 @@ typedef enum {
     HTTP_METHOD_SUBSCRIBE,  /*!< HTTP SUBSCRIBE Method */
     HTTP_METHOD_UNSUBSCRIBE,/*!< HTTP UNSUBSCRIBE Method */
     HTTP_METHOD_OPTIONS,    /*!< HTTP OPTIONS Method */
+    HTTP_METHOD_COPY,       /*!< HTTP COPY Method */
+    HTTP_METHOD_MOVE,       /*!< HTTP MOVE Method */
+    HTTP_METHOD_LOCK,       /*!< HTTP LOCK Method */
+    HTTP_METHOD_UNLOCK,     /*!< HTTP UNLOCK Method */
+    HTTP_METHOD_PROPFIND,   /*!< HTTP PROPFIND Method */
+    HTTP_METHOD_PROPPATCH,  /*!< HTTP PROPPATCH Method */
+    HTTP_METHOD_MKCOL,      /*!< HTTP MKCOL Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 
@@ -113,7 +120,8 @@ typedef struct {
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
-    int                         max_redirection_count;    /*!< Max redirection number, using default value if zero*/
+    int                         max_redirection_count;    /*!< Max number of redirections on receiving HTTP redirect status code, using default value if zero*/
+    int                         max_authorization_retries;    /*!< Max connection retries on receiving HTTP unauthorized status code, using default value if zero. Disables authorization retry if -1*/
     http_event_handle_cb        event_handler;             /*!< HTTP Event Handle */
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
     int                         buffer_size;              /*!< HTTP receive buffer size */
@@ -134,7 +142,12 @@ typedef enum {
     HttpStatus_TemporaryRedirect = 307,
 
     /* 4xx - Client Error */
-    HttpStatus_Unauthorized      = 401
+    HttpStatus_Unauthorized      = 401,
+    HttpStatus_Forbidden         = 403,
+    HttpStatus_NotFound          = 404,
+
+    /* 5xx - Server Error */
+    HttpStatus_InternalError     = 500
 } HttpStatus_Code;
 
 #define ESP_ERR_HTTP_BASE               (0x7000)                    /*!< Starting number of HTTP error codes */
@@ -524,6 +537,19 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
  */
 
 esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, const int len);
+
+/**
+ * @brief          Get Chunk-Length from client
+ *
+ * @param[in]      client   The esp_http_client handle
+ * @param[out]     len      Variable to store length
+ *
+ * @return
+ *     - ESP_OK                 If successful, len will have length of current chunk
+ *     - ESP_FAIL               If the server is not a chunked server
+ *     - ESP_ERR_INVALID_ARG    If the client or len are NULL
+ */
+esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len);
 
 #ifdef __cplusplus
 }

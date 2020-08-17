@@ -62,3 +62,11 @@ set_source_files_properties(
     PROPERTIES COMPILE_DEFINITIONS
     _ESP_FREERTOS_INTERNAL
     )
+
+# The freertos component provides the `start_app` and `start_app_other_cores` 
+# if it is included in the build. It then calls `app_main` 
+# from the main task created, which must be provided by the user. 
+# Like for `start_app` and `start_app_other_cores`,
+# we can't establish dependency on what we don't yet know, so we force the
+# linker to not drop this symbol.
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")

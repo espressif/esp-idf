@@ -31,6 +31,8 @@
 #include "ble_mesh_fast_prov_client_model.h"
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 #define PROV_OWN_ADDR       0x0001
 #define APP_KEY_OCTET       0x12
 #define GROUP_ADDRESS       0xC000
@@ -288,7 +290,7 @@ static void example_provisioning_callback(esp_ble_mesh_prov_cb_event_t event,
             esp_err_t err;
             prov_info.app_idx = param->provisioner_add_app_key_comp.app_idx;
             err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(PROV_OWN_ADDR, prov_info.app_idx,
-                    ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, CID_NVAL);
+                    ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, ESP_BLE_MESH_CID_NVAL);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to bind AppKey with OnOff Client Model", __func__);
                 return;

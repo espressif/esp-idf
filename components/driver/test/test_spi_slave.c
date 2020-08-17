@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "test/test_common_spi.h"
+#include "esp_rom_gpio.h"
 
 #ifndef CONFIG_SPIRAM
 //This test should be removed once the timing test is merged.
@@ -20,8 +21,8 @@
 
 static inline void int_connect( uint32_t gpio, uint32_t sigo, uint32_t sigi )
 {
-    gpio_matrix_out( gpio, sigo, false, false );
-    gpio_matrix_in( gpio, sigi, false );
+    esp_rom_gpio_connect_out_signal( gpio, sigo, false, false );
+    esp_rom_gpio_connect_in_signal( gpio, sigi, false );
 }
 
 static void master_init_nodma( spi_device_handle_t* spi)

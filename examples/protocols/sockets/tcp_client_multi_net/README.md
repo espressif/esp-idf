@@ -89,13 +89,13 @@ I (6965) tcp_client_multiple: HTTP/1.1 200 OK
 Date: Thu, 23 Apr 2020 07:02:58 GMT
 Expires: -1
 Cache-Control: private, max-age=0
-Content-Type: text/html; 
+Content-Type: text/html;
 I (6965) tcp_client_multiple: "example_connect: sta" Received Data 127 bytes
 I (6985) tcp_client_multiple: HTTP/1.1 200 OK
 Date: Thu, 23 Apr 2020 07:02:58 GMT
 Expires: -1
 Cache-Control: private, max-age=0
-Content-Type: text/html; 
+Content-Type: text/html;
 I (7675) tcp_client_multiple: "example_connect: eth" Socket created
 I (7675) tcp_client_multiple: "example_connect: eth" Successfully connected
 I (7695) tcp_client_multiple: "example_connect: sta" Socket created
@@ -105,13 +105,13 @@ I (7735) tcp_client_multiple: HTTP/1.1 200 OK
 Date: Thu, 23 Apr 2020 07:02:59 GMT
 Expires: -1
 Cache-Control: private, max-age=0
-Content-Type: text/html; 
+Content-Type: text/html;
 I (7955) tcp_client_multiple: "example_connect: sta" Received Data 127 bytes
 I (7955) tcp_client_multiple: HTTP/1.1 200 OK
 Date: Thu, 23 Apr 2020 07:02:59 GMT
 Expires: -1
 Cache-Control: private, max-age=0
-Content-Type: text/html; 
+Content-Type: text/html;
 I (8445) tcp_client_multiple: "example_connect: eth" Socket created
 I (8445) tcp_client_multiple: "example_connect: eth" Successfully connected
 I (8505) tcp_client_multiple: "example_connect: eth" Received Data 127 bytes
@@ -119,7 +119,7 @@ I (8505) tcp_client_multiple: HTTP/1.1 200 OK
 Date: Thu, 23 Apr 2020 07:03:00 GMT
 Expires: -1
 Cache-Control: private, max-age=0
-Content-Type: text/html; 
+Content-Type: text/html;
 I (8675) tcp_client_multiple: "example_connect: sta" Socket created
 ```
 
@@ -127,7 +127,7 @@ I (8675) tcp_client_multiple: "example_connect: sta" Socket created
 
 * When connecting using Ethernet, please consult troubleshooting described in [Ethernet common readme](../../../ethernet/README.md)
 or [Ethernet documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_eth.html).
-If using Ethernet for the first time, it is recommended to start with the [Ethernet example readme](../../../ethernet/basic/README.md), which contains instructions for connecting and configuring the PHY. 
+If using Ethernet for the first time, it is recommended to start with the [Ethernet example readme](../../../ethernet/basic/README.md), which contains instructions for connecting and configuring the PHY.
 Once Ethernet example obtains IP address successfully, proceed to this example.
 
-* When connecting using Wi-Fi, please refer to the WiFi examples in [examples/wifi/getting_started/](../wifi/getting_started).
+* When connecting using Wi-Fi, please refer to the WiFi examples in [examples/wifi/getting_started/](../../../wifi/getting_started).

@@ -8,15 +8,14 @@ endif
 
 PROJECT_NAME := bootloader
 
-COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main efuse
+COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main efuse esp_rom
 
 # Clear C and CXX from top level project
 CFLAGS =
 CXXFLAGS =
 
-#We cannot include the idf_target, esp_rom, esp_common component directly but we need their includes.
+#We cannot include the idf_target, esp_common component directly but we need their includes.
 CFLAGS += -I $(IDF_PATH)/components/$(IDF_TARGET)/include
-CFLAGS += -I $(IDF_PATH)/components/esp_rom/include
 CFLAGS += -I $(IDF_PATH)/components/esp_common/include
 CFLAGS += -I $(IDF_PATH)/components/xtensa/include -I $(IDF_PATH)/components/xtensa/$(IDF_TARGET)/include
 

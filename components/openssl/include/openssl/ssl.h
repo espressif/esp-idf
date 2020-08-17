@@ -21,6 +21,8 @@
 
 #include "internal/ssl_x509.h"
 #include "internal/ssl_pkey.h"
+#include "openssl/bio.h"
+#include "openssl/err.h"
 
 /*
 {
@@ -297,6 +299,67 @@ const SSL_METHOD* SSLv3_server_method(void);
  */
 const SSL_METHOD* TLS_server_method(void);
 
+/**
+ * @brief create the target SSL context method
+ *
+ * @return the TLS any version SSL context method
+ */
+const SSL_METHOD* TLS_method(void);
+
+/**
+ * @brief create the target SSL context method
+ *
+ * @return the TLS1.2 version SSL context method
+ */
+const SSL_METHOD* TLSv1_2_method(void);
+
+/**
+ * @brief create the target SSL context method
+ *
+ * @return the TLS1.1 version SSL context method
+ */
+const SSL_METHOD* TLSv1_1_method(void);
+
+/**
+ * @brief create the target SSL context method
+ *
+ * @return the TLS1.0 version SSL context method
+ */
+const SSL_METHOD* TLSv1_method(void);
+
+/**
+ * @brief create the target SSL context method
+ *
+ * @return the SSLV3.0 version SSL context method
+ */
+const SSL_METHOD* SSLv3_method(void);
+
+/**
+ * @brief create the target SSL context method
+ *
+ * @param none
+ *
+ * @return the SSLV2.3 version SSL context method
+ */
+const SSL_METHOD* SSLv23_method(void);
+
+/**
+ * @brief Set minimum protocol version for defined context
+ *
+ * @param ctx SSL context
+ *
+ * @return 1 on success
+ */
+int SSL_CTX_set_min_proto_version(SSL_CTX *ctx, int version);
+
+/**
+ * @brief Set maximum protocol version for defined context
+ *
+ * @param ctx SSL context
+ *
+ * @return 1 on success
+ */
+int SSL_CTX_set_max_proto_version(SSL_CTX *ctx, int version);
 
 /**
  * @brief set the SSL context ALPN select callback function
@@ -347,43 +410,6 @@ void SSL_CTX_set_next_proto_select_cb(SSL_CTX *ctx,
                                                  unsigned int inlen,
                                                  void *arg),
                                       void *arg);
-
-/**
- * @brief get SSL error code
- *
- * @param ssl       - SSL point
- * @param ret_code  - SSL return code
- *
- * @return SSL error number
- */
-int SSL_get_error(const SSL *ssl, int ret_code);
-
-/**
- * @brief clear the SSL error code
- *
- * @param none
- *
- * @return none
- */
-void ERR_clear_error(void);
-
-/**
- * @brief get the current SSL error code
- *
- * @param none
- *
- * @return current SSL error number
- */
-int ERR_get_error(void);
-
-/**
- * @brief register the SSL error strings
- *
- * @param none
- *
- * @return none
- */
-void ERR_load_SSL_strings(void);
 
 /**
  * @brief initialize the SSL library
@@ -1399,7 +1425,17 @@ SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl);
  *
  * @return application data
  */
-char *SSL_get_app_data(SSL *ssl);
+void *SSL_get_app_data(SSL *ssl);
+
+/**
+ * @brief get SSL error code
+ *
+ * @param ssl       - SSL point
+ * @param ret_code  - SSL return code
+ *
+ * @return SSL error number
+ */
+int SSL_get_error(const SSL *ssl, int ret_code);
 
 /**
  * @brief get SSL cipher bits
@@ -1667,7 +1703,7 @@ void SSL_set_accept_state(SSL *ssl);
  *
  * @return none
  */
-void SSL_set_app_data(SSL *ssl, char *arg);
+void SSL_set_app_data(SSL *ssl, void *arg);
 
 /**
  * @brief set SSL BIO
@@ -1756,7 +1792,7 @@ void SSL_set_timeout(SSL *ssl, long t);
  *
  * @return SSL statement string
  */
-char *SSL_state_string(const SSL *ssl);
+const char *SSL_state_string(const SSL *ssl);
 
 /**
  * @brief get SSL statement long string
@@ -1814,6 +1850,52 @@ const char *SSL_get_psk_identity_hint(SSL *ssl);
  * @return identity
  */
 const char *SSL_get_psk_identity(SSL *ssl);
+
+/**
+ * @brief set the SSL verify depth of the SSL
+ *
+ * @param ssl - SSL context
+ * @param depth - Depth level to verify
+ *
+ */
+void SSL_set_verify_depth(SSL *ssl, int depth);
+
+/**
+ * @brief Get default verify callback
+ *
+ * @param ctx             - SSL context
+ * @return verify_callback - verifying callback function
+ *
+ */
+openssl_verify_callback SSL_CTX_get_verify_callback(const SSL_CTX *ctx);
+
+/**
+ * @brief Get default verify callback
+ *
+ * @param ctx             - SSL context
+ * @return verify_callback - verifying callback function
+ *
+ */
+openssl_verify_callback SSL_get_verify_callback(const SSL *s);
+
+/**
+ * @brief Frees RSA object
+ *
+ * Current implementation calls directly EVP_PKEY free
+ *
+ * @param r RSA object
+ *
+ */
+void RSA_free(RSA *r);
+
+/**
+ * @brief Sets SSL mode, partially implemented
+ *
+ * @param ssl SSL context
+ *
+ * @return the new mode bitmask after adding mode
+ */
+uint32_t SSL_set_mode(SSL *ssl, uint32_t mode);
 
 #ifdef __cplusplus
 }

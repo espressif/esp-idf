@@ -1476,6 +1476,46 @@ long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
     return ctx->read_ahead;
 }
 
+char *SSL_CTX_get_ex_data(const SSL_CTX *ctx, int idx)
+{
+    SSL_ASSERT2(ctx);
+
+    return NULL;
+}
+
+int SSL_CTX_set_app_data(SSL_CTX *ctx, void *arg)
+{
+    SSL_ASSERT1(ctx);
+
+    return 0;
+}
+
+void *SSL_get_app_data(SSL *ssl)
+{
+    SSL_ASSERT2(ssl);
+
+    return NULL;
+}
+
+void SSL_set_app_data(SSL *ssl, void *arg)
+{
+    SSL_ASSERT3(ssl);
+}
+
+void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio)
+{
+    SSL_ASSERT3(ssl);
+
+    ssl->bio = rbio;
+}
+
+int SSL_CTX_use_certificate_chain_file(SSL_CTX *ctx, const char *file)
+{
+    SSL_ASSERT1(1)
+
+    return -1;
+}
+
 /**
  * @brief set SSL session time
  */
@@ -1550,12 +1590,16 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
     ssl->param.depth = depth;
 }
 
+#define ESP_OPENSSL_VERIFYCB_IS_SUPPORTED 0
 /**
  * @brief set the SSL context verifying of the SSL context
  */
 void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ctx);
+    if (verify_callback) {
+        SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    }
 
     ctx->verify_mode = mode;
     ctx->default_verify_callback = verify_callback;
@@ -1567,9 +1611,32 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
     SSL_ASSERT3(ssl);
+    if (verify_callback) {
+        SSL_ASSERT3(ESP_OPENSSL_VERIFYCB_IS_SUPPORTED);
+    }
 
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;
+}
+
+/**
+ * @brief get the SSL verify callback from the context
+ */
+openssl_verify_callback SSL_CTX_get_verify_callback(const SSL_CTX *ctx)
+{
+    SSL_ASSERT2(ctx);
+
+    return ctx->default_verify_callback;
+}
+
+/**
+ * @brief get the SSL verify callback from ssl pointer
+ */
+openssl_verify_callback SSL_get_verify_callback(const SSL *ssl)
+{
+    SSL_ASSERT2(ssl);
+
+    return ssl->verify_callback;
 }
 
 /**
@@ -1607,3 +1674,11 @@ int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos, unsigned 
      return 0;
 }
 
+/**
+ * @brief Set the mode, but might assert if the related mode is not supported once session starts
+ */
+uint32_t SSL_set_mode(SSL *ssl, uint32_t mode)
+{
+    ssl->mode |= mode;
+    return ssl->mode;
+}

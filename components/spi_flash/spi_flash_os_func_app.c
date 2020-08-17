@@ -13,21 +13,22 @@
 // limitations under the License.
 
 #include <stdarg.h>
+#include <sys/param.h>  //For max/min
 #include "esp_attr.h"
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "hal/spi_types.h"
 #include "sdkconfig.h"
+#include "esp_log.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
+#include "esp_rom_sys.h"
 
 #include "driver/spi_common_internal.h"
 
+static const char TAG[] = "spi_flash";
 
 /*
  * OS functions providing delay service and arbitration among chips, and with the cache.
@@ -97,8 +98,41 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 
 static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
 {
-    ets_delay_us(us);
+    esp_rom_delay_us(us);
     return ESP_OK;
+}
+static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg)
+{
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+    vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+#endif
+    return ESP_OK;
+}
+
+static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
+{
+    /* Allocate temporary internal buffer to use for the actual read. If the preferred size
+        doesn't fit in free internal memory, allocate the largest available free block.
+
+        (May need to shrink read_chunk_size and retry due to race conditions with other tasks
+        also allocating from the heap.)
+    */
+    void* ret = NULL;
+    unsigned retries = 5;
+    size_t read_chunk_size = reqest_size;
+    while(ret == NULL && retries--) {
+        read_chunk_size = MIN(read_chunk_size, heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+        read_chunk_size = (read_chunk_size + 3) & ~3;
+        ret = heap_caps_malloc(read_chunk_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    }
+    ESP_LOGV(TAG, "allocate temp buffer: %p (%d)", ret, read_chunk_size);
+    *out_size = (ret != NULL? read_chunk_size: 0);
+    return ret;
+}
+
+static IRAM_ATTR void release_buffer_malloc(void* arg, void *temp_buf)
+{
+    free(temp_buf);
 }
 
 static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
@@ -117,14 +151,20 @@ static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {};
 static const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
     .start = spi1_start,
     .end = spi1_end,
-    .delay_us = delay_us,
     .region_protected = main_flash_region_protected,
+    .delay_us = delay_us,
+    .get_temp_buffer = get_buffer_malloc,
+    .release_temp_buffer = release_buffer_malloc,
+    .yield = spi_flash_os_yield,
 };
 
 static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .start = spi_start,
     .end = spi_end,
     .delay_us = delay_us,
+    .get_temp_buffer = get_buffer_malloc,
+    .release_temp_buffer = release_buffer_malloc,
+    .yield = spi_flash_os_yield
 };
 
 static spi_bus_lock_dev_handle_t register_dev(int host_id)

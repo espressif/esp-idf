@@ -1,7 +1,7 @@
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_partition_ops(env, extra_data):
 
     dut = env.get_dut('partition_ops', 'examples/storage/partition_api/partition_ops')

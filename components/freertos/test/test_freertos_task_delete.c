@@ -21,6 +21,8 @@
 #include "unity.h"
 #include "test_utils.h"
 
+#include "esp_rom_sys.h"
+
 #define NO_OF_TSKS  3
 #define DELAY_TICKS 2
 /* Caps of all memory which is allocated from when a task is created */
@@ -42,7 +44,7 @@ static void tsk_extern_del(void *param)
 static void tsk_self_del_us_delay(void *param)
 {
     uint32_t delay = (uint32_t)param;
-    ets_delay_us(delay);
+    esp_rom_delay_us(delay);
     vTaskDelete(NULL);
 }
 
@@ -78,7 +80,7 @@ TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
     for(int i = 0; i < DELAY_US_ITERATIONS; i+= 10){
         vTaskDelay(1);                          //Sync to next tick interrupt
         xTaskCreatePinnedToCore(tsk_self_del_us_delay, "delay", 1024, (void *)i, UNITY_FREERTOS_PRIORITY - 1, NULL, tskNO_AFFINITY);
-        ets_delay_us(10);                       //Busy wait to ensure no affinity task runs on opposite core
+        esp_rom_delay_us(10);                       //Busy wait to ensure no affinity task runs on opposite core
     }
 
 }

@@ -22,7 +22,6 @@
 static void init_task_info(void);
 static void find_paniced_task_index(void);
 static int handle_task_commands(unsigned char *cmd, int len);
-static void esp_gdbstub_send_str_as_hex(const char *str);
 #endif
 
 static void send_reason(void);
@@ -77,6 +76,7 @@ void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame)
     }
 }
 
+
 static void send_reason(void)
 {
     esp_gdbstub_send_start();
@@ -89,16 +89,6 @@ static uint32_t gdbstub_hton(uint32_t i)
 {
     return __builtin_bswap32(i);
 }
-
-#ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
-static void esp_gdbstub_send_str_as_hex(const char *str)
-{
-    while (*str) {
-        esp_gdbstub_send_hex(*str, 8);
-        str++;
-    }    
-}
-#endif
 
 /** Send all registers to gdb */
 static void handle_g_command(const unsigned char* cmd, int len)
@@ -185,16 +175,6 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
     }
     *handle = (TaskHandle_t) s_scratch.tasks[index].pxTCB;
     return true;
-}
-
-static eTaskState get_task_state(size_t index) 
-{
-    return s_scratch.tasks[index].eState;
-}
-
-static int get_task_cpu_id(size_t index) 
-{
-    return s_scratch.tasks[index].xCpuId;
 }
 
 /** Get the index of the task running on the current CPU, and save the result */
@@ -308,34 +288,12 @@ static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
         return;
     }
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str_as_hex("Name: ");
-    esp_gdbstub_send_str_as_hex(pcTaskGetTaskName(handle));
-    esp_gdbstub_send_hex(' ', 8);
-    
-    eTaskState state = get_task_state(task_index);
-    switch (state) {
-        case eRunning:
-            esp_gdbstub_send_str_as_hex("State: Running ");
-            esp_gdbstub_send_str_as_hex("@CPU");
-            esp_gdbstub_send_hex(get_task_cpu_id(task_index) + '0', 8);
-        break;
-        case eReady:
-            esp_gdbstub_send_str_as_hex("State: Ready"); 
-        break;
-        case eBlocked:
-            esp_gdbstub_send_str_as_hex("State: Blocked"); 
-        break;
-        case eSuspended:
-            esp_gdbstub_send_str_as_hex("State: Suspended"); 
-        break;
-        case eDeleted:
-            esp_gdbstub_send_str_as_hex("State: Deleted"); 
-        break;
-        default:
-            esp_gdbstub_send_str_as_hex("State: Invalid"); 
-        break;
+    const char* task_name = pcTaskGetTaskName(handle);
+    while (*task_name) {
+        esp_gdbstub_send_hex(*task_name, 8);
+        task_name++;
     }
-    
+    /** TODO: add "Running" or "Suspended" and "CPU0" or "CPU1" */
     esp_gdbstub_send_end();
 }
 

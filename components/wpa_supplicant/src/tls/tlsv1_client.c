@@ -729,12 +729,12 @@ int tlsv1_client_hello_ext(struct tlsv1_client *conn, int ext_type,
 
 
 /**
- * tlsv1_client_get_keys - Get master key and random data from TLS connection
+ * tlsv1_client_get_random - Get random data from TLS connection
  * @conn: TLSv1 client connection data from tlsv1_client_init()
- * @keys: Structure of key/random data (filled on success)
+ * @keys: Structure of random data (filled on success)
  * Returns: 0 on success, -1 on failure
  */
-int tlsv1_client_get_keys(struct tlsv1_client *conn, struct tls_keys *keys)
+int tlsv1_client_get_random(struct tlsv1_client *conn, struct tls_random *keys)
 {
 	os_memset(keys, 0, sizeof(*keys));
 	if (conn->state == CLIENT_HELLO)
@@ -746,8 +746,6 @@ int tlsv1_client_get_keys(struct tlsv1_client *conn, struct tls_keys *keys)
 	if (conn->state != SERVER_HELLO) {
 		keys->server_random = conn->server_random;
 		keys->server_random_len = TLS_RANDOM_LEN;
-		keys->master_key = conn->master_secret;
-		keys->master_key_len = TLS_MASTER_SECRET_LEN;
 	}
 
 	return 0;

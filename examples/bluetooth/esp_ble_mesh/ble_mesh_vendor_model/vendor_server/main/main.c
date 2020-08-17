@@ -24,8 +24,9 @@
 #include "board.h"
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP     0x02E5
-#define CID_NVAL    0xFFFF
 
 #define ESP_BLE_MESH_VND_MODEL_ID_CLIENT    0x0000
 #define ESP_BLE_MESH_VND_MODEL_ID_SERVER    0x0001

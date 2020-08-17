@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #define MB_CONTROLLER_STACK_SIZE            (CONFIG_FMB_CONTROLLER_STACK_SIZE)   // Stack size for Modbus controller
-#define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_SERIAL_TASK_PRIO - 1)    // priority of MB controller task
+#define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_PORT_TASK_PRIO - 1)    // priority of MB controller task
 
 // Default port defines
 #define MB_DEVICE_ADDRESS   (1)             // Default slave device address in Modbus
@@ -67,8 +67,9 @@ typedef enum
     MB_PORT_SERIAL_MASTER = 0x00,   /*!< Modbus port type serial master. */
     MB_PORT_SERIAL_SLAVE,           /*!< Modbus port type serial slave. */
     MB_PORT_TCP_MASTER,             /*!< Modbus port type TCP master. */
-    MB_PORT_TCP_SLAVE,               /*!< Modbus port type TCP slave. */
-    MB_PORT_COUNT                   /*!< Modbus port count. */
+    MB_PORT_TCP_SLAVE,              /*!< Modbus port type TCP slave. */
+    MB_PORT_COUNT,                  /*!< Modbus port count. */
+    MB_PORT_INACTIVE = 0xFF
 } mb_port_type_t;
 
 /**
@@ -104,8 +105,17 @@ typedef enum {
 typedef enum {
     MB_MODE_RTU,                     /*!< RTU transmission mode. */
     MB_MODE_ASCII,                   /*!< ASCII transmission mode. */
-    MB_MODE_TCP                      /*!< TCP mode. */
-} mb_mode_type_t; // Todo: This is common type leave it here for now
+    MB_MODE_TCP,                     /*!< TCP communication mode. */
+    MB_MODE_UDP                      /*!< UDP communication mode. */
+} mb_mode_type_t;
+
+/*!
+ * \brief Modbus TCP type of address.
+ */
+typedef enum {
+    MB_IPV4 = 0,                     /*!< TCP IPV4 addressing */
+    MB_IPV6 = 1                      /*!< TCP IPV6 addressing */
+} mb_tcp_addr_type_t;
 
 /**
  * @brief Device communication structure to setup Modbus controller
@@ -120,27 +130,27 @@ typedef union {
         uart_parity_t parity;                   /*!< Modbus UART parity settings */
         uint16_t dummy_port;                    /*!< Dummy field, unused */
     };
-    // Tcp communication structure
+    // TCP/UDP communication structure
     struct {
-        mb_mode_type_t tcp_mode;                /*!< Modbus communication mode */
-        uint8_t dummy_addr;                     /*!< Modbus slave address field (dummy for master) */
-        uart_port_t dummy_uart_port;            /*!< Modbus communication port (UART) number */
-        uint32_t dummy_baudrate;                /*!< Modbus baudrate */
-        uart_parity_t dummy_parity;             /*!< Modbus UART parity settings */
-        uint16_t tcp_port;                      /*!< Modbus TCP port */
+        mb_mode_type_t ip_mode;                /*!< Modbus communication mode */
+        uint16_t ip_port;                      /*!< Modbus port */
+        mb_tcp_addr_type_t ip_addr_type;       /*!< Modbus address type */
+        void* ip_addr;                         /*!< Modbus address table for connection */
+        void* ip_netif_ptr;                    /*!< Modbus network interface */
     };
 } mb_communication_info_t;
 
 /**
  * common interface method types
  */
-typedef esp_err_t (*iface_init)(mb_port_type_t, void**);  /*!< Interface method init */
-typedef esp_err_t (*iface_destroy)(void);                 /*!< Interface method destroy */
-typedef esp_err_t (*iface_setup)(void*);                  /*!< Interface method setup */
-typedef esp_err_t (*iface_start)(void);                   /*!< Interface method start */
+typedef esp_err_t (*iface_init)(void**);        /*!< Interface method init */
+typedef esp_err_t (*iface_destroy)(void);       /*!< Interface method destroy */
+typedef esp_err_t (*iface_setup)(void*);        /*!< Interface method setup */
+typedef esp_err_t (*iface_start)(void);         /*!< Interface method start */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // _MB_IFACE_COMMON_H
+

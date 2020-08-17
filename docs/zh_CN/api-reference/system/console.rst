@@ -162,9 +162,9 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 ``console`` 组建还提供了一些 API 来帮助创建一个基本的 REPL 环境。
 
-在一个典型的 console 应用中，你只需要调用 :cpp:func:`esp_console_repl_init`，它会为你初始化好 REPL 环境，其中包括安装 UART 驱动，基本的 console 配置，创建一个新的线程来执行 REPL 任务，注册一些基本的命令（比如 `help` 和 `quit` 命令）。 
+在一个典型的 console 应用中，你只需要调用 :cpp:func:`esp_console_new_repl_uart`，它会为你初始化好构建在 UART 基础上的 REPL 环境，其中包括安装 UART 驱动，基本的 console 配置，创建一个新的线程来执行 REPL 任务，注册一些基本的命令（比如 `help` 命令）。 
 
-完了之后你可以使用 :cpp:func:`esp_console_cmd_register` 来注册其它命令。REPL 环境在初始化后需要再调用 :cpp:func:`esp_console_repl_start` 函数才能开始运行。
+完了之后你可以使用 :cpp:func:`esp_console_cmd_register` 来注册其它命令。REPL 环境在初始化后需要再调用 :cpp:func:`esp_console_start_repl` 函数才能开始运行。
 
 
 应用程序示例
