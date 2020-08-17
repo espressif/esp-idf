@@ -214,8 +214,9 @@ esp_err_t mcpwm_hal_capture_get_result(mcpwm_hal_context_t *hal, int cap_sig, ui
     if (out_edge) {
         *out_edge = mcpwm_ll_get_captured_edge(hal->dev, cap_sig);
     }
-    *out_count = mcpwm_ll_get_capture_val(hal->dev, cap_sig);
-
+    if (out_count) {
+        *out_count = mcpwm_ll_get_capture_val(hal->dev, cap_sig);
+    }
     if (mcpwm_ll_get_intr(hal->dev) & sig_intr) {
         mcpwm_ll_clear_intr(hal->dev, sig_intr);
     }
