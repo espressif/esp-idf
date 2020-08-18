@@ -33,7 +33,7 @@ extern "C" {
 esp_err_t tusb_run_task(void);
 
 /**
- * @brief Stops a FreeRTOS task with @ref tusb_device_task
+ * @brief Stops a FreeRTOS task
  *
  * @return ESP_OK or ESP_FAIL
  */
