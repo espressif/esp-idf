@@ -11,3 +11,4 @@ project(mqtt_ssl_mutual_auth)
 
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/client.crt" TEXT)
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/client.key" TEXT)
+target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/mosquitto.org.crt" TEXT)
