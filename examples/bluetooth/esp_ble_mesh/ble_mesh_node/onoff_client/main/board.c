@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#include "driver/uart.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 
 #include "iot_button.h"

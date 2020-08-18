@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include "esp_log.h"
-#include "driver/uart.h"
 #include "iot_button.h"
 #include "esp_ble_mesh_sensor_model_api.h"
 
