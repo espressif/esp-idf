@@ -87,7 +87,7 @@ struct modem_dce {
     esp_err_t (*get_signal_quality)(modem_dce_t *dce, uint32_t *rssi, uint32_t *ber); /*!< Get signal quality */
     esp_err_t (*get_battery_status)(modem_dce_t *dce, uint32_t *bcs,
                                     uint32_t *bcl, uint32_t *voltage);  /*!< Get battery status */
-    esp_err_t (*get_operator_name)(modem_dce_t *bg96_dce);              /*!< Get operator name */
+    esp_err_t (*get_operator_name)(modem_dce_t *dce);                   /*!< Get operator name */
     esp_err_t (*define_pdp_context)(modem_dce_t *dce, uint32_t cid,
                                     const char *type, const char *apn); /*!< Set PDP Contex */
     esp_err_t (*set_working_mode)(modem_dce_t *dce, modem_mode_t mode); /*!< Set working mode */
