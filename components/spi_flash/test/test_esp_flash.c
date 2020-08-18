@@ -68,6 +68,26 @@ static uint8_t sector_buf[4096];
 #define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
 #define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define SPI1_CS_IO          26  //the pin which is usually used by the PSRAM cs
+#define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
+#define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
+
+#define FSPI_PIN_NUM_MOSI   35
+#define FSPI_PIN_NUM_MISO   37
+#define FSPI_PIN_NUM_CLK    36
+#define FSPI_PIN_NUM_HD     33
+#define FSPI_PIN_NUM_WP     38
+#define FSPI_PIN_NUM_CS     34
+
+// Just use the same pins for HSPI
+#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
+#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
+#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
+#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
+#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
+#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 #endif
 
 #define TEST_CONFIG_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
@@ -143,6 +163,29 @@ flashtest_config_t config_list[] = {
     },
 };
 #elif CONFIG_IDF_TARGET_ESP32S2
+flashtest_config_t config_list[] = {
+    FLASHTEST_CONFIG_COMMON,
+    /* No runners for esp32s2 for these config yet */
+    {
+        .io_mode = TEST_SPI_READ_MODE,
+        .speed = TEST_SPI_SPEED,
+        .host_id = FSPI_HOST,
+        .cs_id = 0,
+        .cs_io_num = FSPI_PIN_NUM_CS,
+        .input_delay_ns = 0,
+    },
+    // /* current runner doesn't have a flash on HSPI */
+    // {
+    //     .io_mode = TEST_SPI_READ_MODE,
+    //     .speed = TEST_SPI_SPEED,
+    //     .host_id = HSPI_HOST,
+    //     .cs_id = 0,
+    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
+    //     .cs_io_num = HSPI_PIN_NUM_CS,
+    //     .input_delay_ns = 20,
+    // },
+};
+#elif CONFIG_IDF_TARGET_ESP32S3
 flashtest_config_t config_list[] = {
     FLASHTEST_CONFIG_COMMON,
     /* No runners for esp32s2 for these config yet */
@@ -253,7 +296,7 @@ static void setup_bus(spi_host_device_t host_id)
         gpio_set_level(HSPI_PIN_NUM_WP, 1);
 #endif
     }
-#if !DISABLED_FOR_TARGETS(ESP32S2)
+#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
     else if (host_id == VSPI_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (VSPI) CS0...\n", host_id + 1);
         spi_bus_config_t vspi_bus_cfg = {
