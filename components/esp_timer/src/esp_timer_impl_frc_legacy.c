@@ -103,7 +103,7 @@ static intr_handle_t s_timer_interrupt_handle;
 
 // Function from the upper layer to be called when the interrupt happens.
 // Registered in esp_timer_impl_init.
-static intr_handler_t s_alarm_handler;
+static intr_handler_t s_alarm_handler = NULL;
 
 // Time in microseconds from startup to the moment
 // when timer counter was last equal to 0. This variable is updated each time
@@ -178,6 +178,9 @@ void esp_timer_impl_unlock(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
+    if (s_alarm_handler == NULL) {
+        return 0;
+    }
     uint32_t timer_val;
     uint64_t time_base;
     uint32_t ticks_per_us;
@@ -208,6 +211,8 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
                         + timer_val / ticks_per_us;
     return result;
 }
+
+int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
