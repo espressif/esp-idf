@@ -51,19 +51,19 @@ typedef enum {
 } esp_crypto_cipher_alg_t;
 
 /*
- * This structure is about the algorithm when do crypto_hash operation, for detail, 
+ * This structure is about the algorithm when do crypto_hash operation, for detail,
  * please reference to the structure crypto_hash.
  */
 typedef struct crypto_hash esp_crypto_hash_t;
 
 /*
- * This structure is about the algorithm when do crypto_cipher operation, for detail, 
+ * This structure is about the algorithm when do crypto_cipher operation, for detail,
  * please reference to the structure crypto_cipher.
  */
 typedef struct crypto_cipher esp_crypto_cipher_t;
 
 /**
-  * @brief The AES callback function when do WPS connect. 
+  * @brief The AES callback function when do WPS connect.
   *
   * @param key  Encryption key.
   * @param iv  Encryption IV for CBC mode (16 bytes).
@@ -73,7 +73,7 @@ typedef struct crypto_cipher esp_crypto_cipher_t;
 typedef int (*esp_aes_128_encrypt_t)(const unsigned char *key, const unsigned char *iv, unsigned char *data, int data_len);
 
 /**
-  * @brief The AES callback function when do WPS connect. 
+  * @brief The AES callback function when do WPS connect.
   *
   * @param key  Decryption key.
   * @param iv  Decryption IV for CBC mode (16 bytes).
@@ -106,7 +106,7 @@ typedef int (*esp_aes_wrap_t)(const unsigned char *kek, int n, const unsigned ch
 typedef int (*esp_aes_unwrap_t)(const unsigned char *kek, int n, const unsigned char *cipher, unsigned char *plain);
 
 /**
-  * @brief The SHA256 callback function when do WPS connect. 
+  * @brief The SHA256 callback function when do WPS connect.
   *
   * @param key  Key for HMAC operations.
   * @param key_len  Length of the key in bytes.
@@ -127,7 +127,7 @@ typedef int (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, i
   * @param label  A unique label for each purpose of the PRF.
   * @param data  Extra data to bind into the key.
   * @param data_len  Length of the data.
-  * @param buf  Buffer for the generated pseudo-random key.  
+  * @param buf  Buffer for the generated pseudo-random key.
   * @param buf_len  Number of bytes of key to generate.
   *
   */
@@ -136,7 +136,7 @@ typedef int (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const cha
 
 /**
  * @brief HMAC-MD5 over data buffer (RFC 2104)'
- * 
+ *
  * @key: Key for HMAC operations
  * @key_len: Length of the key in bytes
  * @data: Pointers to the data area
@@ -144,12 +144,12 @@ typedef int (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const cha
  * @mac: Buffer for the hash (16 bytes)
  * Returns: 0 on success, -1 on failure
  */
-typedef int (*esp_hmac_md5_t)(const unsigned char *key, unsigned int key_len, const unsigned char *data, 
+typedef int (*esp_hmac_md5_t)(const unsigned char *key, unsigned int key_len, const unsigned char *data,
                               unsigned int data_len, unsigned char *mac);
 
 /**
  * @brief HMAC-MD5 over data vector (RFC 2104)
- * 
+ *
  * @key: Key for HMAC operations
  * @key_len: Length of the key in bytes
  * @num_elem: Number of elements in the data vector
@@ -163,7 +163,7 @@ typedef int (*esp_hmac_md5_vector_t)(const unsigned char *key, unsigned int key_
 
 /**
  * @brief HMAC-SHA1 over data buffer (RFC 2104)
- * 
+ *
  * @key: Key for HMAC operations
  * @key_len: Length of the key in bytes
  * @data: Pointers to the data area
@@ -171,12 +171,12 @@ typedef int (*esp_hmac_md5_vector_t)(const unsigned char *key, unsigned int key_
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 of failure
  */
-typedef int (*esp_hmac_sha1_t)(const unsigned char *key, unsigned int key_len, const unsigned char *data, 
+typedef int (*esp_hmac_sha1_t)(const unsigned char *key, unsigned int key_len, const unsigned char *data,
                               unsigned int data_len, unsigned char *mac);
 
 /**
  * @brief HMAC-SHA1 over data vector (RFC 2104)
- * 
+ *
  * @key: Key for HMAC operations
  * @key_len: Length of the key in bytes
  * @num_elem: Number of elements in the data vector
@@ -190,7 +190,7 @@ typedef int (*esp_hmac_sha1_vector_t)(const unsigned char *key, unsigned int key
 
 /**
  * @brief SHA1-based Pseudo-Random Function (PRF) (IEEE 802.11i, 8.5.1.1)
- * 
+ *
  * @key: Key for PRF
  * @key_len: Length of the key in bytes
  * @label: A unique label for each purpose of the PRF
@@ -208,19 +208,19 @@ typedef int (*esp_sha1_prf_t)(const unsigned char *key, unsigned int key_len, co
 
 /**
  * @brief SHA-1 hash for data vector
- * 
+ *
  * @num_elem: Number of elements in the data vector
  * @addr: Pointers to the data areas
  * @len: Lengths of the data blocks
  * @mac: Buffer for the hash
  * Returns: 0 on success, -1 on failure
  */
-typedef int (*esp_sha1_vector_t)(unsigned int num_elem, const unsigned char *addr[], const unsigned int *len, 
+typedef int (*esp_sha1_vector_t)(unsigned int num_elem, const unsigned char *addr[], const unsigned int *len,
                               unsigned char *mac);
 
 /**
  * @brief SHA1-based key derivation function (PBKDF2) for IEEE 802.11i
- * 
+ *
  * @passphrase: ASCII passphrase
  * @ssid: SSID
  * @ssid_len: SSID length in bytes
@@ -238,7 +238,7 @@ typedef int (*esp_pbkdf2_sha1_t)(const char *passphrase, const char *ssid, unsig
 
 /**
  * @brief XOR RC4 stream to given data with skip-stream-start
- * 
+ *
  * @key: RC4 key
  * @keylen: RC4 key length
  * @skip: number of bytes to skip from the beginning of the RC4 stream
@@ -255,7 +255,7 @@ typedef int (*esp_rc4_skip_t)(const unsigned char *key, unsigned int keylen, uns
 
 /**
  * @brief MD5 hash for data vector
- * 
+ *
  * @num_elem: Number of elements in the data vector
  * @addr: Pointers to the data areas
  * @len: Lengths of the data blocks
@@ -267,7 +267,7 @@ typedef int (*esp_md5_vector_t)(unsigned int num_elem, const unsigned char *addr
 
 /**
  * @brief Encrypt one AES block
- * 
+ *
  * @ctx: Context pointer from aes_encrypt_init()
  * @plain: Plaintext data to be encrypted (16 bytes)
  * @crypt: Buffer for the encrypted data (16 bytes)
@@ -276,7 +276,7 @@ typedef void (*esp_aes_encrypt_t)(void *ctx, const unsigned char *plain, unsigne
 
 /**
  * @brief Initialize AES for encryption
- * 
+ *
  * @key: Encryption key
  * @len: Key length in bytes (usually 16, i.e., 128 bits)
  * Returns: Pointer to context data or %NULL on failure
@@ -285,14 +285,14 @@ typedef void * (*esp_aes_encrypt_init_t)(const unsigned char *key,  unsigned int
 
 /**
  * @brief Deinitialize AES encryption
- * 
+ *
  * @ctx: Context pointer from aes_encrypt_init()
  */
 typedef void (*esp_aes_encrypt_deinit_t)(void *ctx);
 
 /**
  * @brief Decrypt one AES block
- * 
+ *
  * @ctx: Context pointer from aes_encrypt_init()
  * @crypt: Encrypted data (16 bytes)
  * @plain: Buffer for the decrypted data (16 bytes)
@@ -301,7 +301,7 @@ typedef void (*esp_aes_decrypt_t)(void *ctx, const unsigned char *crypt, unsigne
 
 /**
  * @brief Initialize AES for decryption
- * 
+ *
  * @key: Decryption key
  * @len: Key length in bytes (usually 16, i.e., 128 bits)
  * Returns: Pointer to context data or %NULL on failure
@@ -310,7 +310,7 @@ typedef void * (*esp_aes_decrypt_init_t)(const unsigned char *key, unsigned int 
 
 /**
  * @brief Deinitialize AES decryption
- * 
+ *
  * @ctx: Context pointer from aes_encrypt_init()
  */
 typedef void (*esp_aes_decrypt_deinit_t)(void *ctx);
@@ -385,6 +385,8 @@ typedef struct {
     esp_aes_decrypt_t aes_decrypt;
     esp_aes_decrypt_init_t aes_decrypt_init;
     esp_aes_decrypt_deinit_t aes_decrypt_deinit;
+    esp_aes_128_encrypt_t aes_128_encrypt;
+    esp_aes_128_decrypt_t aes_128_decrypt;
     esp_omac1_aes_128_t omac1_aes_128;
     esp_ccmp_decrypt_t ccmp_decrypt;
     esp_ccmp_encrypt_t ccmp_encrypt;
