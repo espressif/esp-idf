@@ -12,6 +12,284 @@
 #include "esp_heap_caps.h"
 #include "test_utils.h"
 
+static const uint8_t key_256[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+};
+
+static const uint8_t iv[] = {
+    0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+    0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+};
+
+/* Cipher produced via this Python:
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.backends import default_backend
+
+    def as_c_array(byte_arr):
+
+        hex_str = ''
+        for idx, byte in enumerate(byte_arr):
+            hex_str += "0x{:02x}, ".format(byte)
+            bytes_per_line = 8
+            if idx % bytes_per_line == bytes_per_line - 1:
+                hex_str += '\n'
+
+        return hex_str
+
+    key = bytearray(range(32))
+    iv = bytearray(range(16, 0, -1))
+
+    print("Key: \n{}".format(as_c_array(key)))
+    print("IV: \n{}".format(as_c_array(iv)))
+
+    # Replace CTR with desired mode
+    cipher = Cipher(algorithms.AES(key), modes.CTR(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    input_len = 1000
+
+    plain = b'\x3A'*input_len
+    print(as_c_array(plain))
+    ct = encryptor.update(plain) + encryptor.finalize()
+
+    print("Chipertext: {}".format(as_c_array(ct)))
+*/
+TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
+{
+    const unsigned SZ = 1600;
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+
+    const uint8_t expected_cipher_end[] = {
+        0x3e, 0x68, 0x8a, 0x02, 0xe6, 0xf2, 0x6a, 0x9e,
+        0x9b, 0xb2, 0xc0, 0xc4, 0x63, 0x63, 0xd9, 0x25,
+        0x51, 0xdc, 0xc2, 0x71, 0x96, 0xb3, 0xe5, 0xcd,
+        0xbd, 0x0e, 0xf2, 0xef, 0xa9, 0xab, 0xab, 0x2d,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_setkey_dec(&ctx, key_256, 256);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CTR AES-256 test", "[aes]")
+{
+    const unsigned SZ = 1000;
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+    uint8_t stream_block[16];
+    size_t nc_off = 0;
+
+    const uint8_t expected_cipher_end[] = {
+        0xd4, 0xdc, 0x4f, 0x8f, 0xfe, 0x86, 0xee, 0xb5,
+        0x14, 0x7f, 0xba, 0x30, 0x25, 0xa6, 0x7f, 0x6c,
+        0xb5, 0x73, 0xaf, 0x90, 0xd7, 0xff, 0x36, 0xba,
+        0x2b, 0x1d, 0xec, 0xb9, 0x38, 0xfa, 0x0d, 0xeb,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    nc_off = 0;
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
+TEST_CASE("mbedtls OFB AES-256 test", "[aes]")
+{
+    const unsigned SZ = 1000;
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+    size_t nc_off = 0;
+
+    const uint8_t expected_cipher_end[] = {
+        0xca, 0xc3, 0x05, 0x77, 0xae, 0xb9, 0x38, 0xd6,
+        0x03, 0x0a, 0xad, 0x90, 0x6e, 0xdd, 0xf3, 0x9a,
+        0x41, 0x4d, 0x71, 0x30, 0x04, 0x9f, 0xd3, 0x53,
+        0xb7, 0x5e, 0xb4, 0xfd, 0x93, 0xf8, 0x31, 0x6a,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    nc_off = 0;
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CFB-8 AES-256 test", "[aes]")
+{
+    const unsigned SZ = 1000;
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+
+    const uint8_t expected_cipher_end[] = {
+        0x69, 0xdc, 0x1d, 0x8a, 0x0b, 0x9e, 0xbc, 0x84,
+        0x29, 0xa2, 0x04, 0xb6, 0x91, 0x6b, 0xb2, 0x83,
+        0x13, 0x23, 0x54, 0xcb, 0xf9, 0x6d, 0xcc, 0x53,
+        0x04, 0x59, 0xd1, 0xc9, 0xff, 0xab, 0xe2, 0x37,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
+{
+    const unsigned SZ = 1000;
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+    size_t nc_off = 0;
+
+    const uint8_t expected_cipher_end[] = {
+        0xf3, 0x64, 0x20, 0xa1, 0x70, 0x2a, 0xd9, 0x3f,
+        0xb7, 0x48, 0x8c, 0x2c, 0x1f, 0x65, 0x53, 0xc2,
+        0xac, 0xfd, 0x82, 0xe5, 0x31, 0x24, 0x1f, 0x30,
+        0xaf, 0xcc, 0x8d, 0xb3, 0xf3, 0x63, 0xe1, 0xa0,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_ENCRYPT,  SZ, &nc_off, nonce, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    nc_off = 0;
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_DECRYPT, SZ, &nc_off, nonce, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
 TEST_CASE("mbedtls CTR stream test", "[aes]")
 {
     const unsigned SZ = 100;
@@ -79,11 +357,11 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
         memset(decryptedtext, 0x0, SZ);
 
         size_t offset = 0;
-
         // Encrypt
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
+
             mbedtls_aes_crypt_ctr(&ctx, length, &offset, nonce,
                                   stream_block, plaintext + idx, chipertext + idx );
         }

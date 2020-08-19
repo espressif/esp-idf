@@ -94,6 +94,12 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_SYSTIMER_CLK_EN;
     case PERIPH_GDMA_MODULE:
         return SYSTEM_DMA_CLK_EN;
+    case PERIPH_AES_MODULE:
+        return SYSTEM_CRYPTO_AES_CLK_EN;
+    case PERIPH_SHA_MODULE:
+        return SYSTEM_CRYPTO_SHA_CLK_EN;
+    case PERIPH_RSA_MODULE:
+        return SYSTEM_CRYPTO_RSA_CLK_EN;
     default:
         return 0;
     }
@@ -159,6 +165,30 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_SYSTIMER_RST;
     case PERIPH_GDMA_MODULE:
         return SYSTEM_DMA_RST;
+    case PERIPH_AES_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature, otherwise AES unit is held in reset also.
+            return (SYSTEM_CRYPTO_AES_RST | SYSTEM_CRYPTO_DS_RST);
+        } else {
+            //Don't return other units to reset, as this pulls reset on RSA & SHA units, respectively.
+            return SYSTEM_CRYPTO_AES_RST;
+        }
+    case PERIPH_SHA_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
+            return (SYSTEM_CRYPTO_SHA_RST | SYSTEM_CRYPTO_DS_RST | SYSTEM_CRYPTO_HMAC_RST | SYSTEM_DMA_RST) ;
+        } else {
+            // Don't assert reset on secure boot, otherwise AES is held in reset
+            return SYSTEM_CRYPTO_SHA_RST | SYSTEM_DMA_RST;
+        }
+    case PERIPH_RSA_MODULE:
+        if (enable == true) {
+            /* also clear reset on digital signature, otherwise RSA is held in reset */
+            return (SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_DS_RST);
+        } else {
+            /* don't reset digital signature unit, as this resets AES also */
+            return SYSTEM_CRYPTO_RSA_RST;
+        }
     default:
         return 0;
     }
@@ -177,6 +207,9 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
     case PERIPH_GDMA_MODULE:
+    case PERIPH_AES_MODULE:
+    case PERIPH_SHA_MODULE:
+    case PERIPH_RSA_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
@@ -196,6 +229,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
     case PERIPH_GDMA_MODULE:
+    case PERIPH_AES_MODULE:
+    case PERIPH_RSA_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
