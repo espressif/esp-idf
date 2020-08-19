@@ -55,12 +55,14 @@ typedef enum {
 static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
     if (func == RTCIO_FUNC_RTC) {
+        SENS.sar_io_mux_conf.iomux_clk_gate_en = 1;
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         //0:RTC FUNCTION 1,2,3:Reserved
         SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, SOC_PIN_FUNC_RTC_IO, rtc_io_desc[rtcio_num].func);
     } else if (func == RTCIO_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
+        SENS.sar_io_mux_conf.iomux_clk_gate_en = 0;
     }
 }
 
@@ -350,6 +352,14 @@ static inline void rtcio_ll_enable_sleep_setting(gpio_num_t gpio_num)
 static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
+}
+
+static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
+{
+    REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);
+    // Set level which will trigger wakeup
+    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
+            level , RTC_CNTL_EXT_WAKEUP0_LV_S);
 }
 
 #ifdef __cplusplus

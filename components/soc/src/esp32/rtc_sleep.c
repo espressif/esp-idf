@@ -23,6 +23,8 @@
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
+#include "esp32/rom/ets_sys.h"
+#include "hal/rtc_cntl_ll.h"
 
 #define MHZ (1000000)
 
@@ -218,8 +220,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
 
 void rtc_sleep_set_wakeup_time(uint64_t t)
 {
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, t & UINT32_MAX);
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
+    rtc_cntl_ll_set_wakeup_timer(t);
 }
 
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)

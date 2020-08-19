@@ -1,4 +1,4 @@
-idf_component_register(SRCS "panic.c" "system_api.c" "startup.c" "system_time.c"
+idf_component_register(SRCS "panic.c" "system_api.c" "startup.c" "sleep_modes.c" "system_time.c"
                     INCLUDE_DIRS include
                     PRIV_REQUIRES spi_flash app_update
                                   # requirements due to startup code

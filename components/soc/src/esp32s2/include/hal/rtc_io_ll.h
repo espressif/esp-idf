@@ -354,6 +354,14 @@ static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
     CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
 }
 
+static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
+{
+    REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);
+    // Set level which will trigger wakeup
+    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
+            level , RTC_CNTL_EXT_WAKEUP0_LV_S);
+}
+
 #ifdef __cplusplus
 }
 #endif

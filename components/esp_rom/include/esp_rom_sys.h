@@ -46,6 +46,11 @@ void esp_rom_delay_us(uint32_t us);
  */
 void esp_rom_install_channel_putc(int channel, void (*putc)(char c));
 
+/**
+ *  @brief Disable logging from the ROM code.
+ */
+void esp_rom_disable_logging(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -17,11 +17,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "esp_err.h"
+
 #include "soc/soc_caps.h"
 #include "hal/cpu_hal.h"
 #include "hal/soc_ll.h"
-
-#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {

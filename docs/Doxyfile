@@ -245,7 +245,7 @@ INPUT = \
     ## ESP HTTPS OTA
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
-    $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_sleep.h \
+    $(IDF_PATH)/components/esp_system/include/esp_sleep.h \
     ## Logging
     $(IDF_PATH)/components/log/include/esp_log.h \
     ## Base MAC address
