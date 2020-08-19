@@ -207,7 +207,10 @@ static int dsc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 
     switch (error->status) {
     case 0:
-        bt_mesh_gattc_info[i].ccc_handle = dsc->handle;
+        if (bt_mesh_gattc_info[i].ccc_handle == 0 && dsc &&
+            BLE_UUID16(&dsc->uuid)->value == BLE_MESH_UUID_GATT_CCC_VAL) {
+            bt_mesh_gattc_info[i].ccc_handle = dsc->handle;
+        }
         break;
 
     case BLE_HS_EDONE:
@@ -291,7 +294,8 @@ static int chr_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
                     break;
                 }
             }
-            ble_gattc_disc_all_dscs(conn_handle, bt_mesh_gattc_info[j].data_out_handle, 0xffff, dsc_disced, (void *)j);
+            ble_gattc_disc_all_dscs(conn_handle, bt_mesh_gattc_info[j].data_out_handle, bt_mesh_gattc_info[j].end_handle,
+                                    dsc_disced, (void *)j);
         } else {
             ble_gattc_disc_all_chrs(conn_handle, bt_mesh_gattc_info[j].start_handle, bt_mesh_gattc_info[j].end_handle,
                                     chr_disced, (void *)j);
