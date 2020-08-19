@@ -207,7 +207,7 @@ def get_version():
         return (branch, "branch", False)
 
     # Try to find the branch name even if docs are built locally
-    branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode('utf-8')
+    branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode('utf-8')
     if branch != "HEAD":
         return (branch, "branch", False)
 
