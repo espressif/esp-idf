@@ -31,10 +31,14 @@
 #include <string.h>
 
 
-#define gpspi_flash_ll_get_hw(host_id)  (((host_id)==SPI2_HOST ? &GPSPI2 \
-                                                : ((host_id)==SPI3_HOST ? &GPSPI3 \
-                                                : ((host_id)==SPI4_HOST ? &GPSPI4 \
-                                                : ({abort();(spi_dev_t*)0;})))))
+#define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : (\
+                                          ((host_id)==SPI3_HOST) ? &GPSPI3 : (\
+                                          {abort();(spi_dev_t*)0;}\
+                                        )) )
+#define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : (\
+                                          ((dev) == (void*)&GPSPI3) ? SPI3_HOST : (\
+                                          -1 \
+                                        )) )
 
 typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
 

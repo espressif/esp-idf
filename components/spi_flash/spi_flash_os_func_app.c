@@ -83,9 +83,9 @@ static esp_err_t spi23_end(void *arg)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t delay_ms(void *arg, unsigned ms)
+static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
 {
-    ets_delay_us(1000 * ms);
+    ets_delay_us(us);
     return ESP_OK;
 }
 
@@ -127,14 +127,14 @@ static app_func_arg_t spi4_arg = {
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
     .start = spi1_start,
     .end = spi1_end,
-    .delay_ms = delay_ms,
+    .delay_us = delay_us,
     .region_protected = main_flash_region_protected,
 };
 
 const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .start = spi23_start,
     .end = spi23_end,
-    .delay_ms = delay_ms,
+    .delay_us = delay_us,
 };
 
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
