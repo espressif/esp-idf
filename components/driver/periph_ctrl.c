@@ -20,6 +20,7 @@
 #include "driver/periph_ctrl.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static uint8_t ref_counts = 0;
 
 /* Static functions to return register address & mask for clk_en / rst of each peripheral */
 static uint32_t get_clk_en_mask(periph_module_t periph);
@@ -257,4 +258,26 @@ static uint32_t get_rst_en_reg(periph_module_t periph)
     }
 }
 
+IRAM_ATTR void wifi_bt_common_module_enable(void)
+{
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+    if (ref_counts == 0) {
+        DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG,DPORT_WIFI_CLK_WIFI_BT_COMMON_M);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,0);
+    }
+    
+    ref_counts++;
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+}
 
+IRAM_ATTR void wifi_bt_common_module_disable(void)
+{
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+    ref_counts--;
+    if (ref_counts == 0) {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG,DPORT_WIFI_CLK_WIFI_BT_COMMON_M);
+        DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,0);
+    }
+
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+} 
