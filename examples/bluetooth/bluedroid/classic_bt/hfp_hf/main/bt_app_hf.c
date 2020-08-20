@@ -170,7 +170,7 @@ const char *c_inband_ring_state_str[] = {
 
 // esp_bd_addr_t peer_addr;
 // If you want to connect a specific device, add it's address here
-esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};
+esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
 #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
 

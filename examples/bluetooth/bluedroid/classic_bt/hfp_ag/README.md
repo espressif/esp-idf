@@ -43,47 +43,24 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 When you flash and monitor this example, the commands help table prints the following log at the very begining:
 
 ```
-########################################################################
-HFP AG command usage manual
-HFP AG commands begins with "hf" and end with ";"
-Supported commands are as follows, arguments are embraced with < and >
+Type 'help' to get the list of commands.
+Use UP/DOWN arrows to navigate through command history.
+Press TAB when typing command name to auto-complete.
 
-hf con;                   -- set up connection with peer device
-hf dis;                   -- release connection with peer device
-hf cona;                  -- set up audio connection with peer device
-hf disa;                  -- release audio connection with peer device
-hf vron;                  -- start voice recognition
-hf vroff;                 -- stop voice recognition
-hf vu <tgt> <vol>;        -- volume update
-     tgt: 0-speaker, 1-microphone
-     vol: volume gain ranges from 0 to 15
-hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited indication device status to HF Client
-     call: call status [0,1]
-     callsetup: call setup status [0,3]
-     ntk: network status [0,1]
-     sig: signal strength value from 0~5
-hf ate <rep> <err>;       -- send extended at error code
-     rep: response code from 0 to 7
-     err: error code from 0 to 32
-hf iron;                  -- in-band ring tone provided
-hf iroff;                 -- in-band ring tone not provided
-hf ac;                    -- Answer Incoming Call from AG
-hf rc;                    -- Reject Incoming Call from AG
-hf d <num>;               -- Dial Number by AG, e.g. hf d 11223344
-hf end;                   -- End a call by AG
-hf h;                     -- to see the command for HFP AG
-########################################################################
+ ==================================================
+ |       Steps to test hfp_ag                     |
+ |                                                |
+ |  1. Print 'help' to gain overview of commands  |
+ |  2. Setup a service level connection           |
+ |  3. Run hfp_ag to test                         |
+ |                                                |
+ =================================================
+
 ```
-
-**Note:**
-
-- This command help table will print out in monitor whenever you type `hf h;` or if you input a command that is not required by the command parse rule.
-- The command you type will not echo in monitor and your command should always start with `hf` and end with `;` or the example will not respond.
-- The command you type in will not echo in monitor.
 
 ### Service Level Connection and Disconnection
 
-You can type `hf con;` to establish a service level connection with HF Unit device and log prints such as:
+You can type `con` to establish a service level connection with HF Unit device and log prints such as:
 
 ```
 W (2211) BT_APPL: new conn_srvc id:5, app_id:0
@@ -97,10 +74,9 @@ I (2331) BT_APP_HF: --connection state SLC_CONNECTED, peer feats 0xff, chld_feat
 
 **Note: Only after Hands-free Profile(HFP) service is initialized and a service level connection exists between an HF Unit and an AG device, could other commands be available.**
 
-You can type `hf dis;` to disconnect with the connected HF Unit device, and log prints such as:
+You can type `dis` to disconnect with the connected HF Unit device, and log prints such as:
 
 ```
-E (100147) CNSL: Command [hf dis;]
 disconnect
 W (77321) BT_RFCOMM: port_rfc_closed RFCOMM connection in state 2 closed: Closed (res: 19)
 I (77321) BT_APP_HF: APP HFP event: CONNECTION_STATE_EVT
@@ -111,7 +87,7 @@ W (77381) BT_RFCOMM: RFCOMM_DisconnectInd LCID:0x41
 
 ### Audio Connection and Disconnection
 
-You can type `hf cona;` to establish the audio connection between HF Unit and AG device. Also, you can type `hf disa;` to close the audio data stream.
+You can type `cona` to establish the audio connection between HF Unit and AG device. Also, you can type `disa` to close the audio data stream.
 
 #### Scenarios for Audio Connection
 
@@ -138,10 +114,9 @@ Since CVSD is the default codec in HFP, we just show the scenarios using mSBC:
 
 #### Answer an Incoming Call
 
-You can type `hf ac;` to answer an incoming call and log prints such as:
+You can type `ac` to answer an incoming call and log prints such as:
 
 ```
-E (1066280) CNSL: Command [hf ac;]
 Answer Call from AG.
 W (1066280) BT_APPL: BTA_AG_SCO_CODEC_ST: Ignoring event 1
 I (1067200) BT_APP_HF: APP HFP event: BCS_EVT
@@ -153,10 +128,9 @@ I (1067240) BT_APP_HF: --Audio State connected
 
 #### Reject an Incoming Call
 
-You can type `hf rc;` to reject an incoming call and log prints such as:
+You can type `rc` to reject an incoming call and log prints such as:
 
 ```
-E (10040) CNSL: Command [hf rc;]
 Reject Call from AG.
 I (1067240) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
 I (1067240) BT_APP_HF: --Audio State disconnected
@@ -164,10 +138,9 @@ I (1067240) BT_APP_HF: --Audio State disconnected
 
 #### End a Call
 
-You can type `hf end;` to end the current ongoing call and log prints such as:
+You can type `end` to end the current ongoing call and log prints such as:
 
 ```
-E (157741) CNSL: Command [hf end;]
 End Call from AG.
 W (157741) BT_APPL: BTA_AG_SCO_CLOSING_ST: Ignoring event 3
 I (159311) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
@@ -177,10 +150,9 @@ I (159311) BT_APP_HF: --ESP AG Audio Connection Disconnected.
 
 ### Dial Number
 
-You can type `hf d <num>;` to dial `<num>` from AG and log prints such as:
+You can type `d <num>` to dial `<num>` from AG and log prints such as:
 
 ```
-E (207351) CNSL: Command [hf d 123456;]
 Dial number 123456
 I (207361) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
 I (207361) BT_APP_HF: --Audio State connecting
@@ -193,19 +165,19 @@ I (208811) BT_APP_HF: --Audio State connected
 
 ### Volume Control
 
-You can type `hf vu <tgt> <vol>;` to update the volume of a headset or microphone. The parameter should be set as follows:
+You can type `vu <tgt> <vol>` to update the volume of a headset or microphone. The parameter should be set as follows:
 
 - `<tgt>` : 0 - headset, 1 - microphone.
 - `<vol>` : Integer among 0 - 15.
 
-For example, `hf vu 0 9;` updates the volume of headset and the log on the AG side prints `Volume Update`, while on the HF Unit side the log prints:
+For example, `vu 0 9;` updates the volume of headset and the log on the AG side prints `Volume Update`, while on the HF Unit side the log prints:
 
 ```
 E (17087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
 E (17087) BT_HF: --volume_target: SPEAKER, volume 9
 ```
 
-And also, `hf vu 1 9;` updates the volume of a microphone and the log on the HF Unit side prints:
+And also, `vu 1 9` updates the volume of a microphone and the log on the HF Unit side prints:
 
 ```
 E (32087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
@@ -214,10 +186,9 @@ E (32087) BT_HF: --volume_target: MICROPHONE, volume 9
 
 #### Voice Recognition
 
-You can type `hf vron;` to start the voice recognition and type `hf vroff;` to terminate this function in the AG device. Both commands will notify the HF Unit the status of voice recognition. For example, type `hf vron;` and the log will print:
+You can type `vron` to start the voice recognition and type `vroff` to terminate this function in the AG device. Both commands will notify the HF Unit the status of voice recognition. For example, type `vron` and the log will print:
 
 ```
-E (244131) CNSL: Command [hf vron;]
 Start Voice Recognition.
 I (244141) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
 I (244141) BT_APP_HF: --Audio State connecting
@@ -228,7 +199,7 @@ I (245311) BT_APP_HF: --Audio State connected
 
 #### Device Status Indication
 
-You can type `hf ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG prints such as:  `Device Indicator Changed!`  and on HF Unit side prints such as:
+You can type `ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG prints such as:  `Device Indicator Changed!`  and on HF Unit side prints such as:
 
 ```
 E (293641) BT_HF: APP HFP event: CALL_IND_EVT
@@ -243,12 +214,12 @@ E (293661) BT_HF: -- signal strength: 5
 
 #### Send Extended AT Error Code
 
-You can type `hf ate <rep> <err>` to send extended AT error code to HF Unit. The parameter should be set as follows:
+You can type `ate <rep> <err>` to send extended AT error code to HF Unit. The parameter should be set as follows:
 
 - `<rep>` : integer among 0 - 7.
 - `<err>` : integer among 0 - 32.
 
-When you type `hf ate 7 7;` the log on the AG side prints `Send CME Error.` while on the HF Unit side prints:
+When you type `ate 7 7;` the log on the AG side prints `Send CME Error.` while on the HF Unit side prints:
 
 ```
 E (448146) BT_HF: APP HFP event: AT_RESPONSE
@@ -257,7 +228,7 @@ E (448146) BT_HF: --AT response event, code 7, cme 7
 
 #### In-Band Ring Tone Setting
 
-You can type `hf iron;` to enable the in-band ring tone and type `hf iroff;` to disable it. The log on the AG side prints such as `Device Indicator Changed!` and on HF Unit side it prints such as:
+You can type `iron` to enable the in-band ring tone and type `iroff` to disable it. The log on the AG side prints such as `Device Indicator Changed!` and on HF Unit side it prints such as:
 
 ```
 E (19546) BT_HF: APP HFP event: IN-BAND_RING_TONE_EVT

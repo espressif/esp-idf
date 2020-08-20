@@ -11,7 +11,7 @@
 
 #define HF_MSG_ARGS_MAX             (5)
 
-typedef void (* hf_cmd_handler)(int argn, char **argv);
+typedef int (* hf_cmd_handler)(int argn, char **argv);
 
 typedef struct {
     uint16_t opcode;
@@ -23,4 +23,6 @@ extern hf_msg_hdl_t *hf_get_cmd_tbl(void);
 extern size_t hf_get_cmd_tbl_size(void);
 
 void hf_msg_show_usage(void);
+
+void register_hfp_hf(void);
 #endif /* __APP_HF_MSG_SET_H__*/
