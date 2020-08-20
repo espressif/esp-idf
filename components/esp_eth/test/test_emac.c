@@ -34,6 +34,13 @@ static const char *TAG = "esp32_eth_test";
 #define ETH_PING_DURATION_MS (5000)
 #define ETH_PING_END_TIMEOUT_MS (ETH_PING_DURATION_MS * 2)
 
+/** To make the test stable in our CI environment we ping only internal localhost endpoint,
+ * so the packet doesn't really leave the chip boundary, let alone via ethernet interface.
+ * The ICMP test doesn't logically belong to esp-eth component, but is historically kept here.
+ * Note the test was moved to lwip component in the further release branches
+ */
+#define TEST_ICMP_DESTINATION_DOMAIN_NAME "127.0.0.1"
+
 // compute md5 of download file
 static struct MD5Context md5_context;
 static uint8_t digest[16];
@@ -341,8 +348,8 @@ TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
     struct addrinfo *res = NULL;
     memset(&hint, 0, sizeof(hint));
     memset(&target_addr, 0, sizeof(target_addr));
-    /* convert URL to IP */
-    TEST_ASSERT(getaddrinfo("www.baidu.com", NULL, &hint, &res) == 0);
+    /* convert ICMP destination string to lwip's representation of an IP address */
+    TEST_ASSERT(getaddrinfo(TEST_ICMP_DESTINATION_DOMAIN_NAME, NULL, &hint, &res) == 0);
     struct in_addr addr4 = ((struct sockaddr_in *)(res->ai_addr))->sin_addr;
     inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
     freeaddrinfo(res);
