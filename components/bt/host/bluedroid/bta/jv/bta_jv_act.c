@@ -1688,6 +1688,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle)
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.port_status = code;
         evt_data.rfc_close.async = TRUE;
+        evt_data.rfc_close.slot = NULL;
         if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
             evt_data.rfc_close.async = FALSE;
             evt_data.rfc_close.status = BTA_JV_SUCCESS;
@@ -1871,6 +1872,7 @@ void bta_jv_rfcomm_close(tBTA_JV_MSG *p_data)
         evt_data.rfc_close.port_status = PORT_LOCAL_CLOSED;
         evt_data.rfc_close.handle = cc->handle;
         evt_data.rfc_close.async = TRUE;
+        evt_data.rfc_close.slot = NULL;
         if (p_pcb && (p_pcb->state == BTA_JV_ST_SR_LISTEN ||
                       p_pcb->state == BTA_JV_ST_SR_OPEN ||
                       p_pcb->state == BTA_JV_ST_CL_OPEN ||
@@ -1960,6 +1962,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.async = TRUE;
         evt_data.rfc_close.port_status = code;
+        evt_data.rfc_close.slot = NULL;
         p_pcb->cong = FALSE;
 
         tBTA_JV_RFCOMM_CBACK    *p_cback = p_cb->p_cback;
@@ -2273,6 +2276,23 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
         APPL_TRACE_ERROR("bta_jv_rfcomm_write :: WARNING ! No JV callback set");
     }
 
+}
+
+/*******************************************************************************
+**
+** Function     bta_jv_rfcomm_flow_control
+**
+** Description  give credits to the peer
+**
+** Returns      void
+**
+*******************************************************************************/
+void bta_jv_rfcomm_flow_control(tBTA_JV_MSG *p_data)
+{
+    tBTA_JV_API_RFCOMM_FLOW_CONTROL *fc = &(p_data->rfcomm_fc);
+
+    tBTA_JV_PCB *p_pcb = fc->p_pcb;
+    PORT_FlowControl_GiveCredit(p_pcb->port_handle, TRUE, fc->credits_given);
 }
 
 /*******************************************************************************
