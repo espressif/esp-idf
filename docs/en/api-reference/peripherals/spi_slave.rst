@@ -89,13 +89,6 @@ If the length of the transmission is greater than the buffer length, only the in
 
 .. only:: esp32
 
-    .. Warning::
-
-        The ESP32 DMA hardware has a limit to the number of bytes sent by a Host and received by a Device. The transaction length must be longer than 8 bytes and a multiple of 4 bytes; otherwise, the SPI hardware might fail to receive the last 1 to 7 bytes.
-
-
-.. only:: esp32
-
     GPIO Matrix and IO_MUX
     ----------------------
 
