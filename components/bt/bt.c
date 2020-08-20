@@ -1513,4 +1513,90 @@ void bt_abort_with_coredump_log(uint16_t error)
     r_assert_with_log(error,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
 }
 
+
+typedef void (*esp_func_t)(void* arg);
+int IRAM_ATTR Designated_execution_core1_wrapper(esp_func_t func, void* param)
+{
+    esp_err_t err = ESP_OK;
+    
+    if (xPortGetCoreID() == CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE) {
+        ESP_LOGD("BTDM","Exec core right %d.\n",CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
+    } else {
+        ESP_LOGD("BTDM","Exec core err, will run in core %d.\n",CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE);
+        ESP_ERROR_CHECK(esp_ipc_call(CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE, func, (void *)param));
+        err = ESP_FAIL;
+    }
+    return err;
+}
+
+#define BTDM_TIMER_MAX 4
+esp_timer_handle_t btdm_oneshot_timer[BTDM_TIMER_MAX]={NULL};
+esp_timer_create_args_t oneshot_timer_args[BTDM_TIMER_MAX];
+
+void btdm_debug_error_add(int error);
+esp_err_t simple_timer_start(int timer_id,esp_timer_cb_t timer_callback,int timeout);
+esp_err_t simple_timer_clear(int timer_id);
+
+esp_err_t simple_timer_start(int timer_id,esp_timer_cb_t timer_callback,int timeout)
+{
+    esp_err_t ret = ESP_OK;
+    if(timer_id>BTDM_TIMER_MAX-1)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer id err %d.\n",timer_id);
+        return ESP_ERR_INVALID_ARG;    
+    }
+    if(timer_callback == NULL)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer timer_callback err %p.\n",timer_callback);
+        return ESP_ERR_INVALID_ARG;    
+    }
+    ESP_LOGD("simple_timer","%s:%d\n",__func__,timer_id);
+    
+    if(btdm_oneshot_timer[timer_id] != NULL)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer %d has been set.\n",timer_id);   
+        esp_timer_stop(btdm_oneshot_timer[timer_id]);
+        ret = esp_timer_start_once(btdm_oneshot_timer[timer_id], timeout);
+    }
+    else 
+    {
+        oneshot_timer_args[timer_id].callback = timer_callback;
+        oneshot_timer_args[timer_id].name = "one-shot";
+        ret = esp_timer_create(&oneshot_timer_args[timer_id], &btdm_oneshot_timer[timer_id]);
+        if(ret == ESP_OK) {
+            ret = esp_timer_start_once(btdm_oneshot_timer[timer_id], timeout);
+        }
+    }
+    if(ret != ESP_OK){
+        ESP_LOGE("simple_timer","BTDM Timer %d ret %d .\n",timer_id,ret);  
+        btdm_debug_error_add(15);
+    }
+    return ret;  
+}
+
+esp_err_t simple_timer_clear(int timer_id)
+{
+    ESP_LOGD("simple_timer","%s:%d core_id:%d\n",__func__,timer_id,xPortGetCoreID());
+
+    if(timer_id>BTDM_TIMER_MAX-1)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer id err %d.\n",timer_id);
+        return ESP_ERR_INVALID_ARG;    
+    }
+    if(btdm_oneshot_timer[timer_id]==NULL)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer not init %d.\n",timer_id);
+        return ESP_ERR_INVALID_STATE;    
+    }
+    if(esp_timer_stop(btdm_oneshot_timer[timer_id])==ESP_ERR_INVALID_STATE)
+    {
+        ESP_LOGD("simple_timer","BTDM Timer not start %d.\n",timer_id);
+        return ESP_ERR_INVALID_STATE;        
+    }
+    esp_timer_delete(btdm_oneshot_timer[timer_id]);
+    btdm_oneshot_timer[timer_id] = NULL;
+    return ESP_OK;  
+}
+
+
 #endif /*  CONFIG_BT_ENABLED */
