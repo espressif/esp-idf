@@ -30,6 +30,7 @@
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/dac_hal.h"
 
 #define ADC_MAX_MEAS_NUM_DEFAULT      (255)
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
@@ -260,6 +261,9 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
     ADC_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
     adc_gpio_init(ADC_UNIT_1, channel);
+    /* Workaround: Disable the synchronization operation function of ADC1 and DAC.
+        If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage. */
+    dac_hal_rtc_sync_by_adc(false);
     adc_hal_set_atten(ADC_NUM_1, channel, atten);
     return ESP_OK;
 }
