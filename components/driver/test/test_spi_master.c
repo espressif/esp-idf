@@ -26,6 +26,7 @@
 #include "soc/soc_memory_layout.h"
 #include "driver/spi_common_internal.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 const static char TAG[] = "test_spi";
 
@@ -1093,4 +1094,6 @@ TEST_CASE("spi_speed","[spi]")
     spi_device_release_bus(spi);
     master_free_device_bus(spi);
 }
+#endif
+
 #endif

@@ -31,7 +31,7 @@
 #include "test_dac_audio_file.h"
 #include "driver/i2s.h"
 
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2) // This testcase for ESP32
+#if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2, ESP32S3) // This testcase for ESP32
 
 /*
  * DAC DMA config.

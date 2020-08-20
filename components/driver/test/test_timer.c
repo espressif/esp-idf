@@ -9,6 +9,8 @@
 #include "soc/rtc.h"
 #include "esp_rom_sys.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define TIMER_DIVIDER  16
 #define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
 #define TIMER_DELTA    0.001
@@ -973,3 +975,5 @@ TEST_CASE_MULTIPLE_STAGES("timer_group software reset test",
         "[intr_status][intr_status = 0]",
         timer_group_test_first_stage,
         timer_group_test_second_stage);
+
+#endif

@@ -15,6 +15,8 @@
 #include "math.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
 #define MASTER_BCK_IO 15
@@ -516,3 +518,5 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }
+
+#endif

@@ -12,6 +12,8 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 static const char* TAG = "test_adc2";
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -165,3 +167,5 @@ TEST_CASE("adc2 work with wifi","[adc]")
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
+
+#endif

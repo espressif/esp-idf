@@ -29,7 +29,7 @@
 #include "test_utils.h"
 #include "esp_rom_sys.h"
 
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2) // This testcase for ESP32
+#if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2, ESP32S3) // This testcase for ESP32
 
 /*
  * ADC DMA testcase

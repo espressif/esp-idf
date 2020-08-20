@@ -83,6 +83,11 @@ build_esp_idf_tests_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
+build_esp_idf_tests_cmake_esp32s3:
+  extends: .build_esp_idf_tests_cmake
+  variables:
+    IDF_TARGET: esp32s3
+
 .build_examples_template:
   extends: .build_template
   artifacts:

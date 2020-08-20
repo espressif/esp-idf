@@ -19,6 +19,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
@@ -686,3 +687,5 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
     free(data);
     TEST_ESP_OK(i2c_driver_delete(i2c_num));
 }
+
+#endif

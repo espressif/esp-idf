@@ -16,6 +16,8 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -770,3 +772,5 @@ TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
     gpio_uninstall_isr_service();
     TEST_ASSERT((io18_param.isr_cnt == 1) && (io19_param.isr_cnt == 1));
 }
+
+#endif

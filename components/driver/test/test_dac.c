@@ -14,6 +14,7 @@
 #include "test_utils.h"
 #include "driver/i2s.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 #include "esp_adc_cal.h"
 
 static const char *TAG = "test_dac";
@@ -179,4 +180,6 @@ TEST_CASE("esp32s2 adc2-dac with adc2 calibration", "[adc-dac]")
     subtest_adc_dac(1500, &chars);
     subtest_adc_dac(2500, &chars);
 }
+#endif
+
 #endif

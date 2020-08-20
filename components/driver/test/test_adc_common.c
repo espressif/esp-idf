@@ -15,6 +15,8 @@
 #include "test_utils.h"
 #include "soc/adc_periph.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 static const char *TAG = "test_adc";
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -383,3 +385,5 @@ void test_adc_slope_debug(void)
     }
 #endif
 }
+
+#endif

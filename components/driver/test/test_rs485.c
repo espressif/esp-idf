@@ -9,6 +9,8 @@
 #include "esp_log.h"
 #include "esp_system.h"             // for uint32_t esp_random()
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)
 #define BUF_SIZE         (100)
@@ -282,5 +284,7 @@ static void rs485_master(void)
  * RS485 bus driver hardware to be connected to boards.
 */
 TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver_RS485][test_env=UT_T2_RS485]", rs485_master, rs485_slave);
+
+#endif
 
 #endif

@@ -17,7 +17,7 @@
 
 extern void rtc_clk_select_rtc_slow_clk(void);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 #include "esp32/clk.h"
 

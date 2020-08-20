@@ -12,6 +12,8 @@
 #include "test/test_common_spi.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #ifndef CONFIG_SPIRAM
 //This test should be removed once the timing test is merged.
 
@@ -142,3 +144,5 @@ TEST_CASE("test slave send unaligned","[spi]")
 }
 
 #endif // !CONFIG_SPIRAM
+
+#endif

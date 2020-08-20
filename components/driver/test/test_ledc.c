@@ -25,6 +25,8 @@
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define PULSE_IO 18
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_FLOATING_IO 5
@@ -543,3 +545,5 @@ TEST_CASE("LEDC memory test", "[ledc][test_env=UT_T1_LEDC]")
 }
 
 #endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#endif

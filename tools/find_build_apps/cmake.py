@@ -19,6 +19,7 @@ SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A
 FORMAL_TO_USUAL = {
     'ESP32': 'esp32',
     'ESP32-S2': 'esp32s2',
+    'ESP32-S3': 'esp32s3',
 }
 
 
@@ -99,6 +100,7 @@ class CMakeBuildSystem(BuildSystem):
         formal_to_usual = {
             'ESP32': 'esp32',
             'ESP32-S2': 'esp32s2',
+            'ESP32-S3': 'esp32s3',
         }
 
         readme_file_content = BuildSystem._read_readme(app_path)

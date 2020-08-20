@@ -25,6 +25,8 @@
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define PULSE_IO 21
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
@@ -670,3 +672,5 @@ TEST_CASE("PCNT counting mode test", "[pcnt]")
     printf("PCNT mode test for negative count\n");
     count_mode_test(PCNT_CTRL_GND_IO);
 }
+
+#endif

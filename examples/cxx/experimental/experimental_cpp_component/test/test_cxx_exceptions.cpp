@@ -13,7 +13,7 @@ using namespace idf;
 
 #if CONFIG_IDF_TARGET_ESP32
 #define LEAKS "300"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define LEAKS "800"
 #else
 #error "unknown target in CXX tests, can't set leaks threshold"

@@ -6,6 +6,8 @@
 #include "test/test_common_spi.h"
 #include "sdkconfig.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #ifndef MIN
 #define MIN(a, b)((a) > (b)? (b): (a))
 #endif
@@ -1162,5 +1164,7 @@ spitest_param_set_t mode_conf[] = {
     },
 };
 TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
+
+#endif
 
 #endif
