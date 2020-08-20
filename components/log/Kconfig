@@ -70,4 +70,12 @@ menu "Log output"
             bool "System Time"
     endchoice
 
+    config LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
+        bool "Log Date and Time"
+        default "n"
+        depends on LOG_TIMESTAMP_SOURCE_SYSTEM
+        help
+            Use full date and time in logs, rather than just time.
+            e.g. (1990-01-31 00:01:30.000)
+
 endmenu

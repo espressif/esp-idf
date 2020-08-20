@@ -52,7 +52,11 @@ void esp_log_impl_unlock(void)
 
 char *esp_log_system_timestamp(void)
 {
-    static char buffer[18] = {0};
+#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
+    static char buffer[24] = {0};
+#else
+    static char buffer[13] = {0};
+#endif
     static _lock_t bufferLock = 0;
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
@@ -79,7 +83,15 @@ char *esp_log_system_timestamp(void)
 
         _lock_acquire(&bufferLock);
         snprintf(buffer, sizeof(buffer),
-                 "%02d:%02d:%02d.%03ld",
+#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
+                 "%04u-%02u-%02u "
+#endif
+                 "%02u:%02u:%02u.%03lu",
+#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
+                 timeinfo.tm_year+1900,
+                 timeinfo.tm_mon+1,
+                 timeinfo.tm_mday,
+#endif
                  timeinfo.tm_hour,
                  timeinfo.tm_min,
                  timeinfo.tm_sec,
