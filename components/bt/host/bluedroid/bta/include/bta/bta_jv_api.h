@@ -297,6 +297,7 @@ typedef struct {
     tBTA_JV_STATUS  status;      /* Whether the operation succeeded or failed. */
     UINT32          port_status; /* PORT status */
     UINT32          handle;      /* The connection handle */
+    void            *slot;       /* slot pointer */
     BOOLEAN         async;       /* FALSE, if local initiates disconnect */
 } tBTA_JV_RFCOMM_CLOSE;
 
@@ -893,6 +894,18 @@ extern tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size);
 **
 *******************************************************************************/
 extern tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p_data);
+
+/*******************************************************************************
+**
+** Function         BTA_JvRfcommFlowControl
+**
+** Description      This function gives the credit to the peer
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+extern tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given);
 
 /*******************************************************************************
  **
