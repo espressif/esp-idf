@@ -222,7 +222,7 @@ ESP-BLE-MESH 示例
 
 * :example:`Wi-Fi 和 ESP-BLE-MESH 共存 <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/ble_mesh_wifi_coexist.md>` - 该示例用于演示 Wi-Fi 和 ESP-BLE-MESH 共存的功能。简而言之，用户可在运行 ESP-BLE-MESH 时使用 Wi-Fi，示例请见 :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`。
 
-* ESP-BLE-MESH 节点控制台 - 该演示实现 ESP-BLE-MESH 节点的基本功能。在演示中，Provisioner 可以扫描、验证节点，节点可以回复 Provisioner 的获取/设置消息，示例请见：:example:`example node code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_node>` 和 :example:`example provisioner code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_provisioner>`。
+* ESP-BLE-MESH 节点控制台 - 该演示实现 ESP-BLE-MESH 节点的基本功能。在演示中，Provisioner 可以扫描、验证节点，节点可以回复 Provisioner 的获取/设置消息，示例请见：:example:`example node code <bluetooth/esp_ble_mesh/ble_mesh_console>`。
 
 .. _esp-ble-mesh-demo-videos:
 

@@ -1,6 +1,6 @@
 /* Console example — declarations of command registration functions.
 
-   This example code is in the Public Domain (or CC0 licensed, at your option).
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
 
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -13,7 +13,7 @@
 // Register system functions
 void register_system(void);
 
-// Register bluetooth
+// Register blutooth
 void register_bluetooth(void);
 
 // Register mesh node cmd
@@ -27,12 +27,15 @@ void ble_mesh_register_mesh_test_performance_client(void);
 void ble_mesh_register_configuration_client_model(void);
 #endif
 
+// Register mesh config server and generic server operation cmd
+void ble_mesh_register_server(void);
+
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
 // Register mesh client operation cmd
 void ble_mesh_register_gen_onoff_client(void);
 #endif
 
-#if CONFIG_BLE_MESH_PROVISIONER
-// Regitster mesh provisioner cmd
-void ble_mesh_register_mesh_provisioner(void);
+#if (CONFIG_BLE_MESH_CFG_CLI)
+// Register mesh config client operation cmd
+void ble_mesh_register_configuration_client_model(void);
 #endif
