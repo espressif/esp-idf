@@ -660,7 +660,10 @@ static ssize_t prov_ccc_write(struct bt_mesh_conn *conn,
 
     /* If a connection exists there must be a client */
     client = find_client(conn);
-    __ASSERT(client, "No client for connection");
+    if (!client) {
+        BT_ERR("No client for connection %p", conn);
+        return 0;
+    }
 
     if (client->filter_type == NONE) {
         client->filter_type = PROV;
@@ -795,7 +798,10 @@ static ssize_t proxy_ccc_write(struct bt_mesh_conn *conn,
 
     /* If a connection exists there must be a client */
     client = find_client(conn);
-    __ASSERT(client, "No client for connection");
+    if (!client) {
+        BT_ERR("No client for connection %p", conn);
+        return 0;
+    }
 
     if (client->filter_type == NONE) {
         client->filter_type = WHITELIST;
