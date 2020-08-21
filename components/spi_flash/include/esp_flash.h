@@ -57,7 +57,7 @@ typedef struct {
     esp_err_t (*region_protected)(void* arg, size_t start_addr, size_t size);
 
     /** Delay for at least 'us' microseconds. Called in between 'start' and 'end'. */
-    esp_err_t (*delay_us)(void *arg, unsigned us);
+    esp_err_t (*delay_us)(void *arg, uint32_t us);
 
     /** Called for get temp buffer when buffer from application cannot be directly read into/write from. */
     void *(*get_temp_buffer)(void* arg, size_t reqest_size, size_t* out_size);

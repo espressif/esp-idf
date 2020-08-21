@@ -152,7 +152,7 @@ struct spi_flash_chip_t {
        timeout_ms should be a timeout (in milliseconds) before the function returns ESP_ERR_TIMEOUT. This is useful to avoid hanging
        if the chip is otherwise unresponsive (ie returns all 0xFF or similar.)
     */
-    esp_err_t (*wait_idle)(esp_flash_t *chip, unsigned timeout_ms);
+    esp_err_t (*wait_idle)(esp_flash_t *chip, uint32_t timeout_us);
 
     /* Configure both the SPI host and the chip for the read mode specified in chip->read_mode.
      *

@@ -96,7 +96,7 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 #endif
 }
 
-static IRAM_ATTR esp_err_t delay_us(void *arg, unsigned us)
+static IRAM_ATTR esp_err_t delay_us(void *arg, uint32_t us)
 {
     esp_rom_delay_us(us);
     return ESP_OK;
