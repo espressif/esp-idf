@@ -148,3 +148,7 @@ I (10175) MASTER_TEST: Destroy master...
 ```
 The example reads the characteristics from slave device(s), while alarm is not triggered in the slave device (See the "Example parameters definition"). The output line describes Timestamp, Cid of characteristic, Characteristic name (Units), Characteristic value (Hex).
 
+Note: Refer to file below for more information about current implementation of Modbus:
+
+* `components/freemodbus/README.rst`
+

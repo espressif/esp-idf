@@ -89,3 +89,6 @@ I (14001) SLAVE_TEST: Modbus controller destroyed.
 ```
 The output lines describe type of operation, its timestamp, modbus address, access type, storage address in parameter structure and number of registers accordingly.
 
+Note: Refer to file below for more information about current implementation of Modbus:
+
+* `components/freemodbus/README.rst`
