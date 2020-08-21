@@ -92,9 +92,13 @@ static esp_err_t rtl8201_update_link_duplex_speed(phy_rtl8201_t *rtl8201)
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     bmcr_reg_t bmcr;
     bmsr_reg_t bmsr;
+    uint32_t peer_pause_ability = false;
+    anlpar_reg_t anlpar;
     PHY_CHECK(rtl8201_page_select(rtl8201, 0) == ESP_OK, "select page 0 failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
               "read BMSR failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
+              "read ANLPAR failed", err);
     eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (rtl8201->link_status != link) {
@@ -116,6 +120,14 @@ static esp_err_t rtl8201_update_link_duplex_speed(phy_rtl8201_t *rtl8201)
                       "change speed failed", err);
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
                       "change duplex failed", err);
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
+                      "change pause ability failed", err);
         }
         PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
                   "change link failed", err);
@@ -234,12 +246,22 @@ static esp_err_t rtl8201_pwrctl(esp_eth_phy_t *phy, bool enable)
     }
     PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
               "write BMCR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-              "read BMCR failed", err);
     if (!enable) {
+        PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                  "read BMCR failed", err);
         PHY_CHECK(bmcr.power_down == 1, "power down failed", err);
     } else {
-        PHY_CHECK(bmcr.power_down == 0, "power up failed", err);
+        /* wait for power up complete */
+        uint32_t to = 0;
+        for (to = 0; to < rtl8201->reset_timeout_ms / 10; to++) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                      "read BMCR failed", err);
+            if (bmcr.power_down == 0) {
+                break;
+            }
+        }
+        PHY_CHECK(to < rtl8201->reset_timeout_ms / 10, "power up timeout", err);
     }
     return ESP_OK;
 err:
@@ -268,6 +290,28 @@ static esp_err_t rtl8201_del(esp_eth_phy_t *phy)
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     free(rtl8201);
     return ESP_OK;
+}
+
+static esp_err_t rtl8201_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    esp_eth_mediator_t *eth = rtl8201->eth;
+    /* Set PAUSE function ability */
+    anar_reg_t anar;
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
+              "read ANAR failed", err);
+    if (ability) {
+        anar.asymmetric_pause = 1;
+        anar.symmetric_pause = 1;
+    } else {
+        anar.asymmetric_pause = 0;
+        anar.symmetric_pause = 0;
+    }
+    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
+              "write ANAR failed", err);
+    return ESP_OK;
+err:
+    return ESP_FAIL;
 }
 
 static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
@@ -325,6 +369,7 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->parent.pwrctl = rtl8201_pwrctl;
     rtl8201->parent.get_addr = rtl8201_get_addr;
     rtl8201->parent.set_addr = rtl8201_set_addr;
+    rtl8201->parent.advertise_pause_ability = rtl8201_advertise_pause_ability;
     rtl8201->parent.del = rtl8201_del;
 
     return &(rtl8201->parent);

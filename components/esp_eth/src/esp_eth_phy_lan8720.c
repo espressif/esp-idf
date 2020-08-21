@@ -174,6 +174,10 @@ static esp_err_t lan8720_update_link_duplex_speed(phy_lan8720_t *lan8720)
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     bmsr_reg_t bmsr;
     pscsr_reg_t pscsr;
+    uint32_t peer_pause_ability = false;
+    anlpar_reg_t anlpar;
+    PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
+              "read ANLPAR failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
               "read BMSR failed", err);
     eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
@@ -207,6 +211,14 @@ static esp_err_t lan8720_update_link_duplex_speed(phy_lan8720_t *lan8720)
                       "change speed failed", err);
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
                       "change duplex failed", err);
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
+                      "change pause ability failed", err);
         }
         PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
                   "change link failed", err);
@@ -327,12 +339,22 @@ static esp_err_t lan8720_pwrctl(esp_eth_phy_t *phy, bool enable)
     }
     PHY_CHECK(eth->phy_reg_write(eth, lan8720->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
               "write BMCR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-              "read BMCR failed", err);
     if (!enable) {
+        PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                  "read BMCR failed", err);
         PHY_CHECK(bmcr.power_down == 1, "power down failed", err);
     } else {
-        PHY_CHECK(bmcr.power_down == 0, "power up failed", err);
+        /* wait for power up complete */
+        uint32_t to = 0;
+        for (to = 0; to < lan8720->reset_timeout_ms / 10; to++) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                      "read BMCR failed", err);
+            if (bmcr.power_down == 0) {
+                break;
+            }
+        }
+        PHY_CHECK(to < lan8720->reset_timeout_ms / 10, "power up timeout", err);
     }
     return ESP_OK;
 err:
@@ -361,6 +383,28 @@ static esp_err_t lan8720_del(esp_eth_phy_t *phy)
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
     free(lan8720);
     return ESP_OK;
+}
+
+static esp_err_t lan8720_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
+    esp_eth_mediator_t *eth = lan8720->eth;
+    /* Set PAUSE function ability */
+    anar_reg_t anar;
+    PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
+              "read ANAR failed", err);
+    if (ability) {
+        anar.asymmetric_pause = 1;
+        anar.symmetric_pause = 1;
+    } else {
+        anar.asymmetric_pause = 0;
+        anar.symmetric_pause = 0;
+    }
+    PHY_CHECK(eth->phy_reg_write(eth, lan8720->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
+              "write ANAR failed", err);
+    return ESP_OK;
+err:
+    return ESP_FAIL;
 }
 
 static esp_err_t lan8720_init(esp_eth_phy_t *phy)
@@ -417,6 +461,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
     lan8720->parent.pwrctl = lan8720_pwrctl;
     lan8720->parent.get_addr = lan8720_get_addr;
     lan8720->parent.set_addr = lan8720_set_addr;
+    lan8720->parent.advertise_pause_ability = lan8720_advertise_pause_ability;
     lan8720->parent.del = lan8720_del;
 
     return &(lan8720->parent);

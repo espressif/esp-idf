@@ -142,6 +142,11 @@ static esp_err_t eth_on_state_changed(esp_eth_mediator_t *eth, esp_eth_state_t s
         eth_driver->duplex = duplex;
         break;
     }
+    case ETH_STATE_PAUSE: {
+        uint32_t peer_pause_ability = (uint32_t)args;
+        ETH_CHECK(mac->set_peer_pause_ability(mac, peer_pause_ability) == ESP_OK, "ethernet mac set peer pause ability failed", err, ESP_FAIL);
+        break;
+    }
     default:
         ETH_CHECK(false, "unknown ethernet state: %d", err, ESP_ERR_INVALID_ARG, state);
         break;
@@ -368,6 +373,10 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         break;
     case ETH_CMD_S_PROMISCUOUS:
         ETH_CHECK(mac->set_promiscuous(mac, (bool)data) == ESP_OK, "set promiscuous mode failed", err, ESP_FAIL);
+        break;
+    case ETH_CMD_S_FLOW_CTRL:
+        ETH_CHECK(mac->enable_flow_ctrl(mac, (bool)data) == ESP_OK, "enable mac flow control failed", err, ESP_FAIL);
+        ETH_CHECK(phy->advertise_pause_ability(phy, (uint32_t)data) == ESP_OK, "phy advertise pause ability failed", err, ESP_FAIL);
         break;
     default:
         ETH_CHECK(false, "unknown io command: %d", err, ESP_ERR_INVALID_ARG, cmd);

@@ -78,6 +78,7 @@ typedef enum {
     ETH_STATE_LINK,   /*!< Link status changed */
     ETH_STATE_SPEED,  /*!< Speed updated */
     ETH_STATE_DUPLEX, /*!< Duplex updated */
+    ETH_STATE_PAUSE,  /*!< Pause ability updated */
 } esp_eth_state_t;
 
 /**
@@ -91,6 +92,7 @@ typedef enum {
     ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
     ETH_CMD_G_SPEED,       /*!< Get Speed */
     ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
+    ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
 } esp_eth_io_cmd_t;
 
 /**

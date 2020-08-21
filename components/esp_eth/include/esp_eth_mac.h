@@ -253,6 +253,31 @@ struct esp_eth_mac_s {
     esp_err_t (*set_promiscuous)(esp_eth_mac_t *mac, bool enable);
 
     /**
+    * @brief Enable flow control on MAC layer or not
+    *
+    * @param[in] mac: Ethernet MAC instance
+    * @param[in] enable: set true to enable flow control; set false to disable flow control
+    *
+    * @return
+    *      - ESP_OK: set flow control successfully
+    *      - ESP_FAIL: set flow control failed because some error occurred
+    *
+    */
+    esp_err_t (*enable_flow_ctrl)(esp_eth_mac_t *mac, bool enable);
+
+    /**
+    * @brief Set the PAUSE ability of peer node
+    *
+    * @param[in] mac: Ethernet MAC instance
+    * @param[in] ability: zero indicates that pause function is supported by link partner; non-zero indicates that pause function is not supported by link partner
+    *
+    * @return
+    *      - ESP_OK: set peer pause ability successfully
+    *      - ESP_FAIL: set peer pause ability failed because some error occurred
+    */
+    esp_err_t (*set_peer_pause_ability)(esp_eth_mac_t *mac, uint32_t ability);
+
+    /**
     * @brief Free memory of Ethernet MAC
     *
     * @param[in] mac: Ethernet MAC instance
