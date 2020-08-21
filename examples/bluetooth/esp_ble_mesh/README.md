@@ -14,18 +14,6 @@ This directory includes examples to demonstrate ESP-BLE-MESH functionality based
 
 This example demonstrates how ESP-BLE-MESH uses Console for message transmitting/receiving tests.
 
-#### ble_mesh_node
-
-This example shows how ESP32 acts as a BLE Mesh Node and sends vendor messages for testing.
-
-See [ble_mesh_node](ble_mesh_console/ble_mesh_node) folder for more details.
-
-#### ble_mesh_provisioner
-
-This example shows how ESP32 acts as a BLE Mesh Provisioner and sends vendor messages for testing.
-
-See [ble_mesh_provisioner](ble_mesh_console/ble_mesh_provisioner) folder for more details.
-
 ## ble_mesh_fast_provision
 
 This example illustrates the solution of ESP-BLE-MESH Fast Provisioning.

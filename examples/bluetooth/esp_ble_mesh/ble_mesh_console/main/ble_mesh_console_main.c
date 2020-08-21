@@ -16,15 +16,16 @@
 #include <string.h>
 
 #include "esp_log.h"
-#include "esp_console.h"
 #include "esp_vfs_dev.h"
-
-#include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#include "esp_vfs_fat.h"
+
 #include "esp_bt.h"
 #include "esp_bt_main.h"
+
+#include "esp_console.h"
 
 #include "ble_mesh_console_decl.h"
 
@@ -44,7 +45,6 @@ static void initialize_filesystem(void)
     };
     esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mount FATFS (0x%x)", err);
         return;
     }
 }
@@ -57,29 +57,24 @@ esp_err_t bluetooth_init(void)
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(TAG, "%s failed to initialize controller\n", __func__);
         return ret;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
-        ESP_LOGE(TAG, "%s failed to enable controller\n", __func__);
         return ret;
     }
     ret = esp_bluedroid_init();
     if (ret) {
-        ESP_LOGE(TAG, "%s failed to initialize bluetooth\n", __func__);
         return ret;
     }
     ret = esp_bluedroid_enable();
     if (ret) {
-        ESP_LOGE(TAG, "%s failed to enable bluetooth\n", __func__);
         return ret;
     }
 
     esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_prov_console", ESP_LOG_INFO);
-
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
     return ret;
 }
 
@@ -102,7 +97,7 @@ void app_main(void)
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_PATH;
 #endif
-    repl_config.prompt = "ble_mesh_prov>";
+    repl_config.prompt = "esp32>";
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
@@ -111,11 +106,9 @@ void app_main(void)
     register_bluetooth();
     ble_mesh_register_mesh_node();
     ble_mesh_register_mesh_test_performance_client();
+    ble_mesh_register_server();
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
     ble_mesh_register_gen_onoff_client();
-#endif
-#if (CONFIG_BLE_MESH_PROVISIONER)
-    ble_mesh_register_mesh_provisioner();
 #endif
 #if (CONFIG_BLE_MESH_CFG_CLI)
     ble_mesh_register_configuration_client_model();
