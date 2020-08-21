@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_TRANSPORT_INTERNAL_H_
-#define _ESP_TRANSPORT_INTERNAL_H_
+#ifndef _ESP_TRANSPORT_SSL_INTERNAL_H_
+#define _ESP_TRANSPORT_SSL_INTERNAL_H_
 
 /**
  * @brief      Sets error to common transport handle
@@ -27,4 +27,4 @@
 void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle);
 
 
-#endif /* _ESP_TRANSPORT_INTERNAL_H_ */
+#endif /* _ESP_TRANSPORT_SSL_INTERNAL_H_ */

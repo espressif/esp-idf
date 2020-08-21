@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/random.h>
+#include <sys/socket.h>
 #include "esp_log.h"
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"
@@ -9,6 +10,8 @@
 #include "esp_transport_utils.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/sha1.h"
+#include "esp_transport_internal.h"
+#include "errno.h"
 
 static const char *TAG = "TRANSPORT_WS";
 
@@ -449,6 +452,17 @@ void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path)
     strcpy(ws->path, path);
 }
 
+static int ws_get_socket(esp_transport_handle_t t)
+{
+    if (t) {
+        transport_ws_t *ws = t->data;
+        if (ws && ws->parent && ws->parent->_get_socket) {
+            return ws->parent->_get_socket(ws->parent);
+        }
+    }
+    return -1;
+}
+
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
     esp_transport_handle_t t = esp_transport_init();
@@ -473,6 +487,7 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
     esp_transport_set_parent_transport_func(t, ws_get_payload_transport_handle);
 
     esp_transport_set_context_data(t, ws);
+    t->_get_socket = ws_get_socket;
     return t;
 }
 
@@ -548,4 +563,41 @@ int esp_transport_ws_get_read_payload_len(esp_transport_handle_t t)
     return ws->frame_state.payload_len;
 }
 
+int esp_transport_ws_poll_connection_closed(esp_transport_handle_t t, int timeout_ms)
+{
+    struct timeval timeout;
+    int sock = esp_transport_get_socket(t);
+    fd_set readset;
+    fd_set errset;
+    FD_ZERO(&readset);
+    FD_ZERO(&errset);
+    FD_SET(sock, &readset);
+    FD_SET(sock, &errset);
+
+    int ret = select(sock + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
+    if (ret > 0) {
+        if (FD_ISSET(sock, &readset)) {
+            uint8_t buffer;
+            if (recv(sock, &buffer, 1, MSG_PEEK) <= 0) {
+                // socket is readable, but reads zero bytes -- connection cleanly closed by FIN flag
+                return 1;
+            }
+            ESP_LOGW(TAG, "esp_transport_ws_poll_connection_closed: unexpected data readable on socket=%d", sock);
+        } else if (FD_ISSET(sock, &errset)) {
+            int sock_errno = 0;
+            uint32_t optlen = sizeof(sock_errno);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+            ESP_LOGD(TAG, "esp_transport_ws_poll_connection_closed select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), sock);
+            if (sock_errno == ENOTCONN || sock_errno == ECONNRESET || sock_errno == ECONNABORTED) {
+                // the three err codes above might be caused by connection termination by RTS flag
+                // which we still assume as expected closing sequence of ws-transport connection
+                return 1;
+            }
+            ESP_LOGE(TAG, "esp_transport_ws_poll_connection_closed: unexpected errno=%d on socket=%d", sock_errno, sock);
+        }
+        return -1; // indicates error: socket unexpectedly reads an actual data, or unexpected errno code
+    }
+    return ret;
+
+}
 

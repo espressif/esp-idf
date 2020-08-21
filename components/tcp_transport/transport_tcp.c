@@ -25,6 +25,7 @@
 
 #include "esp_transport_utils.h"
 #include "esp_transport.h"
+#include "esp_transport_internal.h"
 
 static const char *TAG = "TRANS_TCP";
 
@@ -234,6 +235,17 @@ static esp_err_t tcp_destroy(esp_transport_handle_t t)
     return 0;
 }
 
+static int tcp_get_socket(esp_transport_handle_t t)
+{
+    if (t) {
+        transport_tcp_t *tcp = t->data;
+        if (tcp) {
+            return tcp->sock;
+        }
+    }
+    return -1;
+}
+
 esp_transport_handle_t esp_transport_tcp_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
@@ -242,6 +254,7 @@ esp_transport_handle_t esp_transport_tcp_init(void)
     tcp->sock = -1;
     esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy);
     esp_transport_set_context_data(t, tcp);
+    t->_get_socket = tcp_get_socket;
 
     return t;
 }
