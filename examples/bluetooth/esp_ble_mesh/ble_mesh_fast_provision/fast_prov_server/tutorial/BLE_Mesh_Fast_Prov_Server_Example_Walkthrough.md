@@ -1,7 +1,7 @@
 # 1. Introduction
 ## 1.1 Demo Function
 
-This demo is used for fast provisioning networks. It takes no more than 60 seconds to provisioning 100 devices in this demo. 
+This demo is used for fast provisioning networks. It takes no more than 60 seconds to provisioning 100 devices in this demo.
 
 This demo must be used with the EspBleMesh app. For details about how to use the EspBleMesh app, please click [here](EspBleMesh.md).
 
@@ -18,7 +18,7 @@ This demo has only one element, where the following five Models are implemented:
 
 ## 2. Code Analysis
 
-Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial%20%20%20%20%20%20/ble_mesh_wifi_coexist.md)
+Code initialization part reference [Initializing the Bluetooth and Initializing the BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md)
 
 ### 2.1  Data Structure
 
@@ -99,7 +99,7 @@ The variables that are related to the address management are described in the fo
 
 The cache data is required, so a node can change its role to become a provisioner. During this process, the `esp_ble_mesh_set_fast_prov_info` and `esp_ble_mesh_set_fast_prov_action` APIs are called.
 
-The node's cache data, which are described in the following table, is sent by the provisioner. 
+The node's cache data, which are described in the following table, is sent by the provisioner.
 
 | Variable Name        |Description               |
 | ----------------------|------------------------- |
@@ -124,7 +124,7 @@ There are two timers in this demo, which are:
 	* The timer starts or resets and starts when a Temporary Provisioner provisions an unprovisioned device.
 	* The Temporary Provisioner will send a message (Address information) to the Primary Provisioner.
 2. `disable_fast_prov_timer` is used to disable the provisioning capabilities.
-	* The node starts the timer when it receives a **Generic OnOff Get/Set/Set Unack** message sent by the EspBleMesh app. The group address should be used if you want to disable the provisioning capabilities of all nodes. 
+	* The node starts the timer when it receives a **Generic OnOff Get/Set/Set Unack** message sent by the EspBleMesh app. The group address should be used if you want to disable the provisioning capabilities of all nodes.
 
 The variables that are related to these two timers are described below:
 
@@ -137,7 +137,7 @@ The variables that are related to these two timers are described below:
 
 #### 2.2.1 Vendor Server Model
 
-The **Vendor Server** Model implements the node's `fast_prov_server` state, which has been covered in the previous section. 
+The **Vendor Server** Model implements the node's `fast_prov_server` state, which has been covered in the previous section.
 
 ```c
 example_fast_prov_server_t fast_prov_server = {
@@ -160,7 +160,7 @@ example_fast_prov_server_t fast_prov_server = {
 };
 ```
 
-The `fast_prov_srv_op` is used to register the minimum length of messages. For example, the minimum length of the `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET` message is registered as 3 octets. 
+The `fast_prov_srv_op` is used to register the minimum length of messages. For example, the minimum length of the `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET` message is registered as 3 octets.
 
 ```c
 static esp_ble_mesh_model_op_t fast_prov_srv_op[] = {
@@ -178,11 +178,11 @@ The `example_fast_prov_server_init` function is used to register the callback fu
 err = example_fast_prov_server_init(&vnd_models[0]);
 if (err != ESP_OK) {
     ESP_LOGE(TAG, "%s: Failed to initialize fast prov server model", __func__);
-    return err;  
+    return err;
 }
 ```
 
-The `fast_prov_server` struct represents the Vendor server's states. The `CID_ESP` and `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_SRV` constants, which consist of the vendor server Model's Model id `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_SRV`, are used to identity the Vendor server Model. 
+The `fast_prov_server` struct represents the Vendor server's states. The `CID_ESP` and `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_SRV` constants, which consist of the vendor server Model's Model id `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_SRV`, are used to identity the Vendor server Model.
 
 
 ```c
@@ -236,7 +236,7 @@ if (err != ESP_OK) {
 }
 ```
 
-The `CID_ESP` and `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI` constants, which consist of the vendor client Model's Model id `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI`, are used to identity the Vendor client Model. 
+The `CID_ESP` and `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI` constants, which consist of the vendor client Model's Model id `ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI`, are used to identity the Vendor client Model.
 
 ```c
 
@@ -270,7 +270,7 @@ static esp_ble_mesh_elem_t elements[] = {
 
 * INFO_SET
 
-|Meaning | Opcode-send   | Opcode-ack   |                  
+|Meaning | Opcode-send   | Opcode-ack   |
 | -----| ------------- | -------------|
 |Opcode| `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET` | `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS`    |
 |Function| This message contains all the information as a Provisioner |Checks each field of the Provisioner information and set the corresponding flag bit. The returned status is variable.|
@@ -279,7 +279,7 @@ static esp_ble_mesh_elem_t elements[] = {
 
 * NODE_ADDR
 
-|Meaning | Opcode-send   | Opcode-ack   |                  
+|Meaning | Opcode-send   | Opcode-ack   |
 | -----| ------------- | -------------|
 |Opcode| `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR`  | `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_ACK`  |
 |Function| Temporary Provisioner reports the address of the node it has provisioned. |Used to check if the message was sent successfully. |
@@ -287,7 +287,7 @@ static esp_ble_mesh_elem_t elements[] = {
 
 * ADDR_GET
 
-|Meaning | Opcode-send   | Opcode-ack   |                  
+|Meaning | Opcode-send   | Opcode-ack   |
 | -----| ------------- | -------------|
 |Opcode| `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_GET` | `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS`  |
 |Function|Top Provisioner gets the address of all nodes obtained from Primary Provisioner. | Returns the address of all nodes, but does not contain its own.     |
@@ -295,7 +295,7 @@ static esp_ble_mesh_elem_t elements[] = {
 
 * NET_KEY_ADD
 
-|Meaning | Opcode-send   | Opcode-ack   |                  
+|Meaning | Opcode-send   | Opcode-ack   |
 | -----| ------------- | -------------|
 |Opcode | `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_ADD`   | `ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS`    |
 |Function| Reserved for later use   | Reserved for later use     |
@@ -310,7 +310,7 @@ static esp_ble_mesh_elem_t elements[] = {
     esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
 ```
 
-1. The callback function will be triggered when the **Vendor Server** Model: 
+1. The callback function will be triggered when the **Vendor Server** Model:
 	* Receives a message that indicates the Onoff state of the client Model; or
 	* Calls any APIs that send messages.
 
@@ -346,7 +346,7 @@ static esp_ble_mesh_elem_t elements[] = {
     esp_ble_mesh_register_custom_model_callback(example_ble_mesh_custom_model_cb);
 ```
 
-1. The callback function will be triggered when the **Vendor Client** model: 
+1. The callback function will be triggered when the **Vendor Client** model:
 	* Receives any message sent by the vendor server Model; or
 	* Calls any APIs that send messages.
 
@@ -383,7 +383,7 @@ The Vendor Client Model calls the `esp_ble_mesh_client_model_send_msg` API to se
 esp_ble_mesh_msg_ctx_t ctx = {
     .net_idx  = info->net_idx,
     .app_idx  = info->app_idx,
-    .addr     = info->dst, 
+    .addr     = info->dst,
     .send_rel = false,
     .send_ttl = 0,
  };

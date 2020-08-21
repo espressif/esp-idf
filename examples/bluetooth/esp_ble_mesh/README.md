@@ -1,6 +1,6 @@
 # ESP-BLE-MESH Examples
 
-[ESP-BLE-MESH]($IDF_PATH/components/bt/esp_ble_mesh/) is the official Bluetooth® Mesh stack of Espressif Systems. We will provide long-term support for new features, performance optimization, etc.
+[ESP-BLE-MESH](../../../components/bt/esp_ble_mesh/) is the official Bluetooth® Mesh stack of Espressif Systems. We will provide long-term support for new features, performance optimization, etc.
 
 Please help note that breaking changes may be introduced into ESP-BLE-MESH on [minor IDF versions](https://docs.espressif.com/projects/esp-idf/en/latest/versions.html).
 
