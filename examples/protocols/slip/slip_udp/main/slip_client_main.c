@@ -198,7 +198,7 @@ esp_netif_t *slip_if_init(void)
     esp_netif_slip_config_t slip_config;
 
     IP6_ADDR(&slip_config.ip6_addr,
-             lwip_htonl(0xfd000000),
+             lwip_htonl(0xfd0000),
              lwip_htonl(0x00000000),
              lwip_htonl(0x00000000),
              lwip_htonl(0x00000001)
