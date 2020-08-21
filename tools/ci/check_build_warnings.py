@@ -29,6 +29,7 @@ IGNORE_WARNS = [
         r"reassigning to symbol",
         r"changes choice state",
         r"crosstool_version_check\.cmake",
+        r"CryptographyDeprecationWarning",
     ]
 ]
 
