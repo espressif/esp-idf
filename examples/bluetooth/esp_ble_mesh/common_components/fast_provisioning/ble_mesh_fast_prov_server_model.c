@@ -62,7 +62,7 @@ esp_ble_mesh_cfg_srv_t *get_cfg_srv_user_data(void)
     esp_ble_mesh_model_t *model = NULL;
 
     model = example_find_model(esp_ble_mesh_get_primary_element_address(),
-                               ESP_BLE_MESH_MODEL_ID_CONFIG_SRV, CID_NVAL);
+                               ESP_BLE_MESH_MODEL_ID_CONFIG_SRV, ESP_BLE_MESH_CID_NVAL);
     if (!model) {
         ESP_LOGE(TAG, "%s: Failed to get config server model", __func__);
         return NULL;

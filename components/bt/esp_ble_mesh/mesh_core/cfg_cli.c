@@ -20,8 +20,6 @@
 #include "mesh_common.h"
 #include "cfg_cli.h"
 
-#define CID_NVAL 0xffff
-
 /* 2 byte dummy opcode for getting compile time buffer sizes. */
 #define DUMMY_2_BYTE_OP     BLE_MESH_MODEL_OP_2(0xff, 0xff)
 
@@ -384,7 +382,7 @@ static void mod_app_status(struct bt_mesh_model *model,
     if (buf->len >= 4) {
         status.cid = net_buf_simple_pull_le16(buf);
     } else {
-        status.cid = CID_NVAL;
+        status.cid = BLE_MESH_CID_NVAL;
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
@@ -413,7 +411,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
     if (buf->len >= 4) {
         status.cid = net_buf_simple_pull_le16(buf);
     } else {
-        status.cid = CID_NVAL;
+        status.cid = BLE_MESH_CID_NVAL;
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
@@ -436,7 +434,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
     if (buf->len >= 4) {
         status.cid = net_buf_simple_pull_le16(buf);
     } else {
-        status.cid = CID_NVAL;
+        status.cid = BLE_MESH_CID_NVAL;
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
@@ -511,7 +509,7 @@ static void mod_sub_list(struct bt_mesh_model *model,
     if (ctx->recv_op == OP_MOD_SUB_LIST_VND) {
         list.cid = net_buf_simple_pull_le16(buf);
     } else {
-        list.cid = CID_NVAL;
+        list.cid = BLE_MESH_CID_NVAL;
     }
     list.mod_id = net_buf_simple_pull_le16(buf);
 
@@ -599,7 +597,7 @@ static void mod_app_list(struct bt_mesh_model *model,
     if (ctx->recv_op == OP_VND_MOD_APP_LIST) {
         list.cid = net_buf_simple_pull_le16(buf);
     } else {
-        list.cid = CID_NVAL;
+        list.cid = BLE_MESH_CID_NVAL;
     }
     list.mod_id = net_buf_simple_pull_le16(buf);
 
@@ -908,7 +906,7 @@ int bt_mesh_cfg_mod_app_bind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     bt_mesh_model_msg_init(&msg, OP_MOD_APP_BIND);
     net_buf_simple_add_le16(&msg, elem_addr);
     net_buf_simple_add_le16(&msg, mod_app_idx);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -932,7 +930,7 @@ static int mod_sub(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
     net_buf_simple_add_le16(&msg, sub_addr);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -986,7 +984,7 @@ static int mod_sub_va(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
     net_buf_simple_add_mem(&msg, label, 16);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1039,7 +1037,7 @@ int bt_mesh_cfg_mod_pub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
 
     bt_mesh_model_msg_init(&msg, OP_MOD_PUB_GET);
     net_buf_simple_add_le16(&msg, elem_addr);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1072,7 +1070,7 @@ int bt_mesh_cfg_mod_pub_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     net_buf_simple_add_u8(&msg, pub->ttl);
     net_buf_simple_add_u8(&msg, pub->period);
     net_buf_simple_add_u8(&msg, pub->transmit);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1221,7 +1219,7 @@ int bt_mesh_cfg_mod_pub_va_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     net_buf_simple_add_u8(&msg, pub->ttl);
     net_buf_simple_add_u8(&msg, pub->period);
     net_buf_simple_add_u8(&msg, pub->transmit);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1248,7 +1246,7 @@ int bt_mesh_cfg_mod_sub_del_all(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
 
     bt_mesh_model_msg_init(&msg, OP_MOD_SUB_DEL_ALL);
     net_buf_simple_add_le16(&msg, elem_addr);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1271,7 +1269,7 @@ static int mod_sub_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
 
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1290,13 +1288,13 @@ int bt_mesh_cfg_mod_sub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t 
     if (!ctx || !ctx->addr) {
         return -EINVAL;
     }
-    return mod_sub_get(OP_MOD_SUB_GET, ctx, elem_addr, mod_id, CID_NVAL);
+    return mod_sub_get(OP_MOD_SUB_GET, ctx, elem_addr, mod_id, BLE_MESH_CID_NVAL);
 }
 
 int bt_mesh_cfg_mod_sub_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
                                 u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr || cid == CID_NVAL) {
+    if (!ctx || !ctx->addr || cid == BLE_MESH_CID_NVAL) {
         return -EINVAL;
     }
     return mod_sub_get(OP_MOD_SUB_GET_VND, ctx, elem_addr, mod_id, cid);
@@ -1487,7 +1485,7 @@ int bt_mesh_cfg_mod_app_unbind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     bt_mesh_model_msg_init(&msg, OP_MOD_APP_UNBIND);
     net_buf_simple_add_le16(&msg, elem_addr);
     net_buf_simple_add_le16(&msg, app_idx);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1510,7 +1508,7 @@ static int mod_app_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
 
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
-    if (cid != CID_NVAL) {
+    if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
@@ -1529,13 +1527,13 @@ int bt_mesh_cfg_mod_app_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t 
     if (!ctx || !ctx->addr) {
         return -EINVAL;
     }
-    return mod_app_get(OP_SIG_MOD_APP_GET, ctx, elem_addr, mod_id, CID_NVAL);
+    return mod_app_get(OP_SIG_MOD_APP_GET, ctx, elem_addr, mod_id, BLE_MESH_CID_NVAL);
 }
 
 int bt_mesh_cfg_mod_app_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
                                 u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr || cid == CID_NVAL) {
+    if (!ctx || !ctx->addr || cid == BLE_MESH_CID_NVAL) {
         return -EINVAL;
     }
     return mod_app_get(OP_VND_MOD_APP_GET, ctx, elem_addr, mod_id, cid);
