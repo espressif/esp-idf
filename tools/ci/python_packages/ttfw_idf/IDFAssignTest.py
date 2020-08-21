@@ -17,6 +17,8 @@ except ImportError:
 import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
+from idf_py_actions.constants import SUPPORTED_TARGETS
+
 IDF_PATH_FROM_ENV = os.getenv("IDF_PATH")
 
 
@@ -35,6 +37,9 @@ class IDFCaseGroup(CIAssignTest.Group):
 
 
 class IDFAssignTest(CIAssignTest.AssignTest):
+    def __init__(self, test_case_path, ci_config_file, case_group=IDFCaseGroup):
+        super(IDFAssignTest, self).__init__(test_case_path, ci_config_file, case_group)
+
     def format_build_log_path(self, parallel_num):
         return "{}/list_job_{}.json".format(self.case_group.LOCAL_BUILD_DIR, parallel_num)
 
@@ -65,12 +70,6 @@ class IDFAssignTest(CIAssignTest.AssignTest):
 
         with open(artifact_index_file, "w") as f:
             json.dump(artifact_index_list, f)
-
-
-SUPPORTED_TARGETS = [
-    'esp32',
-    'esp32s2',
-]
 
 
 class ExampleGroup(IDFCaseGroup):
@@ -210,22 +209,29 @@ class UnitTestGroup(IDFCaseGroup):
 class ExampleAssignTest(IDFAssignTest):
     CI_TEST_JOB_PATTERN = re.compile(r'^example_test_.+')
 
-    def __init__(self, est_case_path, ci_config_file):
-        super(ExampleAssignTest, self).__init__(est_case_path, ci_config_file, case_group=ExampleGroup)
+    def __init__(self, test_case_path, ci_config_file):
+        super(ExampleAssignTest, self).__init__(test_case_path, ci_config_file, case_group=ExampleGroup)
 
 
 class TestAppsAssignTest(IDFAssignTest):
     CI_TEST_JOB_PATTERN = re.compile(r'^test_app_test_.+')
 
-    def __init__(self, est_case_path, ci_config_file):
-        super(TestAppsAssignTest, self).__init__(est_case_path, ci_config_file, case_group=TestAppsGroup)
+    def __init__(self, test_case_path, ci_config_file):
+        super(TestAppsAssignTest, self).__init__(test_case_path, ci_config_file, case_group=TestAppsGroup)
+
+
+class ComponentUTAssignTest(IDFAssignTest):
+    CI_TEST_JOB_PATTERN = re.compile(r'^component_ut_test_.+')
+
+    def __init__(self, test_case_path, ci_config_file):
+        super(ComponentUTAssignTest, self).__init__(test_case_path, ci_config_file, case_group=ComponentUTGroup)
 
 
 class UnitTestAssignTest(IDFAssignTest):
     CI_TEST_JOB_PATTERN = re.compile(r'^UT_.+')
 
-    def __init__(self, est_case_path, ci_config_file):
-        super(UnitTestAssignTest, self).__init__(est_case_path, ci_config_file, case_group=UnitTestGroup)
+    def __init__(self, test_case_path, ci_config_file):
+        super(UnitTestAssignTest, self).__init__(test_case_path, ci_config_file, case_group=UnitTestGroup)
 
     def search_cases(self, case_filter=None):
         """

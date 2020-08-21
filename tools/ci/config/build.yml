@@ -85,12 +85,10 @@ build_esp_idf_tests_cmake_esp32s2:
 
 .build_examples_template:
   extends: .build_template
-  parallel: 8
   artifacts:
     when: always
     expire_in: 4 days
   only:
-    # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
@@ -98,8 +96,12 @@ build_esp_idf_tests_cmake_esp32s2:
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
   variables:
-    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/examples/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
-    TEST_TYPE: "example_test"
+    TEST_PREFIX: examples
+    TEST_RELATIVE_DIR: examples
+    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/${TEST_RELATIVE_DIR}/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
+    TEST_TYPE: example_test
+    LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
+    BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
   script:
     # RISC-V toolchain is optional but ULP may need it, so install:
     - $IDF_PATH/tools/idf_tools.py install riscv-none-embed-gcc
@@ -113,16 +115,15 @@ build_examples_make:
   # This is a workaround for a rarely encountered issue with building examples in CI.
   # Probably related to building of Kconfig in 'make clean' stage
   retry: 1
+  parallel: 8
   artifacts:
     paths:
       - $LOG_PATH
-      - build_examples/*/*/*/build/size.json
+      - build_${TEST_PREFIX}/*/*/*/build/size.json
       - $SIZE_INFO_LOCATION
   variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_examples_make"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_examples_make"
-    BUILD_SYSTEM: "make"
-    IDF_TARGET: "esp32"  # currently we only support esp32
+    BUILD_SYSTEM: make
+    IDF_TARGET: esp32  # currently we only support esp32
   only:
     refs:
       - master
@@ -140,22 +141,20 @@ build_examples_make:
     - scan_tests
   artifacts:
     paths:
-      - build_examples/list.json
-      - build_examples/list_job_*.json
-      - build_examples/*/*/*/sdkconfig
-      - build_examples/*/*/*/build/size.json
-      - build_examples/*/*/*/build/*.bin
-      - build_examples/*/*/*/build/*.elf
-      - build_examples/*/*/*/build/*.map
-      - build_examples/*/*/*/build/flasher_args.json
-      - build_examples/*/*/*/build/bootloader/*.bin
-      - build_examples/*/*/*/build/partition_table/*.bin
+      - build_${TEST_PREFIX}/list.json
+      - build_${TEST_PREFIX}/list_job_*.json
+      - build_${TEST_PREFIX}/*/*/*/sdkconfig
+      - build_${TEST_PREFIX}/*/*/*/build/size.json
+      - build_${TEST_PREFIX}/*/*/*/build/*.bin
+      - build_${TEST_PREFIX}/*/*/*/build/*.elf
+      - build_${TEST_PREFIX}/*/*/*/build/*.map
+      - build_${TEST_PREFIX}/*/*/*/build/flasher_args.json
+      - build_${TEST_PREFIX}/*/*/*/build/bootloader/*.bin
+      - build_${TEST_PREFIX}/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
       - $SIZE_INFO_LOCATION
   variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_examples"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_examples"
-    BUILD_SYSTEM: "cmake"
+    BUILD_SYSTEM: cmake
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
@@ -165,35 +164,15 @@ build_examples_cmake_esp32:
 
 build_examples_cmake_esp32s2:
   extends: .build_examples_cmake
+  parallel: 8
   variables:
     IDF_TARGET: esp32s2
 
-.build_test_apps: &build_test_apps
-  extends: .build_template
-  stage: build
-  dependencies:
-    - scan_tests
-  artifacts:
-    when: always
-    paths:
-      - build_test_apps/list.json
-      - build_test_apps/list_job_*.json
-      - build_test_apps/*/*/*/sdkconfig
-      - build_test_apps/*/*/*/build/size.json
-      - build_test_apps/*/*/*/build/*.bin
-      - build_test_apps/*/*/*/build/*.elf
-      - build_test_apps/*/*/*/build/*.map
-      - build_test_apps/*/*/*/build/flasher_args.json
-      - build_test_apps/*/*/*/build/bootloader/*.bin
-      - build_test_apps/*/*/*/build/partition_table/*.bin
-      - $LOG_PATH
-      - $SIZE_INFO_LOCATION
-    expire_in: 3 days
+.build_test_apps:
+  extends: .build_examples_cmake
   variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_test_apps"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_test_apps"
-    BUILD_SYSTEM: "cmake"
-    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/tools/test_apps/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
+    TEST_PREFIX: test_apps
+    TEST_RELATIVE_DIR: tools/test_apps
     TEST_TYPE: custom_test
   only:
     variables:
@@ -207,14 +186,38 @@ build_examples_cmake_esp32s2:
 
 build_test_apps_esp32:
   extends: .build_test_apps
+  parallel: 8
   variables:
     IDF_TARGET: esp32
 
 build_test_apps_esp32s2:
   extends: .build_test_apps
+  parallel: 8
   variables:
     IDF_TARGET: esp32s2
 
+.build_component_ut:
+  extends: .build_test_apps
+  variables:
+    TEST_PREFIX: component_ut
+    TEST_RELATIVE_DIR: component_ut
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
+
+build_component_ut_esp32:
+  extends: .build_component_ut
+  variables:
+    IDF_TARGET: esp32
+
+build_component_ut_esp32s2:
+  extends: .build_component_ut
+  variables:
+    IDF_TARGET: esp32s2
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 

@@ -146,19 +146,27 @@ scan_tests:
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_CUSTOM_TEST
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
       - $TEST_APPS_OUTPUT_DIR
+      - $COMPONENT_UT_OUTPUT_DIR
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
     TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
+    COMPONENT_UT_DIR_TXT: ${CI_PROJECT_DIR}/tools/ci/component_ut_dirs.txt
+    COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
   script:
-    - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - *export_component_ut_dirs
+    - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
+    # template python test file not generated yet. preserve binary files for component UT
+    - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR --preserve
 
 check_readme_links:
   extends: .check_job_template
