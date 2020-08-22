@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 11b691b6fa8546a3862a7a876be5f758
+// md5_digest_table 8c9f6537b47cc5b26a1a5896158c612a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -64,7 +64,11 @@ static const esp_efuse_desc_t SECURE_BOOT_KEY[] = {
 };
 
 static const esp_efuse_desc_t ABS_DONE_0[] = {
-    {EFUSE_BLK0, 196, 1}, 	 // Secure boot is enabled for bootloader image. EFUSE_RD_ABS_DONE_0,
+    {EFUSE_BLK0, 196, 1}, 	 // Secure boot V1 is enabled for bootloader image. EFUSE_RD_ABS_DONE_0,
+};
+
+static const esp_efuse_desc_t ABS_DONE_1[] = {
+    {EFUSE_BLK0, 197, 1}, 	 // Secure boot V2 is enabled for bootloader image. EFUSE_RD_ABS_DONE_1,
 };
 
 static const esp_efuse_desc_t ENCRYPT_FLASH_KEY[] = {
@@ -101,6 +105,10 @@ static const esp_efuse_desc_t CONSOLE_DEBUG_DISABLE[] = {
 
 static const esp_efuse_desc_t UART_DOWNLOAD_DIS[] = {
     {EFUSE_BLK0, 27, 1}, 	 // Disable UART download mode. Valid for ESP32 V3 and newer,
+};
+
+static const esp_efuse_desc_t WR_DIS_EFUSE_RD_DISABLE[] = {
+    {EFUSE_BLK0, 0, 1}, 	 // Write protection for EFUSE_RD_DISABLE,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_CRYPT_CNT[] = {
@@ -235,7 +243,12 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_KEY[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ABS_DONE_0[] = {
-    &ABS_DONE_0[0],    		// Secure boot is enabled for bootloader image. EFUSE_RD_ABS_DONE_0
+    &ABS_DONE_0[0],    		// Secure boot V1 is enabled for bootloader image. EFUSE_RD_ABS_DONE_0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ABS_DONE_1[] = {
+    &ABS_DONE_1[0],    		// Secure boot V2 is enabled for bootloader image. EFUSE_RD_ABS_DONE_1
     NULL
 };
 
@@ -281,6 +294,11 @@ const esp_efuse_desc_t* ESP_EFUSE_CONSOLE_DEBUG_DISABLE[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_UART_DOWNLOAD_DIS[] = {
     &UART_DOWNLOAD_DIS[0],    		// Disable UART download mode. Valid for ESP32 V3 and newer
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE[] = {
+    &WR_DIS_EFUSE_RD_DISABLE[0],    		// Write protection for EFUSE_RD_DISABLE
     NULL
 };
 

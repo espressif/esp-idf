@@ -34,6 +34,7 @@
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
 #include "esp_efuse.h"
+#include "esp_efuse_table.h"
 
 /* The following API implementations are used only when called
  * from the bootloader code.
@@ -290,14 +291,17 @@ done:
 
 esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *image_data)
 {
-    uint32_t new_wdata0 = 0;
-    uint32_t new_wdata6 = 0;
-
     ESP_LOGI(TAG, "enabling secure boot v2...");
     esp_err_t ret;
     if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "secure boot v2 is already enabled. Continuing..");
         return ESP_OK;
+    }
+
+    ret = esp_efuse_batch_write_begin();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error batch programming security eFuses.");
+        return ret;
     }
 
     uint32_t coding_scheme = REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
@@ -336,14 +340,19 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         }
 
         ESP_LOGI(TAG, "Burning public key hash to efuse.");
-        uint32_t *boot_public_key_digest_ptr = (uint32_t *) boot_pub_key_digest;
-        for (int i = 0; i < 8 ; i++) {
-            REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4 * i, boot_public_key_digest_ptr[i]);
-            ESP_LOGD(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, boot_public_key_digest_ptr[i]);
+        ret = esp_efuse_write_block(EFUSE_BLK2, boot_pub_key_digest, 0, (DIGEST_LEN * 8));
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Writing public key hash to efuse failed.");
+            return ret;
         }
 
         ESP_LOGI(TAG, "Write protecting public key digest...");
-        new_wdata0 |= EFUSE_WR_DIS_BLK2;
+        ret = esp_efuse_set_write_protect(EFUSE_BLK2);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Write protecting public key digest...failed.");
+            return ret;
+        }
+
         efuse_key_write_protected = true;
         efuse_key_read_protected = false;
     } else {
@@ -375,26 +384,38 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     ESP_LOGI(TAG, "blowing secure boot efuse...");
     ESP_LOGD(TAG, "before updating, EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG));
 
-    new_wdata6 |= EFUSE_RD_ABS_DONE_1;
+    ret = esp_efuse_write_field_bit(ESP_EFUSE_ABS_DONE_1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Blowing secure boot efuse...failed.");
+        return ret;
+    }
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable JTAG...");
-    new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
+    ret = esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_JTAG);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Disable JTAG...failed.");
+        return ret;
+    }
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC
     ESP_LOGI(TAG, "Disable ROM BASIC interpreter fallback...");
-    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
+    ret = esp_efuse_write_field_bit(ESP_EFUSE_CONSOLE_DEBUG_DISABLE);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Disable ROM BASIC interpreter fallback...failed.");
+        return ret;
+    }
 #else
     ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
 #endif
 
 #ifdef CONFIG_SECURE_DISABLE_ROM_DL_MODE
     ESP_LOGI(TAG, "Disable ROM Download mode...");
-    esp_err_t err = esp_efuse_disable_rom_download_mode();
-    if (err != ESP_OK) {
+    ret = esp_efuse_disable_rom_download_mode();
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not disable ROM Download mode...");
         return ESP_FAIL;
     }
@@ -411,15 +432,21 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 #endif
     if (rd_dis_now) {
         ESP_LOGI(TAG, "Prevent read disabling of additional efuses...");
-        new_wdata0 |= EFUSE_WR_DIS_RD_DIS;
+        ret = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Prevent read disabling of additional efuses...failed.");
+            return ret;
+        }
     }
 #else
     ESP_LOGW(TAG, "Allowing read disabling of additional efuses - SECURITY COMPROMISED");
 #endif
 
-    REG_WRITE(EFUSE_BLK0_WDATA0_REG, new_wdata0);
-    REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
-    esp_efuse_burn_new_values();
+    ret = esp_efuse_batch_write_commit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error programming security eFuses.");
+        return ret;
+    }
     uint32_t after = REG_READ(EFUSE_BLK0_RDATA6_REG);
     ESP_LOGD(TAG, "after updating, EFUSE_BLK0_RDATA0 0x%08x EFUSE_BLK0_RDATA6 0x%08x",
              REG_READ(EFUSE_BLK0_RDATA0_REG), after);
