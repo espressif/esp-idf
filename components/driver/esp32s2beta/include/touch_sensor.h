@@ -21,7 +21,7 @@ extern "C" {
 /**
  * @brief Set touch sensor FSM start
  * @note  Start FSM after the touch sensor FSM mode is set.
- * @note  Call this function will reset beseline of all touch channels.
+ * @note  Call this function will reset benchmark of all touch channels.
  * @return
  *      - ESP_OK on success
  */
@@ -97,7 +97,7 @@ esp_err_t touch_pad_get_inactive_connect(touch_pad_conn_type_t *type);
 /**
  * @brief Set the trigger threshold of touch sensor.
  *        The threshold determines the sensitivity of the touch sensor.
- *        The threshold is the original value of the trigger state minus the baseline value.
+ *        The threshold is the original value of the trigger state minus the benchmark value.
  * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be trigered.
  * @param touch_num touch pad index
  * @param threshold threshold of touch sensor. Should be less than the max change value of touch.
@@ -236,24 +236,24 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg, touch_pad_intr_ma
 esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw_data);
 
 /**
- * @brief get baseline of touch sensor.
- * @note After initialization, the baseline value is the maximum during the first measurement period.
+ * @brief get benchmark of touch sensor.
+ * @note After initialization, the benchmark value is the maximum during the first measurement period.
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Touch channel 0 havent this parameter.
  */
-esp_err_t touch_pad_filter_read_baseline(touch_pad_t touch_num, uint32_t *basedata);
+esp_err_t touch_pad_filter_read_benchmark(touch_pad_t touch_num, uint32_t *basedata);
 
 /**
- * @brief Force reset baseline to raw data of touch sensor.
+ * @brief Force reset benchmark to raw data of touch sensor.
  * @param touch_num touch pad index
  *                  - TOUCH_PAD_MAX Reset basaline of all channels
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_reset_baseline(touch_pad_t touch_num);
+esp_err_t touch_pad_reset_benchmark(touch_pad_t touch_num);
 
 /**
  * @brief set parameter of touch sensor filter and detection algorithm.
@@ -282,7 +282,7 @@ esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info);
 esp_err_t touch_pad_filter_enable(void);
 
 /**
- * @brief diaable touch sensor filter for detection algorithm.
+ * @brief disable touch sensor filter for detection algorithm.
  *        For more details on the detection algorithm, please refer to the application documentation.
  * @return
  *     - ESP_OK Success
@@ -339,11 +339,12 @@ esp_err_t touch_pad_denoise_read_data(uint32_t *data);
 
 /**
  * @brief set parameter of waterproof function.
+ *
  *        The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) and a guard channel.
- *        The shielded channel outputs the same signal as the channel being measured. 
+ *        Guard pad is used to detect the large area of water covering the touch panel.
+ *        Shield pad is used to shield the influence of water droplets covering the touch panel.
  *        It is generally designed as a grid and is placed around the touch buttons.
- *        The shielded channel does not follow the measurement signal of the protection channel. 
- *        So that the guard channel can detect a large area of water.
+ *
  * @param waterproof parameter of waterproof
  * @return
  *     - ESP_OK Success
@@ -360,23 +361,14 @@ esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof);
 
 /**
  * @brief Enable parameter of waterproof function.
- *        The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) and a guard channel.
- *        The shielded channel outputs the same signal as the channel being measured. 
- *        It is generally designed as a grid and is placed around the touch buttons.
- *        The shielded channel does not follow the measurement signal of the protection channel. 
- *        So that the guard channel can detect a large area of water.
+ *        Should be called after function ``touch_pad_waterproof_set_config``.
  * @return
  *     - ESP_OK Success
  */
 esp_err_t touch_pad_waterproof_enable(void);
 
 /**
- * @brief Enable parameter of waterproof function.
- *        The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) and a guard channel.
- *        The shielded channel outputs the same signal as the channel being measured. 
- *        It is generally designed as a grid and is placed around the touch buttons.
- *        The shielded channel does not follow the measurement signal of the protection channel. 
- *        So that the guard channel can detect a large area of water.
+ * @brief Disable parameter of waterproof function.
  * @return
  *     - ESP_OK Success
  */
@@ -434,13 +426,13 @@ esp_err_t touch_pad_proximity_data_get(touch_pad_t touch_num, uint32_t *measure_
 esp_err_t touch_pad_sleep_channel_config(touch_pad_sleep_channel_t *slp_config);
 
 /**
- * @brief Read baseline of touch sensor in sleep mode.
- * @param baseline pointer to accept touch sensor baseline value
+ * @brief Read benchmark of touch sensor in sleep mode.
+ * @param benchmark pointer to accept touch sensor benchmark value
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG parameter is NULL
  */
-esp_err_t touch_pad_sleep_channel_read_baseline(uint32_t *baseline);
+esp_err_t touch_pad_sleep_channel_read_benchmark(uint32_t *benchmark);
 
 /**
  * @brief Read debounce of touch sensor in sleep mode.

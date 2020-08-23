@@ -264,7 +264,7 @@ static inline void touch_ll_start_sw_meas(void)
 /**
  * Set the trigger threshold of touch sensor.
  * The threshold determines the sensitivity of the touch sensor.
- * The threshold is the original value of the trigger state minus the baseline value.
+ * The threshold is the original value of the trigger state minus the benchmark value.
  *
  * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be trigered.
  * @param touch_num touch pad index
@@ -278,7 +278,7 @@ static inline void touch_ll_set_threshold(touch_pad_t touch_num, uint32_t thresh
 /**
  * Get the trigger threshold of touch sensor.
  * The threshold determines the sensitivity of the touch sensor.
- * The threshold is the original value of the trigger state minus the baseline value.
+ * The threshold is the original value of the trigger state minus the benchmark value.
  *
  * @param touch_num touch pad index.
  * @param threshold pointer to accept threshold.
@@ -521,24 +521,24 @@ static inline uint32_t touch_ll_read_intr_status_mask(void)
 /************************ Filter register setting ************************/
 
 /**
- * Get baseline value of touch sensor.
+ * Get benchmark value of touch sensor.
  *
- * @note After initialization, the baseline value is the maximum during the first measurement period.
+ * @note After initialization, the benchmark value is the maximum during the first measurement period.
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
  */
-static inline void touch_ll_filter_read_baseline(touch_pad_t touch_num, uint32_t *basedata)
+static inline void touch_ll_filter_read_benchmark(touch_pad_t touch_num, uint32_t *basedata)
 {
-    *basedata = SENS.sar_touch_status[touch_num - 1].touch_pad_baseline;
+    *basedata = SENS.sar_touch_status[touch_num - 1].touch_pad_benchmark;
 }
 
 /**
- * Force reset baseline to raw data of touch sensor.
+ * Force reset benchmark to raw data of touch sensor.
  *
  * @param touch_num touch pad index
  *                  - TOUCH_PAD_MAX Reset basaline of all channels.
  */
-static inline void touch_ll_filter_reset_baseline(touch_pad_t touch_num)
+static inline void touch_ll_filter_reset_benchmark(touch_pad_t touch_num)
 {
     if (touch_num == TOUCH_PAD_MAX) {
         SENS.sar_touch_chn_st.touch_channel_clr = SOC_TOUCH_SENSOR_BIT_MASK_MAX;
@@ -548,8 +548,8 @@ static inline void touch_ll_filter_reset_baseline(touch_pad_t touch_num)
 }
 
 /**
- * Set filter mode. The input to the filter is raw data and the output is the baseline value.
- * Larger filter coefficients increase the stability of the baseline.
+ * Set filter mode. The input to the filter is raw data and the output is the benchmark value.
+ * Larger filter coefficients increase the stability of the benchmark.
  *
  * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
  */
@@ -559,7 +559,7 @@ static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
 }
 
 /**
- * Get filter mode. The input to the filter is raw data and the output is the baseline value.
+ * Get filter mode. The input to the filter is raw data and the output is the benchmark value.
  *
  * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
  */
@@ -590,35 +590,9 @@ static inline void touch_ll_filter_get_debounce(uint32_t *dbc_cnt)
 }
 
 /**
- * Set hysteresis threshold coefficient. hysteresis = hysteresis_thr * touch_threshold.
- * If (raw data - baseline) > (touch threshold + hysteresis), the touch channel be touched.
- * If (raw data - baseline) < (touch threshold - hysteresis), the touch channel be released.
- * Range: 0 ~ 3. The coefficient is 0: 1/8;  1: 3/32;  2: 1/16;  3: 1/32
- *
- * @param hys_thr hysteresis coefficient.
- */
-static inline void touch_ll_filter_set_hysteresis(uint32_t hys_thr)
-{
-    RTCCNTL.touch_filter_ctrl.touch_hysteresis = hys_thr;
-}
-
-/**
- * Get hysteresis threshold coefficient. hysteresis = hysteresis_thr * touch_threshold.
- * If (raw data - baseline) > (touch threshold + hysteresis), the touch channel be touched.
- * If (raw data - baseline) < (touch threshold - hysteresis), the touch channel be released.
- * Range: 0 ~ 3. The coefficient is 0: 1/8;  1: 3/32;  2: 1/16;  3: 1/32
- *
- * @param hys_thr hysteresis coefficient.
- */
-static inline void touch_ll_filter_get_hysteresis(uint32_t *hys_thr)
-{
-    *hys_thr = RTCCNTL.touch_filter_ctrl.touch_hysteresis;
-}
-
-/**
  * Set noise threshold coefficient. noise = noise_thr * touch threshold.
- * If (raw data - baseline) > (noise), the baseline stop updating.
- * If (raw data - baseline) < (noise), the baseline start updating.
+ * If (raw data - benchmark) > (noise), the benchmark stop updating.
+ * If (raw data - benchmark) < (noise), the benchmark start updating.
  * Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
  *
  * @param hys_thr Noise threshold coefficient.
@@ -626,12 +600,15 @@ static inline void touch_ll_filter_get_hysteresis(uint32_t *hys_thr)
 static inline void touch_ll_filter_set_noise_thres(uint32_t noise_thr)
 {
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = noise_thr;
+    RTCCNTL.touch_filter_ctrl.config2 = noise_thr;
+    RTCCNTL.touch_filter_ctrl.config1 = 0xF;
+    RTCCNTL.touch_filter_ctrl.config3 = 2;
 }
 
 /**
  * Get noise threshold coefficient. noise = noise_thr * touch threshold.
- * If (raw data - baseline) > (noise), the baseline stop updating.
- * If (raw data - baseline) < (noise), the baseline start updating.
+ * If (raw data - benchmark) > (noise), the benchmark stop updating.
+ * If (raw data - benchmark) < (noise), the benchmark start updating.
  * Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
  *
  * @param noise_thr Noise threshold coefficient.
@@ -642,61 +619,11 @@ static inline void touch_ll_filter_get_noise_thres(uint32_t *noise_thr)
 }
 
 /**
- * Set negative noise threshold coefficient. negative noise = noise_neg_thr * touch threshold.
- * If (baseline - raw data) > (negative noise), the baseline restart reset process(refer to `baseline_reset`).
- * If (baseline - raw data) < (negative noise), the baseline stop reset process(refer to `baseline_reset`).
- * Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
- *
- * @param noise_thr Negative threshold coefficient.
- */
-static inline void touch_ll_filter_set_neg_noise_thres(uint32_t noise_thr)
-{
-    RTCCNTL.touch_filter_ctrl.touch_neg_noise_thres = noise_thr;
-}
-
-/**
- * Get negative noise threshold coefficient. negative noise = noise_neg_thr * touch threshold.
- * If (baseline - raw data) > (negative noise), the baseline restart reset process(refer to `baseline_reset`).
- * If (baseline - raw data) < (negative noise), the baseline stop reset process(refer to `baseline_reset`).
- * Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
- *
- * @param noise_thr Negative noise threshold coefficient.
- */
-static inline void touch_ll_filter_get_neg_noise_thres(uint32_t *noise_thr)
-{
-    *noise_thr = RTCCNTL.touch_filter_ctrl.touch_neg_noise_thres;
-}
-
-/**
- * Set the cumulative number of baseline reset processes. such as `n`. If the measured values continue to exceed
- * the negative noise threshold for `n` times, the baseline reset to raw data.
- * Range: 0 ~ 15
- *
- * @param reset_cnt The cumulative number of baseline reset processes.
- */
-static inline void touch_ll_filter_set_baseline_reset(uint32_t reset_cnt)
-{
-    RTCCNTL.touch_filter_ctrl.touch_neg_noise_limit = reset_cnt;
-}
-
-/**
- * Get the cumulative number of baseline reset processes. such as `n`. If the measured values continue to exceed
- * the negative noise threshold for `n` times, the baseline reset to raw data.
- * Range: 0 ~ 15
- *
- * @param reset_cnt The cumulative number of baseline reset processes.
- */
-static inline void touch_ll_filter_get_baseline_reset(uint32_t *reset_cnt)
-{
-    *reset_cnt = RTCCNTL.touch_filter_ctrl.touch_neg_noise_limit;
-}
-
-/**
  * Set jitter filter step size.
  * If filter mode is jitter, should set filter step for jitter.
  * Range: 0 ~ 15
  *
- * @param step The step size of the data change when the baseline is updated.
+ * @param step The step size of the data change when the benchmark is updated.
  */
 static inline void touch_ll_filter_set_jitter_step(uint32_t step)
 {
@@ -708,7 +635,7 @@ static inline void touch_ll_filter_set_jitter_step(uint32_t step)
  * If filter mode is jitter, should set filter step for jitter.
  * Range: 0 ~ 15
  *
- * @param step The step size of the data change when the baseline is updated.
+ * @param step The step size of the data change when the benchmark is updated.
  */
 static inline void touch_ll_filter_get_jitter_step(uint32_t *step)
 {
@@ -996,7 +923,7 @@ static inline void touch_ll_sleep_get_channel_num(touch_pad_t *touch_num)
 /**
  * Set the trigger threshold of touch sensor in deep sleep.
  * The threshold determines the sensitivity of the touch sensor.
- * The threshold is the original value of the trigger state minus the baseline value.
+ * The threshold is the original value of the trigger state minus the benchmark value.
  *
  * @note The threshold at sleep is the same as the threshold before sleep.
  */
@@ -1008,7 +935,7 @@ static inline void touch_ll_sleep_set_threshold(uint32_t touch_thres)
 /**
  * Get the trigger threshold of touch sensor in deep sleep.
  * The threshold determines the sensitivity of the touch sensor.
- * The threshold is the original value of the trigger state minus the baseline value.
+ * The threshold is the original value of the trigger state minus the benchmark value.
  *
  * @note The threshold at sleep is the same as the threshold before sleep.
  */
@@ -1034,13 +961,13 @@ static inline void touch_ll_sleep_disable_approach(void)
 }
 
 /**
- * Read baseline of touch sensor for sleep pad.
+ * Read benchmark of touch sensor for sleep pad.
  *
- * @param baseline Pointer to accept touch sensor baseline value.
+ * @param benchmark Pointer to accept touch sensor benchmark value.
  */
-static inline void touch_ll_sleep_read_baseline(uint32_t *baseline)
+static inline void touch_ll_sleep_read_benchmark(uint32_t *benchmark)
 {
-    *baseline = REG_GET_FIELD(SENS_SAR_TOUCH_SLP_STATUS_REG, SENS_TOUCH_SLP_BASELINE);
+    *benchmark = REG_GET_FIELD(SENS_SAR_TOUCH_SLP_STATUS_REG, SENS_TOUCH_SLP_BENCHMARK);
 }
 
 /**

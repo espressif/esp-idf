@@ -41,10 +41,7 @@ void touch_hal_filter_set_config(const touch_filter_config_t *filter_info)
 {
     touch_ll_filter_set_filter_mode(filter_info->mode);
     touch_ll_filter_set_debounce(filter_info->debounce_cnt);
-    touch_ll_filter_set_hysteresis(filter_info->hysteresis_thr);
     touch_ll_filter_set_noise_thres(filter_info->noise_thr);
-    touch_ll_filter_set_neg_noise_thres(filter_info->noise_neg_thr);
-    touch_ll_filter_set_baseline_reset(filter_info->neg_noise_limit);
     touch_ll_filter_set_jitter_step(filter_info->jitter_step);
 }
 
@@ -52,10 +49,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info)
 {
     touch_ll_filter_get_filter_mode(&filter_info->mode);
     touch_ll_filter_get_debounce(&filter_info->debounce_cnt);
-    touch_ll_filter_get_hysteresis(&filter_info->hysteresis_thr);
     touch_ll_filter_get_noise_thres(&filter_info->noise_thr);
-    touch_ll_filter_get_neg_noise_thres(&filter_info->noise_neg_thr);
-    touch_ll_filter_get_baseline_reset(&filter_info->neg_noise_limit);
     touch_ll_filter_get_jitter_step(&filter_info->jitter_step);
 }
 

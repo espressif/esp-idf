@@ -791,10 +791,10 @@ typedef volatile struct {
         struct {
             uint32_t reserved0:            12;
             uint32_t touch_jitter_step:     4;           /*touch jitter step*/
-            uint32_t touch_neg_noise_limit: 4;           /*negative threshold counter limit*/
-            uint32_t touch_neg_noise_thres: 2;
+            uint32_t config1:               4;
+            uint32_t config2:               2;
             uint32_t touch_noise_thres:     2;
-            uint32_t touch_hysteresis:      2;
+            uint32_t config3:               2;
             uint32_t touch_debounce:        3;           /*debounce counter*/
             uint32_t touch_filter_mode:     2;           /*0: IIR ? 1: IIR ? 2: IIR 1/8 3: Jitter*/
             uint32_t touch_filter_en:       1;           /*touch filter enable*/
