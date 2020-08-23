@@ -55,7 +55,7 @@ extern "C" {
 
 #define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
-#define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
+#define RTC_SLOW_CLK_INT_RC_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
 #define RTC_SLOW_CLK_FREQ_90K      90000
 #define RTC_SLOW_CLK_FREQ_INT_RC    RTC_SLOW_CLK_FREQ_90K
@@ -173,7 +173,7 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief RTC SLOW_CLK frequency values
  */
 typedef enum {
-    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
+    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 90 kHz RC oscillator
     RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
     RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
 } rtc_slow_freq_t;
