@@ -58,6 +58,7 @@ extern "C" {
 #define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
 #define RTC_SLOW_CLK_FREQ_90K      90000
+#define RTC_SLOW_CLK_FREQ_INT_RC    RTC_SLOW_CLK_FREQ_90K
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
@@ -397,11 +398,6 @@ bool rtc_clk_8md256_enabled(void);
 void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div);
 
 /**
- * @brief Set XTAL wait cycles by RTC slow clock's period
- */
-void rtc_clk_set_xtal_wait(void);
-
-/**
  * @brief Select source for RTC_SLOW_CLK
  * @param slow_freq clock source (one of rtc_slow_freq_t values)
  */
@@ -734,9 +730,6 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
  * RTC power and clock control initialization settings
  */
 typedef struct {
-    uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 8M clock to be ready
-    uint32_t xtal_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for XTAL clock to be ready
-    uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
     uint32_t clkctl_init : 1;       //!< Perform clock control related initialization
     uint32_t pwrctl_init : 1;       //!< Perform power control related initialization
     uint32_t rtc_dboost_fpd : 1;    //!< Force power down RTC_DBOOST
@@ -753,9 +746,6 @@ typedef struct {
  * production use).
  */
 #define RTC_CONFIG_DEFAULT() {\
-    .ck8m_wait = RTC_CNTL_CK8M_WAIT_DEFAULT, \
-    .xtal_wait = RTC_CNTL_XTL_BUF_WAIT_DEFAULT, \
-    .pll_wait  = RTC_CNTL_PLL_BUF_WAIT_DEFAULT, \
     .clkctl_init = 1, \
     .pwrctl_init = 1, \
     .rtc_dboost_fpd = 1, \

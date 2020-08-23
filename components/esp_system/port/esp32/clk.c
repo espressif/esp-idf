@@ -76,23 +76,23 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
      */
     int retry_32k_xtal = RTC_XTAL_CAL_RETRY;
 
-    do {
-        if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-            /* 32k XTAL oscillator needs to be enabled and running before it can
-             * be used. Hardware doesn't have a direct way of checking if the
-             * oscillator is running. Here we use rtc_clk_cal function to count
-             * the number of main XTAL cycles in the given number of 32k XTAL
-             * oscillator cycles. If the 32k XTAL has not started up, calibration
-             * will time out, returning 0.
-             */
-            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            if (slow_clk == SLOW_CLK_32K_XTAL) {
-                rtc_clk_32k_enable(true);
-            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
-                rtc_clk_32k_enable_external();
-            }
-            // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
-            if (SLOW_CLK_CAL_CYCLES > 0) {
+    if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+        /* 32k XTAL oscillator needs to be enabled and running before it can
+            * be used. Hardware doesn't have a direct way of checking if the
+            * oscillator is running. Here we use rtc_clk_cal function to count
+            * the number of main XTAL cycles in the given number of 32k XTAL
+            * oscillator cycles. If the 32k XTAL has not started up, calibration
+            * will time out, returning 0.
+            */
+        ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
+        if (slow_clk == SLOW_CLK_32K_XTAL) {
+            rtc_clk_32k_enable(true);
+        } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
+            rtc_clk_32k_enable_external();
+        }
+        // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
+        if (SLOW_CLK_CAL_CYCLES > 0) {
+            while (cal_val == 0) {
                 cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
                 if (cal_val == 0 || cal_val < MIN_32K_XTAL_CAL_VAL) {
                     if (retry_32k_xtal-- > 0) {
@@ -100,25 +100,31 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
                     }
                     ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
                     rtc_slow_freq = RTC_SLOW_FREQ_RTC;
+                    break;
                 }
             }
-        } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
-            rtc_clk_8m_enable(true, true);
         }
-        rtc_clk_slow_freq_set(rtc_slow_freq);
+    } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
+        rtc_clk_8m_enable(true, true);
+    }
 
-        if (SLOW_CLK_CAL_CYCLES > 0) {
-            /* TODO: 32k XTAL oscillator has some frequency drift at startup.
-             * Improve calibration routine to wait until the frequency is stable.
-             */
-            cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
-        } else {
-            const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
-        }
-    } while (cal_val == 0);
-    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
-    esp_clk_slowclk_cal_set(cal_val);
+    const rtc_slow_freq_t prev_slow_freq = rtc_clk_slow_freq_get();
+    rtc_clk_slow_freq_set(rtc_slow_freq);
+
+    if (SLOW_CLK_CAL_CYCLES > 0) {
+        /* TODO: 32k XTAL oscillator has some frequency drift at startup.
+            * Improve calibration routine to wait until the frequency is stable.
+            */
+        cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
+        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibrated value: %d", cal_val);
+        esp_clk_slowclk_cal_set(cal_val);
+    } else if(rtc_slow_freq != prev_slow_freq || esp_clk_slowclk_cal_get() == 0) {
+        // Only overwrite with approximate value if the val in register is invalid
+        const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
+        cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK approx value: %d", cal_val);
+        esp_clk_slowclk_cal_set(cal_val);
+    }
 }
 
 void esp_clk_init(void)
@@ -158,15 +164,18 @@ void esp_clk_init(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
+    rtc_slow_freq_t slow_clk = RTC_SLOW_FREQ_RTC;
 #if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)
-    select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
+    slow_clk = SLOW_CLK_32K_XTAL;
 #elif defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_OSC)
-    select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
+    slow_clk = SLOW_CLK_32K_EXT_OSC;
 #elif defined(CONFIG_ESP32_RTC_CLK_SRC_INT_8MD256)
-    select_rtc_slow_clk(SLOW_CLK_8MD256);
-#else
-    select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
+    slow_clk = SLOW_CLK_8MD256;
 #endif
+
+    if(rtc_get_reset_reason(0) != DEEPSLEEP_RESET || rtc_clk_slow_freq_get() != slow_clk || esp_clk_slowclk_cal_get() == 0) {
+        select_rtc_slow_clk(slow_clk);
+    }
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // After changing a frequency WDT timeout needs to be set for new frequency.

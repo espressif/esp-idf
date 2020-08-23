@@ -36,6 +36,7 @@
 /* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */
 #define RTC_FAST_CLK_FREQ_8M        8500000
 #define RTC_SLOW_CLK_FREQ_150K      150000
+#define RTC_SLOW_CLK_FREQ_INT_RC    RTC_SLOW_CLK_FREQ_150K
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_8M / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
@@ -279,6 +280,18 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
     }
 }
 
+static void rtc_clk_set_cntl_wait_cycles(void)
+{
+    const uint32_t slow_clk_freq = rtc_clk_slow_freq_get_hz();
+    const uint32_t pll_wait = slow_clk_freq / 200;
+    const uint32_t xtal_wait = slow_clk_freq / 1000;
+    const uint32_t ck8m_wait = slow_clk_freq / 200;
+
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, pll_wait);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, xtal_wait);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, ck8m_wait);
+}
+
 void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
 {
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL, slow_freq);
@@ -286,6 +299,7 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN,
             (slow_freq == RTC_SLOW_FREQ_32K_XTAL) ? 1 : 0);
 
+    rtc_clk_set_cntl_wait_cycles();
     esp_rom_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
