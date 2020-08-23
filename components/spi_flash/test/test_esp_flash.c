@@ -27,6 +27,7 @@
 
 static uint8_t sector_buf[4096];
 
+#define MAX_ADDR_24BIT      0x1000000
 #define TEST_SPI_SPEED      ESP_FLASH_10MHZ
 #define TEST_SPI_READ_MODE  SPI_FLASH_FASTRD
 // #define FORCE_GPIO_MATRIX
@@ -92,7 +93,7 @@ static uint8_t sector_buf[4096];
 
 #define TEST_CONFIG_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
 
-typedef void (*flash_test_func_t)(esp_flash_t* chip);
+typedef void (*flash_test_func_t)(const esp_partition_t *part);
 
 /* Use FLASH_TEST_CASE for SPI flash tests that only use the main SPI flash chip
 */
@@ -348,39 +349,63 @@ static void setup_new_chip(const flashtest_config_t* test_cfg, esp_flash_t** out
     TEST_ESP_OK(err);
     err = esp_flash_init(init_chip);
     TEST_ESP_OK(err);
-
-    uint32_t size;
-    err = esp_flash_get_size(init_chip, &size);
-    TEST_ESP_OK(err);
-    ESP_LOGI(TAG, "Flash size: 0x%08X", size);
     *out_chip = init_chip;
 }
 
-void teardown_test_chip(esp_flash_t* chip, spi_host_device_t host)
+static void teardown_test_chip(esp_flash_t* chip)
 {
+    spi_host_device_t host_id;
+    get_chip_host(chip, &host_id, NULL);
     //happen to work when chip==NULL
     spi_bus_remove_flash_device(chip);
-    release_bus(host);
+    release_bus(host_id);
+}
+
+static void flash_test_core(flash_test_func_t func, const flashtest_config_t* config)
+{
+    esp_flash_t* chip;
+    setup_new_chip(config, &chip);
+
+    uint32_t size;
+    esp_err_t err = esp_flash_get_size(chip, &size);
+    TEST_ESP_OK(err);
+    ESP_LOGI(TAG, "Flash size: 0x%08X", size);
+
+    const esp_partition_t* test_part = get_test_data_partition();
+    TEST_ASSERT_NOT_EQUAL(NULL, test_part->flash_chip);
+
+    esp_partition_t part = *test_part;
+    part.flash_chip = chip;
+
+    ESP_LOGI(TAG, "Testing chip %p, address 0x%08X...", part.flash_chip, part.address);
+    (*func)(&part);
+
+    // For flash with size over 16MB, add one extra round of test for the 32-bit address area
+    if (size > MAX_ADDR_24BIT) {
+        part.address = 0x1030000;
+        part.size = 0x0010000;
+        ESP_LOGI(TAG, "Testing chip %p, address 0x%08X...", part.flash_chip, part.address);
+        (*func)(&part);
+    }
+
+    teardown_test_chip(chip);
 }
 
 static void flash_test_func(flash_test_func_t func, int test_num)
 {
+    esp_log_level_set("gpio", ESP_LOG_NONE);
     for (int i = 0; i < test_num; i++) {
-        ESP_LOGI(TAG, "Testing config %d/%d", i, test_num);
-        flashtest_config_t* config = &config_list[i];
-        esp_flash_t* chip;
-        setup_new_chip(config, &chip);
-        (*func)(chip);
-        teardown_test_chip(chip, config->host_id);
+        ESP_LOGI(TAG, "Testing config %d/%d", i+1, test_num);
+        flash_test_core(func, &config_list[i]);
     }
     ESP_LOGI(TAG, "Completed %d configs", test_num);
 }
 
 /* ---------- Test code start ------------*/
 
-static void test_metadata(esp_flash_t *chip)
+static void test_metadata(const esp_partition_t* part)
 {
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
+    esp_flash_t* chip = part->flash_chip;
     uint32_t id, size;
     TEST_ESP_OK(esp_flash_read_id(chip, &id));
     TEST_ESP_OK(esp_flash_get_size(chip, &size));
@@ -390,9 +415,9 @@ static void test_metadata(esp_flash_t *chip)
 FLASH_TEST_CASE("SPI flash metadata functions", test_metadata);
 FLASH_TEST_CASE_3("SPI flash metadata functions", test_metadata);
 
-static uint32_t erase_test_region(esp_flash_t *chip, int num_sectors)
+static uint32_t erase_test_region(const esp_partition_t *part, int num_sectors)
 {
-    const esp_partition_t *part = get_test_data_partition();
+    esp_flash_t* chip = part->flash_chip;
     uint32_t offs = part->address;
 
     /* chip should be initialised */
@@ -419,10 +444,10 @@ static uint32_t erase_test_region(esp_flash_t *chip, int num_sectors)
     return offs;
 }
 
-void test_simple_read_write(esp_flash_t *chip)
+void test_simple_read_write(const esp_partition_t* part)
 {
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-    uint32_t offs = erase_test_region(chip, 1);
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = erase_test_region(part, 1);
 
     const int test_seed = 778;
     srand(test_seed);
@@ -450,10 +475,10 @@ void test_simple_read_write(esp_flash_t *chip)
 FLASH_TEST_CASE("SPI flash simple read/write", test_simple_read_write);
 FLASH_TEST_CASE_3("SPI flash simple read/write", test_simple_read_write);
 
-void test_unaligned_read_write(esp_flash_t *chip)
+void test_unaligned_read_write(const esp_partition_t* part)
 {
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-    uint32_t offs = erase_test_region(chip, 2);
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = erase_test_region(part, 2);
 
     const char *msg = "i am a message";
     TEST_ASSERT(strlen(msg) + 1 % 4 != 0);
@@ -471,12 +496,12 @@ void test_unaligned_read_write(esp_flash_t *chip)
 FLASH_TEST_CASE("SPI flash unaligned read/write", test_unaligned_read_write);
 FLASH_TEST_CASE_3("SPI flash unaligned read/write", test_unaligned_read_write);
 
-void test_single_read_write(esp_flash_t* chip)
+void test_single_read_write(const esp_partition_t* part)
 {
-    const int seed = 699;
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-    uint32_t offs = erase_test_region(chip, 2);
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = erase_test_region(part, 2);
 
+    const int seed = 699;
     srand(seed);
     for (unsigned v = 0; v < 512; v++) {
         uint32_t data = rand();
@@ -499,11 +524,12 @@ FLASH_TEST_CASE_3("SPI flash single byte reads/writes", test_single_read_write);
 /* this test is notable because it generates a lot of unaligned reads/writes,
    and also reads/writes across both a sector boundary & many page boundaries.
 */
-void test_three_byte_read_write(esp_flash_t *chip)
+void test_three_byte_read_write(const esp_partition_t* part)
 {
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = erase_test_region(part, 2);
+
     const int seed = 700;
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-    uint32_t offs = erase_test_region(chip, 2);
     esp_rom_printf("offs:%X\n", offs);
 
     srand(seed);
@@ -524,11 +550,9 @@ void test_three_byte_read_write(esp_flash_t *chip)
 FLASH_TEST_CASE("SPI flash three byte reads/writes", test_three_byte_read_write);
 FLASH_TEST_CASE_3("SPI flash three byte reads/writes", test_three_byte_read_write);
 
-void test_erase_large_region(esp_flash_t *chip)
+void test_erase_large_region(const esp_partition_t *part)
 {
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-
-    const esp_partition_t *part = get_test_data_partition();
+    esp_flash_t* chip = part->flash_chip;
 
     /* Write some noise at the start and the end of the region */
     const char *ohai = "OHAI";
@@ -557,8 +581,10 @@ void test_erase_large_region(esp_flash_t *chip)
 FLASH_TEST_CASE("SPI flash erase large region", test_erase_large_region);
 FLASH_TEST_CASE_3("SPI flash erase large region", test_erase_large_region);
 
-static void test_write_protection(esp_flash_t* chip)
+static void test_write_protection(const esp_partition_t* part)
 {
+    esp_flash_t* chip = part->flash_chip;
+
     bool wp = true;
     esp_err_t ret = ESP_OK;
     ret = esp_flash_get_chip_write_protect(chip, &wp);
@@ -591,9 +617,9 @@ static const uint8_t large_const_buffer[16400] = {
     43 // last byte
 };
 
-static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, size_t length);
-static void write_large_buffer(esp_flash_t *chip, const esp_partition_t *part, const uint8_t *source, size_t length);
-static void read_and_check(esp_flash_t *chip, const esp_partition_t *part, const uint8_t *source, size_t length);
+static void test_write_large_buffer(const esp_partition_t *part, const uint8_t *source, size_t length);
+static void write_large_buffer(const esp_partition_t *part, const uint8_t *source, size_t length);
+static void read_and_check(const esp_partition_t *part, const uint8_t *source, size_t length);
 
 // Internal functions for testing, from esp_flash_api.c
 esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe);
@@ -621,8 +647,10 @@ static bool is_mxic_chip(esp_flash_t* chip)
     return (spi_flash_chip_mxic_probe(chip, flash_id)==ESP_OK);
 }
 
-IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(esp_flash_t* chip)
+IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(const esp_partition_t* part)
 {
+    esp_flash_t* chip = part->flash_chip;
+
     bool qe;
     if (chip == NULL) {
         chip = esp_flash_default_chip;
@@ -669,33 +697,8 @@ IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(esp_flash_t* chip)
 FLASH_TEST_CASE_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 FLASH_TEST_CASE_3_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 
-
-void test_permutations(flashtest_config_t* config)
+void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
-    //replace config pointer with pointer to internal temporary config
-    flashtest_config_t temp_cfg;
-    memcpy(&temp_cfg, config, sizeof(flashtest_config_t));
-    flashtest_config_t* cfg = &temp_cfg;
-    esp_flash_t* chip;
-
-    const int length = sizeof(large_const_buffer);
-    uint8_t *source_buf = malloc(length);
-    TEST_ASSERT_NOT_NULL(source_buf);
-    srand(778);
-    for (int i = 0; i < length; i++) {
-        source_buf[i] = rand();
-    }
-
-    const esp_partition_t *part = get_test_data_partition();
-    TEST_ASSERT(part->size > length + 2 + SPI_FLASH_SEC_SIZE);
-
-    //write data to be read, and use the lowest speed to write and read to make sure success
-    cfg->io_mode = SPI_FLASH_READ_MODE_MIN;
-    cfg->speed = ESP_FLASH_SPEED_MIN;
-    setup_new_chip(cfg, &chip);
-    write_large_buffer(chip, part, source_buf, length);
-    read_and_check(chip, part, source_buf, length);
-    teardown_test_chip(chip, cfg->host_id);
     if (config->host_id != -1) {
         esp_flash_speed_t speed = ESP_FLASH_SPEED_MIN;
         while (speed != ESP_FLASH_SPEED_MAX) {
@@ -703,27 +706,90 @@ void test_permutations(flashtest_config_t* config)
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
             while (io_mode != SPI_FLASH_READ_MODE_MAX) {
-                cfg->io_mode = io_mode;
-                cfg->speed = speed;
-                if (io_mode > SPI_FLASH_FASTRD\
-                && !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(cfg->host_id)) {
+                if (io_mode > SPI_FLASH_FASTRD &&
+                    !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
                     io_mode++;
                     continue;
                 }
 
-                setup_new_chip(cfg, &chip);
+                esp_flash_t* chip;
+                flashtest_config_t temp_config = *config;
+                temp_config.io_mode = io_mode;
+                temp_config.speed = speed;
+                setup_new_chip(&temp_config, &chip);
                 ESP_LOGI(TAG, "test flash io mode: %d, speed: %d", io_mode, speed);
 
-                read_and_check(chip, part, source_buf, length);
-                teardown_test_chip(chip, cfg->host_id);
+                part->flash_chip = chip;
+                read_and_check(part, source_buf, length);
+                teardown_test_chip(chip);
+
                 io_mode++;
             }
             speed++;
         }
     } else {
         //test main flash
-        write_large_buffer(NULL, part, source_buf, length);
-        read_and_check(NULL, part, source_buf, length);
+        part->flash_chip = NULL;
+        read_and_check(part, source_buf, length);
+    }
+}
+
+void test_permutations_chip(const flashtest_config_t* config)
+{
+    esp_log_level_set("gpio", ESP_LOG_NONE);
+    esp_flash_t* chip;
+    flashtest_config_t temp_config = *config;
+    // Use the lowest speed to read configs, data and write data to make sure success
+    temp_config.io_mode = SPI_FLASH_READ_MODE_MIN;
+    temp_config.speed = ESP_FLASH_SPEED_MIN;
+    setup_new_chip(&temp_config, &chip);
+
+    //Get size to determine whether to test one extra partition
+    uint32_t size;
+    esp_err_t err = esp_flash_get_size(chip, &size);
+    TEST_ESP_OK(err);
+    ESP_LOGI(TAG, "Flash size: 0x%08X", size);
+    bool addr_32bit = (size > MAX_ADDR_24BIT);
+
+    // Get test partition, and locate temporary partitions according to the default one
+    const esp_partition_t* test_part = get_test_data_partition();
+    const int length = sizeof(large_const_buffer);
+    TEST_ASSERT(test_part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+
+    esp_partition_t part[2] = {};
+    part[0] = *test_part;
+    part[0].flash_chip = chip;
+    // For flash with size over 16MB, add one extra round of test for the 32-bit address area
+    if (addr_32bit) {
+        part[1] = *test_part;
+        part[1].flash_chip = chip;
+        part[1].address = 0x1030000;
+        part[1].size = 0x0010000;
+    } else {
+        part[1].size = 0;
+    }
+
+    // Prepare test data and write to the specified region
+    uint8_t *source_buf = malloc(length);
+    TEST_ASSERT_NOT_NULL(source_buf);
+    srand(778);
+    for (int i = 0; i < length; i++) {
+        source_buf[i] = rand();
+    }
+
+    for (int i = 0; i < 2; i++) {
+        if (part[i].size == 0) continue;
+        write_large_buffer(&part[i], source_buf, length);
+    }
+
+    teardown_test_chip(chip);
+
+    for (int i = 0; i < 2; i++) {
+        if (part[i].size == 0) continue;
+
+        part[i].flash_chip = (esp_flash_t*)-1;
+        ESP_LOGI(TAG, "Testing address 0x%08X...", part[i].address);
+        test_permutations_part(config, &part[i], source_buf, length);
     }
 
     free(source_buf);
@@ -731,42 +797,44 @@ void test_permutations(flashtest_config_t* config)
 
 TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash]")
 {
-    test_permutations(&config_list[0]);
+    test_permutations_chip(&config_list[0]);
 }
 
 #ifndef CONFIG_SPIRAM
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < TEST_CONFIG_NUM; i++) {
-        test_permutations(&config_list[i]);
+        test_permutations_chip(&config_list[i]);
     }
 }
 #endif
 
-static void test_write_large_const_buffer(esp_flash_t* chip)
+
+static void test_write_large_const_buffer(const esp_partition_t* part)
 {
-    test_write_large_buffer(chip, large_const_buffer, sizeof(large_const_buffer));
+    test_write_large_buffer(part, large_const_buffer, sizeof(large_const_buffer));
 }
 
 FLASH_TEST_CASE("Test esp_flash_write large const buffer", test_write_large_const_buffer);
 FLASH_TEST_CASE_3("Test esp_flash_write large const buffer", test_write_large_const_buffer);
 
-static void test_write_large_ram_buffer(esp_flash_t* chip)
+static void test_write_large_ram_buffer(const esp_partition_t* part)
 {
     // buffer in RAM
     uint8_t *source_buf = malloc(sizeof(large_const_buffer));
     TEST_ASSERT_NOT_NULL(source_buf);
     memcpy(source_buf, large_const_buffer, sizeof(large_const_buffer));
-    test_write_large_buffer(chip, source_buf, sizeof(large_const_buffer));
+    test_write_large_buffer(part, source_buf, sizeof(large_const_buffer));
     free(source_buf);
 }
 
 FLASH_TEST_CASE("Test esp_flash_write large RAM buffer", test_write_large_ram_buffer);
 FLASH_TEST_CASE_3("Test esp_flash_write large RAM buffer", test_write_large_ram_buffer);
 
-static void write_large_buffer(esp_flash_t *chip, const esp_partition_t *part, const uint8_t *source, size_t length)
+static void write_large_buffer(const esp_partition_t *part, const uint8_t *source, size_t length)
 {
-    printf("Writing chip %p, %d bytes from source %p\n", chip, length, source);
+    esp_flash_t* chip = part->flash_chip;
+    printf("Writing chip %p %p, %d bytes from source %p\n", chip, (void*)part->address, length, source);
 
     ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE - 1)) );
 
@@ -774,9 +842,10 @@ static void write_large_buffer(esp_flash_t *chip, const esp_partition_t *part, c
     ESP_ERROR_CHECK( esp_flash_write(chip, source, part->address + 1, length) );
 }
 
-static void read_and_check(esp_flash_t *chip, const esp_partition_t *part, const uint8_t *source, size_t length)
+static void read_and_check(const esp_partition_t *part, const uint8_t *source, size_t length)
 {
-    printf("Checking chip %p, %d bytes\n", chip, length);
+    esp_flash_t* chip = part->flash_chip;
+    printf("Checking chip %p 0x%08X, %d bytes\n", chip, part->address, length);
     uint8_t *buf = malloc(length);
     TEST_ASSERT_NOT_NULL(buf);
     ESP_ERROR_CHECK( esp_flash_read(chip, buf, part->address + 1, length) );
@@ -798,14 +867,12 @@ static void read_and_check(esp_flash_t *chip, const esp_partition_t *part, const
     TEST_ASSERT_EQUAL_HEX8(0xFF, ends[3]);
 }
 
-static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, size_t length)
+static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *source, size_t length)
 {
-    ESP_LOGI(TAG, "Testing chip %p...", chip);
-    const esp_partition_t *part = get_test_data_partition();
     TEST_ASSERT(part->size > length + 2 + SPI_FLASH_SEC_SIZE);
 
-    write_large_buffer(chip, part, source, length);
-    read_and_check(chip, part, source, length);
+    write_large_buffer(part, source, length);
+    read_and_check(part, source, length);
 }
 
 typedef struct {
@@ -889,18 +956,12 @@ static uint32_t measure_read(const char* name, const esp_partition_t* part, uint
     return time_measure_end(&time_ctx);
 }
 
-#define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", &test_part, data_to_write, n))
-#define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", &test_part, data_read, n))
+#define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", part, data_to_write, n))
+#define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", part, data_read, n))
 
-static void test_flash_read_write_performance(esp_flash_t* chip)
+static void test_flash_read_write_performance(const esp_partition_t *part)
 {
-    const esp_partition_t *part = get_test_data_partition();
-    // Copy to new partition variable and replace the chip member
-    // Actually there's no "partition" in the external flash on runners. We just don't bother creating a new partition variable.
-    esp_partition_t test_part;
-    memcpy(&test_part, part, sizeof(esp_partition_t));
-    test_part.flash_chip = chip;
-
+    esp_flash_t* chip = part->flash_chip;
     const int total_len = SPI_FLASH_SEC_SIZE;
     uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -910,10 +971,10 @@ static void test_flash_read_write_performance(esp_flash_t* chip)
         data_to_write[i] = rand();
     }
 
-    uint32_t erase_1 = measure_erase(&test_part);
+    uint32_t erase_1 = measure_erase(part);
     uint32_t speed_WR_4B = MEAS_WRITE(4);
     uint32_t speed_RD_4B = MEAS_READ(4);
-    uint32_t erase_2 = measure_erase(&test_part);
+    uint32_t erase_2 = measure_erase(part);
     uint32_t speed_WR_2KB = MEAS_WRITE(2048);
     uint32_t speed_RD_2KB = MEAS_READ(2048);
 
@@ -958,7 +1019,6 @@ static void test_flash_read_write_performance(esp_flash_t* chip)
 FLASH_TEST_CASE("Test esp_flash read/write performance", test_flash_read_write_performance);
 FLASH_TEST_CASE_3("Test esp_flash read/write performance", test_flash_read_write_performance);
 
-
 #ifdef CONFIG_SPIRAM_USE_MALLOC
 
 /* Utility: Read into a small internal RAM buffer using esp_flash_read() and compare what
@@ -978,8 +1038,9 @@ static void s_test_compare_flash_contents_small_reads(esp_flash_t *chip, const u
     free(ibuf);
 }
 
-static void test_flash_read_large_psram_buffer(esp_flash_t *chip)
+static void test_flash_read_large_psram_buffer(const esp_partition_t *part)
 {
+    esp_flash_t* chip = part->flash_chip;
     const size_t BUF_SZ = 256 * 1024;    // Too large for internal RAM
     const size_t TEST_OFFS = 0x1000; // Can be any offset, really
 
@@ -998,8 +1059,9 @@ FLASH_TEST_CASE("esp_flash_read large PSRAM buffer", test_flash_read_large_psram
 
 
 /* similar to above test, but perform it under memory pressure */
-static void test_flash_read_large_psram_buffer_low_internal_mem(esp_flash_t *chip)
+static void test_flash_read_large_psram_buffer_low_internal_mem(const esp_partition_t *part)
 {
+    esp_flash_t* chip = part->flash_chip;
     const size_t BUF_SZ = 256 * 1024;    // Too large for internal RAM
     const size_t REMAINING_INTERNAL = 1024; // Exhaust internal memory until maximum free block is less than this
     const size_t TEST_OFFS = 0x8000;
