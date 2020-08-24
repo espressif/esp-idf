@@ -1,0 +1,1 @@
+This project tests that use of rsource in Kconfig files. The main component will source a Kconfig file depending on the target (IDF_TARGET), which in turn will source a Kconfig file in the project directory -- all specified via relative paths.

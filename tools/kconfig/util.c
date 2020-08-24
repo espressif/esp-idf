@@ -8,13 +8,28 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <libgen.h>
 #include "lkc.h"
 
 /* file already present in list? If not add it */
-struct file *file_lookup(const char *name)
+struct file *file_lookup(const char *name, bool relative)
 {
 	struct file *file;
-	const char *file_name = sym_expand_string_value(name);
+	char fullname[PATH_MAX + 1] = { 0 };
+
+	if (relative) {
+		char *last_bslash = strrchr(zconf_curname(), '\\');
+		char *last_fslash = strrchr(zconf_curname(), '/');
+		char *last_slash = last_bslash ? last_bslash : last_fslash;
+		strncpy(fullname, zconf_curname(), last_slash - zconf_curname());
+		strcat(fullname, last_bslash ? "\\" : "/");
+		strcat(fullname, name);
+	} else {
+		sprintf(fullname, "%s", name);
+	}
+
+	const char *file_name = sym_expand_string_value(fullname);
 
 	for (file = file_list; file; file = file->next) {
 		if (!strcmp(name, file->name)) {
