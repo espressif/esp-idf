@@ -260,3 +260,8 @@ bool BTU_check_queue_is_congest(void)
     return false;
 }
 #endif
+
+int get_btu_work_queue_size(void)
+{
+    return osi_thread_queue_wait_size(btu_thread, 0);
+}

@@ -290,6 +290,8 @@ UINT16 BTU_BleAclPktSize(void);
 
 bool btu_task_post(uint32_t sig, void *param, uint32_t timeout);
 
+int get_btu_work_queue_size(void);
+
 /*
 #ifdef __cplusplus
 }
