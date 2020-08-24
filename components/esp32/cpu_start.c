@@ -430,9 +430,8 @@ void start_cpu0_default(void)
 #endif
 
     bootloader_flash_update_id();
-#if !CONFIG_SPIRAM_BOOT_INIT
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
-    esp_image_header_t fhdr = {0};
+    __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
     fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
     fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_40M;
@@ -447,12 +446,22 @@ void start_cpu0_default(void)
     memcpy(&fhdr, (void*) SOC_DROM_LOW, sizeof(fhdr));
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
+#if !CONFIG_SPIRAM_BOOT_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
     bootloader_flash_clock_config(&fhdr);
     bootloader_flash_gpio_config(&fhdr);
     bootloader_flash_dummy_config(&fhdr);
     bootloader_flash_cs_timing_config();
 #endif //!CONFIG_SPIRAM_BOOT_INIT
+
+#if CONFIG_SPI_FLASH_SIZE_OVERRIDE
+    int app_flash_size = esp_image_get_flash_size(fhdr.spi_size);
+    if (app_flash_size < 1 * 1024 * 1024) {
+        ESP_LOGE(TAG, "Invalid flash size in app image header.");
+        abort();
+    }
+    bootloader_flash_update_size(app_flash_size);
+#endif //CONFIG_SPI_FLASH_SIZE_OVERRIDE
 
     spi_flash_init();
     /* init default OS-aware flash access critical section */

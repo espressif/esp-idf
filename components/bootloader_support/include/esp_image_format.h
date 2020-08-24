@@ -169,6 +169,14 @@ esp_err_t esp_image_verify_bootloader(uint32_t *length);
  */
 esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data);
 
+/**
+ * @brief Get the flash size of the image
+ *
+ * @param app_flash_size The value configured in the image header
+ * @return Actual size, in bytes.
+ */
+int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size);
+
 
 typedef struct {
     uint32_t drom_addr;

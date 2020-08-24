@@ -29,6 +29,14 @@ extern "C" {
 void bootloader_flash_update_id(void);
 
 /**
+ * @brief Update the flash size in g_rom_flashchip (global esp_rom_spiflash_chip_t structure).
+ *
+ * @param size The size to store, in bytes.
+ * @return None
+ */
+void bootloader_flash_update_size(uint32_t size);
+
+/**
  * @brief Set the flash CS setup and hold time.
  *
  * @note CS setup time is recomemded to be 1.5T, and CS hold time is recommended to be 2.5T.
