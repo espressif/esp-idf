@@ -297,7 +297,6 @@ typedef struct {
     tBTA_JV_STATUS  status;      /* Whether the operation succeeded or failed. */
     UINT32          port_status; /* PORT status */
     UINT32          handle;      /* The connection handle */
-    void            *slot;       /* slot pointer */
     BOOLEAN         async;       /* FALSE, if local initiates disconnect */
 } tBTA_JV_RFCOMM_CLOSE;
 
@@ -347,6 +346,7 @@ typedef struct {
     UINT32          req_id;     /* The req_id in the associated BTA_JvRfcommWrite() */
     int             len;        /* The length of the data written. */
     BOOLEAN         cong;       /* congestion status */
+    BOOLEAN         old_cong;   /* congestion status */
 } tBTA_JV_RFCOMM_WRITE;
 
 /* data associated with BTA_JV_API_SET_PM_PROFILE_EVT */
