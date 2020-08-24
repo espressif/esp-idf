@@ -15,8 +15,9 @@
 #include "esp_system.h"
 #include "esp_attr.h"
 
-#include "soc/spinlock.h"
 #include "soc/rtc.h"
+
+#include "freertos/FreeRTOS.h"
 
 #include "sdkconfig.h"
 
@@ -33,10 +34,7 @@
 int64_t IRAM_ATTR __attribute__((weak)) esp_system_get_time(void)
 {
     int64_t t = 0;
-    static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
-    t = (esp_rtc_get_time_us() - g_startup_time); 
-    spinlock_release(&s_time_lock);
+    t = (esp_rtc_get_time_us() - g_startup_time);
     return t;
 }
 

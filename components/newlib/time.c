@@ -21,6 +21,7 @@
 #include <sys/reent.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/lock.h>
 
 #include "esp_system.h"
 #include "esp_attr.h"
@@ -30,7 +31,6 @@
 
 #include "esp_private/system_internal.h"
 
-#include "soc/spinlock.h"
 #include "soc/rtc.h"
 
 #include "esp_time_impl.h"
@@ -53,7 +53,7 @@ static uint64_t s_adjtime_start_us;
 // is how many microseconds total to slew
 static int64_t  s_adjtime_total_correction_us;
 
-static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
+static _lock_t s_time_lock;
 
 // This function gradually changes boot_time to the correction value and immediately updates it.
 static uint64_t adjust_boot_time(void)
@@ -100,21 +100,21 @@ static uint64_t adjust_boot_time(void)
 // Get the adjusted boot time.
 static uint64_t get_adjusted_boot_time(void)
 {
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    _lock_acquire(&s_time_lock);
     uint64_t adjust_time = adjust_boot_time();
-    spinlock_release(&s_time_lock);
+    _lock_release(&s_time_lock);
     return adjust_time;
 }
 
 // Applying the accumulated correction to base_time and stopping the smooth time adjustment.
 static void adjtime_corr_stop (void)
 {
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    _lock_acquire(&s_time_lock);
     if (s_adjtime_start_us != 0){
         adjust_boot_time();
         s_adjtime_start_us = 0;
     }
-    spinlock_release(&s_time_lock);
+    _lock_release(&s_time_lock);
 }
 #endif
 
@@ -122,7 +122,7 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if(outdelta != NULL){
-        spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+        _lock_acquire(&s_time_lock);
         adjust_boot_time();
         if (s_adjtime_start_us != 0) {
             outdelta->tv_sec    = s_adjtime_total_correction_us / 1000000L;
@@ -131,7 +131,7 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
             outdelta->tv_sec    = 0;
             outdelta->tv_usec   = 0;
         }
-        spinlock_release(&s_time_lock);
+        _lock_release(&s_time_lock);
     }
     if(delta != NULL){
         int64_t sec  = delta->tv_sec;
@@ -144,12 +144,12 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         * and the delta of the second call is not NULL, the earlier tuning is stopped,
         * but the already completed part of the adjustment is not canceled.
         */
-        spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+        _lock_acquire(&s_time_lock);
         // If correction is already in progress (s_adjtime_start_time_us != 0), then apply accumulated corrections.
         adjust_boot_time();
         s_adjtime_start_us = esp_time_impl_get_time_since_boot();
         s_adjtime_total_correction_us = sec * 1000000L + usec;
-        spinlock_release(&s_time_lock);
+        _lock_release(&s_time_lock);
     }
     return 0;
 #else

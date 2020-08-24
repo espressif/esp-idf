@@ -14,10 +14,10 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/lock.h>
 
 #include "esp_system.h"
 
-#include "soc/spinlock.h"
 #include "soc/rtc.h"
 #include "esp_rom_sys.h"
 
@@ -61,7 +61,7 @@ uint64_t s_microseconds_offset;
 static uint64_t s_boot_time; // when RTC is used to persist time, two RTC_STORE registers are used to store boot time instead
 #endif
 
-static spinlock_t s_time_lock = SPINLOCK_INITIALIZER;
+static _lock_t s_boot_time_lock;
 
 #if defined( WITH_FRC ) || defined( WITH_RTC )
 uint64_t esp_time_impl_get_time_since_boot(void)
@@ -75,9 +75,7 @@ uint64_t esp_time_impl_get_time_since_boot(void)
     microseconds = esp_system_get_time();
 #endif // WITH_RTC
 #elif defined(WITH_RTC)
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
     microseconds = esp_rtc_get_time_us();
-    spinlock_release(&s_time_lock);
 #endif // WITH_FRC
     return microseconds;
 }
@@ -88,9 +86,7 @@ uint64_t esp_time_impl_get_time(void)
 #if defined( WITH_FRC )
     microseconds = esp_system_get_time();
 #elif defined( WITH_RTC )
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
     microseconds = esp_rtc_get_time_us();
-    spinlock_release(&s_time_lock);
 #endif // WITH_FRC
     return microseconds;
 }
@@ -100,14 +96,14 @@ uint64_t esp_time_impl_get_time(void)
 
 void esp_time_impl_set_boot_time(uint64_t time_us)
 {
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    _lock_acquire(&s_boot_time_lock);
 #ifdef WITH_RTC
     REG_WRITE(RTC_BOOT_TIME_LOW_REG, (uint32_t) (time_us & 0xffffffff));
     REG_WRITE(RTC_BOOT_TIME_HIGH_REG, (uint32_t) (time_us >> 32));
 #else
     s_boot_time = time_us;
 #endif
-    spinlock_release(&s_time_lock);
+    _lock_release(&s_boot_time_lock);
 }
 
 uint64_t esp_clk_rtc_time(void)
@@ -122,13 +118,13 @@ uint64_t esp_clk_rtc_time(void)
 uint64_t esp_time_impl_get_boot_time(void)
 {
     uint64_t result;
-    spinlock_acquire(&s_time_lock, SPINLOCK_WAIT_FOREVER);
+    _lock_acquire(&s_boot_time_lock);
 #ifdef WITH_RTC
     result = ((uint64_t) REG_READ(RTC_BOOT_TIME_LOW_REG)) + (((uint64_t) REG_READ(RTC_BOOT_TIME_HIGH_REG)) << 32);
 #else
     result = s_boot_time;
 #endif
-    spinlock_release(&s_time_lock);
+    _lock_release(&s_boot_time_lock);
     return result;
 }
 
