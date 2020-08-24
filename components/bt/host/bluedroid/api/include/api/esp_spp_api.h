@@ -57,6 +57,7 @@ typedef enum {
  */
 typedef enum {
     ESP_SPP_INIT_EVT                    = 0,                /*!< When SPP is inited, the event comes */
+    ESP_SPP_UNINIT_EVT                  = 1,                /*!< When SPP is uninited, the event comes */
     ESP_SPP_DISCOVERY_COMP_EVT          = 8,                /*!< When SDP discovery complete, the event comes */
     ESP_SPP_OPEN_EVT                    = 26,               /*!< When SPP Client connection open, the event comes */
     ESP_SPP_CLOSE_EVT                   = 27,               /*!< When SPP connection closed, the event comes */
@@ -66,6 +67,7 @@ typedef enum {
     ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes, only for ESP_SPP_MODE_CB */
     ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes, only for ESP_SPP_MODE_CB */
     ESP_SPP_SRV_OPEN_EVT                = 34,               /*!< When SPP Server connection open, the event comes */
+    ESP_SPP_SRV_STOP_EVT                = 35,               /*!< When SPP server stopped, the event comes */
 } esp_spp_cb_event_t;
 
 
@@ -79,6 +81,13 @@ typedef union {
     struct spp_init_evt_param {
         esp_spp_status_t    status;         /*!< status */
     } init;                                 /*!< SPP callback param of SPP_INIT_EVT */
+
+    /**
+     * @brief SPP_UNINIT_EVT
+     */
+    struct spp_uninit_evt_param {
+        esp_spp_status_t    status;         /*!< status */
+    } uninit;                                 /*!< SPP callback param of SPP_UNINIT_EVT */
 
     /**
      * @brief SPP_DISCOVERY_COMP_EVT
@@ -128,6 +137,14 @@ typedef union {
         uint8_t             sec_id;         /*!< security ID used by this server */
         bool                use_co;         /*!< TRUE to use co_rfc_data */
     } start;                                /*!< SPP callback param of ESP_SPP_START_EVT */
+
+    /**
+     * @brief ESP_SPP_SRV_STOP_EVT
+     */
+    struct spp_srv_stop_evt_param {
+        esp_spp_status_t    status;         /*!< status */
+    } srv_stop;                                 /*!< SPP callback param of ESP_SPP_SRV_STOP_EVT */
+
     /**
      * @brief ESP_SPP_CL_INIT_EVT
      */
@@ -273,6 +290,16 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
                             esp_spp_role_t role, uint8_t local_scn, const char *name);
 
+/**
+ * @brief       This function stops a SPP server
+ *              When the server is stopped successfully, the callback is called
+ *              with ESP_SPP_SRV_STOP_EVT.
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_spp_stop_srv(void);
 
 /**
  * @brief       This function is used to write data, only for ESP_SPP_MODE_CB.

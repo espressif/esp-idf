@@ -98,6 +98,12 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_OPEN_EVT");
         gettimeofday(&time_old, NULL);
         break;
+    case ESP_SPP_SRV_STOP_EVT:
+        ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_STOP_EVT");
+        break;
+    case ESP_SPP_UNINIT_EVT:
+        ESP_LOGI(SPP_TAG, "ESP_SPP_UNINIT_EVT");
+        break;
     default:
         break;
     }
