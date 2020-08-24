@@ -114,6 +114,14 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
+    config SPI_FLASH_SIZE_OVERRIDE
+        bool "Override flash size in bootloader header by ESPTOOLPY_FLASHSIZE"
+        default n
+        help
+            SPI Flash driver uses the flash size configured in bootloader header by default.
+            Enable this option to override flash size with latest ESPTOOLPY_FLASHSIZE value from
+            the app header if the size in the bootloader header is incorrect.
+
     menu "Auto-detect flash chips"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP

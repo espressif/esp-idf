@@ -655,3 +655,21 @@ static void debug_log_hash(const uint8_t *image_hash, const char *label)
     ESP_LOGD(TAG, "%s: %s", label, hash_print);
 #endif
 }
+
+int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
+{
+    switch (app_flash_size) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
+        return 1 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_2MB:
+        return 2 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_4MB:
+        return 4 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_8MB:
+        return 8 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_16MB:
+        return 16 * 1024 * 1024;
+    default:
+        return 0;
+    }
+}
