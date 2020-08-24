@@ -149,6 +149,14 @@ menu "SPI Flash driver"
             Enable this option to override flash size with latest ESPTOOLPY_FLASHSIZE value from
             the app header if the size in the bootloader header is incorrect.
 
+    config SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        bool "Flash timeout checkout disabled"
+        depends on !SPI_FLASH_USE_LEGACY_IMPL
+        default n
+        help
+            This option is helpful if you are using a flash chip whose timeout is quite large or unpredictable.
+
+
     menu "Auto-detect flash chips"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP

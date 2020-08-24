@@ -188,6 +188,7 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
  */
 esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_write_protect);
 
+#define ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT -1
 /**
  * @brief Read flash status via the RDSR command and wait for bit 0 (write in
  * progress bit) to be cleared.
