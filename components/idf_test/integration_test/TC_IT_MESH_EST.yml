@@ -1043,7 +1043,7 @@ test cases:
     - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
   - - MSSC SSC[1-<node_num>] mesh -T
     - - P SSC[1-<node_num>] C +MESH:START,OK
-  - - DELAY 60
+  - - DELAY <delay_time>
     - - ''
   - - VALUE <tree_node_num> <node_num>
     - - R PC_COM L OK
