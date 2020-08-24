@@ -415,3 +415,8 @@ bool btc_check_queue_is_congest(void)
     return false;
 }
 
+int get_btc_work_queue_size(void)
+{
+    return osi_thread_queue_wait_size(btc_thread, 0);
+}
+
