@@ -119,5 +119,6 @@ bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg);
 bt_status_t btc_init(void);
 void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
+int get_btc_work_queue_size(void);
 
 #endif /* __BTC_TASK_H__ */

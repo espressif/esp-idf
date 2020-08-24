@@ -1688,7 +1688,6 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle)
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.port_status = code;
         evt_data.rfc_close.async = TRUE;
-        evt_data.rfc_close.slot = NULL;
         if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
             evt_data.rfc_close.async = FALSE;
             evt_data.rfc_close.status = BTA_JV_SUCCESS;
@@ -1872,7 +1871,6 @@ void bta_jv_rfcomm_close(tBTA_JV_MSG *p_data)
         evt_data.rfc_close.port_status = PORT_LOCAL_CLOSED;
         evt_data.rfc_close.handle = cc->handle;
         evt_data.rfc_close.async = TRUE;
-        evt_data.rfc_close.slot = NULL;
         if (p_pcb && (p_pcb->state == BTA_JV_ST_SR_LISTEN ||
                       p_pcb->state == BTA_JV_ST_SR_OPEN ||
                       p_pcb->state == BTA_JV_ST_CL_OPEN ||
@@ -1962,7 +1960,6 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.async = TRUE;
         evt_data.rfc_close.port_status = code;
-        evt_data.rfc_close.slot = NULL;
         p_pcb->cong = FALSE;
 
         tBTA_JV_RFCOMM_CBACK    *p_cback = p_cb->p_cback;
@@ -2260,16 +2257,16 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
     evt_data.status = BTA_JV_FAILURE;
     evt_data.handle = p_pcb->handle;
     evt_data.req_id = wc->req_id;
-    evt_data.cong   = p_pcb->cong;
+    evt_data.old_cong = p_pcb->cong;
     bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
-    evt_data.len = wc->len;
-    if (!evt_data.cong &&
+    evt_data.len = -1;
+    if (!evt_data.old_cong &&
             PORT_WriteDataCO(p_pcb->port_handle, &evt_data.len, wc->len, wc->p_data) ==
             PORT_SUCCESS) {
         evt_data.status = BTA_JV_SUCCESS;
     }
     // update congestion flag
-    evt_data.cong   = p_pcb->cong;
+    evt_data.cong = p_pcb->cong;
     if (p_cb->p_cback) {
         p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, (tBTA_JV *)&evt_data, p_pcb->user_data);
     } else {
