@@ -120,15 +120,19 @@ class Search(object):
         return replicated_cases
 
     @classmethod
-    def search_test_cases(cls, test_case, test_case_file_pattern=None):
+    def search_test_cases(cls, test_case_paths, test_case_file_pattern=None):
         """
         search all test cases from a folder or file, and then do case replicate.
 
-        :param test_case: test case file(s) path
+        :param test_case_paths: test case file(s) paths
         :param test_case_file_pattern: unix filename pattern
         :return: a list of replicated test methods
         """
-        test_case_files = cls._search_test_case_files(test_case, test_case_file_pattern or cls.TEST_CASE_FILE_PATTERN)
+        if not isinstance(test_case_paths, list):
+            test_case_paths = [test_case_paths]
+        test_case_files = []
+        for path in test_case_paths:
+            test_case_files.extend(cls._search_test_case_files(path, test_case_file_pattern or cls.TEST_CASE_FILE_PATTERN))
         test_cases = []
         for test_case_file in test_case_files:
             test_cases += cls._search_cases_from_file(test_case_file)

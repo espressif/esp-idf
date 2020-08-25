@@ -139,7 +139,9 @@ check_public_headers:
     TEST_CONFIG_FILE: ${CI_PROJECT_DIR}/tools/ci/config/target-test.yml
 
 scan_tests:
-  extends: .scan_build_tests
+  extends:
+    - .before_script_for_component_ut
+    - .scan_build_tests
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -158,15 +160,13 @@ scan_tests:
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
     TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
-    COMPONENT_UT_DIR_TXT: ${CI_PROJECT_DIR}/tools/ci/component_ut_dirs.txt
     COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
+    PYTHON_VER: 3
   script:
-    - *export_component_ut_dirs
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
-    # template python test file not generated yet. preserve binary files for component UT
-    - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR --preserve
+    - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
 
 check_readme_links:
   extends: .check_job_template

@@ -17,10 +17,13 @@ import logging
 import os
 import re
 
+import junit_xml
+
 from tiny_test_fw import TinyFW, Utility
-from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp  # noqa: export all Apps for users
-from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
 from .DebugUtils import OCDBackend, GDBBackend, CustomProcess  # noqa: export DebugUtils for users
+from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp, ComponentUTApp  # noqa: export all Apps for users
+from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
+from .unity_test_parser import TestResults, TestFormat
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
 TARGET_DUT_CLS_DICT = {
@@ -108,6 +111,22 @@ def ci_target_check(func):
     return wrapper
 
 
+def test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, drop_kwargs_dut=False, **kwargs):
+    test_target = local_test_check(target)
+    dut = get_dut_class(test_target, erase_nvs)
+    if drop_kwargs_dut and 'dut' in kwargs:  # panic_test() will inject dut, resolve conflicts here
+        dut = kwargs['dut']
+        del kwargs['dut']
+    original_method = TinyFW.test_method(
+        app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
+        module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
+        dut_dict=TARGET_DUT_CLS_DICT, **kwargs
+    )
+    test_func = original_method(func)
+    test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
+    return test_func
+
+
 @ci_target_check
 def idf_example_test(app=Example, target="ESP32", ci_target=None, module="examples", execution_time=1,
                      level="example", erase_nvs=True, config_name=None, **kwargs):
@@ -125,19 +144,8 @@ def idf_example_test(app=Example, target="ESP32", ci_target=None, module="exampl
     :param kwargs: other keyword args
     :return: test method
     """
-
     def test(func):
-        test_target = local_test_check(target)
-        dut = get_dut_class(test_target, erase_nvs)
-        original_method = TinyFW.test_method(
-            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
-            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
-            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
-        )
-        test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
-        return test_func
-
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
     return test
 
 
@@ -157,25 +165,14 @@ def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", ex
     :param kwargs: other keyword args
     :return: test method
     """
-
     def test(func):
-        test_target = local_test_check(target)
-        dut = get_dut_class(test_target, erase_nvs)
-        original_method = TinyFW.test_method(
-            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
-            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
-            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
-        )
-        test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
-        return test_func
-
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
     return test
 
 
 @ci_target_check
 def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
-                    level="integration", erase_nvs=True, config_name=None, group="test-apps", **kwargs):
+                    level="integration", erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -187,27 +184,61 @@ def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", 
     :param level: test level, could be used to filter test cases, string
     :param erase_nvs: if need to erase_nvs in DUT.start_app()
     :param config_name: if specified, name of the app configuration
-    :param group: identifier to group custom tests (unused for now, defaults to "test-apps")
+    :param kwargs: other keyword args
+    :return: test method
+    """
+    def test(func):
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, drop_kwargs_dut=True, **kwargs)
+    return test
+
+
+@ci_target_check
+def idf_component_unit_test(app=ComponentUTApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
+                            level="integration", erase_nvs=True, config_name=None, **kwargs):
+    """
+    decorator for idf custom tests (with default values for some keyword args).
+
+    :param app: test application class
+    :param target: target supported, string or list
+    :param ci_target: target auto run in CI, if None than all target will be tested, None, string or list
+    :param module: module, string
+    :param execution_time: execution time in minutes, int
+    :param level: test level, could be used to filter test cases, string
+    :param erase_nvs: if need to erase_nvs in DUT.start_app()
+    :param config_name: if specified, name of the app configuration
     :param kwargs: other keyword args
     :return: test method
     """
 
     def test(func):
-        test_target = local_test_check(target)
-        dut = get_dut_class(test_target, erase_nvs)
-        if 'dut' in kwargs:  # panic_test() will inject dut, resolve conflicts here
-            dut = kwargs['dut']
-            del kwargs['dut']
-        original_method = TinyFW.test_method(
-            app=app, dut=dut, target=upper_list_or_str(target), ci_target=upper_list_or_str(ci_target),
-            module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
-            dut_dict=TARGET_DUT_CLS_DICT, **kwargs
-        )
-        test_func = original_method(func)
-        test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
-        return test_func
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
 
     return test
+
+
+class ComponentUTResult:
+    """
+    Function Class, parse component unit test results
+    """
+
+    @staticmethod
+    def parse_result(stdout):
+        try:
+            results = TestResults(stdout, TestFormat.UNITY_FIXTURE_VERBOSE)
+        except (ValueError, TypeError) as e:
+            raise ValueError('Error occurs when parsing the component unit test stdout to JUnit report: ' + str(e))
+
+        group_name = results.tests()[0].group()
+        with open(os.path.join(os.getenv('LOG_PATH', ''), '{}_XUNIT_RESULT.xml'.format(group_name)), 'w') as fw:
+            junit_xml.to_xml_report_file(fw, [results.to_junit()])
+
+        if results.num_failed():
+            # raise exception if any case fails
+            err_msg = 'Failed Cases:\n'
+            for test_case in results.test_iter():
+                if test_case.result() == 'FAIL':
+                    err_msg += '\t{}: {}'.format(test_case.name(), test_case.message())
+            raise AssertionError(err_msg)
 
 
 def log_performance(item, value):

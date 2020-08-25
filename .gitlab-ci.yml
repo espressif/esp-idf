@@ -64,21 +64,38 @@ variables:
 .fetch_submodules: &fetch_submodules |
   python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
 
+.add_ssh_keys: &add_ssh_keys |
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+  base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+  chmod 600 ~/.ssh/id_rsa
+  echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
 before_script:
   - source tools/ci/setup_python.sh
   # apply bot filter in before script
   - *apply_bot_filter
   # add gitlab ssh key
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - *add_ssh_keys
   # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
   - *setup_tools_unless_target_test
   - *fetch_submodules
+
+# used for component-based unit test apps
+.before_script_for_component_ut:
+  variables:
+    COMPONENT_UT_EXCLUDE_LIST_FP: ${CI_PROJECT_DIR}/tools/ci/component_ut_excludes.txt
+  before_script:
+    - source tools/ci/setup_python.sh
+    - *apply_bot_filter
+    - *add_ssh_keys
+    - source tools/ci/configure_ci_environment.sh
+    - *setup_tools_unless_target_test
+    - *fetch_submodules
+    - export COMPONENT_UT_DIRS=`find components/ -name test_apps -type d`
+    - export COMPONENT_UT_EXCLUDES=`[ -r $COMPONENT_UT_EXCLUDE_LIST_FP ] && cat $COMPONENT_UT_EXCLUDE_LIST_FP | xargs`
 
 # used for check scripts which we want to run unconditionally
 .before_script_lesser_nofilter:

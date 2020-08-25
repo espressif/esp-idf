@@ -145,7 +145,7 @@ class AssignTest(object):
     """
     Auto assign tests to CI jobs.
 
-    :param test_case_path: path of test case file(s)
+    :param test_case_paths: path of test case file(s)
     :param ci_config_file: path of ``.gitlab-ci.yml``
     """
     # subclass need to rewrite CI test job pattern, to filter all test jobs
@@ -157,8 +157,8 @@ class AssignTest(object):
         "supported_in_ci": True,
     }
 
-    def __init__(self, test_case_path, ci_config_file, case_group=Group):
-        self.test_case_path = test_case_path
+    def __init__(self, test_case_paths, ci_config_file, case_group=Group):
+        self.test_case_paths = test_case_paths
         self.test_case_file_pattern = None
         self.test_cases = []
         self.jobs = self._parse_gitlab_ci_config(ci_config_file)
@@ -197,7 +197,7 @@ class AssignTest(object):
         _case_filter = self.DEFAULT_FILTER.copy()
         if case_filter:
             _case_filter.update(case_filter)
-        test_methods = SearchCases.Search.search_test_cases(self.test_case_path, self.test_case_file_pattern)
+        test_methods = SearchCases.Search.search_test_cases(self.test_case_paths, self.test_case_file_pattern)
         return CaseConfig.filter_test_cases(test_methods, _case_filter)
 
     def _group_cases(self):

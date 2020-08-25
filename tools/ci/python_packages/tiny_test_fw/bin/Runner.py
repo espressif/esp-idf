@@ -32,12 +32,12 @@ from tiny_test_fw.Utility import SearchCases, CaseConfig
 
 class Runner(threading.Thread):
     """
-    :param test_case: test case file or folder
+    :param test_case_paths: test case file or folder
     :param case_config: case config file, allow to filter test cases and pass data to test case
     :param env_config_file: env config file
     """
 
-    def __init__(self, test_case, case_config, env_config_file=None):
+    def __init__(self, test_case_paths, case_config, env_config_file=None):
         super(Runner, self).__init__()
         self.setDaemon(True)
         if case_config:
@@ -45,7 +45,7 @@ class Runner(threading.Thread):
         else:
             test_suite_name = "TestRunner"
         TinyFW.set_default_config(env_config_file=env_config_file, test_suite_name=test_suite_name)
-        test_methods = SearchCases.Search.search_test_cases(test_case)
+        test_methods = SearchCases.Search.search_test_cases(test_case_paths)
         self.test_cases = CaseConfig.Parser.apply_config(test_methods, case_config)
         self.test_result = []
 
@@ -59,23 +59,23 @@ class Runner(threading.Thread):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("test_case",
-                        help="test case folder or file")
+    parser.add_argument("test_cases", nargs='+',
+                        help="test case folders or files")
     parser.add_argument("--case_config", "-c", default=None,
                         help="case filter/config file")
     parser.add_argument("--env_config_file", "-e", default=None,
                         help="test env config file")
     args = parser.parse_args()
 
-    runner = Runner(args.test_case, args.case_config, args.env_config_file)
+    test_cases = [os.path.join(os.getenv('IDF_PATH'), path) if not os.path.isabs(path) else path for path in args.test_cases]
+    runner = Runner(test_cases, args.case_config, args.env_config_file)
     runner.start()
 
     while True:
         try:
             runner.join(1)
-            if not runner.isAlive():
+            if not runner.is_alive():
                 break
         except KeyboardInterrupt:
             print("exit by Ctrl-C")

@@ -571,7 +571,7 @@ class BaseDUT(object):
         return self.__getattribute__(method)
 
     @_expect_lock
-    def expect(self, pattern, timeout=DEFAULT_EXPECT_TIMEOUT):
+    def expect(self, pattern, timeout=DEFAULT_EXPECT_TIMEOUT, full_stdout=False):
         """
         expect(pattern, timeout=DEFAULT_EXPECT_TIMEOUT)
         expect received data on DUT match the pattern. will raise exception when expect timeout.
@@ -581,9 +581,11 @@ class BaseDUT(object):
 
         :param pattern: string or compiled RegEx(string pattern)
         :param timeout: timeout for expect
+        :param full_stdout: return full stdout until meet expect string/pattern or just matched string
         :return: string if pattern is string; matched groups if pattern is RegEx
         """
         method = self._get_expect_method(pattern)
+        stdout = ''
 
         # non-blocking get data for first time
         data = self.data_cache.get_data(0)
@@ -598,12 +600,13 @@ class BaseDUT(object):
                 break
             # wait for new data from cache
             data = self.data_cache.get_data(time_remaining)
+            stdout = data
 
         if ret is None:
             pattern = _pattern_to_string(pattern)
             self._save_expect_failure(pattern, data, start_time)
             raise ExpectTimeout(self.name + ": " + pattern)
-        return ret
+        return stdout if full_stdout else ret
 
     def _expect_multi(self, expect_all, expect_item_list, timeout):
         """

@@ -62,8 +62,7 @@ def main():
     parser.add_argument('test_type',
                         choices=TEST_LABELS.keys(),
                         help='Scan test type')
-    parser.add_argument('-p', '--paths', nargs='+',
-                        required=True,
+    parser.add_argument('paths', nargs='+',
                         help='One or more app paths')
     parser.add_argument('-b', '--build-system',
                         choices=BUILD_SYSTEMS.keys(),
@@ -74,8 +73,7 @@ def main():
     parser.add_argument('-o', '--output-path',
                         required=True,
                         help="output path of the scan result")
-    parser.add_argument("--exclude",
-                        action="append",
+    parser.add_argument("--exclude", nargs="*",
                         help='Ignore specified directory. Can be used multiple times.')
     parser.add_argument('--preserve', action="store_true",
                         help='add this flag to preserve artifacts for all apps')

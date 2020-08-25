@@ -22,7 +22,7 @@ import sys
 from abc import abstractmethod
 
 from tiny_test_fw import App
-from .IDFAssignTest import ExampleGroup, TestAppsGroup, UnitTestGroup, IDFCaseGroup
+from .IDFAssignTest import ExampleGroup, TestAppsGroup, UnitTestGroup, IDFCaseGroup, ComponentUTGroup
 
 try:
     import gitlab_api
@@ -202,9 +202,9 @@ class IDFApp(App.BaseApp):
     def __str__(self):
         parts = ['app<{}>'.format(self.app_path)]
         if self.config_name:
-            parts.extend('config<{}>'.format(self.config_name))
+            parts.append('config<{}>'.format(self.config_name))
         if self.target:
-            parts.extend('target<{}>'.format(self.target))
+            parts.append('target<{}>'.format(self.target))
         return ' '.join(parts)
 
     @classmethod
@@ -445,6 +445,11 @@ class UT(IDFApp):
 class TestApp(Example):
     def __init__(self, app_path, config_name='default', target='esp32', case_group=TestAppsGroup, artifacts_cls=Artifacts):
         super(TestApp, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
+
+
+class ComponentUTApp(TestApp):
+    def __init__(self, app_path, config_name='default', target='esp32', case_group=ComponentUTGroup, artifacts_cls=Artifacts):
+        super(ComponentUTApp, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
 
 
 class LoadableElfTestApp(TestApp):

@@ -1,1 +1,0 @@
-components/esp_netif/test_app
