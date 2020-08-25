@@ -461,8 +461,6 @@ def init_cli(verbose_output=None):
             # Otherwise, if we built any binaries print a message about
             # how to flash them
             def print_flashing_message(title, key):
-                print("\n%s build complete. To flash, run this command:" % title)
-
                 with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
                     flasher_args = json.load(f)
 
@@ -470,6 +468,10 @@ def init_cli(verbose_output=None):
                     return _safe_relpath(os.path.join(args.build_dir, f))
 
                 if key != "project":  # flashing a single item
+                    if key not in flasher_args:
+                        # This is the case for 'idf.py bootloader' if Secure Boot is on, need to follow manual flashing steps
+                        print("\n%s build complete." % title)
+                        return
                     cmd = ""
                     if (key == "bootloader"):  # bootloader needs --flash-mode, etc to be passed in
                         cmd = " ".join(flasher_args["write_flash_args"]) + " "
@@ -484,6 +486,8 @@ def init_cli(verbose_output=None):
                     )
                     for o, f in flash_items:
                         cmd += o + " " + flasher_path(f) + " "
+
+                print("\n%s build complete. To flash, run this command:" % title)
 
                 print(
                     "%s %s -p %s -b %s --before %s --after %s --chip %s %s write_flash %s" % (
