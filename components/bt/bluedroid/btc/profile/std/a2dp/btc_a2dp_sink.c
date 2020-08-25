@@ -105,6 +105,18 @@ typedef struct {
     UINT32  sample_rate;
 } tBTC_A2DP_SINK_CB;
 
+typedef struct {
+    xTaskHandle  btc_aa_snk_task_hdl;
+#if CONFIG_SPIRAM_USE_MALLOC
+    StaticTask_t *task;
+    StackType_t *stack;
+#endif
+} a2dp_sink_task_t;
+
+#define A2DP_MEM_CHECK(a, action) if (!a) {\
+        APPL_TRACE_ERROR("%s ,failed to allocate ", __func__); action;\
+    }
+
 static void btc_a2dp_sink_thread_init(UNUSED_ATTR void *context);
 static void btc_a2dp_sink_thread_cleanup(UNUSED_ATTR void *context);
 static void btc_a2dp_sink_flush_q(fixed_queue_t *p_q);
@@ -123,12 +135,12 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context);
 static tBTC_A2DP_SINK_CB btc_aa_snk_cb;
 static int btc_a2dp_sink_state = BTC_A2DP_SINK_STATE_OFF;
 static future_t *btc_a2dp_sink_future = NULL;
-static xTaskHandle  btc_aa_snk_task_hdl = NULL;
 static QueueHandle_t btc_aa_snk_data_queue = NULL;
 static QueueHandle_t btc_aa_snk_ctrl_queue = NULL;
 static QueueSetHandle_t btc_aa_snk_queue_set;
 
 static esp_a2d_sink_data_cb_t bt_aa_snk_data_cb = NULL;
+static a2dp_sink_task_t a2dp_sink_task;
 
 void btc_a2dp_sink_reg_data_cb(esp_a2d_sink_data_cb_t callback)
 {
@@ -271,26 +283,40 @@ bool btc_a2dp_sink_startup(void)
     if (!btc_aa_snk_data_queue || !btc_aa_snk_ctrl_queue || !btc_aa_snk_queue_set ) {
         goto error_exit;
     }
-
-    xTaskCreatePinnedToCore(btc_a2dp_sink_task_handler, BTC_A2DP_SINK_TASK_NAME, BTC_A2DP_SINK_TASK_STACK_SIZE, NULL, BTC_A2DP_SINK_TASK_PRIO, &btc_aa_snk_task_hdl, BTC_A2DP_SINK_TASK_PINNED_TO_CORE);
-    if (btc_aa_snk_task_hdl == NULL) {
-        goto error_exit;
-    }
-
+#if !CONFIG_SPIRAM_USE_MALLOC
+    xTaskCreatePinnedToCore(btc_a2dp_sink_task_handler, BTC_A2DP_SINK_TASK_NAME, BTC_A2DP_SINK_TASK_STACK_SIZE, NULL, BTC_A2DP_SINK_TASK_PRIO, &a2dp_sink_task.btc_aa_snk_task_hdl, BTC_A2DP_SINK_TASK_PINNED_TO_CORE);
+    A2DP_MEM_CHECK(a2dp_sink_task.btc_aa_snk_task_hdl, goto error_exit);
+#else
+    a2dp_sink_task.stack = heap_caps_malloc(BTC_A2DP_SINK_TASK_STACK_SIZE, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+    a2dp_sink_task.task = heap_caps_calloc(1, sizeof(StaticTask_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    A2DP_MEM_CHECK(a2dp_sink_task.stack, goto error_exit);
+    A2DP_MEM_CHECK(a2dp_sink_task.task, goto error_exit);
+    a2dp_sink_task.btc_aa_snk_task_hdl = xTaskCreateStaticPinnedToCore(btc_a2dp_sink_task_handler, BTC_A2DP_SINK_TASK_NAME, BTC_A2DP_SINK_TASK_STACK_SIZE, NULL, BTC_A2DP_SINK_TASK_PRIO, a2dp_sink_task.stack, a2dp_sink_task.task, BTC_A2DP_SINK_TASK_PINNED_TO_CORE);
+    A2DP_MEM_CHECK(a2dp_sink_task.btc_aa_snk_task_hdl, goto error_exit);
+#endif
     btc_a2dp_sink_ctrl_post(BTC_MEDIA_TASK_SINK_INIT, NULL);
 
     APPL_TRACE_EVENT("## A2DP SINK MEDIA THREAD STARTED ##\n");
 
     return true;
 
-error_exit:;
+error_exit:
     APPL_TRACE_ERROR("%s unable to start up media thread\n", __func__);
 
-    if (btc_aa_snk_task_hdl != NULL) {
-        vTaskDelete(btc_aa_snk_task_hdl);
-        btc_aa_snk_task_hdl = NULL;
+    if (a2dp_sink_task.btc_aa_snk_task_hdl != NULL) {
+        vTaskDelete(a2dp_sink_task.btc_aa_snk_task_hdl);
+        a2dp_sink_task.btc_aa_snk_task_hdl = NULL;
     }
-
+#if CONFIG_SPIRAM_USE_MALLOC
+    if (a2dp_sink_task.task) {
+        free(a2dp_sink_task.task);
+        a2dp_sink_task.task = NULL;
+    }
+    if (a2dp_sink_task.stack) {
+        free(a2dp_sink_task.stack);
+        a2dp_sink_task.stack = NULL;
+    }
+#endif
     if (btc_aa_snk_data_queue) {
         vQueueDelete(btc_aa_snk_data_queue);
         btc_aa_snk_data_queue = NULL;
@@ -333,9 +359,15 @@ void btc_a2dp_sink_shutdown(void)
     future_await(btc_a2dp_sink_future);
     btc_a2dp_sink_future = NULL;
 
-    vTaskDelete(btc_aa_snk_task_hdl);
-    btc_aa_snk_task_hdl = NULL;
+    vTaskDelete(a2dp_sink_task.btc_aa_snk_task_hdl);
+    a2dp_sink_task.btc_aa_snk_task_hdl = NULL;
 
+#if CONFIG_SPIRAM_USE_MALLOC
+    free(a2dp_sink_task.stack);
+    free(a2dp_sink_task.task);
+    a2dp_sink_task.task = NULL;
+    a2dp_sink_task.stack = NULL;
+#endif
     vQueueDelete(btc_aa_snk_data_queue);
     btc_aa_snk_data_queue = NULL;
 
