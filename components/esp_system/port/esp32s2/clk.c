@@ -233,7 +233,6 @@ void esp_perip_clk_init(void)
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
                            DPORT_UART1_CLK_EN |
 #endif
-                           DPORT_USB_CLK_EN |
                            DPORT_SPI2_CLK_EN |
                            DPORT_I2C_EXT0_CLK_EN |
                            DPORT_UHCI0_CLK_EN |
