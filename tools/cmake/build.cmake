@@ -407,6 +407,70 @@ macro(idf_build_process target)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "")
     endif()
 
+    # Call for component manager to download dependencies for all components
+    idf_build_set_property(IDF_COMPONENT_MANAGER "$ENV{IDF_COMPONENT_MANAGER}")
+    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+    if(idf_component_manager)
+        if(idf_component_manager EQUAL "0")
+            message(VERBOSE "IDF Component manager was explicitly disabled by setting IDF_COMPONENT_MANAGER=0")
+        elseif(idf_component_manager EQUAL "1")
+            set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
+            set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
+
+            set(__contents "components:\n")
+            idf_build_get_property(__component_targets __COMPONENT_TARGETS)
+            foreach(__component_target ${__component_targets})
+                __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
+                __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+                set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
+            endforeach()
+
+            file(WRITE ${local_components_list_file} "${__contents}")
+
+            # Call for the component manager to prepare remote dependencies
+            execute_process(COMMAND ${PYTHON}
+                "-m"
+                "idf_component_manager.prepare_components"
+                "--project_dir=${project_dir}"
+                "prepare_dependencies"
+                "--local_components_list_file=${local_components_list_file}"
+                "--managed_components_list_file=${managed_components_list_file}"
+                RESULT_VARIABLE result
+                ERROR_VARIABLE error)
+
+            if(NOT result EQUAL 0)
+                message(FATAL_ERROR "${error}")
+            endif()
+
+            include(${managed_components_list_file})
+
+            # Add managed components to list of all components
+            # `managed_components` contains the list of components installed by the component manager
+            # It is defined in the temporary managed_components_list_file file
+            set(__COMPONENTS "${__COMPONENTS};${managed_components}")
+
+            file(REMOVE ${managed_components_list_file})
+            file(REMOVE ${local_components_list_file})
+        else()
+            message(WARNING "IDF_COMPONENT_MANAGER environment variable is set to unknown value "
+                    "\"${idf_component_manager}\". If you want to use component manager set it to 1.")
+        endif()
+    else()
+        idf_build_get_property(__component_targets __COMPONENT_TARGETS)
+        set(__components_with_manifests "")
+        foreach(__component_target ${__component_targets})
+            __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+            if(EXISTS "${__component_dir}/idf_component.yml")
+                set(__components_with_manifests "${__components_with_manifests}\t${__component_dir}\n")
+            endif()
+        endforeach()
+
+        if(NOT "${__components_with_manifests}" STREQUAL "")
+            message(WARNING "\"idf_component.yml\" file was found for components:\n${__components_with_manifests}"
+                    "However, the component manager is not enabled.")
+        endif()
+    endif()
+
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
