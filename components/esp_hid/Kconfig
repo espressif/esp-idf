@@ -1,6 +1,6 @@
 menu "HID Support"
 
-    config HID_TASK_STACK_SIZE
+    config HID_EVENT_TASK_STACK_SIZE
         int "HID event (callback to application) stack size"
         default 2048
 
