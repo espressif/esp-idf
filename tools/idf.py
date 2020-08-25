@@ -242,7 +242,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
                 "-DPYTHON_DEPS_CHECKED=1",
                 "-DESP_PLATFORM=1",
             ]
-            if not args.no_warnings:
+            if args.cmake_warn_uninitialized:
                 cmake_args += ["--warn-uninitialized"]
                 cmake_args += ["-DWARN_UNINITIALIZED=1"]
 
@@ -998,8 +998,10 @@ def init_cli():
                 "default": None,
             },
             {
-                "names": ["-n", "--no-warnings"],
-                "help": "Disable Cmake warnings.",
+                "names": ["-w/-n", "--cmake-warn-uninitialized/--no-warnings"],
+                "help": ("Enable CMake uninitialized variable warnings for CMake files inside the project directory. "
+                         "(--no-warnings is now the default, and doesn't need to be specified.)"),
+                "envvar": "IDF_CMAKE_WARN_UNINITIALIZED",
                 "is_flag": True,
                 "default": False,
             },
