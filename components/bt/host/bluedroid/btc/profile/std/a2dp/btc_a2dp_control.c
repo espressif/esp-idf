@@ -29,7 +29,6 @@
 #include "btc_a2dp_sink.h"
 #include "btc_a2dp_source.h"
 #include "esp_a2dp_api.h"
-#include "btc_avrc.h"
 
 #if BTC_AV_INCLUDED
 
@@ -60,13 +59,11 @@ static inline void a2dp_cmd_acknowledge(int cmd, int status)
 
 void btc_a2dp_control_command_ack(int status)
 {
-    /* sanity check 
+    /* sanity check */
     if (btc_aa_ctrl_cb.a2dp_cmd_pending == ESP_A2D_MEDIA_CTRL_NONE) {
         APPL_TRACE_ERROR("warning : no command pending, ignore ack");
         return;
-    }  
-    */ 
-    
+    }
 
     /* clear pending */
     int cmd = btc_aa_ctrl_cb.a2dp_cmd_pending;
@@ -129,7 +126,7 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
 
     switch (ctrl) {
     case ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY:
-//#if BTC_AV_SRC_INCLUDED
+#if BTC_AV_SRC_INCLUDED
         if (btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID) {
             if (btc_a2dp_source_is_task_shutting_down()) {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
@@ -139,15 +136,13 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
             } else {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
-            } 
+            }
         } else {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
         }
-//#else /* BTC_AV_SRC_INCLUDED */
-        //if (btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
-                //btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
-            //}   /
-//#endif /* #if BTC_AV_SRC_INCLUDED */
+#else /* BTC_AV_SRC_INCLUDED */
+        btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
+#endif /* #if BTC_AV_SRC_INCLUDED */
         break;
     case ESP_A2D_MEDIA_CTRL_START:
         if (btc_av_stream_ready() == TRUE ) {
@@ -168,24 +163,22 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         }
         break;
     case ESP_A2D_MEDIA_CTRL_STOP:
+        if (btc_av_is_connected() == FALSE) {
+            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
+            break;
+        }
 #if BTC_AV_SRC_INCLUDED
         if (btc_av_get_peer_sep() == AVDT_TSEP_SNK && !btc_a2dp_source_is_streaming() &&
-                btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID && btc_av_is_peer_edr() == TRUE) {
+                btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID) {
             /* we are already stopped, just ack back*/
-            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);   
+            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
             break;
-        /* check if connect a2dp */
-        } else if (btc_av_is_peer_edr() == FALSE){
-            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE); 
         }
 #endif /* BTC_AV_SRC_INCLUDED */
         btc_dispatch_sm_event(BTC_AV_STOP_STREAM_REQ_EVT, NULL, 0);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-        if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID &&
-                btc_av_is_peer_edr() == TRUE) {
+        if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
-        } else if (btc_av_is_peer_edr() == FALSE){
-            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
         }
 #endif
         break;
@@ -194,14 +187,11 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         if (btc_av_stream_started_ready()) {
             btc_dispatch_sm_event(BTC_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-            if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID &&
-                    btc_av_is_peer_edr() == TRUE) {
+            if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
-            } else if (btc_av_is_peer_edr() == FALSE) {
-                btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
             }
-#endif  
-        } else if (btc_av_is_peer_edr() == TRUE){
+#endif
+        } else if (btc_av_is_connected() == TRUE) {
             /* we are not in started state; just ack back ok. This can happen if we are
                remotely suspended; clear REMOTE SUSPEND Flag */
             btc_av_clear_remote_suspend_flag();
@@ -210,7 +200,6 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
         }
         break;
-
     default :
         APPL_TRACE_ERROR("### A2DP-MEDIA EVENT %u NOT HANDLED ###", ctrl);
         btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
