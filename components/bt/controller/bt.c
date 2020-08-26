@@ -217,11 +217,11 @@ extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 extern void bredr_sco_datapath_set(uint8_t data_path);
 extern void btdm_controller_scan_duplicate_list_clear(void);
 /* Coexistence */
-extern int coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration);
-extern int coex_bt_release_wrapper(uint32_t event);
-extern int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
-extern uint32_t coex_bb_reset_lock_wrapper(void);
-extern void coex_bb_reset_unlock_wrapper(uint32_t restore);
+extern int coex_bt_request(uint32_t event, uint32_t latency, uint32_t duration);
+extern int coex_bt_release(uint32_t event);
+extern int coex_register_bt_cb(coex_func_cb_t cb);
+extern uint32_t coex_bb_reset_lock(void);
+extern void coex_bb_reset_unlock(uint32_t restore);
 extern void coex_ble_adv_priority_high_set(bool high);
 
 extern char _bss_start_btdm;
@@ -288,6 +288,11 @@ static void IRAM_ATTR btdm_sleep_exit_phase1_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
 static bool coex_bt_wakeup_request(void);
 static void coex_bt_wakeup_request_end(void);
+static int coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration);
+static int coex_bt_release_wrapper(uint32_t event);
+static int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
+static uint32_t coex_bb_reset_lock_wrapper(void);
+static void coex_bb_reset_unlock_wrapper(uint32_t restore);
 
 /* Local variable definition
  ***************************************************************************
@@ -961,6 +966,49 @@ static void coex_bt_wakeup_request_end(void)
     return;
 }
 
+int IRAM_ATTR coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bt_request(event, latency, duration);
+#else
+    return 0;
+#endif
+}
+
+int IRAM_ATTR coex_bt_release_wrapper(uint32_t event)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bt_release(event);
+#else
+    return 0;
+#endif
+}
+
+int coex_register_bt_cb_wrapper(coex_func_cb_t cb) 
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_register_bt_cb(cb);
+#else
+    return 0;
+#endif
+}
+
+uint32_t IRAM_ATTR coex_bb_reset_lock_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bb_reset_lock();
+#else
+    return 0;
+#endif
+}
+
+void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_bb_reset_unlock(restore);
+#endif
+}
+
 bool esp_vhci_host_check_send_available(void)
 {
     return API_vhci_host_check_send_available();
@@ -1271,6 +1319,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 #endif
 
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_init();
+#endif
+
     btdm_cfg_mask = btdm_config_mask_load();
 
     if (btdm_controller_init(btdm_cfg_mask, cfg) != 0) {
@@ -1375,8 +1427,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     esp_phy_enable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
-    coex_init();
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_enable();
 #endif
 
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
@@ -1388,8 +1440,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     ret = btdm_controller_enable(mode);
     if (ret != 0) {
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
-        coex_deinit();
+#if CONFIG_SW_COEXIST_ENABLE
+        coex_disable();
 #endif
         esp_phy_disable();
 #ifdef CONFIG_PM_ENABLE
@@ -1425,8 +1477,8 @@ esp_err_t esp_bt_controller_disable(void)
 
     btdm_controller_disable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
-    coex_deinit();
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
 #endif
 
     esp_phy_disable();

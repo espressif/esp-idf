@@ -391,11 +391,9 @@ esp_pm_config_esp32s2_t cfg = {
 #endif
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
-#endif
 #endif
 
 #ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE

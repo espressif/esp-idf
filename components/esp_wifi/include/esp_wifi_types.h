@@ -329,7 +329,7 @@ typedef struct {
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
 #if CONFIG_IDF_TARGET_ESP32
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     unsigned :8;                  /**< reserved */
 #endif
     unsigned ampdu_cnt:8;         /**< ampdu cnt */
@@ -340,12 +340,20 @@ typedef struct {
     unsigned :32;                 /**< reserved */
 #if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    unsigned :24;                 /**< reserved */
+    unsigned :32;                 /**< reserved */
 #endif
     unsigned :31;                 /**< reserved */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
 #if CONFIG_IDF_TARGET_ESP32S2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
     unsigned :24;                 /**< reserved */
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    unsigned :32;                 /**< reserved */
+    unsigned :32;                 /**< reserved */
+    unsigned :32;                 /**< reserved */
 #endif
     unsigned sig_len:12;          /**< length of packet including Frame Check Sequence(FCS) */
     unsigned :12;                 /**< reserved */
@@ -531,6 +539,8 @@ typedef enum {
     WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
     WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
 
+    WIFI_EVENT_FTM_REPORT,               /**< Receive report of FTM procedure */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -616,6 +626,7 @@ typedef struct {
 #define WIFI_STATIS_RXTX      (1<<1)
 #define WIFI_STATIS_HW        (1<<2)
 #define WIFI_STATIS_DIAG      (1<<3)
+#define WIFI_STATIS_PS        (1<<4)
 #define WIFI_STATIS_ALL       (-1)
 
 #ifdef __cplusplus
