@@ -60,7 +60,7 @@ static tBTM_SEC_DEV_REC *btm_find_oldest_dev (void);
 BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
                           UINT8 *features, UINT32 trusted_mask[],
                           LINK_KEY link_key, UINT8 key_type, tBTM_IO_CAP io_cap,
-                          UINT8 pin_length)
+                          UINT8 pin_length, UINT8 sc_support)
 {
 #if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec;
@@ -99,6 +99,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 
     p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;           /* Default value */
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;
+    p_dev_rec->remote_secure_connection_previous_state = sc_support;
 
     if (dev_class) {
         memcpy (p_dev_rec->dev_class, dev_class, DEV_CLASS_LEN);
