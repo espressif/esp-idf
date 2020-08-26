@@ -76,7 +76,7 @@ typedef enum {
 
 /// A2DP media control commands
 typedef enum {
-    ESP_A2D_MEDIA_CTRL_NONE = 0,               /*!< dummy command */
+    ESP_A2D_MEDIA_CTRL_NONE = 0,               /*!< Not for application use, use inside stack only. */
     ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY,          /*!< check whether AVDTP is connected, only used in A2DP source */
     ESP_A2D_MEDIA_CTRL_START,                  /*!< command to set up media transmission channel */
     ESP_A2D_MEDIA_CTRL_STOP,                   /*!< command to stop media transmission */
