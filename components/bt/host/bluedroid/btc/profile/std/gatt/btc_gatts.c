@@ -900,6 +900,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
     case BTA_GATTS_CONNECT_EVT:
         gatts_if = p_data->conn.server_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
+        param.connect.link_role = p_data->conn.link_role;
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, ESP_BD_ADDR_LEN);
         param.connect.conn_params.interval = p_data->conn.conn_params.interval;
         param.connect.conn_params.latency = p_data->conn.conn_params.latency;
