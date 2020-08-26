@@ -23,7 +23,9 @@
   * 8MHz
   */
 #if APB_CLK_FREQ==80*1000*1000
-#define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
+#define SPI_MASTER_FREQ_2M      (APB_CLK_FREQ/40)	///< 2MHz
+#define SPI_MASTER_FREQ_4M      (APB_CLK_FREQ/20)	///< 4MHz
+#define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)	///< 8MHz
 #define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    ///< 8.89MHz
 #define SPI_MASTER_FREQ_10M     (APB_CLK_FREQ/8)    ///< 10MHz
 #define SPI_MASTER_FREQ_11M     (APB_CLK_FREQ/7)    ///< 11.43MHz
