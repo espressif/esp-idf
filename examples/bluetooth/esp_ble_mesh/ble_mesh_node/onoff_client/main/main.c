@@ -23,6 +23,8 @@
 #include "ble_mesh_example_init.h"
 #include "ble_mesh_example_nvs.h"
 
+#define TAG "EXAMPLE"
+
 #define CID_ESP 0x02E5
 
 static uint8_t dev_uuid[16] = { 0xdd, 0xdd };

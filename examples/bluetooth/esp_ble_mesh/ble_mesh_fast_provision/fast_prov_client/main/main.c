@@ -31,6 +31,8 @@
 #include "ble_mesh_fast_prov_client_model.h"
 #include "ble_mesh_example_init.h"
 
+#define TAG "EXAMPLE"
+
 #define PROV_OWN_ADDR       0x0001
 #define APP_KEY_OCTET       0x12
 #define GROUP_ADDRESS       0xC000
