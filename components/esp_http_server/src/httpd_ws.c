@@ -383,4 +383,15 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     return ESP_OK;
 }
 
+int httpd_ws_get_fd_info(httpd_handle_t hd, int fd)
+{
+    struct sock_db *sess = httpd_sess_get(hd, fd);
+
+    if (sess == NULL) {
+        return -1;
+    }
+    bool is_active_ws = sess->ws_handshake_done && (!sess->ws_close);
+    return is_active_ws ? 1 : 0;
+}
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */

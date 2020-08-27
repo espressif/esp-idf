@@ -1586,6 +1586,19 @@ esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *pkt);
  */
 esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t *frame);
 
+/**
+ * @brief Checks the supplied socket descriptor if it belongs to any active client
+ * of this server instance and if the websoket protocol is active
+ *
+ * @param[in] hd      Server instance data
+ * @param[in] fd      Socket descriptor
+ * @return
+ *  - -1                    : This fd is not a client of this httpd
+ *  - 0                     : This fd is an active client, protocol is not WS
+ *  - 1                     : This fd is an active client, protocol is WS
+ */
+int httpd_ws_get_fd_info(httpd_handle_t hd, int fd)
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff
  * @}
