@@ -185,15 +185,6 @@ const char *bt_hex(const void *buf, size_t len);
 
 void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len);
 
-unsigned int _copy(uint8_t *to, unsigned int to_len,
-                   const uint8_t *from, unsigned int from_len);
-
-void _set(void *to, uint8_t val, unsigned int len);
-
-uint8_t _double_byte(uint8_t a);
-
-int _compare(const uint8_t *a, const uint8_t *b, size_t size);
-
 #ifdef __cplusplus
 }
 #endif
