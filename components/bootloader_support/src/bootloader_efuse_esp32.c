@@ -27,6 +27,11 @@ uint8_t bootloader_common_get_chip_revision(void)
     case 3:
         chip_ver = 2;
         break;
+#if CONFIG_IDF_ENV_FPGA
+    case 4: /* Empty efuses, but APB_CTRL_DATE_REG bit is set */
+        chip_ver = 3;
+        break;
+#endif
     case 7:
         chip_ver = 3;
         break;
