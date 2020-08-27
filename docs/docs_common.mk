@@ -180,10 +180,10 @@ gh-linkcheck: | check_python_packages
 	@echo "Checking for hardcoded GitHub links"  # note: exception for links to support policy doc as we *want* this to be a link to master's policy
 	@if (find ../ -name '*.rst' | xargs grep \
 		'https://github.com/espressif/esp-idf/tree\|https://github.com/espressif/esp-idf/blob\|https://github.com/espressif/esp-idf/raw' \
-		| grep -v 'SUPPORT_POLICY\.md' \
+		| grep -v '/SUPPORT_POLICY' \
 		); \
 	then \
-		echo "WARNINIG: Some .rst files contain hardcoded Github links."; \
+		echo "WARNING: Some .rst files contain hardcoded Github links."; \
 		echo "Please check above output and replace links with one of the following:"; \
 		echo "- :idf:\`dir\` - points to directory inside ESP-IDF"; \
 		echo "- :idf_file:\`file\` - points to file inside ESP-IDF"; \
