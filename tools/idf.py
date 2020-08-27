@@ -37,8 +37,12 @@ from collections import Counter, OrderedDict
 from importlib import import_module
 from pkgutil import iter_modules
 
-from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)
+# pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
+# idf.py extentions. Therefore, pyc file generation is turned off:
+sys.dont_write_bytecode = True
+
+from idf_py_actions.errors import FatalError  # noqa: E402
+from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)  # noqa: E402
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
