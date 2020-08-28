@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
-from ttfw_idf import Utility
 import os
+import time
+
+from ttfw_idf import Utility
 import ttfw_idf
 
 
@@ -24,9 +26,9 @@ def test_examples_gcov(env, extra_data):
         expect_counter_output(0, timeout=20)
         dut.expect('Ready to dump GCOV data...', timeout=5)
 
-        def dump_coverage():
+        def dump_coverage(cmd):
             try:
-                response = oocd.cmd_exec('esp gcov dump')
+                response = oocd.cmd_exec(cmd)
                 with open(openocd_cmd_log, 'a') as f:
                     f.write(response)
 
@@ -42,15 +44,21 @@ def test_examples_gcov(env, extra_data):
                 Utility.console_log(dut.read(size=1000))
                 raise
 
-        dump_coverage()
+        # Test two hard-coded dumps
+        dump_coverage('esp gcov dump')
         dut.expect('GCOV data have been dumped.', timeout=5)
         expect_counter_output(1)
         dut.expect('Ready to dump GCOV data...', timeout=5)
-        dump_coverage()
+        dump_coverage('esp gcov dump')
         dut.expect('GCOV data have been dumped.', timeout=5)
 
         for i in range(2, 6):
             expect_counter_output(i)
+
+        for _ in range(3):
+            time.sleep(1)
+            # Test instant run-time dump
+            dump_coverage('esp gcov')
 
 
 if __name__ == '__main__':
