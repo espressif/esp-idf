@@ -995,7 +995,7 @@ def main():
         args.port = args.port.replace('COM', r'\\.\COM')
         yellow_print("--- WARNING: GDB cannot open serial ports accessed as COMx")
         yellow_print("--- Using %s instead..." % args.port)
-    elif args.port.startswith("/dev/tty."):
+    elif args.port.startswith("/dev/tty.") and sys.platform == 'darwin':
         args.port = args.port.replace("/dev/tty.", "/dev/cu.")
         yellow_print("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
         yellow_print("--- Using %s instead..." % args.port)
