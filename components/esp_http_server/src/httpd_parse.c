@@ -758,8 +758,8 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
              sd->ws_handler != NULL ? "Yes" : "No",
              sd->ws_close ? "Yes" : "No");
     if (sd->ws_handshake_done && sd->ws_handler != NULL) {
-        ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket"));
         ret = httpd_ws_get_frame_type(r);
+        ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket, ws_type=%d"), ra->ws_type);
 
         /*  Stop and return here immediately if it's a CLOSE frame */
         if (ra->ws_type == HTTPD_WS_TYPE_CLOSE) {
@@ -767,13 +767,13 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
             return ret;
         }
 
-        /* Ignore PONG frame, as this is a server */
         if (ra->ws_type == HTTPD_WS_TYPE_PONG) {
-            return ret;
+            /* Pass the PONG frames to the handler as well, as user app might send PINGs */
+            ESP_LOGD(TAG, LOG_FMT("Received PONG frame"));
         }
 
         /* Call handler if it's a non-control frame */
-        if (ret == ESP_OK && ra->ws_type < HTTPD_WS_TYPE_CLOSE) {
+        if (ret == ESP_OK && ra->ws_type <= HTTPD_WS_TYPE_PONG) {
             ret = sd->ws_handler(r);
         }
 

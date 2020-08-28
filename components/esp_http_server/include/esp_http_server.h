@@ -410,6 +410,14 @@ typedef struct httpd_uri {
 } httpd_uri_t;
 
 /**
+ * @brief Structure for holding list of clients
+ */
+typedef struct httpd_client_list {
+    size_t active_clients;      /*!< number of active clients in this struct */
+    int    client_fds[];        /*!< array of file descriptors of all active clients */
+} httpd_client_list_t;
+
+/**
  * @brief   Registers a URI handler
  *
  * @note    URI handlers can be registered in real time as long as the
@@ -1466,6 +1474,19 @@ esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
  */
 esp_err_t httpd_sess_update_lru_counter(httpd_handle_t handle, int sockfd);
 
+/**
+ * @brief   Returns list of current socket descriptors of active sessions
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] max_fds   Maximum number of socket fds the supplied list could hold
+ * @param[out] fd_list  Structure holding socket descriptors
+ *
+ * @return
+ *  - ESP_OK              : Successfully retrieved session list
+ *  - ESP_ERR_INVALID_ARG : Wrong arguments or list is longer than maximum
+ */
+esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t max_fds, httpd_client_list_t *fd_list);
+
 /** End of Session
  * @}
  */
@@ -1525,6 +1546,15 @@ typedef enum {
     HTTPD_WS_TYPE_PING       = 0x9,
     HTTPD_WS_TYPE_PONG       = 0xA
 } httpd_ws_type_t;
+
+/**
+ * @brief Enum for client info description
+ */
+typedef enum {
+    HTTPD_WS_CLIENT_INVALID        = 0x0,
+    HTTPD_WS_CLIENT_HTTP           = 0x1,
+    HTTPD_WS_CLIENT_WEBSOCKET      = 0x2,
+} httpd_ws_client_info_t;
 
 /**
  * @brief WebSocket frame format
@@ -1593,11 +1623,11 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
  * @param[in] hd      Server instance data
  * @param[in] fd      Socket descriptor
  * @return
- *  - -1                    : This fd is not a client of this httpd
- *  - 0                     : This fd is an active client, protocol is not WS
- *  - 1                     : This fd is an active client, protocol is WS
+ *  - HTTPD_WS_CLIENT_INVALID   : This fd is not a client of this httpd
+ *  - HTTPD_WS_CLIENT_HTTP      : This fd is an active client, protocol is not WS
+ *  - HTTPD_WS_CLIENT_WEBSOCKET : This fd is an active client, protocol is WS
  */
-int httpd_ws_get_fd_info(httpd_handle_t hd, int fd)
+httpd_ws_client_info_t httpd_ws_get_fd_info(httpd_handle_t hd, int fd);
 
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff
