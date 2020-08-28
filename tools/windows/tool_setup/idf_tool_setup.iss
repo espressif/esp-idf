@@ -13,12 +13,17 @@
 #define PythonInstallerName "idf-python-3.9.1-embed-win64.zip"
 #define PythonInstallerDownloadURL "https://dl.espressif.com/dl/idf-python/idf-python-3.9.1-embed-win64.zip"
 
-#define GitVersion "2.21.0"
-#define GitInstallerName "Git-2.21.0-64-bit.exe"
-#define GitInstallerDownloadURL "https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe"
+#define GitVersion "2.28.0"
+#define GitInstallerName "Git-2.28.0-64-bit.exe"
+#define GitInstallerDownloadURL "https://github.com/git-for-windows/git/releases/download/v2.28.0.windows.1/Git-2.28.0-64-bit.exe"
 
-#define IDFCmdExeShortcutDescription "Open ESP-IDF Command Prompt (cmd.exe)"
-#define IDFCmdExeShortcutFile "ESP-IDF Command Prompt (cmd.exe).lnk"
+#define IDFVersionsURL "https://dl.espressif.com/dl/esp-idf/idf_versions.txt"
+
+#define IDFCmdExeShortcutDescription "Open ESP-IDF Command Prompt (cmd.exe) Environment"
+#define IDFCmdExeShortcutFile "ESP-IDF CMD.lnk"
+
+#define IDFPsShortcutDescription "Open ESP-IDF PowerShell Environment"
+#define IDFPsShortcutFile "ESP-IDF PowerShell.lnk"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -62,6 +67,7 @@ Source: "..\..\idf_tools.py"; DestDir: "{app}"; DestName: "idf_tools_fallback.py
 ; Note: this tools.json matches the requirements of IDF v3.x versions.
 Source: "tools_fallback.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
 Source: "idf_cmd_init.bat"; DestDir: "{app}"
+Source: "idf_cmd_init.ps1"; DestDir: "{app}"
 Source: "dist\*"; DestDir: "{app}\dist"
 ; Helper Python files for sanity check of Python environment - used by system_check_page
 Source: "system_check\system_check_download.py"; Flags: dontcopy
@@ -77,11 +83,15 @@ Type: filesandordirs; Name: "{app}\releases"
 Type: filesandordirs; Name: "{app}\tools"
 Type: filesandordirs; Name: "{app}\python_env"
 Type: files; Name: "{group}\{#IDFCmdExeShortcutFile}"
+Type: files; Name: "{group}\{#IDFPsShortcutFile}"
 Type: files; Name: "{autodesktop}\{#IDFCmdExeShortcutFile}"
+Type: files; Name: "{autodesktop}\{#IDFPsShortcutFile}"
 
 [Tasks]
-Name: createlnk; Description: "Create Start Menu shortcut for the ESP-IDF Tools Command Prompt";
-Name: createdsk; Description: "Create Desktop shortcut for the ESP-IDF Tools Command Prompt";
+Name: CreateLnkStartCmd; Description: "Create Start Menu shortcut for the ESP-IDF Tools Command Prompt Environment";
+Name: CreateLnkStartPs; Description: "Create Start Menu shortcut for the ESP-IDF Tools Powershell Environment";
+Name: CreateLnkDeskCmd; Description: "Create Desktop shortcut for the ESP-IDF Tools Command Prompt Environment";
+Name: CreateLnkDeskPs; Description: "Create Desktop shortcut for the ESP-IDF Tools Powershell Environment";
 ; WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption, not by the position index in WizardForm.TasksList.Items
 ; Please, keep this in mind when making changes to the item's description - WD checkbox is to be disabled on systems without the Windows Defender installed
 Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
@@ -89,7 +99,9 @@ Name: idf_tools_use_mirror; Description: "Use Espressif download server instead 
 
 [Run]
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
-Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
+Filename: "{group}\{#IDFPsShortcutFile}"; Flags: postinstall shellexec unchecked; Description: "Run ESP-IDF PowerShell Environment"; Check: IsPowerShellInstalled
+Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec unchecked; Description: "Run ESP-IDF Command Prompt Environment"; Check: IsCmdInstalled
+
 
 [UninstallRun]
 Filename: "powershell.exe"; \
