@@ -138,7 +138,7 @@ static struct bt_mesh_dev_prop {
 u8_t bt_mesh_get_dev_prop_len(u16_t prop_id)
 {
     if (prop_id > BLE_MESH_TOTAL_LUMINOUS_ENERGY) {
-        BT_ERR("%s, Unknown Device Property ID 0x%04x", __func__, prop_id);
+        BT_ERR("Unknown Device Property ID 0x%04x", prop_id);
         return UINT8_MAX;
     }
 

@@ -55,7 +55,8 @@ uint16_t esp_ble_mesh_get_primary_element_address(void);
  *                      to 0x0000 in order to unsubscribe the model from the group.
  *
  */
-uint16_t *esp_ble_mesh_is_model_subscribed_to_group(esp_ble_mesh_model_t *model, uint16_t group_addr);
+uint16_t *esp_ble_mesh_is_model_subscribed_to_group(esp_ble_mesh_model_t *model,
+                                                    uint16_t group_addr);
 
 /**
  * @brief         Find the BLE Mesh element pointer via the element address.
@@ -87,7 +88,7 @@ uint8_t esp_ble_mesh_get_element_count(void);
  *
  */
 esp_ble_mesh_model_t *esp_ble_mesh_find_vendor_model(const esp_ble_mesh_elem_t *element,
-        uint16_t company_id, uint16_t model_id);
+                                                     uint16_t company_id, uint16_t model_id);
 
 /**
  * @brief        Find the SIG model with the given element and Model id.
@@ -98,7 +99,8 @@ esp_ble_mesh_model_t *esp_ble_mesh_find_vendor_model(const esp_ble_mesh_elem_t *
  * @return       Pointer to the SIG Model on success, or NULL on failure which means the SIG Model is not found.
  *
  */
-esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *element, uint16_t model_id);
+esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *element,
+                                                  uint16_t model_id);
 
 /**
  * @brief        Get the Composition data which has been registered.

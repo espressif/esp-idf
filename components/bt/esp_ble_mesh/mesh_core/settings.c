@@ -357,7 +357,7 @@ static int rpl_set(const char *name)
         if (!entry) {
             entry = rpl_alloc(src);
             if (!entry) {
-                BT_ERR("%s, No space for a new RPL 0x%04x", __func__, src);
+                BT_ERR("No space for a new RPL 0x%04x", src);
                 err = -ENOMEM;
                 goto free;
             }
@@ -414,7 +414,7 @@ static int net_key_set(const char *name)
 
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
-            BT_ERR("%s, Failed to load NetKey 0x%03x", __func__, net_idx);
+            BT_ERR("Failed to load NetKey 0x%03x", net_idx);
             goto free;
         }
 
@@ -426,7 +426,7 @@ static int net_key_set(const char *name)
         if (!sub) {
             sub = subnet_alloc(net_idx);
             if (!sub) {
-                BT_ERR("%s, No space for a new subnet 0x%03x", __func__, net_idx);
+                BT_ERR("No space for a new subnet 0x%03x", net_idx);
                 err = -ENOMEM;
                 goto free;
             }
@@ -438,7 +438,7 @@ static int net_key_set(const char *name)
         memcpy(sub->keys[0].net, &key.val[0], 16);
         memcpy(sub->keys[1].net, &key.val[1], 16);
 
-        BT_INFO("Restored NetKey Index 0x%03x", sub->net_idx);
+        BT_INFO("Restored NetKeyIndex 0x%03x", sub->net_idx);
         BT_INFO("Restored NetKey %s", bt_hex(sub->keys[0].net, 16));
     }
 
@@ -474,7 +474,7 @@ static int app_key_set(const char *name)
 
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
-            BT_ERR("%s, Failed to load AppKey 0x%03x", __func__, app_idx);
+            BT_ERR("Failed to load AppKey 0x%03x", app_idx);
             goto free;
         }
 
@@ -484,7 +484,7 @@ static int app_key_set(const char *name)
 
         sub = bt_mesh_subnet_get(key.net_idx);
         if (!sub) {
-            BT_ERR("%s, Failed to find subnet 0x%03x", __func__, key.net_idx);
+            BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
             err = -ENOENT;
             goto free;
         }
@@ -493,7 +493,7 @@ static int app_key_set(const char *name)
         if (!app) {
             app = bt_mesh_app_key_alloc(app_idx);
             if (!app) {
-                BT_ERR("%s, No space for a new app key 0x%03x", __func__, app_idx);
+                BT_ERR("No space for a new appkey 0x%03x", app_idx);
                 err = -ENOMEM;
                 goto free;
             }
@@ -507,7 +507,7 @@ static int app_key_set(const char *name)
         bt_mesh_app_id(app->keys[0].val, &app->keys[0].id);
         bt_mesh_app_id(app->keys[1].val, &app->keys[1].id);
 
-        BT_INFO("Restored AppKey Index 0x%03x, NetKey Index 0x%03x",
+        BT_INFO("Restored AppKeyIndex 0x%03x, NetKeyIndex 0x%03x",
             app->app_idx, app->net_idx);
         BT_INFO("Restored AppKey %s", bt_hex(app->keys[0].val, 16));
     }
@@ -527,13 +527,13 @@ static int hb_pub_set(const char *name)
     BT_DBG("%s", __func__);
 
     if (!hb_pub) {
-        BT_ERR("%s, NULL cfg hb pub", __func__);
+        BT_ERR("Invalid heartbeat pub");
         return -EINVAL;
     }
 
     err = bt_mesh_load_core_settings(name, (u8_t *)&hb_val, sizeof(hb_val), &exist);
     if (err) {
-        BT_ERR("Failed to load heartbeat publication");
+        BT_ERR("Failed to load heartbeat pub");
         hb_pub->dst = BLE_MESH_ADDR_UNASSIGNED;
         hb_pub->count = 0U;
         hb_pub->ttl = 0U;
@@ -572,7 +572,7 @@ static int cfg_set(const char *name)
     BT_DBG("%s", __func__);
 
     if (!cfg) {
-        BT_ERR("%s, NULL cfg", __func__);
+        BT_ERR("Invalid configuration");
         stored_cfg.valid = false;
         return -EINVAL;
     }
@@ -787,7 +787,7 @@ static int va_set(const char *name)
 
         lab = get_label(index);
         if (lab == NULL) {
-            BT_WARN("%s, Out of labels buffers", __func__);
+            BT_WARN("Out of labels buffers");
             err = -ENOBUFS;
             goto free;
         }
@@ -826,7 +826,7 @@ static int p_prov_set(const char *name)
 
     bt_mesh_provisioner_restore_prov_info(val.primary_addr, val.alloc_addr);
 
-    BT_INFO("Restored Primary Address 0x%04x, next address allocation 0x%04x",
+    BT_INFO("Restored Primary Address 0x%04x, next address alloc 0x%04x",
         val.primary_addr, val.alloc_addr);
 
     return 0;
@@ -842,7 +842,7 @@ static int p_net_idx_set(const char *name)
 
     err = bt_mesh_load_core_settings(name, (u8_t *)&net_idx, sizeof(net_idx), &exist);
     if (err) {
-        BT_ERR("Failed to load next net_idx allocation");
+        BT_ERR("Failed to load next NetKeyIndex alloc");
         return 0;
     }
 
@@ -852,7 +852,7 @@ static int p_net_idx_set(const char *name)
 
     bt_mesh.p_net_idx_next = net_idx;
 
-    BT_INFO("Restored next NetKey Index allocation 0x%03x", bt_mesh.p_net_idx_next);
+    BT_INFO("Restored next NetKeyIndex alloc 0x%03x", bt_mesh.p_net_idx_next);
 
     return 0;
 }
@@ -867,7 +867,7 @@ static int p_app_idx_set(const char *name)
 
     err = bt_mesh_load_core_settings(name, (u8_t *)&app_idx, sizeof(app_idx), &exist);
     if (err) {
-        BT_ERR("Failed to load next app_idx allocation");
+        BT_ERR("Failed to load next AppKeyIndex alloc");
         return 0;
     }
 
@@ -877,7 +877,7 @@ static int p_app_idx_set(const char *name)
 
     bt_mesh.p_app_idx_next = app_idx;
 
-    BT_INFO("Restored next AppKey Index allocation 0x%03x", bt_mesh.p_app_idx_next);
+    BT_INFO("Restored next AppKeyIndex alloc 0x%03x", bt_mesh.p_app_idx_next);
 
     return 0;
 }
@@ -890,7 +890,7 @@ static struct bt_mesh_subnet *p_subnet_alloc(void)
         if (bt_mesh.p_sub[i] == NULL) {
             bt_mesh.p_sub[i] = bt_mesh_calloc(sizeof(struct bt_mesh_subnet));
             if (!bt_mesh.p_sub[i]) {
-                BT_ERR("%s, Failed to allocate memory", __func__);
+                BT_ERR("%s, Out of memory", __func__);
                 return NULL;
             }
 
@@ -909,7 +909,7 @@ static struct bt_mesh_app_key *p_appkey_alloc(void)
         if (bt_mesh.p_app_keys[i] == NULL) {
             bt_mesh.p_app_keys[i] = bt_mesh_calloc(sizeof(struct bt_mesh_app_key));
             if (!bt_mesh.p_app_keys[i]) {
-                BT_ERR("%s, Failed to allocate memory", __func__);
+                BT_ERR("%s, Out of memory", __func__);
                 return NULL;
             }
 
@@ -946,7 +946,7 @@ static int p_net_key_set(const char *name)
 
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
-            BT_ERR("%s, Failed to load NetKey 0x%03x", __func__, net_idx);
+            BT_ERR("Failed to load NetKey 0x%03x", net_idx);
             goto free;
         }
 
@@ -958,7 +958,7 @@ static int p_net_key_set(const char *name)
         if (!sub) {
             sub = p_subnet_alloc();
             if (!sub) {
-                BT_ERR("%s, No space for a new subnet 0x%03x", __func__, net_idx);
+                BT_ERR("No space for a new subnet 0x%03x", net_idx);
                 err = -ENOMEM;
                 goto free;
             }
@@ -970,7 +970,7 @@ static int p_net_key_set(const char *name)
         memcpy(sub->keys[0].net, &key.val[0], 16);
         memcpy(sub->keys[1].net, &key.val[1], 16);
 
-        BT_INFO("Restored NetKey Index 0x%03x", sub->net_idx);
+        BT_INFO("Restored NetKeyIndex 0x%03x", sub->net_idx);
         BT_INFO("Restored NetKey %s", bt_hex(sub->keys[0].net, 16));
     }
 
@@ -1006,7 +1006,7 @@ static int p_app_key_set(const char *name)
 
         err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
         if (err) {
-            BT_ERR("%s, Failed to load AppKey 0x%03x", __func__, app_idx);
+            BT_ERR("Failed to load AppKey 0x%03x", app_idx);
             goto free;
         }
 
@@ -1016,7 +1016,7 @@ static int p_app_key_set(const char *name)
 
         sub = bt_mesh_provisioner_subnet_get(key.net_idx);
         if (!sub) {
-            BT_ERR("%s, Failed to find subnet 0x%03x", __func__, key.net_idx);
+            BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
             err = -ENOENT;
             goto free;
         }
@@ -1025,7 +1025,7 @@ static int p_app_key_set(const char *name)
         if (!app) {
             app = p_appkey_alloc();
             if (!app) {
-                BT_ERR("%s, No space for a new app key 0x%03x", __func__, app_idx);
+                BT_ERR("No space for a new appkey 0x%03x", app_idx);
                 err = -ENOMEM;
                 goto free;
             }
@@ -1039,7 +1039,7 @@ static int p_app_key_set(const char *name)
         bt_mesh_app_id(app->keys[0].val, &app->keys[0].id);
         bt_mesh_app_id(app->keys[1].val, &app->keys[1].id);
 
-        BT_INFO("Restored AppKey Index 0x%03x, NetKey Index 0x%03x",
+        BT_INFO("Restored AppKeyIndex 0x%03x, NetKeyIndex 0x%03x",
             app->app_idx, app->net_idx);
         BT_INFO("Restored AppKey %s", bt_hex(app->keys[0].val, 16));
     }
@@ -1158,7 +1158,7 @@ static int p_node_set(const char *name)
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t addr = net_buf_simple_pull_le16(buf);
         if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
-            BT_ERR("%s, 0x%04x is not a unicast address", __func__, addr);
+            BT_ERR("Invalid unicast address 0x%04x", addr);
             continue;
         }
 
@@ -1284,14 +1284,14 @@ static int subnet_init(struct bt_mesh_subnet *sub)
 
     err = bt_mesh_net_keys_create(&sub->keys[0], sub->keys[0].net);
     if (err) {
-        BT_ERR("%s, Unable to generate keys for subnet", __func__);
+        BT_ERR("Unable to generate keys for subnet");
         return -EIO;
     }
 
     if (sub->kr_phase != BLE_MESH_KR_NORMAL) {
         err = bt_mesh_net_keys_create(&sub->keys[1], sub->keys[1].net);
         if (err) {
-            BT_ERR("%s, Unable to generate keys for subnet", __func__);
+            BT_ERR("Unable to generate keys for subnet");
             (void)memset(&sub->keys[0], 0, sizeof(sub->keys[0]));
             return -EIO;
         }
@@ -1338,7 +1338,7 @@ int settings_core_commit(void)
         }
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            bt_mesh_proxy_prov_disable(true);
+            bt_mesh_proxy_server_prov_disable(true);
         }
 
         for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
@@ -1350,7 +1350,7 @@ int settings_core_commit(void)
 
             err = subnet_init(sub);
             if (err) {
-                BT_ERR("%s, Failed to init subnet 0x%03x", __func__, sub->net_idx);
+                BT_ERR("Failed to init subnet 0x%03x", sub->net_idx);
             }
         }
     }
@@ -1376,7 +1376,7 @@ int settings_core_commit(void)
 
             err = subnet_init(sub);
             if (err) {
-                BT_ERR("%s, Failed to init subnet 0x%03x", __func__, sub->net_idx);
+                BT_ERR("Failed to init subnet 0x%03x", sub->net_idx);
             }
             sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
         }
@@ -1688,7 +1688,7 @@ static void clear_app_key(u16_t app_idx)
 
     err = bt_mesh_remove_core_settings_item("mesh/appkey", app_idx);
     if (err) {
-        BT_ERR("%s, Failed to remove 0x%03x from mesh/appkey", __func__, app_idx);
+        BT_ERR("Failed to remove 0x%03x from mesh/appkey", app_idx);
     }
 
     return;
@@ -1706,7 +1706,7 @@ static void clear_net_key(u16_t net_idx)
 
     err = bt_mesh_remove_core_settings_item("mesh/netkey", net_idx);
     if (err) {
-        BT_ERR("%s, Failed to remove 0x%03x from mesh/netkey", __func__, net_idx);
+        BT_ERR("Failed to remove 0x%03x from mesh/netkey", net_idx);
     }
 
     return;
@@ -1729,7 +1729,7 @@ static void store_net_key(struct bt_mesh_subnet *sub)
     sprintf(name, "mesh/nk/%04x", sub->net_idx);
     err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
     if (err) {
-        BT_ERR("%s, Failed to store NetKey 0x%03x", __func__, sub->net_idx);
+        BT_ERR("Failed to store NetKey 0x%03x", sub->net_idx);
         return;
     }
 
@@ -1755,7 +1755,7 @@ static void store_app_key(struct bt_mesh_app_key *app)
     sprintf(name, "mesh/ak/%04x", app->app_idx);
     err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
     if (err) {
-        BT_ERR("%s, Failed to store AppKey 0x%03x", __func__, app->app_idx);
+        BT_ERR("Failed to store AppKey 0x%03x", app->app_idx);
         return;
     }
 
@@ -2317,7 +2317,7 @@ static void store_p_net_key(struct bt_mesh_subnet *sub)
     sprintf(name, "mesh/pnk/%04x", sub->net_idx);
     err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
     if (err) {
-        BT_ERR("%s, Failed to store NetKey 0x%03x", __func__, sub->net_idx);
+        BT_ERR("Failed to store NetKey 0x%03x", sub->net_idx);
         return;
     }
 
@@ -2341,7 +2341,7 @@ static void store_p_app_key(struct bt_mesh_app_key *app)
     sprintf(name, "mesh/pak/%04x", app->app_idx);
     err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
     if (err) {
-        BT_ERR("%s, Failed to store AppKey 0x%03x", __func__, app->app_idx);
+        BT_ERR("Failed to store AppKey 0x%03x", app->app_idx);
         return;
     }
 
@@ -2380,7 +2380,7 @@ void bt_mesh_clear_p_app_idx(void)
 void bt_mesh_store_p_subnet(struct bt_mesh_subnet *sub)
 {
     if (sub == NULL) {
-        BT_ERR("%s, Invalid subnet",__func__);
+        BT_ERR("Invalid subnet");
         return;
     }
 
@@ -2393,7 +2393,7 @@ void bt_mesh_store_p_subnet(struct bt_mesh_subnet *sub)
 void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key)
 {
     if (key == NULL) {
-        BT_ERR("%s, Invalid AppKey",__func__);
+        BT_ERR("Invalid AppKey");
         return;
     }
 
@@ -2406,7 +2406,7 @@ void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key)
 void bt_mesh_clear_p_subnet(struct bt_mesh_subnet *sub)
 {
     if (sub == NULL) {
-        BT_ERR("%s, Invalid subnet",__func__);
+        BT_ERR("Invalid subnet");
         return;
     }
 
@@ -2418,7 +2418,7 @@ void bt_mesh_clear_p_subnet(struct bt_mesh_subnet *sub)
 void bt_mesh_clear_p_app_key(struct bt_mesh_app_key *key)
 {
     if (key == NULL) {
-        BT_ERR("%s, Invalid AppKey",__func__);
+        BT_ERR("Invalid AppKey");
         return;
     }
 
@@ -2433,7 +2433,7 @@ void bt_mesh_clear_rpl_single(u16_t src)
     int err = 0;
 
     if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
-        BT_ERR("%s, Invalid source address 0x%04x", __func__, src);
+        BT_ERR("Invalid src 0x%04x", src);
         return;
     }
 
@@ -2453,7 +2453,7 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node)
     int err = 0;
 
     if (node == NULL) {
-        BT_ERR("%s, Invalid node", __func__);
+        BT_ERR("Invalid node info");
         return;
     }
 
@@ -2507,7 +2507,7 @@ static void clear_node(u16_t addr)
 void bt_mesh_clear_node_info(u16_t unicast_addr)
 {
     if (!BLE_MESH_ADDR_IS_UNICAST(unicast_addr)) {
-        BT_ERR("%s, Invalid unicast address 0x%04x", __func__, unicast_addr);
+        BT_ERR("Invalid unicast address 0x%04x", unicast_addr);
         return;
     }
 
@@ -2523,7 +2523,7 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node)
     int err = 0;
 
     if (node == NULL) {
-        BT_ERR("%s, Invalid node", __func__);
+        BT_ERR("Invalid node info");
         return;
     }
 
@@ -2542,7 +2542,7 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node)
     int err = 0;
 
     if (!node || !node->comp_data || node->comp_length == 0U) {
-        BT_ERR("%s, Invalid node info", __func__);
+        BT_ERR("Invalid node info");
         return;
     }
 

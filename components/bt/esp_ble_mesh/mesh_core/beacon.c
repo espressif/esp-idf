@@ -177,7 +177,7 @@ static int secure_beacon_send(void)
         buf = bt_mesh_adv_create(BLE_MESH_ADV_BEACON, PROV_XMIT,
                                  K_NO_WAIT);
         if (!buf) {
-            BT_ERR("%s, Unable to allocate beacon buffer", __func__);
+            BT_ERR("Out of beacon buffer");
             return -ENOBUFS;
         }
 
@@ -213,7 +213,7 @@ static int unprovisioned_beacon_send(void)
 
     buf = bt_mesh_adv_create(BLE_MESH_ADV_BEACON, UNPROV_XMIT, K_NO_WAIT);
     if (!buf) {
-        BT_ERR("%s, Unable to allocate beacon buffer", __func__);
+        BT_ERR("Out of beacon buffer");
         return -ENOBUFS;
     }
 
@@ -341,7 +341,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
     u8_t flags = 0U;
 
     if (buf->len < 21) {
-        BT_ERR("%s, Too short secure beacon (len %u)", __func__, buf->len);
+        BT_ERR("Too short secure beacon (len %u)", buf->len);
         return;
     }
 
@@ -420,7 +420,7 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf, s8_t rssi)
     BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (buf->len < 1) {
-        BT_ERR("%s, Too short beacon", __func__);
+        BT_ERR("Too short beacon");
         return;
     }
 
