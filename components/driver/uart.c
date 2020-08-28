@@ -1025,6 +1025,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
         UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
+        return ESP_ERR_TIMEOUT;
     }
     xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return ESP_OK;
