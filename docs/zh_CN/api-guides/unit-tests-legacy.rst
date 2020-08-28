@@ -113,9 +113,9 @@ DUT1 终端::
 
     Waiting for signal: [dut2 mac address]!
     Please input parameter value from any board send this signal and press "Enter" key.
-    
 
-DUT2 终端:: 
+
+DUT2 终端::
 
     Send signal: [dut2 mac address][10:20:30:40:50:60]!
 
@@ -183,7 +183,7 @@ DUT2 终端::
 
 当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目。
 
-.. code:: bash
+.. code::
 
    Here's the test menu, pick your combo:
    (1)     "esp_ota_begin() verifies arguments" [ota]
@@ -230,7 +230,7 @@ DUT2 终端::
 
 一旦选择了多设备测试用例，它会打印一个子菜单：
 
-.. code:: bash
+.. code::
 
    Running gpio master/slave test example...
    gpio master/slave test example
@@ -241,7 +241,7 @@ DUT2 终端::
 
 与多设备测试用例相似，多阶段测试用例也会打印子菜单：
 
-.. code:: bash
+.. code::
 
    Running reset reason check for deepsleep...
    reset reason check for deepsleep

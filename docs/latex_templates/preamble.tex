@@ -1,0 +1,129 @@
+% package with esp-idf specific macros
+\usepackage{espidf}
+
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{graphicx}
+%%% reduce spaces for Table of contents, figures and tables
+%%% it is used "\addtocontents{toc}{\vskip -1.2cm}" etc. in the document
+\usepackage[notlot,nottoc,notlof]{}
+
+\usepackage{color}
+\usepackage{transparent}
+\usepackage{eso-pic}
+\usepackage{lipsum}
+
+%%% Needed for displaying Chinese in English documentation
+\usepackage{xeCJK}
+
+\usepackage{footnotebackref} %%link at the footnote to go to the place of footnote in the text
+
+%% spacing between line
+\usepackage{setspace}
+\singlespacing
+
+
+\definecolor{myred}{RGB}{229, 32, 26}
+\definecolor{mygrayy}{RGB}{127, 127, 127}
+\definecolor{myblack}{RGB}{64, 64, 64}
+
+
+%%%%%%%%%%% datetime
+\usepackage{datetime}
+
+\newdateformat{MonthYearFormat}{%
+    \monthname[\THEMONTH], \THEYEAR}
+
+
+%% RO, LE will not work for 'oneside' layout.
+%% Change oneside to twoside in document class
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+% Header and footer
+\makeatletter
+  \fancypagestyle{normal}{
+    \fancyhf{}
+    \fancyhead[L]{\nouppercase{\leftmark}}
+    \fancyfoot[C]{\py@HeaderFamily\thepage \\ \href{https://www.espressif.com/en/company/documents/documentation_feedback?docId=4287&sections=&version=\idfReleaseName}{Submit Document Feedback}}
+    \fancyfoot[L]{Espressif Systems}
+    \fancyfoot[R]{\idfReleaseName}
+    \renewcommand{\headrulewidth}{0.4pt}
+    \renewcommand{\footrulewidth}{0.4pt}
+  }
+\makeatother
+
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+
+% Define a spacing for section, subsection and subsubsection
+% http://tex.stackexchange.com/questions/108684/spacing-before-and-after-section-titles
+
+\titlespacing*{\section}{0pt}{6pt plus 0pt minus 0pt}{6pt plus 0pt minus 0pt}
+\titlespacing*{\subsection}{0pt}{18pt plus 64pt minus 0pt}{0pt}
+\titlespacing*{\subsubsection}{0pt}{12pt plus 0pt minus 0pt}{0pt}
+\titlespacing*{\paragraph}    {0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+\titlespacing*{\subparagraph} {0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% Define the colors of table of contents
+% This is helpful to understand http://tex.stackexchange.com/questions/110253/what-the-first-argument-for-lsubsection-actually-is
+\definecolor{LochmaraColor}{HTML}{1020A0}
+
+% Hyperlinks
+\hypersetup{
+    colorlinks = true,
+    allcolors = {LochmaraColor},
+}
+
+
+\RequirePackage{tocbibind} %%% comment this to remove page number for following
+\addto\captionsenglish{\renewcommand{\contentsname}{Table of contents}}
+\addto\captionsenglish{\renewcommand{\listfigurename}{List of figures}}
+\addto\captionsenglish{\renewcommand{\listtablename}{List of tables}}
+% \addto\captionsenglish{\renewcommand{\chaptername}{Chapter}}
+
+
+
+
+%%reduce spacing for itemize
+\usepackage{enumitem}
+\setlist{nosep}
+
+%%%%%%%%%%% Quote Styles at the top of chapter
+\usepackage{epigraph}
+\setlength{\epigraphwidth}{0.8\columnwidth}
+\newcommand{\chapterquote}[2]{\epigraphhead[60]{\epigraph{\textit{#1}}{\textbf {\textit{--#2}}}}}
+%%%%%%%%%%% Quote for all places except Chapter
+\newcommand{\sectionquote}[2]{{\quote{\textit{``#1''}}{\textbf {\textit{--#2}}}}}
+
+% Insert 22pt white space before roc title. \titlespacing at line 65 changes it by -22 later on.
+\renewcommand*\contentsname{\hspace{0pt}Contents}
+
+
+% Define section, subsection and subsubsection font size and color
+\usepackage{sectsty}
+\definecolor{AllportsColor}{HTML}{A02010}
+\allsectionsfont{\color{AllportsColor}}
+
+\usepackage{titlesec}
+\titleformat{\section}
+{\color{AllportsColor}\LARGE\bfseries}{\thesection.}{1em}{}
+
+\titleformat{\subsection}
+{\color{AllportsColor}\Large\bfseries}{\thesubsection.}{1em}{}
+
+\titleformat{\subsubsection}
+{\color{AllportsColor}\large\bfseries}{\thesubsubsection.}{1em}{}
+
+\titleformat{\paragraph}
+{\color{AllportsColor}\large\bfseries}{\theparagraph}{1em}{}
+
+\titleformat{\subparagraph}
+  {\normalfont\normalsize\bfseries}{\thesubparagraph}{1em}{}
+
+\titleformat{\subsubparagraph}
+  {\normalfont\normalsize\bfseries}{\thesubsubparagraph}{1em}{}
