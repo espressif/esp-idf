@@ -29,7 +29,7 @@ begin
     Result := Result + 'Using existing ESP-IDF copy: ' + NewLine
               + Space + IDFExistingPath + NewLine + NewLine;
   end else begin
-    Result := Result + 'Will download ESP-IDF ' + IDFDownloadVersion + ' into:' + NewLine
+    Result := Result + 'Will install ESP-IDF ' + IDFDownloadVersion + ' into:' + NewLine
               + Space + IDFDownloadPath + NewLine + NewLine;
   end;
 

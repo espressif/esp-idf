@@ -4,12 +4,21 @@ param (
     [string]$IdfVersion = "v4.1"
 )
 
-$Installer
-$IdfPath
-$IdfVersion
+"Configuration:"
+"* Installer = $Installer"
+"* IdfPath = $IdfPath"
+"* IdfVersion = $IdfVersion"
+
+$ProcessName = (Get-Item $Installer).Basename
+"Waiting for process: $ProcessName"
+
+# Set PYTHONHOME and PYTHONPATH to some directory which is not on the system to test process of creating venv
+# The Installer and IDF shell wrappers contains clearing of variables
+$env:PYTHONPATH="C:\Hvannadalshnúkur"
+$env:PYTHONHOME="C:\Hvannadalshnúkur"
 
 mkdir C:\Temp
-C:\Output\esp-idf-tools-setup-unsigned.exe /VERYSILENT /LOG=C:\Temp\install.txt /SUPPRESSMSGBOXES /SP- /NOCANCEL /NORESTART /IDFVERSION=${IdfVersion}
-$InstallerProcess = Get-Process esp-idf-tools-setup-unsigned
+&$Installer /VERYSILENT /LOG=C:\Temp\install.txt /SUPPRESSMSGBOXES /SP- /NOCANCEL /NORESTART /IDFVERSION=${IdfVersion}
+$InstallerProcess = Get-Process $ProcessName
 Wait-Process -Id $InstallerProcess.id
-Get-Content C:\Temp\install.txt
+Get-Content -Tail 80 C:\Temp\install.txt

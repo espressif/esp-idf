@@ -6,6 +6,8 @@
 set -e
 set -u
 
+INSTALLER_TYPE="${1-online}"
+
 if [[ -z "${KEYFILE:-}" || -z "${CERTCHAIN:-}" ]]; then
     echo "To sign the installer, set the following environment variables:"
     echo "  KEYFILE - private key file"
@@ -19,8 +21,8 @@ umask 770  # for the process substitution FIFO
 VERSION=`grep "#define MyAppVersion " idf_tool_setup.iss | cut -d ' ' -f3 | tr -d '"'`
 echo "Installer version ${VERSION}"
 
-IN_FILE="Output/esp-idf-tools-setup-unsigned.exe"
-OUT_FILE="Output/esp-idf-tools-setup-${VERSION}.exe"
+IN_FILE="Output/esp-idf-tools-setup-${INSTALLER_TYPE}-unsigned.exe"
+OUT_FILE="Output/esp-idf-tools-setup-${INSTALLER_TYPE}-${VERSION}.exe"
 
 if [[ -n "${KEYPASSWORD:-}" ]]; then
     PASSARG="-readpass <(echo \"$KEYPASSWORD\")"

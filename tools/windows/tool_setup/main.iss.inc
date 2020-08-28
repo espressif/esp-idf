@@ -40,10 +40,18 @@ var
   DestPath: String;
 begin
   Result := True;
-  if CurPageID <> wpReady then
-    exit;
+  if CurPageID <> wpReady then begin
+    Exit;
+  end;
 
   ForceDirectories(ExpandConstant('{app}\dist'));
+
+  if (IsOfflineMode) then begin
+    ForceDirectories(ExpandConstant('{app}\releases'));
+    IDFZIPFileVersion := IDFDownloadVersion;
+    IDFZIPFileName := ExpandConstant('{app}\releases\esp-idf-bundle.zip');
+    Exit;
+  end;
 
   if not GitUseExisting then
   begin
@@ -68,6 +76,8 @@ procedure AddPythonGitToPath();
 var
   EnvPath: String;
   PythonLibPath: String;
+  EnvPythonHome: String;
+  PythonNoUserSite: String;
 begin
   EnvPath := GetEnv('PATH');
 
@@ -83,10 +93,28 @@ begin
     new value to be visible to this process. }
   SetEnvironmentVariable('IDF_TOOLS_PATH', ExpandConstant('{app}'))
 
+  { Set PYTHONNOUSERSITE variable True to avoid loading packages from AppData\Roaming. }
+  { https://doc.pypy.org/en/latest/man/pypy.1.html#environment }
+  { If set to a non-empty value, equivalent to the -s option. Don’t add the user site directory to sys.path. }
+  if (IsPythonNoUserSite) then begin
+    PythonNoUserSite := 'True';
+  end else begin
+    PythonNoUserSite := '';
+  end;
+  Log('PYTHONNOUSERSITE=' + PythonNoUserSite);
+  SetEnvironmentVariable('PYTHONNOUSERSITE', PythonNoUserSite);
+
   { Log and clear PYTHONPATH variable, as it might point to libraries of another Python version}
   PythonLibPath := GetEnv('PYTHONPATH')
   Log('PYTHONPATH=' + PythonLibPath)
   SetEnvironmentVariable('PYTHONPATH', '')
+
+  { Log and clear PYTHONHOME, the existence of PYTHONHOME might cause trouble when creating virtualenv. }
+  { The error message when creating virtualenv: }
+  {   Fatal Python error: init_fs_encoding: failed to get the Python codec of the filesystem encoding. }
+  EnvPythonHome := GetEnv('PYTHONHOME')
+  Log('PYTHONHOME=' + EnvPythonHome)
+  SetEnvironmentVariable('PYTHONHOME', '')
 end;
 
 procedure InstallEmbeddedPython();
@@ -102,10 +130,11 @@ begin
   UpdatePythonVariables(EmbeddedPythonPath);
   Log('Checking existence of Embedded Python: ' + EmbeddedPythonPath);
   if (FileExists(EmbeddedPythonPath)) then begin
+    Log('Embedded Python found.');
     Exit;
   end;
 
-  CmdLine := ExpandConstant('{tmp}\7za.exe x -o{app}\tools\python\' + PythonVersion + '\ -r -aoa "{app}\dist\idf-python-' + PythonVersion + '-embed-win64.zip"');
+  CmdLine := ExpandConstant('{tmp}\7za.exe x -o{app}\tools\idf-python\' + PythonVersion + '\ -r -aoa "{app}\dist\idf-python-' + PythonVersion + '-embed-win64.zip"');
   DoCmdlineInstall('Extracting Python Interpreter', 'Using Embedded Python', CmdLine);
 end;
 
@@ -117,16 +146,22 @@ begin
   if CurStep <> ssPostInstall then
     exit;
 
-  ExtractTemporaryFile('7za.exe')
+  ExtractTemporaryFile('7za.exe');
+
   InstallEmbeddedPython();
 
   try
     AddPythonGitToPath();
 
-    if not IDFUseExisting then
-      IDFDownload();
+    if not IDFUseExisting then begin
+      if (IsOfflineMode) then begin
+        IDFOfflineInstall();
+      end else begin
+        IDFDownloadInstall();
+      end;
+    end;
 
-    if WizardIsTaskSelected('idf_tools_use_mirror') then
+    if WizardIsTaskSelected('UseMirror') then
     begin
       SetEnvironmentVariable('IDF_GITHUB_ASSETS', 'dl.espressif.com/github_assets')
     end;
@@ -134,29 +169,24 @@ begin
     IDFToolsSetup();
 
 
-  if WizardIsTaskSelected('CreateLnkStartCmd') then
+  if WizardIsTaskSelected('CreateLinkStartCmd') then
   begin
     CreateIDFCommandPromptShortcut('{autostartmenu}\Programs\ESP-IDF');
   end;
 
-  if WizardIsTaskSelected('CreateLnkStartPs') then
+  if WizardIsTaskSelected('CreateLinkStartPowerShell') then
   begin
     CreateIDFPowershellShortcut('{autostartmenu}\Programs\ESP-IDF' );
   end;
 
-  if WizardIsTaskSelected('CreateLnkDeskCmd') then
+  if WizardIsTaskSelected('CreateLinkDeskCmd') then
   begin
     CreateIDFCommandPromptShortcut('{autodesktop}');
   end;
 
-  if WizardIsTaskSelected('CreateLnkDeskPs') then
+  if WizardIsTaskSelected('CreateLinkDeskPowerShell') then
   begin
     CreateIDFPowershellShortcut('{autodesktop}');
-  end;
-
-  if WizardIsTaskSelected('wdexcl') then
-  begin
-    RegisterIDFToolsExecutablesInWD();
   end;
 
   except
@@ -184,10 +214,10 @@ end;
 
 function IsPowerShellInstalled(): Boolean;
 begin
-  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLnkDeskPs') or WizardIsTaskSelected('CreateLnkStartPs')));
+  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLinkDeskPowerShell') or WizardIsTaskSelected('CreateLinkStartPowerShell')));
 end;
 
 function IsCmdInstalled(): Boolean;
 begin
-  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLnkDeskCmd') or WizardIsTaskSelected('CreateLnkStartCmd')));
+  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLinkDeskCmd') or WizardIsTaskSelected('CreateLinkStartCmd')));
 end;

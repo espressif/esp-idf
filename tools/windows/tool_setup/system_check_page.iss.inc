@@ -472,10 +472,14 @@ begin
   end;
 end;
 
+{ Wrapper function for Run task. Run tasks requires calling function. }
+function GetIsWindowsDefenderEnabled(): Boolean;
+begin
+  Result := IsWindowsDefenderEnabled;
+end;
+
 { Execute system check }
 procedure ExecuteSystemCheck();
-var
-  UseEmbeddedPythonParam: String;
 begin
   { Execute system check only once. Avoid execution in case of back button. }
   if (SystemCheckState <> SYSTEM_CHECK_STATE_INIT) then begin
@@ -486,11 +490,12 @@ begin
   SystemLogTitle(CustomMessage('SystemCheckStart'));
   StopSystemCheckButton.Enabled := True;
 
-  VerifyRootCertificates();
+  if (not IsOfflineMode) then begin
+    VerifyRootCertificates();
+  end;
 
   { Search for the installed Python version only on explicit user request. }
-  UseEmbeddedPythonParam := ExpandConstant('{param:USEEMBEDDEDPYTHON|yes}');
-  if (UseEmbeddedPythonParam <> 'yes') then begin
+  if (not UseEmbeddedPython) then begin
     FindInstalledPythonVersions();
   end;
 
@@ -525,7 +530,6 @@ end;
 
 { Invoke scan of system environment. }
 procedure OnSystemCheckActivate(Sender: TWizardPage);
-var SystemCheckParam:String;
 begin
   { Display special controls. For some reason the first call of the page does not invoke SystemCheckOnCurPageChanged. }
   FullLogButton.Visible := True;
@@ -533,8 +537,7 @@ begin
   StopSystemCheckButton.Visible := True;
   SystemCheckViewer.Visible := True;
 
-  SystemCheckParam := ExpandConstant('{param:SKIPSYSTEMCHECK|no}');
-  if (SystemCheckParam = 'yes') then begin
+  if (SkipSystemCheck) then begin
     SystemCheckState := SYSTEM_CHECK_STATE_STOPPED;
     SystemLog('System Check disabled by command line option /SKIPSYSTEMCHECK.');
   end;
@@ -598,7 +601,7 @@ begin
   InstalledPythonVersions := TStringList.Create();
   InstalledPythonDisplayNames := TStringList.Create();
   InstalledPythonExecutables := TStringList.Create();
-  PythonVersionAdd('{#PythonVersion}', 'Use Python {#PythonVersion} Embedded (Recommended)', 'tools\python\{#PythonVersion}\python.exe');
+  PythonVersionAdd('{#PythonVersion}', 'Use Python {#PythonVersion} Embedded (Recommended)', 'tools\idf-python\{#PythonVersion}\python.exe');
 
   { Create Spinner animation. }
   Spinner := TStringList.Create();
