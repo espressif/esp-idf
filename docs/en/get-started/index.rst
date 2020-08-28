@@ -2,8 +2,6 @@
 Get Started
 ***********
 
-{IDF_TARGET_CL:default = "esp32", esp32 = "esp32", esp32s2 = "esp32s2"}
-
 :link_to_translation:`zh_CN:[中文]`
 
 .. Please keep README.md in sync with these instructions.
@@ -333,7 +331,7 @@ Linux and macOS
 .. code-block:: bash
 
     cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_CL}
+    idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
 Windows
@@ -342,10 +340,10 @@ Windows
 .. code-block:: batch
 
     cd %userprofile%\esp\hello_world
-    idf.py set-target {IDF_TARGET_CL}
+    idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
-Setting the target with ``idf.py set-target {IDF_TARGET}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
+Setting the target with ``idf.py set-target {IDF_TARGET_PATH_NAME}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
 
 If the previous steps have been done correctly, the following menu appears:
 
