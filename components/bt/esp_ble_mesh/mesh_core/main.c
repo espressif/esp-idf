@@ -81,9 +81,6 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
         bt_mesh_store_iv(false);
     }
 
-    /* Add this to avoid "already active status" for bt_mesh_scan_enable() */
-    bt_mesh_scan_disable();
-
     bt_mesh_net_start();
 
     return 0;
@@ -171,10 +168,30 @@ bool bt_mesh_is_provisioner_en(void)
     }
 }
 
+static bool prov_bearers_valid(bt_mesh_prov_bearer_t bearers)
+{
+    if ((!(bearers & (BLE_MESH_PROV_ADV | BLE_MESH_PROV_GATT))) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            !IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & BLE_MESH_PROV_ADV)) ||
+        (!IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & BLE_MESH_PROV_GATT))) {
+        BT_ERR("Invalid bearers 0x%02x", bearers);
+        return false;
+    }
+    return true;
+}
+
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 {
     if (bt_mesh_is_provisioned()) {
+        BT_WARN("%s, Already", __func__);
         return -EALREADY;
+    }
+
+    if (prov_bearers_valid(bearers) == false) {
+        return -EINVAL;
     }
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
@@ -204,6 +221,10 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 {
     if (bt_mesh_is_provisioned()) {
         return -EALREADY;
+    }
+
+    if (prov_bearers_valid(bearers) == false) {
+        return -EINVAL;
     }
 
     bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_NODE);
@@ -509,13 +530,6 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
     }
 #endif
 
-    if ((IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
-            (bearers & BLE_MESH_PROV_ADV)) ||
-            (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
-             (bearers & BLE_MESH_PROV_GATT))) {
-        bt_mesh_scan_enable();
-    }
-
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
         bt_mesh_provisioner_pb_gatt_enable();
@@ -523,13 +537,15 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_init();
+    }
+
     if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
         bt_mesh_beacon_enable();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-        bt_mesh_friend_init();
-    }
+    bt_mesh_scan_enable();
 
     return 0;
 }
@@ -541,6 +557,10 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
     if (bt_mesh_is_provisioner_en()) {
         BT_WARN("%s, Already", __func__);
         return -EALREADY;
+    }
+
+    if (prov_bearers_valid(bearers) == false) {
+        return -EINVAL;
     }
 
     err = bt_mesh_provisioner_set_prov_info();
@@ -573,9 +593,13 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
         return -EALREADY;
     }
 
+    if (prov_bearers_valid(bearers) == false) {
+        return -EINVAL;
+    }
+
     enable = bt_mesh_provisioner_get_prov_bearer();
     if (!(enable & bearers)) {
-        BT_ERR("%s, Bearers mismatch", __func__);
+        BT_ERR("Mismatch bearers 0x%02x", bearers);
         return -EINVAL;
     }
 
