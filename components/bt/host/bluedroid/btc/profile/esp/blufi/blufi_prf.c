@@ -36,6 +36,7 @@
 #include "blufi_int.h"
 
 #include "esp_blufi_api.h"
+#include "esp_gatt_common_api.h"
 
 #if (GATTS_INCLUDED == TRUE)
 
@@ -530,10 +531,17 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
             remain_len -= hdr->data_len;
         }
 
-        btc_blufi_send_notify((uint8_t *)hdr,
+retry:
+        if (esp_ble_get_cur_sendable_packets_num(blufi_env.conn_id) > 0) {
+            btc_blufi_send_notify((uint8_t *)hdr,
                 ((hdr->fc & BLUFI_FC_CHECK) ?
                  hdr->data_len + sizeof(struct blufi_hdr) + 2 :
                  hdr->data_len + sizeof(struct blufi_hdr)));
+        } else {
+            BTC_TRACE_WARNING("%s wait to send blufi custom data\n", __func__);
+            vTaskDelay(pdMS_TO_TICKS(10));
+            goto retry;
+        }
 
         osi_free(hdr);
         hdr =  NULL;
