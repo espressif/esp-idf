@@ -406,6 +406,7 @@ typedef struct {
 
 typedef struct {
     UINT16              conn_id;
+    UINT8               link_role;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
     tBTA_GATT_CONN_PARAMS conn_params;
@@ -614,6 +615,7 @@ typedef struct {
     tBTA_GATTS_IF       server_if;
     BD_ADDR             remote_bda;
     UINT16              conn_id;
+    UINT8               link_role;
     tBTA_GATT_REASON    reason; /* report disconnect reason */
     tBTA_GATT_TRANSPORT transport;
     tBTA_GATT_CONN_PARAMS conn_params;

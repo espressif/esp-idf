@@ -1002,6 +1002,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 cb_data.conn.conn_params.interval = p_lcb->current_used_conn_interval;
                 cb_data.conn.conn_params.latency = p_lcb->current_used_conn_latency;
                 cb_data.conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
+                cb_data.conn.link_role = p_lcb->link_role;
             }else {
                 APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
             }
