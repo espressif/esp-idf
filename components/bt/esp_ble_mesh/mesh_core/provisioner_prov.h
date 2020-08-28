@@ -386,12 +386,11 @@ void bt_mesh_provisioner_fast_prov_enable(bool enable);
 /**
  * @brief This function is called to set netkey index used for fast provisioning.
  *
- * @param[in] net_key: Netkey value
  * @param[in] net_idx: Netkey index
  *
- * @return status for set netkey index msg
+ * @return None
  */
-u8_t bt_mesh_provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx);
+void bt_mesh_provisioner_set_fast_prov_net_idx(u16_t net_idx);
 
 /**
  * @brief This function is called to get netkey index used for fast provisioning.
