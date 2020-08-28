@@ -408,3 +408,87 @@ build_installer:
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:
   extends: .build_template_app_template
+
+# Sonarqube related jobs put here for this reason:
+# Here we have two jobs. code_quality_check and code_quality_report.
+#
+# code_quality_check will analyze the code changes between your MR and
+# code repo stored in sonarqube server. The analysis result is only shown in
+# the comments under this MR and won't be transferred to the server.
+#
+# code_quality_report will analyze and transfer both of the newly added code
+# and the analysis result to the server.
+#
+# Put in the front to ensure that the newly merged code can be stored in
+# sonarqube server ASAP, in order to avoid reporting unrelated code issues
+.sonar_scan_template:
+  stage: build
+  image:
+    name: $CI_DOCKER_REGISTRY/sonarqube-scanner:1
+  before_script:
+    - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
+    - python $SUBMODULE_FETCH_TOOL
+    # Exclude the submodules, all paths ends with /**
+    # get all submodules configs | get all paths | add /** as suffix | xargs | replace all <space> to <comma>
+    - export SUBMODULES=$(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g')
+    # Exclude the report dir
+    - export EXCLUSIONS="$SUBMODULES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
+    - python $NORMALIZE_CLANGTIDY_PY $CI_PROJECT_DIR/$REPORT_DIR/warnings.txt $CI_PROJECT_DIR/$REPORT_DIR/clang_tidy_report.txt $CI_PROJECT_DIR
+  variables:
+    GIT_DEPTH: 0
+    NORMALIZE_CLANGTIDY_PY: $CI_PROJECT_DIR/tools/ci/normalize_clangtidy_path.py
+    REPORT_DIR: examples/get-started/hello_world/tidybuild/report
+  tags:
+    - host_test
+
+code_quality_check:
+  extends: .sonar_scan_template
+  dependencies:
+    - clang_tidy_check_regular_for_MR_review
+  only:
+    - merge_requests
+  script:
+    - sonar-scanner -X
+      -Dsonar.analysis.mode=preview
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.sources=$CI_PROJECT_DIR
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.projectKey=esp-idf
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.commit_sha=$(git log --pretty=format:%H origin/master..origin/$CI_COMMIT_REF_NAME | tr '\n' ',')
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
+      -Dsonar.cxx.includeDirectories=components,/usr/include
+      -Dsonar.python.pylint_config=.pylintrc
+      -Dsonar.gitlab.ci_merge_request_iid=$CI_MERGE_REQUEST_IID
+      -Dsonar.gitlab.merge_request_discussion=true
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
+
+code_quality_report:
+  extends: .sonar_scan_template
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+    - schedules
+  dependencies:
+    - clang_tidy_check_regular
+  script:
+    - sonar-scanner
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.sources=$CI_PROJECT_DIR
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.projectKey=esp-idf
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
+      -Dsonar.cxx.includeDirectories=components,/usr/include
+      -Dsonar.python.pylint_config=.pylintrc
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
