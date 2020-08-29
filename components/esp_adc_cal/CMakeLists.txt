@@ -1,9 +1,15 @@
 idf_build_get_property(target IDF_TARGET)
-# ToDo: re-enable adc-cal for other target
-if(NOT ${target} STREQUAL "esp32")
-    return()
+
+if(${target} STREQUAL "esp32")
+    idf_component_register(SRCS "esp_adc_cal_esp32.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES driver efuse)
+
+elseif(${target} STREQUAL "esp32s2")
+	idf_component_register(SRCS "esp_adc_cal_esp32s2.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES driver efuse)
+
 endif()
 
-idf_component_register(SRCS "esp_adc_cal.c"
-                    INCLUDE_DIRS "include"
-                    REQUIRES driver)
+
