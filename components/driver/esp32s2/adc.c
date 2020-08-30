@@ -72,7 +72,7 @@ esp_err_t adc_digi_init(void)
 esp_err_t adc_digi_deinit(void)
 {
     ADC_ENTER_CRITICAL();
-    adc_hal_digi_init();
+    adc_hal_digi_deinit();
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }

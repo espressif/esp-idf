@@ -84,6 +84,35 @@ typedef enum {
     ADC_ENCODE_MAX,
 } adc_i2s_encode_t;
 
+/*---------------------------------------------------------------
+                    Common setting
+---------------------------------------------------------------*/
+
+/**
+ * @brief Enable ADC power
+ */
+void adc_power_on(void);
+
+/**
+ * @brief Power off SAR ADC
+ * This function will force power down for ADC
+ */
+void adc_power_off(void);
+
+/**
+ * @brief Initialize ADC pad
+ * @param adc_unit ADC unit index
+ * @param channel ADC channel index
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
+
+/*---------------------------------------------------------------
+                    RTC controller setting
+---------------------------------------------------------------*/
+
 /**
  * @brief Get the GPIO number of a specific ADC1 channel.
  *
@@ -172,27 +201,6 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *     -  Other: ADC1 channel reading.
  */
 int adc1_get_raw(adc1_channel_t channel);
-
-/**
- * @brief Enable ADC power
- */
-void adc_power_on(void);
-
-/**
- * @brief Power off SAR ADC
- * This function will force power down for ADC
- */
-void adc_power_off(void);
-
-/**
- * @brief Initialize ADC pad
- * @param adc_unit ADC unit index
- * @param channel ADC channel index
- * @return
- *     - ESP_OK success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
 
 /**
  * @brief Set ADC data invert
@@ -345,6 +353,33 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
  *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
  */
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio) __attribute__((deprecated));
+/*---------------------------------------------------------------
+                    Digital controller setting
+---------------------------------------------------------------*/
+
+/**
+ * @brief ADC digital controller initialization.
+ * @return
+ *      - ESP_OK Success
+ */
+esp_err_t adc_digi_init(void);
+
+/**
+ * @brief ADC digital controller deinitialization.
+ * @return
+ *      - ESP_OK Success
+ */
+esp_err_t adc_digi_deinit(void);
+
+/**
+ * @brief Setting the digital controller.
+ *
+ * @param config Pointer to digital controller paramter. Refer to `adc_digi_config_t`.
+ *
+ * @return
+ *      - ESP_OK Success
+ */
+esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);
 
 #ifdef __cplusplus
 }

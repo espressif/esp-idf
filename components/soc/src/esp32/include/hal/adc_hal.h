@@ -31,22 +31,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-    bool conv_limit_en;         /*!<Enable max conversion number detection for digital controller.
-                                    If the number of ADC conversion is equal to the `limit_num`, the conversion is stopped. */
-    uint32_t conv_limit_num;    /*!<ADC max conversion number for digital controller. */
-    uint32_t adc1_pattern_len;  /*!<Pattern table length for digital controller. Range: 0 ~ 16.
-                                    The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
-                                    resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
-                                    pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
-    uint32_t adc2_pattern_len;  /*!<Refer to `adc1_pattern_len` */
-    adc_hal_digi_pattern_table_t *adc1_pattern;   /*!<Pointer to pattern table for digital controller. The table size defined by `adc1_pattern_len`. */
-    adc_hal_digi_pattern_table_t *adc2_pattern;   /*!<Refer to `adc1_pattern` */
-    adc_hal_digi_convert_mode_t conv_mode;        /*!<ADC conversion mode for digital controller. ESP32 only support ADC1 single mode. */
-    adc_digi_output_format_t format;      /*!<ADC output data format for digital controller. */
-    uint32_t clk_div;           /*!< ADC module clock division factor. ADC clock divided from APB clock.*/
-} adc_hal_digi_config_t;
-
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
@@ -58,26 +42,9 @@ typedef struct {
  */
 #define adc_hal_digi_set_data_source(src) adc_ll_digi_set_data_source(src)
 
-/**
- * Setting the digital controller.
- *
- * @prarm adc_digi_config_t cfg Pointer to digital controller paramter.
- */
-void adc_hal_digi_controller_config(const adc_hal_digi_config_t *cfg);
-
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
-
-/**
- * @brief ADC digital controller initialization.
- */
-void adc_hal_digi_init(void);
-
-/**
- * @brief ADC digital controller deinitialization.
- */
-void adc_hal_digi_deinit(void);
 
 /*---------------------------------------------------------------
                     Hall sensor setting
