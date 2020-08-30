@@ -34,6 +34,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/dac.inc
+.. include-build-file:: inc/dac_common.inc
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^

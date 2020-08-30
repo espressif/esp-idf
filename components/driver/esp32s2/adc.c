@@ -22,6 +22,7 @@
 #include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
+#include "esp_pm.h"
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
 #include "driver/rtc_io.h"
@@ -56,6 +57,10 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_adc_digi_arbiter_lock = NULL;
+#endif  //CONFIG_PM_ENABLE
+
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
@@ -71,6 +76,12 @@ esp_err_t adc_digi_init(void)
 
 esp_err_t adc_digi_deinit(void)
 {
+#ifdef CONFIG_PM_ENABLE
+    if (s_adc_digi_arbiter_lock) {
+        esp_pm_lock_delete(s_adc_digi_arbiter_lock);
+        s_adc_digi_arbiter_lock = NULL;
+    }
+#endif
     ADC_ENTER_CRITICAL();
     adc_hal_digi_deinit();
     ADC_EXIT_CRITICAL();
@@ -79,6 +90,22 @@ esp_err_t adc_digi_deinit(void)
 
 esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
 {
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err;
+    if (s_adc_digi_arbiter_lock == NULL) {
+        if (config->dig_clk.use_apll) {
+            err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "adc_dma", &s_adc_digi_arbiter_lock);
+        } else {
+            err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "adc_dma", &s_adc_digi_arbiter_lock);
+        }
+        if (err != ESP_OK) {
+            s_adc_digi_arbiter_lock = NULL;
+            ESP_LOGE(ADC_TAG, "ADC-DMA pm lock error");
+            return err;
+        }
+    }
+#endif //CONFIG_PM_ENABLE
+
     ADC_ENTER_CRITICAL();
     adc_hal_digi_controller_config(config);
     ADC_EXIT_CRITICAL();
@@ -157,6 +184,10 @@ esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_controller_t ctrl)
 
 esp_err_t adc_digi_start(void)
 {
+#ifdef CONFIG_PM_ENABLE
+    ADC_CHECK((s_adc_digi_arbiter_lock), "Should start after call `adc_digi_controller_config`", ESP_FAIL);
+    esp_pm_lock_acquire(s_adc_digi_arbiter_lock);
+#endif
     ADC_ENTER_CRITICAL();
     adc_hal_digi_enable();
     ADC_EXIT_CRITICAL();
@@ -165,6 +196,11 @@ esp_err_t adc_digi_start(void)
 
 esp_err_t adc_digi_stop(void)
 {
+#ifdef CONFIG_PM_ENABLE
+    if (s_adc_digi_arbiter_lock) {
+        esp_pm_lock_release(s_adc_digi_arbiter_lock);
+    }
+#endif
     ADC_ENTER_CRITICAL();
     adc_hal_digi_disable();
     ADC_EXIT_CRITICAL();

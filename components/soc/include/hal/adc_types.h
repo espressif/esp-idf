@@ -174,6 +174,8 @@ typedef struct {
 /**
  * @brief ADC digital controller (DMA mode) clock system setting.
  *        Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
+ *
+ * @note: The clocks of the DAC digital controller use the ADC digital controller clock divider.
  */
 typedef struct {
     bool use_apll;      /*!<true: use APLL clock; false: use APB clock. */
@@ -225,7 +227,7 @@ typedef struct {
                                     pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
     uint32_t adc2_pattern_len;  /*!<Refer to ``adc1_pattern_len`` */
     adc_digi_pattern_table_t *adc1_pattern;  /*!<Pointer to pattern table for digital controller. The table size defined by `adc1_pattern_len`. */
-    adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to ``adc1_pattern`` */
+    adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
     adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
     adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
 #ifdef CONFIG_IDF_TARGET_ESP32S2
@@ -233,7 +235,8 @@ typedef struct {
                                     The unit is the divided clock. Range: 40 ~ 4095.
                                     Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
                                     Note: The sampling rate of each channel is also related to the conversion mode (See ``adc_digi_convert_mode_t``) and pattern table settings. */
-    adc_digi_clk_t dig_clk;     /*!<ADC digital controller clock divider settings. Refer to ``adc_digi_clk_t`` */
+    adc_digi_clk_t dig_clk;     /*!<ADC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
+                                    Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
     uint32_t dma_eof_num;       /*!<DMA eof num of adc digital controller.
                                     If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                     Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
