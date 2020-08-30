@@ -75,11 +75,6 @@
 void dac_hal_cw_generator_config(dac_cw_config_t *cw);
 
 /**
- * Enable DAC output data from DMA.
+ * Enable/disable DAC output data from DMA.
  */
-#define dac_hal_dma_enable() dac_ll_dma_enable()
-
-/**
- * Disable DAC output data from DMA.
- */
-#define dac_hal_dma_disable() dac_ll_dma_disable()
+#define dac_hal_digi_enable_dma(enable) dac_ll_digi_enable_dma(enable)

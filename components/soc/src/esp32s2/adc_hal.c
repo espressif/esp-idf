@@ -16,7 +16,7 @@
 
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
-#include "esp_log.h"
+
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
@@ -95,6 +95,9 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
  * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
  * Enable clock and select clock source for ADC digital controller.
  * Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
+ *
+ * @note ADC and DAC digital controller share the same frequency divider.
+ *       Please set a reasonable frequency division factor to meet the sampling frequency of the ADC and the output frequency of the DAC.
  *
  * @param clk Refer to ``adc_digi_clk_t``.
  */

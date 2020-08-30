@@ -107,24 +107,6 @@ esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
     return ESP_OK;
 }
 
-esp_err_t dac_i2s_enable(void)
-{
-    portENTER_CRITICAL(&rtc_spinlock);
-    dac_hal_dma_enable();
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_i2s_disable(void)
-{
-    portENTER_CRITICAL(&rtc_spinlock);
-    dac_hal_dma_disable();
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
 esp_err_t dac_cw_generator_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
@@ -145,7 +127,7 @@ esp_err_t dac_cw_generator_disable(void)
 
 esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
 {
-    assert(cw != NULL);
+    if (!cw) return ESP_ERR_INVALID_ARG;
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_cw_generator_config(cw);
