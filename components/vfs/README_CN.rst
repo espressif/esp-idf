@@ -134,7 +134,7 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 
 如果应用程序使用 UART 驱动，则可以调用 ``esp_vfs_dev_uart_use_driver`` 函数来指导 VFS 使用驱动中断、读写阻塞功能等。您也可以调用 ``esp_vfs_dev_uart_use_nonblocking`` 来恢复非阻塞函数。
 
-VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 ``esp_vfs_dev_uart_set_rx_line_endings`` 和 ``esp_vfs_dev_uart_set_tx_line_endings`` 为输入输出配置换行符。
+VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 ``esp_vfs_dev_uart_port_set_rx_line_endings`` 和 ``esp_vfs_dev_uart_port_set_tx_line_endings`` 为输入输出配置换行符。
 
 
 标准流和 FreeRTOS 任务

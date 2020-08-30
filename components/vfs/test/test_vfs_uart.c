@@ -81,8 +81,8 @@ TEST_CASE("can read from stdin", "[vfs]")
 
 TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
 {
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     flush_stdin_stdout();
     const char* send_str = "1234567890\n\r123\r\n4\n";
