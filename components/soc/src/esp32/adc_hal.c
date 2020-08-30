@@ -20,8 +20,7 @@
 void adc_hal_digi_init(void)
 {
     adc_hal_init();
-    adc_hal_set_sar_clk_div(ADC_NUM_1, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_1));
-    adc_hal_set_sar_clk_div(ADC_NUM_2, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_2));
+    adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
 }
 
 void adc_hal_digi_deinit(void)
@@ -31,11 +30,10 @@ void adc_hal_digi_deinit(void)
     adc_hal_deinit();
 }
 
-void adc_hal_digi_controller_config(const adc_hal_digi_config_t *cfg)
+void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 {
     /* If enable digital controller, adc xpd should always on. */
     adc_ll_set_power_manage(ADC_POWER_SW_ON);
-    adc_ll_digi_set_clk_div(cfg->clk_div);
     /* Single channel mode or multi channel mode. */
     adc_ll_digi_set_convert_mode(cfg->conv_mode);
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
