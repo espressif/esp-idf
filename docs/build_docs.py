@@ -404,8 +404,9 @@ def call_linkcheck(entry):
 # https://github.com/espressif/esp-idf/raw/
 GH_LINK_RE = r"https://github.com/espressif/esp-idf/(?:tree|blob|raw)/[^\s]+"
 
-# we allow this one link, because we always want users to see the latest support policy
-GH_LINK_ALLOWED = ["https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md"]
+# we allow this one doc, because we always want users to see the latest support policy
+GH_LINK_ALLOWED = ["https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md",
+                   "https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY_CN.md"]
 
 
 def action_gh_linkcheck(args):
