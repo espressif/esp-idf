@@ -4,13 +4,6 @@ entries:
     panic (noflash)
     panic_handler (noflash)
     reset_reason (noflash)
-    system_api:esp_system_abort (noflash)
-    startup:do_secondary_init(default)
-    startup:start_cpu0_default(default)
-    startup:do_core_init(default)
-    startup:do_system_init_fn(default)
-    startup:start_cpu_other_cores_default(default)
-    startup:do_global_ctors(default)
     
     if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
         usb_console:esp_usb_console_write_char (noflash)

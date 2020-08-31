@@ -81,7 +81,7 @@
 uint64_t g_startup_time = 0;
 
 // App entry point for core 0
-extern void start_app(void);
+extern void esp_startup_start_app(void);
 
 // Entry point for core 0 from hardware init (port layer)
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
@@ -91,7 +91,7 @@ void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attri
 void start_cpu_other_cores(void) __attribute__((weak, alias("start_cpu_other_cores_default"))) __attribute__((noreturn));
 
 // App entry point for core [1..X]
-void start_app_other_cores(void) __attribute__((weak, alias("start_app_other_cores_default"))) __attribute__((noreturn));
+void esp_startup_start_app_other_cores(void) __attribute__((weak, alias("esp_startup_start_app_other_cores_default"))) __attribute__((noreturn));
 
 static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
@@ -159,7 +159,7 @@ static void do_system_init_fn(void)
 }
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-static void IRAM_ATTR start_app_other_cores_default(void)
+static void  esp_startup_start_app_other_cores_default(void)
 {
     while (1) {
         esp_rom_delay_us(UINT32_MAX);
@@ -174,7 +174,7 @@ static void start_cpu_other_cores_default(void)
         esp_rom_delay_us(100);
     }
 
-    start_app_other_cores();
+    esp_startup_start_app_other_cores();
 }
 #endif
 
@@ -304,7 +304,7 @@ static void do_secondary_init(void)
 #endif
 }
 
-void start_cpu0_default(void)
+static void start_cpu0_default(void)
 {
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
@@ -353,7 +353,7 @@ void start_cpu0_default(void)
     s_system_full_inited = true;
 #endif
 
-    start_app();
+    esp_startup_start_app();
     while (1);
 }
 
