@@ -345,6 +345,7 @@ UT_002:
 
 UT_003:
   extends: .unit_test_template
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_SDMODE

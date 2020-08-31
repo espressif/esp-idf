@@ -307,6 +307,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         errno = ENFILE;
         return -1;
     }
+
     FRESULT res = f_open(&fat_ctx->files[fd], path, fat_mode_conv(flags));
     if (res != FR_OK) {
         file_cleanup(fat_ctx, fd);
@@ -315,6 +316,34 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         errno = fresult_to_errno(res);
         return -1;
     }
+
+#ifdef CONFIG_FATFS_USE_FASTSEEK
+    FIL* file = &fat_ctx->files[fd];
+    DWORD *clmt_mem =  ff_memalloc(sizeof(DWORD) * CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE);
+    if (clmt_mem == NULL) {
+        f_close(file);
+        file_cleanup(fat_ctx, fd);
+        _lock_release(&fat_ctx->lock);
+        ESP_LOGE(TAG, "open: Failed to pre-allocate CLMT buffer for fast-seek");
+        errno = ENOMEM;
+        return -1;
+    } 
+
+    file->cltbl = clmt_mem;
+    file->cltbl[0] = CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE;
+    res = f_lseek(file, CREATE_LINKMAP);
+    ESP_LOGD(TAG, "%s: fast-seek has: %s",
+            __func__,
+            (res == FR_OK) ? "activated" : "failed");
+    if(res != FR_OK) {
+        ESP_LOGW(TAG, "%s: fast-seek not activated reason code: %d",
+                __func__, res);
+        //If linkmap creation fails, fallback to the non fast seek.
+        ff_memfree(file->cltbl);
+        file->cltbl = NULL;
+    }
+#endif
+
     // O_APPEND need to be stored because it is not compatible with FA_OPEN_APPEND:
     //  - FA_OPEN_APPEND means to jump to the end of file only after open()
     //  - O_APPEND means to jump to the end only before each write()
@@ -465,6 +494,11 @@ static int vfs_fat_close(void* ctx, int fd)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
     FIL* file = &fat_ctx->files[fd];
+
+#ifdef CONFIG_FATFS_USE_FASTSEEK
+    ff_memfree(file->cltbl);
+#endif
+
     FRESULT res = f_close(file);
     file_cleanup(fat_ctx, fd);
     _lock_release(&fat_ctx->lock);
@@ -494,6 +528,9 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
         errno = EINVAL;
         return -1;
     }
+
+    ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%d", __func__, new_pos, f_size(file));
+
     FRESULT res = f_lseek(file, new_pos);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
