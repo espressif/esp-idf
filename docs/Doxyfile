@@ -21,6 +21,14 @@ PROJECT_NAME = "ESP32 Programming Guide"
 ## and used to include in API reference documentation
 
 INPUT = \
+    ## TinyUSB
+    $(IDF_PATH)/components/tinyusb/additions/include/tinyusb.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/tusb_cdc_acm.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/tusb_config.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/tusb_console.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/tusb_tasks.h \
+    $(IDF_PATH)/components/tinyusb/additions/include/vfs_tinyusb.h \
     ##
     ## Wi-Fi - API Reference
     ##
@@ -260,7 +268,7 @@ INPUT = \
     ## NOTE: for line below header_file.inc is not used
     $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
     $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
-    $(IDF_PATH)/components/ulp/include/ulp_common.h \  
+    $(IDF_PATH)/components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
     ##

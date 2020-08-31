@@ -40,22 +40,22 @@ typedef enum{
  * @brief Data provided to the input of the `callback_rx_wanted_char` callback
  */
 typedef struct {
-    char wanted_char;
+    char wanted_char; /*!< Wanted character */
 } cdcacm_event_rx_wanted_char_data_t;
 
 /**
  * @brief Data provided to the input of the `callback_line_state_changed` callback
  */
 typedef struct {
-    bool dtr;
-    bool rts;
+    bool dtr; /*!< Data Terminal Ready (DTR) line state */
+    bool rts; /*!< Request To Send (RTS) line state */
 } cdcacm_event_line_state_changed_data_t;
 
 /**
  * @brief Data provided to the input of the `line_coding_changed` callback
  */
 typedef struct {
-    cdc_line_coding_t const *p_line_coding;
+    cdc_line_coding_t const *p_line_coding; /*!< New line coding value */
 } cdcacm_event_line_coding_changed_data_t;
 
 /**
@@ -72,7 +72,7 @@ typedef enum {
  * @brief Describes an event passing to the input of a callbacks
  */
 typedef struct {
-    cdcacm_event_type_t type;
+    cdcacm_event_type_t type; /*!< Event type */
     union {
         cdcacm_event_rx_wanted_char_data_t rx_wanted_char_data;
         cdcacm_event_line_state_changed_data_t line_state_changed_data;
