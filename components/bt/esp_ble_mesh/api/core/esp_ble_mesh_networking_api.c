@@ -23,12 +23,12 @@
 #define ESP_BLE_MESH_TX_SDU_MAX ((CONFIG_BLE_MESH_ADV_BUF_COUNT - 3) * 12)
 
 static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx,
-        uint32_t opcode,
-        btc_ble_mesh_model_act_t act,
-        uint16_t length, uint8_t *data,
-        int32_t msg_timeout, bool need_rsp,
-        esp_ble_mesh_dev_role_t device_role)
+                                         esp_ble_mesh_msg_ctx_t *ctx,
+                                         uint32_t opcode,
+                                         btc_ble_mesh_model_act_t act,
+                                         uint16_t length, uint8_t *data,
+                                         int32_t msg_timeout, bool need_rsp,
+                                         esp_ble_mesh_dev_role_t device_role)
 {
     btc_ble_mesh_model_args_t arg = {0};
     uint8_t op_len = 0, mic_len = 0;
@@ -39,12 +39,12 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("%s, Invalid destination address 0x0000", __func__);
+        BT_ERR("Invalid destination address 0x0000");
         return ESP_ERR_INVALID_ARG;
     }
 
     if (device_role > ROLE_FAST_PROV) {
-        BT_ERR("%s, Invalid device role 0x%02x", __func__, device_role);
+        BT_ERR("Invalid device role 0x%02x", device_role);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -63,7 +63,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
         if (op_len + length > model->pub->msg->size) {
-            BT_ERR("%s, Model publication msg size %d is too small", __func__, model->pub->msg->size);
+            BT_ERR("Too small publication msg size %d", model->pub->msg->size);
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -75,7 +75,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     }
 
     if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
-        BT_ERR("%s, Data length %d is too large", __func__, length);
+        BT_ERR("Too large data length %d", length);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -176,8 +176,9 @@ esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 }
 
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
-        uint16_t length, uint8_t *data)
+                                             esp_ble_mesh_msg_ctx_t *ctx,
+                                             uint32_t opcode,
+                                             uint16_t length, uint8_t *data)
 {
     if (model == NULL || ctx == NULL ||
         ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
@@ -190,9 +191,11 @@ esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
 }
 
 esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
-        uint16_t length, uint8_t *data, int32_t msg_timeout,
-        bool need_rsp, esp_ble_mesh_dev_role_t device_role)
+                                             esp_ble_mesh_msg_ctx_t *ctx,
+                                             uint32_t opcode,
+                                             uint16_t length, uint8_t *data,
+                                             int32_t msg_timeout, bool need_rsp,
+                                             esp_ble_mesh_dev_role_t device_role)
 {
     if (model == NULL || ctx == NULL ||
         ctx->net_idx == ESP_BLE_MESH_KEY_UNUSED ||
@@ -218,8 +221,8 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
 }
 
 esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_server_state_type_t type,
-        esp_ble_mesh_server_state_value_t *value)
+                                                 esp_ble_mesh_server_state_type_t type,
+                                                 esp_ble_mesh_server_state_value_t *value)
 {
     btc_ble_mesh_model_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -294,7 +297,8 @@ uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name)
     return bt_mesh_provisioner_get_node_index(name);
 }
 
-esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t unicast_addr, uint8_t *data, uint16_t length)
+esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t unicast_addr,
+                                                        uint8_t *data, uint16_t length)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -396,7 +400,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_node_with_addr(uint16_t unicast_addr)
 }
 
 esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
-        uint16_t net_idx, uint16_t app_idx)
+                                                     uint16_t net_idx, uint16_t app_idx)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -419,7 +423,7 @@ esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
 }
 
 esp_err_t esp_ble_mesh_provisioner_update_local_app_key(const uint8_t app_key[16],
-            uint16_t net_idx, uint16_t app_idx)
+                                                        uint16_t net_idx, uint16_t app_idx)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -447,7 +451,7 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_app_key(uint16_t net_idx, uint
 }
 
 esp_err_t esp_ble_mesh_provisioner_bind_app_key_to_local_model(uint16_t element_addr, uint16_t app_idx,
-        uint16_t model_id, uint16_t company_id)
+                                                               uint16_t model_id, uint16_t company_id)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};

@@ -80,22 +80,22 @@ void bt_mesh_settings_foreach(void)
         err = nvs_open(ctx->nvs_name, NVS_READWRITE, &ctx->handle);
 #endif
         if (err != ESP_OK) {
-            BT_ERR("%s, Open nvs failed, name %s, err %d", __func__, ctx->nvs_name, err);
+            BT_ERR("Open nvs failed, name %s, err %d", ctx->nvs_name, err);
             continue;
         }
 
         if (ctx->settings_init && ctx->settings_init()) {
-            BT_ERR("%s, Init settings failed, name %s", __func__, ctx->nvs_name);
+            BT_ERR("Init settings failed, name %s", ctx->nvs_name);
             continue;
         }
 
         if (ctx->settings_load && ctx->settings_load()) {
-            BT_ERR("%s, Load settings failed, name %s", __func__, ctx->nvs_name);
+            BT_ERR("Load settings failed, name %s", ctx->nvs_name);
             continue;
         }
 
         if (ctx->settings_commit && ctx->settings_commit()) {
-            BT_ERR("%s, Commit settings failed, name %s", __func__, ctx->nvs_name);
+            BT_ERR("Commit settings failed, name %s", ctx->nvs_name);
             continue;
         }
     }
@@ -109,7 +109,7 @@ void bt_mesh_settings_deforeach(void)
         struct settings_context *ctx = &settings_ctx[i];
 
         if (ctx->settings_deinit && ctx->settings_deinit()) {
-            BT_ERR("%s, Deinit settings failed, name %s", __func__, ctx->nvs_name);
+            BT_ERR("Deinit settings failed, name %s", ctx->nvs_name);
             continue;
         }
 
@@ -139,26 +139,26 @@ static int settings_save(nvs_handle handle, const char *key, const u8_t *val, si
         return -EINVAL;
     }
 
-    BT_DBG("%s, nvs %s, key %s", __func__, val ? "set" : "erase", key);
+    BT_DBG("nvs %s, key %s", val ? "set" : "erase", key);
 
     if (val) {
         err = nvs_set_blob(handle, key, val, len);
     } else {
         err = nvs_erase_key(handle, key);
         if (err == ESP_ERR_NVS_NOT_FOUND) {
-            BT_DBG("%s, %s does not exist", __func__, key);
+            BT_DBG("%s not exists", key);
             return 0;
         }
     }
     if (err != ESP_OK) {
-        BT_ERR("%s, Failed to %s %s data (err %d)", __func__,
-               val ? "set" : "erase", key, err);
+        BT_ERR("Failed to %s %s data (err %d)",
+                val ? "set" : "erase", key, err);
         return -EIO;
     }
 
     err = nvs_commit(handle);
     if (err != ESP_OK) {
-        BT_ERR("%s, Failed to commit settings (err %d)", __func__, err);
+        BT_ERR("Failed to commit settings (err %d)", err);
         return -EIO;
     }
 
@@ -186,12 +186,12 @@ static int settings_load(nvs_handle handle, const char *key,
     err = nvs_get_blob(handle, key, buf, &buf_len);
     if (err != ESP_OK) {
         if (err == ESP_ERR_NVS_NOT_FOUND) {
-            BT_DBG("%s, Settings %s is not found", __func__, key);
+            BT_DBG("Settings %s not found", key);
             *exist = false;
             return 0;
         }
 
-        BT_ERR("%s, Failed to get %s data (err %d)", __func__, key, err);
+        BT_ERR("Failed to get %s data (err %d)", key, err);
         return -EIO;
     }
 
@@ -220,7 +220,7 @@ static size_t settings_get_length(nvs_handle handle, const char *key)
     err = nvs_get_blob(handle, key, NULL, &len);
     if (err != ESP_OK) {
         if (err != ESP_ERR_NVS_NOT_FOUND) {
-            BT_ERR("%s, Failed to get %s length (err %d)", __func__, key, err);
+            BT_ERR("Failed to get %s length (err %d)", key, err);
         }
         return 0;
     }
@@ -242,20 +242,20 @@ static struct net_buf_simple *settings_get_item(nvs_handle handle, const char *k
 
     length = settings_get_length(handle, key);
     if (!length) {
-        BT_DBG("%s, Empty %s", __func__, key);
+        BT_DBG("Empty %s", key);
         return NULL;
     }
 
     buf = bt_mesh_alloc_buf(length);
     if (!buf) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         /* TODO: in this case, erase all related settings? */
         return NULL;
     }
 
     err = settings_load(handle, key, buf->data, length, &exist);
     if (err) {
-        BT_ERR("%s, Failed to load %s", __func__, key);
+        BT_ERR("Failed to load %s", key);
         /* TODO: in this case, erase all related settings? */
         bt_mesh_free_buf(buf);
         return NULL;
@@ -316,7 +316,7 @@ static int settings_add_item(nvs_handle handle, const char *key, const u16_t val
 
     /* Check if val already exists */
     if (is_settings_item_exist(buf, val) == true) {
-        BT_DBG("%s, 0x%04x already exists", __func__, val);
+        BT_DBG("0x%04x already exists", val);
         bt_mesh_free_buf(buf);
         return 0;
     }
@@ -325,7 +325,7 @@ static int settings_add_item(nvs_handle handle, const char *key, const u16_t val
 
     store = bt_mesh_alloc_buf(length);
     if (!store) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         bt_mesh_free_buf(buf);
         return -ENOMEM;
     }
@@ -363,7 +363,7 @@ static int settings_remove_item(nvs_handle handle, const char *key, const u16_t 
 
     /* Check if val does exist */
     if (is_settings_item_exist(buf, val) == false) {
-        BT_DBG("%s, 0x%04x does not exist", __func__, val);
+        BT_DBG("0x%04x not exists", val);
         bt_mesh_free_buf(buf);
         return 0;
     }
@@ -377,7 +377,7 @@ static int settings_remove_item(nvs_handle handle, const char *key, const u16_t 
 
     store = bt_mesh_alloc_buf(length);
     if (!store) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         bt_mesh_free_buf(buf);
         return -ENOMEM;
     }
