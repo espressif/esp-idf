@@ -1,6 +1,6 @@
 # This script should be sourced, not executed.
 
-function realpath_int() {
+function __realpath() {
     wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
     arg=$1
     case "$arg" in
@@ -11,8 +11,12 @@ function realpath_int() {
     echo "$scriptdir"
 }
 
+function __verbose() {
+    [[ -n IDF_QUIET ]] && return
+    echo "$@"
+}
 
-function idf_export_main() {
+function __main() {
     # The file doesn't have executable permissions, so this shouldn't really happen.
     # Doing this in case someone tries to chmod +x it and execute...
     if [[ -n "${BASH_SOURCE}" && ( "${BASH_SOURCE[0]}" == "${0}" ) ]]; then
@@ -27,7 +31,7 @@ function idf_export_main() {
         if [[ -n "${BASH_SOURCE}" ]]
         then
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                script_dir="$(realpath_int $BASH_SOURCE)"
+                script_dir="$(__realpath $BASH_SOURCE)"
             else
                 script_name="$(readlink -f $BASH_SOURCE)"
                 script_dir="$(dirname $script_name)"
@@ -41,14 +45,14 @@ function idf_export_main() {
 
     old_path=$PATH
 
-    echo "Adding ESP-IDF tools to PATH..."
+    __verbose "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     export IDF_TOOLS_EXPORT_CMD=${IDF_PATH}/export.sh
     export IDF_TOOLS_INSTALL_CMD=${IDF_PATH}/install.sh
     idf_exports=$(${IDF_PATH}/tools/idf_tools.py export) || return 1
     eval "${idf_exports}"
 
-    echo "Checking if Python packages are up to date..."
+    __verbose "Checking if Python packages are up to date..."
     python ${IDF_PATH}/tools/check_python_dependencies.py || return 1
 
 
@@ -64,17 +68,17 @@ function idf_export_main() {
         path_prefix=${PATH%%${old_path}}
         paths="${path_prefix//:/ }"
         if [ -n "${paths}" ]; then
-            echo "Added the following directories to PATH:"
+            __verbose "Added the following directories to PATH:"
         else
-            echo "All paths are already set."
+            __verbose "All paths are already set."
         fi
         for path_entry in ${paths}
         do
-            echo "  ${path_entry}"
+            __verbose "  ${path_entry}"
         done
     else
-        echo "Updated PATH variable:"
-        echo "  ${PATH}"
+        __verbose "Updated PATH variable:"
+        __verbose "  ${PATH}"
     fi
 
     # Clean up
@@ -88,14 +92,15 @@ function idf_export_main() {
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment
 
-    echo "Done! You can now compile ESP-IDF projects."
-    echo "Go to the project directory and run:"
-    echo ""
-    echo "  idf.py build"
-    echo ""
+    __verbose "Done! You can now compile ESP-IDF projects."
+    __verbose "Go to the project directory and run:"
+    __verbose ""
+    __verbose "  idf.py build"
+    __verbose ""
 }
 
-idf_export_main
+__main
 
-unset realpath_int
-unset idf_export_main
+unset __realpath
+unset __verbose
+unset __main
