@@ -31,6 +31,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/portable.h"
 #include "openeth.h"
 
 static const char *TAG = "emac_opencores";
@@ -398,8 +399,12 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
               "alloc emac interrupt failed", out, NULL);
 
     // Create the RX task
-    BaseType_t xReturned = xTaskCreate(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = xPortGetCoreID();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
+                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", out, NULL);
     return &(emac->parent);
 
