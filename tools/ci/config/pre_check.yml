@@ -197,11 +197,6 @@ clang_tidy_check:
 clang_tidy_check_regular:
   extends: .clang_tidy_check_template
 
-clang_tidy_check_regular_for_MR_review:
-  extends: .clang_tidy_check_template
-  only:
-    - merge_requests
-
 clang_tidy_check_all:
   extends: .clang_tidy_check_template
   variables:

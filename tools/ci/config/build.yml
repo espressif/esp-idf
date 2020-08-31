@@ -444,11 +444,11 @@ build_template_app:
 code_quality_check:
   extends: .sonar_scan_template
   dependencies:
-    - clang_tidy_check_regular_for_MR_review
+    - clang_tidy_check_regular
   only:
-    - merge_requests
+    - triggers
   script:
-    - sonar-scanner -X
+    - sonar-scanner
       -Dsonar.analysis.mode=preview
       -Dsonar.host.url=$SONAR_HOST_URL
       -Dsonar.login=$SONAR_LOGIN
