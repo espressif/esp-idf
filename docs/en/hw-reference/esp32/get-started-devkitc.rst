@@ -27,14 +27,13 @@ To cover a wide range of user requirements, the following versions of ESP32-DevK
 
 - different ESP32 modules
 
-   - :ref:`esp-modules-and-boards-esp32-wroom-32`
-   - :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`esp-modules-and-boards-esp32-solo-1`
-   - :ref:`ESP32-WROVER <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-B <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-I <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-B (IPEX) <esp-modules-and-boards-esp32-wrover>`
+   - `ESP32-WROOM-32E <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf>`_
+   - `ESP32-WROOM-32UE <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf>`_
+   - `ESP32-WROOM-32D <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_
+   - `ESP32-WROOM-32U <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_
+   - `ESP32-SOLO-1 <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1_datasheet_en.pdf>`_
+   - `ESP32-WROVER-E <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_
+   - `ESP32-WROVER-IE <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_
 
 - male or female pin headers.
 
