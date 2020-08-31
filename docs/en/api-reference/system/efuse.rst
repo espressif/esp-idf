@@ -14,9 +14,9 @@ Hardware description
 The {IDF_TARGET_NAME} has a number of eFuses which can store system and user parameters. Each eFuse is a one-bit field which can be programmed to 1 after which it cannot be reverted back to 0.
 Some of system parameters are using these eFuse bits directly by hardware modules and have special place (for example EFUSE_BLK0).
 
-.. only:: esp32
+For more details, see Chapter eFuse Controller of `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_. Some eFuse bits are available for user applications.
 
-	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ in part 20 eFuse controller. Some eFuse bits are available for user applications.
+.. only:: esp32
 
 	ESP32 has 4 eFuse blocks each of the size of 256 bits (not all bits are available):
 
@@ -26,8 +26,6 @@ Some of system parameters are using these eFuse bits directly by hardware module
 	* EFUSE_BLK3 can be partially reserved for the custom MAC address, or used entirely for user application. Note that some bits are already used in IDF.
 
 .. only:: esp32s2
-
-	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_. Some eFuse bits are available for user applications.
 
 	{IDF_TARGET_NAME} has 11 eFuse blocks each of the size of 256 bits (not all bits are available):
 
