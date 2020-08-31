@@ -32,7 +32,11 @@ https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
 本安装器可为您安装所需的交叉编译器、OpenOCD、cmake_ 和 Ninja_ 编译工具，以及一款 mconf-idf_ 配置工具。此外，本安装器还可在有需要时下载、运行 Python_ 3.7 和 `Git For Windows` 的安装器。
 
-本安装器还可用于下载任意 ESP-IDF 发布版本。
+本安装器还可用于下载任意 ESP-IDF 发布版本。推荐将 ESP-IDF 下载到 ``%userprofile%\esp`` 目录下，其中 ``%userprofile%`` 代表家目录。可运行以下命令，创建 ``%userprofile%\esp``。
+
+.. code-block:: batch
+
+    mkdir %userprofile%\esp
 
 使用命令提示符
 ========================
