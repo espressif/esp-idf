@@ -26,7 +26,7 @@ Hardware abstraction in ESP-IDF is comprised of the following layers, ordered fr
 - Hardware Abstraction Layer (HAL)
 - Driver Layers
 
-The LL Layer, and HAL are entirely contained within the ``soc`` component. Each layer is dependent on the layer below it (i.e, driver depends on HAL, HAL depends on LL, LL depends on the register header files).
+The LL Layer, and HAL are entirely contained within the ``hal`` component. Each layer is dependent on the layer below it (i.e, driver depends on HAL, HAL depends on LL, LL depends on the register header files).
 
 For a particular peripheral ``xxx``, its hardware abstraction will generally consist of the header files described in the table below. Files that are **Target Specific** will have a separate implementation for each target (i.e., a separate copy for each chip). However, the ``#include`` directive will still be target-independent (i.e., will be the same for different targets) as the build system will automatically include the correct version of the header and source files.
 

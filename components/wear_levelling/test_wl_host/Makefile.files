@@ -33,5 +33,6 @@ INCLUDE_DIRS := \
 	esp32/include \
 	bootloader_support/include \
 	app_update/include \
+	hal/include \
 	spi_flash/include \
 	)

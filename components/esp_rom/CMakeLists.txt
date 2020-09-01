@@ -5,7 +5,7 @@ idf_component_register(SRCS "patches/esp_rom_crc.c"
                             "patches/esp_rom_uart.c" 
                        INCLUDE_DIRS include
                        PRIV_INCLUDE_DIRS "${target}"
-                       PRIV_REQUIRES soc)
+                       PRIV_REQUIRES soc hal)
 
 if(BOOTLOADER_BUILD)
     set(scripts

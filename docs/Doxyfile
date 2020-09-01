@@ -100,7 +100,6 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/i2s.h \
     $(IDF_PATH)/components/driver/include/driver/ledc.h \
     $(IDF_PATH)/components/driver/include/driver/mcpwm.h \
-    $(IDF_PATH)/components/soc/include/hal/mcpwm_types.h \
     $(IDF_PATH)/components/driver/include/driver/pcnt.h \
     $(IDF_PATH)/components/driver/include/driver/rmt.h \
     $(IDF_PATH)/components/driver/include/driver/sigmadelta.h \
@@ -122,21 +121,22 @@ INPUT = \
     $(IDF_PATH)/components/esp32s2/include/cp_dma.h \
     $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
     $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
-    $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
-    $(IDF_PATH)/components/soc/include/hal/spi_types.h \
-    $(IDF_PATH)/components/soc/include/hal/pcnt_types.h \
-    $(IDF_PATH)/components/soc/include/hal/i2s_types.h \
-    $(IDF_PATH)/components/soc/include/hal/rtc_io_types.h \
-    $(IDF_PATH)/components/soc/include/hal/sigmadelta_types.h \
-    $(IDF_PATH)/components/soc/include/hal/timer_types.h \
-    $(IDF_PATH)/components/soc/include/hal/ledc_types.h \
-    $(IDF_PATH)/components/soc/include/hal/i2c_types.h \
-    $(IDF_PATH)/components/soc/include/hal/dac_types.h \
-    $(IDF_PATH)/components/soc/include/hal/adc_types.h \
-    $(IDF_PATH)/components/soc/include/hal/gpio_types.h \
-    $(IDF_PATH)/components/soc/include/hal/uart_types.h \
-    $(IDF_PATH)/components/soc/include/hal/twai_types.h \
-    $(IDF_PATH)/components/soc/include/hal/touch_sensor_types.h \
+    $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
+    $(IDF_PATH)/components/hal/include/hal/uart_types.h \
+    $(IDF_PATH)/components/hal/include/hal/mcpwm_types.h \
+    $(IDF_PATH)/components/hal/include/hal/rmt_types.h \
+    $(IDF_PATH)/components/hal/include/hal/spi_types.h \
+    $(IDF_PATH)/components/hal/include/hal/pcnt_types.h \
+    $(IDF_PATH)/components/hal/include/hal/i2s_types.h \
+    $(IDF_PATH)/components/hal/include/hal/rtc_io_types.h \
+    $(IDF_PATH)/components/hal/include/hal/sigmadelta_types.h \
+    $(IDF_PATH)/components/hal/include/hal/timer_types.h \
+    $(IDF_PATH)/components/hal/include/hal/ledc_types.h \
+    $(IDF_PATH)/components/hal/include/hal/i2c_types.h \
+    $(IDF_PATH)/components/hal/include/hal/dac_types.h \
+    $(IDF_PATH)/components/hal/include/hal/adc_types.h \
+    $(IDF_PATH)/components/hal/include/hal/twai_types.h \
+    $(IDF_PATH)/components/hal/include/hal/touch_sensor_types.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/adc_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/dac_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/touch_sensor_channel.h \
@@ -197,7 +197,7 @@ INPUT = \
     $(IDF_PATH)/components/spi_flash/include/esp_flash.h \
     $(IDF_PATH)/components/spi_flash/include/esp_partition.h \
     $(IDF_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
-    $(IDF_PATH)/components/soc/include/hal/spi_flash_types.h \
+    $(IDF_PATH)/components/hal/include/hal/spi_flash_types.h \
     ## SPIFFS
     $(IDF_PATH)/components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
@@ -207,7 +207,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/sdspi_host.h \
     ## SDIO slave
     $(IDF_PATH)/components/driver/include/driver/sdio_slave.h \
-    $(IDF_PATH)/components/soc/include/hal/sdio_slave_types.h \
+    $(IDF_PATH)/components/hal/include/hal/sdio_slave_types.h \
     ## Non-Volatile Storage
     $(IDF_PATH)/components/nvs_flash/include/nvs.h \
     $(IDF_PATH)/components/nvs_flash/include/nvs_flash.h \

@@ -1,0 +1,17 @@
+[mapping:hal]
+archive: libhal.a
+entries:
+    spi_hal_iram (noflash)
+    spi_slave_hal_iram (noflash)
+    if UART_ISR_IN_IRAM = y:
+        uart_hal_iram (noflash)
+    else:
+        uart_hal_iram (default)
+    spi_flash_hal_iram (noflash)
+    ledc_hal_iram (noflash)
+    i2c_hal_iram (noflash)
+    spi_flash_hal_gpspi (noflash)
+    cpu_hal (noflash)
+    soc_hal (noflash)
+    wdt_hal_iram (noflash)
+    systimer_hal (noflash)
