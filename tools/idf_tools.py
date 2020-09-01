@@ -1206,7 +1206,10 @@ def action_install_python_env(args):
 
         subprocess.check_call([sys.executable, '-m', 'virtualenv', idf_python_env_path],
                               stdout=sys.stdout, stderr=sys.stderr)
-    run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
+    # Need to update resolver otherwise gdbgui dependency is not possible
+    # satisfy
+    run_args = [virtualenv_python, '-m', 'pip', 'install',
+                '--no-warn-script-location', '--use-feature=2020-resolver']
     requirements_txt = os.path.join(global_idf_path, 'requirements.txt')
     run_args += ['-r', requirements_txt]
     if args.extra_wheels_dir:
