@@ -32,7 +32,7 @@
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 
-static struct timeval tv_start, tv_stop;
+__attribute__((unused)) static struct timeval tv_start, tv_stop;
 
 #ifndef CONFIG_FREERTOS_UNICORE
 static void deep_sleep_task(void *arg)
@@ -59,6 +59,7 @@ TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RE
     esp_deep_sleep_start();
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(1000000);
@@ -77,6 +78,7 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 static void test_light_sleep(void* arg)
 {
@@ -336,7 +338,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
     esp_deep_sleep_start();
 }
 
-static float get_time_ms(void)
+__attribute__((unused)) static float get_time_ms(void)
 {
     gettimeofday(&tv_stop, NULL);
 
@@ -345,13 +347,14 @@ static float get_time_ms(void)
     return fabs(dt);
 }
 
-static uint32_t get_cause(void)
+__attribute__((unused)) static uint32_t get_cause(void)
 {
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
                                             RTC_CNTL_WAKEUP_CAUSE);
     return wakeup_cause;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 // This test case verifies deactivation of trigger for wake up sources
 TEST_CASE("disable source trigger behavior", "[deepsleep]")
 {
@@ -424,6 +427,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     // Disable ext0 wakeup source, as this might interfere with other tests
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 static RTC_DATA_ATTR struct timeval start;
 static void trigger_deepsleep(void)
