@@ -22,12 +22,14 @@ extern "C" {
 #endif
 
 typedef void *esp_https_ota_handle_t;
+typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 
 /**
  * @brief ESP HTTPS OTA configuration
  */
 typedef struct {
     const esp_http_client_config_t *http_config;   /*!< ESP HTTP client configuration */
+    http_client_init_cb_t http_client_init_cb;     /*!< Callback after ESP HTTP client is initialised */
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)

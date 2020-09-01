@@ -173,6 +173,14 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto failure;
     }
 
+    if (ota_config->http_client_init_cb) {
+        err = ota_config->http_client_init_cb(https_ota_handle->http_client);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "http_client_init_cb returned %d", err);
+            goto failure;
+        }
+    }
+
     err = _http_connect(https_ota_handle->http_client);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to establish HTTP connection");
