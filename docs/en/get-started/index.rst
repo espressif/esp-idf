@@ -48,10 +48,16 @@ Hardware:
 
 Software:
 
+
+.. note::
+
+    If you are using our official `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ or `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ then you can skip downloading esp-idf and toolchain manually and instead follow onboarding process from the IDEs itself, `Eclipse Plugin Installing IDF Plugin <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`_ or `VSCode Extension Onboarding <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/ONBOARDING.md>`_
+
+
+* **IDE** of your choice to write programs in C, we have official support for `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ and :doc:`VSCode Extension <vscode-setup>`
 * **Toolchain** to compile code for {IDF_TARGET_NAME}
 * **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
 * **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
-* **Text editor** to write programs (**Projects**) in C, e.g., `Eclipse <https://www.eclipse.org/>`_
 
 
 .. figure:: ../../_static/what-you-need.png
@@ -529,7 +535,7 @@ When flashing, you will see the output log similar to the following:
 
 If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
 
-If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
+If you'd like to use the Eclipse/VSCode IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`, :doc:`VSCode guide <vscode-setup>`.
 
 
 .. _get-started-build-monitor:
@@ -623,6 +629,7 @@ Related Documents
 
     establish-serial-connection
     eclipse-setup
+    vscode-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
     :esp32: ../get-started-legacy/index
