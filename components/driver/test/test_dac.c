@@ -142,6 +142,9 @@ static bool subtest_adc_dac(int mV_ref, esp_adc_cal_characteristics_t * chars)
 TEST_CASE("esp32s2 adc2-dac with adc2 calibration", "[adc-dac]")
 {
     gpio_num_t adc_gpio_num, dac_gpio_num;
+    if (esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_TP) != ESP_OK) {
+        TEST_IGNORE_MESSAGE("Warning: This esp32s2 board does not support calibration. This test will be skipped.\n");
+    }
     TEST_ESP_OK( adc2_pad_get_io_num( ADC_TEST_CHANNEL_NUM, &adc_gpio_num ) );
     TEST_ESP_OK( dac_pad_get_io_num( DAC_TEST_CHANNEL_NUM, &dac_gpio_num ) );
     printf("Please connect ADC2 CH%d-GPIO%d <--> DAC CH%d-GPIO%d.\n", ADC_TEST_CHANNEL_NUM, adc_gpio_num,
