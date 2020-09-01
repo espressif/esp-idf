@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# We need libpython2.7 due to GDB tools
 RUN apt-get update && apt-get install -y \
     apt-utils \
     bison \
@@ -17,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libusb-1.0-0-dev \
     make \
     ninja-build \
+    libpython2.7 \
     python3 \
     python3-pip \
     unzip \
