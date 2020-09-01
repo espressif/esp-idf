@@ -42,6 +42,9 @@
 
 #if BTC_AV_INCLUDED
 
+bool g_av_open_fail;
+bool g_av_with_rc;
+
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
@@ -311,8 +314,9 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         btc_av_cb.flags = 0;
         btc_av_cb.edr = 0;
         btc_a2dp_on_idle();
-        if(open_fail) {
-            BTC_TRACE_ERROR("AV_OPEN fail: Sta %d , SM Sta %d\n",av_open.state, av_open.av_state);
+
+        if(g_av_open_fail) {
+            BTC_TRACE_ERROR("AV_OPEN: Sta %d , SM Sta %d\n",av_open.state, av_open.av_state);
             /* inform the application of the event */
             btc_report_connection_state(av_open.state, &(btc_av_cb.peer_bda), 0);
         }
@@ -328,7 +332,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         btc_av_cb.bta_handle = ((tBTA_AV *)p_data)->registr.hndl;
         // Init av_open struct and av_open_state
         memset(&av_open, 0, sizeof(btc_av_open_t));
-        open_fail = false;
+        g_av_open_fail = false;
         break;
 
     case BTA_AV_PENDING_EVT:
@@ -336,7 +340,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         if (event == BTC_AV_CONNECT_REQ_EVT) {
             memcpy(&btc_av_cb.peer_bda, &((btc_av_connect_req_t *)p_data)->target_bda,
                    sizeof(bt_bdaddr_t));
-            if (av_with_rc) {
+            if (g_av_with_rc) {
                 BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
                         TRUE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
             } else {
@@ -347,7 +351,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
             bdcpy(btc_av_cb.peer_bda.address, ((tBTA_AV *)p_data)->pend.bd_addr);
             UINT16 uuid = (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) ? UUID_SERVCLASS_AUDIO_SOURCE :
                 UUID_SERVCLASS_AUDIO_SINK;
-            if (av_with_rc) {
+            if (g_av_with_rc) {
                 BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
                         TRUE, BTA_SEC_AUTHENTICATE, uuid);
             } else {
@@ -435,7 +439,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
 
     case BTA_AV_REJECT_EVT:
         BTC_TRACE_DEBUG(" Received  BTA_AV_REJECT_EVT \n");
-        open_fail = true;
+        g_av_open_fail = true;
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
         break;
 
@@ -455,7 +459,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
                      p_bta_data->open.status );
             av_open.state = ESP_A2D_CONNECTION_STATE_DISCONNECTED;
             av_open.av_state  = BTC_AV_STATE_IDLE;
-            open_fail = true;
+            g_av_open_fail = true;
         }
 
         /* change state to open/idle based on the status */
@@ -470,7 +474,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
         } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC &&
                    (p_bta_data->open.status == BTA_AV_SUCCESS)) {
             /* Bring up AVRCP connection too if AVRC Initialized */
-            if(av_with_rc) {
+            if(g_av_with_rc) {
                 BTA_AvOpenRc(btc_av_cb.bta_handle);
             } else {
                 BTC_TRACE_WARNING("AVRC not Init, not using it.");
@@ -582,7 +586,7 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
         /* inform the application that we are disconnecting */
         btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btc_av_cb.peer_bda),
                                     close->disc_rsn);
-        open_fail = false;
+        g_av_open_fail = false;
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
         break;
     }
@@ -712,7 +716,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         /* inform the application that we are disconnected */
         btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btc_av_cb.peer_bda),
                                     close->disc_rsn);
-        open_fail = false;
+        g_av_open_fail = false;
         /* change state to idle, send acknowledgement if start is pending */
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
 
@@ -903,7 +907,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
 
         /* avdtp link is closed */
         btc_a2dp_on_stopped(NULL);
-        open_fail = false;
+        g_av_open_fail = false;
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
 
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
@@ -1288,7 +1292,7 @@ bt_status_t btc_av_execute_service(BOOLEAN b_enable, UINT8 tsep)
         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
          * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
          * be initiated by the app/audioflinger layers */
-        if (av_with_rc) {
+        if (g_av_with_rc) {
             BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD |
                         BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
                         BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL,
