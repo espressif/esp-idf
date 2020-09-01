@@ -33,8 +33,13 @@
 #include "bta/bta_av_api.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
-extern bool g_av_open_fail;
+
+// global variable to inidcate avrc is initialized with a2dp
 extern bool g_av_with_rc;
+// global variable to indicate a2dp is initialized
+extern bool g_a2dp_on_init;
+// global variable to indicate a2dp is deinitialized
+extern bool g_a2dp_on_deinit;
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
