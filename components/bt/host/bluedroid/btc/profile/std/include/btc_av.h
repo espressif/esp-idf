@@ -33,8 +33,8 @@
 #include "bta/bta_av_api.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
-bool open_fail;
-bool av_with_rc;
+extern bool g_av_open_fail;
+extern bool g_av_with_rc;
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
