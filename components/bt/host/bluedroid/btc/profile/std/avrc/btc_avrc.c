@@ -1011,15 +1011,20 @@ static void btc_avrc_ct_init(void)
         return;
     }
 
-    // indicate that using A2DP with AVRC
-    g_av_with_rc = true;
-
     /// initialize CT-specific resources
     s_rc_ct_init = BTC_RC_CT_INIT_MAGIC;
 
     /// initialize CT-TG shared resources
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
         memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
+
+        if (!g_av_with_rc) {
+            g_av_with_rc = true;
+        }
+
+        if (g_a2dp_on_init) {
+            BTC_TRACE_WARNING("AVRC Controller is expected to be initialized in advance of A2DP !!!");
+        }
     }
 }
 
@@ -1037,13 +1042,14 @@ static void btc_avrc_ct_deinit(void)
 {
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
+    if (g_a2dp_on_deinit) {
+        BTC_TRACE_WARNING("A2DP already deinit, AVRC CT shuold deinit in advance of A2DP !!!");
+    }
+
     if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
         BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
         return;
     }
-
-    // indicate that using A2DP with AVRC
-    g_av_with_rc = true;
 
     /// deinit CT-specific resources
     s_rc_ct_init = 0;
@@ -1051,6 +1057,9 @@ static void btc_avrc_ct_deinit(void)
     /// deinit CT-TG shared resources
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
         memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
+        if (g_av_with_rc) {
+            g_av_with_rc = false;
+        }
     }
 
     BTC_TRACE_API("## %s ## completed", __FUNCTION__);
@@ -1285,6 +1294,14 @@ static void btc_avrc_tg_init(void)
     /// initialize CT-TG shared resources
     if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
         memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+
+        if (!g_av_with_rc) {
+            g_av_with_rc = true;
+        }
+
+        if (g_a2dp_on_init) {
+            BTC_TRACE_WARNING("AVRC Taget is expected to be initialized in advance of A2DP !!!");
+        }
     }
 
     s_rc_tg_init = BTC_RC_TG_INIT_MAGIC;
@@ -1304,6 +1321,10 @@ static void btc_avrc_tg_deinit(void)
 {
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
+    if (g_a2dp_on_deinit) {
+        BTC_TRACE_WARNING("A2DP already deinit, AVRC TG shuold deinit in advance of A2DP !!!");
+    }
+
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
         BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
         return;
@@ -1317,6 +1338,9 @@ static void btc_avrc_tg_deinit(void)
     /// deinit CT-TG shared resources
     if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
         memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+        if (g_av_with_rc) {
+            g_av_with_rc = false;
+        }
     }
 
     BTC_TRACE_API("## %s ## completed", __FUNCTION__);
