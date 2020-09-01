@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
+#include "esp_spi_flash_counters.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -418,43 +419,6 @@ extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
  *       It does not use any OS primitives and IPC and implies that only calling CPU is active.
  */
 extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
-
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-
-/**
- * Structure holding statistics for one type of operation
- */
-typedef struct {
-    uint32_t count;     // number of times operation was executed
-    uint32_t time;      // total time taken, in microseconds
-    uint32_t bytes;     // total number of bytes
-} spi_flash_counter_t;
-
-typedef struct {
-    spi_flash_counter_t read;
-    spi_flash_counter_t write;
-    spi_flash_counter_t erase;
-} spi_flash_counters_t;
-
-/**
- * @brief  Reset SPI flash operation counters
- */
-void spi_flash_reset_counters(void);
-
-/**
- * @brief  Print SPI flash operation counters
- */
-void spi_flash_dump_counters(void);
-
-/**
- * @brief  Return current SPI flash operation counters
- *
- * @return  pointer to the spi_flash_counters_t structure holding values
- *          of the operation counters
- */
-const spi_flash_counters_t* spi_flash_get_counters(void);
-
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 #ifdef __cplusplus
 }

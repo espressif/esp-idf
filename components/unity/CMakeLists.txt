@@ -27,7 +27,7 @@ else()
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "unity/src" "unity/extras/fixture/src")
+                    INCLUDE_DIRS ${includes})
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
