@@ -253,5 +253,9 @@ void hid_keyboard_build_report(uint8_t *buffer, keyboard_cmd_t cmd);
 
 void hid_mouse_build_report(uint8_t *buffer, mouse_cmd_t cmd);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif /* HID_DEV_H__ */
 
