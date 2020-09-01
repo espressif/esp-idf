@@ -1978,11 +1978,12 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_MODEL_PUBLISH: {
         if (arg->model_publish.device_role == PROVISIONER) {
-            bt_mesh_role_param_t common = {0};
-            common.model = (struct bt_mesh_model *)(arg->model_publish.model);
-            common.role  = arg->model_publish.device_role;
-            if (bt_mesh_set_client_model_role(&common)) {
-                BT_ERR("Failed to set model role");
+            /* Currently Provisioner only supports client model */
+            err = bt_mesh_set_client_model_role((struct bt_mesh_model *)arg->model_publish.model,
+                                                arg->model_publish.device_role);
+            if (err) {
+                BT_ERR("Failed to set client role");
+                btc_ble_mesh_model_publish_comp_cb(arg->model_publish.model, err);
                 break;
             }
         }
@@ -1995,10 +1996,14 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Out of memory", __func__);
+            btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
+                                            arg->model_send.opcode, -ENOMEM);
             break;
         }
+
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
         arg->model_send.ctx->srv_send = true;
+
         err = bt_mesh_model_send((struct bt_mesh_model *)arg->model_send.model,
                                  (struct bt_mesh_msg_ctx *)arg->model_send.ctx,
                                  buf, NULL, NULL);
@@ -2008,26 +2013,30 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
-        bt_mesh_role_param_t common = {0};
         /* arg->model_send.length contains opcode & message, plus extra 4-bytes TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Out of memory", __func__);
+            btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
+                                            arg->model_send.opcode, -ENOMEM);
             break;
         }
+
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
-        arg->model_send.ctx->srv_send = false;
-        common.model = (struct bt_mesh_model *)(arg->model_send.model);
-        common.role  = arg->model_send.device_role;
-        if (bt_mesh_set_client_model_role(&common)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
-        err = bt_mesh_client_send_msg((struct bt_mesh_model *)arg->model_send.model,
-                                      arg->model_send.opcode,
-                                      (struct bt_mesh_msg_ctx *)arg->model_send.ctx, buf,
-                                      btc_ble_mesh_client_model_timeout_cb, arg->model_send.msg_timeout,
-                                      arg->model_send.need_rsp, NULL, NULL);
+        bt_mesh_client_common_param_t param = {
+            .opcode = arg->model_send.opcode,
+            .model = (struct bt_mesh_model *)arg->model_send.model,
+            .ctx.net_idx = arg->model_send.ctx->net_idx,
+            .ctx.app_idx = arg->model_send.ctx->app_idx,
+            .ctx.addr = arg->model_send.ctx->addr,
+            .ctx.send_rel = arg->model_send.ctx->send_rel,
+            .ctx.send_ttl = arg->model_send.ctx->send_ttl,
+            .ctx.srv_send = false,
+            .msg_timeout = arg->model_send.msg_timeout,
+            .msg_role = arg->model_send.device_role,
+        };
+        err = bt_mesh_client_send_msg(&param, buf, arg->model_send.need_rsp,
+                                      btc_ble_mesh_client_model_timeout_cb);
         bt_mesh_free_buf(buf);
         btc_ble_mesh_model_send_comp_cb(arg->model_send.model, arg->model_send.ctx,
                                         arg->model_send.opcode, err);

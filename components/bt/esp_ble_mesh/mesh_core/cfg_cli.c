@@ -20,13 +20,6 @@
 #include "mesh_common.h"
 #include "cfg_cli.h"
 
-/* 2 byte dummy opcode for getting compile time buffer sizes. */
-#define DUMMY_2_BYTE_OP     BLE_MESH_MODEL_OP_2(0xff, 0xff)
-
-s32_t config_msg_timeout;
-
-static bt_mesh_config_client_t *cli;
-
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
     { OP_BEACON_SET,           OP_BEACON_STATUS        },
@@ -130,9 +123,9 @@ static void timeout_handler(struct k_work *work)
     return;
 }
 
-static void cfg_client_cancel(struct bt_mesh_model *model,
-                              struct bt_mesh_msg_ctx *ctx,
-                              void *status, size_t len)
+static void cfg_client_recv_status(struct bt_mesh_model *model,
+                                   struct bt_mesh_msg_ctx *ctx,
+                                   void *status, size_t len)
 {
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
@@ -221,8 +214,7 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
 
     switch (ctx->recv_op) {
     case OP_DEV_COMP_DATA_STATUS: {
-        struct bt_mesh_cfg_comp_data_status *val;
-        val = (struct bt_mesh_cfg_comp_data_status *)status;
+        struct bt_mesh_cfg_comp_data_status *val = status;
         bt_mesh_free_buf(val->comp_data);
         break;
     }
@@ -272,7 +264,7 @@ static void comp_data_status(struct bt_mesh_model *model,
 
     net_buf_simple_add_mem(status.comp_data, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_comp_data_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_comp_data_status));
 }
 
 static void state_status_u8(struct bt_mesh_model *model,
@@ -287,7 +279,7 @@ static void state_status_u8(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(u8_t));
+    cfg_client_recv_status(model, ctx, &status, sizeof(u8_t));
 }
 
 static void beacon_status(struct bt_mesh_model *model,
@@ -331,7 +323,7 @@ static void relay_status(struct bt_mesh_model *model,
     status.relay      = net_buf_simple_pull_u8(buf);
     status.retransmit = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_relay_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_relay_status));
 }
 
 static void net_key_status(struct bt_mesh_model *model,
@@ -347,7 +339,7 @@ static void net_key_status(struct bt_mesh_model *model,
     status.status = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_netkey_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_netkey_status));
 }
 
 static void app_key_status(struct bt_mesh_model *model,
@@ -363,7 +355,7 @@ static void app_key_status(struct bt_mesh_model *model,
     status.status = net_buf_simple_pull_u8(buf);
     key_idx_unpack(buf, &status.net_idx, &status.app_idx);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_appkey_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_appkey_status));
 }
 
 static void mod_app_status(struct bt_mesh_model *model,
@@ -386,7 +378,7 @@ static void mod_app_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_app_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_app_status));
 }
 
 static void mod_pub_status(struct bt_mesh_model *model,
@@ -415,7 +407,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_pub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_pub_status));
 }
 
 static void mod_sub_status(struct bt_mesh_model *model,
@@ -438,7 +430,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
     }
     status.mod_id = net_buf_simple_pull_le16(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_mod_sub_status));
 }
 
 static void hb_sub_status(struct bt_mesh_model *model,
@@ -459,7 +451,7 @@ static void hb_sub_status(struct bt_mesh_model *model,
     status.min    = net_buf_simple_pull_u8(buf);
     status.max    = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
 }
 
 static void hb_pub_status(struct bt_mesh_model *model,
@@ -480,7 +472,7 @@ static void hb_pub_status(struct bt_mesh_model *model,
     status.feat    = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
 }
 
 static void node_reset_status(struct bt_mesh_model *model,
@@ -491,7 +483,7 @@ static void node_reset_status(struct bt_mesh_model *model,
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
 
-    cfg_client_cancel(model, ctx, NULL, 0);
+    cfg_client_recv_status(model, ctx, NULL, 0);
 }
 
 static void mod_sub_list(struct bt_mesh_model *model,
@@ -520,7 +512,7 @@ static void mod_sub_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.addr, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_sub_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_sub_list));
 }
 
 static void net_key_list(struct bt_mesh_model *model,
@@ -540,7 +532,7 @@ static void net_key_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.net_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_net_key_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_net_key_list));
 }
 
 static void app_key_list(struct bt_mesh_model *model,
@@ -562,7 +554,7 @@ static void app_key_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_app_key_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_app_key_list));
 }
 
 static void node_id_status(struct bt_mesh_model *model,
@@ -579,7 +571,7 @@ static void node_id_status(struct bt_mesh_model *model,
     status.net_idx = net_buf_simple_pull_le16(buf);
     status.identity = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_node_id_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_node_id_status));
 }
 
 static void mod_app_list(struct bt_mesh_model *model,
@@ -608,7 +600,7 @@ static void mod_app_list(struct bt_mesh_model *model,
     }
     net_buf_simple_add_mem(list.app_idx, buf->data, buf->len);
 
-    cfg_client_cancel(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_app_list));
+    cfg_client_recv_status(model, ctx, &list, sizeof(struct bt_mesh_cfg_mod_app_list));
 }
 
 static void kr_phase_status(struct bt_mesh_model *model,
@@ -625,7 +617,7 @@ static void kr_phase_status(struct bt_mesh_model *model,
     status.net_idx = net_buf_simple_pull_le16(buf);
     status.phase = net_buf_simple_pull_u8(buf);
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_key_refresh_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_key_refresh_status));
 }
 
 static void lpn_pollto_status(struct bt_mesh_model *model,
@@ -643,7 +635,7 @@ static void lpn_pollto_status(struct bt_mesh_model *model,
     status.timeout |= net_buf_simple_pull_u8(buf) << 8;
     status.timeout |= net_buf_simple_pull_u8(buf) << 16;
 
-    cfg_client_cancel(model, ctx, &status, sizeof(struct bt_mesh_cfg_lpn_pollto_status));
+    cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_lpn_pollto_status));
 }
 
 static void net_trans_status(struct bt_mesh_model *model,
@@ -681,251 +673,158 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-int bt_mesh_cfg_comp_data_get(struct bt_mesh_msg_ctx *ctx, u8_t page)
+static int send_msg_with_none(bt_mesh_client_common_param_t *param, u32_t op)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_DEV_COMP_DATA_GET, 1);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_DEV_COMP_DATA_GET);
-    net_buf_simple_add_u8(&msg, page);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_DEV_COMP_DATA_GET, ctx,
-                                  &msg, timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
-}
-
-static int get_state_u8(struct bt_mesh_msg_ctx *ctx, u32_t op)
-{
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 0);
-    int err = 0;
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 0);
 
     bt_mesh_model_msg_init(&msg, op);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int set_state_u8(struct bt_mesh_msg_ctx *ctx, u32_t op, u8_t new_val)
+static int send_msg_with_u8(bt_mesh_client_common_param_t *param, u32_t op, u8_t val)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 1);
-    int err = 0;
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 1);
 
     bt_mesh_model_msg_init(&msg, op);
-    net_buf_simple_add_u8(&msg, new_val);
+    net_buf_simple_add_u8(&msg, val);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_beacon_get(struct bt_mesh_msg_ctx *ctx)
+static int send_msg_with_le16(bt_mesh_client_common_param_t *param, u32_t op, u16_t val)
 {
-    if (!ctx || !ctx->addr) {
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 2);
+
+    bt_mesh_model_msg_init(&msg, op);
+    net_buf_simple_add_le16(&msg, val);
+
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
+}
+
+int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, u8_t page)
+{
+    return send_msg_with_u8(param, OP_DEV_COMP_DATA_GET, page);
+}
+
+int bt_mesh_cfg_beacon_get(bt_mesh_client_common_param_t *param)
+{
+    return send_msg_with_none(param, OP_BEACON_GET);
+}
+
+int bt_mesh_cfg_beacon_set(bt_mesh_client_common_param_t *param, u8_t val)
+{
+    if (val > 0x01) {
+        BT_ERR("Invalid beacon state 0x%02x", val);
         return -EINVAL;
     }
-    return get_state_u8(ctx, OP_BEACON_GET);
+    return send_msg_with_u8(param, OP_BEACON_SET, val);
 }
 
-int bt_mesh_cfg_beacon_set(struct bt_mesh_msg_ctx *ctx, u8_t val)
+int bt_mesh_cfg_ttl_get(bt_mesh_client_common_param_t *param)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return set_state_u8(ctx, OP_BEACON_SET, val);
+    return send_msg_with_none(param, OP_DEFAULT_TTL_GET);
 }
 
-int bt_mesh_cfg_ttl_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_ttl_set(bt_mesh_client_common_param_t *param, u8_t val)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return get_state_u8(ctx, OP_DEFAULT_TTL_GET);
+    return send_msg_with_u8(param, OP_DEFAULT_TTL_SET, val);
 }
 
-int bt_mesh_cfg_ttl_set(struct bt_mesh_msg_ctx *ctx, u8_t val)
+int bt_mesh_cfg_friend_get(bt_mesh_client_common_param_t *param)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return set_state_u8(ctx, OP_DEFAULT_TTL_SET, val);
+    return send_msg_with_none(param, OP_FRIEND_GET);
 }
 
-int bt_mesh_cfg_friend_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_friend_set(bt_mesh_client_common_param_t *param, u8_t val)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return get_state_u8(ctx, OP_FRIEND_GET);
+    return send_msg_with_u8(param, OP_FRIEND_SET, val);
 }
 
-int bt_mesh_cfg_friend_set(struct bt_mesh_msg_ctx *ctx, u8_t val)
+int bt_mesh_cfg_gatt_proxy_get(bt_mesh_client_common_param_t *param)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return set_state_u8(ctx, OP_FRIEND_SET, val);
+    return send_msg_with_none(param, OP_GATT_PROXY_GET);
 }
 
-int bt_mesh_cfg_gatt_proxy_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_gatt_proxy_set(bt_mesh_client_common_param_t *param, u8_t val)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return get_state_u8(ctx, OP_GATT_PROXY_GET);
+    return send_msg_with_u8(param, OP_GATT_PROXY_SET, val);
 }
 
-int bt_mesh_cfg_gatt_proxy_set(struct bt_mesh_msg_ctx *ctx, u8_t val)
+int bt_mesh_cfg_relay_get(bt_mesh_client_common_param_t *param)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return set_state_u8(ctx, OP_GATT_PROXY_SET, val);
+    return send_msg_with_none(param, OP_RELAY_GET);
 }
 
-int bt_mesh_cfg_relay_get(struct bt_mesh_msg_ctx *ctx)
-{
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_GET, 0);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_RELAY_GET);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_RELAY_GET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
-}
-
-int bt_mesh_cfg_relay_set(struct bt_mesh_msg_ctx *ctx, u8_t new_relay,
-                          u8_t new_transmit)
+int bt_mesh_cfg_relay_set(bt_mesh_client_common_param_t *param,
+                          u8_t relay, u8_t retransmit)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_SET, 2);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_RELAY_SET);
-    net_buf_simple_add_u8(&msg, new_relay);
-    net_buf_simple_add_u8(&msg, new_transmit);
+    net_buf_simple_add_u8(&msg, relay);
+    net_buf_simple_add_u8(&msg, retransmit);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_RELAY_SET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_net_key_add(struct bt_mesh_msg_ctx *ctx, u16_t key_net_idx,
-                            const u8_t net_key[16])
+int bt_mesh_cfg_net_key_add(bt_mesh_client_common_param_t *param,
+                            u16_t net_idx, const u8_t net_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_ADD, 18);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !net_key) {
+    if (!net_key) {
+        BT_ERR("Invalid NetKey");
         return -EINVAL;
     }
 
     bt_mesh_model_msg_init(&msg, OP_NET_KEY_ADD);
-    net_buf_simple_add_le16(&msg, key_net_idx);
+    net_buf_simple_add_le16(&msg, net_idx);
     net_buf_simple_add_mem(&msg, net_key, 16);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_NET_KEY_ADD, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_app_key_add(struct bt_mesh_msg_ctx *ctx, u16_t key_net_idx,
-                            u16_t key_app_idx, const u8_t app_key[16])
+int bt_mesh_cfg_app_key_add(bt_mesh_client_common_param_t *param,
+                            u16_t net_idx, u16_t app_idx,
+                            const u8_t app_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_ADD, 19);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !app_key) {
+    if (!app_key) {
+        BT_ERR("Invalid AppKey");
         return -EINVAL;
     }
 
     bt_mesh_model_msg_init(&msg, OP_APP_KEY_ADD);
-    key_idx_pack(&msg, key_net_idx, key_app_idx);
+    key_idx_pack(&msg, net_idx, app_idx);
     net_buf_simple_add_mem(&msg, app_key, 16);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_APP_KEY_ADD, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_app_bind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                             u16_t mod_app_idx, u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_app_bind(bt_mesh_client_common_param_t *param,
+                             u16_t elem_addr, u16_t app_idx,
+                             u16_t mod_id, u16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_BIND, 8);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_MOD_APP_BIND);
     net_buf_simple_add_le16(&msg, elem_addr);
-    net_buf_simple_add_le16(&msg, mod_app_idx);
+    net_buf_simple_add_le16(&msg, app_idx);
     if (cid != BLE_MESH_CID_NVAL) {
         net_buf_simple_add_le16(&msg, cid);
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_APP_BIND, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_sub(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                   u16_t sub_addr, u16_t mod_id, u16_t cid)
+static int mod_sub(bt_mesh_client_common_param_t *param, u32_t op,
+                   u16_t elem_addr, u16_t sub_addr,
+                   u16_t mod_id, u16_t cid)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 8);
-    int err = 0;
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 8);
 
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -935,50 +834,42 @@ static int mod_sub(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_sub_add(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t sub_addr, u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_sub_add(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t sub_addr,
+                            u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr) {
+    return mod_sub(param, OP_MOD_SUB_ADD, elem_addr, sub_addr, mod_id, cid);
+}
+
+int bt_mesh_cfg_mod_sub_del(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t sub_addr,
+                            u16_t mod_id, u16_t cid)
+{
+    return mod_sub(param, OP_MOD_SUB_DEL, elem_addr, sub_addr, mod_id, cid);
+}
+
+int bt_mesh_cfg_mod_sub_overwrite(bt_mesh_client_common_param_t *param,
+                                  u16_t elem_addr, u16_t sub_addr,
+                                  u16_t mod_id, u16_t cid)
+{
+    return mod_sub(param, OP_MOD_SUB_OVERWRITE, elem_addr, sub_addr, mod_id, cid);
+}
+
+static int mod_sub_va(bt_mesh_client_common_param_t *param, u32_t op,
+                      u16_t elem_addr, const u8_t label[16],
+                      u16_t mod_id, u16_t cid)
+{
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 22);
+
+    if (!label) {
+        BT_ERR("Invalid label uuid");
         return -EINVAL;
     }
-    return mod_sub(OP_MOD_SUB_ADD, ctx, elem_addr, sub_addr, mod_id, cid);
-}
 
-int bt_mesh_cfg_mod_sub_del(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t sub_addr, u16_t mod_id, u16_t cid)
-{
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return mod_sub(OP_MOD_SUB_DEL, ctx, elem_addr, sub_addr, mod_id, cid);
-}
-
-int bt_mesh_cfg_mod_sub_overwrite(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                  u16_t sub_addr, u16_t mod_id, u16_t cid)
-{
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return mod_sub(OP_MOD_SUB_OVERWRITE, ctx, elem_addr, sub_addr, mod_id, cid);
-}
-
-static int mod_sub_va(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                      const u8_t label[16], u16_t mod_id, u16_t cid)
-{
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 22);
-    int err = 0;
-
-    BT_DBG("net_idx 0x%04x addr 0x%04x elem_addr 0x%04x label %s",
-           ctx->net_idx, ctx->addr, elem_addr, label);
+    BT_DBG("elem_addr 0x%04x label %s", elem_addr, bt_hex(label, 16));
     BT_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
 
     bt_mesh_model_msg_init(&msg, op);
@@ -989,51 +880,34 @@ static int mod_sub_va(u32_t op, struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_sub_va_add(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               const u8_t label[16], u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_sub_va_add(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, const u8_t label[16],
+                               u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr || !label) {
-        return -EINVAL;
-    }
-    return mod_sub_va(OP_MOD_SUB_VA_ADD, ctx, elem_addr, label, mod_id, cid);
+    return mod_sub_va(param, OP_MOD_SUB_VA_ADD, elem_addr, label, mod_id, cid);
 }
 
-int bt_mesh_cfg_mod_sub_va_del(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               const u8_t label[16], u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_sub_va_del(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, const u8_t label[16],
+                               u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr || !label) {
-        return -EINVAL;
-    }
-    return mod_sub_va(OP_MOD_SUB_VA_DEL, ctx, elem_addr, label, mod_id, cid);
+    return mod_sub_va(param, OP_MOD_SUB_VA_DEL, elem_addr, label, mod_id, cid);
 }
 
-int bt_mesh_cfg_mod_sub_va_overwrite(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                     const u8_t label[16], u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_sub_va_overwrite(bt_mesh_client_common_param_t *param,
+                                     u16_t elem_addr, const u8_t label[16],
+                                     u16_t mod_id, u16_t cid)
 {
-    if (!ctx || !ctx->addr || !label) {
-        return -EINVAL;
-    }
-    return mod_sub_va(OP_MOD_SUB_VA_OVERWRITE, ctx, elem_addr, label, mod_id, cid);
+    return mod_sub_va(param, OP_MOD_SUB_VA_OVERWRITE, elem_addr, label, mod_id, cid);
 }
 
-int bt_mesh_cfg_mod_pub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_pub_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id, u16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_GET, 6);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_MOD_PUB_GET);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -1042,24 +916,17 @@ int bt_mesh_cfg_mod_pub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_PUB_GET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_pub_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                            u16_t mod_id, u16_t cid,
+int bt_mesh_cfg_mod_pub_set(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id, u16_t cid,
                             struct bt_mesh_cfg_mod_pub *pub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_SET, 13);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !pub) {
+    if (!pub) {
+        BT_ERR("Invalid model pub set");
         return -EINVAL;
     }
 
@@ -1075,23 +942,16 @@ int bt_mesh_cfg_mod_pub_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_PUB_SET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_hb_sub_set(struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_cfg_hb_sub_set(bt_mesh_client_common_param_t *param,
                            struct bt_mesh_cfg_hb_sub *sub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_SET, 5);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !sub) {
+    if (!sub) {
+        BT_ERR("Invalid heartbeat sub set");
         return -EINVAL;
     }
 
@@ -1100,44 +960,21 @@ int bt_mesh_cfg_hb_sub_set(struct bt_mesh_msg_ctx *ctx,
     net_buf_simple_add_le16(&msg, sub->dst);
     net_buf_simple_add_u8(&msg, sub->period);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_HEARTBEAT_SUB_SET, ctx,
-                                  &msg, timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_hb_sub_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_hb_sub_get(bt_mesh_client_common_param_t *param)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_GET, 0);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_SUB_GET);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_HEARTBEAT_SUB_GET, ctx,
-                                  &msg, timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return send_msg_with_none(param, OP_HEARTBEAT_SUB_GET);
 }
 
-int bt_mesh_cfg_hb_pub_set(struct bt_mesh_msg_ctx *ctx,
-                           const struct bt_mesh_cfg_hb_pub *pub)
+int bt_mesh_cfg_hb_pub_set(bt_mesh_client_common_param_t *param,
+                           struct bt_mesh_cfg_hb_pub *pub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_SET, 9);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !pub) {
+    if (!pub) {
+        BT_ERR("Invalid heartbeat pub set");
         return -EINVAL;
     }
 
@@ -1149,66 +986,28 @@ int bt_mesh_cfg_hb_pub_set(struct bt_mesh_msg_ctx *ctx,
     net_buf_simple_add_le16(&msg, pub->feat);
     net_buf_simple_add_le16(&msg, pub->net_idx);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_HEARTBEAT_PUB_SET, ctx,
-                                  &msg, timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_hb_pub_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_hb_pub_get(bt_mesh_client_common_param_t *param)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_GET, 0);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_PUB_GET);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_HEARTBEAT_PUB_GET, ctx,
-                                  &msg, timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return send_msg_with_none(param, OP_HEARTBEAT_PUB_GET);
 }
 
-int bt_mesh_cfg_node_reset(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_node_reset(bt_mesh_client_common_param_t *param)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_RESET, 0);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_NODE_RESET);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_NODE_RESET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return send_msg_with_none(param, OP_NODE_RESET);
 }
 
-int bt_mesh_cfg_mod_pub_va_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               u16_t mod_id, u16_t cid, const u8_t label[16],
+int bt_mesh_cfg_mod_pub_va_set(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, u16_t mod_id,
+                               u16_t cid, const u8_t label[16],
                                struct bt_mesh_cfg_mod_pub *pub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_VA_SET, 27);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !label || !pub) {
+    if (!label || !pub) {
+        BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
@@ -1224,25 +1023,13 @@ int bt_mesh_cfg_mod_pub_va_set(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_PUB_VA_SET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_sub_del_all(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_sub_del_all(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_SUB_DEL_ALL, 6);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_MOD_SUB_DEL_ALL);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -1251,21 +1038,13 @@ int bt_mesh_cfg_mod_sub_del_all(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_SUB_DEL_ALL, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_sub_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
+static int mod_sub_get(bt_mesh_client_common_param_t *param, u32_t op,
                        u16_t elem_addr, u16_t mod_id, u16_t cid)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 6);
-    int err = 0;
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 6);
 
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -1274,39 +1053,32 @@ static int mod_sub_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_sub_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t mod_id)
+int bt_mesh_cfg_mod_sub_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id)
 {
-    if (!ctx || !ctx->addr) {
+    return mod_sub_get(param, OP_MOD_SUB_GET, elem_addr, mod_id, BLE_MESH_CID_NVAL);
+}
+
+int bt_mesh_cfg_mod_sub_get_vnd(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid)
+{
+    if (cid == BLE_MESH_CID_NVAL) {
+        BT_ERR("Invalid company id");
         return -EINVAL;
     }
-    return mod_sub_get(OP_MOD_SUB_GET, ctx, elem_addr, mod_id, BLE_MESH_CID_NVAL);
+    return mod_sub_get(param, OP_MOD_SUB_GET_VND, elem_addr, mod_id, cid);
 }
 
-int bt_mesh_cfg_mod_sub_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid)
-{
-    if (!ctx || !ctx->addr || cid == BLE_MESH_CID_NVAL) {
-        return -EINVAL;
-    }
-    return mod_sub_get(OP_MOD_SUB_GET_VND, ctx, elem_addr, mod_id, cid);
-}
-
-int bt_mesh_cfg_net_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
-                               const u8_t net_key[16])
+int bt_mesh_cfg_net_key_update(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, const u8_t net_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_UPDATE, 18);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !net_key) {
+    if (!net_key) {
+        BT_ERR("Invalid NetKey");
         return -EINVAL;
     }
 
@@ -1314,66 +1086,27 @@ int bt_mesh_cfg_net_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
     net_buf_simple_add_le16(&msg, net_idx);
     net_buf_simple_add_mem(&msg, net_key, 16);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_NET_KEY_UPDATE, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_net_key_delete(struct bt_mesh_msg_ctx *ctx, u16_t net_idx)
+int bt_mesh_cfg_net_key_delete(bt_mesh_client_common_param_t *param, u16_t net_idx)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_DEL, 2);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_NET_KEY_DEL);
-    net_buf_simple_add_le16(&msg, net_idx);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_NET_KEY_DEL, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return send_msg_with_le16(param, OP_NET_KEY_DEL, net_idx);
 }
 
-int bt_mesh_cfg_net_key_get(struct bt_mesh_msg_ctx *ctx)
+int bt_mesh_cfg_net_key_get(bt_mesh_client_common_param_t *param)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_GET, 0);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_NET_KEY_GET);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_NET_KEY_GET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return send_msg_with_none(param, OP_NET_KEY_GET);
 }
 
-int bt_mesh_cfg_app_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
-                               u16_t app_idx, const u8_t app_key[16])
+int bt_mesh_cfg_app_key_update(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, u16_t app_idx,
+                               const u8_t app_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_UPDATE, 19);
-    int err = 0;
 
-    if (!ctx || !ctx->addr || !app_key) {
+    if (!app_key) {
+        BT_ERR("Invalid AppKey");
         return -EINVAL;
     }
 
@@ -1381,106 +1114,52 @@ int bt_mesh_cfg_app_key_update(struct bt_mesh_msg_ctx *ctx, u16_t net_idx,
     key_idx_pack(&msg, net_idx, app_idx);
     net_buf_simple_add_mem(&msg, app_key, 16);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_APP_KEY_UPDATE, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_app_key_delete(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u16_t app_idx)
+int bt_mesh_cfg_app_key_delete(bt_mesh_client_common_param_t *param,
+                               u16_t net_idx, u16_t app_idx)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_DEL, 3);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_APP_KEY_DEL);
     key_idx_pack(&msg, net_idx, app_idx);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_APP_KEY_DEL, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_app_key_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx)
+int bt_mesh_cfg_app_key_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_GET, 2);
-    int err = 0;
+    return send_msg_with_le16(param, OP_APP_KEY_GET, net_idx);
+}
 
-    if (!ctx || !ctx->addr) {
+int bt_mesh_cfg_node_identity_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
+{
+    return send_msg_with_le16(param, OP_NODE_IDENTITY_GET, net_idx);
+}
+
+int bt_mesh_cfg_node_identity_set(bt_mesh_client_common_param_t *param,
+                                  u16_t net_idx, u8_t identity)
+{
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_SET, 3);
+
+    if (identity > 0x02) {
+        BT_ERR("Invalid node identity 0x%02x", identity);
         return -EINVAL;
     }
 
-    bt_mesh_model_msg_init(&msg, OP_APP_KEY_GET);
+    bt_mesh_model_msg_init(&msg, OP_NODE_IDENTITY_SET);
     net_buf_simple_add_le16(&msg, net_idx);
+    net_buf_simple_add_u8(&msg, identity);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_APP_KEY_GET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int node_identity_op(u32_t op, struct bt_mesh_msg_ctx *ctx,
-                            u16_t net_idx, u8_t identity)
-{
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 3);
-    int err = 0;
-
-    bt_mesh_model_msg_init(&msg, op);
-    net_buf_simple_add_le16(&msg, net_idx);
-    if (op == OP_NODE_IDENTITY_SET) {
-        net_buf_simple_add_u8(&msg, identity);
-    }
-
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
-}
-
-int bt_mesh_cfg_node_identity_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx)
-{
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return node_identity_op(OP_NODE_IDENTITY_GET, ctx, net_idx, 0xFF);
-}
-
-int bt_mesh_cfg_node_identity_set(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u8_t identity)
-{
-    if (!ctx || !ctx->addr || identity > 0x01) {
-        return -EINVAL;
-    }
-    return node_identity_op(OP_NODE_IDENTITY_SET, ctx, net_idx, identity);
-}
-
-int bt_mesh_cfg_mod_app_unbind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                               u16_t app_idx, u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_mod_app_unbind(bt_mesh_client_common_param_t *param,
+                               u16_t elem_addr, u16_t app_idx,
+                               u16_t mod_id, u16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_UNBIND, 8);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
 
     bt_mesh_model_msg_init(&msg, OP_MOD_APP_UNBIND);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -1490,21 +1169,13 @@ int bt_mesh_cfg_mod_app_unbind(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, OP_MOD_APP_UNBIND, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_app_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
+static int mod_app_get(bt_mesh_client_common_param_t *param, u32_t op,
                        u16_t elem_addr, u16_t mod_id, u16_t cid)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 6);
-    int err = 0;
+    BLE_MESH_MODEL_BUF_DEFINE(msg, op, 6);
 
     bt_mesh_model_msg_init(&msg, op);
     net_buf_simple_add_le16(&msg, elem_addr);
@@ -1513,115 +1184,60 @@ static int mod_app_get(u32_t op, struct bt_mesh_msg_ctx *ctx,
     }
     net_buf_simple_add_le16(&msg, mod_id);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_mod_app_get(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr, u16_t mod_id)
+int bt_mesh_cfg_mod_app_get(bt_mesh_client_common_param_t *param,
+                            u16_t elem_addr, u16_t mod_id)
 {
-    if (!ctx || !ctx->addr) {
+    return mod_app_get(param, OP_SIG_MOD_APP_GET, elem_addr, mod_id, BLE_MESH_CID_NVAL);
+}
+
+int bt_mesh_cfg_mod_app_get_vnd(bt_mesh_client_common_param_t *param,
+                                u16_t elem_addr, u16_t mod_id, u16_t cid)
+{
+    if (cid == BLE_MESH_CID_NVAL) {
+        BT_ERR("Invalid company id");
         return -EINVAL;
     }
-    return mod_app_get(OP_SIG_MOD_APP_GET, ctx, elem_addr, mod_id, BLE_MESH_CID_NVAL);
+    return mod_app_get(param, OP_VND_MOD_APP_GET, elem_addr, mod_id, cid);
 }
 
-int bt_mesh_cfg_mod_app_get_vnd(struct bt_mesh_msg_ctx *ctx, u16_t elem_addr,
-                                u16_t mod_id, u16_t cid)
+int bt_mesh_cfg_kr_phase_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
 {
-    if (!ctx || !ctx->addr || cid == BLE_MESH_CID_NVAL) {
+    return send_msg_with_le16(param, OP_KRP_GET, net_idx);
+}
+
+int bt_mesh_cfg_kr_phase_set(bt_mesh_client_common_param_t *param,
+                             u16_t net_idx, u8_t transition)
+{
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_KRP_SET, 3);
+
+    if (transition > 0x03) {
+        BT_ERR("Invalid kr phase transition 0x%02x", transition);
         return -EINVAL;
     }
-    return mod_app_get(OP_VND_MOD_APP_GET, ctx, elem_addr, mod_id, cid);
-}
 
-static int kr_phase_op(u32_t op, struct bt_mesh_msg_ctx *ctx,
-                       u16_t net_idx, u8_t transition)
-{
-    BLE_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 3);
-    int err = 0;
-
-    bt_mesh_model_msg_init(&msg, op);
+    bt_mesh_model_msg_init(&msg, OP_KRP_SET);
     net_buf_simple_add_le16(&msg, net_idx);
-    if (op == OP_KRP_SET) {
-        net_buf_simple_add_u8(&msg, transition);
-    }
+    net_buf_simple_add_u8(&msg, transition);
 
-    err = bt_mesh_client_send_msg(cli->model, op, ctx, &msg, timeout_handler,
-                                  config_msg_timeout, true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
+    return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_kr_phase_get(struct bt_mesh_msg_ctx *ctx, u16_t net_idx)
+int bt_mesh_cfg_lpn_timeout_get(bt_mesh_client_common_param_t *param, u16_t lpn_addr)
 {
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return kr_phase_op(OP_KRP_GET, ctx, net_idx, 0xFF);
+    return send_msg_with_le16(param, OP_LPN_TIMEOUT_GET, lpn_addr);
 }
 
-int bt_mesh_cfg_kr_phase_set(struct bt_mesh_msg_ctx *ctx, u16_t net_idx, u8_t transition)
+int bt_mesh_cfg_net_transmit_get(bt_mesh_client_common_param_t *param)
 {
-    if (!ctx || !ctx->addr || transition > 0x03) {
-        return -EINVAL;
-    }
-    return kr_phase_op(OP_KRP_SET, ctx, net_idx, transition);;
+    return send_msg_with_none(param, OP_NET_TRANSMIT_GET);
 }
 
-int bt_mesh_cfg_lpn_timeout_get(struct bt_mesh_msg_ctx *ctx, u16_t lpn_addr)
+int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, u8_t transmit)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_LPN_TIMEOUT_GET, 2);
-    int err = 0;
-
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-
-    bt_mesh_model_msg_init(&msg, OP_LPN_TIMEOUT_GET);
-    net_buf_simple_add_le16(&msg, lpn_addr);
-
-    err = bt_mesh_client_send_msg(cli->model, OP_LPN_TIMEOUT_GET, ctx, &msg,
-                                  timeout_handler, config_msg_timeout,
-                                  true, NULL, NULL);
-    if (err) {
-        BT_ERR("%s, send failed (err %d)", __func__, err);
-    }
-
-    return err;
-}
-
-int bt_mesh_cfg_net_transmit_get(struct bt_mesh_msg_ctx *ctx)
-{
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return get_state_u8(ctx, OP_NET_TRANSMIT_GET);
-}
-
-int bt_mesh_cfg_net_transmit_set(struct bt_mesh_msg_ctx *ctx, u8_t transmit)
-{
-    if (!ctx || !ctx->addr) {
-        return -EINVAL;
-    }
-    return set_state_u8(ctx, OP_NET_TRANSMIT_SET, transmit);
-}
-
-s32_t bt_mesh_cfg_cli_timeout_get(void)
-{
-    return config_msg_timeout;
-}
-
-void bt_mesh_cfg_cli_timeout_set(s32_t timeout)
-{
-    config_msg_timeout = timeout;
+    return send_msg_with_u8(param, OP_NET_TRANSMIT_SET, transmit);
 }
 
 int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
@@ -1664,8 +1280,6 @@ int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
         bt_mesh_client_clear_list(client->internal_data);
     }
 
-    cli = client;
-
     /* Configuration Model security is device-key based */
     model->keys[0] = BLE_MESH_KEY_DEV;
 
@@ -1700,10 +1314,8 @@ int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary)
 
         /* Free the allocated internal data */
         bt_mesh_free(client->internal_data);
-        cli->internal_data = NULL;
+        client->internal_data = NULL;
     }
-
-    client = NULL;
 
     bt_mesh_cfg_client_mutex_free();
 

@@ -229,7 +229,6 @@ void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
 {
     esp_ble_mesh_light_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
-    size_t length = 0U;
     uint8_t act = 0U;
 
     if (!model || !ctx) {
@@ -270,8 +269,7 @@ void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     cb_params.params = &params;
 
     if (val && len) {
-        length = (len <= sizeof(cb_params.status_cb)) ? len : sizeof(cb_params.status_cb);
-        memcpy(&cb_params.status_cb, val, length);
+        memcpy(&cb_params.status_cb, val, MIN(len, sizeof(cb_params.status_cb)));
     }
 
     btc_ble_mesh_lighting_client_callback(&cb_params, act);
@@ -298,7 +296,6 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
     btc_ble_mesh_lighting_client_args_t *arg = NULL;
     esp_ble_mesh_light_client_cb_param_t cb = {0};
     bt_mesh_client_common_param_t common = {0};
-    bt_mesh_role_param_t role_param = {0};
 
     if (!msg || !msg->arg) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -310,12 +307,6 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_LIGHTING_CLIENT_GET_STATE: {
         params = arg->light_client_get_state.params;
-        role_param.model = (struct bt_mesh_model *)params->model;
-        role_param.role = params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -324,10 +315,10 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         common.ctx.send_rel = params->ctx.send_rel;
         common.ctx.send_ttl = params->ctx.send_ttl;
         common.msg_timeout = params->msg_timeout;
+        common.msg_role = params->msg_role;
 
         cb.params = arg->light_client_get_state.params;
-        cb.error_code = bt_mesh_light_client_get_state(&common,
-                        (void *)arg->light_client_get_state.get_state, (void *)&cb.status_cb);
+        cb.error_code = bt_mesh_light_client_get_state(&common, arg->light_client_get_state.get_state);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_GET_STATE_EVT);
@@ -336,12 +327,6 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_LIGHTING_CLIENT_SET_STATE: {
         params = arg->light_client_set_state.params;
-        role_param.model = (struct bt_mesh_model *)params->model;
-        role_param.role = params->msg_role;
-        if (bt_mesh_set_client_model_role(&role_param)) {
-            BT_ERR("Failed to set model role");
-            break;
-        }
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
         common.ctx.net_idx = params->ctx.net_idx;
@@ -350,10 +335,10 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         common.ctx.send_rel = params->ctx.send_rel;
         common.ctx.send_ttl = params->ctx.send_ttl;
         common.msg_timeout = params->msg_timeout;
+        common.msg_role = params->msg_role;
 
         cb.params = arg->light_client_set_state.params;
-        cb.error_code = bt_mesh_light_client_set_state(&common,
-                        (void *)arg->light_client_set_state.set_state, (void *)&cb.status_cb);
+        cb.error_code = bt_mesh_light_client_set_state(&common, arg->light_client_set_state.set_state);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_SET_STATE_EVT);
@@ -523,7 +508,6 @@ void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type, struct bt_mesh_model *
                                            const u8_t *val, size_t len)
 {
     esp_ble_mesh_lighting_server_cb_param_t cb_params = {0};
-    size_t length = 0U;
     uint8_t act = 0U;
 
     if (model == NULL || ctx == NULL) {
@@ -560,8 +544,7 @@ void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type, struct bt_mesh_model *
     cb_params.ctx.send_ttl = ctx->send_ttl;
 
     if (val && len) {
-        length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
-        memcpy(&cb_params.value, val, length);
+        memcpy(&cb_params.value, val, MIN(len, sizeof(cb_params.value)));
     }
 
     btc_ble_mesh_lighting_server_callback(&cb_params, act);
