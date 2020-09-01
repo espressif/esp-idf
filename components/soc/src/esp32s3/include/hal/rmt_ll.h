@@ -314,8 +314,12 @@ static inline uint32_t rmt_ll_get_rx_thres_interrupt_status(rmt_dev_t *dev)
 
 static inline void rmt_ll_set_tx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
 {
-    dev->carrier_duty_ch[channel].high = high_ticks;
-    dev->carrier_duty_ch[channel].low = low_ticks;
+    // In case the compiler optimise a 32bit instruction (e.g. s32i) into two 16bit instruction (e.g. s16i, which is not allowed to access a register)
+    // We take care of the "read-modify-write" procedure by ourselves.
+    typeof(dev->carrier_duty_ch[0]) reg;
+    reg.high = high_ticks;
+    reg.low = low_ticks;
+    dev->carrier_duty_ch[channel].val = reg.val;
 }
 
 static inline void rmt_ll_set_rx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
