@@ -34,28 +34,23 @@ extern const struct bt_mesh_model_op bt_mesh_health_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_HEALTH_CLI,    \
             bt_mesh_health_cli_op, NULL, cli_data)
 
-int bt_mesh_health_cli_set(struct bt_mesh_model *model);
+int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid);
 
-int bt_mesh_health_fault_get(struct bt_mesh_msg_ctx *ctx, u16_t cid);
+int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
+                               u16_t cid, bool need_ack);
 
-int bt_mesh_health_fault_clear(struct bt_mesh_msg_ctx *ctx, u16_t cid,
-                               bool need_ack);
-
-int bt_mesh_health_fault_test(struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
                               u16_t cid, u8_t test_id, bool need_ack);
 
-int bt_mesh_health_period_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_health_period_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_health_period_set(struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_health_period_set(bt_mesh_client_common_param_t *param,
                               u8_t divisor, bool need_ack);
 
-int bt_mesh_health_attention_get(struct bt_mesh_msg_ctx *ctx);
+int bt_mesh_health_attention_get(bt_mesh_client_common_param_t *param);
 
-int bt_mesh_health_attention_set(struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_health_attention_set(bt_mesh_client_common_param_t *param,
                                  u8_t attention, bool need_ack);
-
-s32_t bt_mesh_health_cli_timeout_get(void);
-void bt_mesh_health_cli_timeout_set(s32_t timeout);
 
 /* Health Client Status Message Context */
 
