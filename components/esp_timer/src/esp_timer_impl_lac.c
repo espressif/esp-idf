@@ -97,7 +97,7 @@ static intr_handle_t s_timer_interrupt_handle;
 /* Function from the upper layer to be called when the interrupt happens.
  * Registered in esp_timer_impl_init.
  */
-static intr_handler_t s_alarm_handler;
+static intr_handler_t s_alarm_handler = NULL;
 
 /* Spinlock used to protect access to the hardware registers. */
 portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -146,8 +146,13 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
+    if (s_alarm_handler == NULL) {
+        return 0;
+    }
     return esp_timer_impl_get_counter_reg() / TICKS_PER_US;
 }
+
+int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {

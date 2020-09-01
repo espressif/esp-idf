@@ -78,7 +78,7 @@ struct esp_timer {
     LIST_ENTRY(esp_timer) list_entry;
 };
 
-static bool is_initialized(void);
+static inline bool is_initialized(void);
 static esp_err_t timer_insert(esp_timer_handle_t timer);
 static esp_err_t timer_remove(esp_timer_handle_t timer);
 static bool timer_armed(esp_timer_handle_t timer);
@@ -361,7 +361,7 @@ static void IRAM_ATTR timer_alarm_handler(void* arg)
     }
 }
 
-static IRAM_ATTR bool is_initialized(void)
+static IRAM_ATTR inline bool is_initialized(void)
 {
     return s_timer_task != NULL;
 }
@@ -527,15 +527,6 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
     }
     timer_list_unlock();
     return next_alarm;
-}
-
-int64_t IRAM_ATTR esp_timer_get_time(void)
-{
-    if(is_initialized()) {
-        return esp_timer_impl_get_time();
-    } else {
-        return 0;
-    }
 }
 
 // Provides strong definition for system time functions relied upon
