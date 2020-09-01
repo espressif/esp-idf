@@ -630,6 +630,7 @@ Related Documents
 
     establish-serial-connection
     eclipse-setup
+    vscode-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
     :esp32: ../get-started-legacy/index
