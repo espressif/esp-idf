@@ -16,7 +16,7 @@
 #include "aes_wrap.h"
 
 static void ccmp_aad_nonce(const struct ieee80211_hdr *hdr, const u8 *data,
-			   u8 *aad, size_t *aad_len, u8 *nonce)
+                           u8 *aad, size_t *aad_len, u8 *nonce, bool espnow_pkt)
 {
 	u16 fc, stype, seq;
 	int qos = 0, addr4 = 0;
@@ -41,7 +41,7 @@ static void ccmp_aad_nonce(const struct ieee80211_hdr *hdr, const u8 *data,
 				qc += ETH_ALEN;
 			nonce[0] = qc[0] & 0x0f;
 		}
-	} else if (WLAN_FC_GET_TYPE(fc) == WLAN_FC_TYPE_MGMT)
+	} else if (!espnow_pkt && WLAN_FC_GET_TYPE(fc) == WLAN_FC_TYPE_MGMT)
 		nonce[0] |= 0x10; /* Management */
 
 	fc &= ~(WLAN_FC_RETRY | WLAN_FC_PWRMGT | WLAN_FC_MOREDATA);
@@ -136,7 +136,7 @@ static void ccmp_aad_nonce_pv1(const u8 *hdr, const u8 *a1, const u8 *a2,
 
 
 u8 * ccmp_decrypt(const u8 *tk, const u8 *hdr, const u8 *data,
-		  size_t data_len, size_t *decrypted_len)
+		  size_t data_len, size_t *decrypted_len, bool espnow_pkt)
 {
 	u8 aad[30], nonce[13];
 	size_t aad_len;
@@ -153,21 +153,21 @@ u8 * ccmp_decrypt(const u8 *tk, const u8 *hdr, const u8 *data,
 	mlen = data_len - 8 - 8;
 
 	os_memset(aad, 0, sizeof(aad));
-	ccmp_aad_nonce((const struct ieee80211_hdr *)hdr, data, aad, &aad_len, nonce);
-	//wpa_hexdump(MSG_DEBUG, "CCMP AAD", aad, aad_len);
-	//wpa_hexdump(MSG_DEBUG, "CCMP nonce", nonce, 13);
+	ccmp_aad_nonce((const struct ieee80211_hdr *)hdr, data, aad, &aad_len,
+                   nonce, espnow_pkt);
+	wpa_hexdump(MSG_DEBUG, "CCMP AAD", aad, aad_len);
+	wpa_hexdump(MSG_DEBUG, "CCMP nonce", nonce, 13);
 
 	if (aes_ccm_ad(tk, 16, nonce, 8, data + 8, mlen, aad, aad_len,
-		       data + 8 + mlen, plain) < 0) {
+                   data + 8 + mlen, plain, espnow_pkt ? true : false) < 0) {
 		os_free(plain);
 		return NULL;
 	}
-	//wpa_hexdump(MSG_DEBUG, "CCMP decrypted", plain, mlen);
+	wpa_hexdump(MSG_DEBUG, "CCMP decrypted", plain, mlen);
 
 	*decrypted_len = mlen;
 	return plain;
 }
-
 
 void ccmp_get_pn(u8 *pn, const u8 *data)
 {
@@ -210,7 +210,7 @@ u8 * ccmp_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 	*pos++ = pn[0]; /* PN5 */
 
 	os_memset(aad, 0, sizeof(aad));
-	ccmp_aad_nonce(hdr, crypt + hdrlen, aad, &aad_len, nonce);
+	ccmp_aad_nonce(hdr, crypt + hdrlen, aad, &aad_len, nonce, false);
 	wpa_hexdump(MSG_DEBUG, "CCMP AAD", aad, aad_len);
 	wpa_hexdump(MSG_DEBUG, "CCMP nonce", nonce, 13);
 
@@ -288,12 +288,13 @@ u8 * ccmp_256_decrypt(const u8 *tk, const u8 *hdr, const u8 *data,
 	mlen = data_len - 8 - 16;
 
 	os_memset(aad, 0, sizeof(aad));
-	ccmp_aad_nonce((const struct ieee80211_hdr *)hdr, data, aad, &aad_len, nonce);
+	ccmp_aad_nonce((const struct ieee80211_hdr *)hdr, data, aad,
+                   &aad_len, nonce, false);
 	wpa_hexdump(MSG_DEBUG, "CCMP-256 AAD", aad, aad_len);
 	wpa_hexdump(MSG_DEBUG, "CCMP-256 nonce", nonce, 13);
 
 	if (aes_ccm_ad(tk, 32, nonce, 16, data + 8, mlen, aad, aad_len,
-		       data + 8 + mlen, plain) < 0) {
+		       data + 8 + mlen, plain, false) < 0) {
 		os_free(plain);
 		return NULL;
 	}
@@ -334,7 +335,7 @@ u8 * ccmp_256_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 	*pos++ = pn[0]; /* PN5 */
 
 	os_memset(aad, 0, sizeof(aad));
-	ccmp_aad_nonce(hdr, crypt + hdrlen, aad, &aad_len, nonce);
+	ccmp_aad_nonce(hdr, crypt + hdrlen, aad, &aad_len, nonce, false);
 	wpa_hexdump(MSG_DEBUG, "CCMP-256 AAD", aad, aad_len);
 	wpa_hexdump(MSG_DEBUG, "CCMP-256 nonce", nonce, 13);
 
