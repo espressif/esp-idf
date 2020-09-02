@@ -19,7 +19,7 @@ class ConfigTargetVisibilityTestCase(unittest.TestCase):
 
     def _get_config(self, name):
         sym = self.config.syms.get(name)
-        if sym:
+        if sym and len(sym.nodes) > 0:
             return sym.nodes[0]
         choice = self.config.named_choices.get(name)
         if choice:

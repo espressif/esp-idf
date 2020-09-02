@@ -8,6 +8,9 @@ menu "Menu for CHIPA"
     config EXT_CONFIG2_FOR_CHIPA_MENU
         bool "Config for chip A (depend on the visibility of the menu)"
 
+    config EXT_CONFIG3_FOR_CHIPA_MENU
+        int "integer"
+        default 5
 endmenu
 
 config EXT_CONFIG3_FOR_CHIPA
