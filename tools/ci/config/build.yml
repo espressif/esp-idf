@@ -447,7 +447,11 @@ code_quality_check:
     - clang_tidy_check_regular
   only:
     - triggers
+  allow_failure: true
   script:
+    - export CI_MERGE_REQUEST_IID=`python ${CI_PROJECT_DIR}/tools/ci/ci_get_latest_mr_iid.py ${CI_COMMIT_BRANCH} | xargs`
+    # test if this branch have merge request, if not, exit 0
+    - test -n "$CI_MERGE_REQUEST_IID" || exit 0
     - sonar-scanner
       -Dsonar.analysis.mode=preview
       -Dsonar.host.url=$SONAR_HOST_URL
