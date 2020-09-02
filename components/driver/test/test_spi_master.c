@@ -937,7 +937,9 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+#ifndef CONFIG_SPIRAM_SUPPORT
     TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+#endif
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -952,7 +954,9 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+#ifndef CONFIG_SPIRAM_SUPPORT
     TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+#endif
 
     //release the bus
     spi_device_release_bus(spi);
@@ -970,7 +974,9 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+#ifndef CONFIG_SPIRAM_SUPPORT
     TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+#endif
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -984,7 +990,9 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+#ifndef CONFIG_SPIRAM_SUPPORT
     TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+#endif
 
     //release the bus
     spi_device_release_bus(spi);
