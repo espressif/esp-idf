@@ -424,7 +424,7 @@ build_template_app:
 .sonar_scan_template:
   stage: build
   image:
-    name: $CI_DOCKER_REGISTRY/sonarqube-scanner:1
+    name: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
   before_script:
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
     - python $SUBMODULE_FETCH_TOOL
