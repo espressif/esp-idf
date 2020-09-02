@@ -336,10 +336,12 @@ typedef int (*esp_omac1_aes_128_t)(const uint8_t *key, const uint8_t *data, size
  * @data: Pointer to encrypted data buffer
  * @data_len: Encrypted data length in bytes
  * @decrypted_len: Length of decrypted data
+ * @espnow_pkt: Indicates if it's an ESPNOW packet
  * Returns: Pointer to decrypted data on success, NULL on failure
  */
 typedef uint8_t * (*esp_ccmp_decrypt_t)(const uint8_t *tk, const uint8_t *ieee80211_hdr,
-                                        const uint8_t *data, size_t data_len, size_t *decrypted_len);
+                                        const uint8_t *data, size_t data_len,
+                                        size_t *decrypted_len, bool espnow_pkt);
 
 /**
  * @brief Encrypt data using CCMP (Counter Mode CBC-MAC Protocol OR
