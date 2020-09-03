@@ -28,6 +28,7 @@
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "esp_private/system_internal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
@@ -45,7 +46,6 @@
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
-#include "esp_timer.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -260,7 +260,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
 #endif
         for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-            int64_t start_time_us = esp_timer_get_time();
+            int64_t start_time_us = esp_system_get_time();
 #endif
             spi_flash_guard_start();
 #ifndef CONFIG_SPI_FLASH_BYPASS_BLOCK_ERASE
@@ -277,7 +277,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
             }
             spi_flash_guard_end();
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-            no_yield_time_us += (esp_timer_get_time() - start_time_us);
+            no_yield_time_us += (esp_system_get_time() - start_time_us);
             if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
                 no_yield_time_us = 0;
                 if (s_flash_guard_ops && s_flash_guard_ops->yield) {

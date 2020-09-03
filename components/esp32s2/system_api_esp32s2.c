@@ -17,7 +17,6 @@
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
-#include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp32s2/rom/cache.h"
 #include "esp_rom_uart.h"
@@ -30,6 +29,7 @@
 #include "soc/syscon_reg.h"
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
+#include "hal/cpu_hal.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -55,7 +55,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = xPortGetCoreID();
+    const uint32_t core_id = cpu_hal_get_core_id();
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs
