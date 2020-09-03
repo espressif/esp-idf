@@ -52,14 +52,5 @@ Ubuntu v20.04 和 Debian v7 之前的版本默认解释器为 Python 2.7，但�
 继续设置开发环境，请前往 :ref:`get-started-get-esp-idf` 章节。
 
 
-相关文档
-=================
-
-.. toctree::
-    :maxdepth: 1
-
-    :esp32: linux-setup-scratch
-
-
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 
