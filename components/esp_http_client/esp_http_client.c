@@ -867,7 +867,11 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            return ridx;
+            if (rlen < 0 && ridx == 0) {
+                return ESP_FAIL;
+            } else {
+                return ridx;
+            }
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
