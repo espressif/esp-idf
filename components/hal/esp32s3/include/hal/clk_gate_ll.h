@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
