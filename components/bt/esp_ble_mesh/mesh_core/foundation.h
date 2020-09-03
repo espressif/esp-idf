@@ -132,18 +132,6 @@ struct label {
     bt_mesh_atomic_t flags[1];
 };
 
-int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_cfg_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_srv_deinit(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary);
-
 void bt_mesh_cfg_reset(void);
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat);
