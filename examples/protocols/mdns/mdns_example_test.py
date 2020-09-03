@@ -6,12 +6,11 @@ import struct
 import dpkt
 import dpkt.dns
 from threading import Thread, Event
+import subprocess
 
 from tiny_test_fw import DUT
 import ttfw_idf
 
-# g_run_server = True
-# g_done = False
 stop_mdns_server = Event()
 esp_answered = Event()
 
@@ -112,7 +111,8 @@ def test_examples_protocol_mdns(env, extra_data):
     thread1 = Thread(target=mdns_server, args=(specific_host,))
     thread1.start()
     try:
-        dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        ip_address = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)[0]
+        print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         stop_mdns_server.set()
         thread1.join()
@@ -125,6 +125,13 @@ def test_examples_protocol_mdns(env, extra_data):
         dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: gethostbyname: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: getaddrinfo: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
+        # 5. check the DUT answers to `dig` command
+        dig_output = subprocess.check_output(['dig', '+short', '-p', '5353', '@224.0.0.251',
+                                              '{}.local'.format(specific_host)])
+        print('Resolving {} using "dig" succeeded with:\n{}'.format(specific_host, dig_output))
+        if not ip_address.encode('utf-8') in dig_output:
+            raise ValueError("Test has failed: Incorrectly resolved DUT hostname using dig"
+                             "Output should've contained DUT's IP address:{}".format(ip_address))
     finally:
         stop_mdns_server.set()
         thread1.join()
