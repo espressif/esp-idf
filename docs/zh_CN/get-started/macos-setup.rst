@@ -13,10 +13,6 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
     sudo easy_install pip
 
-- 安装 pyserial::
-
-    pip install --user pyserial
-
 - 安装 CMake 和 Ninja 编译工具：
 
     - 如果有安装 HomeBrew_，则可通过运行以下指令完成安装::
@@ -43,14 +39,6 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 ========
 
 继续设置开发环境，请前往 :ref:get-started-get-esp-idf。
-
-相关文档
-========
-
-.. toctree::
-    :maxdepth: 1
-   
-    macos-setup-scratch
 
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/

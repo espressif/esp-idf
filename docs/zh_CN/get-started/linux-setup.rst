@@ -67,14 +67,4 @@ Arch Linux 用户
 
 继续设置开发环境，请前往 :ref:`get-started-get-esp-idf` 章节。
 
-
-相关文档
-========
-
-.. toctree::
-	:maxdepth: 1
-
-	linux-setup-scratch
-
-
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
