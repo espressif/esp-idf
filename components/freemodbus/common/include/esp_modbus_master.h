@@ -136,7 +136,6 @@ esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler);
  * @brief Initialize Modbus Master controller interface handle
  *
  * @param[in] handler - pointer to master data structure
- * @return None
  */
 void mbc_master_init_iface(void* handler);
 

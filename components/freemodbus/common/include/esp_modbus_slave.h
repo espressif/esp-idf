@@ -78,7 +78,6 @@ esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler);
  * @brief Initialize Modbus Slave controller interface handle
  *
  * @param[in] handler - pointer to slave interface data structure
- * @return None
  */
 void mbc_slave_init_iface(void* handler);
 
