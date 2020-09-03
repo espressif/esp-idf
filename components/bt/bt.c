@@ -1458,7 +1458,8 @@ extern bool connection_is_alive();
 extern uint32_t real_bt_isr_count ;
 extern uint32_t connection_LinkSuperTimeout;
 extern uint32_t bt_isr_count_arry[16];
-
+extern uint32_t conn_disconn_stat_save_bit;
+extern uint32_t last_conn_disconn_solt_time;
 static bool check_bt_is_alive()
 {
     static int stop_times = 0;
@@ -1481,7 +1482,39 @@ static bool check_bt_is_alive()
     last_clk_ts = currect_clkint_ts;
     return BT_IS_ALIVE;
 }
+
+
+void IRAM_ATTR __attribute__((noinline))  abort_with_more_log_end(uint32_t user_bit,uint32_t bt_err_bit,uint32_t ble_err_bit,uint32_t last_err,uint32_t timesolt,uint32_t time_diff)
+{
+    ets_printf(DRAM_STR("ASSERT2: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x time:%d\n"),
+        user_bit, bt_err_bit, ble_err_bit, last_err, timesolt, time_diff);
+
+    __asm__ __volatile__("ill\n");
+
+}
+
+extern uint32_t btdm_debug_error_get_time();
+extern uint32_t btdm_debug_error_get_last_time();
+extern void btdm_debug_error_get_bit(uint32_t *error_bit);
+
+// abort with 'err bit log' and 'int stat log' in dump
+// every func will use 40 bytes
+void IRAM_ATTR __attribute__((noinline)) abort_with_more_log(uint32_t conn_state,uint32_t int_enable_1,uint32_t bt_int,uint32_t ble_int,uint32_t curr_time)
+{
+    uint32_t error_log[10] = {0, 0, 0, 0};
+    uint32_t time_slot ,time_slot2;
+    btdm_debug_error_get_bit(error_log);
+    time_slot = btdm_debug_error_get_time();
+    time_slot2 = btdm_debug_error_get_last_time();
+    abort_with_more_log_end(error_log[0], error_log[1], error_log[2], error_log[3], time_slot,time_slot2);
+
+    ets_printf(DRAM_STR("ASSERT: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x len:%d\n"),
+        conn_state, int_enable_1, bt_int, ble_int, curr_time);
+}
+
 void esp_crosscore_int_send_get_int(int core_id);
+void dbg_set_bit_state(uint8_t bit,bool state);
+extern uint32_t r_ld_read_clock(void);
 void esp_bt_check_need_restart()
 {
     if(connection_is_alive() && (check_bt_is_alive()==false))
@@ -1499,8 +1532,22 @@ void esp_bt_check_need_restart()
                 vTaskDelay(100/portTICK_PERIOD_MS);
             }
             RMT_DBG_LOG_ERROR("BT not alive,INT Core %d EN 0x%x",CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE,_int_enable_flag);
+            intenable = _int_enable_flag;
         }
-        r_assert_with_log(_int_enable_flag,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
+        int diff_time_with_last_conn = r_ld_read_clock() - last_conn_disconn_solt_time;
+        int conn_dis_stat = conn_disconn_stat_save_bit;
+        conn_dis_stat = conn_dis_stat & (~(0x00FFFFFF));
+        if(diff_time_with_last_conn<0x00FFFFFF)
+        {
+            conn_dis_stat = conn_dis_stat | (0x00FFFFFF & diff_time_with_last_conn);
+        }
+        else 
+        {
+            conn_dis_stat = conn_dis_stat | (0x00FFFFFF);
+        }
+
+        abort_with_more_log(conn_dis_stat,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
+        r_assert_with_log(conn_dis_stat,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
     }
 }
 
