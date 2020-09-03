@@ -39,6 +39,7 @@ tools/ci/build_template_app.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/check_build_warnings.py
+tools/ci/check_callgraph.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_examples_cmake_make.py
 tools/ci/check_examples_rom_header.sh
