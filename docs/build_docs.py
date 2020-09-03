@@ -33,6 +33,7 @@ import os.path
 import subprocess
 import sys
 import re
+from packaging import version
 from collections import namedtuple
 
 LANGUAGES = ["en", "zh_CN"]
@@ -45,6 +46,7 @@ SPHINX_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "sphinx-kno
 DXG_WARN_LOG = "doxygen-warning-log.txt"
 DXG_SANITIZED_LOG = "doxygen-warning-log-sanitized.txt"
 DXG_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "doxygen-known-warnings.txt")
+DXG_CI_VERSION = version.parse('1.8.11')
 
 LogMessage = namedtuple("LogMessage", "original_text sanitized_text")
 
@@ -246,6 +248,17 @@ def action_build(args):
             return ret
 
 
+def check_doxygen_version():
+    # Different version of doxygen may produce different warnings
+    # This could cause a build to fail locally, but pass CI and vice versa
+    process = subprocess.run(['doxygen', '--version'], encoding='utf-8', stdout=subprocess.PIPE)
+    doxygen_ver = process.stdout.strip()
+
+    if version.parse(doxygen_ver) > DXG_CI_VERSION:
+        print('Local doxygen version {} is newer than CI doxygen version {}. Local build may contain '
+              'warnings that will not be raised when built by CI.'.format(doxygen_ver, DXG_CI_VERSION))
+
+
 def call_build_docs(entry):
     (language, target, build_dir, src_dir, sphinx_parallel_jobs, builders, input_docs) = entry
     for buildername in builders:
@@ -264,6 +277,7 @@ def call_build_docs(entry):
                           out_sanitized_log_file=os.path.join(build_dir, SPHINX_SANITIZED_LOG))
 
         if ret != 0:
+            check_doxygen_version()
             return ret
 
     # Build PDF from tex
