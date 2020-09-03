@@ -1483,7 +1483,15 @@ typedef enum {
  * @brief WebSocket frame format
  */
 typedef struct httpd_ws_frame {
-    bool final;                 /*!< Final frame */
+    bool final;                 /*!< Final frame:
+                                     For received frames this field indicates whether the `FIN` flag was set.
+                                     For frames to be transmitted, this field is only used if the `fragmented`
+                                         option is set as well. If `fragmented` is false, the `FIN` flag is set
+                                         by default, marking the ws_frame as a complete/unfragmented message
+                                         (esp_http_server doesn't automatically fragment messages) */
+    bool fragmented;            /*!< Indication that the frame allocated for transmission is a message fragment,
+                                     so the `FIN` flag is set manually according to the `final` option.
+                                     This flag is never set for received messages */
     httpd_ws_type_t type;       /*!< WebSocket frame type */
     uint8_t *payload;           /*!< Pre-allocated data buffer */
     size_t len;                 /*!< Length of the WebSocket data */
