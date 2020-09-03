@@ -11,7 +11,7 @@
 #define CCMP_H
 
 u8 * ccmp_decrypt(const u8 *tk, const u8 *hdr, const u8 *data,
-		  size_t data_len, size_t *decrypted_len);
+		  size_t data_len, size_t *decrypted_len, bool espnow_pkt);
 u8 * ccmp_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 		  u8 *pn, int keyid, size_t *encrypted_len);
 u8 * ccmp_encrypt_pv1(const u8 *tk, const u8 *a1, const u8 *a2, const u8 *a3,

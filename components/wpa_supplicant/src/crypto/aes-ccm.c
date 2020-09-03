@@ -177,9 +177,10 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 
 
 /* AES-CCM with fixed L=2 and aad_len <= 30 assumption */
-int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
+int aes_ccm_ad(const u8 *key, size_t key_len, u8 *nonce,
 	       size_t M, const u8 *crypt, size_t crypt_len,
-	       const u8 *aad, size_t aad_len, const u8 *auth, u8 *plain)
+	       const u8 *aad, size_t aad_len, const u8 *auth,
+	       u8 *plain, bool skip_auth)
 {
 	const size_t L = 2;
 	void *aes;
@@ -199,6 +200,11 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
 
 	/* plaintext = msg XOR (S_1 | S_2 | ... | S_n) */
 	aes_ccm_encr(aes, L, crypt, crypt_len, plain, a);
+
+	if (skip_auth) {
+		aes_encrypt_deinit(aes);
+		return 0;
+	}
 
 	aes_ccm_auth_start(aes, M, L, nonce, aad, aad_len, crypt_len, x);
 	aes_ccm_auth(aes, plain, crypt_len, x);
