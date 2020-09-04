@@ -29,6 +29,7 @@ extern "C"
 #endif
 
 #define OTA_SIZE_UNKNOWN 0xffffffff /*!< Used for esp_ota_begin() if new image size is unknown */
+#define OTA_WITH_SEQUENTIAL_WRITES 0xfffffffe /*!< Used for esp_ota_begin() if new image size is unknown and erase can be done in incremental manner (assuming write operation is in continuous sequence) */
 
 #define ESP_ERR_OTA_BASE                         0x1500                     /*!< Base error code for ota_ops api */
 #define ESP_ERR_OTA_PARTITION_CONFLICT           (ESP_ERR_OTA_BASE + 0x01)  /*!< Error if request was to write or erase the current running partition */

@@ -39,6 +39,7 @@ struct esp_https_ota_handle {
     size_t ota_upgrade_buf_size;
     int binary_file_len;
     esp_https_ota_state state;
+    bool bulk_flash_erase;
 };
 
 typedef struct esp_https_ota_handle esp_https_ota_t;
@@ -207,7 +208,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto http_cleanup;
     }
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
-
+    https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;
     https_ota_handle->binary_file_len = 0;
     *handle = (esp_https_ota_handle_t)https_ota_handle;
     https_ota_handle->state = ESP_HTTPS_OTA_BEGIN;
@@ -280,9 +281,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 
     esp_err_t err;
     int data_read;
+    const int erase_size = handle->bulk_flash_erase ? OTA_SIZE_UNKNOWN : OTA_WITH_SEQUENTIAL_WRITES;
     switch (handle->state) {
         case ESP_HTTPS_OTA_BEGIN:
-            err = esp_ota_begin(handle->update_partition, OTA_SIZE_UNKNOWN, &handle->update_handle);
+            err = esp_ota_begin(handle->update_partition, erase_size, &handle->update_handle);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
                 return err;
