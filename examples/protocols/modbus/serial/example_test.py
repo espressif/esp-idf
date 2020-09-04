@@ -165,7 +165,7 @@ def test_check_mode(dut=None, mode_str=None, value=None):
     return False
 
 
-@ttfw_idf.idf_example_test(env_tag='UT_T2_RS485', ignore=True)
+@ttfw_idf.idf_example_test(env_tag='UT_T2_RS485')
 def test_modbus_communication(env, comm_mode):
     global logger
 
