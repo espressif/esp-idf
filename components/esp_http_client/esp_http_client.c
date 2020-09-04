@@ -1351,6 +1351,9 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->nc = 1;
         client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
         client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
+        if (client->auth_data->algorithm == NULL) {
+            client->auth_data->algorithm = strdup("MD5");
+        }
         client->auth_data->qop = http_utils_get_string_between(auth_header, "qop=\"", "\"");
         client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
         client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
