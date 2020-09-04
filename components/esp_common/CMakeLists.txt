@@ -45,7 +45,12 @@ else()
                       lwip
                       spi_flash
                       wpa_supplicant
-                      tcpip_adapter)
+                      tcpip_adapter
+                      esp_serial_slave_link
+                      esp_netif
+                      soc
+                      esp-tls
+                      esp_https_ota)
 
     idf_build_get_property(build_components BUILD_COMPONENTS)
     foreach(req ${optional_reqs})
