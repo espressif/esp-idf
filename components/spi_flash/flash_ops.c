@@ -143,7 +143,6 @@ static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t si
     return true;
 }
 
-
 void spi_flash_init(void)
 {
     spi_flash_init_lock();
