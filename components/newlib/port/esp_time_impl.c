@@ -50,7 +50,7 @@
 // Offset between FRC timer and the RTC.
 // Initialized after reset or light sleep.
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER) && defined(CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER)
-uint64_t s_microseconds_offset;
+uint64_t s_microseconds_offset = 0;
 #endif
 
 #ifndef CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
