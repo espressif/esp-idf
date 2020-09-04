@@ -44,5 +44,15 @@ void esp_netif_destroy_slip(netif_related_data_t *slip);
  */
 esp_err_t esp_netif_stop_slip(esp_netif_t *esp_netif);
 
+/**
+ * @brief Start the esp slip netif
+ *
+ * @param[in]    esp_netif handle to slip esp-netif instance
+ *
+ * @return
+ *         - ESP_OK on success
+ */
+esp_err_t esp_netif_start_slip(esp_netif_t *esp_netif);
+
 
 #endif // _ESP_NETIF_LWIP_SLIP_H_

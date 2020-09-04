@@ -73,7 +73,7 @@ netif_related_data_t * esp_netif_new_slip(esp_netif_t *esp_netif, const esp_neti
  */
 esp_err_t esp_netif_stop_slip(esp_netif_t *esp_netif)
 {
-    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)esp_netif;
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)esp_netif->related_data;
     assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
 
     ESP_LOGI(TAG, "%s: Stopped SLIP connection: %p", __func__, slip_ctx);
@@ -81,6 +81,26 @@ esp_err_t esp_netif_stop_slip(esp_netif_t *esp_netif)
     // Stop interface
     netif_set_link_down(esp_netif->lwip_netif);
 
+    return ESP_OK;
+}
+
+/**
+ * @brief Starts the SLIP interface
+ */
+esp_err_t esp_netif_start_slip(esp_netif_t *esp_netif)
+{
+    lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)esp_netif->related_data;
+    assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
+
+    ESP_LOGI(TAG, "%s: Starting SLIP interface: %p", __func__, slip_ctx);
+
+    // Set the netif up
+    netif_set_up(esp_netif->lwip_netif);
+    netif_set_link_up(esp_netif->lwip_netif);
+    int8_t addr_index = 0;
+
+    netif_ip6_addr_set(esp_netif->lwip_netif, addr_index, (ip6_addr_t *)&slip_ctx->addr);
+    netif_ip6_addr_set_state(esp_netif->lwip_netif, addr_index, IP6_ADDR_VALID);
     return ESP_OK;
 }
 
@@ -230,10 +250,7 @@ err_t esp_slipif_init(struct netif *netif)
     // Store netif index in net interface for SIO open command to abstract the dev
     netif->state = (void *)esp_index;
 
-    err_t err = slipif_init(netif);
-    netif_set_up(netif);
-    netif_set_link_up(netif);
-    return err;
+    return slipif_init(netif);
 }
 
 static const struct esp_netif_netstack_config s_netif_config_slip = {

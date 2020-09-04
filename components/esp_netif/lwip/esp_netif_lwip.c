@@ -649,6 +649,9 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 #endif
     }
     struct netif *p_netif = esp_netif->lwip_netif;
+    if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, SLIP_LWIP_NETIF)) {
+        esp_netif_start_slip(esp_netif);
+    }
     if (esp_netif->flags&ESP_NETIF_FLAG_AUTOUP) {
         ESP_LOGD(TAG, "%s Setting the lwip netif%p UP", __func__, p_netif);
         netif_set_up(p_netif);
