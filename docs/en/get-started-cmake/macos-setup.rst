@@ -47,11 +47,11 @@ Toolchain Setup
 
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-|download_link_osx|
+|download_link_macos|
 
 Download this file, then extract it in ``~/esp`` directory:
 
-.. include:: /_build/inc/unpack-code-osx.inc
+.. include:: /_build/inc/unpack-code-macos.inc
 
 .. _setup-macos-toolchain-add-it-to-path-cmake:
 
