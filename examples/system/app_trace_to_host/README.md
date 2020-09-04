@@ -13,7 +13,7 @@ For more description of [logging to host](https://docs.espressif.com/projects/es
 
 Debugging of time critical functions may not work as desired if log messages are sent through the UART port. Printing out the logs may considerably slow down tested function to the point where it will not operate as expected.
 
-Let's consider a case we are testing implementation of [zero level crossing](https://en.wikipedia.org/wiki/Zero_crossing) detection for a 50 Hz signal with ESP32's ADC. 
+Let's consider a case we are testing implementation of [zero level crossing](https://en.wikipedia.org/wiki/Zero_crossing) detection for a 50 Hz signal with ESP32's ADC.
 
 We will start by checking if we can read ADC, what is the signal level and how many samples can be collected over 20 ms period by using a code snippet below:
 
@@ -36,7 +36,7 @@ I (4319) example: Sample:4, Value:27
 I (4319) example: Sample:5, Value:4095
 ```
 
-As you see we were able to collect only five samples. This seems rather not adequate for zero crossing detection. 
+As you see we were able to collect only five samples. This seems rather not adequate for zero crossing detection.
 
 We can remove `ESP_LOGI()` line and sample much faster, but then will not be able to see the values. To see the values we would need to save them in the memory and print out later.
 
@@ -46,7 +46,7 @@ Instead of saving samples to memory, a simple and compelling solution to this is
 esp_log_set_vprintf(esp_apptrace_vprintf);
 ```
 
-Once time critical messages are sent out, we can redirect `ESP_LOGx` back back to the UART by adding extra two lines of code. 
+Once time critical messages are sent out, we can redirect `ESP_LOGx` back back to the UART by adding extra two lines of code.
 
 ```c
 esp_log_set_vprintf(vprintf);
@@ -176,7 +176,7 @@ This is the log we have been looking for, complete with timestamps as if printed
 
 ## Example Output
 
-Check the full example code [app_trace_to_host](main/app_trace_to_host_test.c) that combines both tests above and runs them in a loop showing instantly the number of samples collected:
+Check the full example code [app_trace_to_host](main/app_trace_to_host_example_main.c) that combines both tests above and runs them in a loop showing instantly the number of samples collected:
 
 ```
 I (4289) example: Sampling ADC and sending data to the host...
@@ -199,7 +199,7 @@ With this example code we have demonstrated powerful functionality of logging to
 
 ## Troubleshooting
 1. I can not flash new firmware when OpenOCD is connected to ESP32.
-   * One likely cause would be that you set wrong SPI flash voltage when you start OpenOCD. Suppose you're working with an ESP32 board / module which has a 3.3V powered SPI flash, but you select 
+   * One likely cause would be that you set wrong SPI flash voltage when you start OpenOCD. Suppose you're working with an ESP32 board / module which has a 3.3V powered SPI flash, but you select
 `board/esp32-wrover.cfg` configuration file when start OpenOCD. In this situation, you might not be able to flash ESP32 when OpenOCD is connected. So make sure what the working voltage of the SPI flash is. Currently, for 1.8V flash, we'd like to suggest using `board/esp32-wrover.cfg` and for 3.3V flash, using `board/esp-wroom-32.cfg`. For more information about it, please refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration).
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)
