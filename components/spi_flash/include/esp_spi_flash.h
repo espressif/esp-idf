@@ -317,6 +317,10 @@ typedef void (*spi_flash_op_unlock_func_t)(void);
  * @brief Function to protect SPI flash critical regions corruption.
  */
 typedef bool (*spi_flash_is_safe_write_address_t)(size_t addr, size_t size);
+/**
+ * @brief Function to yield to the OS during erase operation.
+ */
+typedef void (*spi_flash_os_yield_t)(void);
 
 /**
  * Structure holding SPI flash access critical sections management functions.
@@ -357,6 +361,7 @@ typedef struct {
 #if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
     spi_flash_is_safe_write_address_t   is_safe_write_address; /**< checks flash write addresses.*/
 #endif
+    spi_flash_os_yield_t                yield;      /**< yield to the OS during flash erase */
 } spi_flash_guard_funcs_t;
 
 /**
