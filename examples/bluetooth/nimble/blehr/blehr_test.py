@@ -19,8 +19,12 @@ import os
 import re
 import threading
 import traceback
-import Queue
 import subprocess
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 from tiny_test_fw import Utility
 import ttfw_idf
