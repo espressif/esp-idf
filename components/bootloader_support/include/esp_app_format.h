@@ -13,6 +13,8 @@
 // limitations under the License.
 #pragma once
 
+#include <inttypes.h>
+
 /**
  * @brief ESP chip ID
  *
