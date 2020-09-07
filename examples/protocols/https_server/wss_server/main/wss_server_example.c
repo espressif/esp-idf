@@ -84,7 +84,8 @@ static const httpd_uri_t ws = {
         .method     = HTTP_GET,
         .handler    = ws_handler,
         .user_ctx   = NULL,
-        .is_websocket = true
+        .is_websocket = true,
+        .handle_ws_control_frames = true
 };
 
 

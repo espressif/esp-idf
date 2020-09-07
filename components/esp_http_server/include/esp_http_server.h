@@ -406,6 +406,12 @@ typedef struct httpd_uri {
      * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
      */
     bool is_websocket;
+
+    /**
+     * Flag indicating that control frames (PING, PONG, CLOSE) are also passed to the handler
+     * This is used if a custom processing of the control frames is needed
+     */
+    bool handle_ws_control_frames;
 #endif
 } httpd_uri_t;
 
