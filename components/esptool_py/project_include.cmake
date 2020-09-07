@@ -4,7 +4,14 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 
-set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${target})
+set(chip_model ${target})
+if(target STREQUAL "esp32s3")
+    if(CONFIG_IDF_TARGET_ESP32S3_BETA_VERSION_2)
+        set(chip_model "esp32s3beta2")
+    endif()
+endif()
+
+set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
