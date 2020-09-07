@@ -170,6 +170,9 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_REG(0) : (hw == &UART1) ? UART_FIFO_REG(1) : UART_FIFO_REG(2);
     for(int i = 0; i < rd_len; i++) {
         buf[i] = READ_PERI_REG(fifo_addr);
+#ifdef CONFIG_COMPILER_OPTIMIZATION_PERF
+        __asm__ __volatile__("nop");
+#endif
     }
 }
 
