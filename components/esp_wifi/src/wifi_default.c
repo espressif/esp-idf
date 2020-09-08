@@ -58,6 +58,10 @@ static void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id,
         }
     }
 
+    if ((ret = esp_wifi_internal_reg_netstack_buf_cb(esp_netif_netstack_buf_ref, esp_netif_netstack_buf_free)) != ESP_OK) {
+        ESP_LOGE(TAG, "netstack cb reg failed with %d", ret);
+        return;
+    }
     esp_netif_set_mac(esp_netif, mac);
     esp_netif_action_start(esp_netif, base, event_id, data);
 }
