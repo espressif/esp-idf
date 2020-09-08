@@ -10,12 +10,14 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
-#include "soc/cp_dma_caps.h"
-#include "cp_dma.h"
+#include "esp_async_memcpy.h"
+#include "soc/soc_caps.h"
+
+#if SOC_CP_DMA_SUPPORTED || SOC_GDMA_SUPPORTED
 
 #define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
 
-static void cp_dma_setup_testbench(uint32_t seed, uint32_t *buffer_size, uint8_t **src_buf, uint8_t **dst_buf, uint8_t **from_addr, uint8_t **to_addr, uint32_t align)
+static void async_memcpy_setup_testbench(uint32_t seed, uint32_t *buffer_size, uint8_t **src_buf, uint8_t **dst_buf, uint8_t **from_addr, uint8_t **to_addr, uint32_t align)
 {
     srand(seed);
     printf("allocating memory buffer...\r\n");
@@ -43,7 +45,7 @@ static void cp_dma_setup_testbench(uint32_t seed, uint32_t *buffer_size, uint8_t
     }
 }
 
-static void cp_dma_verify_and_clear_testbench(uint32_t seed, uint32_t buffer_size, uint8_t *src_buf, uint8_t *dst_buf, uint8_t *from_addr, uint8_t *to_addr)
+static void async_memcpy_verify_and_clear_testbench(uint32_t seed, uint32_t buffer_size, uint8_t *src_buf, uint8_t *dst_buf, uint8_t *from_addr, uint8_t *to_addr)
 {
     srand(seed);
     for (int i = 0; i < buffer_size; i++) {
@@ -59,13 +61,12 @@ static void cp_dma_verify_and_clear_testbench(uint32_t seed, uint32_t buffer_siz
     free(dst_buf);
 }
 
-TEST_CASE("memory copy by DMA one by one", "[CP_DMA]")
+TEST_CASE("memory copy by DMA one by one", "[async mcp]")
 {
-    cp_dma_config_t config = CP_DMA_DEFAULT_CONFIG();
-    config.max_in_stream = 4;
-    config.max_out_stream = 4;
-    cp_dma_driver_t driver = NULL;
-    TEST_ESP_OK(cp_dma_driver_install(&config, &driver));
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    config.backlog = 4;
+    async_memcpy_t driver = NULL;
+    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
     uint32_t test_buffer_len[] = {256, 512, 1024, 2048, 4096, 5011};
     uint8_t *sbuf = NULL;
@@ -76,24 +77,22 @@ TEST_CASE("memory copy by DMA one by one", "[CP_DMA]")
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
         // Test different align edge
         for (int align = 0; align < 4; align++) {
-            cp_dma_setup_testbench(i, &test_buffer_len[i], &sbuf, &dbuf, &from, &to, align);
-            TEST_ESP_OK(cp_dma_memcpy(driver, to, from, test_buffer_len[i], NULL, NULL));
-            cp_dma_verify_and_clear_testbench(i, test_buffer_len[i], sbuf, dbuf, from, to);
+            async_memcpy_setup_testbench(i, &test_buffer_len[i], &sbuf, &dbuf, &from, &to, align);
+            TEST_ESP_OK(esp_async_memcpy(driver, to, from, test_buffer_len[i], NULL, NULL));
+            async_memcpy_verify_and_clear_testbench(i, test_buffer_len[i], sbuf, dbuf, from, to);
 
             vTaskDelay(pdMS_TO_TICKS(100));
         }
     }
 
-    TEST_ESP_OK(cp_dma_driver_uninstall(driver));
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 }
 
-TEST_CASE("memory copy by DMA on the fly", "[CP_DMA]")
+TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
 {
-    cp_dma_config_t config = CP_DMA_DEFAULT_CONFIG();
-    config.max_in_stream = 4;
-    config.max_out_stream = 4;
-    cp_dma_driver_t driver = NULL;
-    TEST_ESP_OK(cp_dma_driver_install(&config, &driver));
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    async_memcpy_t driver = NULL;
+    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
     uint32_t test_buffer_len[] = {512, 1024, 2048, 4096, 5011};
     uint8_t *sbufs[] = {0, 0, 0, 0, 0};
@@ -103,82 +102,79 @@ TEST_CASE("memory copy by DMA on the fly", "[CP_DMA]")
 
     // Aligned case
     for (int i = 0; i < sizeof(sbufs) / sizeof(sbufs[0]); i++) {
-        cp_dma_setup_testbench(i, &test_buffer_len[i], &sbufs[i], &dbufs[i], &froms[i], &tos[i], 0);
+        async_memcpy_setup_testbench(i, &test_buffer_len[i], &sbufs[i], &dbufs[i], &froms[i], &tos[i], 0);
     }
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
-        TEST_ESP_OK(cp_dma_memcpy(driver, tos[i], froms[i], test_buffer_len[i], NULL, NULL));
+        TEST_ESP_OK(esp_async_memcpy(driver, tos[i], froms[i], test_buffer_len[i], NULL, NULL));
     }
     for (int i = 0; i < sizeof(sbufs) / sizeof(sbufs[0]); i++) {
-        cp_dma_verify_and_clear_testbench(i, test_buffer_len[i], sbufs[i], dbufs[i], froms[i], tos[i]);
+        async_memcpy_verify_and_clear_testbench(i, test_buffer_len[i], sbufs[i], dbufs[i], froms[i], tos[i]);
     }
 
     // Non-aligned case
     for (int i = 0; i < sizeof(sbufs) / sizeof(sbufs[0]); i++) {
-        cp_dma_setup_testbench(i, &test_buffer_len[i], &sbufs[i], &dbufs[i], &froms[i], &tos[i], 3);
+        async_memcpy_setup_testbench(i, &test_buffer_len[i], &sbufs[i], &dbufs[i], &froms[i], &tos[i], 3);
     }
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
-        TEST_ESP_OK(cp_dma_memcpy(driver, tos[i], froms[i], test_buffer_len[i], NULL, NULL));
+        TEST_ESP_OK(esp_async_memcpy(driver, tos[i], froms[i], test_buffer_len[i], NULL, NULL));
     }
     for (int i = 0; i < sizeof(sbufs) / sizeof(sbufs[0]); i++) {
-        cp_dma_verify_and_clear_testbench(i, test_buffer_len[i], sbufs[i], dbufs[i], froms[i], tos[i]);
+        async_memcpy_verify_and_clear_testbench(i, test_buffer_len[i], sbufs[i], dbufs[i], froms[i], tos[i]);
     }
 
-    TEST_ESP_OK(cp_dma_driver_uninstall(driver));
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 }
 
-#define TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS (16)
-static uint32_t test_cp_dma_memcpy_bench_len = 4096;
+#define TEST_ASYNC_MEMCPY_BENCH_COUNTS (16)
+static uint32_t test_async_memcpy_bench_len = 4095;
 static int count = 0;
 
-static IRAM_ATTR bool test_cp_dma_memcpy_cb(cp_dma_driver_t drv_hdl, cp_dma_event_t *event, void *cb_args)
+static IRAM_ATTR bool test_async_memcpy_isr_cb(async_memcpy_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
 {
     SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
     BaseType_t high_task_wakeup = pdFALSE;
-    switch (event->id) {
-    case CP_DMA_EVENT_M2M_DONE:
-        count++;
-        if (count == TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS) {
-            xSemaphoreGiveFromISR(sem, &high_task_wakeup);
-        }
-        break;
-    default:
-        break;
+    count++;
+    if (count == TEST_ASYNC_MEMCPY_BENCH_COUNTS) {
+        xSemaphoreGiveFromISR(sem, &high_task_wakeup);
     }
     return high_task_wakeup == pdTRUE;
 }
 
-TEST_CASE("memory copy by DMA with callback", "[CP_DMA][performance]")
+TEST_CASE("memory copy by DMA with callback", "[async mcp]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
 
-    cp_dma_config_t config = CP_DMA_DEFAULT_CONFIG();
-    cp_dma_driver_t driver = NULL;
-    TEST_ESP_OK(cp_dma_driver_install(&config, &driver));
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    config.backlog = TEST_ASYNC_MEMCPY_BENCH_COUNTS;
+    async_memcpy_t driver = NULL;
+    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
     uint8_t *sbuf = NULL;
     uint8_t *dbuf = NULL;
     uint8_t *from = NULL;
     uint8_t *to = NULL;
 
-    cp_dma_setup_testbench(0, &test_cp_dma_memcpy_bench_len, &sbuf, &dbuf, &from, &to, 0);
+    async_memcpy_setup_testbench(0, &test_async_memcpy_bench_len, &sbuf, &dbuf, &from, &to, 0);
     count = 0;
     ccomp_timer_start();
-    for (int i = 0; i < TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS; i++) {
-        TEST_ESP_OK(cp_dma_memcpy(driver, to, from, test_cp_dma_memcpy_bench_len, test_cp_dma_memcpy_cb, sem));
+    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
+        TEST_ESP_OK(esp_async_memcpy(driver, to, from, test_async_memcpy_bench_len, test_async_memcpy_isr_cb, sem));
     }
 
     // wait for done semaphore
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
-    esp_rom_printf("memcpy %d Bytes data by HW costs %lldus\r\n", test_cp_dma_memcpy_bench_len, ccomp_timer_stop() / TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS);
+    esp_rom_printf("memcpy %d Bytes data by HW costs %lldus\r\n", test_async_memcpy_bench_len, ccomp_timer_stop() / TEST_ASYNC_MEMCPY_BENCH_COUNTS);
 
     ccomp_timer_start();
-    for (int i = 0; i < TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS; i++) {
-        memcpy(to, from, test_cp_dma_memcpy_bench_len);
+    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
+        memcpy(to, from, test_async_memcpy_bench_len);
     }
-    esp_rom_printf("memcpy %d Bytes data by SW costs %lldus\r\n", test_cp_dma_memcpy_bench_len, ccomp_timer_stop() / TEST_CP_DMA_MECP_DMAY_BENCH_COUNTS);
+    esp_rom_printf("memcpy %d Bytes data by SW costs %lldus\r\n", test_async_memcpy_bench_len, ccomp_timer_stop() / TEST_ASYNC_MEMCPY_BENCH_COUNTS);
 
-    cp_dma_verify_and_clear_testbench(0, test_cp_dma_memcpy_bench_len, sbuf, dbuf, from, to);
+    async_memcpy_verify_and_clear_testbench(0, test_async_memcpy_bench_len, sbuf, dbuf, from, to);
 
-    TEST_ESP_OK(cp_dma_driver_uninstall(driver));
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
     vSemaphoreDelete(sem);
 }
+
+#endif //SOC_CP_DMA_SUPPORTED || SOC_GDMA_SUPPORTED

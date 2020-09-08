@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*******************************************************************************
+ * NOTICE
+ * The HAL is not public api, don't use in application code.
+ * See readme.md in soc/README.md
+ ******************************************************************************/
+
 #pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SOC_CP_DMA_MAX_BUFFER_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
+#include "soc/gdma_struct.h"
+
+typedef struct {
+    gdma_dev_t *dev;
+} gdma_hal_context_t;
 
 #ifdef __cplusplus
 }

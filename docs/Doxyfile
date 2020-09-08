@@ -118,9 +118,9 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/dac_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
-    $(IDF_PATH)/components/esp32s2/include/cp_dma.h \
     $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
     $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
+    $(IDF_PATH)/components/hal/include/hal/dma_types.h \
     $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
     $(IDF_PATH)/components/hal/include/hal/uart_types.h \
     $(IDF_PATH)/components/hal/include/hal/mcpwm_types.h \
@@ -255,6 +255,8 @@ INPUT = \
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
     $(IDF_PATH)/components/esp_system/include/esp_sleep.h \
+    ## Async memory copy
+    $(IDF_PATH)/components/esp_system/include/esp_async_memcpy.h \
     ## Logging
     $(IDF_PATH)/components/log/include/esp_log.h \
     ## Base MAC address

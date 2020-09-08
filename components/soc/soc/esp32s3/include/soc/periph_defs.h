@@ -42,9 +42,6 @@ typedef enum {
     PERIPH_FSPI_MODULE, //SPI2
     PERIPH_HSPI_MODULE, //SPI3
     PERIPH_VSPI_MODULE, //SPI4
-    PERIPH_SPI2_DMA_MODULE,
-    PERIPH_SPI3_DMA_MODULE,
-    PERIPH_SPI_SHARED_DMA_MODULE, //this DMA is shared by SPI1 and SPI4
     PERIPH_SDMMC_MODULE,
     PERIPH_TWAI_MODULE,
     PERIPH_RNG_MODULE,
@@ -56,9 +53,8 @@ typedef enum {
     PERIPH_AES_MODULE,
     PERIPH_SHA_MODULE,
     PERIPH_RSA_MODULE,
-    PERIPH_CRYPTO_DMA_MODULE, //this DMA is shared between AES and SHA
-    PERIPH_AES_DMA_MODULE,
-    PERIPH_SHA_DMA_MODULE,
+    PERIPH_SYSTIMER_MODULE,
+    PERIPH_GDMA_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 
@@ -102,7 +98,7 @@ typedef enum {
     ETS_PWM3_INTR_SOURCE,                       /**< interruot of PWM3, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
-    ETS_TWAI_INTR_SOURCE ,                      /**< interrupt of can, level*/
+    ETS_TWAI_INTR_SOURCE,                       /**< interrupt of can, level*/
     ETS_USB_INTR_SOURCE,                        /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
@@ -132,12 +128,11 @@ typedef enum {
     ETS_DCACHE_SYNC0_INTR_SOURCE,               /**< interrupt of data cache sync done, LEVEL*/
     ETS_ICACHE_SYNC0_INTR_SOURCE,               /**< interrupt of instruction cache sync done, LEVEL*/
     ETS_APB_ADC_INTR_SOURCE,                    /**< interrupt of APB ADC, LEVEL*/
-
-    ETS_CRYPTO_DMA_INTR_SOURCE = 66,            /**< interrupt of encrypted DMA, LEVEL*/
-    ETS_CRYPTO_DMA1_INTR_SOURCE,
-    ETS_CRYPTO_DMA2_INTR_SOURCE,
-    ETS_CRYPTO_DMA3_INTR_SOURCE,
-    ETS_CRYPTO_DMA4_INTR_SOURCE,
+    ETS_DMA_CH0_INTR_SOURCE,                    /**< interrupt of general DMA channel 0, LEVEL*/
+    ETS_DMA_CH1_INTR_SOURCE,                    /**< interrupt of general DMA channel 1, LEVEL*/
+    ETS_DMA_CH2_INTR_SOURCE,                    /**< interrupt of general DMA channel 2, LEVEL*/
+    ETS_DMA_CH3_INTR_SOURCE,                    /**< interrupt of general DMA channel 3, LEVEL*/
+    ETS_DMA_CH4_INTR_SOURCE,                    /**< interrupt of general DMA channel 4, LEVEL*/
     ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
     ETS_AES_INTR_SOURCE,                        /**< interrupt of AES accelerator, level*/
     ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
@@ -153,8 +148,7 @@ typedef enum {
     ETS_CORE0_PIF_PMS_SIZE_INTR_SOURCE,
     ETS_CORE1_IRAM0_PMS_INTR_SOURCE,
     ETS_CORE1_DRAM0_PMS_INTR_SOURCE,
-
-    ETS_CORE1_PIF_PMS_INTR_SOURCE = 86,
+    ETS_CORE1_PIF_PMS_INTR_SOURCE,
     ETS_CORE1_PIF_PMS_SIZE_INTR_SOURCE,
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_CACHE_CORE1_ACS_INTR_SOURCE,
