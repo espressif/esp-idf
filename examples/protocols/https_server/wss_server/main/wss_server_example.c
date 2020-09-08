@@ -210,14 +210,9 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+// Get all clients and send async message
 static void wss_server_send_messages(httpd_handle_t* server)
 {
-    // Get all clients and send async message
-    struct {
-        size_t active_clients;
-        int    client_fds[max_clients];
-    } client_list;
-
     bool send_messages = true;
 
     // Send async message to all connected clients that use websocket protocol every 10 seconds
@@ -227,10 +222,11 @@ static void wss_server_send_messages(httpd_handle_t* server)
         if (!*server) { // httpd might not have been created by now
             continue;
         }
-
-        if (httpd_get_client_list(*server, max_clients, (httpd_client_list_t*)&client_list) == ESP_OK) {
-            for (size_t i=0; i < client_list.active_clients; ++i) {
-                int sock = client_list.client_fds[i];
+        size_t clients = max_clients;
+        int    client_fds[max_clients];
+        if (httpd_get_client_list(*server, &clients, client_fds) == ESP_OK) {
+            for (size_t i=0; i < clients; ++i) {
+                int sock = client_fds[i];
                 if (httpd_ws_get_fd_info(*server, sock) == HTTPD_WS_CLIENT_WEBSOCKET) {
                     ESP_LOGI(TAG, "Active client (fd=%d) -> sending async message", sock);
                     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));

@@ -104,17 +104,18 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
     return ESP_OK;
 }
 
-esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t max_fds, httpd_client_list_t *fd_list)
+esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds)
 {
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd == NULL || max_fds == 0 || fd_list == NULL || max_fds < hd->config.max_open_sockets) {
+    if (hd == NULL || fds == NULL || *fds == 0 || client_fds == NULL || *fds < hd->config.max_open_sockets) {
         return ESP_ERR_INVALID_ARG;
     }
-    fd_list->active_clients = 0;
+    size_t max_fds = *fds;
+    *fds = 0;
     for (int i = 0; i < hd->config.max_open_sockets; ++i) {
         if (hd->hd_sd[i].fd != -1) {
-            if (fd_list->active_clients < max_fds) {
-                fd_list->client_fds[fd_list->active_clients++] = hd->hd_sd[i].fd;
+            if (*fds < max_fds) {
+                client_fds[(*fds)++] = hd->hd_sd[i].fd;
             } else {
                 return ESP_ERR_INVALID_ARG;
             }

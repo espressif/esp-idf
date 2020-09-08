@@ -416,14 +416,6 @@ typedef struct httpd_uri {
 } httpd_uri_t;
 
 /**
- * @brief Structure for holding list of clients
- */
-typedef struct httpd_client_list {
-    size_t active_clients;      /*!< number of active clients in this struct */
-    int    client_fds[];        /*!< array of file descriptors of all active clients */
-} httpd_client_list_t;
-
-/**
  * @brief   Registers a URI handler
  *
  * @note    URI handlers can be registered in real time as long as the
@@ -1484,14 +1476,15 @@ esp_err_t httpd_sess_update_lru_counter(httpd_handle_t handle, int sockfd);
  * @brief   Returns list of current socket descriptors of active sessions
  *
  * @param[in] handle    Handle to server returned by httpd_start
- * @param[in] max_fds   Maximum number of socket fds the supplied list could hold
- * @param[out] fd_list  Structure holding socket descriptors
+ * @param[in,out] fds   In: Number of fds allocated in the supplied structure client_fds
+ *                      Out: Number of valid client fds returned in client_fds,
+ * @param[out] client_fds  Array of client fds
  *
  * @return
  *  - ESP_OK              : Successfully retrieved session list
- *  - ESP_ERR_INVALID_ARG : Wrong arguments or list is longer than maximum
+ *  - ESP_ERR_INVALID_ARG : Wrong arguments or list is longer than allocated
  */
-esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t max_fds, httpd_client_list_t *fd_list);
+esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
 
 /** End of Session
  * @}
