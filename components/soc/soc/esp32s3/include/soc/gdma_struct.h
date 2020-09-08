@@ -315,6 +315,8 @@ typedef volatile struct {
     uint32_t date; /*register version.*/
 } gdma_dev_t;
 
+_Static_assert(sizeof(gdma_dev_t) == 0x244, "incorrect size of gdma_dev_t.");
+
 extern gdma_dev_t GDMA;
 
 #ifdef __cplusplus

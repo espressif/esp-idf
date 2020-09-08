@@ -151,6 +151,14 @@ bool spicommon_dma_chan_in_use(int dma_chan);
 bool spicommon_dma_chan_free(int dma_chan);
 
 /**
+ * @brief Connect SPI and DMA peripherals
+ * 
+ * @param host     SPI peripheral
+ * @param dma_chan DMA channel
+ */
+void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan);
+
+/**
  * @brief Connect a SPI peripheral to GPIO pins
  *
  * This routine is used to connect a SPI peripheral to the IO-pads and DMA channel given in
