@@ -287,9 +287,10 @@ If the RMT driver has been installed with :cpp:func:`rmt_driver_install` for som
 Application Examples
 --------------------
 
-* A simple RMT TX example: :example:`peripherals/rmt/morse_code`.
-* Another RMT TX example, specific to drive a common RGB LED strip: :example:`peripherals/rmt/led_strip`.
+* Using RMT to send morse code: :example:`peripherals/rmt/morse_code`.
+* Using RMT to drive RGB LED strip: :example:`peripherals/rmt/led_strip`.
 * NEC remote control TX and RX example: :example:`peripherals/rmt/ir_protocols`.
+* Musical buzzer example: :example:`peripherals/rmt/musical_buzzer`.
 
 
 API Reference
