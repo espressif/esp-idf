@@ -13,15 +13,15 @@
 // limitations under the License.
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
 #include "driver/spi_master.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**

@@ -13,13 +13,13 @@
 // limitations under the License.
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ESP_ETH_PHY_ADDR_AUTO (-1)
 
