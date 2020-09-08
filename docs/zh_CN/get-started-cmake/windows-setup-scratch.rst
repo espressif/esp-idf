@@ -58,7 +58,7 @@ Python 安装完成后，打开 Windows 开始菜单下的 Command Prompt，并�
 
 从 dl.espressif.com 下载预编译的 Windows 平台工具链：
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-96-g2852398-5.2.0.zip
+https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-97-gc752ad5-5.2.0.zip
 
 解压压缩包文件到 ``C:\Program Files`` （或其他地址）。压缩包文件包含 ``xtensa-esp32-elf`` 目录。
 
