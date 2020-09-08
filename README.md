@@ -4,7 +4,7 @@
 
 [![Documentation Status](https://readthedocs.com/projects/espressif-esp-idf/badge/?version=latest)](https://docs.espressif.com/projects/esp-idf/en/latest/?badge=latest)
 
-ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
+ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip provided for Windows, Linux and macOS.
 
 # Developing With ESP-IDF
 
@@ -37,25 +37,15 @@ See the Getting Started guide links above for a detailed setup guide. This is a 
 
 ## Setup Build Environment
 
-(See Getting Started guide for a full list of required steps with details.)
+(See the Getting Started guide listed above for a full list of required steps with more details.)
 
-* Install host build dependencies mentioned in Getting Started guide.
-* Add `tools/` directory to the PATH
-* Run `python -m pip install -r requirements.txt` to install Python dependencies
+* Install host build dependencies mentioned in the Getting Started guide.
+* Run the install script to set up the build environment. The options include `install.bat` or `install.ps1` for Windows, and `install.sh` for Unix shells.
+* Run the export script on Windows (`export.bat`) or source it on Unix (`source export.sh`) in every shell environment before using ESP-IDF.
 
 ## Configuring the Project
 
-`idf.py menuconfig`
-
-* Opens a text-based configuration menu for the project.
-* Use up & down arrow keys to navigate the menu.
-* Use Enter key to go into a submenu, Escape key to go out or to exit.
-* Type `?` to see a help screen. Enter key exits the help screen.
-* Use Space key, or `Y` and `N` keys to enable (Yes) and disable (No) configuration items with checkboxes "`[*]`"
-* Pressing `?` while highlighting a configuration item displays help about that item.
-* Type `/` to search the configuration items.
-
-Once done configuring, press Escape multiple times to exit and say "Yes" to save the new configuration when prompted.
+`idf.py menuconfig` opens a text-based configuration menu where you can configure the project.
 
 ## Compiling the Project
 
