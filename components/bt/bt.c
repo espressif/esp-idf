@@ -1451,6 +1451,7 @@ void IRAM_ATTR __attribute__((noinline)) r_assert(const char *condition, int par
 #define BT_NOT_ALIVE false
 #define BT_INT_STA_REG (0x3FF7100C)
 #define BLE_INT_STA_REG (0x3FF71210)
+#define BT_INTSTAT_ADDR (0x3FF71010)
 
 extern int _int_enable_flag;
 
@@ -1499,14 +1500,33 @@ extern void btdm_debug_error_get_bit(uint32_t *error_bit);
 
 // abort with 'err bit log' and 'int stat log' in dump
 // every func will use 40 bytes
-void IRAM_ATTR __attribute__((noinline)) abort_with_more_log(uint32_t conn_state,uint32_t int_enable_1,uint32_t bt_int,uint32_t ble_int,uint32_t curr_time)
+void IRAM_ATTR __attribute__((noinline)) abort_with_more_log2(uint32_t int_stat,uint32_t diag0,uint32_t diag1,uint32_t diag2,uint32_t diag3)
 {
     uint32_t error_log[10] = {0, 0, 0, 0};
     uint32_t time_slot ,time_slot2;
     btdm_debug_error_get_bit(error_log);
     time_slot = btdm_debug_error_get_time();
     time_slot2 = btdm_debug_error_get_last_time();
+
+    ets_printf(DRAM_STR("ASSERT diag: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n"),
+        int_stat, diag0, diag1, diag2, diag3);
     abort_with_more_log_end(error_log[0], error_log[1], error_log[2], error_log[3], time_slot,time_slot2);
+}
+
+void IRAM_ATTR __attribute__((noinline)) abort_with_more_log(uint32_t conn_state,uint32_t int_enable_1,uint32_t bt_int,uint32_t ble_int,uint32_t curr_time)
+{
+    uint32_t int_stat = 0;
+    uint32_t diag[4]={0};
+    WRITE_PERI_REG(0x60031050,0x87);
+    diag[0] = READ_PERI_REG(0x60031054);
+
+    WRITE_PERI_REG(0x60031050,0x83828180);
+    diag[1] = READ_PERI_REG(0x60031054);
+
+    diag[2] = READ_PERI_REG(BT_INTSTAT_ADDR);
+
+    int_stat = READ_PERI_REG(0x60031000);
+    abort_with_more_log2(int_stat, diag[0], diag[1], diag[2], diag[3]);
 
     ets_printf(DRAM_STR("ASSERT: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x len:%d\n"),
         conn_state, int_enable_1, bt_int, ble_int, curr_time);
