@@ -525,6 +525,20 @@ bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client);
 int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer, int len);
 
 /**
+ * @brief       Process all remaining response data
+ *              This uses an internal buffer to repeatedly receive, parse, and discard response data until complete.
+ *              As no additional user-supplied buffer is required, this may be preferrable to `esp_http_client_read_response` in situations where the content 
+ *              of the response may be ignored, or is processed via the client's event handler.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - (-1) if any errors
+ *     - Length of data read
+ */
+int esp_http_client_flush_response(esp_http_client_handle_t client);
+
+/**
  * @brief          Get URL from client
  *
  * @param[in]      client   The esp_http_client handle
