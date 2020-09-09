@@ -1377,6 +1377,26 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
     return read_len;
 }
 
+esp_err_t esp_http_client_flush_response(esp_http_client_handle_t client, int *len)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    int read_len = 0;
+    while (!esp_http_client_is_complete_data_received(client)) {
+        int data_read = esp_http_client_get_data(client);
+        if (data_read < 0) {
+            return ESP_FAIL;
+        }
+        read_len += data_read;
+    }
+    if (len) {
+        *len = read_len;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, const int len)
 {
     if (client == NULL || url == NULL) {
