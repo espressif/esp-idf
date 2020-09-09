@@ -370,10 +370,17 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO
     int xtal_freq = (int) rtc_clk_xtal_freq_get();
+#ifdef CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t cfg = {
         .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
         .min_freq_mhz = xtal_freq,
     };
+#else
+esp_pm_config_esp32s2_t cfg = {
+        .max_freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = xtal_freq,
+    };
+#endif
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
 #endif //CONFIG_PM_ENABLE
