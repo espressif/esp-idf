@@ -460,59 +460,6 @@ test cases:
   test point 2: Conn interact with other WiFi operation
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: WIFI_CONN_0401
-  SDK: |-
-    8266_NonOS
-    8266_RTOS
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -R -a 0
-    - - R SSC1 C +AUTORECONN:OK
-  - - SSC SSC1 sta -R -a 2
-    - - R SSC1 C +AUTORECONN:0
-  - - SSC SSC1 reboot
-    - - ''
-  - - DELAY 15
-    - - ''
-  - - SSC SSC1 sta -Q
-    - - R SSC1 C JAP:DISCONNECTED
-  - - SSC SSC1 sta -R -a 1
-    - - R SSC1 C +AUTORECONN:OK
-  - - SSC SSC1 sta -R -a 2
-    - - R SSC1 C +AUTORECONN:1
-  - - SSC SSC1 reboot
-    - - R SSC1 C +JAP:CONNECTED
-  execution time: 0.0
-  expected result: |-
-    1.设置autoreconn,关闭
-    2.查询当前autoreconn状态是否关闭
-    3.重启系统，等待15s
-    4.查询target1 未自动重连AP
-    5.设置autoreconn,开启
-    6.查询当前autoreconn状态是否开启
-    7.系统重启后target1 自动重连AP
-  initial condition: STAM2
-  level: Integration
-  module: WIFI MAC
-  steps: |-
-    1.设置autoreconn,关闭
-    2.查询当前autoreconn状态是否关闭
-    3.重启系统，等待15s
-    4.查询target1 未自动重连AP
-    5.设置autoreconn,开启
-    6.查询当前autoreconn状态是否开启
-    7.系统重启后target1 自动重连AP
-  sub module: WIFI Connect
-  summary: auto reconnect test
-  test environment: SSC_T1_5
-  test point 1: basic function
-  test point 2: power on auto reconnect test
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
   ID: WIFI_CONN_0501
   SDK: |-
     8266_NonOS
