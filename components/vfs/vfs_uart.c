@@ -71,14 +71,15 @@ static fd_set *_writefds_orig = NULL;
 static fd_set *_errorfds_orig = NULL;
 
 // Newline conversion mode when transmitting
-static esp_line_endings_t s_tx_mode =
+static esp_line_endings_t s_tx_mode [UART_NUM] = { [0 ... UART_NUM-1] =
 #if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
-        ESP_LINE_ENDINGS_CRLF;
+        ESP_LINE_ENDINGS_CRLF
 #elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
-        ESP_LINE_ENDINGS_CR;
+        ESP_LINE_ENDINGS_CR
 #else
-        ESP_LINE_ENDINGS_LF;
+        ESP_LINE_ENDINGS_LF
 #endif
+    };
 
 // Newline conversion mode when receiving
 static esp_line_endings_t s_rx_mode[UART_NUM] = { [0 ... UART_NUM-1] =
@@ -172,9 +173,9 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
     _lock_acquire_recursive(&s_uart_write_locks[fd]);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
-        if (c == '\n' && s_tx_mode != ESP_LINE_ENDINGS_LF) {
+        if (c == '\n' && s_tx_mode[fd] != ESP_LINE_ENDINGS_LF) {
             s_uart_tx_func[fd](fd, '\r');
-            if (s_tx_mode == ESP_LINE_ENDINGS_CR) {
+            if (s_tx_mode[fd] == ESP_LINE_ENDINGS_CR) {
                 continue;
             }
         }
@@ -927,7 +928,29 @@ void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
 
 void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
 {
-    s_tx_mode = mode;
+    for (int i = 0; i < UART_NUM; ++i) {
+        s_tx_mode[i] = mode;
+    }
+}
+
+int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
+{
+    if (uart_num < 0 || uart_num >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+    s_rx_mode[uart_num] = mode;
+    return 0;
+}
+
+int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode)
+{
+    if (uart_num < 0 || uart_num >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+    s_tx_mode[uart_num] = mode;
+    return 0;
 }
 
 void esp_vfs_dev_uart_use_nonblocking(int uart_num)
