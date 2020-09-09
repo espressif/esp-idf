@@ -19,27 +19,25 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
-
 #include "soc/spi_periph.h"
 #include "soc/lldesc.h"
-
 #include "hal/spi_slave_hd_hal.h"
 
 
-void slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *config)
+void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config)
 {
     memset(hal, 0, sizeof(spi_slave_hd_hal_context_t));
-    spi_dev_t* hw = SPI_LL_GET_HW(config->host_id);
+    spi_dev_t* hw = SPI_LL_GET_HW(hal_config->host_id);
     hal->dev = hw;
 
     //Configure slave
     spi_ll_slave_hd_init(hw);
-    spi_ll_set_addr_bitlen(hw, config->address_bits);
-    spi_ll_set_command_bitlen(hw, config->command_bits);
-    spi_ll_set_dummy(hw, config->dummy_bits);
-    spi_ll_set_rx_lsbfirst(hw, config->rx_lsbfirst);
-    spi_ll_set_tx_lsbfirst(hw, config->tx_lsbfirst);
-    spi_ll_slave_set_mode(hw, config->mode, (config->dma_chan != 0));
+    spi_ll_set_addr_bitlen(hw, hal_config->address_bits);
+    spi_ll_set_command_bitlen(hw, hal_config->command_bits);
+    spi_ll_set_dummy(hw, hal_config->dummy_bits);
+    spi_ll_set_rx_lsbfirst(hw, hal_config->rx_lsbfirst);
+    spi_ll_set_tx_lsbfirst(hw, hal_config->tx_lsbfirst);
+    spi_ll_slave_set_mode(hw, hal_config->mode, (hal_config->dma_chan != 0));
 
     spi_ll_disable_intr(hw, UINT32_MAX);
     spi_ll_clear_intr(hw, UINT32_MAX);
@@ -66,7 +64,7 @@ void slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_c
                                         SPI_LL_TRANS_LEN_COND_RDBUF |
                                         SPI_LL_TRANS_LEN_COND_RDDMA);
 
-    spi_ll_slave_set_seg_mode(hw, true);
+    spi_ll_slave_set_seg_mode(hal->dev, true);
 }
 
 void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, size_t len)

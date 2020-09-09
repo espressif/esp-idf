@@ -485,7 +485,7 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param val stored clock configuration calculated before (by ``spi_ll_cal_clock``).
  */
-static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, spi_ll_clock_val_t *val)
+static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_clock_val_t *val)
 {
     hw->clock.val = *(uint32_t *)val;
 }

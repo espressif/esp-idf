@@ -24,11 +24,12 @@ static const char SPI_HAL_TAG[] = "spi_hal";
         return (ret_val); \
     }
 
-void spi_hal_init(spi_hal_context_t *hal, int host_id)
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
 {
     memset(hal, 0, sizeof(spi_hal_context_t));
-    spi_dev_t *hw = spi_periph_signal[host_id].hw;
+    spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
+
     spi_ll_master_init(hw);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
@@ -38,6 +39,9 @@ void spi_hal_init(spi_hal_context_t *hal, int host_id)
     spi_ll_enable_int(hw);
     spi_ll_set_int_stat(hw);
     spi_ll_set_mosi_delay(hw, 0, 0);
+
+    //Save the dma configuration in ``spi_hal_context_t``
+    memcpy(&hal->dma_config, dma_config, sizeof(spi_hal_dma_config_t));
 }
 
 void spi_hal_deinit(spi_hal_context_t *hal)
@@ -49,20 +53,20 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-esp_err_t spi_hal_cal_clock_conf(const spi_hal_context_t *hal, int speed_hz, int duty_cycle, bool use_gpio, int input_delay_ns, int *out_freq, spi_hal_timing_conf_t *timing_conf)
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int *out_freq, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf;
 
-    int eff_clk_n = spi_ll_master_cal_clock(APB_CLK_FREQ, speed_hz, duty_cycle, &temp_conf.clock_reg);
+    int eff_clk_n = spi_ll_master_cal_clock(APB_CLK_FREQ, timing_param->clock_speed_hz, timing_param->duty_cycle, &temp_conf.clock_reg);
 
     //When the speed is too fast, we may need to use dummy cycles to compensate the reading.
     //But these don't work for full-duplex connections.
-    spi_hal_cal_timing(eff_clk_n, use_gpio, input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
+    spi_hal_cal_timing(eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-    const int freq_limit = spi_hal_get_freq_limit(use_gpio, input_delay_ns);
+    const int freq_limit = spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
 
-    SPI_HAL_CHECK(hal->half_duplex || temp_conf.timing_dummy == 0 || hal->no_compensate,
+    SPI_HAL_CHECK(timing_param->half_duplex || temp_conf.timing_dummy == 0 || timing_param->no_compensate,
                   "When work in full-duplex mode at frequency > %.1fMHz, device cannot read correct data.\n\
 Try to use IOMUX pins to increase the frequency limit, or use the half duplex mode.\n\
 Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
