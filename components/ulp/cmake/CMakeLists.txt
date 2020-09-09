@@ -13,7 +13,7 @@ execute_process(
     OUTPUT_VARIABLE as_output
     ERROR_QUIET)
 
-string(REGEX MATCH "GNU assembler \\(GNU Binutils\\) (${version_pattern})" as_version ${as_output})
+string(REGEX MATCH "\\(GNU Binutils\\) (${version_pattern})" as_version ${as_output})
 set(as_version ${CMAKE_MATCH_1})
 
 
