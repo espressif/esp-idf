@@ -26,7 +26,10 @@ ULP_PREPROCESSOR_ARGS := \
 
 # Check the assembler version
 include $(IDF_PATH)/components/ulp/toolchain_ulp_version.mk
-ULP_AS_VER := $(shell $(ULP_AS) --version | sed -E -n 's|GNU assembler \(GNU Binutils\) ([a-z0-9\.-]+)|\1|gp')
+# $(ULP_AS) --version output might be localized, for example the first line could be
+# "Ensamblador (GNU Binutils) 2.28.51-esp-20191205 de GNU" instead of
+# "GNU assembler (GNU Binutils) 2.28.51-esp-20191205".
+ULP_AS_VER := $(shell $(ULP_AS) --version | sed -E -n 's/.+ \(GNU Binutils\) ([a-z0-9\.-]+)( .*)?/\1/gp')
 
 $(info Building ULP app $(ULP_APP_NAME))
 $(info ULP assembler version: $(ULP_AS_VER))
