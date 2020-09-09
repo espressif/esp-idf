@@ -104,6 +104,26 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
     return ESP_OK;
 }
 
+esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds)
+{
+    struct httpd_data *hd = (struct httpd_data *) handle;
+    if (hd == NULL || fds == NULL || *fds == 0 || client_fds == NULL || *fds < hd->config.max_open_sockets) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    size_t max_fds = *fds;
+    *fds = 0;
+    for (int i = 0; i < hd->config.max_open_sockets; ++i) {
+        if (hd->hd_sd[i].fd != -1) {
+            if (*fds < max_fds) {
+                client_fds[(*fds)++] = hd->hd_sd[i].fd;
+            } else {
+                return ESP_ERR_INVALID_ARG;
+            }
+        }
+    }
+    return ESP_OK;
+}
+
 void *httpd_get_global_user_ctx(httpd_handle_t handle)
 {
     return ((struct httpd_data *)handle)->config.global_user_ctx;
