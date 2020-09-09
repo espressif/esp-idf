@@ -25,7 +25,7 @@ reserved for features which are needed to meet particular regulatory
 requirements or standards for new products, and which carry a very low risk of
 introducing regressions.)
 
-During the Maintenace period, the version is still supported but only bugfixes
+During the Maintenance period, the version is still supported but only bugfixes
 for high severity issues or security issues will be applied.
 
 Using an “In Service” version is recommended when starting a new project.

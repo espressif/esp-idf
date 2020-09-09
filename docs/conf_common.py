@@ -54,6 +54,7 @@ extensions = ['breathe',
               'sphinxcontrib.nwdiag',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
+              'sphinxcontrib.cairosvgconverter',
 
               'extensions.html_redirects',
               'extensions.toctree_filter',
