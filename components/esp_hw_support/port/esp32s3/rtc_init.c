@@ -22,9 +22,12 @@
 #include "soc/extmem_reg.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_ulp.h"
+#include "soc_log.h"
 
 #define RTC_CNTL_MEM_FORCE_PU (RTC_CNTL_SLOWMEM_FORCE_PU | RTC_CNTL_FASTMEM_FORCE_PU)
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
+
+static char *TAG = "rtcinit";
 
 void rtc_init(rtc_config_t cfg)
 {
@@ -113,21 +116,20 @@ void rtc_init(rtc_config_t cfg)
         //cancel digital pu force
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_PU);
 
+        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_I2C_RESET_POR_FORCE_PD);
+
         /* If this mask is enabled, all soc memories cannot enter power down mode */
         /* We should control soc memory power down mode from RTC, so we will not touch this register any more */
         CLEAR_PERI_REG_MASK(SYSTEM_MEM_PD_MASK_REG, SYSTEM_LSLP_MEM_PD_MASK);
         /* If this pd_cfg is set to 1, all memory won't enter low power mode during light sleep */
         /* If this pd_cfg is set to 0, all memory will enter low power mode during light sleep */
-        rtc_sleep_pd_config_t pd_cfg = RTC_SLEEP_PD_CONFIG_ALL(0);
-        rtc_sleep_pd(pd_cfg);
+        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(0);
+        rtc_sleep_pu(pu_cfg);
 
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
-        // ROM_RAM power domain is removed
-        // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_WRAP_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO);
-        // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_NOISO);
         //cancel digital PADS force no iso
         if (cfg.cpu_waiti_clk_gate) {
@@ -182,6 +184,7 @@ void rtc_init(rtc_config_t cfg)
                 break;
             }
             if (cycle1 >= timeout_cycle) {
+                SOC_LOGW(TAG, "o_code calibration fail\n");
                 break;
             }
         }

@@ -1071,8 +1071,8 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
     /* Enable i2s_write_reg function. */
     void phy_get_romfunc_addr(void);
     phy_get_romfunc_addr();
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    // CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);//TODO: finish it in MR-10423.
+    // SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);//TODO: finish it in MR-10423.
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
@@ -1122,7 +1122,7 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
     /* Enable i2s_write_reg function. */
     void phy_get_romfunc_addr(void);
     phy_get_romfunc_addr();
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    // SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M); //TODO: finish it in MR-10423.
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
