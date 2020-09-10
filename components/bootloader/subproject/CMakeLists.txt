@@ -98,7 +98,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
 
         set(bootloader_unsigned_bin "bootloader-unsigned.bin")
         add_custom_command(OUTPUT ".signed_bin_timestamp"
-            COMMAND cp "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
             COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile "${secure_boot_signing_key}"
             -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
             COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
