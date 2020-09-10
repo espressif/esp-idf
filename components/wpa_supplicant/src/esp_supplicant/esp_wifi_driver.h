@@ -65,7 +65,8 @@ enum {
     WPA2_AUTH_CCKM      = 0x07,
     WPA2_AUTH_PSK_SHA256= 0x08,
     WPA3_AUTH_PSK       = 0x09,
-    WPA2_AUTH_INVALID   = 0x0a,
+    WPA2_AUTH_ENT_SHA256= 0x0a,
+    WPA2_AUTH_INVALID   = 0x0b,
 };
 
 typedef enum {
