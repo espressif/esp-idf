@@ -50,17 +50,16 @@ Hardware:
 
 Software:
 
+You have a choice to either download and install the following software manually
 
-.. note::
+    * **Toolchain** to compile code for {IDF_TARGET_NAME}
+    * **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
+    * **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
 
-    If you are using our official `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ or `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ then you can skip downloading esp-idf and toolchain manually and instead follow onboarding process from the IDEs itself, `Eclipse Plugin Installing IDF Plugin <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`_ or `VSCode Extension Onboarding <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/ONBOARDING.md>`_
+**or** get through the onboarding process using the following official plugins for integrated development environments (IDE) described in separate documents
 
-
-* **IDE** of your choice to write programs in C, we have official support for `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ and :doc:`VSCode Extension <vscode-setup>`
-* **Toolchain** to compile code for {IDF_TARGET_NAME}
-* **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
-* **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
-
+    * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ (`installation link <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`_)
+    * `VS Code Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ (`onboarding <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/ONBOARDING.md>`_)
 
 .. figure:: ../../_static/what-you-need.png
     :align: center
@@ -278,7 +277,7 @@ Step 5. Start a Project
 
 Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
 
-Copy :example:`get-started/hello_world` to ``~/esp`` directory:
+Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
 
 Linux and macOS
 ~~~~~~~~~~~~~~~
@@ -406,7 +405,7 @@ This command will compile the application and all ESP-IDF components, then it wi
    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
 
-If there are no errors, the build will finish by generating the firmware binary .bin file.
+If there are no errors, the build will finish by generating the firmware binary .bin files.
 
 
 .. _get-started-flash:
@@ -414,7 +413,7 @@ If there are no errors, the build will finish by generating the firmware binary 
 Step 9. Flash onto the Device
 =============================
 
-Flash the binaries that you just built onto your {IDF_TARGET_NAME} board by running:
+Flash the binaries that you just built (bootloader.bin, partition-table.bin and hello-world.bin) onto your {IDF_TARGET_NAME} board by running:
 
 .. code-block:: bash
 
@@ -537,7 +536,7 @@ When flashing, you will see the output log similar to the following:
 
 If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
 
-If you'd like to use the Eclipse/VSCode IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`, :doc:`VSCode guide <vscode-setup>`.
+If you'd like to use the Eclipse or VS Code IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`, :doc:`VS Code guide <vscode-setup>`.
 
 
 .. _get-started-build-monitor:
