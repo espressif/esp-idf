@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include "soc/i2s_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

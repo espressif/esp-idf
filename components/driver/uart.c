@@ -61,7 +61,7 @@ static const char* UART_TAG = "uart";
 #define UART_CLKDIV_FRAG_BIT_WIDTH      (3)
 #define UART_TX_IDLE_NUM_DEFAULT        (0)
 #define UART_PATTERN_DET_QLEN_DEFAULT   (10)
-#define UART_MIN_WAKEUP_THRESH          (SOC_UART_MIN_WAKEUP_THRESH)
+#define UART_MIN_WAKEUP_THRESH          (UART_LL_MIN_WAKEUP_THRESH)
 
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
@@ -118,7 +118,7 @@ typedef struct {
     int rx_cur_remain;                  /*!< Data number that waiting to be read out in ring buffer item*/
     uint8_t* rx_ptr;                    /*!< pointer to the current data in ring buffer*/
     uint8_t* rx_head_ptr;               /*!< pointer to the head of RX item*/
-    uint8_t rx_data_buf[UART_FIFO_LEN]; /*!< Data buffer to stash FIFO data*/
+    uint8_t rx_data_buf[SOC_UART_FIFO_LEN]; /*!< Data buffer to stash FIFO data*/
     uint8_t rx_stash_len;               /*!< stashed data length.(When using flow control, after reading out FIFO data, if we fail to push to buffer, we can just stash them.) */
     uart_pat_rb_t rx_pattern_pos;
 
@@ -265,8 +265,8 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask)
 esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((rx_thresh_xon < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
-    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xon < SOC_UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xoff < SOC_UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
     uart_sw_flowctrl_t sw_flow_ctl = {
         .xon_char = XON,
         .xoff_char = XOFF,
@@ -282,7 +282,7 @@ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_t
 esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow_ctrl, uint8_t rx_thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((rx_thresh < UART_FIFO_LEN), "rx flow thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh < SOC_UART_FIFO_LEN), "rx flow thresh error", ESP_FAIL);
     UART_CHECK((flow_ctrl < UART_HW_FLOWCTRL_MAX), "hw_flowctrl mode error", ESP_FAIL);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_hw_flow_ctrl(&(uart_context[uart_num].hal), flow_ctrl, rx_thresh);
@@ -522,7 +522,7 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((thresh < UART_FIFO_LEN), "empty intr threshold error", ESP_FAIL);
+    UART_CHECK((thresh < SOC_UART_FIFO_LEN), "empty intr threshold error", ESP_FAIL);
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
@@ -622,7 +622,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((uart_config), "param null", ESP_FAIL);
-    UART_CHECK((uart_config->rx_flow_ctrl_thresh < UART_FIFO_LEN), "rx flow thresh error", ESP_FAIL);
+    UART_CHECK((uart_config->rx_flow_ctrl_thresh < SOC_UART_FIFO_LEN), "rx flow thresh error", ESP_FAIL);
     UART_CHECK((uart_config->flow_ctrl < UART_HW_FLOWCTRL_MAX), "hw_flowctrl mode error", ESP_FAIL);
     UART_CHECK((uart_config->data_bits < UART_DATA_BITS_MAX), "data bit error", ESP_FAIL);
     uart_module_enable(uart_num);
@@ -644,7 +644,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((intr_conf), "param null", ESP_FAIL);
-    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_MASK);
+    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     if(intr_conf->intr_enable_mask & UART_INTR_RXFIFO_TOUT) {
         uart_hal_set_rx_timeout(&(uart_context[uart_num].hal), intr_conf->rx_timeout_thresh);
@@ -962,7 +962,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 // then postpone interrupt processing for next interrupt
                 uart_event.type = UART_EVENT_MAX;
             } else {
-                // Workaround for RS485: If the RS485 half duplex mode is active 
+                // Workaround for RS485: If the RS485 half duplex mode is active
                 // and transmitter is in idle state then reset received buffer and reset RTS pin
                 // skip this behavior for other UART modes
                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
@@ -1281,8 +1281,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
 {
     esp_err_t r;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((rx_buffer_size > UART_FIFO_LEN), "uart rx buffer length error", ESP_FAIL);
-    UART_CHECK((tx_buffer_size > UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error", ESP_FAIL);
+    UART_CHECK((rx_buffer_size > SOC_UART_FIFO_LEN), "uart rx buffer length error", ESP_FAIL);
+    UART_CHECK((tx_buffer_size > SOC_UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error", ESP_FAIL);
 #if CONFIG_UART_ISR_IN_IRAM
     if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0) {
         ESP_LOGI(UART_TAG, "ESP_INTR_FLAG_IRAM flag not set while CONFIG_UART_ISR_IN_IRAM is enabled, flag updated");
@@ -1354,8 +1354,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT,
     };
     uart_module_enable(uart_num);
-    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_MASK);
-    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_MASK);
+    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
+    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     r=uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
     if (r!=ESP_OK) goto err;
     r=uart_intr_config(uart_num, &uart_intr);

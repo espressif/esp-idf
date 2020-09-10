@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/uart_caps.h"
+#include "soc/soc_caps.h"
 
 
 /**

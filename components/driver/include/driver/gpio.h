@@ -19,6 +19,7 @@
 #include <esp_bit_defs.h>
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_types.h"
 
@@ -39,6 +40,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
+/// Check whether it is a valid GPIO number
+#define GPIO_IS_VALID_GPIO(gpio_num)        (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0)
+/// Check whether it can be a valid GPIO number of output mode
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0)
+
 
 typedef intr_handle_t gpio_isr_handle_t;
 
@@ -419,7 +427,7 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   */
 void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
-#if GPIO_SUPPORTS_FORCE_HOLD
+#if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
   * @brief Force hold digital and rtc gpio pad.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.

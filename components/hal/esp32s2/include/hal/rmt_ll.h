@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "soc/rmt_struct.h"
-#include "soc/rmt_caps.h"
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)

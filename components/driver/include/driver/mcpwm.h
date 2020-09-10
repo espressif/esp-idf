@@ -26,7 +26,6 @@
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 #include "hal/mcpwm_types.h"
-#include "soc/mcpwm_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -35,6 +35,12 @@ extern "C" {
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
+#define GPIO_LL_APP_CPU_INTR_ENA      (BIT(0))
+#define GPIO_LL_APP_CPU_NMI_INTR_ENA  (BIT(1))
+#define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(2))
+#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(3))
+#define GPIO_LL_SDIO_EXT_INTR_ENA     (BIT(4))
+
 /**
   * @brief Enable pull-up on GPIO.
   *
@@ -147,9 +153,9 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, gpio_num_t gpio_num)
 {
     if (core_id == 0) {
-        hw->pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
+        hw->pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
-        hw->pin[gpio_num].int_ena = GPIO_APP_CPU_INTR_ENA;     //enable pro cpu intr
+        hw->pin[gpio_num].int_ena = GPIO_LL_APP_CPU_INTR_ENA;     //enable pro cpu intr
     }
 }
 

@@ -21,7 +21,7 @@
 #include "hal/mpu_ll.h"
 #include "hal/mpu_types.h"
 
-#include "soc/mpu_caps.h"
+#include "soc/soc_caps.h"
 
 void mpu_hal_set_region_access(int id, mpu_access_t access)
 {

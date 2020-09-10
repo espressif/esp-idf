@@ -19,9 +19,9 @@
 
 #include "esp_err.h"
 
+#include "soc/soc_caps.h"
 #include "hal/cpu_types.h"
 #include "hal/cpu_ll.h"
-#include "soc/cpu_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

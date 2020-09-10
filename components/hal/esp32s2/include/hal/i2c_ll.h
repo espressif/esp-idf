@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#define I2C_LL_INTR_MASK          (0x1ffff) /*!< I2C all interrupt bitmap */
+
 /**
  * @brief I2C hardware cmd register filed.
  */
@@ -42,7 +44,7 @@ typedef union {
  * @brief I2C interrupt event
  */
 typedef enum {
-    I2C_INTR_EVENT_ERR,        
+    I2C_INTR_EVENT_ERR,
     I2C_INTR_EVENT_ARBIT_LOST,   /*!< I2C arbition lost event */
     I2C_INTR_EVENT_NACK,         /*!< I2C NACK event */
     I2C_INTR_EVENT_TOUT,         /*!< I2C time out event */
@@ -540,7 +542,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
     uint32_t fifo_addr = (hw == &I2C0) ? 0x6001301c : 0x6002701c;
     for(int i = 0; i < len; i++) {
         WRITE_PERI_REG(fifo_addr, ptr[i]);
-    }   
+    }
 }
 
 /**
@@ -557,7 +559,7 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
     uint32_t fifo_addr = (hw == &I2C0) ? 0x6001301c : 0x6002701c;
     for(int i = 0; i < len; i++) {
         ptr[i] = READ_PERI_REG(fifo_addr);
-    }   
+    }
 }
 
 /**

@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/ledc_caps.h"
+#include "soc/soc_caps.h"
 
 typedef enum {
 #ifdef SOC_LEDC_SUPPORT_HS_MODE

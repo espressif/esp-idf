@@ -15,6 +15,7 @@
 // The HAL layer for ADC (common part)
 
 #include "hal/adc_hal.h"
+#include "hal/adc_hal_conf.h"
 #include "hal/adc_types.h"
 
 void adc_hal_digi_init(void)

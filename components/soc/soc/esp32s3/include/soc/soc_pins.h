@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * Pin definition header file. The long term plan is to have a single soc_pins.h for all
+ * peripherals. Now we temporarily separate these information into periph_pins/channels.h for each
+ * peripheral and include them here to avoid developing conflicts in those header files.
+ */
+
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// ESP32 have 1 PCNT peripheral
-#define SOC_PCNT_PORT_NUM      (1)
-#define SOC_PCNT_UNIT_NUM      (8)
-
-#ifdef __cplusplus
-}
-#endif
+#include "soc/gpio_pins.h"
+#include "soc/spi_pins.h"
+#include "soc/sdio_slave_pins.h"
+#include "soc/sdmmc_pins.h"

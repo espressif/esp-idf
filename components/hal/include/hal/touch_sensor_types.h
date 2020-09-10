@@ -15,11 +15,10 @@
 #pragma once
 
 #include <stdbool.h>
-
-#include "soc/soc.h"
-#include "soc/touch_sensor_caps.h"
-#include "sdkconfig.h"
 #include "esp_attr.h"
+#include "soc/soc.h"
+#include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 /** Touch pad channel */
 typedef enum {
@@ -115,9 +114,10 @@ typedef enum {
 } touch_trigger_src_t;
 
 /********************************/
+#define TOUCH_PAD_BIT_MASK_ALL              ((1<<SOC_TOUCH_SENSOR_NUM)-1)
 #define TOUCH_PAD_SLOPE_DEFAULT             (TOUCH_PAD_SLOPE_7)
 #define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_LOW)
-#define TOUCH_PAD_BIT_MASK_MAX              (SOC_TOUCH_SENSOR_BIT_MASK_MAX)
+#define TOUCH_PAD_BIT_MASK_MAX              (TOUCH_PAD_BIT_MASK_ALL)
 #define TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD    (TOUCH_HVOLT_2V7)
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)
 #define TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD   (TOUCH_HVOLT_ATTEN_0V5)

@@ -21,10 +21,10 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
-#include "soc/rmt_caps.h"
 #include "soc/rmt_struct.h"
 #include "hal/rmt_types.h"
 

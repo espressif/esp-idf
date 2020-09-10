@@ -20,7 +20,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc.h"
 #include "soc/dac_channel.h"
-#include "soc/dac_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C"

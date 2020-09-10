@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include "soc/soc_caps.h"
 #include "soc/ledc_reg.h"
 #include "soc/ledc_struct.h"
-#include "soc/ledc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

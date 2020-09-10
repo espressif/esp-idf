@@ -25,9 +25,12 @@ extern "C" {
 #endif
 
 // The default fifo depth
-#define UART_LL_FIFO_DEF_LEN  (UART_FIFO_LEN)
+#define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (&UART1))
+
+#define UART_LL_MIN_WAKEUP_THRESH (2)
+#define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 // Define UART interrupts
 typedef enum {
@@ -247,7 +250,7 @@ static inline uint32_t uart_ll_get_txfifo_len(uart_dev_t *hw)
  * @return None.
  */
 static inline void uart_ll_set_stop_bits(uart_dev_t *hw, uart_stop_bits_t stop_bit)
-{ 
+{
     hw->conf0.stop_bit_num = stop_bit;
 }
 
@@ -523,7 +526,7 @@ static inline void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 static inline void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
-    hw->sleep_conf.active_threshold = wakeup_thrd - SOC_UART_MIN_WAKEUP_THRESH;
+    hw->sleep_conf.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
 
 /**
@@ -665,7 +668,7 @@ static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, ui
  */
 static inline uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf.active_threshold + SOC_UART_MIN_WAKEUP_THRESH;
+    return hw->sleep_conf.active_threshold + UART_LL_MIN_WAKEUP_THRESH;
 }
 
 /**

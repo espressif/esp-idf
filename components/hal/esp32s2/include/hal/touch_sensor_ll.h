@@ -48,7 +48,7 @@ static inline void touch_ll_set_meas_times(uint16_t meas_time)
     //The times of charge and discharge in each measure process of touch channels.
     RTCCNTL.touch_ctrl1.touch_meas_num = meas_time;
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    RTCCNTL.touch_ctrl2.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT; //wait volt stable
+    RTCCNTL.touch_ctrl2.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT_MAX; //wait volt stable
 }
 
 /**
@@ -345,8 +345,8 @@ static inline void touch_ll_get_threshold(touch_pad_t touch_num, uint32_t *thres
  */
 static inline void touch_ll_set_channel_mask(uint16_t enable_mask)
 {
-    RTCCNTL.touch_scan_ctrl.touch_scan_pad_map  |= (enable_mask & SOC_TOUCH_SENSOR_BIT_MASK_MAX);
-    SENS.sar_touch_conf.touch_outen |= (enable_mask & SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    RTCCNTL.touch_scan_ctrl.touch_scan_pad_map  |= (enable_mask & TOUCH_PAD_BIT_MASK_ALL);
+    SENS.sar_touch_conf.touch_outen |= (enable_mask & TOUCH_PAD_BIT_MASK_ALL);
 }
 
 /**
@@ -359,7 +359,7 @@ static inline void touch_ll_get_channel_mask(uint16_t *enable_mask)
 {
     *enable_mask = SENS.sar_touch_conf.touch_outen \
                    & RTCCNTL.touch_scan_ctrl.touch_scan_pad_map \
-                   & SOC_TOUCH_SENSOR_BIT_MASK_MAX;
+                   & TOUCH_PAD_BIT_MASK_ALL;
 }
 
 /**
@@ -370,8 +370,8 @@ static inline void touch_ll_get_channel_mask(uint16_t *enable_mask)
  */
 static inline void touch_ll_clear_channel_mask(uint16_t disable_mask)
 {
-    SENS.sar_touch_conf.touch_outen &= ~(disable_mask & SOC_TOUCH_SENSOR_BIT_MASK_MAX);
-    RTCCNTL.touch_scan_ctrl.touch_scan_pad_map  &= ~(disable_mask & SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    SENS.sar_touch_conf.touch_outen &= ~(disable_mask & TOUCH_PAD_BIT_MASK_ALL);
+    RTCCNTL.touch_scan_ctrl.touch_scan_pad_map  &= ~(disable_mask & TOUCH_PAD_BIT_MASK_ALL);
 }
 
 /**
@@ -659,7 +659,7 @@ static inline void touch_ll_reset_benchmark(touch_pad_t touch_num)
     /* Clear touch channels to initialize the channel value (benchmark, raw_data).
      */
     if (touch_num == TOUCH_PAD_MAX) {
-        SENS.sar_touch_chn_st.touch_channel_clr = SOC_TOUCH_SENSOR_BIT_MASK_MAX;
+        SENS.sar_touch_chn_st.touch_channel_clr = TOUCH_PAD_BIT_MASK_ALL;
     } else {
         SENS.sar_touch_chn_st.touch_channel_clr = (1U << touch_num);
     }

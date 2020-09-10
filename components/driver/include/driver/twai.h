@@ -28,7 +28,6 @@ extern "C" {
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "gpio.h"
-#include "soc/twai_caps.h"
 #include "hal/twai_types.h"
 
 /* -------------------- Default initializers and flags ---------------------- */

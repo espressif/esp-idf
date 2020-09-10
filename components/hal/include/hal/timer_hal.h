@@ -27,9 +27,9 @@
 extern "C" {
 #endif
 
+#include "soc/soc_caps.h"
 #include "hal/timer_ll.h"
 #include "hal/timer_types.h"
-#include "soc/timer_group_caps.h"
 
 /**
  * Context that should be maintained by both the driver and the HAL

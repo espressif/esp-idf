@@ -22,10 +22,10 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #include <soc/mcpwm_periph.h>
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_types.h"
-#include "soc/mcpwm_caps.h"
 #include "hal/hal_defs.h"
 
 #include "esp_types.h"

@@ -319,7 +319,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
   */
 #define gpio_hal_iomux_out(hal, gpio_num, func, oen_inv) gpio_ll_iomux_out((hal)->dev, gpio_num, func, oen_inv)
 
-#if GPIO_SUPPORTS_FORCE_HOLD
+#if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
   * @brief Force hold digital and rtc gpio pad.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.

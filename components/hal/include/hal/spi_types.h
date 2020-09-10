@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "soc/spi_caps.h"
 #include "esp_attr.h"
-#include "sdkconfig.h"
 #include <esp_bit_defs.h>
+#include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 /**
  * @brief Enum with the three SPI peripherals that are software-accessible in it

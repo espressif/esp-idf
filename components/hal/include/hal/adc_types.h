@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "sdkconfig.h"
-#include "soc/adc_caps.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief ADC unit enumeration.

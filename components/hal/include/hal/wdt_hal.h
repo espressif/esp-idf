@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "soc/timer_group_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/wdt_types.h"
 #include "hal/mwdt_ll.h"
 #include "hal/rwdt_ll.h"

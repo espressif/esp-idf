@@ -32,10 +32,10 @@
 
 #pragma once
 
+#include <esp_types.h>
 #include "soc/lldesc.h"
 #include "soc/spi_struct.h"
-#include <esp_types.h>
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/spi_ll.h"
 
 /**

@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@
 extern "C" {
 #endif
 
-#define TWAI_BRP_MIN                        2
-#define TWAI_BRP_MAX                        128
-#define TWAI_BRP_MAX_ECO                    256
-#define TWAI_BRP_DIV_THRESH                 128
-#define TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
+
+#define GPIO_MATRIX_CONST_ONE_INPUT   (0x38)
+#define GPIO_MATRIX_CONST_ZERO_INPUT  (0x30)
 
 #ifdef __cplusplus
 }

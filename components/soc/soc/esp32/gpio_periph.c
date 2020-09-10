@@ -14,7 +14,7 @@
 
 #include "soc/gpio_periph.h"
 
-const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
+const uint32_t GPIO_PIN_MUX_REG[SOC_GPIO_PIN_COUNT] = {
     IO_MUX_GPIO0_REG,
     IO_MUX_GPIO1_REG,
     IO_MUX_GPIO2_REG,
@@ -57,7 +57,7 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     IO_MUX_GPIO39_REG,
 };
 
-const uint32_t GPIO_HOLD_MASK[GPIO_PIN_COUNT] = {
+const uint32_t GPIO_HOLD_MASK[SOC_GPIO_PIN_COUNT] = {
     0,
     BIT(1),
     0,

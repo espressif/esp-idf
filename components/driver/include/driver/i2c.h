@@ -29,8 +29,8 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include "driver/gpio.h"
+#include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
-#include "soc/i2c_caps.h"
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
 

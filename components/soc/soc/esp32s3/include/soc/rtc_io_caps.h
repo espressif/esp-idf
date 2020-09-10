@@ -14,5 +14,5 @@
 
 #pragma once
 
-#define SOC_RTC_IO_PIN_COUNT   22
-#define SOC_PIN_FUNC_RTC_IO     0
+#define SOC_RTCIO_PIN_COUNT   22
+#define RTCIO_LL_PIN_FUNC     0

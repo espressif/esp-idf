@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/usb_pins.h"
+#include "soc/soc_pins.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/usb_reg.h"
 #include "soc/usb_types.h"

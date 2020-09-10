@@ -1,8 +1,9 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,12 +14,18 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define SOC_ADC1_DATA_INVERT_DEFAULT    (0)
+#define SOC_ADC2_DATA_INVERT_DEFAULT    (0)
 
-#define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
+#define SOC_ADC_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
 
-#ifdef __cplusplus
-}
-#endif
+#define SOC_ADC_FSM_RSTB_WAIT_DEFAULT       (8)
+#define SOC_ADC_FSM_START_WAIT_DEFAULT      (5)
+#define SOC_ADC_FSM_STANDBY_WAIT_DEFAULT    (100)
+#define ADC_FSM_SAMPLE_CYCLE_DEFAULT        (3)
+
+#define SOC_ADC_PWDET_CCT_DEFAULT           (4)
+
+#define SOC_ADC_SAR_CLK_DIV_DEFAULT(PERIPH_NUM) ((PERIPH_NUM==0)? 2 : 1)
+
+#define SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT    (2)

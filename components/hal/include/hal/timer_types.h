@@ -21,8 +21,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include <esp_bit_defs.h>
-#include "soc/timer_group_caps.h"
 #include "esp_attr.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief Selects a Timer-Group out of 2 available groups

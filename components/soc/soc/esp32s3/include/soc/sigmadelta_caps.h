@@ -18,19 +18,7 @@ extern "C" {
 #endif
 
 // ESP32-S3 have 1 SIGMADELTA peripheral.
-#define SIGMADELTA_PORT_0             (0) /*!< SIGMADELTA port 0 */
-#define SIGMADELTA_PORT_MAX           (1) /*!< SIGMADELTA port max */
 #define SOC_SIGMADELTA_NUM            (SIGMADELTA_PORT_MAX)
-
-#define SIGMADELTA_CHANNEL_0   (0)    /*!< Sigma-delta channel 0 */
-#define SIGMADELTA_CHANNEL_1   (1)    /*!< Sigma-delta channel 1 */
-#define SIGMADELTA_CHANNEL_2   (2)    /*!< Sigma-delta channel 2 */
-#define SIGMADELTA_CHANNEL_3   (3)    /*!< Sigma-delta channel 3 */
-#define SIGMADELTA_CHANNEL_4   (4)    /*!< Sigma-delta channel 4 */
-#define SIGMADELTA_CHANNEL_5   (5)    /*!< Sigma-delta channel 5 */
-#define SIGMADELTA_CHANNEL_6   (6)    /*!< Sigma-delta channel 6 */
-#define SIGMADELTA_CHANNEL_7   (7)    /*!< Sigma-delta channel 7 */
-#define SIGMADELTA_CHANNEL_MAX (8)
 
 #ifdef __cplusplus
 }

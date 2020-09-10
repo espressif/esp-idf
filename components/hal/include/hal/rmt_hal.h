@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "soc/soc_caps.h"
 #include "soc/rmt_struct.h"
-#include "soc/rmt_caps.h"
 
 /**
  * @brief HAL context type of RMT driver

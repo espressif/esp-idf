@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
 #include "string.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/hal_defs.h"
 
 #define APB_CYCLE_NS   (1000*1000*1000LL/APB_CLK_FREQ)

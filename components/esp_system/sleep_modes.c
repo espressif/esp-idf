@@ -32,7 +32,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/uart_caps.h"
+#include "soc/soc_caps.h"
 
 #include "hal/wdt_hal.h"
 #include "hal/rtc_io_hal.h"
@@ -587,7 +587,7 @@ static void touch_wakeup_prepare(void)
 {
     touch_pad_sleep_channel_t slp_config;
     touch_pad_fsm_stop();
-    touch_pad_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    touch_pad_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
     touch_pad_sleep_channel_get_info(&slp_config);
     touch_pad_set_channel_mask(BIT(slp_config.touch_num));
     touch_pad_fsm_start();

@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include "esp_log.h"
 #include "sys/lock.h"
+#include "soc/soc_pins.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
@@ -53,7 +54,7 @@ static const char *TOUCH_TAG = "TOUCH_SENSOR";
         TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
         TOUCH_CHECK(channel != SOC_TOUCH_DENOISE_CHANNEL, "TOUCH0 is internal denoise channel", ESP_ERR_INVALID_ARG); \
     } while (0);
-#define TOUCH_CH_MASK_CHECK(mask) TOUCH_CHECK((mask <= SOC_TOUCH_SENSOR_BIT_MASK_MAX), "touch channel bitmask error", ESP_ERR_INVALID_ARG)
+#define TOUCH_CH_MASK_CHECK(mask) TOUCH_CHECK((mask <= TOUCH_PAD_BIT_MASK_ALL), "touch channel bitmask error", ESP_ERR_INVALID_ARG)
 #define TOUCH_INTR_MASK_CHECK(mask) TOUCH_CHECK(mask & TOUCH_PAD_INTR_MASK_ALL, "intr mask error", ESP_ERR_INVALID_ARG)
 #define TOUCH_PARAM_CHECK_STR(s)           ""s" parameter error"
 

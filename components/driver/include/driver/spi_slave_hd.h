@@ -15,7 +15,7 @@
 #pragma once
 
 #include "esp_types.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 
 #include "hal/spi_types.h"

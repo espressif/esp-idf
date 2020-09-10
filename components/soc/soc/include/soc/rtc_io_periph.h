@@ -16,14 +16,13 @@
 
 #include "soc/soc.h"
 //include soc related (generated) definitions
-#include "soc/rtc_io_caps.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_io_channel.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_struct.h"
-#include "soc/gpio_caps.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -61,7 +60,7 @@ typedef struct {
  * This is an internal function of the driver, and is not usually useful
  * for external use.
  */
-extern const rtc_io_desc_t rtc_io_desc[SOC_RTC_IO_PIN_COUNT];
+extern const rtc_io_desc_t rtc_io_desc[SOC_RTCIO_PIN_COUNT];
 
 /**
  * @brief Provides a constant table to get rtc io number with gpio number
@@ -69,7 +68,7 @@ extern const rtc_io_desc_t rtc_io_desc[SOC_RTC_IO_PIN_COUNT];
  * This is an internal function of the driver, and is not usually useful
  * for external use.
  */
-extern const int rtc_io_num_map[GPIO_PIN_COUNT];
+extern const int rtc_io_num_map[SOC_GPIO_PIN_COUNT];
 
 #ifdef CONFIG_RTCIO_SUPPORT_RTC_GPIO_DESC
 /**

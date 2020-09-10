@@ -14,10 +14,10 @@
 
 #include <sys/param.h>
 #include <assert.h>
+#include "soc/soc_caps.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
-#include "soc/systimer_caps.h"
 #include "soc/rtc.h"
 
 #define SYSTIMER_TICKS_PER_US (80) // Number of timer ticks per microsecond

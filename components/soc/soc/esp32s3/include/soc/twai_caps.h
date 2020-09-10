@@ -18,8 +18,8 @@
 extern "C" {
 #endif
 
-#define TWAI_BRP_MIN                2
-#define TWAI_BRP_MAX                32768
+#define SOC_TWAI_BRP_MIN    2
+#define SOC_TWAI_BRP_MAX    32768
 
 #ifdef __cplusplus
 }

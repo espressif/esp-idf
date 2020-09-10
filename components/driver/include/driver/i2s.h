@@ -20,7 +20,7 @@
 #include "freertos/semphr.h"
 #include "soc/i2s_periph.h"
 #include "soc/rtc_periph.h"
-#include "soc/i2s_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "driver/periph_ctrl.h"

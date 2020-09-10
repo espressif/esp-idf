@@ -14,8 +14,8 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #include "soc/touch_sensor_channel.h"
-#include "soc/touch_sensor_caps.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_reg.h"
