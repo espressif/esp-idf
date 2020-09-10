@@ -76,6 +76,12 @@ static void spp_osi_free(void *p)
     osi_free(p);
 }
 
+#if SPP_DYNAMIC_MEMORY == FALSE
+#define is_spp_init() (spp_local_param.spp_slot_mutex != NULL)
+#else
+#define is_spp_init() (&spp_local_param != NULL && spp_local_param.spp_slot_mutex != NULL)
+#endif
+
 static spp_slot_t *spp_malloc_slot(void)
 {
     if (++spp_local_param.spp_slot_id == 0) {
@@ -359,7 +365,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
 
 static void btc_spp_init(btc_spp_args_t *arg)
 {
-    if (spp_local_param.spp_slot_mutex) {
+    if (is_spp_init()) {
         esp_spp_cb_param_t param;
         param.init.status = ESP_SPP_FAILURE;
         btc_spp_cb_to_app(ESP_SPP_INIT_EVT, &param);
@@ -387,7 +393,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
 static void btc_spp_uninit(void)
 {
     esp_spp_cb_param_t param;
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         param.uninit.status = ESP_SPP_FAILURE;
         btc_spp_cb_to_app(ESP_SPP_UNINIT_EVT, &param);
         BTC_TRACE_ERROR("%s SPP has not been initiated, shall init first!", __func__);
@@ -432,7 +438,7 @@ static void btc_spp_uninit(void)
 
 static void btc_spp_start_discovery(btc_spp_args_t *arg)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -441,7 +447,7 @@ static void btc_spp_start_discovery(btc_spp_args_t *arg)
 
 static void btc_spp_connect(btc_spp_args_t *arg)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -463,7 +469,7 @@ static void btc_spp_connect(btc_spp_args_t *arg)
 
 static void btc_spp_disconnect(btc_spp_args_t *arg)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -480,7 +486,7 @@ static void btc_spp_disconnect(btc_spp_args_t *arg)
 
 static void btc_spp_start_srv(btc_spp_args_t *arg)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -502,7 +508,7 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
 }
 
 static void btc_spp_stop_srv(void) {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -545,7 +551,7 @@ static void btc_spp_stop_srv(void) {
 
 static void btc_spp_write(btc_spp_args_t *arg)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return;
     }
@@ -865,7 +871,7 @@ int bta_co_rfc_data_incoming(void *user_data, BT_HDR *p_buf)
     msg.act = BTA_JV_RFCOMM_DATA_IND_EVT;
 
     uint32_t id = (uintptr_t)user_data;
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return -1;
     }
@@ -915,7 +921,7 @@ int bta_co_rfc_data_outgoing(void *user_data, uint8_t *buf, uint16_t size)
 
 static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return -1;
     }
@@ -938,7 +944,7 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
 }
 static int spp_vfs_close(int fd)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return -1;
     }
@@ -970,7 +976,7 @@ static bool incoming_list_2_ringbuf_read(spp_slot_t *slot)
 
 static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
 {
-    if (!spp_local_param.spp_slot_mutex) {
+    if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         return -1;
     }
