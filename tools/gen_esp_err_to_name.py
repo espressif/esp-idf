@@ -45,7 +45,7 @@ ignore_files = ['components/mdns/test_afl_fuzz_host/esp32_compat.h',        # us
                 ]
 
 # add directories here which should not be parsed
-ignore_dirs = ('examples')
+ignore_dirs = ('examples', 'components/cmock/CMock/test')
 
 # macros from here have higher priorities in case of collisions
 priority_headers = ['components/esp_common/include/esp_err.h']

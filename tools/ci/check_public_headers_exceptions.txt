@@ -85,6 +85,9 @@ components/unity/unity/src/unity_internals.h
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
+components/cmock/CMock/src/cmock.h
+components/cmock/CMock/src/cmock_internals.h
+
 ### Here are the files that do not compile for some reason
 #
 components/app_trace/include/esp_sysview_trace.h

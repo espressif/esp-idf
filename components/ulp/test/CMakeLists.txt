@@ -1,6 +1,6 @@
 idf_component_register(SRC_DIRS ${IDF_TARGET}
 PRIV_INCLUDE_DIRS .
-PRIV_REQUIRES unity ulp soc esp_common)
+PRIV_REQUIRES cmock ulp soc esp_common)
 
 if(IDF_TARGET STREQUAL "esp32")
     set(ulp_sources "ulp/test_jumps_esp32.S")
