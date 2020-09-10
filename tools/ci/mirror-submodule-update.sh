@@ -26,6 +26,10 @@ die() {
 
 [ -z ${GITLAB_SSH_SERVER:-} ] && die "Have to set up GITLAB_SSH_SERVER environment variable"
 
+if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then
+    GITLAB_SSH_SERVER="${LOCAL_GITLAB_SSH_SERVER}"
+fi
+
 ERR_CANNOT_UPDATE=13
 
 REPO_DIR=${1:-"${PWD}"}

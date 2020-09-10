@@ -77,6 +77,7 @@ before_script:
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then SRV=${LOCAL_GITLAB_SSH_SERVER##*@};SRV=${SRV%%:*};printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >> ~/.ssh/config; fi
   # Download and install tools, if needed
   - *setup_tools_unless_target_test
 
@@ -119,6 +120,7 @@ before_script:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then SRV=${LOCAL_GITLAB_SSH_SERVER##*@};SRV=${SRV%%:*};printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >> ~/.ssh/config; fi
 
 build_template_app:
   stage: build
