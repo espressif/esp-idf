@@ -29,10 +29,11 @@ typedef bt_mesh_client_user_data_t      bt_mesh_health_client_t;
 typedef bt_mesh_client_internal_data_t  health_internal_data_t;
 
 extern const struct bt_mesh_model_op bt_mesh_health_cli_op[];
+extern const struct bt_mesh_model_cb bt_mesh_health_cli_cb;
 
 #define BLE_MESH_MODEL_HEALTH_CLI(cli_data)             \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_HEALTH_CLI,    \
-            bt_mesh_health_cli_op, NULL, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_HEALTH_CLI,    \
+            bt_mesh_health_cli_op, NULL, cli_data, &bt_mesh_health_cli_cb)
 
 int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid);
 
