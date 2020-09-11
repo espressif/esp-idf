@@ -2314,7 +2314,7 @@ UINT8 l2cu_get_num_hi_priority (void)
 ** Description      This function initiates an acl connection via HCI
 **                  If switch required to create connection it is already done.
 **
-** Returns          TRUE if successful, FALSE if gki get buffer fails.
+** Returns          TRUE if successful, FALSE if osi get buffer fails.
 **
 *******************************************************************************/
 
