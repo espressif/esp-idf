@@ -33,10 +33,6 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#define CONFIG_MDNS_MAX_SERVICES    25
-
-#define ERR_OK                      0
-#define ESP_OK                      0
 #define ESP_FAIL                    -1
 
 #define ESP_ERR_NO_MEM              0x101
@@ -57,16 +53,24 @@
 #define portMAX_DELAY               0xFFFFFFFF
 #define portTICK_PERIOD_MS          1
 #define ESP_LOGD(a,b)
+#define ESP_LOGE(a,b,c)
+#define ESP_LOGV(a,b,c,d)
+
+#define LWIP_HDR_PBUF_H
+#define __ESP_SYSTEM_H__
+#define INC_TASK_H
 
 #define xSemaphoreTake(s,d)
 #define xTaskDelete(a)
 #define vTaskDelete(a)             free(a)
 #define xSemaphoreGive(s)
+#define xQueueCreateMutex(s)
 #define _mdns_pcb_init(a,b)         true
-#define _mdns_pcb_deinit(a,b)         true
+#define _mdns_pcb_deinit(a,b)       true
 #define xSemaphoreCreateMutex()     malloc(1)
 #define xSemaphoreCreateBinary()    malloc(1)
 #define vSemaphoreDelete(s)         free(s)
+#define queueQUEUE_TYPE_MUTEX       ( ( uint8_t ) 1U
 #define xTaskCreatePinnedToCore(a,b,c,d,e,f,g)     *(f) = malloc(1)
 #define vTaskDelay(m)               usleep((m)*0)
 #define pbuf_free(p)                free(p)
@@ -84,9 +88,6 @@
 #define ip_2_ip6(ipaddr)   (&((ipaddr)->u_addr.ip6))
 #define ip_2_ip4(ipaddr)   (&((ipaddr)->u_addr.ip4))
 
-#define IPADDR_TYPE_V4                0U
-#define IPADDR_TYPE_V6                6U
-#define IPADDR_TYPE_ANY               46U
 #define IP_SET_TYPE_VAL(ipaddr, iptype) do { (ipaddr).type = (iptype); }while(0)
 #define IP_ADDR4(ipaddr,a,b,c,d)      do { IP4_ADDR(ip_2_ip4(ipaddr),a,b,c,d); \
                                            IP_SET_TYPE_VAL(*(ipaddr), IPADDR_TYPE_V4); } while(0)
@@ -102,59 +103,13 @@ typedef void * SemaphoreHandle_t;
 typedef void * xQueueHandle;
 typedef void * QueueHandle_t;
 typedef void * TaskHandle_t;
-typedef void * esp_timer_handle_t;
 typedef uint32_t TickType_t;
 typedef uint32_t portTickType;
 
 
-typedef enum {
-    WIFI_MODE_NULL = 0,  /**< null mode */
-    WIFI_MODE_STA,       /**< WiFi station mode */
-    WIFI_MODE_AP,        /**< WiFi soft-AP mode */
-    WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
-    WIFI_MODE_MAX
-} wifi_mode_t;
-
 extern const char * WIFI_EVENT;
 extern const char * IP_EVENT;
 extern const char * ETH_EVENT;
-
-typedef enum {
-    WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
-    WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
-    WIFI_EVENT_STA_START,                /**< ESP32 station start */
-    WIFI_EVENT_STA_STOP,                 /**< ESP32 station stop */
-    WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
-    WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
-    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
-
-    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
-
-    WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
-    WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
-    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
-    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
-
-    WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
-} wifi_event_t;
-
-typedef enum {
-    ETHERNET_EVENT_START,                /**< ESP32 ethernet start */
-    ETHERNET_EVENT_STOP,                 /**< ESP32 ethernet stop */
-    ETHERNET_EVENT_CONNECTED,            /**< ESP32 ethernet phy link up */
-    ETHERNET_EVENT_DISCONNECTED,         /**< ESP32 ethernet phy link down */
-} eth_event_t;
-
-typedef enum {
-    IP_EVENT_STA_GOT_IP,               /*!< ESP32 station got IP from connected AP */
-    IP_EVENT_STA_LOST_IP,              /*!< ESP32 station lost IP and the IP is reset to 0 */
-    IP_EVENT_AP_STAIPASSIGNED,         /*!< ESP32 soft-AP assign an IP to a connected station */
-    IP_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
-    IP_EVENT_ETH_GOT_IP,               /*!< ESP32 ethernet got IP from connected AP */
-} ip_event_t;
 
 /* status of DHCP client or DHCP server */
 typedef enum {
@@ -178,14 +133,6 @@ struct ip6_addr {
 };
 typedef struct ip6_addr ip6_addr_t;
 
-typedef struct _ip_addr {
-  union {
-    ip6_addr_t ip6;
-    ip4_addr_t ip4;
-  } u_addr;
-  uint8_t type;
-} ip_addr_t;
-
 typedef struct {
     ip4_addr_t ip;
     ip4_addr_t netmask;
@@ -203,18 +150,7 @@ typedef struct {
     ip6_addr_t ip;
 } tcpip_adapter_ip6_info_t;
 
-typedef struct {
-    tcpip_adapter_if_t if_index;        /*!< Interface for which the event is received */
-    tcpip_adapter_ip6_info_t ip6_info;  /*!< IPv6 address of the interface */
-} ip_event_got_ip6_t;
-
 typedef void* system_event_t;
-
-inline esp_err_t esp_wifi_get_mode(wifi_mode_t * mode)
-{
-    *mode = WIFI_MODE_APSTA;
-    return ESP_OK;
-}
 
 struct pbuf {
   struct pbuf *next;
