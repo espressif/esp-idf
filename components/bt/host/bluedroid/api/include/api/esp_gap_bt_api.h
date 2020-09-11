@@ -221,6 +221,7 @@ typedef enum {
     ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< set AFH channels event */
     ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
     ESP_BT_GAP_MODE_CHG_EVT,
+    ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,         /*!< remove bond device complete event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -354,6 +355,14 @@ typedef union {
         esp_bd_addr_t bda;                      /*!< remote bluetooth device address*/
         esp_bt_pm_mode_t mode;                  /*!< PM mode*/
     } mode_chg;                                 /*!< mode change event parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT
+     */
+    struct bt_remove_bond_dev_cmpl_evt_param {
+        esp_bd_addr_t bda;                          /*!< remote bluetooth device address*/
+        esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
+    }remove_bond_dev_cmpl;                           /*!< Event parameter of ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT */
 
 } esp_bt_gap_cb_param_t;
 
