@@ -19,6 +19,8 @@
 #include "esp_netif_slip.h"
 #include "lwip/netif.h"
 
+#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+
 struct esp_netif_netstack_lwip_vanilla_config {
     err_t (*init_fn)(struct netif*);
     void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
@@ -126,3 +128,5 @@ struct esp_netif_obj {
     char * if_desc;
     int route_prio;
 };
+
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
