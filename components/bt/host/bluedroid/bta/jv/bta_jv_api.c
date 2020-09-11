@@ -347,6 +347,7 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(UINT32 handle)
     return (status);
 }
 
+#if BTA_JV_L2CAP_INCLUDED
 /*******************************************************************************
 **
 ** Function         BTA_JvL2capConnectLE
@@ -860,6 +861,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT32 req_i
 
     return (status);
 }
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /*******************************************************************************
 **
