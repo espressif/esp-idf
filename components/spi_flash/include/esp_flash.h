@@ -65,8 +65,21 @@ typedef struct {
     /** Called for release temp buffer. */
     void (*release_temp_buffer)(void* arg, void *temp_buf);
 
+    #define SPI_FLASH_YIELD_REQ_YIELD   BIT(0)
+    #define SPI_FLASH_YIELD_REQ_SUSPEND BIT(1)
+
+    /** Yield to other tasks. Called during erase operations.
+     * @return ESP_OK means yield needs to be called (got an event to handle), while ESP_ERR_TIMEOUT means skip yield.*/
+    esp_err_t (*check_yield)(void *arg, uint32_t chip_status, uint32_t* out_request);
+
+    #define SPI_FLASH_YIELD_STA_RESUME  BIT(2)
+
     /** Yield to other tasks. Called during erase operations. */
-    esp_err_t (*yield)(void *arg);
+    esp_err_t (*yield)(void *arg, uint32_t* out_status);
+
+    /** Called for get system time. */
+    int64_t (*get_system_time)(void *arg);
+
 } esp_flash_os_functions_t;
 
 /** @brief Structure to describe a SPI flash chip connected to the system.

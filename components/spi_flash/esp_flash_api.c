@@ -22,8 +22,8 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp_flash_internal.h"
-#include "esp_private/system_internal.h"
 
+#include "spi_flash_chip_generic.h" //for spi_flash_chip_generic_yield()
 
 static const char TAG[] = "spi_flash";
 
@@ -73,11 +73,13 @@ esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
 static esp_err_t spiflash_start_default(esp_flash_t *chip);
 static esp_err_t spiflash_end_default(esp_flash_t *chip, esp_err_t err);
 static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip);
+static esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
 
 typedef struct {
     esp_err_t (*start)(esp_flash_t *chip);
     esp_err_t (*end)(esp_flash_t *chip, esp_err_t err);
     esp_err_t (*chip_check)(esp_flash_t **inout_chip);
+    esp_err_t (*flash_end_flush_cache)(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
 } rom_spiflash_api_func_t;
 
 // These functions can be placed in the ROM. For now we use the code in IDF.
@@ -85,6 +87,7 @@ DRAM_ATTR static rom_spiflash_api_func_t default_spiflash_rom_api = {
     .start = spiflash_start_default,
     .end = spiflash_end_default,
     .chip_check = check_chip_pointer_default,
+    .flash_end_flush_cache = flash_end_flush_cache,
 };
 
 DRAM_ATTR rom_spiflash_api_func_t *rom_spiflash_api_funcs = &default_spiflash_rom_api;
@@ -133,6 +136,26 @@ static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip)
     }
     return ESP_OK;
 }
+
+static IRAM_ATTR esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length)
+{
+    if (!bus_acquired) {
+        // Try to acquire the bus again to flush the cache before exit.
+        esp_err_t acquire_err = rom_spiflash_api_funcs->start(chip);
+        if (acquire_err != ESP_OK) {
+            return (err == ESP_OK)? acquire_err: err;
+        }
+    }
+
+    if (chip->host->driver->flush_cache) {
+        esp_err_t flush_err = chip->host->driver->flush_cache(chip->host, address, length);
+        if (err == ESP_OK) {
+            err = flush_err;
+        }
+    }
+    return rom_spiflash_api_funcs->end(chip, err);
+}
+
 
 /* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
 inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
@@ -334,12 +357,24 @@ esp_err_t IRAM_ATTR esp_flash_erase_chip(esp_flash_t *chip)
     VERIFY_CHIP_OP(erase_chip);
     CHECK_WRITE_ADDRESS(chip, 0, chip->size);
 
+    //check before the operation, in case this is called too close to the last operation
+    err = spi_flash_chip_generic_yield(chip, false);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     err = rom_spiflash_api_funcs->start(chip);
     if (err != ESP_OK) {
         return err;
     }
 
     err = chip->chip_drv->erase_chip(chip);
+    if (chip->host->driver->flush_cache) {
+        esp_err_t flush_cache_err = chip->host->driver->flush_cache(chip->host, 0, chip->size);
+        if (err == ESP_OK) {
+            err = flush_cache_err;
+        }
+    }
     return rom_spiflash_api_funcs->end(chip, err);
 }
 
@@ -387,47 +422,58 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         // Don't lock the SPI flash for the entire erase, as this may be very long
         err = rom_spiflash_api_funcs->end(chip, err);
     }
+    if (err != ESP_OK) {
+        return err;
+    }
 
-#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-    int64_t no_yield_time_us = 0;
-#endif
-    while (err == ESP_OK && len >= sector_size) {
-#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        int64_t start_time_us = esp_system_get_time();
-#endif
+    uint32_t erase_addr = start;
+    uint32_t len_remain = len;
+    // Indicate whether the bus is acquired by the driver, needs to be released before return
+    bool bus_acquired = false;
+    while (1) {
+        //check before the operation, in case this is called too close to the last operation
+        err = spi_flash_chip_generic_yield(chip, false);
+        if (err != ESP_OK) {
+            break;
+        }
+
         err = rom_spiflash_api_funcs->start(chip);
         if (err != ESP_OK) {
-            return err;
+            break;
         }
+        bus_acquired = true;
 
 #ifndef CONFIG_SPI_FLASH_BYPASS_BLOCK_ERASE
         // If possible erase an entire multi-sector block
-        if (block_erase_size > 0 && len >= block_erase_size && (start % block_erase_size) == 0) {
-            err = chip->chip_drv->erase_block(chip, start);
-            start += block_erase_size;
-            len -= block_erase_size;
+        if (block_erase_size > 0 && len_remain >= block_erase_size && (erase_addr % block_erase_size) == 0) {
+            err = chip->chip_drv->erase_block(chip, erase_addr);
+            erase_addr += block_erase_size;
+            len_remain -= block_erase_size;
         } else
 #endif
         {
             // Otherwise erase individual sector only
-            err = chip->chip_drv->erase_sector(chip, start);
-            start += sector_size;
-            len -= sector_size;
+            err = chip->chip_drv->erase_sector(chip, erase_addr);
+            erase_addr += sector_size;
+            len_remain -= sector_size;
         }
 
-        err = rom_spiflash_api_funcs->end(chip, err);
-
-#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        no_yield_time_us += (esp_system_get_time() - start_time_us);
-        if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
-            no_yield_time_us = 0;
-            if (chip->os_func->yield) {
-                chip->os_func->yield(chip->os_func_data);
-            }
+        if (err != ESP_OK || len_remain == 0) {
+            // On ESP32, the cache re-enable is in the end() function, while flush_cache should
+            // happen when the cache is still disabled on ESP32. Break before the end() function and
+            // do end() later
+            assert(bus_acquired);
+            break;
         }
-#endif
+
+        err = rom_spiflash_api_funcs->end(chip, ESP_OK);
+        if (err != ESP_OK) {
+            break;
+        }
+        bus_acquired = false;
     }
-    return err;
+
+    return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, start, len);
 }
 
 esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *out_write_protected)
@@ -638,38 +684,62 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     //when the cache is disabled, only the DRAM can be read, check whether we need to copy the data first
     bool direct_write = chip->host->driver->supports_direct_write(chip->host, buffer);
 
+    // Indicate whether the bus is acquired by the driver, needs to be released before return
+    bool bus_acquired = false;
     err = ESP_OK;
     /* Write output in chunks, either by buffering on stack or
        by artificially cutting into MAX_WRITE_CHUNK parts (in an OS
        environment, this prevents writing from causing interrupt or higher priority task
        starvation.) */
-    do {
+    uint32_t write_addr = address;
+    uint32_t len_remain = length;
+    while (1) {
         uint32_t write_len;
         const void *write_buf;
         uint32_t temp_buf[8];
         if (direct_write) {
-            write_len = MIN(length, MAX_WRITE_CHUNK);
+            write_len = MIN(len_remain, MAX_WRITE_CHUNK);
             write_buf = buffer;
         } else {
-            write_len = MIN(length, sizeof(temp_buf));
+            write_len = MIN(len_remain, sizeof(temp_buf));
             memcpy(temp_buf, buffer, write_len);
             write_buf = temp_buf;
         }
 
-        err = rom_spiflash_api_funcs->start(chip);
+        //check before the operation, in case this is called too close to the last operation
+        err = spi_flash_chip_generic_yield(chip, false);
         if (err != ESP_OK) {
-            return err;
+            break;
         }
 
-        err = chip->chip_drv->write(chip, write_buf, address, write_len);
+        err = rom_spiflash_api_funcs->start(chip);
+        if (err != ESP_OK) {
+            break;
+        }
+        bus_acquired = true;
 
-        address += write_len;
-        buffer = (void *)((intptr_t)buffer + write_len);
-        length -= write_len;
+        err = chip->chip_drv->write(chip, write_buf, write_addr, write_len);
+        len_remain -= write_len;
+
+        if (err != ESP_OK || len_remain == 0) {
+            // On ESP32, the cache re-enable is in the end() function, while flush_cache should
+            // happen when the cache is still disabled on ESP32. Break before the end() function and
+            // do end() later
+            assert(bus_acquired);
+            break;
+        }
 
         err = rom_spiflash_api_funcs->end(chip, err);
-    } while (err == ESP_OK && length > 0);
-    return err;
+        if (err != ESP_OK) {
+            break;
+        }
+        bus_acquired = false;
+
+        write_addr += write_len;
+        buffer = (void *)((intptr_t)buffer + write_len);
+    }
+
+    return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 }
 
 //currently the legacy implementation is used, from flash_ops.c

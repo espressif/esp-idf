@@ -119,13 +119,6 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
     }
     if (err == ESP_OK) {
         chip->host->driver->erase_chip(chip->host);
-        //to save time, flush cache here
-        if (chip->host->driver->flush_cache) {
-            err = chip->host->driver->flush_cache(chip->host, 0, chip->size);
-            if (err != ESP_OK) {
-                return err;
-            }
-        }
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
@@ -143,13 +136,6 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
     }
     if (err == ESP_OK) {
         chip->host->driver->erase_sector(chip->host, start_address);
-        //to save time, flush cache here
-        if (chip->host->driver->flush_cache) {
-            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
-            if (err != ESP_OK) {
-                return err;
-            }
-        }
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
@@ -167,13 +153,6 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
     }
     if (err == ESP_OK) {
         chip->host->driver->erase_block(chip->host, start_address);
-        //to save time, flush cache here
-        if (chip->host->driver->flush_cache) {
-            err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
-            if (err != ESP_OK) {
-                return err;
-            }
-        }
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
@@ -253,9 +232,8 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
             length -= write_len;
         }
     }
-    if (err == ESP_OK && chip->host->driver->flush_cache) {
-        err = chip->host->driver->flush_cache(chip->host, address, length);
-    }
+    // The caller is responsible to do host->driver->flush_cache, because this function may be
+    // called in small pieces. Frequency call of flush cache will do harm to the performance.
     return err;
 }
 
@@ -316,6 +294,30 @@ esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_
 esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_t reg_id, uint32_t* out_reg)
 {
     return chip->host->driver->read_status(chip->host, (uint8_t*)out_reg);
+}
+
+esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, bool wip)
+{
+    esp_err_t err = ESP_OK;
+    uint32_t flags = wip? 1: 0; //check_yield() and yield() impls should not issue suspend/resume if this flag is zero
+
+    if (chip->os_func->check_yield) {
+        uint32_t request;
+        //According to the implementation, the check_yield() function may block, poll, delay or do nothing but return
+        err = chip->os_func->check_yield(chip->os_func_data, flags, &request);
+        if (err == ESP_OK) {
+            if (err == ESP_OK && (request & SPI_FLASH_YIELD_REQ_YIELD) != 0) {
+                uint32_t status;
+                //According to the implementation, the yield() function may block until something happen
+                err = chip->os_func->yield(chip->os_func_data, &status);
+            }
+        } else if (err == ESP_ERR_TIMEOUT) {
+            err = ESP_OK;
+        } else {
+            abort();
+        }
+    }
+    return err;
 }
 
 esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_us)
