@@ -139,26 +139,34 @@ check_public_headers:
     TEST_CONFIG_FILE: ${CI_PROJECT_DIR}/tools/ci/config/target-test.yml
 
 scan_tests:
-  extends: .scan_build_tests
+  extends:
+    - .before_script_for_component_ut
+    - .scan_build_tests
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_CUSTOM_TEST
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
       - $TEST_APPS_OUTPUT_DIR
+      - $COMPONENT_UT_OUTPUT_DIR
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
     TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
+    COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
+    PYTHON_VER: 3
   script:
-    - python $CI_SCAN_TESTS_PY example_test -b make $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - python $CI_SCAN_TESTS_PY example_test -b cmake $EXAMPLE_TEST_DIR --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
+    - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
 
 check_readme_links:
   extends: .check_job_template

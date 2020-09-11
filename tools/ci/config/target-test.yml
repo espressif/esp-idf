@@ -84,16 +84,7 @@
 
 .test_app_template:
   extends: .example_test_template
-  stage: target_test
-  dependencies:
-    - assign_test
   only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - triggers
-      - schedules
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_CUSTOM_TEST
@@ -103,6 +94,28 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+
+.component_ut_template:
+  extends:
+    - .before_script_for_component_ut
+    - .example_test_template
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST
+  variables:
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
+    PYTHON_VER: 3
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone test env configs
+    - ./tools/ci/retry_failed.sh git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    # run test
+    - python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE
 
 .unit_test_template:
   extends: .example_test_template
@@ -395,6 +408,12 @@ test_app_test_003:
   tags:
     - ESP32
     - Example_PPP
+
+component_ut_test_001:
+  extends: .component_ut_template
+  tags:
+    - ESP32
+    - COMPONENT_UT_GENERIC
 
 UT_001:
   extends: .unit_test_template

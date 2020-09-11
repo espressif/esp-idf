@@ -15,7 +15,7 @@ if(CONFIG_UNITY_ENABLE_FIXTURE)
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "unity/src")
+                    INCLUDE_DIRS "include" "unity/src" "unity/extras/fixture/src")
 
 target_compile_definitions(${COMPONENT_LIB} PUBLIC
     -DUNITY_INCLUDE_CONFIG_H
