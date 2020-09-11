@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 #pragma once
@@ -175,11 +175,11 @@ static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx
 
 /**
  * @brief Check if certain HAL state flags are set
- * 
+ *
  * The HAL will maintain a record of the controller's state via a set of flags.
  * These flags are automatically maintained (i.e., set and reset) inside various
  * HAL function calls. This function checks if certain flags are currently set.
- * 
+ *
  * @param hal_ctx Context of the HAL layer
  * @param check_flags Bit mask of flags to check
  * @return True if one or more of the flags in check_flags are set

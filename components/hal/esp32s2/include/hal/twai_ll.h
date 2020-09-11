@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The ll is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 // The Lowlevel layer for TWAI
@@ -33,7 +33,7 @@ extern "C" {
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
-#define TWAI_LL_STATUS_RBS      (0x1 << 0)      //Receive Buffer Status 
+#define TWAI_LL_STATUS_RBS      (0x1 << 0)      //Receive Buffer Status
 #define TWAI_LL_STATUS_DOS      (0x1 << 1)      //Data Overrun Status
 #define TWAI_LL_STATUS_TBS      (0x1 << 2)      //Transmit Buffer Status
 #define TWAI_LL_STATUS_TCS      (0x1 << 3)      //Transmission Complete Status
@@ -130,10 +130,10 @@ static inline bool twai_ll_is_in_reset_mode(twai_dev_t *hw)
 
 /**
  * @brief   Set operating mode of TWAI controller
- * 
+ *
  * @param hw Start address of the TWAI registers
  * @param mode Operating mode
- * 
+ *
  * @note Must be called in reset mode
  */
 static inline void twai_ll_set_mode(twai_dev_t *hw, twai_mode_t mode)
@@ -530,7 +530,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  * This function encodes a message into a frame structure. The frame structure
  * has an identical layout to the TX buffer, allowing the frame structure to be
  * directly copied into TX buffer.
- * 
+ *
  * @param[in] 11bit or 29bit ID
  * @param[in] dlc Data length code
  * @param[in] data Pointer to an 8 byte array containing data. NULL if no data
@@ -641,8 +641,8 @@ static inline uint32_t twai_ll_get_rx_msg_count(twai_dev_t *hw)
  * @brief   Set CLKOUT Divider and enable/disable
  *
  * Configure CLKOUT. CLKOUT is a pre-scaled version of APB CLK. Divider can be
- * 1, or any even number from 2 to 490. Set the divider to 0 to disable CLKOUT. 
- * 
+ * 1, or any even number from 2 to 490. Set the divider to 0 to disable CLKOUT.
+ *
  * @param hw Start address of the TWAI registers
  * @param divider Divider for CLKOUT (any even number from 2 to 490). Set to 0 to disable CLKOUT
  */

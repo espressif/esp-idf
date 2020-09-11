@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The ll is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 #pragma once
@@ -211,7 +211,7 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
 
 /**
  * Enable/disable invert the DAC digital controller clock signal.
- * 
+ *
  * @param enable true or false.
  */
 static inline void dac_ll_digi_clk_inv(bool enable)

@@ -14,7 +14,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 // The LL layer for ESP32 SIGMADELTA register operations
