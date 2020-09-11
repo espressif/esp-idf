@@ -19,6 +19,7 @@
 #
 
 from __future__ import division, print_function
+from future.moves.itertools import zip_longest
 from builtins import int, range, bytes
 from io import open
 import sys
@@ -28,7 +29,6 @@ import random
 import struct
 import os
 import array
-import csv
 import zlib
 import codecs
 import datetime
@@ -905,19 +905,40 @@ def generate(args, is_encr_enabled=False, encr_key=None):
     with open(args.input, 'rt', encoding='utf8') as input_file,\
             open(args.output, 'wb') as output_file,\
             nvs_open(output_file, input_size, args.version, is_encrypt=is_encr_enabled, key=encr_key) as nvs_obj:
-        # Comments are skipped
-        reader = csv.DictReader(filter(lambda row: row[0] != '#',input_file), delimiter=',')
+
         if nvs_obj.version == Page.VERSION1:
             version_set = VERSION1_PRINT
         else:
             version_set = VERSION2_PRINT
+
         print("\nCreating NVS binary with version:", version_set)
-        for row in reader:
+
+        line = input_file.readline().strip()
+
+        # Comments are skipped
+        while line.startswith('#'):
+            line = input_file.readline().strip()
+        if not isinstance(line, str):
+            line = line.encode('utf-8')
+
+        header = line.split(',')
+
+        while True:
+            line = input_file.readline().strip()
+            if not isinstance(line, str):
+                line = line.encode('utf-8')
+
+            value = line.split(',')
+            if len(value) == 1 and '' in value:
+                break
+
+            data = dict(zip_longest(header, value))
+
             try:
                 # Check key length
-                if len(row["key"]) > 15:
-                    raise InputError("Length of key `%s` should be <= 15 characters." % row["key"])
-                write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
+                if len(data["key"]) > 15:
+                    raise InputError("Length of key `{}` should be <= 15 characters.".format(data["key"]))
+                write_entry(nvs_obj, data["key"], data["type"], data["encoding"], data["value"])
             except InputError as e:
                 print(e)
                 filedir, filename = os.path.split(args.output)
