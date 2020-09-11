@@ -507,6 +507,37 @@ static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
 }
 #endif /// BT_SSP_INCLUDED == TRUE
 
+#if (SMP_INCLUDED == TRUE)
+static void btc_dm_dev_unpaired_evt(tBTA_DM_LINK_DOWN *p_link_down)
+{
+    esp_bt_gap_cb_param_t param;
+    BTC_TRACE_DEBUG("%s",__func__);
+    memcpy(param.remove_bond_dev_cmpl.bda, p_link_down->bd_addr, ESP_BD_ADDR_LEN);
+    btm_set_bond_type_dev(p_link_down->bd_addr, BOND_TYPE_UNKNOWN);
+    if (p_link_down->status == HCI_SUCCESS) {
+        //remove the bonded key in the config and nvs flash.
+        param.remove_bond_dev_cmpl.status = btc_storage_remove_bonded_device((bt_bdaddr_t *)param.remove_bond_dev_cmpl.bda);
+    } else {
+        param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;
+    }
+
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT;
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+#endif /// BTC_GAP_BT_INCLUDED == TRUE
+}
+#endif /* #if (SMP_INCLUDED == TRUE) */
+
 tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
 {
     return btc_dm_cb.btc_enabled_services;
@@ -647,14 +678,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 
     case BTA_DM_DEV_UNPAIRED_EVT: {
 #if (SMP_INCLUDED == TRUE)
-        bt_bdaddr_t bd_addr;
-        BTC_TRACE_DEBUG("BTA_DM_DEV_UNPAIRED_EVT");
-        memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
-        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
-        if (p_data->link_down.status == HCI_SUCCESS) {
-            //remove the bonded key in the config and nvs flash.
-            btc_storage_remove_bonded_device(&bd_addr);
-        }
+        btc_dm_dev_unpaired_evt(&p_data->link_down);
 #endif /* #if (SMP_INCLUDED == TRUE) */
         break;
     }
