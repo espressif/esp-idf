@@ -317,6 +317,7 @@ Linux 和 MacOS 操作系统
 .. code-block:: bash
 
     cd ~/esp/hello_world
+    idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
 Windows 操作系统
@@ -325,9 +326,10 @@ Windows 操作系统
 .. code-block:: batch
 
     cd %userprofile%\esp\hello_world
+    idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
-打开一个新项目后，应首先设置“目标”芯片 ``idf.py set-target {IDF_TARGET}``。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
+打开一个新项目后，应首先设置“目标”芯片 ``idf.py set-target {IDF_TARGET_PATH_NAME}``。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
 
 如果之前的步骤都正确，则会显示下面的菜单：
 
