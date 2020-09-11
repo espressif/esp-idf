@@ -25,11 +25,11 @@ Ring Buffers
 The ESP-IDF FreeRTOS ring buffer is a strictly FIFO buffer that supports arbitrarily sized items.
 Ring buffers are a more memory efficient alternative to FreeRTOS queues in situations where the
 size of items is variable. The capacity of a ring buffer is not measured by the number of items
-it can store, but rather by the amount of memory used for storing items. You may apply for a
-piece of memory on the ring buffer to send an item, or just use the API to copy your data and send
-(according to the send API you call). For efficiency reasons,
+it can store, but rather by the amount of memory used for storing items. The ring buffer provides API 
+to send an item, or to allocate space for an item in the ring buffer to be filled manually by the user. 
+For efficiency reasons,
 **items are always retrieved from the ring buffer by reference**. As a result, all retrieved
-items *must also be returned* in order for them to be removed from the ring buffer completely.
+items *must also be returned* to the ring buffer by using :cpp:func:`vRingbufferReturnItem` or :cpp:func:`vRingbufferReturnItemFromISR`, in order for them to be removed from the ring buffer completely.
 The ring buffers are split into the three following types:
 
 **No-Split** buffers will guarantee that an item is stored in contiguous memory and will not
