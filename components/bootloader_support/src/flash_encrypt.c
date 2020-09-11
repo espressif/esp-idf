@@ -80,7 +80,7 @@ void esp_flash_write_protect_crypt_cnt(void)
 
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 {
-    uint8_t efuse_flash_crypt_cnt_wr_protected = 0;
+    bool flash_crypt_cnt_wr_dis = false;
 #if CONFIG_IDF_TARGET_ESP32   
     uint8_t dis_dl_enc = 0, dis_dl_dec = 0, dis_dl_cache = 0;
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -94,9 +94,17 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 
     if (esp_flash_encryption_enabled()) {
         /* Check if FLASH CRYPT CNT is write protected */
-        efuse_flash_crypt_cnt_wr_protected = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
 
-        if (efuse_flash_crypt_cnt_wr_protected) {
+        flash_crypt_cnt_wr_dis = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
+        if (!flash_crypt_cnt_wr_dis) {
+            uint8_t flash_crypt_cnt = 0;
+            esp_efuse_read_field_blob(CRYPT_CNT, &flash_crypt_cnt, CRYPT_CNT[0]->bit_count);
+            if (flash_crypt_cnt == (1 << (CRYPT_CNT[0]->bit_count)) - 1) {
+                flash_crypt_cnt_wr_dis = true;
+            }
+        }
+
+        if (flash_crypt_cnt_wr_dis) {
 
 #if CONFIG_IDF_TARGET_ESP32
             dis_dl_cache = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
