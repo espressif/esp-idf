@@ -86,6 +86,7 @@ public class ESPDevice {
     private ESPConstants.SecurityType securityType;
 
     private String proofOfPossession;
+    private String versionInfo;
     private int totalCount;
     private int startIndex;
     private ArrayList<WiFiAccessPoint> wifiApList;
@@ -333,6 +334,20 @@ public class ESPDevice {
      */
     public String getProofOfPossession() {
         return proofOfPossession;
+    }
+
+    /**
+     * This method is used to get version information to determine what features are enabled in a device and act accordingly.
+     *
+     * @return Returns device version information.
+     */
+    public String getVersionInfo() {
+
+        if (transport instanceof BLETransport) {
+            return ((BLETransport) transport).versionInfo;
+        } else {
+            return versionInfo;
+        }
     }
 
     /**
@@ -1032,6 +1047,7 @@ public class ESPDevice {
 
                     String data = new String(returnData, StandardCharsets.UTF_8);
                     Log.d(TAG, "Value : " + data);
+                    versionInfo = data;
                     deviceCapabilities = new ArrayList<>();
 
                     try {

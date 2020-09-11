@@ -63,6 +63,7 @@ public class BLETransport implements Transport {
     private String serviceUuid;
     private boolean isReadingDescriptors = false;
     public ArrayList<String> deviceCapabilities = new ArrayList<>();
+    public String versionInfo;
 
     /**
      * Create BLETransport implementation
@@ -279,6 +280,7 @@ public class BLETransport implements Transport {
 
                 String data = new String(characteristic.getValue(), StandardCharsets.UTF_8);
                 Log.d(TAG, "Value : " + data);
+                versionInfo = data;
 
                 try {
                     JSONObject jsonObject = new JSONObject(data);
