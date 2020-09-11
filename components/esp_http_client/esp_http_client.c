@@ -434,12 +434,12 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     }
 
     if (config->transport_type == HTTP_TRANSPORT_OVER_SSL) {
-        http_utils_assign_string(&client->connection_info.scheme, "https", 0);
+        http_utils_assign_string(&client->connection_info.scheme, "https", -1);
         if (client->connection_info.port == 0) {
             client->connection_info.port = DEFAULT_HTTPS_PORT;
         }
     } else {
-        http_utils_assign_string(&client->connection_info.scheme, "http", 0);
+        http_utils_assign_string(&client->connection_info.scheme, "http", -1);
         if (client->connection_info.port == 0) {
             client->connection_info.port = DEFAULT_HTTP_PORT;
         }
@@ -783,10 +783,10 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
             if (password) {
                 *password = 0;
                 password ++;
-                http_utils_assign_string(&client->connection_info.password, password, 0);
+                http_utils_assign_string(&client->connection_info.password, password, -1);
                 HTTP_MEM_CHECK(TAG, client->connection_info.password, return ESP_ERR_NO_MEM);
             }
-            http_utils_assign_string(&client->connection_info.username, username, 0);
+            http_utils_assign_string(&client->connection_info.username, username, -1);
             HTTP_MEM_CHECK(TAG, client->connection_info.username, return ESP_ERR_NO_MEM);
             free(user_info);
         } else {
@@ -798,7 +798,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     if (purl.field_data[UF_PATH].len) {
         http_utils_assign_string(&client->connection_info.path, url + purl.field_data[UF_PATH].off, purl.field_data[UF_PATH].len);
     } else {
-        http_utils_assign_string(&client->connection_info.path, "/", 0);
+        http_utils_assign_string(&client->connection_info.path, "/", -1);
     }
     HTTP_MEM_CHECK(TAG, client->connection_info.path, return ESP_ERR_NO_MEM);
 
@@ -1375,6 +1375,26 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
         read_len += data_read;
     }
     return read_len;
+}
+
+esp_err_t esp_http_client_flush_response(esp_http_client_handle_t client, int *len)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    int read_len = 0;
+    while (!esp_http_client_is_complete_data_received(client)) {
+        int data_read = esp_http_client_get_data(client);
+        if (data_read < 0) {
+            return ESP_FAIL;
+        }
+        read_len += data_read;
+    }
+    if (len) {
+        *len = read_len;
+    }
+    return ESP_OK;
 }
 
 esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, const int len)

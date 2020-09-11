@@ -45,7 +45,7 @@ char *http_utils_assign_string(char **str, const char *new_str, int len)
         return NULL;
     }
     char *old_str = *str;
-    if (l <= 0) {
+    if (l < 0) {
         l = strlen(new_str);
     }
     if (old_str) {
