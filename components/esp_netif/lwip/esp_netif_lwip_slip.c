@@ -13,12 +13,16 @@
 // limitations under the License.
 
 
-#include "lwip/dns.h"
+
 #include "esp_netif.h"
 #include "esp_log.h"
 #include "esp_netif_slip.h"
 #include "esp_netif_lwip_internal.h"
 #include "esp_netif_net_stack.h"
+
+#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+
+#include "lwip/dns.h"
 #include "lwip/opt.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/netif.h"
@@ -296,3 +300,4 @@ void sio_send(uint8_t c, sio_fd_t fd)
         ESP_LOGD(TAG, "%s: uart_write_bytes error %i", __func__, ret);
     }
 }
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

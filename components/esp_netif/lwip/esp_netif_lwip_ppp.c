@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lwip/dns.h"
+
 #include "esp_netif.h"
+
+#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+
+#include "lwip/dns.h"
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppos.h"
 #include "esp_log.h"
@@ -21,8 +25,8 @@
 #include "esp_event.h"
 #include "esp_netif_ppp.h"
 #include "esp_netif_lwip_internal.h"
-#include "lwip/ip6_addr.h"
 #include <string.h>
+#include "lwip/ip6_addr.h"
 
 ESP_EVENT_DEFINE_BASE(NETIF_PPP_STATUS);
 
@@ -384,3 +388,5 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
     LOG_PPP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
 
 #endif /* PPPOS_SUPPORT */
+
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

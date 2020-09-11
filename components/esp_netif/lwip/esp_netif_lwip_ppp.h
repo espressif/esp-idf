@@ -15,6 +15,8 @@
 #ifndef _ESP_NETIF_LWIP_PPP_H_
 #define _ESP_NETIF_LWIP_PPP_H_
 
+#if CONFIG_ESP_NETIF_TCPIP_LWIP
+
 /**
  * @brief  Creates new PPP related structure
  *
@@ -74,5 +76,8 @@ esp_err_t esp_netif_stop_ppp(netif_related_data_t *netif_related);
  *
  */
 void esp_netif_ppp_set_default_netif(netif_related_data_t *netif_related);
+
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
+
 
 #endif // _ESP_NETIF_LWIP_PPP_H_
