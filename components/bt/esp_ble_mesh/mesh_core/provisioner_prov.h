@@ -277,12 +277,12 @@ int bt_mesh_provisioner_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb);
 int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info);
 
 /**
- * @brief This function sets the provisioning information needed by Provisioner,
- *        including unicast address, IV Index, etc.
+ * @brief This function initializes the provisioning information needed by Provisioner,
+ *        including NetKey Index, flags, IV Index, etc.
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_prov_info(void);
+int bt_mesh_provisioner_init_prov_info(void);
 
 /**
  * @brief This function sets the provisioning bearer type used by Provisioner.
