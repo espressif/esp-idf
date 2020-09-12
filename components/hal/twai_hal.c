@@ -32,7 +32,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx)
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
         return false;
     }
-#ifdef SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
+#if SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
     twai_ll_enable_extended_reg_layout(hal_ctx->dev);        //Changes the address layout of the registers
 #endif
     twai_ll_set_mode(hal_ctx->dev, TWAI_MODE_LISTEN_ONLY);    //Freeze REC by changing to LOM mode

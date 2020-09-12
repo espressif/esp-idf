@@ -47,7 +47,7 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
-#ifdef SOC_DIRAM_INVERTED // We want the word before the result to hold the DRAM address
+#if SOC_DIRAM_INVERTED // We want the word before the result to hold the DRAM address
     uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dend);
 #else
     uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dstart);

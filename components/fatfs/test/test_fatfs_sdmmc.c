@@ -38,7 +38,7 @@
 #define SDSPI_HOST_ID   HSPI_HOST
 
 
-#ifdef SOC_SDMMC_HOST_SUPPORTED
+#if SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"
 
 

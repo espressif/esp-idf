@@ -104,12 +104,9 @@
 #define SOC_GPIO_PORT                   (1)
 #define SOC_GPIO_PIN_COUNT              40
 
-
-// On ESP32 those PADs which have RTC functions must set pullup/down/capability via RTC register.
-// On ESP32-S2, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT   (0)
-// Force hold is a new function of ESP32-S2
-#define SOC_GPIO_SUPPORT_FORCE_HOLD        (0)
+// SOC_GPIO_SUPPORT_RTC_INDEPENDENT not defined. On ESP32 those PADs which have RTC functions must
+// set pullup/down/capability via RTC register. On ESP32-S2, Digital IOs have their own registers to
+// control pullup/down/capability, independent with RTC registers.
 
 // 0~39 except from 20, 24, 28~31 are valid
 #define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFULL & ~(0ULL | BIT20 | BIT24 | BIT28 | BIT29 | BIT30 | BIT31))
@@ -121,17 +118,12 @@
 #define SOC_I2C_NUM             (2)
 
 #define SOC_I2C_FIFO_LEN        (32) /*!< I2C hardware FIFO depth */
-//ESP32 do not support hardware FSM reset
-#define SOC_I2C_SUPPORT_HW_FSM_RST  (0)
-//ESP32 do not support hardware clear bus
-#define SOC_I2C_SUPPORT_HW_CLR_BUS  (0)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 have 2 I2S
 #define SOC_I2S_NUM                 (2)
 
 #define SOC_I2S_SUPPORTS_PDM        (1) // ESP32 support PDM
-#define SOC_I2S_SUPPORTS_DMA_EQUAL  (0) // ESP32 don't support dma equal
 #define SOC_I2S_SUPPORTS_ADC_DAC    (1) // ESP32 support ADC and DAC
 
 #define SOC_I2S_MAX_BUFFER_SIZE     (4 * 1024 * 1024) //the maximum RAM can be allocated

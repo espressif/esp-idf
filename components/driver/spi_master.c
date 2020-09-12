@@ -410,7 +410,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     hal_dev->tx_lsbfirst = dev_config->flags & SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
     hal_dev->rx_lsbfirst = dev_config->flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
     hal_dev->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
-#ifdef SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_SUPPORT_AS_CS
     hal_dev->as_cs = dev_config->flags& SPI_DEVICE_CLK_AS_CS ? 1 : 0;
 #endif
     hal_dev->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;

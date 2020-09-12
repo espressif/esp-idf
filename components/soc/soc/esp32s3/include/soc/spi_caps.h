@@ -20,7 +20,6 @@
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     72
 
-//#define SOC_SPI_SUPPORT_AS_CS         //don't support to toggle the CS while the clock toggles
 #define SOC_SPI_SUPPORT_DDRCLK              1
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1

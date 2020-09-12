@@ -109,9 +109,7 @@
 // ESP32-S2 have 2 I2S
 #define SOC_I2S_NUM            (1)
 
-#define SOC_I2S_SUPPORTS_PDM       (0) // ESP32-S2 don't support PDM
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1) // ESP32-S2 need dma equal
-#define SOC_I2S_SUPPORTS_ADC_DAC   (0) // ESP32-S2 don't support ADC and DAC
 
 #define SOC_I2S_MAX_BUFFER_SIZE               (4 * 1024 * 1024) //the maximum RAM can be allocated
 
@@ -183,7 +181,7 @@
 #define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUP_SUPPORT_XTAL
+#define SOC_TIMER_GROUP_SUPPORT_XTAL        1
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*! 15 Touch channels */

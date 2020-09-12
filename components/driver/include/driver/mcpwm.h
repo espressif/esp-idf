@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DRIVER_MCPWM_H_
-#define _DRIVER_MCPWM_H_
+#pragma once
 
 #include "soc/soc_caps.h"
-#ifndef SOC_MCPWM_SUPPORTED
-#error MCPWM is not supported in this chip target
-#endif
+#if SOC_MCPWM_SUPPORTED
 
 #include "esp_err.h"
 #include "soc/soc.h"
@@ -664,4 +661,5 @@ esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *a
 }
 #endif
 
-#endif  /*_DRIVER_MCPWM_H_*/
+#endif  //SOC_MCPWM_SUPPORTED
+

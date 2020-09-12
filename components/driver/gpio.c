@@ -36,7 +36,13 @@ static const char *GPIO_TAG = "gpio";
         ESP_LOGE(GPIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
         return (ret_val); \
     }
+
 #define GPIO_ISR_CORE_ID_UNINIT    (3)
+
+//default value for SOC_GPIO_SUPPORT_RTC_INDEPENDENT is 0
+#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+#endif
 
 typedef struct {
     gpio_isr_t fn;   /*!< isr function */

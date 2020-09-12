@@ -302,7 +302,7 @@ void timer_hal_get_status_reg_mask_bit(timer_hal_context_t *hal, uint32_t *statu
  */
 #define timer_hal_get_intr_status_reg(hal)  timer_ll_get_intr_status_reg((hal)->dev)
 
-#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
 /**
  * @brief Set clock source.
  *
