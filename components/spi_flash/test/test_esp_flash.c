@@ -113,10 +113,10 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else
 #define FLASH_TEST_CASE_3(STR, FUNC_TO_RUN) \
-    TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
+    TEST_CASE(STR", 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNC_TO_RUN) \
-    TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH][ignore]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
+    TEST_CASE(STR", 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH][ignore]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 #endif
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
@@ -801,7 +801,7 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 }
 
 #ifndef CONFIG_SPIRAM
-TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
+TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < TEST_CONFIG_NUM; i++) {
         test_permutations_chip(&config_list[i]);
