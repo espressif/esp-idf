@@ -66,6 +66,7 @@ typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 #define NVS_DEFAULT_PART_NAME               "nvs"   /*!< Default partition name of the NVS partition in the partition table */
 
 #define NVS_PART_NAME_MAX_SIZE              16   /*!< maximum length of partition name (excluding null terminator) */
+#define NVS_KEY_NAME_MAX_SIZE               16   /*!< Maximal length of NVS key name (including null terminator) */
 
 /**
  * @brief Mode of opening the non-volatile storage
@@ -122,9 +123,7 @@ typedef struct nvs_opaque_iterator_t *nvs_iterator_t;
  * The default NVS partition is the one that is labelled "nvs" in the partition
  * table.
  *
- * @param[in]  name        Namespace name. Maximal length is determined by the
- *                         underlying implementation, but is guaranteed to be
- *                         at least 15 characters. Shouldn't be empty.
+ * @param[in]  name        Namespace name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param[in]  open_mode   NVS_READWRITE or NVS_READONLY. If NVS_READONLY, will
  *                         open a handle for reading only. All write requests will
  *             be rejected for this handle.
@@ -150,9 +149,7 @@ esp_err_t nvs_open(const char* name, nvs_open_mode_t open_mode, nvs_handle_t *ou
  * with NVS using nvs_flash_init_partition() API.
  *
  * @param[in]  part_name   Label (name) of the partition of interest for object read/write/erase
- * @param[in]  name        Namespace name. Maximal length is determined by the
- *                         underlying implementation, but is guaranteed to be
- *                         at least 15 characters. Shouldn't be empty.
+ * @param[in]  name        Namespace name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param[in]  open_mode   NVS_READWRITE or NVS_READONLY. If NVS_READONLY, will
  *                         open a handle for reading only. All write requests will
  *             be rejected for this handle.
@@ -179,9 +176,7 @@ esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_o
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
- * @param[in]  key     Key name. Maximal length is determined by the underlying
- *                     implementation, but is guaranteed to be at least
- *                     15 characters. Shouldn't be empty.
+ * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
  *                     For strings, the maximum length (including null character) is
  *                     4000 bytes.
@@ -218,7 +213,7 @@ esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
- * @param[in]  key     Key name. Maximal length is 15 characters. Shouldn't be empty.
+ * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
  * @param[in]  length  length of binary value to set, in bytes; Maximum length is
  *                     508000 bytes or (97.6% of the partition size - 4000) bytes
@@ -263,9 +258,7 @@ esp_err_t nvs_set_blob(nvs_handle_t handle, const char* key, const void* value, 
  * \endcode
  *
  * @param[in]     handle     Handle obtained from nvs_open function.
- * @param[in]     key        Key name. Maximal length is determined by the underlying
- *                           implementation, but is guaranteed to be at least
- *                           15 characters. Shouldn't be empty.
+ * @param[in]     key        Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param         out_value  Pointer to the output value.
  *                           May be NULL for nvs_get_str and nvs_get_blob, in this
  *                           case required length will be returned in length argument.
@@ -324,9 +317,7 @@ esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value
  * \endcode
  *
  * @param[in]     handle     Handle obtained from nvs_open function.
- * @param[in]     key        Key name. Maximal length is determined by the underlying
- *                           implementation, but is guaranteed to be at least
- *                           15 characters. Shouldn't be empty.
+ * @param[in]     key        Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  * @param         out_value  Pointer to the output value.
  *                           May be NULL for nvs_get_str and nvs_get_blob, in this
  *                           case required length will be returned in length argument.
@@ -356,9 +347,7 @@ esp_err_t nvs_get_blob(nvs_handle_t handle, const char* key, void* out_value, si
  * @param[in]  handle  Storage handle obtained with nvs_open.
  *                     Handles that were opened read only cannot be used.
  *
- * @param[in]  key     Key name. Maximal length is determined by the underlying
- *                     implementation, but is guaranteed to be at least
- *                     15 characters. Shouldn't be empty.
+ * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
  *
  * @return
  *              - ESP_OK if erase operation was successful
