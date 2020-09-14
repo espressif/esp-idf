@@ -59,38 +59,38 @@
 
 /// Configuration of the HAL
 typedef struct {
-    uint32_t  host_id;              ///< Host ID of the spi peripheral
-    dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
-    dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
-    uint32_t  spics_io_num;         ///< CS GPIO pin for this device
-    uint8_t   mode;                 ///< SPI mode (0-3)
-    uint32_t  command_bits;         ///< command field bits, multiples of 8 and at least 8.
-    uint32_t  address_bits;         ///< address field bits, multiples of 8 and at least 8.
-    uint32_t  dummy_bits;           ///< dummy field bits, multiples of 8 and at least 8.
+    uint32_t      host_id;              ///< Host ID of the spi peripheral
+    spi_dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
+    spi_dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
+    uint32_t      spics_io_num;         ///< CS GPIO pin for this device
+    uint8_t       mode;                 ///< SPI mode (0-3)
+    uint32_t      command_bits;         ///< command field bits, multiples of 8 and at least 8.
+    uint32_t      address_bits;         ///< address field bits, multiples of 8 and at least 8.
+    uint32_t      dummy_bits;           ///< dummy field bits, multiples of 8 and at least 8.
 
     struct {
-        uint32_t tx_lsbfirst : 1;   ///< Whether TX data should be sent with LSB first.
-        uint32_t rx_lsbfirst : 1;   ///< Whether RX data should be read with LSB first.
+        uint32_t  tx_lsbfirst : 1;      ///< Whether TX data should be sent with LSB first.
+        uint32_t  rx_lsbfirst : 1;      ///< Whether RX data should be read with LSB first.
     };
-    uint32_t dma_chan;              ///< The dma channel used.
+    uint32_t      dma_chan;             ///< The dma channel used.
 } spi_slave_hd_hal_config_t;
 
 /// Context of the HAL, initialized by :cpp:func:`spi_slave_hd_hal_init`.
 typedef struct {
-    spi_dev_t *dev;                 ///< Beginning address of the peripheral registers.
-    dma_dev_t *dma_in;              ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
-    dma_dev_t *dma_out;             ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
-    lldesc_t  *dmadesc_tx;          /**< Array of DMA descriptor used by the TX DMA.
-                                     *  The amount should be larger than dmadesc_n. The driver should ensure that
-                                     *  the data to be sent is shorter than the descriptors can hold.
-                                     */
-    lldesc_t  *dmadesc_rx;          /**< Array of DMA descriptor used by the RX DMA.
-                                     *  The amount should be larger than dmadesc_n. The driver should ensure that
-                                     *  the data to be sent is shorter than the descriptors can hold.
-                                     */
+    spi_dev_t     *dev;                 ///< Beginning address of the peripheral registers.
+    spi_dma_dev_t *dma_in;              ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+    spi_dma_dev_t *dma_out;             ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+    lldesc_t      *dmadesc_tx;          /**< Array of DMA descriptor used by the TX DMA.
+                                         *  The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *  the data to be sent is shorter than the descriptors can hold.
+                                         */
+    lldesc_t      *dmadesc_rx;          /**< Array of DMA descriptor used by the RX DMA.
+                                         *  The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *  the data to be sent is shorter than the descriptors can hold.
+                                         */
 
     /* Internal status used by the HAL implementation, initialized as 0. */
-    uint32_t  intr_not_triggered;
+    uint32_t      intr_not_triggered;
 } spi_slave_hd_hal_context_t;
 
 /**

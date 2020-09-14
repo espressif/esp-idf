@@ -119,7 +119,9 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
 void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev, const spi_hal_trans_config_t *trans)
 {
     spi_dev_t *hw = hal->hw;
-    spi_ll_reset_dma(hw);
+
+    spi_ll_dma_fifo_reset(hal->hw);
+
     //Fill DMA descriptors
     if (trans->rcv_buffer) {
         if (!hal->dma_enabled) {
@@ -132,9 +134,11 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             spi_ll_dma_rx_enable(hal->hw, 1);     
             spi_dma_ll_rx_start(hal->dma_in, hal->dma_config.dmadesc_rx);
         }
+
     } else {
         //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
         if (hal->dma_enabled) {
+            spi_ll_dma_rx_enable(hal->hw, 1);
             spi_dma_ll_rx_start(hal->dma_in, 0);
         }
     }
@@ -152,6 +156,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             spi_dma_ll_tx_start(hal->dma_out, hal->dma_config.dmadesc_tx);
         }
     }
+
     //in ESP32 these registers should be configured after the DMA is set
     if ((!dev->half_duplex && trans->rcv_buffer) || trans->send_buffer) {
         spi_ll_enable_mosi(hw, 1);

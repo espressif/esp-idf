@@ -24,13 +24,24 @@ static const char SPI_HAL_TAG[] = "spi_hal";
         return (ret_val); \
     }
 
-void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
+static void s_spi_hal_dma_init_config(const spi_hal_context_t *hal)
+{
+    spi_dma_ll_rx_enable_burst_data(hal->dma_in, 1);
+    spi_dma_ll_tx_enable_burst_data(hal->dma_out, 1);
+    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, 1);
+    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, 1);
+}
+
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_dma_config_t *dma_config)
 {
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
+    hal->dma_in = dma_config->dma_in;
+    hal->dma_out = dma_config->dma_out;
 
     spi_ll_master_init(hw);
+    s_spi_hal_dma_init_config(hal);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just

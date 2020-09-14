@@ -36,6 +36,7 @@
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
+#include "hal/spi_slave_hal.h"
 
 static const char *SPI_TAG = "spi_slave";
 #define SPI_CHECK(a, str, ret_val) \
@@ -192,7 +193,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
 
     spi_slave_hal_context_t *hal = &spihost[host]->hal;
-    spi_slave_hal_init(hal, host);
+    //assign the SPI, RX DMA and TX DMA peripheral registers beginning address
+    spi_slave_hal_config_t hal_config = {
+        .host_id = host,
+        .dma_in = SPI_LL_GET_HW(host),
+        .dma_out = SPI_LL_GET_HW(host)
+    };
+    spi_slave_hal_init(hal, &hal_config);
 
     if (dma_desc_ct) {
         hal->dmadesc_tx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);

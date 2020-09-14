@@ -23,14 +23,25 @@
 #include "soc/lldesc.h"
 #include "hal/spi_slave_hd_hal.h"
 
+static void s_spi_slave_hd_hal_dma_init_config(const spi_slave_hd_hal_context_t *hal)
+{
+    spi_dma_ll_rx_enable_burst_data(hal->dma_in, 1);
+    spi_dma_ll_tx_enable_burst_data(hal->dma_out, 1);
+    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, 1);
+    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, 1);
+}
 
 void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config)
 {
     memset(hal, 0, sizeof(spi_slave_hd_hal_context_t));
     spi_dev_t* hw = SPI_LL_GET_HW(hal_config->host_id);
     hal->dev = hw;
+    hal->dma_in = hal_config->dma_in;
+    hal->dma_out = hal_config->dma_out;
 
     //Configure slave
+    s_spi_slave_hd_hal_dma_init_config(hal);
+
     spi_ll_slave_hd_init(hw);
     spi_ll_set_addr_bitlen(hw, hal_config->address_bits);
     spi_ll_set_command_bitlen(hw, hal_config->command_bits);
@@ -71,18 +82,24 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
 {
     lldesc_setup_link(hal->dmadesc_rx, out_buf, len, true);
 
-    spi_ll_rxdma_reset(hal->dev);
+    spi_dma_ll_rx_reset(hal->dma_in);
+    spi_ll_infifo_full_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_WR_DONE);
-    spi_ll_rxdma_start(hal->dev, &hal->dmadesc_rx[0]);
+
+    spi_ll_dma_rx_enable(hal->dev, 1);
+    spi_dma_ll_rx_start(hal->dma_in, &hal->dmadesc_rx[0]); 
 }
 
 void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len)
 {
     lldesc_setup_link(hal->dmadesc_tx, data, len, false);
 
-    spi_ll_txdma_reset(hal->dev);
+    spi_dma_ll_tx_reset(hal->dma_out);
+    spi_ll_outfifo_empty_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD8);
-    spi_ll_txdma_start(hal->dev, &hal->dmadesc_tx[0]);
+
+    spi_ll_dma_tx_enable(hal->dev, 1);
+    spi_dma_ll_tx_start(hal->dma_out, &hal->dmadesc_tx[0]); 
 }
 
 static spi_ll_intr_t get_event_intr(spi_event_t ev)
