@@ -5,6 +5,7 @@ from docutils import io, nodes, statemachine, utils
 from docutils.utils.error_reporting import SafeString, ErrorString
 from docutils.parsers.rst import directives
 from sphinx.directives.other import Include as BaseInclude
+from sphinx.util import logging
 
 
 def setup(app):
@@ -19,6 +20,16 @@ def setup(app):
     app.add_directive('include', FormatedInclude, override=True)
 
     return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
+
+
+def check_content(content, docname):
+    # Log warnings for any {IDF_TARGET} expressions that haven't been replaced
+    logger = logging.getLogger(__name__)
+
+    errors = re.findall(r'{IDF_TARGET.*?}', content)
+
+    for err in errors:
+        logger.warning('Badly formated string substitution: {}'.format(err), location=docname)
 
 
 class StringSubstituter:
@@ -112,6 +123,8 @@ class StringSubstituter:
 
     def substitute_source_read_cb(self, app, docname, source):
         source[0] = self.substitute(source[0])
+
+        check_content(source[0], docname)
 
 
 class FormatedInclude(BaseInclude):
