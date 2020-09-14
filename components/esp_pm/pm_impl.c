@@ -42,12 +42,16 @@
 
 #include "sdkconfig.h"
 
+// [refactor-todo] opportunity for further refactor
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/pm.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
+#include "esp32s3/pm.h"
 #endif
 
 #define MHZ (1000000)
@@ -75,6 +79,10 @@
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
 #define DEFAULT_CPU_FREQ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32S3
+/* Minimal divider at which REF_CLK_FREQ can be obtained */
+#define REF_CLK_DIV_MIN 2
+#define DEFAULT_CPU_FREQ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -102,7 +110,7 @@ static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define PERIPH_SKIP_LIGHT_SLEEP_NO 1
 
 /* Indicates if light sleep shoule be skipped by peripherals. */
@@ -201,6 +209,8 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32_t* config = (const esp_pm_config_esp32_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32S2
     const esp_pm_config_esp32s2_t* config = (const esp_pm_config_esp32s2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    const esp_pm_config_esp32s3_t* config = (const esp_pm_config_esp32s3_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -246,7 +256,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
          */
         apb_max_freq = 80;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     int apb_max_freq = MIN(max_freq_mhz, 80); /* CPU frequency in APB_MAX mode */
 #endif
 
@@ -526,7 +536,7 @@ void esp_pm_impl_waiti(void)
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 esp_err_t esp_pm_register_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 {
     for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
@@ -575,7 +585,7 @@ static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 #endif // portNUM_PROCESSORS == 2
 #if CONFIG_IDF_TARGET_ESP32
     if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching) {
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching || periph_should_skip_light_sleep()) {
 #endif
         s_skipped_light_sleep[core_id] = true;
@@ -706,6 +716,8 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_pm_config_esp32s2_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32S3
+    esp_pm_config_esp32s3_t cfg = {
 #endif
         .max_freq_mhz = DEFAULT_CPU_FREQ,
         .min_freq_mhz = xtal_freq,

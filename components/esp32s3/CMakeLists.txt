@@ -19,8 +19,6 @@ else()
              "hw_random.c"
              "intr_alloc.c"
              "memprot.c"
-             "pm_esp32s3.c"
-             "pm_trace.c"
              "spiram.c"
              "spiram_psram.c"
              "system_api_esp32s3.c")

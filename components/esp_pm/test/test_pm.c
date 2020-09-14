@@ -23,6 +23,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
+#include "esp32s3/ulp.h"
 #endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
@@ -39,6 +42,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_pm_config_esp32s2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S3
+    esp_pm_config_esp32s3_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq),
@@ -81,6 +86,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_pm_config_esp32s2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S3
+    esp_pm_config_esp32s3_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
@@ -97,6 +104,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_pm_config_esp32s2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32S3
+    esp_pm_config_esp32s3_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,
@@ -151,6 +160,8 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
     assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
 #elif CONFIG_IDF_TARGET_ESP32S2
     assert(CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+#elif CONFIG_IDF_TARGET_ESP32S3
+    assert(CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
 #endif
 
     /* Set up GPIO used to wake up RTC */
