@@ -27,18 +27,23 @@ import binascii
 import logging
 import re
 import time
+
 from pygdbmi.gdbcontroller import GdbController, DEFAULT_GDB_TIMEOUT_SEC
 
-idf_path = os.getenv('IDF_PATH')
-if idf_path:
-    sys.path.insert(0, os.path.join(idf_path, 'components', 'esptool_py', 'esptool'))
+IDF_PATH = os.getenv('IDF_PATH')
+if not IDF_PATH:
+    sys.stderr.write("IDF_PATH is not found! Set proper IDF_PATH in environment.\n")
+    sys.exit(2)
 
+sys.path.insert(0, os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool'))
 try:
     import esptool
-
 except ImportError:
-    sys.stderr.write("esptool is not found! Set proper $IDF_PATH in environment.\n")
+    sys.stderr.write("esptool is not found!\n")
     sys.exit(2)
+
+PARTTOOL_PY = os.path.join(IDF_PATH, "components", "partition_table", "parttool.py")
+ESPTOOL_PY = os.path.join(IDF_PATH, "components", "esptool_py", "esptool", "esptool.py")
 
 try:
     import typing
@@ -130,7 +135,6 @@ class BinStruct(object):
         f.write(s.dump())
         f.close()
     """
-
     def __init__(self, buf=None):
         """Base constructor for binary structure objects
         """
@@ -219,7 +223,7 @@ class Elf32NoteDesc(object):
         """Reads ELF32 note descriptor
         """
         hdr_sz = struct.calcsize("<LLL")
-        nm_len,desc_len,self.type = struct.unpack("<LLL", data[:hdr_sz])
+        nm_len, desc_len, self.type = struct.unpack("<LLL", data[:hdr_sz])
         nm_len_a = nm_len + ((4 - nm_len) % 4)
         self.name = struct.unpack("<%ds" % (nm_len - 1), data[hdr_sz:hdr_sz + nm_len - 1])[0].decode('ascii')
         self.desc = data[hdr_sz + nm_len_a:hdr_sz + nm_len_a + desc_len]
@@ -441,6 +445,7 @@ class ESPCoreDumpElfFile(esptool.ELFFile):
         def read_section_header(offs):
             name_offs,sec_type,flags,lma,sec_offs,size = struct.unpack_from("<LLLLLL", section_header[offs:])
             return (name_offs, sec_type, flags, lma, size, sec_offs)
+
         all_sections = [read_section_header(offs) for offs in section_header_offsets]
         prog_sections = [s for s in all_sections if s[1] == esptool.ELFFile.SEC_TYPE_PROGBITS]
 
@@ -650,6 +655,7 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
         # Temporary ELF core file, passed to the GDB
         self.core_elf_file = None  # type: typing.Optional[typing.BinaryIO]
         self.hdr = {}
+        self.temp_files = []
 
     def _get_registers_from_stack(self, data, grows_down):
         """Returns list of registers (in GDB format) from xtensa stack frame
@@ -745,7 +751,12 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
             for i in range(XT_SOL_AR_NUM):
                 regs[REG_AR_START_IDX + i] = stack[XT_SOL_AR_START + i]
             # nxt = stack[XT_SOL_NEXT]
-        return regs,extra_regs
+        return regs, extra_regs
+
+    def create_temp_file(self):
+        t = tempfile.NamedTemporaryFile("w+b", delete=False)
+        self.temp_files.append(t.name)
+        return t
 
     def tcb_is_sane(self, tcb_addr, tcb_size):
         """Check tcb address if it is correct
@@ -755,7 +766,7 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
     def stack_is_sane(self, sp):
         """Check stack address if it is correct
         """
-        return not(sp < 0x3ffae010 or sp > 0x3fffffff)
+        return not (sp < 0x3ffae010 or sp > 0x3fffffff)
 
     def addr_is_fake(self, addr):
         """Check if address is in fake area
@@ -919,7 +930,7 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
         data = self.read_data(off, self.ESP_COREDUMP_HDR_SZ)
         vals = struct.unpack_from(self.ESP_COREDUMP_HDR_FMT, data)
         self.hdr = dict(zip(('tot_len', 'ver', 'task_num', 'tcbsz', 'segs_num'), vals))
-        self.core_elf_file = tempfile.NamedTemporaryFile()
+        self.core_elf_file = self.create_temp_file()
         self.set_version(self.hdr['ver'])
         if self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32S2 or self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32:
             if self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_CRC32 or self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_SHA256:
@@ -942,12 +953,28 @@ class ESPCoreDumpLoader(ESPCoreDumpVersion):
         return data
 
     def cleanup(self):
+        def remove(f, timeout_sec):
+            """
+            Removes the file. Waits `timeout_sec` for the file to stop being used
+            """
+            timeout = time.time() + timeout_sec
+            while (time.time() <= timeout):
+                try:
+                    os.remove(f)
+                    return
+                except OSError:
+                    time.sleep(.1)
+            logging.warning("File \'%s\' is used by another process and can't be removed" % f)
+
+        logging.debug("Cleaning up...")
         if self.core_elf_file:
             self.core_elf_file.close()
             self.core_elf_file = None
         if self.core_src_file:
             self.core_src_file.close()
             self.core_src_file = None
+        for t in self.temp_files:
+            remove(t, 2)
 
 
 class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
@@ -966,7 +993,7 @@ class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
         if not b64:
             self.core_src_file = open(path, mode="rb")
         else:
-            self.core_src_file = tempfile.NamedTemporaryFile("w+b")
+            self.core_src_file = self.create_temp_file()
             with open(path, 'rb') as fb64:
                 while True:
                     line = fb64.readline()
@@ -985,7 +1012,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     ESP_COREDUMP_FLASH_LEN_SZ     = struct.calcsize(ESP_COREDUMP_FLASH_LEN_FMT)
     ESP_COREDUMP_PART_TABLE_OFF   = 0x8000
 
-    def __init__(self, off, tool_path=None, chip='esp32', port=None, baud=None):
+    def __init__(self, off, chip='esp32', port=None, baud=None):
         """Constructor for core dump flash loader
         """
         super(ESPCoreDumpFlashLoader, self).__init__()
@@ -995,27 +1022,16 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         self.dump_sz = 0
         self._load_coredump(off)
 
-    def get_tool_path(self, use_esptool=None):
-        """Get tool path
-        """
-        if use_esptool:
-            tool_path = os.path.join(idf_path, 'components', 'esptool_py', 'esptool') + os.path.sep
-        else:
-            tool_path = os.path.join(idf_path, 'components', 'partition_table') + os.path.sep
-        return tool_path
-
-    def get_core_dump_partition_info(self, part_off=None, tool_path=None):
+    def get_core_dump_partition_info(self, part_off=None):
         """Get core dump partition info using parttool
         """
         logging.info("Retrieving core dump partition offset and size...")
-        if not tool_path:
-            tool_path = self.get_tool_path(use_esptool=False)
         if not part_off:
             part_off = self.ESP_COREDUMP_PART_TABLE_OFF
         size = None
         offset = None
         try:
-            tool_args = [sys.executable, tool_path + 'parttool.py', "-q", "--partition-table-offset", str(part_off)]
+            tool_args = [sys.executable, PARTTOOL_PY, "-q", "--partition-table-offset", str(part_off)]
             if self.port:
                 tool_args.extend(['--port', self.port])
             invoke_args = tool_args + ["get_partition_info", "--partition-type", "data", "--partition-subtype", "coredump", "--info", "offset", "size"]
@@ -1032,19 +1048,19 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             raise e
         return (offset, size)
 
-    def invoke_parttool(self, tool_path=None):
+    def invoke_parttool(self):
         """Loads core dump from flash using parttool
         """
-        part_tool_args = [sys.executable, tool_path + 'parttool.py']
+        tool_args = [sys.executable, PARTTOOL_PY]
         if self.port:
-            part_tool_args.extend(['--port', self.port])
-        part_tool_args.extend(['read_partition', '--partition-type', 'data', '--partition-subtype', 'coredump', '--output'])
-        self.core_src_file = tempfile.NamedTemporaryFile()
+            tool_args.extend(['--port', self.port])
+        tool_args.extend(['read_partition', '--partition-type', 'data', '--partition-subtype', 'coredump', '--output'])
+        self.core_src_file = self.create_temp_file()
         try:
-            part_tool_args.append(self.core_src_file.name)
+            tool_args.append(self.core_src_file.name)
             self.fcore_name = self.core_src_file.name
             # read core dump partition
-            et_out = subprocess.check_output(part_tool_args)
+            et_out = subprocess.check_output(tool_args)
             if len(et_out):
                 logging.info(et_out.decode('utf-8'))
             self.dump_sz = self._read_core_dump_length(self.core_src_file)
@@ -1059,17 +1075,17 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             logging.debug(e.output)
             raise e
 
-    def invoke_esptool(self, tool_path=None, off=None):
+    def invoke_esptool(self, off=None):
         """Loads core dump from flash using elftool
         """
-        tool_args = [sys.executable, tool_path + 'esptool.py', '-c', self.chip]
+        tool_args = [sys.executable, ESPTOOL_PY, '-c', self.chip]
         if self.port:
             tool_args.extend(['-p', self.port])
         if self.baud:
             tool_args.extend(['-b', str(self.baud)])
-        self.core_src_file = tempfile.NamedTemporaryFile()
+        self.core_src_file = self.create_temp_file()
         try:
-            (part_offset, part_size) = self.get_core_dump_partition_info(tool_path='')
+            (part_offset, part_size) = self.get_core_dump_partition_info()
             if not off:
                 off = part_offset  # set default offset if not specified
                 logging.warning("The core dump image offset is not specified. Use partition offset: %d.", part_offset)
@@ -1100,26 +1116,17 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     def _load_coredump(self, off=None):
         """Loads core dump from flash using parttool or elftool (if offset is set)
         """
-        tool_path = None
         try:
             if off:
-                tool_path = ''
                 logging.info("Invoke esptool to read image.")
-                self.invoke_esptool(tool_path=tool_path, off=off)
+                self.invoke_esptool(off=off)
             else:
-                tool_path = ''
                 logging.info("Invoke parttool to read image.")
-                self.invoke_parttool(tool_path=tool_path)
+                self.invoke_parttool()
         except subprocess.CalledProcessError as e:
             if len(e.output):
                 logging.info(e.output)
-            logging.warning("System path is not set. Try to use predefined path.")
-            if off:
-                tool_path = self.get_tool_path(use_esptool=True)
-                self.invoke_esptool(tool_path=tool_path, off=off)
-            else:
-                tool_path = self.get_tool_path(use_esptool=False)
-                self.invoke_parttool(tool_path=tool_path)
+            logging.error("Error during the subprocess execution")
 
     def _read_core_dump_length(self, f):
         """Reads core dump length
@@ -1214,9 +1221,9 @@ def dbg_corefile(args):
                          )
 
     p.wait()
-    print('Done!')
     if loader:
         loader.cleanup()
+    print('Done!')
 
 
 def gdbmi_filter_responses(responses, resp_message, resp_type):
@@ -1225,6 +1232,7 @@ def gdbmi_filter_responses(responses, resp_message, resp_type):
 
 def gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=True, done_message=None, done_type=None): \
         # type: (GdbController, str, typing.Optional[str], str, bool, typing.Optional[str], typing.Optional[str]) -> list
+
     p.write(cmd, read_response=False)
     t_end = time.time() + DEFAULT_GDB_TIMEOUT_SEC
     filtered_response_list = []
@@ -1470,10 +1478,13 @@ def info_corefile(args):
     print("\n===================== ESP32 CORE DUMP END =====================")
     print("===============================================================")
 
-    p.exit()
-    print('Done!')
+    try:
+        p.exit()
+    except IndexError:
+        logging.warning("Attempt to terminate the GDB process failed, because it is already terminated. Skip")
     if loader:
         loader.cleanup()
+    print('Done!')
 
 
 def main():
