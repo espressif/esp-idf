@@ -1,15 +1,9 @@
 /*
  * AES (Rijndael) cipher
- * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2012, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef AES_I_H
@@ -71,7 +65,7 @@ extern const u8 rcons[10];
 
 #else /* AES_SMALL_TABLES */
 
-#define RCON(i) (rcons[(i)] << 24)
+#define RCON(i) ((u32) rcons[(i)] << 24)
 
 static inline u32 rotr(u32 val, int bits)
 {
@@ -100,10 +94,10 @@ static inline u32 rotr(u32 val, int bits)
 #define TD1(i) rotr(Td0[((i) >> 16) & 0xff], 8)
 #define TD2(i) rotr(Td0[((i) >> 8) & 0xff], 16)
 #define TD3(i) rotr(Td0[(i) & 0xff], 24)
-#define TD41(i) (Td4s[((i) >> 24) & 0xff] << 24)
-#define TD42(i) (Td4s[((i) >> 16) & 0xff] << 16)
-#define TD43(i) (Td4s[((i) >> 8) & 0xff] << 8)
-#define TD44(i) (Td4s[(i) & 0xff])
+#define TD41(i) ((u32) Td4s[((i) >> 24) & 0xff] << 24)
+#define TD42(i) ((u32) Td4s[((i) >> 16) & 0xff] << 16)
+#define TD43(i) ((u32) Td4s[((i) >> 8) & 0xff] << 8)
+#define TD44(i) ((u32) Td4s[(i) & 0xff])
 #define TD0_(i) Td0[(i) & 0xff]
 #define TD1_(i) rotr(Td0[(i) & 0xff], 8)
 #define TD2_(i) rotr(Td0[(i) & 0xff], 16)

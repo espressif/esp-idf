@@ -29,6 +29,7 @@
 #include <sys/time.h>
 #include "esp_system.h"
 #include "utils/common.h"
+#include "mbedtls/platform_util.h"
 
 int os_get_time(struct os_time *t)
 {
@@ -59,3 +60,10 @@ void os_sleep(os_time_t sec, os_time_t usec)
         usleep(usec);
     }
 }
+
+#ifdef USE_MBEDTLS_CRYPTO
+void forced_memzero(void *ptr, size_t len)
+{
+    mbedtls_platform_zeroize(ptr, len);
+}
+#endif

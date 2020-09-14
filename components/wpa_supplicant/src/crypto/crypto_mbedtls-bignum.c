@@ -251,10 +251,10 @@ int crypto_bignum_to_string(const struct crypto_bignum *a,
     return outlen;
 }
 
-int crypto_bignum_addmod(struct crypto_bignum *a,
-                      struct crypto_bignum *b,
-                      struct crypto_bignum *c,
-                      struct crypto_bignum *d)
+int crypto_bignum_addmod(const struct crypto_bignum *a,
+			 const struct crypto_bignum *b,
+			 const struct crypto_bignum *c,
+			 struct crypto_bignum *d)
 {
     struct crypto_bignum *tmp = crypto_bignum_init();
     int ret = -1;
