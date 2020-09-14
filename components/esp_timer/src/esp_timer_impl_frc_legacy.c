@@ -128,7 +128,7 @@ static uint32_t s_timer_us_per_overflow;
 // will not increment s_time_base_us if this flag is set.
 static bool s_mask_overflow;
 
-#ifdef CONFIG_PM_DFS_USE_RTC_TIMER_REF
+#ifdef CONFIG_PM_USE_RTC_TIMER_REF
 // If DFS is enabled, upon the first frequency change this value is set to the
 // difference between esp_timer value and RTC timer value. On every subsequent
 // frequency change, s_time_base_us is adjusted to maintain the same difference
@@ -319,7 +319,7 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 
     s_time_base_us += count / s_timer_ticks_per_us;
 
-#ifdef CONFIG_PM_DFS_USE_RTC_TIMER_REF
+#ifdef CONFIG_PM_USE_RTC_TIMER_REF
     // Due to the extra time required to read RTC time, don't attempt this
     // adjustment when switching to a higher frequency (which usually
     // happens in an interrupt).
@@ -333,7 +333,7 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
             s_rtc_time_diff = new_rtc_time_diff;
         }
     }
-#endif // CONFIG_PM_DFS_USE_RTC_TIMER_REF
+#endif // CONFIG_PM_USE_RTC_TIMER_REF
 
     s_timer_ticks_per_us = new_ticks_per_us;
     s_timer_us_per_overflow = ALARM_OVERFLOW_VAL / new_ticks_per_us;
