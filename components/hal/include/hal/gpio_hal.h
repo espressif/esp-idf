@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 // The HAL layer for GPIO
@@ -321,17 +321,17 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 
 #if GPIO_SUPPORTS_FORCE_HOLD
 /**
-  * @brief Force hold digital and rtc gpio pad. 
-  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode. 
-  * 
+  * @brief Force hold digital and rtc gpio pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  *
   * @param hal Context of the HAL layer
   * */
 #define gpio_hal_force_hold_all(hal) gpio_ll_force_hold_all((hal)->dev)
 
 /**
-  * @brief Force unhold digital and rtc gpio pad. 
-  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode. 
-  * 
+  * @brief Force unhold digital and rtc gpio pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  *
   * @param hal Context of the HAL layer
   * */
 #define gpio_hal_force_unhold_all(hal) gpio_ll_force_unhold_all((hal)->dev)

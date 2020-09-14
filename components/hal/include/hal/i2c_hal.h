@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 // The HAL layer for I2C
@@ -75,7 +75,7 @@ typedef struct {
 #define i2c_hal_trans_start(hal)    i2c_ll_trans_start((hal)->dev)
 
 /**
- * @brief  Enable I2C master RX interrupt 
+ * @brief  Enable I2C master RX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -84,7 +84,7 @@ typedef struct {
 #define i2c_hal_enable_master_rx_it(hal)    i2c_ll_master_enable_rx_it((hal)->dev)
 
 /**
- * @brief  Enable I2C master TX interrupt 
+ * @brief  Enable I2C master TX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -458,7 +458,7 @@ void i2c_hal_master_fsm_rst(i2c_hal_context_t *hal);
 void i2c_hal_master_clr_bus(i2c_hal_context_t *hal);
 
 /**
- * @brief  Enable I2C slave TX interrupt 
+ * @brief  Enable I2C slave TX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -467,7 +467,7 @@ void i2c_hal_master_clr_bus(i2c_hal_context_t *hal);
 void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal);
 
 /**
- * @brief  Disable I2C slave TX interrupt 
+ * @brief  Disable I2C slave TX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -476,7 +476,7 @@ void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal);
 void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal);
 
 /**
- * @brief  Enable I2C slave RX interrupt 
+ * @brief  Enable I2C slave RX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -485,7 +485,7 @@ void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal);
 void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal);
 
 /**
- * @brief  Disable I2C slave RX interrupt 
+ * @brief  Disable I2C slave RX interrupt
  *
  * @param  hal Context of the HAL layer
  *
@@ -494,7 +494,7 @@ void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal);
 void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal);
 
 /**
- * @brief  I2C master handle tx interrupt event 
+ * @brief  I2C master handle tx interrupt event
  *
  * @param  hal Context of the HAL layer
  * @param  event Pointer to accept the interrupt event
@@ -504,7 +504,7 @@ void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal);
 void i2c_hal_master_handle_tx_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
 
 /**
- * @brief  I2C master handle rx interrupt event 
+ * @brief  I2C master handle rx interrupt event
  *
  * @param  hal Context of the HAL layer
  * @param  event Pointer to accept the interrupt event
@@ -514,7 +514,7 @@ void i2c_hal_master_handle_tx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
 void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
 
 /**
- * @brief  I2C slave handle interrupt event 
+ * @brief  I2C slave handle interrupt event
  *
  * @param  hal Context of the HAL layer
  * @param  event Pointer to accept the interrupt event

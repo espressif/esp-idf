@@ -15,7 +15,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 #pragma once
@@ -116,7 +116,7 @@ static inline uint32_t can_hal_decode_interrupt_events(can_hal_context_t *hal_ct
 
 static inline void can_hal_format_frame(const can_message_t *message, can_hal_frame_t *frame)
 {
-    twai_hal_format_frame(message, frame);                           
+    twai_hal_format_frame(message, frame);
 }
 
 static inline void can_hal_parse_frame(can_hal_frame_t *frame, can_message_t *message)

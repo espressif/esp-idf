@@ -56,7 +56,7 @@ esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_
  * NOTICE
  * Rest part of this file are part of the HAL layer
  * The HAL is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 /**
