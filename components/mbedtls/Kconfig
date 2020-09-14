@@ -637,6 +637,13 @@ menu "mbedTLS"
 
                     This option is generally faster than CCM.
 
+        config MBEDTLS_NIST_KW_C
+            bool "NIST key wrapping (KW) and KW padding (KWP)"
+            default n
+            depends on MBEDTLS_AES_C
+            help
+                    Enable NIST key wrapping and key wrapping padding.
+
     endmenu # Symmetric Ciphers
 
     config MBEDTLS_RIPEMD160_C

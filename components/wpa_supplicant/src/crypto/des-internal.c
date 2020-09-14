@@ -8,12 +8,11 @@
  * See README for more details.
  */
 
+#include "includes.h"
 
-#include "utils/includes.h"
-
-#include "utils/common.h"
+#include "common.h"
 #include "crypto.h"
-//#include "des_i.h"
+#include "des_i.h"
 
 /*
  * This implementation is based on a DES implementation included in
@@ -246,6 +245,7 @@ static const u32 SP8[64] =
 	0x00001040UL, 0x00040040UL, 0x10000000UL, 0x10041000UL
 };
 
+
 static void cookey(const u32 *raw1, u32 *keyout)
 {
 	u32 *cook;
@@ -396,7 +396,7 @@ static void desfunc(u32 *block, const u32 *keys)
 
 /* wpa_supplicant/hostapd specific wrapper */
 
-void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
+int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
 	u8 pkey[8], next, tmp;
 	int i;
@@ -421,9 +421,10 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 
 	os_memset(pkey, 0, sizeof(pkey));
 	os_memset(ek, 0, sizeof(ek));
+	return 0;
 }
 
-/*
+
 void des_key_setup(const u8 *key, u32 *ek, u32 *dk)
 {
 	deskey(key, 0, ek);
@@ -490,4 +491,4 @@ void des3_decrypt(const u8 *crypt, const struct des3_key_s *key, u8 *plain)
 	desfunc(work, key->dk[2]);
 	WPA_PUT_BE32(plain, work[0]);
 	WPA_PUT_BE32(plain + 4, work[1]);
-}*/
+}

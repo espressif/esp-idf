@@ -1459,7 +1459,7 @@ failed:
             #endif
             return -1;
         }
-        if (aes_unwrap(sm->ptk.kek, maxkeylen / 8,
+        if (aes_unwrap(sm->ptk.kek, 16, maxkeylen / 8,
         				    (const u8 *) (key + 1), gd->gtk)) {
             #ifdef DEBUG_PRINT
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap "
@@ -1703,7 +1703,7 @@ failed:
             return -1;
         }
         */
-        if (aes_unwrap(sm->ptk.kek, keydatalen / 8,
+        if (aes_unwrap(sm->ptk.kek, 16, keydatalen / 8,
         				    (u8 *) (key + 1), buf)) {
             #ifdef DEBUG_PRINT
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap failed - "
@@ -2216,7 +2216,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
         if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
             hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(), esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         } else {
-        pbkdf2_sha1((char *)esp_wifi_sta_get_prof_password_internal(), (char *)sta_ssid->ssid, (size_t)sta_ssid->len,
+        pbkdf2_sha1((char *)esp_wifi_sta_get_prof_password_internal(), sta_ssid->ssid, (size_t)sta_ssid->len,
             4096, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         }
         esp_wifi_sta_update_ap_info_internal();
