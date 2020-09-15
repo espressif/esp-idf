@@ -282,7 +282,7 @@ static void check_wake_stub(void)
     TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
 }
 
-TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
+TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][ignore][reset=DEEPSLEEP_RESET]",
         prepare_wake_stub,
         check_wake_stub);
 

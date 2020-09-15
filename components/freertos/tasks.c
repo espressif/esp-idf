@@ -4092,6 +4092,10 @@ static void prvCheckTasksWaitingTermination( void )
 		pxTaskStatus->pxStackBase = pxTCB->pxStack;
 		pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
 
+		#if ( configTASKLIST_INCLUDE_COREID == 1 )
+		pxTaskStatus.xCoreID = pxTCB->xCoreID;
+		#endif /* configTASKLIST_INCLUDE_COREID */
+
 		#if ( configUSE_MUTEXES == 1 )
 		{
 			pxTaskStatus->uxBasePriority = pxTCB->uxBasePriority;
@@ -4303,6 +4307,20 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #endif /* INCLUDE_uxTaskGetStackHighWaterMark */
 /*-----------------------------------------------------------*/
+#if (INCLUDE_pxTaskGetStackStart == 1)
+
+	uint8_t* pxTaskGetStackStart( TaskHandle_t xTask)
+	{
+		TCB_t *pxTCB;
+		uint8_t* uxReturn;
+
+		pxTCB = prvGetTCBFromHandle( xTask );
+		uxReturn = (uint8_t*)pxTCB->pxStack;
+
+		return uxReturn;
+	}
+
+#endif /* INCLUDE_pxTaskGetStackStart */
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
