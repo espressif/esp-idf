@@ -13,12 +13,12 @@
 // limitations under the License.
 #pragma once
 
+#include "esp_err.h"
+#include "esp_event_base.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "esp_err.h"
-#include "esp_event_base.h"
 
 /**
  * @brief Maximum Ethernet payload size

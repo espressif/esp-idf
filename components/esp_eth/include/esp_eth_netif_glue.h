@@ -13,11 +13,11 @@
 // limitations under the License.
 #pragma once
 
+#include "esp_eth.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "esp_eth.h"
 
 /**
  * @brief Create a netif glue for Ethernet driver
