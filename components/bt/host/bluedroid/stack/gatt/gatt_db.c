@@ -154,7 +154,11 @@ static tGATT_STATUS gatts_check_attr_readability(tGATT_ATTR16 *p_attr,
         GATT_TRACE_ERROR( "GATT_INSUF_KEY_SIZE\n");
         return GATT_INSUF_KEY_SIZE;
     }
-
+    /* LE Authorization check*/
+    if ((perm & GATT_READ_AUTHORIZATION) && (!(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED) || !(sec_flag & GATT_SEC_FLAG_AUTHORIZATION))) {
+        GATT_TRACE_ERROR( "GATT_INSUF_AUTHORIZATION\n");
+        return GATT_INSUF_AUTHORIZATION;
+    }
 
     if (read_long) {
         switch (p_attr->uuid) {
@@ -1117,6 +1121,11 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                 } else if ((perm & GATT_WRITE_ENCRYPTED_PERM ) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED) && (key_size < min_key_size)) {
                     status = GATT_INSUF_KEY_SIZE;
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_KEY_SIZE");
+                }
+                /* LE Authorization check*/
+                else if ((perm & GATT_WRITE_AUTHORIZATION) && (!(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED) || !(sec_flag & GATT_SEC_FLAG_AUTHORIZATION))){
+                    status = GATT_INSUF_AUTHORIZATION;
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHORIZATION");
                 }
                 /* LE security mode 2 attribute  */
                 else if (perm & GATT_WRITE_SIGNED_PERM && op_code != GATT_SIGN_CMD_WRITE && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)
