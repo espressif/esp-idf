@@ -605,6 +605,20 @@ menu "LWIP"
             This would in turn fail the configuration for the whole link.
             If your modem is not responding correctly to PPP Phase Network, try to disable IPV6 support.
 
+    config LWIP_IPV6_MEMP_NUM_ND6_QUEUE
+        int "Max number of IPv6 packets to queue during MAC resolution"
+        range 3 20
+        default 3
+        help
+            Config max number of IPv6 packets to queue during MAC resolution.
+
+    config LWIP_IPV6_ND6_NUM_NEIGHBORS
+        int "Max number of entries in IPv6 neighbor cache"
+        range 3 10
+        default 5
+        help
+            Config max number of entries in IPv6 neighbor cache
+
     config LWIP_PPP_NOTIFY_PHASE_SUPPORT
         bool "Enable Notify Phase Callback"
         depends on LWIP_PPP_SUPPORT
