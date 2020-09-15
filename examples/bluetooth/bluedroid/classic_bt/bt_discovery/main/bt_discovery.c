@@ -191,13 +191,16 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
     }
 }
 
-void bt_app_gap_init(void)
+static void bt_app_gap_init(void)
 {
     app_gap_cb_t *p_dev = &m_dev_info;
     memset(p_dev, 0, sizeof(app_gap_cb_t));
+
+    /* start to discover nearby Bluetooth devices */
+    p_dev->state = APP_GAP_STATE_DEVICE_DISCOVERING;
 }
 
-void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
     app_gap_cb_t *p_dev = &m_dev_info;
     char bda_str[18];
@@ -249,23 +252,20 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     return;
 }
 
-void bt_app_gap_start_up(void)
+static void bt_app_gap_start_up(void)
 {
     char *dev_name = "ESP_GAP_INQRUIY";
     esp_bt_dev_set_device_name(dev_name);
 
-    /* set discoverable and connectable mode, wait to be connected */
-    esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-
     /* register GAP callback function */
     esp_bt_gap_register_callback(bt_app_gap_cb);
 
-    /* inititialize device information and status */
-    app_gap_cb_t *p_dev = &m_dev_info;
-    memset(p_dev, 0, sizeof(app_gap_cb_t));
+    /* set discoverable and connectable mode, wait to be connected */
+    esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
 
-    /* start to discover nearby Bluetooth devices */
-    p_dev->state = APP_GAP_STATE_DEVICE_DISCOVERING;
+    /* inititialize device information and status */
+    bt_app_gap_init();
+
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 }
 

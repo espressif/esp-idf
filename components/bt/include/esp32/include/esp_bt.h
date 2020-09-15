@@ -304,7 +304,7 @@ esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_le
 esp_err_t esp_bredr_tx_power_get(esp_power_level_t *min_power_level, esp_power_level_t *max_power_level);
 
 /**
- * @brief  set default SCO data path
+ * @brief  Set default SCO data path
  *         Should be called after controller is enabled, and before (e)SCO link is established
  * @param  data_path: SCO data path
  * @return              ESP_OK - success, other - failed

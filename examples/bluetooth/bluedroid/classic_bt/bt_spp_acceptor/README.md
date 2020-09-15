@@ -1,19 +1,46 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-ESP-IDF BT-SPP-ACCEPTOR demo
-======================
+## ESP-IDF BT-SPP-ACCEPTOR demo
 
-Demo of SPP acceptor role
+This is the demo for user to use ESP_APIs to create a **Serial Port Protocol** (**SPP**) acceptor and we aggregate **Secure Simple Pair** (**SSP**) into this demo to show how to use SPP when creating your own APPs.
 
-This is the demo for user to use ESP_APIs to create a SPP acceptor.
+## How to use example
 
-Options choose step:
-1. `idf.py menuconfig`
-2. enter menuconfig `Component config`, choose `Bluetooth`
-3. enter menu Bluetooth, choose `Classic Bluetooth" and "SPP Profile`
-4. choose your options.
+### Hardware Required
 
-Then set `SPP_SHOW_MODE` as `SPP_SHOW_DATA` or `SPP_SHOW_SPEED` in code(should be same with bt_spp_initator).
+This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC.
 
-After the program started, bt_spp_initator will connect it and send data.
+To operate it should be connected to an SPP Initiator running on a smartphone or on another ESP32 development board.
+
+### Configure the project
+
+```
+idf.py menuconfig
+```
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+idf.py -p PORT flash monitor
+```
+
+(Replace PORT with the name of the serial port to use.)
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+
+## Example Description
+
+After the program started, `bt_spp_initator` will connect it and send data.
+
+## Trouble shooting
+
+- Acceptor is expected to start before `bt_spp_initator` start.
+
+- To see the information of data, users shall set `SPP_SHOW_MODE` as `SPP_SHOW_DATA` or `SPP_SHOW_SPEED` in code(should be same with `bt_spp_initator`).
+
+- We also show the Security Simple Pair in this SPP demo. Users can set the IO Capability and Security Mode for their device (security level is fixed level 4). The default security mode of this demo is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](./ESP32_SSP.md).

@@ -151,9 +151,11 @@ typedef union {
 typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
 /**
- * @brief           A2DP profile data callback function
- * @param[in]       buf : data received from A2DP source device and is PCM format decoder from SBC decoder;
+ * @brief           A2DP sink data callback function
+ *
+ * @param[in]       buf : pointer to the data received from A2DP source device and is PCM format decoded from SBC decoder;
  *                  buf references to a static memory block and can be overwritten by upcoming data
+ *
  * @param[in]       len : size(in bytes) in buf
  */
 typedef void (* esp_a2d_sink_data_cb_t)(const uint8_t *buf, uint32_t len);
@@ -191,7 +193,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
  * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
  *                  from SBC format. This function should be called only after esp_bluedroid_enable()
  *                  completes successfully, used only by A2DP sink. The callback is invoked in the context
- *                  of A2DP sink task whose stack size is configurable through menuconfig
+ *                  of A2DP sink task whose stack size is configurable through menuconfig.
  *
  * @param[in]       callback: A2DP sink data callback function
  *
@@ -209,7 +211,8 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
  * @brief           Initialize the bluetooth A2DP sink module. This function should be called
  *                  after esp_bluedroid_enable() completes successfully, and ESP_A2D_PROF_STATE_EVT
  *                  with ESP_A2D_INIT_SUCCESS will reported to the APP layer. Note: A2DP can work independently.
- *                  If you want to use AVRC together, you should initiate AVRC first.
+ *                  If you want to use AVRC together, you should initiate AVRC first. This
+ *                  function should be called after esp_bluedroid_enable() completes successfully.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -227,7 +230,7 @@ esp_err_t esp_a2d_sink_init(void);
  *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
  *
  * @return
- *                  - ESP_OK: success
+ *                  - ESP_OK: if the deinitialization request is sent successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -237,12 +240,13 @@ esp_err_t esp_a2d_sink_deinit(void);
 
 /**
  *
- * @brief           Connect to remote bluetooth A2DP source device, must after esp_a2d_sink_init()
+ * @brief           Connect to remote bluetooth A2DP source device. This API must be called after
+ *                  esp_a2d_sink_init() and before esp_a2d_sink_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
  * @return
- *                  - ESP_OK: connect request is sent to lower layer
+ *                  - ESP_OK: connect request is sent to lower layer successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -252,11 +256,13 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           Disconnect from the remote A2DP source device
+ * @brief           Disconnect from the remote A2DP source device. This API must be called after
+ *                  esp_a2d_sink_init() and before esp_a2d_sink_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
+ *
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
+ *                  - ESP_OK: disconnect request is sent to lower layer successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -266,11 +272,13 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           media control commands; this API can be used for both A2DP sink and source
+ * @brief           Media control commands. This API can be used for both A2DP sink and source
+ *                  and must be called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
  *
  * @param[in]       ctrl: control commands for A2DP data channel
+ *
  * @return
- *                  - ESP_OK: control command is sent to lower layer
+ *                  - ESP_OK: control command is sent to lower layer successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -280,13 +288,14 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
 
 /**
  *
- * @brief           Initialize the bluetooth A2DP source module. This function should be called
+ * @brief           Initialize the bluetooth A2DP source module. A2DP can work independently.
+ *                  If you want to use AVRC together, you should initiate AVRC first. This function should be called
  *                  after esp_bluedroid_enable() completes successfully, and ESP_A2D_PROF_STATE_EVT
  *                  with ESP_A2D_INIT_SUCCESS will reported to the APP layer. Note: A2DP can work independently.
  *                  If you want to use AVRC together, you should initiate AVRC first.
  *
  * @return
- *                  - ESP_OK: if the initialization request is sent successfully
+ *                  - ESP_OK: if the initialization request is sent to lower layer successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -310,10 +319,10 @@ esp_err_t esp_a2d_source_deinit(void);
 
 
 /**
- * @brief           Register A2DP source data input function; For now the input is PCM data stream.
+ * @brief           Register A2DP source data input function. For now, the input shoule be PCM data stream.
  *                  This function should be called only after esp_bluedroid_enable() completes
  *                  successfully. The callback is invoked in the context of A2DP source task whose
- *                  stack size is configurable through menuconfig
+ *                  stack size is configurable through menuconfig.
  *
  * @param[in]       callback: A2DP source data callback function
  *
@@ -328,12 +337,13 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
 
 /**
  *
- * @brief           Connect to remote A2DP sink device, must after esp_a2d_source_init()
+ * @brief           Connect to remote A2DP sink device. This API must be called
+ *                  after esp_a2d_source_init() and before esp_a2d_source_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
  * @return
- *                  - ESP_OK: connect request is sent to lower layer
+ *                  - ESP_OK: connect request is sent to lower layer successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -343,7 +353,8 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           Disconnect from the remote A2DP sink device
+ * @brief           Disconnect from the remote A2DP sink device. This API must be called
+ *                  after esp_a2d_source_init() and before esp_a2d_source_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  * @return

@@ -198,10 +198,6 @@ tBTA_AV_CB  bta_av_cb;
 tBTA_AV_CB  *bta_av_cb_ptr;
 #endif
 
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-static char *bta_av_st_code(UINT8 state);
-#endif
-
 /*******************************************************************************
 **
 ** Function         bta_av_timer_cback
@@ -414,27 +410,18 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
         if (AVDT_DISCONNECT_IND_EVT == event) {
             p_scb = bta_av_addr_to_scb(bd_addr);
         }
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
         else if (AVDT_CONNECT_IND_EVT == event) {
             APPL_TRACE_DEBUG("CONN_IND is ACP:%d\n", p_data->hdr.err_param);
         }
-#endif
 
-        if (/*((p_scb && (p_scb->role & BTA_AV_ROLE_AD_ACP)) ||
-
-            //(AVDT_CONNECT_IND_EVT == event && AVDT_ACP == p_data->hdr.err_param))
-
-            (AVDT_CONNECT_IND_EVT == event))&& */
-            (p_msg = (tBTA_AV_STR_MSG *) osi_malloc((UINT16) (sizeof(tBTA_AV_STR_MSG)))) != NULL) {
+        if ((p_msg = (tBTA_AV_STR_MSG *) osi_malloc((UINT16) (sizeof(tBTA_AV_STR_MSG)))) != NULL) {
             p_msg->hdr.event = evt;
             p_msg->hdr.layer_specific = event;
             p_msg->hdr.offset = p_data->hdr.err_param;
             bdcpy(p_msg->bd_addr, bd_addr);
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
             if (p_scb) {
                 APPL_TRACE_DEBUG("scb hndl x%x, role x%x\n", p_scb->hndl, p_scb->role);
             }
-#endif
             APPL_TRACE_DEBUG("conn_cback bd_addr:%02x-%02x-%02x-%02x-%02x-%02x\n",
                              bd_addr[0], bd_addr[1],
                              bd_addr[2], bd_addr[3],
@@ -442,7 +429,6 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
             bta_sys_sendmsg(p_msg);
         }
     }
-
 }
 
 #if AVDT_REPORTING == TRUE
@@ -1188,12 +1174,7 @@ void bta_av_sm_execute(tBTA_AV_CB *p_cb, UINT16 event, tBTA_AV_DATA *p_data)
     tBTA_AV_ST_TBL      state_table;
     UINT8               action;
 
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-    APPL_TRACE_EVENT("AV event=0x%x(%s) state=%d(%s)\n",
-                     event, bta_av_evt_code(event), p_cb->state, bta_av_st_code(p_cb->state));
-#else
     APPL_TRACE_EVENT("AV event=0x%x state=%d\n", event, p_cb->state);
-#endif
 
     /* look up the state table for the current state */
     state_table = bta_av_st_tbl[p_cb->state];
@@ -1231,19 +1212,11 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
     }
 
     if (event >= first_event) {
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
         APPL_TRACE_VERBOSE("AV nsm event=0x%x(%s)\n", event, bta_av_evt_code(event));
-#else
-        APPL_TRACE_VERBOSE("AV nsm event=0x%x\n", event);
-#endif
         /* non state machine events */
         (*bta_av_nsm_act[event - BTA_AV_FIRST_NSM_EVT]) ((tBTA_AV_DATA *) p_msg);
     } else if (event >= BTA_AV_FIRST_SM_EVT && event <= BTA_AV_LAST_SM_EVT) {
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
         APPL_TRACE_VERBOSE("AV sm event=0x%x(%s)\n", event, bta_av_evt_code(event));
-#else
-        APPL_TRACE_VERBOSE("AV sm event=0x%x\n", event);
-#endif
         /* state machine events */
         bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA *) p_msg);
     } else {
@@ -1260,24 +1233,6 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
 /*****************************************************************************
 **  Debug Functions
 *****************************************************************************/
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-/*******************************************************************************
-**
-** Function         bta_av_st_code
-**
-** Description
-**
-** Returns          char *
-**
-*******************************************************************************/
-UNUSED_ATTR static char *bta_av_st_code(UINT8 state)
-{
-    switch (state) {
-    case BTA_AV_INIT_ST: return "INIT";
-    case BTA_AV_OPEN_ST: return "OPEN";
-    default:             return "unknown";
-    }
-}
 /*******************************************************************************
 **
 ** Function         bta_av_evt_code
@@ -1357,6 +1312,71 @@ char *bta_av_evt_code(UINT16 evt_code)
     default:             return "unknown";
     }
 }
-#endif
+
+/*******************************************************************************
+**
+** Function         bta_av_action_code
+**
+** Description
+**
+** Returns          char *
+**
+*******************************************************************************/
+char *bta_av_action_code(UINT16 action_code)
+{
+    switch (action_code) {
+    case 0:  return "BTA_AV_DO_DISC";
+    case 1:  return "BTA_AV_CLEANUP";
+    case 2:  return "BTA_AV_FREE_SDB";
+    case 3:  return "BTA_AV_CONFIG_IND";
+    case 4:  return "BTA_AV_DISCONNECT_REQ";
+    case 5:  return "BTA_AV_SECURITY_REQ";
+    case 6:  return "BTA_AV_SECURITY_RSP";
+    case 7:  return "BTA_AV_SETCONFIG_RSP";
+    case 8:  return "BTA_AV_ST_RC_TIMER";
+    case 9:  return "BTA_AV_STR_OPENED";
+    case 10: return "BTA_AV_SECURITY_IND";
+    case 11: return "BTA_AV_SECURITY_CFM";
+    case 12: return "BTA_AV_DO_CLOSE";
+    case 13: return "BTA_AV_CONNECT_REQ";
+    case 14: return "BTA_AV_SDP_FAILED";
+    case 15: return "BTA_AV_DISC_RESULTS";
+    case 16: return "BTA_AV_DISC_RES_AS_ACP";
+    case 17: return "BTA_AV_OPEN_FAILED";
+    case 18: return "BTA_AV_GETCAP_RESULTS";
+    case 19: return "BTA_AV_SETCONFIG_REJ";
+    case 20: return "BTA_AV_DISCOVER_REQ";
+    case 21: return "BTA_AV_CONN_FAILED";
+    case 22: return "BTA_AV_DO_START";
+    case 23: return "BTA_AV_STR_STOPPED";
+    case 24: return "BTA_AV_RECONFIG";
+    case 25: return "BTA_AV_DATA_PATH";
+    case 26: return "BTA_AV_START_OK";
+    case 27: return "BTA_AV_START_FAILED";
+    case 28: return "BTA_AV_STR_CLOSED";
+    case 29: return "BTA_AV_CLR_CONG";
+    case 30: return "BTA_AV_SUSPEND_CFM";
+    case 31: return "BTA_AV_RCFG_STR_OK";
+    case 32: return "BTA_AV_RCFG_FAILED";
+    case 33: return "BTA_AV_RCFG_CONNECT";
+    case 34: return "BTA_AV_RCFG_DISCNTD";
+    case 35: return "BTA_AV_SUSPEND_CONT";
+    case 36: return "BTA_AV_RCFG_CFM";
+    case 37: return "BTA_AV_RCFG_OPEN";
+    case 38: return "BTA_AV_SECURITY_REJ";
+    case 39: return "BTA_AV_OPEN_RC";
+    case 40: return "BTA_AV_CHK_2ND_START";
+    case 41: return "BTA_AV_SAVE_CAPS";
+    case 42: return "BTA_AV_SET_USE_RC";
+    case 43: return "BTA_AV_CCO_CLOSE";
+    case 44: return "BTA_AV_SWITCH_ROLE";
+    case 45: return "BTA_AV_ROLE_RES";
+    case 46: return "BTA_AV_DELAY_CO";
+    case 47: return "BTA_AV_OPEN_AT_INC";
+    case 48: return "BTA_AV_OPEN_FAIL_SDP";
+    case 49: return "NULL";
+    default: return "unknown";
+    }
+}
 
 #endif /* BTA_AV_INCLUDED */

@@ -36,6 +36,7 @@ const uint8_t *esp_bt_dev_get_address(void);
 /**
  * @brief           Set bluetooth device name. This function should be called after esp_bluedroid_enable()
  *                  completes successfully.
+ *
  *                  A BR/EDR/LE device type shall have a single Bluetooth device name which shall be
  *                  identical irrespective of the physical channel used to perform the name discovery procedure.
  *
