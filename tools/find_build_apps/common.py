@@ -22,6 +22,7 @@ FULL_NAME_PLACEHOLDER = "@f"
 INDEX_PLACEHOLDER = "@i"
 
 IDF_SIZE_PY = os.path.join(os.environ["IDF_PATH"], "tools", "idf_size.py")
+SIZE_JSON_FN = 'size.json'
 
 SDKCONFIG_LINE_REGEX = re.compile(r"^([^=]+)=\"?([^\"\n]*)\"?\n*$")
 
@@ -66,6 +67,22 @@ def find_first_match(pattern, path):
         if res:
             return os.path.join(root, res[0])
     return None
+
+
+def rmdir(path, exclude_file_pattern=None):
+    if not exclude_file_pattern:
+        shutil.rmtree(path, ignore_errors=True)
+        return
+
+    for root, dirs, files in os.walk(path, topdown=False):
+        for f in files:
+            if not fnmatch.fnmatch(f, exclude_file_pattern):
+                os.remove(os.path.join(root, f))
+        for d in dirs:
+            try:
+                os.rmdir(os.path.join(root, d))
+            except OSError:
+                pass
 
 
 class BuildItem(object):
@@ -242,7 +259,7 @@ class BuildItem(object):
         if not map_file:
             raise ValueError('.map file not found under "{}"'.format(self.build_path))
 
-        size_json_fp = os.path.join(self.build_path, 'size.json')
+        size_json_fp = os.path.join(self.build_path, SIZE_JSON_FN)
         idf_size_args = [
             sys.executable,
             IDF_SIZE_PY,
