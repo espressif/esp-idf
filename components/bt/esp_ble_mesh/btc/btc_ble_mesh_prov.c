@@ -948,6 +948,11 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(u8_t conn_handle, u1
 
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
 {
+    if (!bt_mesh_is_initialized()) {
+        BT_ERR("Mesh stack is not initialized!");
+        return -EINVAL;
+    }
+
     __ASSERT(model && model->op, "%s, Invalid parameter", __func__);
     esp_ble_mesh_model_op_t *op = model->op;
     while (op != NULL && op->opcode != 0) {
