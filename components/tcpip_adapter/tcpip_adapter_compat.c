@@ -58,7 +58,7 @@ static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int
         esp_netif_t *ap_netif = esp_netif_new(&cfg);
 
         esp_netif_attach_wifi_ap(ap_netif);
-        esp_wifi_set_default_wifi_sta_handlers();
+        esp_wifi_set_default_wifi_ap_handlers();
         s_esp_netifs[TCPIP_ADAPTER_IF_AP] = ap_netif;
     }
 }
