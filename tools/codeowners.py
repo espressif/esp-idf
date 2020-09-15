@@ -17,17 +17,79 @@
 # limitations under the License.
 
 import argparse
-from collections import defaultdict
 import os
+import re
 import subprocess
 import sys
+
 
 CODEOWNERS_PATH = os.path.join(os.path.dirname(__file__), "..", ".gitlab", "CODEOWNERS")
 CODEOWNER_GROUP_PREFIX = "@esp-idf-codeowners/"
 
 
+def get_all_files():
+    """
+    Get list of all file paths in the repository.
+    """
+    idf_root = os.path.join(os.path.dirname(__file__), "..")
+    # only split on newlines, since file names may contain spaces
+    return subprocess.check_output(["git", "ls-files"], cwd=idf_root).decode("utf-8").strip().split('\n')
+
+
+def pattern_to_regex(pattern):
+    """
+    Convert the CODEOWNERS path pattern into a regular expression string.
+    """
+    orig_pattern = pattern  # for printing errors later
+
+    # Replicates the logic from normalize_pattern function in Gitlab ee/lib/gitlab/code_owners/file.rb:
+    if not pattern.startswith('/'):
+        pattern = '/**/' + pattern
+    if pattern.endswith('/'):
+        pattern = pattern + '**/*'
+
+    # Convert the glob pattern into a regular expression:
+    # first into intermediate tokens
+    pattern = (pattern.replace('**/', ':REGLOB:')
+                      .replace('**', ':INVALID:')
+                      .replace('*', ':GLOB:')
+                      .replace('.', ':DOT:')
+                      .replace('?', ':ANY:'))
+
+    if pattern.find(':INVALID:') >= 0:
+        raise ValueError("Likely invalid pattern '{}': '**' should be followed by '/'".format(orig_pattern))
+
+    # then into the final regex pattern:
+    re_pattern = (pattern.replace(':REGLOB:', '(?:.*/)?')
+                         .replace(':GLOB:', '[^/]*')
+                         .replace(':DOT:', '[.]')
+                         .replace(':ANY:', '.') + '$')
+    if re_pattern.startswith('/'):
+        re_pattern = '^' + re_pattern
+
+    return re_pattern
+
+
+def files_by_regex(all_files, regex):
+    """
+    Return all files in the repository matching the given regular expresion.
+    """
+    return [file for file in all_files if regex.search('/' + file)]
+
+
+def files_by_pattern(all_files, pattern=None):
+    """
+    Return all the files in the repository matching the given CODEOWNERS pattern.
+    """
+    if not pattern:
+        return all_files
+
+    return files_by_regex(all_files, re.compile(pattern_to_regex(pattern)))
+
+
 def action_identify(args):
     best_match = []
+    all_files = get_all_files()
     with open(CODEOWNERS_PATH) as f:
         for line in f:
             line = line.strip()
@@ -36,19 +98,23 @@ def action_identify(args):
             tokens = line.split()
             path_pattern = tokens[0]
             owners = tokens[1:]
-            files = files_by_pattern(path_pattern)
+            files = files_by_pattern(all_files, path_pattern)
             if args.path in files:
                 best_match = owners
     for owner in best_match:
         print(owner)
 
 
-def files_by_pattern(pattern=None):
-    args = ["git", "ls-files"]
-    if pattern:
-        args.append(pattern)
-    idf_root = os.path.join(os.path.dirname(__file__), "..")
-    return subprocess.check_output(args, cwd=idf_root).decode("utf-8").split()
+def action_test_pattern(args):
+    re_pattern = pattern_to_regex(args.pattern)
+
+    if args.regex:
+        print(re_pattern)
+        return
+
+    files = files_by_regex(get_all_files(), re.compile(re_pattern))
+    for f in files:
+        print(f)
 
 
 def action_ci_check(args):
@@ -57,12 +123,15 @@ def action_ci_check(args):
     def add_error(msg):
         errors.append("Error at CODEOWNERS:{}: {}".format(line_no, msg))
 
-    files_by_owner = defaultdict(int)
+    all_files = get_all_files()
     prev_path_pattern = ""
     with open(CODEOWNERS_PATH) as f:
         for line_no, line in enumerate(f, start=1):
             # Skip empty lines and comments
             line = line.strip()
+            if line.startswith("# sort-order-reset"):
+                prev_path_pattern = ""
+
             if not line or line.startswith("#"):
                 continue
 
@@ -75,26 +144,19 @@ def action_ci_check(args):
 
             # Check that the file is sorted by path patterns
             path_pattern_for_cmp = path_pattern.replace("-", "_")  # ignore difference between _ and - for ordering
-            if path_pattern_for_cmp < prev_path_pattern:
+            if prev_path_pattern and path_pattern_for_cmp < prev_path_pattern:
                 add_error("file is not sorted: {} < {}".format(path_pattern_for_cmp, prev_path_pattern))
             prev_path_pattern = path_pattern_for_cmp
 
             # Check that the pattern matches at least one file
-            files = files_by_pattern(path_pattern)
+            files = files_by_pattern(all_files, path_pattern)
             if not files:
                 add_error("no files matched by pattern {}".format(path_pattern))
 
-            # Count the number of files per owner
             for o in owners:
                 # Sanity-check the owner group name
                 if not o.startswith(CODEOWNER_GROUP_PREFIX):
                     add_error("owner {} doesn't start with {}".format(o, CODEOWNER_GROUP_PREFIX))
-                files_by_owner[o] += len(files)
-
-    owners_sorted = sorted([(owner, cnt) for owner, cnt in files_by_owner.items()], key=lambda p: p[0])
-    print("File count per owner (not including submodules):")
-    for owner, cnt in owners_sorted:
-        print("{}: {} files".format(owner, cnt))
 
     if not errors:
         print("No errors found.")
@@ -110,17 +172,27 @@ def main():
         sys.argv[0], description="Internal helper script for working with the CODEOWNERS file."
     )
     subparsers = parser.add_subparsers(dest="action")
+
     identify = subparsers.add_parser(
         "identify",
-        help="Lists the owners of the specified path within IDF."
+        help="List the owners of the specified path within IDF."
         "This command doesn't support files inside submodules, or files not added to git repository.",
     )
     identify.add_argument("path", help="Path of the file relative to the root of the repository")
+
     subparsers.add_parser(
         "ci-check",
         help="Check CODEOWNERS file: every line should match at least one file, sanity-check group names, "
         "check that the file is sorted by paths",
     )
+
+    test_pattern = subparsers.add_parser(
+        "test-pattern",
+        help="Print files in the repository for a given CODEOWNERS pattern. Useful when adding new rules."
+    )
+    test_pattern.add_argument("--regex", action="store_true", help="Print the equivalent regular expression instead of the file list.")
+    test_pattern.add_argument("pattern", help="Path pattern to get the list of files for")
+
     args = parser.parse_args()
 
     if args.action is None:
