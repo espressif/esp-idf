@@ -1266,6 +1266,17 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device);
 */
 esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params);
 
+/**
+* @brief           This function is called to authorized a link after Authentication(MITM protection)
+*
+* @param[in]       bd_addr: BD address of the peer device.
+* @param[out]      authorize: Authorized the link or not.
+* 
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize);
 #ifdef __cplusplus
 }
 #endif
