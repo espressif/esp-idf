@@ -594,6 +594,7 @@ struct tBTM_SEC_DEV_REC{
 #define BTM_SEC_ROLE_SWITCHED   0x40
 #define BTM_SEC_IN_USE          0x80
     /* LE link security flag */
+#define BTM_SEC_LE_AUTHORIZATION   0x0100   /* LE link is authorized */
 #define BTM_SEC_LE_AUTHENTICATED   0x0200   /* LE link is encrypted after pairing with MITM */
 #define BTM_SEC_LE_ENCRYPTED       0x0400   /* LE link is encrypted */
 #define BTM_SEC_LE_NAME_KNOWN      0x0800   /* not used */
@@ -1210,6 +1211,8 @@ void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle);
 void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_state);
 BOOLEAN btm_sec_legacy_authentication_mutual (tBTM_SEC_DEV_REC *p_dev_rec);
 BOOLEAN btm_find_sec_dev_in_list (void *p_node_data, void *context);
+
+BOOLEAN btm_sec_dev_authorization(BD_ADDR bd_addr, BOOLEAN authorized);
 
 /*
 #ifdef __cplusplus

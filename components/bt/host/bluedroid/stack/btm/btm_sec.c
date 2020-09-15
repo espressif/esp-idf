@@ -6277,3 +6277,39 @@ void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle)
 }
 #endif /// (CLASSIC_BT_INCLUDED == TRUE)
 #endif  ///SMP_INCLUDED == TRUE
+
+/******************************************************************************
+ **
+ ** Function         btm_sec_dev_authorization
+ **
+ ** Description      This function is used to authorize a specified device(BLE)
+ **
+ ******************************************************************************
+ */
+#if (BLE_INCLUDED == TRUE)
+BOOLEAN btm_sec_dev_authorization(BD_ADDR bd_addr, BOOLEAN authorized)
+{
+#if (SMP_INCLUDED == TRUE)
+    UINT8  sec_flag = 0;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec) {
+        sec_flag = (UINT8)(p_dev_rec->sec_flags >> 8);
+        if (!(sec_flag & BTM_SEC_LINK_KEY_AUTHED)) {
+            BTM_TRACE_ERROR("Authorized should after successful Authentication(MITM protection)\n"); 
+            return FALSE;
+        }
+
+        if (authorized) {
+            p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHORIZATION;
+        } else {
+            p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHORIZATION);
+        }
+    } else {
+        BTM_TRACE_ERROR("%s, can't find device\n", __func__);
+        return FALSE;
+    }
+    return TRUE;
+#endif  ///SMP_INCLUDED == TRUE
+    return FALSE;
+}
+#endif  /// BLE_INCLUDE == TRUE
