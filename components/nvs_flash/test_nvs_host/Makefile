@@ -10,11 +10,11 @@ SOURCE_FILES = \
 		nvs_pagemanager.cpp \
 		nvs_storage.cpp \
 		nvs_item_hash_list.cpp \
-		nvs_encr.cpp \
-		nvs_ops.cpp \
 		nvs_handle_simple.cpp \
 		nvs_handle_locked.cpp \
 		nvs_partition_manager.cpp \
+		nvs_partition.cpp \
+		nvs_encrypted_partition.cpp \
 		nvs_cxx_api.cpp \
 	) \
 	spi_flash_emulation.cpp \
@@ -25,6 +25,7 @@ SOURCE_FILES = \
 	test_partition_manager.cpp \
 	test_nvs_handle.cpp \
 	test_nvs_storage.cpp \
+	test_nvs_partition.cpp \
 	test_nvs_cxx_api.cpp \
 	test_nvs_initialization.cpp \
 	crc.cpp \
@@ -36,7 +37,7 @@ else
 COMPILER := gcc
 endif
 
-CPPFLAGS += -I../include -I../src -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage
+CPPFLAGS += -I../include -I../src -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
@@ -89,6 +90,8 @@ clean: clean-coverage
 	rm -f ../nvs_partition_generator/partition_encrypted.bin
 	rm -f ../nvs_partition_generator/partition_encrypted_using_keygen.bin
 	rm -f ../nvs_partition_generator/partition_encrypted_using_keyfile.bin
+	rm -f ../nvs_partition_generator/partition_decrypted.bin
+	rm -f ../nvs_partition_generator/partition_encoded.bin
 	rm -f ../nvs_partition_generator/Test-1-partition-encrypted.bin
 	rm -f ../nvs_partition_generator/Test-1-partition.bin
 	rm -f ../../../tools/mass_mfg/samples/sample_values_multipage_blob_created.csv

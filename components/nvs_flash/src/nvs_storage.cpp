@@ -90,7 +90,7 @@ void Storage::eraseOrphanDataBlobs(TBlobIndexList& blobIdxList)
 
 esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
 {
-    auto err = mPageManager.load(baseSector, sectorCount);
+    auto err = mPageManager.load(mPartition, baseSector, sectorCount);
     if (err != ESP_OK) {
         mState = StorageState::INVALID;
         return err;

@@ -202,6 +202,9 @@ const esp_partition_t *esp_partition_verify(const esp_partition_t *partition);
 /**
  * @brief Read data from the partition
  *
+ * Partitions marked with an encryption flag will automatically be
+ * be read and decrypted via a cache mapping.
+ *
  * @param partition Pointer to partition structure obtained using
  *                  esp_partition_find_first or esp_partition_get.
  *                  Must be non-NULL.
@@ -250,7 +253,59 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_write(const esp_partition_t* partition,
-                             size_t dst_offset, const void* src, size_t size);
+                              size_t dst_offset, const void* src, size_t size);
+
+/**
+ * @brief Read data from the partition
+ *
+ * @note This function is essentially the same as \c esp_partition_write() above.
+ *       It just never decrypts data but returns it as is.
+ *
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
+ * @param dst Pointer to the buffer where data should be stored.
+ *            Pointer must be non-NULL and buffer must be at least 'size' bytes long.
+ * @param src_offset Address of the data to be read, relative to the
+ *                   beginning of the partition.
+ * @param size Size of data to be read, in bytes.
+ *
+ * @return ESP_OK, if data was read successfully;
+ *         ESP_ERR_INVALID_ARG, if src_offset exceeds partition size;
+ *         ESP_ERR_INVALID_SIZE, if read would go out of bounds of the partition;
+ *         or one of error codes from lower-level flash driver.
+ */
+esp_err_t esp_partition_read_raw(const esp_partition_t* partition,
+                                 size_t src_offset, void* dst, size_t size);
+
+/**
+ * @brief Write data to the partition without any transformation/encryption.
+ *
+ * @note This function is essentially the same as \c esp_partition_write() above.
+ *       It just never encrypts data but writes it as is.
+ *
+ * Before writing data to flash, corresponding region of flash needs to be erased.
+ * This can be done using esp_partition_erase_range function.
+ *
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
+ * @param dst_offset Address where the data should be written, relative to the
+ *                   beginning of the partition.
+ * @param src Pointer to the source buffer.  Pointer must be non-NULL and
+ *            buffer must be at least 'size' bytes long.
+ * @param size Size of data to be written, in bytes.
+ *
+ * @note Prior to writing to flash memory, make sure it has been erased with
+ *       esp_partition_erase_range call.
+ *
+ * @return ESP_OK, if data was written successfully;
+ *         ESP_ERR_INVALID_ARG, if dst_offset exceeds partition size;
+ *         ESP_ERR_INVALID_SIZE, if write would go out of bounds of the partition;
+ *         or one of the error codes from lower-level flash driver.
+ */
+esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
+                                  size_t dst_offset, const void* src, size_t size);
 
 /**
  * @brief Erase part of the partition

@@ -402,6 +402,43 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
     }
 }
 
+esp_err_t esp_partition_read_raw(const esp_partition_t* partition,
+        size_t src_offset, void* dst, size_t size)
+{
+    assert(partition != NULL);
+    if (src_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (src_offset + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+    return esp_flash_read(partition->flash_chip, dst, partition->address + src_offset, size);
+#else
+    return spi_flash_read(partition->address + src_offset, dst, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+}
+
+esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
+                             size_t dst_offset, const void* src, size_t size)
+{
+    assert(partition != NULL);
+    if (dst_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (dst_offset + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    dst_offset = partition->address + dst_offset;
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+    return esp_flash_write(partition->flash_chip, src, dst_offset, size);
+#else
+    return spi_flash_write(dst_offset, src, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+}
+
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
                                     size_t offset, size_t size)
 {

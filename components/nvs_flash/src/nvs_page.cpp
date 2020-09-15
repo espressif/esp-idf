@@ -20,10 +20,10 @@
 #include <cstdio>
 #include <cstring>
 
-#include "nvs_ops.hpp"
-
 namespace nvs
 {
+
+Page::Page() : mPartition(nullptr) { }
 
 uint32_t Page::Header::calculateCrc32()
 {
@@ -32,14 +32,19 @@ uint32_t Page::Header::calculateCrc32()
                     offsetof(Header, mCrc32) - offsetof(Header, mSeqNumber));
 }
 
-esp_err_t Page::load(uint32_t sectorNumber)
+esp_err_t Page::load(Partition *partition, uint32_t sectorNumber)
 {
+    if (partition == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    mPartition = partition;
     mBaseAddress = sectorNumber * SEC_SIZE;
     mUsedEntryCount = 0;
     mErasedEntryCount = 0;
 
     Header header;
-    auto rc = spi_flash_read(mBaseAddress, &header, sizeof(header));
+    auto rc = mPartition->read_raw(mBaseAddress, &header, sizeof(header));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -54,7 +59,7 @@ esp_err_t Page::load(uint32_t sectorNumber)
         if (!block) return ESP_ERR_NO_MEM;
 
         for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += 4 * BLOCK_SIZE) {
-            rc = spi_flash_read(mBaseAddress + i, block, 4 * BLOCK_SIZE);
+            rc = mPartition->read_raw(mBaseAddress + i, block, 4 * BLOCK_SIZE);
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
                 delete[] block;
@@ -101,7 +106,7 @@ esp_err_t Page::writeEntry(const Item& item)
 {
     esp_err_t err;
 
-    err = nvs_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
+    err = mPartition->write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
 
     if (err != ESP_OK) {
         mState = PageState::INVALID;
@@ -133,6 +138,7 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     const uint8_t* buf = data;
 
 #ifdef ESP_PLATFORM
+    // TODO: check whether still necessary with esp_partition* API
     /* On the ESP32, data can come from DROM, which is not accessible by spi_flash_write
      * function. To work around this, we copy the data to heap if it came from DROM.
      * Hopefully this won't happen very often in practice. For data from DRAM, we should
@@ -149,7 +155,7 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     }
 #endif //ESP_PLATFORM
 
-    auto rc = nvs_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+    auto rc = mPartition->write(getEntryAddress(mNextFreeEntry), buf, size);
 
 #ifdef ESP_PLATFORM
     if (buf != data) {
@@ -518,7 +524,7 @@ esp_err_t Page::mLoadEntryTable()
     if (mState == PageState::ACTIVE ||
             mState == PageState::FULL ||
             mState == PageState::FREEING) {
-        auto rc = spi_flash_read(mBaseAddress + ENTRY_TABLE_OFFSET, mEntryTable.data(),
+        auto rc = mPartition->read_raw(mBaseAddress + ENTRY_TABLE_OFFSET, mEntryTable.data(),
                                  mEntryTable.byteSize());
         if (rc != ESP_OK) {
             mState = PageState::INVALID;
@@ -557,7 +563,7 @@ esp_err_t Page::mLoadEntryTable()
         while (mNextFreeEntry < ENTRY_COUNT) {
             uint32_t entryAddress = getEntryAddress(mNextFreeEntry);
             uint32_t header;
-            auto rc = spi_flash_read(entryAddress, &header, sizeof(header));
+            auto rc = mPartition->read_raw(entryAddress, &header, sizeof(header));
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
                 return rc;
@@ -722,7 +728,7 @@ esp_err_t Page::initialize()
     header.mVersion = mVersion;
     header.mCrc32 = header.calculateCrc32();
 
-    auto rc = spi_flash_write(mBaseAddress, &header, sizeof(header));
+    auto rc = mPartition->write_raw(mBaseAddress, &header, sizeof(header));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -739,7 +745,7 @@ esp_err_t Page::alterEntryState(size_t index, EntryState state)
     mEntryTable.set(index, state);
     size_t wordToWrite = mEntryTable.getWordIndex(index);
     uint32_t word = mEntryTable.data()[wordToWrite];
-    auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordToWrite) * 4,
+    auto rc = mPartition->write_raw(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordToWrite) * 4,
             &word, sizeof(word));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
@@ -763,7 +769,7 @@ esp_err_t Page::alterEntryRangeState(size_t begin, size_t end, EntryState state)
         }
         if (nextWordIndex != wordIndex) {
             uint32_t word = mEntryTable.data()[wordIndex];
-            auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordIndex) * 4,
+            auto rc = mPartition->write_raw(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordIndex) * 4,
                     &word, 4);
             if (rc != ESP_OK) {
                 return rc;
@@ -777,7 +783,7 @@ esp_err_t Page::alterEntryRangeState(size_t begin, size_t end, EntryState state)
 esp_err_t Page::alterPageState(PageState state)
 {
     uint32_t state_val = static_cast<uint32_t>(state);
-    auto rc = spi_flash_write(mBaseAddress, &state_val, sizeof(state));
+    auto rc = mPartition->write_raw(mBaseAddress, &state_val, sizeof(state));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -788,7 +794,7 @@ esp_err_t Page::alterPageState(PageState state)
 
 esp_err_t Page::readEntry(size_t index, Item& dst) const
 {
-    auto rc = nvs_flash_read(getEntryAddress(index), &dst, sizeof(dst));
+    auto rc = mPartition->read(getEntryAddress(index), &dst, sizeof(dst));
     if (rc != ESP_OK) {
         return rc;
     }
@@ -925,8 +931,7 @@ esp_err_t Page::setVersion(uint8_t ver)
 
 esp_err_t Page::erase()
 {
-    auto sector = mBaseAddress / SPI_FLASH_SEC_SIZE;
-    auto rc = spi_flash_erase_sector(sector);
+    auto rc = mPartition->erase_range(mBaseAddress, SPI_FLASH_SEC_SIZE);
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;

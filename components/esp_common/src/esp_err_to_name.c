@@ -213,6 +213,12 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 API functions.  NVS key is different in
                                                                                 comparison */
 #   endif
+#   ifdef      ESP_ERR_NVS_WRONG_ENCRYPTION
+    ERR_TBL_IT(ESP_ERR_NVS_WRONG_ENCRYPTION),                   /*  4377 0x1119 NVS partition is marked as encrypted
+                                                                                with generic flash encryption. This is
+                                                                                forbidden since the NVS encryption works
+                                                                                differently. */
+#   endif
     // components/ulp/include/ulp_common.h
 #   ifdef      ESP_ERR_ULP_BASE
     ERR_TBL_IT(ESP_ERR_ULP_BASE),                               /*  4608 0x1200 Offset for ULP-related error codes */
