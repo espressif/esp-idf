@@ -97,7 +97,7 @@ struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx);
 
 bool bt_mesh_tx_in_progress(void);
 
-void bt_mesh_rx_reset(void);
+void bt_mesh_rx_reset(bool erase);
 void bt_mesh_tx_reset(void);
 void bt_mesh_rx_reset_single(u16_t src);
 void bt_mesh_tx_reset_single(u16_t dst);
@@ -113,8 +113,6 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
 void bt_mesh_trans_deinit(bool erase);
-
-void bt_mesh_rpl_clear(void);
 
 void bt_mesh_heartbeat_send(void);
 

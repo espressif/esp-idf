@@ -1818,10 +1818,11 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             app_key = arg->add_local_app_key.app_key;
         }
         act = ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT;
-        param.provisioner_add_app_key_comp.app_idx = arg->add_local_app_key.app_idx;
         param.provisioner_add_app_key_comp.err_code =
             bt_mesh_provisioner_local_app_key_add(app_key, arg->add_local_app_key.net_idx,
                     &arg->add_local_app_key.app_idx);
+        param.provisioner_add_app_key_comp.net_idx = arg->add_local_app_key.net_idx;
+        param.provisioner_add_app_key_comp.app_idx = arg->add_local_app_key.app_idx;
         break;
     }
     case BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_APP_KEY:
@@ -1851,9 +1852,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             net_key = arg->add_local_net_key.net_key;
         }
         act = ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT;
-        param.provisioner_add_net_key_comp.net_idx = arg->add_local_net_key.net_idx;
         param.provisioner_add_net_key_comp.err_code =
             bt_mesh_provisioner_local_net_key_add(net_key, &arg->add_local_net_key.net_idx);
+        param.provisioner_add_net_key_comp.net_idx = arg->add_local_net_key.net_idx;
         break;
     }
     case BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_NET_KEY:
