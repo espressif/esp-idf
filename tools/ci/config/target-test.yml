@@ -398,7 +398,7 @@ test_app_test_003:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 39
+  parallel: 43
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -407,7 +407,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 15
+  parallel: 12
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -481,7 +481,7 @@ UT_017:
 
 UT_018:
   extends: .unit_test_template
-  parallel: 5
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -537,6 +537,7 @@ UT_033:
 
 UT_034:
   extends: .unit_test_template
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
@@ -560,7 +561,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_s2_template
-  parallel: 38
+  parallel: 41
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -612,7 +613,12 @@ UT_045:
     - ESP32_IDF
     - UT_SDIO
     - psram
-
+    
+UT_046:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
 
 nvs_compatible_test:
   extends: .test_template
