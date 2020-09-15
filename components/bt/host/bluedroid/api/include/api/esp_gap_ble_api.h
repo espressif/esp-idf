@@ -292,6 +292,8 @@ typedef enum {
     ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
     /* Enable/Disable OOB support */
     ESP_BLE_SM_OOB_SUPPORT,
+    /* Appl encryption key size */
+    ESP_BLE_APP_ENC_KEY_SIZE,
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
