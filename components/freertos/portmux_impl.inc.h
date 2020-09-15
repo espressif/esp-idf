@@ -51,7 +51,7 @@ PORTMUX_AQUIRE_MUX_FN_NAME(portMUX_TYPE *mux, int timeout_cycles) {
 	bool set_timeout = timeout_cycles > portMUX_NO_TIMEOUT;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	if (!set_timeout) {
-		timeout_cycles = 10000; // Always set a timeout in debug mode
+		timeout_cycles = 1000000 * (esp_clk_cpu_freq() / 1000000); // Always set a timeout in debug mode
 		set_timeout = true;
 	}
 #endif
