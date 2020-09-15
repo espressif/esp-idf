@@ -1257,6 +1257,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 bta_dm_co_ble_oob_support(enable);
                 break;
             }
+            case ESP_BLE_APP_ENC_KEY_SIZE: {
+                uint8_t key_size = 0;
+                STREAM_TO_UINT8(key_size, value);
+                bta_dm_co_ble_set_appl_enc_key_size(key_size);
+                break;
+            }
             default:
                 break;
         }
