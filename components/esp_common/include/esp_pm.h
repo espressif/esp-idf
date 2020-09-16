@@ -46,6 +46,11 @@ typedef enum {
      * Argument is unused and should be set to 0.
      */
     ESP_PM_NO_LIGHT_SLEEP,
+    /**
+     * Prevent the system from going into deep sleep.
+     * Argument is unused and should be set to 0.
+     */
+    ESP_PM_NO_DEEP_SLEEP,
 } esp_pm_lock_type_t;
 
 /**
@@ -180,3 +185,4 @@ esp_err_t esp_pm_dump_locks(FILE* stream);
 #ifdef __cplusplus
 }
 #endif
+

@@ -34,9 +34,11 @@ typedef struct {
     int max_freq_mhz;   /*!< Maximum CPU frequency, in MHz */
     int min_freq_mhz;   /*!< Minimum CPU frequency to use when no locks are taken, in MHz */
     bool light_sleep_enable;        /*!< Enter light sleep when no locks are taken */
+    bool deep_sleep_enable;        /*!< Enter deep sleep when no locks are taken */
 } esp_pm_config_esp32_t;
 
 
 #ifdef __cplusplus
 }
 #endif
+
