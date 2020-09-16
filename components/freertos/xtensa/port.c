@@ -547,7 +547,7 @@ static void main_task(void* args)
 
 
 #if !CONFIG_FREERTOS_UNICORE
-void start_app_other_cores(void)
+void esp_startup_start_app_other_cores(void)
 {
 	// For now, we only support up to two core: 0 and 1.
 	if (xPortGetCoreID() >= 2) {
@@ -581,7 +581,7 @@ void start_app_other_cores(void)
 }
 #endif
 
-void start_app(void)
+void esp_startup_start_app(void)
 {
 #if CONFIG_ESP_INT_WDT
 	esp_int_wdt_init();
