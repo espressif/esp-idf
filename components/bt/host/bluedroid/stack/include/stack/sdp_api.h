@@ -222,7 +222,7 @@ extern BOOLEAN SDP_ServiceSearchRequest (UINT8 *p_bd_addr,
 ** Description      This function queries an SDP server for information.
 **
 **                  The difference between this API function and the function
-**                  SDP_ServiceSearchRequest is that this one does a
+**                  SDP_ServiceSearchRequest2 is that this one does a
 **                  combined ServiceSearchAttributeRequest SDP function.
 **
 ** Returns          TRUE if discovery started, FALSE if failed.

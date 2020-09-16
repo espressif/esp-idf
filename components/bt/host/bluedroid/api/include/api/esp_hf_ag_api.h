@@ -301,8 +301,8 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
  * @brief           Response of Volume Recognition Command(AT+VRA) from HFP client. As a precondition to use this API,
  *                  Service Level Connection shall exist with HFP client.
  *
- * @param[in]       remote_bda: volume control target, speaker or microphone
- * @param[in]       value: gain of the speaker of microphone, ranges 0 to 15
+ * @param[in]       remote_bda: the device address of voice recognization initiator
+ * @param[in]       value: 0 - voice recognition disabled, 1- voice recognition enabled
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
