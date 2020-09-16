@@ -176,6 +176,19 @@ esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
 esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t *value);
 
 /**
+ * @brief Get PCNT event status of PCNT unit
+ *
+ * @param unit PCNT unit number
+ * @param status Pointer to accept event status word
+ * @return
+ *
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_STATE pcnt driver has not been initialized
+ *      - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t pcnt_get_event_status(pcnt_unit_t unit, uint32_t *status);
+
+/**
  * @brief Unregister PCNT interrupt handler (registered by pcnt_isr_register), the handler is an ISR.
  *        The handler will be attached to the same CPU core that this function is running on.
  *        If the interrupt service is registered by pcnt_isr_service_install, please call pcnt_isr_service_uninstall instead

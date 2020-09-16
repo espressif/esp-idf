@@ -201,6 +201,16 @@ static inline esp_err_t _pcnt_get_event_value(pcnt_port_t pcnt_port, pcnt_unit_t
     return ESP_OK;
 }
 
+static inline esp_err_t _pcnt_get_event_status(pcnt_port_t pcnt_port, pcnt_unit_t unit, uint32_t *status)
+{
+    PCNT_OBJ_CHECK(pcnt_port);
+    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(status != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
+
+    *status = pcnt_hal_get_event_status(&(p_pcnt_obj[pcnt_port]->hal), unit);
+    return ESP_OK;
+}
+
 static inline esp_err_t _pcnt_set_filter_value(pcnt_port_t pcnt_port, pcnt_unit_t unit, uint16_t filter_val)
 {
     PCNT_OBJ_CHECK(pcnt_port);
@@ -278,7 +288,7 @@ static void IRAM_ATTR pcnt_intr_service(void *arg)
     pcnt_port_t pcnt_port = (pcnt_port_t)arg;
     pcnt_hal_get_intr_status(&(p_pcnt_obj[pcnt_port]->hal), &status);
     pcnt_hal_clear_intr_status(&(p_pcnt_obj[pcnt_port]->hal), status);
-    
+
     while (status) {
         int unit = __builtin_ffs(status) - 1;
         status &= ~(1 << unit);
@@ -457,6 +467,11 @@ esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
 esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t *value)
 {
     return _pcnt_get_event_value(PCNT_PORT_0, unit, evt_type, value);
+}
+
+esp_err_t pcnt_get_event_status(pcnt_unit_t unit, uint32_t *status)
+{
+    return _pcnt_get_event_status(PCNT_PORT_0, unit, status);
 }
 
 esp_err_t pcnt_set_filter_value(pcnt_unit_t unit, uint16_t filter_val)

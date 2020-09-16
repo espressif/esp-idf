@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := pcnt
+PROJECT_NAME := rotary_encoder
 
 include $(IDF_PATH)/make/project.mk
 

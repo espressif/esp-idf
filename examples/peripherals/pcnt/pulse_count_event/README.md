@@ -1,7 +1,4 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
-# PCNT Example
+# Pulse Count Event Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -18,7 +15,7 @@ Pin connection:
 
 * GPIO4 is the default output GPIO of the 1 Hz pulse generator.
 * GPIO18 is the default pulse input GPIO. We need to short GPIO4 and GPIO18.
-* GPIO5 is the default control signal, which can be left floating with internal pull up, or connected to Ground (If GPIO5 is left floating, the value of counter increases with the rising edges of the PWM pulses. If GPIO15 is connected to Ground, the value decreases).
+* GPIO5 is the default control signal, which can be left floating with internal pull up, or connected to Ground (If GPIO5 is left floating, the value of counter increases with the rising edges of the PWM pulses. If GPIO5 is connected to Ground, the value decreases).
 
 ### Configure the project
 

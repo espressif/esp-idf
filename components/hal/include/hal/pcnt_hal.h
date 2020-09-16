@@ -165,6 +165,15 @@ typedef struct {
 #define pcnt_hal_get_event_value(hal, unit, evt_type, value) pcnt_ll_get_event_value((hal)->dev, unit, evt_type, value)
 
 /**
+ * @brief Get PCNT event status
+ *
+ * @param hal Context of the HAL layer
+ * @param unit PCNT unit number
+ * @return event status word
+ */
+#define pcnt_hal_get_event_status(hal, unit) pcnt_ll_get_event_status((hal)->dev, unit)
+
+/**
  * @brief Set PCNT filter value
  *
  * @param hal Context of the HAL layer
