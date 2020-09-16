@@ -24,7 +24,8 @@ class Gitlab(object):
         else:
             # otherwise try to use config file at local filesystem
             config_files = None
-        self.gitlab_inst = gitlab.Gitlab.from_config(config_files=config_files)
+        gitlab_id = os.getenv("LOCAL_GITLAB_HTTPS_HOST")  # if None, will use the default gitlab server
+        self.gitlab_inst = gitlab.Gitlab.from_config(gitlab_id=gitlab_id, config_files=config_files)
         self.gitlab_inst.auth()
         if project_id:
             self.project = self.gitlab_inst.projects.get(project_id)
