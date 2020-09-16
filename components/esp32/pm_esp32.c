@@ -82,6 +82,10 @@ static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+/* Optional user-provided callback function for wakeup from automatic light sleep */
+static esp_pm_light_sleep_wakeup_callback s_light_sleep_wakeup_cb = NULL;
+static void* s_light_sleep_wakeup_ctx = NULL;
+
 /* Indicates if light sleep entry was skipped in vApplicationSleep for given CPU.
  * This in turn gets used in IDLE hook to decide if `waiti` needs
  * to be invoked or not.
@@ -236,6 +240,14 @@ esp_err_t esp_pm_configure(const void* vconfig)
 
     return ESP_OK;
 }
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+void esp_pm_set_light_sleep_wakeup_cb(esp_pm_light_sleep_wakeup_callback cb, void* ctx)
+{
+    s_light_sleep_wakeup_cb = cb;
+    s_light_sleep_wakeup_ctx = ctx;
+}
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 static pm_mode_t IRAM_ATTR get_lowest_allowed_mode(void)
 {
@@ -513,6 +525,7 @@ static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 
 void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 {
+    bool went_to_sleep = false;
     portENTER_CRITICAL(&s_switch_lock);
     int core_id = xPortGetCoreID();
     if (!should_skip_light_sleep(core_id)) {
@@ -535,6 +548,8 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
             int64_t slept_us = esp_timer_get_time() - sleep_start;
             ESP_PM_TRACE_EXIT(SLEEP, core_id);
 
+            went_to_sleep = true;
+
             uint32_t slept_ticks = slept_us / (portTICK_PERIOD_MS * 1000LL);
             if (slept_ticks > 0) {
                 /* Adjust RTOS tick count based on the amount of time spent in sleep */
@@ -554,6 +569,9 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
+    if (went_to_sleep && s_light_sleep_wakeup_cb != NULL) {
+        s_light_sleep_wakeup_cb(s_light_sleep_wakeup_ctx);
+    }
 }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
