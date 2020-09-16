@@ -591,11 +591,11 @@ void esp_pm_impl_init(void)
 #ifdef CONFIG_PM_TRACE
     esp_pm_trace_init();
 #endif
-    ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos0",
+    ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rtos0",
             &s_rtos_lock_handle[0]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[0]));
 #if portNUM_PROCESSORS == 2
-    ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos1",
+    ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rtos1",
             &s_rtos_lock_handle[1]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[1]));
 #endif // portNUM_PROCESSORS == 2
