@@ -86,8 +86,6 @@ public class BLETransport implements Transport {
     @Override
     public void sendConfigData(String path, byte[] data, ResponseListener listener) {
 
-        currentResponseListener = listener;
-
         if (uuidMap.containsKey(path)) {
 
             BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(uuidMap.get(path)));
@@ -101,15 +99,25 @@ public class BLETransport implements Transport {
                     this.transportToken.acquire();
                     characteristic.setValue(data);
                     bluetoothGatt.writeCharacteristic(characteristic);
+                    currentResponseListener = listener;
                 } catch (Exception e) {
                     e.printStackTrace();
                     listener.onFailure(e);
                     this.transportToken.release();
+                    currentResponseListener = listener;
+                    if (currentResponseListener != null) {
+                        currentResponseListener.onFailure(e);
+                    }
                 }
             } else {
                 Log.e(TAG, "Characteristic is not available for given path.");
+                currentResponseListener = listener;
+                if (currentResponseListener != null) {
+                    currentResponseListener.onFailure(new RuntimeException("Characteristic is not available for given path."));
+                }
             }
         } else {
+            currentResponseListener = listener;
             Log.e(TAG, "Characteristic is not available for given path.");
             if (currentResponseListener != null) {
                 currentResponseListener.onFailure(new RuntimeException("Characteristic is not available for given path."));
@@ -317,11 +325,11 @@ public class BLETransport implements Transport {
                     dispatcherThreadPool.submit(new Runnable() {
                         @Override
                         public void run() {
+                            currentResponseListener = null;
                             byte[] charValue = characteristic.getValue();
                             responseListener.onSuccess(charValue);
                         }
                     });
-                    currentResponseListener = null;
                 } else {
 
                     currentResponseListener.onFailure(new Exception("Read from BLE failed"));
@@ -336,7 +344,7 @@ public class BLETransport implements Transport {
 
             Log.d(TAG, "onCharacteristicWrite, status : " + status);
             Log.d(TAG, "UUID : " + characteristic.getUuid().toString());
-//            super.onCharacteristicWrite(gatt, characteristic, status);
+            super.onCharacteristicWrite(gatt, characteristic, status);
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 bluetoothGatt.readCharacteristic(characteristic);
