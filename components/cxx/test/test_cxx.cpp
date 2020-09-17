@@ -44,16 +44,17 @@ TEST_CASE("can use std::vector", "[cxx]")
     TEST_ASSERT_EQUAL(51, std::accumulate(std::begin(v), std::end(v), 0));
 }
 
-/* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
+/* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
    - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
      This info is kept until global destructors are called by __do_global_dtors_aux()
    - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
    - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
    - 88 bytes are allocated by pthread_setspecific() to init internal lock
+   - some more memory...
    */
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=300]")
 {
     int thrown_value;
     try {
@@ -65,7 +66,7 @@ TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=300]")
 {
     bool thrown_value = false;
     try {
@@ -77,7 +78,7 @@ TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=300]")
 {
     void* thrown_value = 0;
     try {
@@ -89,7 +90,7 @@ TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=300]")
 {
     uint64_t thrown_value = 0;
     try {
@@ -101,7 +102,7 @@ TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=300]")
 {
     char thrown_value = '0';
     try {
@@ -113,7 +114,7 @@ TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=300]")
 {
     wchar_t thrown_value = 0;
     try {
@@ -125,7 +126,7 @@ TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=300]")
 {
     float thrown_value = 0;
     try {
@@ -137,7 +138,7 @@ TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=300]")
 {
     double thrown_value = 0;
     try {
@@ -149,7 +150,7 @@ TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=300]")
 {
     const char *thrown_value = 0;
     try {
@@ -167,7 +168,7 @@ public:
     NonExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=300]")
 {
     int thrown_value = 0;
     try {
@@ -185,7 +186,7 @@ public:
     ExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=300]")
 {
     int thrown_value = 0;
     try {
@@ -197,7 +198,7 @@ TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks=300]")
 {
     void **p, **pprev = NULL;
     int thrown_value = 0;
