@@ -130,8 +130,8 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 * ``idf.py menuconfig`` - configure unit test app.
 
 * ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* ``idf.py -T xxx build`` - build unit test app with tests for specific components. 
-* ``idf.py -T all -E xxxbuild`` - build unit test app with all unit tests, except for unit tests of some components. (For instance: ``idf.py -T all -E ulp mbedtls build`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
+* ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
+* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests excluding ``ulp`` and ``mbedtls`` components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
