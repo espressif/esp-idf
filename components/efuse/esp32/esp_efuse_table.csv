@@ -65,7 +65,8 @@ RD_DIS_BLK3,            EFUSE_BLK0,    18,    1,    Read protection for EFUSE_BL
 #############
 CHIP_VER_DIS_APP_CPU,   EFUSE_BLK0,    96,    1,    EFUSE_RD_CHIP_VER_DIS_APP_CPU
 CHIP_VER_DIS_BT,        EFUSE_BLK0,    97,    1,    EFUSE_RD_CHIP_VER_DIS_BT
-CHIP_VER_PKG,           EFUSE_BLK0,    105,   3,    EFUSE_RD_CHIP_VER_PKG
+CHIP_VER_PKG,           EFUSE_BLK0,    105,   3,    EFUSE_RD_CHIP_VER_PKG least significant bits
+,                       EFUSE_BLK0,    98,    1,    EFUSE_RD_CHIP_VER_PKG_4BIT most significant bit
 CHIP_CPU_FREQ_LOW,      EFUSE_BLK0,    108,   1,    EFUSE_RD_CHIP_CPU_FREQ_LOW
 CHIP_CPU_FREQ_RATED,    EFUSE_BLK0,    109,   1,    EFUSE_RD_CHIP_CPU_FREQ_RATED
 CHIP_VER_REV1,          EFUSE_BLK0,    111,   1,    EFUSE_RD_CHIP_VER_REV1

@@ -45,6 +45,13 @@ uint8_t bootloader_common_get_chip_revision(void)
     return chip_ver;
 }
 
+uint32_t bootloader_common_get_chip_ver_pkg(void)
+{
+    uint32_t pkg_version = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
+    uint32_t pkg_version_4bit = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG_4BIT);
+    return (pkg_version_4bit << 3) | pkg_version;
+}
+
 int bootloader_clock_get_rated_freq_mhz()
 {
     //Check if ESP32 is rated for a CPU frequency of 160MHz only

@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 8c9f6537b47cc5b26a1a5896158c612a
+// md5_digest_table f552d73ac112985991efa6734a60c8d9
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -148,7 +148,8 @@ static const esp_efuse_desc_t CHIP_VER_DIS_BT[] = {
 };
 
 static const esp_efuse_desc_t CHIP_VER_PKG[] = {
-    {EFUSE_BLK0, 105, 3}, 	 // EFUSE_RD_CHIP_VER_PKG,
+    {EFUSE_BLK0, 105, 3}, 	 // EFUSE_RD_CHIP_VER_PKG least significant bits,
+    {EFUSE_BLK0, 98, 1}, 	 // EFUSE_RD_CHIP_VER_PKG_4BIT most significant bit,
 };
 
 static const esp_efuse_desc_t CHIP_CPU_FREQ_LOW[] = {
@@ -348,7 +349,8 @@ const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_DIS_BT[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_PKG[] = {
-    &CHIP_VER_PKG[0],    		// EFUSE_RD_CHIP_VER_PKG
+    &CHIP_VER_PKG[0],    		// EFUSE_RD_CHIP_VER_PKG least significant bits
+    &CHIP_VER_PKG[1],    		// EFUSE_RD_CHIP_VER_PKG_4BIT most significant bit
     NULL
 };
 

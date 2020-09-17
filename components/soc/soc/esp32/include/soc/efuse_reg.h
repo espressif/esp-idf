@@ -104,7 +104,7 @@
 #define EFUSE_RD_CHIP_CPU_FREQ_LOW_V  0x1
 #define EFUSE_RD_CHIP_CPU_FREQ_LOW_S  12
 /* EFUSE_RD_CHIP_VER_PKG : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
-/*description: chip package */
+/*description: least significant bits of chip package */
 #define EFUSE_RD_CHIP_VER_PKG  0x00000007
 #define EFUSE_RD_CHIP_VER_PKG_M  ((EFUSE_RD_CHIP_VER_PKG_V)<<(EFUSE_RD_CHIP_VER_PKG_S))
 #define EFUSE_RD_CHIP_VER_PKG_V  0x7
@@ -127,12 +127,12 @@
 #define EFUSE_RD_CHIP_VER_DIS_CACHE_M  (BIT(3))
 #define EFUSE_RD_CHIP_VER_DIS_CACHE_V  0x1
 #define EFUSE_RD_CHIP_VER_DIS_CACHE_S  3
-/* EFUSE_RD_CHIP_VER_32PAD : RO ;bitpos:[2] ;default: 1'b0 ; */
-/*description: */
-#define EFUSE_RD_CHIP_VER_32PAD  (BIT(2))
-#define EFUSE_RD_CHIP_VER_32PAD_M  (BIT(2))
-#define EFUSE_RD_CHIP_VER_32PAD_V  0x1
-#define EFUSE_RD_CHIP_VER_32PAD_S  2
+/* EFUSE_RD_CHIP_VER_PKG_4BIT : RO ;bitpos:[2] ;default: 1'b0 ; */
+/*description: most significant bit of chip package */
+#define EFUSE_RD_CHIP_VER_PKG_4BIT  (BIT(2))
+#define EFUSE_RD_CHIP_VER_PKG_4BIT_M  (BIT(2))
+#define EFUSE_RD_CHIP_VER_PKG_4BIT_V  0x1
+#define EFUSE_RD_CHIP_VER_PKG_4BIT_S  2
 /* EFUSE_RD_CHIP_VER_DIS_BT : RO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
 #define EFUSE_RD_CHIP_VER_DIS_BT  (BIT(1))
@@ -381,7 +381,7 @@
 #define EFUSE_CHIP_CPU_FREQ_LOW_V  0x1
 #define EFUSE_CHIP_CPU_FREQ_LOW_S  12
 /* EFUSE_CHIP_VER_PKG : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
-/*description: */
+/*description: least significant bits of chip package */
 #define EFUSE_CHIP_VER_PKG  0x00000007
 #define EFUSE_CHIP_VER_PKG_M  ((EFUSE_CHIP_VER_PKG_V)<<(EFUSE_CHIP_VER_PKG_S))
 #define EFUSE_CHIP_VER_PKG_V  0x7
@@ -391,6 +391,7 @@
 #define EFUSE_CHIP_VER_PKG_ESP32D2WDQ5  2
 #define EFUSE_CHIP_VER_PKG_ESP32PICOD2  4
 #define EFUSE_CHIP_VER_PKG_ESP32PICOD4  5
+#define EFUSE_CHIP_VER_PKG_ESP32PICOV302  6
 /* EFUSE_SPI_PAD_CONFIG_HD : R/W ;bitpos:[8:4] ;default: 5'b0 ; */
 /*description: program for SPI_pad_config_hd*/
 #define EFUSE_SPI_PAD_CONFIG_HD  0x0000001F
@@ -403,12 +404,12 @@
 #define EFUSE_CHIP_VER_DIS_CACHE_M  (BIT(3))
 #define EFUSE_CHIP_VER_DIS_CACHE_V  0x1
 #define EFUSE_CHIP_VER_DIS_CACHE_S  3
-/* EFUSE_CHIP_VER_32PAD : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: */
-#define EFUSE_CHIP_VER_32PAD  (BIT(2))
-#define EFUSE_CHIP_VER_32PAD_M  (BIT(2))
-#define EFUSE_CHIP_VER_32PAD_V  0x1
-#define EFUSE_CHIP_VER_32PAD_S  2
+/* EFUSE_CHIP_VER_PKG_4BIT : RO ;bitpos:[2] ;default: 1'b0 ; */
+/*description: most significant bit of chip package */
+#define EFUSE_CHIP_VER_PKG_4BIT  (BIT(2))
+#define EFUSE_CHIP_VER_PKG_4BIT_M  (BIT(2))
+#define EFUSE_CHIP_VER_PKG_4BIT_V  0x1
+#define EFUSE_CHIP_VER_PKG_4BIT_S  2
 /* EFUSE_CHIP_VER_DIS_BT : R/W ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
 #define EFUSE_CHIP_VER_DIS_BT  (BIT(1))

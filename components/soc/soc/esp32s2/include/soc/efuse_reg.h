@@ -917,12 +917,24 @@ extern "C" {
 #define EFUSE_SPI_PAD_CONF_1_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_3_REG          (DR_REG_EFUSE_BASE + 0x050)
-/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:18] ;default: 14'h0 ; */
-/*description: Stores the fist 14 bits of the zeroth part of system data.*/
-#define EFUSE_SYS_DATA_PART0_0  0x00003FFF
+/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:25] ;default: 7'h0 ; */
+/*description: Stores the fist 7 bits of the zeroth part of system data.*/
+#define EFUSE_SYS_DATA_PART0_0  0x0000007F
 #define EFUSE_SYS_DATA_PART0_0_M  ((EFUSE_SYS_DATA_PART0_0_V)<<(EFUSE_SYS_DATA_PART0_0_S))
-#define EFUSE_SYS_DATA_PART0_0_V  0x3FFF
-#define EFUSE_SYS_DATA_PART0_0_S  18
+#define EFUSE_SYS_DATA_PART0_0_V  0x7F
+#define EFUSE_SYS_DATA_PART0_0_S  25
+/* EFUSE_PKG_VERSION : RO ;bitpos:[24:21] ;default: 4'h0 ; */
+/*description: Package version 0:ESP32-S2, 1:ESP32-S2FH16, 2:ESP32-S2FH32 */
+#define EFUSE_PKG_VERSION  0x0000000F
+#define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
+#define EFUSE_PKG_VERSION_V  0xF
+#define EFUSE_PKG_VERSION_S  21
+/* EFUSE_WAFER_VERSION : RO ;bitpos:[20:18] ;default: 3'h0 ; */
+/*description: WAFER version 0:A */
+#define EFUSE_WAFER_VERSION  0x00000007
+#define EFUSE_WAFER_VERSION_M  ((EFUSE_WAFER_VERSION_V)<<(EFUSE_WAFER_VERSION_S))
+#define EFUSE_WAFER_VERSION_V  0x7
+#define EFUSE_WAFER_VERSION_S  18
 /* EFUSE_SPI_PAD_CONF_2 : RO ;bitpos:[17:0] ;default: 18'h0 ; */
 /*description: Stores the second part of SPI_PAD_CONF.*/
 #define EFUSE_SPI_PAD_CONF_2  0x0003FFFF

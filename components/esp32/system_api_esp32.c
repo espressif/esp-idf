@@ -159,7 +159,7 @@ void esp_chip_info(esp_chip_info_t* out_info)
     if ((efuse_rd3 & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
         out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
     }
-    int package = (efuse_rd3 & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
+    uint32_t package = esp_efuse_get_pkg_ver();
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||

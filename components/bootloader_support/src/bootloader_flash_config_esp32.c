@@ -78,8 +78,7 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
         drv = 3;
     }
 
-    uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
-    uint32_t pkg_ver = chip_ver & 0x7;
+    uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
 
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
@@ -176,7 +175,7 @@ int bootloader_flash_get_wp_pin(void)
 #else
     // no custom value, find it based on the package eFuse value
     uint8_t chip_ver;
-    uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
+    uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
     switch(pkg_ver) {
     case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5:
         return ESP32_D2WD_WP_GPIO;
