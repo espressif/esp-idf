@@ -65,6 +65,7 @@ static struct key_update {
 } key_updates[CONFIG_BLE_MESH_APP_KEY_COUNT + CONFIG_BLE_MESH_SUBNET_COUNT];
 
 static struct k_delayed_work pending_store;
+static void store_pending(struct k_work *work);
 
 /* Mesh network storage information */
 struct net_val {
@@ -1463,6 +1464,14 @@ static void schedule_store(int flag)
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, flag);
 
+    /* When Node is not provisioned OR Provisioner is disabled,
+     * we will directly erase the stored information.
+     */
+    if (!bt_mesh_is_provisioned() && !bt_mesh_is_provisioner_en()) {
+        store_pending(NULL);
+        return;
+    }
+
     if (bt_mesh_atomic_get(bt_mesh.flags) & NO_WAIT_PENDING_BITS) {
         timeout = K_NO_WAIT;
     } else if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_RPL_PENDING) &&
@@ -1540,7 +1549,7 @@ void bt_mesh_store_iv(bool only_duration)
     }
 }
 
-void bt_mesh_clear_iv(void)
+static void clear_iv(void)
 {
     BT_DBG("Clearing IV");
     bt_mesh_erase_core_settings("mesh/iv");
@@ -2080,7 +2089,7 @@ static void store_pending(struct k_work *work)
         if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
             store_pending_iv();
         } else {
-            bt_mesh_clear_iv();
+            clear_iv();
         }
     }
 
@@ -2626,7 +2635,13 @@ int settings_core_deinit(void)
 
 int settings_core_erase(void)
 {
-    /* Erase here must not use the pending_store timer. */
+    /* Erase here must not use the pending_store timer.
+     * This is used for erasing the information which
+     * could not be erased during the previous deinit
+     * operations.
+     */
+    bt_mesh_clear_net();
+    bt_mesh_clear_seq();
     bt_mesh_clear_role();
     return 0;
 }

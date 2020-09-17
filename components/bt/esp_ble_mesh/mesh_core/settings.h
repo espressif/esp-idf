@@ -22,7 +22,6 @@ extern "C" {
 void bt_mesh_store_role(void);
 void bt_mesh_store_net(void);
 void bt_mesh_store_iv(bool only_duration);
-void bt_mesh_clear_iv(void);
 void bt_mesh_store_seq(void);
 void bt_mesh_clear_seq(void);
 void bt_mesh_store_rpl(struct bt_mesh_rpl *rpl);

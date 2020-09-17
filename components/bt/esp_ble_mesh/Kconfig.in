@@ -327,7 +327,7 @@ if BLE_MESH
         config BLE_MESH_SEQ_STORE_RATE
             int "How often the sequence number gets updated in storage"
             range 0 1000000
-            default 6
+            default 0
             help
                 This value defines how often the local sequence number gets updated in
                 persistent storage (i.e. flash). e.g. a value of 100 means that the
@@ -342,7 +342,7 @@ if BLE_MESH
         config BLE_MESH_RPL_STORE_TIMEOUT
             int "Minimum frequency that the RPL gets updated in storage"
             range 0 1000000
-            default 5
+            default 0
             help
                 This value defines in seconds how soon the RPL (Replay Protection List)
                 gets written to persistent storage after a change occurs. If the node
