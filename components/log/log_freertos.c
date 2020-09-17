@@ -50,15 +50,8 @@ void esp_log_impl_unlock(void)
     xSemaphoreGive(s_log_mutex);
 }
 
-char *esp_log_system_timestamp(void)
+static bool esp_log_system_early_timestamp(char *buffer)
 {
-#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
-    static char buffer[24] = {0};
-#else
-    static char buffer[13] = {0};
-#endif
-    static _lock_t bufferLock = 0;
-
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         uint32_t timestamp = esp_log_early_timestamp();
         for (uint8_t i = 0; i < sizeof(buffer); i++) {
@@ -73,6 +66,17 @@ char *esp_log_system_timestamp(void)
                 break;
             }
         }
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
+char *esp_log_system_timestamp(void)
+{
+    static char buffer[13] = {0};
+    static _lock_t bufferLock = 0;
+
+    if (esp_log_system_early_timestamp(buffer) == ESP_OK) {
         return buffer;
     } else {
         struct timeval tv;
@@ -83,15 +87,37 @@ char *esp_log_system_timestamp(void)
 
         _lock_acquire(&bufferLock);
         snprintf(buffer, sizeof(buffer),
-#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
-                 "%04u-%02u-%02u "
-#endif
                  "%02u:%02u:%02u.%03lu",
-#if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_DATETIME
+                 timeinfo.tm_hour,
+                 timeinfo.tm_min,
+                 timeinfo.tm_sec,
+                 tv.tv_usec / 1000);
+        _lock_release(&bufferLock);
+
+        return buffer;
+    }
+}
+
+char *esp_log_system_datetimestamp(void)
+{
+    static char buffer[24] = {0};
+    static _lock_t bufferLock = 0;
+
+    if (esp_log_system_early_timestamp(buffer) == ESP_OK) {
+        return buffer;
+    } else {
+        struct timeval tv;
+        struct tm timeinfo;
+
+        gettimeofday(&tv, NULL);
+        localtime_r(&tv.tv_sec, &timeinfo);
+
+        _lock_acquire(&bufferLock);
+        snprintf(buffer, sizeof(buffer),
+                 "%04u-%02u-%02u %02u:%02u:%02u.%03lu",
                  timeinfo.tm_year+1900,
                  timeinfo.tm_mon+1,
                  timeinfo.tm_mday,
-#endif
                  timeinfo.tm_hour,
                  timeinfo.tm_min,
                  timeinfo.tm_sec,
