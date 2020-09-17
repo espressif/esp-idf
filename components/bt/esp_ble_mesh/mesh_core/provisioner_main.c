@@ -22,6 +22,7 @@
 #include "settings.h"
 #include "friend.h"
 #include "transport.h"
+#include "foundation.h"
 #include "mesh_common.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
@@ -162,28 +163,22 @@ int bt_mesh_provisioner_deinit(bool erase)
 {
     int i;
 
-    for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT; i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         if (bt_mesh.p_sub[i]) {
-            if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]->net_idx);
-            }
-            bt_mesh_free(bt_mesh.p_sub[i]);
-            bt_mesh.p_sub[i] = NULL;
+            bt_mesh_provisioner_local_net_key_del(bt_mesh.p_sub[i]->net_idx, erase);
         }
     }
 
-    for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_APP_KEY_COUNT; i++) {
-        if (bt_mesh.p_app_keys[i]) {
-            if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]->app_idx);
-            }
-            bt_mesh_free(bt_mesh.p_app_keys[i]);
-            bt_mesh.p_app_keys[i] = NULL;
-        }
-    }
+    /* Clear model state that isn't otherwise cleared. E.g. AppKey
+     * binding and model publication is cleared as a consequence
+     * of removing all app keys, however model subscription clearing
+     * must be taken care of here.
+     */
+    bt_mesh_mod_sub_reset(erase);
 
     bt_mesh.p_net_idx_next = 0U;
     bt_mesh.p_app_idx_next = 0U;
+
     if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_clear_p_net_idx();
         bt_mesh_clear_p_app_idx();
@@ -1116,7 +1111,7 @@ const u8_t *bt_mesh_provisioner_local_app_key_get(u16_t net_idx, u16_t app_idx)
     return NULL;
 }
 
-static void model_pub_clear(struct bt_mesh_model *model)
+static void model_pub_clear(struct bt_mesh_model *model, bool store)
 {
     if (!model->pub) {
         return;
@@ -1138,14 +1133,14 @@ static void model_pub_clear(struct bt_mesh_model *model)
         k_delayed_work_cancel(&model->pub->timer);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
         bt_mesh_store_mod_pub(model);
     }
 
     return;
 }
 
-static void model_unbind(struct bt_mesh_model *model, u16_t app_idx)
+static void model_unbind(struct bt_mesh_model *model, u16_t app_idx, bool store)
 {
     int i;
 
@@ -1158,24 +1153,30 @@ static void model_unbind(struct bt_mesh_model *model, u16_t app_idx)
 
         model->keys[i] = BLE_MESH_KEY_UNUSED;
 
-        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
             bt_mesh_store_mod_bind(model);
         }
 
-        model_pub_clear(model);
+        model_pub_clear(model, store);
     }
 }
+
+struct unbind_data {
+    u16_t app_idx;
+    bool store;
+};
 
 static void _model_unbind(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                           bool vnd, bool primary, void *user_data)
 {
-    u16_t app_idx = *(u16_t *)user_data;
+    struct unbind_data *data = user_data;
 
-    model_unbind(mod, app_idx);
+    model_unbind(mod, data->app_idx, data->store);
 }
 
-int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx)
+int bt_mesh_provisioner_local_app_key_del(u16_t net_idx, u16_t app_idx, bool store)
 {
+    struct unbind_data data = { .app_idx = app_idx, .store = store };
     struct bt_mesh_app_key *key = NULL;
     int i;
 
@@ -1196,9 +1197,9 @@ int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx)
         if (key && key->net_idx == net_idx &&
                 key->app_idx == app_idx) {
             /* Remove the AppKey from the models if they are bound with it */
-            bt_mesh_model_foreach(_model_unbind, &app_idx);
+            bt_mesh_model_foreach(_model_unbind, &data);
 
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
                 bt_mesh_clear_p_app_key(app_idx);
             }
 
@@ -1369,7 +1370,7 @@ const u8_t *bt_mesh_provisioner_local_net_key_get(u16_t net_idx)
     return NULL;
 }
 
-int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx)
+int bt_mesh_provisioner_local_net_key_del(u16_t net_idx, bool store)
 {
     struct bt_mesh_subnet *sub = NULL;
     int i, j;
@@ -1387,12 +1388,13 @@ int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx)
             /* Delete any app keys bound to this NetKey index */
             for (j = 0; j < ARRAY_SIZE(bt_mesh.p_app_keys); j++) {
                 struct bt_mesh_app_key *key = bt_mesh.p_app_keys[j];
+
                 if (key && key->net_idx == sub->net_idx) {
-                    bt_mesh_provisioner_local_app_key_delete(key->net_idx, key->app_idx);
+                    bt_mesh_provisioner_local_app_key_del(key->net_idx, key->app_idx, store);
                 }
             }
 
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
                 bt_mesh_clear_p_subnet(net_idx);
             }
 
