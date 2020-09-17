@@ -14,6 +14,9 @@
 
 #include "esp_hmac.h"
 #include "unity.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
+#include "esp_log.h"
 
 #if CONFIG_IDF_ENV_FPGA
 
@@ -27,6 +30,7 @@ typedef struct {
 } hmac_result;
 
 static const ets_efuse_block_t key_block = ETS_EFUSE_BLOCK_KEY4;
+static const char *TAG = "test_hmac";
 
 static void setup_keyblock(void) {
     const uint8_t key_data[32] = {
@@ -42,6 +46,64 @@ static void setup_keyblock(void) {
     } else {
         printf("writing key failed, maybe written already\n");
     }
+}
+
+TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
+{
+    int ets_status;
+
+    const uint8_t key_data[32] = {
+        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
+        25,26,27,28,29,30,31,32
+    };
+
+    // Results calculated with Python:
+    //
+    // import hmac, hashlib, binascii
+    // key = b"".join([chr(x).encode() for x in range(1,33)])
+    // ", ".join("0x%x" % x for x in hmac.HMAC(key, b"\x00" * 32, hashlib.sha256).digest() )
+    const uint8_t token_data[32] = {
+        0xb2, 0xa4, 0x9b, 0x1c, 0xce, 0x1b, 0xe9, 0x22, 0xbb, 0x7e, 0x43, 0x12, 0x77, 0x41, 0x3e, 0x3e,
+        0x8e, 0x6c, 0x3e, 0x8e, 0x6e, 0x17, 0x62, 0x5c, 0x50, 0xac, 0x66, 0xa9, 0xa8, 0x57, 0x94, 0x9b
+    };
+
+    ets_status = ets_efuse_write_key(ETS_EFUSE_BLOCK_KEY3,
+                        ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG,
+                        key_data, sizeof(key_data));
+
+    if (ets_status == ESP_OK) {
+        ESP_LOGI(TAG, "HMAC_DOWN_JTAG key programmed!");
+    } else {
+        ESP_LOGW(TAG, "HMAC_DOWN_JTAG key programming failed, \
+                       maybe written already. Continuing");
+    }
+
+    TEST_ASSERT_MESSAGE(ESP_OK == esp_efuse_batch_write_begin(),
+                    "Error programming security efuse.\n");
+
+    ets_status = esp_efuse_set_read_protect(ETS_EFUSE_BLOCK_KEY3);
+    if (ets_status != ESP_OK) {
+        ESP_LOGW(TAG, "EFUSE_BLOCK read protect setting failed. \
+                       Not a must prerequisite to run this test case. Continuing");
+    }
+
+    ets_status = esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG);
+    if (ets_status != ESP_OK) {
+        ESP_LOGI(TAG, "JTAG Disable temporarily failed. \
+                       May be disabled already. Continuing the test.");
+    }
+
+    TEST_ASSERT_MESSAGE(ESP_OK == esp_efuse_batch_write_commit(),
+                    "Error programming security efuse.\n");
+
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, esp_hmac_jtag_enable(HMAC_KEY3, token_data),
+		    "JTAG should be re-enabled now, please manually verify");
+}
+
+TEST_CASE("HMAC 'downstream' JTAG Disable", "[hw_crypto]")
+{
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, esp_hmac_jtag_disable(),
+		    "JTAG should be disabled now, please manually verify");
 }
 
 TEST_CASE("HMAC 'upstream' MAC generation with zeroes", "[hw_crypto]")
