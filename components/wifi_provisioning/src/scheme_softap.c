@@ -43,8 +43,11 @@ static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
         },
     };
 
-    strncpy((char *) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
-    wifi_config.ap.ssid_len = strnlen(ssid, sizeof(wifi_config.ap.ssid));
+    /* SSID can be a non NULL terminated string if `ap.ssid_len` is specified
+     * Hence, memcpy is used to support 32 bytes long SSID per 802.11 standard */
+    const size_t ssid_len = strnlen(ssid, sizeof(wifi_config.ap.ssid));
+    memcpy(wifi_config.ap.ssid, ssid, ssid_len);
+    wifi_config.ap.ssid_len = ssid_len;
 
     if (strlen(pass) == 0) {
         memset(wifi_config.ap.password, 0, sizeof(wifi_config.ap.password));
