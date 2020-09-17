@@ -571,7 +571,7 @@ netif_found:
       ip_data.current_ip_header_tot_len += hlen;
 
       /* Skip over this header. */
-      if (hlen > p->len) {
+      if (p->len < 8 || hlen > p->len) {
         LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
           ("IPv6 options header (hlen %"U16_F") does not fit in first pbuf (len %"U16_F"), IPv6 packet dropped.\n",
               hlen, p->len));
@@ -594,7 +594,7 @@ netif_found:
       ip_data.current_ip_header_tot_len += hlen;
 
       /* Skip over this header. */
-      if (hlen > p->len) {
+      if (p->len < 8 || hlen > p->len) {
         LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
           ("IPv6 options header (hlen %"U16_F") does not fit in first pbuf (len %"U16_F"), IPv6 packet dropped.\n",
               hlen, p->len));
@@ -617,7 +617,7 @@ netif_found:
       ip_data.current_ip_header_tot_len += hlen;
 
       /* Skip over this header. */
-      if (hlen > p->len) {
+      if (p->len < 8 || hlen > p->len) {
         LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
           ("IPv6 options header (hlen %"U16_F") does not fit in first pbuf (len %"U16_F"), IPv6 packet dropped.\n",
               hlen, p->len));
