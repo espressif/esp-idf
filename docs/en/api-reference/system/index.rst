@@ -18,7 +18,7 @@ System API
     High Resolution Timer <esp_timer>
     Himem (large external SPI RAM) API <himem>
     Inter-Processor Call <ipc>
-    Call function with external stack <esp_expression_with_stack>
+    Call function with external stack <esp_function_with_shared_stack>
     Interrupt Allocation <intr_alloc>
     Logging <log>
     Miscellaneous System APIs <system>
