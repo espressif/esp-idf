@@ -4,45 +4,46 @@ The Async memcpy API
 Overview
 --------
 
-ESP32-S2 features a dedicated DMA (a.k.a `CP_DMA`) which aims to offload internal memory copy operations from the CPU. When using 160MHz CPU, copying 4KB of data via memcpy() takes 14us, copying via cp_dma_memcpy can complete in 7us.
+{IDF_TARGET_NAME} has a DMA engine which can help to offload internal memory copy operations from the CPU in a asynchronous way.
 
-The async memcpy API wraps all DMA configurations and operations, the signature of :cpp:func:`cp_dma_memcpy` is almost the same to the standard libc one.
+The async memcpy API wraps all DMA configurations and operations, the signature of :cpp:func:`esp_async_memcpy` is almost the same to the standard libc one.
 
-Thanks to the benefit of the DMA, we don't have to wait for each memory copy to be done before we issue another memcpy request. By providing a user defined callback, it's still possible to know when memcpy has finished.
+Thanks to the benefit of the DMA, we don't have to wait for each memory copy to be done before we issue another memcpy request. By the way, it's still possible to know when memcpy is finished by listening in the memcpy callback function.
 
-.. note::
-    Memory copy with external PSRAM is not supported on ESP32-S2, :cpp:func:`cp_dma_memcpy` will abort returning an error if memory address does not reside in SRAM.
+.. only:: esp32s2
+
+    .. note::
+        Memory copy from/to external PSRAM is not supported on ESP32-S2, :cpp:func:`esp_async_memcpy` will abort returning an error if buffer address is not in SRAM.
 
 Configure and Install driver
 ----------------------------
 
-:cpp:func:`cp_dma_driver_install` is used to install `CP_DMA` driver with user's configuration. Please note that async memcpy has to be called with the handle returned by :cpp:func:`cp_dma_driver_install`.
+:cpp:func:`esp_async_memcpy_install` is used to install the driver with user's configuration. Please note that async memcpy has to be called with the handle returned from :cpp:func:`esp_async_memcpy_install`.
 
-Driver configuration is described in :cpp:type:`cp_dma_config_t`:
-:cpp:member:`max_out_stream` and :cpp:member:`max_in_stream`: You can increase/decrease the number if you want to support more/less memcpy operations to be pending in background.
-:cpp:member:`flags`: Control special behavior of `CP_DMA`. If `CP_DMA_FLAGS_WORK_WITH_CACHE_DISABLE` is set in the flags, then `CP_DMA` driver can work even when cache is disabled. Please note, it would increase the consumption of SRAM.
+Driver configuration is described in :cpp:type:`async_memcpy_config_t`:
+:cpp:member:`backlog`: This is used to configured the maximum number of DMA operation that can be working at the background at the same time.
+:cpp:member:`flags`: This is used to enable some special driver features.
 
-:c:macro:`CP_DMA_DEFAULT_CONFIG` provides a default configuration, which specifies the maximum data streams used by underlay DMA engine to 8.
+:c:macro:`ASYNC_MEMCPY_DEFAULT_CONFIG` provides a default configuration, which specifies the backlog to 8.
 
 .. highlight:: c
 
 ::
 
-    cp_dma_config_t config = CP_DMA_DEFAULT_CONFIG();
-    config.max_in_stream = 4; // update the maximum data stream supported by DMA
-    config.max_out_stream = 4;
-    config.flags = CP_DMA_FLAGS_WORK_WITH_CACHE_DISABLE; // the driver can work even when cache is disabled
-    cp_dma_driver_t driver = NULL;
-    ESP_ERROR_CHECK(cp_dma_driver_install(&config, &driver)); // install driver, return driver handle
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    // update the maximum data stream supported by underlying DMA engine
+    config.backlog = 16;
+    async_memcpy_t driver = NULL;
+    ESP_ERROR_CHECK(esp_async_memcpy_install(&config, &driver)); // install driver, return driver handle
 
 Send memory copy request
 ------------------------
 
-:cpp:func:`cp_dma_memcpy` is the API to send memory copy request to DMA engine. It must be called after `CP_DMA` driver is installed successfully. This API is thread safe, so it can be called from different tasks.
+:cpp:func:`esp_async_memcpy` is the API to send memory copy request to DMA engine. It must be called after driver is installed successfully. This API is thread safe, so it can be called from different tasks.
 
-Different from the libc version of `memcpy`, user can pass a callback to :cpp:func:`cp_dma_memcpy` when it's necessary. The callback is executed in the ISR context, make sure you won't violate the the restriction applied to ISR handler.
+Different from the libc version of `memcpy`, user should also pass a callback to :cpp:func:`esp_async_memcpy`, if it's necessary to be notified when the memory copy is done. The callback is executed in the ISR context, make sure you won't violate the the restriction applied to ISR handler.
 
-Besides that, the callback function should reside in IRAM space by applying `IRAM_ATTR` attribute. The prototype of the callback function is :cpp:type:`cp_dma_isr_cb_t`, please note that, the callback function should return true if there's a high priority task woken up due to any operations done in the callback.
+Besides that, the callback function should reside in IRAM space by applying `IRAM_ATTR` attribute. The prototype of the callback function is :cpp:type:`async_memcpy_isr_cb_t`, please note that, the callback function should return true if it wakes up a high priority task by some API like :cpp:func:`xSemaphoreGiveFromISR`.
 
 .. highlight:: c
 
@@ -51,30 +52,25 @@ Besides that, the callback function should reside in IRAM space by applying `IRA
     Semphr_Handle_t semphr; //already initialized in somewhere
 
     // Callback implementation, running in ISR context
-    static IRAM_ATTR bool memcpy_cb(cp_dma_driver_t drv_hdl, cp_dma_event_t *event, void *cb_args)
+    static IRAM_ATTR bool my_async_memcpy_cb(async_memcpy_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
     {
+        SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
         BaseType_t high_task_wakeup = pdFALSE;
-        switch (event->id) {
-        case CP_DMA_EVENT_M2M_DONE:
-            SemphrGiveInISR(semphr, &high_task_wakeup); // high_task_wakeup set to pdTRUE if some high priority task unblocked
-            break;
-        default:
-            break;
-        }
+        SemphrGiveInISR(semphr, &high_task_wakeup); // high_task_wakeup set to pdTRUE if some high priority task unblocked
         return high_task_wakeup == pdTRUE;
     }
 
     // Called from user's context
-    ESP_ERROR_CHECK(cp_dma_memcpy(driver, to, from, copy_len, memcpy_cb, cb_args));
+    ESP_ERROR_CHECK(esp_async_memcpy(driver_handle, to, from, copy_len, my_async_memcpy_cb, my_semaphore));
     //Do something else here
-    SemphrTake(semphr, ...); //wait until the buffer copy is done
+    SemphrTake(my_semaphore, ...); //wait until the buffer copy is done
 
 Uninstall driver (optional)
 ---------------------------
 
-:cpp:func:`cp_dma_driver_uninstall` is used to uninstall `CP_DMA` driver. It's not necessary to uninstall the driver after each memcpy operation. If your application won't use `CP_DMA` anymore, then this API can recycle the memory used by driver.
+:cpp:func:`esp_async_memcpy_uninstall` is used to uninstall asynchronous memcpy driver. It's not necessary to uninstall the driver after each memcpy operation. If you know your application won't use this driver anymore, then this API can recycle the memory for you.
 
 API Reference
 -------------
 
-.. include-build-file:: inc/cp_dma.inc
+.. include-build-file:: inc/esp_async_memcpy.inc

@@ -74,10 +74,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_SPI3_CLK_EN;
     case PERIPH_VSPI_MODULE:
         return SYSTEM_SPI4_CLK_EN;
-    case PERIPH_SPI2_DMA_MODULE:
-        return SYSTEM_SPI2_DMA_CLK_EN;
-    case PERIPH_SPI3_DMA_MODULE:
-        return SYSTEM_SPI3_DMA_CLK_EN;
     case PERIPH_SDMMC_MODULE:
         return SYSTEM_SDIO_HOST_CLK_EN;
     case PERIPH_TWAI_MODULE:
@@ -94,6 +90,10 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_BT_BASEBAND_EN;
     case PERIPH_BT_LC_MODULE:
         return SYSTEM_BT_LC_EN;
+    case PERIPH_SYSTIMER_MODULE:
+        return SYSTEM_SYSTIMER_CLK_EN;
+    case PERIPH_GDMA_MODULE:
+        return SYSTEM_DMA_CLK_EN;
     default:
         return 0;
     }
@@ -151,14 +151,14 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_SPI3_RST;
     case PERIPH_VSPI_MODULE:
         return SYSTEM_SPI4_RST;
-    case PERIPH_SPI2_DMA_MODULE:
-        return SYSTEM_SPI2_DMA_RST;
-    case PERIPH_SPI3_DMA_MODULE:
-        return SYSTEM_SPI3_DMA_RST;
     case PERIPH_SDMMC_MODULE:
         return SYSTEM_SDIO_HOST_RST;
     case PERIPH_TWAI_MODULE:
         return SYSTEM_TWAI_RST;
+    case PERIPH_SYSTIMER_MODULE:
+        return SYSTEM_SYSTIMER_RST;
+    case PERIPH_GDMA_MODULE:
+        return SYSTEM_DMA_RST;
     default:
         return 0;
     }
@@ -176,7 +176,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return SYSTEM_WIFI_CLK_EN_REG ;
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
-    case PERIPH_SPI_SHARED_DMA_MODULE:
+    case PERIPH_GDMA_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
@@ -195,7 +195,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
         return SYSTEM_CORE_RST_EN_REG;
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
-    case PERIPH_SPI_SHARED_DMA_MODULE:
+    case PERIPH_GDMA_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
@@ -228,4 +228,3 @@ static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
 
 #ifdef __cplusplus
 }
-#endif
