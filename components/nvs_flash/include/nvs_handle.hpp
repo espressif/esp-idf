@@ -44,9 +44,7 @@ public:
      *
      * Sets value for key. Note that physical storage will not be updated until nvs_commit function is called.
      *
-     * @param[in]  key     Key name. Maximal length is determined by the underlying
-     *                     implementation, but is guaranteed to be at least
-     *                     15 characters. Shouldn't be empty.
+     * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
      * @param[in]  value   The value to set. Allowed types are the ones declared in ItemType as well as enums.
      *                     For strings, the maximum length (including null character) is
      *                     4000 bytes.
@@ -79,9 +77,7 @@ public:
      *
      * In case of any error, out_value is not modified.
      *
-     * @param[in]     key        Key name. Maximal length is determined by the underlying
-     *                           implementation, but is guaranteed to be at least
-     *                           15 characters. Shouldn't be empty.
+     * @param[in]     key        Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
      * @param         value      The output value. All integral types which are declared in ItemType as well as enums
      *                           are allowed. Note however that enums lost their type information when stored in NVS.
      *                           Ensure that the correct enum type is used during retrieval with \ref get_item!
@@ -101,7 +97,7 @@ public:
      * This family of functions set value for the key, given its name. Note that
      * actual storage will not be updated until nvs_commit function is called.
      *
-     * @param[in]  key     Key name. Maximal length is 15 characters. Shouldn't be empty.
+     * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
      * @param[in]  blob    The blob value to set.
      * @param[in]  len     length of binary value to set, in bytes; Maximum length is
      *                     508000 bytes or (97.6% of the partition size - 4000) bytes
@@ -138,9 +134,7 @@ public:
      * It is suggested that nvs_get/set_str is used for zero-terminated C strings, and
      * nvs_get/set_blob used for arbitrary data structures.
      *
-     * @param[in]     key        Key name. Maximal length is determined by the underlying
-     *                           implementation, but is guaranteed to be at least
-     *                           15 characters. Shouldn't be empty.
+     * @param[in]     key        Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
      * @param         out_str/   Pointer to the output value.
      *                out_blob
      * @param[inout]  length     A non-zero pointer to the variable holding the length of out_value.
