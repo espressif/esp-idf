@@ -419,7 +419,8 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup(void)
 {
-#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+#if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
+    ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
 #ifdef CONFIG_ESP32_ULP_COPROC_ENABLED
@@ -455,7 +456,8 @@ static void timer_wakeup_prepare(void)
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
-#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+#if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
+    ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
     if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN)) {

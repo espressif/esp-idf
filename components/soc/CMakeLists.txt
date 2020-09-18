@@ -38,8 +38,14 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "src/regi2c_ctrl.c")
 endif()
 
+set(priv_requires ${target})
+if(${target} STREQUAL "esp32")
+     # For RTC_EXT_CRYST_ADDIT_CURRENT to get chip revision in rtc_clk.c
+     list(APPEND priv_requires efuse)
+endif()
+
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES ${target}
+                       PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_IDF_TARGET_ESP32)

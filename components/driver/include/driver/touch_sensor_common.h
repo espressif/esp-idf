@@ -28,6 +28,7 @@ extern "C" {
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_NO_MEM Touch pad init error
+ *     - ESP_ERR_NOT_SUPPORTED Touch pad is providing current to external XTAL
  */
 esp_err_t touch_pad_init(void);
 
