@@ -256,9 +256,9 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
                               size_t dst_offset, const void* src, size_t size);
 
 /**
- * @brief Read data from the partition
+ * @brief Read data from the partition without any transformation/decryption.
  *
- * @note This function is essentially the same as \c esp_partition_write() above.
+ * @note This function is essentially the same as \c esp_partition_read() above.
  *       It just never decrypts data but returns it as is.
  *
  * @param partition Pointer to partition structure obtained using
