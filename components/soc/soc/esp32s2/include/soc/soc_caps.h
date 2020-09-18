@@ -43,6 +43,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE 1
 #define SOC_RISCV_COPROC_SUPPORTED 1
 #define SOC_USB_SUPPORTED 1
+#define SOC_PCNT_SUPPORTED 1
 
 #define SOC_CACHE_SUPPORT_WRAP    1
 
@@ -132,6 +133,7 @@
 // ESP32-S2 have 1 PCNT peripheral
 #define SOC_PCNT_PORT_NUM      (1)
 #define SOC_PCNT_UNIT_NUM      (4) // ESP32-S2 only have 4 unit
+#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_CHANNEL_MEM_WORDS (64)       /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */

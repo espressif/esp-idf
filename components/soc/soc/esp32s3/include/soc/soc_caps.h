@@ -6,6 +6,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_PCNT_SUPPORTED 1
 #define SOC_TWAI_SUPPORTED 1
 #define SOC_GDMA_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 2
@@ -42,7 +43,9 @@
 #include "mpu_caps.h"
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#include "pcnt_caps.h"
+#define SOC_PCNT_PORT_NUM         (1)
+#define SOC_PCNT_UNIT_NUM         (4)
+#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #include "rmt_caps.h"

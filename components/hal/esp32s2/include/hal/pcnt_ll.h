@@ -33,6 +33,50 @@ extern "C" {
 #define PCNT_LL_GET_HW(num) (((num) == 0) ? (&PCNT) : NULL)
 
 /**
+ * @brief Set PCNT channel edge mode
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param channel PCNT channel number
+ * @param pos_mode Counter mode when detecting positive edge
+ * @param neg_mode Counter mode when detecting negative edge
+ */
+static inline void pcnt_ll_set_edge_mode(pcnt_dev_t *hw, pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode)
+{
+    typeof(hw->conf_unit[unit].conf0) conf0_reg = hw->conf_unit[unit].conf0;
+    if (channel == 0) {
+        conf0_reg.ch0_pos_mode = pos_mode;
+        conf0_reg.ch0_neg_mode = neg_mode;
+    } else {
+        conf0_reg.ch1_pos_mode = pos_mode;
+        conf0_reg.ch1_neg_mode = neg_mode;
+    }
+    hw->conf_unit[unit].conf0 = conf0_reg;
+}
+
+/**
+ * @brief Set PCNT channel level mode
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param channel PCNT channel number
+ * @param hctrl_mode Counter mode when control signal is high level
+ * @param lctrl_mode Counter mode when control signal is low level
+ */
+static inline void pcnt_ll_set_level_mode(pcnt_dev_t *hw, pcnt_unit_t unit, pcnt_channel_t channel, pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode)
+{
+    typeof(hw->conf_unit[unit].conf0) conf0_reg = hw->conf_unit[unit].conf0;
+    if (channel == 0) {
+        conf0_reg.ch0_hctrl_mode = hctrl_mode;
+        conf0_reg.ch0_lctrl_mode = lctrl_mode;
+    } else {
+        conf0_reg.ch1_hctrl_mode = hctrl_mode;
+        conf0_reg.ch1_lctrl_mode = lctrl_mode;
+    }
+    hw->conf_unit[unit].conf0 = conf0_reg;
+}
+
+/**
  * @brief Set PCNT counter mode
  *
  * @param hw Peripheral PCNT hardware instance address.
@@ -45,19 +89,8 @@ extern "C" {
  */
 static inline void pcnt_ll_set_mode(pcnt_dev_t *hw, pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode, pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode)
 {
-    typeof(hw->conf_unit[unit].conf0) conf0_reg = hw->conf_unit[unit].conf0;
-    if (channel == 0) {
-        conf0_reg.ch0_pos_mode = pos_mode;
-        conf0_reg.ch0_neg_mode = neg_mode;
-        conf0_reg.ch0_hctrl_mode = hctrl_mode;
-        conf0_reg.ch0_lctrl_mode = lctrl_mode;
-    } else {
-        conf0_reg.ch1_pos_mode = pos_mode;
-        conf0_reg.ch1_neg_mode = neg_mode;
-        conf0_reg.ch1_hctrl_mode = hctrl_mode;
-        conf0_reg.ch1_lctrl_mode = lctrl_mode;
-    }
-    hw->conf_unit[unit].conf0 = conf0_reg;
+    pcnt_ll_set_edge_mode(hw, unit, channel, pos_mode, neg_mode);
+    pcnt_ll_set_level_mode(hw, unit, channel, hctrl_mode, lctrl_mode);
 }
 
 /**
@@ -245,6 +278,18 @@ static inline void pcnt_ll_get_event_value(pcnt_dev_t *hw, pcnt_unit_t unit, pcn
     } else {
         *value = 0;
     }
+}
+
+/**
+ * @brief Get PCNT event status
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @return event status word
+ */
+static inline uint32_t pcnt_ll_get_event_status(pcnt_dev_t *hw, pcnt_unit_t unit)
+{
+    return hw->status_unit[unit].val;
 }
 
 /**

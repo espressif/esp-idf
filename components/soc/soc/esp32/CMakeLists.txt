@@ -2,6 +2,7 @@ add_library(soc_esp32 STATIC
     "adc_periph.c"
     "dac_periph.c"
     "gpio_periph.c"
+    "pcnt_periph.c"
     "rtc_io_periph.c"
     "rtc_periph.c"
     "sdio_slave_periph.c"
