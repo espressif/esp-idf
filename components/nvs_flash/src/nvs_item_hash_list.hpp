@@ -27,16 +27,16 @@ class HashList
 public:
     HashList();
     ~HashList();
-    
-    void insert(const Item& item, size_t index);
+
+    esp_err_t insert(const Item& item, size_t index);
     void erase(const size_t index, bool itemShouldExist=true);
     size_t find(size_t start, const Item& item);
     void clear();
-    
+
 private:
     HashList(const HashList& other);
     const HashList& operator= (const HashList& rhs);
-    
+
 protected:
 
     struct HashListNode {

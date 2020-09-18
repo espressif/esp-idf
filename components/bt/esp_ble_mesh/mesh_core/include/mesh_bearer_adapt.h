@@ -627,7 +627,7 @@ struct bt_mesh_gatt_attr {
     .uuid = BLE_MESH_UUID_GATT_CHRC,                            \
     .perm = BLE_MESH_GATT_PERM_READ,                            \
     .read = bt_mesh_gatts_attr_read_chrc,                       \
-    .user_data = (&(struct bt_mesh_gatt_char) { .uuid = _uuid, \
+    .user_data = (&(struct bt_mesh_gatt_char) { .uuid = _uuid,  \
                            .properties = _props, }),            \
 }
 
@@ -709,10 +709,11 @@ int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_service_unregister(struct bt_mesh_gatt_service *svc);
 
 ssize_t bt_mesh_gatts_attr_read_included(struct bt_mesh_conn *conn,
-        const struct bt_mesh_gatt_attr *attr,
-        void *buf, u16_t len, u16_t offset);
+                                         const struct bt_mesh_gatt_attr *attr,
+                                         void *buf, u16_t len, u16_t offset);
 
-ssize_t bt_mesh_gatts_attr_read(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
+ssize_t bt_mesh_gatts_attr_read(struct bt_mesh_conn *conn,
+                                const struct bt_mesh_gatt_attr *attr,
                                 void *buf, u16_t buf_len, u16_t offset,
                                 const void *value, u16_t value_len);
 
@@ -721,10 +722,11 @@ ssize_t bt_mesh_gatts_attr_read_service(struct bt_mesh_conn *conn,
                                         void *buf, u16_t len, u16_t offset);
 
 ssize_t bt_mesh_gatts_attr_read_chrc(struct bt_mesh_conn *conn,
-                                     const struct bt_mesh_gatt_attr *attr, void *buf,
-                                     u16_t len, u16_t offset);
+                                     const struct bt_mesh_gatt_attr *attr,
+                                     void *buf, u16_t len, u16_t offset);
 
-int bt_mesh_gatts_notify(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
+int bt_mesh_gatts_notify(struct bt_mesh_conn *conn,
+                         const struct bt_mesh_gatt_attr *attr,
                          const void *data, u16_t len);
 
 u16_t bt_mesh_gatt_get_mtu(struct bt_mesh_conn *conn);
@@ -750,7 +752,8 @@ void bt_mesh_gattc_exchange_mtu(u8_t index);
 
 u16_t bt_mesh_gattc_get_mtu_info(struct bt_mesh_conn *conn);
 
-int bt_mesh_gattc_write_no_rsp(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
+int bt_mesh_gattc_write_no_rsp(struct bt_mesh_conn *conn,
+                               const struct bt_mesh_gatt_attr *attr,
                                const void *data, u16_t len);
 
 void bt_mesh_gattc_disconnect(struct bt_mesh_conn *conn);

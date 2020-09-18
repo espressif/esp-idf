@@ -35,10 +35,28 @@ bool esp_ble_mesh_node_is_provisioned(void)
     return bt_mesh_is_provisioned();
 }
 
+static bool prov_bearers_valid(esp_ble_mesh_prov_bearer_t bearers)
+{
+    if ((!(bearers & (ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT))) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            !IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & ESP_BLE_MESH_PROV_ADV)) ||
+        (!IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            !(bearers & ESP_BLE_MESH_PROV_GATT))) {
+        return false;
+    }
+    return true;
+}
+
 esp_err_t esp_ble_mesh_node_prov_enable(esp_ble_mesh_prov_bearer_t bearers)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
+
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
@@ -56,6 +74,10 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers)
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -68,7 +90,7 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers)
 }
 
 esp_err_t esp_ble_mesh_node_set_oob_pub_key(uint8_t pub_key_x[32], uint8_t pub_key_y[32],
-        uint8_t private_key[32])
+                                            uint8_t private_key[32])
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -157,7 +179,7 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name)
 
 #if (CONFIG_BLE_MESH_PROVISIONER)
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
-        uint8_t pub_key_y[32])
+                                                    uint8_t pub_key_y[32])
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -232,6 +254,10 @@ esp_err_t esp_ble_mesh_provisioner_prov_enable(esp_ble_mesh_prov_bearer_t bearer
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -249,6 +275,10 @@ esp_err_t esp_ble_mesh_provisioner_prov_disable(esp_ble_mesh_prov_bearer_t beare
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (prov_bearers_valid(bearers) == false) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -262,7 +292,7 @@ esp_err_t esp_ble_mesh_provisioner_prov_disable(esp_ble_mesh_prov_bearer_t beare
 }
 
 esp_err_t esp_ble_mesh_provisioner_add_unprov_dev(esp_ble_mesh_unprov_dev_add_t *add_dev,
-        esp_ble_mesh_dev_add_flag_t flags)
+                                                  esp_ble_mesh_dev_add_flag_t flags)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -288,8 +318,10 @@ esp_err_t esp_ble_mesh_provisioner_add_unprov_dev(esp_ble_mesh_unprov_dev_add_t 
 }
 
 esp_err_t esp_ble_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16],
-            esp_ble_mesh_bd_addr_t addr, esp_ble_mesh_addr_type_t addr_type,
-            esp_ble_mesh_prov_bearer_t bearer, uint16_t oob_info, uint16_t unicast_addr)
+                                                         esp_ble_mesh_bd_addr_t addr,
+                                                         esp_ble_mesh_addr_type_t addr_type,
+                                                         esp_ble_mesh_prov_bearer_t bearer,
+                                                         uint16_t oob_info, uint16_t unicast_addr)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -347,7 +379,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_dev(esp_ble_mesh_device_delete_t *del_
 }
 
 esp_err_t esp_ble_mesh_provisioner_set_dev_uuid_match(const uint8_t *match_val, uint8_t match_len,
-        uint8_t offset, bool prov_after_match)
+                                                      uint8_t offset, bool prov_after_match)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};

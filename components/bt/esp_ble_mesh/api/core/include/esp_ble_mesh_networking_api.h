@@ -23,7 +23,7 @@ extern "C" {
 
 /** @brief: event, event code of user-defined model events; param, parameters of user-defined model events */
 typedef void (* esp_ble_mesh_model_cb_t)(esp_ble_mesh_model_cb_event_t event,
-        esp_ble_mesh_model_cb_param_t *param);
+                                         esp_ble_mesh_model_cb_param_t *param);
 
 /**
  * @brief         Register BLE Mesh callback for user-defined models' operations.
@@ -104,8 +104,9 @@ esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model);
  *
  */
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
-        uint16_t length, uint8_t *data);
+                                             esp_ble_mesh_msg_ctx_t *ctx,
+                                             uint32_t opcode,
+                                             uint16_t length, uint8_t *data);
 
 /**
  * @brief         Send client model message (such as model get, set, etc).
@@ -123,9 +124,11 @@ esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
  *
  */
 esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
-        uint16_t length, uint8_t *data, int32_t msg_timeout,
-        bool need_rsp, esp_ble_mesh_dev_role_t device_role);
+                                             esp_ble_mesh_msg_ctx_t *ctx,
+                                             uint32_t opcode,
+                                             uint16_t length, uint8_t *data,
+                                             int32_t msg_timeout, bool need_rsp,
+                                             esp_ble_mesh_dev_role_t device_role);
 
 /**
  * @brief         Send a model publication message.
@@ -166,8 +169,8 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
  *
  */
 esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_server_state_type_t type,
-        esp_ble_mesh_server_state_value_t *value);
+                                                 esp_ble_mesh_server_state_type_t type,
+                                                 esp_ble_mesh_server_state_value_t *value);
 
 /**
  * @brief         Reset the provisioning procedure of the local BLE Mesh node.
@@ -226,7 +229,8 @@ uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
  * @return       ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t unicast_addr, uint8_t *data, uint16_t length);
+esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t unicast_addr,
+                                                        uint8_t *data, uint16_t length);
 
 /**
  * @brief        This function is called to get the provisioned node information
@@ -329,7 +333,8 @@ esp_err_t esp_ble_mesh_provisioner_delete_node_with_addr(uint16_t unicast_addr);
  * @return        ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16], uint16_t net_idx, uint16_t app_idx);
+esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
+                                                     uint16_t net_idx, uint16_t app_idx);
 
 /**
  * @brief         This function is used to update a local AppKey for Provisioner.
@@ -342,7 +347,7 @@ esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16], 
  *
  */
 esp_err_t esp_ble_mesh_provisioner_update_local_app_key(const uint8_t app_key[16],
-                uint16_t net_idx, uint16_t app_idx);
+                                                        uint16_t net_idx, uint16_t app_idx);
 
 /**
  * @brief         This function is called by Provisioner to get the local app key value.
@@ -370,7 +375,7 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_app_key(uint16_t net_idx, uint
  *
  */
 esp_err_t esp_ble_mesh_provisioner_bind_app_key_to_local_model(uint16_t element_addr, uint16_t app_idx,
-        uint16_t model_id, uint16_t company_id);
+                                                               uint16_t model_id, uint16_t company_id);
 
 /**
  * @brief         This function is called by Provisioner to add local network key.

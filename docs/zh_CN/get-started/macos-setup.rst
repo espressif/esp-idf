@@ -23,11 +23,11 @@
 
 Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 
-|download_link_osx|
+|download_link_macos|
 
 下载压缩文件之后，解压到 ``~/esp`` 目录中:
 
-.. include:: /_build/inc/unpack-code-osx.inc
+.. include:: /_build/inc/unpack-code-macos.inc
 
 .. _setup-macos-toolchain-add-it-to-path:
 

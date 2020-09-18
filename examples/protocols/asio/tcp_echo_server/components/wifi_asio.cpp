@@ -124,9 +124,9 @@ extern "C" void app_main()
             256, 0, 0, NULL, 0) );
     /* Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     // wait till we receive IP, so asio realated code can be started
     xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, 1, 1, portMAX_DELAY);

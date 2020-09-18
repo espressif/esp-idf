@@ -61,6 +61,12 @@ typedef uint8_t esp_ble_mesh_octet8_t[ESP_BLE_MESH_OCTET8_LEN];
 /*!< Invalid Company ID */
 #define ESP_BLE_MESH_CID_NVAL                     0xFFFF
 
+/*!< Special TTL value to request using configured default TTL */
+#define ESP_BLE_MESH_TTL_DEFAULT                  0xFF
+
+/*!< Maximum allowed TTL value */
+#define ESP_BLE_MESH_TTL_MAX                      0x7F
+
 #define ESP_BLE_MESH_ADDR_UNASSIGNED              0x0000
 #define ESP_BLE_MESH_ADDR_ALL_NODES               0xFFFF
 #define ESP_BLE_MESH_ADDR_PROXIES                 0xFFFC
@@ -265,7 +271,7 @@ typedef enum {
 #define ESP_BLE_MESH_MODEL_OP_2(b0, b1)     (((b0) << 8) | (b1))
 #define ESP_BLE_MESH_MODEL_OP_3(b0, cid)    ((((b0) << 16) | 0xC00000) | (cid))
 
-/*!< This macro is associated with BLE_MESH_MODEL in mesh_access.h */
+/*!< This macro is associated with BLE_MESH_MODEL_CB in mesh_access.h */
 #define ESP_BLE_MESH_SIG_MODEL(_id, _op, _pub, _user_data)          \
 {                                                                   \
     .model_id = (_id),                                              \
@@ -278,7 +284,7 @@ typedef enum {
     .user_data = _user_data,                                        \
 }
 
-/*!< This macro is associated with BLE_MESH_MODEL_VND in mesh_access.h */
+/*!< This macro is associated with BLE_MESH_MODEL_VND_CB in mesh_access.h */
 #define ESP_BLE_MESH_VENDOR_MODEL(_company, _id, _op, _pub, _user_data) \
 {                                                                       \
     .vnd.company_id = (_company),                                       \
@@ -455,6 +461,17 @@ typedef struct {
  */
 #define ESP_BLE_MESH_MODEL_OP_END {0, 0, 0}
 
+/** Abstraction that describes a model callback structure.
+ *  This structure is associated with struct bt_mesh_model_cb in mesh_access.h.
+ */
+typedef struct {
+    /** Callback used during model initialization. Initialized by the stack. */
+    esp_ble_mesh_cb_t init_cb;
+
+    /** Callback used during model deinitialization. Initialized by the stack. */
+    esp_ble_mesh_cb_t deinit_cb;
+} esp_ble_mesh_model_cbs_t;
+
 /** Abstraction that describes a Mesh Model instance.
  *  This structure is associated with struct bt_mesh_model in mesh_access.h
  */
@@ -487,6 +504,9 @@ struct esp_ble_mesh_model {
 
     /** Model operation context */
     esp_ble_mesh_model_op_t *op;
+
+    /** Model callback structure */
+    esp_ble_mesh_model_cbs_t *cb;
 
     /** Model-specific user data */
     void *user_data;
@@ -522,7 +542,7 @@ typedef struct {
     /** Force sending reliably by using segment acknowledgement */
     uint8_t  send_rel: 1;
 
-    /** TTL, or BLE_MESH_TTL_DEFAULT for default TTL. */
+    /** TTL, or ESP_BLE_MESH_TTL_DEFAULT for default TTL. */
     uint8_t  send_ttl;
 
     /** Opcode of a received message. Not used for sending message. */

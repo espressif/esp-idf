@@ -48,11 +48,11 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
 下载 MacOS 版本的 ESP32 工具链，请前往乐鑫官网：
 
-|download_link_osx|
+|download_link_macos|
 
 完成下载后，请在 ``~/esp`` 目录下进行解压：
 
-.. include:: /_build/inc/unpack-code-osx.inc
+.. include:: /_build/inc/unpack-code-macos.inc
 
 .. _setup-macos-toolchain-add-it-to-path-cmake:
 

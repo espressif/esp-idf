@@ -29,8 +29,11 @@ extern "C" {
 typedef bt_mesh_client_user_data_t      bt_mesh_light_client_t;
 typedef bt_mesh_client_internal_data_t  light_internal_data_t;
 
+/* Lighting Client Model Callback */
+extern const struct bt_mesh_model_cb bt_mesh_lighting_client_cb;
+
 /* Light Lightness Client Model Context */
-extern const struct bt_mesh_model_op light_lightness_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_light_lightness_cli_op[];
 
 /** @def BLE_MESH_MODEL_LIGHT_LIGHTNESS_CLI
  *
@@ -43,8 +46,8 @@ extern const struct bt_mesh_model_op light_lightness_cli_op[];
  *  @return New light lightness client model instance.
  */
 #define BLE_MESH_MODEL_LIGHT_LIGHTNESS_CLI(cli_pub, cli_data)   \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,   \
-                    light_lightness_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,   \
+            bt_mesh_light_lightness_cli_op, cli_pub, cli_data, &bt_mesh_lighting_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_light_lightness_client_t;
 
@@ -102,7 +105,7 @@ struct bt_mesh_light_lightness_range_set {
 };
 
 /* Light CTL Client Model Context */
-extern const struct bt_mesh_model_op light_ctl_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_light_ctl_cli_op[];
 
 /** @def BLE_MESH_MODEL_LIGHT_CTL_CLI
  *
@@ -115,8 +118,8 @@ extern const struct bt_mesh_model_op light_ctl_cli_op[];
  *  @return New light CTL client model instance.
  */
 #define BLE_MESH_MODEL_LIGHT_CTL_CLI(cli_pub, cli_data)     \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,     \
-                    light_ctl_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,     \
+            bt_mesh_light_ctl_cli_op, cli_pub, cli_data, &bt_mesh_lighting_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_light_ctl_client_t;
 
@@ -181,7 +184,7 @@ struct bt_mesh_light_ctl_default_set {
 };
 
 /* Light HSL Client Model Context */
-extern const struct bt_mesh_model_op light_hsl_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_light_hsl_cli_op[];
 
 /** @def BLE_MESH_MODEL_LIGHT_HSL_CLI
  *
@@ -194,8 +197,8 @@ extern const struct bt_mesh_model_op light_hsl_cli_op[];
  *  @return New light HSL client model instance.
  */
 #define BLE_MESH_MODEL_LIGHT_HSL_CLI(cli_pub, cli_data)     \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,     \
-                    light_hsl_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,     \
+            bt_mesh_light_hsl_cli_op, cli_pub, cli_data, &bt_mesh_lighting_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_light_hsl_client_t;
 
@@ -283,7 +286,7 @@ struct bt_mesh_light_hsl_range_set {
 };
 
 /* Light xyL Client Model Context */
-extern const struct bt_mesh_model_op light_xyl_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_light_xyl_cli_op[];
 
 /** @def BLE_MESH_MODEL_LIGHT_XYL_CLI
  *
@@ -296,8 +299,8 @@ extern const struct bt_mesh_model_op light_xyl_cli_op[];
  *  @return New light xyL client model instance.
  */
 #define BLE_MESH_MODEL_LIGHT_XYL_CLI(cli_pub, cli_data)     \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,     \
-                    light_xyl_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,     \
+            bt_mesh_light_xyl_cli_op, cli_pub, cli_data, &bt_mesh_lighting_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_light_xyl_client_t;
 
@@ -355,7 +358,7 @@ struct bt_mesh_light_xyl_range_set {
 };
 
 /* Light LC Client Model Context */
-extern const struct bt_mesh_model_op light_lc_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_light_lc_cli_op[];
 
 /** @def BLE_MESH_MODEL_LIGHT_LC_CLI
  *
@@ -368,8 +371,8 @@ extern const struct bt_mesh_model_op light_lc_cli_op[];
  *  @return New light lc client model instance.
  */
 #define BLE_MESH_MODEL_LIGHT_LC_CLI(cli_pub, cli_data)      \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_LC_CLI,      \
-                    light_lc_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_LIGHT_LC_CLI,      \
+            bt_mesh_light_lc_cli_op, cli_pub, cli_data, &bt_mesh_lighting_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_light_lc_client_t;
 
@@ -419,126 +422,24 @@ struct bt_mesh_light_lc_property_set {
 };
 
 /**
- * @brief This function is called to initialize light lightness client model user_data.
- *
- * @param[in] model:   Pointer to light lightness client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_lightness_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize light ctl client model user_data.
- *
- * @param[in] model:   Pointer to light ctl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_ctl_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize light hsl client model user_data.
- *
- * @param[in] model:   Pointer to light hsl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_hsl_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize light xyl client model user_data.
- *
- * @param[in] model:   Pointer to light xyl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_xyl_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize light lc client model user_data.
- *
- * @param[in] model:   Pointer to light lc client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_lc_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize light lightness client model user_data.
- *
- * @param[in] model:   Pointer to light lightness client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_lightness_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize light ctl client model user_data.
- *
- * @param[in] model:   Pointer to light ctl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_ctl_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize light hsl client model user_data.
- *
- * @param[in] model:   Pointer to light hsl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_hsl_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize light xyl client model user_data.
- *
- * @param[in] model:   Pointer to light xyl client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_xyl_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize light lc client model user_data.
- *
- * @param[in] model:   Pointer to light lc client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_light_lc_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
  * @brief This function is called to get light states.
  *
  * @param[in]  common: Message common information structure
  * @param[in]  get:    Pointer of light get message value
- * @param[out] status: Pointer of light status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
+int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *get);
 
 /**
  * @brief This function is called to set light states.
  *
  * @param[in]  common: Message common information structure
  * @param[in]  set:    Pointer of light set message value
- * @param[out] status: Pointer of light status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
+int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set);
 
 #ifdef __cplusplus
 }

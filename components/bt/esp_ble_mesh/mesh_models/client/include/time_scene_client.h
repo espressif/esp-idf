@@ -29,8 +29,11 @@ extern "C" {
 typedef bt_mesh_client_user_data_t      bt_mesh_time_scene_client_t;
 typedef bt_mesh_client_internal_data_t  time_scene_internal_data_t;
 
+/* Time Scene Client Model Callback */
+extern const struct bt_mesh_model_cb bt_mesh_time_scene_client_cb;
+
 /* Time Client Model Context */
-extern const struct bt_mesh_model_op time_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_time_cli_op[];
 
 /** @def BLE_MESH_MODEL_TIME_CLI
  *
@@ -43,8 +46,8 @@ extern const struct bt_mesh_model_op time_cli_op[];
  *  @return New time client model instance.
  */
 #define BLE_MESH_MODEL_TIME_CLI(cli_pub, cli_data)      \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_TIME_CLI,      \
-                    time_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_TIME_CLI,      \
+            bt_mesh_time_cli_op, cli_pub, cli_data, &bt_mesh_time_scene_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_time_client_t;
 
@@ -100,7 +103,7 @@ struct bt_mesh_time_role_set {
 };
 
 /* Scene Client Model Context */
-extern const struct bt_mesh_model_op scene_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_scene_cli_op[];
 
 /** @def BLE_MESH_MODEL_SCENE_CLI
  *
@@ -113,8 +116,8 @@ extern const struct bt_mesh_model_op scene_cli_op[];
  *  @return New scene client model instance.
  */
 #define BLE_MESH_MODEL_SCENE_CLI(cli_pub, cli_data)     \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SCENE_CLI,     \
-                    scene_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_SCENE_CLI,     \
+            bt_mesh_scene_cli_op, cli_pub, cli_data, &bt_mesh_time_scene_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_scene_client_t;
 
@@ -149,7 +152,7 @@ struct bt_mesh_scene_delete {
 };
 
 /* Scheduler Client Model Context */
-extern const struct bt_mesh_model_op scheduler_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_scheduler_cli_op[];
 
 /** @def BLE_MESH_MODEL_SCHEDULER_CLI
  *
@@ -162,8 +165,8 @@ extern const struct bt_mesh_model_op scheduler_cli_op[];
  *  @return New scheduler client model instance.
  */
 #define BLE_MESH_MODEL_SCHEDULER_CLI(cli_pub, cli_data)     \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SCHEDULER_CLI,     \
-                    scheduler_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_SCHEDULER_CLI,     \
+            bt_mesh_scheduler_cli_op, cli_pub, cli_data, &bt_mesh_time_scene_client_cb)
 
 typedef bt_mesh_client_user_data_t  bt_mesh_scheduler_client_t;
 
@@ -204,86 +207,24 @@ struct bt_mesh_scheduler_act_set {
 };
 
 /**
- * @brief This function is called to initialize time client model user_data.
- *
- * @param[in] model:   Pointer to time client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_time_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize scene client model user_data.
- *
- * @param[in] model:   Pointer to scene client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_scene_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to initialize scheduler client model user_data.
- *
- * @param[in] model:   Pointer to scheduler client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_scheduler_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize time client model user_data.
- *
- * @param[in] model:   Pointer to time client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_time_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize scene client model user_data.
- *
- * @param[in] model:   Pointer to scene client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_scene_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize scheduler client model user_data.
- *
- * @param[in] model:   Pointer to scheduler client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_scheduler_cli_deinit(struct bt_mesh_model *model, bool primary);
-
-/**
  * @brief This function is called to get scene states.
  *
  * @param[in]  common: Message common information structure
  * @param[in]  get:    Pointer of time scene get message value
- * @param[out] status: Pointer of time scene status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get);
 
 /**
  * @brief This function is called to set scene states.
  *
  * @param[in]  common: Message common information structure
  * @param[in]  set:    Pointer of time scene set message value
- * @param[out] status: Pointer of time scene status message value
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set);
 
 #ifdef __cplusplus
 }
