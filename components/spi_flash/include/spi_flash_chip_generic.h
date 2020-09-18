@@ -72,6 +72,7 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size);
  *
  * @return
  *      - ESP_OK if success
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
  *      - or other error passed from the ``set_write_protect``, ``wait_idle`` or ``erase_chip`` function of host driver
  */
 esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip);
@@ -84,6 +85,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip);
  *
  * @return
  *      - ESP_OK if success
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
  *      - or other error passed from the ``set_write_protect``, ``wait_idle`` or ``erase_sector`` function of host driver
  */
 esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_address);
@@ -96,6 +98,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
  *
  * @return
  *      - ESP_OK if success
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
  *      - or other error passed from the ``set_write_protect``, ``wait_idle`` or ``erase_block`` function of host driver
  */
 esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_address);
@@ -129,6 +132,7 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
  *
  * @return
  *      - ESP_OK if success
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
  *      - or other error passed from the ``wait_idle`` or ``program_page`` function of host driver
  */
 esp_err_t

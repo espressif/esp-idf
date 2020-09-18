@@ -117,14 +117,21 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
-    if (err == ESP_OK) {
+    //The chip didn't accept the previous write command. Ignore this in preparation stage.
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         chip->host->driver->erase_chip(chip->host);
+        chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->chip_erase_timeout);
 #endif
     }
+    // Ensure WEL is 0, even if the erase failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
+    }
+
     return err;
 }
 
@@ -134,14 +141,21 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
-    if (err == ESP_OK) {
+    //The chip didn't accept the previous write command. Ignore this in preparationstage.
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         chip->host->driver->erase_sector(chip->host, start_address);
+        chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->sector_erase_timeout);
 #endif
     }
+    // Ensure WEL is 0, even if the erase failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
+    }
+
     return err;
 }
 
@@ -151,14 +165,21 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
-    if (err == ESP_OK) {
+    //The chip didn't accept the previous write command. Ignore this in preparationstage.
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         chip->host->driver->erase_block(chip->host, start_address);
+        chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->block_erase_timeout);
 #endif
     }
+    // Ensure WEL is 0, even if the erase failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
+    }
+
     return err;
 }
 
@@ -199,12 +220,17 @@ esp_err_t spi_flash_chip_generic_page_program(esp_flash_t *chip, const void *buf
     esp_err_t err;
 
     err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
-
-    if (err == ESP_OK) {
+    //The chip didn't accept the previous write command. Ignore this in preparationstage.
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         // Perform the actual Page Program command
         chip->host->driver->program_page(chip->host, buffer, address, length);
+        chip->busy = 1;
 
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
+    }
+    // Ensure WEL is 0, even if the page program failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
     }
     return err;
 }
@@ -247,8 +273,8 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
     esp_err_t err = ESP_OK;
 
     err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
-
-    if (err == ESP_OK) {
+    //The chip didn't accept the previous write command. Ignore this in preparationstage.
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         chip->host->driver->set_write_protect(chip->host, write_protect);
     }
 
@@ -264,9 +290,9 @@ esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write
 esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_write_protect)
 {
     esp_err_t err = ESP_OK;
-    uint8_t status;
+    uint32_t status;
     assert(out_write_protect!=NULL);
-    err = chip->host->driver->read_status(chip->host, &status);
+    err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &status);
     if (err != ESP_OK) {
         return err;
     }
@@ -344,8 +370,14 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
         }
         status = read;
 
-        if ((status & SR_WIP) == 0) {
-            break; // Write in progress is complete
+        if ((status & SR_WIP) == 0) { // Verify write in progress is complete
+            if (chip->busy == 1) {
+                chip->busy = 0;
+                if ((status & SR_WREN) != 0) { // The previous command is not accepted, leaving the WEL still set.
+                    return ESP_ERR_NOT_SUPPORTED;
+                }
+            }
+            break;
         }
         if (timeout_us > 0 && interval > 0) {
             int delay = MIN(interval, timeout_us);
@@ -355,7 +387,6 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
             }
         }
     }
-
     return (timeout_us > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
 }
 
@@ -587,11 +618,19 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 
         ret = (*wrsr_func)(chip, sr_update);
         if (ret != ESP_OK) {
+            chip->chip_drv->set_chip_write_protect(chip, true);
             return ret;
         }
 
         ret = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
-        if (ret != ESP_OK) {
+        if (ret == ESP_ERR_NOT_SUPPORTED) {
+            chip->chip_drv->set_chip_write_protect(chip, true);
+        }
+        /* This function is the fallback approach, so we give it higher tolerance.
+         *   When the previous WRSR is rejected by the flash,
+         *  the result of this function is determined by the result -whether the value of RDSR meets the expectation.
+         */
+        if (ret != ESP_OK && ret != ESP_ERR_NOT_SUPPORTED) {
             return ret;
         }
 
@@ -605,8 +644,6 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
         if (sr != sr_update) {
             ret = ESP_ERR_FLASH_NO_RESPONSE;
         }
-
-        chip->chip_drv->set_chip_write_protect(chip, true);
     }
     return ret;
 }

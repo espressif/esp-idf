@@ -289,6 +289,8 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
     COUNTER_STOP(erase);
 
     spi_flash_guard_start();
+    // Ensure WEL is 0 after the operation, even if the erase failed.
+    esp_rom_spiflash_write_disable();
     spi_flash_check_and_flush_cache(start_addr, size);
     spi_flash_guard_end();
 
@@ -461,6 +463,8 @@ out:
     COUNTER_STOP(write);
 
     spi_flash_guard_start();
+    // Ensure WEL is 0 after the operation, even if the write failed.
+    esp_rom_spiflash_write_disable();
     spi_flash_check_and_flush_cache(dst, size);
     spi_flash_guard_end();
 
@@ -491,6 +495,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     err = spi_flash_write_encrypted_chip(dest_addr, src, size);
     COUNTER_ADD_BYTES(write, size);
     spi_flash_guard_start();
+    esp_rom_spiflash_write_disable();
     spi_flash_check_and_flush_cache(dest_addr, size);
     spi_flash_guard_end();
 #else
@@ -525,6 +530,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
         COUNTER_ADD_BYTES(write, size);
 
         spi_flash_guard_start();
+        esp_rom_spiflash_write_disable();
         spi_flash_check_and_flush_cache(dest_addr, size);
         spi_flash_guard_end();
 

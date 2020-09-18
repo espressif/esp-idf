@@ -102,6 +102,8 @@ struct esp_flash_t {
     esp_flash_io_mode_t read_mode; ///< Configured SPI flash read mode. Set before ``esp_flash_init`` is called.
     uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
     uint32_t chip_id;               ///< Detected chip id.
+    uint32_t busy             :1;   ///< This flag is used to verify chip's status.
+    uint32_t reserved_flags   :31;  ///< reserved.
 };
 
 
@@ -159,7 +161,10 @@ esp_err_t esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size);
  * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
  *
  *
- * @return ESP_OK on success, or a flash error code if operation failed.
+ * @return
+ *      - ESP_OK on success,
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
+ *      - Other flash error code if operation failed.
  */
 esp_err_t esp_flash_erase_chip(esp_flash_t *chip);
 
@@ -176,7 +181,10 @@ esp_err_t esp_flash_erase_chip(esp_flash_t *chip);
  * chip->drv->block_erase_size field, typically 65536 bytes). Remaining sectors are erased using individual sector erase
  * commands.
  *
- * @return ESP_OK on success, or a flash error code if operation failed.
+ * @return
+ *      - ESP_OK on success,
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
+ *      - Other flash error code if operation failed.
  */
 esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len);
 
@@ -280,7 +288,10 @@ esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint
  *
  * There are no alignment constraints on buffer, address or length.
  *
- * @return ESP_OK on success, or a flash error code if operation failed.
+ * @return
+ *      - ESP_OK on success,
+ *      - ESP_ERR_NOT_SUPPORTED if the chip is not able to perform the operation. This is indicated by WREN = 1 after the command is sent.
+ *      - Other flash error code if operation failed.
  */
 esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length);
 

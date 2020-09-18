@@ -14,6 +14,7 @@
 #include "sdkconfig.h"
 #include "esp32/rom/spi_flash.h"
 #include "soc/spi_periph.h"
+#include "spi_flash_defs.h"
 
 
 #define SPI_IDX   1
@@ -679,6 +680,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint3
         total_sector_num--;
     }
 
+    return ESP_ROM_SPIFLASH_RESULT_OK;
+}
+
+esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
+{
+    REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WRDI);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
