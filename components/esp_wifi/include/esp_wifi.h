@@ -992,7 +992,7 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
   *    - ESP_ERR_WIFI_NO_MEM: out of memory
   */
 
-esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
+esp_err_t esp_wifi_80211_tx(esp_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
 
 /**
   * @brief The RX callback function of Channel State Information(CSI)  data. 
