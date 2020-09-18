@@ -7,6 +7,8 @@
 
 namespace nvs {
 
+namespace partition_lookup {
+
 esp_err_t lookup_nvs_partition(const char* label, NVSPartition **p)
 {
     const esp_partition_t* esp_partition = esp_partition_find_first(
@@ -61,5 +63,7 @@ esp_err_t lookup_nvs_encrypted_partition(const char* label, nvs_sec_cfg_t* cfg, 
 }
 
 #endif // CONFIG_NVS_ENCRYPTION
+
+} // partition_lookup
 
 } // nvs

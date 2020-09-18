@@ -50,7 +50,7 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
     assert(SPI_FLASH_SEC_SIZE != 0);
 
     NVSPartition *p = nullptr;
-    esp_err_t result = lookup_nvs_partition(partition_label, &p);
+    esp_err_t result = partition_lookup::lookup_nvs_partition(partition_label, &p);
 
     if (result != ESP_OK) {
         goto error;
@@ -125,9 +125,9 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
     NVSPartition *p;
     esp_err_t result;
     if (cfg != nullptr) {
-        result = lookup_nvs_encrypted_partition(part_name, cfg, &p);
+        result = partition_lookup::lookup_nvs_encrypted_partition(part_name, cfg, &p);
     } else {
-        result = lookup_nvs_partition(part_name, &p);
+        result = partition_lookup::lookup_nvs_partition(part_name, &p);
     }
 
     if (result != ESP_OK) {
