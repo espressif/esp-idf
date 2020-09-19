@@ -8,6 +8,7 @@
 #define SOC_TWAI_SUPPORTED 1
 #define SOC_GDMA_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 2
+#define SOC_CACHE_SUPPORT_WRAP    1
 
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready

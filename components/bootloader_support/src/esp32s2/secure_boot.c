@@ -17,7 +17,7 @@
 #include "esp_secure_boot.h"
 #include "soc/efuse_reg.h"
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
 

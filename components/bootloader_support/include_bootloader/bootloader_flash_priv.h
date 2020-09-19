@@ -19,10 +19,26 @@
 #include <stdint.h>
 #include <esp_err.h>
 #include <esp_spi_flash.h> /* including in bootloader for error values */
+#include "sdkconfig.h"
+#include "bootloader_flash.h"
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 0x10000
 #define MMAP_ALIGNED_MASK 0x0000FFFF
+
+/* SPI commands (actual on-wire commands not SPI controller bitmasks)
+   Suitable for use with the bootloader_execute_flash_command static function.
+*/
+#define CMD_RDID       0x9F
+#define CMD_WRSR       0x01
+#define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
+#define CMD_WREN       0x06
+#define CMD_WRDI       0x04
+#define CMD_RDSR       0x05
+#define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
+#define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
+#define CMD_WRAP       0x77 /* Set burst with wrap command */
+
 
 /* Provide a Flash API for bootloader_support code,
    that can be used from bootloader or app code.
@@ -135,5 +151,21 @@ static inline uint32_t bootloader_cache_pages_to_map(uint32_t size, uint32_t vad
 {
     return (size + (vaddr - (vaddr & MMU_FLASH_MASK)) + MMU_BLOCK_SIZE - 1) / MMU_BLOCK_SIZE;
 }
+
+/**
+ * @brief Execute a user command on the flash
+ *
+ * @param command The command value to execute.
+ * @param mosi_data MOSI data to send
+ * @param mosi_len Length of MOSI data, in bits
+ * @param miso_len Length of MISO data to receive, in bits
+ * @return Received MISO data
+ */
+uint32_t bootloader_execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len);
+
+/**
+ * @brief Enable the flash write protect (WEL bit).
+ */
+void bootloader_enable_wp(void);
 
 #endif

@@ -1,5 +1,3 @@
-set(priv_requires bootloader_support soc)
-
 if(BOOTLOADER_BUILD)
     if (CONFIG_IDF_TARGET_ESP32)
         # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
@@ -10,6 +8,7 @@ if(BOOTLOADER_BUILD)
         set(srcs)
     endif()
     set(cache_srcs "")
+    set(priv_requires bootloader_support soc)
 else()
     set(cache_srcs
         "cache_utils.c"
