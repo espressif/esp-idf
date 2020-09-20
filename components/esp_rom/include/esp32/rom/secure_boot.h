@@ -81,11 +81,11 @@ typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
  *
  * This function is used to verify the bootloader before burning its public key hash into Efuse.
  * Also, it is used to verify the app on loading the image on boot and on OTA.
- * 
+ *
  * @param sig The signature block flashed aligned 4096 bytes from the firmware.
  * @param image_digest The SHA-256 Digest of the firmware to be verified
  * @param trusted_key_digest The SHA-256 Digest of the public key (ets_rsa_pubkey_t) of a single signature block.
- * @param verified_digest RSA-PSS signature of image_digest. Pass an uninitialised array. 
+ * @param verified_digest RSA-PSS signature of image_digest. Pass an uninitialised array.
  *
  * @return SBV2_SUCCESS if signature is valid
  * SBV2_FAILED for failures.
@@ -94,21 +94,25 @@ secure_boot_v2_status_t ets_secure_boot_verify_signature(const ets_secure_boot_s
 
 /** @brief This function verifies the 1st stage bootloader. Implemented in the ROM.
  *  Reboots post verification. It reads the Efuse key for verification of the public key.
- * 
+ *
  * This function is not used in the current workflow.
- * 
+ *
  */
 void ets_secure_boot_verify_boot_bootloader(void);
 
 /** @brief Confirms if the secure boot V2 has been enabled. Implemented in the ROM.
- * 
+ *
  * In ESP32-ECO3 - It checks the value of ABS_DONE_1 in EFuse.
- * 
+ *
  * @return true if is Secure boot v2 has been enabled
  * False if Secure boot v2 has not been enabled.
  */
 bool ets_use_secure_boot_v2();
 
 #endif /* CONFIG_ESP32_REV_MIN_3 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ROM_SECURE_BOOT_H_ */
