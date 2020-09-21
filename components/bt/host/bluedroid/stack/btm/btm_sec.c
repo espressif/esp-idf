@@ -6295,7 +6295,7 @@ BOOLEAN btm_sec_dev_authorization(BD_ADDR bd_addr, BOOLEAN authorized)
     if (p_dev_rec) {
         sec_flag = (UINT8)(p_dev_rec->sec_flags >> 8);
         if (!(sec_flag & BTM_SEC_LINK_KEY_AUTHED)) {
-            BTM_TRACE_ERROR("Authorized should after successful Authentication(MITM protection)\n"); 
+            BTM_TRACE_ERROR("Authorized should after successful Authentication(MITM protection)\n");
             return FALSE;
         }
 

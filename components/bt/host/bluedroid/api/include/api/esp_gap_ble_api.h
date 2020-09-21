@@ -1310,13 +1310,12 @@ esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels);
 *
 * @param[in]       bd_addr: BD address of the peer device.
 * @param[out]      authorize: Authorized the link or not.
-* 
+*
 * @return          - ESP_OK : success
 *                  - other  : failed
 *
 */
 esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize);
-
 #ifdef __cplusplus
 }
 #endif
