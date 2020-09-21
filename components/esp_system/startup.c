@@ -166,7 +166,7 @@ static void  esp_startup_start_app_other_cores_default(void)
     }
 }
 
-static void start_cpu_other_cores_default(void)
+static void IRAM_ATTR start_cpu_other_cores_default(void)
 {
     do_system_init_fn();
 
