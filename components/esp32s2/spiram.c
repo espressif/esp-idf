@@ -50,10 +50,7 @@ static const char* TAG = "spiram";
 #define PSRAM_SPEED PSRAM_CACHE_S20M
 #endif
 
-#define SPIRAM_SIZE  esp_spiram_get_size()
-
 static bool spiram_inited=false;
-
 
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
@@ -62,16 +59,17 @@ static bool spiram_inited=false;
 */
 bool esp_spiram_test(void)
 {
-    volatile int *spiram=(volatile int*)(SOC_EXTRAM_DATA_HIGH - SPIRAM_SIZE);
+    size_t spiram_size = esp_spiram_get_size();
+    volatile int *spiram=(volatile int*)(SOC_EXTRAM_DATA_HIGH - spiram_size);
     size_t p;
-    size_t s=SPIRAM_SIZE;
+    size_t s = spiram_size;
     int errct=0;
     int initial_err=-1;
 
-    if ((SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW) < SPIRAM_SIZE) {
+    if (SOC_EXTRAM_DATA_SIZE < spiram_size) {
         ESP_EARLY_LOGW(TAG, "Only test spiram from %08x to %08x\n", SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH);
         spiram=(volatile int*)SOC_EXTRAM_DATA_LOW;
-        s = SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW;
+        s = SOC_EXTRAM_DATA_SIZE;
     }
     for (p=0; p<(s/sizeof(int)); p+=8) {
         spiram[p]=p^0xAAAAAAAA;
@@ -100,12 +98,12 @@ bool esp_spiram_test(void)
 #define DBUS3_ONLY_CACHE_SIZE                   BUS_AHB_DBUS3_CACHE_SIZE
 #define DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE      (DRAM0_DRAM1_DPORT_CACHE_SIZE + DBUS3_ONLY_CACHE_SIZE)
 
-#define SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT      (SPIRAM_SIZE - DRAM0_DRAM1_DPORT_CACHE_SIZE)
-#define SPIRAM_SIZE_EXC_DATA_CACHE             (SPIRAM_SIZE - DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE)
+#define SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT      (spiram_size - DRAM0_DRAM1_DPORT_CACHE_SIZE)
+#define SPIRAM_SIZE_EXC_DATA_CACHE             (spiram_size - DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE)
 
-#define SPIRAM_SMALL_SIZE_MAP_VADDR             (DRAM0_CACHE_ADDRESS_HIGH - SPIRAM_SIZE)
+#define SPIRAM_SMALL_SIZE_MAP_VADDR             (DRAM0_CACHE_ADDRESS_HIGH - spiram_size)
 #define SPIRAM_SMALL_SIZE_MAP_PADDR             0
-#define SPIRAM_SMALL_SIZE_MAP_SIZE              SPIRAM_SIZE
+#define SPIRAM_SMALL_SIZE_MAP_SIZE              spiram_size
 
 #define SPIRAM_MID_SIZE_MAP_VADDR               (AHB_DBUS3_ADDRESS_HIGH - SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT)
 #define SPIRAM_MID_SIZE_MAP_PADDR               0
@@ -121,23 +119,24 @@ bool esp_spiram_test(void)
 
 void IRAM_ATTR esp_spiram_init_cache(void)
 {
+    size_t spiram_size = esp_spiram_get_size();
     Cache_Suspend_DCache();
     /* map the address from SPIRAM end to the start, map the address in order: DRAM1, DRAM1, DPORT, DBUS3 */
-    if (SPIRAM_SIZE <= DRAM0_ONLY_CACHE_SIZE) {
+    if (spiram_size <= DRAM0_ONLY_CACHE_SIZE) {
         /* cache size <= 3MB + 512 KB, only map DRAM0 bus */
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_SMALL_SIZE_MAP_VADDR, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, SPIRAM_SMALL_SIZE_MAP_SIZE >> 16, 0);
         REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM0);
-    } else if (SPIRAM_SIZE <= DRAM0_DRAM1_CACHE_SIZE) {
+    } else if (spiram_size <= DRAM0_DRAM1_CACHE_SIZE) {
         /* cache size <= 7MB + 512KB, only map DRAM0 and DRAM1 bus */
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_SMALL_SIZE_MAP_VADDR, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, SPIRAM_SMALL_SIZE_MAP_SIZE >> 16, 0);
         REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM1 | EXTMEM_PRO_DCACHE_MASK_DRAM0);
-    } else if (SPIRAM_SIZE <= DRAM0_DRAM1_DPORT_CACHE_SIZE) {
+    } else if (spiram_size <= DRAM0_DRAM1_DPORT_CACHE_SIZE) {
         /* cache size <= 10MB + 512KB, map DRAM0, DRAM1, DPORT bus */
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_SMALL_SIZE_MAP_VADDR, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, SPIRAM_SMALL_SIZE_MAP_SIZE >> 16, 0);
         REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM1 | EXTMEM_PRO_DCACHE_MASK_DRAM0 | EXTMEM_PRO_DCACHE_MASK_DPORT);
     } else {
 #if CONFIG_SPIRAM_USE_AHB_DBUS3// TODO Ready to remove this macro esp32s2 no AHB bus access cache
-        if (SPIRAM_SIZE <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
+        if (spiram_size <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
             /* cache size <= 14MB + 512KB, map DRAM0, DRAM1, DPORT bus, as well as data bus3 */
             Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_MID_SIZE_MAP_VADDR, SPIRAM_MID_SIZE_MAP_PADDR, 64, SPIRAM_MID_SIZE_MAP_SIZE >> 16, 0);
         } else {
@@ -156,8 +155,6 @@ void IRAM_ATTR esp_spiram_init_cache(void)
 }
 
 static uint32_t pages_for_flash = 0;
-static uint32_t page0_mapped = 0;
-static uint32_t page0_page = INVALID_PHY_PAGE;
 static uint32_t instrcution_in_spiram = 0;
 static uint32_t rodata_in_spiram = 0;
 
@@ -173,6 +170,11 @@ static uint32_t rodata_start_page = 0;
 static uint32_t rodata_end_page = 0;
 #endif
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+static uint32_t page0_mapped = 0;
+static uint32_t page0_page = INVALID_PHY_PAGE;
+#endif
+
 uint32_t esp_spiram_instruction_access_enabled(void)
 {
     return instrcution_in_spiram;
@@ -186,11 +188,12 @@ uint32_t esp_spiram_rodata_access_enabled(void)
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 esp_err_t esp_spiram_enable_instruction_access(void)
 {
+    size_t spiram_size = esp_spiram_get_size();
     uint32_t pages_in_flash = 0;
     pages_in_flash += Cache_Count_Flash_Pages(PRO_CACHE_IBUS0, &page0_mapped);
     pages_in_flash += Cache_Count_Flash_Pages(PRO_CACHE_IBUS1, &page0_mapped);
-    if ((pages_in_flash + pages_for_flash) > (SPIRAM_SIZE >> 16)) {
-        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, has %d pages, need %d pages.", (SPIRAM_SIZE >> 16), (pages_in_flash + pages_for_flash));
+    if ((pages_in_flash + pages_for_flash) > (spiram_size >> 16)) {
+        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, has %d pages, need %d pages.", (spiram_size >> 16), (pages_in_flash + pages_for_flash));
         return ESP_FAIL;
     }
     ESP_EARLY_LOGI(TAG, "Instructions copied and mapped to SPIRAM");
@@ -215,7 +218,7 @@ esp_err_t esp_spiram_enable_rodata_access(void)
     pages_in_flash += Cache_Count_Flash_Pages(PRO_CACHE_DBUS1, &page0_mapped);
     pages_in_flash += Cache_Count_Flash_Pages(PRO_CACHE_DBUS2, &page0_mapped);
 
-    if ((pages_in_flash + pages_for_flash) > (SPIRAM_SIZE >> 16)) {
+    if ((pages_in_flash + pages_for_flash) > (esp_spiram_get_size() >> 16)) {
         ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the read only data.");
         return ESP_FAIL;
     }
@@ -300,16 +303,19 @@ esp_err_t esp_spiram_init(void)
         return r;
     }
 
-    spiram_inited=true;
+    spiram_inited = true;
+
+    size_t spiram_size = esp_spiram_get_size();
+
 #if (CONFIG_SPIRAM_SIZE != -1)
-    if (esp_spiram_get_size()!=CONFIG_SPIRAM_SIZE) {
-        ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, esp_spiram_get_size()/1024);
+    if (spiram_size != CONFIG_SPIRAM_SIZE) {
+        ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, spiram_size/1024);
         return ESP_ERR_INVALID_SIZE;
     }
 #endif
 
     ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device",
-                                          (esp_spiram_get_size()*8)/(1024*1024));
+                                          (spiram_size*8)/(1024*1024));
     ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : \
                                           PSRAM_SPEED == PSRAM_CACHE_S80M ? "sram 80m" : "sram 20m");
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
@@ -322,17 +328,18 @@ esp_err_t esp_spiram_init(void)
 
 esp_err_t esp_spiram_add_to_heapalloc(void)
 {
+    size_t spiram_size = esp_spiram_get_size();
     uint32_t size_for_flash = (pages_for_flash << 16);
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (SPIRAM_SIZE - (pages_for_flash << 16))/1024);
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (spiram_size - (pages_for_flash << 16))/1024);
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
 
-    if (SPIRAM_SIZE <= DRAM0_DRAM1_DPORT_CACHE_SIZE) {
+    if (spiram_size <= DRAM0_DRAM1_DPORT_CACHE_SIZE) {
         /* cache size <= 10MB + 512KB, map DRAM0, DRAM1, DPORT bus */
         return heap_caps_add_region((intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + size_for_flash, (intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + SPIRAM_SMALL_SIZE_MAP_SIZE -1);
     } else {
 #if CONFIG_SPIRAM_USE_AHB_DBUS3 //TODO
-        if (SPIRAM_SIZE <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
+        if (spiram_size <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
             /* cache size <= 14MB + 512KB, map DRAM0, DRAM1, DPORT bus, as well as data bus3 */
             if (size_for_flash <= SPIRAM_MID_SIZE_MAP_SIZE) {
                 esp_err_t err = heap_caps_add_region((intptr_t)SPIRAM_MID_SIZE_MAP_VADDR + size_for_flash, (intptr_t)SPIRAM_MID_SIZE_MAP_VADDR + SPIRAM_MID_SIZE_MAP_SIZE -1);

@@ -74,7 +74,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { SOC_RTC_DRAM_LOW, 0x2000, 5, 0}, //RTC Fast Memory
 #endif
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
+    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 4, 0}, //SPI SRAM, if available
 #endif
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
@@ -138,7 +138,9 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
 
 #ifdef CONFIG_SPIRAM
-SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
+/* Reserve the whole possible SPIRAM region here, spiram.c will add some or all of this
+ * memory to heap depending on the actual SPIRAM chip size. */
+SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region);
 #endif
 
 // Blocks 19 and 20 may be reserved for the trace memory

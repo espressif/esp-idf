@@ -74,11 +74,11 @@ size_t __attribute__((weak)) esp_himem_reserved_area_size(void) {
 }
 
 
-static int spiram_size_usable_for_malloc(void)
+static size_t spiram_size_usable_for_malloc(void)
 {
-    int s=esp_spiram_get_size();
-    if (s>4*1024*1024) s=4*1024*1024; //we can map at most 4MiB
-    return s-esp_himem_reserved_area_size();
+    /* SPIRAM chip may be larger than the size we can map into address space */
+    size_t s = MIN(esp_spiram_get_size(), SOC_EXTRAM_DATA_SIZE);
+    return s - esp_himem_reserved_area_size();
 }
 
 
