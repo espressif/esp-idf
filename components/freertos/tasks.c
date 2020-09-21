@@ -645,10 +645,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 */
 void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 {
-	TCB_t *curTCB = pxCurrentTCB[xCoreID];
+	TCB_t *curTCB;
 	BaseType_t i;
 
 	if (xCoreID != tskNO_AFFINITY) {
+		curTCB = pxCurrentTCB[xCoreID];
 		if ( curTCB->uxPriority < uxPriority ) {
 			vPortYieldOtherCore( xCoreID );
 		}
