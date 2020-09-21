@@ -65,6 +65,7 @@ enum {
     BTA_GATTC_DISC_CLOSE,
     BTA_GATTC_RESTART_DISCOVER,
     BTA_GATTC_CFG_MTU,
+    BTA_GATTC_READ_BY_TYPE,
 
     BTA_GATTC_IGNORE
 };
@@ -98,7 +99,8 @@ const tBTA_GATTC_ACTION bta_gattc_action[] = {
     bta_gattc_ignore_op_cmpl,
     bta_gattc_disc_close,
     bta_gattc_restart_discover,
-    bta_gattc_cfg_mtu
+    bta_gattc_cfg_mtu,
+    bta_gattc_read_by_type
 };
 
 
@@ -134,6 +136,7 @@ static const UINT8 bta_gattc_st_idle[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_OP_CMPL_EVT            */   {BTA_GATTC_IGNORE,            BTA_GATTC_IDLE_ST},
     /* BTA_GATTC_INT_DISCONN_EVT       */    {BTA_GATTC_IGNORE,            BTA_GATTC_IDLE_ST},
 
+    /* BTA_GATTC_API_READ_BY_TYPE_EVT   */   {BTA_GATTC_FAIL,              BTA_GATTC_IDLE_ST},
 };
 
 /* state table for wait for open state */
@@ -163,6 +166,7 @@ static const UINT8 bta_gattc_st_w4_conn[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_OP_CMPL_EVT            */   {BTA_GATTC_IGNORE,             BTA_GATTC_W4_CONN_ST},
     /* BTA_GATTC_INT_DISCONN_EVT      */     {BTA_GATTC_OPEN_FAIL,          BTA_GATTC_IDLE_ST},
 
+    /* BTA_GATTC_API_READ_BY_TYPE_EVT   */   {BTA_GATTC_FAIL,               BTA_GATTC_W4_CONN_ST},
 };
 
 /* state table for open state */
@@ -193,6 +197,7 @@ static const UINT8 bta_gattc_st_connected[][BTA_GATTC_NUM_COLS] = {
 
     /* BTA_GATTC_INT_DISCONN_EVT        */   {BTA_GATTC_CLOSE,              BTA_GATTC_IDLE_ST},
 
+    /* BTA_GATTC_API_READ_BY_TYPE_EVT   */   {BTA_GATTC_READ_BY_TYPE,       BTA_GATTC_CONN_ST},
 };
 
 /* state table for discover state */
@@ -222,6 +227,7 @@ static const UINT8 bta_gattc_st_discover[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_OP_CMPL_EVT            */   {BTA_GATTC_IGNORE_OP_CMPL,     BTA_GATTC_DISCOVER_ST},
     /* BTA_GATTC_INT_DISCONN_EVT        */   {BTA_GATTC_CLOSE,              BTA_GATTC_IDLE_ST},
 
+    /* BTA_GATTC_API_READ_BY_TYPE_EVT   */   {BTA_GATTC_Q_CMD,              BTA_GATTC_DISCOVER_ST},
 };
 
 /* type for state table */
@@ -479,6 +485,8 @@ static char *gattc_evt_code(tBTA_GATTC_INT_EVT evt_code)
         return "BTA_GATTC_API_DISABLE_EVT";
     case BTA_GATTC_API_CFG_MTU_EVT:
         return "BTA_GATTC_API_CFG_MTU_EVT";
+    case BTA_GATTC_API_READ_BY_TYPE_EVT:
+        return "BTA_GATTC_API_READ_BY_TYPE_EVT";
     default:
         return "unknown GATTC event code";
     }
