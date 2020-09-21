@@ -156,17 +156,22 @@ static const char *HTTP_METHOD_MAPPING[] = {
 static void *http_malloc(size_t size)
 {
     void *data =  NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
     data = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    data = malloc(size);
+#endif
     return data;
 }
 
 static void *http_calloc(size_t nmemb, size_t size)
 {
     void *data =  NULL;
-    data = heap_caps_malloc(nmemb * size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (data) {
-        memset(data, 0, nmemb * size);
-    }
+#if CONFIG_SPIRAM_USE_MALLOC
+    data = heap_caps_calloc(nmemb, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    data = calloc(nmemb, size);
+#endif
     return data;
 }
 
