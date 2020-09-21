@@ -1273,7 +1273,7 @@ esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_pa
 *
 * @param[in]       bd_addr: BD address of the peer device.
 * @param[out]      authorize: Authorized the link or not.
-* 
+*
 * @return          - ESP_OK : success
 *                  - other  : failed
 *
