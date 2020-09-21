@@ -494,12 +494,12 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
         spihost[host]->hw->pin.master_ck_sel |= (1<<freecs);
     } else {
-        spihost[host]->hw->pin.master_ck_sel &= (1<<freecs);
+        spihost[host]->hw->pin.master_ck_sel &= ~(1<<freecs);
     }
     if (dev_config->flags&SPI_DEVICE_POSITIVE_CS) {
         spihost[host]->hw->pin.master_cs_pol |= (1<<freecs);
     } else {
-        spihost[host]->hw->pin.master_cs_pol &= (1<<freecs);
+        spihost[host]->hw->pin.master_cs_pol &= ~(1<<freecs);
     }
     spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
     spihost[host]->hw->ctrl2.mosi_delay_num = 0;
