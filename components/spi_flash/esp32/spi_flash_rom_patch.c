@@ -101,11 +101,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void)
     while (REG_READ(SPI_CMD_REG(SPI_IDX)) != 0) {
     }
     esp_rom_spiflash_wait_idle(&g_rom_spiflash_chip);
-    if (esp_rom_spiflash_write_status(&g_rom_spiflash_chip, new_status) != ESP_ROM_SPIFLASH_RESULT_OK) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
+    esp_rom_spiflash_result_t ret = esp_rom_spiflash_write_status(&g_rom_spiflash_chip, new_status);
+    // WEL bit should be cleared after operations regardless of writing succeed or not.
+    esp_rom_spiflash_wait_idle(&g_rom_spiflash_chip);
+    REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WRDI);
+    while (REG_READ(SPI_CMD_REG(SPI_IDX)) != 0) {
     }
-
-    return ESP_ROM_SPIFLASH_RESULT_OK;
+    return ret;
 }
 
 #if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
