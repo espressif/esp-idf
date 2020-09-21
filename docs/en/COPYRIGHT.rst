@@ -74,11 +74,6 @@ This is the list of licenses for tools included in this repository, which are us
 
 * :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
 
-* :idf_file:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
-
-* :idf_file:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
-
-
 Documentation
 -------------
 

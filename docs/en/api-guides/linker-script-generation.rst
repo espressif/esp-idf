@@ -276,7 +276,7 @@ The three fragment types share a common grammar:
 **Condition Checking**
 
 Condition checking enable the linker script generation to be configuration-aware. Depending on whether expressions involving configuration values
-are true or not, a particular set of values for a key can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py`
+are true or not, a particular set of values for a key can be used. The evaluation uses ``eval_string`` from kconfiglib package
 and adheres to its required syntax and limitations. Supported operators are as follows:
 
     - comparison
