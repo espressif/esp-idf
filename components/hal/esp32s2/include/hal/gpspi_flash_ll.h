@@ -156,7 +156,7 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
  */
 static inline bool gpspi_flash_ll_host_idle(const spi_dev_t *dev)
 {
-    return dev->fsm.st != 0;
+    return dev->fsm.st == 0;
 }
 
 /**

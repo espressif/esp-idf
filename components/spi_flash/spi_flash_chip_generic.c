@@ -287,7 +287,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
 
 esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_us)
 {
-    while (chip->host->driver->host_idle(chip->host) && *timeout_us > 0) {
+    while (!chip->host->driver->host_idle(chip->host) && *timeout_us > 0) {
 #if HOST_DELAY_INTERVAL_US > 0
         if (*timeout_us > 1) {
             int delay = MIN(HOST_DELAY_INTERVAL_US, *timeout_us);
