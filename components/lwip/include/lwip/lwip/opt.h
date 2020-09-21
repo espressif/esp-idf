@@ -2538,6 +2538,14 @@
 #endif
 
 /**
+ * ESP_ND6_QUEUEING==1: queue outgoing IPv6 packets while MAC address
+ * is being resolved.
+ */
+#if !defined ESP_ND6_QUEUEING
+#define ESP_ND6_QUEUEING                (LWIP_IPV6)
+#endif
+
+/**
  * MEMP_NUM_ND6_QUEUE: Max number of IPv6 packets to queue during MAC resolution.
  */
 #ifndef MEMP_NUM_ND6_QUEUE
