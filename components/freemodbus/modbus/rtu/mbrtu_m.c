@@ -264,11 +264,11 @@ xMBMasterRTUReceiveFSM( void )
          * the timer of respond timeout .
          */
     case STATE_M_RX_IDLE:
-    	/* In time of respond timeout,the receiver receive a frame.
-    	 * Disable timer of respond timeout and change the transmiter state to idle.
-    	 */
-    	vMBMasterPortTimersDisable( );
-    	eSndState = STATE_M_TX_IDLE;
+        /* In time of respond timeout,the receiver receive a frame.
+         * Disable timer of respond timeout and change the transmiter state to idle.
+         */
+        vMBMasterPortTimersDisable( );
+        eSndState = STATE_M_TX_IDLE;
 
         usMasterRcvBufferPos = 0;
         ucMasterRTURcvBuf[usMasterRcvBufferPos++] = ucByte;
@@ -336,11 +336,11 @@ xMBMasterRTUTransmitFSM( void )
              * else master will enable timer of respond timeout. */
             if ( xFrameIsBroadcast == TRUE )
             {
-            	vMBMasterPortTimersConvertDelayEnable( );
+                vMBMasterPortTimersConvertDelayEnable( );
             }
             else
             {
-            	vMBMasterPortTimersRespondTimeoutEnable( );
+                vMBMasterPortTimersRespondTimeoutEnable( );
             }
             xNeedPoll = TRUE;
         }
@@ -353,96 +353,95 @@ xMBMasterRTUTransmitFSM( void )
 BOOL
 xMBMasterRTUTimerExpired(void)
 {
-	BOOL xNeedPoll = FALSE;
+    BOOL xNeedPoll = FALSE;
 
-	switch (eRcvState)
-	{
-		/* Timer t35 expired. Startup phase is finished. */
-	case STATE_M_RX_INIT:
-		xNeedPoll = xMBMasterPortEventPost(EV_MASTER_READY);
-		break;
+    switch (eRcvState)
+    {
+        /* Timer t35 expired. Startup phase is finished. */
+    case STATE_M_RX_INIT:
+        xNeedPoll = xMBMasterPortEventPost(EV_MASTER_READY);
+        break;
 
-		/* A frame was received and t35 expired. Notify the listener that
-		 * a new frame was received. */
-	case STATE_M_RX_RCV:
-		xNeedPoll = xMBMasterPortEventPost(EV_MASTER_FRAME_RECEIVED);
-		break;
+        /* A frame was received and t35 expired. Notify the listener that
+         * a new frame was received. */
+    case STATE_M_RX_RCV:
+        xNeedPoll = xMBMasterPortEventPost(EV_MASTER_FRAME_RECEIVED);
+        break;
 
-		/* An error occured while receiving the frame. */
-	case STATE_M_RX_ERROR:
-		vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
-		xNeedPoll = xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
-		break;
+        /* An error occured while receiving the frame. */
+    case STATE_M_RX_ERROR:
+        vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
+        xNeedPoll = xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
+        break;
 
-		/* Function called in an illegal state. */
-	default:
-		assert((eRcvState == STATE_M_RX_INIT) || (eRcvState == STATE_M_RX_RCV)
-		        || (eRcvState == STATE_M_RX_ERROR) || (eRcvState == STATE_M_RX_IDLE));
-		break;
-	}
-	eRcvState = STATE_M_RX_IDLE;
+        /* Function called in an illegal state. */
+    default:
+        assert((eRcvState == STATE_M_RX_INIT) || (eRcvState == STATE_M_RX_RCV)
+                || (eRcvState == STATE_M_RX_ERROR) || (eRcvState == STATE_M_RX_IDLE));
+        break;
+    }
+    eRcvState = STATE_M_RX_IDLE;
 
-	switch (eSndState)
-	{
-		/* A frame was send finish and convert delay or respond timeout expired.
-		 * If the frame is broadcast,The master will idle,and if the frame is not
-		 * broadcast.Notify the listener process error.*/
-	case STATE_M_TX_XFWR:
-		if ( xFrameIsBroadcast == FALSE ) {
-			vMBMasterSetErrorType(EV_ERROR_RESPOND_TIMEOUT);
-			xNeedPoll = xMBMasterPortEventPost(EV_MASTER_ERROR_PROCESS);
-		}
-		break;
-		/* Function called in an illegal state. */
-	default:
-		assert(
-				( eSndState == STATE_M_TX_XFWR ) || ( eSndState == STATE_M_TX_IDLE ));
-		break;
-	}
-	eSndState = STATE_M_TX_IDLE;
+    switch (eSndState)
+    {
+        /* A frame was send finish and convert delay or respond timeout expired.
+         * If the frame is broadcast,The master will idle,and if the frame is not
+         * broadcast.Notify the listener process error.*/
+    case STATE_M_TX_XFWR:
+        if ( xFrameIsBroadcast == FALSE ) {
+            vMBMasterSetErrorType(EV_ERROR_RESPOND_TIMEOUT);
+            xNeedPoll = xMBMasterPortEventPost(EV_MASTER_ERROR_PROCESS);
+        }
+        break;
+        /* Function called in an illegal state. */
+    default:
+                assert( ( eSndState == STATE_M_TX_XMIT ) || ( eSndState == STATE_M_TX_IDLE ));
+        break;
+    }
+    eSndState = STATE_M_TX_IDLE;
 
-	vMBMasterPortTimersDisable( );
-	/* If timer mode is convert delay, the master event then turns EV_MASTER_EXECUTE status. */
-	if (eMasterCurTimerMode == MB_TMODE_CONVERT_DELAY) {
-		xNeedPoll = xMBMasterPortEventPost( EV_MASTER_EXECUTE );
-	}
+    vMBMasterPortTimersDisable( );
+    /* If timer mode is convert delay, the master event then turns EV_MASTER_EXECUTE status. */
+    if (eMasterCurTimerMode == MB_TMODE_CONVERT_DELAY) {
+        xNeedPoll = xMBMasterPortEventPost( EV_MASTER_EXECUTE );
+    }
 
-	return xNeedPoll;
+    return xNeedPoll;
 }
 
 /* Get Modbus Master send RTU's buffer address pointer.*/
 void vMBMasterGetRTUSndBuf( UCHAR ** pucFrame )
 {
-	*pucFrame = ( UCHAR * ) ucMasterRTUSndBuf;
+    *pucFrame = ( UCHAR * ) ucMasterRTUSndBuf;
 }
 
 /* Get Modbus Master send PDU's buffer address pointer.*/
 void vMBMasterGetPDUSndBuf( UCHAR ** pucFrame )
 {
-	*pucFrame = ( UCHAR * ) &ucMasterRTUSndBuf[MB_SER_PDU_PDU_OFF];
+    *pucFrame = ( UCHAR * ) &ucMasterRTUSndBuf[MB_SER_PDU_PDU_OFF];
 }
 
 /* Set Modbus Master send PDU's buffer length.*/
 void vMBMasterSetPDUSndLength( USHORT SendPDULength )
 {
-	usMasterSendPDULength = SendPDULength;
+    usMasterSendPDULength = SendPDULength;
 }
 
 /* Get Modbus Master send PDU's buffer length.*/
 USHORT usMBMasterGetPDUSndLength( void )
 {
-	return usMasterSendPDULength;
+    return usMasterSendPDULength;
 }
 
 /* Set Modbus Master current timer mode.*/
 void vMBMasterSetCurTimerMode( eMBMasterTimerMode eMBTimerMode )
 {
-	eMasterCurTimerMode = eMBTimerMode;
+    eMasterCurTimerMode = eMBTimerMode;
 }
 
 /* The master request is broadcast? */
 BOOL xMBMasterRequestIsBroadcast( void ){
-	return xFrameIsBroadcast;
+    return xFrameIsBroadcast;
 }
 #endif
 

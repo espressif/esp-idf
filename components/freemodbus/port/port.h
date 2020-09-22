@@ -31,7 +31,7 @@
 #define MB_PORT_CHECK(a, ret_val, str, ...) \
     if (!(a)) { \
         ESP_LOGE(MB_PORT_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
+        return ret_val; \
     }
 
 #ifdef __cplusplus
@@ -67,6 +67,9 @@ void vMBPortExitCritical( );
                                     ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
 #define MB_PORT_PARITY_GET(parity) ((parity != UART_PARITY_DISABLE) ? \
                                         ((parity == UART_PARITY_ODD) ? MB_PAR_ODD : MB_PAR_EVEN) : MB_PAR_NONE)
+
+#define MB_PORT_CHECK_EVENT( event, mask ) ( event & mask )
+#define MB_PORT_CLEAR_EVENT( event, mask ) do { event &= ~mask; } while(0)
 
 #ifdef __cplusplus
 PR_END_EXTERN_C
