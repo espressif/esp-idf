@@ -210,6 +210,7 @@ def action_extensions(base_actions, project_path):
             },
             {
                 "names": ["-C", "--project-dir"],
+                "scope": "shared",
                 "help": "Project directory.",
                 "type": click.Path(),
                 "default": os.getcwd(),

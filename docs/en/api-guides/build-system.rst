@@ -117,6 +117,21 @@ Note that some older versions of CCache may exhibit bugs on some platforms, so i
 - ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
 - ``--cmake-warn-uninitialized`` (or ``-w``) will cause CMake to print uninitialized variable warnings inside the project directory (not for directories not found inside the project directory). This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.
 
+
+Start a new project
+-------------------
+
+Use the command ``idf.py create-project`` for starting a new project. Execute ``idf.py create-project --help`` for more information.
+
+
+Example:
+
+.. code-block:: bash
+
+    idf.py create-project --path my_projects my_new_project
+
+This example will create a new project called my_new_project directly into the directory my_projects.
+
 Using CMake Directly
 --------------------
 
@@ -343,6 +358,23 @@ There are other arguments that can be passed to ``idf_component_register``. Thes
 are discussed :ref:`here<cmake-component-register>`.
 
 See `example component requirements`_ and  `example component CMakeLists`_ for more complete component ``CMakeLists.txt`` examples.
+
+Create a new component
+----------------------
+
+Use the command ``idf.py create-component`` for creating a new component.
+The new component will contain set of files necessary for building a component.
+You may include the component's header file into your project and use its functionality.
+For more information execute ``idf.py create-component --help``.
+
+Example:
+
+.. code-block:: bash
+
+    idf.py -C components create-component my_component
+
+The example will create a new component in the subdirectory `components` under the current working directory.
+For more information about components follow the documentation page :ref:`see above <component-directories>`.
 
 .. _component variables:
 
