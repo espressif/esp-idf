@@ -132,7 +132,9 @@ struct label {
     bt_mesh_atomic_t flags[1];
 };
 
-void bt_mesh_cfg_reset(void);
+void bt_mesh_mod_sub_reset(bool store);
+
+void bt_mesh_cfg_reset(bool store);
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat);
 

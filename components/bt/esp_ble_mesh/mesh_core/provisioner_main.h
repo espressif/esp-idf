@@ -111,7 +111,7 @@ int bt_mesh_provisioner_local_app_key_update(const u8_t app_key[16],
 
 const u8_t *bt_mesh_provisioner_local_app_key_get(u16_t net_idx, u16_t app_idx);
 
-int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx);
+int bt_mesh_provisioner_local_app_key_del(u16_t net_idx, u16_t app_idx, bool store);
 
 int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx);
 
@@ -119,7 +119,7 @@ int bt_mesh_provisioner_local_net_key_update(const u8_t net_key[16], u16_t net_i
 
 const u8_t *bt_mesh_provisioner_local_net_key_get(u16_t net_idx);
 
-int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx);
+int bt_mesh_provisioner_local_net_key_del(u16_t net_idx, bool store);
 
 /* Provisioner bind local client model with proper appkey index */
 int bt_mesh_provisioner_bind_local_model_app_idx(u16_t elem_addr, u16_t mod_id,
