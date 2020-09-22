@@ -513,11 +513,27 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+static char *_get_host_header(char *host, int port)
+{
+    int err = 0;
+    char *host_name;
+    if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
+        err = asprintf(&host_name, "%s:%d", host, port);
+    } else {
+        err = asprintf(&host_name, "%s", host);
+    }
+    if (err == -1) {
+        return NULL;
+    }
+    return host_name;
+}
+
 esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
 {
 
     esp_http_client_handle_t client;
     esp_transport_handle_t tcp;
+    char *host_name;
     bool _success;
 
     _success = (
@@ -595,22 +611,37 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 
     if (config->host != NULL && config->path != NULL) {
+        host_name = _get_host_header(client->connection_info.host, client->connection_info.port);
+        if (host_name == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for host header");
+            goto error;
+        }
         _success = (
             (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-            (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+            (esp_http_client_set_header(client, "Host", host_name) == ESP_OK)
         );
-
+        free(host_name);
         if (!_success) {
             ESP_LOGE(TAG, "Error while setting default configurations");
             goto error;
         }
     } else if (config->url != NULL) {
+        if (esp_http_client_set_url(client, config->url) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set URL");
+            goto error;
+        }
+        host_name = _get_host_header(client->connection_info.host, client->connection_info.port);
+        if (host_name == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for host header");
+            goto error;
+        }
+
         _success = (
-                    (esp_http_client_set_url(client, config->url) == ESP_OK) &&
                     (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-                    (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+                    (esp_http_client_set_header(client, "Host", host_name) == ESP_OK)
                 );
 
+        free(host_name);
         if (!_success) {
             ESP_LOGE(TAG, "Error while setting default configurations");
             goto error;
