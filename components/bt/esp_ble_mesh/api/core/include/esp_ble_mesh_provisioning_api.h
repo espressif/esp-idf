@@ -263,12 +263,11 @@ esp_err_t esp_ble_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16],
                                                          uint16_t oob_info, uint16_t unicast_addr);
 
 /**
- * @brief        Delete device from queue, reset current provisioning link and reset the node.
+ * @brief        Delete device from queue, and reset current provisioning link with the device.
  *
- * @note         If the device is in the queue, remove it from the queue; if the device is being
- *               provisioned, terminate the provisioning procedure; if the device has already
- *               been provisioned, reset the device. And either one of the addr or device UUID
- *               can be input.
+ * @note         If the device is in the queue, remove it from the queue; if the device is
+ *               being provisioned, terminate the provisioning procedure. Either one of the
+ *               device address or device UUID can be used as input.
  *
  * @param[in]    del_dev: Pointer to a struct containing the device information.
  *
