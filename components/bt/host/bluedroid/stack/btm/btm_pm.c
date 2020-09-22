@@ -194,6 +194,10 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
     mode = p_mode->mode & ~BTM_PM_MD_FORCE;
 
     p_acl_cb = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+    if (p_acl_cb == NULL){
+        return BTM_UNKNOWN_ADDR;
+    }
+
     p_cb = p_acl_cb->p_pm_mode_db;
     if (mode != BTM_PM_MD_ACTIVE) {
         /* check if the requested mode is supported */
