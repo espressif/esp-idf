@@ -298,8 +298,8 @@ typedef struct {
     uint32_t sw_reset_timeout_ms; /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;  /*!< Stack size of the receive task */
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
-    int smi_mdc_gpio_num;         /*!< SMI MDC GPIO number */
-    int smi_mdio_gpio_num;        /*!< SMI MDIO GPIO number */
+    int smi_mdc_gpio_num;         /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;        /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
     uint32_t flags;               /*!< Flags that specify extra capability for mac driver */
 } eth_mac_config_t;
 
