@@ -1,5 +1,4 @@
 set(srcs
-        "dac_hal.c"
         "rtc_clk.c"
         "rtc_clk_init.c"
         "rtc_init.c"
