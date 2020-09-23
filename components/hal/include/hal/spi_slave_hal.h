@@ -36,32 +36,35 @@
 #include "soc/spi_struct.h"
 #include <esp_types.h>
 #include "soc/spi_caps.h"
+#include "hal/spi_ll.h"
 
 /**
  * Context that should be maintained by both the driver and the HAL.
  */
 typedef struct {
     /* configured by driver at initialization, don't touch */
-    spi_dev_t *hw;          ///< Beginning address of the peripheral registers.
+    spi_dev_t     *hw;              ///< Beginning address of the peripheral registers.
+    spi_dma_dev_t *dma_in;          ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+    spi_dma_dev_t *dma_out;         ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
     /* should be configured by driver at initialization */
-    lldesc_t *dmadesc_rx;   /**< Array of DMA descriptor used by the TX DMA.
-                             *   The amount should be larger than dmadesc_n. The driver should ensure that
-                             *   the data to be sent is shorter than the descriptors can hold.
-                             */
-    lldesc_t *dmadesc_tx;   /**< Array of DMA descriptor used by the RX DMA.
-                             *   The amount should be larger than dmadesc_n. The driver should ensure that
-                             *   the data to be sent is shorter than the descriptors can hold.
-                             */
-    int dmadesc_n;          ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
+    lldesc_t      *dmadesc_rx;      /**< Array of DMA descriptor used by the TX DMA.
+                                     *   The amount should be larger than dmadesc_n. The driver should ensure that
+                                     *   the data to be sent is shorter than the descriptors can hold.
+                                     */
+    lldesc_t      *dmadesc_tx;      /**< Array of DMA descriptor used by the RX DMA.
+                                     *   The amount should be larger than dmadesc_n. The driver should ensure that
+                                     *   the data to be sent is shorter than the descriptors can hold.
+                                     */
+    int dmadesc_n;                  ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
 
     /*
      * configurations to be filled after ``spi_slave_hal_init``. Updated to
      * peripheral registers when ``spi_slave_hal_setup_device`` is called.
      */
     struct {
-        uint32_t rx_lsbfirst    : 1;
-        uint32_t tx_lsbfirst    : 1;
-        uint32_t use_dma        : 1;
+        uint32_t rx_lsbfirst : 1;
+        uint32_t tx_lsbfirst : 1;
+        uint32_t use_dma     : 1;
     };
     int mode;
 
@@ -69,21 +72,27 @@ typedef struct {
      * Transaction specific (data), all these parameters will be updated to the
      * peripheral every transaction.
      */
-    uint32_t bitlen;        ///< Expected maximum length of the transaction, in bits.
-    const void *tx_buffer;  ///< Data to be sent
-    void *rx_buffer;        ///< Buffer to hold the received data.
+    uint32_t bitlen;                ///< Expected maximum length of the transaction, in bits.
+    const void *tx_buffer;          ///< Data to be sent
+    void *rx_buffer;                ///< Buffer to hold the received data.
 
     /*  Other transaction result after one transaction */
-    uint32_t rcv_bitlen;    ///< Length of the last transaction, in bits.
+    uint32_t rcv_bitlen;            ///< Length of the last transaction, in bits.
 } spi_slave_hal_context_t;
+
+typedef struct {
+    uint32_t host_id;               ///< SPI controller ID
+    spi_dma_dev_t *dma_in;          ///< Input  DMA(DMA -> RAM) peripheral register address
+    spi_dma_dev_t *dma_out;         ///< Output DMA(RAM -> DMA) peripheral register address
+} spi_slave_hal_config_t;
 
 /**
  * Init the peripheral and the context.
  *
- * @param hal Context of the HAL layer.
+ * @param hal     Context of the HAL layer.
  * @param host_id Index of the SPI peripheral. 0 for SPI1, 1 for HSPI (SPI2) and 2 for VSPI (SPI3).
  */
-void spi_slave_hal_init(spi_slave_hal_context_t *hal, int host_id);
+void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config_t *hal_config);
 
 /**
  * Deinit the peripheral (and the context if needed).

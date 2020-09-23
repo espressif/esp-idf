@@ -102,13 +102,14 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
+        .dma_in = SPI_LL_GET_HW(host_id),
+        .dma_out = SPI_LL_GET_HW(host_id),
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
         .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
         .dma_chan = config->dma_chan,
-        .mode = config->mode,
+        .mode = config->mode
     };
-
-    slave_hd_hal_init(&host->hal, &hal_config);
+    spi_slave_hd_hal_init(&host->hal, &hal_config);
 
     if (config->dma_chan != 0) {
         //See how many dma descriptors we need and allocate them

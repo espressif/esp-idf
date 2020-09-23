@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 /// Registers to reset during initialization. Don't use in app.
-#define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
+#define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_TRANS_DONE_EN | SPI_INT_WR_DMA_DONE_EN | SPI_INT_RD_DMA_DONE_EN | SPI_INT_WR_BUF_DONE_EN | SPI_INT_RD_BUF_DONE_EN)
 /// Swap the bit order to its correct place to send
@@ -50,6 +50,9 @@ extern "C" {
  */
 typedef uint32_t spi_ll_clock_val_t;
 
+//On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. So set the registers of SPI peripheral to control DMA.
+typedef spi_dev_t spi_dma_dev_t;
+
 /** IO modes supported by the master. */
 typedef enum {
     SPI_LL_IO_MODE_NORMAL = 0,  ///< 1-bit mode for all phases
@@ -58,12 +61,6 @@ typedef enum {
     SPI_LL_IO_MODE_QIO,         ///< 4-bit mode for address and data phases, 1-bit mode for command phase
     SPI_LL_IO_MODE_QUAD,        ///< 4-bit mode for data phases only, 1-bit mode for command and address phases
 } spi_ll_io_mode_t;
-
-/// Interrupt type for different working pattern
-typedef enum {
-    SPI_LL_INT_TYPE_NORMAL = 0, ///< Typical pattern, only wait for trans done
-    SPI_LL_INT_TYPE_SEG = 1,    ///< Wait for DMA signals
-} spi_ll_slave_intr_type;
 
 /// Type definition of all supported interrupts
 typedef enum {
@@ -104,11 +101,6 @@ FLAG_ATTR(spi_ll_trans_len_cond_t)
  */
 static inline void spi_ll_master_init(spi_dev_t *hw)
 {
-    //Reset DMA
-    hw->dma_conf.val |= SPI_LL_RST_MASK;
-    hw->dma_out_link.start = 0;
-    hw->dma_in_link.start = 0;
-    hw->dma_conf.val &= ~SPI_LL_RST_MASK;
     //Reset timing
     hw->ctrl2.val = 0;
 
@@ -137,51 +129,25 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
     hw->user.doutdin = 1; //we only support full duplex
     hw->user.sio = 0;
     hw->slave.slave_mode = 1;
-    hw->dma_conf.val |= SPI_LL_RST_MASK;
-    hw->dma_out_link.start = 0;
-    hw->dma_in_link.start = 0;
-    hw->dma_conf.val &= ~SPI_LL_RST_MASK;
     hw->slave.soft_reset = 1;
     hw->slave.soft_reset = 0;
     //use all 64 bytes of the buffer
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
-    //by default seg mode is disabled
-    hw->dma_conf.dma_continue = 0;
 
     //Disable unneeded ints
     hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
-    hw->dma_int_ena.val = 0;
 }
 
-static inline void spi_ll_slave_hd_init(spi_dev_t* hw)
+static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
 {
     hw->clock.val = 0;
     hw->user.val = 0;
     hw->ctrl.val = 0;
     hw->user.sio = 0;
-    //hw->user.tx_start_bit = 7;
 
     hw->slave.soft_reset = 1;
     hw->slave.soft_reset = 0;
-
-    //Reset DMA
-    hw->dma_conf.val |= SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST;
-    hw->dma_out_link.start = 0;
-    hw->dma_in_link.start = 0;
-    hw->dma_conf.val &= ~(SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST);
-
-    if (hw == &GPSPI2) {
-        hw->dma_conf.out_data_burst_en = 1;
-    } else {
-        hw->dma_conf.out_data_burst_en = 0;
-    }
-    hw->dma_conf.outdscr_burst_en = 1;
-    hw->dma_conf.indscr_burst_en = 1;
-
-    hw->dma_conf.rx_eof_en = 0;
-    hw->dma_conf.out_eof_mode = 1;
-    hw->dma_conf.out_auto_wrback = 1;
 
     hw->user.doutdin = 0; //we only support full duplex
     hw->slave.slave_mode = 1;
@@ -221,103 +187,83 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
     return hw->cmd.val;
 }
 
-/*------------------------------------------------------------------------------
- * DMA
- *----------------------------------------------------------------------------*/
 /**
- * Reset TX and RX DMAs.
+ * Reset SPI CPU FIFO
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_reset_dma(spi_dev_t *hw)
+static inline void spi_ll_cpu_fifo_reset(spi_dev_t *hw)
 {
-    //Reset DMA peripheral
-    hw->dma_conf.val |= SPI_LL_RST_MASK;
-    hw->dma_out_link.start = 0;
-    hw->dma_in_link.start = 0;
-    hw->dma_conf.val &= ~SPI_LL_RST_MASK;
-    hw->dma_conf.out_data_burst_en = 0;
-    hw->dma_conf.indscr_burst_en = 1;
-    hw->dma_conf.outdscr_burst_en = 1;
-    hw->dma_in_link.dma_rx_ena = 0;
-    assert(hw->dma_in_link.dma_rx_ena == 0);
+    //This is not used in esp32s2
 }
 
 /**
- * Start RX DMA.
+ * Reset SPI DMA FIFO
  *
  * @param hw Beginning address of the peripheral registers.
- * @param addr Address of the beginning DMA descriptor.
  */
-static inline void spi_ll_rxdma_start(spi_dev_t *hw, lldesc_t *addr)
+static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
 {
-    hw->dma_in_link.addr = (int) addr & 0xFFFFF;
-    hw->dma_in_link.start = 1;
+    hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
+    hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;
 }
 
 /**
- * Start TX DMA.
- *
+ * Clear in fifo full error
+ * 
  * @param hw Beginning address of the peripheral registers.
- * @param addr Address of the beginning DMA descriptor.
  */
-static inline void spi_ll_txdma_start(spi_dev_t *hw, lldesc_t *addr)
+static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
 {
-    hw->dma_out_link.addr = (int) addr & 0xFFFFF;
-    hw->dma_out_link.start = 1;
-}
-
-static inline void spi_ll_rxdma_reset(spi_dev_t* hw)
-{
-    hw->dma_conf.in_rst = 1;
-    hw->dma_conf.in_rst = 0;
     hw->dma_conf.infifo_full_clr = 1;
     hw->dma_conf.infifo_full_clr = 0;
 }
 
-static inline void spi_ll_txdma_reset(spi_dev_t* hw)
+/**
+ * Clear out fifo empty error
+ * 
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
 {
-    hw->dma_conf.out_rst = 1;
-    hw->dma_conf.out_rst = 0;
     hw->dma_conf.outfifo_empty_clr = 1;
     hw->dma_conf.outfifo_empty_clr = 0;
 }
 
-static inline void spi_ll_rxdma_restart(spi_dev_t* hw)
+/*------------------------------------------------------------------------------
+ * SPI configuration for DMA
+ *----------------------------------------------------------------------------*/
+/**
+ * Enable/Disable RX DMA (Peripherals->DMA->RAM)
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable 1: enable; 2: disable
+ */
+static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
 {
-    hw->dma_in_link.restart = 1;
+    //This is not used in esp32s2
 }
 
-static inline void spi_ll_txdma_restart(spi_dev_t* hw)
+/**
+ * Enable/Disable TX DMA (RAM->DMA->Peripherals)
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable 1: enable; 2: disable
+ */
+static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
 {
-    hw->dma_out_link.restart = 1;
+    //This is not used in esp32s2
 }
 
-static inline void spi_ll_rxdma_disable(spi_dev_t* hw)
+/**
+ * Configuration of OUT EOF flag generation way
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param enable  1: when dma pop all data from fifo  0:when ahb push all data to fifo.
+ */
+static inline void spi_ll_dma_set_out_eof_generation(spi_dma_dev_t *dma_out, bool enable)
 {
-    hw->dma_in_link.dma_rx_ena = 0;
-}
-
-static inline void spi_ll_txdma_disable(spi_dev_t* hw)
-{
-    hw->dma_out_link.dma_tx_ena = 0;
-    hw->dma_out_link.stop = 1;
-}
-
-static inline void spi_ll_rxdma_clr_err(spi_dev_t* hw)
-{
-    hw->dma_conf.infifo_full_clr = 1;
-    hw->dma_conf.infifo_full_clr = 0;
-}
-
-static inline void spi_ll_txdma_clr_err(spi_dev_t* hw)
-{
-    hw->dma_int_clr.outfifo_empty_err= 1;
-}
-
-static inline bool spi_ll_txdma_get_empty_err(spi_dev_t* hw)
-{
-    return hw->dma_int_raw.outfifo_empty_err;
+    dma_out->dma_conf.out_eof_mode = enable;
 }
 
 /*------------------------------------------------------------------------------
@@ -559,7 +505,7 @@ static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_
     }
 }
 
-static inline void spi_ll_slave_set_seg_mode(spi_dev_t* hw, bool seg_trans)
+static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
 {
     hw->dma_conf.dma_seg_trans_en = seg_trans;
     hw->dma_conf.rx_eof_en = seg_trans;
@@ -590,7 +536,7 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param val stored clock configuration calculated before (by ``spi_ll_cal_clock``).
  */
-static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, spi_ll_clock_val_t *val)
+static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_clock_val_t *val)
 {
     hw->clock.val = *(uint32_t *)val;
 }
@@ -784,7 +730,7 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
  * Enable/disable the segment transfer feature for the slave.
  *
  * @param hw Beginning address of the peripheral registers.
- * @param en true to enable, false to disable.
+ * @param en     true to enable, false to disable.
  */
 static inline void spi_ll_slave_set_seg_en(spi_dev_t *hw, bool en)
 {
@@ -982,7 +928,7 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     item(SPI_LL_INTR_OUT_EOF,       dma_int_ena.out_eof,        dma_int_raw.out_eof,        dma_int_clr.out_eof=1) \
     item(SPI_LL_INTR_OUT_TOTAL_EOF, dma_int_ena.out_total_eof,  dma_int_raw.out_total_eof,  dma_int_clr.out_total_eof=1) \
     item(SPI_LL_INTR_SEG_DONE,      slave.int_dma_seg_trans_en, hold.dma_seg_trans_done,    hold.dma_seg_trans_done=0) \
-    item(SPI_LL_INTR_IN_FULL,        dma_int_ena.infifo_full_err, dma_int_raw.infifo_full_err, dma_int_clr.infifo_full_err=1) \
+    item(SPI_LL_INTR_IN_FULL,       dma_int_ena.infifo_full_err, dma_int_raw.infifo_full_err, dma_int_clr.infifo_full_err=1) \
     item(SPI_LL_INTR_OUT_EMPTY,     dma_int_ena.outfifo_empty_err, dma_int_raw.outfifo_empty_err,  dma_int_clr.outfifo_empty_err=1) \
     item(SPI_LL_INTR_WR_DONE,       dma_int_ena.cmd7, dma_int_raw.cmd7,  dma_int_clr.cmd7=1) \
     item(SPI_LL_INTR_CMD8,          dma_int_ena.cmd8, dma_int_raw.cmd8,  dma_int_clr.cmd8=1) \
@@ -1047,7 +993,6 @@ static inline void spi_ll_disable_int(spi_dev_t *hw)
 static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
 {
     hw->slave.trans_done = 0;
-    hw->dma_int_clr.val = UINT32_MAX;
 }
 
 /**
@@ -1070,27 +1015,6 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
     hw->slave.int_trans_done_en = 1;
 }
 
-/**
- * Set different interrupt types for the slave.
- *
- * @param hw Beginning address of the peripheral registers.
- * @param int_type Interrupt type
- */
-static inline void spi_ll_slave_set_int_type(spi_dev_t *hw, spi_ll_slave_intr_type int_type)
-{
-    switch (int_type) {
-    case SPI_LL_INT_TYPE_SEG:
-        hw->dma_int_ena.in_suc_eof = 1;
-        hw->dma_int_ena.out_total_eof = 1;
-        hw->slave.int_trans_done_en = 0;
-        break;
-    default:
-        hw->dma_int_ena.in_suc_eof = 0;
-        hw->dma_int_ena.out_total_eof = 0;
-        hw->slave.int_trans_done_en = 1;
-    }
-}
-
 /*------------------------------------------------------------------------------
  * Slave HD
  *----------------------------------------------------------------------------*/
@@ -1111,6 +1035,157 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
 {
     return hw->slave1.last_addr;
 }
+
+/*------------------------------------------------------------------------------
+ * DMA:
+ *      RX DMA (Peripherals->DMA->RAM)
+ *      TX DMA (RAM->DMA->Peripherals)
+ *----------------------------------------------------------------------------*/
+/**
+ * Reset RX DMA which stores the data received from a peripheral into RAM.
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ */
+static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in)
+{
+    //Reset RX DMA peripheral
+    dma_in->dma_in_link.dma_rx_ena = 0;
+    assert(dma_in->dma_in_link.dma_rx_ena == 0);
+
+    dma_in->dma_conf.in_rst = 1;
+    dma_in->dma_conf.in_rst = 0;
+}
+
+/**
+ * Start RX DMA.
+ *
+ * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param addr Address of the beginning DMA descriptor.
+ */
+static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, lldesc_t *addr)
+{
+    dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
+    dma_in->dma_in_link.start = 1;
+}
+
+/**
+ * Enable DMA RX channel burst for data
+ *
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param enable  True to enable, false to disable
+ */
+static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_out, bool enable)
+{
+    //This is not supported in esp32s2
+}
+
+/**
+ * Enable DMA TX channel burst for descriptor
+ *
+ * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param enable  True to enable, false to disable
+ */
+static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, bool enable)
+{
+    dma_in->dma_conf.indscr_burst_en = enable;
+}
+
+/**
+ * Configuration of RX DMA EOF interrupt generation way
+ *
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans. 
+ */
+static inline void spi_dma_ll_set_rx_eof_generation(spi_dma_dev_t *dma_in, bool enable)
+{
+    dma_in->dma_conf.rx_eof_en = enable;
+}
+
+/**
+ * Reset TX DMA which transmits the data from RAM to a peripheral.
+ *
+ * @param hw      Beginning address of the peripheral registers.
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ */
+static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out)
+{
+    //Reset TX DMA peripheral
+    dma_out->dma_conf.out_rst = 1;
+    dma_out->dma_conf.out_rst = 0;
+}
+
+/**
+ * Start TX DMA.
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param addr Address of the beginning DMA descriptor.
+ */
+static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, lldesc_t *addr)
+{
+    dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
+    dma_out->dma_out_link.start = 1;
+}
+
+/**
+ * Enable DMA TX channel burst for data
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param enable  True to enable, false to disable
+ */
+static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, bool enable)
+{
+    dma_out->dma_conf.out_data_burst_en = enable;
+}
+
+/**
+ * Enable DMA TX channel burst for descriptor
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param enable  True to enable, false to disable
+ */
+static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, bool enable)
+{
+    dma_out->dma_conf.outdscr_burst_en = enable;
+}
+
+/**
+ * Enable automatic outlink-writeback
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param enable  True to enable, false to disable
+ */
+static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, bool enable)
+{
+    dma_out->dma_conf.out_auto_wrback = enable;
+}
+
+static inline void spi_dma_ll_rx_restart(spi_dma_dev_t *dma_in)
+{
+    dma_in->dma_in_link.restart = 1;
+}
+
+static inline void spi_dma_ll_tx_restart(spi_dma_dev_t *dma_out)
+{
+    dma_out->dma_out_link.restart = 1;
+}
+
+static inline void spi_dma_ll_rx_disable(spi_dma_dev_t *dma_in)
+{
+    dma_in->dma_in_link.dma_rx_ena = 0;
+}
+
+static inline void spi_dma_ll_tx_disable(spi_dma_dev_t *dma_out)
+{
+    dma_out->dma_out_link.dma_tx_ena = 0;
+    dma_out->dma_out_link.stop = 1;
+}
+
+static inline bool spi_ll_tx_get_empty_err(spi_dev_t *hw)
+{
+    return hw->dma_int_raw.outfifo_empty_err;
+}
+
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK
 

@@ -22,7 +22,7 @@
  * The HAL layer for SPI Slave HD mode, currently only segment mode is supported
  *
  * Usage:
- * - Firstly, initialize the slave with `slave_hd_hal_init`
+ * - Firstly, initialize the slave with `spi_slave_hd_hal_init`
  *
  * - Event handling:
  *     - (Optional) Call ``spi_slave_hd_hal_enable_event_intr`` to enable the used interrupts
@@ -59,51 +59,54 @@
 
 /// Configuration of the HAL
 typedef struct {
-    int host_id;                    ///< Host ID of the spi peripheral
-    int spics_io_num;               ///< CS GPIO pin for this device
-    uint8_t mode;                   ///< SPI mode (0-3)
-    int     command_bits;           ///< command field bits, multiples of 8 and at least 8.
-    int     address_bits;           ///< address field bits, multiples of 8 and at least 8.
-    int     dummy_bits;             ///< dummy field bits, multiples of 8 and at least 8.
+    uint32_t      host_id;              ///< Host ID of the spi peripheral
+    spi_dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
+    spi_dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
+    uint32_t      spics_io_num;         ///< CS GPIO pin for this device
+    uint8_t       mode;                 ///< SPI mode (0-3)
+    uint32_t      command_bits;         ///< command field bits, multiples of 8 and at least 8.
+    uint32_t      address_bits;         ///< address field bits, multiples of 8 and at least 8.
+    uint32_t      dummy_bits;           ///< dummy field bits, multiples of 8 and at least 8.
 
     struct {
-        uint32_t tx_lsbfirst    : 1;///< Whether TX data should be sent with LSB first.
-        uint32_t rx_lsbfirst    : 1;///< Whether RX data should be read with LSB first.
+        uint32_t  tx_lsbfirst : 1;      ///< Whether TX data should be sent with LSB first.
+        uint32_t  rx_lsbfirst : 1;      ///< Whether RX data should be read with LSB first.
     };
-    int dma_chan;                   ///< The dma channel used.
+    uint32_t      dma_chan;             ///< The dma channel used.
 } spi_slave_hd_hal_config_t;
 
-/// Context of the HAL, initialized by :cpp:func:`slave_hd_hal_init`.
+/// Context of the HAL, initialized by :cpp:func:`spi_slave_hd_hal_init`.
 typedef struct {
-    spi_dev_t* dev;         ///< Beginning address of the peripheral registers.
-    lldesc_t *dmadesc_tx;   /**< Array of DMA descriptor used by the TX DMA.
-                             *   The amount should be larger than dmadesc_n. The driver should ensure that
-                             *   the data to be sent is shorter than the descriptors can hold.
-                             */
-    lldesc_t *dmadesc_rx;   /**< Array of DMA descriptor used by the RX DMA.
-                             *   The amount should be larger than dmadesc_n. The driver should ensure that
-                             *   the data to be sent is shorter than the descriptors can hold.
-                             */
+    spi_dev_t     *dev;                 ///< Beginning address of the peripheral registers.
+    spi_dma_dev_t *dma_in;              ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+    spi_dma_dev_t *dma_out;             ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+    lldesc_t      *dmadesc_tx;          /**< Array of DMA descriptor used by the TX DMA.
+                                         *  The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *  the data to be sent is shorter than the descriptors can hold.
+                                         */
+    lldesc_t      *dmadesc_rx;          /**< Array of DMA descriptor used by the RX DMA.
+                                         *  The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *  the data to be sent is shorter than the descriptors can hold.
+                                         */
 
     /* Internal status used by the HAL implementation, initialized as 0. */
-    uint32_t intr_not_triggered;
+    uint32_t      intr_not_triggered;
 } spi_slave_hd_hal_context_t;
-
 
 /**
  * @brief Initialize the hardware and part of the context
  *
- * @param hal       Context of the HAL layer
- * @param config    Configuration of the HAL
+ * @param hal        Context of the HAL layer
+ * @param hal_config Configuration of the HAL
  */
-void slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *config);
+void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config);
 
 /**
  * @brief Check and clear signal of one event
  *
  * @param hal       Context of the HAL layer
  * @param ev        Event to check
- * @return true if event triggered, otherwise false
+ * @return          True if event triggered, otherwise false
  */
 bool spi_slave_hd_hal_check_clear_event(spi_slave_hd_hal_context_t* hal, spi_event_t ev);
 
@@ -116,7 +119,7 @@ bool spi_slave_hd_hal_check_clear_event(spi_slave_hd_hal_context_t* hal, spi_eve
  *
  * @param hal       Context of the HAL layer
  * @param ev        Event to check and disable
- * @return true if event triggered, otherwise false
+ * @return          True if event triggered, otherwise false
  */
 bool spi_slave_hd_hal_check_disable_event(spi_slave_hd_hal_context_t* hal, spi_event_t ev);
 
@@ -156,7 +159,7 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
  * @brief Get the length of total received data
  *
  * @param hal       Context of the HAL layer
- * @return The received length
+ * @return          The received length
  */
 int spi_slave_hd_hal_rxdma_get_len(spi_slave_hd_hal_context_t *hal);
 
@@ -167,8 +170,8 @@ int spi_slave_hd_hal_rxdma_get_len(spi_slave_hd_hal_context_t *hal);
  * @brief Start the TX DMA operation with the specified buffer
  *
  * @param hal       Context of the HAL layer
- * @param data Buffer of data to send
- * @param len Size of the buffer, also the maximum length to send
+ * @param data      Buffer of data to send
+ * @param len       Size of the buffer, also the maximum length to send
  */
 void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len);
 
@@ -179,9 +182,9 @@ void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size
  * @brief Read from the shared register buffer
  *
  * @param hal       Context of the HAL layer
- * @param addr  Address of the shared regsiter to read
- * @param out_data Buffer to store the read data
- * @param len   Length to read from the shared buffer
+ * @param addr      Address of the shared regsiter to read
+ * @param out_data  Buffer to store the read data
+ * @param len       Length to read from the shared buffer
  */
 void spi_slave_hd_hal_read_buffer(spi_slave_hd_hal_context_t *hal, int addr, uint8_t *out_data, size_t len);
 
@@ -199,7 +202,7 @@ void spi_slave_hd_hal_write_buffer(spi_slave_hd_hal_context_t *hal, int addr, ui
  * @brief Get the length of previous transaction.
  *
  * @param hal       Context of the HAL layer
- * @return The length of previous transaction
+ * @return          The length of previous transaction
  */
 int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal);
 
@@ -207,6 +210,6 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal);
  * @brief Get the address of last transaction
  *
  * @param hal       Context of the HAL layer
- * @return The address of last transaction
+ * @return          The address of last transaction
  */
 int spi_slave_hd_hal_get_last_addr(spi_slave_hd_hal_context_t *hal);
