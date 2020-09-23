@@ -639,7 +639,7 @@ static void btc_gap_bt_read_rssi_delta_cmpl_callback(void *p_data)
 
 static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
 {
-    BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, BTA_TRANSPORT_BR_EDR, btc_gap_bt_read_rssi_delta_cmpl_callback);
+    BTA_DmReadRSSI(arg->read_rssi_delta.bda.address, BTA_TRANSPORT_BR_EDR, btc_gap_bt_read_rssi_delta_cmpl_callback);
 }
 
 static esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
