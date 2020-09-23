@@ -334,6 +334,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
     I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, dbias);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
+    rtc_clk_apb_freq_update(80 * MHZ);
     ets_update_cpu_frequency(cpu_freq_mhz);
 }
 

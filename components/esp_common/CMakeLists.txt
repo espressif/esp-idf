@@ -1,12 +1,18 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(CONFIG_IDF_ENV_FPGA)
+    list(APPEND srcs "src/fpga_overrides.c")
+endif()
+
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp_common is headers
-    idf_component_register(INCLUDE_DIRS include)
+    idf_component_register(SRCS ${srcs}
+                           INCLUDE_DIRS include
+                           PRIV_REQUIRES soc)
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 else()
     # Regular app build
-    set(srcs "src/brownout.c"
+    list(APPEND srcs "src/brownout.c"
              "src/esp_err.c"
              "src/dbg_stubs.c"
              "src/esp_err_to_name.c"
@@ -60,4 +66,9 @@ else()
         endif()
     endforeach()
 
+endif()
+
+if(CONFIG_IDF_ENV_FPGA)
+    # Forces the linker to include fpga stubs from this component
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
 endif()

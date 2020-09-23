@@ -124,6 +124,10 @@ class MemRegions(object):
                 # MemRegDef(0x3FFF8000, 0x4000, MemRegions.DIRAM_ID, 0x40068000),
                 # MemRegDef(0x3FFFC000, 0x4000, MemRegions.DIRAM_ID, 0x4006C000),
             ])
+        elif target == 'esp32s3':
+            return sorted([
+                MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DIRAM_ID, 0x40378000),
+            ])
         else:
             return None
 

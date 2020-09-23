@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "soc/rmt_struct.h"
 #include "soc/rmt_caps.h"
 

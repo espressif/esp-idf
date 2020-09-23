@@ -1,3 +1,6 @@
+if(IDF_TARGET STREQUAL "esp32s3")
+    return()
+endif()
 idf_component_register(SRC_DIRS ${IDF_TARGET}
 PRIV_INCLUDE_DIRS .
 PRIV_REQUIRES cmock ulp soc esp_common)

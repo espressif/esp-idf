@@ -171,16 +171,25 @@ menu "ESP32S3-Specific"
 
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
-            default SPIRAM_TYPE_ESPPSRAM32
+            default SPIRAM_TYPE_AUTO
+
+            config SPIRAM_TYPE_AUTO
+                bool "Auto-detect"
+
+            config SPIRAM_TYPE_ESPPSRAM16
+                bool "ESP-PSRAM16 or APS1604"
 
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
+
             config SPIRAM_TYPE_ESPPSRAM64
                 bool "ESP-PSRAM64 or LY68L6400"
         endchoice
 
         config SPIRAM_SIZE
             int
+            default -1 if SPIRAM_TYPE_AUTO
+            default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
@@ -201,22 +210,6 @@ menu "ESP32S3-Specific"
                 help
                     The PSRAM CS IO can be any unused GPIO, please refer to your hardware design.
         endmenu
-
-        config SPIRAM_SPIWP_SD3_PIN
-            int "SPI PSRAM WP(SD3) Pin when customizing pins via eFuse (read help)"
-            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
-            range 0 33
-            default 28
-            help
-                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
-                overridden by setting the eFuses SPI_PAD_CONFIG_xxx.
-
-                Different from esp32 chip, on esp32-s3, the WP pin would also be defined in efuse.
-                This value would only be used if the WP pin recorded in efuse SPI_PAD_CONFIG_xxx is invalid.
-
-                When flash mode is set to QIO or QOUT,
-                the PSRAM WP pin will be set as the value configured in bootloader.
-
         config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"
             default n
@@ -237,11 +230,6 @@ menu "ESP32S3-Specific"
             default SPIRAM_SPEED_40M
             help
                 Select the speed for the SPI RAM chip.
-                If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
-
-                1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
-                2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
-                3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
 
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"

@@ -19,6 +19,8 @@
 #include "esp_rom_efuse.h"
 #include "bootloader_common.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 static const char* TAG = "efuse_test";
 
 static void test_read_blob(void)
@@ -858,3 +860,5 @@ TEST_CASE("Test chip_revision APIs return the same value", "[efuse]")
     esp_efuse_utility_update_virt_blocks();
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_chip_ver(), bootloader_common_get_chip_revision());
 }
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

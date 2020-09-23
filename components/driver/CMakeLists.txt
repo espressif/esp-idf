@@ -1,3 +1,5 @@
+idf_build_get_property(target IDF_TARGET)
+
 set(srcs
     "adc_common.c"
     "dac_common.c"
@@ -23,9 +25,9 @@ set(srcs
     "twai.c"
     "uart.c")
 
-set(includes "include")
+set(includes "include" "${target}/include")
 
-if(IDF_TARGET STREQUAL "esp32")
+if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "mcpwm.c"
                      "sdio_slave.c"
@@ -37,7 +39,7 @@ if(IDF_TARGET STREQUAL "esp32")
     list(APPEND includes "esp32/include")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32s2")
+if(${target} STREQUAL "esp32s2")
     list(APPEND srcs "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"

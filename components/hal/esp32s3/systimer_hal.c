@@ -17,8 +17,9 @@
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
 #include "soc/systimer_caps.h"
+#include "hal/clk_gate_ll.h"
 
-#define SYSTIMER_TICKS_PER_US  (16) // Number of timer ticks per microsecond
+#define SYSTIMER_TICKS_PER_US  (16) // Systimer clock source is fixed to 16MHz
 
 uint64_t systimer_hal_get_counter_value(systimer_counter_id_t counter_id)
 {
@@ -56,6 +57,7 @@ void systimer_hal_set_alarm_value(systimer_alarm_id_t alarm_id, uint64_t timesta
     systimer_counter_value_t alarm = { .val = timestamp * SYSTIMER_TICKS_PER_US};
     systimer_ll_disable_alarm(alarm_id);
     systimer_ll_set_alarm_value(alarm_id, alarm.val);
+    systimer_ll_apply_alarm_value(alarm_id);
     systimer_ll_enable_alarm(alarm_id);
 }
 
@@ -78,7 +80,7 @@ void systimer_hal_on_apb_freq_update(uint32_t apb_ticks_per_us)
 void systimer_hal_counter_value_advance(systimer_counter_id_t counter_id, int64_t time_us)
 {
     systimer_counter_value_t new_count = { .val = systimer_hal_get_counter_value(counter_id) + time_us * SYSTIMER_TICKS_PER_US };
-    systimer_ll_load_counter_value(counter_id, new_count.val);
+    systimer_ll_set_counter_value(counter_id, new_count.val);
     systimer_ll_apply_counter_value(counter_id);
 }
 
@@ -89,6 +91,7 @@ void systimer_hal_enable_counter(systimer_counter_id_t counter_id)
 
 void systimer_hal_init(void)
 {
+    periph_ll_enable_clk_clear_rst(PERIPH_SYSTIMER_MODULE);
     systimer_ll_enable_clock();
 }
 

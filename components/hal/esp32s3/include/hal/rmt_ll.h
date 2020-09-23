@@ -17,12 +17,23 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <stdbool.h>
 #include "soc/rmt_struct.h"
 #include "soc/rmt_caps.h"
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)
+
+static inline void rmt_ll_set_sclk(rmt_dev_t *dev, uint32_t source, uint32_t div_num, uint32_t div_frac_a, uint32_t div_frac_b)
+{
+    dev->sys_conf.sclk_active = 0;
+    dev->sys_conf.sclk_sel = source;
+    dev->sys_conf.sclk_div_num = div_num;
+    dev->sys_conf.sclk_div_a = div_frac_a;
+    dev->sys_conf.sclk_div_b = div_frac_b;
+    dev->sys_conf.sclk_active = 1;
+}
 
 static inline void rmt_ll_enable_drive_clock(rmt_dev_t *dev, bool enable)
 {
@@ -38,14 +49,20 @@ static inline void rmt_ll_reset_counter_clock_div(rmt_dev_t *dev, uint32_t chann
 
 static inline void rmt_ll_reset_tx_pointer(rmt_dev_t *dev, uint32_t channel)
 {
+    dev->tx_conf[channel].apb_mem_rst = 1;
+    dev->tx_conf[channel].mem_rd_rst = 1;
 }
 
 static inline void rmt_ll_reset_rx_pointer(rmt_dev_t *dev, uint32_t channel)
 {
+    dev->rx_conf[channel].conf1.apb_mem_rst = 1;
+    dev->rx_conf[channel].conf1.mem_wr_rst = 1;
 }
 
 static inline void rmt_ll_start_tx(rmt_dev_t *dev, uint32_t channel)
 {
+    dev->tx_conf[channel].conf_update = 1;
+    dev->tx_conf[channel].tx_start = 1;
 }
 
 static inline void rmt_ll_stop_tx(rmt_dev_t *dev, uint32_t channel)
@@ -72,6 +89,7 @@ static inline bool rmt_ll_is_mem_power_down(rmt_dev_t *dev)
 
 static inline void rmt_ll_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
 {
+    dev->tx_conf[channel].mem_size = block_num;
 }
 
 static inline uint32_t rmt_ll_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
@@ -81,11 +99,12 @@ static inline uint32_t rmt_ll_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 
 static inline void rmt_ll_set_counter_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
+    dev->tx_conf[channel].div_cnt = div;
 }
 
 static inline uint32_t rmt_ll_get_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    return 256;
+    return dev->tx_conf[channel].div_cnt;
 }
 
 static inline void rmt_ll_enable_tx_pingpong(rmt_dev_t *dev, bool enable)
@@ -117,6 +136,7 @@ static inline uint32_t rmt_ll_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
 
 static inline void rmt_ll_enable_tx_loop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
+    dev->tx_conf[channel].tx_conti_mode = enable;
 }
 
 static inline bool rmt_ll_is_tx_loop_enabled(rmt_dev_t *dev, uint32_t channel)
@@ -126,23 +146,23 @@ static inline bool rmt_ll_is_tx_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 
 static inline void rmt_ll_set_tx_loop_count(rmt_dev_t *dev, uint32_t channel, uint32_t count)
 {
-    dev->tx_lim_ch[channel].tx_loop_num = count;
+    dev->tx_lim[channel].tx_loop_num = count;
 }
 
 static inline void rmt_ll_reset_tx_loop(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->tx_lim_ch[channel].loop_count_reset = 1;
-    dev->tx_lim_ch[channel].loop_count_reset = 0;
+    dev->tx_lim[channel].loop_count_reset = 1;
+    dev->tx_lim[channel].loop_count_reset = 0;
 }
 
 static inline void rmt_ll_enable_tx_loop_count(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->tx_lim_ch[channel].tx_loop_cnt_en = enable;
+    dev->tx_lim[channel].tx_loop_cnt_en = enable;
 }
 
 static inline void rmt_ll_enable_tx_sync(rmt_dev_t *dev, bool enable)
 {
-    dev->tx_sim.en = enable;
+    dev->tx_sim.tx_sim_en = enable;
 }
 
 static inline void rmt_ll_add_channel_to_group(rmt_dev_t *dev, uint32_t channel)
@@ -175,30 +195,32 @@ static inline uint32_t rmt_ll_get_counter_clock_src(rmt_dev_t *dev, uint32_t cha
 
 static inline void rmt_ll_enable_tx_idle(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
+    dev->tx_conf[channel].idle_out_en = enable;
 }
 
 static inline bool rmt_ll_is_tx_idle_enabled(rmt_dev_t *dev, uint32_t channel)
 {
-    return false;
+    return dev->tx_conf[channel].idle_out_en;
 }
 
 static inline void rmt_ll_set_tx_idle_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
+    dev->tx_conf[channel].idle_out_lv = level;
 }
 
 static inline uint32_t rmt_ll_get_tx_idle_level(rmt_dev_t *dev, uint32_t channel)
 {
-    return 0;
+    return dev->tx_conf[channel].idle_out_lv;
 }
 
 static inline uint32_t rmt_ll_get_channel_status(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->status_ch[channel].val;
+    return 0;
 }
 
 static inline void rmt_ll_set_tx_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
-    dev->tx_lim_ch[channel].limit = limit;
+    dev->tx_lim[channel].limit = limit;
 }
 
 static inline void rmt_ll_set_rx_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
@@ -316,34 +338,39 @@ static inline void rmt_ll_set_tx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
 {
     // In case the compiler optimise a 32bit instruction (e.g. s32i) into two 16bit instruction (e.g. s16i, which is not allowed to access a register)
     // We take care of the "read-modify-write" procedure by ourselves.
-    typeof(dev->carrier_duty_ch[0]) reg;
+    typeof(dev->tx_carrier[0]) reg;
     reg.high = high_ticks;
     reg.low = low_ticks;
-    dev->carrier_duty_ch[channel].val = reg.val;
+    dev->tx_carrier[channel].val = reg.val;
 }
 
 static inline void rmt_ll_set_rx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
 {
+    typeof(dev->rx_carrier[0]) reg;
+    reg.high_thres = high_ticks;
+    reg.low_thres = low_ticks;
+    dev->rx_carrier[channel].val = reg.val;
 }
 
 static inline void rmt_ll_get_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t *high_ticks, uint32_t *low_ticks)
 {
-    *high_ticks = dev->carrier_duty_ch[channel].high;
-    *low_ticks = dev->carrier_duty_ch[channel].low;
 }
 
 static inline void rmt_ll_enable_carrier(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
+    dev->tx_conf[channel].carrier_en = enable;
 }
 
 static inline void rmt_ll_set_carrier_on_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
+    dev->tx_conf[channel].carrier_out_lv = level;
 }
 
 // set true, enable carrier in all RMT state (idle, reading, sending)
 // set false, enable carrier only in sending state (i.e. there're effective data in RAM to be sent)
 static inline void rmt_ll_tx_set_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
+    dev->tx_conf[channel].carrier_eff_en = !enable;
 }
 
 static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const rmt_item32_t *data, uint32_t length, uint32_t off)

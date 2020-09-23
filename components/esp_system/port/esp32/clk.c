@@ -121,7 +121,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     esp_clk_slowclk_cal_set(cal_val);
 }
 
-void esp_clk_init(void)
+ __attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
@@ -203,7 +203,7 @@ void esp_clk_init(void)
  * These peripheral clocks are enabled when the peripherals are initialized
  * and disabled when they are de-initialized.
  */
-void esp_perip_clk_init(void)
+__attribute__((weak)) void esp_perip_clk_init(void)
 {
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
 

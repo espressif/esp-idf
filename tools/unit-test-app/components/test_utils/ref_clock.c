@@ -77,7 +77,7 @@ void ref_clock_init(void)
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 0); // select REF_TICK (1MHz)
 #else
-    // TODO: configure RMT module clock source to fixed 1MHz
+    rmt_ll_set_sclk(s_rmt_hal.regs, 3, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
 #endif
     rmt_hal_set_counter_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
     rmt_ll_enable_tx_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output

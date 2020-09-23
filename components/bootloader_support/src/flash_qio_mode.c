@@ -15,10 +15,12 @@
 #include <stdint.h>
 #include "bootloader_flash_config.h"
 #include "flash_qio_mode.h"
+#include "sdkconfig.h"
 #include "bootloader_flash_priv.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_rom_efuse.h"
+#include "flash_qio_mode.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -28,7 +30,6 @@
 #endif
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
-#include "sdkconfig.h"
 
 
 static const char *TAG = "qio_mode";
@@ -194,7 +195,7 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 #if CONFIG_IDF_TARGET_ESP32
     int wp_pin = bootloader_flash_get_wp_pin();
     esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), spiconfig);
 #endif
     return ESP_OK;

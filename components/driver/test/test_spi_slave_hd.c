@@ -17,6 +17,7 @@
 #include "unity.h"
 #include "test/test_common_spi.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #define TEST_DMA_MAX_SIZE    14000
 #define TEST_BUFFER_SIZE 256     ///< buffer size of each wrdma buffer in fifo mode
@@ -574,3 +575,5 @@ TEST_CASE("test spi slave hd continuous mode, master too long", "[spi][spi_slv_h
 }
 
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
+
+#endif

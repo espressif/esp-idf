@@ -14,6 +14,11 @@
 
 ---
 
+.. tool-xtensa-esp32s3-elf-notes
+
+
+---
+
 .. tool-esp32ulp-elf-notes
 
 

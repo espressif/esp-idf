@@ -10,6 +10,8 @@
 #include "esp_rom_uart.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/memprot.h"
 #endif
 
 

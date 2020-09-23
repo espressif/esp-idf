@@ -68,6 +68,8 @@ bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host)
         idle &= spi_flash_ll_host_idle(&SPI0);
 #elif CONFIG_IDF_TARGET_ESP32S2
         idle &= spi_flash_ll_host_idle(&SPIMEM0);
+#elif CONFIG_IDF_TARGET_ESP32S3
+        idle &= spi_flash_ll_host_idle(&SPIMEM0);
 #endif
     }
 

@@ -58,6 +58,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
+            "spi_flash_hal_gpspi.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/systimer_hal.c"
             "esp32s3/touch_sensor_hal.c")

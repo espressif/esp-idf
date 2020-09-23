@@ -9,6 +9,8 @@
 #include "freertos/task.h"
 #include "driver/sigmadelta.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 TEST_CASE("SigmaDelta config test", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
@@ -85,3 +87,5 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
     TEST_ESP_OK(sigmadelta_set_pin(SIGMADELTA_CHANNEL_0, 5));
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 }
+
+#endif

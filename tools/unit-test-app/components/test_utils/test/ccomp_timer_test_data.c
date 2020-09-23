@@ -14,6 +14,8 @@
 #include "esp32/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
+#elif CONFIG_IDF_TARTGET_ESP32S3
+#include "esp32s3/clk.h"
 #endif
 
 #include "unity.h"
@@ -28,7 +30,7 @@ static const char* TAG = "test_ccomp_timer";
 #define CACHE_SIZE              (1 << 15)
 // Only test half due to lack of memory
 #define TEST_SIZE               (CACHE_SIZE / 2) 
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 // Default cache configuration - no override specified on
 // test_utils config
 #define CACHE_WAYS              8

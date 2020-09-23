@@ -12,6 +12,8 @@
 #include "test_utils.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 // CI ONLY: Don't connect any other signals to this GPIO
 #define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
@@ -518,4 +520,6 @@ TEST_CASE("RMT TX loop", "[rmt]")
     TEST_ASSERT_EQUAL(10, count);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
+#endif
+
 #endif

@@ -20,9 +20,8 @@
 #include <iostream>
 #include "test_utils.h" // unity_send_signal
 
-#include "i2c_cxx.hpp"
-
 #ifdef __cpp_exceptions
+#include "i2c_cxx.hpp"
 
 using namespace std;
 using namespace idf;

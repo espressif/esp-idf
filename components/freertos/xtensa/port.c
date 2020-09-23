@@ -127,6 +127,8 @@
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/spiram.h"
 #endif
 
 #include "esp_private/startup_internal.h" // [refactor-todo] for g_spiram_ok

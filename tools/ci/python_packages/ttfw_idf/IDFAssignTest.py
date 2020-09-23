@@ -17,7 +17,7 @@ except ImportError:
 import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
-from idf_py_actions.constants import SUPPORTED_TARGETS
+from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
 
 IDF_PATH_FROM_ENV = os.getenv('IDF_PATH')
 
@@ -310,6 +310,8 @@ if __name__ == '__main__':
     parser.add_argument('--pipeline_id', '-p', type=int, default=None, help='pipeline_id')
     parser.add_argument('--test-case-file-pattern', help='file name pattern used to find Python test case files')
     args = parser.parse_args()
+
+    SUPPORTED_TARGETS.extend(PREVIEW_TARGETS)
 
     test_case_paths = [os.path.join(IDF_PATH_FROM_ENV, path) if not os.path.isabs(path) else path for path in args.test_case_paths]
     args_list = [test_case_paths, args.config]

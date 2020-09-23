@@ -29,6 +29,29 @@ extern "C" {
 
 #if defined(MBEDTLS_SHA256_ALT)
 
+#if CONFIG_IDF_TARGET_ESP32S3
+
+#include "esp32s3/sha.h"
+
+typedef enum {
+    ESP_SHA256_STATE_INIT,
+    ESP_SHA256_STATE_IN_PROCESS
+} esp_sha256_state;
+
+/**
+ * \brief          SHA-256 context structure
+ */
+typedef struct {
+    uint32_t total[2];          /*!< number of bytes processed  */
+    uint32_t state[8];          /*!< intermediate digest state  */
+    unsigned char buffer[64];   /*!< data block being processed */
+    int first_block;           /*!< if first then true, else false */
+    esp_sha_type mode;
+    esp_sha256_state sha_state;
+}
+mbedtls_sha256_context;
+
+#endif //CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_IDF_TARGET_ESP32S2
 

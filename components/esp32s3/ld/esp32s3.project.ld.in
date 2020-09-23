@@ -284,6 +284,7 @@ SECTIONS
   .flash.text :
   {
     _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
@@ -294,6 +295,7 @@ SECTIONS
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
     /**
@@ -308,6 +310,7 @@ SECTIONS
   {
     . = SIZEOF(.flash.text);
     . = ALIGN(0x10000) + 0x20;
+    _rodata_reserved_start = .;
   } > drom0_0_seg
 
   /* When modifying the alignment, don't forget to update tls_section_alignment in pxPortInitialiseStack */
@@ -367,6 +370,7 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } > default_rodata_seg
 

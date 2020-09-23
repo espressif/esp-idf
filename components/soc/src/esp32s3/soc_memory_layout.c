@@ -57,7 +57,7 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  */
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
+    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 4, 0}, //SPI SRAM, if available
 #endif
 #if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
     { 0x40374000, 0x4000,  3, 0},          //Level 1, IRAM
@@ -101,7 +101,9 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_
 #endif
 
 #ifdef CONFIG_SPIRAM
-SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
+/* Reserve the whole possible SPIRAM region here, spiram.c will add some or all of this
+ * memory to heap depending on the actual SPIRAM chip size. */
+SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region);
 #endif
 
 #if CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM > 0

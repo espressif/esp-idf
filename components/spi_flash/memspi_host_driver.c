@@ -25,7 +25,7 @@
 static const char TAG[] = "memspi";
 DRAM_ATTR static const spi_flash_host_driver_t esp_flash_default_host = ESP_FLASH_DEFAULT_HOST_DRIVER();
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 extern void spi_flash_hal_gpspi_poll_cmd_done(spi_flash_host_inst_t *host);
 extern esp_err_t spi_flash_hal_gpspi_device_config(spi_flash_host_inst_t *host);
 esp_err_t spi_flash_hal_gpspi_configure_host_io_mode(
@@ -67,7 +67,7 @@ esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     host->inst.driver = &esp_flash_default_host;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (cfg->host_id == SPI_HOST)
         host->inst.driver = &esp_flash_default_host;
     else {

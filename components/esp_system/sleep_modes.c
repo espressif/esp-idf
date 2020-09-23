@@ -48,14 +48,16 @@
 #include "esp32/rom/cache.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/rom/ets_sys.h"
 #include "soc/extmem_reg.h"
-#include "esp32s2/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
+#include "esp32s3/rom/cache.h"
+#include "esp32s3/rom/rtc.h"
+#include "soc/extmem_reg.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -68,6 +70,8 @@
 #define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
@@ -318,7 +322,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, 1);
 #endif
 
@@ -524,7 +528,7 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 #else // CONFIG_ESP32_ULP_COPROC_ENABLED
     return ESP_ERR_INVALID_STATE;
 #endif // CONFIG_ESP32_ULP_COPROC_ENABLED
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
 #endif
@@ -720,6 +724,9 @@ esp_err_t esp_sleep_enable_wifi_wakeup(void)
 #elif CONFIG_IDF_TARGET_ESP32S2
     s_config.wakeup_triggers |= RTC_WIFI_TRIG_EN;
     return ESP_OK;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    s_config.wakeup_triggers |= RTC_MAC_TRIG_EN;
+    return ESP_OK;
 #endif
 }
 
@@ -732,7 +739,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
 #endif
 

@@ -38,7 +38,7 @@
 #include "driver/rtc_io.h"
 #include "esp_rom_sys.h"
 
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32) // This testcase for ESP32S2
+#if !DISABLED_FOR_TARGETS(ESP8266, ESP32, ESP32S3) // This testcase for ESP32S2
 
 static const char *TAG = "test_touch";
 

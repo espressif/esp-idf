@@ -272,18 +272,25 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
     switch (group_num) {
     case TIMER_GROUP_0:
     default:
-        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
-            intr_source = ETS_TG0_T0_LEVEL_INTR_SOURCE + timer_num;
-        } else {
+        intr_source = ETS_TG0_T0_LEVEL_INTR_SOURCE + timer_num;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE)) {
             intr_source = ETS_TG0_T0_EDGE_INTR_SOURCE + timer_num;
         }
+#endif
         timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_0][timer_num]->hal), &status_reg, &mask);
         break;
     case TIMER_GROUP_1:
+        intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE)) {
+            intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
+        }
+#endif
         if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
             intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
         } else {
-            intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
+            intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
         }
         timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_1][timer_num]->hal), &status_reg, &mask);
         break;

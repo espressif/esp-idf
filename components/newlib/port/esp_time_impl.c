@@ -35,12 +35,18 @@
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/clk.h"
 #include "esp32s2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/rtc.h"
+#include "esp32s3/clk.h"
+#include "esp32s3/rtc.h"
 #endif
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) \
     || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) \
     || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC ) \
-    || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )
+    || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 ) \
+    || defined( CONFIG_ESP32S3_TIME_SYSCALL_USE_RTC ) \
+    || defined( CONFIG_ESP32S3_TIME_SYSCALL_USE_RTC_FRC1 )
 #define WITH_RTC 1
 #endif
 

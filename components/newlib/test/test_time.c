@@ -9,6 +9,7 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "soc/rtc.h"
+#include "soc/rtc_cntl_reg.h"
 #include "esp_system.h"
 #include "test_utils.h"
 #include "esp_log.h"
@@ -17,8 +18,13 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
+#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
+#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/clk.h"
+#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #if portNUM_PROCESSORS == 2
@@ -32,7 +38,7 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
         for (int i = 0; i < 200000; ++i) {
             // wait for 20us, reading one of RTC registers
             uint32_t ccount = xthal_get_ccount();
-            while (xthal_get_ccount() - ccount < 20 * CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ) {
+            while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
                 volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
                 (void) val;
             }

@@ -16,13 +16,13 @@ else()
              "clk.c"
              "crosscore_int.c"
              "dport_access.c"
-             "esp_crypto_lock.c"
              "hw_random.c"
              "intr_alloc.c"
              "memprot.c"
              "pm_esp32s3.c"
              "pm_trace.c"
-             "sleep_modes.c"
+             "spiram.c"
+             "spiram_psram.c"
              "system_api_esp32s3.c")
     set(include_dirs "include")
 

@@ -73,7 +73,7 @@ typedef enum {
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
-void esp_clk_init(void)
+ __attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     RESET_REASON rst_reas;
@@ -206,7 +206,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  * These peripheral clocks are enabled when the peripherals are initialized
  * and disabled when they are de-initialized.
  */
-void esp_perip_clk_init(void)
+__attribute__((weak)) void esp_perip_clk_init(void)
 {
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
     uint32_t common_perip_clk1 = 0;

@@ -28,6 +28,11 @@
 #include "esp32s2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/cache.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #endif
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
@@ -304,6 +309,11 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_st
     *saved_state = ret;
 #elif CONFIG_IDF_TARGET_ESP32S2
     *saved_state = Cache_Suspend_ICache();
+#elif CONFIG_IDF_TARGET_ESP32S3
+    uint32_t icache_state, dcache_state;
+    icache_state = Cache_Suspend_ICache() << 16;
+    dcache_state = Cache_Suspend_DCache();
+    *saved_state = icache_state | dcache_state;
 #endif
 }
 
@@ -323,6 +333,9 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S2
     Cache_Resume_ICache(saved_state);
+#elif CONFIG_IDF_TARGET_ESP32S3
+    Cache_Resume_DCache(saved_state & 0xffff);
+    Cache_Resume_ICache(saved_state >> 16);
 #endif
 }
 
@@ -335,6 +348,8 @@ IRAM_ATTR bool spi_flash_cache_enabled(void)
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S2
     bool result = (REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE) != 0);
+#elif CONFIG_IDF_TARGET_ESP32S3
+    bool result = (REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE) != 0);
 #endif
     return result;
 }
@@ -448,16 +463,19 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     int i;
     bool flash_spiram_wrap_together, flash_support_wrap = true, spiram_support_wrap = true;
     uint32_t drom0_in_icache = 1;//always 1 in esp32s2
+#if CONFIG_IDF_TARGET_ESP32S3
+    drom0_in_icache = 0;
+#endif
 
     if (icache_wrap_enable) {
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
         icache_wrap_size = 16;
 #else
         icache_wrap_size = 32;
 #endif
     }
     if (dcache_wrap_enable) {
-#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B
+#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B
         dcache_wrap_size = 16;
 #else
         dcache_wrap_size = 32;
@@ -549,13 +567,13 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 
 #ifdef CONFIG_FLASHMODE_QIO
     flash_support_wrap = true;
-extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
+    extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
         flash_support_wrap = false;
         ESP_EARLY_LOGW(TAG, "Flash do not support wrap size %d.", flash_wrap_size);
     }
 #else
-        ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
+    ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
 #endif
 
 #ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
@@ -578,6 +596,261 @@ extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
     }
 #if CONFIG_ESP32S2_SPIRAM_SUPPORT
+    extern esp_err_t psram_enable_wrap(uint32_t wrap_size);
+    if (spiram_support_wrap && spiram_wrap_size > 0) {
+        ESP_EARLY_LOGI(TAG, "SPIRAM wrap enabled, size = %d.", spiram_wrap_size);
+        psram_enable_wrap(spiram_wrap_size);
+        esp_enable_cache_spiram_wrap((spiram_wrap_sizes[0] > 0), (spiram_wrap_sizes[1] > 0));
+    }
+#endif
+
+    return ESP_OK;
+
+}
+#endif
+#if CONFIG_IDF_TARGET_ESP32S3
+IRAM_ATTR void esp_config_instruction_cache_mode(void)
+{
+    cache_size_t cache_size;
+    cache_ways_t cache_ways;
+    cache_line_size_t cache_line_size;
+
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
+    Cache_Occupy_ICache_MEMORY(CACHE_MEMORY_IBANK0, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_HALF;
+#else
+    Cache_Occupy_ICache_MEMORY(CACHE_MEMORY_IBANK0, CACHE_MEMORY_IBANK1);
+    cache_size = CACHE_SIZE_FULL;
+#endif
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_4WAYS
+    cache_ways = CACHE_4WAYS_ASSOC;
+#else
+    cache_ways = CACHE_8WAYS_ASSOC;
+#endif
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
+    cache_line_size = CACHE_LINE_SIZE_16B;
+#elif CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_32B
+    cache_line_size = CACHE_LINE_SIZE_32B;
+#else
+    cache_line_size = CACHE_LINE_SIZE_64B;
+#endif
+    ESP_EARLY_LOGI(TAG, "Instruction cache: size %dKB, %dWays, cache line size %dByte", cache_size == CACHE_SIZE_HALF ? 16 : 32, cache_ways == CACHE_4WAYS_ASSOC ? 4 : 8, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : (cache_line_size == CACHE_LINE_SIZE_32B ? 32 : 64));
+    Cache_Set_ICache_Mode(cache_size, cache_ways, cache_line_size);
+    Cache_Invalidate_ICache_All();
+    extern void Cache_Enable_ICache(uint32_t autoload);
+    Cache_Enable_ICache(0);
+}
+
+IRAM_ATTR void esp_config_data_cache_mode(void)
+{
+    cache_size_t cache_size;
+    cache_ways_t cache_ways;
+    cache_line_size_t cache_line_size;
+
+#if CONFIG_ESP32S3_DATA_CACHE_32KB
+    Cache_Occupy_DCache_MEMORY(CACHE_MEMORY_DBANK1, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_HALF;
+#else
+    Cache_Occupy_DCache_MEMORY(CACHE_MEMORY_DBANK0, CACHE_MEMORY_DBANK1);
+    cache_size = CACHE_SIZE_FULL;
+#endif
+#if CONFIG_ESP32S3_DATA_CACHE_4WAYS
+    cache_ways = CACHE_4WAYS_ASSOC;
+#else
+    cache_ways = CACHE_8WAYS_ASSOC;
+#endif
+#if CONFIG_ESP32S3_DATA_CACHE_LINE_16B
+    cache_line_size = CACHE_LINE_SIZE_16B;
+#elif CONFIG_ESP32S3_DATA_CACHE_LINE_32B
+    cache_line_size = CACHE_LINE_SIZE_32B;
+#else
+    cache_line_size = CACHE_LINE_SIZE_64B;
+#endif
+    // ESP_EARLY_LOGI(TAG, "Data cache: size %dKB, %dWays, cache line size %dByte", cache_size == CACHE_SIZE_HALF ? 32 : 64, cache_ways == CACHE_4WAYS_ASSOC ? 4 : 8, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : (cache_line_size == CACHE_LINE_SIZE_32B ? 32 : 64));
+    Cache_Set_DCache_Mode(cache_size, cache_ways, cache_line_size);
+    Cache_Invalidate_DCache_All();
+}
+
+static IRAM_ATTR void esp_enable_cache_flash_wrap(bool icache, bool dcache)
+{
+    uint32_t i_autoload, d_autoload;
+    if (icache) {
+        i_autoload = Cache_Suspend_ICache();
+    }
+    if (dcache) {
+        d_autoload = Cache_Suspend_DCache();
+    }
+    REG_SET_BIT(EXTMEM_CACHE_WRAP_AROUND_CTRL_REG, EXTMEM_CACHE_FLASH_WRAP_AROUND);
+    if (icache) {
+        Cache_Resume_ICache(i_autoload);
+    }
+    if (dcache) {
+        Cache_Resume_DCache(d_autoload);
+    }
+}
+
+#if CONFIG_ESP32S3_SPIRAM_SUPPORT
+static IRAM_ATTR void esp_enable_cache_spiram_wrap(bool icache, bool dcache)
+{
+    uint32_t i_autoload, d_autoload;
+    if (icache) {
+        i_autoload = Cache_Suspend_ICache();
+    }
+    if (dcache) {
+        d_autoload = Cache_Suspend_DCache();
+    }
+    REG_SET_BIT(EXTMEM_CACHE_WRAP_AROUND_CTRL_REG, EXTMEM_CACHE_SRAM_RD_WRAP_AROUND);
+    if (icache) {
+        Cache_Resume_ICache(i_autoload);
+    }
+    if (dcache) {
+        Cache_Resume_DCache(d_autoload);
+    }
+}
+#endif
+
+esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable)
+{
+    int icache_wrap_size = 0, dcache_wrap_size = 0;
+    int flash_wrap_sizes[2] = {-1, -1}, spiram_wrap_sizes[2] = {-1, -1};
+    int flash_wrap_size = 0, spiram_wrap_size = 0;
+    int flash_count = 0, spiram_count = 0;
+    int i;
+    bool flash_spiram_wrap_together, flash_support_wrap = false, spiram_support_wrap = true;
+    uint32_t drom0_in_icache = 0;//always 0 in chip7.2.4
+
+    if (icache_wrap_enable) {
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
+        icache_wrap_size = 16;
+#elif CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_32B
+        icache_wrap_size = 32;
+#else
+        icache_wrap_size = 64;
+#endif
+    }
+    if (dcache_wrap_enable) {
+#if CONFIG_ESP32S3_DATA_CACHE_LINE_16B
+        dcache_wrap_size = 16;
+#elif CONFIG_ESP32S3_DATA_CACHE_LINE_32B
+        dcache_wrap_size = 32;
+#else
+        dcache_wrap_size = 64;
+#endif
+    }
+
+    uint32_t instruction_use_spiram = 0;
+    uint32_t rodata_use_spiram = 0;
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    extern uint32_t esp_spiram_instruction_access_enabled();
+    instruction_use_spiram = esp_spiram_instruction_access_enabled();
+#endif
+#if CONFIG_SPIRAM_RODATA
+    extern uint32_t esp_spiram_rodata_access_enabled();
+    rodata_use_spiram = esp_spiram_rodata_access_enabled();
+#endif
+
+    if (instruction_use_spiram) {
+        spiram_wrap_sizes[0] = icache_wrap_size;
+    } else {
+        flash_wrap_sizes[0] = icache_wrap_size;
+    }
+    if (rodata_use_spiram) {
+        if (drom0_in_icache) {
+            spiram_wrap_sizes[0] = icache_wrap_size;
+        } else {
+            spiram_wrap_sizes[1] = dcache_wrap_size;
+        }
+#ifdef CONFIG_EXT_RODATA_SUPPORT
+        spiram_wrap_sizes[1] = dcache_wrap_size;
+#endif
+    } else {
+        if (drom0_in_icache) {
+            flash_wrap_sizes[0] = icache_wrap_size;
+        } else {
+            flash_wrap_sizes[1] = dcache_wrap_size;
+        }
+#ifdef CONFIG_EXT_RODATA_SUPPORT
+        flash_wrap_sizes[1] = dcache_wrap_size;
+#endif
+    }
+#ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
+    spiram_wrap_sizes[1] = dcache_wrap_size;
+#endif
+    for (i = 0; i < 2; i++) {
+        if (flash_wrap_sizes[i] != -1) {
+            flash_count++;
+            flash_wrap_size = flash_wrap_sizes[i];
+        }
+    }
+    for (i = 0; i < 2; i++) {
+        if (spiram_wrap_sizes[i] != -1) {
+            spiram_count++;
+            spiram_wrap_size = spiram_wrap_sizes[i];
+        }
+    }
+    if (flash_count + spiram_count <= 2) {
+        flash_spiram_wrap_together = false;
+    } else {
+        flash_spiram_wrap_together = true;
+    }
+    if (flash_count > 1 && flash_wrap_sizes[0] != flash_wrap_sizes[1]) {
+        ESP_EARLY_LOGW(TAG, "Flash wrap with different length %d and %d, abort wrap.", flash_wrap_sizes[0], flash_wrap_sizes[1]);
+        if (spiram_wrap_size == 0) {
+            return ESP_FAIL;
+        }
+        if (flash_spiram_wrap_together) {
+            ESP_EARLY_LOGE(TAG, "Abort spiram wrap because flash wrap length not fixed.");
+            return ESP_FAIL;
+        }
+    }
+    if (spiram_count > 1 && spiram_wrap_sizes[0] != spiram_wrap_sizes[1]) {
+        ESP_EARLY_LOGW(TAG, "SPIRAM wrap with different length %d and %d, abort wrap.", spiram_wrap_sizes[0], spiram_wrap_sizes[1]);
+        if (flash_wrap_size == 0) {
+            return ESP_FAIL;
+        }
+        if (flash_spiram_wrap_together) {
+            ESP_EARLY_LOGW(TAG, "Abort flash wrap because spiram wrap length not fixed.");
+            return ESP_FAIL;
+        }
+    }
+
+    if (flash_spiram_wrap_together && flash_wrap_size != spiram_wrap_size) {
+        ESP_EARLY_LOGW(TAG, "SPIRAM has different wrap length with flash, %d and %d, abort wrap.", spiram_wrap_size, flash_wrap_size);
+        return ESP_FAIL;
+    }
+
+#ifdef CONFIG_FLASHMODE_QIO
+    flash_support_wrap = true;
+    extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
+    if (!spi_flash_support_wrap_size(flash_wrap_size)) {
+        flash_support_wrap = false;
+        ESP_EARLY_LOGW(TAG, "Flash do not support wrap size %d.", flash_wrap_size);
+    }
+#else
+    ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
+#endif
+
+
+#ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
+    extern bool psram_support_wrap_size(uint32_t wrap_size);
+    if (!psram_support_wrap_size(spiram_wrap_size)) {
+        spiram_support_wrap = false;
+        ESP_EARLY_LOGW(TAG, "SPIRAM do not support wrap size %d.", spiram_wrap_size);
+    }
+#endif
+
+    if (flash_spiram_wrap_together && !(flash_support_wrap && spiram_support_wrap)) {
+        ESP_EARLY_LOGW(TAG, "Flash and SPIRAM should support wrap together.");
+        return ESP_FAIL;
+    }
+
+    extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
+    if (flash_support_wrap && flash_wrap_size > 0) {
+        ESP_EARLY_LOGI(TAG, "Flash wrap enabled, size = %d.", flash_wrap_size);
+        spi_flash_enable_wrap(flash_wrap_size);
+        esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
+    }
+#if CONFIG_ESP32S3_SPIRAM_SUPPORT
     extern esp_err_t psram_enable_wrap(uint32_t wrap_size);
     if (spiram_support_wrap && spiram_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "SPIRAM wrap enabled, size = %d.", spiram_wrap_size);

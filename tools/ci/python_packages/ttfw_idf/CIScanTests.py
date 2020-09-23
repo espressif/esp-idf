@@ -8,7 +8,7 @@ from collections import defaultdict
 from find_apps import find_apps
 from find_build_apps import BUILD_SYSTEMS, BUILD_SYSTEM_CMAKE
 from ttfw_idf.IDFAssignTest import ExampleAssignTest, TestAppsAssignTest
-from idf_py_actions.constants import SUPPORTED_TARGETS
+from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
 
 TEST_LABELS = {
     'example_test': 'BOT_LABEL_EXAMPLE_TEST',
@@ -89,6 +89,8 @@ def main():
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise e
+
+    SUPPORTED_TARGETS.extend(PREVIEW_TARGETS)
 
     if (not build_standalone_apps) and (not build_test_case_apps):
         for target in SUPPORTED_TARGETS:
