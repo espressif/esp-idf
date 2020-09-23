@@ -93,7 +93,25 @@ typedef struct {
 
 typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
 
+/**
+ * transfer an message to another module in the different task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @param  arg_len   length of paramter
+ * @param  copy_func deep copy function
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func);
+
+/**
+ * transfer an message to another module in tha same task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
+bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg);
 
 bt_status_t btc_init(void);
 void btc_deinit(void);
