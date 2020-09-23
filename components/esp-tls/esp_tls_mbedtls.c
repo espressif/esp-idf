@@ -44,6 +44,11 @@ static const atcacert_def_t* cert_def = NULL;
 static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cfg);
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
 
+#if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
+#include "rsa_sign_alt.h"
+static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
+#endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */
+
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
@@ -56,6 +61,9 @@ typedef struct esp_tls_pki_t {
     unsigned int privkey_pem_bytes;
     const unsigned char *privkey_password;
     unsigned int privkey_password_len;
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    void *esp_ds_data;
+#endif
 } esp_tls_pki_t;
 
 esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
@@ -125,6 +133,9 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
     ret = mbedtls_ssl_handshake(&tls->ssl);
     if (ret == 0) {
         tls->conn_state = ESP_TLS_DONE;
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+        esp_ds_release_ds_lock();
+#endif
         return 1;
     } else {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
@@ -247,6 +258,9 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     atcab_release();
 #endif
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    esp_ds_release_ds_lock();
+#endif
 }
 
 static esp_err_t set_ca_cert(esp_tls_t *tls, const unsigned char *cacert, size_t cacert_len)
@@ -272,7 +286,6 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
     int ret;
 
     if (pki->publiccert_pem_buf != NULL &&
-        pki->privkey_pem_buf != NULL &&
         pki->public_cert != NULL &&
         pki->pk_key != NULL) {
 
@@ -286,8 +299,22 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
         }
 
-        ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
-                                   pki->privkey_password, pki->privkey_password_len);
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+        if (pki->esp_ds_data != NULL) {
+            ret = esp_mbedtls_init_pk_ctx_for_ds(pki);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to initialize pk context for ");
+                return ret;
+            }
+        } else
+#endif
+        if (pki->privkey_pem_buf != NULL) {
+            ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
+                                       pki->privkey_password, pki->privkey_password_len);
+        } else {
+            return ESP_ERR_INVALID_ARG;
+        }
+
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
@@ -477,6 +504,35 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGE(TAG, "Please enable secure element support for ESP-TLS in menuconfig");
         return ESP_FAIL;
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
+    } else if (cfg->ds_data != NULL) {
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+        if (cfg->clientcert_pem_buf == NULL) {
+            ESP_LOGE(TAG, "Client certificate is also required with the DS parameters");
+            return ESP_ERR_INVALID_STATE;
+        }
+        esp_ds_set_session_timeout(cfg->timeout_ms);
+        /* set private key pointer to NULL since the DS peripheral with its own configuration data is used */
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->clientcert,
+            .pk_key = &tls->clientkey,
+            .publiccert_pem_buf = cfg->clientcert_buf,
+            .publiccert_pem_bytes = cfg->clientcert_bytes,
+            .privkey_pem_buf = NULL,
+            .privkey_pem_bytes = 0,
+            .privkey_password = NULL,
+            .privkey_password_len = 0,
+            .esp_ds_data = cfg->ds_data,
+        };
+
+        esp_err_t esp_ret = set_pki_context(tls, &pki);
+        if (esp_ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set client pki context for the DS peripheral, returned %02x", esp_ret);
+            return esp_ret;
+        }
+#else
+        ESP_LOGE(TAG, "Please enable the DS peripheral support for the ESP-TLS in menuconfig. (only supported for the ESP32-S2 chip)");
+        return ESP_FAIL;
+#endif
     } else if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
@@ -671,3 +727,25 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cf
     return ESP_OK;
 }
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
+
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
+{
+    int ret = -1;
+    /* initialize the mbedtls pk context with rsa context */
+    mbedtls_rsa_context rsakey;
+    mbedtls_rsa_init(&rsakey, MBEDTLS_RSA_PKCS_V15, 0);
+    if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, &rsakey, NULL, esp_ds_rsa_sign,
+                                        esp_ds_get_keylen )) != 0) {
+        ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned %02x", ret);
+        return ESP_FAIL;
+    }
+    ret = esp_ds_init_data_ctx(((const esp_tls_pki_t*)pki)->esp_ds_data);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize DS parameters from nvs");
+        return ESP_FAIL;
+    }
+    ESP_LOGD(TAG, "DS peripheral params initialized.");
+    return ESP_OK;
+}
+#endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */

@@ -205,6 +205,7 @@ typedef struct esp_tls_cfg {
                                             /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
                                                  bundle for server verification, must be enabled in menuconfig */
 
+    void *ds_data;                          /*!< Pointer for digital signature peripheral context */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

@@ -24,6 +24,15 @@ menu "ESP-TLS"
             Enable use of Secure Element for ESP-TLS, this enables internal support for
             ATECC608A peripheral on ESPWROOM32SE, which can be used for TLS connection.
 
+    config ESP_TLS_USE_DS_PERIPHERAL
+        bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
+        depends on IDF_TARGET_ESP32S2 && ESP_TLS_USING_MBEDTLS
+        default y
+        help
+            Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral
+            can only be used when it is appropriately configured for TLS.
+            Consult the ESP-TLS documentation in ESP-IDF Programming Guide for more details.
+
     config ESP_TLS_SERVER
         bool "Enable ESP-TLS Server"
         default n

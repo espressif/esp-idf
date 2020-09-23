@@ -88,37 +88,73 @@ SSL/TLS libraries and with all respective configurations set to default.
 
 .. note::    `These values are subject to change with change in configuration options and version of respective libraries`.
 
-ATECC608A (Secure Element) with ESP-TLS
---------------------------------------------------
+.. only:: esp32
 
-ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE.
-Use of ATECC608A is supported only when ESP-TLS is used with mbedTLS as its underlying SSL/TLS stack.
-ESP-TLS uses mbedtls as its underlying TLS/SSL stack by default unless changed manually.
+    ATECC608A (Secure Element) with ESP-TLS
+    --------------------------------------------------
 
-.. note:: ATECC608A chip on ESP32-WROOM-32SE must be already configured and provisioned, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_
+    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE.
+    Use of ATECC608A is supported only when ESP-TLS is used with mbedTLS as its underlying SSL/TLS stack.
+    ESP-TLS uses mbedtls as its underlying TLS/SSL stack by default unless changed manually.
 
-To enable the secure element support, and use it in you project for TLS connection, you will have to follow below steps
+    .. note:: ATECC608A chip on ESP32-WROOM-32SE must be already configured and provisioned, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_
 
-1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `esp-cryptoauthlib with ESP_IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_
+    To enable the secure element support, and use it in you project for TLS connection, you will have to follow below steps
 
-2) Enable following menuconfig option::
+    1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `esp-cryptoauthlib with ESP_IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_
 
-    menuconfig->Component config->ESP-TLS->Use Secure Element (ATECC608A) with ESP-TLS
+    2) Enable following menuconfig option::
 
-3) Select type of ATECC608A chip with following option::
+        menuconfig->Component config->ESP-TLS->Use Secure Element (ATECC608A) with ESP-TLS
 
-    menuconfig->Component config->esp-cryptoauthlib->Choose Type of ATECC608A chip
+    3) Select type of ATECC608A chip with following option::
 
-to know more about different types of ATECC608A chips and how to obtain type of ATECC608A connected to your ESP module please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_
+        menuconfig->Component config->esp-cryptoauthlib->Choose Type of ATECC608A chip
 
-4) Enable use of ATECC608A in ESP-TLS by providing following config option in `esp_tls_cfg_t`
+    to know more about different types of ATECC608A chips and how to obtain type of ATECC608A connected to your ESP module please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_
 
-.. code-block:: c
+    4) Enable use of ATECC608A in ESP-TLS by providing following config option in `esp_tls_cfg_t`
 
-        esp_tls_cfg_t cfg = {
-            /* other configurations options */
-            .use_secure_element = true,
-        };
+    .. code-block:: c
+
+            esp_tls_cfg_t cfg = {
+                /* other configurations options */
+                .use_secure_element = true,
+            };
+
+.. only:: esp32s2
+
+    .. _digital-signature-with-esp-tls:
+
+    Digital Signature with ESP-TLS
+    ------------------------------
+    ESP-TLS provides support for using the Digital Signature (DS) with ESP32-S2.
+    Use of the DS for TLS is supported only when ESP-TLS is used with mbedTLS (default stack) as its underlying SSL/TLS stack.
+    For more details on Digital Signature, please refer to the :doc:`Digital Signature Documentation </api-reference/peripherals/ds>`. The technical details of Digital Signature such as
+    how to calculate private key parameters can be found at `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+    The DS peripheral must be configured before it can be used to perform Digital Signature, see `Configure the DS Peripheral` in :doc:`Digital Signature </api-reference/peripherals/ds>`.
+
+    .. note:: As the DS peripheral support is only available for ESP32-S2, the idf-target should be set to ESP32-S2. See `Selecting the Target` in :doc:`build-system.</api-guides/build-system>`.
+
+    The DS peripheral must be initlized with the required encrypted private key parameters (obtained when the DS peripheral is configured). ESP-TLS internally initializes the DS peripheral when
+    provided with the required DS context (DS parameters). Please see the below code snippet for passing the DS context to esp-tls context. The DS context passed to the esp-tls context should not be freed till the TLS connection is deleted.
+
+    .. code-block:: c
+
+            #include "esp_tls.h"
+            esp_ds_data_ctx_t *ds_ctx;
+            /* initialize ds_ctx with encrypted private key parameters, which can be read from the nvs or
+            provided through the application code */
+            esp_tls_cfg_t cfg = {
+                .clientcert_buf = /* the client cert */,
+                .clientcert_bytes = /* length of the client cert */,
+                /* other configurations options */
+                .ds_data = (void *)ds_ctx,
+            };
+
+    .. note:: When using Digital Signature for the TLS connection, along with the other required params, only the client cert (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
+
+    * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
 
 API Reference
 -------------

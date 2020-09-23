@@ -303,6 +303,14 @@ static int ssl_get_socket(esp_transport_handle_t t)
     return -1;
 }
 
+void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.ds_data = ds_data;
+    }
+}
+
 esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
