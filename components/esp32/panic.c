@@ -362,7 +362,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
             return;
         }
         panicPutStr(". Exception was unhandled.\r\n");
-        if (exccause == 0 /* IllegalInstruction */) {
+        if (exccause == EXCCAUSE_ILLEGAL) {
             illegal_instruction_helper(frame);
         }
         esp_reset_reason_set_hint(ESP_RST_PANIC);
@@ -468,9 +468,10 @@ static void doBacktrace(XtExcFrame *exc_frame, int depth)
     putEntry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
 
     //Check if first frame is valid
-    bool corrupted = (esp_stack_ptr_is_sane(stk_frame.sp) &&
-                      esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc))) ?
-                      false : true;
+    bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
+                       (esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)) ||
+                        /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+                        exc_frame->exccause == EXCCAUSE_INSTR_PROHIBITED));
     uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
     while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
         if (!esp_backtrace_get_next_frame(&stk_frame)) {    //Get next stack frame
