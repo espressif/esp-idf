@@ -175,7 +175,7 @@ static void IRAM_ATTR set_isr_wrapper(int32_t n, void *f, void *arg)
 static void * IRAM_ATTR spin_lock_create_wrapper(void)
 {
     portMUX_TYPE tmp = portMUX_INITIALIZER_UNLOCKED;
-    void *mux = malloc(sizeof(portMUX_TYPE));
+    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     
     if (mux) {
         memcpy(mux,&tmp,sizeof(portMUX_TYPE));
