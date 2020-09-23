@@ -1547,7 +1547,7 @@ extern void BTA_DmClearWhiteList(void);
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 #endif  ///BLE_INCLUDED == TRUE
 
-extern void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb);
+extern void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb);
 
 /*******************************************************************************
 **
