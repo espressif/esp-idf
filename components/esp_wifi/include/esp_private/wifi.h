@@ -478,6 +478,28 @@ esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8
 bool esp_wifi_internal_is_tsf_active(void);
 #endif
 
+/**
+  * @breif    TxDone callback function type. Should be registered using esp_wifi_set_tx_done_cb()
+  *
+  * @param    ifidx The interface id that the tx callback has been triggered from
+  * @param    data Pointer to the data transmitted
+  * @param    data_len Length of the data transmitted
+  * @param    txStatus True:if the data was transmitted sucessfully False: if data transmission failed
+  */
+typedef void (* wifi_tx_done_cb_t)(uint8_t ifidx, uint8_t *data, uint16_t *data_len, bool txStatus);
+
+/**
+  * @brief    Register the txDone callback function of type wifi_tx_done_cb_t
+  *
+  * @param    cb The callback function
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_set_tx_done_cb(wifi_tx_done_cb_t cb);
+
 #ifdef __cplusplus
 }
 #endif
