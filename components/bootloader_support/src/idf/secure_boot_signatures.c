@@ -206,11 +206,19 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
        during boot-time verification. */
     memset(verified_digest, 0, DIGEST_LEN);
 
+    /* Generating the SHA of the public key components in the signature block */
+    for (i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        bootloader_sha256_handle_t sig_block_sha;
+        sig_block_sha = bootloader_sha256_start();
+        bootloader_sha256_data(sig_block_sha, &sig_block->block[i].key, sizeof(sig_block->block[i].key));
+        bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_key_digest[i]);
+    }
+
 #if CONFIG_IDF_TARGET_ESP32
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0};
     memcpy(efuse_trusted_digest, (uint8_t *) EFUSE_BLK2_RDATA0_REG, sizeof(efuse_trusted_digest));
 
-    if (memcmp(efuse_trusted_digest, sig_block_key_digest, DIGEST_LEN) != 0) {
+    if (memcmp(efuse_trusted_digest, sig_block_key_digest[0], DIGEST_LEN) != 0) {
         const uint8_t zeroes[DIGEST_LEN] = {0};
         /* Can't continue if secure boot is enabled, OR if a different digest is already written in efuse BLK2
 
@@ -231,14 +239,6 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         return ESP_FAIL;
     }
 #endif /* CONFIG_IDF_TARGET_ESP32 */
-
-    /* Generating the SHA of the public key components in the signature block */
-    for (i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-        bootloader_sha256_handle_t sig_block_sha;
-        sig_block_sha = bootloader_sha256_start();
-        bootloader_sha256_data(sig_block_sha, &sig_block->block[i].key, sizeof(sig_block->block[i].key));
-        bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_key_digest[i]);
-    }
 #endif /* CONFIG_SECURE_BOOT_V2_ENABLED */
 
     ESP_LOGI(TAG, "Verifying with RSA-PSS...");
