@@ -48,6 +48,7 @@ extern "C" {
  * stored somewhere to be quickly used.
  */
 typedef uint32_t spi_ll_clock_val_t;
+typedef spi_dev_t spi_dma_dev_t;
 
 /** IO modes supported by the master. */
 typedef enum {
@@ -418,7 +419,7 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param val stored clock configuration calculated before (by ``spi_ll_cal_clock``).
  */
-static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, spi_ll_clock_val_t *val)
+static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_clock_val_t *val)
 {
     hw->clock.val = *(uint32_t *)val;
 }
@@ -782,6 +783,25 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     return 0;
 }
 
+static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
+{ 
+}
+
+static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
+{
+}
+
+static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
+{
+}
+
+static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
+{
+}
+
+static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
+{
+}
 
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK

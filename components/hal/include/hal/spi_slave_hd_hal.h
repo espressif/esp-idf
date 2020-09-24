@@ -56,7 +56,6 @@
 #include "hal/spi_ll.h"
 #include "hal/spi_types.h"
 
-
 /// Configuration of the HAL
 typedef struct {
     uint32_t      host_id;              ///< Host ID of the spi peripheral
