@@ -598,7 +598,7 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
     return NULL;
 }
 
-void heap_caps_aligned_free(void *ptr)
+IRAM_ATTR void heap_caps_aligned_free(void *ptr)
 {
     heap_caps_free(ptr);
 }

@@ -544,7 +544,7 @@ static const uint8_t data_drom[320+3] = {
 0x70, 0x22, 0x7D, 0x0A, 0x6D, 0xD3, 0x77, 0x73, 0xD0, 0xF4, 0x06, 0xB2, 0x19, 0x8C, 0xFF, 0x58, 0xE4, 0xDB, 0xE9, 0xEC, 0x89, 0x6A, 0xF4, 0x0E, 0x67, 0x12, 0xEC, 0x11, 0xD2, 0x1F, 0x8D, 0xD7,
 };
 
-TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi][ignore]")
+TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 {
 #ifdef CONFIG_SPIRAM
     //test psram if enabled
@@ -564,7 +564,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi][ignore]"
     ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
     ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
     TEST_ASSERT(esp_ptr_in_dram(data_dram));
-    TEST_ASSERT(esp_ptr_in_iram(data_iram));
+    TEST_ASSERT(esp_ptr_executable(data_iram) || esp_ptr_in_iram(data_iram) || esp_ptr_in_diram_iram(data_iram));
     TEST_ASSERT(esp_ptr_in_drom(data_drom));
 
     srand(52);

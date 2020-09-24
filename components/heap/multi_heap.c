@@ -236,10 +236,10 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
     }
 
     multi_heap_internal_lock(heap);
-
-    heap->free_bytes += tlsf_block_size(p);
+    size_t previous_block_size =  tlsf_block_size(p);
     void *result = tlsf_realloc(heap->heap_data, p, size);
     if(result) {
+        heap->free_bytes += previous_block_size;
         heap->free_bytes -= tlsf_block_size(result);
         if (heap->free_bytes < heap->minimum_free_bytes) {
             heap->minimum_free_bytes = heap->free_bytes;

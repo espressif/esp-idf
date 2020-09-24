@@ -25,7 +25,6 @@
 */
 extern void *heap_caps_malloc_default( size_t size );
 extern void *heap_caps_realloc_default( void *ptr, size_t size );
-extern void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
 
 void* malloc(size_t size)
 {

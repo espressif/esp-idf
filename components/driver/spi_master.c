@@ -714,7 +714,7 @@ static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
 {
     spi_transaction_t *trans_desc = trans_buf->trans;
     if ((void *)trans_buf->buffer_to_send != &trans_desc->tx_data[0] &&
-        trans_buf->buffer_to_send != trans_desc->tx_buffer) { // NOLINT(clang-analyzer-unix.Malloc)
+        trans_buf->buffer_to_send != trans_desc->tx_buffer) {
         free((void *)trans_buf->buffer_to_send); //force free, ignore const
     }
     // copy data from temporary DMA-capable buffer back to IRAM buffer and free the temporary one.

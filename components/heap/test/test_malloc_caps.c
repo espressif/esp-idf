@@ -162,8 +162,6 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
 
-#ifndef CONFIG_SPIRAM
-
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
@@ -247,4 +245,3 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 
     (void)ptr;
 }
-#endif

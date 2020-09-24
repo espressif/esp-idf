@@ -90,13 +90,13 @@ extern "C" {
 #include "esp_rom_sys.h"
 #include "sdkconfig.h"
 #include "freertos/xtensa_api.h"
+#include "esp_system.h"
+#include "soc/cpu.h"
+#include <limits.h>
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
 #endif
-#include "esp_system.h"
-#include "soc/cpu.h"
-#include <limits.h>
 
 /*-----------------------------------------------------------
  * Port specific definitions.
@@ -136,10 +136,6 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 #include "sdkconfig.h"
 #include "esp_attr.h"
-
-
-#define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
-void vPortAssertIfInISR(void);
 
 // Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
@@ -185,9 +181,6 @@ typedef spinlock_t portMUX_TYPE;
 #define portMUX_TRY_LOCK        SPINLOCK_NO_WAIT       /* Try to acquire the spinlock a single time only */
 #define portMUX_INITIALIZER_UNLOCKED  SPINLOCK_INITIALIZER 
 
-#define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
-void vPortAssertIfInISR(void);
-
 #define portCRITICAL_NESTING_IN_TCB 0
 
 static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux) 
@@ -212,6 +205,9 @@ static inline void __attribute__((always_inline)) vPortCPUReleaseMutex(portMUX_T
 
 void vPortEnterCritical(portMUX_TYPE *mux);
 void vPortExitCritical(portMUX_TYPE *mux);
+
+#define portASSERT_IF_IN_ISR()  vPortAssertIfInISR()
+void vPortAssertIfInISR(void);
 
 /*
  * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
@@ -319,7 +315,7 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
 
 static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) 
 {
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT) || defined(ESP32S2_SPIRAM_SUPPORT)   
+#ifdef CONFIG_SPIRAM   
     compare_and_set_extram(addr, compare, set);
 #endif    
 }
@@ -478,8 +474,8 @@ BaseType_t xPortInterruptedFromISRContext(void);
  * contained in xRegions.
  */
 #if( portUSING_MPU_WRAPPERS == 1 )
-    //struct xMEMORY_REGION;
-    //void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth ) PRIVILEGED_FUNCTION;
+    struct xMEMORY_REGION;
+    void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth ) PRIVILEGED_FUNCTION;
     void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings );
 #endif
 

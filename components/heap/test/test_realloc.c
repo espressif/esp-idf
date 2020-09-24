@@ -24,7 +24,7 @@ TEST_CASE("realloc shrink buffer in place", "[heap]")
 #endif
 
 #ifndef CONFIG_ESP32S2_MEMPROT_FEATURE
-TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap][ignore]")
+TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap]")
 {
     const size_t buffer_size = 64;
 
@@ -34,7 +34,7 @@ TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap][ignore]")
     TEST_ASSERT(y);
 
     //y needs to fall in a compatible memory area of IRAM:
-    TEST_ASSERT(esp_ptr_executable(y));
+    TEST_ASSERT(esp_ptr_executable(y)|| esp_ptr_in_iram(y) || esp_ptr_in_diram_iram(y));
 
     free(y);
 }

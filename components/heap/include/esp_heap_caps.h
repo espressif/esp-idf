@@ -124,9 +124,6 @@ void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
  * @brief Used to deallocate memory previously allocated with heap_caps_aligned_alloc
  * 
  * @param ptr Pointer to the memory allocated
- * @note This function is aimed to deallocate only memory allocated with
- *       heap_caps_aligned_alloc, memory allocated with heap_caps_malloc
- *       MUST not be passed to this function
  * @note This function is deprecated, plase consider using heap_caps_free() instead 
  */
 void __attribute__((deprecated))  heap_caps_aligned_free(void *ptr);                                                  

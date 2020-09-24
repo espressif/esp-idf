@@ -98,9 +98,6 @@ extern "C" {
 
 #include "mpu_wrappers.h"
 
-#include "hal/cpu_hal.h"
-#include "xt_instr_macros.h"
-
 /*
  * Setup the stack of a new task so it is ready to be placed under the
  * scheduler control.  The registers have to be placed on the stack in
@@ -170,7 +167,7 @@ void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 
-#else 
+#else  // configUSE_FREERTOS_PROVIDED_HEAP
 
 /*
  * Map to the memory management routines required for the port.
@@ -198,18 +195,6 @@ BaseType_t xPortStartScheduler( void ) PRIVILEGED_FUNCTION;
  * executing.
  */
 void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
-
-/*
- * The structures and methods of manipulating the MPU are contained within the
- * port layer.
- *
- * Fills the xMPUSettings structure with the memory region information
- * contained in xRegions.
- */
-#if( portUSING_MPU_WRAPPERS == 1 )
-	struct xMEMORY_REGION;
-	void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
-#endif
 
 #ifdef __cplusplus
 }
