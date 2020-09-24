@@ -51,4 +51,5 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
     mbedtls_sha256_free(ctx);
     free(handle);
+    handle = NULL;
 }

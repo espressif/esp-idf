@@ -170,8 +170,8 @@ Some old ways of disabling unit tests for targets, that have obvious disadvantag
   - Test item: some items that will be performed on some targets, but skipped on other
     targets. E.g.
 
-    There are three test items SD 1-bit, SD 4-bit and SDSPI. For ESP32S2, which doesn't have
-    SD host, among the tests only SDSPI is enabled on ESP32S2.
+    There are three test items SD 1-bit, SD 4-bit and SDSPI. For ESP32-S2, which doesn't have
+    SD host, among the tests only SDSPI is enabled on ESP32-S2.
 
   - Test implementation: some code will always happen, but in different ways. E.g.
 
