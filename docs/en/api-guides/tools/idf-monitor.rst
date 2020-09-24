@@ -129,7 +129,7 @@ For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs writt
    recompiling the application.
 
 Your app tags must not contain spaces, asterisks ``*``,
-and semicolons ``:`` to be compatible with the output filtering feature.
+or colons ``:`` to be compatible with the output filtering feature.
 
 If the last line of the output in your app is not followed by a carriage return, the output filtering might get confused, i.e., the monitor starts to print the line and later finds out that the line should not have been written. This is a known issue and can be avoided by always adding a carriage return (especially when no output follows immediately afterwards).
 
