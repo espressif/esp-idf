@@ -40,7 +40,7 @@ enum {
     WIFI_WPA_ALG_GCMP
 };
 
-enum {
+typedef enum {
     WIFI_APPIE_PROBEREQ = 0,
     WIFI_APPIE_ASSOC_REQ,
     WIFI_APPIE_ASSOC_RESP,
@@ -53,7 +53,7 @@ enum {
     WIFI_APPIE_ESP_MANUFACTOR,
     WIFI_APPIE_COUNTRY,
     WIFI_APPIE_MAX,
-};
+} wifi_appie_t;
 
 enum {
     NONE_AUTH           = 0x01,
@@ -195,6 +195,7 @@ void esp_wifi_deauthenticate_internal(u8 reason_code);
 bool esp_wifi_sta_is_running_internal(void);
 bool esp_wifi_auth_done_internal(void);
 int esp_wifi_set_ap_key_internal(int alg, const u8 *addr, int idx, u8 *key, size_t key_len);
+int esp_wifi_get_sta_hw_key_idx_internal(int key_idx);
 int esp_wifi_set_sta_key_internal(int alg, u8 *addr, int key_idx, int set_tx,
                                   u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid);
 int  esp_wifi_get_sta_key_internal(uint8_t *ifx, int *alg, u8 *addr, int *key_idx,

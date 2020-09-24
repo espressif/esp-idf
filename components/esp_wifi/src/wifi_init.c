@@ -24,6 +24,7 @@
 #include "esp_netif.h"
 #include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 #include "driver/adc2_wifi_private.h"
+#include "esp_coexist_internal.h"
 
 #if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
@@ -199,6 +200,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
     }
+#endif
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_init();
 #endif
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {

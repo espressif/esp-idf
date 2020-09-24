@@ -672,7 +672,7 @@ int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
     }
 
     //now only use keyentry 0 for pairwise key
-    sm->key_entry_valid = 5;
+    sm->key_entry_valid = esp_wifi_get_sta_hw_key_idx_internal(0); //KEY_IDX_STA_PTK
 
     if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
                (u8 *) sm->ptk.tk1, keylen,sm->key_entry_valid) < 0) {
@@ -808,7 +808,7 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
         _gtk = gtk_buf;
     }
     //now only use keycache entry1 for group key
-    sm->key_entry_valid = gd->keyidx;
+    sm->key_entry_valid = esp_wifi_get_sta_hw_key_idx_internal(gd->keyidx);
     if (sm->pairwise_cipher == WPA_CIPHER_NONE) {
         if (wpa_sm_set_key(&(sm->install_gtk), gd->alg,
                    sm->bssid, //(u8 *) "\xff\xff\xff\xff\xff\xff",
