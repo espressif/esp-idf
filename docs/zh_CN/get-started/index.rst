@@ -2,6 +2,12 @@
 快速入门
 ***********
 
+{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1"}
+
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash"}
+
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900"}
+
 :link_to_translation:`en:[English]`
 
 本文档旨在指导用户搭建 {IDF_TARGET_NAME} 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 {IDF_TARGET_NAME} 开发板等步骤。
@@ -471,13 +477,14 @@ Windows 操作系统
 
 .. code-block:: none
 
-    ...
-    Hello world!
-    Restarting in 10 seconds...
-    I (211) cpu_start: Starting scheduler on APP CPU.
-    Restarting in 9 seconds...
-    Restarting in 8 seconds...
-    Restarting in 7 seconds...
+    	...
+    	Hello world!
+    	Restarting in 10 seconds...
+    	This is {IDF_TARGET_PATH_NAME} chip with {IDF_TARGET_CORE_NUM} CPU core(s), {IDF_TARGET_FEATURES}
+	Minimum free heap size: {IDF_TARGET_HEAP_SIZE} bytes
+    	Restarting in 9 seconds...
+    	Restarting in 8 seconds...
+    	Restarting in 7 seconds...
 
 您可使用快捷键 ``Ctrl+]``，退出 IDF 监视器。
 

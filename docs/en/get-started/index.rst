@@ -2,6 +2,13 @@
 Get Started
 ***********
 
+{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1"}
+
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash"}
+
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900"}
+
+
 :link_to_translation:`zh_CN:[中文]`
 
 .. Please keep README.md in sync with these instructions.
@@ -569,14 +576,15 @@ After startup and diagnostic logs scroll up, you should see "Hello world!" print
 
 .. code-block:: none
 
-    ...
-    Hello world!
-    Restarting in 10 seconds...
-    This is esp32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 2MB external flash
-    Restarting in 9 seconds...
-    Restarting in 8 seconds...
-    Restarting in 7 seconds...
-
+    	...
+    	Hello world!
+    	Restarting in 10 seconds...
+    	This is {IDF_TARGET_PATH_NAME} chip with {IDF_TARGET_CORE_NUM} CPU core(s), {IDF_TARGET_FEATURES}
+	Minimum free heap size: {IDF_TARGET_HEAP_SIZE} bytes
+    	Restarting in 9 seconds...
+    	Restarting in 8 seconds...
+    	Restarting in 7 seconds...
+    
 To exit IDF monitor use the shortcut ``Ctrl+]``.
 
 .. only:: esp32
