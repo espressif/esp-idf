@@ -910,8 +910,8 @@ extern "C" {
 	/* Either variables of tick type cannot be read atomically, or
 	portTICK_TYPE_IS_ATOMIC was not set - map the critical sections used when
 	the tick count is returned to the standard critical section macros. */
-	#define portTICK_TYPE_ENTER_CRITICAL() portENTER_CRITICAL()
-	#define portTICK_TYPE_EXIT_CRITICAL() portEXIT_CRITICAL()
+	#define portTICK_TYPE_ENTER_CRITICAL(mux) portENTER_CRITICAL(mux)
+	#define portTICK_TYPE_EXIT_CRITICAL(mux) portEXIT_CRITICAL(mux)
 	#define portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR() portSET_INTERRUPT_MASK_FROM_ISR()
 	#define portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( x ) portCLEAR_INTERRUPT_MASK_FROM_ISR( ( x ) )
 #else
@@ -987,6 +987,10 @@ V8 if desired. */
 	members directly (which is not supposed to be done). */
 	#define pxContainer pvContainer
 #endif /* configENABLE_BACKWARD_COMPATIBILITY */
+
+#ifndef configESP32_PER_TASK_DATA
+	#define configESP32_PER_TASK_DATA 1
+#endif
 
 #if( configUSE_ALTERNATIVE_API != 0 )
 	#error The alternative API was deprecated some time ago, and was removed in FreeRTOS V9.0 0

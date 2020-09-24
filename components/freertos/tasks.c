@@ -3240,8 +3240,8 @@ void vTaskSwitchContext( void )
 		#endif /* configGENERATE_RUN_TIME_STATS */
 
 		/* Check for stack overflow, if configured. */
-		//taskFIRST_CHECK_FOR_STACK_OVERFLOW();
-		//taskSECOND_CHECK_FOR_STACK_OVERFLOW();
+		taskFIRST_CHECK_FOR_STACK_OVERFLOW();
+		taskSECOND_CHECK_FOR_STACK_OVERFLOW();
 
 		/* Select a new task to run */
 
