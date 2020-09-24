@@ -21,22 +21,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
+from future.utils import iteritems
 import argparse
 import json
+import kconfiglib
 import os
 import os.path
 import re
 import sys
 import tempfile
-from future.utils import iteritems
 
 import gen_kconfig_doc
-
-try:
-    from . import kconfiglib
-except Exception:
-    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-    import kconfiglib
 
 __version__ = "0.1"
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+import kconfiglib
 import os
 import sys
 import unittest
 
 try:
-    from . import kconfiglib
-except Exception:
+    import gen_kconfig_doc
+except ImportError:
     sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../..')))
-    import kconfiglib
-import gen_kconfig_doc
+    import gen_kconfig_doc
 
 
 class ConfigTargetVisibilityTestCase(unittest.TestCase):

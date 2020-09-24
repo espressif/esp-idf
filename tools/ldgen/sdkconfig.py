@@ -14,17 +14,8 @@
 # limitations under the License.
 #
 
-import os
 from pyparsing import Word, alphanums, printables, Combine, Literal, hexnums, quotedString, Optional, nums, removeQuotes, oneOf, Group, infixNotation, opAssoc
-
-import sys
-try:
-    from . import kconfiglib
-except Exception:
-    parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
-    sys.path.insert(0, kconfig_new_dir)
-    import kconfiglib
+import kconfiglib
 
 
 class SDKConfig:

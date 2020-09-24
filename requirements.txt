@@ -18,6 +18,7 @@ pygdbmi<=0.9.0.2
 # The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not copatible with latest gdbgui (>=0.13.2.0)
 reedsolo>=1.5.3,<=1.5.4
 bitstring>=3.1.6
+kconfiglib==13.7.1
 
 # windows-curses are required in Windows command line but cannot be installed in MSYS2. A requirement like
 # "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment

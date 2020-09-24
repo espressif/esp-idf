@@ -2,7 +2,7 @@
 
 kconfig_new is the kconfig support used by the CMake-based build system.
 
-It uses a fork of [kconfiglib](https://github.com/ulfalizer/Kconfiglib) which adds a few small features (newer upstream kconfiglib also has the support we need, we just haven't updated yet). See comments at top of kconfiglib.py for details
+It depends on the [kconfiglib](https://github.com/ulfalizer/Kconfiglib) package.
 
 ## confserver.py
 
