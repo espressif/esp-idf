@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define MHZ (1000000)
 
 #define DPORT_CPUPERIOD_SEL_80		0
