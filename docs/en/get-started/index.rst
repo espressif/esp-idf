@@ -201,6 +201,8 @@ If the command line window or ESP-IDF Tools Installer window was already open be
 
 While this environment variable is still set, the ESP-IDF Tools Installer and the command line installer will prefer the Espressif download server.
 
+.. Once the ESP-IDF Tools Installer binary is updated to include the checkbox, the above can be rewritten to refer to it
+
 Linux and macOS
 ---------------
 
