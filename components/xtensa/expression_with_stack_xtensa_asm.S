@@ -13,44 +13,39 @@
 // limitations under the License.
 
 #include <freertos/xtensa_context.h>
-    
-    .extern esp_clear_watchpoint
+
+    .extern xtensa_shared_stack
+    .extern xtensa_shared_stack_callback
+    .extern xtensa_shared_stack_function_done
+    .extern xtensa_shared_stack_env
+    .extern longjmp
     .text
 
-/**
- * extern void switch_stack_enter(portSTACK_TYPE *stack, portSTACK_TYPE *backup_stack);
- */
-    .globl     esp_switch_stack_enter
-    .type       esp_switch_stack_enter,@function
+
+/* extern void esp_shared_stack_invoke_function(void) */
+
+    .globl     esp_shared_stack_invoke_function
+    .type       esp_shared_stack_invoke_function,@function
     .align      4
-esp_switch_stack_enter:
+esp_shared_stack_invoke_function:
 
     #ifndef __XTENSA_CALL0_ABI__
-    entry   sp, 0x10
-    mov   a4, a1
-    s32i   a4, a3, 0 /* on a3 there is a safe place to save the current stack */
-    l32i   a4, a2, 0 /* obtains the user allocated stack buffer */
-    mov   a1, a4     /* sp register now contains caller specified stack */
-    retw
-    #else 
-    #error "this code is written for Window ABI"
-    #endif
-
-/**
- * extern void switch_stack_exit(portSTACK_TYPE *backup_stack);
- */
-    .globl  esp_switch_stack_exit
-    .type   esp_switch_stack_exit,@function
-    .align  4
-esp_switch_stack_exit:
-
-    #ifndef __XTENSA_CALL0_ABI__
-    entry   sp, 0x10
-
-    l32i a4, a2, 0  /* recover the original task stack */
-    mov a1, a4      /* put it on sp register again */
-    retw
-
-    #else 
+    movi    a0, 0                   /* must not rotate the window here, */
+                                    /* the state of execution for shared stack */
+                                    /* functions will be completely destroyed at end */
+    movi    a6, xtensa_shared_stack
+    l32i    sp, a6, 0               /* load shared stack pointer */
+    movi    a12, xtensa_shared_stack_callback
+    l32i    a12, a12, 0
+    callx4  a12                     /* call user function */
+    movi    a6, xtensa_shared_stack_function_done
+    movi    a7, 1
+    s32i    a7, a6, 0               /* hint the function was finished */
+    movi    a6, xtensa_shared_stack_env
+    movi    a7, 0
+    movi    a12, longjmp
+    callx4  a12                 /* jump to last clean state previously saved */
+    ret
+    #else
     #error "this code is written for Window ABI"
     #endif
