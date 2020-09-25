@@ -81,25 +81,27 @@ TEST_CASE("test adjtime function", "[newlib]")
     tv_delta.tv_sec = 0;
     tv_delta.tv_usec = -900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
-
-    tv_delta.tv_sec = 0;
-    tv_delta.tv_usec = 900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
 
     tv_delta.tv_sec = -4;
     tv_delta.tv_usec = -900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  -4);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
 
     // after settimeofday() adjtime() is stopped
     tv_delta.tv_sec = 15;
     tv_delta.tv_usec = 900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, -4);
+    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
     TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
@@ -112,21 +114,24 @@ TEST_CASE("test adjtime function", "[newlib]")
     tv_delta.tv_sec = 15;
     tv_delta.tv_usec = 900000;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
 
     TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
 
     tv_delta.tv_sec = 1;
     tv_delta.tv_usec = 0;
     TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_TRUE(tv_outdelta.tv_sec == 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
     // the correction will be equal to (1_000_000us >> 6) = 15_625 us.
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec >= 15600);
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec <= 15650);
