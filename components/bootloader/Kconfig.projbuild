@@ -763,6 +763,7 @@ menu "Security features"
     config SECURE_ENABLE_SECURE_ROM_DL_MODE
         bool "Permanently switch to ROM UART Secure Download mode"
         depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE
+        select ESPTOOLPY_NO_STUB
         help
             If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
             Download Mode into a separate Secure Download mode. This option can only work if

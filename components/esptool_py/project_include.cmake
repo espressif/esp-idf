@@ -160,7 +160,7 @@ else()
     list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
 endif()
 
-if(NOT CONFIG_ESPTOOLPY_WITH_STUB)
+if(CONFIG_ESPTOOLPY_NO_STUB)
     list(APPEND esptool_flash_main_args "--no-stub")
 endif()
 
