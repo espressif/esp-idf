@@ -52,13 +52,4 @@ Next Steps
 To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
 
 
-Related Documents
-=================
-
-.. toctree::
-    :maxdepth: 1
-
-    linux-setup-scratch
-
-
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
