@@ -82,6 +82,7 @@ Name: createdsk; Description: "Create Desktop shortcut for the ESP-IDF Tools Com
 ; WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption, not by the position index in WizardForm.TasksList.Items
 ; Please, keep this in mind when making changes to the item's description - WD checkbox is to be disabled on systems without the Windows Defender installed
 Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
+Name: idf_tools_use_mirror; Description: "Use Espressif download server instead of downloading tool packages from Github"; Flags: unchecked;
 
 [Run]
 Filename: "{app}\dist\{#PythonInstallerName}"; Parameters: "/passive PrependPath=1 InstallLauncherAllUsers=0 Include_dev=0 Include_tcltk=0 Include_launcher=0 Include_test=0 Include_doc=0"; Description: "Installing Python"; Check: PythonInstallRequired
