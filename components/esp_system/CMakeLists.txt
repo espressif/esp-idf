@@ -1,8 +1,10 @@
 idf_component_register(SRCS "esp_async_memcpy.c" "panic.c" "system_api.c" "startup.c" "sleep_modes.c" "system_time.c"
                     INCLUDE_DIRS include
-                    PRIV_REQUIRES spi_flash app_update
-                                  # requirements due to startup code
-                                  nvs_flash pthread app_trace
+                    PRIV_REQUIRES spi_flash
+                                  # [refactor-todo] requirements due to init code,
+                                  # should be removable once using component init functions
+                                  # link-time registration is used.
+                                  esp_pm app_update nvs_flash pthread app_trace
                     LDFRAGMENTS "linker.lf")
 
 add_subdirectory(port)

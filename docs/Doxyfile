@@ -277,8 +277,8 @@ INPUT = \
     $(IDF_PATH)/components/app_trace/include/esp_app_trace.h \
     $(IDF_PATH)/components/app_trace/include/esp_sysview_trace.h \
     ### Power management
-    $(IDF_PATH)/components/esp_common/include/esp_pm.h \
-    $(IDF_PATH)/components/$(IDF_TARGET)/include/$(IDF_TARGET)/pm.h \
+    $(IDF_PATH)/components/esp_pm/include/esp_pm.h \
+    $(IDF_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
     ### esp_timer, High Resolution Timer
     $(IDF_PATH)/components/esp_timer/include/esp_timer.h \
     ### esp_event, Event Loop Library

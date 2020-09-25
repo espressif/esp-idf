@@ -14,7 +14,7 @@ if(CONFIG_ETH_ENABLED)
         # esp_netif related
         if(esp_netif IN_LIST components_to_build)
             list(APPEND srcs "src/esp_eth_netif_glue.c")
-            list(APPEND priv_requires "esp_netif")
+            list(APPEND priv_requires esp_netif esp_pm)
         endif()
     endif()
 

@@ -16,6 +16,10 @@
 
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     ESP_PM_TRACE_IDLE,
     ESP_PM_TRACE_TICK,
@@ -43,3 +47,7 @@ void esp_pm_trace_exit(esp_pm_trace_event_t event, int core_id);
 #define ESP_PM_TRACE_EXIT(type, core_id)  do { (void) core_id; } while(0)
 
 #endif // CONFIG_PM_TRACE
+
+#ifdef __cplusplus
+}
+#endif

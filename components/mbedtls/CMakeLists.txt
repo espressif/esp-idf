@@ -4,7 +4,7 @@ idf_build_get_property(python PYTHON)
 idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
     INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include"
     REQUIRES lwip
-    PRIV_REQUIRES soc
+    PRIV_REQUIRES esp_pm soc
     )
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
