@@ -11,8 +11,7 @@ Wi-Fi Driver
 - Support an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
 - Up to 20 MBit/sec TCP throughput and 30 MBit/sec UDP throughput over the air
 - Support Sniffer
-- Support set fast_crypto algorithm and normal algorithm switch which used in wifi connect
-- Support both fast scan and all channel scan feature
+- Support both fast scan and all-channel scan
 - Support multiple antennas
 - Support channel state information
 
@@ -298,7 +297,7 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
 ++++++++++++++++++++++++++++++
  - s1.1: The main task calls esp_netif_init() to create an LwIP core task and initialize LwIP-related work.
 
- - s1.2: The main task calls esp_event_loop_init() to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task.
+ - s1.2: The main task calls :cpp:func:`esp_event_loop_create` to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task.
 
  - s1.3: The main task calls esp_netif_create_default_wifi_ap() or esp_netif_create_default_wifi_sta() to create default network interface instance binding station or AP with TCP/IP stack.
 
@@ -511,10 +510,10 @@ The scan type and other per-scan attributes are configured by esp_wifi_scan_star
 |                  |                                                              |
 +------------------+--------------------------------------------------------------+
 
-There also some global scan attributes which is configured by API esp_wifi_set_config, refer to `Station Basic Configuration`_
+There are also some global scan attributes which are configured by API :cpp:func:`esp_wifi_set_config`, refer to `Station Basic Configuration`_
 
-Scan All APs In All Channels(foreground)
-+++++++++++++++++++++++++++++++++++++++++++
+Scan All APs on All Channels (Foreground)
++++++++++++++++++++++++++++++++++++++++++++++
 
 Scenario:
 
@@ -570,8 +569,8 @@ Scan-Done Event Handling Phase
  - s3.1: When all channels are scanned, <`WIFI_EVENT_SCAN_DONE`_> will arise.
  - s3.2: The application's event callback function notifies the application task that <`WIFI_EVENT_SCAN_DONE`_> is received. esp_wifi_scan_get_ap_num() is called to get the number of APs that have been found in this scan. Then, it allocates enough entries and calls esp_wifi_scan_get_ap_records() to get the AP records. Please note that the AP records in the Wi-Fi driver will be freed, once esp_wifi_scan_get_ap_records() is called. Do not call esp_wifi_scan_get_ap_records() twice for a single scan-done event. If esp_wifi_scan_get_ap_records() is not called when the scan-done event occurs, the AP records allocated by the Wi-Fi driver will not be freed. So, make sure you call esp_wifi_scan_get_ap_records(), yet only once.
 
-Scan All APs on All Channels(background)
-++++++++++++++++++++++++++++++++++++++++
+Scan All APs on All Channels (Background)
+++++++++++++++++++++++++++++++++++++++++++
 Scenario:
 
 .. seqdiag::
@@ -604,9 +603,9 @@ Scenario:
         APP_TASK   <-  EVENT_TASK [label="3.2 > WIFI_EVENT_SCAN_DONE"];
     }
 
-The scenario above is an all-channel background scan. Compared to `Scan All APs In All Channels(foreground)`_ , the difference in the all-channel background scan is that the Wi-Fi driver will scan the back-to-home channel for 30 ms before it switches to the next channel to give the Wi-Fi connection a chance to transmit/receive data.
+The scenario above is an all-channel background scan. Compared to `Scan All APs on All Channels (Foreground)`_ , the difference in the all-channel background scan is that the Wi-Fi driver will scan the back-to-home channel for 30 ms before it switches to the next channel to give the Wi-Fi connection a chance to transmit/receive data.
 
-Scan for a Specific AP in All Channels
+Scan for Specific AP on All Channels
 +++++++++++++++++++++++++++++++++++++++
 Scenario:
 
@@ -637,7 +636,7 @@ Scenario:
         APP_TASK   <-  EVENT_TASK [label="3.2 > WIFI_EVENT_SCAN_DONE"];
     }
 
-This scan is similar to `Scan All APs In All Channels(foreground)`_. The differences are:
+This scan is similar to `Scan All APs on All Channels (Foreground)`_. The differences are:
 
  - s1.1: In step 1.2, the target AP will be configured to SSID/BSSID.
  - s2.1~s2.N: Each time the Wi-Fi driver scans an AP, it will check whether it is a target AP or not. If the scan is WIFI_FAST_SCAN scan and the target AP is found, then the scan-done event will arise and scanning will end; otherwise, the scan will continue. Please note that the first scanned channel may not be channel 1, because the Wi-Fi driver optimizes the scanning sequence.
@@ -649,7 +648,7 @@ You can scan a specific AP, or all of them, in any given channel. These two scen
 Scan in Wi-Fi Connect
 +++++++++++++++++++++++++
 
-When esp_wifi_connect() is called, then the Wi-Fi driver will try to scan the configured AP first. The scan in "Wi-Fi Connect" is the same as `Scan for a Specific AP In All Channels`_, except that no scan-done event will be generated when the scan is completed. If the target AP is found, then the Wi-Fi driver will start the Wi-Fi connection; otherwise, <`WIFI_EVENT_STA_DISCONNECTED`_> will be generated. Refer to `Scan for a Specific AP in All Channels`_
+When esp_wifi_connect() is called, the Wi-Fi driver will try to scan the configured AP first. The scan in "Wi-Fi Connect" is the same as `Scan for Specific AP On All Channels`_, except that no scan-done event will be generated when the scan is completed. If the target AP is found, the Wi-Fi driver will start the Wi-Fi connection; otherwise, <`WIFI_EVENT_STA_DISCONNECTED`_> will be generated. Refer to `Scan for Specific AP On All Channels`_
 
 Scan In Blocked Mode
 ++++++++++++++++++++
@@ -717,15 +716,13 @@ Scenario:
         WIFI_TASK  <-  AP        [label="3.3 > Assoc response"];
         EVENT_TASK <-  WIFI_TASK [label="3.4 > WIFI_EVENT_STA_DISCONNECTED"];
         === 4. 4-way Handshake Phase ===
-        WIFI_TASK  ->  AP        [label="4.1 > 1/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.2 > WIFI_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.1 > WIFI_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  <-  AP        [label="4.2 > 1/4 EAPOL"];
         WIFI_TASK  ->  AP        [label="4.3 > 2/4 EAPOL"];
         EVENT_TASK <-  WIFI_TASK [label="4.4 > WIFI_EVENT_STA_DISCONNECTED"];
-        WIFI_TASK  ->  AP        [label="4.5 > 3/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.6 > WIFI_EVENT_STA_DISCONNECTED"];
-        WIFI_TASK  ->  AP        [label="4.7 > 4/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.8 > WIFI_EVENT_STA_DISCONNECTED"];
-        EVENT_TASK <-  WIFI_TASK [label="4.9 > WIFI_EVENT_STA_CONNECTED"];
+        WIFI_TASK  <-  AP        [label="4.5 > 3/4 EAPOL"];
+        WIFI_TASK  ->  AP        [label="4.6 > 4/4 EAPOL"];
+        EVENT_TASK <-  WIFI_TASK [label="4.7 > WIFI_EVENT_STA_CONNECTED"];
     }
 
 
@@ -755,10 +752,13 @@ Association Phase
 Four-way Handshake Phase
 ++++++++++++++++++++++++++
 
- - s4.1, The four-way handshake is sent out and the association timer is enabled.
- - s4.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
- - s4.3, The association response is received and the association timer is stopped.
- - s4.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises and the reason-code will be the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>.
+ - s4.1, The handshake timer is enabled, the 1/4 EAPOL is not received before the handshake timer expires, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_HANDSHAKE_TIMEOUT. Refer to <`Wi-Fi Reason Code`_>.
+ - s4.2, The 1/4 EAPOL is received.
+ - s4.3, The STA replies 2/4 EAPOL.
+ - s4.4, If the 3/4 EAPOL is not received before the handshake timer expires, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_HANDSHAKE_TIMEOUT. Refer to <`Wi-Fi Reason Code`_>.
+ - s4.5, The 3/4 EAPOL is received.
+ - s4.6, The STA replies 4/4 EAPOL.
+ - s4.7, The STA raises <`WIFI_EVENT_STA_CONNECTED`_>.
 
 
 Wi-Fi Reason Code
@@ -887,7 +887,7 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | IE_INVALID                |   13  |    13   | Invalid element, i.e. an element whose content does not meet|
-|                           |       |         | the specifications of the Standard in Clause 8.             |
+|                           |       |         | the specifications of the Standard in frame formats clause. |
 |                           |       |         |                                                             |
 |                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
@@ -1093,7 +1093,7 @@ API esp_wifi_set_config() can be used to configure the station. The table below 
 +------------------+--------------------------------------------------------------+
 | scan_method      | For WIFI_FAST_SCAN scan, the scan ends when the first matched|
 |                  | AP is found, for WIFI_ALL_CHANNEL_SCAN, the scan finds all   |
-|                  | matched APs in all channels.                                 |
+|                  | matched APs on all channels.                                 |
 |                  | The default scan is WIFI_FAST_SCAN.                          |
 +------------------+--------------------------------------------------------------+
 | bssid_set        | If bssid_set is 0, the station connects to the AP whose SSID |
@@ -1142,7 +1142,7 @@ API esp_wifi_set_config() can be used to configure the station. The table below 
 +------------------+--------------------------------------------------------------+
 
 .. attention::
-    WEP/WPA security modes are deprecated in IEEE802.11-2016 specifications and are recommended not to be used. These modes can be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as WIFI_AUTH_WPA2_PSK.
+    WEP/WPA security modes are deprecated in IEEE 802.11-2016 specifications and are recommended not to be used. These modes can be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as WIFI_AUTH_WPA2_PSK.
 
 AP Basic Configuration
 +++++++++++++++++++++++++++++++++++++
@@ -1229,7 +1229,7 @@ Long Range (LR)
 
 Long Range (LR) mode is an Espressif-patented Wi-Fi mode which can achieve a one-kilometer line of sight range. It has better reception sensitivity, stronger anti-interference ability and longer transmission distance than the traditional 802.11B mode.
 
-LR Compitability
+LR Compatibility
 *************************
 
 Since LR is Espressif unique Wi-Fi mode, only {IDF_TARGET_NAME} devices can transmit and receive the LR data. In other words, the {IDF_TARGET_NAME} device should NOT transmit the data in LR data rate if the connected device doesn't support LR. The application can achieve this by configuring suitable Wi-Fi mode. If the negotiated mode supports LR, the {IDF_TARGET_NAME} may transmit data in LR rate, otherwise, {IDF_TARGET_NAME} will transmit all data in traditional Wi-Fi data rate.
@@ -1312,18 +1312,18 @@ The table below describes the fields in detail,  please consult local 2.4GHz RF 
 |                  |  - an ASCII 'I' character if the regulations under which the station/AP is        |
 |                  |    operating are for an indoor environment only.                                  |
 |                  |  - an ASCII 'X' character if the station/AP is operating under a noncountry       |
-|                  |    entity. The first two octets of the noncountry entity is two ASSCII 'XX'       |
+|                  |    entity. The first two octets of the noncountry entity is two ASCII 'XX'        |
 |                  |    characters.                                                                    |
 |                  |  - the binary representation of the Operating Class table number currently in use.|
-|                  |    Refer 802.11-2012 Annex E.                                                     |
+|                  |    Refer to Annex E, IEEE Std 802.11-2012.                                        |
 |                  |                                                                                   |
 +------------------+-----------------------------------------------------------------------------------+
 | schan            | Start channel, it's the minimum channel number of the regulations under which the |
 |                  | station/AP can operate.                                                           |
 |                  |                                                                                   |
 +------------------+-----------------------------------------------------------------------------------+
-| snum             | Total channel number of the regulations, e.g. if the schan=1, nchan=13, it means  |
-|                  | the station/AP can send data from channel 1 to 13.                                |
+| nchan            | Total number of channels as per the regulations, e.g. if the schan=1, nchan=13,   |
+|                  | it means the station/AP can send data from channel 1 to 13.                       |
 |                  |                                                                                   |
 +------------------+-----------------------------------------------------------------------------------+
 | policy           | Country policy, this field control which country info will be used if the         |
@@ -1343,22 +1343,14 @@ Following table depicts which country info is used in different WiFi Mode and di
 |           |                            | default country info.                                          |
 |           |                            |                                                                |
 |           |                            | For scan:                                                      |
+|           |                            |   -If schan+nchan-1 >11 :                                      |
+|           |                            |    Use active scan from schan to 11 and use passive scan       |
+|           |                            |    from 12 to schan+nchan-1.                                   |
 |           |                            |                                                                |
-|           |                            |  - before the station connects to the AP, scans channel        |
-|           |                            |    "schan" to "min(11, schan+nchan-1)" with active scan and    |
-|           |                            |    channel min(12, schan+nchan)" to 14 with passive scan.      |
-|           |                            |    E.g. if the used country info is                            |
-|           |                            |    {.cc="CN", .schan=1, .nchan=6} then 1 to 6 is active scan   |
-|           |                            |    and 7 to 14 is passive scan                                 |
-|           |                            |    If the used country info is                                 |
-|           |                            |    {.cc="CN", .schan=1, .nchan=12} then 1 to 11 is active scan |
-|           |                            |    and 12 to 14 is passive scan                                |
+|           |                            |   -If schan+nchan-1 <= 11 :                                    |
+|           |                            |    Use active scan from schan to schan+nchan-1.                |
 |           |                            |                                                                |
-|           |                            |  - after the station connects to the AP, scans channel         |
-|           |                            |    "schan" to "schan+nchan-1" with active scan and channel     |
-|           |                            |    "schan+nchan" to 14 with passive scan                       |
-|           |                            |                                                                |
-|           |                            | Always keep in mind that if if a AP with with hidden SSID      |
+|           |                            | Always keep in mind that if an AP with hidden SSID             |
 |           |                            | is set to a passive scan channel, the passive scan will not    |
 |           |                            | find it. In other words, if the application hopes to find the  |
 |           |                            | AP with hidden SSID in every channel, the policy of            |
@@ -1378,9 +1370,9 @@ Following table depicts which country info is used in different WiFi Mode and di
 | AP        | WIFI_COUNTRY_POLICY_MANUAL | Always use the configured country info                         |
 |           |                            |                                                                |
 +-----------+----------------------------+----------------------------------------------------------------+
-| Station/AP| WIFI_COUNTRY_POLICY_AUTO   | If the station doesn't connects to any AP, the AP use the      |
+|Station/AP-| WIFI_COUNTRY_POLICY_AUTO   | If the station doesn't connects to any AP, the AP use the      |
 |           |                            | configured country info.                                       |
-| coexit    |                            | If the station connects to an AP, the AP has the same          |
+|coexistence|                            | If the station connects to an AP, the AP has the same          |
 |           |                            | country info as the station.                                   |
 |           |                            |                                                                |
 |           |                            | Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO      |
@@ -1389,7 +1381,7 @@ Following table depicts which country info is used in different WiFi Mode and di
 Home Channel
 *************************
 
-In AP mode, the home channel is defined as that of the AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+AP mode, the home channel of AP and station must be the same. If the home channels of Station and AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the AP needs to switch its channel from 6 to 9 to make sure that both station and AP have the same home channel. While switching channel, the {IDF_TARGET_NAME} in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Stations that support channel switching will transition smoothly whereas stations who do not will disconnect and reconnect to the SoftAP.
+In AP mode, the home channel is defined as the AP channel. In Station mode, home channel is defined as the channel of AP which the station is connected to. In Station/AP-coexistence mode, the home channel of AP and station must be the same, if they are different, the station's home channel is always in priority. Take the following as an example: the AP is on channel 6, and the station connects to an AP whose channel is 9. Since the station's home channel has higher priority, the AP needs to switch its channel from 6 to make sure that it has the same home channel as the station. While switching channel, the {IDF_TARGET_NAME} in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Station that supports channel switching will transit without disconnecting and reconnecting to the SoftAP.
 
 
 Wi-Fi Vendor IE Configuration
@@ -1456,15 +1448,6 @@ AP Sleep
 Currently {IDF_TARGET_NAME} AP doesn't support all of the power save feature defined in Wi-Fi specification. To be specific, the AP only caches unicast data for the stations connect to this AP, but doesn't cache the multicast data for the stations. If stations connected to the {IDF_TARGET_NAME} AP are power save enabled, they may experience multicast packet loss.
 
 In future, all power save features will be supported on {IDF_TARGET_NAME} AP.
-
-{IDF_TARGET_NAME} Wi-Fi Connect Crypto
---------------------------------------
-Now {IDF_TARGET_NAME} have two group crypto functions can be used when do wifi connect, one is the original functions, the other is optimized by ESP hardware:
-1. Original functions which is the source code used in the folder components/wpa_supplicant/src/crypto function;
-2. The optimized functions is in the folder components/wpa_supplicant/src/fast_crypto, these function used the hardware crypto to make it faster than origin one, the type of function's name add `fast_` to distinguish with the original one. For example, the API aes_wrap() is used to encrypt frame information when do 4 way handshake, the fast_aes_wrap() has the same result but can be faster.
-
-Two groups of crypto function can be used when register in the wpa_crypto_funcs_t, wpa2_crypto_funcs_t and wps_crypto_funcs_t structure, also we have given the recommend functions to register in the
-fast_crypto_ops.c, you can register the function as the way you need, however what should make action is that the crypto_hash_xxx function and crypto_cipher_xxx function need to register with the same function to operation. For example, if you register crypto_hash_init() function to initialize the esp_crypto_hash structure, you need use the crypto_hash_update() and crypto_hash_finish() function to finish the operation, rather than fast_crypto_hash_update() or fast_crypto_hash_finish().
 
 {IDF_TARGET_NAME} Wi-Fi Throughput
 -----------------------------------
