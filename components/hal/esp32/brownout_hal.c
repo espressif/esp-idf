@@ -39,3 +39,8 @@ void brownout_hal_intr_clear(void)
 {
     RTCCNTL.int_clr.rtc_brown_out = 1;
 }
+
+bool brownout_hal_intr_raw(void)
+{
+    return RTCCNTL.int_raw.rtc_brown_out != 0;
+}

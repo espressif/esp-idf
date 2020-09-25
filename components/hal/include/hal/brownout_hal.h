@@ -43,6 +43,8 @@ void brownout_hal_intr_enable(bool enable);
 
 void brownout_hal_intr_clear(void);
 
+bool brownout_hal_intr_raw(void);
+
 #ifdef __cplusplus
 }
 #endif
