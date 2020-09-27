@@ -23,6 +23,12 @@ JTAG 调试
 :ref:`jtag-debugging-tips-and-quirks`
     介绍使用 OpenOCD 和 GDB 通过 JTAG 接口调试 {IDF_TARGET_NAME} 时的注意事项和补充内容。
 
+
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: devkit-defs
+   :end-before: ---
+
+
 .. _jtag-debugging-introduction:
 
 引言
@@ -39,7 +45,7 @@ JTAG 调试
 本文将指导如何在 Linux，Windows 和 MacOS 环境下为 {IDF_TARGET_NAME} 安装 OpenOCD，并使用 GDB 进行软件调试。除了个别操作系统的安装过程有所差别以外，软件用户界面和使用流程都是一样的。
 
 .. note::
-    本文使用的图片素材来自于 Ubuntu 16.04 LTE 上 Eclipse Neon 3 软件的截图，不同的操作系统（Windows， MacOS 或者 Linux）和 Eclipse 软件版本在用户界面上可能会有细微的差别。
+    本文使用的图片素材来自于 Ubuntu 16.04 LTS 上 Eclipse Neon 3 软件的截图，不同的操作系统（Windows， MacOS 或者 Linux）和 Eclipse 软件版本在用户界面上可能会有细微的差别。
 
 .. _jtag-debugging-how-it-works:
 
@@ -60,7 +66,7 @@ JTAG 调试
 
 `Eclipse <https://www.eclipse.org/>`__ 环境集成了 JTAG 调试和应用程序加载、监视的功能，它使得软件从编写、编译、加载到调试的迭代过程变得更加快速而简单。所有的软件均适用于 Windows，Linux 和 MacOS 平台。
 
-如果你使用的是 :doc:`ESP-WROVER-KIT 开发板 <../../hw-reference/modules-and-boards>`，得益于板载的 FT232H 芯片，PC 和 {IDF_TARGET_NAME} 的连接仅仅需要一根 USB 线即可完成。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
+如果你使用的是 |devkit-name-with-link|，得益于板载的 FT232H 芯片，PC 和 {IDF_TARGET_NAME} 的连接仅仅需要一根 USB 线即可完成。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
 
 根据用户的喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
 
@@ -69,7 +75,7 @@ JTAG 调试
 选择 JTAG 适配器
 ----------------
 
-上手 JTAG 最快速便捷的方式是使用 :doc:`ESP-WROVER-KIT 开发板 <../../hw-reference/modules-and-boards>`，因为它板载了 JTAG 调试接口，无需使用外部的 JTAG 硬件适配器和额外的线缆来连接 JTAG 与 {IDF_TARGET_NAME}。ESP-WROVER-KIT 采用 FT2232H 提供的 JTAG 接口，可以稳定运行在 20 MHz 的时钟频率，外接的适配器很难达到这个速度。
+上手 JTAG 最快速便捷的方式是使用 |devkit-name-with-link|，因为它板载了 JTAG 调试接口，无需使用外部的 JTAG 硬件适配器和额外的线缆来连接 JTAG 与 {IDF_TARGET_NAME}。|devkit-name| 采用 FT2232H 提供的 JTAG 接口，可以稳定运行在 20 MHz 的时钟频率，外接的适配器很难达到这个速度。
 
 如果你想使用单独的 JTAG 适配器，请确保其与 {IDF_TARGET_NAME} 的电平电压和 OpenOCD 软件都兼容。{IDF_TARGET_NAME} 使用的是业界标准的 JTAG 接口，它省略了（实际上也并不需要）TRST 信号脚。JTAG 使用的 IO 引脚由 VDD_3P3_RTC 电源引脚供电（通常连接到外部 3.3 V 的电源轨），因此 JTAG 硬件适配器的引脚需要能够在该电压范围内正常工作。
 
@@ -127,7 +133,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 .. toctree::
     :maxdepth: 1
 
-    :esp32: configure-wrover
+    configure-ft2232h-jtag
     configure-other-jtag
 
 
@@ -140,35 +146,26 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 .. highlight:: bash
 
-打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）::
+打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）:
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: run-openocd
+    :end-before: ---
 
 .. note::
 
-    上述命令中 ``-f`` 选项后跟的配置文件专用于板载 esp32-wroom-32 模组的 ESP-WROVER-KIT 开发板。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
+    上述命令中 ``-f`` 选项后跟的配置文件专用于 |run-openocd-device-name|。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
 
 .. highlight:: none
 
-现在应该可以看到如下输入（此日志来自 ESP-WROVER-KIT）::
+现在应该可以看到如下输入（此日志来自 |run-openocd-device-name|）:
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
-    Licensed under GNU GPL v2
-    For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
-    none separate
-    adapter speed: 20000 kHz
-    force hard breakpoints
-    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
-    Info : clock speed 20000 kHz
-    Info : JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : JTAG tap: esp32.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-    Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-output
+   :end-before: ---
 
 -  如果出现指示权限问题的错误，请参阅 ``~/esp/openocd-esp32`` 目录下 OpenOCD README 文件中关于 “Permissions delegation” 的说明。
--  如果发现配置文件有错误，例如 ``Can't find board/esp32-wrover-kit-3.3v.cfg``，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
+-  如果发现配置文件有错误，例如 |run-openocd-cfg-file-err|，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
 -  如果看到 JTAG 错误（输出全是 1 或者全是 0），请检查硬件连接，除了 {IDF_TARGET_NAME} 的引脚之外是否还有其他信号连接到了 JTAG，并查看是否所有器件都已经上电。
 
 
@@ -179,9 +176,11 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 您可以像往常一样构建并上传 {IDF_TARGET_NAME} 应用程序，具体请参阅 :ref:`get-started-build` 章节。
 
-除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下::
+除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下:
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-upload
+   :end-before: ---
 
 其中 OpenOCD 的烧写命令 ``program_esp`` 具有以下格式：
 
@@ -250,23 +249,31 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 .. highlight:: bash
 
-如果要使用本地从源代码编译的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并设置 ``OPENOCD_SCRIPTS`` 环境变量，这样 OpenOCD 才能找到配置文件。Linux 和 macOS 用户可以执行::
+如果要使用本地从源代码编译的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并设置 ``OPENOCD_SCRIPTS`` 环境变量，这样 OpenOCD 才能找到配置文件。Linux 和 macOS 用户可以执行:
+
+.. code-block:: bash
 
     cd ~/esp/openocd-esp32
     export OPENOCD_SCRIPTS=$PWD/tcl
 
-Windows 用户可以执行::
+Windows 用户可以执行:
+
+.. code-block:: batch
 
     cd %USERPROFILE%\esp\openocd-esp32
     set "OPENOCD_SCRIPTS=%CD%\tcl"
 
-运行本地编译的 OpenOCD 的示例如下（Linux 和 macOS 用户）::
+运行本地编译的 OpenOCD 的示例如下（Linux 和 macOS 用户）:
 
-    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-linux
+   :end-before: ---
 
-Windows 用户::
+Windows 用户:
 
-    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-win
+   :end-before: ---
 
 
 .. _jtag-debugging-tips-and-quirks:

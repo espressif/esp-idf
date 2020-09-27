@@ -25,6 +25,11 @@ GDB. The document is structured as follows:
     This section provides collection of tips and quirks related JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
 
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: devkit-defs
+   :end-before: ---
+
+
 .. _jtag-debugging-introduction:
 
 Introduction
@@ -42,7 +47,7 @@ This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and d
 
 .. note::
 
-    Screenshots presented in this document have been made for Eclipse Neon 3 running on Ubuntu 16.04 LTE. There may be some small differences in what a particular user interface looks like, depending on whether you are using Windows, MacOS or Linux and / or a different release of Eclipse.
+    Screenshots presented in this document have been made for Eclipse Neon 3 running on Ubuntu 16.04 LTS. There may be some small differences in what a particular user interface looks like, depending on whether you are using Windows, MacOS or Linux and / or a different release of Eclipse.
 
 .. _jtag-debugging-how-it-works:
 
@@ -62,9 +67,7 @@ Under "Application Loading and Monitoring" there is another software and hardwar
 
 Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
-.. only:: esp32
-
-    If the :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
+If the |devkit-name-with-link| is used, then connection from PC to {IDF_TARGET_NAME} is done effectively with a single USB cable. This is made possible by the FT2232H chip, which provides two USB channels, one for JTAG and the one for UART connection.
 
 Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
 
@@ -74,7 +77,7 @@ Depending on user preferences, both `debugger` and `idf.py build` can be operate
 Selecting JTAG Adapter
 ----------------------
 
-The quickest and most convenient way to start with JTAG debugging is by using :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>`. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}. WROVER KIT is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
+The quickest and most convenient way to start with JTAG debugging is by using |devkit-name-with-link|. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}. |devkit-name| is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
 
 If you decide to use separate JTAG adapter, look for one that is compatible with both the voltage levels on the {IDF_TARGET_NAME} as well as with the OpenOCD software. The JTAG port on the {IDF_TARGET_NAME} is an industry-standard JTAG port which lacks (and does not need) the TRST pin. The JTAG I/O pins all are powered from the VDD_3P3_RTC pin (which normally would be powered by a 3.3 V rail) so the JTAG adapter needs to be able to work with JTAG pins in that voltage range.
 
@@ -98,7 +101,7 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 
 The output should be as follows (although the version may be more recent than listed here)::
 
-    Open On-Chip Debugger  v0.10.0-{IDF_TARGET_TOOLCHAIN_NAME}-20190708 (2019-07-08-11:04)
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
         http://openocd.org/doc/doxygen/bugs.html
@@ -131,7 +134,7 @@ This step depends on JTAG and {IDF_TARGET_NAME} board you are using - see the tw
 .. toctree::
     :maxdepth: 1
 
-    :esp32: configure-wrover
+    configure-ft2232h-jtag
     configure-other-jtag
 
 
@@ -144,35 +147,26 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 .. highlight:: bash
 
-Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS)::
+Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS):
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd
+   :end-before: ---
 
 .. note::
 
-    The files provided after ``-f`` above are specific for ESP-WROVER-KIT with esp32-wroom-32 module. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
+    The files provided after ``-f`` above are specific for |run-openocd-device-name|. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 .. highlight:: none
 
-You should now see similar output (this log is for ESP-WROVER-KIT)::
+You should now see similar output (this log is for |run-openocd-device-name|):
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
-    Licensed under GNU GPL v2
-    For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
-    none separate
-    adapter speed: 20000 kHz
-    force hard breakpoints
-    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
-    Info : clock speed 20000 kHz
-    Info : JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : JTAG tap: esp32.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-    Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-output
+   :end-before: ---
 
 * If there is an error indicating permission problems, please see the "Permissions delegation" bit in the OpenOCD README file in ``~/esp/openocd-esp32`` directory.
-* In case there is an error finding configuration files, e.g. ``Can't find board/esp32-wrover-kit-3.3v.cfg``, check the path after ``-s``. This path is used by OpenOCD to look for the files specified after ``-f``. Also check if the file is indeed under provided path.
+* In case there is an error finding configuration files, e.g. |run-openocd-cfg-file-err|, check ``OPENOCD_SCRIPTS`` environment variable is set correctly. This variable is used by OpenOCD to look for the files specified after ``-f``. See :ref:`jtag-debugging-setup-openocd` section for details. Also check if the file is indeed under provided path.
 * If you see JTAG errors (...all ones/...all zeroes) please check your connections, whether no other signals are connected to JTAG besides {IDF_TARGET_NAME}'s pins, and see if everything is powered on.
 
 
@@ -183,9 +177,11 @@ Upload application for debugging
 
 Build and upload your application to {IDF_TARGET_NAME} as usual, see :ref:`get-started-build`.
 
-Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
+Another option is to write application image to flash using OpenOCD via JTAG with commands like this:
 
-    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-upload
+   :end-before: ---
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
@@ -251,26 +247,31 @@ Please refer to separate documents listed below, that describe build process.
 
 The examples of invoking OpenOCD in this document assume using pre-built binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
 
-.. highlight:: bash
+To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS:
 
-To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS::
+.. code-block:: bash
 
     cd ~/esp/openocd-esp32
     export OPENOCD_SCRIPTS=$PWD/tcl
 
-For Windows::
+For Windows:
+
+.. code-block:: batch
 
     cd %USERPROFILE%\esp\openocd-esp32
     set "OPENOCD_SCRIPTS=%CD%\tcl"
 
-Example of invoking OpenOCD build locally from sources, for Linux and macOS::
+Example of invoking OpenOCD build locally from sources, for Linux and macOS:
 
-    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-linux
+   :end-before: ---
 
-and Windows::
+and Windows:
 
-    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
-
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   :start-after: run-openocd-src-win
+   :end-before: ---
 
 .. _jtag-debugging-tips-and-quirks:
 
