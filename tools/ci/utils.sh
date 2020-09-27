@@ -17,6 +17,13 @@ function add_ssh_keys() {
 function add_gitlab_ssh_keys() {
   add_ssh_keys "${GITLAB_KEY}"
   echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >>~/.ssh/config
+
+  # For gitlab geo nodes
+  if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then
+    SRV=${LOCAL_GITLAB_SSH_SERVER##*@} # remove the chars before @, which is the account
+    SRV=${SRV%%:*}                     # remove the chars after :, which is the port
+    printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >>~/.ssh/config
+  fi
 }
 
 function add_github_ssh_keys() {
