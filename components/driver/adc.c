@@ -231,7 +231,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
         dig_cfg.adc2_pattern_len = 1;
         dig_cfg.adc2_pattern = adc2_pattern;
     }
-
+    adc_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
     adc_hal_init();
     adc_hal_dig_controller_config(&dig_cfg);
