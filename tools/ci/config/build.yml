@@ -4,25 +4,69 @@
   tags:
     - build
   variables:
-    BATCH_BUILD: "1"
-    V: "0"
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
 
+.build_template_app_template:
+  extends:
+    - .build_template
+    - .rules:labels:build
+  variables:
+    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
+    BUILD_DIR: "@t/@w"
+    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
+    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
+    BUILD_COMMAND_ARGS: ""
+  artifacts:
+    when: always
+    paths:
+      - log_template_app/*
+      - size_info.txt
+      - build_template_app/**/size.json
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - ./tools/ci/retry_failed.sh git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
+    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - cd components/esp_wifi/lib
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
+
+# build-related-pre-check-jobs ------------------------------------------------
+# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
+fast_template_app:
+  extends: .build_template_app_template
+  stage: pre_check
+  variables:
+    BUILD_COMMAND_ARGS: "-p"
+
+check_docs_gh_links:
+  extends: .build_docs_template
+  stage: pre_check
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
+#------------------------------------------------------------------------------
+
 .build_ssc_template:
-  extends: .build_template
-  parallel: 3
+  extends:
+    - .build_template
+    - .rules:labels:build-integration_test
   artifacts:
     paths:
       - SSC/ssc_bin
     expire_in: 1 week
-  variables:
-    TARGET_NAME: "ESP32"
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_INTEGRATION_TEST
-      - $BOT_LABEL_REGULAR_TEST
   script:
     - ./tools/ci/retry_failed.sh git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
@@ -31,6 +75,7 @@
 
 build_ssc_esp32:
   extends: .build_ssc_template
+  parallel: 3
   variables:
     TARGET_NAME: "ESP32"
 
@@ -41,7 +86,9 @@ build_ssc_esp32s2:
     TARGET_NAME: "ESP32S2"
 
 .build_esp_idf_tests_cmake:
-  extends: .build_template
+  extends:
+    - .build_template
+    - .rules:labels:build-unit_test
   artifacts:
     paths:
       - tools/unit-test-app/output/${IDF_TARGET}
@@ -52,13 +99,6 @@ build_ssc_esp32s2:
       - $SIZE_INFO_LOCATION
     when: always
     expire_in: 4 days
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_UNIT_TEST
-      - $BOT_LABEL_UNIT_TEST_S2
-      - $BOT_LABEL_REGULAR_TEST
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
     BUILD_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/builds
@@ -89,17 +129,9 @@ build_esp_idf_tests_cmake_esp32s3:
     IDF_TARGET: esp32s3
 
 .build_examples_template:
-  extends: .build_template
-  artifacts:
-    when: always
-    expire_in: 4 days
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_EXAMPLE_TEST
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_WEEKEND_TEST
+  extends:
+    - .build_template
+    - .rules:labels:build-example_test-weekend_test
   variables:
     TEST_PREFIX: examples
     TEST_RELATIVE_DIR: examples
@@ -116,7 +148,8 @@ build_esp_idf_tests_cmake_esp32s3:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
 build_examples_make:
-  extends: .build_examples_template
+  extends:
+    - .build_examples_template
   # This is a workaround for a rarely encountered issue with building examples in CI.
   # Probably related to building of Kconfig in 'make clean' stage
   retry: 1
@@ -126,23 +159,16 @@ build_examples_make:
       - $LOG_PATH
       - build_${TEST_PREFIX}/*/*/*/build/size.json
       - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 4 days
   variables:
     BUILD_SYSTEM: make
     IDF_TARGET: esp32  # currently we only support esp32
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - triggers
-      - schedules
-      - pipelines
-      - web
 
 # same as above, but for CMake
-.build_examples_cmake: &build_examples_cmake
+.build_examples_cmake:
   extends: .build_examples_template
-  dependencies:
+  needs:
     - scan_tests
   artifacts:
     paths:
@@ -174,18 +200,13 @@ build_examples_cmake_esp32s2:
     IDF_TARGET: esp32s2
 
 .build_test_apps:
-  extends: .build_examples_cmake
+  extends:
+    - .build_examples_cmake
+    - .rules:labels:build-custom_test-weekend_test
   variables:
     TEST_PREFIX: test_apps
     TEST_RELATIVE_DIR: tools/test_apps
     TEST_TYPE: custom_test
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_CUSTOM_TEST
-      - $BOT_LABEL_WEEKEND_TEST
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
@@ -202,17 +223,12 @@ build_test_apps_esp32s2:
     IDF_TARGET: esp32s2
 
 .build_component_ut:
-  extends: .build_test_apps
+  extends:
+    - .build_test_apps
+    - .rules:labels:build-unit_test
   variables:
     TEST_PREFIX: component_ut
     TEST_RELATIVE_DIR: component_ut
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_UNIT_TEST
-      - $BOT_LABEL_UNIT_TEST_S2
 
 build_component_ut_esp32:
   extends: .build_component_ut
@@ -224,125 +240,81 @@ build_component_ut_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
-# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
-
-.build_docs_template: &build_docs_template
+.build_docs_template:
   stage: build
   image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - build_docs
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
+  parallel:
+    matrix:
+      - DOCLANG: [ "en", "zh_CN" ]
+        DOCTGT: [ "esp32", "esp32s2" ]
+
+build_docs_html:
+  extends:
+    - .build_docs_template
+    - .rules:labels:build_docs
   artifacts:
     when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
     expire_in: 4 days
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_BUILD_DOCS
-      - $BOT_LABEL_REGULAR_TEST
-  dependencies: []
-  script:
-    - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html -l $DOCLANG -t $DOCTGT build
-
-build_docs_html:
-  extends: .build_docs_template
-  parallel:
-    matrix:
-      - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2"]
+  variables:
+    DOC_BUILDERS: "html"
 
 build_docs_pdf:
-  stage: build
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  tags:
-    - build_docs
+  extends:
+    - .build_docs_template
+    - .rules:labels:build_docs-slim
   artifacts:
     when: always
     paths:
       - docs/_build/*/*/latex/*
     expire_in: 4 days
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "master"'
-    - if: '$CI_COMMIT_REF_NAME =~ "/^release\/v/"'
-    - if: '$CI_COMMIT_REF_NAME =~ "/^v\d+\.\d+(\.\d+)?($|-)/"'
-    - if: $BOT_LABEL_BUILD_DOCS
-  dependencies: []
-  parallel:
-    matrix:
-      - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2"]
+  variables:
+    DOC_BUILDERS: "latex"
+
+.test_build_system_template:
+  extends:
+    - .build_template
+    - .rules:labels:build-weekend_test
   script:
-    - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs latex -l $DOCLANG -t $DOCTGT build
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
 
 test_build_system:
-  extends: .build_template
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_WEEKEND_TEST
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - rm -rf test_build_system
-    - mkdir test_build_system
-    - cd test_build_system
-    - ${IDF_PATH}/tools/ci/test_build_system.sh
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system.sh
 
 test_build_system_cmake:
-  extends: .build_template
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_WEEKEND_TEST
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - rm -rf test_build_system
-    - mkdir test_build_system
-    - cd test_build_system
-    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
 
 test_build_system_cmake_macos:
-  extends: .macos_build_template
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - schedules
-      - triggers
-      - pipelines
-      - web
-    variables:
-      - $CI_PIPELINE_SOURCE != "push" && $BOT_LABEL_MACOS_TEST != null
-      - $CI_PIPELINE_SOURCE == "push"
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - rm -rf test_build_system
-    - mkdir test_build_system
-    - cd test_build_system
-    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+  extends:
+    - .test_build_system_template
+    - .before_script_macos
+    - .rules:os:mac_os
+  tags:
+    - macos_shell
 
 build_docker:
+  extends:
+    - .rules:master-release-schedule
   stage: build
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - schedules
   variables:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
   before_script: []
@@ -358,65 +330,46 @@ build_docker:
     # Therefore, build a copy of the example located inside the container.
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
 
-build_idf_exe:
+.test-on-windows:
+  extends: .rules:master-release-schedule
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - schedules
   before_script: []
+  script:
+    - cd $TEST_DIR
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build .
+
+build_idf_exe:
+  extends: .test-on-windows
   artifacts:
     paths:
       - tools/windows/idf_exe/build/idf-exe-v*.zip
     expire_in: 4 days
-  script:
-    - cd tools/windows/idf_exe/
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build .
+  variables:
+    TEST_DIR: tools/windows/idf_exe
 
 build_cmdlinerunner:
-  stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
-  tags:
-    - build
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - schedules
-  before_script: []
+  extends: .test-on-windows
   artifacts:
     paths:
       - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
     expire_in: 4 days
-  script:
-    - cd tools/windows/tool_setup/cmdlinerunner
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build .
+  variables:
+    TEST_DIR: tools/windows/tool_setup/cmdlinerunner
 
 build_installer:
+  extends: .rules:master-release-schedule
   # using a different stage here to be able to use artifacts from build_cmdlinerunner job
   stage: host_test
   image: $CI_DOCKER_REGISTRY/wine-innosetup:1
   tags:
     - build
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - schedules
-  dependencies:
+  needs:
     - build_cmdlinerunner
   before_script: []
   script:
@@ -444,14 +397,15 @@ build_template_app:
   image:
     name: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
   before_script:
+    - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
-    - python $SUBMODULE_FETCH_TOOL
+    - fetch_submodules
     # Exclude the submodules, all paths ends with /**
-    # get all submodules configs | get all paths | add /** as suffix | xargs | replace all <space> to <comma>
-    - export SUBMODULES=$(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g')
+    - export SUBMODULES=$(get_all_submodules)
     # get all exclude paths specified in tools/ci/sonar_exclude_list.txt | ignore lines start with # | xargs | replace all <space> to <comma>
     - export CUSTOM_EXCLUDES=$(cat $CI_PROJECT_DIR/tools/ci/sonar_exclude_list.txt | grep -v '^#' | xargs | sed -e 's/ /,/g')
-    - export EXCLUSIONS="$SUBMODULES,$CUSTOM_EXCLUDES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
+    # Exclude the report dir
+    - export EXCLUSIONS="$SUBMODULES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
     - python $NORMALIZE_CLANGTIDY_PY $CI_PROJECT_DIR/$REPORT_DIR/warnings.txt $CI_PROJECT_DIR/$REPORT_DIR/clang_tidy_report.txt $CI_PROJECT_DIR
   variables:
     GIT_DEPTH: 0
@@ -459,13 +413,13 @@ build_template_app:
     REPORT_DIR: examples/get-started/hello_world/tidybuild/report
   tags:
     - host_test
+  needs:
+    - clang_tidy_check_regular
 
 code_quality_check:
-  extends: .sonar_scan_template
-  dependencies:
-    - clang_tidy_check_regular
-  only:
-    - triggers
+  extends:
+    - .sonar_scan_template
+    - .rules:trigger
   allow_failure: true
   script:
     - export CI_MERGE_REQUEST_IID=`python ${CI_PROJECT_DIR}/tools/ci/ci_get_latest_mr_iid.py ${CI_COMMIT_BRANCH} | xargs`
@@ -491,14 +445,9 @@ code_quality_check:
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
 
 code_quality_report:
-  extends: .sonar_scan_template
-  only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
-    - schedules
-  dependencies:
-    - clang_tidy_check_regular
+  extends:
+    - .sonar_scan_template
+    - .rules:master-release-schedule
   script:
     - sonar-scanner
       -Dsonar.host.url=$SONAR_HOST_URL

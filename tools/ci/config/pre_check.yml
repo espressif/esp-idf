@@ -1,61 +1,63 @@
+.pre_check_base_template:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
+
+.pre_check_job_template:
+  extends:
+    - .pre_check_base_template
+    - .before_script_lesser_nofilter
+
+.pre_check_job_template_with_filter:
+  extends:
+    - .pre_check_base_template
+    - .before_script_lesser
+
 check_line_endings:
-  extends: .check_job_template
+  extends: .pre_check_job_template
   script:
     - tools/ci/check-line-endings.sh ${IDF_PATH}
 
 check_permissions:
-  extends: .check_job_template
+  extends: .pre_check_job_template
   script:
     - tools/ci/check-executable.sh
 
 check_docs_lang_sync:
-  extends: .check_job_template
-  stage: pre_check
+  extends: .pre_check_job_template
   variables:
     SUBMODULES_TO_FETCH: "none"
   script:
     - cd docs
     - ./check_lang_folder_sync.sh
 
-check_docs_gh_links:
-  extends: .build_docs_template
-  stage: pre_check
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  script:
-    - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
-
 check_version:
-  extends: .check_job_template
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
-  only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
+  extends:
+    - .pre_check_job_template
+    - .rules:master-release
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
 
 check_examples_cmake_make:
-  extends: .check_job_template_with_filter
-  except:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
+  extends:
+    - .pre_check_job_template_with_filter
+    - .rules:dev_push-trigger
   script:
     - python ${IDF_PATH}/tools/ci/check_examples_cmake_make.py
 
 check_rom_api_header:
-  extends: .check_job_template_with_filter
+  extends: .pre_check_job_template_with_filter
   script:
     - tools/ci/check_examples_rom_header.sh
     - tools/ci/check_rom_apis.sh
 
 check_python_style:
-  extends: .python_lint_template
+  extends: .pre_check_base_template
   artifacts:
     when: on_failure
     paths:
@@ -65,7 +67,7 @@ check_python_style:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
 check_kconfigs:
-  extends: .check_job_template_with_filter
+  extends: .pre_check_job_template_with_filter
   artifacts:
     when: on_failure
     paths:
@@ -81,51 +83,31 @@ check_kconfigs:
     - ${IDF_PATH}/tools/check_kconfigs.py
 
 check_deprecated_kconfig_options:
-  extends: .check_job_template_with_filter
+  extends: .pre_check_job_template_with_filter
   script:
     - ${IDF_PATH}/tools/ci/check_deprecated_kconfigs.py
 
 check_cmake_style:
-  extends: .check_job_template
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
+  extends: .pre_check_job_template
   script:
     tools/cmake/run_cmake_lint.sh
 
 check_wifi_lib_md5:
-  stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  extends: .pre_check_base_template
   tags:
     - build
   variables:
     SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
-  dependencies: []
   script:
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
 
-# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
-fast_template_app:
-  extends: .build_template_app_template
-  stage: pre_check
-  variables:
-    BUILD_COMMAND_ARGS: "-p"
-
 check_public_headers:
-  stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  extends:
+    - .pre_check_base_template
+    - .rules:labels:build
   tags:
     - build
-  variables:
-    BATCH_BUILD: "1"
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
@@ -140,16 +122,8 @@ check_public_headers:
 
 scan_tests:
   extends:
-    - .before_script_for_component_ut
     - .scan_build_tests
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_REGULAR_TEST
-      - $BOT_LABEL_EXAMPLE_TEST
-      - $BOT_LABEL_CUSTOM_TEST
-      - $BOT_LABEL_UNIT_TEST
-      - $BOT_LABEL_UNIT_TEST_S2
+    - .rules:tests:build-ttfw_tests
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
@@ -163,13 +137,14 @@ scan_tests:
     COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
     PYTHON_VER: 3
   script:
+    - set_component_ut_vars
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
 
 check_readme_links:
-  extends: .check_job_template
+  extends: .pre_check_job_template
   tags: [ "amd64", "deploy", "internet" ]
   allow_failure: true
   variables:
@@ -178,11 +153,8 @@ check_readme_links:
     - python ${IDF_PATH}/tools/ci/check_readme_links.py
 
 .clang_tidy_check_template:
-  stage: pre_check
+  extends: .pre_check_base_template
   image: ${CI_DOCKER_REGISTRY}/clang-static-analysis
-  tags:
-    - host_test
-  dependencies: []
   artifacts:
     reports:
       junit: $IDF_PATH/output.xml
@@ -212,18 +184,15 @@ clang_tidy_check_all:
     BOT_LABEL_STATIC_ANALYSIS_ALL: 1
 
 check_codeowners:
-  extends: .check_job_template
+  extends: .pre_check_job_template
   script:
     - tools/codeowners.py ci-check
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
 check_version_tag:
-  extends: .check_job_template
-  only:
-    refs:
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
+  extends:
+    - .pre_check_job_template
+    - .rules:release-tag
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1

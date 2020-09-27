@@ -1,0 +1,239 @@
+.if-master-refs: &if-master-refs
+  if: '$CI_COMMIT_REF_NAME == "master"'
+
+.if-release-branch: &if-release-branch
+  if: '$CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/'
+
+.if-release-tag-regular: &if-release-tag-regular
+  if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/ && $BOT_TRIGGER_WITH_LABEL == null'
+
+.if-master-release-regular: &if-master-release-regular
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
+
+.if-dev-push: &if-dev-push
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+
+.if-schedule: &if-schedule
+  if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+.if-trigger: &if-trigger
+  if: '$CI_PIPELINE_SOURCE == "trigger"'
+
+.if-label-regular-test: &if-label-regular-test
+  if: '$BOT_LABEL_REGULAR_TEST'
+
+.if-label-build: &if-label-build
+  if: '$BOT_LABEL_BUILD'
+
+.if-label-build-docs: &if-label-build-docs
+  if: '$BOT_LABEL_BUILD_DOCS'
+
+.if-label-integration-test: &if-label-integration-test
+  if: '$BOT_LABEL_INTEGRATION_TEST'
+
+.if-label-unit-test: &if-label-unit-test
+  if: '$BOT_LABEL_UNIT_TEST'
+
+.if-label-unit-test-s2: &if-label-unit-test-s2
+  if: '$BOT_LABEL_UNIT_TEST_S2'
+
+.if-label-unit-test-all-target: &if-label-unit-test-all-target
+  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_S2'
+
+.if-label-weekend-test: &if-label-weekend-test
+  if: '$BOT_LABEL_WEEKEND_TEST'
+
+.if-label-example-test: &if-label-example-test
+  if: '$BOT_LABEL_EXAMPLE_TEST'
+
+.if-label-custom-test: &if-label-custom-test
+  if: '$BOT_LABEL_CUSTOM_TEST'
+
+.if-label-host-test: &if-label-host-test
+  if: '$BOT_LABEL_HOST_TEST'
+
+.if-label-fuzzer-test: &if-label-fuzzer-test
+  if: '$BOT_LABEL_FUZZER_TEST'
+
+.if-label-nvs-coverage: &if-label-nvs-coverage
+  if: '$BOT_LABEL_NVS_COVERAGE'
+
+.if-label-static-analysis: &if-label-static-analysis
+  if: '$BOT_LABEL_STATIC_ANALYSIS || $BOT_LABEL_STATIC_ANALYSIS_ALL'
+
+.if-label-iperf-stress-test: &if-label-iperf-stress-test
+  if: '$BOT_LABEL_IPERF_STRESS_TEST'
+
+.if-os-mac: &if-os-mac
+  if: '$BOT_LABEL_MACOS_TEST'
+
+.rules:master-release:
+  rules:
+    - <<: *if-master-refs
+    - <<: *if-release-branch
+
+.rules:release-tag:
+  rules:
+    - <<: *if-release-tag-regular
+
+.rules:deploy:
+  rules:
+    - <<: *if-master-release-regular
+
+.rules:master-schedule:
+  rules:
+    - <<: *if-master-refs
+    - <<: *if-schedule
+
+.rules:master-schedule-always:
+  rules:
+    - <<: *if-master-refs
+      when: always
+    - <<: *if-schedule
+      when: always
+
+.rules:master-release-schedule:
+  rules:
+    - <<: *if-master-refs
+    - <<: *if-release-branch
+    - <<: *if-schedule
+
+.rules:trigger:
+  rules:
+    - <<: *if-trigger
+
+.rules:dev_push-trigger:
+  rules:
+    - <<: *if-trigger
+    - <<: *if-dev-push
+
+.rules:labels:static_analysis:
+  rules:
+    - <<: *if-label-static-analysis
+
+.rules:labels:build:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-regular-test
+    - <<: *if-label-build
+
+.rules:labels:build_docs:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-build-docs
+
+.rules:labels:build_docs-slim:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build-docs
+
+.rules:labels:host_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-regular-test
+    - <<: *if-label-host-test
+
+.rules:labels:example_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-schedule
+    - <<: *if-label-example-test
+
+.rules:labels:custom_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-schedule
+    - <<: *if-label-custom-test
+
+.rules:labels:unit_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-unit-test
+
+.rules:labels:unit_test_s2-only:
+  rules:
+    - <<: *if-label-unit-test-s2
+
+.rules:labels:integration_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-integration-test
+
+.rules:labels:weekend_test-only:
+  rules:
+    - <<: *if-label-weekend-test
+
+.rules:labels:iperf_stress_test-only:
+  rules:
+    - <<: *if-label-iperf-stress-test
+
+.rules:labels:build-integration_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-integration-test
+
+.rules:labels:build-weekend_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-weekend-test
+
+.rules:labels:build-unit_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-unit-test-all-target
+
+.rules:labels:build-example_test-weekend_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-example-test
+    - <<: *if-label-weekend-test
+
+.rules:labels:build-custom_test-weekend_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-custom-test
+    - <<: *if-label-weekend-test
+
+.rules:labels:fuzzer_test-weekend_test:
+  rules:
+    - <<: *if-label-fuzzer-test
+    - <<: *if-label-weekend-test
+
+.rules:labels:nvs_coverage:
+  rules:
+    - <<: *if-label-nvs-coverage
+
+.rules:test:target_test-weekend_test:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-example-test
+    - <<: *if-label-custom-test
+    - <<: *if-label-unit-test-all-target
+    - <<: *if-label-integration-test
+    - <<: *if-label-weekend-test
+
+.rules:tests:build-ttfw_tests:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-label-build
+    - <<: *if-label-regular-test
+    - <<: *if-label-example-test
+    - <<: *if-label-custom-test
+    - <<: *if-label-unit-test-all-target
+
+.rules:os:mac_os:
+  rules:
+    - <<: *if-master-release-regular
+    - <<: *if-os-mac

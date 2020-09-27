@@ -1,16 +1,16 @@
-.clang_tidy_deploy_template:
+.deploy_job_template:
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - deploy
+
+.clang_tidy_deploy_template:
+  extends: .deploy_job_template
   tags:
     - deploy
     - shiny
   script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_SERVER $DOCS_SERVER_USER
     - export GIT_VER=$(git describe --always)
     - cd $IDF_PATH/examples/get-started/hello_world/tidybuild
     - mv report $GIT_VER
@@ -27,89 +27,56 @@ clang_tidy_deploy:
   extends: .clang_tidy_deploy_template
   # Override default stage to happen before the post_check
   stage: test_deploy
-  dependencies:
+  needs:
     - clang_tidy_check
     - clang_tidy_check_all
   variables:
     BOT_NEEDS_TRIGGER_BY_NAME: 1
 
 clang_tidy_deploy_regular:
-  extends: .clang_tidy_deploy_template
-  dependencies:
+  extends:
+    - .clang_tidy_deploy_template
+    - .rules:labels:static_analysis
+  needs:
     - clang_tidy_check_regular
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - triggers
-      - schedules
-    variables:
-      - $BOT_LABEL_STATIC_ANALYSIS
-      - $BOT_LABEL_STATIC_ANALYSIS_ALL
 
 push_to_github:
-  stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - deploy
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-  when: on_success
-  dependencies: []
-  extends: .before_script_lesser
+  extends:
+    - .deploy_job_template
+    - .before_script_lesser
+    - .rules:deploy
   script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GH_PUSH_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
     - git remote add github git@github.com:espressif/esp-idf.git
     - tools/ci/push_to_github.sh
 
 .deploy_docs_template:
-  extends: .before_script_lesser
-  stage: deploy
+  extends:
+    - .deploy_job_template
+    - .before_script_lesser
   image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - deploy
     - shiny
-  dependencies:
+  needs:
     - build_docs_html
     - build_docs_pdf
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
   script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $DOCS_DEPLOY_PRIVATEKEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host $DOCS_DEPLOY_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_DEPLOY_SERVER_USER\n" >> ~/.ssh/config
+    - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always)
-
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ${IDF_PATH}/tools/ci/deploy_docs.py
-
 
 # deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
 deploy_docs_preview:
-  extends: .deploy_docs_template
+  extends:
+    - .deploy_docs_template
+    - .rules:labels:build_docs-slim
   # Override default stage to happen before the post_check
   stage: test_deploy
-  only:
-    refs:
-      - triggers
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD_DOCS
   variables:
     TYPE: "preview"
     # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
@@ -121,15 +88,10 @@ deploy_docs_preview:
 
 # deploy docs to production webserver
 deploy_docs_production:
-  extends: .deploy_docs_template
-  only:
-    refs:
-      # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
+  # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
+  extends:
+    - .deploy_docs_template
+    - .rules:deploy
   variables:
     TYPE: "preview"
     DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
@@ -139,15 +101,13 @@ deploy_docs_production:
     DOCS_DEPLOY_URL_BASE: "https://docs.espressif.com/projects/esp-idf"
 
 deploy_test_result:
-  stage: deploy
+  extends:
+    - .deploy_job_template
+    - .before_script_slim
+    - .rules:master-schedule-always
   image: $CI_DOCKER_REGISTRY/bot-env
   tags:
     - deploy_test
-  when: always
-  only:
-    refs:
-      - master
-      - schedules
   artifacts:
     when: always
     paths:
@@ -161,14 +121,8 @@ deploy_test_result:
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
-  before_script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   script:
+    - add_gitlab_ssh_keys
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
     - export REV_COUNT=$(git rev-list --count HEAD)
     - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
