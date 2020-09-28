@@ -26,7 +26,7 @@
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - ./tools/ci/retry_failed.sh git clone ${ESP_IDF_TEMPLATE_GIT}
+    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default branch
     - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
@@ -68,7 +68,7 @@ check_docs_gh_links:
       - SSC/ssc_bin
     expire_in: 1 week
   script:
-    - ./tools/ci/retry_failed.sh git clone $SSC_REPOSITORY
+    - retry_failed git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
     - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
@@ -310,6 +310,7 @@ test_build_system_cmake_macos:
 
 build_docker:
   extends:
+    - .before_script_slim
     - .rules:master-release-schedule
   stage: build
   image: espressif/docker-builder:1
@@ -317,7 +318,6 @@ build_docker:
     - build_docker_amd64_brno
   variables:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
-  before_script: []
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
@@ -331,12 +331,13 @@ build_docker:
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
 
 .test-on-windows:
-  extends: .rules:master-release-schedule
+  extends:
+    - .before_script_slim
+    - .rules:master-release-schedule
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build
-  before_script: []
   script:
     - cd $TEST_DIR
     - mkdir build
@@ -363,7 +364,9 @@ build_cmdlinerunner:
     TEST_DIR: tools/windows/tool_setup/cmdlinerunner
 
 build_installer:
-  extends: .rules:master-release-schedule
+  extends:
+    - .before_script_slim
+    - .rules:master-release-schedule
   # using a different stage here to be able to use artifacts from build_cmdlinerunner job
   stage: host_test
   image: $CI_DOCKER_REGISTRY/wine-innosetup:1
@@ -371,7 +374,6 @@ build_installer:
     - build
   needs:
     - build_cmdlinerunner
-  before_script: []
   script:
     - cd tools/windows/tool_setup/
     - ./build_installer.sh

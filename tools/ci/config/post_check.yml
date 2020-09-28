@@ -20,7 +20,9 @@
     - .before_script_lesser
 
 check_submodule_sync:
-  extends: .post_check_job_template
+  extends:
+    - .before_script_slim
+    - .post_check_job_template
   tags:
     - github_sync
   retry: 2
@@ -28,7 +30,6 @@ check_submodule_sync:
     GIT_STRATEGY: clone
     SUBMODULES_TO_FETCH: "none"
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
-  before_script: []
   script:
     - git submodule deinit --force .
     # setting the default remote URL to the public one, to resolve relative location URLs

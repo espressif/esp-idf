@@ -44,7 +44,7 @@ function fetch_submodules() {
 }
 
 function get_all_submodules() {
-  echo "$(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g')"
+  git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g'
 }
 
 function set_component_ut_vars() {
@@ -52,4 +52,68 @@ function set_component_ut_vars() {
   export COMPONENT_UT_DIRS=$(find components/ -name test_apps -type d)
   export COMPONENT_UT_EXCLUDES=$([ -r $exclude_list_fp ] && cat $exclude_list_fp | xargs)
   echo "COMPONENT_UT_DIRS, COMPONENT_UT_EXCLUDES written into export"
+}
+
+function error() {
+  printf "\033[0;31m%s\n\033[0m" "${1}" >&2
+}
+
+function info() {
+  printf "\033[0;32m%s\n\033[0m" "${1}" >&2
+}
+
+function warning() {
+  printf "\033[0;33m%s\n\033[0m" "${1}" >&2
+}
+
+function run_cmd() {
+  local start=$(date +%s)
+  eval "$@"
+  local ret=$?
+  local end=$(date +%s)
+  local duration=$((end - start))
+
+  if [[ $ret -eq 0 ]]; then
+    info "(\$ $*) succeeded in ${duration} seconds."
+    return 0
+  else
+    error "(\$ $*) failed in ${duration} seconds."
+    return $ret
+  fi
+}
+
+# Retries a command RETRY_ATTEMPTS times in case of failure
+# Inspired by https://stackoverflow.com/a/8351489
+function retry_failed() {
+  local max_attempts=${RETRY_ATTEMPTS-3}
+  local timeout=${RETRY_TIMEWAIT-1}
+  local attempt=1
+  local exitCode=0
+
+  whole_start=$(date +%s)
+  while true; do
+    if run_cmd "$@"; then
+      exitCode=0
+      break
+    else
+      exitCode=$?
+    fi
+
+    if ((attempt >= max_attempts)); then
+      break
+    fi
+
+    error "Retrying in ${timeout} seconds..."
+    sleep $timeout
+    attempt=$((attempt + 1))
+    timeout=$((timeout * 2))
+  done
+
+  local duration=$(($(date '+%s') - whole_start))
+  if [[ $exitCode != 0 ]]; then
+    error "Totally failed! Spent $duration sec in total"
+  else
+    info "Done! Spent $duration sec in total"
+  fi
+  return $exitCode
 }
