@@ -15,18 +15,16 @@
 #pragma once
 
 /**
- * @file i2c_sar.h
+ * @file regi2c_saradc.h
  * @brief Register definitions for analog to calibrate initial code for getting a more precise voltage of SAR ADC.
  *
  * This file lists register fields of SAR, located on an internal configuration
- * bus. These definitions are used via macros defined in i2c_rtc_clk.h, by
+ * bus. These definitions are used via macros defined in regi2c_ctrl.h, by
  * function in adc_ll.h.
  */
 
 #define I2C_SAR_ADC            0X69
-#define I2C_SAR_ADC_HOSTID     0
-
-#define ADC_ANA_CONFIG2_REG  0x6000E048
+#define I2C_SAR_ADC_HOSTID     1
 
 #define ADC_SAR1_ENCAL_GND_ADDR 0x7
 #define ADC_SAR1_ENCAL_GND_ADDR_MSB 5
@@ -75,3 +73,7 @@
 #define ADC_SARADC_ENT_RTC_ADDR 0x7
 #define ADC_SARADC_ENT_RTC_ADDR_MSB 3
 #define ADC_SARADC_ENT_RTC_ADDR_LSB 3
+
+#define I2C_SARADC_TSENS_DAC 0x6
+#define I2C_SARADC_TSENS_DAC_MSB 3
+#define I2C_SARADC_TSENS_DAC_LSB 0

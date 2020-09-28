@@ -7,7 +7,7 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,10 +100,10 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
     /* Should be called before writing I2C registers. */
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ADC_ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
-    I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
 /**
@@ -1138,23 +1138,23 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
     /* Should be called before writing I2C registers. */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ADC_ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
     /* Enable/disable internal connect GND (for calibration). */
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
         if (internal_gnd) {
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
         } else {
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
         }
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
         if (internal_gnd) {
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
         } else {
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
         }
     }
 }
@@ -1167,9 +1167,9 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
     }
 }
 
@@ -1186,15 +1186,15 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
     uint8_t lsb = param & 0xFF;
     /* Should be called before writing I2C registers. */
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ADC_ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
 }
 /* Temp code end. */
@@ -1214,20 +1214,20 @@ static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, b
 {
     /* Should be called before writing I2C registers. */
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ADC_ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 
     if (en) {
         if (adc == ADC_NUM_1) {
             /* Config test mux to route v_ref to ADC1 Channels */
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 1);
         } else {
             /* Config test mux to route v_ref to ADC2 Channels */
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 1);
-            I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
         }
         //in sleep force to use rtc to control ADC
         SENS.sar_meas2_mux.sar2_rtc_force = 1;
@@ -1238,8 +1238,8 @@ static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, b
         //set en_pad for ADC2 channels (bits 0x380)
         SENS.sar_meas2_ctrl2.sar2_en_pad = 1 << channel;
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
-        I2C_WRITEREG_MASK_RTC(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
         SENS.sar_meas2_mux.sar2_rtc_force = 0;
         //set sar2_en_test
         SENS.sar_meas2_ctrl1.sar2_en_test = 0;

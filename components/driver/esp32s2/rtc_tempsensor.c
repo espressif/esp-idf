@@ -25,6 +25,7 @@
 #include "soc/sens_struct.h"
 #include "driver/temp_sensor.h"
 #include "esp32s2/rom/ets_sys.h"
+#include "regi2c_ctrl.h"
 
 static const char *TAG = "tsens";
 
@@ -38,18 +39,6 @@ static const char *TAG = "tsens";
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)
 #define TSENS_SYS_OFFSET  (20.52)
-
-#include "i2c_rtc_clk.h"
-
-#define ANA_CONFIG2_REG  0x6000E048
-#define ANA_CONFIG2_M   (BIT(18))
-
-#define I2C_ADC            0X69
-#define I2C_ADC_HOSTID     1
-
-#define I2C_SARADC_TSENS_DAC        6
-#define I2C_SARADC_TSENS_DAC_MSB    3
-#define I2C_SARADC_TSENS_DAC_LSB    0
 
 typedef struct {
     int index;
@@ -75,9 +64,9 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-    I2C_WRITEREG_MASK_RTC(I2C_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
     SENS.sar_tctrl.tsens_clk_div = tsens.clk_div;
     SENS.sar_tctrl.tsens_power_up_force = 1;
     SENS.sar_tctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
@@ -96,9 +85,9 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
     TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-    tsens->dac_offset = I2C_READREG_MASK_RTC(I2C_ADC, I2C_SARADC_TSENS_DAC);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+    tsens->dac_offset = REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);
     for (int i = TSENS_DAC_L0; i < TSENS_DAC_MAX; i++) {
         if (tsens->dac_offset == dac_offset[i].set_val) {
             tsens->dac_offset = dac_offset[i].index;
