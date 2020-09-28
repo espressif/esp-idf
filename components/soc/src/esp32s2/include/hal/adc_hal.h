@@ -66,6 +66,9 @@ void adc_hal_digi_disable(void);
  * Enable clock and select clock source for ADC digital controller.
  * Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
  *
+ * @note ADC and DAC digital controller share the same frequency divider.
+ *       Please set a reasonable frequency division factor to meet the sampling frequency of the ADC and the output frequency of the DAC.
+ *
  * @param clk Refer to ``adc_digi_clk_t``.
  */
 void adc_hal_digi_clk_config(const adc_digi_clk_t *clk);

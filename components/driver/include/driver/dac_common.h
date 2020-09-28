@@ -68,22 +68,6 @@ esp_err_t dac_output_enable(dac_channel_t channel);
 esp_err_t dac_output_disable(dac_channel_t channel);
 
 /**
- * @brief Enable DAC output data from I2S
- *
- * @return
- *     - ESP_OK success
- */
-esp_err_t dac_i2s_enable(void);
-
-/**
- * @brief Disable DAC output data from I2S
- *
- * @return
- *     - ESP_OK success
- */
-esp_err_t dac_i2s_disable(void);
-
-/**
  * @brief Enable cosine wave generator output.
  *
  * @return
@@ -105,6 +89,7 @@ esp_err_t dac_cw_generator_disable(void);
  * @param cw Configuration.
  * @return
  *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG The parameter is NULL.
  */
 esp_err_t dac_cw_generator_config(dac_cw_config_t *cw);
 

@@ -23,15 +23,16 @@
 #include <stdlib.h>
 #include "soc/dac_periph.h"
 #include "hal/dac_types.h"
+#include "soc/apb_saradc_struct.h"
+#include "soc/apb_saradc_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*---------------------------------------------------------------
-                    RTC controller setting
+                    DAC common setting
 ---------------------------------------------------------------*/
-
 /**
  * Power on dac module and start output voltage.
  *
@@ -59,6 +60,9 @@ static inline void dac_ll_power_down(dac_channel_t channel)
     }
 }
 
+/*---------------------------------------------------------------
+                    RTC controller setting
+---------------------------------------------------------------*/
 /**
  * Output voltage with value (8 bit).
  *
@@ -204,23 +208,79 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
 /************************************/
 /*           DAC DMA API's          */
 /************************************/
+
 /**
- * Enable DAC output data from I2S DMA.
- * I2S_CLK connect to DAC_CLK, I2S_DATA_OUT connect to DAC_DATA.
+ * Enable/disable invert the DAC digital controller clock signal.
+ * 
+ * @param enable true or false.
  */
-static inline void dac_ll_dma_enable(void)
+static inline void dac_ll_digi_clk_inv(bool enable)
 {
-    SENS.sar_dac_ctrl1.dac_dig_force = 1;
-    SENS.sar_dac_ctrl1.dac_clk_inv = 1;
+    SENS.sar_dac_ctrl1.dac_clk_inv = enable;
 }
 
 /**
- * Disable DAC output data from I2S DMA.
+ * Enable/disable DAC-DMA mode for dac digital controller.
  */
-static inline void dac_ll_dma_disable(void)
+static inline void dac_ll_digi_enable_dma(bool enable)
 {
-    SENS.sar_dac_ctrl1.dac_dig_force = 0;
-    SENS.sar_dac_ctrl1.dac_clk_inv = 0;
+    SENS.sar_dac_ctrl1.dac_dig_force = enable;
+    APB_SARADC.apb_dac_ctrl.apb_dac_trans = enable;
+}
+
+/**
+ * Sets the number of interval clock cycles for the digital controller to trigger the DAC output.
+ * Expression: `dac_output_freq` = `controller_clk` / interval.
+ *
+ * @note The clocks of the DAC digital controller use the ADC digital controller clock divider.
+ *
+ * @param cycle The number of clock cycles for the trigger output interval. The unit is the divided clock.
+ */
+static inline void dac_ll_digi_set_trigger_interval(uint32_t cycle)
+{
+    APB_SARADC.apb_dac_ctrl.dac_timer_target = cycle;
+}
+
+/**
+ * Enable/disable DAC digital controller to trigger the DAC output.
+ *
+ * @param enable true or false.
+ */
+static inline void dac_ll_digi_trigger_output(bool enable)
+{
+    APB_SARADC.apb_dac_ctrl.dac_timer_en = enable;
+}
+
+/**
+ * Set DAC conversion mode for digital controller.
+ *
+ * @param mode Conversion mode select. See ``dac_digi_convert_mode_t``.
+ */
+static inline void dac_ll_digi_set_convert_mode(dac_digi_convert_mode_t mode)
+{
+    if (mode == DAC_CONV_NORMAL) {
+        APB_SARADC.apb_dac_ctrl.apb_dac_alter_mode = 0;
+    } else {
+        APB_SARADC.apb_dac_ctrl.apb_dac_alter_mode = 1;
+    }
+}
+
+/**
+ * Reset FIFO of DAC digital controller.
+ */
+static inline void dac_ll_digi_fifo_reset(void)
+{
+    APB_SARADC.apb_dac_ctrl.dac_reset_fifo = 1;
+    APB_SARADC.apb_dac_ctrl.dac_reset_fifo = 0;
+}
+
+/**
+ * Reset DAC digital controller.
+ */
+static inline void dac_ll_digi_reset(void)
+{
+    APB_SARADC.apb_dac_ctrl.apb_dac_rst = 1;
+    APB_SARADC.apb_dac_ctrl.apb_dac_rst = 0;
 }
 
 #ifdef __cplusplus
