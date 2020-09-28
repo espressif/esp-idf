@@ -66,7 +66,7 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
 
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
-    if (!esp_ptr_internal(data_out)) {
+    if (!esp_ptr_internal(data_out) && cfg->host_id == SPI1_HOST) {
         return ESP_ERR_INVALID_ARG;
     }
     if (cfg->cs_num >= SOC_SPI_PERIPH_CS_NUM(cfg->host_id)) {
