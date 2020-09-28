@@ -1,0 +1,24 @@
+menu "Http_File_Serving Example menu"
+
+    config EXAMPLE_MOUNT_SD_CARD
+        bool "Mount the SD card to the filesystem"
+        default n
+        help
+            If this config item is set, the file you upload to server can be chosen to save in the SDcard.
+
+    config EXAMPLE_FORMAT_IF_MOUNT_SDCARD_FAILED
+        bool "The card will be formatted if mount has failed."
+        default n
+        depends on EXAMPLE_MOUNT_SD_CARD
+        help
+            If this config item is set, the card will be formatted if mount has failed.
+
+    config EXAMPLE_USE_SDMMC_HOST
+        bool "Use SDMMC host"
+        default y
+        depends on EXAMPLE_MOUNT_SD_CARD && IDF_TARGET_ESP32
+        help
+            If this config item is set, SDMMC is used to mount the SDcard.
+            Otherwise, will use SPI host to access and mount the SDcard.
+
+endmenu

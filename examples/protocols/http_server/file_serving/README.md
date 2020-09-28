@@ -2,6 +2,8 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+If the SD card option is enabled, you can access files in the SD card by the path `/sdcard` 
+
 HTTP file server example demonstrates file serving with both upload and download capability, using the `esp_http_server` component of ESP-IDF. The following URIs are provided by the server:
 
 | URI                  | Method  | Description                                                                               |
@@ -37,6 +39,12 @@ File server implementation can be found under `main/file_server.c` which uses SP
         1. `myfile.html` is uploaded to `/path/on/device/myfile_copy.html` using `curl -X POST --data-binary @myfile.html 192.168.43.130:80/upload/path/on/device/myfile_copy.html`
         2. download the uploaded copy back : `curl 192.168.43.130:80/path/on/device/myfile_copy.html > myfile_copy.html`
         3. compare the copy with the original using `cmp myfile.html myfile_copy.html`
+
+* To write to SD card, you need to:
+    1. Select the `Mount the SD card to the filesystem` in the configuration menu (by calling `idf.py menuconfig` and select the `EXAMPLE_MOUNT_SD_CARD` option.
+    2. If you need to format the card while the card fails to be mounted, enable the config option `The card will be formatted if mount has failed` (`EXAMPLE_FORMAT_SDCARD_IF_MOUNT_FAILED`). Be careful, all the data in the card will disappear.
+
+    Note: You will have to access the SD card by SPI bus with sdspi driver, if you are using ESP32S2.
 
 ## Note
 
