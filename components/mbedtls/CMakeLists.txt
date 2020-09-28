@@ -141,6 +141,11 @@ set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 # Link mbedtls libraries to component library
 target_link_libraries(${COMPONENT_LIB} PUBLIC ${mbedtls_targets})
 
+if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
+    # Link target (esp32s2) library to component library
+    target_link_libraries(${COMPONENT_LIB} PUBLIC ${target})
+endif()
+
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
     idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
