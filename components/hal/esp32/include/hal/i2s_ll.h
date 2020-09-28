@@ -391,61 +391,6 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Get I2S tx pdm fp
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fp
- */
-static inline void i2s_ll_get_tx_pdm_fp(i2s_dev_t *hw, uint32_t *val)
-{
-    *val = hw->pdm_freq_conf.tx_pdm_fp;
-}
-
-/**
- * @brief Get I2S tx pdm fs
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fs
- */
-static inline void i2s_ll_get_tx_pdm_fs(i2s_dev_t *hw, uint32_t *val)
-{
-    *val = hw->pdm_freq_conf.tx_pdm_fs;
-}
-
-/**
- * @brief Set I2S tx pdm fp
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fp
- */
-static inline void i2s_ll_set_tx_pdm_fp(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_freq_conf.tx_pdm_fp = val;
-}
-
-/**
- * @brief Set I2S tx pdm fs
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fs
- */
-static inline void i2s_ll_set_tx_pdm_fs(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_freq_conf.tx_pdm_fs = val;
-}
-
-/**
- * @brief Get I2S rx sinc dsr 16 en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get rx sinc dsr 16 en
- */
-static inline void i2s_ll_get_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool *val)
-{
-    *val = hw->pdm_conf.rx_sinc_dsr_16_en;
-}
-
-/**
  * @brief Set I2S clkm div num
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -534,17 +479,6 @@ static inline void i2s_ll_set_rx_bits_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Set I2S rx sinc dsr 16 en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx sinc dsr 16 en
- */
-static inline void i2s_ll_set_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.rx_sinc_dsr_16_en = val;
-}
-
-/**
  * @brief Set I2S dscr en
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -575,50 +509,6 @@ static inline void i2s_ll_set_lcd_en(i2s_dev_t *hw, bool val)
 static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
 {
     hw->conf2.camera_en = val;
-}
-
-/**
- * @brief Set I2S pcm2pdm conv en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set pcm2pdm conv en
- */
-static inline void i2s_ll_set_pcm2pdm_conv_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.pcm2pdm_conv_en = val;
-}
-
-/**
- * @brief Set I2S pdm2pcm conv en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set pdm2pcm conv en
- */
-static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.pdm2pcm_conv_en = val;
-}
-
-/**
- * @brief Set I2S rx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx pdm en
- */
-static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.rx_pdm_en = val;
-}
-
-/**
- * @brief Set I2S tx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm en
- */
-static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.tx_pdm_en = val;
 }
 
 /**
@@ -754,17 +644,6 @@ static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Set I2S tx sinc osr2
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx sinc osr2
- */
-static inline void i2s_ll_set_tx_sinc_osr2(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_conf.tx_sinc_osr2 = val;
-}
-
-/**
  * @brief Set I2S sig loopback
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -864,35 +743,6 @@ static inline void i2s_ll_set_rx_pcm_long(i2s_dev_t *hw)
 }
 
 /**
- * @brief Configure I2S TX pdm
- *
- * @param sample_rate The sample rate to be set.
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_tx_pdm_cfg(i2s_dev_t *hw, uint32_t sample_rate)
-{
-    uint32_t fp = 96;
-    uint32_t fs = sample_rate / 1000 * 10;
-    hw->pdm_freq_conf.tx_pdm_fp = fp;
-    hw->pdm_freq_conf.tx_pdm_fs = fs;
-    hw->pdm_conf.tx_sinc_osr2 = fp/fs;
-    hw->pdm_conf.pcm2pdm_conv_en = 1;
-    hw->pdm_conf.tx_pdm_en = 1;
-}
-
-/**
- * @brief Configure I2S TX pdm
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_rx_pdm_cfg(i2s_dev_t *hw)
-{
-    hw->pdm_conf.rx_sinc_dsr_16_en = 0;
-    hw->pdm_conf.pdm2pcm_conv_en = 1;
-    hw->pdm_conf.rx_pdm_en = 1;
-}
-
-/**
  * @brief Enable I2S build in ADC mode
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -917,6 +767,82 @@ static inline void i2s_ll_build_in_dac_ena(i2s_dev_t *hw)
     hw->conf.tx_right_first = 1;
     hw->conf.tx_msb_shift = 0;
     hw->conf.tx_short_sync = 0;
+}
+
+
+/**
+ * @brief Enable I2S RX PDM mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pdm_en Set true to enable rx PDM mode
+ */
+static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool pdm_en)
+{
+    hw->pdm_conf.rx_pdm_en = pdm_en;
+}
+
+/**
+ * @brief Enable I2S tx pdm mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pdm_en Set true to enable tx PDM mode
+ */
+static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool pdm_en)
+{
+    hw->pdm_conf.tx_pdm_en = pdm_en;
+}
+
+/**
+ * @brief Configure I2S tx PDM filter module group0
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param fp The fp value of TX PDM filter module group0.
+ * @param fs The fs value of TX PDM filter module group0. 
+ */
+static inline void i2s_ll_tx_pdm_cfg(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
+{
+    hw->pdm_freq_conf.tx_pdm_fp = fp;
+    hw->pdm_freq_conf.tx_pdm_fs = fs;
+    hw->pdm_conf.tx_sinc_osr2 = fp/fs;
+    hw->pdm_conf.pcm2pdm_conv_en = 1;
+    hw->pdm_conf.tx_pdm_en = 1;
+}
+
+/**
+ * @brief Configure I2S rx PDM
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr Down-sampling rate value of rx PDM
+ */
+static inline void i2s_ll_rx_pdm_cfg(i2s_dev_t *hw, uint32_t dsr)
+{
+    hw->pdm_conf.rx_sinc_dsr_16_en = dsr;
+    hw->pdm_conf.pdm2pcm_conv_en = 1;
+    hw->pdm_conf.rx_pdm_en = 1;
+}
+
+/**
+ * @brief Get I2S tx PDM  configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param fp Pointer to store tx PDM fp configuration
+ * @param fs Pointer to store tx PDM fs configuration
+ */
+static inline void i2s_ll_get_tx_pdm(i2s_dev_t *hw, uint32_t *fp, uint32_t *fs)
+{
+    *fp = hw->pdm_freq_conf.tx_pdm_fp;
+    *fs = hw->pdm_freq_conf.tx_pdm_fs;
+}
+
+/**
+ * @brief Get I2S rx PDM configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr Pointer to stoe the rx PDM down-sample rate configuration
+ */
+static inline void i2s_ll_get_rx_pdm(i2s_dev_t *hw, uint32_t *dsr)
+{
+    *dsr = hw->pdm_conf.rx_sinc_dsr_16_en;
 }
 
 #ifdef __cplusplus
