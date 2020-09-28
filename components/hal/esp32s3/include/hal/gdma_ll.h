@@ -486,7 +486,7 @@ static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
 static inline void gdma_ll_tx_extend_fifo_size_to(gdma_dev_t *dev, uint32_t channel, uint32_t size_in_bytes)
 {
     if (size_in_bytes > SOC_GDMA_L2_FIFO_BASE_SIZE) {
-        dev->sram_size[channel].out_size = size_in_bytes / 8;
+        dev->sram_size[channel].out_size =  (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
     }
 }
 
