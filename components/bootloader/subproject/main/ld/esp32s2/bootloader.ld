@@ -44,7 +44,7 @@ SECTIONS
     *libhal.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_time.*(.literal .text .literal.* .text.*)
-    *libsoc.a:i2c_rtc_clk.*(.literal .text .literal.* .text.*)
+    *libsoc.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)

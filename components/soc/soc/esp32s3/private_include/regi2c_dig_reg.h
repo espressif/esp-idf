@@ -15,7 +15,7 @@
 #pragma once
 
 /**
- * @file i2c_dig_reg.h
+ * @file regi2c_dig_reg.h
  * @brief Register definitions for digital to get rtc voltage & digital voltage by setting rtc_dbias_Wak & dig_dbias_wak or by analog self-calibration.
  *
  */

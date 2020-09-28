@@ -13,4 +13,4 @@ add_library(soc_esp32s2 STATIC
     "usb_periph.c"
     "touch_sensor_periph.c")
 
-target_include_directories(soc_esp32s2 PUBLIC . include ../include)
+target_include_directories(soc_esp32s2 PUBLIC include ../include private_include)

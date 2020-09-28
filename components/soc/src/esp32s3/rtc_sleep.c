@@ -25,7 +25,7 @@
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
 
 #define RTC_CNTL_MEM_FOLW_CPU (RTC_CNTL_SLOWMEM_FOLW_CPU | RTC_CNTL_FASTMEM_FOLW_CPU)
 
@@ -117,10 +117,10 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_CLR_BIT(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_FORCE);
     REG_SET_FIELD(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_PD_EN, cfg.vddsdio_pd_en);
 
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, cfg.rtc_dbias_slp);
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, cfg.rtc_dbias_wak);
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG_SLEEP, cfg.dig_dbias_slp);
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, cfg.dig_dbias_wak);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, cfg.rtc_dbias_slp);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, cfg.rtc_dbias_wak);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG_SLEEP, cfg.dig_dbias_slp);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, cfg.dig_dbias_wak);
 
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_DEEP_SLP_REJECT_EN, cfg.deep_slp_reject);
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_LIGHT_SLP_REJECT_EN, cfg.light_slp_reject);

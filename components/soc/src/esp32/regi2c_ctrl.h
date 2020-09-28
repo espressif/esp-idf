@@ -14,8 +14,9 @@
 
 #pragma once
 
-#include "i2c_apll.h"
-#include "i2c_bbpll.h"
+#include <stdint.h>
+#include "regi2c_apll.h"
+#include "regi2c_bbpll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,18 +38,18 @@ void rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t d
 void rom_i2c_writeReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
 
 /* Convenience macros for the above functions, these use register definitions
- * from i2c_apll.h/i2c_bbpll.h header files.
+ * from regi2c_apll.h/regi2c_bbpll.h header files.
  */
-#define I2C_WRITEREG_MASK_RTC(block, reg_add, indata) \
+#define REGI2C_WRITE_MASK(block, reg_add, indata) \
       rom_i2c_writeReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
 
-#define I2C_READREG_MASK_RTC(block, reg_add) \
+#define REGI2C_READ_MASK(block, reg_add) \
       rom_i2c_readReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
 
-#define I2C_WRITEREG_RTC(block, reg_add, indata) \
+#define REGI2C_WRITE(block, reg_add, indata) \
       rom_i2c_writeReg(block, block##_HOSTID,  reg_add, indata)
 
-#define I2C_READREG_RTC(block, reg_add) \
+#define REGI2C_READ(block, reg_add) \
       rom_i2c_readReg(block, block##_HOSTID,  reg_add)
 
 

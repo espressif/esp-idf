@@ -15,8 +15,8 @@
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/apb_ctrl_reg.h"
-#include "i2c_rtc_clk.h"
-#include "i2c_brownout.h"
+#include "regi2c_ctrl.h"
+#include "regi2c_brownout.h"
 #include "esp_log.h"
 
 #define I2C_RTC_WIFI_CLK_EN (APB_CTRL_WIFI_CLK_EN_REG)
