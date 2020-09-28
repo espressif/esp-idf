@@ -98,12 +98,16 @@ static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data,
     ESP_LOGI(TAG, "WiFi Credentials Received : \n\tssid %s \n\tpassword %s",
              req_data->ssid, req_data->password);
 
-    /* Using strncpy allows the max SSID length to be 32 bytes (as per 802.11 standard).
+    /* Using memcpy allows the max SSID length to be 32 bytes (as per 802.11 standard).
      * But this doesn't guarantee that the saved SSID will be null terminated, because
      * wifi_cfg->sta.ssid is also 32 bytes long (without extra 1 byte for null character).
      * Although, this is not a matter for concern because esp_wifi library reads the SSID
      * upto 32 bytes in absence of null termination */
-    strncpy((char *) wifi_cfg->sta.ssid, req_data->ssid, sizeof(wifi_cfg->sta.ssid));
+    const size_t ssid_len = strnlen(req_data->ssid, sizeof(wifi_cfg->sta.ssid));
+    /* Ensure SSID less than 32 bytes is null terminated */
+    memset(wifi_cfg->sta.ssid, 0, sizeof(wifi_cfg->sta.ssid));
+    memcpy(wifi_cfg->sta.ssid, req_data->ssid, ssid_len);
+
     strlcpy((char *) wifi_cfg->sta.password, req_data->password, sizeof(wifi_cfg->sta.password));
     return ESP_OK;
 }
