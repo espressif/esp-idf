@@ -47,6 +47,10 @@
 #include "hli_api.h"
 #include "esp_core_dump.h"
 
+#ifdef CONFIG_BLUEDROID_ENABLED
+#include "esp_bt_main.h"
+#endif
+
 #if CONFIG_BT_ENABLED
 #define CONFIG_BT_HLIGH_LEVEL_INT
 /* Macro definition
@@ -1207,6 +1211,35 @@ esp_err_t esp_bt_controller_deinit(void)
     return ESP_OK;
 }
 
+static esp_err_t bt_restart(void)
+{
+    int ret = 0;
+    ESP_LOGI(BTDM_LOG_TAG, "stop/deinit bt");
+
+#ifdef CONFIG_BLUEDROID_ENABLED
+    ret = esp_bluedroid_disable();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "bluedroid disable ret=%d", ret);
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "bluedroid deinit ret=%d", ret);
+    }
+#endif
+
+    ret = esp_bt_controller_disable();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
+    }
+    ret = esp_bt_controller_deinit();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "controller deinit ret=%d", ret);
+    }
+    return ESP_OK;
+}
+
+
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
     int ret;
@@ -1266,6 +1299,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
+    esp_register_shutdown_handler((shutdown_handler_t)bt_restart);
 
     return ESP_OK;
 }
@@ -1303,6 +1337,7 @@ esp_err_t esp_bt_controller_disable(void)
     esp_pm_lock_release(s_light_sleep_pm_lock);
     esp_pm_lock_release(s_pm_lock);
 #endif
+
 
     return ESP_OK;
 }

@@ -44,7 +44,7 @@ static const char* TAG = "system_api";
 
 static uint8_t base_mac_addr[6] = { 0 };
 
-#define SHUTDOWN_HANDLERS_NO 2
+#define SHUTDOWN_HANDLERS_NO 3
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 void system_init()
@@ -211,14 +211,25 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
-     int i;
-     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
-	  if (shutdown_handlers[i] == NULL) {
-	       shutdown_handlers[i] = handler;
-	       return ESP_OK;
-	  }
-     }
-     return ESP_FAIL;
+    int empty_slot = SHUTDOWN_HANDLERS_NO;
+    int i;
+
+    for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+              return ESP_OK;
+        }
+
+        if ((empty_slot == SHUTDOWN_HANDLERS_NO) && (shutdown_handlers[i] == NULL)) {
+            empty_slot = i;
+	}
+    }
+
+    if (empty_slot < SHUTDOWN_HANDLERS_NO) {
+        shutdown_handlers[empty_slot] = handler;
+        return ESP_OK;
+    }
+
+    return ESP_FAIL;
 }
 
 void esp_restart_noos() __attribute__ ((noreturn));
@@ -302,6 +313,9 @@ void IRAM_ATTR esp_restart_noos()
          DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
          DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
+
+    // Delay 1us to make sure wifi/bt mac/bb reset successfully
+    ets_delay_us(1);
 
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
