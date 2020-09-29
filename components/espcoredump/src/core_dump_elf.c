@@ -89,7 +89,7 @@ typedef struct _core_dump_elf_t
 
 #define ALIGN(b, var) var = align(b, var)
 
-#if CONFIG_ESP32_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 
 static inline uint32_t align(uint32_t width, uint32_t in)
 {
@@ -607,7 +607,7 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, panic_info_t *
 esp_err_t esp_core_dump_write_elf(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err = ESP_OK;
-    static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static core_dump_task_header_t *tasks[CONFIG_ESP_COREDUMP_MAX_TASKS_NUM];
     static core_dump_elf_t self;
     core_dump_header_t dump_hdr;
     uint32_t tcb_sz = COREDUMP_TCB_SIZE, task_num;
@@ -616,7 +616,7 @@ esp_err_t esp_core_dump_write_elf(panic_info_t *info, core_dump_write_config_t *
 
     ELF_CHECK_ERR((info && write_cfg), ESP_ERR_INVALID_ARG, "Invalid input data.");
 
-    task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM);
+    task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
     ESP_COREDUMP_LOGI("Found tasks: %d", task_num);
 
     self.write_cfg = write_cfg;
@@ -700,4 +700,4 @@ esp_err_t esp_core_dump_write_elf(panic_info_t *info, core_dump_write_config_t *
     return err;
 }
 
-#endif //CONFIG_ESP32_COREDUMP_DATA_FORMAT_ELF
+#endif //CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF

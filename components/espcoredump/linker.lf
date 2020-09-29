@@ -13,7 +13,7 @@ entries:
 [mapping:spi_flash_override]
 archive: libspi_flash.a
 entries:
-    if ESP_PANIC_HANDLER_IRAM = y && ESP32_ENABLE_COREDUMP_TO_FLASH = y:
+    if ESP_PANIC_HANDLER_IRAM = y && ESP_COREDUMP_ENABLE_TO_FLASH = y:
         esp_flash_api (noflash_text)
         esp_flash_spi_init (noflash_text)
     else:
@@ -22,7 +22,7 @@ entries:
 [mapping:mbedtls]
 archive: libmbedtls.a
 entries:
-    if ESP32_COREDUMP_CHECKSUM_SHA256 = y :
+    if ESP_COREDUMP_CHECKSUM_SHA256 = y :
         if MBEDTLS_HARDWARE_SHA = n:
             sha256 (noflash_text)
         else:

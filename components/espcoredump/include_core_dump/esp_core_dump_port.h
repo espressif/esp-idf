@@ -15,9 +15,9 @@
 #define ESP_CORE_DUMP_PORT_H_
 
 #include "freertos/FreeRTOS.h"
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
 #include "esp_rom_crc.h"
-#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
 #include "mbedtls/sha256.h"
 #endif
 #include "esp_core_dump_priv.h"
@@ -74,7 +74,7 @@ void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data);
 void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, size_t data_len);
 size_t esp_core_dump_checksum_finish(core_dump_write_data_t* wr_data, void** chs_ptr);
 
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
 void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output);
 int esp_core_dump_sha(mbedtls_sha256_context *ctx,
         const unsigned char *input, size_t ilen, unsigned char output[32]);
@@ -83,32 +83,32 @@ int esp_core_dump_sha(mbedtls_sha256_context *ctx,
 #define esp_core_dump_in_isr_context() xPortInterruptedFromISRContext()
 uint32_t esp_core_dump_get_isr_stack_end(void);
 
-#if CONFIG_ESP32_CORE_DUMP_STACK_SIZE > 0
+#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
 #if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
 // increase stack size in verbose mode
-#define ESP32_CORE_DUMP_STACK_SIZE (CONFIG_ESP32_CORE_DUMP_STACK_SIZE+100)
+#define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE+100)
 #else
-#define ESP32_CORE_DUMP_STACK_SIZE CONFIG_ESP32_CORE_DUMP_STACK_SIZE
+#define ESP_COREDUMP_STACK_SIZE CONFIG_ESP_COREDUMP_STACK_SIZE
 #endif
 #endif
 
 void esp_core_dump_report_stack_usage(void);
 
-#if ESP32_CORE_DUMP_STACK_SIZE > 0
+#if ESP_COREDUMP_STACK_SIZE > 0
 #define COREDUMP_STACK_FILL_BYTE	        (0xa5U)
 extern uint8_t s_coredump_stack[];
 extern uint8_t *s_core_dump_sp;
 
 #if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
 #define esp_core_dump_fill_stack() \
-    memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP32_CORE_DUMP_STACK_SIZE)
+    memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE)
 #else
 #define esp_core_dump_fill_stack()
 #endif
 
 #define esp_core_dump_setup_stack() \
 { \
-    s_core_dump_sp = (uint8_t *)((uint32_t)(s_coredump_stack + ESP32_CORE_DUMP_STACK_SIZE - 1) & ~0xf); \
+    s_core_dump_sp = (uint8_t *)((uint32_t)(s_coredump_stack + ESP_COREDUMP_STACK_SIZE - 1) & ~0xf); \
     esp_core_dump_fill_stack(); \
     /* watchpoint 1 can be used for task stack overflow detection, re-use it, it is no more necessary */ \
 	esp_clear_watchpoint(1); \

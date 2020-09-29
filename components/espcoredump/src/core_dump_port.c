@@ -126,7 +126,7 @@ typedef struct
 
 extern uint8_t port_IntStack;
 
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP_COREDUMP_ENABLE
 
 static uint32_t s_total_length = 0;
 
@@ -142,8 +142,8 @@ static uint32_t s_fake_stacks_num;
 
 static xtensa_extra_info_t s_extra_info;
 
-#if ESP32_CORE_DUMP_STACK_SIZE > 0
-uint8_t s_coredump_stack[ESP32_CORE_DUMP_STACK_SIZE];
+#if ESP_COREDUMP_STACK_SIZE > 0
+uint8_t s_coredump_stack[ESP_COREDUMP_STACK_SIZE];
 uint8_t *s_core_dump_sp;
 
 static uint32_t esp_core_dump_free_stack_space(const uint8_t *pucStackByte)
@@ -160,14 +160,14 @@ static uint32_t esp_core_dump_free_stack_space(const uint8_t *pucStackByte)
 
 void esp_core_dump_report_stack_usage(void)
 {
-#if ESP32_CORE_DUMP_STACK_SIZE > 0
+#if ESP_COREDUMP_STACK_SIZE > 0
     uint32_t bytes_free = esp_core_dump_free_stack_space(s_coredump_stack);
     ESP_COREDUMP_LOGD("Core dump used %u bytes on stack. %u bytes left free.",
         s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
 #endif
 }
 
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
 
 // function to calculate SHA256 for solid data array
 int esp_core_dump_sha(mbedtls_sha256_context *ctx,
@@ -204,9 +204,9 @@ void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output)
 void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data)
 {
     if (wr_data) {
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
         wr_data->crc = 0;
-#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
         mbedtls_sha256_init(&wr_data->ctx);
         (void)mbedtls_sha256_starts_ret(&wr_data->ctx, 0);
 #endif
@@ -217,9 +217,9 @@ void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data)
 void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, size_t data_len)
 {
     if (wr_data && data) {
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
         wr_data->crc = esp_rom_crc32_le(wr_data->crc, data, data_len);
-#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
 #if CONFIG_MBEDTLS_HARDWARE_SHA
         // set software mode of SHA calculation
         wr_data->ctx.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
@@ -236,14 +236,14 @@ uint32_t esp_core_dump_checksum_finish(core_dump_write_data_t* wr_data, void** c
 {
     // get core dump checksum
     uint32_t chs_len = 0;
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
     if (chs_ptr) {
         wr_data->crc = wr_data->crc;
         *chs_ptr = (void*)&wr_data->crc;
         ESP_COREDUMP_LOG_PROCESS("Dump data CRC = 0x%x, offset = 0x%x", wr_data->crc, wr_data->off);
     }
     chs_len = sizeof(wr_data->crc);
-#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     if (chs_ptr) {
         ESP_COREDUMP_LOG_PROCESS("Dump data offset = %d", wr_data->off);
         (void)mbedtls_sha256_finish_ret(&wr_data->ctx, (uint8_t*)&wr_data->sha_output);
@@ -287,7 +287,7 @@ inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t** const tasks,
                         const uint32_t snapshot_size)
 {
-    static TaskSnapshot_t s_tasks_snapshots[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static TaskSnapshot_t s_tasks_snapshots[CONFIG_ESP_COREDUMP_MAX_TASKS_NUM];
     uint32_t tcb_sz; // unused
 
     /* implying that TaskSnapshot_t extends core_dump_task_header_t by adding extra fields */
@@ -521,7 +521,7 @@ bool esp_core_dump_check_task(panic_info_t *info,
                                                 task_frame->a0,
                                                 task_frame->a1);
             } else {
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
                     XtExcFrame *task_frame2 = (XtExcFrame *)task->stack_start;
                     task_frame2->exccause = COREDUMP_INVALID_CAUSE_VALUE;
                     ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
