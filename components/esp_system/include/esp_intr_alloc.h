@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "freertos/xtensa_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,9 +67,9 @@ extern "C" {
  * sources that do not pass through the interrupt mux. To allocate an interrupt for these sources,
  * pass these pseudo-sources to the functions.
  */
-#define ETS_INTERNAL_TIMER0_INTR_SOURCE		-1 ///< Xtensa timer 0 interrupt source
-#define ETS_INTERNAL_TIMER1_INTR_SOURCE		-2 ///< Xtensa timer 1 interrupt source
-#define ETS_INTERNAL_TIMER2_INTR_SOURCE		-3 ///< Xtensa timer 2 interrupt source
+#define ETS_INTERNAL_TIMER0_INTR_SOURCE		-1 ///< Platform timer 0 interrupt source
+#define ETS_INTERNAL_TIMER1_INTR_SOURCE		-2 ///< Platform timer 1 interrupt source
+#define ETS_INTERNAL_TIMER2_INTR_SOURCE		-3 ///< Platform timer 2 interrupt source
 #define ETS_INTERNAL_SW0_INTR_SOURCE		-4 ///< Software int source 1
 #define ETS_INTERNAL_SW1_INTR_SOURCE		-5 ///< Software int source 2
 #define ETS_INTERNAL_PROFILING_INTR_SOURCE	-6 ///< Int source for profiling
@@ -82,10 +81,10 @@ extern "C" {
 #define ETS_INTERNAL_INTR_SOURCE_OFF		(-ETS_INTERNAL_PROFILING_INTR_SOURCE)
 
 /** Enable interrupt by interrupt number */
-#define ESP_INTR_ENABLE(inum)  xt_ints_on((1<<inum))
+#define ESP_INTR_ENABLE(inum)  esp_intr_enable_source(inum)
 
 /** Disable interrupt by interrupt number */
-#define ESP_INTR_DISABLE(inum) xt_ints_off((1<<inum))
+#define ESP_INTR_DISABLE(inum) esp_intr_disable_source(inum)
 
 /** Function prototype for interrupt handler function */
 typedef void (*intr_handler_t)(void *arg);
@@ -290,11 +289,22 @@ esp_err_t esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram);
  */
 void esp_intr_noniram_disable(void);
 
-
 /**
  * @brief Re-enable interrupts disabled by esp_intr_noniram_disable
  */
 void esp_intr_noniram_enable(void);
+
+/**
+ * @brief enable the interrupt source based on its number
+ * @param inum interrupt number from 0 to 31
+ */ 
+void esp_intr_enable_source(int inum);
+
+/**
+ * @brief disable the interrupt source based on its number
+ * @param inum interrupt number from 0 to 31
+ */ 
+void esp_intr_disable_source(int inum);
 
 /**@}*/
 

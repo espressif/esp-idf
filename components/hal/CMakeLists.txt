@@ -30,7 +30,9 @@ if(NOT BOOTLOADER_BUILD)
                 "spi_flash_hal.c"
                 "spi_flash_hal_iram.c"
                 "soc_hal.c"
-                "twai_hal.c")
+                "twai_hal.c"
+                "interrupt_controller_hal.c"
+                "${target}/interrupt_descriptor_table.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs

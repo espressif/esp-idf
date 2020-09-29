@@ -17,7 +17,7 @@ else()
              "crosscore_int.c"
              "dport_access.c"
              "hw_random.c"
-             "intr_alloc.c"
+            
              "memprot.c"
              "spiram.c"
              "spiram_psram.c"

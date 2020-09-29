@@ -11,6 +11,8 @@ else()
              "expression_with_stack_xtensa_asm.S"
              "eri.c"
              "trax.c"
+             "xtensa_intr.c"
+             "xtensa_intr_asm.S"
              "${target}/trax_init.c"
              )
 

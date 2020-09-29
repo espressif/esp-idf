@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <esp_types.h>
+#include <limits.h>
+#include <assert.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <esp_types.h>
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
-#include "soc/soc.h"
-#include <limits.h>
-#include <assert.h>
+#include "hal/cpu_hal.h"
+#include "hal/interrupt_controller_hal.h"
+
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc.h"
+#endif
 
 static const char* TAG = "intr_alloc";
 
@@ -39,7 +42,6 @@ static const char* TAG = "intr_alloc";
 #define ETS_INTERNAL_SW0_INTR_NO 7
 #define ETS_INTERNAL_SW1_INTR_NO 29
 #define ETS_INTERNAL_PROFILING_INTR_NO 11
-
 
 /*
 Define this to debug the choices made when allocating the interrupt. This leads to much debugging
@@ -53,77 +55,6 @@ being triggered, that is why it is separate from the normal LOG* scheme.
 # define ALCHLOG(...) do {} while (0)
 #endif
 
-
-typedef enum {
-    INTDESC_NORMAL=0,
-    INTDESC_RESVD,
-    INTDESC_SPECIAL //for xtensa timers / software ints
-} int_desc_flag_t;
-
-typedef enum {
-    INTTP_LEVEL=0,
-    INTTP_EDGE,
-    INTTP_NA
-} int_type_t;
-
-typedef struct {
-    int level;
-    int_type_t type;
-    int_desc_flag_t cpuflags[2];
-} int_desc_t;
-
-
-//We should mark the interrupt for the timer used by FreeRTOS as reserved. The specific timer
-//is selectable using menuconfig; we use these cpp bits to convert that into something we can use in
-//the table below.
-#if CONFIG_FREERTOS_CORETIMER_0
-#define INT6RES INTDESC_RESVD
-#else
-#define INT6RES INTDESC_SPECIAL
-#endif
-
-#if CONFIG_FREERTOS_CORETIMER_1
-#define INT15RES INTDESC_RESVD
-#else
-#define INT15RES INTDESC_SPECIAL
-#endif
-
-//This is basically a software-readable version of the interrupt usage table in include/soc/soc.h
-const static int_desc_t int_desc[32]={
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //0
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //1
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //2
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //3
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_NORMAL} }, //4
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //5
-    { 1, INTTP_NA,    {INT6RES,        INT6RES       } }, //6
-    { 1, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //7
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //8
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //9
-    { 1, INTTP_EDGE , {INTDESC_NORMAL, INTDESC_NORMAL} }, //10
-    { 3, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //11
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //12
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //13
-    { 7, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //14, NMI
-    { 3, INTTP_NA,    {INT15RES,       INT15RES      } }, //15
-    { 5, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL} }, //16
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //17
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //18
-    { 2, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //19
-    { 2, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //20
-    { 2, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //21
-    { 3, INTTP_EDGE,  {INTDESC_RESVD,  INTDESC_NORMAL} }, //22
-    { 3, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //23
-    { 4, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_NORMAL} }, //24
-    { 4, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //25
-    { 5, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_RESVD } }, //26
-    { 3, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //27
-    { 4, INTTP_EDGE,  {INTDESC_NORMAL, INTDESC_NORMAL} }, //28
-    { 3, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //29
-    { 4, INTTP_EDGE,  {INTDESC_RESVD,  INTDESC_RESVD } }, //30
-    { 5, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //31
-};
-
 typedef struct shared_vector_desc_t shared_vector_desc_t;
 typedef struct vector_desc_t vector_desc_t;
 
@@ -136,7 +67,6 @@ struct shared_vector_desc_t {
     void *arg;
     shared_vector_desc_t *next;
 };
-
 
 #define VECDESC_FL_RESERVED     (1<<0)
 #define VECDESC_FL_INIRAM       (1<<1)
@@ -170,10 +100,11 @@ struct non_shared_isr_arg_t {
 static vector_desc_t *vector_desc_head = NULL;
 
 //This bitmask has an 1 if the int should be disabled when the flash is disabled.
-static uint32_t non_iram_int_mask[portNUM_PROCESSORS];
+static uint32_t non_iram_int_mask[SOC_CPU_CORES_NUM];
+
 //This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable.
-static uint32_t non_iram_int_disabled[portNUM_PROCESSORS];
-static bool non_iram_int_disabled_flag[portNUM_PROCESSORS];
+static uint32_t non_iram_int_disabled[SOC_CPU_CORES_NUM];
+static bool non_iram_int_disabled_flag[SOC_CPU_CORES_NUM];
 
 #if CONFIG_SYSVIEW_ENABLE
 extern uint32_t port_switch_flag[];
@@ -262,7 +193,7 @@ static vector_desc_t * find_desc_for_source(int source, int cpu)
 esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 {
     if (intno>31) return ESP_ERR_INVALID_ARG;
-    if (cpu>=portNUM_PROCESSORS) return ESP_ERR_INVALID_ARG;
+    if (cpu>=SOC_CPU_CORES_NUM) return ESP_ERR_INVALID_ARG;
 
     portENTER_CRITICAL(&spinlock);
     vector_desc_t *vd=get_desc_for_int(intno, cpu);
@@ -280,7 +211,7 @@ esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 esp_err_t esp_intr_reserve(int intno, int cpu)
 {
     if (intno>31) return ESP_ERR_INVALID_ARG;
-    if (cpu>=portNUM_PROCESSORS) return ESP_ERR_INVALID_ARG;
+    if (cpu>=SOC_CPU_CORES_NUM) return ESP_ERR_INVALID_ARG;
 
     portENTER_CRITICAL(&spinlock);
     vector_desc_t *vd=get_desc_for_int(intno, cpu);
@@ -294,43 +225,26 @@ esp_err_t esp_intr_reserve(int intno, int cpu)
     return ESP_OK;
 }
 
-//Interrupt handler table and unhandled uinterrupt routine. Duplicated
-//from xtensa_intr.c... it's supposed to be private, but we need to look
-//into it in order to see if someone allocated an int using
-//xt_set_interrupt_handler.
-typedef struct xt_handler_table_entry {
-    void * handler;
-    void * arg;
-} xt_handler_table_entry;
-extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS*portNUM_PROCESSORS];
-extern void xt_unhandled_interrupt(void * arg);
-
-//Returns true if handler for interrupt is not the default unhandled interrupt handler
-static bool int_has_handler(int intr, int cpu)
-{
-    return (_xt_interrupt_table[intr*portNUM_PROCESSORS+cpu].handler != xt_unhandled_interrupt);
-}
-
 static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force)
 {
     //Check if interrupt is not reserved by design
     int x = vd->intno;
-    if (int_desc[x].cpuflags[cpu]==INTDESC_RESVD) {
+    if (interrupt_controller_hal_get_cpu_desc_flags(x, cpu)==INTDESC_RESVD) {
         ALCHLOG("....Unusable: reserved");
         return false;
     }
-    if (int_desc[x].cpuflags[cpu]==INTDESC_SPECIAL && force==-1) {
+    if (interrupt_controller_hal_get_cpu_desc_flags(x, cpu)==INTDESC_SPECIAL && force==-1) {
         ALCHLOG("....Unusable: special-purpose int");
         return false;
     }
     //Check if the interrupt level is acceptable
-    if (!(flags&(1<<int_desc[x].level))) {
+    if (!(flags&(1<<interrupt_controller_hal_get_level(x)))) {
         ALCHLOG("....Unusable: incompatible level");
         return false;
     }
     //check if edge/level type matches what we want
-    if (((flags&ESP_INTR_FLAG_EDGE) && (int_desc[x].type==INTTP_LEVEL)) ||
-            (((!(flags&ESP_INTR_FLAG_EDGE)) && (int_desc[x].type==INTTP_EDGE)))) {
+    if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL)) ||
+            (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)))) {
         ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
@@ -339,6 +253,7 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: reserved at runtime.");
         return false;
     }
+
     //Ints can't be both shared and non-shared.
     assert(!((vd->flags&VECDESC_FL_SHARED)&&(vd->flags&VECDESC_FL_NONSHARED)));
     //check if interrupt already is in use by a non-shared interrupt
@@ -361,11 +276,12 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
             ALCHLOG("...Unusable: int is shared, we need non-shared.");
             return false;
         }
-    } else if (int_has_handler(x, cpu)) {
-        //Check if interrupt already is allocated by xt_set_interrupt_handler
+    } else if (interrupt_controller_hal_has_handler(x, cpu)) {
+        //Check if interrupt already is allocated by interrupt_controller_hal_set_int_handler
         ALCHLOG("....Unusable: already allocated");
         return false;
     }
+
     return true;
 }
 
@@ -378,6 +294,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
     int best=-1;
     int bestLevel=9;
     int bestSharedCt=INT_MAX;
+
     //Default vector desc, for vectors not in the linked list
     vector_desc_t empty_vect_desc;
     memset(&empty_vect_desc, 0, sizeof(vector_desc_t));
@@ -427,12 +344,14 @@ static int get_available_int(int flags, int cpu, int force, int source)
         }
 
         ALCHLOG("Int %d reserved %d level %d %s hasIsr %d",
-            x, int_desc[x].cpuflags[cpu]==INTDESC_RESVD, int_desc[x].level,
-            int_desc[x].type==INTTP_LEVEL?"LEVEL":"EDGE", int_has_handler(x, cpu));
+            x, interrupt_controller_hal_get_cpu_desc_flags(x,cpu)==INTDESC_RESVD, interrupt_controller_hal_get_level(x),
+            interrupt_controller_hal_get_type(x)==INTTP_LEVEL?"LEVEL":"EDGE", interrupt_controller_hal_has_handler(x, cpu));
+
         if ( !is_vect_desc_usable(vd, flags, cpu, force) ) continue;
 
         if (flags&ESP_INTR_FLAG_SHARED) {
             //We're allocating a shared int.
+
             //See if int already is used as a shared interrupt.
             if (vd->flags&VECDESC_FL_SHARED) {
                 //We can use this already-marked-as-shared interrupt. Count the already attached isrs in order to see
@@ -443,11 +362,11 @@ static int get_available_int(int flags, int cpu, int force, int source)
                     no++;
                     svdesc=svdesc->next;
                 }
-                if (no<bestSharedCt || bestLevel>int_desc[x].level) {
+                if (no<bestSharedCt || bestLevel>interrupt_controller_hal_get_level(x)) {
                     //Seems like this shared vector is both okay and has the least amount of ISRs already attached to it.
                     best=x;
                     bestSharedCt=no;
-                    bestLevel=int_desc[x].level;
+                    bestLevel=interrupt_controller_hal_get_level(x);
                     ALCHLOG("...int %d more usable as a shared int: has %d existing vectors", x, no);
                 } else {
                     ALCHLOG("...worse than int %d", best);
@@ -457,9 +376,9 @@ static int get_available_int(int flags, int cpu, int force, int source)
                     //We haven't found a feasible shared interrupt yet. This one is still free and usable, even if
                     //not marked as shared.
                     //Remember it in case we don't find any other shared interrupt that qualifies.
-                    if (bestLevel>int_desc[x].level) {
+                    if (bestLevel>interrupt_controller_hal_get_level(x)) {
                         best=x;
-                        bestLevel=int_desc[x].level;
+                        bestLevel=interrupt_controller_hal_get_level(x);
                         ALCHLOG("...int %d usable as a new shared int", x);
                     }
                 } else {
@@ -468,9 +387,9 @@ static int get_available_int(int flags, int cpu, int force, int source)
             }
         } else {
             //Seems this interrupt is feasible. Select it and break out of the loop; no need to search further.
-            if (bestLevel>int_desc[x].level) {
+            if (bestLevel>interrupt_controller_hal_get_level(x)) {
                 best=x;
-                bestLevel=int_desc[x].level;
+                bestLevel=interrupt_controller_hal_get_level(x);
             } else {
                 ALCHLOG("...worse than int %d", best);
             }
@@ -497,7 +416,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
                 sh_vec->isr(sh_vec->arg);
 #if CONFIG_SYSVIEW_ENABLE
                 // check if we will return to scheduler or to interrupted task after ISR
-                if (!port_switch_flag[xPortGetCoreID()]) {
+                if (!port_switch_flag[cpu_hal_get_core_id()]) {
                     traceISR_EXIT();
                 }
 #endif
@@ -519,7 +438,7 @@ static void IRAM_ATTR non_shared_intr_isr(void *arg)
     // when CONFIG_SYSVIEW_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
     ns_isr_arg->isr(ns_isr_arg->isr_arg);
     // check if we will return to scheduler or to interrupted task after ISR
-    if (!port_switch_flag[xPortGetCoreID()]) {
+    if (!port_switch_flag[cpu_hal_get_core_id()]) {
         traceISR_EXIT();
     }
     portEXIT_CRITICAL_ISR(&spinlock);
@@ -532,7 +451,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 {
     intr_handle_data_t *ret=NULL;
     int force=-1;
-    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", xPortGetCoreID());
+    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", cpu_hal_get_core_id());
     //Shared interrupts should be level-triggered.
     if ((flags&ESP_INTR_FLAG_SHARED) && (flags&ESP_INTR_FLAG_EDGE)) return ESP_ERR_INVALID_ARG;
     //You can't set an handler / arg for a non-C-callable interrupt.
@@ -542,6 +461,9 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     //Statusreg should have a mask
     if (intrstatusreg && !intrstatusmask) return ESP_ERR_INVALID_ARG;
     //If the ISR is marked to be IRAM-resident, the handler must not be in the cached region
+    //ToDo: if we are to allow placing interrupt handlers into the 0x400c0000—0x400c2000 region,
+    //we need to make sure the interrupt is connected to the CPU0.
+    //CPU1 does not have access to the RTC fast memory through this region.
     if ((flags&ESP_INTR_FLAG_IRAM) &&
             (ptrdiff_t) handler >= SOC_RTC_IRAM_HIGH &&
             (ptrdiff_t) handler < SOC_RTC_DATA_LOW ) {
@@ -556,7 +478,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             flags|=ESP_INTR_FLAG_LOWMED;
         }
     }
-    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): Args okay. Resulting flags 0x%X", xPortGetCoreID(), flags);
+    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): Args okay. Resulting flags 0x%X", cpu_hal_get_core_id(), flags);
 
     //Check 'special' interrupt sources. These are tied to one specific interrupt, so we
     //have to force get_free_int to only look at that.
@@ -572,7 +494,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (ret==NULL) return ESP_ERR_NO_MEM;
 
     portENTER_CRITICAL(&spinlock);
-    int cpu=xPortGetCoreID();
+    int cpu=cpu_hal_get_core_id();
     //See if we can find an interrupt that matches the flags.
     int intr=get_available_int(flags, cpu, force, source);
     if (intr==-1) {
@@ -624,9 +546,9 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             ns_isr_arg->isr=handler;
             ns_isr_arg->isr_arg=arg;
             ns_isr_arg->source=source;
-            xt_set_interrupt_handler(intr, non_shared_intr_isr, ns_isr_arg);
+            interrupt_controller_hal_set_int_handler(intr, non_shared_intr_isr, ns_isr_arg);
 #else
-            xt_set_interrupt_handler(intr, handler, arg);
+            interrupt_controller_hal_set_int_handler(intr, handler, arg);
 #endif
         }
         if (flags&ESP_INTR_FLAG_EDGE) xthal_set_intclear(1 << intr);
@@ -699,12 +621,25 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
     return ESP_OK;
 }
 
+#if !CONFIG_FREERTOS_UNICORE
+static void esp_intr_free_cb(void *arg)
+{
+    (void)esp_intr_free((intr_handle_t)arg);
+}
+#endif /* !CONFIG_FREERTOS_UNICORE */
+
 esp_err_t esp_intr_free(intr_handle_t handle)
 {
     bool free_shared_vector=false;
     if (!handle) return ESP_ERR_INVALID_ARG;
-    //This routine should be called from the interrupt the task is scheduled on.
-    if (handle->vector_desc->cpu!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG;
+
+#if !CONFIG_FREERTOS_UNICORE
+    //Assign this routine to the core where this interrupt is allocated on.
+    if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) {
+        esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &esp_intr_free_cb, (void *)handle);
+        return ret == ESP_OK ? ESP_OK : ESP_FAIL;
+    }
+#endif /* !CONFIG_FREERTOS_UNICORE */
 
     portENTER_CRITICAL(&spinlock);
     esp_intr_disable(handle);
@@ -736,14 +671,14 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
 #if CONFIG_SYSVIEW_ENABLE
         if (!free_shared_vector) {
-            void *isr_arg = xt_get_interrupt_handler_arg(handle->vector_desc->intno);
+            void *isr_arg = interrupt_controller_hal_get_int_handler_arg(handle->vector_desc->intno);
             if (isr_arg) {
                 free(isr_arg);
             }
         }
 #endif
-        //Reset to normal handler
-        xt_set_interrupt_handler(handle->vector_desc->intno, xt_unhandled_interrupt, (void*)((int)handle->vector_desc->intno));
+        //Reset to normal handler:
+        interrupt_controller_hal_set_int_handler(handle->vector_desc->intno, NULL, (void*)((int)handle->vector_desc->intno));
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
@@ -793,7 +728,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
         intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
     } else {
         //Re-enable using cpu int ena reg
-        if (handle->vector_desc->cpu!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
+        if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
         ESP_INTR_ENABLE(handle->vector_desc->intno);
     }
     portEXIT_CRITICAL_SAFE(&spinlock);
@@ -830,7 +765,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
         }
     } else {
         //Disable using per-cpu regs
-        if (handle->vector_desc->cpu!=xPortGetCoreID()) {
+        if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) {
             portEXIT_CRITICAL_SAFE(&spinlock);
             return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
         }
@@ -840,40 +775,25 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     return ESP_OK;
 }
 
-
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
-    int oldint;
-    int cpu=xPortGetCoreID();
-    int intmask=~non_iram_int_mask[cpu];
+    uint32_t oldint;
+    int cpu=cpu_hal_get_core_id();
+    uint32_t intmask=~non_iram_int_mask[cpu];
     if (non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=true;
-    asm volatile (
-        "movi %0,0\n"
-        "xsr %0,INTENABLE\n"    //disable all ints first
-        "rsync\n"
-        "and a3,%0,%1\n"        //mask ints that need disabling
-        "wsr a3,INTENABLE\n"    //write back
-        "rsync\n"
-        :"=&r"(oldint):"r"(intmask):"a3");
+    oldint = interrupt_controller_hal_disable_int_mask(intmask);
     //Save which ints we did disable
     non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-    int cpu=xPortGetCoreID();
+    int cpu=cpu_hal_get_core_id();
     int intmask=non_iram_int_disabled[cpu];
     if (!non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=false;
-    asm volatile (
-        "movi a3,0\n"
-        "xsr a3,INTENABLE\n"
-        "rsync\n"
-        "or a3,a3,%0\n"
-        "wsr a3,INTENABLE\n"
-        "rsync\n"
-        ::"r"(intmask):"a3");
+    interrupt_controller_hal_enable_int_mask(intmask);
 }
 
 //These functions are provided in ROM, but the ROM-based functions use non-multicore-capable
@@ -882,13 +802,19 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 
 
 void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
-    xt_ints_on(mask);
+    interrupt_controller_hal_enable_interrupts(mask);
 }
 
 void IRAM_ATTR ets_isr_mask(unsigned int mask) {
-    xt_ints_off(mask);
+    interrupt_controller_hal_disable_interrupts(mask);
 }
 
+void esp_intr_enable_source(int inum) 
+{
+    interrupt_controller_hal_enable_interrupts(1 << inum);
+}
 
-
-
+void esp_intr_disable_source(int inum)
+{
+    interrupt_controller_hal_disable_interrupts(1 << inum);
+}

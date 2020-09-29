@@ -9,8 +9,6 @@ set(srcs
     "xtensa/portasm.S"
     "xtensa/xtensa_context.S"
     "xtensa/xtensa_init.c"
-    "xtensa/xtensa_intr_asm.S"
-    "xtensa/xtensa_intr.c"
     "xtensa/xtensa_overlay_os_hook.c"
     "xtensa/xtensa_vector_defaults.S"
     "xtensa/xtensa_vectors.S")

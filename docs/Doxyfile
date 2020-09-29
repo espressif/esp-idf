@@ -237,7 +237,7 @@ INPUT = \
     ## Himem
     $(IDF_PATH)/components/esp32/include/esp32/himem.h \
     ## Interrupt Allocation
-    $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_intr_alloc.h \
+    $(IDF_PATH)/components/esp_system/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \

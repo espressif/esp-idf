@@ -386,7 +386,8 @@ _frxt_tick_timer_init:
     call0   xt_ints_on
     #else
     movi    a6, XT_TIMER_INTEN
-    call4   xt_ints_on
+    movi    a3, xt_ints_on
+    callx4  a3  
     #endif
 
     RET(16)
