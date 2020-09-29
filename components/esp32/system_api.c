@@ -384,3 +384,8 @@ void esp_chip_info(esp_chip_info_t* out_info)
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }
+
+inline bool soc_has_cache_lock_bug(void)
+{
+    return (esp_efuse_get_chip_ver() == 3);
+}

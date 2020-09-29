@@ -332,6 +332,15 @@ typedef struct {
  */
 void esp_chip_info(esp_chip_info_t* out_info);
 
+/**
+ * @brief Cache lock bug exists or not
+ *
+ * @return
+ *          - true : bug exists
+ *          - false : bug not exists
+ */
+bool soc_has_cache_lock_bug(void);
+
 #ifdef __cplusplus
 }
 #endif

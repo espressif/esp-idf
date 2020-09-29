@@ -387,6 +387,10 @@ void start_cpu0_default(void)
     esp_int_wdt_init();
     //Initialize the interrupt watch dog for CPU0.
     esp_int_wdt_cpu_init();
+#else
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+#endif
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();

@@ -244,9 +244,9 @@ void panicHandler(XtExcFrame *frame)
         while (1);
     }
 
-    //The core which triggers the interrupt watchdog will delay 1 us, so the other core can save its frame.
+    //The core which triggers the interrupt watchdog will delay 500 us, so the other core can save its frame.
     if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-        ets_delay_us(1);
+        ets_delay_us(500);
     }
 
     if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
