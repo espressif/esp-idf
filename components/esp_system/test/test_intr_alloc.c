@@ -17,7 +17,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"
-
+#include "sdkconfig.h"
 
 #define TIMER_DIVIDER   16               /*!< Hardware timer clock divider */
 #define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
@@ -242,7 +242,12 @@ void IRAM_ATTR int_handler1(void* arg)
     } else {
         ctx->flag1 = true;
     }
+
+    #ifdef CONFIG_IDF_TARGET_ESP32
     SPI2.slave.trans_done = 0;
+    #else
+    GPSPI2.slave.trans_done = 0;
+    #endif
 }
 
 void IRAM_ATTR int_handler2(void* arg)
@@ -260,9 +265,13 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[int
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
-
+    
+    #ifdef CONFIG_IDF_TARGET_ESP32
     //enable HSPI(spi2)
     periph_module_enable(PERIPH_HSPI_MODULE);
+    #else
+    periph_module_enable(PERIPH_FSPI_MODULE);
+    #endif
 
     esp_err_t r;
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);
@@ -273,10 +282,20 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[int
     //assign shared then
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler2, &ctx, &handle2);
     TEST_ESP_OK(r);
+
+    #ifdef CONFIG_IDF_TARGET_ESP32
     SPI2.slave.trans_inten = 1;
+    #else
+    GPSPI2.slave.int_trans_done_en = 1;
+    #endif
 
     printf("trigger first time.\n");
+
+    #ifdef CONFIG_IDF_TARGET_ESP32
     SPI2.slave.trans_done = 1;
+    #else
+    GPSPI2.slave.trans_done = 1;
+    #endif
 
     vTaskDelay(100);
     TEST_ASSERT( ctx.flag1 && ctx.flag2 );
@@ -285,12 +304,18 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[int
     r=esp_intr_free(handle2);
 
     printf("trigger second time.\n");
+    
+    #ifdef CONFIG_IDF_TARGET_ESP32
     SPI2.slave.trans_done = 1;
+    #else
+    GPSPI2.slave.trans_done = 1;
+    #endif
 
     vTaskDelay(500);
     TEST_ASSERT( ctx.flag3 && !ctx.flag4 );
     printf("test passed.\n");
 }
+
 
 #ifndef CONFIG_FREERTOS_UNICORE
 

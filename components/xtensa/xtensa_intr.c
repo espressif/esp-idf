@@ -31,8 +31,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <xtensa/config/core.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/portable.h"
+#include "xtensa/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 
@@ -40,7 +40,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /* Handler table is in xtensa_intr_asm.S */
 
-extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM*portNUM_PROCESSORS];
+extern xt_exc_handler _xt_exception_table[];
 
 
 /*
@@ -103,6 +103,11 @@ void xt_unhandled_interrupt(void * arg)
 	esp_rom_printf("Unhandled interrupt %d on cpu %d!\n", (int)arg, xPortGetCoreID());
 }
 
+//Returns true if handler for interrupt is not the default unhandled interrupt handler
+bool xt_int_has_handler(int intr, int cpu)
+{
+    return (_xt_interrupt_table[intr*portNUM_PROCESSORS+cpu].handler != xt_unhandled_interrupt);
+}
 
 /*
   This function registers a handler for the specified interrupt. The "arg"

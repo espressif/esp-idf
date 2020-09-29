@@ -17,7 +17,6 @@ else()
              "crosscore_int.c"
              "dport_access.c"
              "hw_random.c"
-             "intr_alloc.c"
              "spiram.c"
              "spiram_psram.c"
              "system_api_esp32s2.c"

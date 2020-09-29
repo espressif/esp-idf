@@ -86,12 +86,11 @@ extern "C" {
 #include <esp_heap_caps.h>
 #include "esp_rom_sys.h"
 #include "sdkconfig.h"
+#include "freertos/xtensa_api.h"
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
 #endif
-
-//#include "xtensa_context.h"
 
 /*-----------------------------------------------------------
  * Port specific definitions.

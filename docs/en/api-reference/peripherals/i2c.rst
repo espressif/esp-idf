@@ -75,7 +75,7 @@ After the I2C driver is configured, install it by calling the function :cpp:func
 - Port number, one of the two port numbers from :cpp:type:`i2c_port_t`
 - Master or slave, selected from :cpp:type:`i2c_mode_t`
 - (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
-- Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp32/include/esp_intr_alloc.h`)
+- Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp_system/include/esp_intr_alloc.h`)
 
 
 .. _i2c-api-master-mode:
