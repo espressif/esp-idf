@@ -28,6 +28,8 @@ import ttfw_idf
 
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
 
+STRIP_CONFIG_PATTERN = re.compile(r"(.+?)(_\d+)?$")
+
 # matches e.g.: "rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)"
 RESET_PATTERN = re.compile(r"(rst:0x[0-9a-fA-F]*\s\([\w].*?\),boot:0x[0-9a-fA-F]*\s\([\w].*?\))")
 
@@ -159,7 +161,11 @@ def replace_app_bin(dut, name, new_app_bin):
 
 
 def format_case_name(case):
-    return "[{}] {}".format(case["config"], case["name"])
+    # we could split cases of same config into multiple binaries as we have limited rom space
+    # we should regard those configs like `default` and `default_2` as the same config
+    match = STRIP_CONFIG_PATTERN.match(case["config"])
+    stripped_config_name = match.group(1)
+    return "[{}] {}".format(stripped_config_name, case["name"])
 
 
 def reset_dut(dut):
@@ -304,7 +310,7 @@ def run_unit_test_cases(env, extra_data):
             log_test_case("test case", one_case, ut_config)
             performance_items = []
             # create junit report test case
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 run_one_normal_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
@@ -506,7 +512,7 @@ def run_multiple_devices_cases(env, extra_data):
         for one_case in case_config[ut_config]:
             log_test_case("multi-device test", one_case, ut_config, )
             result = False
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 result = run_one_multiple_devices_case(duts, ut_config, env, one_case,
                                                        one_case.get('app_bin'), junit_test_case)
@@ -664,7 +670,7 @@ def run_multiple_stage_cases(env, extra_data):
         for one_case in case_config[ut_config]:
             log_test_case("multi-stage test", one_case, ut_config)
             performance_items = []
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 run_one_multiple_stage_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
