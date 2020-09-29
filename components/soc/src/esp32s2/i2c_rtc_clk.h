@@ -17,6 +17,7 @@
 #include "i2c_apll.h"
 #include "i2c_bbpll.h"
 #include "i2c_ulp.h"
+#include "i2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,26 +32,27 @@ extern "C" {
 /* Clear to enable BBPLL */
 #define I2C_BBPLL_M     (BIT(17))
 
-/* ROM functions which read/write internal control bus */
-uint8_t rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
-uint8_t rom_i2c_readReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb);
-void rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
-void rom_i2c_writeReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
+/* Read/Write internal control bus */
+uint8_t i2c_rtc_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add);
+uint8_t i2c_rtc_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb);
+void i2c_rtc_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
+void i2c_rtc_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
+void i2c_rtc_init(void);
 
 /* Convenience macros for the above functions, these use register definitions
  * from i2c_apll.h/i2c_bbpll.h header files.
  */
 #define I2C_WRITEREG_MASK_RTC(block, reg_add, indata) \
-      rom_i2c_writeReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
+      i2c_rtc_write_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
 
 #define I2C_READREG_MASK_RTC(block, reg_add) \
-      rom_i2c_readReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
+      i2c_rtc_read_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
 
 #define I2C_WRITEREG_RTC(block, reg_add, indata) \
-      rom_i2c_writeReg(block, block##_HOSTID,  reg_add, indata)
+      i2c_rtc_write_reg(block, block##_HOSTID,  reg_add, indata)
 
 #define I2C_READREG_RTC(block, reg_add) \
-      rom_i2c_readReg(block, block##_HOSTID,  reg_add)
+      i2c_rtc_read_reg(block, block##_HOSTID,  reg_add)
 
 #ifdef __cplusplus
 }
