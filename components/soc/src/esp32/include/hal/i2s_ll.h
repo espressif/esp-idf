@@ -871,8 +871,8 @@ static inline void i2s_ll_set_rx_pcm_long(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_pdm_cfg(i2s_dev_t *hw, uint32_t sample_rate)
 {
-    uint32_t fp = 96;
-    uint32_t fs = sample_rate / 1000 * 10;
+    uint32_t fp = 960;
+    uint32_t fs = sample_rate / 100;
     hw->pdm_freq_conf.tx_pdm_fp = fp;
     hw->pdm_freq_conf.tx_pdm_fs = fs;
     hw->pdm_conf.tx_sinc_osr2 = fp/fs;
