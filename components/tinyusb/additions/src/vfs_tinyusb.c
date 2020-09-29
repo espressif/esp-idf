@@ -83,11 +83,11 @@ static esp_err_t apply_path(char const *path)
             ESP_LOGE(TAG, "The path is too long; maximum is %d characters", VFS_TUSB_MAX_PATH);
             return ESP_ERR_INVALID_ARG;
         }
-        strncpy(s_vfstusb.vfs_path, path, path_len);
+        strncpy(s_vfstusb.vfs_path, path, (VFS_TUSB_MAX_PATH - 1));
     } else {
         strncpy(s_vfstusb.vfs_path,
                 VFS_TUSB_PATH_DEFAULT,
-                strlen(VFS_TUSB_PATH_DEFAULT) + 1);
+                (VFS_TUSB_MAX_PATH - 1));
     }
     ESP_LOGV(TAG, "Path is set to `%s`", s_vfstusb.vfs_path);
     return ESP_OK;
