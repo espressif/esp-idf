@@ -94,6 +94,7 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
+    $(IDF_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(IDF_PATH)/components/driver/include/driver/gpio.h \
     $(IDF_PATH)/components/driver/include/driver/rtc_io.h \
     $(IDF_PATH)/components/driver/include/driver/i2c.h \

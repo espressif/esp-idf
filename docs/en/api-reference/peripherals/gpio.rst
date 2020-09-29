@@ -24,7 +24,7 @@ There is also separate "RTC GPIO" support, which functions when GPIOs are routed
 Application Example
 -------------------
 
-GPIO output and input interrupt example: :example:`peripherals/gpio`.
+GPIO output and input interrupt example: :example:`peripherals/gpio/generic_gpio`.
 
 API Reference - Normal GPIO
 ---------------------------
