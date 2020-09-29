@@ -138,6 +138,20 @@ uint32_t cipher_type_map_public_to_supp(wifi_cipher_type_t cipher)
     }
 }
 
+static bool is_wpa2_enterprise_connection(void)
+{
+    uint8_t authmode;
+
+    if (esp_wifi_sta_prof_is_wpa2_internal()) {
+        authmode = esp_wifi_sta_get_prof_authmode_internal();
+        if ((authmode == WPA2_AUTH_ENT) || (authmode == WPA2_AUTH_ENT_SHA256)) {
+            return true;
+	}
+    }
+
+    return false;
+}
+
 /**
  * get_bssid - Get the current BSSID
  * @priv: private driver interface data
@@ -589,8 +603,7 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     if (res)
         goto failed;
 
-    if (esp_wifi_sta_prof_is_wpa2_internal() &&
-        esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT) {
+    if (is_wpa2_enterprise_connection()) {
         pmksa_cache_set_current(sm, NULL, sm->bssid, 0, 0);
     }
 
@@ -2088,6 +2101,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     sm->proto = wpa_proto;
     if (auth_mode == WPA2_AUTH_ENT) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X; /* for wpa2 enterprise */
+    } else if (auth_mode == WPA2_AUTH_ENT_SHA256) {
+        sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SHA256; /* for wpa2 enterprise sha256 */
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
     } else if (auth_mode == WPA3_AUTH_PSK) {
@@ -2127,8 +2142,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-        (esp_wifi_sta_prof_is_wpa2_internal() &&
-         esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT)) {
+	is_wpa2_enterprise_connection()) {
         pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
         wpa_sm_set_pmk_from_pmksa(sm);
     }
