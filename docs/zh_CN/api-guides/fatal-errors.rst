@@ -62,7 +62,7 @@
 
 - 如果 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
-- 如果使能了 :doc:`Core Dump <core_dump>` 功能（``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` 或者 ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` 选项），系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
+- 如果使能了 :doc:`Core Dump <core_dump>` 功能（``CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH`` 或者 ``CONFIG_ESP_COREDUMP_ENABLE_TO_UART`` 选项），系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
 
 下图展示了紧急处理程序的行为：
 

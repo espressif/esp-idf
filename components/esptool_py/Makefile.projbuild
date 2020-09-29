@@ -149,7 +149,7 @@ simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 PRINT_FILTER ?=
 
 MONITOR_CORE_DUMP_DECODE_ARG ?=
-MONITOR_CORE_DUMP_DECODE = $(call dequote,$(CONFIG_ESP32_CORE_DUMP_DECODE))
+MONITOR_CORE_DUMP_DECODE = $(call dequote,$(CONFIG_ESP_COREDUMP_DECODE))
 ifneq ("$(MONITOR_CORE_DUMP_DECODE)","")
 MONITOR_CORE_DUMP_DECODE_ARG = --decode-coredumps $(MONITOR_CORE_DUMP_DECODE)
 endif

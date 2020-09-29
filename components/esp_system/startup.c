@@ -373,7 +373,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_pm_impl_init();
 #endif
 
-#if CONFIG_ESP_ENABLE_COREDUMP
+#if CONFIG_ESP_COREDUMP_ENABLE
     esp_core_dump_init();
 #endif
 

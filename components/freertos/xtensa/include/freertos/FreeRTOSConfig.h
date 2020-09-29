@@ -319,7 +319,7 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP_COREDUMP_ENABLE
 #define configENABLE_TASK_SNAPSHOT          1
 #endif
 #ifndef configENABLE_TASK_SNAPSHOT
