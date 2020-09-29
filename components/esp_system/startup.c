@@ -373,10 +373,8 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_pm_impl_init();
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP_ENABLE_COREDUMP
     esp_core_dump_init();
-#endif
 #endif
 
 #if CONFIG_SW_COEXIST_ENABLE
