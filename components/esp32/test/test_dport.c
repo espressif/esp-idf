@@ -371,7 +371,7 @@ static void accessDPORT2_stall_other_cpu(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Check stall workaround DPORT and Hi-interrupt", "[esp32] [ignore]")
+TEST_CASE("Check stall workaround DPORT and Hi-interrupt", "[esp32]")
 {
     xt_highint5_read_apb = 0;
     dport_test_result    = false;

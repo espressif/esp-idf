@@ -129,7 +129,7 @@ done:
     vTaskDelete(NULL);
 }
 
-TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling][ignore]")
+TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling]")
 {
     const esp_partition_t *partition = get_test_data_partition();
     wl_handle_t handle;
