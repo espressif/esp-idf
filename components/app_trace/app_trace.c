@@ -495,7 +495,7 @@ static uint16_t esp_apptrace_trax_pend_chunk_sz_get(void)
 #endif
 
 // assumed to be protected by caller from multi-core/thread access
-static esp_err_t esp_apptrace_trax_block_switch(void)
+static __attribute__((noinline)) esp_err_t esp_apptrace_trax_block_switch(void)
 {
     int prev_block_num = s_trace_buf.trax.state.in_block % 2;
     int new_block_num = prev_block_num ? (0) : (1);
