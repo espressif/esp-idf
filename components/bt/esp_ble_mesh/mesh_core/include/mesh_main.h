@@ -446,6 +446,12 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers);
                                               BLE_MESH_FEAT_FRIEND |    \
                                               BLE_MESH_FEAT_LOW_POWER)
 
+/** @brief Check if the mesh stack is initialized.
+ *
+ *  @return true - yes, false - no.
+ */
+bool bt_mesh_is_initialized(void);
+
 /** @brief Initialize Mesh support
  *
  *  After calling this API, the node will not automatically advertise as

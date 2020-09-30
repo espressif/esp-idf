@@ -31,6 +31,11 @@
 
 static bool mesh_init = false;
 
+bool bt_mesh_is_initialized(void)
+{
+    return mesh_init;
+}
+
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
                       u8_t flags, u32_t iv_index, u16_t addr,
                       const u8_t dev_key[16])
