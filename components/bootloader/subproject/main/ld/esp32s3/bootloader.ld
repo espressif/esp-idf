@@ -6,8 +6,8 @@
 
 MEMORY
 {
-  iram_seg (RWX) :                  org = 0x403B8000, len = 0x4000
-  iram_loader_seg (RWX) :           org = 0x403BC000, len = 0x4000
+  iram_seg (RWX) :                  org = 0x403B6000, len = 0x4000
+  iram_loader_seg (RWX) :           org = 0x403BA000, len = 0x6000
   dram_seg (RW) :                   org = 0x3FCD0000, len = 0x4000
 }
 
