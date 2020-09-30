@@ -21,6 +21,9 @@
 #include "soc/compare_set.h"
 #include "xtensa/xtruntime.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef CONFIG_SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
 #define NEED_VOLATILE_MUX volatile
@@ -153,6 +156,10 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
     XTOS_RESTORE_INTLEVEL(irq_status);
 #endif    
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

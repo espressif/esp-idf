@@ -1,13 +1,10 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(SRCS "src/cpu_util.c"
-                            "src/memory_layout_utils.c"
-                            "src/lldesc.c"
+idf_component_register(SRCS "src/lldesc.c"
                             "src/soc_include_legacy_warn.c"
-                            "src/compare_set.c"
-                       REQUIRES hal #cpu.h directly includes HAL header
+                            "src/memory_layout_utils.c"
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES ${target}
+                       PRIV_REQUIRES hal # [refactor-todo] soc dependency on hal for rtc sources
                        LDFRAGMENTS linker.lf)
 
 add_subdirectory(soc)
