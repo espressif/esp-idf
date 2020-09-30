@@ -2912,17 +2912,25 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
             phase == BLE_MESH_KR_PHASE_2) {
         sub->kr_phase = BLE_MESH_KR_PHASE_2;
         sub->kr_flag = 1;
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            BT_DBG("Storing kr phase persistently");
+            bt_mesh_store_subnet(sub);
+        }
+
         bt_mesh_net_beacon_update(sub);
     } else if ((sub->kr_phase == BLE_MESH_KR_PHASE_1 ||
                 sub->kr_phase == BLE_MESH_KR_PHASE_2) &&
                phase == BLE_MESH_KR_PHASE_3) {
+        sub->kr_phase = BLE_MESH_KR_NORMAL;
+        sub->kr_flag = 0;
         bt_mesh_net_revoke_keys(sub);
+
         if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) ||
                 IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
             friend_cred_refresh(ctx->net_idx);
         }
-        sub->kr_phase = BLE_MESH_KR_NORMAL;
-        sub->kr_flag = 0;
+
         bt_mesh_net_beacon_update(sub);
     }
 
