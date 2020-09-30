@@ -284,10 +284,11 @@ static inline esp_err_t _pcnt_isr_handler_remove(pcnt_port_t pcnt_port, pcnt_uni
 // pcnt interrupt service
 static void IRAM_ATTR pcnt_intr_service(void *arg)
 {
-    uint32_t status;
+    uint32_t status, mask = 0;
     pcnt_port_t pcnt_port = (pcnt_port_t)arg;
     pcnt_hal_get_intr_status(&(p_pcnt_obj[pcnt_port]->hal), &status);
     
+    mask = status;
     while (status) {
         int unit = __builtin_ffs(status) - 1;
         status &= ~(1 << unit);
@@ -296,7 +297,7 @@ static void IRAM_ATTR pcnt_intr_service(void *arg)
             (pcnt_isr_func[unit].fn)(pcnt_isr_func[unit].args);
         }
     }
-    pcnt_hal_clear_intr_status(&(p_pcnt_obj[pcnt_port]->hal), status);
+    pcnt_hal_clear_intr_status(&(p_pcnt_obj[pcnt_port]->hal), mask);
 }
 
 static inline esp_err_t _pcnt_isr_service_install(pcnt_port_t pcnt_port, int intr_alloc_flags)
