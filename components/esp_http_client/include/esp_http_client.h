@@ -128,7 +128,11 @@ typedef struct {
  * Enum for the HTTP status codes.
  */
 typedef enum {
+    /* 2xx - Success */
+    HttpStatus_Ok                = 200,
+
     /* 3xx - Redirection */
+    HttpStatus_MultipleChoices   = 300,
     HttpStatus_MovedPermanently  = 301,
     HttpStatus_Found             = 302,
 
