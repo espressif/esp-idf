@@ -582,6 +582,10 @@ void bt_mesh_rpl_reset(void)
             } else {
                 rpl->old_iv = true;
             }
+
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+                bt_mesh_store_rpl(rpl);
+            }
         }
     }
 }
