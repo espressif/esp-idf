@@ -1,16 +1,43 @@
 #!/usr/bin/env python
+from pprint import pformat
 import re
 from test_panic_util.test_panic_util import get_dut
 
 
-def test_common(dut, test_name):
+def get_default_backtrace(test_name):
+    return [
+        test_name,
+        "app_main",
+        "main_task",
+        "vPortTaskWrapper"
+    ]
+
+
+def test_common(dut, test_name, expected_backtrace=None):
+    if expected_backtrace is None:
+        expected_backtrace = get_default_backtrace(dut.test_name)
+
+    if "gdbstub" in test_name:
+        dut.start_gdb()
+        frames = dut.gdb_backtrace()
+        if not dut.match_backtrace(frames, expected_backtrace):
+            raise AssertionError("Unexpected backtrace in test {}:\n{}".format(test_name, pformat(frames)))
+        return
+
     if "uart" in test_name:
         dut.expect(dut.COREDUMP_UART_END)
+
     dut.expect("Rebooting...")
+
     if "uart" in test_name:
-        dut.process_coredump_uart
+        dut.process_coredump_uart()
+        # TODO: check backtrace
     elif "flash" in test_name:
-        dut.process_coredump_flash
+        dut.process_coredump_flash()
+        # TODO: check backtrace
+    elif "panic" in test_name:
+        # TODO: check backtrace
+        pass
 
 
 def task_wdt_inner(env, test_name):
@@ -22,7 +49,11 @@ def task_wdt_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("Guru Meditation")
-        test_common(dut, test_name)
+        test_common(dut, test_name, expected_backtrace=[
+            # Backtrace interrupted when abort is called, IDF-842.
+            # Task WDT calls abort internally.
+            "panic_abort", "esp_system_abort"
+        ])
 
 
 def int_wdt_inner(env, test_name):
@@ -60,7 +91,8 @@ def cache_error_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("Guru Meditation")
-        test_common(dut, test_name)
+        test_common(dut, test_name,
+                    expected_backtrace=["die"] + get_default_backtrace(dut.test_name))
 
 
 def abort_inner(env, test_name):
@@ -69,7 +101,10 @@ def abort_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("Guru Meditation", "Re-entered core dump")
-        test_common(dut, test_name)
+        test_common(dut, test_name, expected_backtrace=[
+            # Backtrace interrupted when abort is called, IDF-842
+            "panic_abort", "esp_system_abort"
+        ])
 
 
 def storeprohibited_inner(env, test_name):
@@ -110,4 +145,5 @@ def instr_fetch_prohibited_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("Guru Meditation")
-        test_common(dut, test_name)
+        test_common(dut, test_name,
+                    expected_backtrace=["_init"] + get_default_backtrace(dut.test_name))
