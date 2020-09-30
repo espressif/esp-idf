@@ -142,6 +142,7 @@ exclude =
     # submodules
         components/bootloader/subproject/components/micro-ecc/micro-ecc,
         components/bt/host/nimble/nimble,
+        components/cmock/CMock,
         components/esptool_py/esptool,
         components/expat/expat,
         components/json/cJSON,
