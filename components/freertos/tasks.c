@@ -1278,11 +1278,15 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	void vTaskDelete( TaskHandle_t xTaskToDelete )
 	{
 	TCB_t *pxTCB;
-	BaseType_t core = xPortGetCoreID();
+	TCB_t *curTCB;
+	BaseType_t core;
 	BaseType_t xFreeNow = 0;
 
 		taskENTER_CRITICAL( &xTaskQueueMutex );
 		{
+			core = xPortGetCoreID();
+			curTCB = pxCurrentTCB[core];
+
 			/* If null is passed in here then it is the calling task that is
 			being deleted. */
 			pxTCB = prvGetTCBFromHandle( xTaskToDelete );
@@ -1313,7 +1317,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			not return. */
 			uxTaskNumber++;
 
-			if( pxTCB == pxCurrentTCB[core] || 
+			if( pxTCB == curTCB ||
 				(portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core ]) ||
 				(portNUM_PROCESSORS > 1 && pxTCB->xCoreID == (!core)) )
 			{
@@ -1362,15 +1366,29 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		been deleted. */
 		if( xSchedulerRunning != pdFALSE )
 		{
-			if( pxTCB == pxCurrentTCB[core] )
+			if( pxTCB == curTCB )
 			{
 				configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 				portYIELD_WITHIN_API();
 			}
-			else if ( portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core] )	//If task was currently running on the other core
+			else if ( portNUM_PROCESSORS > 1 )
 			{
-				/* if task is running on the other CPU, force a yield on that CPU to take it off */
-				vPortYieldOtherCore( !core );
+				/* Check if the deleted task is currently running on any other core
+				   and force a yield to take it off.
+
+				   (this includes re-checking the core that curTCB was previously
+				   running on, in case curTCB has migrated to a different core.)
+				*/
+				taskENTER_CRITICAL( &xTaskQueueMutex );
+				for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++)
+				{
+					if(pxTCB == pxCurrentTCB[ i ] )
+					{
+						vPortYieldOtherCore( i );
+						break;
+					}
+				}
+				taskEXIT_CRITICAL( &xTaskQueueMutex );
 			}
 			else
 			{
@@ -1929,10 +1947,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			{
 				/* The current task has just been suspended. */
 				taskENTER_CRITICAL(&xTaskQueueMutex);
-				BaseType_t core = xPortGetCoreID();
+				BaseType_t suspended = uxSchedulerSuspended[xPortGetCoreID()];
 				taskEXIT_CRITICAL(&xTaskQueueMutex);
 
-				configASSERT( uxSchedulerSuspended[core] == 0 );
+				configASSERT( suspended == 0 );
 				portYIELD_WITHIN_API();
 			}
 			else
