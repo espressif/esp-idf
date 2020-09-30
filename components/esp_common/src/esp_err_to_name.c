@@ -710,11 +710,12 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTPD_TASK
     ERR_TBL_IT(ESP_ERR_HTTPD_TASK),                             /* 45064 0xb008 Failed to launch server task/thread */
 #   endif
-    // components/esp32s2/include/esp_ds.h
-#   ifdef      ESP_ERR_HW_CRYPTO_DS_BASE
-    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_BASE),                      /* 49152 0xc000 Starting number of HW cryptography
+    // components/esp_common/include/esp_err.h
+#   ifdef      ESP_ERR_HW_CRYPTO_BASE
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_BASE),                         /* 49152 0xc000 Starting number of HW cryptography
                                                                                 module error codes */
 #   endif
+    // components/esp32s2/include/esp_ds.h
 #   ifdef      ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL),                 /* 49153 0xc001 HMAC peripheral problem */
 #   endif

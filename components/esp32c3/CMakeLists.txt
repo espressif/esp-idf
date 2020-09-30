@@ -16,6 +16,7 @@ else()
              "crosscore_int.c"
              "dport_access.c"
              "esp_hmac.c"
+             "esp_ds.c"
              "esp_crypto_lock.c"
              "hw_random.c"
              "system_api_esp32c3.c")

@@ -21,26 +21,39 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL           ESP_ERR_HW_CRYPTO_BASE + 0x1 /*!< HMAC peripheral problem */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_KEY         ESP_ERR_HW_CRYPTO_BASE + 0x2 /*!< given HMAC key isn't correct,
+#define ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL           ESP_ERR_HW_CRYPTO_BASE + 0x1 /*!< HMAC peripheral problem */
+#define ESP32C3_ERR_HW_CRYPTO_DS_INVALID_KEY         ESP_ERR_HW_CRYPTO_BASE + 0x2 /*!< given HMAC key isn't correct,
                                                                                 HMAC peripheral problem */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST      ESP_ERR_HW_CRYPTO_BASE + 0x4 /*!< message digest check failed,
+#define ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST      ESP_ERR_HW_CRYPTO_BASE + 0x4 /*!< message digest check failed,
                                                                                 result is invalid */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING     ESP_ERR_HW_CRYPTO_BASE + 0x5 /*!< padding check failed, but result
+#define ESP32C3_ERR_HW_CRYPTO_DS_INVALID_PADDING     ESP_ERR_HW_CRYPTO_BASE + 0x5 /*!< padding check failed, but result
                                                                                    is produced anyway and can be read*/
 
-#define ESP_DS_IV_LEN 16
+#define ESP_DS_IV_BIT_LEN 128
+#define ESP_DS_SIGNATURE_MAX_BIT_LEN 3072
+#define ESP_DS_SIGNATURE_MD_BIT_LEN 256
+#define ESP_DS_SIGNATURE_M_PRIME_BIT_LEN 32
+#define ESP_DS_SIGNATURE_L_BIT_LEN 32
+#define ESP_DS_SIGNATURE_PADDING_BIT_LEN 64
 
-/* Length of parameter 'C' stored in flash */
-#define ESP_DS_C_LEN (12672 / 8)
+/* Length of parameter 'C' stored in flash, in bytes
+   - Operands Y, M and r_bar; each 3072 bits
+   - Operand MD (message digest); 256 bits
+   - Operands M' and L; each 32 bits
+   - Operand beta (padding value; 64 bits
+*/
+#define ESP_DS_C_LEN (((ESP_DS_SIGNATURE_MAX_BIT_LEN * 3 \
+        + ESP_DS_SIGNATURE_MD_BIT_LEN   \
+        + ESP_DS_SIGNATURE_M_PRIME_BIT_LEN   \
+        + ESP_DS_SIGNATURE_L_BIT_LEN   \
+        + ESP_DS_SIGNATURE_PADDING_BIT_LEN) / 8))
 
 typedef struct esp_ds_context esp_ds_context_t;
 
 typedef enum {
     ESP_DS_RSA_1024 = (1024 / 32) - 1,
     ESP_DS_RSA_2048 = (2048 / 32) - 1,
-    ESP_DS_RSA_3072 = (3072 / 32) - 1,
-    ESP_DS_RSA_4096 = (4096 / 32) - 1
+    ESP_DS_RSA_3072 = (3072 / 32) - 1
 } esp_digital_signature_length_t;
 
 /**
@@ -53,7 +66,7 @@ typedef struct esp_digital_signature_data {
      * RSA LENGTH register parameters
      * (number of words in RSA key & operands, minus one).
      *
-     * Max value 127 (for RSA 4096).
+     * Max value 127 (for RSA 3072).
      *
      * This value must match the length field encrypted and stored in 'c',
      * or invalid results will be returned. (The DS peripheral will
@@ -69,7 +82,7 @@ typedef struct esp_digital_signature_data {
     /**
      * IV value used to encrypt 'c'
      */
-    uint8_t iv[ESP_DS_IV_LEN];
+    uint32_t iv[ESP_DS_IV_BIT_LEN / 32];
 
     /**
      * Encrypted Digital Signature parameters. Result of AES-CBC encryption
@@ -78,23 +91,23 @@ typedef struct esp_digital_signature_data {
     uint8_t c[ESP_DS_C_LEN];
 } esp_ds_data_t;
 
-/** Plaintext parameters used by Digital Signature.
+/**
+ * Plaintext parameters used by Digital Signature.
  *
- * Not used for signing with DS peripheral, but can be encrypted
- * in-device by calling esp_ds_encrypt_params()
- *
- * @note This documentation is mostly taken from the ROM code.
+ * This is only used for encrypting the RSA parameters by calling esp_ds_encrypt_params().
+ * Afterwards, the result can be stored in flash or in other persistent memory.
+ * The encryption is a prerequisite step before any signature operation can be done.
  */
 typedef struct {
-    uint32_t Y[4096/32];                    //!< RSA exponent
-    uint32_t M[4096/32];                    //!< RSA modulus
-    uint32_t Rb[4096/32];                   //!< RSA r inverse operand
-    uint32_t M_prime;                       //!< RSA M prime operand
-    esp_digital_signature_length_t length;  //!< RSA length
+    uint32_t  Y[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32]; //!< RSA exponent
+    uint32_t  M[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32]; //!< RSA modulus
+    uint32_t Rb[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32]; //!< RSA r inverse operand
+    uint32_t M_prime;                               //!< RSA M prime operand
+    uint32_t length;                                //!< RSA length in words (32 bit)
 } esp_ds_p_data_t;
 
 /**
- * Sign the message.
+ * @brief Sign the message with a hardware key from specific key slot.
  *
  * This function is a wrapper around \c esp_ds_finish_sign() and \c esp_ds_start_sign(), so do not use them
  * in parallel.
@@ -124,7 +137,7 @@ esp_err_t esp_ds_sign(const void *message,
         void *signature);
 
 /**
- * Start the signing process.
+ * @brief Start the signing process.
  *
  * This function yields a context object which needs to be passed to \c esp_ds_finish_sign() to finish the signing
  * process.
@@ -158,7 +171,7 @@ esp_err_t esp_ds_start_sign(const void *message,
 bool esp_ds_is_busy(void);
 
 /**
- * Finish the signing process.
+ * @brief Finish the signing process.
  *
  * @param signature the destination of the signature, should be (data->rsa_length + 1)*4 bytes long
  * @param esp_ds_ctx the context object retreived by \c esp_ds_start_sign()
@@ -167,13 +180,19 @@ bool esp_ds_is_busy(void);
  *      - ESP_OK if successful, the ds operation has been finished and the result is written to signature.
  *      - ESP_ERR_INVALID_ARG if one of the parameters is NULL
  *      - ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST if the message digest didn't match; the signature is invalid.
+ *        This means that the encrypted RSA key parameters are invalid, indicating that they may have been tampered
+ *        with or indicating a flash error, etc.
  *      - ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING if the message padding is incorrect, the signature can be read though
- *        since the message digest matches.
+ *        since the message digest matches (see TRM for more details).
  */
 esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx);
 
 /**
- * Encrypt the private key parameters.
+ * @brief Encrypt the private key parameters.
+ *
+ * The encryption is a prerequisite step before any signature operation can be done.
+ * It is not strictly necessary to use this encryption function, the encryption could also happen on an external
+ * device.
  *
  * @param data Output buffer to store encrypted data, suitable for later use generating signatures.
  *        The allocated memory must be in internal memory and word aligned since it's filled by DMA. Both is asserted

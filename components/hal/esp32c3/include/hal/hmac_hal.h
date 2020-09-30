@@ -100,7 +100,7 @@ void hmac_hal_next_block_padding(void);
 void hmac_hal_read_result_256(void *result);
 
 /**
- * @brief Clean the HMAC result provided to other hardware.
+ * @brief Clear (invalidate) the HMAC result provided to other hardware.
  */
 void hmac_hal_clean(void);
 
