@@ -664,6 +664,9 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
 
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 {
+    if (client->response->status_code >= HttpStatus_Ok && client->response->status_code < HttpStatus_MultipleChoices) {
+        return ESP_OK;
+    }
     if (client->redirect_counter >= client->max_redirection_count || client->disable_auto_redirect) {
         ESP_LOGE(TAG, "Error, reach max_redirection_count count=%d", client->redirect_counter);
         return ESP_ERR_HTTP_MAX_REDIRECT;
