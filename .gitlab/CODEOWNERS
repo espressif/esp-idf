@@ -97,6 +97,7 @@
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/freemodbus/               @esp-idf-codeowners/peripherals
 /components/freertos/                 @esp-idf-codeowners/system
+/components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
 /components/idf_test/                 @esp-idf-codeowners/ci
 /components/jsmn/                     @esp-idf-codeowners/app-utilities
