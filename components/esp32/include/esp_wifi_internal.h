@@ -329,6 +329,17 @@ esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_m
   */
 esp_err_t esp_wifi_internal_statistic_dump(void);
 
+/**
+  * @brief     Get WiFi critical event bitmap
+  *
+  * @attention This API is use to check whether the critical and very-hard-to-reproduce
+  *            issue is happened.
+  *
+  * @return critical event bitmap
+  */
+uint32_t esp_wifi_get_critical_event(void);
+
+
 #ifdef __cplusplus
 }
 #endif
