@@ -122,7 +122,7 @@ Supported notations and RAM regions
 Example
 ^^^^^^^
 
-1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP32_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
+1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
 
 2. In your project, create a global variable in DRAM area as such as:
 

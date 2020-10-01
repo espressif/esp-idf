@@ -90,7 +90,7 @@ def action_extensions(base_actions, project_path):
         monitor_args += ["-b", monitor_baud]
         monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
 
-        coredump_decode = get_sdkconfig_value(project_desc["config_file"], "CONFIG_ESP32_CORE_DUMP_DECODE")
+        coredump_decode = get_sdkconfig_value(project_desc["config_file"], "CONFIG_ESP_COREDUMP_DECODE")
         if coredump_decode is not None:
             monitor_args += ["--decode-coredumps", coredump_decode]
 

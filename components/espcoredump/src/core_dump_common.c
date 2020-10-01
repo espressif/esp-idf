@@ -18,7 +18,7 @@
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 
-#if CONFIG_ESP32_COREDUMP_DATA_FORMAT_BIN
+#if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
 
 static inline uint32_t esp_core_dump_get_tcb_len(void)
 {
@@ -102,14 +102,14 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_config_t* write_
 static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err;
-    static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static core_dump_task_header_t *tasks[CONFIG_ESP_COREDUMP_MAX_TASKS_NUM];
     uint32_t task_num, tcb_sz = esp_core_dump_get_tcb_len();
     uint32_t data_len = 0, task_id;
     int curr_task_index = COREDUMP_CURR_TASK_NOT_FOUND;
     core_dump_header_t hdr;
     core_dump_mem_seg_header_t interrupted_task_stack;
 
-    task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM);
+    task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
     ESP_COREDUMP_LOGI("Found tasks: %d!", task_num);
 
     // Verifies all tasks in the snapshot
@@ -282,11 +282,11 @@ inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *wr
 {
     esp_core_dump_setup_stack();
 
-#ifndef CONFIG_ESP32_ENABLE_COREDUMP_TO_NONE
+#ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
-#if CONFIG_ESP32_COREDUMP_DATA_FORMAT_BIN
+#if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
     err = esp_core_dump_write_binary(info, write_cfg);
-#elif CONFIG_ESP32_COREDUMP_DATA_FORMAT_ELF
+#elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
     err = esp_core_dump_write_elf(info, write_cfg);
 #endif
     if (err != ESP_OK) {

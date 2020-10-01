@@ -20,7 +20,7 @@
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 typedef struct _core_dump_partition_t
 {
@@ -313,7 +313,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return err;
     }
     // TODO: check CRC or SHA basing on the version of coredump image stored in flash
-#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
     uint32_t *crc = (uint32_t *)(((uint8_t *)core_data) + *out_size);
     crc--; // Point to CRC field
 
@@ -326,7 +326,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         spi_flash_munmap(core_data_handle);
         return ESP_ERR_INVALID_CRC;
     }
-#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     uint8_t* sha256_ptr = (uint8_t*)(((uint8_t *)core_data) + *out_size);
     sha256_ptr -= COREDUMP_SHA256_LEN;
     ESP_LOGD(TAG, "Core dump data offset, size: %d, %u!",

@@ -294,23 +294,23 @@ void esp_panic_handler(panic_info_t *info)
     panic_print_str("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler((XtExcFrame*) info->frame);
 #else
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP_COREDUMP_ENABLE
     static bool s_dumping_core;
     if (s_dumping_core) {
         panic_print_str("Re-entered core dump! Exception happened during core dump!\r\n");
     } else {
         disable_all_wdts();
         s_dumping_core = true;
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
         esp_core_dump_to_flash(info);
 #endif
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
         esp_core_dump_to_uart(info);
 #endif
         s_dumping_core = false;
         reconfigure_all_wdts();
     }
-#endif /* CONFIG_ESP32_ENABLE_COREDUMP */
+#endif /* CONFIG_ESP_COREDUMP_ENABLE */
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
