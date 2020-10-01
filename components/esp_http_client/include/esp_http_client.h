@@ -537,7 +537,7 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
  *     - ESP_FAIL               If failed to read response
  *     - ESP_ERR_INVALID_ARG    If the client is NULL
  */
-int esp_http_client_flush_response(esp_http_client_handle_t client, int *len);
+esp_err_t esp_http_client_flush_response(esp_http_client_handle_t client, int *len);
 
 /**
  * @brief          Get URL from client
