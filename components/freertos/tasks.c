@@ -2188,7 +2188,7 @@ uint32_t ulIdleTaskStackSize;
 	for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++) 
 	{
 		/* Add the idle task at the lowest priority. */
-		#if( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_STATIC_ALLOCATION == 0 )
+        #if( 0 ) /* configSUPPORT_STATIC_ALLOCATION == 1 ) Temporarily unsupported IDF-2243 */
 		{
 			/* The Idle task is created using user provided RAM - obtain the
 			address of the RAM then create the idle task. */
@@ -2216,7 +2216,7 @@ uint32_t ulIdleTaskStackSize;
 			/* The Idle task is being created using dynamically allocated RAM. */
 			xReturn = xTaskCreatePinnedToCore(	prvIdleTask,
 									configIDLE_TASK_NAME,
-									configMINIMAL_STACK_SIZE,
+									configIDLE_TASK_STACK_SIZE,
 									( void * ) NULL,
 									portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
 									&xIdleTaskHandle[i],
