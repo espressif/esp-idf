@@ -224,7 +224,7 @@ static inline void spi_flash_ll_user_start(spi_dev_t *dev)
  */
 static inline bool spi_flash_ll_host_idle(const spi_dev_t *dev)
 {
-    return dev->ext2.st != 0;
+    return dev->ext2.st == 0;
 }
 
 /*------------------------------------------------------------------------------
