@@ -17,14 +17,17 @@
  * it will use UDP to send 'ACK' to cellphone.
  */
 
-#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "lwip/sockets.h"
 #include "esp_netif.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
+
+#if CONFIG_ESP_NETIF_TCPIP_LWIP
+
+#include <string.h>
+#include "lwip/sockets.h"
 #include "esp_smartconfig.h"
 #include "smartconfig_ack.h"
 
@@ -208,3 +211,6 @@ void sc_send_ack_stop(void)
 {
     s_sc_ack_send = false;
 }
+
+#endif
+

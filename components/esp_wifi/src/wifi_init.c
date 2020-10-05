@@ -150,6 +150,8 @@ static void esp_wifi_config_info(void)
 #ifdef CONFIG_ESP32_WIFI_RX_BA_WIN
     ESP_LOGI(TAG, "rx ba win: %d", CONFIG_ESP32_WIFI_RX_BA_WIN);
 #endif
+
+#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
     ESP_LOGI(TAG, "tcpip mbox: %d", CONFIG_LWIP_TCPIP_RECVMBOX_SIZE);
     ESP_LOGI(TAG, "udp mbox: %d", CONFIG_LWIP_UDP_RECVMBOX_SIZE);
     ESP_LOGI(TAG, "tcp mbox: %d", CONFIG_LWIP_TCP_RECVMBOX_SIZE);
@@ -171,6 +173,10 @@ static void esp_wifi_config_info(void)
 
 #ifdef CONFIG_LWIP_IRAM_OPTIMIZATION
     ESP_LOGI(TAG, "LWIP IRAM OP enabled");
+#endif
+
+#else
+    ESP_LOGI(TAG, "LWIP disabled");
 #endif
 }
 
@@ -245,3 +251,4 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
+
