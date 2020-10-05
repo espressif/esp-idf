@@ -46,13 +46,8 @@ function(__ldgen_process_template template output)
     # Create command to invoke the linker script generator tool.
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
-    idf_build_get_property(kconfigs KCONFIGS)
-    idf_build_get_property(kconfig_projbuilds KCONFIG_PROJBUILDS)
 
     idf_build_get_property(python PYTHON)
-
-    string(REPLACE ";" " " kconfigs "${kconfigs}")
-    string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
 
     idf_build_get_property(config_env_path CONFIG_ENV_PATH)
 
