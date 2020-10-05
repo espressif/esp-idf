@@ -202,51 +202,55 @@ void IRAM_ATTR call_start_cpu1(void)
 
 static void start_other_core(void)
 {
-    // If not the single core variant of ESP32 - check this since there is
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+
+    // If not the single core variant of a target - check this since there is
     // no separate soc_caps.h for the single core variant.
-    bool is_single_core = false;
-#if CONFIG_IDF_TARGET_ESP32
-    is_single_core = REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU);
-#endif
-    if (!is_single_core) {
-        ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
+    if (!(chip_info.cores > 1)) {
+        ESP_EARLY_LOGE(TAG, "Running on single core variant of a chip, but app is built with multi-core support.");
+        ESP_EARLY_LOGE(TAG, "Check that CONFIG_FREERTOS_UNICORE is enabled in menuconfig");
+        abort();
+    }
+
+    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
 #if CONFIG_IDF_TARGET_ESP32
-        Cache_Flush(1);
-        Cache_Read_Enable(1);
+    Cache_Flush(1);
+    Cache_Read_Enable(1);
 #endif
-        esp_cpu_unstall(1);
 
-        // Enable clock and reset APP CPU. Note that OpenOCD may have already
-        // enabled clock and taken APP CPU out of reset. In this case don't reset
-        // APP CPU again, as that will clear the breakpoints which may have already
-        // been set.
+    esp_cpu_unstall(1);
+
+    // Enable clock and reset APP CPU. Note that OpenOCD may have already
+    // enabled clock and taken APP CPU out of reset. In this case don't reset
+    // APP CPU again, as that will clear the breakpoints which may have already
+    // been set.
 #if CONFIG_IDF_TARGET_ESP32
-        if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
-            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
-            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-        }
+    if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
+        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
+        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+    }
 #elif CONFIG_IDF_TARGET_ESP32S3
-        if (!REG_GET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN)) {
-            REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
-            REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
-            REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
-            REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
-        }
+    if (!REG_GET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN)) {
+        REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+        REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
+        REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
+        REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
+    }
 #endif
-        ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
+    ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
-        volatile bool cpus_up = false;
+    bool cpus_up = false;
 
-        while (!cpus_up) {
-            cpus_up = true;
-            for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
-                cpus_up &= s_cpu_up[i];
-            }
-            esp_rom_delay_us(100);
+    while (!cpus_up) {
+        cpus_up = true;
+        for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+            cpus_up &= s_cpu_up[i];
         }
+        esp_rom_delay_us(100);
     }
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
