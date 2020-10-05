@@ -126,7 +126,7 @@ function(__component_write_properties output_file)
         foreach(property ${component_properties})
             __component_get_property(val ${component_target} ${property})
             set(component_properties_text
-                "${component_properties_text}\nset(__component_${component_target}_${property} ${val})")
+                "${component_properties_text}\nset(__component_${component_target}_${property} \"${val}\")")
         endforeach()
         file(WRITE ${output_file} "${component_properties_text}")
     endforeach()
