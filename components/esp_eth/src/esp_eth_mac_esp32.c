@@ -312,15 +312,19 @@ static void emac_esp32_rx_task(void *arg)
 
 static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
 {
-    /* Setup SMI MDC GPIO */
-    gpio_set_direction(emac->smi_mdc_gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(emac->smi_mdc_gpio_num, EMAC_MDC_O_IDX, false, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdc_gpio_num], PIN_FUNC_GPIO);
-    /* Setup SMI MDIO GPIO */
-    gpio_set_direction(emac->smi_mdio_gpio_num, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(emac->smi_mdio_gpio_num, EMAC_MDO_O_IDX, false, false);
-    esp_rom_gpio_connect_in_signal(emac->smi_mdio_gpio_num, EMAC_MDI_I_IDX, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdio_gpio_num], PIN_FUNC_GPIO);
+    if (emac->smi_mdc_gpio_num >= 0) {
+        /* Setup SMI MDC GPIO */
+        gpio_set_direction(emac->smi_mdc_gpio_num, GPIO_MODE_OUTPUT);
+        esp_rom_gpio_connect_out_signal(emac->smi_mdc_gpio_num, EMAC_MDC_O_IDX, false, false);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdc_gpio_num], PIN_FUNC_GPIO);
+    }
+    if (emac->smi_mdio_gpio_num >= 0) {
+        /* Setup SMI MDIO GPIO */
+        gpio_set_direction(emac->smi_mdio_gpio_num, GPIO_MODE_INPUT_OUTPUT);
+        esp_rom_gpio_connect_out_signal(emac->smi_mdio_gpio_num, EMAC_MDO_O_IDX, false, false);
+        esp_rom_gpio_connect_in_signal(emac->smi_mdio_gpio_num, EMAC_MDI_I_IDX, false);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdio_gpio_num], PIN_FUNC_GPIO);
+    }
 }
 
 static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
