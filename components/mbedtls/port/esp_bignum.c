@@ -32,6 +32,7 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "bignum_impl.h"
+#include "soc/rsa_caps.h"
 
 #include <mbedtls/bignum.h>
 
@@ -301,7 +302,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         return mbedtls_mpi_lset(Z, 1);
     }
 
-    if (num_words * 32 > 4096) {
+    if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
         return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
     }
 
@@ -403,8 +404,8 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
        multiplication doesn't have the same restriction, so result is simply the
        number of bits in X plus number of bits in in Y.)
     */
-    if (hw_words * 32 > 2048) {
-        if (z_words * 32 <= 4096) {
+    if (hw_words * 32 > SOC_RSA_MAX_BIT_LEN/2) {
+        if (z_words * 32 <= SOC_RSA_MAX_BIT_LEN) {
             /* Note: it's possible to use mpi_mult_mpi_overlong
                for this case as well, but it's very slightly
                slower and requires a memory allocation.
