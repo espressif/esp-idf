@@ -444,7 +444,7 @@ macro(project project_name)
 
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
-        target_link_libraries(${project_elf} "-Wl,--cref -Wl,--Map=${mapfile}")
+        target_link_libraries(${project_elf} "-Wl,--cref" "-Wl,--Map=\"${mapfile}\"")
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
