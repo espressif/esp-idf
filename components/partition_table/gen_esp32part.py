@@ -166,8 +166,8 @@ class PartitionTable(list):
 
         for p in self:
             if p.type == ptype and p.subtype == subtype:
-                return p
-        return None
+                yield p
+        return
 
     def find_by_name(self, name):
         for p in self:

@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 import os
 import io
-import re
 
 try:
     import gen_esp32part
@@ -412,17 +411,20 @@ class PartToolTests(Py23TestCase):
                                               csvpath, "get_partition_info"] + args,
                                              stderr=subprocess.STDOUT)
             self.assertNotIn(b"WARNING", output)
-            m = re.search(b"0x[0-9a-fA-F]+", output)
-            return m.group(0) if m else ""
+            return output.strip()
         finally:
             os.remove(csvpath)
 
     def test_find_basic(self):
         csv = """
-nvs,      data, nvs,     0x9000,  0x4000
-otadata,  data, ota,     0xd000,  0x2000
-phy_init, data, phy,     0xf000,  0x1000
-factory,  app, factory, 0x10000,  1M
+nvs,      data, nvs,      0x9000,   0x4000
+otadata,  data, ota,      0xd000,   0x2000
+phy_init, data, phy,      0xf000,   0x1000
+factory,  app, factory,   0x10000,  1M
+nvs1_user, data, nvs,     0x110000, 0x4000
+nvs2_user, data, nvs,     0x114000, 0x4000
+nvs_key1, data, nvs_keys, 0x118000, 0x1000, encrypted
+nvs_key2, data, nvs_keys, 0x119000, 0x1000, encrypted
         """
 
         def rpt(args):
@@ -436,6 +438,34 @@ factory,  app, factory, 0x10000,  1M
             rpt(["--partition-name", "otadata", "--info", "offset"]), b"0xd000")
         self.assertEqual(
             rpt(["--partition-boot-default", "--info", "offset"]), b"0x10000")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "name", "offset", "size", "encrypted"]),
+            b"nvs 0x9000 0x4000 False")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "name", "offset", "size", "encrypted", "--part_list"]),
+            b"nvs 0x9000 0x4000 False nvs1_user 0x110000 0x4000 False nvs2_user 0x114000 0x4000 False")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "name", "--part_list"]),
+            b"nvs nvs1_user nvs2_user")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs_keys", "--info", "name", "--part_list"]),
+            b"nvs_key1 nvs_key2")
+        self.assertEqual(
+            rpt(["--partition-name", "nvs", "--info", "encrypted"]), b"False")
+        self.assertEqual(
+            rpt(["--partition-name", "nvs1_user", "--info", "encrypted"]), b"False")
+        self.assertEqual(
+            rpt(["--partition-name", "nvs2_user", "--info", "encrypted"]), b"False")
+        self.assertEqual(
+            rpt(["--partition-name", "nvs_key1", "--info", "encrypted"]), b"True")
+        self.assertEqual(
+            rpt(["--partition-name", "nvs_key2", "--info", "encrypted"]), b"True")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs_keys", "--info", "name", "encrypted", "--part_list"]),
+            b"nvs_key1 True nvs_key2 True")
+        self.assertEqual(
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "name", "encrypted", "--part_list"]),
+            b"nvs False nvs1_user False nvs2_user False")
 
     def test_fallback(self):
         csv = """

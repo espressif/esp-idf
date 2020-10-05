@@ -44,10 +44,11 @@ def status(msg):
 
 class _PartitionId():
 
-    def __init__(self, name=None, type=None, subtype=None):
+    def __init__(self, name=None, p_type=None, subtype=None, part_list=None):
         self.name = name
-        self.type = type
+        self.type = p_type
         self.subtype = subtype
+        self.part_list = part_list
 
 
 class PartitionName(_PartitionId):
@@ -58,8 +59,8 @@ class PartitionName(_PartitionId):
 
 class PartitionType(_PartitionId):
 
-    def __init__(self, type, subtype):
-        _PartitionId.__init__(self, type=type, subtype=subtype)
+    def __init__(self, p_type, subtype, part_list):
+        _PartitionId.__init__(self, p_type=p_type, subtype=subtype, part_list=part_list)
 
 
 PARTITION_BOOT_DEFAULT = _PartitionId()
@@ -144,11 +145,13 @@ class ParttoolTarget():
         if partition_id.name:
             partition = self.partition_table.find_by_name(partition_id.name)
         elif partition_id.type and partition_id.subtype:
-            partition = self.partition_table.find_by_type(partition_id.type, partition_id.subtype)
+            partition = list(self.partition_table.find_by_type(partition_id.type, partition_id.subtype))
+            if not partition_id.part_list:
+                partition = partition[0]
         else:  # default boot partition
             search = ["factory"] + ["ota_{}".format(d) for d in range(16)]
             for subtype in search:
-                partition = self.partition_table.find_by_type("app", subtype)
+                partition = next(self.partition_table.find_by_type("app", subtype), None)
                 if partition:
                     break
 
@@ -200,20 +203,24 @@ def _erase_partition(target, partition_id):
 
 def _get_partition_info(target, partition_id, info):
     try:
-        partition = target.get_partition_info(partition_id)
+        partitions = target.get_partition_info(partition_id)
+        if not isinstance(partitions, list):
+            partitions = [partitions]
     except Exception:
         return
-
-    info_dict = {
-        "offset": '0x{:x}'.format(partition.offset),
-        "size": '0x{:x}'.format(partition.size)
-    }
 
     infos = []
 
     try:
-        for i in info:
-            infos += [info_dict[i]]
+        for p in partitions:
+            info_dict = {
+                "name": '{}'.format(p.name),
+                "offset": '0x{:x}'.format(p.offset),
+                "size": '0x{:x}'.format(p.size),
+                "encrypted": '{}'.format(p.encrypted)
+            }
+            for i in info:
+                infos += [info_dict[i]]
     except KeyError:
         raise RuntimeError("Request for unknown partition info {}".format(i))
 
@@ -269,7 +276,8 @@ def main():
 
     print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information", parents=[partition_selection_parser])
     print_partition_info_subparser.add_argument("--info", help="type of partition information to get",
-                                                choices=["offset", "size"], default=["offset", "size"], nargs="+")
+                                                choices=["name", "offset", "size", "encrypted"], default=["offset", "size"], nargs="+")
+    print_partition_info_subparser.add_argument('--part_list', help="Get a list of partitions suitable for a given type", action='store_true')
 
     args = parser.parse_args()
     quiet = args.quiet
@@ -286,7 +294,7 @@ def main():
     elif args.partition_type:
         if not args.partition_subtype:
             raise RuntimeError("--partition-subtype should be defined when --partition-type is defined")
-        partition_id = PartitionType(args.partition_type, args.partition_subtype)
+        partition_id = PartitionType(args.partition_type, args.partition_subtype, args.part_list)
     elif args.partition_boot_default:
         partition_id = PARTITION_BOOT_DEFAULT
     else:

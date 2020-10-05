@@ -191,7 +191,7 @@ The component `partition_table` provides a tool :component_file:`parttool.py<par
   - reading a partition and saving the contents to a file (read_partition)
   - writing the contents of a file to a partition (write_partition)
   - erasing a partition (erase_partition)
-  - retrieving info such as offset and size of a given partition (get_partition_info)
+  - retrieving info such as name, offset, size and flag ("encrypted") of a given partition (get_partition_info)
 
 The tool can either be imported and used from another Python script or invoked from shell script for users wanting to perform operation programmatically. This is facilitated by the tool's Python API
 and command-line interface, respectively.
