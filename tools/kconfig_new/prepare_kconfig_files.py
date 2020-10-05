@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
 
@@ -22,7 +11,7 @@ import sys
 from io import open
 
 
-def _prepare_source_files(env_dict):
+def _prepare_source_files(env_dict, list_separator):
     """
     Prepares source files which are sourced from the main Kconfig because upstream kconfiglib doesn't support sourcing
     a file list. The inputs are the same environment variables which are used by kconfiglib:
@@ -37,18 +26,27 @@ def _prepare_source_files(env_dict):
 
     After running this function, COMPONENT_KCONFIGS_SOURCE_FILE and COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE will
     contain a list of source statements based on the content of COMPONENT_KCONFIGS and COMPONENT_KCONFIGS_PROJBUILD,
-    respectively. For example, if COMPONENT_KCONFIGS="var1 var2 var3" and
+    respectively. For example, if COMPONENT_KCONFIGS="var1;var2;var3" and
     COMPONENT_KCONFIGS_SOURCE_FILE="/path/file.txt" then the content of file /path/file.txt will be:
         source "var1"
         source "var2"
         source "var3"
+
+    The character used to delimit paths in COMPONENT_KCONFIGS* variables is determined based on
+    presence of 'IDF_CMAKE' variable in the env_dict.
+    GNU Make build system uses a space, CMake build system uses a semicolon.
     """
 
     def _dequote(var):
         return var[1:-1] if len(var) > 0 and (var[0], var[-1]) == ('"',) * 2 else var
 
     def _write_source_file(config_var, config_file):
-        new_content = '\n'.join(['source "{}"'.format(path) for path in _dequote(config_var).split()])
+        dequoted_var = _dequote(config_var)
+        if dequoted_var:
+            new_content = '\n'.join(['source "{}"'.format(path) for path in dequoted_var.split(list_separator)])
+        else:
+            new_content = ''
+
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
                 old_content = f.read()
@@ -71,8 +69,7 @@ def _prepare_source_files(env_dict):
         sys.exit(1)
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser(description='Kconfig Source File Generator')
 
     parser.add_argument('--env', action='append', default=[],
@@ -81,6 +78,10 @@ if __name__ == '__main__':
     parser.add_argument('--env-file', type=argparse.FileType('r'),
                         help='Optional file to load environment variables from. Contents '
                              'should be a JSON object where each key/value pair is a variable.')
+
+    parser.add_argument('--list-separator', choices=['space', 'semicolon'],
+                        default='space',
+                        help='Separator used in environment list variables (COMPONENT_KCONFIGS, COMPONENT_KCONFIGS_PROJBUILD)')
 
     args = parser.parse_args()
 
@@ -93,4 +94,10 @@ if __name__ == '__main__':
     if args.env_file is not None:
         env.update(json.load(args.env_file))
 
-    _prepare_source_files(env)
+    list_separator = ';' if args.list_separator == 'semicolon' else ' '
+
+    _prepare_source_files(env, list_separator)
+
+
+if __name__ == '__main__':
+    main()

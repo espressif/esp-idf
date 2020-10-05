@@ -223,6 +223,10 @@ def main():
                         help='Optional file to load environment variables from. Contents '
                              'should be a JSON object where each key/value pair is a variable.')
 
+    parser.add_argument('--list-separator', choices=['space', 'semicolon'],
+                        default='space',
+                        help='Separator used in environment list variables (COMPONENT_SDKCONFIG_RENAMES)')
+
     args = parser.parse_args()
 
     for fmt, filename in args.output:
@@ -247,8 +251,12 @@ def main():
     config.warn_assign_redun = False
     config.warn_assign_override = False
 
+    sdkconfig_renames_sep = ';' if args.list_separator == 'semicolon' else ' '
+
     sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get('COMPONENT_SDKCONFIG_RENAMES', '').split()
+    sdkconfig_renames_from_env = os.environ.get('COMPONENT_SDKCONFIG_RENAMES')
+    if sdkconfig_renames_from_env:
+        sdkconfig_renames += sdkconfig_renames_from_env.split(sdkconfig_renames_sep)
     deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
 
     if len(args.defaults) > 0:
