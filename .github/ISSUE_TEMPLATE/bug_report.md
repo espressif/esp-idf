@@ -38,7 +38,7 @@ If the issue cannot be solved after the steps before, please follow these instru
 - Development Kit:      [ESP32-Wrover-Kit|ESP32-DevKitC|ESP32-PICO-Kit|ESP32-LyraT|ESP32-LyraTD-MSC|none]
 - Kit version (for WroverKit/PicoKit/DevKitC): [v1|v2|v3|v4]
 - Module or chip used:  [ESP32-WROOM-32|ESP32-WROOM-32D|ESP32-WROOM-32U|ESP32-WROVER|ESP32-WROVER-I|ESP32-WROVER-B|ESP32-WROVER-IB|ESP32-SOLO-1|ESP32-PICO-D4|ESP32]
-- IDF version (run ``git describe --tags`` to find it):
+- IDF version (run ``git describe`` to find it):
     // v3.2-dev-1148-g96cd3b75c
 - Build System:         [Make|CMake|idf.py]
 - Compiler version (run ``xtensa-esp32-elf-gcc --version`` to find it):

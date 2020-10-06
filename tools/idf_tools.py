@@ -843,7 +843,7 @@ def get_python_env_path():
             idf_version_str = version_file.read()
     else:
         try:
-            idf_version_str = subprocess.check_output(['git', 'describe', '--tags'],
+            idf_version_str = subprocess.check_output(['git', 'describe'],
                                                       cwd=global_idf_path, env=os.environ).decode()
         except subprocess.CalledProcessError as e:
             warn('Git describe was unsuccessul: {}'.format(e))
