@@ -14,7 +14,7 @@ entries:
     gpio (noflash)
 
 [mapping:ext_soc]
-archive: libsoc.a
+archive: libhal.a
 entries:
     gpio_hal (noflash)
 
