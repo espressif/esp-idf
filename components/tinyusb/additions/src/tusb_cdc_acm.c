@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "tusb.h"
 #include "tusb_cdc_acm.h"
 #include "cdc.h"
@@ -34,7 +36,6 @@ typedef struct {
     tusb_cdcacm_callback_t callback_rx_wanted_char;
     tusb_cdcacm_callback_t callback_line_state_changed;
     tusb_cdcacm_callback_t callback_line_coding_changed;
-    xTimerHandle flush_timer;
 } esp_tusb_cdcacm_t; /*!< CDC_AMC object */
 
 static const char *TAG = "tusb_cdc_acm";
@@ -52,7 +53,7 @@ static inline esp_tusb_cdcacm_t *get_acm(tinyusb_cdcacm_itf_t itf)
 /* TinyUSB callbacks
    ********************************************************************* */
 
-/* Invoked when cdc when line state changed e.g connected/disconnected */
+/* Invoked by cdc interface when line state changed e.g connected/disconnected */
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
     esp_tusb_cdcacm_t *acm = get_acm(itf);
@@ -262,32 +263,6 @@ size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, uint8_t *in_buf, siz
 }
 
 
-static inline bool timer_isactive(tinyusb_cdcacm_itf_t itf)
-{
-    esp_tusb_cdcacm_t *acm = get_acm(itf);
-    return xTimerIsTimerActive(acm->flush_timer);
-}
-
-static inline esp_err_t timer_start(tinyusb_cdcacm_itf_t itf, uint32_t timeout_ticks)
-{
-    esp_tusb_cdcacm_t *acm = get_acm(itf);
-    xTimerChangePeriod(acm->flush_timer, timeout_ticks, 0); // set the timer
-    if (!xTimerIsTimerActive(acm->flush_timer)) {
-        if (xTimerStart(acm->flush_timer, 0) != pdPASS) { // start
-            ESP_LOGE(TAG, "Can't start the timer");
-            return ESP_FAIL;
-        }
-    }
-    return ESP_OK;
-}
-
-static inline void timer_stop(tinyusb_cdcacm_itf_t itf)
-{
-    if (timer_isactive(itf)) {
-        xTimerStop(get_acm(itf)->flush_timer, 0);
-    }
-}
-
 
 esp_err_t tinyusb_cdcacm_write_flush(tinyusb_cdcacm_itf_t itf, uint32_t timeout_ticks)
 {
@@ -305,31 +280,25 @@ esp_err_t tinyusb_cdcacm_write_flush(tinyusb_cdcacm_itf_t itf, uint32_t timeout_
             }
         }
         return ESP_ERR_TIMEOUT;
-    } else { // if timeout use timer
-        ESP_RETURN_ON_ERROR(timer_start(itf, timeout_ticks));
+    } else { // trying during the timeout
+        uint32_t ticks_start = xTaskGetTickCount();
+        uint32_t ticks_now = ticks_start;
         while (1) { // loop until success or until the time runs out
+            ticks_now = xTaskGetTickCount();
             if (!tud_cdc_n_write_available(itf)) { // if nothing to write - nothing to flush
                 break;
             }
             if (tud_cdc_n_write_flush(itf)) { // Success
                 break;
             }
-            if (!timer_isactive(itf)) { // Time is up
+            if ( (ticks_now - ticks_start) > timeout_ticks ) { // Time is up
                 ESP_LOGW(TAG, "Flush failed");
                 return ESP_ERR_TIMEOUT;
             }
             vTaskDelay(1);
         }
-        timer_stop(itf);
         return ESP_OK;
     }
-}
-
-
-static void flush_timer_cb(xTimerHandle pxTimer)
-{
-    ESP_LOGV(TAG, "flush_timer stopped");
-    xTimerStop(pxTimer, 0);
 }
 
 static esp_err_t alloc_obj(tinyusb_cdcacm_itf_t itf)
@@ -376,10 +345,6 @@ esp_err_t tusb_cdc_acm_init(const tinyusb_config_cdcacm_t *cfg)
     if (cfg->callback_line_coding_changed) {
         tinyusb_cdcacm_register_callback( itf, CDC_EVENT_LINE_CODING_CHANGED, cfg->callback_line_coding_changed);
     }
-
-    /* SW timer*/
-    acm->flush_timer = xTimerCreate(
-                           "flush_timer", 10 / portTICK_PERIOD_MS, pdTRUE, (void *)itf, flush_timer_cb);
 
     /* Buffers */
     acm->rx_tfbuf = malloc(CONFIG_USB_CDC_RX_BUFSIZE);
