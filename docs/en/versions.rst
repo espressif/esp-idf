@@ -70,7 +70,7 @@ Checking The Current Version
 The local ESP-IDF version can be checked using git::
 
   cd $IDF_PATH
-  git describe --tags --dirty
+  git describe --dirty
 
 The version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (these versions in code will not always update, it only changes if that particular source file is recompiled).
 

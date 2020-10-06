@@ -837,7 +837,7 @@ def get_python_env_path():
         with open(version_file_path, "r") as version_file:
             idf_version_str = version_file.read()
     else:
-        idf_version_str = subprocess.check_output(['git', '--work-tree=' + global_idf_path, 'describe', '--tags'], cwd=global_idf_path, env=os.environ).decode()
+        idf_version_str = subprocess.check_output(['git', '--work-tree=' + global_idf_path, 'describe'], cwd=global_idf_path, env=os.environ).decode()
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
     idf_version = match.group(1)
 
