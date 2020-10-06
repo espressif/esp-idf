@@ -796,6 +796,18 @@ check_pipeline_triggered_by_label:
     # We want to make sure some jobs are always executed to detect regression.
     - test "$BOT_LABEL_REGULAR_TEST" = "true" || exit -1
 
+# For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
+# the version returned by 'git describe'
+check_version_tag:
+  extends: .check_job_template
+  only:
+    refs:
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+  script:
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1
+
 assign_test:
   tags:
     - assign_test
