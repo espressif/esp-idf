@@ -669,8 +669,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     sema = xSemaphoreCreateBinary();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task2, "task2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task2, "task2", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
@@ -678,8 +678,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     esp_efuse_utility_erase_virt_blocks();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task3, "task3", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task3, "task3", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
