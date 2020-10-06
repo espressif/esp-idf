@@ -55,7 +55,7 @@ def _get_apps(target, build_system):
         sys.executable + " " + os.getenv('IDF_PATH') +
         "/tools/find_apps.py -p examples --recursive --target %s --build-system %s"
         % (target, build_system),
-        shell=True)
+        shell=True).decode('utf-8')
     o_list = output.split("\n")
     json_list = []
     for j in o_list:
