@@ -155,3 +155,16 @@ build_template_app:
     - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
     - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
     - popd
+
+# For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
+# the version returned by 'git describe'
+check_version_tag:
+  extends: .check_job_template
+  only:
+    refs:
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+  script:
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1
+
