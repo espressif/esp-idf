@@ -72,7 +72,6 @@ static inline __attribute__((__always_inline__)) int tlsf_fls(unsigned int word)
 /*
 ** Set assert macro, if it has not been provided by the user.
 */
-#define tlsf_assert(x) 
 #if !defined (tlsf_assert)
 #define tlsf_assert assert
 #endif
