@@ -86,7 +86,7 @@ extern "C" {
 #define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
 
 #define ESP_ERR_WIFI_POST        (ESP_ERR_WIFI_BASE + 18)  /*!< Failed to post the event to WiFi task */
-#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalod WiFi state when init/deinit is called */
+#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalid WiFi state when init/deinit is called */
 #define ESP_ERR_WIFI_STOP_STATE  (ESP_ERR_WIFI_BASE + 20)  /*!< Returned when WiFi is stopping */
 #define ESP_ERR_WIFI_NOT_ASSOC   (ESP_ERR_WIFI_BASE + 21)  /*!< The WiFi connection is not associated */
 #define ESP_ERR_WIFI_TX_DISALLOW (ESP_ERR_WIFI_BASE + 22)  /*!< The WiFi TX is disallowed */
@@ -313,7 +313,7 @@ esp_err_t esp_wifi_stop(void);
  * @brief  Restore WiFi stack persistent settings to default values
  *
  * This function will reset settings made using the following APIs:
- * - esp_wifi_get_auto_connect,
+ * - esp_wifi_set_auto_connect,
  * - esp_wifi_set_protocol,
  * - esp_wifi_set_config related
  * - esp_wifi_set_mode
