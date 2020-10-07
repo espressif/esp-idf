@@ -167,9 +167,10 @@ static esp_err_t mesh_netif_transmit_from_root_ap(void *h, void *buffer, size_t 
     }
     return ESP_OK;
 }
-
-// Construct and Destruct functions
-//
+static esp_err_t mesh_netif_transmit_from_root_ap_wrap(void *h, void *buffer, size_t len, void *netstack_buf)
+{
+    return mesh_netif_transmit_from_root_ap(h, buffer, len);
+}
 
 static esp_err_t mesh_netif_transmit_from_node_sta(void *h, void *buffer, size_t len)
 {
@@ -186,6 +187,13 @@ static esp_err_t mesh_netif_transmit_from_node_sta(void *h, void *buffer, size_t
     return err;
 }
 
+static esp_err_t mesh_netif_transmit_from_node_sta_wrap(void *h, void *buffer, size_t len, void *netstack_buf)
+{
+    return mesh_netif_transmit_from_node_sta(h, buffer, len);
+}
+
+// Construct and Destruct functions
+//
 static esp_err_t mesh_driver_start_root_ap(esp_netif_t * esp_netif, void * args)
 {
     mesh_netif_driver_t driver = args;
@@ -193,6 +201,7 @@ static esp_err_t mesh_driver_start_root_ap(esp_netif_t * esp_netif, void * args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
             .handle =  driver,
             .transmit = mesh_netif_transmit_from_root_ap,
+            .transmit_wrap = mesh_netif_transmit_from_root_ap_wrap,
             .driver_free_rx_buffer = mesh_free
     };
 
@@ -206,6 +215,7 @@ static esp_err_t mesh_driver_start_node_sta(esp_netif_t * esp_netif, void * args
     esp_netif_driver_ifconfig_t driver_ifconfig = {
             .handle =  driver,
             .transmit = mesh_netif_transmit_from_node_sta,
+            .transmit_wrap = mesh_netif_transmit_from_node_sta_wrap,
             .driver_free_rx_buffer = mesh_free
     };
 
