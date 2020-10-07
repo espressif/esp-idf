@@ -539,6 +539,6 @@ int64_t IRAM_ATTR esp_system_get_time(void)
 
 uint32_t IRAM_ATTR esp_system_get_time_resolution(void)
 {
-    return 1;
+    return 1000;
 }
 #endif

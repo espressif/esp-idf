@@ -72,7 +72,7 @@ int64_t esp_system_get_time(void);
 /** 
  * @brief Get the resolution of the time returned by `esp_system_get_time`.
  * 
- * @returns the resolution in microseconds
+ * @returns the resolution in nanoseconds
  */
 uint32_t esp_system_get_time_resolution(void);
 

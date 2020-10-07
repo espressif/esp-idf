@@ -42,5 +42,5 @@ int64_t IRAM_ATTR __attribute__((weak)) esp_system_get_time(void)
 
 uint32_t IRAM_ATTR __attribute__((weak)) esp_system_get_time_resolution(void)
 {
-    return 1000000L / rtc_clk_slow_freq_get_hz();
+    return 1000000000L / rtc_clk_slow_freq_get_hz();
 }
