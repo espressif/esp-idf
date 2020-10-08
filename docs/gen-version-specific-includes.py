@@ -198,7 +198,7 @@ def get_version():
 
     # Otherwise, use git to look for a tag
     try:
-        tag = subprocess.check_output(["git", "describe", "--tags", "--exact-match"]).strip()
+        tag = subprocess.check_output(["git", "describe", "--exact-match"]).strip()
         is_stable = re.match(r"v[0-9\.]+$", tag) is not None
         return (tag, "tag", is_stable)
     except subprocess.CalledProcessError:

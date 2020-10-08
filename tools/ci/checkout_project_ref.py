@@ -35,7 +35,7 @@ def target_branch_candidates(proj_name):
         pass
     # branch name read from IDF
     try:
-        git_describe = subprocess.check_output(["git", "describe", "--tags", "HEAD"])
+        git_describe = subprocess.check_output(["git", "describe", "HEAD"])
         match = IDF_GIT_DESCRIBE_PATTERN.search(git_describe.decode())
         if match:
             major_revision = match.group(1)
