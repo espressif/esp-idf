@@ -5137,3 +5137,8 @@ TickType_t uxReturn;
 	#include "tasks_test_access_functions.h"
 #endif
 
+/* If timers.c is not referenced anywhere, don't create the timer task to save RAM */
+BaseType_t  __attribute__((weak)) xTimerCreateTimerTask( void )
+{
+	return pdPASS;
+}
