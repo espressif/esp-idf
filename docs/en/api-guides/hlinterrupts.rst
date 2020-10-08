@@ -31,7 +31,7 @@ Using these symbols is done by creating an assembly file (suffix .S) and definin
         rsr     a0, EXCSAVE_5
         rfi     5
 
-For a real-life example, see the :component_file:`esp_system/port/{IDF_TARGET_PATH_NAME}/dport_panic_highint_hdl.S` file; the panic handler interrupt is implemented there.
+For a real-life example, see the :component_file:`esp_system/port/soc/{IDF_TARGET_PATH_NAME}/dport_panic_highint_hdl.S` file; the panic handler interrupt is implemented there.
 
 
 Notes

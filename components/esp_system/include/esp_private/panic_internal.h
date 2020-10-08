@@ -16,13 +16,19 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "soc/soc_caps.h"
+
 #include "sdkconfig.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern bool g_panic_abort;
+
+extern void *g_exc_frames[SOC_CPU_CORES_NUM];
 
 // Function to print longer amounts of information such as the details
 // and backtrace field of panic_info_t. These functions should limit themselves
@@ -71,6 +77,20 @@ void panic_print_hex(int h);
 #endif
 
 void __attribute__((noreturn)) panic_abort(const char *details);
+
+void panic_arch_fill_info(void *frame, panic_info_t *info);
+
+void panic_soc_fill_info(void *frame, panic_info_t *info);
+
+void panic_print_registers(const void *frame, int core);
+
+void panic_print_backtrace(const void *frame, int core);
+
+uint32_t panic_get_address(const void* frame);
+
+void panic_set_address(void *frame, uint32_t addr);
+
+uint32_t panic_get_cause(const void* frame);
 
 #ifdef __cplusplus
 }

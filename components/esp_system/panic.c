@@ -46,11 +46,26 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
+#include "esp_private/gdbstub.h"
+#endif
+
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#include "esp_core_dump.h"
+#endif
+
+#if CONFIG_APPTRACE_ENABLE
+#include "esp_app_trace.h"
+#if CONFIG_SYSVIEW_ENABLE
+#include "SEGGER_RTT.h"
+#endif
+
 #if CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO == -1
 #define APPTRACE_ONPANIC_HOST_FLUSH_TMO   ESP_APPTRACE_TMO_INFINITE
 #else
 #define APPTRACE_ONPANIC_HOST_FLUSH_TMO   (1000*CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO)
 #endif
+#endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
 #include "esp_private/gdbstub.h"

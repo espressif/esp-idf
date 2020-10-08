@@ -7678,7 +7678,7 @@ LOAD /home/xy/.espressif/tools/xtensa-esp32s2-elf/esp-2019r2-8.2.0/xtensa-esp32s
  .literal.vApplicationStackOverflowHook
                 0x0000000040024a4c        0x8 esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
                                          0x18 (size before relaxing)
- .literal.panicHandler
+ .literal.panic_handle_pseudo_exception
                 0x0000000040024a54       0x9c esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
                                         0x1a8 (size before relaxing)
  .literal.xt_unhandled_exception
@@ -8819,10 +8819,10 @@ LOAD /home/xy/.espressif/tools/xtensa-esp32s2-elf/esp-2019r2-8.2.0/xtensa-esp32s
                                          0x23 (size before relaxing)
                 0x0000000040029b88                vApplicationStackOverflowHook
  *fill*         0x0000000040029b9f        0x1 
- .text.panicHandler
+ .text.panic_handle_pseudo_exception
                 0x0000000040029ba0      0x31d esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
                                         0x3a0 (size before relaxing)
-                0x0000000040029ba0                panicHandler
+                0x0000000040029ba0                panic_handle_pseudo_exception
  *fill*         0x0000000040029ebd        0x3 
  .text.xt_unhandled_exception
                 0x0000000040029ec0       0x7d esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
@@ -9570,7 +9570,7 @@ LOAD /home/xy/.espressif/tools/xtensa-esp32s2-elf/esp-2019r2-8.2.0/xtensa-esp32s
  .rodata.vApplicationStackOverflowHook.str1.4
                 0x000000003ffbd8f4       0x3e esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
  *fill*         0x000000003ffbd932        0x2 
- .rodata.panicHandler.str1.4
+ .rodata.panic_handle_pseudo_exception.str1.4
                 0x000000003ffbd934      0x418 esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
  .rodata.xt_unhandled_exception.str1.4
                 0x000000003ffbdd4c       0x4d esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
@@ -15047,7 +15047,7 @@ newlib_include_locks_impl                         esp-idf/newlib/libnewlib.a(loc
 newlib_include_pthread_impl                       esp-idf/newlib/libnewlib.a(pthread.c.obj)
 newlib_include_syscalls_impl                      esp-idf/newlib/libnewlib.a(syscalls.c.obj)
 opendir                                           esp-idf/vfs/libvfs.a(vfs.c.obj)
-panicHandler                                      esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
+panic_handle_pseudo_exception                                      esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
                                                   esp-idf/freertos/libfreertos.a(xtensa_vectors.S.obj)
                                                   esp-idf/esp32s2/libesp32s2.a(dport_panic_highint_hdl.S.obj)
 pcTaskGetTaskName                                 esp-idf/freertos/libfreertos.a(tasks.c.obj)

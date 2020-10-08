@@ -13,101 +13,85 @@
 // limitations under the License.
 #include "soc/soc.h"
 #include "soc/interrupt_reg.h"
+#include "riscv/rvruntime-frames.h"
 
 
 	.equ SAVE_REGS, 32
 	.equ CONTEXT_SIZE, (SAVE_REGS * 4)
-	.equ PANIC_REGS, 38
-	.equ PANIC_REGS_SIZE, (PANIC_REGS * 4)
-
-.altmacro
-
-.macro lwsp a, b
-	lw \a, ((\b)*4)(sp)
-.endm
-
-.macro swsp a, b
-	sw \a, ((\b)*4)(sp)
-.endm
-
 
 .macro save_regs
-	addi    sp, sp, -CONTEXT_SIZE
-	swsp 	ra, 1
-	swsp 	a0, 2
-	swsp 	a1, 3
-	swsp 	a2, 4
-	swsp 	a3, 5
-	swsp 	a4, 6
-	swsp 	a5, 7
-	swsp 	a6, 8
-	swsp 	a7, 9
-	swsp 	t0, 10
-	swsp 	t1, 11
-	swsp 	t2, 12
-	swsp 	t3, 13
-	swsp 	t4, 14
-	swsp 	t5, 15
-	swsp 	t6, 16
-	//swsp 	sp, 17
-	//swsp 	gp, 18
-	swsp 	tp, 19
-	swsp 	s0, 20
-	swsp 	s1, 21
-	swsp 	s2, 22
-	swsp 	s3, 23
-	swsp 	s4, 24
-	swsp 	s5, 25
-	swsp 	s6, 26
-	swsp 	s7, 27
-	swsp 	s8, 28
-	swsp 	s9, 29
-	swsp 	s10, 30
-	swsp 	s11, 31
+	addi sp, sp, -CONTEXT_SIZE
+	sw   ra,  RV_STK_RA(sp)
+	sw   tp,  RV_STK_TP(sp)
+	sw   t0,  RV_STK_T0(sp)
+	sw   t1,  RV_STK_T1(sp)
+	sw   t2,  RV_STK_T2(sp)
+	sw   s0,  RV_STK_S0(sp)
+	sw   s1,  RV_STK_S1(sp)
+	sw   a0,  RV_STK_A0(sp)
+	sw   a1,  RV_STK_A1(sp)
+	sw   a2,  RV_STK_A2(sp)
+	sw   a3,  RV_STK_A3(sp)
+	sw   a4,  RV_STK_A4(sp)
+	sw   a5,  RV_STK_A5(sp)
+	sw   a6,  RV_STK_A6(sp)
+	sw   a7,  RV_STK_A7(sp)
+	sw   s2,  RV_STK_S2(sp)
+	sw   s3,  RV_STK_S3(sp)
+	sw   s4,  RV_STK_S4(sp)
+	sw   s5,  RV_STK_S5(sp)
+	sw   s6,  RV_STK_S6(sp)
+	sw   s7,  RV_STK_S7(sp)
+	sw   s8,  RV_STK_S8(sp)
+	sw   s9,  RV_STK_S9(sp)
+	sw   s10, RV_STK_S10(sp)
+	sw   s11, RV_STK_S11(sp)
+	sw   t3,  RV_STK_T3(sp)
+	sw   t4,  RV_STK_T4(sp)
+	sw   t5,  RV_STK_T5(sp)
+	sw   t6,  RV_STK_T6(sp)
 .endm
 
 .macro save_mepc
-	csrr	t0, mepc
-	swsp	t0, 0
+	csrr t0, mepc
+	sw   t0, RV_STK_MEPC(sp)
 .endm
 
 .macro restore_regs
-	lwsp 	ra, 1
-	lwsp 	a0, 2
-	lwsp 	a1, 3
-	lwsp 	a2, 4
-	lwsp 	a3, 5
-	lwsp 	a4, 6
-	lwsp 	a5, 7
-	lwsp 	a6, 8
-	lwsp 	a7, 9
-	lwsp 	t0, 10
-	lwsp 	t1, 11
-	lwsp 	t2, 12
-	lwsp 	t3, 13
-	lwsp 	t4, 14
-	lwsp 	t5, 15
-	lwsp 	t6, 16
-	//lwsp 	sp, 17
-	//lwsp 	gp, 18
-	lwsp 	tp, 19
-	lwsp 	s0, 20
-	lwsp 	s1, 21
-	lwsp 	s2, 22
-	lwsp 	s3, 23
-	lwsp 	s4, 24
-	lwsp 	s5, 25
-	lwsp 	s6, 26
-	lwsp 	s7, 27
-	lwsp 	s8, 28
-	lwsp 	s9, 29
-	lwsp 	s10, 30
-	lwsp 	s11, 31
+	lw   ra,  RV_STK_RA(sp)
+	lw   tp,  RV_STK_TP(sp)
+	lw   t0,  RV_STK_T0(sp)
+	lw   t1,  RV_STK_T1(sp)
+	lw   t2,  RV_STK_T2(sp)
+	lw   s0,  RV_STK_S0(sp)
+	lw   s1,  RV_STK_S1(sp)
+	lw   a0,  RV_STK_A0(sp)
+	lw   a1,  RV_STK_A1(sp)
+	lw   a2,  RV_STK_A2(sp)
+	lw   a3,  RV_STK_A3(sp)
+	lw   a4,  RV_STK_A4(sp)
+	lw   a5,  RV_STK_A5(sp)
+	lw   a6,  RV_STK_A6(sp)
+	lw   a7,  RV_STK_A7(sp)
+	lw   s2,  RV_STK_S2(sp)
+	lw   s3,  RV_STK_S3(sp)
+	lw   s4,  RV_STK_S4(sp)
+	lw   s5,  RV_STK_S5(sp)
+	lw   s6,  RV_STK_S6(sp)
+	lw   s7,  RV_STK_S7(sp)
+	lw   s8,  RV_STK_S8(sp)
+	lw   s9,  RV_STK_S9(sp)
+	lw   s10, RV_STK_S10(sp)
+	lw   s11, RV_STK_S11(sp)
+	lw   t3,  RV_STK_T3(sp)
+	lw   t4,  RV_STK_T4(sp)
+	lw   t5,  RV_STK_T5(sp)
+	lw   t6,  RV_STK_T6(sp)
 	addi sp, sp, CONTEXT_SIZE
 .endm
 
 .macro restore_mepc
-	lwsp	t0, 0
+	lw	t0, RV_STK_MEPC(sp)
 	csrw	mepc, t0
 .endm
 
@@ -143,61 +127,61 @@ _vector_table:
 	.size _vector_table, .-_vector_table
 
 	/* Exception handler.*/
-	.global panicHandler
+	.global xt_unhandled_exception
 	.type _panic_handler, @function
 _panic_handler:
-	addi sp, sp, -PANIC_REGS_SIZE
-	swsp x0, 0
-	swsp x1, 1
-	/* x2 is sp - it will be placed on stack later (after we can use the other registers for computation) */
-	swsp x3, 3
-	swsp x4, 4
-	swsp x5, 5
-	swsp x6, 6
-	swsp x7, 7
-	swsp x8, 8
-	swsp x9, 9
-	swsp x10, 10
-	swsp x11, 11
-	swsp x12, 12
-	swsp x13, 13
-	swsp x14, 14
-	swsp x15, 15
-	swsp x16, 16
-	swsp x17, 17
-	swsp x18, 18
-	swsp x19, 19
-	swsp x20, 20
-	swsp x21, 21
-	swsp x22, 22
-	swsp x23, 23
-	swsp x24, 24
-	swsp x25, 25
-	swsp x26, 26
-	swsp x27, 27
-	swsp x28, 28
-	swsp x29, 29
-	swsp x30, 30
-	swsp x31, 31
-	/* "Undo" the modification already done to the sp (x2) by the panic handler */
-	addi a1, x2, PANIC_REGS_SIZE
-	swsp a1, 2
-	csrr a1, mcause
-	swsp a1, 32
-	csrr a1, mepc
-	swsp a1, 33
-	csrr a1, mhartid
-	swsp a1, 34
-	csrr a1, mstatus
-	swsp a1, 35
-	csrr a1, mtval
-	swsp a1, 36
-	csrr a1, mtvec
-	swsp a1, 37
+	addi sp, sp, -RV_STK_FRMSZ /* allocate space on stack to store necessary registers */
+	/* save general registers */
+	sw ra,  RV_STK_RA(sp)
+	sw gp,  RV_STK_GP(sp)
+	sw tp,  RV_STK_TP(sp)
+	sw t0,  RV_STK_T0(sp)
+	sw t1,  RV_STK_T1(sp)
+	sw t2,  RV_STK_T2(sp)
+	sw s0,  RV_STK_S0(sp)
+	sw s1,  RV_STK_S1(sp)
+	sw a0,  RV_STK_A0(sp)
+	sw a1,  RV_STK_A1(sp)
+	sw a2,  RV_STK_A2(sp)
+	sw a3,  RV_STK_A3(sp)
+	sw a4,  RV_STK_A4(sp)
+	sw a5,  RV_STK_A5(sp)
+	sw a6,  RV_STK_A6(sp)
+	sw a7,  RV_STK_A7(sp)
+	sw s2,  RV_STK_S2(sp)
+	sw s3,  RV_STK_S3(sp)
+	sw s4,  RV_STK_S4(sp)
+	sw s5,  RV_STK_S5(sp)
+	sw s6,  RV_STK_S6(sp)
+	sw s7,  RV_STK_S7(sp)
+	sw s8,  RV_STK_S8(sp)
+	sw s9,  RV_STK_S9(sp)
+	sw s10, RV_STK_S10(sp)
+	sw s11, RV_STK_S11(sp)
+	sw t3,  RV_STK_T3(sp)
+	sw t4,  RV_STK_T4(sp)
+	sw t5,  RV_STK_T5(sp)
+	sw t6,  RV_STK_T6(sp)
+	addi t0, sp, RV_STK_FRMSZ /* restore sp with the value when trap happened */
+	sw t0,  RV_STK_SP(sp)
+	csrr t0, mepc
+	sw t0,  RV_STK_MEPC(sp)
+	csrr t0, mstatus
+	sw t0,  RV_STK_MSTATUS(sp)
+	csrr t0, mtvec
+	sw t0,  RV_STK_MTVEC(sp)
+	csrr t0, mcause
+	sw t0,  RV_STK_MCAUSE(sp)
+	csrr t0, mtval
+	sw t0,  RV_STK_MTVAL(sp)
+	csrr t0, mhartid
+	sw t0,  RV_STK_MHARTID(sp)
+
+	/* call xt_unhandled_exception(sp,cause) */
 	mv a0, sp
 	csrr a1, mcause
-	jal zero, panicHandler
-    /*  panicHandler never returns */
+	jal zero, xt_unhandled_exception
+	/*	panicHandler never returns */
 	.size  _panic_handler, .-_panic_handler
 
 	/* This is the interrupt handler.
@@ -215,16 +199,15 @@ _interrupt_handler:
 
 	/* scheduler not enabled, jump directly to ISR handler */
 	lw t0, uxSchedulerRunning
-	beq t0,zero,already_on_handler
+	beq t0, zero, already_on_handler
 
 	/* increments the ISR nesting count */
-	/* This will work properly when we have nested interrupts */
 	la t0, uxInterruptNesting
 	lw t1, 0x0(t0)
 	addi t2,t1,1
 	sw  t2, 0x0(t0)
 
-	/* If reached here from another low-prio ISR, skip stack pushing to TCB */
+	/* If reached here from another low priority ISR, skip stack pushing to TCB */
 	bne t1,zero, already_on_handler
 
 	/* Otherwise, save current sp, and use the isr stack from here */
@@ -242,7 +225,7 @@ already_on_handler:
 	lw s3, 0(t0)
 
 	/* Increase interrupt threshold level */
-	la t2, 0x7fffffff
+	li t2, 0x7fffffff
 	and t1, s1, t2		/* t1 = mcause & mask */
 	slli t1, t1, 2 		/* t1 = mcause * 4 */
 	la t2, INTC_INT_PRIO_REG(0)
@@ -252,14 +235,14 @@ already_on_handler:
 	sw t2, 0(t0)		/* INTERRUPT_CORE0_CPU_INT_THRESH_REG = t2 */
 	fence
 
-	la t0, 0x8
+	li t0, 0x8
 	csrrs t0, mstatus, t0
 
 	/* call the C dispatcher */
 	mv      a0, sp		/* argument 1, stack pointer */
 	csrr    a1, mcause	/* argument 2, interrupt number */
 	/* mask off the interrupt flag of mcause */
-	la	    t0, 0x7fffffff
+	li	    t0, 0x7fffffff
 	and     a1, a1, t0
 	jal     _global_interrupt_handler
 
@@ -281,7 +264,7 @@ already_on_handler:
 	la t0, uxInterruptNesting
 	lw t1, 0x0(t0)
 
-	/* Already zero, protect againts underflow */
+	/* Already zero, protect against underflow */
 	beq t1, zero, isr_skip_decrement
 	addi t1,t1, -1
 	sw  t1, 0x0(t0)
@@ -290,7 +273,7 @@ isr_skip_decrement:
 	/* may still have interrupts pending, skip section below and exit */
 	bne t1,zero,isr_exit
 
-	/* handlered all the ISRs and scheduled the next task, take its stack */
+	/* handled all the ISRs and scheduled the next task, take its stack */
 	/* load on sp, then exit. */
 	lw sp, pxCurrentTCB
 	lw sp, 0x0(sp)

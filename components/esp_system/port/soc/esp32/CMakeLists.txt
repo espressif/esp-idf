@@ -1,9 +1,8 @@
 set(srcs "dport_panic_highint_hdl.S"
          "clk.c"
          "reset_reason.c"
-         "../async_memcpy_impl_gdma.c"
-         "../arch/xtensa/panic_handler.c"
-         "../arch/xtensa/panic_handler_asm.S"
+         "../../arch/xtensa/panic_arch.c"
+         "../../arch/xtensa/panic_handler_asm.S"
          )
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
