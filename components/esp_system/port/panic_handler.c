@@ -371,12 +371,12 @@ static inline void print_memprot_err_details(const void *f)
 {
     uint32_t *fault_addr;
     uint32_t op_type, op_subtype;
-    mem_type_prot_t mem_type = esp_memprot_get_intr_memtype();
+    mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
     esp_memprot_get_fault_status( mem_type, &fault_addr, &op_type, &op_subtype );
 
     char *operation_type = "Write";
     if ( op_type == 0 ) {
-        operation_type = (mem_type == MEMPROT_IRAM0 && op_subtype == 0) ? "Instruction fetch" : "Read";
+        operation_type = (mem_type == MEMPROT_IRAM0_SRAM && op_subtype == 0) ? "Instruction fetch" : "Read";
     }
 
     panic_print_str( operation_type );
@@ -506,7 +506,7 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t *info, bool pseu
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (frame->exccause == PANIC_RSN_CACHEERR) {
-            if ( esp_memprot_is_assoc_intr_any() ) {
+            if ( esp_memprot_get_active_intr_memtype() != MEMPROT_NONE ) {
                 info->details = print_memprot_err_details;
                 info->reason = "Memory protection fault";
             } else {

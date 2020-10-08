@@ -415,6 +415,12 @@ test_app_test_003:
     - ESP32
     - Example_PPP
 
+test_app_test_004:
+  extends: .test_app_template
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
 component_ut_test_001:
   extends: .component_ut_template
   tags:
