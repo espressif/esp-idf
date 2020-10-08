@@ -234,13 +234,15 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    const uint8_t *image = bootloader_mmap(partition->offset, partition->size);
+    const uint32_t app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+    const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
+    const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
     if (image == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, partition->size);
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
         return ESP_FAIL;
     }
 
-    memcpy(app_desc, image + sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t), sizeof(esp_app_desc_t));
+    memcpy(app_desc, image + app_desc_offset, sizeof(esp_app_desc_t));
     bootloader_munmap(image);
 
     if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
