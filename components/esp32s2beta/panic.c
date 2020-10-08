@@ -188,6 +188,8 @@ static const char *edesc[] = {
 
 #define NUM_EDESCS (sizeof(edesc) / sizeof(char *))
 
+extern int _invalid_pc_placeholder;
+
 static void commonErrorHandler(XtExcFrame *frame);
 static inline void disableAllWdts(void);
 
@@ -374,6 +376,14 @@ void panicHandler(XtExcFrame *frame)
 
     if (esp_cpu_in_ocd_debug_mode()) {
         disableAllWdts();
+        if (!(esp_ptr_executable((void *)((frame->pc & 0x3fffffffU) | 0x40000000U)) && (frame->pc & 0xC0000000U))) {
+            /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
+             * Incase the PC is invalid, GDB will fail to translate addresses to function names
+             * Hence replacing the PC to a placeholder address in case of invalid PC
+             */
+            frame->pc = (uint32_t)&_invalid_pc_placeholder;
+        }
+
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
             frame->exccause == PANIC_RSN_INTWDT_CPU1) {
             TIMERG1.int_clr.wdt = 1;
@@ -418,6 +428,14 @@ void xt_unhandled_exception(XtExcFrame *frame)
                                       APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
+            if (!(esp_ptr_executable((void *)((frame->pc & 0x3fffffffU) | 0x40000000U)) && (frame->pc & 0xC0000000U))) {
+                /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
+                 * Incase the PC is invalid, GDB will fail to translate addresses to function names
+                 * Hence replacing the PC to a placeholder address in case of invalid PC
+                 */
+                frame->pc = (uint32_t)&_invalid_pc_placeholder;
+            }
+
             //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
             //will kick in exactly at the context the error happened.
             setFirstBreakpoint(frame->pc);
