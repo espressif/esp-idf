@@ -433,9 +433,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_IDF_TARGET_ESP32S2
 #if CONFIG_ESP32S2_MEMPROT_FEATURE
 #if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
-    esp_memprot_set_prot(true, true);
+    esp_memprot_set_prot(true, true, NULL);
 #else
-    esp_memprot_set_prot(true, false);
+    esp_memprot_set_prot(true, false, NULL);
 #endif
 #endif
 #endif

@@ -1,0 +1,5 @@
+# Esp32S2 only
+CONFIG_IDF_TARGET="esp32s2"
+
+# Disable automatic memory protection
+CONFIG_ESP32S2_MEMPROT_FEATURE=n
