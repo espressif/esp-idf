@@ -139,6 +139,10 @@ static int common_cmd_handler(int argc, char** argv)
     uint32_t cur_session_id = atoi(argv[1]);
 
     uint8_t *buf = (uint8_t *) malloc(strlen(argv[2]));
+    if (buf == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
     uint8_t *outbuf;
     ssize_t outlen;
     ssize_t len = hex2bin(argv[2], buf);
