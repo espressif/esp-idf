@@ -24,6 +24,7 @@
 #include <test_utils.h>
 #include <esp_partition.h>
 #include <esp_attr.h>
+#include "esp_log.h"
 
 TEST_CASE("Test erase partition", "[spi_flash]")
 {
@@ -65,4 +66,28 @@ TEST_CASE("Test erase partition", "[spi_flash]")
             TEST_ASSERT_EQUAL_HEX8(0xFF, buf[i]);
         }
     }
+}
+
+TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", "[spi_flash]")
+{
+    esp_partition_t partition;
+    const void *ptr;
+    spi_flash_mmap_handle_t handle;
+
+    uint8_t sha256[32] = { 0 };
+    size_t size_flash_chip = spi_flash_get_chip_size();
+
+    printf("size_flash_chip = %d bytes\n", size_flash_chip);
+
+    ESP_ERROR_CHECK(spi_flash_mmap(0x00000000, size_flash_chip * 7 / 10, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    partition.address   = 0x00000000;
+    partition.size      = size_flash_chip;
+    partition.type      = ESP_PARTITION_TYPE_DATA;
+
+    ESP_ERROR_CHECK(esp_partition_get_sha256(&partition, sha256));
+    ESP_LOG_BUFFER_HEX("sha", sha256, sizeof(sha256));
+
+    spi_flash_munmap(handle);
 }

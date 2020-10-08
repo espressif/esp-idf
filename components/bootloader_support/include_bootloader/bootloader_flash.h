@@ -22,6 +22,7 @@
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 0x10000
+#define MMAP_ALIGNED_MASK 0x0000FFFF
 
 /* Provide a Flash API for bootloader_support code,
    that can be used from bootloader or app code.
@@ -35,7 +36,7 @@
  *
  * @return Number of free pages
  */
-uint32_t bootloader_mmap_get_free_pages();
+uint32_t bootloader_mmap_get_free_pages(void);
 
 /**
  * @brief Map a region of flash to data memory

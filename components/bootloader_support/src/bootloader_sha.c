@@ -21,7 +21,7 @@
 // App version is a wrapper around mbedTLS SHA API
 #include <mbedtls/sha256.h>
 
-bootloader_sha256_handle_t bootloader_sha256_start()
+bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
     if (!ctx) {
@@ -53,6 +53,7 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
     mbedtls_sha256_free(ctx);
     free(handle);
+    handle = NULL;
 }
 
 #else // Bootloader version
@@ -70,7 +71,7 @@ static const size_t BLOCK_WORDS = (64/sizeof(uint32_t));
 // Words in final SHA256 digest
 static const size_t DIGEST_WORDS = (32/sizeof(uint32_t));
 
-bootloader_sha256_handle_t bootloader_sha256_start()
+bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
     // Enable SHA hardware
     ets_sha_enable();
