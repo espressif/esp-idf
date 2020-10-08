@@ -88,6 +88,16 @@ void IRAM_ATTR esp_restart_noos(void)
     uart_tx_wait_idle(1);
     uart_tx_wait_idle(2);
 
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    if (esp_ptr_external_ram(get_sp())) {
+        // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
+        // then need to switch SP to Internal Memory otherwise
+        // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
+        uint32_t new_sp = SOC_DRAM_LOW + (SOC_DRAM_HIGH - SOC_DRAM_LOW) / 2;
+        SET_STACK(new_sp);
+    }
+#endif
+
     // Disable cache
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);

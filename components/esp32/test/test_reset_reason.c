@@ -244,4 +244,89 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         check_reset_reason_brownout);
 
 
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifndef CONFIG_FREERTOS_UNICORE
+#include "xt_instr_macros.h"
+#include "xtensa/config/specreg.h"
+
+static int size_stack = 1024 * 3;
+static StackType_t *start_addr_stack;
+
+static int fibonacci(int n, void* func(void))
+{
+    int tmp1 = n, tmp2 = n;
+    uint32_t base, start;
+    RSR(WINDOWBASE, base);
+    RSR(WINDOWSTART, start);
+    printf("WINDOWBASE = %-2d   WINDOWSTART = 0x%x\n", base, start);
+    if (n <= 1) {
+        StackType_t *last_addr_stack = get_sp();
+        StackType_t *used_stack = (StackType_t *) (start_addr_stack - last_addr_stack);
+        printf("addr_stack = %p, used[%p]/all[0x%x] space in stack\n", last_addr_stack, used_stack, size_stack);
+        func();
+        return n;
+    }
+    int fib = fibonacci(n - 1, func) + fibonacci(n - 2, func);
+    printf("fib = %d\n", (tmp1 - tmp2) + fib);
+    return fib;
+}
+
+static void test_task(void *func)
+{
+    start_addr_stack = get_sp();
+    if (esp_ptr_external_ram(start_addr_stack)) {
+        printf("restart_task: uses external stack, addr_stack = %p\n", start_addr_stack);
+    } else {
+        printf("restart_task: uses internal stack, addr_stack = %p\n", start_addr_stack);
+    }
+    fibonacci(35, func);
+}
+
+static void func_do_exception(void)
+{
+    *((int *) 0) = 0;
+}
+
+static void init_restart_task(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, esp_restart, 5, stack_for_task, &task_buf, 1);
+    while (1) { };
+}
+
+static void init_task_do_exception(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, func_do_exception, 5, stack_for_task, &task_buf, 1);
+    while (1) { };
+}
+
+static void test1_finish(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    printf("test - OK\n");
+}
+
+static void test2_finish(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+    printf("test - OK\n");
+}
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack][reset=SW_CPU_RESET]",
+        init_restart_task,
+        test1_finish);
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack][reset=StoreProhibited,SW_CPU_RESET]",
+        init_task_do_exception,
+        test2_finish);
+
+#endif // CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+
+
 /* Not tested here: ESP_RST_SDIO */
