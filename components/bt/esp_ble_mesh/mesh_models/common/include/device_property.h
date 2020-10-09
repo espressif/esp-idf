@@ -22,192 +22,366 @@ extern "C" {
 #endif
 
 /**
- * BLE Mesh Device Properties.
+ * Details of BLE Mesh Device Properties.
+ * Note: For the size of the corresponding characteristic, please refer to the GATT_Specification_Supplement_v2.
  *
- * Name                                                        Type                                                                                ID          Characteristic                               Type Size
- * Average Ambient Temperature In A Period Of Day              org.bluetooth.property.average_ambient_temperature_in_a_period_of_day               0x0001      Temperature 8 In A Period Of Day             3
- * Average Input Current                                       org.bluetooth.property.average_input_current                                        0x0002      Average Current                              3
- * Average Input Voltage                                       org.bluetooth.property.average_input_voltage                                        0x0003      Average Voltage                              3
- * Average Output Current                                      org.bluetooth.property.average_output_current                                       0x0004      Average Current                              3
- * Average Output Voltage                                      org.bluetooth.property.average_output_voltage                                       0x0005      Average Voltage                              3
- * Center Beam Intensity At Full Power                         org.bluetooth.property.center_beam_intensity_at_full_power                          0x0006      Luminous Intensity                           2
- * Chromaticity Tolerance                                      org.bluetooth.property.chromaticity_tolerance                                       0x0007      Chromaticity Tolerance                       1
- * Color Rendering Index R9                                    org.bluetooth.property.color_rendering_index_r9                                     0x0008      Cie 13.3-1995 Color Rendering Index          1
- * Color Rendering Index Ra                                    org.bluetooth.property.color_rendering_index_ra                                     0x0009      Cie 13.3-1995 Color Rendering Index          1
- * Device Appearance                                           org.bluetooth.property.device_appearance                                            0x000A      Gap.Appearance                               2
- * Device Country Of Origin                                    org.bluetooth.property.device_country_of_origin                                     0x000B      Country Code                                 2
- * Device Date Of Manufacture                                  org.bluetooth.property.device_date_of_manufacture                                   0x000C      Date Utc                                     4
- * Device Energy Use Since Turn On                             org.bluetooth.property.device_energy_use_since_turn_on                              0x000D      Energy                                       4
- * Device Firmware Revision                                    org.bluetooth.property.device_firmware_revision                                     0x000E      Fixed String 8                               8
- * Device Global Trade Item Number                             org.bluetooth.property.device_global_trade_item_number                              0x000F      Global Trade Item Number                     8
- * Device Hardware Revision                                    org.bluetooth.property.device_hardware_revision                                     0x0010      Fixed String 16                              16
- * Device Manufacturer Name                                    org.bluetooth.property.device_manufacturer_name                                     0x0011      Fixed String 36                              36
- * Device Model Number                                         org.bluetooth.property.device_model_number                                          0x0012      Fixed String 24                              24
- * Device Operating Temperature Range Specification            org.bluetooth.property.device_operating_temperature_range_specification             0x0013      Temperature Range                            4
- * Device Operating Temperature Statistical Values             org.bluetooth.property.device_operating_temperature_statistical_values              0x0014      Temperature Statistics                       9
- * Device Over Temperature Event Statistics                    org.bluetooth.property.device_over_temperature_event_statistics                     0x0015      Event Statistics                             6
- * Device Power Range Specification                            org.bluetooth.property.device_power_range_specification                             0x0016      Power Specification                          12
- * Device Runtime Since Turn On                                org.bluetooth.property.device_runtime_since_turn_on                                 0x0017      Time Hour 24                                 4
- * Device Runtime Warranty                                     org.bluetooth.property.device_runtime_warranty                                      0x0018      Time Hour 24                                 4
- * Device Serial Number                                        org.bluetooth.property.device_serial_number                                         0x0019      Fixed String 16                              16
- * Device Software Revision                                    org.bluetooth.property.device_software_revision                                     0x001A      Fixed String 8                               8
- * Device Under Temperature Event Statistics                   org.bluetooth.property.device_under_temperature_event_statistics                    0x001B      Event Statistics                             6
- * Indoor Ambient Temperature Statistical Values               org.bluetooth.property.indoor_ambient_temperature_statistical_values                0x001C      Temperature 8 Statistics                     5
- * Initial CIE 1931 Chromaticity Coordinates                   org.bluetooth.property.initial_cie_1931_chromaticity_coordinates                    0x001D      Chromaticity Coordinates                     4
- * Initial Correlated Color Temperature                        org.bluetooth.property.initial_correlated_color_temperature                         0x001E      Correlated Color Temperature                 2
- * Initial Luminous Flux                                       org.bluetooth.property.initial_luminous_flux                                        0x001F      Luminous Flux                                2
- * Initial Planckian Distance                                  org.bluetooth.property.initial_planckian_distance                                   0x0020      Chromatic Distance From Planckian            2
- * Input Current Range Specification                           org.bluetooth.property.input_current_range_specification                            0x0021      Electric Current Specification               6
- * Input Current Statistics                                    org.bluetooth.property.input_current_statistics                                     0x0022      Electric Current Statistics                  9
- * Input Over Current Event Statistics                         org.bluetooth.property.input_over_current_event_statistics                          0x0023      Event Statistics                             6
- * Input Over Ripple Voltage Event Statistics                  org.bluetooth.property.input_over_ripple_voltage_event_statistics                   0x0024      Event Statistics                             6
- * Input Over Voltage Event Statistics                         org.bluetooth.property.input_over_voltage_event_statistics                          0x0025      Event Statistics                             6
- * Input Under Current Event Statistics                        org.bluetooth.property.input_under_current_event_statistics                         0x0026      Event Statistics                             6
- * Input Under Voltage Event Statistics                        org.bluetooth.property.input_under_voltage_event_statistics                         0x0027      Event Statistics                             6
- * Input Voltage Range Specification                           org.bluetooth.property.input_voltage_range_specification                            0x0028      Voltage Specification                        6
- * Input Voltage Ripple Specification                          org.bluetooth.property.input_voltage_ripple_specification                           0x0029      Percentage 8                                 1
- * Input Voltage Statistics                                    org.bluetooth.property.input_voltage_statistics                                     0x002A      Voltage Statistics                           9
- * Light Control Ambient LuxLevel On                           org.bluetooth.property.light_control_ambient_luxlevel_on                            0x002B      Illuminance                                  4
- * Light Control Ambient LuxLevel Prolong                      org.bluetooth.property.light_control_ambient_luxlevel_prolong                       0x002C      Illuminance                                  4
- * Light Control Ambient LuxLevel Standby                      org.bluetooth.property.light_control_ambient_luxlevel_standby                       0x002D      Illuminance                                  4
- * Light Control Lightness On                                  org.bluetooth.property.light_control_lightness_on                                   0x002E      Perceived Lightness                          2
- * Light Control Lightness Prolong                             org.bluetooth.property.light_control_lightness_prolong                              0x002F      Perceived Lightness                          2
- * Light Control Lightness Standby                             org.bluetooth.property.light_control_lightness_standby                              0x0030      Perceived Lightness                          2
- * Light Control Regulator Accuracy                            org.bluetooth.property.light_control_regulator_accuracy                             0x0031      Percentage 8                                 1
- * Light Control Regulator Kid                                 org.bluetooth.property.light_control_regulator_kid                                  0x0032      Coefficient                                  4
- * Light Control Regulator Kiu                                 org.bluetooth.property.light_control_regulator_kiu                                  0x0033      Coefficient                                  4
- * Light Control Regulator Kpd                                 org.bluetooth.property.light_control_regulator_kpd                                  0x0034      Coefficient                                  4
- * Light Control Regulator Kpu                                 org.bluetooth.property.light_control_regulator_kpu                                  0x0035      Coefficient                                  4
- * Light Control Time Fade                                     org.bluetooth.property.light_control_time_fade                                      0x0036      Time Millisecond 24                          4
- * Light Control Time Fade On                                  org.bluetooth.property.light_control_time_fade_on                                   0x0037      Time Millisecond 24                          4
- * Light Control Time Fade Standby Auto                        org.bluetooth.property.light_control_time_fade_standby_auto                         0x0038      Time Millisecond 24                          4
- * Light Control Time Fade Standby Manual                      org.bluetooth.property.light_control_time_fade_standby_manual                       0x0039      Time Millisecond 24                          4
- * Light Control Time Occupancy Delay                          org.bluetooth.property.light_control_time_occupancy_delay                           0x003A      Time Millisecond 24                          4
- * Light Control Time Prolong                                  org.bluetooth.property.light_control_time_prolong                                   0x003B      Time Millisecond 24                          4
- * Light Control Time Run On                                   org.bluetooth.property.light_control_time_run_on                                    0x003C      Time Millisecond 24                          4
- * Lumen Maintenance Factor                                    org.bluetooth.property.lumen_maintenance_factor                                     0x003D      Percentage 8                                 1
- * Luminous Efficacy                                           org.bluetooth.property.luminous_efficacy                                            0x003E      Luminous Efficacy                            2
- * Luminous Energy Since Turn On                               org.bluetooth.property.luminous_energy_since_turn_on                                0x003F      Luminous Energy                              4
- * Luminous Exposure                                           org.bluetooth.property.luminous_exposure                                            0x0040      Luminous Exposure                            4
- * Luminous Flux Range                                         org.bluetooth.property.luminous_flux_range                                          0x0041      Luminous Flux Range                          4
- * Motion Sensed                                               org.bluetooth.property.motion_sensed                                                0x0042      Percentage 8                                 1
- * Motion Threshold                                            org.bluetooth.property.motion_threshold                                             0x0043      Percentage 8                                 1
- * Open Circuit Event Statistics                               org.bluetooth.property.open_circuit_event_statistics                                0x0044      Event Statistics                             6
- * Outdoor Statistical Values                                  org.bluetooth.property.outdoor_statistical_values                                   0x0045      Temperature 8 Statistics                     5
- * Output Current Range                                        org.bluetooth.property.output_current_range                                         0x0046      Electric Current Range                       4
- * Output Current Statistics                                   org.bluetooth.property.output_current_statistics                                    0x0047      Electric Current Statistics                  9
- * Output Ripple Voltage Specification                         org.bluetooth.property.output_ripple_voltage_specification                          0x0048      Percentage 8                                 1
- * Output Voltage Range                                        org.bluetooth.property.output_voltage_range                                         0x0049      Voltage Specification                        6
- * Output Voltage Statistics                                   org.bluetooth.property.output_voltage_statistics                                    0x004A      Voltage Statistics                           9
- * Over Output Ripple Voltage Event Statistics                 org.bluetooth.property.over_output_ripple_voltage_event_statistics                  0x004B      Event Statistics                             6
- * People Count                                                org.bluetooth.property.people_count                                                 0x004C      Count 16                                     2
- * Presence Detected                                           org.bluetooth.property.presence_detected                                            0x004D      Boolean                                      1
- * Present Ambient Light Level                                 org.bluetooth.property.present_ambient_light_level                                  0x004E      Illuminance                                  4
- * Present Ambient Temperature                                 org.bluetooth.property.present_ambient_temperature                                  0x004F      Temperature 8                                1
- * Present CIE 1931 Chromaticity Coordinates                   org.bluetooth.property.present_cie_1931_chromaticity                                0x0050      Chromaticity Coordinates                     4
- * Present Correlated Color Temperature                        org.bluetooth.property.present_correlated_color_temperature                         0x0051      Correlated Color Temperature                 2
- * Present Device Input Power                                  org.bluetooth.property.present_device_input_power                                   0x0052      Power                                        4
- * Present Device Operating Efficiency                         org.bluetooth.property.present_device_operating_efficiency                          0x0053      Percentage 8                                 1
- * Present Device Operating Temperature                        org.bluetooth.property.present_device_operating_temperature                         0x0054      Temperature                                  2
- * Present Illuminance                                         org.bluetooth.property.present_illuminance                                          0x0055      Illuminance                                  4
- * Present Indoor Ambient Temperature                          org.bluetooth.property.present_indoor_ambient_temperature                           0x0056      Temperature 8                                1
- * Present Input Current                                       org.bluetooth.property.present_input_current                                        0x0057      Electric Current                             2
- * Present Input Ripple Voltage                                org.bluetooth.property.present_input_ripple_voltage                                 0x0058      Percentage 8                                 1
- * Present Input Voltage                                       org.bluetooth.property.present_input_voltage                                        0x0059      Voltage                                      2
- * Present Luminous Flux                                       org.bluetooth.property.present_luminous_flux                                        0x005A      Luminous Flux                                2
- * Present Outdoor Ambient Temperature                         org.bluetooth.property.present_outdoor_ambient_temperature                          0x005B      Temperature 8                                1
- * Present Output Current                                      org.bluetooth.property.present_output_current                                       0x005C      Electric Current                             2
- * Present Output Voltage                                      org.bluetooth.property.present_output_voltage                                       0x005D      Voltage                                      2
- * Present Planckian Distance                                  org.bluetooth.property.present_planckian_distance                                   0x005E      Chromatic Distance From Planckian            2
- * Present Relative Output Ripple Voltage                      org.bluetooth.property.present_relative_output_ripple_voltage                       0x005F      Percentage 8                                 1
- * Relative Device Energy Use In A Period Of Day               org.bluetooth.property.relative_device_energy_use_in_a_period_of_day                0x0060      Energy In A Period Of Day                    6
- * Relative Device Runtime In A Generic Level Range            org.bluetooth.property.relative_device_runtime_in_a_generic_level_range             0x0061      Relative Runtime In A Generic Level Range    5
- * Relative Exposure Time In An Illuminance Range              org.bluetooth.property.relative_exposure_time_in_an_illuminance_range               0x0062      Relative Value In An Illuminance Range       9
- * Relative Runtime In A Correlated Color Temperature Range    org.bluetooth.property.relative_runtime_in_a_correlated_color_temperature_range     0x0063      Luminous Energy                              4
- * Relative Runtime In A Device Operating Temperature Range    org.bluetooth.property.relative_runtime_in_a_device_operating_temperature_range     0x0064      Relative Value In A Temperature Range        5
- * Relative Runtime In An Input Current Range                  org.bluetooth.property.relative_runtime_in_an_input_current_range                   0x0065      Relative Runtime In A Current Range          5
- * Relative Runtime In An Input Voltage Range                  org.bluetooth.property.relative_runtime_in_an_input_voltage_range                   0x0066      Relative Value In A Voltage Range            5
- * Short Circuit Event Statistics                              org.bluetooth.property.short_circuit_event_statistics                               0x0067      Event Statistics                             6
- * Time Since Motion Sensed                                    org.bluetooth.property.time_since_motion_sensed                                     0x0068      Time Second 16                               2
- * Time Since Presence Detected                                org.bluetooth.property.time_since_presence_detected                                 0x0069      Time Second 16                               2
- * Total Device Energy Use                                     org.bluetooth.property.total_device_energy_use                                      0x006A      Energy                                       4
- * Total Device Off On Cycles                                  org.bluetooth.property.total_device_off_on_cycles                                   0x006B      Count 24                                     4
- * Total Device Power On Cycles                                org.bluetooth.property.total_device_power_on_cycles                                 0x006C      Count 24                                     4
- * Total Device Power On Time                                  org.bluetooth.property.total_device_power_on_time                                   0x006D      Time Hour 24                                 4
- * Total Device Runtime                                        org.bluetooth.property.total_device_runtime                                         0x006E      Time Hour 24                                 4
- * Total Light Exposure Time                                   org.bluetooth.property.total_light_exposure_time                                    0x006F      Time Hour 24                                 4
- * Total Luminous Energy                                       org.bluetooth.property.total_luminous_energy                                        0x0070      Luminous Energy                              4
- */
-
-/**
- * Characteristics referenced by BLE Mesh Device Properties.
- *
- * Name                                        Uniform Type Identifier                                                     Assigned Number     Specification Level
- * Average Current                             org.bluetooth.characteristic.average_current                                2AE0                Adopted
- * Average Voltage                             org.bluetooth.characteristic.average_voltage                                2AE1                Adopted
- * Boolean                                     org.bluetooth.characteristic.boolean                                        2AE2                Adopted
- * Chromatic Distance From Planckian           org.bluetooth.characteristic.chromatic_distance_from_planckian              2AE3                Adopted
- * Chromaticity Coordinate                     org.bluetooth.characteristic.chromaticity_coordinate                        2B1C                Adopted
- * Chromaticity Coordinates                    org.bluetooth.characteristic.chromaticity_coordinates                       2AE4                Adopted
- * Chromaticity In CCT And Duv Values          org.bluetooth.characteristic.chromaticity_in_cct_and_duv_values             2AE5                Adopted
- * Chromaticity Tolerance                      org.bluetooth.characteristic.chromaticity_tolerance                         2AE6                Adopted
- * CIE 13.3-1995 Color Rendering Index         org.bluetooth.characteristic.cie_13.3-1995_color_rendering_index            2AE7                Adopted
- * Coefficient                                 org.bluetooth.characteristic.coefficient                                    2AE8                Adopted
- * Correlated Color Temperature                org.bluetooth.characteristic.correlated_color_temperature                   2AE9                Adopted
- * Count 16                                    org.bluetooth.characteristic.count_16                                       2AEA                Adopted
- * Count 24                                    org.bluetooth.characteristic.count_24                                       2AEB                Adopted
- * Country Code                                org.bluetooth.characteristic.country_code                                   2AEC                Adopted
- * Date UTC                                    org.bluetooth.characteristic.date_utc                                       2AED                Adopted
- * Electric Current                            org.bluetooth.characteristic.electric_current                               2AEE                Adopted
- * Electric Current Range                      org.bluetooth.characteristic.electric_current_range                         2AEF                Adopted
- * Electric Current Specification              org.bluetooth.characteristic.electric_current_specification                 2AF0                Adopted
- * Electric Current Statistics                 org.bluetooth.characteristic.electric_current_statistics                    2AF1                Adopted
- * Energy                                      org.bluetooth.characteristic.energy                                         2AF2                Adopted
- * Energy In A Period Of Day                   org.bluetooth.characteristic.energy_in_a_period_of_day                      2AF3                Adopted
- * Event Statistics                            org.bluetooth.characteristic.event_statistics                               2AF4                Adopted
- * Fixed String 16                             org.bluetooth.characteristic.fixed_string_16                                2AF5                Adopted
- * Fixed String 24                             org.bluetooth.characteristic.fixed_string_24                                2AF6                Adopted
- * Fixed String 36                             org.bluetooth.characteristic.fixed_string_36                                2AF7                Adopted
- * Fixed String 8                              org.bluetooth.characteristic.fixed_string_8                                 2AF8                Adopted
- * Generic Level                               org.bluetooth.characteristic.generic_level                                  2AF9                Adopted
- * Global Trade Item Number                    org.bluetooth.characteristic.global_trade_item_number                       2AFA                Adopted
- * Illuminance                                 org.bluetooth.characteristic.illuminance                                    2AFB                Adopted
- * Luminous Efficacy                           org.bluetooth.characteristic.luminous_efficacy                              2AFC                Adopted
- * Luminous Energy                             org.bluetooth.characteristic.luminous_energy                                2AFD                Adopted
- * Luminous Exposure                           org.bluetooth.characteristic.luminous_exposure                              2AFE                Adopted
- * Luminous Flux                               org.bluetooth.characteristic.luminous_flux                                  2AFF                Adopted
- * Luminous Flux Range                         org.bluetooth.characteristic.luminous_flux_range                            2B00                Adopted
- * Luminous Intensity                          org.bluetooth.characteristic.luminous_intensity                             2B01                Adopted
- * Mass Flow                                   org.bluetooth.characteristic.mass_flow                                      2B02                Adopted
- * Mesh Provisioning Data In                   org.bluetooth.characteristic.mesh_provisioning_data_in                      2ADB                Adopted
- * Mesh Provisioning Data Out                  org.bluetooth.characteristic.mesh_provisioning_data_out                     2ADC                Adopted
- * Mesh Proxy Data In                          org.bluetooth.characteristic.mesh_proxy_data_in                             2ADD                Adopted
- * Mesh Proxy Data Out                         org.bluetooth.characteristic.mesh_proxy_data_out                            2ADE                Adopted
- * Perceived Lightness                         org.bluetooth.characteristic.perceived_lightness                            2B03                Adopted
- * Percentage 8                                org.bluetooth.characteristic.percentage_8                                   2B04                Adopted
- * Power                                       org.bluetooth.characteristic.power                                          2B05                Adopted
- * Power Specification                         org.bluetooth.characteristic.power_specification                            2B06                Adopted
- * Relative Runtime In A Current Range         org.bluetooth.characteristic.relative_runtime_in_a_current_range            2B07                Adopted
- * Relative Runtime In A Generic Level Range   org.bluetooth.characteristic.relative_runtime_in_a_generic_level_range      2B08                Adopted
- * Relative Value In A Period of Day           org.bluetooth.characteristic.relative_value_in_a_period_of_day              2B0B                Adopted
- * Relative Value In A Temperature Range       org.bluetooth.characteristic.relative_value_in_a_temperature_range          2B0C                Adopted
- * Relative Value In A Voltage Range           org.bluetooth.characteristic.relative_value_in_a_voltage_range              2B09                Adopted
- * Relative Value In An Illuminance Range      org.bluetooth.characteristic.relative_value_in_an_illuminance_range         2B0A                Adopted
- * Temperature 8                               org.bluetooth.characteristic.temperature_8                                  2B0D                Adopted
- * Temperature 8 In A Period Of Day            org.bluetooth.characteristic.temperature_8_in_a_period_of_day               2B0E                Adopted
- * Temperature 8 Statistics                    org.bluetooth.characteristic.temperature_8_statistics                       2B0F                Adopted
- * Temperature Range                           org.bluetooth.characteristic.temperature_range                              2B10                Adopted
- * Temperature Statistics                      org.bluetooth.characteristic.temperature_statistics                         2B11                Adopted
- * Time Decihour 8                             org.bluetooth.characteristic.time_decihour_8                                2B12                Adopted
- * Time Exponential 8                          org.bluetooth.characteristic.time_exponential_8                             2B13                Adopted
- * Time Hour 24                                org.bluetooth.characteristic.time_hour_24                                   2B14                Adopted
- * Time Millisecond 24                         org.bluetooth.characteristic.time_millisecond_24                            2B15                Adopted
- * Time Second 16                              org.bluetooth.characteristic.time_second_16                                 2B16                Adopted
- * Time Second 8                               org.bluetooth.characteristic.time_second_8                                  2B17                Adopted
- * Voltage                                     org.bluetooth.characteristic.voltage                                        2B18                Adopted
- * Voltage Specification                       org.bluetooth.characteristic.voltage_specification                          2B19                Adopted
- * Voltage Statistics                          org.bluetooth.characteristic.voltage_statistics                             2B1A                Adopted
- * Volume Flow                                 org.bluetooth.characteristic.volume_flow                                    2B1B                Adopted
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * |                   Device Property Name                   |   ID   |               Characteristic              | Size |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Average Ambient Temperature In A Period Of Day           | 0x0001 | Temperature 8 In A Period Of Day          |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Average Input Current                                    | 0x0002 | Average Current                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Average Input Voltage                                    | 0x0003 | Average Voltage                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Average Output Current                                   | 0x0004 | Average Current                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Average Output Voltage                                   | 0x0005 | Average Voltage                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Center Beam Intensity At Full Power                      | 0x0006 | Luminous Intensity                        |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Chromaticity Tolerance                                   | 0x0007 | Chromaticity Tolerance                    |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Color Rendering Index R9                                 | 0x0008 | Cie 13.3-1995 Color Rendering Index       |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Color Rendering Index Ra                                 | 0x0009 | Cie 13.3-1995 Color Rendering Index       |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Appearance                                        | 0x000A | Gap.Appearance                            |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Country Of Origin                                 | 0x000B | Country Code                              |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Date Of Manufacture                               | 0x000C | Date UTC                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Energy Use Since Turn On                          | 0x000D | Energy                                    |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Firmware Revision                                 | 0x000E | Fixed String 8                            |  8   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Global Trade Item Number                          | 0x000F | Global Trade Item Number                  |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Hardware Revision                                 | 0x0010 | Fixed String 16                           |  16  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Manufacturer Name                                 | 0x0011 | Fixed String 36                           |  36  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Model Number                                      | 0x0012 | Fixed String 24                           |  24  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Operating Temperature Range Specification         | 0x0013 | Temperature Range                         |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Operating Temperature Statistical Values          | 0x0014 | Temperature Statistics                    |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Over Temperature Event Statistics                 | 0x0015 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Power Range Specification                         | 0x0016 | Power Specification                       |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Runtime Since Turn On                             | 0x0017 | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Runtime Warranty                                  | 0x0018 | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Serial Number                                     | 0x0019 | Fixed String 16                           |  16  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Software Revision                                 | 0x001A | Fixed String 8                            |  8   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Device Under Temperature Event Statistics                | 0x001B | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Indoor Ambient Temperature Statistical Values            | 0x001C | Temperature 8 Statistics                  |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Initial CIE 1931 Chromaticity Coordinates                | 0x001D | Chromaticity Coordinates                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Initial Correlated Color Temperature                     | 0x001E | Correlated Color Temperature              |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Initial Luminous Flux                                    | 0x001F | Luminous Flux                             |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Initial Planckian Distance                               | 0x0020 | Chromatic Distance From Planckian         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Current Range Specification                        | 0x0021 | Electric Current Specification            |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Current Statistics                                 | 0x0022 | Electric Current Statistics               |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Over Current Event Statistics                      | 0x0023 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Over Ripple Voltage Event Statistics               | 0x0024 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Over Voltage Event Statistics                      | 0x0025 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Under Current Event Statistics                     | 0x0026 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Under Voltage Event Statistics                     | 0x0027 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Voltage Range Specification                        | 0x0028 | Voltage Specification                     |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Voltage Ripple Specification                       | 0x0029 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Input Voltage Statistics                                 | 0x002A | Voltage Statistics                        |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Ambient LuxLevel On                        | 0x002B | Illuminance                               |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Ambient LuxLevel Prolong                   | 0x002C | Illuminance                               |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Ambient LuxLevel Standby                   | 0x002D | Illuminance                               |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Lightness On                               | 0x002E | Perceived Lightness                       |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Lightness Prolong                          | 0x002F | Perceived Lightness                       |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Lightness Standby                          | 0x0030 | Perceived Lightness                       |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Regulator Accuracy                         | 0x0031 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Regulator Kid                              | 0x0032 | Coefficient                               |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Regulator Kiu                              | 0x0033 | Coefficient                               |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Regulator Kpd                              | 0x0034 | Coefficient                               |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Regulator Kpu                              | 0x0035 | Coefficient                               |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Fade                                  | 0x0036 | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Fade On                               | 0x0037 | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Fade Standby Auto                     | 0x0038 | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Fade Standby Manual                   | 0x0039 | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Occupancy Delay                       | 0x003A | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Prolong                               | 0x003B | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Control Time Run On                                | 0x003C | Time Millisecond 24                       |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Lumen Maintenance Factor                                 | 0x003D | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminous Efficacy                                        | 0x003E | Luminous Efficacy                         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminous Energy Since Turn On                            | 0x003F | Luminous Energy                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminous Exposure                                        | 0x0040 | Luminous Exposure                         |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminous Flux Range                                      | 0x0041 | Luminous Flux Range                       |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Motion Sensed                                            | 0x0042 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Motion Threshold                                         | 0x0043 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Open Circuit Event Statistics                            | 0x0044 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Outdoor Statistical Values                               | 0x0045 | Temperature 8 Statistics                  |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Current Range                                     | 0x0046 | Electric Current Range                    |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Current Statistics                                | 0x0047 | Electric Current Statistics               |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Ripple Voltage Specification                      | 0x0048 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Voltage Range                                     | 0x0049 | Voltage Specification                     |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Voltage Statistics                                | 0x004A | Voltage Statistics                        |  9   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Over Output Ripple Voltage Event Statistics              | 0x004B | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | People Count                                             | 0x004C | Count 16                                  |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Presence Detected                                        | 0x004D | Boolean                                   |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Light Level                              | 0x004E | Illuminance                               |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Temperature                              | 0x004F | Temperature 8                             |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present CIE 1931 Chromaticity Coordinates                | 0x0050 | Chromaticity Coordinates                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Correlated Color Temperature                     | 0x0051 | Correlated Color Temperature              |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Device Input Power                               | 0x0052 | Power                                     |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Device Operating Efficiency                      | 0x0053 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Device Operating Temperature                     | 0x0054 | Temperature                               |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Illuminance                                      | 0x0055 | Illuminance                               |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Indoor Ambient Temperature                       | 0x0056 | Temperature 8                             |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Input Current                                    | 0x0057 | Electric Current                          |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Input Ripple Voltage                             | 0x0058 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Input Voltage                                    | 0x0059 | Voltage                                   |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Luminous Flux                                    | 0x005A | Luminous Flux                             |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Outdoor Ambient Temperature                      | 0x005B | Temperature 8                             |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Output Current                                   | 0x005C | Electric Current                          |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Output Voltage                                   | 0x005D | Voltage                                   |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Planckian Distance                               | 0x005E | Chromatic Distance From Planckian         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Relative Output Ripple Voltage                   | 0x005F | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Device Energy Use In A Period Of Day            | 0x0060 | Energy In A Period Of Day                 |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Device Runtime In A Generic Level Range         | 0x0061 | Relative Runtime In A Generic Level Range |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Exposure Time In An Illuminance Range           | 0x0062 | Relative Value In An Illuminance Range    |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Runtime In A Correlated Color Temperature Range | 0x0063 | Luminous Energy                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Runtime In A Device Operating Temperature Range | 0x0064 | Relative Value In A Temperature Range     |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Runtime In An Input Current Range               | 0x0065 | Relative Runtime In A Current Range       |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Relative Runtime In An Input Voltage Range               | 0x0066 | Relative Value In A Voltage Range         |  5   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Short Circuit Event Statistics                           | 0x0067 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Time Since Motion Sensed                                 | 0x0068 | Time Second 16                            |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Time Since Presence Detected                             | 0x0069 | Time Second 16                            |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Energy Use                                  | 0x006A | Energy                                    |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Off On Cycles                               | 0x006B | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Power On Cycles                             | 0x006C | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Power On Time                               | 0x006D | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Runtime                                     | 0x006E | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Light Exposure Time                                | 0x006F | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Luminous Energy                                    | 0x0070 | Luminous Energy                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Desired Ambient Temperature                              | 0x0071 | Temperature 8                             |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Precise Total Device Energy Use                          | 0x0072 | Energy32                                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Power Factor                                             | 0x0073 | Cosine Of The Angle                       |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Sensor Gain                                              | 0x0074 | Coefficient                               |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Precise Present Ambient Temperature                      | 0x0075 | Temperature                               |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Relative Humidity                        | 0x0076 | Humidity                                  |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Carbon Dioxide Concentration             | 0x0077 | CO2 Concentration                         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Volatile Organic Compounds Concentration | 0x0078 | VOC Concentration                         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Ambient Noise                                    | 0x0079 | Noise                                     |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Active Energy Loadside                                   | 0x0080 | Energy32                                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Active Power Loadside                                    | 0x0081 | Power                                     |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Air Pressure                                             | 0x0082 | Pressure                                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Apparent Energy                                          | 0x0083 | Apparent Energy32                         |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Apparent Power                                           | 0x0084 | Apparent Power                            |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Apparent Wind Direction                                  | 0x0085 | Apparent Wind Direction                   |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Apparent Wind Speed                                      | 0x0086 | Apparent Wind Speed                       |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Dew Point                                                | 0x0087 | Dew Point                                 |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | External Supply Voltage                                  | 0x0088 | High Voltage                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | External Supply Voltage Frequency                        | 0x0089 | Voltage Frequency                         |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Gust Factor                                              | 0x008A | Gust Factor                               |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Heat Index                                               | 0x008B | Heat Index                                |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Distribution                                       | 0x008C | Light Distribution                        |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Current                                     | 0x008D | Average Current                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source On Time Not Resettable                      | 0x008E | Time Second 32                            |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source On Time Resettable                          | 0x008F | Time Second 32                            |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Open Circuit Statistics                     | 0x0090 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Overall Failures Statistics                 | 0x0091 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Short Circuit Statistics                    | 0x0092 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Start Counter Resettable                    | 0x0093 | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Temperature                                 | 0x0094 | High Temperature                          |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Thermal Derating Statistics                 | 0x0095 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Thermal Shutdown Statistics                 | 0x0096 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Total Power On Cycles                       | 0x0097 | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Voltage                                     | 0x0098 | Average Voltage                           |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Color                                          | 0x0099 | Fixed String 24                           |  24  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Identification Number                          | 0x009A | Fixed String 24                           |  24  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Manufacturer GTIN                              | 0x009B | Global Trade Item Number                  |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Nominal Input Power                            | 0x009C | Power                                     |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Nominal Maximum AC Mains Voltage               | 0x009D | Voltage                                   |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Nominal Minimum AC Mains Voltage               | 0x009E | Voltage                                   |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Power At Minimum Dim Level                     | 0x009F | Power                                     |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Time Of Manufacture                            | 0x00A0 | Date UTC                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Magnetic Declination                                     | 0x00A1 | Magnetic Declination                      |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Magnetic Flux Density - 2D                               | 0x00A2 | Magnetic Flux Density - 2D                |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Magnetic Flux Density - 3D                               | 0x00A3 | Magnetic Flux Density - 3D                |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Nominal Light Output                                     | 0x00A4 | Light Output                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Overall Failure Condition                                | 0x00A5 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Pollen Concentration                                     | 0x00A6 | Pollen Concentration                      |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Indoor Relative Humidity                         | 0x00A7 | Humidity                                  |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Present Outdoor Relative Humidity                        | 0x00A8 | Humidity                                  |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Pressure                                                 | 0x00A9 | Pressure                                  |  4   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Rainfall                                                 | 0x00AA | Rainfall                                  |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Rated Median Useful Life Of Luminaire                    | 0x00AB | Time Hour 24                              |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Rated Median Useful Light Source Starts                  | 0x00AC | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Reference Temperature                                    | 0x00AD | High Temperature                          |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Total Device Starts                                      | 0x00AE | Count 24                                  |  3   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | True Wind Direction                                      | 0x00AF | True Wind Direction                       |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | True Wind Speed                                          | 0x00B0 | True Wind Speed                           |  2   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | UV Index                                                 | 0x00B1 | UV Index                                  |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Wind Chill                                               | 0x00B2 | Wind Chill                                |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Light Source Type                                        | 0x00B3 | Light Source Type                         |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Luminaire Identification String                          | 0x00B4 | Fixed String 64                           |  64  |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Power Limitation                                  | 0x00B5 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Thermal Derating                                         | 0x00B6 | Event Statistics                          |  6   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
+ * | Output Current Percent                                   | 0x00B7 | Percentage 8                              |  1   |
+ * |----------------------------------------------------------|--------|-------------------------------------------|------|
  */
 
 /**
@@ -326,122 +500,252 @@ extern "C" {
 #define BLE_MESH_TOTAL_DEVICE_RUNTIME                                       0x006E
 #define BLE_MESH_TOTAL_LIGHT_EXPOSURE_TIME                                  0x006F
 #define BLE_MESH_TOTAL_LUMINOUS_ENERGY                                      0x0070
+#define BLE_MESH_DESIRED_AMBIENT_TEMPERATURE                                0x0071
+#define BLE_MESH_PRECISE_TOTAL_DEVICE_ENERGY_USE                            0x0072
+#define BLE_MESH_POWER_FACTOR                                               0x0073
+#define BLE_MESH_SENSOR_GAIN                                                0x0074
+#define BLE_MESH_PRECISE_PRESENT_AMBIENT_TEMPERATURE                        0x0075
+#define BLE_MESH_PRESENT_AMBIENT_RELATIVE_HUMIDITY                          0x0076
+#define BLE_MESH_PRESENT_AMBIENT_CARBON_DIOXIDE_CONCENTRATION               0x0077
+#define BLE_MESH_PRESENT_AMBIENT_VOLATILE_ORGANIC_COMPOUNDS_CONCENTRATION   0x0078
+#define BLE_MESH_PRESENT_AMBIENT_NOISE                                      0x0079
+#define BLE_MESH_ACTIVE_ENERGY_LOADSIDE                                     0x0080
+#define BLE_MESH_ACTIVE_POWER_LOADSIDE                                      0x0081
+#define BLE_MESH_AIR_PRESSURE                                               0x0082
+#define BLE_MESH_APPARENT_ENERGY                                            0x0083
+#define BLE_MESH_APPARENT_POWER                                             0x0084
+#define BLE_MESH_APPARENT_WIND_DIRECTION                                    0x0085
+#define BLE_MESH_APPARENT_WIND_SPEED                                        0x0086
+#define BLE_MESH_DEW_POINT                                                  0x0087
+#define BLE_MESH_EXTERNAL_SUPPLY_VOLTAGE                                    0x0088
+#define BLE_MESH_EXTERNAL_SUPPLY_VOLTAGE_FREQUENCY                          0x0089
+#define BLE_MESH_GUST_FACTOR                                                0x008A
+#define BLE_MESH_HEAT_INDEX                                                 0x008B
+#define BLE_MESH_LIGHT_DISTRIBUTION                                         0x008C
+#define BLE_MESH_LIGHT_SOURCE_CURRENT                                       0x008D
+#define BLE_MESH_LIGHT_SOURCE_ON_TIME_NOT_RESETTABLE                        0x008E
+#define BLE_MESH_LIGHT_SOURCE_ON_TIME_RESETTABLE                            0x008F
+#define BLE_MESH_LIGHT_SOURCE_OPEN_CIRCUIT_STATISTICS                       0x0090
+#define BLE_MESH_LIGHT_SOURCE_OVERALL_FAILURES_STATISTICS                   0x0091
+#define BLE_MESH_LIGHT_SOURCE_SHORT_CIRCUIT_STATISTICS                      0x0092
+#define BLE_MESH_LIGHT_SOURCE_START_COUNTER_RESETTABLE                      0x0093
+#define BLE_MESH_LIGHT_SOURCE_TEMPERATURE                                   0x0094
+#define BLE_MESH_LIGHT_SOURCE_THERMAL_DERATING_STATISTICS                   0x0095
+#define BLE_MESH_LIGHT_SOURCE_THERMAL_SHUTDOWN_STATISTICS                   0x0096
+#define BLE_MESH_LIGHT_SOURCE_TOTAL_POWER_ON_CYCLES                         0x0097
+#define BLE_MESH_LIGHT_SOURCE_VOLTAGE                                       0x0098
+#define BLE_MESH_LUMINAIRE_COLOR                                            0x0099
+#define BLE_MESH_LUMINAIRE_IDENTIFICATION_NUMBER                            0x009A
+#define BLE_MESH_LUMINAIRE_MANUFACTURER_GTIN                                0x009B
+#define BLE_MESH_LUMINAIRE_NOMINAL_INPUT_POWER                              0x009C
+#define BLE_MESH_LUMINAIRE_NOMINAL_MAXIMUM_AC_MAINS_VOLTAGE                 0x009D
+#define BLE_MESH_LUMINAIRE_NOMINAL_MINIMUM_AC_MAINS_VOLTAGE                 0x009E
+#define BLE_MESH_LUMINAIRE_POWER_AT_MINIMUM_DIM_LEVEL                       0x009F
+#define BLE_MESH_LUMINAIRE_TIME_OF_MANUFACTURE                              0x00A0
+#define BLE_MESH_MAGNETIC_DECLINATION                                       0x00A1
+#define BLE_MESH_MAGNETIC_FLUX_DENSITY_2D                                   0x00A2
+#define BLE_MESH_MAGNETIC_FLUX_DENSITY_3D                                   0x00A3
+#define BLE_MESH_NOMINAL_LIGHT_OUTPUT                                       0x00A4
+#define BLE_MESH_OVERALL_FAILURE_CONDITION                                  0x00A5
+#define BLE_MESH_POLLEN_CONCENTRATION                                       0x00A6
+#define BLE_MESH_PRESENT_INDOOR_RELATIVE_HUMIDITY                           0x00A7
+#define BLE_MESH_PRESENT_OUTDOOR_RELATIVE_HUMIDITY                          0x00A8
+#define BLE_MESH_PRESSURE                                                   0x00A9
+#define BLE_MESH_RAINFALL                                                   0x00AA
+#define BLE_MESH_RATED_MEDIAN_USEFUL_LIFE_OF_LUMINAIRE                      0x00AB
+#define BLE_MESH_RATED_MEDIAN_USEFUL_LIGHT_SOURCE_STARTS                    0x00AC
+#define BLE_MESH_REFERENCE_TEMPERATURE                                      0x00AD
+#define BLE_MESH_TOTAL_DEVICE_STARTS                                        0x00AE
+#define BLE_MESH_TRUE_WIND_DIRECTION                                        0x00AF
+#define BLE_MESH_TRUE_WIND_SPEED                                            0x00B0
+#define BLE_MESH_UV_INDEX                                                   0x00B1
+#define BLE_MESH_WIND_CHILL                                                 0x00B2
+#define BLE_MESH_LIGHT_SOURCE_TYPE                                          0x00B3
+#define BLE_MESH_LUMINAIRE_IDENTIFICATION_STRING                            0x00B4
+#define BLE_MESH_OUTPUT_POWER_LIMITATION                                    0x00B5
+#define BLE_MESH_THERMAL_DERATING                                           0x00B6
+#define BLE_MESH_OUTPUT_CURRENT_PERCENT                                     0x00B7
 
 /**
  * @brief BLE Mesh Device Property value length
  */
-#define BLE_MESH_AVERAGE_AMBIENT_TEMPERATURE_IN_A_PERIOD_OF_DAY_LEN             0x03
-#define BLE_MESH_AVERAGE_INPUT_CURRENT_LEN                                      0x03
-#define BLE_MESH_AVERAGE_INPUT_VOLTAGE_LEN                                      0x03
-#define BLE_MESH_AVERAGE_OUTPUT_CURRENT_LEN                                     0x03
-#define BLE_MESH_AVERAGE_OUTPUT_VOLTAGE_LEN                                     0x03
-#define BLE_MESH_CENTER_BEAM_INTENSITY_AT_FULL_POWER_LEN                        0x02
-#define BLE_MESH_CHROMATICITY_TOLERANCE_LEN                                     0x01
-#define BLE_MESH_COLOR_RENDERING_INDEX_R9_LEN                                   0x01
-#define BLE_MESH_COLOR_RENDERING_INDEX_RA_LEN                                   0x01
-#define BLE_MESH_DEVICE_APPEARANCE_LEN                                          0x02
-#define BLE_MESH_DEVICE_COUNTRY_OF_ORIGIN_LEN                                   0x02
-#define BLE_MESH_DEVICE_DATE_OF_MANUFACTURE_LEN                                 0x04
-#define BLE_MESH_DEVICE_ENERGY_USE_SINCE_TURN_ON_LEN                            0x04
-#define BLE_MESH_DEVICE_FIRMWARE_REVISION_LEN                                   0x08
-#define BLE_MESH_DEVICE_GLOBAL_TRADE_ITEM_NUMBER_LEN                            0x08
-#define BLE_MESH_DEVICE_HARDWARE_REVISION_LEN                                   0x16
-#define BLE_MESH_DEVICE_MANUFACTURER_NAME_LEN                                   0x36
-#define BLE_MESH_DEVICE_MODEL_NUMBER_LEN                                        0x24
-#define BLE_MESH_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION_LEN           0x04
-#define BLE_MESH_DEVICE_OPERATING_TEMPERATURE_STATISTICAL_VALUES_LEN            0x09
-#define BLE_MESH_DEVICE_OVER_TEMPERATURE_EVENT_STATISTICS_LEN                   0x06
-#define BLE_MESH_DEVICE_POWER_RANGE_SPECIFICATION_LEN                           0x12
-#define BLE_MESH_DEVICE_RUNTIME_SINCE_TURN_ON_LEN                               0x04
-#define BLE_MESH_DEVICE_RUNTIME_WARRANTY_LEN                                    0x04
-#define BLE_MESH_DEVICE_SERIAL_NUMBER_LEN                                       0x16
-#define BLE_MESH_DEVICE_SOFTWARE_REVISION_LEN                                   0x08
-#define BLE_MESH_DEVICE_UNDER_TEMPERATURE_EVENT_STATISTICS_LEN                  0x06
-#define BLE_MESH_INDOOR_AMBIENT_TEMPERATURE_STATISTICAL_VALUES_LEN              0x05
-#define BLE_MESH_INITIAL_CIE_1931_CHROMATICITY_COORDINATES_LEN                  0x04
-#define BLE_MESH_INITIAL_CORRELATED_COLOR_TEMPERATURE_LEN                       0x02
-#define BLE_MESH_INITIAL_LUMINOUS_FLUX_LEN                                      0x02
-#define BLE_MESH_INITIAL_PLANCKIAN_DISTANCE_LEN                                 0x02
-#define BLE_MESH_INPUT_CURRENT_RANGE_SPECIFICATION_LEN                          0x06
-#define BLE_MESH_INPUT_CURRENT_STATISTICS_LEN                                   0x09
-#define BLE_MESH_INPUT_OVER_CURRENT_EVENT_STATISTICS_LEN                        0x06
-#define BLE_MESH_INPUT_OVER_RIPPLE_VOLTAGE_EVENT_STATISTICS_LEN                 0x06
-#define BLE_MESH_INPUT_OVER_VOLTAGE_EVENT_STATISTICS_LEN                        0x06
-#define BLE_MESH_INPUT_UNDER_CURRENT_EVENT_STATISTICS_LEN                       0x06
-#define BLE_MESH_INPUT_UNDER_VOLTAGE_EVENT_STATISTICS_LEN                       0x06
-#define BLE_MESH_INPUT_VOLTAGE_RANGE_SPECIFICATION_LEN                          0x06
-#define BLE_MESH_INPUT_VOLTAGE_RIPPLE_SPECIFICATION_LEN                         0x01
-#define BLE_MESH_INPUT_VOLTAGE_STATISTICS_LEN                                   0x09
-#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_ON_LEN                          0x04
-#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_PROLONG_LEN                     0x04
-#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_STANDBY_LEN                     0x04
-#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_ON_LEN                                 0x02
-#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_PROLONG_LEN                            0x02
-#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_STANDBY_LEN                            0x02
-#define BLE_MESH_LIGHT_CONTROL_REGULATOR_ACCURACY_LEN                           0x01
-#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KID_LEN                                0x04
-#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KIU_LEN                                0x04
-#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KPD_LEN                                0x04
-#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KPU_LEN                                0x04
-#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_LEN                                    0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_ON_LEN                                 0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_AUTO_LEN                       0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_MANUAL_LEN                     0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_OCCUPANCY_DELAY_LEN                         0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_PROLONG_LEN                                 0x03
-#define BLE_MESH_LIGHT_CONTROL_TIME_RUN_ON_LEN                                  0x03
-#define BLE_MESH_LUMEN_MAINTENANCE_FACTOR_LEN                                   0x01
-#define BLE_MESH_LUMINOUS_EFFICACY_LEN                                          0x02
-#define BLE_MESH_LUMINOUS_ENERGY_SINCE_TURN_ON_LEN                              0x04
-#define BLE_MESH_LUMINOUS_EXPOSURE_LEN                                          0x04
-#define BLE_MESH_LUMINOUS_FLUX_RANGE_LEN                                        0x04
-#define BLE_MESH_MOTION_SENSED_LEN                                              0x01
-#define BLE_MESH_MOTION_THRESHOLD_LEN                                           0x01
-#define BLE_MESH_OPEN_CIRCUIT_EVENT_STATISTICS_LEN                              0x06
-#define BLE_MESH_OUTDOOR_STATISTICAL_VALUES_LEN                                 0x05
-#define BLE_MESH_OUTPUT_CURRENT_RANGE_LEN                                       0x04
-#define BLE_MESH_OUTPUT_CURRENT_STATISTICS_LEN                                  0x09
-#define BLE_MESH_OUTPUT_RIPPLE_VOLTAGE_SPECIFICATION_LEN                        0x01
-#define BLE_MESH_OUTPUT_VOLTAGE_RANGE_LEN                                       0x06
-#define BLE_MESH_OUTPUT_VOLTAGE_STATISTICS_LEN                                  0x09
-#define BLE_MESH_OVER_OUTPUT_RIPPLE_VOLTAGE_EVENT_STATISTICS_LEN                0x06
-#define BLE_MESH_PEOPLE_COUNT_LEN                                               0x02
-#define BLE_MESH_PRESENCE_DETECTED_LEN                                          0x01
-#define BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL_LEN                                0x04
-#define BLE_MESH_PRESENT_AMBIENT_TEMPERATURE_LEN                                0x01
-#define BLE_MESH_PRESENT_CIE_1931_CHROMATICITY_LEN                              0x04
-#define BLE_MESH_PRESENT_CORRELATED_COLOR_TEMPERATURE_LEN                       0x02
-#define BLE_MESH_PRESENT_DEVICE_INPUT_POWER_LEN                                 0x04
-#define BLE_MESH_PRESENT_DEVICE_OPERATING_EFFICIENCY_LEN                        0x01
-#define BLE_MESH_PRESENT_DEVICE_OPERATING_TEMPERATURE_LEN                       0x02
-#define BLE_MESH_PRESENT_ILLUMINANCE_LEN                                        0x04
-#define BLE_MESH_PRESENT_INDOOR_AMBIENT_TEMPERATURE_LEN                         0x01
-#define BLE_MESH_PRESENT_INPUT_CURRENT_LEN                                      0x02
-#define BLE_MESH_PRESENT_INPUT_RIPPLE_VOLTAGE_LEN                               0x01
-#define BLE_MESH_PRESENT_INPUT_VOLTAGE_LEN                                      0x02
-#define BLE_MESH_PRESENT_LUMINOUS_FLUX_LEN                                      0x02
-#define BLE_MESH_PRESENT_OUTDOOR_AMBIENT_TEMPERATURE_LEN                        0x01
-#define BLE_MESH_PRESENT_OUTPUT_CURRENT_LEN                                     0x02
-#define BLE_MESH_PRESENT_OUTPUT_VOLTAGE_LEN                                     0x02
-#define BLE_MESH_PRESENT_PLANCKIAN_DISTANCE_LEN                                 0x02
-#define BLE_MESH_PRESENT_RELATIVE_OUTPUT_RIPPLE_VOLTAGE_LEN                     0x01
-#define BLE_MESH_RELATIVE_DEVICE_ENERGY_USE_IN_A_PERIOD_OF_DAY_LEN              0x06
-#define BLE_MESH_RELATIVE_DEVICE_RUNTIME_IN_A_GENERIC_LEVEL_RANGE_LEN           0x05
-#define BLE_MESH_RELATIVE_EXPOSURE_TIME_IN_AN_ILLUMINANCE_RANGE_LEN             0x09
-#define BLE_MESH_RELATIVE_RUNTIME_IN_A_CORRELATED_COLOR_TEMPERATURE_RANGE_LEN   0x04
-#define BLE_MESH_RELATIVE_RUNTIME_IN_A_DEVICE_OPERATING_TEMPERATURE_RANGE_LEN   0x05
-#define BLE_MESH_RELATIVE_RUNTIME_IN_AN_INPUT_CURRENT_RANGE_LEN                 0x05
-#define BLE_MESH_RELATIVE_RUNTIME_IN_AN_INPUT_VOLTAGE_RANGE_LEN                 0x05
-#define BLE_MESH_SHORT_CIRCUIT_EVENT_STATISTICS_LEN                             0x06
-#define BLE_MESH_TIME_SINCE_MOTION_SENSED_LEN                                   0x02
-#define BLE_MESH_TIME_SINCE_PRESENCE_DETECTED_LEN                               0x02
-#define BLE_MESH_TOTAL_DEVICE_ENERGY_USE_LEN                                    0x04
-#define BLE_MESH_TOTAL_DEVICE_OFF_ON_CYCLES_LEN                                 0x04
-#define BLE_MESH_TOTAL_DEVICE_POWER_ON_CYCLES_LEN                               0x04
-#define BLE_MESH_TOTAL_DEVICE_POWER_ON_TIME_LEN                                 0x04
-#define BLE_MESH_TOTAL_DEVICE_RUNTIME_LEN                                       0x04
-#define BLE_MESH_TOTAL_LIGHT_EXPOSURE_TIME_LEN                                  0x04
-#define BLE_MESH_TOTAL_LUMINOUS_ENERGY_LEN                                      0x04
+#define BLE_MESH_AVERAGE_AMBIENT_TEMPERATURE_IN_A_PERIOD_OF_DAY_LEN             3
+#define BLE_MESH_AVERAGE_INPUT_CURRENT_LEN                                      3
+#define BLE_MESH_AVERAGE_INPUT_VOLTAGE_LEN                                      3
+#define BLE_MESH_AVERAGE_OUTPUT_CURRENT_LEN                                     3
+#define BLE_MESH_AVERAGE_OUTPUT_VOLTAGE_LEN                                     3
+#define BLE_MESH_CENTER_BEAM_INTENSITY_AT_FULL_POWER_LEN                        2
+#define BLE_MESH_CHROMATICITY_TOLERANCE_LEN                                     1
+#define BLE_MESH_COLOR_RENDERING_INDEX_R9_LEN                                   1
+#define BLE_MESH_COLOR_RENDERING_INDEX_RA_LEN                                   1
+#define BLE_MESH_DEVICE_APPEARANCE_LEN                                          2
+#define BLE_MESH_DEVICE_COUNTRY_OF_ORIGIN_LEN                                   2
+#define BLE_MESH_DEVICE_DATE_OF_MANUFACTURE_LEN                                 3
+#define BLE_MESH_DEVICE_ENERGY_USE_SINCE_TURN_ON_LEN                            3
+#define BLE_MESH_DEVICE_FIRMWARE_REVISION_LEN                                   8
+#define BLE_MESH_DEVICE_GLOBAL_TRADE_ITEM_NUMBER_LEN                            6
+#define BLE_MESH_DEVICE_HARDWARE_REVISION_LEN                                   16
+#define BLE_MESH_DEVICE_MANUFACTURER_NAME_LEN                                   36
+#define BLE_MESH_DEVICE_MODEL_NUMBER_LEN                                        24
+#define BLE_MESH_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION_LEN           4
+#define BLE_MESH_DEVICE_OPERATING_TEMPERATURE_STATISTICAL_VALUES_LEN            9
+#define BLE_MESH_DEVICE_OVER_TEMPERATURE_EVENT_STATISTICS_LEN                   6
+#define BLE_MESH_DEVICE_POWER_RANGE_SPECIFICATION_LEN                           9
+#define BLE_MESH_DEVICE_RUNTIME_SINCE_TURN_ON_LEN                               3
+#define BLE_MESH_DEVICE_RUNTIME_WARRANTY_LEN                                    3
+#define BLE_MESH_DEVICE_SERIAL_NUMBER_LEN                                       16
+#define BLE_MESH_DEVICE_SOFTWARE_REVISION_LEN                                   8
+#define BLE_MESH_DEVICE_UNDER_TEMPERATURE_EVENT_STATISTICS_LEN                  6
+#define BLE_MESH_INDOOR_AMBIENT_TEMPERATURE_STATISTICAL_VALUES_LEN              5
+#define BLE_MESH_INITIAL_CIE_1931_CHROMATICITY_COORDINATES_LEN                  4
+#define BLE_MESH_INITIAL_CORRELATED_COLOR_TEMPERATURE_LEN                       2
+#define BLE_MESH_INITIAL_LUMINOUS_FLUX_LEN                                      2
+#define BLE_MESH_INITIAL_PLANCKIAN_DISTANCE_LEN                                 2
+#define BLE_MESH_INPUT_CURRENT_RANGE_SPECIFICATION_LEN                          6
+#define BLE_MESH_INPUT_CURRENT_STATISTICS_LEN                                   9
+#define BLE_MESH_INPUT_OVER_CURRENT_EVENT_STATISTICS_LEN                        6
+#define BLE_MESH_INPUT_OVER_RIPPLE_VOLTAGE_EVENT_STATISTICS_LEN                 6
+#define BLE_MESH_INPUT_OVER_VOLTAGE_EVENT_STATISTICS_LEN                        6
+#define BLE_MESH_INPUT_UNDER_CURRENT_EVENT_STATISTICS_LEN                       6
+#define BLE_MESH_INPUT_UNDER_VOLTAGE_EVENT_STATISTICS_LEN                       6
+#define BLE_MESH_INPUT_VOLTAGE_RANGE_SPECIFICATION_LEN                          6
+#define BLE_MESH_INPUT_VOLTAGE_RIPPLE_SPECIFICATION_LEN                         1
+#define BLE_MESH_INPUT_VOLTAGE_STATISTICS_LEN                                   9
+#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_ON_LEN                          3
+#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_PROLONG_LEN                     3
+#define BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_STANDBY_LEN                     3
+#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_ON_LEN                                 2
+#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_PROLONG_LEN                            2
+#define BLE_MESH_LIGHT_CONTROL_LIGHTNESS_STANDBY_LEN                            2
+#define BLE_MESH_LIGHT_CONTROL_REGULATOR_ACCURACY_LEN                           1
+#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KID_LEN                                4
+#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KIU_LEN                                4
+#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KPD_LEN                                4
+#define BLE_MESH_LIGHT_CONTROL_REGULATOR_KPU_LEN                                4
+#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_LEN                                    3
+#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_ON_LEN                                 3
+#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_AUTO_LEN                       3
+#define BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_MANUAL_LEN                     3
+#define BLE_MESH_LIGHT_CONTROL_TIME_OCCUPANCY_DELAY_LEN                         3
+#define BLE_MESH_LIGHT_CONTROL_TIME_PROLONG_LEN                                 3
+#define BLE_MESH_LIGHT_CONTROL_TIME_RUN_ON_LEN                                  3
+#define BLE_MESH_LUMEN_MAINTENANCE_FACTOR_LEN                                   1
+#define BLE_MESH_LUMINOUS_EFFICACY_LEN                                          2
+#define BLE_MESH_LUMINOUS_ENERGY_SINCE_TURN_ON_LEN                              3
+#define BLE_MESH_LUMINOUS_EXPOSURE_LEN                                          3
+#define BLE_MESH_LUMINOUS_FLUX_RANGE_LEN                                        4
+#define BLE_MESH_MOTION_SENSED_LEN                                              1
+#define BLE_MESH_MOTION_THRESHOLD_LEN                                           1
+#define BLE_MESH_OPEN_CIRCUIT_EVENT_STATISTICS_LEN                              6
+#define BLE_MESH_OUTDOOR_STATISTICAL_VALUES_LEN                                 5
+#define BLE_MESH_OUTPUT_CURRENT_RANGE_LEN                                       4
+#define BLE_MESH_OUTPUT_CURRENT_STATISTICS_LEN                                  9
+#define BLE_MESH_OUTPUT_RIPPLE_VOLTAGE_SPECIFICATION_LEN                        1
+#define BLE_MESH_OUTPUT_VOLTAGE_RANGE_LEN                                       6
+#define BLE_MESH_OUTPUT_VOLTAGE_STATISTICS_LEN                                  9
+#define BLE_MESH_OVER_OUTPUT_RIPPLE_VOLTAGE_EVENT_STATISTICS_LEN                6
+#define BLE_MESH_PEOPLE_COUNT_LEN                                               2
+#define BLE_MESH_PRESENCE_DETECTED_LEN                                          1
+#define BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL_LEN                                3
+#define BLE_MESH_PRESENT_AMBIENT_TEMPERATURE_LEN                                1
+#define BLE_MESH_PRESENT_CIE_1931_CHROMATICITY_LEN                              4
+#define BLE_MESH_PRESENT_CORRELATED_COLOR_TEMPERATURE_LEN                       2
+#define BLE_MESH_PRESENT_DEVICE_INPUT_POWER_LEN                                 3
+#define BLE_MESH_PRESENT_DEVICE_OPERATING_EFFICIENCY_LEN                        1
+#define BLE_MESH_PRESENT_DEVICE_OPERATING_TEMPERATURE_LEN                       2
+#define BLE_MESH_PRESENT_ILLUMINANCE_LEN                                        3
+#define BLE_MESH_PRESENT_INDOOR_AMBIENT_TEMPERATURE_LEN                         1
+#define BLE_MESH_PRESENT_INPUT_CURRENT_LEN                                      2
+#define BLE_MESH_PRESENT_INPUT_RIPPLE_VOLTAGE_LEN                               1
+#define BLE_MESH_PRESENT_INPUT_VOLTAGE_LEN                                      2
+#define BLE_MESH_PRESENT_LUMINOUS_FLUX_LEN                                      2
+#define BLE_MESH_PRESENT_OUTDOOR_AMBIENT_TEMPERATURE_LEN                        1
+#define BLE_MESH_PRESENT_OUTPUT_CURRENT_LEN                                     2
+#define BLE_MESH_PRESENT_OUTPUT_VOLTAGE_LEN                                     2
+#define BLE_MESH_PRESENT_PLANCKIAN_DISTANCE_LEN                                 2
+#define BLE_MESH_PRESENT_RELATIVE_OUTPUT_RIPPLE_VOLTAGE_LEN                     1
+#define BLE_MESH_RELATIVE_DEVICE_ENERGY_USE_IN_A_PERIOD_OF_DAY_LEN              5
+#define BLE_MESH_RELATIVE_DEVICE_RUNTIME_IN_A_GENERIC_LEVEL_RANGE_LEN           5
+#define BLE_MESH_RELATIVE_EXPOSURE_TIME_IN_AN_ILLUMINANCE_RANGE_LEN             5
+#define BLE_MESH_RELATIVE_RUNTIME_IN_A_CORRELATED_COLOR_TEMPERATURE_RANGE_LEN   3
+#define BLE_MESH_RELATIVE_RUNTIME_IN_A_DEVICE_OPERATING_TEMPERATURE_RANGE_LEN   3
+#define BLE_MESH_RELATIVE_RUNTIME_IN_AN_INPUT_CURRENT_RANGE_LEN                 5
+#define BLE_MESH_RELATIVE_RUNTIME_IN_AN_INPUT_VOLTAGE_RANGE_LEN                 5
+#define BLE_MESH_SHORT_CIRCUIT_EVENT_STATISTICS_LEN                             6
+#define BLE_MESH_TIME_SINCE_MOTION_SENSED_LEN                                   2
+#define BLE_MESH_TIME_SINCE_PRESENCE_DETECTED_LEN                               2
+#define BLE_MESH_TOTAL_DEVICE_ENERGY_USE_LEN                                    3
+#define BLE_MESH_TOTAL_DEVICE_OFF_ON_CYCLES_LEN                                 3
+#define BLE_MESH_TOTAL_DEVICE_POWER_ON_CYCLES_LEN                               3
+#define BLE_MESH_TOTAL_DEVICE_POWER_ON_TIME_LEN                                 3
+#define BLE_MESH_TOTAL_DEVICE_RUNTIME_LEN                                       3
+#define BLE_MESH_TOTAL_LIGHT_EXPOSURE_TIME_LEN                                  3
+#define BLE_MESH_TOTAL_LUMINOUS_ENERGY_LEN                                      3
+#define BLE_MESH_DESIRED_AMBIENT_TEMPERATURE_LEN                                1
+#define BLE_MESH_PRECISE_TOTAL_DEVICE_ENERGY_USE_LEN                            4
+#define BLE_MESH_POWER_FACTOR_LEN                                               1
+#define BLE_MESH_SENSOR_GAIN_LEN                                                4
+#define BLE_MESH_PRECISE_PRESENT_AMBIENT_TEMPERATURE_LEN                        2
+#define BLE_MESH_PRESENT_AMBIENT_RELATIVE_HUMIDITY_LEN                          2
+#define BLE_MESH_PRESENT_AMBIENT_CARBON_DIOXIDE_CONCENTRATION_LEN               2
+#define BLE_MESH_PRESENT_AMBIENT_VOLATILE_ORGANIC_COMPOUNDS_CONCENTRATION_LEN   2
+#define BLE_MESH_PRESENT_AMBIENT_NOISE_LEN                                      1
+#define BLE_MESH_ACTIVE_ENERGY_LOADSIDE_LEN                                     4
+#define BLE_MESH_ACTIVE_POWER_LOADSIDE_LEN                                      3
+#define BLE_MESH_AIR_PRESSURE_LEN                                               4
+#define BLE_MESH_APPARENT_ENERGY_LEN                                            4
+#define BLE_MESH_APPARENT_POWER_LEN                                             3
+#define BLE_MESH_APPARENT_WIND_DIRECTION_LEN                                    2
+#define BLE_MESH_APPARENT_WIND_SPEED_LEN                                        2
+#define BLE_MESH_DEW_POINT_LEN                                                  1
+#define BLE_MESH_EXTERNAL_SUPPLY_VOLTAGE_LEN                                    3
+#define BLE_MESH_EXTERNAL_SUPPLY_VOLTAGE_FREQUENCY_LEN                          2
+#define BLE_MESH_GUST_FACTOR_LEN                                                1
+#define BLE_MESH_HEAT_INDEX_LEN                                                 1
+#define BLE_MESH_LIGHT_DISTRIBUTION_LEN                                         1
+#define BLE_MESH_LIGHT_SOURCE_CURRENT_LEN                                       3
+#define BLE_MESH_LIGHT_SOURCE_ON_TIME_NOT_RESETTABLE_LEN                        4
+#define BLE_MESH_LIGHT_SOURCE_ON_TIME_RESETTABLE_LEN                            4
+#define BLE_MESH_LIGHT_SOURCE_OPEN_CIRCUIT_STATISTICS_LEN                       6
+#define BLE_MESH_LIGHT_SOURCE_OVERALL_FAILURES_STATISTICS_LEN                   6
+#define BLE_MESH_LIGHT_SOURCE_SHORT_CIRCUIT_STATISTICS_LEN                      6
+#define BLE_MESH_LIGHT_SOURCE_START_COUNTER_RESETTABLE_LEN                      3
+#define BLE_MESH_LIGHT_SOURCE_TEMPERATURE_LEN                                   2
+#define BLE_MESH_LIGHT_SOURCE_THERMAL_DERATING_STATISTICS_LEN                   6
+#define BLE_MESH_LIGHT_SOURCE_THERMAL_SHUTDOWN_STATISTICS_LEN                   6
+#define BLE_MESH_LIGHT_SOURCE_TOTAL_POWER_ON_CYCLES_LEN                         3
+#define BLE_MESH_LIGHT_SOURCE_VOLTAGE_LEN                                       3
+#define BLE_MESH_LUMINAIRE_COLOR_LEN                                            24
+#define BLE_MESH_LUMINAIRE_IDENTIFICATION_NUMBER_LEN                            24
+#define BLE_MESH_LUMINAIRE_MANUFACTURER_GTIN_LEN                                6
+#define BLE_MESH_LUMINAIRE_NOMINAL_INPUT_POWER_LEN                              3
+#define BLE_MESH_LUMINAIRE_NOMINAL_MAXIMUM_AC_MAINS_VOLTAGE_LEN                 2
+#define BLE_MESH_LUMINAIRE_NOMINAL_MINIMUM_AC_MAINS_VOLTAGE_LEN                 2
+#define BLE_MESH_LUMINAIRE_POWER_AT_MINIMUM_DIM_LEVEL_LEN                       3
+#define BLE_MESH_LUMINAIRE_TIME_OF_MANUFACTURE_LEN                              3
+#define BLE_MESH_MAGNETIC_DECLINATION_LEN                                       2
+#define BLE_MESH_MAGNETIC_FLUX_DENSITY_2D_LEN                                   4
+#define BLE_MESH_MAGNETIC_FLUX_DENSITY_3D_LEN                                   6
+#define BLE_MESH_NOMINAL_LIGHT_OUTPUT_LEN                                       3
+#define BLE_MESH_OVERALL_FAILURE_CONDITION_LEN                                  6
+#define BLE_MESH_POLLEN_CONCENTRATION_LEN                                       3
+#define BLE_MESH_PRESENT_INDOOR_RELATIVE_HUMIDITY_LEN                           2
+#define BLE_MESH_PRESENT_OUTDOOR_RELATIVE_HUMIDITY_LEN                          2
+#define BLE_MESH_PRESSURE_LEN                                                   4
+#define BLE_MESH_RAINFALL_LEN                                                   2
+#define BLE_MESH_RATED_MEDIAN_USEFUL_LIFE_OF_LUMINAIRE_LEN                      3
+#define BLE_MESH_RATED_MEDIAN_USEFUL_LIGHT_SOURCE_STARTS_LEN                    3
+#define BLE_MESH_REFERENCE_TEMPERATURE_LEN                                      2
+#define BLE_MESH_TOTAL_DEVICE_STARTS_LEN                                        3
+#define BLE_MESH_TRUE_WIND_DIRECTION_LEN                                        2
+#define BLE_MESH_TRUE_WIND_SPEED_LEN                                            2
+#define BLE_MESH_UV_INDEX_LEN                                                   1
+#define BLE_MESH_WIND_CHILL_LEN                                                 1
+#define BLE_MESH_LIGHT_SOURCE_TYPE_LEN                                          1
+#define BLE_MESH_LUMINAIRE_IDENTIFICATION_STRING_LEN                            64
+#define BLE_MESH_OUTPUT_POWER_LIMITATION_LEN                                    6
+#define BLE_MESH_THERMAL_DERATING_LEN                                           6
+#define BLE_MESH_OUTPUT_CURRENT_PERCENT_LEN                                     1
 
 /**
  * @brief BLE Mesh Device Property referenced Characteristic UUIDs
