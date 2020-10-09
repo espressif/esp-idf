@@ -50,11 +50,20 @@ def main():
         help='Linker template file',
         type=argparse.FileType('r'))
 
-    argparser.add_argument(
+    fragments_group = argparser.add_mutually_exclusive_group()
+
+    fragments_group.add_argument(
         '--fragments', '-f',
         type=argparse.FileType('r'),
         help='Input fragment files',
-        nargs='+')
+        nargs='+'
+    )
+
+    fragments_group.add_argument(
+        '--fragments-list',
+        help='Input fragment files as a semicolon-separated list',
+        type=str
+    )
 
     argparser.add_argument(
         '--libraries-file',
@@ -102,12 +111,17 @@ def main():
     args = argparser.parse_args()
 
     input_file = args.input
-    fragment_files = [] if not args.fragments else args.fragments
     libraries_file = args.libraries_file
     config_file = args.config
     output_path = args.output
     kconfig_file = args.kconfig
     objdump = args.objdump
+
+    fragment_files = []
+    if args.fragments_list:
+        fragment_files = args.fragments_list.split(';')
+    elif args.fragments:
+        fragment_files = args.fragments
 
     check_mapping = args.check_mapping
     if args.check_mapping_exceptions:
