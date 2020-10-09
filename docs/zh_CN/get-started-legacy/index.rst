@@ -40,15 +40,6 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 * 获取 **ESP-IDF** 软件开发框架。该框架已经基本包含 ESP32 使用的 API（软件库和源代码）和运行 **工具链** 的脚本;
 * 安装 C 语言编程（**工程**）的 **文本编辑器**，例如 `Eclipse <https://www.eclipse.org/>`_。
 
-
-.. figure:: ../../_static/what-you-need.png
-    :align: center
-    :alt: ESP32 应用程序开发
-    :figclass: align-center
-
-    ESP32 应用程序开发
-
-
 开发板简介
 ==========
 

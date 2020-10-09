@@ -42,15 +42,6 @@ Software:
 * **ESP-IDF** that essentially contains API (software libraries and source code) for ESP32 and scripts to operate the **Toolchain**
 * **Text editor** to write programs (**Projects**) in C, e.g., `Eclipse <https://www.eclipse.org/>`_
 
-
-.. figure:: ../../_static/what-you-need.png
-    :align: center
-    :alt: Development of applications for ESP32
-    :figclass: align-center
-
-    Development of applications for ESP32
-
-
 Development Board Overviews
 ===========================
 
