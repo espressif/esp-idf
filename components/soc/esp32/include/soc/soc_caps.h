@@ -159,9 +159,12 @@
 #define SOC_PCNT_UNIT_CHANNEL_NUM (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
-#define SOC_RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
-#define SOC_RMT_CHANNELS_NUM      (8)  /*!< Total 8 channels */
-#define SOC_RMT_SUPPORT_REF_TICK  (1)  /*!< Support set REF_TICK as the RMT clock source */
+#define SOC_RMT_CHANNEL_MEM_WORDS      (64) /*!< Each channel owns 64 words memory */
+#define SOC_RMT_TX_CHANNELS_NUM        (8)  /*!< Number of channels that capable of Transmit */
+#define SOC_RMT_RX_CHANNELS_NUM        (8)  /*!< Number of channels that capable of Receive */
+#define SOC_RMT_CHANNELS_NUM           (8)  /*!< Total 8 channels (each channel can be configured to either TX or RX) */
+#define SOC_RMT_SUPPORT_REF_TICK       (1)  /*!< Support set REF_TICK as the RMT clock source */
+#define SOC_RMT_SOURCE_CLK_INDEPENDENT (1)  /*!< Can select different source clock for channels */
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT 18

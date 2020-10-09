@@ -41,12 +41,20 @@ typedef struct {
 void rmt_hal_init(rmt_hal_context_t *hal);
 
 /**
- * @brief Reset RMT Channel specific HAL driver
+ * @brief Reset RMT TX Channel
  *
  * @param hal: RMT HAL context
  * @param channel: RMT channel number
  */
-void rmt_hal_channel_reset(rmt_hal_context_t *hal, uint32_t channel);
+void rmt_hal_tx_channel_reset(rmt_hal_context_t *hal, uint32_t channel);
+
+/**
+ * @brief Reset RMT TX Channel
+ *
+ * @param hal: RMT HAL context
+ * @param channel: RMT channel number
+ */
+void rmt_hal_rx_channel_reset(rmt_hal_context_t *hal, uint32_t channel);
 
 /**
  * @brief Set counter clock for RMT channel
@@ -56,17 +64,7 @@ void rmt_hal_channel_reset(rmt_hal_context_t *hal, uint32_t channel);
  * @param base_clk_hz: base clock for RMT internal channel (counter clock will divide from it)
  * @param counter_clk_hz: target counter clock
  */
-void rmt_hal_set_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz);
-
-/**
- * @brief Get counter clock for RMT channel
- *
- * @param hal: RMT HAL context
- * @param channel: RMT channel number
- * @param base_clk_hz: base clock for RMT internal channel (counter clock will divide from it)
- * @return counter clock in Hz
- */
-uint32_t rmt_hal_get_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz);
+void rmt_hal_tx_set_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz);
 
 /**
  * @brief Set carrier clock for RMT channel
@@ -78,17 +76,6 @@ uint32_t rmt_hal_get_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uin
  * @param carrier_clk_duty: duty ratio of carrier clock
  */
 void rmt_hal_set_carrier_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t carrier_clk_hz, float carrier_clk_duty);
-
-/**
- * @brief Get carrier clock for RMT channel
- *
- * @param hal: RMT HAL context
- * @param channel: RMT channel number
- * @param base_clk_hz: base clock for RMT carrier generation
- * @param carrier_clk_hz: target carrier clock
- * @param carrier_clk_duty: duty ratio of carrier clock
- */
-void rmt_hal_get_carrier_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t *carrier_clk_hz, float *carrier_clk_duty);
 
 /**
  * @brief Set filter threshold for RMT Receive channel
@@ -119,18 +106,6 @@ void rmt_hal_set_rx_idle_thres(rmt_hal_context_t *hal, uint32_t channel, uint32_
  * @return number of items that get received
  */
 uint32_t rmt_hal_receive(rmt_hal_context_t *hal, uint32_t channel, rmt_item32_t *buf);
-
-/**
- * @brief Transmit a from by RMT
- *
- * @param hal: RMT HAL context
- * @param channel: RMT channel number
- * @param src: RMT items to transmit
- * @param length: length of RMT items to transmit
- * @param offset: offset of RMT internal memory to store the items.
- *        Note: the caller should ensure that (length + offset) <= (memory block * SOC_RMT_CHANNEL_MEM_WORDS).
- */
-void rmt_hal_transmit(rmt_hal_context_t *hal, uint32_t channel, const rmt_item32_t *src, uint32_t length, uint32_t offset);
 
 #ifdef __cplusplus
 }
