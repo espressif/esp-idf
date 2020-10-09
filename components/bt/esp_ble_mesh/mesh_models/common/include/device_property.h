@@ -213,6 +213,7 @@ extern "C" {
 /**
  * @brief BLE Mesh Device Property IDs
  */
+#define BLE_MESH_INVALID_DEVICE_PROPERTY_ID                                 0x0000
 #define BLE_MESH_AVERAGE_AMBIENT_TEMPERATURE_IN_A_PERIOD_OF_DAY             0x0001
 #define BLE_MESH_AVERAGE_INPUT_CURRENT                                      0x0002
 #define BLE_MESH_AVERAGE_INPUT_VOLTAGE                                      0x0003
