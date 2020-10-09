@@ -17,8 +17,9 @@
  */
 
 #include <stdbool.h>
+#include "esp32s3/memprot.h"
 
-bool esp_memprot_is_assoc_intr_any(void)
+mem_type_prot_t IRAM_ATTR esp_memprot_get_active_intr_memtype(void)
 {
-    return true;
+    return MEMPROT_NONE;
 }

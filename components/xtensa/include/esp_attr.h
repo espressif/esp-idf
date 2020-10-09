@@ -14,6 +14,7 @@
 #ifndef __ESP_ATTR_H__
 #define __ESP_ATTR_H__
 
+#include <stdint.h>
 #include "sdkconfig.h"
 
 #define ROMFN_ATTR
