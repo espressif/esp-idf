@@ -156,6 +156,7 @@ COMPONENT_SRCDIRS += esp_ble_mesh/mesh_common               \
                      esp_ble_mesh/mesh_core                 \
                      esp_ble_mesh/mesh_core/storage         \
                      esp_ble_mesh/btc                       \
+                     esp_ble_mesh/mesh_models/common        \
                      esp_ble_mesh/mesh_models/client        \
                      esp_ble_mesh/mesh_models/server        \
                      esp_ble_mesh/api/core                  \
