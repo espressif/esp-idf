@@ -53,8 +53,6 @@ extern "C" {
 #define BLE_MESH_UNKNOWN_REMAIN_TIME            0x3F
 #define BLE_MESH_DEVICE_SPECIFIC_RESOLUTION     10
 
-#define BLE_MESH_INVALID_DEVICE_PROPERTY_ID     0x0000
-
 enum {
     BLE_MESH_TRANS_TIMER_START,  /* Proper transition timer has been started */
     BLE_MESH_TRANS_FLAG_MAX,
