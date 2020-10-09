@@ -1281,22 +1281,17 @@ def gdbmi_cmd_exec_console(p, gdb_cmd):  # type: (GdbController, str) -> str
              .replace('\\n', '\n').replace('\\t', '\t').rstrip("\n")
 
 
-def gdbmi_get_thread_ids(p):  # type: (GdbController) -> (str, typing.List[str])
-    """ Get the current thread ID and the list of all thread IDs known to GDB, as strings """
-    result = gdbmi_run_cmd_get_one_response(p, "-thread-list-ids", "done", "result")["payload"]
+def gdbmi_get_threads(p):  # type: (GdbController) -> (typing.List[dict], str)
+    """ Get information about all threads known to GDB, and the current thread ID """
+    result = gdbmi_run_cmd_get_one_response(p, "-thread-info", "done", "result")["payload"]
     current_thread_id = result["current-thread-id"]
-    thread_ids = result["thread-ids"]["thread-id"]
-    return current_thread_id, thread_ids
+    threads = result["threads"]
+    return threads, current_thread_id
 
 
 def gdbmi_switch_thread(p, thr_id):  # type: (GdbController, str) -> None
     """ Tell GDB to switch to a specific thread, given its ID """
     gdbmi_run_cmd_get_one_response(p, "-thread-select %s" % thr_id, "done", "result")
-
-
-def gdbmi_get_thread_info(p, thr_id=None):  # type: (GdbController, typing.Optional[str]) -> dict
-    """ Get thread info dictionary for the given thread ID """
-    return gdbmi_run_cmd_get_one_response(p, "-thread-info" + (" %s" % thr_id) if thr_id else "", "done", "result")["payload"]["threads"][0]
 
 
 def gdbmi_data_evaluate_expression(p, expr):  # type: (GdbController, str) -> str
@@ -1435,16 +1430,13 @@ def info_corefile(args):
     print("\n======================== THREADS INFO =========================")
     print(gdbmi_cmd_exec_console(p, "info threads"))
     # THREADS STACKS
-    cur_thread, threads = gdbmi_get_thread_ids(p)
-    for thr_id in threads:
+    threads, _ = gdbmi_get_threads(p)
+    for thr in threads:
+        thr_id = int(thr["id"])
+        tcb_addr = gdb2freertos_thread_id(thr["target-id"])
         task_index = int(thr_id) - 1
-        gdbmi_switch_thread(p, thr_id)
-        thr_info_res = gdbmi_get_thread_info(p, thr_id)
-        if not thr_info_res["target-id"]:
-            print("WARNING: Unable to switch to thread %s\n" % thr_id)
-            continue
-        tcb_addr = gdb2freertos_thread_id(thr_info_res["target-id"])
         task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
+        gdbmi_switch_thread(p, thr_id)
         print("\n==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
         print(gdbmi_cmd_exec_console(p, "bt"))
         if task_info and task_info[task_index].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
