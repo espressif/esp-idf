@@ -18,6 +18,8 @@
  */
 
 #pragma once
+#include <stdbool.h>
+#include <stdint.h>
 #include "esp_attr.h"
 
 #ifdef __cplusplus
