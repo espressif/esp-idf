@@ -44,6 +44,7 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
 {
     spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
     spi_dev_t *dev = get_spi_dev(host);
+
     spi_flash_ll_reset(dev);
     spi_flash_ll_set_cs_pin(dev, ctx->cs_num);
     spi_flash_ll_set_clock(dev, &ctx->clock_conf);
