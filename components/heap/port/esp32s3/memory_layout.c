@@ -44,6 +44,8 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
     // Type 4: SPI SRAM data
     { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
+    // Type 5: DRAM which is not DMA accesible
+    { "NON_DMA_DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT, 0 }, false, false},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -69,10 +71,11 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCC0000, 0x10000, 2, 0x403B0000}, //Level 6, IDRAM, can be used as trace memroy
     { 0x3FCD0000, 0x10000, 2, 0x403C0000}, //Level 7, IDRAM, can be used as trace memroy
     { 0x3FCE0000, 0x10000, 1, 0},          //Level 8, IDRAM, can be used as trace memroy, contains stacks used by startup flow, recycled by heap allocator in app_main task
-#if CONFIG_ESP32S3_DATA_CACHE_16KB
-    { 0x3FCF0000, 0xC000,  0, 0},          //Level 9, DRAM
-#elif CONFIG_ESP32S3_DATA_CACHE_32KB
+#if CONFIG_ESP32S3_DATA_CACHE_16KB || CONFIG_ESP32S3_DATA_CACHE_32KB
     { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
+#endif
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    { 0x3C000000, 0x4000,  5, 0}
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
