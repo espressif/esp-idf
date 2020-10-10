@@ -59,7 +59,7 @@ class PartitionName(_PartitionId):
 
 class PartitionType(_PartitionId):
 
-    def __init__(self, p_type, subtype, part_list):
+    def __init__(self, p_type, subtype, part_list=None):
         _PartitionId.__init__(self, p_type=p_type, subtype=subtype, part_list=part_list)
 
 
