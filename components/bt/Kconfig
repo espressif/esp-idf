@@ -1972,7 +1972,7 @@ if BLE_MESH
             advertising bearer.
 
     config BLE_MESH_NET_BUF_POOL_USAGE
-        bool "BLE Mesh net buffer pool usage tracking"
+        bool
         default y
         help
             Enable BLE Mesh net buffer pool tracking. This option is used to introduce another
