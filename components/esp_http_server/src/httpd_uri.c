@@ -175,6 +175,11 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 #ifdef CONFIG_HTTPD_WS_SUPPORT
             hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
             hd->hd_calls[i]->handle_ws_control_frames = uri_handler->handle_ws_control_frames;
+            if (uri_handler->supported_subprotocol) {
+                hd->hd_calls[i]->supported_subprotocol = strdup(uri_handler->supported_subprotocol);
+            } else {
+                hd->hd_calls[i]->supported_subprotocol = NULL;
+            }
 #endif
             ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
@@ -316,7 +321,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
     struct httpd_req_aux   *aux = req->aux;
     if (uri->is_websocket && aux->ws_handshake_detect && uri->method == HTTP_GET) {
         ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
-        esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req);
+        esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req, uri->supported_subprotocol);
         if (ret != ESP_OK) {
             return ret;
         }
