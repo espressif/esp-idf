@@ -11,7 +11,7 @@
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DRAM_START     0x3FC80000
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403BC000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x403BA000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)

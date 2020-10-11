@@ -24,7 +24,7 @@ gen_configs() {
     echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > esp-idf-template/sdkconfig.ci.O2
     echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF=y" >> esp-idf-template/sdkconfig.ci.O2
 
-    # Only built in make, because CMake already build this config in pre_build job
+    # This part will be built in earlier stage (pre_build job) with only cmake. Built with make in later stage
     # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
     echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > esp-idf-template/sdkconfig.ci2.Og
     echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG=y" >> esp-idf-template/sdkconfig.ci2.Og
@@ -72,18 +72,18 @@ build_stage2() {
     CONFIG_STR=$(get_config_str sdkconfig.ci.*=)
     search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
+    search_cmake esp32s3 ${CONFIG_STR}
 
     CONFIG_STR=$(get_config_str sdkconfig.ci.*= sdkconfig.ci2.*=)
     search_make esp32 ${CONFIG_STR}
-    search_make esp32s2 ${CONFIG_STR}
 
     build build_list_1.json
 
     CONFIG_STR=$(get_config_str sdkconfig.ci3.*=)
-    search_cmake esp32 ${CONFIG_STR}
     search_make esp32 ${CONFIG_STR}
+    search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
-    search_make esp32s2 ${CONFIG_STR}
+    search_cmake esp32s3 ${CONFIG_STR}
 
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
     export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
@@ -95,6 +95,7 @@ build_stage1() {
     CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
     search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
+    search_cmake esp32s3 ${CONFIG_STR}
 
     build
 }
