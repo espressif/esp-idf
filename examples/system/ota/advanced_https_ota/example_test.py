@@ -234,8 +234,8 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     truncated_bin_size = 64000
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
-    f = open(binary_file, "r+")
-    fo = open(os.path.join(dut1.app.binary_path, truncated_bin_name), "w+")
+    f = open(binary_file, "rb+")
+    fo = open(os.path.join(dut1.app.binary_path, truncated_bin_name), "wb+")
     fo.write(f.read(truncated_bin_size))
     fo.close()
     f.close()
@@ -285,8 +285,8 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     truncated_bin_size = 180
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
-    f = open(binary_file, "r+")
-    fo = open(os.path.join(dut1.app.binary_path, truncated_bin_name), "w+")
+    f = open(binary_file, "rb+")
+    fo = open(os.path.join(dut1.app.binary_path, truncated_bin_name), "wb+")
     fo.write(f.read(truncated_bin_size))
     fo.close()
     f.close()
