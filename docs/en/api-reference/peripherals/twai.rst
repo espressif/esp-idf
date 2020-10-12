@@ -151,7 +151,10 @@ The TWAI driver contains an alert feature that is used to notify the application
     The TWAI controller's **error warning limit** is used to preemptively warn the application of bus errors before the error passive state is reached. By default, the TWAI driver sets the **error warning limit** to **96**. The ``TWAI_ALERT_ABOVE_ERR_WARN`` is raised when the TEC or REC becomes larger then or equal to the error warning limit. The ``TWAI_ALERT_BELOW_ERR_WARN`` is raised when both TEC and REC return back to values below **96**.
 
 .. note::
-    When enabling alerts, the ``TWAI_ALERT_AND_LOG`` flag can be used to cause the TWAI driver to log any raised alerts to UART. The ``TWAI_ALERT_ALL`` and ``TWAI_ALERT_NONE`` macros can also be used to enable/disable all alerts during configuration/reconfiguration.
+    When enabling alerts, the ``TWAI_ALERT_AND_LOG`` flag can be used to cause the TWAI driver to log any raised alerts to UART. However, alert logging is disabled and ``TWAI_ALERT_AND_LOG`` if the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option is enabled (see :ref:`placing-isr-into-iram`).
+    
+.. note::
+    The ``TWAI_ALERT_ALL`` and ``TWAI_ALERT_NONE`` macros can also be used to enable/disable all alerts during configuration/reconfiguration.
 
 Bit Timing
 ^^^^^^^^^^
@@ -232,6 +235,23 @@ Disabling TX Queue
 
 The TX queue can be disabled during configuration by setting the ``tx_queue_len`` member of :cpp:type:`twai_general_config_t` to ``0``. This will allow applications that do not require message transmission to save a small amount of memory when using the TWAI driver.
 
+.. _placing-isr-into-iram:
+
+Placing ISR into IRAM
+^^^^^^^^^^^^^^^^^^^^^
+
+The TWAI driver's ISR (Interrupt Service Routine) can be placed into IRAM so that the ISR can still run whilst the cache is disabled. Placing the ISR into IRAM may be necessary to maintain the TWAI driver's functionality during lengthy cache disabling operations (such as SPI Flash writes, OTA updates etc). Whilst the cache is disabled, the ISR will continue to:
+
+- Read received messages from the RX buffer and place them into the driver's RX queue.
+- Load messages pending transmission from the driver's TX queue and write them into the TX buffer.
+
+To place the TWAI driver's ISR, users must do the following:
+
+- Enable the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option using ``idf.py menuconfig``.
+- When calling :cpp:func:`twai_driver_install`, the `intr_flags` member of :cpp:type:`twai_general_config_t` should set the :c:macro:`ESP_INTR_FLAG_IRAM` set.
+
+.. note::
+    When the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option is enabled, the TWAI driver will no longer log any alerts (i.e., the ``TWAI_ALERT_AND_LOG`` flag will not have any effect).
 
 .. ------------------------------- TWAI Driver ---------------------------------
 
