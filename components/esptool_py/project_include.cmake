@@ -143,10 +143,10 @@ add_custom_target(erase_flash
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
-    -D IDF_MONITOR="${idf_path}/tools/idf_monitor.py"
-    -D ELF_FILE="${elf_dir}/${elf}"
+    -D SERIAL_TOOL="${idf_path}/tools/idf_monitor.py"
+    -D SERIAL_TOOL_ARGS="${elf_dir}/${elf}"
     -D WORKING_DIRECTORY="${build_dir}"
-    -P run_idf_monitor.cmake
+    -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     USES_TERMINAL
     )
