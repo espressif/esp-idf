@@ -26,6 +26,7 @@
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
 #include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/rtc.h"
 #include "hal/rtc_cntl_ll.h"
 
 /**
@@ -131,6 +132,11 @@ void rtc_sleep_set_wakeup_time(uint64_t t)
     rtc_cntl_ll_set_wakeup_timer(t);
 }
 
+/* Read back 'reject' status when waking from light or deep sleep */
+static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
+
+static const unsigned DEEP_SLEEP_TOUCH_WAIT_CYCLE = 0xFF;
+
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
@@ -139,16 +145,108 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
         REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_LIGHT_SLP_REJECT_EN);
     }
 
+    /* Set wait cycle for touch or COCPU after deep sleep. */
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, DEEP_SLEEP_TOUCH_WAIT_CYCLE);
+
     /* Start entry into sleep mode */
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SLEEP_EN);
-
-    /* Set wait cycle for touch or COCPU after deep sleep. */
-    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, 0xFF);
 
     while (GET_PERI_REG_MASK(RTC_CNTL_INT_RAW_REG,
                              RTC_CNTL_SLP_REJECT_INT_RAW | RTC_CNTL_SLP_WAKEUP_INT_RAW) == 0) {
         ;
     }
+
+    return rtc_sleep_finish(lslp_mem_inf_fpu);
+}
+
+#define STR2(X) #X
+#define STR(X) STR2(X)
+
+uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
+{
+    REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
+    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+
+    /* Calculate RTC Fast Memory CRC (for wake stub) & go to deep sleep
+
+       Because we may be running from RTC memory as stack, we can't easily call any
+       functions to do this (as registers may spill to stack, corrupting the CRC).
+
+       Instead, load all the values we need into registers (triggering any stack spills)
+       then use register ops only to calculate the CRC value, write it to the RTC CRC value
+       register, and immediately go into deep sleep.
+     */
+
+    /* Values used to set the DPORT_RTC_FASTMEM_CONFIG_REG value */
+    const unsigned CRC_START_ADDR = 0;
+    const unsigned CRC_LEN = 0x7ff;
+
+    asm volatile(
+                 "movi a2, 0\n" // trigger a stack spill on working register if needed
+
+                 /* Start CRC calculation */
+                 "s32i %1, %0, 0\n" // set RTC_MEM_CRC_ADDR & RTC_MEM_CRC_LEN
+                 "or a2, %1, %2\n"
+                 "s32i a2, %0, 0\n" // set RTC_MEM_CRC_START
+
+                 /* Wait for the CRC calculation to finish */
+                 ".Lwaitcrc:\n"
+                 "memw\n"
+                 "l32i a2, %0, 0\n"
+                 "bbci a2, "STR(DPORT_RTC_MEM_CRC_FINISH_S)", .Lwaitcrc\n"
+                 "xor %2, %2, %2\n" // %2 -> ~DPORT_RTC_MEM_CRC_START
+                 "and a2, a2, %2\n"
+                 "s32i a2, %0, 0\n"  // clear RTC_MEM_CRC_START
+                 "memw\n"
+                 "xor %2, %2, %2\n" // %2 -> DPORT_RTC_MEM_CRC_START, probably unnecessary but gcc assumes inputs unchanged
+
+                 /* Store the calculated value in RTC_MEM_CRC_REG */
+                 "l32i a2, %3, 0\n"
+                 "s32i a2, %4, 0\n"
+                 "memw\n"
+
+                 /* Set wait cycle for touch or COCPU after deep sleep (can be moved to C code part?) */
+                 "l32i a2, %5, 0\n"
+                 "and a2, a2, %6\n"
+                 "or a2, a2, %7\n"
+                 "s32i a2, %5, 0\n"
+
+                 /* Set register bit to go into deep sleep */
+                 "l32i a2, %8, 0\n"
+                 "or   a2, a2, %9\n"
+                 "s32i a2, %8, 0\n"
+                 "memw\n"
+
+                 /* Wait for sleep reject interrupt (never finishes if successful) */
+                 ".Lwaitsleep:"
+                 "memw\n"
+                 "l32i a2, %10, 0\n"
+                 "and a2, a2, %11\n"
+                 "beqz a2, .Lwaitsleep\n"
+
+                 :
+                 : /* Note, at -O0 this is the limit of available registers in this function */
+                   "r" (DPORT_RTC_FASTMEM_CONFIG_REG), // %0
+                   "r" ( (CRC_START_ADDR << DPORT_RTC_MEM_CRC_START_S)
+                         | (CRC_LEN << DPORT_RTC_MEM_CRC_LEN_S)), // %1
+                   "r" (DPORT_RTC_MEM_CRC_START), // %2
+                   "r" (DPORT_RTC_FASTMEM_CRC_REG), // %3
+                   "r" (RTC_MEMORY_CRC_REG), // %4
+                   "r" (RTC_CNTL_TIMER2_REG), // %5
+                   "r" (~RTC_CNTL_ULPCP_TOUCH_START_WAIT_M), // %6
+                   "r" (DEEP_SLEEP_TOUCH_WAIT_CYCLE << RTC_CNTL_ULPCP_TOUCH_START_WAIT_S), // %7
+                   "r" (RTC_CNTL_STATE0_REG), // %8
+                   "r" (RTC_CNTL_SLEEP_EN), // %9
+                   "r" (RTC_CNTL_INT_RAW_REG), // %10
+                   "r" (RTC_CNTL_SLP_REJECT_INT_RAW | RTC_CNTL_SLP_WAKEUP_INT_RAW) // %11
+                 : "a2" // working register
+                 );
+
+    return rtc_sleep_finish(0);
+}
+
+static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
+{
     /* In deep sleep mode, we never get here */
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
