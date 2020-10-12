@@ -14,6 +14,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "soc/soc_caps.h"
+#if SOC_PCNT_SUPPORTED
 #include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
@@ -21,11 +23,8 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
-#include "soc/soc_caps.h"
 #include "unity.h"
 #include "esp_rom_gpio.h"
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #define PULSE_IO 21
 #define PCNT_INPUT_IO 4
@@ -673,4 +672,4 @@ TEST_CASE("PCNT counting mode test", "[pcnt]")
     count_mode_test(PCNT_CTRL_GND_IO);
 }
 
-#endif
+#endif // #if SOC_PCNT_SUPPORTED
