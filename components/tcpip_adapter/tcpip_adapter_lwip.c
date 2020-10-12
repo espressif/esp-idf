@@ -325,6 +325,7 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
 
         for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
             netif_ip6_addr_set(esp_netif[tcpip_if] ,i ,IP6_ADDR_ANY6);
+            netif_ip6_addr_set_state(esp_netif[tcpip_if], i, IP6_ADDR_INVALID);
         }
         netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
         netif_set_down(esp_netif[tcpip_if]);
