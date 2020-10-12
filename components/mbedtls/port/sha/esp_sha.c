@@ -15,26 +15,29 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/sha.h"
-#endif
+#include "hal/sha_types.h"
+#include "soc/sha_caps.h"
+#include "esp_log.h"
 
 #include <mbedtls/sha1.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
 
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+#include "sha/sha_parallel_engine.h"
+#elif SOC_SHA_SUPPORT_DMA
+#include "sha/sha_dma.h"
+#endif
+
+static const char *TAG = "esp_sha";
 
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
     int ret;
     assert(input != NULL && output != NULL);
 
+#if SOC_SHA_SUPPORT_SHA1
     if (sha_type == SHA1) {
-
         mbedtls_sha1_context *ctx1 = (mbedtls_sha1_context *)malloc(sizeof(mbedtls_sha1_context));
         assert(ctx1 != NULL);
         mbedtls_sha1_starts_ret(ctx1);
@@ -44,9 +47,12 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
         assert(ret == 0);
         mbedtls_sha1_free(ctx1);
         free(ctx1);
+        return;
+    }
+#endif //SOC_SHA_SUPPORT_SHA1
 
-    } else if (sha_type == SHA2_256) {
-
+#if SOC_SHA_SUPPORT_SHA256
+    if (sha_type == SHA2_256) {
         mbedtls_sha256_context *ctx256 = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
         assert(ctx256 != NULL);
         mbedtls_sha256_starts_ret(ctx256, 0);
@@ -56,9 +62,12 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
         assert(ret == 0);
         mbedtls_sha256_free(ctx256);
         free(ctx256);
+        return;
+    }
+#endif //SOC_SHA_SUPPORT_SHA256
 
-    } else if (sha_type == SHA2_384) {
-
+#if SOC_SHA_SUPPORT_SHA384
+    if (sha_type == SHA2_384) {
         mbedtls_sha512_context *ctx384 = (mbedtls_sha512_context *)malloc(sizeof(mbedtls_sha512_context));
         assert(ctx384 != NULL);
         mbedtls_sha512_starts_ret(ctx384, 1);
@@ -68,9 +77,12 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
         assert(ret == 0);
         mbedtls_sha512_free(ctx384);
         free(ctx384);
+        return;
+    }
+#endif //SOC_SHA_SUPPORT_SHA384
 
-    } else if (sha_type == SHA2_512) {
-
+#if SOC_SHA_SUPPORT_SHA512
+    if (sha_type == SHA2_512) {
         mbedtls_sha512_context *ctx512 = (mbedtls_sha512_context *)malloc(sizeof(mbedtls_sha512_context));
         assert(ctx512 != NULL);
         mbedtls_sha512_starts_ret(ctx512, 0);
@@ -80,7 +92,10 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
         assert(ret == 0);
         mbedtls_sha512_free(ctx512);
         free(ctx512);
-
+        return;
     }
+#endif //SOC_SHA_SUPPORT_SHA512
 
+    ESP_LOGE(TAG, "SHA type %d not supported", sha_type);
+    abort();
 }

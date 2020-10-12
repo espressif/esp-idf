@@ -16,7 +16,7 @@
 #include "soc/rtc.h"
 #include "esp_log.h"
 #include "mbedtls/sha256.h"
-#include "esp32/sha.h"
+#include "sha/sha_parallel_engine.h"
 #include "esp32/aes.h"
 #include "mbedtls/rsa.h"
 

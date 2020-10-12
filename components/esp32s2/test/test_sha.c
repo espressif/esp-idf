@@ -13,7 +13,7 @@
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "esp32s2/sha.h"
+#include "sha/sha_dma.h"
 
 /* Note: Most of the SHA functions are called as part of mbedTLS, so
 are tested as part of mbedTLS tests. Only esp_sha() is different.

@@ -47,11 +47,15 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#include "esp32/sha.h"
+#include "sha/sha_parallel_engine.h"
 
 /* Implementation that should never be optimized out by the compiler */
-static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = (unsigned char*)v; while( n-- ) *p++ = 0;
+static void mbedtls_zeroize( void *v, size_t n )
+{
+    volatile unsigned char *p = (unsigned char *)v;
+    while ( n-- ) {
+        *p++ = 0;
+    }
 }
 
 /*
@@ -84,8 +88,9 @@ void mbedtls_sha1_init( mbedtls_sha1_context *ctx )
 
 void mbedtls_sha1_free( mbedtls_sha1_context *ctx )
 {
-    if( ctx == NULL )
+    if ( ctx == NULL ) {
         return;
+    }
 
     if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
         esp_sha_unlock_engine(SHA1);
@@ -335,8 +340,9 @@ int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *inp
     size_t fill;
     uint32_t left;
 
-    if( ilen == 0 )
+    if ( ilen == 0 ) {
         return 0;
+    }
 
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
@@ -344,11 +350,11 @@ int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *inp
     ctx->total[0] += (uint32_t) ilen;
     ctx->total[0] &= 0xFFFFFFFF;
 
-    if( ctx->total[0] < (uint32_t) ilen )
+    if ( ctx->total[0] < (uint32_t) ilen ) {
         ctx->total[1]++;
+    }
 
-    if( left && ilen >= fill )
-    {
+    if ( left && ilen >= fill ) {
         memcpy( (void *) (ctx->buffer + left), input, fill );
 
         if ( ( ret = mbedtls_internal_sha1_process( ctx, ctx->buffer ) ) != 0 ) {
@@ -360,8 +366,7 @@ int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *inp
         left = 0;
     }
 
-    while( ilen >= 64 )
-    {
+    while ( ilen >= 64 ) {
         if ( ( ret = mbedtls_internal_sha1_process( ctx, input ) ) != 0 ) {
             return ret;
         }
@@ -370,8 +375,9 @@ int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *inp
         ilen  -= 64;
     }
 
-    if( ilen > 0 )
+    if ( ilen > 0 ) {
         memcpy( (void *) (ctx->buffer + left), input, ilen );
+    }
 
     return 0;
 }
@@ -385,9 +391,8 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx,
 }
 #endif
 
-static const unsigned char sha1_padding[64] =
-{
- 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static const unsigned char sha1_padding[64] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -404,7 +409,7 @@ int mbedtls_sha1_finish_ret( mbedtls_sha1_context *ctx, unsigned char output[20]
     unsigned char msglen[8];
 
     high = ( ctx->total[0] >> 29 )
-         | ( ctx->total[1] <<  3 );
+           | ( ctx->total[1] <<  3 );
     low  = ( ctx->total[0] <<  3 );
 
     PUT_UINT32_BE( high, msglen, 0 );

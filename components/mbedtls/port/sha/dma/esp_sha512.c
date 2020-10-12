@@ -1,7 +1,5 @@
 /*
- *  SHA-512 implementation with hardware ESP32 support added.
- *  Uses mbedTLS software implementation for failover when concurrent
- *  SHA operations are in use.
+ *  SHA-512 implementation with hardware ESP support added.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  Additions Copyright (C) 2016-2020, Espressif Systems (Shanghai) PTE LTD
@@ -54,12 +52,15 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#include "esp32s2/sha.h"
+#include "sha/sha_dma.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n )
 {
-    volatile unsigned char *p = v; while ( n-- ) *p++ = 0;
+    volatile unsigned char *p = v;
+    while ( n-- ) {
+        *p++ = 0;
+    }
 }
 
 /*

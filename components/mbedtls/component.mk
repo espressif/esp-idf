@@ -2,13 +2,15 @@
 # Component Makefile
 #
 
+
 COMPONENT_ADD_INCLUDEDIRS := port/include mbedtls/include esp_crt_bundle/include
 
-COMPONENT_SRCDIRS := mbedtls/library port port/$(IDF_TARGET) esp_crt_bundle
+COMPONENT_SRCDIRS := mbedtls/library port port/$(IDF_TARGET) port/sha port/sha/parallel_engine esp_crt_bundle
 
 COMPONENT_OBJEXCLUDE := mbedtls/library/net_sockets.o
 
 COMPONENT_SUBMODULES += mbedtls
+
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
 #
@@ -21,8 +23,10 @@ ifndef CONFIG_MBEDTLS_HARDWARE_MPI
     COMPONENT_OBJEXCLUDE += port/esp_bignum.o port/$(IDF_TARGET)/bignum.o
 endif
 
+
+
 ifndef CONFIG_MBEDTLS_HARDWARE_SHA
-    COMPONENT_OBJEXCLUDE += port/$(IDF_TARGET)/esp_sha1.o port/$(IDF_TARGET)/esp_sha256.o port/$(IDF_TARGET)/esp_sha512.o
+    COMPONENT_OBJEXCLUDE += port/parallel_engine/esp_sha1.o port/parallel_engine/esp_sha256.o port/parallel_engine/esp_sha512.o
 endif
 
 ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
