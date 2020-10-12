@@ -47,8 +47,8 @@ DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&defa
 
 #define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200
 #define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS     4000
-#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS   500  //according to GD25Q127 + 100ms
-#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS    1300  //according to GD25Q127 + 100ms
+#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS   600  //according to GD25Q127(125°) + 100ms
+#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS    4100  //according to GD25Q127(125°) + 100ms
 #define SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS   500
 
 #define HOST_DELAY_INTERVAL_US                      1
@@ -126,7 +126,11 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
                 return err;
             }
         }
+#ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+#else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->chip_erase_timeout);
+#endif
     }
     return err;
 }
@@ -146,7 +150,11 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
                 return err;
             }
         }
+#ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+#else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->sector_erase_timeout);
+#endif
     }
     return err;
 }
@@ -166,7 +174,11 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
                 return err;
             }
         }
+#ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+#else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->block_erase_timeout);
+#endif
     }
     return err;
 }
@@ -303,6 +315,10 @@ esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_
 
 esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_us)
 {
+    bool timeout_en = (timeout_us != ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+    if (timeout_us == ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT) {
+        timeout_us = 0;// In order to go into while
+    }
     timeout_us++; // allow at least one pass before timeout, last one has no sleep cycle
 
     uint8_t status = 0;
@@ -324,7 +340,9 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
         if (timeout_us > 0 && interval > 0) {
             int delay = MIN(interval, timeout_us);
             chip->os_func->delay_us(chip->os_func_data, delay);
-            timeout_us -= delay;
+            if (timeout_en) {
+                timeout_us -= delay;
+            }
         }
     }
 
