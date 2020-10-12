@@ -133,9 +133,9 @@ endif()
 add_custom_target(erase_flash
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
-    -D ESPTOOLPY="${ESPTOOLPY}"
-    -D ESPTOOL_ARGS="erase_flash"
-    -P run_esptool.cmake
+    -D SERIAL_TOOL="${ESPTOOLPY}"
+    -D SERIAL_TOOL_ARGS="erase_flash"
+    -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     USES_TERMINAL
     )
@@ -332,10 +332,10 @@ function(esptool_py_flash_target target_name main_args sub_args)
     add_custom_target(${target_name}
         COMMAND ${CMAKE_COMMAND}
         -D IDF_PATH="${idf_path}"
-        -D ESPTOOLPY="${ESPTOOLPY}"
-        -D ESPTOOL_ARGS="${main_args};write_flash;@${target_name}_args"
+        -D SERIAL_TOOL="${ESPTOOLPY}"
+        -D SERIAL_TOOL_ARGS="${main_args};write_flash;@${target_name}_args"
         -D WORKING_DIRECTORY="${build_dir}"
-        -P ${esptool_py_dir}/run_esptool.cmake
+        -P ${esptool_py_dir}/run_serial_tool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL
         )
@@ -373,10 +373,10 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
         add_custom_target(encrypted-${target_name}
             COMMAND ${CMAKE_COMMAND}
             -D IDF_PATH="${idf_path}"
-            -D ESPTOOLPY="${ESPTOOLPY}"
-            -D ESPTOOL_ARGS="${main_args};write_flash;@encrypted_${target_name}_args"
+            -D SERIAL_TOOL="${ESPTOOLPY}"
+            -D SERIAL_TOOL_ARGS="${main_args};write_flash;@encrypted_${target_name}_args"
             -D WORKING_DIRECTORY="${build_dir}"
-            -P ${esptool_py_dir}/run_esptool.cmake
+            -P ${esptool_py_dir}/run_serial_tool.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             USES_TERMINAL
             )

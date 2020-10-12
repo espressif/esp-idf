@@ -11,5 +11,5 @@ execute_process(COMMAND ${CMD}
 
 if(${result})
     # No way to have CMake silently fail, unfortunately
-    message(FATAL_ERROR "${TOOL} failed")
+    message(FATAL_ERROR "${SERIAL_TOOL} failed")
 endif()
