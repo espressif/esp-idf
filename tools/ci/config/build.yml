@@ -449,8 +449,9 @@ build_template_app:
     # Exclude the submodules, all paths ends with /**
     # get all submodules configs | get all paths | add /** as suffix | xargs | replace all <space> to <comma>
     - export SUBMODULES=$(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g')
-    # Exclude the report dir
-    - export EXCLUSIONS="$SUBMODULES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
+    # get all exclude paths specified in tools/ci/sonar_exclude_list.txt | ignore lines start with # | xargs | replace all <space> to <comma>
+    - export CUSTOM_EXCLUDES=$(cat $CI_PROJECT_DIR/tools/ci/sonar_exclude_list.txt | grep -v '^#' | xargs | sed -e 's/ /,/g')
+    - export EXCLUSIONS="$SUBMODULES,$CUSTOM_EXCLUDES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
     - python $NORMALIZE_CLANGTIDY_PY $CI_PROJECT_DIR/$REPORT_DIR/warnings.txt $CI_PROJECT_DIR/$REPORT_DIR/clang_tidy_report.txt $CI_PROJECT_DIR
   variables:
     GIT_DEPTH: 0

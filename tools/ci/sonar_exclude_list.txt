@@ -1,0 +1,6 @@
+# exclude list for sonarqube
+# Here're some examples: (relative with the idf_path)
+# - test/**
+# - test/*/*.c
+# - test.c
+# lines start with # will be ignored
