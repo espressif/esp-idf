@@ -130,7 +130,7 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
     }
     esp_err_t err = esp_ota_write(https_ota_handle->update_handle, buffer, buf_len);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%d", err);
+        ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
     } else {
         https_ota_handle->binary_file_len += buf_len;
         ESP_LOGD(TAG, "Written image length %d", https_ota_handle->binary_file_len);
@@ -177,7 +177,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     if (ota_config->http_client_init_cb) {
         err = ota_config->http_client_init_cb(https_ota_handle->http_client);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "http_client_init_cb returned %d", err);
+            ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
             goto failure;
         }
     }
@@ -374,7 +374,7 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
     if ((err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)) {
         esp_err_t err = esp_ota_set_boot_partition(handle->update_partition);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%d", err);
+            ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         }
     }
     free(handle);
