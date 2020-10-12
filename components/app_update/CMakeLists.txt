@@ -49,7 +49,8 @@ if(NOT BOOTLOADER_BUILD)
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 
         set(esptool_args "--esptool-args;before=${CONFIG_ESPTOOLPY_BEFORE};after=${CONFIG_ESPTOOLPY_AFTER}")
-        set(otatool_args "--partition-table-file;${PARTITION_CSV_PATH};--partition-table-offset;${PARTITION_TABLE_OFFSET}")
+        set(otatool_args "--partition-table-file;${PARTITION_CSV_PATH}"
+                         "--partition-table-offset;${PARTITION_TABLE_OFFSET}")
         idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
         add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"

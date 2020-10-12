@@ -3,7 +3,8 @@
 # without needing a CMake re-run)
 set(ESPPORT $ENV{ESPPORT})
 if(NOT ESPPORT)
-    message("Note: ${SERIAL_TOOL} will search for a serial port. To specify a port, set the ESPPORT environment variable.")
+    message("Note: ${SERIAL_TOOL} will search for a serial port. "
+            "To specify a port, set the ESPPORT environment variable.")
 else()
     set(port_arg "-p ${ESPPORT}")
 endif()
