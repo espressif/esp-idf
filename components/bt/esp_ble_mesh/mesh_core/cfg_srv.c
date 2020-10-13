@@ -3403,7 +3403,10 @@ static int cfg_srv_deinit(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    bt_mesh_cfg_reset();
+    /* Use "false" here because if cfg needs to be erased,
+     * it will already be erased in the ble_mesh_deinit().
+     */
+    bt_mesh_cfg_reset(false);
 
     k_delayed_work_free(&cfg->hb_pub.timer);
     cfg->hb_pub.dst = BLE_MESH_ADDR_UNASSIGNED;
@@ -3421,6 +3424,7 @@ const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb = {
 static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                       bool vnd, bool primary, void *user_data)
 {
+    bool store = *(bool *)user_data;
     size_t clear_count = 0U;
 
     /* Clear model state that isn't otherwise cleared. E.g. AppKey
@@ -3431,12 +3435,17 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
     clear_count = mod_sub_list_clear(mod);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && clear_count) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && clear_count && store) {
         bt_mesh_store_mod_sub(mod);
     }
 }
 
-void bt_mesh_cfg_reset(void)
+void bt_mesh_mod_sub_reset(bool store)
+{
+    bt_mesh_model_foreach(mod_reset, &store);
+}
+
+void bt_mesh_cfg_reset(bool store)
 {
     struct bt_mesh_cfg_srv *cfg = conf;
     int i;
@@ -3460,11 +3469,11 @@ void bt_mesh_cfg_reset(void)
         struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
         if (sub->net_idx != BLE_MESH_KEY_UNUSED) {
-            bt_mesh_subnet_del(sub, true);
+            bt_mesh_subnet_del(sub, store);
         }
     }
 
-    bt_mesh_model_foreach(mod_reset, NULL);
+    bt_mesh_mod_sub_reset(store);
 
     (void)memset(labels, 0, sizeof(labels));
 }
