@@ -213,21 +213,36 @@ void ssl_pm_free(SSL *ssl)
 static int ssl_pm_reload_crt(SSL *ssl)
 {
     int ret;
-    int mode;
+    int mode = MBEDTLS_SSL_VERIFY_UNSET;
     struct ssl_pm *ssl_pm = ssl->ssl_pm;
     struct x509_pm *ca_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
 
     struct pkey_pm *pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
     struct x509_pm *crt_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
 
-    if (ssl->verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-    else if (ssl->verify_mode & SSL_VERIFY_PEER)
-        mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
-    else if (ssl->verify_mode & SSL_VERIFY_CLIENT_ONCE)
-        mode = MBEDTLS_SSL_VERIFY_UNSET;
-    else
-        mode = MBEDTLS_SSL_VERIFY_NONE;
+/* OpenSSL verification modes outline (see `man SSL_set_verify` for more details)
+ *
+ * | openssl mode    | Server                                     | Client                                    |
+ * | SSL_VERIFY_NONE | will not send a client certificate request |  server certificate which will be checked |
+ *                                                                   handshake  will be continued regardless  |
+ * | SSL_VERIFY_PEER | depends on SSL_VERIFY_FAIL_IF_NO_PEER_CERT |  handshake is terminated if verify fails  |
+ *                                                                   (unless anonymous ciphers--not supported |
+ * | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | handshake is terminated if |   ignored                                 |
+ *                                     client cert verify fails   |                                           |
+ */
+    if (ssl->method->endpoint == MBEDTLS_SSL_IS_SERVER) {
+        if (ssl->verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+            mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+        else if (ssl->verify_mode & SSL_VERIFY_PEER)
+            mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
+        else if (ssl->verify_mode == SSL_VERIFY_NONE)
+            mode = MBEDTLS_SSL_VERIFY_NONE;
+    } else if (ssl->method->endpoint == MBEDTLS_SSL_IS_CLIENT) {
+        if (ssl->verify_mode & SSL_VERIFY_PEER)
+            mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+        else if (ssl->verify_mode == SSL_VERIFY_NONE)
+            mode = MBEDTLS_SSL_VERIFY_NONE;
+    }
 
     mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
 
