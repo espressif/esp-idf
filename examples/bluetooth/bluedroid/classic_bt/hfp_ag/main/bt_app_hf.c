@@ -119,9 +119,9 @@ static const int16_t sine_int16[] = {
 #define TABLE_SIZE_CVSD   100
 static uint32_t bt_app_hf_outgoing_cb(uint8_t *p_buf, uint32_t sz)
 {
-    int sine_phase = esp_random();
+    static int sine_phase = 0;
 
-    for (int i = 0; i < TABLE_SIZE_CVSD; i++) {
+    for (int i = 0; i * 2 + 1 < sz; i++) {
         p_buf[i * 2]     = sine_int16[sine_phase];
         p_buf[i * 2 + 1] = sine_int16[sine_phase];
         ++sine_phase;
@@ -131,7 +131,7 @@ static uint32_t bt_app_hf_outgoing_cb(uint8_t *p_buf, uint32_t sz)
     }
     return sz;
 }
- 
+
 static void bt_app_hf_incoming_cb(const uint8_t *buf, uint32_t sz)
 {
     // direct to i2s

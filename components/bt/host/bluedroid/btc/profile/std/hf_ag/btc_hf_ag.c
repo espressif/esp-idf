@@ -873,6 +873,22 @@ update_call_states:
     return status;
 }
 
+bt_status_t btc_hf_ci_sco_data(void)
+{
+    bt_status_t status = BT_STATUS_SUCCESS;
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    int idx = btc_hf_latest_connected_idx();
+    CHECK_HF_SLC_CONNECTED();
+
+    if (idx != BTC_HF_INVALID_IDX) {
+        BTA_AgCiData(hf_local_param[idx].btc_hf_cb.handle);
+        return status;
+    }
+    status = BT_STATUS_FAIL;
+#endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE ) */
+    return status;
+}
+
 /************************************************************************************
 **  Memory malloc and release
 ************************************************************************************/
