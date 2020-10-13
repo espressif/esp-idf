@@ -2119,8 +2119,19 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         (esp_wifi_sta_prof_is_wpa2_internal() &&
          esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT)) {
-        pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
-        wpa_sm_set_pmk_from_pmksa(sm);
+        if (!esp_wifi_skip_supp_pmkcaching()) {
+            pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
+            wpa_sm_set_pmk_from_pmksa(sm);
+        } else {
+            struct rsn_pmksa_cache_entry *entry = NULL;
+
+            if (sm->pmksa) {
+                entry = pmksa_cache_get(sm->pmksa, (const u8 *)bssid, NULL, NULL);
+            }
+            if (entry) {
+                pmksa_cache_flush(sm->pmksa, NULL, entry->pmk, entry->pmk_len);
+            }
+        }
     }
  
 #ifdef CONFIG_IEEE80211W
