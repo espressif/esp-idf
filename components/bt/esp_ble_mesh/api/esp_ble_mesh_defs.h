@@ -1132,6 +1132,7 @@ typedef union {
      */
     struct ble_mesh_provisioner_add_local_app_key_comp_param {
         int err_code;                           /*!< Indicate the result of adding local AppKey by the Provisioner */
+        uint16_t net_idx;                       /*!< NetKey Index */
         uint16_t app_idx;                       /*!< AppKey Index */
     } provisioner_add_app_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT */
     /**
@@ -1176,14 +1177,14 @@ typedef union {
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT
      */
-    struct ble_mesh_provisioner_delete_node_with_uuid_comp_data_comp_param {
+    struct ble_mesh_provisioner_delete_node_with_uuid_comp_param {
         int err_code;                           /*!< Indicate the result of deleting node with uuid by the Provisioner */
         uint8_t uuid[16];                       /*!< Node device uuid */
     } provisioner_delete_node_with_uuid_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT
      */
-    struct ble_mesh_provisioner_delete_node_with_addr_comp_data_comp_param {
+    struct ble_mesh_provisioner_delete_node_with_addr_comp_param {
         int err_code;                           /*!< Indicate the result of deleting node with unicast address by the Provisioner */
         uint16_t unicast_addr;                  /*!< Node unicast address */
     } provisioner_delete_node_with_addr_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT */
