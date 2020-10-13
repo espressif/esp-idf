@@ -107,7 +107,7 @@ void bt_mesh_node_reset(void)
 
     bt_mesh_cfg_reset();
 
-    bt_mesh_rx_reset();
+    bt_mesh_rx_reset(true);
     bt_mesh_tx_reset();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
@@ -199,10 +199,27 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
         return -EINVAL;
     }
 
-    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
+    /* Add this judgement here in case the device worked as a
+     * Provisioner previously. Before the corresponding info
+     * of Provisioner is erased from flash, users try to use
+     * the device as a node, which will cause the information
+     * in NVS been handled incorrectly.
+     */
+    u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
+    if (role != BLE_MESH_SETTINGS_ROLE_NONE &&
+        role != BLE_MESH_SETTINGS_ROLE_NODE) {
+        BT_ERR("%s, Mismatch role %u", __func__, role);
+        return -EIO;
+    }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_store_role();
+    if (role == BLE_MESH_SETTINGS_ROLE_NONE) {
+        bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
+    }
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS_BACKWARD_COMPATIBILITY) ||
+        role == BLE_MESH_SETTINGS_ROLE_NONE) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            bt_mesh_store_role();
+        }
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
@@ -225,6 +242,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 {
     if (bt_mesh_is_provisioned()) {
+        BT_WARN("%s, Already provisioned", __func__);
         return -EALREADY;
     }
 
@@ -504,10 +522,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     bt_mesh_comp_unprovision();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        if (param->erase) {
-            bt_mesh_clear_role();
-        }
-        bt_mesh_settings_deinit();
+        bt_mesh_settings_deinit(param->erase);
     }
 
     bt_mesh_timer_deinit();
@@ -532,6 +547,27 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
         return -EINVAL;
     }
 
+    /* Add this judgement here in case the device worked as a
+     * node previously. Before the corresponding information
+     * of the node is erased from flash, users try to use the
+     * device as a Provisioner, which will cause the information
+     * in NVS been handled incorrectly.
+     */
+    u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
+    if (role != BLE_MESH_SETTINGS_ROLE_NONE &&
+        role != BLE_MESH_SETTINGS_ROLE_PROV) {
+        BT_ERR("%s, Mismatch role %u", __func__, role);
+        return -EIO;
+    }
+
+    if (role == BLE_MESH_SETTINGS_ROLE_NONE) {
+        bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            bt_mesh_store_role();
+        }
+    }
+
     err = bt_mesh_provisioner_net_create();
     if (err) {
         BT_ERR("Failed to create network");
@@ -547,12 +583,6 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
     bt_mesh_provisioner_set_prov_bearer(bearers, false);
 
     bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
-
-    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_store_role();
-    }
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
