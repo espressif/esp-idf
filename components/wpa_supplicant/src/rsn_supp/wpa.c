@@ -2142,9 +2142,20 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-	is_wpa2_enterprise_connection()) {
-        pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
-        wpa_sm_set_pmk_from_pmksa(sm);
+        is_wpa2_enterprise_connection()) {
+        if (!esp_wifi_skip_supp_pmkcaching()) {
+            pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
+            wpa_sm_set_pmk_from_pmksa(sm);
+        } else {
+            struct rsn_pmksa_cache_entry *entry = NULL;
+
+            if (sm->pmksa) {
+                entry = pmksa_cache_get(sm->pmksa, (const u8 *)bssid, NULL, NULL);
+            }
+            if (entry) {
+                pmksa_cache_flush(sm->pmksa, NULL, entry->pmk, entry->pmk_len);
+            }
+        }
     }
 
     sm->eapol1_count = 0;
