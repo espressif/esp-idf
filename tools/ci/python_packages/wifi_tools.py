@@ -51,15 +51,25 @@ class wpa_cli:
         iface_path = service.GetInterface(self.iface_name)
         self.iface_obj = bus.get_object("fi.w1.wpa_supplicant1", iface_path)
         self.iface_ifc = dbus.Interface(self.iface_obj, "fi.w1.wpa_supplicant1.Interface")
+        self.iface_props = dbus.Interface(self.iface_obj, 'org.freedesktop.DBus.Properties')
         if self.iface_ifc is None:
             raise RuntimeError('supplicant : Failed to fetch interface')
 
-        self.old_network = self.iface_obj.Get("fi.w1.wpa_supplicant1.Interface", "CurrentNetwork",
-                                              dbus_interface='org.freedesktop.DBus.Properties')
+        self.old_network = self._get_iface_property("CurrentNetwork")
+        print("Old network is %s" % self.old_network)
+
         if self.old_network == '/':
             self.old_network = None
         else:
             self.connected = True
+
+    def _get_iface_property(self, name):
+        """ Read the property with 'name' from the wi-fi interface object
+
+        Note: The result is a dbus wrapped type, so should usually convert it to the corresponding native
+        Python type
+        """
+        return self.iface_props.Get("fi.w1.wpa_supplicant1.Interface", name)
 
     def connect(self, ssid, password):
         if self.connected is True:
@@ -69,6 +79,8 @@ class wpa_cli:
         if self.new_network is not None:
             self.iface_ifc.RemoveNetwork(self.new_network)
 
+        print("Pre-connect state is %s, IP is %s" % (self._get_iface_property("State"), get_wiface_IPv4(self.iface_name)))
+
         self.new_network = self.iface_ifc.AddNetwork({"ssid": ssid, "psk": password})
         self.iface_ifc.SelectNetwork(self.new_network)
 
@@ -76,7 +88,14 @@ class wpa_cli:
         retry = 10
         while retry > 0:
             time.sleep(5)
+
+            state = str(self._get_iface_property("State"))
+            print("wpa iface state %s (scanning %s)" % (state, bool(self._get_iface_property("Scanning"))))
+            if state in ["disconnected", "inactive"]:
+                self.iface_ifc.Reconnect()
+
             ip = get_wiface_IPv4(self.iface_name)
+            print("wpa iface %s IP %s" % (self.iface_name, ip))
             if ip is not None:
                 self.connected = True
                 return ip

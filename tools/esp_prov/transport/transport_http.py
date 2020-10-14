@@ -34,9 +34,9 @@ class Transport_HTTP(Transport):
             raise RuntimeError("Unable to resolve hostname :" + hostname)
 
         if ssl_context is None:
-            self.conn = HTTPConnection(hostname, timeout=30)
+            self.conn = HTTPConnection(hostname, timeout=45)
         else:
-            self.conn = HTTPSConnection(hostname, context=ssl_context, timeout=30)
+            self.conn = HTTPSConnection(hostname, context=ssl_context, timeout=45)
         try:
             print("Connecting to " + hostname)
             self.conn.connect()
