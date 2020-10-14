@@ -83,6 +83,7 @@
 /components/esp_ipc/                  @esp-idf-codeowners/system
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_netif/                @esp-idf-codeowners/network
+/components/esp_pm/                   @esp-idf-codeowners/power-management
 /components/esp_ringbuf/              @esp-idf-codeowners/system
 /components/esp_rom/                  @esp-idf-codeowners/system
 /components/esp_serial_slave_link/    @esp-idf-codeowners/peripherals
