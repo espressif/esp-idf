@@ -92,12 +92,13 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
         ESP32-PICO-KIT-1 <../hw-reference/esp32/get-started-pico-kit-1>
+        ESP32-PICO-DevKitM-2 <../hw-reference/esp32/get-started-pico-devkitm-2>
 
 .. only:: esp32s2
 
     .. toctree::
         :maxdepth: 1
-
+        
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
         ESP32-S2-DevKitM-1(U) <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
         ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
