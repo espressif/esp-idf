@@ -1,5 +1,6 @@
 [mapping:heap]
 archive: libheap.a
 entries:
+    heap_tlsf (noflash)
     multi_heap (noflash)
     multi_heap_poisoning (noflash)

@@ -29,8 +29,10 @@ void test_task_get_state(void* arg)
 
 void blocked_task(void *arg)
 {
+    uint32_t notify_value;
+
     while(1){
-        vTaskDelay(portMAX_DELAY);
+        xTaskNotifyWait(0, 0xFFFFFFFF, &notify_value, portMAX_DELAY);
     }
 }
 

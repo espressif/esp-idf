@@ -7,6 +7,7 @@ endif
 
 SOURCE_FILES = $(abspath \
     ../multi_heap.c \
+    ../heap_tlsf.c \
 	../multi_heap_poisoning.c \
 	test_multi_heap.cpp \
 	main.cpp \

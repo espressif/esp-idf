@@ -719,7 +719,7 @@ static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
     }
     // copy data from temporary DMA-capable buffer back to IRAM buffer and free the temporary one.
     if ((void *)trans_buf->buffer_to_rcv != &trans_desc->rx_data[0] &&
-        trans_buf->buffer_to_rcv != trans_desc->rx_buffer) {
+        trans_buf->buffer_to_rcv != trans_desc->rx_buffer) { // NOLINT(clang-analyzer-unix.Malloc)
         if (trans_desc->flags & SPI_TRANS_USE_RXDATA) {
             memcpy((uint8_t *) & trans_desc->rx_data[0], trans_buf->buffer_to_rcv, (trans_desc->rxlength + 7) / 8);
         } else {

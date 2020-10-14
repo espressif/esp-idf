@@ -362,7 +362,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         do {
             int tmr_id = 0;
             s_tmr = xTimerCreate("connTmr", (10000 / portTICK_RATE_MS),
-                               pdTRUE, (void *)tmr_id, a2d_app_heart_beat);
+                               pdTRUE, (void *) &tmr_id, a2d_app_heart_beat);
             xTimerStart(s_tmr, portMAX_DELAY);
         } while (0);
         break;

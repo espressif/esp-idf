@@ -564,7 +564,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
     ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
     TEST_ASSERT(esp_ptr_in_dram(data_dram));
-    TEST_ASSERT(esp_ptr_in_iram(data_iram));
+    TEST_ASSERT(esp_ptr_executable(data_iram) || esp_ptr_in_iram(data_iram) || esp_ptr_in_diram_iram(data_iram));
     TEST_ASSERT(esp_ptr_in_drom(data_drom));
 
     srand(52);

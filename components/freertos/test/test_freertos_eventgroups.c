@@ -125,7 +125,7 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
 }
 
 /*-----------------Test case for event group trace facilities-----------------*/
-#ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
+#ifdef  CONFIG_FREERTOS_USE_TRACE_FACILITY
 /*
  * Test event group Trace Facility functions such as
  * xEventGroupClearBitsFromISR(), xEventGroupSetBitsFromISR()
@@ -217,5 +217,4 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
     vSemaphoreDelete(done_sem);
     vTaskDelay(10);     //Give time for idle task to clear up deleted tasks
 }
-
 #endif      //CONFIG_FREERTOS_USE_TRACE_FACILITY

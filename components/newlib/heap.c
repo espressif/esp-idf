@@ -26,7 +26,6 @@
 extern void *heap_caps_malloc_default( size_t size );
 extern void *heap_caps_realloc_default( void *ptr, size_t size );
 
-
 void* malloc(size_t size)
 {
     return heap_caps_malloc_default(size);
@@ -77,6 +76,11 @@ void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
     return result;
 }
 
+void* memalign(size_t alignment, size_t n)
+{
+    return heap_caps_aligned_alloc(alignment, n, MALLOC_CAP_DEFAULT);
+}
+
 /* No-op function, used to force linking this file,
    instead of the heap implementation from newlib.
  */
@@ -89,13 +93,6 @@ void newlib_include_heap_impl(void)
    Define them as non-functional stubs here, so that the application
    can not cause the newlib heap implementation to be linked in
  */
-void* memalign(size_t alignment, size_t n)
-{
-    extern void memalign_function_was_linked_but_unsupported_in_esp_idf(void);
-    memalign_function_was_linked_but_unsupported_in_esp_idf();
-    return NULL;
-    
-}
 
 int malloc_trim(size_t pad)
 {

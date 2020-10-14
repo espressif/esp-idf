@@ -299,6 +299,8 @@ INPUT = \
     $(IDF_PATH)/components/freertos/include/freertos/semphr.h \
     $(IDF_PATH)/components/freertos/include/freertos/timers.h \
     $(IDF_PATH)/components/freertos/include/freertos/event_groups.h \
+    $(IDF_PATH)/components/freertos/include/freertos/stream_buffer.h \
+    $(IDF_PATH)/components/freertos/include/freertos/message_buffer.h \
     ### Ringbuffer
     $(IDF_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     ### Helper functions for error codes

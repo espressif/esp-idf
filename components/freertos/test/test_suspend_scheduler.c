@@ -61,7 +61,7 @@ static void counter_task_fn(void *vp_config)
 TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[freertos]")
 {
     isr_count = 0;
-    isr_semaphore = xSemaphoreCreateMutex();
+    isr_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t counter_task;
     intr_handle_t isr_handle = NULL;
 
