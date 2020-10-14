@@ -1612,7 +1612,7 @@ void bt_abort_with_coredump_log(uint16_t error)
     asm volatile ("rsr %0, INTENABLE\n" :"=r"(intenable));
     RMT_DBG_LOG_ERROR("abort!0x%x INT R:0x%x EN 0x%x",error,*((uint32_t*)BT_INT_STA_REG),intenable);
     RMT_DBG_LOG_ERROR("BLE INT R:0x%x",*((uint32_t*)BLE_INT_STA_REG));
-    r_assert_with_log(error,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
+    abort_with_more_log(error,intenable,*((uint32_t*)BT_INT_STA_REG),*((uint32_t*)BLE_INT_STA_REG),(uint32_t)(esp_timer_get_time()/1000));
 }
 
 
