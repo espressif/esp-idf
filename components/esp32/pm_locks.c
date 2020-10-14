@@ -173,19 +173,19 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
 
     fprintf(stream, "Lock stats:\n");
     esp_pm_lock_t* it;
-    char line[64];
+    char line[80];
     SLIST_FOREACH(it, &s_list, next) {
         char *buf = line;
-        size_t len = sizeof(line) - 1;
-        line[len] = 0;
+        size_t len = sizeof(line);
         size_t cb;
 
         portENTER_CRITICAL(&it->spinlock);
         if (it->name == NULL) {
             cb = snprintf(buf, len, "lock@%p ", it);
         } else {
-            cb = snprintf(buf, len, "%-15s ", it->name);
+            cb = snprintf(buf, len, "%-15.15s ", it->name);
         }
+        assert(cb <= len); // above formats should fit into sizeof(line)
         buf += cb;
         len -= cb;
 #ifdef WITH_PROFILING
@@ -193,12 +193,12 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
         if (it->count > 0) {
             time_held += cur_time - it->last_taken;
         }
-        snprintf(buf, len, "%10s  %3d  %3d  %9d  %9lld  %3lld%%\n",
+        snprintf(buf, len, "%14s  %3d  %3d  %9d  %12lld  %3lld%%\n",
                 s_lock_type_names[it->type], it->arg,
                 it->count, it->times_taken, time_held,
                 (time_held + cur_time_d100 - 1) / cur_time_d100);
 #else
-        snprintf(buf, len, "%10s  %3d  %3d\n", s_lock_type_names[it->type], it->arg, it->count);
+        snprintf(buf, len, "%14s  %3d  %3d\n", s_lock_type_names[it->type], it->arg, it->count);
 #endif // WITH_PROFILING
         portEXIT_CRITICAL(&it->spinlock);
         fputs(line, stream);
