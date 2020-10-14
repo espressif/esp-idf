@@ -237,6 +237,12 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             // No secure boot, but SHA-256 can be appended for basic corruption detection
             if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
                 err = verify_simple_hash(sha_handle, data);
+#ifdef CONFIG_IDF_ENV_FPGA
+                if (err != ESP_OK) {
+                    ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
+                    err = ESP_OK;
+                }
+#endif
                 sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
             }
 #endif // SECURE_BOOT_CHECK_SIGNATURE
