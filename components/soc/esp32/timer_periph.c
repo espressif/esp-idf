@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "soc/soc.h"
+#include "soc/timer_periph.h"
 
-#define SOC_TIMER_GROUP_SUPPORT_XTAL 1
+const timer_group_signal_conn_t timer_group_periph_signals = {
+    .groups = {
+        [0] = {
+            .module = PERIPH_TIMG0_MODULE,
+            .t0_irq_id = ETS_TG0_T0_LEVEL_INTR_SOURCE
+        },
+        [1] = {
+            .module = PERIPH_TIMG1_MODULE,
+            .t0_irq_id = ETS_TG1_T0_LEVEL_INTR_SOURCE,
+        }
+    }
+};

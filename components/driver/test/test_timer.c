@@ -803,7 +803,7 @@ TEST_CASE("Timer interrupt register", "[hw_timer][leaks=200]")
     }
 }
 
-#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
 /**
  * Timer clock source:
  * 1. configure clock source as APB clock, and enable timer interrupt

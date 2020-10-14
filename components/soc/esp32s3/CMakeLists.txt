@@ -15,6 +15,7 @@ set(srcs
     "sigmadelta_periph.c"
     "soc_memory_layout.c"
     "spi_periph.c"
+    "timer_periph.c"
     "touch_sensor_periph.c"
     "uart_periph.c")
 

@@ -17,10 +17,10 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "hal/timer_hal.h"
+#include "soc/timer_periph.h"
 #include "soc/rtc.h"
 
 static const char *TIMER_TAG = "timer_group";
@@ -83,7 +83,7 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
         uint32_t div;
         timer_hal_get_divider(&(p_timer_obj[group_num][timer_num]->hal), &div);
         *time = (double)timer_val * div / rtc_clk_apb_freq_get();
-#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
         if (timer_hal_get_use_xtal(&(p_timer_obj[group_num][timer_num]->hal))) {
             *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * 1000000);
         }
@@ -266,36 +266,10 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
     TIMER_CHECK(fn != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(p_timer_obj[group_num][timer_num] != NULL, TIMER_NEVER_INIT_ERROR, ESP_ERR_INVALID_ARG);
 
-    int intr_source = 0;
     uint32_t status_reg = 0;
     uint32_t mask = 0;
-    switch (group_num) {
-    case TIMER_GROUP_0:
-    default:
-        intr_source = ETS_TG0_T0_LEVEL_INTR_SOURCE + timer_num;
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE)) {
-            intr_source = ETS_TG0_T0_EDGE_INTR_SOURCE + timer_num;
-        }
-#endif
-        timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_0][timer_num]->hal), &status_reg, &mask);
-        break;
-    case TIMER_GROUP_1:
-        intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE)) {
-            intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
-        }
-#endif
-        if ((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
-            intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
-        } else {
-            intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
-        }
-        timer_hal_get_status_reg_mask_bit(&(p_timer_obj[TIMER_GROUP_1][timer_num]->hal), &status_reg, &mask);
-        break;
-    }
-    return esp_intr_alloc_intrstatus(intr_source, intr_alloc_flags, status_reg, mask, fn, arg, handle);
+    timer_hal_get_status_reg_mask_bit(&(p_timer_obj[group_num][timer_num]->hal), &status_reg, &mask);
+    return esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_num].t0_irq_id + timer_num, intr_alloc_flags, status_reg, mask, fn, arg, handle);
 }
 
 esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer_config_t *config)
@@ -305,11 +279,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TIMER_CHECK(config != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(config->divider > 1 && config->divider < 65537, DIVIDER_RANGE_ERROR, ESP_ERR_INVALID_ARG);
 
-    if (group_num == TIMER_GROUP_0) {
-        periph_module_enable(PERIPH_TIMG0_MODULE);
-    } else if (group_num == TIMER_GROUP_1) {
-        periph_module_enable(PERIPH_TIMG1_MODULE);
-    }
+    periph_module_enable(timer_group_periph_signals.groups[group_num].module);
 
     if (p_timer_obj[group_num][timer_num] == NULL) {
         p_timer_obj[group_num][timer_num] = (timer_obj_t *) heap_caps_calloc(1, sizeof(timer_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -327,15 +297,12 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     timer_hal_set_divider(&(p_timer_obj[group_num][timer_num]->hal), config->divider);
     timer_hal_set_counter_increase(&(p_timer_obj[group_num][timer_num]->hal), config->counter_dir);
     timer_hal_set_alarm_enable(&(p_timer_obj[group_num][timer_num]->hal), config->alarm_en);
-    if (config->intr_type == TIMER_INTR_LEVEL) {
-        timer_hal_set_level_int_enable(&(p_timer_obj[group_num][timer_num]->hal), true);
+    timer_hal_set_level_int_enable(&(p_timer_obj[group_num][timer_num]->hal), true);
+    if (config->intr_type != TIMER_INTR_LEVEL) {
+        ESP_LOGW(TIMER_TAG, "only support Level Interrupt, switch to Level Interrupt instead");
     }
-    // currently edge interrupt is not supported
-    // if (config->intr_type == TIMER_INTR_EDGE) {
-    //     timer_hal_set_edge_int_enable(&(p_timer_obj[group_num][timer_num]->hal), true);
-    // }
     timer_hal_set_counter_enable(&(p_timer_obj[group_num][timer_num]->hal), config->counter_en);
-#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
     timer_hal_set_use_xtal(&(p_timer_obj[group_num][timer_num]->hal), config->clk_src);
 #endif
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
@@ -450,9 +417,12 @@ uint32_t IRAM_ATTR timer_group_get_intr_status_in_isr(timer_group_t group_num)
     uint32_t intr_status = 0;
     if (p_timer_obj[group_num][TIMER_0] != NULL) {
         timer_hal_get_intr_status(&(p_timer_obj[group_num][TIMER_0]->hal), &intr_status);
-    } else if (p_timer_obj[group_num][TIMER_1] != NULL) {
+    }
+#if SOC_TIMER_GROUP_TIMERS_PER_GROUP > 1
+    else if (p_timer_obj[group_num][TIMER_1] != NULL) {
         timer_hal_get_intr_status(&(p_timer_obj[group_num][TIMER_1]->hal), &intr_status);
     }
+#endif
     return intr_status;
 }
 

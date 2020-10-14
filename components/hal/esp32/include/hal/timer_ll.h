@@ -302,7 +302,7 @@ FORCE_INLINE_ATTR void timer_ll_clear_intr_status(timg_dev_t *hw, timer_idx_t ti
  */
 FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_status)
 {
-    *intr_status = hw->int_st_timers.val;
+    *intr_status = hw->int_st_timers.val & 0x03;
 }
 
 /**
@@ -316,7 +316,7 @@ FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_s
 FORCE_INLINE_ATTR void timer_ll_get_intr_raw_status(timer_group_t group_num, uint32_t *intr_raw_status)
 {
     timg_dev_t *hw = TIMER_LL_GET_HW(group_num);
-    *intr_raw_status = hw->int_raw.val;
+    *intr_raw_status = hw->int_raw.val & 0x03;
 }
 
 /**
