@@ -83,7 +83,7 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
         uint32_t div;
         timer_hal_get_divider(&(p_timer_obj[group_num][timer_num]->hal), &div);
         *time = (double)timer_val * div / rtc_clk_apb_freq_get();
-#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
         if (timer_hal_get_use_xtal(&(p_timer_obj[group_num][timer_num]->hal))) {
             *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * 1000000);
         }
@@ -302,7 +302,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
         ESP_LOGW(TIMER_TAG, "only support Level Interrupt, switch to Level Interrupt instead");
     }
     timer_hal_set_counter_enable(&(p_timer_obj[group_num][timer_num]->hal), config->counter_en);
-#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
     timer_hal_set_use_xtal(&(p_timer_obj[group_num][timer_num]->hal), config->clk_src);
 #endif
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
