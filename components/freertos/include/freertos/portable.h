@@ -202,7 +202,7 @@ BaseType_t xPortInterruptedFromISRContext(void);
 
 /* Multi-core: get current core ID */
 static inline uint32_t IRAM_ATTR xPortGetCoreID(void) {
-    return cpu_hal_get_core_id();
+    return (uint32_t) cpu_hal_get_core_id();
 }
 
 /* Get tick rate per second */
@@ -230,12 +230,11 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 }
 #endif
 
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) 
+static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)    
+#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
     compare_and_set_extram(addr, compare, set);
-#endif    
+#endif
 }
 
 #endif /* PORTABLE_H */
-
