@@ -32,7 +32,7 @@
 // runner. Also avoid using GPIO18.
 #define TEST_GPIO_EXT_OUT_IO        17  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO         21  // default input GPIO
-#define TEST_GPIO_OUTPUT_PIN        26
+#define TEST_GPIO_OUTPUT_PIN        12
 #define TEST_GPIO_INPUT_ONLY_PIN    46
 #define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_46
 #endif
@@ -153,7 +153,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 {
     //error param test
     //ESP32 test 41 bit, ESP32-S2 test 48 bit
-    gpio_config_t io_config;
+    gpio_config_t io_config = { 0 };
     io_config.intr_type = GPIO_INTR_DISABLE;
     io_config.pin_bit_mask = ((uint64_t)1<<(GPIO_NUM_MAX+1));
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
