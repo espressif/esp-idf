@@ -33,6 +33,10 @@
 #include "lwip/dns.h"
 #endif
 
+#if CONFIG_LWIP_TCP_ISN_HOOK
+#include "tcp_isn.h"
+#endif
+
 #include "esp_netif_lwip_ppp.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -263,6 +267,18 @@ esp_err_t esp_netif_init(void)
 {
     if (tcpip_initialized == false) {
         tcpip_initialized = true;
+#if CONFIG_LWIP_TCP_ISN_HOOK
+        uint8_t rand_buf[16];
+        /*
+         * This is early startup code where WiFi/BT is yet to be enabled and hence
+         * relevant entropy source is not available. However, bootloader enables
+         * SAR ADC based entropy source at its initialization, and our requirement
+         * of random bytes is pretty small (16), so we can assume that following
+         * API will provide sufficiently random data.
+         */
+        esp_fill_random(rand_buf, sizeof(rand_buf));
+        lwip_init_tcp_isn(esp_log_timestamp(), rand_buf);
+#endif
         tcpip_init(NULL, NULL);
         ESP_LOGD(TAG, "LwIP stack has been initialized");
     }
