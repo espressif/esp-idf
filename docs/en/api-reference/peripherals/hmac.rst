@@ -88,7 +88,23 @@ HMAC for Enabling JTAG
 Key Purpose values: 6, 5
 
 The third application is using the HMAC as a key to enable JTAG if it was soft-disabled before.
-This functionality is currently not implemented.
+Following is the procedure to re-enable the JTAG
+
+Setup
+
+1. Generate a 256-bit HMAC secret key to use for JTAG re-enable.
+2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ets_efuse_write_key() function in the firmware or using espefuse.py from the host.
+3. Configure the eFuse key block to be read protected using the esp_efuse_set_read_protect(), so that software cannot read back the value.
+4. Burn the "soft JTAG disable" bit by esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG). This will permanently disable JTAG unless the correct key value is provided by software.
+
+JTAG enable
+
+1. The key to re-enable JTAG is the output of the HMAC-SHA256 function using the secret key in eFuse and 32 0x00 bytes as the message.
+2. Pass this key value when calling the :cpp:func:`esp_hmac_jtag_enable` function from the firmware.
+3. To re-disable JTAG in the firmware, reset the system or call :cpp:func:`esp_hmac_jtag_disable`.
+
+For more details, check the chapter *HMAC Module* in the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+
 
 Application Outline
 -------------------
