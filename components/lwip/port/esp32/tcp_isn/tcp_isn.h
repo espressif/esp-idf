@@ -27,8 +27,8 @@
  * Author: David van Moolenbroek <david@minix3.org>
  */
 
-#ifndef LWIP_HDR_CONTRIB_ADDONS_TCP_ISN_H
-#define LWIP_HDR_CONTRIB_ADDONS_TCP_ISN_H
+#ifndef LWIP_TCP_ISN_H
+#define LWIP_TCP_ISN_H
 
 #include "lwip/opt.h"
 #include "lwip/ip_addr.h"
@@ -45,4 +45,4 @@ u32_t lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
 }
 #endif
 
-#endif /* LWIP_HDR_CONTRIB_ADDONS_TCP_ISN_H */
+#endif /* LWIP_TCP_ISN_H */
