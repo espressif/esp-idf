@@ -4,6 +4,7 @@ set(include_dirs
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
+    port/esp32/tcp_isn
     )
 
 set(srcs
@@ -133,6 +134,10 @@ if(CONFIG_VFS_SUPPORT_IO)
     list(APPEND srcs "port/esp32/vfs_lwip.c")
 else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
+endif()
+
+if(CONFIG_LWIP_TCP_ISN_HOOK)
+    list(APPEND srcs "port/esp32/tcp_isn/tcp_isn.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
