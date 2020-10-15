@@ -143,7 +143,7 @@ CURRENT_PLATFORM = PLATFORM_FROM_NAME.get(PYTHON_PLATFORM, UNKNOWN_PLATFORM)
 EXPORT_SHELL = 'shell'
 EXPORT_KEY_VALUE = 'key-value'
 
-ISRG_X1_ROOT_CERT = """
+ISRG_X1_ROOT_CERT = u"""
 -----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
@@ -307,7 +307,11 @@ def unpack(filename, destination):
 def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
     url_type, path = splittype(url)
 
-    with contextlib.closing(urlopen(url, data, context=context)) as fp:
+    # urlopen doesn't have context argument in Python <=2.7.9
+    extra_urlopen_args = {}
+    if context:
+        extra_urlopen_args["context"] = context
+    with contextlib.closing(urlopen(url, data, **extra_urlopen_args)) as fp:
         headers = fp.info()
 
         # Just return the local path and the "headers" for file://
@@ -665,8 +669,13 @@ class IDFTool(object):
                 # For dl.espressif.com, add the ISRG x1 root certificate.
                 # This works around the issue with outdated certificate stores in some installations.
                 if "dl.espressif.com" in url:
-                    ctx = ssl.create_default_context()
-                    ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
+                    try:
+                        ctx = ssl.create_default_context()
+                        ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
+                    except AttributeError:
+                        # no ssl.create_default_context or load_verify_locations cadata argument
+                        # in Python <=2.7.8
+                        pass
 
                 urlretrieve_ctx(url, local_temp_path, report_progress if not global_non_interactive else None, context=ctx)
                 sys.stdout.write("\rDone\n")
