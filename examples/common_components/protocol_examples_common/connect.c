@@ -105,6 +105,7 @@ esp_err_t example_disconnect(void)
     stop();
     ESP_LOGI(TAG, "Disconnected from %s", s_connection_name);
     s_connection_name = NULL;
+    ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&stop));
     return ESP_OK;
 }
 
