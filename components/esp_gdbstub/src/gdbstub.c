@@ -19,8 +19,11 @@
 
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
+static inline int gdb_tid_to_task_index(int tid);
+static inline int task_index_to_gdb_tid(int tid);
 static void init_task_info(void);
 static void find_paniced_task_index(void);
+static void set_active_task(size_t index);
 static int handle_task_commands(unsigned char *cmd, int len);
 #endif
 
@@ -44,12 +47,13 @@ void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame)
         s_scratch.state = GDBSTUB_STARTED;
         /* Save the paniced frame and get the list of tasks */
         memcpy(&s_scratch.paniced_frame, frame, sizeof(*frame));
-        esp_gdbstub_frame_to_regfile(frame, &s_scratch.regfile);
         init_task_info();
         find_paniced_task_index();
         /* Current task is the paniced task */
         if (s_scratch.paniced_task_index == GDBSTUB_CUR_TASK_INDEX_UNKNOWN) {
-            s_scratch.current_task_index = 0;
+            set_active_task(0);
+        } else {
+            set_active_task(s_scratch.paniced_task_index);
         }
     }
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
@@ -162,6 +166,34 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
+/* Some terminology related to task/thread indices:
+ *
+ * "task index" — Index used here in gdbstub.c to enumberate all the tasks.
+ *                Range is from 0 to <number of tasks> - 1.
+ *                The order is defined by uxTaskGetSnapshotAll.
+ *
+ * "GDB TID" — Thread ID used by GDB internally and in the remote protocol.
+ *             IDs of real threads can be any positive values other than 0.
+ *             For example, OpenOCD uses the TCB pointer (cast to a 32-bit int) as GDB TID.
+ *             Values 0 and -1, when used in place of TID in the remote protocol
+ *             have special meanings:
+ *             -1: indicates all threads, may be used in 'Hc' command
+ *              0: indicates an arbitrary process or thread (GDB client doesn't care, server decides)
+ *
+ * Since GDB TIDs are arbitrary, except that 0 is reserved, we set them using a simple rule:
+ *    GDB TID = task index + 1.
+ * The two functions below perform the conversions between the kinds of IDs.
+ */
+static inline int gdb_tid_to_task_index(int tid)
+{
+    return tid - 1;
+}
+
+static inline int task_index_to_gdb_tid(int tid)
+{
+    return tid + 1;
+}
+
 static void init_task_info(void)
 {
     unsigned tcb_size;
@@ -191,29 +223,46 @@ static void find_paniced_task_index(void)
     s_scratch.paniced_task_index = GDBSTUB_CUR_TASK_INDEX_UNKNOWN;
 }
 
+/** Select the current task and update the regfile */
+static void set_active_task(size_t index)
+{
+    if (index == s_scratch.paniced_task_index) {
+        /* Have to get the registers from exception frame */
+        esp_gdbstub_frame_to_regfile(&s_scratch.paniced_frame, &s_scratch.regfile);
+    } else {
+        /* Get the registers from TCB.
+         * FIXME: for the task currently running on the other CPU, extracting the registers from TCB
+         * isn't valid. Need to use some IPC mechanism to obtain the registers of the other CPU.
+         */
+        TaskHandle_t handle = NULL;
+        get_task_handle(index, &handle);
+        if (handle != NULL) {
+            esp_gdbstub_tcb_to_regfile(handle, &s_scratch.regfile);
+        }
+    }
+    s_scratch.current_task_index = index;
+}
+
 /** H command sets the "current task" for the purpose of further commands */
 static void handle_H_command(const unsigned char* cmd, int len)
 {
-    if (cmd[1] == 'g' || cmd[1] == 'c') {
-        const char *ret = "OK";
+    const char *ret = "OK";
+    if (cmd[1] == 'g') {
         cmd += 2;
-        int requested_task_index = esp_gdbstub_gethex(&cmd, -1);
-        if (requested_task_index == s_scratch.paniced_task_index ||
-                (requested_task_index == 0 && s_scratch.current_task_index == GDBSTUB_CUR_TASK_INDEX_UNKNOWN)) {
-            /* Get the registers of the paniced task */
-            esp_gdbstub_frame_to_regfile(&s_scratch.paniced_frame, &s_scratch.regfile);
-        } else if (requested_task_index > s_scratch.task_count) {
+        int requested_tid = esp_gdbstub_gethex(&cmd, -1);
+        int requested_task_index = gdb_tid_to_task_index(requested_tid);
+        if (requested_tid == 0) {
+            /* 0 means "arbitrary process or thread", keep the current thread */
+        } else if (requested_task_index >= s_scratch.task_count ||
+                   requested_tid == -1) { /* -1 means "all threads", which doesn't make sense for "Hg" */
             ret = "E00";
         } else {
-            TaskHandle_t handle = NULL;
-            get_task_handle(requested_task_index, &handle);
-            /* FIXME: for the task currently running on the other CPU, extracting the registers from TCB
-             * isn't valid. Need to use some IPC mechanism to obtain the registers of the other CPU
-             */
-            if (handle != NULL) {
-                esp_gdbstub_tcb_to_regfile(handle, &s_scratch.regfile);
-            }
+            set_active_task(requested_task_index);
         }
+        esp_gdbstub_send_str_packet(ret);
+    } else if (cmd[1] == 'c') {
+        /* Select the task for "continue" and "step" operations. No-op in post-mortem mode. */
+        /* Note that the argument may be -1 to indicate "all threads" or 0 to indicate "any thread" */
         esp_gdbstub_send_str_packet(ret);
     } else {
         esp_gdbstub_send_str_packet(NULL);
@@ -225,7 +274,7 @@ static void handle_qC_command(const unsigned char* cmd, int len)
 {
     esp_gdbstub_send_start();
     esp_gdbstub_send_str("QC");
-    esp_gdbstub_send_hex(s_scratch.current_task_index, 32);
+    esp_gdbstub_send_hex(task_index_to_gdb_tid(s_scratch.current_task_index), 32);
     esp_gdbstub_send_end();
 }
 
@@ -238,50 +287,42 @@ static void handle_T_command(const unsigned char* cmd, int len)
     esp_gdbstub_send_str_packet("OK");
 }
 
+/** Called by qfThreadInfo and qsThreadInfo handlers */
+static void send_single_thread_info(int task_index)
+{
+    esp_gdbstub_send_start();
+    esp_gdbstub_send_str("m");
+    esp_gdbstub_send_hex(task_index_to_gdb_tid(task_index), 32);
+    esp_gdbstub_send_end();
+}
+
 /** qfThreadInfo requests the start of the thread list, qsThreadInfo (below) is repeated to
  *  get the subsequent threads.
  */
 static void handle_qfThreadInfo_command(const unsigned char* cmd, int len)
 {
-    /* The first task in qfThreadInfo reply is going to be the one which GDB will request to stop.
-     * Therefore it has to be the paniced task.
-     * Reply with the paniced task index, and later skip over this index while handling qsThreadInfo
-     */
-    esp_gdbstub_send_start();
-    esp_gdbstub_send_str("m");
-    esp_gdbstub_send_hex(s_scratch.paniced_task_index, 32);
-    esp_gdbstub_send_end();
-
-    s_scratch.thread_info_index = 0;
+    assert(s_scratch.task_count > 0);  /* There should be at least one task */
+    send_single_thread_info(0);
+    s_scratch.thread_info_index = 1;
 }
 
 static void handle_qsThreadInfo_command(const unsigned char* cmd, int len)
 {
-    int next_task_index = ++s_scratch.thread_info_index;
-
-    if (next_task_index == s_scratch.task_count) {
+    int task_index = s_scratch.thread_info_index;
+    if (task_index == s_scratch.task_count) {
         /* No more tasks */
         esp_gdbstub_send_str_packet("l");
         return;
     }
-
-    if (next_task_index == s_scratch.paniced_task_index) {
-        /* Have already sent this one in the reply to qfThreadInfo, skip over it */
-        handle_qsThreadInfo_command(cmd, len);
-        return;
-    }
-
-    esp_gdbstub_send_start();
-    esp_gdbstub_send_str("m");
-    esp_gdbstub_send_hex(next_task_index, 32);
-    esp_gdbstub_send_end();
+    send_single_thread_info(s_scratch.thread_info_index);
+    s_scratch.thread_info_index++;
 }
 
 /** qThreadExtraInfo requests the thread name */
 static void handle_qThreadExtraInfo_command(const unsigned char* cmd, int len)
 {
     cmd += sizeof("qThreadExtraInfo,") - 1;
-    int task_index = esp_gdbstub_gethex(&cmd, -1);
+    int task_index = gdb_tid_to_task_index(esp_gdbstub_gethex(&cmd, -1));
     TaskHandle_t handle;
     if (!get_task_handle(task_index, &handle)) {
         esp_gdbstub_send_str_packet("E01");

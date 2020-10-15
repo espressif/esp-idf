@@ -17,7 +17,11 @@ except ImportError:
 import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
-from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
+try:
+    from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
+except ImportError:
+    SUPPORTED_TARGETS = []
+    PREVIEW_TARGETS = []
 
 IDF_PATH_FROM_ENV = os.getenv('IDF_PATH')
 
