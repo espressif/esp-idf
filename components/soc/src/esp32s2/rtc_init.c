@@ -21,7 +21,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
 #include "soc_log.h"
 
 static const char *TAG = "rtc_init";
@@ -179,13 +179,13 @@ void rtc_init(rtc_config_t cfg)
         rtc_clk_cpu_freq_set_xtal();
 
 
-        I2C_WRITEREG_MASK_RTC(I2C_ULP, I2C_ULP_IR_RESETB, 0);
-        I2C_WRITEREG_MASK_RTC(I2C_ULP, I2C_ULP_IR_RESETB, 1);
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
         bool odone_flag = 0;
         bool bg_odone_flag = 0;
         while(1) {
-            odone_flag = I2C_READREG_MASK_RTC(I2C_ULP, I2C_ULP_O_DONE_FLAG);
-            bg_odone_flag = I2C_READREG_MASK_RTC(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
+            odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_O_DONE_FLAG);
+            bg_odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
             cycle1 = rtc_time_get();
             if (odone_flag && bg_odone_flag)
                 break;

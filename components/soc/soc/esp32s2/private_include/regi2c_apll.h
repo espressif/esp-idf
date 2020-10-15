@@ -15,16 +15,16 @@
 #pragma once
 
 /**
- * @file i2c_apll.h
+ * @file regi2c_apll.h
  * @brief Register definitions for audio PLL (APLL)
  *
  * This file lists register fields of APLL, located on an internal configuration
- * bus. These definitions are used via macros defined in i2c_rtc_clk.h, by
+ * bus. These definitions are used via macros defined in regi2c_ctrl.h, by
  * rtc_clk_apll_enable function in rtc_clk.c.
  */
 
 #define I2C_APLL            0X6D
-#define I2C_APLL_HOSTID     3
+#define I2C_APLL_HOSTID     1
 
 #define I2C_APLL_IR_CAL_DELAY        0
 #define I2C_APLL_IR_CAL_DELAY_MSB    3

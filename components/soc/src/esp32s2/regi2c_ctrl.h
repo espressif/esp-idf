@@ -14,10 +14,11 @@
 
 #pragma once
 
-#include "i2c_apll.h"
-#include "i2c_bbpll.h"
-#include "i2c_ulp.h"
-#include "i2c_saradc.h"
+#include <stdint.h>
+#include "regi2c_apll.h"
+#include "regi2c_bbpll.h"
+#include "regi2c_ulp.h"
+#include "regi2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,11 @@ extern "C" {
 #define I2C_APLL_M      (BIT(14))
 /* Clear to enable BBPLL */
 #define I2C_BBPLL_M     (BIT(17))
+/* Clear to enable SAR */
+#define I2C_SAR_M       (BIT(18))
+
+#define ANA_CONFIG2_REG 0x6000E048
+#define ANA_SAR_CFG2_M  (BIT(16))
 
 /* Read/Write internal control bus */
 uint8_t i2c_rtc_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add);
@@ -40,18 +46,18 @@ void i2c_rtc_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uin
 void i2c_rtc_init(void);
 
 /* Convenience macros for the above functions, these use register definitions
- * from i2c_apll.h/i2c_bbpll.h header files.
+ * from regi2c_apll.h/regi2c_bbpll.h header files.
  */
-#define I2C_WRITEREG_MASK_RTC(block, reg_add, indata) \
+#define REGI2C_WRITE_MASK(block, reg_add, indata) \
       i2c_rtc_write_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
 
-#define I2C_READREG_MASK_RTC(block, reg_add) \
+#define REGI2C_READ_MASK(block, reg_add) \
       i2c_rtc_read_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
 
-#define I2C_WRITEREG_RTC(block, reg_add, indata) \
+#define REGI2C_WRITE(block, reg_add, indata) \
       i2c_rtc_write_reg(block, block##_HOSTID,  reg_add, indata)
 
-#define I2C_READREG_RTC(block, reg_add) \
+#define REGI2C_READ(block, reg_add) \
       i2c_rtc_read_reg(block, block##_HOSTID,  reg_add)
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 set(srcs
         "rtc_clk.c"
-        "i2c_rtc_clk.c"
+        "regi2c_ctrl.c"
         "rtc_clk_init.c"
         "rtc_init.c"
         "rtc_pm.c"

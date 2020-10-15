@@ -20,16 +20,16 @@
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
-#include "i2c_rtc_clk.h"
-#include "i2c_ulp.h"
+#include "regi2c_ctrl.h"
+#include "regi2c_ulp.h"
 
 #define RTC_CNTL_MEM_FORCE_PU (RTC_CNTL_SLOWMEM_FORCE_PU | RTC_CNTL_FASTMEM_FORCE_PU)
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
 
 void rtc_init(rtc_config_t cfg)
 {
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
     rtc_clk_set_xtal_wait();
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, cfg.pll_wait);
@@ -54,8 +54,8 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_WAIT_TIMER, rtc_init_cfg.rtc_mem_wait_cycles);
 
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, RTC_CNTL_DBIAS_1V10);
-    I2C_WRITEREG_MASK_RTC(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, RTC_CNTL_DBIAS_1V10);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, RTC_CNTL_DBIAS_1V10);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, RTC_CNTL_DBIAS_1V10);
 
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
@@ -170,13 +170,13 @@ void rtc_init(rtc_config_t cfg)
         rtc_clk_cpu_freq_get_config(&old_config);
         rtc_clk_cpu_freq_set_xtal();
 
-        I2C_WRITEREG_MASK_RTC(I2C_ULP, I2C_ULP_IR_RESETB, 0);
-        I2C_WRITEREG_MASK_RTC(I2C_ULP, I2C_ULP_IR_RESETB, 1);
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
         bool odone_flag = 0;
         bool bg_odone_flag = 0;
         while (1) {
-            odone_flag = I2C_READREG_MASK_RTC(I2C_ULP, I2C_ULP_O_DONE_FLAG);
-            bg_odone_flag = I2C_READREG_MASK_RTC(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
+            odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_O_DONE_FLAG);
+            bg_odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
             cycle1 = rtc_time_get();
             if (odone_flag && bg_odone_flag) {
                 break;
