@@ -455,35 +455,36 @@ function run_tests()
 
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
-    rm -rf build
+    rm -r build sdkconfig
     echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
     idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults" reconfigure
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
-    rm -r sdkconfig.defaults build
-    # Test for external libraries in custom CMake projects with ESP-IDF components linked
-    mkdir build && touch build/sdkconfig
-    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> build/sdkconfig
-    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> build/sdkconfig
+    rm -r build sdkconfig sdkconfig.defaults
+
+    print_status "Test for external libraries in custom CMake projects with ESP-IDF components linked"
+    mkdir build
+    IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
+    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > $IDF_AS_LIB/sdkconfig
+    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> $IDF_AS_LIB/sdkconfig
     # note: we just need to run cmake
-    (cd build && cmake $IDF_PATH/examples/build_system/cmake/idf_as_lib -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
+    (cd build && cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
-    rm -r build
-    #Test for various strategies
+
     for strat in MEMW NOPS DUPLDST; do
-        rm -r build sdkconfig.defaults sdkconfig sdkconfig.defaults.esp32
+        print_status "Test for external libraries in custom CMake projects with PSRAM strategy $strat"
+        rm -r build sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
         stratlc=`echo $strat | tr A-Z a-z`
-        mkdir build && touch build/sdkconfig
         echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_$strat=y"  >> sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
         # note: we do 'reconfigure' here, as we just need to run cmake
         idf.py reconfigure
         grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
-        (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-strategy=$stratlc) && failure "All commands in compile_commands.json should use PSRAM cache workaround strategy $strat when selected"
+        (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-strategy=$stratlc) && failure "All commands in compile_commands.json should use PSRAM cache workaround strategy"
         echo ${PWD}
         rm -r sdkconfig.defaults build
     done

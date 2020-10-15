@@ -14,7 +14,7 @@ if("${TARGET}" STREQUAL "esp32")
                     # processing the component is needed for flashing related
                     # targets and file generation
                     COMPONENTS esp32 freertos esptool_py
-                    SDKCONFIG ${CMAKE_BINARY_DIR}/sdkconfig
+                    SDKCONFIG ${CMAKE_CURRENT_LIST_DIR}/sdkconfig
                     BUILD_DIR ${CMAKE_BINARY_DIR})
 else()
     # Create stubs for esp32 and freertos, stub::esp32 and stub::freertos
