@@ -327,6 +327,17 @@ menu "LWIP"
 
     menu "TCP"
 
+        config LWIP_TCP_ISN_HOOK
+            bool "Enable TCP ISN Hook"
+            default y
+            help
+                Enables custom TCP ISN hook to randomize initial sequence
+                number in TCP connection. This is recommended as default
+                lwIP implementation (`tcp_next_iss`) is not very strong,
+                as it does not take into consideration any platform
+                specific entropy source.
+
+
         config LWIP_MAX_ACTIVE_TCP
             int "Maximum active TCP Connections"
             range 1 1024
