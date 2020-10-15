@@ -33,6 +33,7 @@ void *hostap_init(void)
     struct wpa_auth_config *auth_conf;
     u8 mac[6];
     u16 spp_attrubute = 0;
+    u8 pairwise_cipher;
 
     hapd = (struct hostapd_data *)os_zalloc(sizeof(struct hostapd_data));
 
@@ -65,9 +66,25 @@ void *hostap_init(void)
         auth_conf->wpa = WPA_PROTO_RSN | WPA_PROTO_WPA;
     }
 
-    auth_conf->wpa_group = WPA_CIPHER_TKIP;
-    auth_conf->wpa_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
-    auth_conf->rsn_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
+    pairwise_cipher = esp_wifi_ap_get_prof_pairwise_cipher_internal();
+    /* TKIP is compulsory in WPA Mode */
+    if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
+        pairwise_cipher = WIFI_CIPHER_TYPE_TKIP_CCMP;
+    }
+    if (pairwise_cipher == WIFI_CIPHER_TYPE_TKIP) {
+        auth_conf->wpa_group = WPA_CIPHER_TKIP;
+        auth_conf->wpa_pairwise = WPA_CIPHER_TKIP;
+        auth_conf->rsn_pairwise = WPA_CIPHER_TKIP;
+    } else if (pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
+        auth_conf->wpa_group = WPA_CIPHER_CCMP;
+        auth_conf->wpa_pairwise = WPA_CIPHER_CCMP;
+        auth_conf->rsn_pairwise = WPA_CIPHER_CCMP;
+    } else {
+        auth_conf->wpa_group = WPA_CIPHER_TKIP;
+        auth_conf->wpa_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
+        auth_conf->rsn_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
+    }
+
     auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
     auth_conf->eapol_version = EAPOL_VERSION;
 
