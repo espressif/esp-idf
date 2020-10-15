@@ -74,16 +74,10 @@
 #include "lwip/ip_addr.h"
 #include "lwip/sys.h"
 #include <string.h>
+#include "esp32/rom/md5_hash.h"
+#include "soc/soc_memory_layout.h"
 
 #ifdef LWIP_HOOK_TCP_ISN
-
-/* pull in md5 of ppp? */
-#include "netif/ppp/ppp_opts.h"
-#if !PPP_SUPPORT || (!LWIP_USE_EXTERNAL_POLARSSL && !LWIP_USE_EXTERNAL_MBEDTLS)
-#undef  LWIP_INCLUDED_POLARSSL_MD5
-#define LWIP_INCLUDED_POLARSSL_MD5 1
-#include "netif/ppp/polarssl/md5.h"
-#endif
 
 static u8_t input[64];
 static u32_t base_time;
@@ -119,7 +113,6 @@ u32_t
 lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
     const ip_addr_t *remote_ip, u16_t remote_port)
 {
-  md5_context ctx;
   u8_t output[16];
   u32_t isn;
 
@@ -167,10 +160,21 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
 
   /* The secret and padding are already filled in. */
 
-  /* Generate the hash, using MD5. */
-  md5_starts(&ctx);
-  md5_update(&ctx, input, sizeof(input));
-  md5_finish(&ctx, output);
+  /*
+   * Generate the hash using ROM MD5 APIs
+   * This hook is invoked in the context of TCP/IP (tiT) task and
+   * it is unlikely that its stack would be placed in SPIRAM. Hence
+   * even with SPIRAM enabled case and ESP32 revision < 3, using ROM
+   * APIs should not create any issues.
+   */
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+  assert(!esp_ptr_external_ram(get_sp()));
+#endif
+
+  struct MD5Context ctx;
+  MD5Init(&ctx);
+  MD5Update(&ctx, input, sizeof(input));
+  MD5Final(output, &ctx);
 
   /* Arbitrarily take the first 32 bits from the generated hash. */
   MEMCPY(&isn, output, sizeof(isn));
