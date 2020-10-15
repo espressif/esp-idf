@@ -24,7 +24,7 @@
 #include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
 #include "xtensa/core-macros.h"

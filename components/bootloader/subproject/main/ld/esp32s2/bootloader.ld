@@ -39,6 +39,7 @@ SECTIONS
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libsoc.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libsoc.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)

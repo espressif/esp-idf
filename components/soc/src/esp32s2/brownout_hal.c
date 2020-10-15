@@ -16,13 +16,13 @@
 #include "hal/brownout_hal.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "i2c_rtc_clk.h"
-#include "i2c_brownout.h"
+#include "regi2c_ctrl.h"
+#include "regi2c_brownout.h"
 
 
 void brownout_hal_config(const brownout_hal_config_t *cfg)
 {
-    I2C_WRITEREG_MASK_RTC(I2C_BOD, I2C_BOD_THRESHOLD, cfg->threshold);
+    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD, cfg->threshold);
     typeof(RTCCNTL.brown_out) brown_out_reg = {
         .out2_ena = 1,
         .int_wait = 0x002,
