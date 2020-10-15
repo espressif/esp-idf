@@ -396,6 +396,17 @@
  */
 #define LWIP_TCP_RTO_TIME             CONFIG_LWIP_TCP_RTO_TIME
 
+/**
+ * Set TCP hook for Initial Sequence Number (ISN)
+ */
+#ifdef CONFIG_LWIP_TCP_ISN_HOOK
+#include <lwip/arch.h>
+struct ip_addr;
+u32_t lwip_hook_tcp_isn(const struct ip_addr *local_ip, u16_t local_port,
+                        const struct ip_addr *remote_ip, u16_t remote_port);
+#define LWIP_HOOK_TCP_ISN               lwip_hook_tcp_isn
+#endif
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
