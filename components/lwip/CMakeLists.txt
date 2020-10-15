@@ -4,6 +4,7 @@ set(include_dirs
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
+    port/esp32/tcp_isn
     )
 
 set(srcs
@@ -127,6 +128,10 @@ endif()
 
 if(CONFIG_ETH_ENABLED)
     list(APPEND srcs "port/esp32/netif/ethernetif.c")
+endif()
+
+if(CONFIG_LWIP_TCP_ISN_HOOK)
+    list(APPEND srcs "port/esp32/tcp_isn/tcp_isn.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
