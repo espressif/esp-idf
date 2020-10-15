@@ -98,7 +98,12 @@ Make sure you re-login to enable read and write permissions for the serial port.
 Verify serial connection
 ------------------------
 
-Now verify that the serial connection is operational. You can do this using a serial terminal program. In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial program and set communication parameters like below.
+Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after reseting {IDF_TARGET_NAME}. 
+
+Windows and Linux
+^^^^^^^^^^^^^^^^^
+
+In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial program and set communication parameters like below.
 
 Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
@@ -117,7 +122,41 @@ Run terminal, set identified serial port, baud rate = 115200, data bits = 8, sto
     Setting Serial Communication in PuTTY on Linux
 
 
-Then open serial port in terminal and check, if you see any log printed out by {IDF_TARGET_NAME}. The log contents will depend on application loaded to {IDF_TARGET_NAME}. An example log by {IDF_TARGET_NAME} is shown below.
+Then open serial port in terminal and check, if you see any log printed out by {IDF_TARGET_NAME}. The log contents will depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_.
+
+.. note::
+
+   Close the serial terminal after verification that communication is working. If you keep the terminal session open, the serial port will be inaccessible for uploading firmware later.
+
+MacOS
+^^^^^
+
+To spare you the trouble of installing a serial terminal program, MacOS offers the **screen** command.
+
+- As discussed in `Check port on Linux and MacOS`_, run::
+
+    ls /dev/cu.*
+
+- You should see similar output::
+
+    /dev/cu.Bluetooth-Incoming-Port /dev/cu.SLAB_USBtoUART      /dev/cu.SLAB_USBtoUART7
+
+- The output will vary depending on the type and the number of boards connected to your PC. Then pick the device name of your board and run::
+
+    screen /dev/cu.device_name 115200
+
+  Replace ``device_name`` with the name found running ``ls /dev/cu.*``. 
+
+- What you are looking for is some log displayed by the **screen**. The log contents will depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. To exit the **screen** session type Ctrl-A + \\ .
+
+.. note::
+
+   Do not forget to **exit the screen session** after verifying that the communication is working. If you fail to do it and just close the terminal window, the serial port will be inaccessible for uploading firmware later.
+
+Example Output
+^^^^^^^^^^^^^^
+
+An example log by {IDF_TARGET_NAME} is shown below. Reset the board if you do not see anything.
 
 .. highlight:: none
 
@@ -147,10 +186,6 @@ If you can see readable log output, it means serial connection is working and yo
 .. note::
 
    For some serial port wiring configurations, the serial RTS & DTR pins need to be disabled in the terminal program before the {IDF_TARGET_NAME} will boot and produce serial output. This depends on the hardware itself, most development boards (including all Espressif boards) *do not* have this issue. The issue is present if RTS & DTR are wired directly to the EN & GPIO0 pins. See the `esptool documentation`_ for more details.
-
-.. note::
-
-   Close serial terminal after verification that communication is working. In the next step we are going to use a different application to upload a new firmware to {IDF_TARGET_NAME}. This application will not be able to access serial port while it is open in terminal.
 
 If you got here from :ref:`get-started-connect` when installing s/w for {IDF_TARGET_NAME} development, then you can continue with :ref:`get-started-configure`.
 
