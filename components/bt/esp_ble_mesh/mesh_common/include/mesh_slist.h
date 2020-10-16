@@ -312,7 +312,7 @@ static inline void sys_slist_append(sys_slist_t *list,
  * @param tail A pointer to the last element of the list to append
  */
 static inline void sys_slist_append_list(sys_slist_t *list,
-        void *head, void *tail)
+                                         void *head, void *tail)
 {
     if (!list->tail) {
         list->head = (sys_snode_t *)head;
@@ -333,7 +333,7 @@ static inline void sys_slist_append_list(sys_slist_t *list,
  * @param list_to_append A pointer to the list to append.
  */
 static inline void sys_slist_merge_slist(sys_slist_t *list,
-        sys_slist_t *list_to_append)
+                                         sys_slist_t *list_to_append)
 {
     sys_slist_append_list(list, list_to_append->head,
                           list_to_append->tail);
@@ -443,7 +443,7 @@ static inline void sys_slist_remove(sys_slist_t *list,
  * @return true if node was removed
  */
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
-        sys_snode_t *node)
+                                             sys_snode_t *node)
 {
     sys_snode_t *prev = NULL;
     sys_snode_t *test;

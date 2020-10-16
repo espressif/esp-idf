@@ -30,7 +30,7 @@ static const bt_mesh_client_op_pair_t health_op_pair[] = {
 
 static bt_mesh_mutex_t health_client_lock;
 
-static void bt_mesh_health_client_mutex_new(void)
+static inline void bt_mesh_health_client_mutex_new(void)
 {
     if (!health_client_lock.mutex) {
         bt_mesh_mutex_create(&health_client_lock);
@@ -38,18 +38,18 @@ static void bt_mesh_health_client_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_health_client_mutex_free(void)
+static inline void bt_mesh_health_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&health_client_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_health_client_lock(void)
+static inline void bt_mesh_health_client_lock(void)
 {
     bt_mesh_mutex_lock(&health_client_lock);
 }
 
-static void bt_mesh_health_client_unlock(void)
+static inline void bt_mesh_health_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&health_client_lock);
 }

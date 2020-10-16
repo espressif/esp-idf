@@ -111,7 +111,7 @@ static const bt_mesh_client_op_pair_t gen_op_pair[] = {
 
 static bt_mesh_mutex_t generic_client_lock;
 
-static void bt_mesh_generic_client_mutex_new(void)
+static inline void bt_mesh_generic_client_mutex_new(void)
 {
     if (!generic_client_lock.mutex) {
         bt_mesh_mutex_create(&generic_client_lock);
@@ -119,18 +119,18 @@ static void bt_mesh_generic_client_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_generic_client_mutex_free(void)
+static inline void bt_mesh_generic_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&generic_client_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_generic_client_lock(void)
+static inline void bt_mesh_generic_client_lock(void)
 {
     bt_mesh_mutex_lock(&generic_client_lock);
 }
 
-static void bt_mesh_generic_client_unlock(void)
+static inline void bt_mesh_generic_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&generic_client_lock);
 }

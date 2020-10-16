@@ -72,7 +72,7 @@ static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
 
 static bt_mesh_mutex_t cfg_client_lock;
 
-static void bt_mesh_cfg_client_mutex_new(void)
+static inline void bt_mesh_cfg_client_mutex_new(void)
 {
     if (!cfg_client_lock.mutex) {
         bt_mesh_mutex_create(&cfg_client_lock);
@@ -80,18 +80,18 @@ static void bt_mesh_cfg_client_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_cfg_client_mutex_free(void)
+static inline void bt_mesh_cfg_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&cfg_client_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_cfg_client_lock(void)
+static inline void bt_mesh_cfg_client_lock(void)
 {
     bt_mesh_mutex_lock(&cfg_client_lock);
 }
 
-static void bt_mesh_cfg_client_unlock(void)
+static inline void bt_mesh_cfg_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&cfg_client_lock);
 }

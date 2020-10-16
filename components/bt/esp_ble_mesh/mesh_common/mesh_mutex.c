@@ -82,7 +82,7 @@ void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex)
     }
 }
 
-static void bt_mesh_alarm_mutex_new(void)
+static inline void bt_mesh_alarm_mutex_new(void)
 {
     if (!alarm_lock.mutex) {
         bt_mesh_mutex_create(&alarm_lock);
@@ -99,7 +99,7 @@ void bt_mesh_alarm_unlock(void)
     bt_mesh_mutex_unlock(&alarm_lock);
 }
 
-static void bt_mesh_list_mutex_new(void)
+static inline void bt_mesh_list_mutex_new(void)
 {
     if (!list_lock.mutex) {
         bt_mesh_mutex_create(&list_lock);
@@ -116,7 +116,7 @@ void bt_mesh_list_unlock(void)
     bt_mesh_mutex_unlock(&list_lock);
 }
 
-static void bt_mesh_buf_mutex_new(void)
+static inline void bt_mesh_buf_mutex_new(void)
 {
     if (!buf_lock.mutex) {
         bt_mesh_mutex_create(&buf_lock);
@@ -133,7 +133,7 @@ void bt_mesh_buf_unlock(void)
     bt_mesh_mutex_unlock(&buf_lock);
 }
 
-static void bt_mesh_atomic_mutex_new(void)
+static inline void bt_mesh_atomic_mutex_new(void)
 {
     if (!atomic_lock.mutex) {
         bt_mesh_mutex_create(&atomic_lock);
@@ -159,22 +159,22 @@ void bt_mesh_mutex_init(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_alarm_mutex_free(void)
+static inline void bt_mesh_alarm_mutex_free(void)
 {
     bt_mesh_mutex_free(&alarm_lock);
 }
 
-static void bt_mesh_list_mutex_free(void)
+static inline void bt_mesh_list_mutex_free(void)
 {
     bt_mesh_mutex_free(&list_lock);
 }
 
-static void bt_mesh_buf_mutex_free(void)
+static inline void bt_mesh_buf_mutex_free(void)
 {
     bt_mesh_mutex_free(&buf_lock);
 }
 
-static void bt_mesh_atomic_mutex_free(void)
+static inline void bt_mesh_atomic_mutex_free(void)
 {
     bt_mesh_mutex_free(&atomic_lock);
 }
@@ -186,4 +186,4 @@ void bt_mesh_mutex_deinit(void)
     bt_mesh_buf_mutex_free();
     bt_mesh_atomic_mutex_free();
 }
-#endif
+#endif /* CONFIG_BLE_MESH_DEINIT */
