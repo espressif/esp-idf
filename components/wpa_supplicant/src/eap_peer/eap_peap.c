@@ -861,6 +861,10 @@ eap_peap_decrypt(struct eap_sm *sm, struct eap_peap_data *data,
 	res = eap_peer_tls_decrypt(sm, &data->ssl, in_data, &in_decrypted);
 	if (res)
 		return res;
+	if (wpabuf_len(in_decrypted) == 0) {
+		wpabuf_free(in_decrypted);
+		return 1;
+	}
 
 continue_req:
 	wpa_hexdump_buf(MSG_DEBUG, "EAP-PEAP: Decrypted Phase 2 EAP",
