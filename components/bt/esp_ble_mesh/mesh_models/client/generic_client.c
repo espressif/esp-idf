@@ -21,7 +21,7 @@
 #include "model_opcode.h"
 #include "generic_client.h"
 
-#if BLE_MESH_GENERIC_CLIENT_ENABLE
+#if CONFIG_BLE_MESH_GENERIC_CLIENT
 
 /* The followings are the macro definitions of Generic client
  * model message length, and a message is composed of 3 parts:
@@ -1215,4 +1215,4 @@ const struct bt_mesh_model_cb bt_mesh_generic_client_cb = {
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
-#endif /* BLE_MESH_GENERIC_CLIENT_ENABLE */
+#endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */

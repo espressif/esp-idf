@@ -8,10 +8,13 @@
 
 #include <errno.h>
 
+#include "mesh_config.h"
 #include "mesh_common.h"
 #include "model_opcode.h"
 #include "state_binding.h"
 #include "state_transition.h"
+
+#if CONFIG_BLE_MESH_SERVER_MODEL
 
 #define MINDIFF (2.25e-308)
 
@@ -102,6 +105,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
 
     switch (type) {
+#if CONFIG_BLE_MESH_GENERIC_SERVER
     case GENERIC_ONOFF_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_ONOFF_SRV) {
             BT_ERR("Invalid Generic OnOff Server, model id 0x%04x", model->id);
@@ -168,6 +172,8 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         gen_power_level_publish(model, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
     case LIGHT_LIGHTNESS_ACTUAL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV) {
             BT_ERR("Invalid Light Lightness Server, model id 0x%04x", model->id);
@@ -331,6 +337,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         light_lc_publish(model, BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
     default:
         BT_WARN("Unknown binding state type 0x%02x", type);
         return -EINVAL;
@@ -339,3 +346,4 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     return 0;
 }
 
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */

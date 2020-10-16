@@ -861,102 +861,126 @@ if BLE_MESH
             uses 0 as the timeout value when sending acknowledged messages, then
             the default value will be used which is four seconds.
 
-    menu "Support for BLE Mesh Client Models"
+    menu "Support for BLE Mesh client/server models"
 
         config BLE_MESH_CFG_CLI
-            bool "Configuration Client Model"
+            bool "Configuration Client model"
             help
-                Enable support for Configuration client model.
+                Enable support for Configuration Client model.
 
         config BLE_MESH_HEALTH_CLI
-            bool "Health Client Model"
+            bool "Health Client model"
             help
-                Enable support for Health client model.
+                Enable support for Health Client model.
 
         config BLE_MESH_GENERIC_ONOFF_CLI
-            bool "Generic OnOff Client Model"
+            bool "Generic OnOff Client model"
             help
-                Enable support for Generic OnOff client model.
+                Enable support for Generic OnOff Client model.
 
         config BLE_MESH_GENERIC_LEVEL_CLI
-            bool "Generic Level Client Model"
+            bool "Generic Level Client model"
             help
-                Enable support for Generic Level client model.
+                Enable support for Generic Level Client model.
 
         config BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI
-            bool "Generic Default Transition Time Client Model"
+            bool "Generic Default Transition Time Client model"
             help
-                Enable support for Generic Default Transition Time client model.
+                Enable support for Generic Default Transition Time Client model.
 
         config BLE_MESH_GENERIC_POWER_ONOFF_CLI
-            bool "Generic Power OnOff Client Model"
+            bool "Generic Power OnOff Client model"
             help
-                Enable support for Generic Power OnOff client model.
+                Enable support for Generic Power OnOff Client model.
 
         config BLE_MESH_GENERIC_POWER_LEVEL_CLI
-            bool "Generic Power Level Client Model"
+            bool "Generic Power Level Client model"
             help
-                Enable support for Generic Power Level client model.
+                Enable support for Generic Power Level Client model.
 
         config BLE_MESH_GENERIC_BATTERY_CLI
-            bool "Generic Battery Client Model"
+            bool "Generic Battery Client model"
             help
-                Enable support for Generic Battery client model.
+                Enable support for Generic Battery Client model.
 
         config BLE_MESH_GENERIC_LOCATION_CLI
-            bool "Generic Location Client Model"
+            bool "Generic Location Client model"
             help
-                Enable support for Generic Location client model.
+                Enable support for Generic Location Client model.
 
         config BLE_MESH_GENERIC_PROPERTY_CLI
-            bool "Generic Property Client Model"
+            bool "Generic Property Client model"
             help
-                Enable support for Generic Property client model.
+                Enable support for Generic Property Client model.
 
         config BLE_MESH_SENSOR_CLI
-            bool "Sensor Client Model"
+            bool "Sensor Client model"
             help
-                Enable support for Sensor client model.
+                Enable support for Sensor Client model.
 
         config BLE_MESH_TIME_CLI
-            bool "Time Client Model"
+            bool "Time Client model"
             help
-                Enable support for Time client model.
+                Enable support for Time Client model.
 
         config BLE_MESH_SCENE_CLI
-            bool "Scene Client Model"
+            bool "Scene Client model"
             help
-                Enable support for Scene client model.
+                Enable support for Scene Client model.
 
         config BLE_MESH_SCHEDULER_CLI
-            bool "Scheduler Client Model"
+            bool "Scheduler Client model"
             help
-                Enable support for Scheduler client model.
+                Enable support for Scheduler Client model.
 
         config BLE_MESH_LIGHT_LIGHTNESS_CLI
-            bool "Light Lightness Client Model"
+            bool "Light Lightness Client model"
             help
-                Enable support for Light Lightness client model.
+                Enable support for Light Lightness Client model.
 
         config BLE_MESH_LIGHT_CTL_CLI
-            bool "Light CTL Client Model"
+            bool "Light CTL Client model"
             help
-                Enable support for Light CTL client model.
+                Enable support for Light CTL Client model.
 
         config BLE_MESH_LIGHT_HSL_CLI
-            bool "Light HSL Client Model"
+            bool "Light HSL Client model"
             help
-                Enable support for Light HSL client model.
+                Enable support for Light HSL Client model.
 
         config BLE_MESH_LIGHT_XYL_CLI
-            bool "Light XYL Client Model"
+            bool "Light XYL Client model"
             help
-                Enable support for Light XYL client model.
+                Enable support for Light XYL Client model.
 
         config BLE_MESH_LIGHT_LC_CLI
-            bool "Light LC Client Model"
+            bool "Light LC Client model"
             help
-                Enable support for Light LC client model.
+                Enable support for Light LC Client model.
+
+        config BLE_MESH_GENERIC_SERVER
+            bool "Generic server models"
+            default y
+            help
+                Enable support for Generic server models.
+
+        config BLE_MESH_SENSOR_SERVER
+            bool "Sensor server models"
+            default y
+            help
+                Enable support for Sensor server models.
+
+        config BLE_MESH_TIME_SCENE_SERVER
+            bool "Time and Scenes server models"
+            default y
+            help
+                Enable support for Time and Scenes server models.
+
+        config BLE_MESH_LIGHTING_SERVER
+            bool "Lighting server models"
+            default y
+            help
+                Enable support for Lighting server models.
 
     endmenu
 

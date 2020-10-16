@@ -19,7 +19,7 @@
 #include "time_scene_client.h"
 #include "esp_ble_mesh_time_scene_model_api.h"
 
-#if BLE_MESH_TIME_SCENE_CLIENT_ENABLE
+#if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
 
 /* Time and Scenes Client Models related functions */
 
@@ -377,7 +377,10 @@ void btc_ble_mesh_time_scene_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_time_scene_client_free_req_data(msg);
     return;
 }
-#endif /* BLE_MESH_TIME_SCENE_CLIENT_ENABLE */
+
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_CLIENT */
+
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
 
 /* Time and Scenes Server Models related functions */
 
@@ -477,3 +480,4 @@ void btc_ble_mesh_time_scene_server_cb_handler(btc_msg_t *msg)
     return;
 }
 
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
