@@ -597,7 +597,7 @@ The detailed description of these commands please see below.
    
    *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
    
-   *Offset* – 10-bit signed value, offset in bytes
+   *Offset* – 13-bit signed value, offset in bytes
 
 **Cycles**
   4 cycles to execute, 4 cycles to fetch next instruction
@@ -634,7 +634,7 @@ The detailed description of these commands please see below.
    
    *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
    
-   *Offset* – 10-bit signed value, offset in bytes
+   *Offset* – 13-bit signed value, offset in bytes
 
 **Cycles**
   4 cycles to execute, 4 cycles to fetch next instruction
@@ -933,29 +933,6 @@ The detailed description of these commands please see below.
 
 
 
-**SLEEP** – set ULP wakeup timer period
----------------------------------------
-
-**Syntax**
-  **SLEEP**   *sleep_reg*
-
-**Operands**
-   - *sleep_reg* – 0..4, selects one of ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers.
-
-**Cycles**
-  2 cycles to execute, 4 cycles to fetch next instruction
-
-**Description**
-   The instruction selects which of the ``SENS_ULP_CP_SLEEP_CYCx_REG`` (x = 0..4) register values is to be used by the ULP wakeup timer as wakeup period. By default, the value from ``SENS_ULP_CP_SLEEP_CYC0_REG`` is used.
-
-**Examples**::
-
-  1:        SLEEP     1         // Use period set in SENS_ULP_CP_SLEEP_CYC1_REG
-
-  2:        .set sleep_reg, 4   // Set constant
-            SLEEP  sleep_reg    // Use period set in SENS_ULP_CP_SLEEP_CYC4_REG
-
-
 **WAIT** – wait some number of cycles
 -------------------------------------
 
@@ -1012,7 +989,7 @@ The detailed description of these commands please see below.
 **Operands**
   - *Rdst* – Destination Register R[0..3], result will be stored to this register
   - *Sar_sel* – Select ADC: 0 = SARADC1, 1 = SARADC2
-  - *Mux*  -  selected PAD, SARADC Pad[Mux+1] is enabled
+  - *Mux*  -  selected PAD, SARADC Pad[Mux-1] is enabled. If the user passes Mux value 1, then ADC pad 0 gets used.
 
 **Cycles**
   ``23 + max(1, SAR_AMP_WAIT1) + max(1, SAR_AMP_WAIT2) + max(1, SAR_AMP_WAIT3) + SARx_SAMPLE_CYCLE + SARx_SAMPLE_BIT`` cycles to execute, 4 cycles to fetch next instruction
@@ -1023,51 +1000,6 @@ The detailed description of these commands please see below.
 **Examples**::
 
    1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
-
-**I2C_RD** - read single byte from I2C slave
---------------------------------------------
-
-**Syntax**
-  - **I2C_RD**   *Sub_addr, High, Low, Slave_sel*
-
-**Operands**
-  - *Sub_addr* – Address within the I2C slave to read.
-  - *High*, *Low* — Define range of bits to read. Bits outside of [High, Low] range are masked.
-  - *Slave_sel*  -  Index of I2C slave address to use.
-
-**Cycles**
-  Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction.
-
-**Description**
-  ``I2C_RD`` instruction reads one byte from I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
-  8 bits of read result is stored into `R0` register.
-
-**Examples**::
-
-   1:        I2C_RD      0x10, 7, 0, 0      // Read byte from sub-address 0x10 of slave with address set in SENS_I2C_SLAVE_ADDR0
-
-
-**I2C_WR** - write single byte to I2C slave
--------------------------------------------
-
-**Syntax**
-  - **I2C_WR**   *Sub_addr, Value, High, Low, Slave_sel*
-
-**Operands**
-  - *Sub_addr* – Address within the I2C slave to write.
-  - *Value* – 8-bit value to be written.
-  - *High*, *Low* — Define range of bits to write. Bits outside of [High, Low] range are masked.
-  - *Slave_sel*  -  Index of I2C slave address to use.
-
-**Cycles**
-  Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction.
-
-**Description**
-  ``I2C_WR`` instruction writes one byte to I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
-
-**Examples**::
-
-   1:        I2C_WR      0x20, 0x33, 7, 0, 1      // Write byte 0x33 to sub-address 0x20 of slave with address set in SENS_I2C_SLAVE_ADDR1.
 
 
 **REG_RD** – read from peripheral register

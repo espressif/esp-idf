@@ -145,21 +145,46 @@ Declaration of the entry point symbol comes from the generated header file menti
     entry:
             /* code starts here */
 
+.. only:: esp32
 
-ULP Program Flow
-----------------
+    ESP32 ULP program flow
+    -----------------------
 
-The ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts the number of RTC_SLOW_CLK ticks (by default, produced by an internal 150kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using the ``sleep`` instruction.
+    ESP32 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks 
+    (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). 
+    When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. 
+    Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using ``sleep`` instruction.
 
-The application can set ULP timer period values (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4) using the ``ulp_set_wakeup_period`` function.
+    The application can set ULP timer period values (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4) using ``ulp_set_wakeup_period`` function.
 
-.. doxygenfunction:: ulp_set_wakeup_period
+    .. doxygenfunction:: ulp_set_wakeup_period
 
-Once the timer counts the number of ticks set in the selected ``SENS_ULP_CP_SLEEP_CYCx_REG`` register, the ULP coprocessor will power up and start running the program from the entry point set in the call to ``ulp_run``.
+    Once the timer counts the number of ticks set in the selected ``SENS_ULP_CP_SLEEP_CYCx_REG`` register, ULP coprocessor powers up and starts running the program from the entry point set in the call to ``ulp_run``.
 
-The program runs until it encounters a ``halt`` instruction or an illegal instruction. Once the program halts, the ULP coprocessor will power down, and the timer will be started again.
+    The program runs until it encounters a ``halt`` instruction or an illegal instruction. Once the program halts, ULP coprocessor powers down, and the timer is started again.
 
-To disable the timer (effectively preventing the ULP program from running again), please clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register. This can be done both from the ULP code and from the main program.
+    To disable the timer (effectively preventing the ULP program from running again), clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register. This can be done both from ULP code and from the main program.
+
+
+.. only:: esp32s2
+
+    ESP32-S2 ULP program flow
+    -------------------------
+
+    ESP32-S2 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks 
+    (by default, produced by an internal 90 kHz RC oscillator). The number of ticks is set using ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register. 
+
+    The application can set ULP timer period values by ``ulp_set_wakeup_period`` function.
+
+    .. doxygenfunction:: ulp_set_wakeup_period
+
+    Once the timer counts the number of ticks set in the selected ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register, ULP coprocessor powers up and starts running the program 
+    from the entry point set in the call to ``ulp_run``.
+
+    The program runs until it encounters a ``halt`` instruction or an illegal instruction. Once the program halts, ULP coprocessor powers down, and the timer is started again.
+
+    To disable the timer (effectively preventing the ULP program from running again), clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register. 
+    This can be done both from ULP code and from the main program.
 
 
 .. _binutils-esp32ulp toolchain: https://github.com/espressif/binutils-esp32ulp
