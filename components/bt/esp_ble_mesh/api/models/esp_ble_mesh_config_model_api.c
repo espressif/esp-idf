@@ -19,18 +19,12 @@
 #include "btc_ble_mesh_config_model.h"
 #include "esp_ble_mesh_config_model_api.h"
 
+#if CONFIG_BLE_MESH_CFG_CLI
 esp_err_t esp_ble_mesh_register_config_client_callback(esp_ble_mesh_cfg_client_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_CONFIG_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);
-}
-
-esp_err_t esp_ble_mesh_register_config_server_callback(esp_ble_mesh_cfg_server_cb_t callback)
-{
-    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
-
-    return (btc_profile_cb_set(BTC_PID_CONFIG_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
 static bool config_client_get_need_param(esp_ble_mesh_opcode_t opcode)
@@ -100,4 +94,12 @@ esp_err_t esp_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param_
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_config_client_args_t), btc_ble_mesh_config_client_arg_deep_copy)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
+
+esp_err_t esp_ble_mesh_register_config_server_callback(esp_ble_mesh_cfg_server_cb_t callback)
+{
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    return (btc_profile_cb_set(BTC_PID_CONFIG_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }

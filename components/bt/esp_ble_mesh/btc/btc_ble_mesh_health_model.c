@@ -21,6 +21,8 @@
 #include "health_cli.h"
 #include "esp_ble_mesh_health_model_api.h"
 
+#if CONFIG_BLE_MESH_HEALTH_CLI
+
 /* Health Client Model related functions */
 
 static inline void btc_ble_mesh_health_client_cb_to_app(esp_ble_mesh_health_client_cb_event_t event,
@@ -456,6 +458,7 @@ void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_health_client_free_req_data(msg);
     return;
 }
+#endif /* CONFIG_BLE_MESH_HEALTH_CLI */
 
 /* Health Server Model related functions */
 

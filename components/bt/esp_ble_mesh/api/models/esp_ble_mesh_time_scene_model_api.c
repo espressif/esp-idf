@@ -19,6 +19,7 @@
 #include "btc_ble_mesh_time_scene_model.h"
 #include "esp_ble_mesh_time_scene_model_api.h"
 
+#if BLE_MESH_TIME_SCENE_CLIENT_ENABLE
 esp_err_t esp_ble_mesh_register_time_scene_client_callback(esp_ble_mesh_time_scene_client_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
@@ -76,6 +77,7 @@ esp_err_t esp_ble_mesh_time_scene_client_set_state(esp_ble_mesh_client_common_pa
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_time_scene_client_args_t), btc_ble_mesh_time_scene_client_arg_deep_copy)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif /* BLE_MESH_TIME_SCENE_CLIENT_ENABLE */
 
 esp_err_t esp_ble_mesh_register_time_scene_server_callback(esp_ble_mesh_time_scene_server_cb_t callback)
 {
