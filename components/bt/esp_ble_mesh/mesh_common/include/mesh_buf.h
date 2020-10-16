@@ -11,7 +11,7 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
-#include "sdkconfig.h"
+#include "mesh_config.h"
 #include "mesh_slist.h"
 #include "mesh_compiler.h"
 
