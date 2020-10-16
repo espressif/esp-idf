@@ -19,7 +19,7 @@
 #include "lighting_client.h"
 #include "esp_ble_mesh_lighting_model_api.h"
 
-#if BLE_MESH_LIGHTING_CLIENT_ENABLE
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
 
 /* Lighting Client Models related functions */
 
@@ -375,7 +375,10 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_lighting_client_free_req_data(msg);
     return;
 }
-#endif /* BLE_MESH_LIGHTING_CLIENT_ENABLE */
+
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */
+
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
 
 /* Lighting Server Models related functions */
 
@@ -574,3 +577,5 @@ void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_lighting_server_free_req_data(msg);
     return;
 }
+
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
