@@ -37,10 +37,12 @@ static void bt_mesh_health_client_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_health_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&health_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_health_client_lock(void)
 {
@@ -343,6 +345,7 @@ static int health_cli_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int health_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_health_client_t *client = NULL;
@@ -373,8 +376,11 @@ static int health_cli_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_health_cli_cb = {
     .init = health_cli_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = health_cli_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };

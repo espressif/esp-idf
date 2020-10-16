@@ -25,10 +25,12 @@ static void bt_mesh_light_server_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_light_server_mutex_free(void)
 {
     bt_mesh_mutex_free(&light_server_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_light_server_lock(void)
 {
@@ -3326,6 +3328,7 @@ static int light_lc_setup_srv_init(struct bt_mesh_model *model)
     return light_server_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int light_server_deinit(struct bt_mesh_model *model)
 {
     if (model->user_data == NULL) {
@@ -3551,68 +3554,95 @@ static int light_lc_setup_srv_deinit(struct bt_mesh_model *model)
 
     return light_server_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_light_lightness_srv_cb = {
     .init = light_lightness_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_lightness_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_lightness_setup_srv_cb = {
     .init = light_lightness_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_lightness_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_ctl_srv_cb = {
     .init = light_ctl_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_ctl_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_ctl_setup_srv_cb = {
     .init = light_ctl_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_ctl_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_ctl_temp_srv_cb = {
     .init = light_ctl_temp_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_ctl_temp_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_hsl_srv_cb = {
     .init = light_hsl_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_hsl_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_hsl_setup_srv_cb = {
     .init = light_hsl_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_hsl_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_hsl_hue_srv_cb = {
     .init = light_hsl_hue_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_hsl_hue_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_hsl_sat_srv_cb = {
     .init = light_hsl_sat_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_hsl_sat_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_xyl_srv_cb = {
     .init = light_xyl_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_xyl_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_xyl_setup_srv_cb = {
     .init = light_xyl_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_xyl_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_lc_srv_cb = {
     .init = light_lc_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_lc_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_light_lc_setup_srv_cb = {
     .init = light_lc_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = light_lc_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };

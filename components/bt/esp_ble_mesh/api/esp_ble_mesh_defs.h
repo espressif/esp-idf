@@ -468,8 +468,10 @@ typedef struct {
     /** Callback used during model initialization. Initialized by the stack. */
     esp_ble_mesh_cb_t init_cb;
 
+#if CONFIG_BLE_MESH_DEINIT
     /** Callback used during model deinitialization. Initialized by the stack. */
     esp_ble_mesh_cb_t deinit_cb;
+#endif /* CONFIG_BLE_MESH_DEINIT */
 } esp_ble_mesh_model_cbs_t;
 
 /** Abstraction that describes a Mesh Model instance.

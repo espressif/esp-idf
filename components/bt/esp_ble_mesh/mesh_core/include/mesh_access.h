@@ -439,6 +439,7 @@ struct bt_mesh_model_cb {
      */
     int (*const init)(struct bt_mesh_model *model);
 
+#if CONFIG_BLE_MESH_DEINIT
     /** @brief Model deinit callback.
      *
      *  Called on every model instance during mesh deinitialization.
@@ -451,6 +452,7 @@ struct bt_mesh_model_cb {
      *  @param model Model to be de-initialized.
      */
     int (*const deinit)(struct bt_mesh_model *model);
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 /** Abstraction that describes a Mesh Model instance */

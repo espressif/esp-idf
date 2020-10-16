@@ -123,10 +123,12 @@ static void bt_mesh_tx_seg_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_tx_seg_mutex_free(void)
 {
     bt_mesh_mutex_free(&tx_seg_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_tx_seg_lock(void)
 {
@@ -145,10 +147,12 @@ static void bt_mesh_rx_seg_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_rx_seg_mutex_free(void)
 {
     bt_mesh_mutex_free(&rx_seg_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_rx_seg_lock(void)
 {
@@ -1859,6 +1863,7 @@ void bt_mesh_trans_init(void)
     bt_mesh_rx_seg_mutex_new();
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_trans_deinit(bool erase)
 {
     int i;
@@ -1877,6 +1882,7 @@ void bt_mesh_trans_deinit(bool erase)
     bt_mesh_tx_seg_mutex_free();
     bt_mesh_rx_seg_mutex_free();
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_heartbeat_send(void)
 {

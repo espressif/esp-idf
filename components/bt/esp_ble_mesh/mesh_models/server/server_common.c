@@ -190,6 +190,7 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_server_free_ctx(struct k_work *work)
 {
     __ASSERT(work, "Invalid parameter");
@@ -198,6 +199,7 @@ void bt_mesh_server_free_ctx(struct k_work *work)
         work->_reserved = NULL;
     }
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
                                      u8_t tid, u16_t src, u16_t dst, s64_t *now)

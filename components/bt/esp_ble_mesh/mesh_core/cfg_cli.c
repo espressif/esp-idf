@@ -79,10 +79,12 @@ static void bt_mesh_cfg_client_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_cfg_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&cfg_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_cfg_client_lock(void)
 {
@@ -1286,6 +1288,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int cfg_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_config_client_t *client = NULL;
@@ -1319,8 +1322,11 @@ static int cfg_cli_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
     .init = cfg_cli_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = cfg_cli_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
