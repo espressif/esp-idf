@@ -4134,7 +4134,7 @@ static void prvCheckTasksWaitingTermination( void )
 		pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
 
 		#if ( configTASKLIST_INCLUDE_COREID == 1 )
-		pxTaskStatus.xCoreID = pxTCB->xCoreID;
+		pxTaskStatus->xCoreID = pxTCB->xCoreID;
 		#endif /* configTASKLIST_INCLUDE_COREID */
 
 		#if ( configUSE_MUTEXES == 1 )
