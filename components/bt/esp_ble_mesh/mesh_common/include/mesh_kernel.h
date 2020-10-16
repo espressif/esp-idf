@@ -13,7 +13,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-#include "sdkconfig.h"
+#include "mesh_config.h"
 #include "mesh_types.h"
 
 #ifdef __cplusplus
