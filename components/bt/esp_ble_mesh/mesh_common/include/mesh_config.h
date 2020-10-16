@@ -21,7 +21,24 @@
 extern "C" {
 #endif
 
+#define BLE_MESH_GENERIC_CLIENT_ENABLE (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_LEVEL_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_POWER_ONOFF_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_POWER_LEVEL_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_BATTERY_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_LOCATION_CLI | \
+                                        CONFIG_BLE_MESH_GENERIC_PROPERTY_CLI)
 
+#define BLE_MESH_TIME_SCENE_CLIENT_ENABLE (CONFIG_BLE_MESH_TIME_CLI | \
+                                           CONFIG_BLE_MESH_SCENE_CLI | \
+                                           CONFIG_BLE_MESH_SCHEDULER_CLI)
+
+#define BLE_MESH_LIGHTING_CLIENT_ENABLE (CONFIG_BLE_MESH_LIGHT_LIGHTNESS_CLI | \
+                                         CONFIG_BLE_MESH_LIGHT_CTL_CLI | \
+                                         CONFIG_BLE_MESH_LIGHT_HSL_CLI | \
+                                         CONFIG_BLE_MESH_LIGHT_XYL_CLI | \
+                                         CONFIG_BLE_MESH_LIGHT_LC_CLI)
 
 #ifdef __cplusplus
 }
