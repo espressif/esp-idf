@@ -14,9 +14,12 @@
 
 #include "btc_ble_mesh_health_model.h"
 
+#include "mesh_config.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "health_cli.h"
+
+#if CONFIG_BLE_MESH_HEALTH_CLI
 
 static const bt_mesh_client_op_pair_t health_op_pair[] = {
     { OP_HEALTH_FAULT_GET,   OP_HEALTH_FAULT_STATUS  },
@@ -384,3 +387,5 @@ const struct bt_mesh_model_cb bt_mesh_health_cli_cb = {
     .deinit = health_cli_deinit,
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_HEALTH_CLI */

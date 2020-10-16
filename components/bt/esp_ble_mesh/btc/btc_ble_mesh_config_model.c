@@ -20,6 +20,8 @@
 #include "cfg_cli.h"
 #include "esp_ble_mesh_config_model_api.h"
 
+#if CONFIG_BLE_MESH_CFG_CLI
+
 /* Configuration Client Model related functions */
 
 static inline void btc_ble_mesh_config_client_cb_to_app(esp_ble_mesh_cfg_client_cb_event_t event,
@@ -678,6 +680,7 @@ void btc_ble_mesh_config_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_config_client_free_req_data(msg);
     return;
 }
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
 
 /* Configuration Server Model related functions */
 

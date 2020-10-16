@@ -19,6 +19,8 @@
 #include "generic_client.h"
 #include "esp_ble_mesh_generic_model_api.h"
 
+#if BLE_MESH_GENERIC_CLIENT_ENABLE
+
 /* Generic Client Models related functions */
 
 static inline void btc_ble_mesh_generic_client_cb_to_app(esp_ble_mesh_generic_client_cb_event_t event,
@@ -529,6 +531,7 @@ void btc_ble_mesh_generic_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_generic_client_free_req_data(msg);
     return;
 }
+#endif /* BLE_MESH_GENERIC_CLIENT_ENABLE */
 
 /* Generic Server Models related functions */
 
