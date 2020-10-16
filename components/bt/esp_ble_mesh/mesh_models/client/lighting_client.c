@@ -21,7 +21,7 @@
 #include "model_opcode.h"
 #include "lighting_client.h"
 
-#if BLE_MESH_LIGHTING_CLIENT_ENABLE
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
 
 /* The followings are the macro definitions of Lighting client
  * model message length, and a message is composed of 3 parts:
@@ -1405,4 +1405,4 @@ const struct bt_mesh_model_cb bt_mesh_lighting_client_cb = {
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
-#endif /* BLE_MESH_LIGHTING_CLIENT_ENABLE */
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */

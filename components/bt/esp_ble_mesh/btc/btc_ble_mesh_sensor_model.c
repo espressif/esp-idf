@@ -613,7 +613,10 @@ void btc_ble_mesh_sensor_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_sensor_client_free_req_data(msg);
     return;
 }
+
 #endif /* CONFIG_BLE_MESH_SENSOR_CLI */
+
+#if CONFIG_BLE_MESH_SENSOR_SERVER
 
 /* Sensor Server Models related functions */
 
@@ -891,3 +894,5 @@ void btc_ble_mesh_sensor_server_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_sensor_server_free_req_data(msg);
     return;
 }
+
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */
