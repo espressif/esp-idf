@@ -25,10 +25,12 @@ static void bt_mesh_generic_server_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_generic_server_mutex_free(void)
 {
     bt_mesh_mutex_free(&generic_server_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_generic_server_lock(void)
 {
@@ -2624,6 +2626,7 @@ static int gen_client_prop_srv_init(struct bt_mesh_model *model)
     return generic_server_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int generic_server_deinit(struct bt_mesh_model *model)
 {
     if (model->user_data == NULL) {
@@ -2794,73 +2797,102 @@ static int gen_client_prop_srv_deinit(struct bt_mesh_model *model)
 
     return generic_server_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_gen_onoff_srv_cb = {
     .init = gen_onoff_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_onoff_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_level_srv_cb = {
     .init = gen_level_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_level_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_def_trans_time_srv_cb = {
     .init = gen_def_trans_time_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_def_trans_time_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_power_onoff_srv_cb = {
     .init = gen_power_onoff_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_power_onoff_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_power_onoff_setup_srv_cb = {
     .init = gen_power_onoff_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_power_onoff_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_power_level_srv_cb = {
     .init = gen_power_level_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_power_level_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_power_level_setup_srv_cb = {
     .init = gen_power_level_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_power_level_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_battery_srv_cb = {
     .init = gen_battery_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_battery_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_location_srv_cb = {
     .init = gen_location_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_location_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_location_setup_srv_cb = {
     .init = gen_location_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_location_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_user_prop_srv_cb = {
     .init = gen_user_prop_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_user_prop_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_admin_prop_srv_cb = {
     .init = gen_admin_prop_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_admin_prop_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_manu_prop_srv_cb = {
     .init = gen_manu_prop_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_manu_prop_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_gen_client_prop_srv_cb = {
     .init = gen_client_prop_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = gen_client_prop_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
