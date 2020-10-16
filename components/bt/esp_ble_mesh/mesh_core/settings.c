@@ -171,7 +171,7 @@ struct node_info {
 
 static bt_mesh_mutex_t settings_lock;
 
-static void bt_mesh_settings_mutex_new(void)
+static inline void bt_mesh_settings_mutex_new(void)
 {
     if (settings_lock.mutex == NULL) {
         bt_mesh_mutex_create(&settings_lock);
@@ -179,7 +179,7 @@ static void bt_mesh_settings_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_settings_mutex_free(void)
+static inline void bt_mesh_settings_mutex_free(void)
 {
     bt_mesh_mutex_free(&settings_lock);
 }
