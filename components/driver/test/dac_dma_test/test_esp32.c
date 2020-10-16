@@ -57,14 +57,6 @@
 //I2S channel number
 #define EXAMPLE_I2S_CHANNEL_NUM   ((EXAMPLE_I2S_FORMAT < I2S_CHANNEL_FMT_ONLY_RIGHT) ? (2) : (1))
 
-//flash record size, for recording 5 seconds' data
-#define FLASH_RECORD_SIZE         (EXAMPLE_I2S_CHANNEL_NUM * EXAMPLE_I2S_SAMPLE_RATE * EXAMPLE_I2S_SAMPLE_BITS / 8 * 5)
-#define FLASH_ERASE_SIZE          (FLASH_RECORD_SIZE % FLASH_SECTOR_SIZE == 0) ? FLASH_RECORD_SIZE : FLASH_RECORD_SIZE + (FLASH_SECTOR_SIZE - FLASH_RECORD_SIZE % FLASH_SECTOR_SIZE)
-//sector size of flash
-#define FLASH_SECTOR_SIZE         (0x1000)
-//flash read / write address
-#define FLASH_ADDR                (0x200000)
-
 /**
  * @brief I2S ADC/DAC mode init.
  */
@@ -72,23 +64,24 @@ static void example_i2s_init(void)
 {
     int i2s_num = EXAMPLE_I2S_NUM;
     i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN,
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
         .dma_buf_len = 1024,
-        .use_apll = 1,
+        .use_apll = 0,
     };
     //install and start i2s driver
     TEST_ESP_OK( i2s_driver_install(i2s_num, &i2s_config, 0, NULL) );
     //init DAC pad
-    TEST_ESP_OK( i2s_set_dac_mode(I2S_DAC_CHANNEL_RIGHT_EN) );
+    TEST_ESP_OK( i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN) );
 }
 
 static void example_i2s_deinit(void)
 {
+    TEST_ESP_OK( i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE) );
     TEST_ESP_OK( i2s_driver_uninstall(EXAMPLE_I2S_NUM) );
 }
 
@@ -149,15 +142,16 @@ static void example_reset_play_mode(void)
 
 TEST_CASE("DAC DMA output", "[dac]")
 {
-    example_i2s_init();
-
     size_t bytes_written;
     int i2s_read_len = EXAMPLE_I2S_READ_LEN;
     uint8_t *i2s_write_buff = (uint8_t *) calloc(i2s_read_len, sizeof(char));
-    printf("Playing file example: \n");
     int offset = 0;
     int tot_size = sizeof(audio_table);
+    printf("Playing file example: \n");
+
+    example_i2s_init();
     example_set_file_play_mode();
+
     while (offset < tot_size) {
         int play_len = ((tot_size - offset) > (4 * 1024)) ? (4 * 1024) : (tot_size - offset);
         int i2s_wr_len = example_i2s_dac_data_scale(i2s_write_buff, (uint8_t *)(audio_table + offset), play_len);
@@ -165,7 +159,7 @@ TEST_CASE("DAC DMA output", "[dac]")
         offset += play_len;
         example_disp_buf((uint8_t *) i2s_write_buff, 32);
     }
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+
     example_reset_play_mode();
     free(i2s_write_buff);
 
