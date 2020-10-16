@@ -474,7 +474,7 @@ typedef void (*bt_mesh_dh_key_cb_t)(const u8_t key[32], const u8_t idx);
  *  or BLE_MESH_GATT_ITER_STOP to stop.
  */
 typedef u8_t (*bt_mesh_gatt_attr_func_t)(const struct bt_mesh_gatt_attr *attr,
-        void *user_data);
+                                         void *user_data);
 
 /** @brief Connection callback structure.
  *
