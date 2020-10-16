@@ -19,6 +19,8 @@
 #include "time_scene_client.h"
 #include "esp_ble_mesh_time_scene_model_api.h"
 
+#if BLE_MESH_TIME_SCENE_CLIENT_ENABLE
+
 /* Time and Scenes Client Models related functions */
 
 static inline void btc_ble_mesh_time_scene_client_cb_to_app(esp_ble_mesh_time_scene_client_cb_event_t event,
@@ -375,6 +377,7 @@ void btc_ble_mesh_time_scene_client_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_time_scene_client_free_req_data(msg);
     return;
 }
+#endif /* BLE_MESH_TIME_SCENE_CLIENT_ENABLE */
 
 /* Time and Scenes Server Models related functions */
 

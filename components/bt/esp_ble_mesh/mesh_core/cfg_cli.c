@@ -16,9 +16,12 @@
 #include "btc_ble_mesh_config_model.h"
 
 #include "mesh.h"
+#include "mesh_config.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "cfg_cli.h"
+
+#if CONFIG_BLE_MESH_CFG_CLI
 
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
@@ -1330,3 +1333,5 @@ const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
     .deinit = cfg_cli_deinit,
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
