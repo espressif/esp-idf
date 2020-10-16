@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 
+#include "mesh_config.h"
 #include "mesh_common.h"
 #include "proxy_server.h"
 #include "provisioner_main.h"
