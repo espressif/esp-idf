@@ -15,6 +15,8 @@
 #include "xtensa/hal.h"
 #include "esp_rom_sys.h"
 
+#if CONFIG_FREERTOS_CORETIMER_0
+
 static volatile int in_int_context, int_handled;
 
 
@@ -52,3 +54,5 @@ TEST_CASE("xPortInIsrContext test", "[freertos]")
 #endif
 }
 
+
+#endif

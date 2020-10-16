@@ -1,7 +1,8 @@
+#include "sdkconfig.h"
 #include "unity.h"
 #include "esp_intr_alloc.h"
 
-#if defined(__XTENSA__)
+#if defined(__XTENSA__) && CONFIG_FREERTOS_CORETIMER_0
 #include "xtensa/config/core-isa.h"
 #include "xtensa/hal.h"
 #if defined(XCHAL_HAVE_WINDOWED)
@@ -40,4 +41,4 @@ TEST_CASE("context save doesn't corrupt return address register", "[freertos]")
 }
 
 #endif // XCHAL_HAVE_WINDOWED
-#endif // __XTENSA__
+#endif // __XTENSA__ && CONFIG_FREERTOS_CORETIMER_0

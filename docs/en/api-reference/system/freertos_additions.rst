@@ -506,6 +506,9 @@ and ``vApplicationTickHook()`` can only be defined once. However, the ESP32 is d
 in nature, therefore same Idle Hook and Tick Hook are used for both cores (in other words,
 the hooks are symmetrical for both cores).
 
+In a dual core system, ``vApplicationTickHook()`` must be located in IRAM (for example
+by adding the IRAM_ATTR attribute).
+
 ESP-IDF Idle and Tick Hooks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Due to the the dual core nature of the ESP32, it may be necessary for some
