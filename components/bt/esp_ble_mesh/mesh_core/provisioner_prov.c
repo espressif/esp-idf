@@ -363,10 +363,12 @@ static void bt_mesh_pb_adv_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_pb_adv_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_adv_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_pb_adv_lock(void)
 {
@@ -385,10 +387,12 @@ static void bt_mesh_pb_buf_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_pb_buf_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_buf_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_pb_buf_lock(void)
 {
@@ -409,10 +413,12 @@ static void bt_mesh_pb_gatt_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_pb_gatt_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_gatt_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_pb_gatt_lock(void)
 {
@@ -3348,6 +3354,7 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_provisioner_prov_deinit(bool erase)
 {
     int i;
@@ -3398,6 +3405,7 @@ int bt_mesh_provisioner_prov_deinit(bool erase)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static bool is_unprov_dev_info_callback_to_app(bt_mesh_prov_bearer_t bearer,
         const u8_t uuid[16], const bt_mesh_addr_t *addr, u16_t oob_info, s8_t rssi)

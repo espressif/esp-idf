@@ -164,6 +164,7 @@ esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     return btc_ble_mesh_client_model_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 {
     if (model == NULL) {
@@ -174,6 +175,7 @@ esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 
     return btc_ble_mesh_client_model_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
                                              esp_ble_mesh_msg_ctx_t *ctx,

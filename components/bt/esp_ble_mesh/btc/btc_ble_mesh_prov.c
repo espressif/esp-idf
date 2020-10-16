@@ -962,10 +962,12 @@ int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     return bt_mesh_client_init((struct bt_mesh_model *)model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int btc_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 {
     return bt_mesh_client_deinit((struct bt_mesh_model *)model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod)
 {
@@ -2027,10 +2029,12 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
                                                  arg->model_unsub_group_addr.model_id,
                                                  arg->model_unsub_group_addr.group_addr);
         break;
+#if CONFIG_BLE_MESH_DEINIT
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
         break;
+#endif /* CONFIG_BLE_MESH_DEINIT */
     default:
         BT_WARN("%s, Unknown act %d", __func__, msg->act);
         return;
