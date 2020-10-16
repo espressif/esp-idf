@@ -469,6 +469,7 @@ static int health_srv_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int health_srv_deinit(struct bt_mesh_model *model)
 {
     struct bt_mesh_health_srv *srv = model->user_data;
@@ -499,10 +500,13 @@ static int health_srv_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_health_srv_cb = {
     .init = health_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = health_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)

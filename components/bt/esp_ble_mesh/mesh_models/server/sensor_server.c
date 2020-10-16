@@ -1127,6 +1127,7 @@ static int sensor_setup_srv_init(struct bt_mesh_model *model)
     return sensor_server_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int sensor_server_deinit(struct bt_mesh_model *model)
 {
     if (model->user_data == NULL) {
@@ -1156,13 +1157,18 @@ static int sensor_setup_srv_deinit(struct bt_mesh_model *model)
 
     return sensor_server_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_sensor_srv_cb = {
     .init = sensor_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_sensor_setup_srv_cb = {
     .init = sensor_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };

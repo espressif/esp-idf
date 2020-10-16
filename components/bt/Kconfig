@@ -1798,6 +1798,13 @@ if BLE_MESH
 
     endchoice # BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
 
+    config BLE_MESH_DEINIT
+        bool "Support de-initialize BLE Mesh stack"
+        default y
+        help
+            If enabled, users can use the function esp_ble_mesh_deinit() to de-initialize
+            the whole BLE Mesh stack.
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE

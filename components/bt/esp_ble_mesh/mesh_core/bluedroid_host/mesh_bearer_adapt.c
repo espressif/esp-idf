@@ -1750,6 +1750,7 @@ void bt_mesh_gatt_init(void)
 #endif
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_gatt_deinit(void)
 {
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
@@ -1779,6 +1780,7 @@ void bt_mesh_gatt_deinit(void)
     }
 #endif
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_adapt_init(void)
 {

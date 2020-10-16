@@ -3397,6 +3397,7 @@ static int cfg_srv_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int cfg_srv_deinit(struct bt_mesh_model *model)
 {
     struct bt_mesh_cfg_srv *cfg = model->user_data;
@@ -3423,10 +3424,13 @@ static int cfg_srv_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb = {
     .init = cfg_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = cfg_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
