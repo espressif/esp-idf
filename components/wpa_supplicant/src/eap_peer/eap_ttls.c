@@ -1423,6 +1423,16 @@ start:
 		goto start;
 	}
 
+	/* draft-ietf-emu-eap-tls13-13 Section 2.5 */
+	if (data->ssl.tls_v13 && wpabuf_len(in_decrypted) == 1 &&
+	    *wpabuf_head_u8(in_decrypted) == 0) {
+		wpa_printf(MSG_DEBUG,
+			   "EAP-TTLS: ACKing EAP-TLS Commitment Message");
+		eap_peer_tls_reset_output(&data->ssl);
+		wpabuf_free(in_decrypted);
+		return 1;
+	}
+
 continue_req:
 	data->phase2_start = 0;
 
