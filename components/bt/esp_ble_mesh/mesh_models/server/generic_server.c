@@ -10,11 +10,14 @@
 
 #include "btc_ble_mesh_generic_model.h"
 
+#include "mesh_config.h"
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
+
+#if CONFIG_BLE_MESH_GENERIC_SERVER
 
 static bt_mesh_mutex_t generic_server_lock;
 
@@ -2896,3 +2899,5 @@ const struct bt_mesh_model_cb bt_mesh_gen_client_prop_srv_cb = {
     .deinit = gen_client_prop_srv_deinit,
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */

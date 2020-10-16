@@ -15,10 +15,13 @@
 #include <errno.h>
 
 #include "mesh.h"
+#include "mesh_config.h"
 #include "access.h"
 #include "mesh_common.h"
 #include "generic_server.h"
 #include "lighting_server.h"
+
+#if CONFIG_BLE_MESH_SERVER_MODEL
 
 /**
  * According to Mesh Model Spec:
@@ -258,3 +261,5 @@ struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u
 
     return buf;
 }
+
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */

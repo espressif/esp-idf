@@ -16,10 +16,13 @@
 
 #include "btc_ble_mesh_time_scene_model.h"
 
+#include "mesh_config.h"
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
+
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
 
 static bt_mesh_mutex_t time_scene_server_lock;
 
@@ -1545,3 +1548,5 @@ const struct bt_mesh_model_cb bt_mesh_scheduler_setup_srv_cb = {
     .deinit = scheduler_setup_srv_deinit,
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
