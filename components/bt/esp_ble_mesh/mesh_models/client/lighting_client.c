@@ -127,10 +127,12 @@ static void bt_mesh_light_client_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_light_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&light_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_light_client_lock(void)
 {
@@ -1362,6 +1364,7 @@ static int lighting_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int lighting_client_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_light_client_t *client = NULL;
@@ -1390,8 +1393,11 @@ static int lighting_client_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_lighting_client_cb = {
     .init = lighting_client_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = lighting_client_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };

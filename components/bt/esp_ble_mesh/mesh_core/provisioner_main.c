@@ -43,10 +43,12 @@ static void bt_mesh_provisioner_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_provisioner_mutex_free(void)
 {
     bt_mesh_mutex_free(&provisioner_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_provisioner_lock(void)
 {
@@ -159,6 +161,7 @@ done:
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_provisioner_deinit(bool erase)
 {
     int i;
@@ -194,6 +197,7 @@ int bt_mesh_provisioner_deinit(bool erase)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 bool bt_mesh_provisioner_check_is_addr_dup(u16_t addr, u8_t elem_num, bool comp_with_own)
 {

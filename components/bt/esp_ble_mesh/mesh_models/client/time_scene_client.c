@@ -72,10 +72,12 @@ static void bt_mesh_time_scene_client_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_time_scene_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&time_scene_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_time_scene_client_lock(void)
 {
@@ -668,6 +670,7 @@ static int time_scene_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int time_scene_client_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_time_scene_client_t *client = NULL;
@@ -696,8 +699,11 @@ static int time_scene_client_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_time_scene_client_cb = {
     .init = time_scene_client_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = time_scene_client_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
