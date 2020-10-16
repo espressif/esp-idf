@@ -356,7 +356,7 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
 
 static bt_mesh_mutex_t client_model_lock;
 
-static void bt_mesh_client_model_mutex_new(void)
+static inline void bt_mesh_client_model_mutex_new(void)
 {
     if (!client_model_lock.mutex) {
         bt_mesh_mutex_create(&client_model_lock);
@@ -364,7 +364,7 @@ static void bt_mesh_client_model_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_client_model_mutex_free(void)
+static inline void bt_mesh_client_model_mutex_free(void)
 {
     bt_mesh_mutex_free(&client_model_lock);
 }

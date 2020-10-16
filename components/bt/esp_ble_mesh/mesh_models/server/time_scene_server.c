@@ -23,7 +23,7 @@
 
 static bt_mesh_mutex_t time_scene_server_lock;
 
-static void bt_mesh_time_scene_server_mutex_new(void)
+static inline void bt_mesh_time_scene_server_mutex_new(void)
 {
     if (!time_scene_server_lock.mutex) {
         bt_mesh_mutex_create(&time_scene_server_lock);
@@ -31,7 +31,7 @@ static void bt_mesh_time_scene_server_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_time_scene_server_mutex_free(void)
+static inline void bt_mesh_time_scene_server_mutex_free(void)
 {
     bt_mesh_mutex_free(&time_scene_server_lock);
 }

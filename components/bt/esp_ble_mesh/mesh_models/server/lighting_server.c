@@ -18,7 +18,7 @@
 
 static bt_mesh_mutex_t light_server_lock;
 
-static void bt_mesh_light_server_mutex_new(void)
+static inline void bt_mesh_light_server_mutex_new(void)
 {
     if (!light_server_lock.mutex) {
         bt_mesh_mutex_create(&light_server_lock);
@@ -26,7 +26,7 @@ static void bt_mesh_light_server_mutex_new(void)
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static void bt_mesh_light_server_mutex_free(void)
+static inline void bt_mesh_light_server_mutex_free(void)
 {
     bt_mesh_mutex_free(&light_server_lock);
 }
