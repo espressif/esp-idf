@@ -16,11 +16,14 @@
 
 #include "btc_ble_mesh_sensor_model.h"
 
+#include "mesh_config.h"
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
+
+#if CONFIG_BLE_MESH_SENSOR_SERVER
 
 static void update_sensor_periodic_pub(struct bt_mesh_model *model, u16_t prop_id);
 
@@ -1172,3 +1175,5 @@ const struct bt_mesh_model_cb bt_mesh_sensor_setup_srv_cb = {
     .deinit = sensor_setup_srv_deinit,
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */
