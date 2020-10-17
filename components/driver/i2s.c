@@ -343,9 +343,16 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
     }
 
     i2s_stop(i2s_num);
-
-    i2s_hal_set_tx_mode(&(p_i2s_obj[i2s_num]->hal), ch, bits);
+#if SOC_I2S_SUPPORTS_ADC_DAC
+    /* I2S-ADC only support single channel format. */
+    if (!(p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN)) {
+        i2s_hal_set_rx_mode(&(p_i2s_obj[i2s_num]->hal), ch, bits);
+    }
+#else
     i2s_hal_set_rx_mode(&(p_i2s_obj[i2s_num]->hal), ch, bits);
+#endif
+    i2s_hal_set_tx_mode(&(p_i2s_obj[i2s_num]->hal), ch, bits);
+
     if (p_i2s_obj[i2s_num]->channel_num != ch) {
         p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
     }
