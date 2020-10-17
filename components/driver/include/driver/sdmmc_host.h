@@ -15,9 +15,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#ifndef SOC_SDMMC_HOST_SUPPORTED
-#error SDMMC host is not supported in this chip target
-#endif
+#if SOC_SDMMC_HOST_SUPPORTED
 
 #include <stdint.h>
 #include <stddef.h>
@@ -245,3 +243,5 @@ esp_err_t sdmmc_host_pullup_en(int slot, int width);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //SOC_SDMMC_HOST_SUPPORTED

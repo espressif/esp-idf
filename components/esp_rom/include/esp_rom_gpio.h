@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/gpio_pins.h"  //for GPIO_MATRIX_CONST_ONE_INPUT, GPIO_MATRIX_CONST_ZERO_INPUT
 
 /**
  * @brief Configure IO Pad as General Purpose IO,

@@ -31,7 +31,7 @@
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "driver/spi_common_internal.h"
 #include "driver/periph_ctrl.h"
@@ -972,7 +972,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         ESP_EARLY_LOGE(TAG, "PSRAM 2T mode and SPIRAM bank switching can not enabled meanwhile. Please read the help text for SPIRAM_2T_MODE in the project configuration menu.");
         abort();
 #endif
-        /* Note: 2T mode command should not be sent twice, 
+        /* Note: 2T mode command should not be sent twice,
            otherwise psram would get back to normal mode. */
         if (psram_2t_mode_check(PSRAM_SPI_1) != ESP_OK) {
             psram_2t_mode_enable(PSRAM_SPI_1);

@@ -16,6 +16,7 @@
 
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
+#include "hal/adc_hal_conf.h"
 
 /*---------------------------------------------------------------
                     Digital controller setting

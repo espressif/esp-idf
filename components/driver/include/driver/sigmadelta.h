@@ -14,8 +14,8 @@
 #pragma once
 
 #include <esp_types.h>
+#include "soc/soc_caps.h"
 #include "soc/sigmadelta_periph.h"
-#include "soc/sigmadelta_caps.h"
 #include "driver/gpio.h"
 #include "hal/sigmadelta_types.h"
 

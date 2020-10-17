@@ -32,7 +32,7 @@
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
 #include "soc/apb_ctrl_reg.h"
 #include "soc/efuse_reg.h"

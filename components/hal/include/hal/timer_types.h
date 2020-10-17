@@ -21,8 +21,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include <esp_bit_defs.h>
-#include "soc/timer_group_caps.h"
 #include "esp_attr.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief Selects a Timer-Group out of 2 available groups
@@ -98,7 +98,7 @@ typedef enum {
     TIMER_AUTORELOAD_MAX,
 } timer_autoreload_t;
 
-#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
 /**
  * @brief Select timer source clock.
  */
@@ -118,7 +118,7 @@ typedef struct {
     timer_count_dir_t counter_dir; /*!< Counter direction  */
     timer_autoreload_t auto_reload;   /*!< Timer auto-reload */
     uint32_t divider;   /*!< Counter clock divider. The divider's range is from from 2 to 65536. */
-#ifdef SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
     timer_src_clk_t clk_src;  /*!< Use XTAL as source clock. */
 #endif
 } timer_config_t;

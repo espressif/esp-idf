@@ -17,7 +17,7 @@
 #include "soc/periph_defs.h"
 #include "soc/i2s_struct.h"
 #include "soc/i2s_reg.h"
-#include "soc/i2s_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

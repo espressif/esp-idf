@@ -62,7 +62,7 @@ static inline void touch_ll_set_meas_time(uint16_t meas_time)
     //touch sensor measure time= meas_cycle / 8Mhz
     SENS.sar_touch_ctrl1.touch_meas_delay = meas_time;
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    SENS.sar_touch_ctrl1.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT;
+    SENS.sar_touch_ctrl1.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT_MAX;
 }
 
 /**

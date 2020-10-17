@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -19,7 +20,6 @@
 #include "driver/pcnt.h"
 #include "driver/periph_ctrl.h"
 #include "hal/pcnt_hal.h"
-#include "soc/pcnt_caps.h"
 #include "esp_rom_gpio.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
@@ -287,7 +287,7 @@ static void IRAM_ATTR pcnt_intr_service(void *arg)
     uint32_t status;
     pcnt_port_t pcnt_port = (pcnt_port_t)arg;
     pcnt_hal_get_intr_status(&(p_pcnt_obj[pcnt_port]->hal), &status);
-    
+
     while (status) {
         int unit = __builtin_ffs(status) - 1;
         status &= ~(1 << unit);

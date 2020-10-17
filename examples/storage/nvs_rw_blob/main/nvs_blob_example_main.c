@@ -168,7 +168,7 @@ void app_main(void)
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
 
     gpio_reset_pin(GPIO_NUM_0);
-    gpio_set_direction(GPIO_NUM_0, GPIO_MODE_DEF_INPUT);
+    gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
 
     /* Read the status of GPIO0. If GPIO0 is LOW for longer than 1000 ms,
        then save module's run time and restart it

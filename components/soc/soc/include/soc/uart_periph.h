@@ -13,9 +13,9 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
-#include "soc/uart_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/gpio_sig_map.h"
 

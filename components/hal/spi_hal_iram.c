@@ -49,7 +49,7 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 {
     //Configure clock settings
     spi_dev_t *hw = hal->hw;
-#ifdef SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_SUPPORT_AS_CS
     spi_ll_master_set_cksel(hw, dev->cs_pin_id, dev->as_cs);
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);

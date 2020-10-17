@@ -21,6 +21,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief   TWAI Constants
@@ -46,6 +47,10 @@ extern "C" {
 #define TWAI_MSG_FLAG_SELF              0x08        /**< Transmit as a Self Reception Request. Unused for received. */
 #define TWAI_MSG_FLAG_DLC_NON_COMP      0x10        /**< Message's Data length code is larger than 8. This will break compliance with TWAI */
 
+#define TWAI_BRP_MAX    SOC_TWAI_BRP_MAX    /**< Maximum configurable BRP value */
+#define TWAI_BRP_MIN    SOC_TWAI_BRP_MIN    /**< Minimum configurable BRP value */
+
+
 /**
  * @brief Initializer macros for timing configuration structure
  *
@@ -55,12 +60,12 @@ extern "C" {
  * @note These timing values are based on the assumption APB clock is at 80MHz
  * @note The available bit rates are dependent on the chip target and revision.
  */
-#if (TWAI_BRP_MAX > 256)
+#if (SOC_TWAI_BRP_MAX > 256)
 #define TWAI_TIMING_CONFIG_1KBITS()     {.brp = 4000, .tseg_1 = 15, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_5KBITS()     {.brp = 800, .tseg_1 = 15, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_10KBITS()    {.brp = 400, .tseg_1 = 15, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #endif
-#if (TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN >= 2)
+#if (SOC_TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN >= 2)
 #define TWAI_TIMING_CONFIG_12_5KBITS()  {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_16KBITS()    {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_20KBITS()    {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}

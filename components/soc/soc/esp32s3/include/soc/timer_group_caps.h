@@ -14,4 +14,4 @@
 
 #pragma once
 
-#define SOC_TIMER_GROUP_SUPPORT_XTAL
+#define SOC_TIMER_GROUP_SUPPORT_XTAL 1

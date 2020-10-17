@@ -32,6 +32,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dac_hal.h"
+#include "hal/adc_hal_conf.h"
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \

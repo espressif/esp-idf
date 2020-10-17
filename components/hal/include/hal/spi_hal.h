@@ -133,7 +133,7 @@ typedef struct {
         uint32_t tx_lsbfirst : 1;       ///< Whether LSB is sent first for TX data, device specific
         uint32_t rx_lsbfirst : 1;       ///< Whether LSB is received first for RX data, device specific
         uint32_t no_compensate : 1;     ///< No need to add dummy to compensate the timing, device specific
-#ifdef SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_SUPPORT_AS_CS
         uint32_t as_cs  : 1;            ///< Whether to toggle the CS while the clock toggles, device specific
 #endif
         uint32_t positive_cs : 1;       ///< Whether the postive CS feature is abled, device specific

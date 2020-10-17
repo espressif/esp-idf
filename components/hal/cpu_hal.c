@@ -21,7 +21,7 @@
 #include "hal/cpu_hal.h"
 #include "hal/cpu_types.h"
 
-#include "soc/cpu_caps.h"
+#include "soc/soc_caps.h"
 
 
 #if SOC_CPU_BREAKPOINTS_NUM > 0

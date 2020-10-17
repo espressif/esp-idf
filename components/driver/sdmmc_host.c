@@ -17,8 +17,9 @@
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc_caps.h"
+#include "soc/soc_pins.h"
 #include "soc/gpio_periph.h"
-#include "soc/gpio_caps.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "driver/gpio.h"

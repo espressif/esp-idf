@@ -18,7 +18,7 @@
 #include "hal/cpu_hal.h"
 #include "hal/mpu_hal.h"
 #include "hal/mpu_types.h"
-#include "soc/mpu_caps.h"
+#include "soc/soc_caps.h"
 #include "bootloader_mem.h"
 #include "xt_instr_macros.h"
 #include "xtensa/config/specreg.h"
@@ -28,7 +28,7 @@ static inline void cpu_configure_region_protection(void)
     /* Currently, the only supported chips esp32 and esp32s2
      * have the same configuration. Move this to the port layer once
      * more chips with different configurations are supported.
-     * 
+     *
      * Both chips have the address space divided into 8 regions, 512MB each.
      */
     const int illegal_regions[] = {0, 4, 5, 6, 7}; // 0x00000000, 0x80000000, 0xa0000000, 0xc0000000, 0xe0000000

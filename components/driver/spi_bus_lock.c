@@ -18,7 +18,7 @@
 #include "sdkconfig.h"
 #include "spi_common_internal.h"
 #include "esp_intr_alloc.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "stdatomic.h"
 #include "esp_log.h"
 #include <strings.h>

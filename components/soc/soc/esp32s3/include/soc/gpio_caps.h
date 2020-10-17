@@ -20,27 +20,18 @@ extern "C" {
 
 // ESP32-S3 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1)
-#define GPIO_PIN_COUNT          (48)
+#define SOC_GPIO_PIN_COUNT      (48)
 
 // On ESP32-S3, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
-#define GPIO_SUPPORTS_RTC_INDEPENDENT (1)
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S3
-#define GPIO_SUPPORTS_FORCE_HOLD      (1)
+#define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
-#define GPIO_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_PRO_CPU_NMI_INTR_ENA  (BIT(1))
+// 0~47 except from 22~25, 47 are valid
+#define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25 | BIT47))
+// GPIO 46, 47 are input only
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46 | BIT47))
 
-#define GPIO_MODE_DEF_DISABLE         (0)
-#define GPIO_MODE_DEF_INPUT           (BIT0)
-#define GPIO_MODE_DEF_OUTPUT          (BIT1)
-#define GPIO_MODE_DEF_OD              (BIT2)
-
-#define GPIO_IS_VALID_GPIO(gpio_num)             ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0)) /*!< Check whether it is a valid GPIO number */
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 46))              /*!< Check whether it can be a valid GPIO number of output mode */
-#define GPIO_MASK_CONTAIN_INPUT_GPIO(gpio_mask)  ((gpio_mask & (GPIO_SEL_46)))                                    /*!< Check whether it contains input io */
-
-#define GPIO_MATRIX_CONST_ONE_INPUT   (0x38)
-#define GPIO_MATRIX_CONST_ZERO_INPUT  (0x3C)
 
 #ifdef __cplusplus
 }

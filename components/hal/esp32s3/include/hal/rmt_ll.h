@@ -20,7 +20,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/rmt_struct.h"
-#include "soc/rmt_caps.h"
+#include "soc/soc_caps.h"
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)

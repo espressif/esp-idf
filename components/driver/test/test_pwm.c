@@ -27,7 +27,7 @@
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
-#ifdef SOC_MCPWM_SUPPORTED
+#if SOC_MCPWM_SUPPORTED
 #include "soc/mcpwm_periph.h"
 #include "driver/mcpwm.h"
 

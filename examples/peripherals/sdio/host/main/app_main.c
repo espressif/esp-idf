@@ -276,7 +276,7 @@ void slave_power_on(void)
 #endif
     gpio_config_t cfg = {
         .pin_bit_mask = BIT64(GPIO_B1),
-        .mode = GPIO_MODE_DEF_OUTPUT,
+        .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = false,
         .pull_down_en = false,
         .intr_type = GPIO_INTR_DISABLE,

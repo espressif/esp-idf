@@ -103,7 +103,7 @@ void esp_timer_impl_advance(int64_t time_us)
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
-#ifdef SOC_SYSTIMER_INT_LEVEL
+#if SOC_SYSTIMER_INT_LEVEL
     int int_type = 0;
 #else
     int int_type = ESP_INTR_FLAG_EDGE;

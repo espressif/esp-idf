@@ -20,6 +20,7 @@ extern "C" {
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -27,7 +28,6 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include "hal/uart_types.h"
-#include "soc/uart_caps.h"
 
 // Valid UART port number
 #define UART_NUM_0             (0) /*!< UART port 0 */
@@ -38,6 +38,9 @@ extern "C" {
 #define UART_NUM_MAX           (SOC_UART_NUM) /*!< UART port max */
 
 #define UART_PIN_NO_CHANGE      (-1)         /*!< Constant for uart_set_pin function which indicates that UART pin should not be changed */
+
+#define UART_FIFO_LEN           SOC_UART_FIFO_LEN       ///< Length of the UART HW FIFO
+#define UART_BITRATE_MAX        SOC_UART_BITRATE_MAX    ///< Maximum configurable bitrate
 
 /**
  * @brief UART interrupt configuration parameters for uart_intr_config function
@@ -224,7 +227,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  * @brief Set UART line inverse mode
  *
  * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
- * @param inverse_mask Choose the wires that need to be inverted. Using the ORred mask of `uart_signal_inv_t` 
+ * @param inverse_mask Choose the wires that need to be inverted. Using the ORred mask of `uart_signal_inv_t`
  *
  * @return
  *     - ESP_OK   Success

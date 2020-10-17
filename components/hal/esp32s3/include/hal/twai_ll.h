@@ -363,7 +363,7 @@ static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
 static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)
 {
 #ifdef TWAI_BRP_DIV_SUPPORTED
-    if (brp > TWAI_BRP_DIV_THRESH) {
+    if (brp > SOC_TWAI_BRP_DIV_THRESH) {
         //Need to set brp_div bit
         hw->interrupt_enable_reg.brp_div = 1;
         brp /= 2;

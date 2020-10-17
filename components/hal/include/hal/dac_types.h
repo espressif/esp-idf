@@ -1,6 +1,6 @@
 #pragma once
 
-#include "soc/dac_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/adc_types.h"
 #include "sdkconfig.h"
 

@@ -22,12 +22,11 @@ extern "C" {
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
-#define I2C_INTR_MASK          (0x3fff) /*!< I2C all interrupt bitmap */
 
 //ESP32-S3 support hardware FSM reset
-#define I2C_SUPPORT_HW_FSM_RST  (1)
+#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
 //ESP32-S3 support hardware clear bus
-#define I2C_SUPPORT_HW_CLR_BUS  (1)
+#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,7 @@
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
 #include "soc/apb_ctrl_reg.h"
 #include "soc/efuse_reg.h"
@@ -61,7 +61,7 @@ static const char* TAG = "psram";
 #define PSRAM_RESET                0x99
 #define PSRAM_SET_BURST_LEN        0xC0
 #define PSRAM_DEVICE_ID            0x9F
-// ID 
+// ID
 #define PSRAM_ID_KGD_M          0xff
 #define PSRAM_ID_KGD_S             8
 #define PSRAM_ID_KGD            0x5d
@@ -215,7 +215,7 @@ void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
     _psram_exec_cmd(spi_num, cmd, cmd_bit_len, addr, addr_bit_len,
         dummy_bits, mosi_data, mosi_bit_len, miso_data, miso_bit_len);
     esp_rom_spi_cmd_start(spi_num, miso_data, miso_bit_len / 8, cs_mask, is_write_erase_operation);
-    
+
     WRITE_PERI_REG(SPI_MEM_USER_REG(spi_num), backup_usr);
     WRITE_PERI_REG(SPI_MEM_USER1_REG(spi_num), backup_usr1);
     WRITE_PERI_REG(SPI_MEM_USER2_REG(spi_num), backup_usr2);

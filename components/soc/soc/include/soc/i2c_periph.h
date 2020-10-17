@@ -15,7 +15,7 @@
 
 #include "soc/i2c_reg.h"
 #include "soc/i2c_struct.h"
-#include "soc/i2c_caps.h"
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 
 #ifdef __cplusplus

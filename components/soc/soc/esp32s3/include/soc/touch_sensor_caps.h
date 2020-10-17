@@ -19,9 +19,8 @@ extern "C" {
 #endif
 
 #define SOC_TOUCH_SENSOR_NUM                (15)
-#define SOC_TOUCH_SENSOR_BIT_MASK_MAX       (0x7fff)
 
-#define SOC_TOUCH_PAD_MEASURE_WAIT          (0xFF)
+#define SOC_TOUCH_PAD_MEASURE_WAIT_MAX          (0xFF)
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)
 
 #define SOC_TOUCH_SHIELD_CHANNEL            (14)

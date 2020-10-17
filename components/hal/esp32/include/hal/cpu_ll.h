@@ -17,7 +17,7 @@
 
 #include "esp_attr.h"
 
-#include "soc/cpu_caps.h"
+#include "soc/soc_caps.h"
 
 #include "xt_instr_macros.h"
 #include "xtensa/config/specreg.h"

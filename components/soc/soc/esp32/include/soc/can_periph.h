@@ -23,8 +23,8 @@ extern "C" {
 #warning soc/can_periph.h is deprecated, please use soc/twai_periph.h instead
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "soc/soc_caps.h"
 #include "soc/can_struct.h"
-#include "soc/can_caps.h"
 #endif
 
 #ifdef __cplusplus

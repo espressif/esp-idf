@@ -19,9 +19,9 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
-#include "soc/gdma_caps.h"
 
 #define GDMA_LL_EVENT_TX_L3_FIFO_UDF (1<<17)
 #define GDMA_LL_EVENT_TX_L3_FIFO_OVF (1<<16)

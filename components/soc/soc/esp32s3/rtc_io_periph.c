@@ -14,7 +14,7 @@
 
 #include "soc/rtc_io_periph.h"
 
-const int rtc_io_num_map[GPIO_PIN_COUNT] = {
+const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     RTCIO_GPIO0_CHANNEL,    //GPIO0
     RTCIO_GPIO1_CHANNEL,    //GPIO1
     RTCIO_GPIO2_CHANNEL,    //GPIO2
@@ -66,7 +66,7 @@ const int rtc_io_num_map[GPIO_PIN_COUNT] = {
 };
 
 //Reg,Mux,Fun,IE,Up,Down,Rtc_number
-const rtc_io_desc_t rtc_io_desc[SOC_RTC_IO_PIN_COUNT] = {
+const rtc_io_desc_t rtc_io_desc[SOC_RTCIO_PIN_COUNT] = {
     /*REG                    MUX select                    function select               Input enable                 Pullup                    Pulldown                  Sleep select                   Sleep input enable           Sleep output enable           PAD hold   Pad force hold              Mask of drive capability  Offset                    gpio number */
     {RTC_IO_TOUCH_PAD0_REG,  RTC_IO_TOUCH_PAD0_MUX_SEL_M,  RTC_IO_TOUCH_PAD0_FUN_SEL_S,  RTC_IO_TOUCH_PAD0_FUN_IE_M,  RTC_IO_TOUCH_PAD0_RUE_M,  RTC_IO_TOUCH_PAD0_RDE_M,  RTC_IO_TOUCH_PAD0_SLP_SEL_M,   RTC_IO_TOUCH_PAD0_SLP_IE_M,  RTC_IO_TOUCH_PAD0_SLP_OE_M,   0,         RTC_CNTL_TOUCH_PAD0_HOLD_M,  RTC_IO_TOUCH_PAD0_DRV_V,  RTC_IO_TOUCH_PAD0_DRV_S,  RTCIO_CHANNEL_0_GPIO_NUM}, //0
     {RTC_IO_TOUCH_PAD1_REG,  RTC_IO_TOUCH_PAD1_MUX_SEL_M,  RTC_IO_TOUCH_PAD1_FUN_SEL_S,  RTC_IO_TOUCH_PAD1_FUN_IE_M,  RTC_IO_TOUCH_PAD1_RUE_M,  RTC_IO_TOUCH_PAD1_RDE_M,  RTC_IO_TOUCH_PAD1_SLP_SEL_M,   RTC_IO_TOUCH_PAD1_SLP_IE_M,  RTC_IO_TOUCH_PAD1_SLP_OE_M,   0,         RTC_CNTL_TOUCH_PAD1_HOLD_M,  RTC_IO_TOUCH_PAD1_DRV_V,  RTC_IO_TOUCH_PAD1_DRV_S,  RTCIO_CHANNEL_1_GPIO_NUM}, //1

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "soc/soc_caps.h"
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 

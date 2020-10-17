@@ -21,7 +21,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/adc_channel.h"
-#include "soc/adc_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * Store IO number corresponding to the ADC channel number.
- * 
+ *
  * @value
  *      - >=0 : GPIO number index.
  *      - -1  : Not support.

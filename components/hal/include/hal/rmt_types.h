@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#include "soc/rmt_caps.h"
+#include "soc/soc_caps.h"
 
 /**
 * @brief RMT channel ID

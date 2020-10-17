@@ -15,7 +15,7 @@
 #pragma once
 #include <stdint.h>
 //include soc related (generated) definitions
-#include "soc/sdmmc_pins.h"
+#include "soc/soc_pins.h"
 #include "soc/sdmmc_reg.h"
 #include "soc/sdmmc_struct.h"
 #include "soc/gpio_sig_map.h"

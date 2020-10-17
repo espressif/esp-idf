@@ -19,7 +19,8 @@
 #include "soc/periph_defs.h"
 
 //include soc related (generated) definitions
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
+#include "soc/soc_pins.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/gpio_sig_map.h"

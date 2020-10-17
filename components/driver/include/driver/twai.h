@@ -19,16 +19,13 @@ extern "C" {
 #endif
 
 #include "soc/soc_caps.h"
-#ifndef SOC_TWAI_SUPPORTED
-#error TWAI is not supported in this chip target
-#endif
+#if SOC_TWAI_SUPPORTED
 
 #include "freertos/FreeRTOS.h"
 #include "esp_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "gpio.h"
-#include "soc/twai_caps.h"
 #include "hal/twai_types.h"
 
 /* -------------------- Default initializers and flags ---------------------- */
@@ -347,3 +344,5 @@ esp_err_t twai_clear_receive_queue(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //SOC_TWAI_SUPPORTED

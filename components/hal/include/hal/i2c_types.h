@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/i2c_caps.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).

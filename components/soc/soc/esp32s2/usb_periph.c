@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "soc/soc_caps.h"
 #include "soc/usb_periph.h"
-#include "soc/gpio_caps.h"
 
 const usb_iopin_dsc_t usb_periph_iopins[] = {
     {USBPHY_VP_NUM, USB_EXTPHY_VP_IDX, 0, 1},

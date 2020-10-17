@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "soc/systimer_caps.h"
+#include "soc/soc_caps.h"
 
 /*
  * @brief The structure of the counter value in systimer

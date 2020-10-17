@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "hal/adc_hal.h"
+#include "hal/adc_hal_conf.h"
 
 void adc_hal_init(void)
 {

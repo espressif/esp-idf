@@ -18,13 +18,11 @@
 extern "C" {
 #endif
 
-#define UART_FIFO_LEN          (128)      /*!< The UART hardware FIFO length */
-#define UART_BITRATE_MAX       (5000000)  /*!< Max bit rate supported by UART */
+#define SOC_UART_FIFO_LEN          (128)      /*!< The UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX       (5000000)  /*!< Max bit rate supported by UART */
 
 // ESP32-S3 have 2 UART
 #define SOC_UART_NUM           (2)
-#define SOC_UART_MIN_WAKEUP_THRESH (2)
-#define UART_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #ifdef __cplusplus
 }

@@ -21,7 +21,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
-#include "soc/gpio_caps.h"
+#include "soc/soc_caps.h"
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
@@ -606,7 +606,7 @@ TEST_CASE("PCNT interrupt method test(control IO is low)", "[pcnt][timeout=120]"
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
 
     pcnt_evt_queue = xQueueCreate(10, sizeof(uint32_t));
-    
+
     pcnt_isr_handle_t pcnt_isr_service;
     TEST_ESP_OK(pcnt_isr_register(pcnt_intr_handler, NULL, 0, &pcnt_isr_service));
     TEST_ESP_OK(pcnt_intr_enable(PCNT_UNIT_0));
