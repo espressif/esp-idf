@@ -217,8 +217,10 @@ def action_extensions(base_actions, project_path):
                 "default": None,
             },
             {
-                "names": ["-n", "--no-warnings"],
-                "help": "Disable Cmake warnings.",
+                "names": ["-w/-n", "--cmake-warn-uninitialized/--no-warnings"],
+                "help": ("Enable CMake uninitialized variable warnings for CMake files inside the project directory. "
+                         "(--no-warnings is now the default, and doesn't need to be specified.)"),
+                "envvar": "IDF_CMAKE_WARN_UNINITIALIZED",
                 "is_flag": True,
                 "default": False,
             },

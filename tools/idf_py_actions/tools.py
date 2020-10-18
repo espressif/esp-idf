@@ -178,7 +178,7 @@ def ensure_build_directory(args, prog_name, always_run_cmake=False):
                 "-DPYTHON_DEPS_CHECKED=1",
                 "-DESP_PLATFORM=1",
             ]
-            if not args.no_warnings:
+            if args.cmake_warn_uninitialized:
                 cmake_args += ["--warn-uninitialized"]
 
             if args.define_cache_entry:
