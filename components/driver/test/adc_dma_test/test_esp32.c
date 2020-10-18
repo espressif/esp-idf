@@ -110,7 +110,7 @@ static esp_err_t adc_dma_data_check(uint8_t *buf, int length, int ideal_level)
         } else if (ideal_level == 0) {  // low level 0v
             TEST_ASSERT_LESS_THAN( 10, p->type1.data );
         } else if (ideal_level == 2) {  // middle level 1.4v
-            TEST_ASSERT_INT_WITHIN( 128, 1666, p->type1.data );
+            TEST_ASSERT_INT_WITHIN( 128, 1586, p->type1.data );
         } else if (ideal_level == 3) {  // normal level
         } else { // no check
         }
