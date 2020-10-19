@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include "sdkconfig.h"
 #include "heap_tlsf_config.h"
 
 #if defined(__cplusplus)

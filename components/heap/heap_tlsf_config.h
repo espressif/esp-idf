@@ -43,7 +43,7 @@ enum tlsf_config
 	** values require more memory in the control structure. Values of
 	** 4 or 5 are typical.
 	*/
-	SL_INDEX_COUNT_LOG2  = 5,
+	SL_INDEX_COUNT_LOG2  = 2,
 
 	/* All allocation sizes and addresses are aligned to 4 bytes. */
 	ALIGN_SIZE_LOG2 = 2,
@@ -63,7 +63,11 @@ enum tlsf_config
 	/* Tunning the first level, we can reduce TLSF pool overhead
 	 * in exchange of manage a pool smaller than 4GB
 	 */
-	FL_INDEX_MAX = 30,
+	#ifndef CONFIG_SPIRAM
+	FL_INDEX_MAX = 18, //Each pool can have up 256KB
+	#else
+	FL_INDEX_MAX = 23, //Each pool can have up 8MB
+	#endif
 
 	SL_INDEX_COUNT = (1 << SL_INDEX_COUNT_LOG2),
 	FL_INDEX_SHIFT = (SL_INDEX_COUNT_LOG2 + ALIGN_SIZE_LOG2),
