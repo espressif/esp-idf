@@ -134,6 +134,7 @@ uint32_t rmt_hal_receive(rmt_hal_context_t *hal, uint32_t channel, rmt_item32_t 
  * @param src: RMT items to transmit
  * @param length: length of RMT items to transmit
  * @param offset: offset of RMT internal memory to store the items
+ * @note The caller should ensure that (length + offset) <= (memory block * RMT_CHANNEL_MEM_WORDS).
  */
 void rmt_hal_transmit(rmt_hal_context_t *hal, uint32_t channel, const rmt_item32_t *src, uint32_t length, uint32_t offset);
 
