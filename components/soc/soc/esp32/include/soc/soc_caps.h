@@ -63,6 +63,7 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
+#define SOC_PCNT_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
 #define SOC_EMAC_SUPPORTED          1
@@ -155,6 +156,7 @@
 // ESP32 have 1 PCNT peripheral
 #define SOC_PCNT_PORT_NUM      (1)
 #define SOC_PCNT_UNIT_NUM      (8)
+#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_CHANNEL_MEM_WORDS   (64) /*!< Each channel owns 64 words memory */

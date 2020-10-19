@@ -9,17 +9,15 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include <stdio.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "driver/periph_ctrl.h"
 #include "driver/ledc.h"
-#include "driver/gpio.h"
 #include "driver/pcnt.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+
+static const char *TAG = "example";
 
 /**
  * TEST CODE BRIEF
@@ -43,7 +41,6 @@
  *   - reaches 'l_lim' value or 'h_lim' value,
  *   - will be reset to zero.
  */
-#define PCNT_TEST_UNIT      PCNT_UNIT_0
 #define PCNT_H_LIM_VAL      10
 #define PCNT_L_LIM_VAL     -10
 #define PCNT_THRESH1_VAL    5
@@ -53,7 +50,6 @@
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
 xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
-pcnt_isr_handle_t user_isr_handle = NULL; //user's ISR service handle
 
 /* A sample structure to pass events from the PCNT
  * interrupt handler to the main program.
@@ -69,24 +65,13 @@ typedef struct {
  */
 static void IRAM_ATTR pcnt_example_intr_handler(void *arg)
 {
-    uint32_t intr_status = PCNT.int_st.val;
-    int i;
+    int pcnt_unit = (int)arg;
     pcnt_evt_t evt;
-    portBASE_TYPE HPTaskAwoken = pdFALSE;
-
-    for (i = 0; i < PCNT_UNIT_MAX; i++) {
-        if (intr_status & (BIT(i))) {
-            evt.unit = i;
-            /* Save the PCNT event type that caused an interrupt
-               to pass it to the main program */
-            evt.status = PCNT.status_unit[i].val;
-            PCNT.int_clr.val = BIT(i);
-            xQueueSendFromISR(pcnt_evt_queue, &evt, &HPTaskAwoken);
-            if (HPTaskAwoken == pdTRUE) {
-                portYIELD_FROM_ISR();
-            }
-        }
-    }
+    evt.unit = pcnt_unit;
+    /* Save the PCNT event type that caused an interrupt
+       to pass it to the main program */
+    pcnt_get_event_status(pcnt_unit, &evt.status);
+    xQueueSendFromISR(pcnt_evt_queue, &evt, NULL);
 }
 
 /* Configure LED PWM Controller
@@ -120,7 +105,7 @@ static void ledc_init(void)
  *  - set up the input filter
  *  - set up the counter events to watch
  */
-static void pcnt_example_init(void)
+static void pcnt_example_init(int unit)
 {
     /* Prepare configuration for the PCNT unit */
     pcnt_config_t pcnt_config = {
@@ -128,7 +113,7 @@ static void pcnt_example_init(void)
         .pulse_gpio_num = PCNT_INPUT_SIG_IO,
         .ctrl_gpio_num = PCNT_INPUT_CTRL_IO,
         .channel = PCNT_CHANNEL_0,
-        .unit = PCNT_TEST_UNIT,
+        .unit = unit,
         // What to do on the positive / negative edge of pulse input?
         .pos_mode = PCNT_COUNT_INC,   // Count up on the positive edge
         .neg_mode = PCNT_COUNT_DIS,   // Keep the counter value on the negative edge
@@ -143,39 +128,40 @@ static void pcnt_example_init(void)
     pcnt_unit_config(&pcnt_config);
 
     /* Configure and enable the input filter */
-    pcnt_set_filter_value(PCNT_TEST_UNIT, 100);
-    pcnt_filter_enable(PCNT_TEST_UNIT);
+    pcnt_set_filter_value(unit, 100);
+    pcnt_filter_enable(unit);
 
     /* Set threshold 0 and 1 values and enable events to watch */
-    pcnt_set_event_value(PCNT_TEST_UNIT, PCNT_EVT_THRES_1, PCNT_THRESH1_VAL);
-    pcnt_event_enable(PCNT_TEST_UNIT, PCNT_EVT_THRES_1);
-    pcnt_set_event_value(PCNT_TEST_UNIT, PCNT_EVT_THRES_0, PCNT_THRESH0_VAL);
-    pcnt_event_enable(PCNT_TEST_UNIT, PCNT_EVT_THRES_0);
+    pcnt_set_event_value(unit, PCNT_EVT_THRES_1, PCNT_THRESH1_VAL);
+    pcnt_event_enable(unit, PCNT_EVT_THRES_1);
+    pcnt_set_event_value(unit, PCNT_EVT_THRES_0, PCNT_THRESH0_VAL);
+    pcnt_event_enable(unit, PCNT_EVT_THRES_0);
     /* Enable events on zero, maximum and minimum limit values */
-    pcnt_event_enable(PCNT_TEST_UNIT, PCNT_EVT_ZERO);
-    pcnt_event_enable(PCNT_TEST_UNIT, PCNT_EVT_H_LIM);
-    pcnt_event_enable(PCNT_TEST_UNIT, PCNT_EVT_L_LIM);
+    pcnt_event_enable(unit, PCNT_EVT_ZERO);
+    pcnt_event_enable(unit, PCNT_EVT_H_LIM);
+    pcnt_event_enable(unit, PCNT_EVT_L_LIM);
 
     /* Initialize PCNT's counter */
-    pcnt_counter_pause(PCNT_TEST_UNIT);
-    pcnt_counter_clear(PCNT_TEST_UNIT);
+    pcnt_counter_pause(unit);
+    pcnt_counter_clear(unit);
 
-    /* Register ISR handler and enable interrupts for PCNT unit */
-    pcnt_isr_register(pcnt_example_intr_handler, NULL, 0, &user_isr_handle);
-    pcnt_intr_enable(PCNT_TEST_UNIT);
+    /* Install interrupt service and add isr callback handler */
+    pcnt_isr_service_install(0);
+    pcnt_isr_handler_add(unit, pcnt_example_intr_handler, (void *)unit);
 
     /* Everything is set up, now go to counting */
-    pcnt_counter_resume(PCNT_TEST_UNIT);
+    pcnt_counter_resume(unit);
 }
 
 void app_main(void)
 {
+    int pcnt_unit = PCNT_UNIT_0;
     /* Initialize LEDC to generate sample pulse signal */
     ledc_init();
 
     /* Initialize PCNT event queue and PCNT functions */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
-    pcnt_example_init();
+    pcnt_example_init(pcnt_unit);
 
     int16_t count = 0;
     pcnt_evt_t evt;
@@ -186,31 +172,26 @@ void app_main(void)
          */
         res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_PERIOD_MS);
         if (res == pdTRUE) {
-            pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
-            printf("Event PCNT unit[%d]; cnt: %d\n", evt.unit, count);
+            pcnt_get_counter_value(pcnt_unit, &count);
+            ESP_LOGI(TAG, "Event PCNT unit[%d]; cnt: %d", evt.unit, count);
             if (evt.status & PCNT_EVT_THRES_1) {
-                printf("THRES1 EVT\n");
+                ESP_LOGI(TAG, "THRES1 EVT");
             }
             if (evt.status & PCNT_EVT_THRES_0) {
-                printf("THRES0 EVT\n");
+                ESP_LOGI(TAG, "THRES0 EVT");
             }
             if (evt.status & PCNT_EVT_L_LIM) {
-                printf("L_LIM EVT\n");
+                ESP_LOGI(TAG, "L_LIM EVT");
             }
             if (evt.status & PCNT_EVT_H_LIM) {
-                printf("H_LIM EVT\n");
+                ESP_LOGI(TAG, "H_LIM EVT");
             }
             if (evt.status & PCNT_EVT_ZERO) {
-                printf("ZERO EVT\n");
+                ESP_LOGI(TAG, "ZERO EVT");
             }
         } else {
-            pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
-            printf("Current counter value :%d\n", count);
+            pcnt_get_counter_value(pcnt_unit, &count);
+            ESP_LOGI(TAG, "Current counter value :%d", count);
         }
-    }
-    if(user_isr_handle) {
-        //Free the ISR service handle.
-        esp_intr_free(user_isr_handle);
-        user_isr_handle = NULL;
     }
 }

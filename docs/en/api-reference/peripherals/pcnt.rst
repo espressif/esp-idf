@@ -91,7 +91,8 @@ In order to check what are the threshold values currently set, use function :cpp
 Application Example
 -------------------
 
-Pulse counter with control signal and event interrupt example: :example:`peripherals/pcnt`.
+* Pulse counter with control signal and event interrupt example: :example:`peripherals/pcnt/pulse_count_event`.
+* Parse the signal generated from rotary encoder: :example:`peripherals/pcnt/rotary_encoder`.
 
 
 API Reference
