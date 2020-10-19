@@ -443,6 +443,8 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
     adc_dac_dma_linker_deinit();
     adc_dac_dma_isr_deregister(adc_dma_isr, NULL);
     TEST_ESP_OK( adc_digi_deinit() );
+    vTaskDelay(10 / portTICK_RATE_MS);
+
     return 0;
 }
 
