@@ -17,9 +17,9 @@
 #include "mesh_config.h"
 #include "foundation.h"
 #include "mesh_common.h"
-#include "health_cli.h"
 
 #if CONFIG_BLE_MESH_HEALTH_CLI
+#include "health_cli.h"
 
 static const bt_mesh_client_op_pair_t health_op_pair[] = {
     { OP_HEALTH_FAULT_GET,   OP_HEALTH_FAULT_STATUS  },

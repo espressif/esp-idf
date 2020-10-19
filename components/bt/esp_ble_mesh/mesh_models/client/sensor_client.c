@@ -19,9 +19,9 @@
 
 #include "mesh_config.h"
 #include "model_opcode.h"
-#include "sensor_client.h"
 
 #if CONFIG_BLE_MESH_SENSOR_CLI
+#include "sensor_client.h"
 
 /* The followings are the macro definitions of Sensor client
  * model message length, and a message is composed of 3 parts:
