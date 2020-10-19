@@ -917,7 +917,7 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
 esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_data_length);
 
 /**
- * @brief           This function sets the random address for the application
+ * @brief           This function sets the static Random Address and Non-Resolvable Private Address for the application
  *
  * @param[in]       rand_addr: the random address which should be setting
  *
