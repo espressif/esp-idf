@@ -16,10 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_time_scene_model.h"
-#include "time_scene_client.h"
 #include "esp_ble_mesh_time_scene_model_api.h"
 
 #if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
+#include "time_scene_client.h"
 
 /* Time and Scenes Client Models related functions */
 

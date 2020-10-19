@@ -873,6 +873,12 @@ if BLE_MESH
             help
                 Enable support for Health Client model.
 
+        config BLE_MESH_HEALTH_SRV
+            bool "Health Server model"
+            default y
+            help
+                Enable support for Health Server model.
+
     endmenu #Support for BLE Mesh Foundation models
 
     menu "Support for BLE Mesh Client/Server models"

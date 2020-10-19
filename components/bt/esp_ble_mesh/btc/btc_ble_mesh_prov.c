@@ -34,14 +34,28 @@
 #include "provisioner_prov.h"
 #include "provisioner_main.h"
 
+#if CONFIG_BLE_MESH_CFG_CLI
 #include "cfg_cli.h"
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
+#if CONFIG_BLE_MESH_HEALTH_CLI
 #include "health_cli.h"
+#endif /* CONFIG_BLE_MESH_HEALTH_CLI */
 #include "cfg_srv.h"
+#if CONFIG_BLE_MESH_HEALTH_SRV
 #include "health_srv.h"
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */
+#if CONFIG_BLE_MESH_GENERIC_CLIENT
 #include "generic_client.h"
+#endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
 #include "lighting_client.h"
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */
+#if CONFIG_BLE_MESH_SENSOR_CLI
 #include "sensor_client.h"
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */
+#if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
 #include "time_scene_client.h"
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_CLIENT */
 #include "client_common.h"
 #include "state_binding.h"
 #include "local_operation.h"
@@ -1021,8 +1035,10 @@ extern const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb;
 #endif /* CONFIG_BLE_MESH_CFG_CLI */
 
 /* Health Models */
+#if CONFIG_BLE_MESH_HEALTH_SRV
 extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
 extern const struct bt_mesh_model_cb bt_mesh_health_srv_cb;
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */
 #if CONFIG_BLE_MESH_HEALTH_CLI
 extern const struct bt_mesh_model_op bt_mesh_health_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_health_cli_cb;
@@ -1186,6 +1202,7 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
         break;
     }
 #endif /* CONFIG_BLE_MESH_CFG_CLI */
+#if CONFIG_BLE_MESH_HEALTH_SRV
     case BLE_MESH_MODEL_ID_HEALTH_SRV: {
         model->op = (esp_ble_mesh_model_op_t *)bt_mesh_health_srv_op;
         model->cb = (esp_ble_mesh_model_cbs_t *)&bt_mesh_health_srv_cb;
@@ -1198,6 +1215,7 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
         }
         break;
     }
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */
 #if CONFIG_BLE_MESH_HEALTH_CLI
     case BLE_MESH_MODEL_ID_HEALTH_CLI: {
         model->op = (esp_ble_mesh_model_op_t *)bt_mesh_health_cli_op;

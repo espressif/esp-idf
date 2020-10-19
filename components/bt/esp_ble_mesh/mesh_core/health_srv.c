@@ -17,6 +17,8 @@
 #include "access.h"
 #include "foundation.h"
 #include "mesh_common.h"
+
+#if CONFIG_BLE_MESH_HEALTH_SRV
 #include "health_srv.h"
 
 #define HEALTH_TEST_STANDARD    0x00
@@ -547,3 +549,9 @@ void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
         }
     }
 }
+#else /* CONFIG_BLE_MESH_HEALTH_SRV */
+void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
+{
+    return;
+}
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */

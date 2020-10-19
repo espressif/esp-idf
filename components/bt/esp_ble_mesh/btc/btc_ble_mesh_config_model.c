@@ -17,10 +17,10 @@
 
 #include "btc_ble_mesh_config_model.h"
 #include "foundation.h"
-#include "cfg_cli.h"
 #include "esp_ble_mesh_config_model_api.h"
 
 #if CONFIG_BLE_MESH_CFG_CLI
+#include "cfg_cli.h"
 
 /* Configuration Client Model related functions */
 
