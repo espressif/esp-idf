@@ -16,10 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_lighting_model.h"
-#include "lighting_client.h"
 #include "esp_ble_mesh_lighting_model_api.h"
 
 #if CONFIG_BLE_MESH_LIGHTING_CLIENT
+#include "lighting_client.h"
 
 /* Lighting Client Models related functions */
 

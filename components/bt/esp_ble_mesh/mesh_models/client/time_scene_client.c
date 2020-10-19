@@ -19,9 +19,9 @@
 
 #include "mesh_config.h"
 #include "model_opcode.h"
-#include "time_scene_client.h"
 
 #if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
+#include "time_scene_client.h"
 
 /* The followings are the macro definitions of Time Scene client
  * model message length, and a message is composed of 3 parts:
