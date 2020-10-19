@@ -160,18 +160,19 @@ static void rs485_init(void)
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = 122,
+        .rx_flow_ctrl_thresh = 120,
+        .source_clk = UART_SCLK_APB,
     };
     printf("RS485 port initialization...\r\n");
+    TEST_ESP_OK(uart_wait_tx_idle_polling(UART_NUM1));
     // Configure UART1 parameters
-    uart_param_config(UART_NUM1, &uart_config);
-    // Set UART1 pins(TX: IO4, RX: I05, RTS: IO18, CTS: IO19)
-    uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART_PIN_NO_CHANGE);
+    TEST_ESP_OK(uart_param_config(UART_NUM1, &uart_config));
+    // Set UART1 pins
+    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART_PIN_NO_CHANGE));
     // Install UART driver (we don't need an event queue here)
-    uart_driver_install(UART_NUM1, BUF_SIZE * 2, 0, 0, NULL, 0);
+    TEST_ESP_OK(uart_driver_install(UART_NUM1, BUF_SIZE * 2, 0, 0, NULL, 0));
     // Setup rs485 half duplex mode
-    //uart_set_rs485_hd_mode(uart_num, true);
-    uart_set_mode(UART_NUM1, UART_MODE_RS485_HALF_DUPLEX);
+    TEST_ESP_OK(uart_set_mode(UART_NUM1, UART_MODE_RS485_HALF_DUPLEX));
 }
 
 static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t buffer_size)
@@ -214,13 +215,14 @@ static void rs485_slave(void)
             // If received packet is correct then send it back
             if (status == ESP_OK) {
                 uart_write_bytes(UART_NUM1, (char*)slave_data, len);
+                uart_wait_tx_idle_polling(UART_NUM1);
                 good_count++;
             } else {
                 printf("Incorrect packet received.\r\n");
                 err_count++;
             }
         } else {
-            printf("Incorrect data packet[%d] received.\r\n", pack_count);
+            printf("Incorrect data packet[%d], data length: %d, received.\r\n", pack_count, len);
             err_count++;
         }
     }
@@ -252,6 +254,7 @@ static void rs485_master(void)
         esp_err_t status = print_packet_data("Send ", master_buffer, BUF_SIZE);
         TEST_ASSERT(status == ESP_OK);
         uart_write_bytes(UART_NUM1, (char*)master_buffer, BUF_SIZE);
+        uart_wait_tx_idle_polling(UART_NUM1);
         // Read translated packet from slave
         int len = uart_read_bytes(UART_NUM1, slave_buffer, BUF_SIZE, (PACKET_READ_TICS * 2));
         // Check if the received packet is too short
@@ -267,10 +270,11 @@ static void rs485_master(void)
             }
         }
         else {
-            printf("Incorrect answer from slave.\r\n");
+            printf("Incorrect answer from slave, length = %d.\r\n", len);
             err_count++;
         }
     }
+    uart_wait_tx_done(UART_NUM1, PACKET_READ_TICS);
     // Free the buffer and delete driver at the end
     free(master_buffer);
     uart_driver_delete(UART_NUM1);
