@@ -2581,7 +2581,7 @@ if BLE_MESH
             uses 0 as the timeout value when sending acknowledged messages, then
             the default value will be used which is four seconds.
 
-    menu "Support for BLE Mesh client/server models"
+    menu "Support for BLE Mesh Foundation models"
 
         config BLE_MESH_CFG_CLI
             bool "Configuration Client model"
@@ -2592,6 +2592,10 @@ if BLE_MESH
             bool "Health Client model"
             help
                 Enable support for Health Client model.
+
+    endmenu #Support for BLE Mesh Foundation models
+
+    menu "Support for BLE Mesh Client/Server models"
 
         config BLE_MESH_GENERIC_ONOFF_CLI
             bool "Generic OnOff Client model"
@@ -2702,7 +2706,7 @@ if BLE_MESH
             help
                 Enable support for Lighting server models.
 
-    endmenu
+    endmenu #Support for BLE Mesh Client/Server models
 
     config BLE_MESH_IV_UPDATE_TEST
         bool "Test the IV Update Procedure"
