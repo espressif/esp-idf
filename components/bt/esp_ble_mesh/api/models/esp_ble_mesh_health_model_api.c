@@ -79,6 +79,7 @@ esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_
 }
 #endif /* CONFIG_BLE_MESH_HEALTH_CLI */
 
+#if CONFIG_BLE_MESH_HEALTH_SRV
 esp_err_t esp_ble_mesh_register_health_server_callback(esp_ble_mesh_health_server_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
@@ -105,3 +106,4 @@ esp_err_t esp_ble_mesh_health_server_fault_update(esp_ble_mesh_elem_t *element)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_server_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */

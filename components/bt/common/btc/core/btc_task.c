@@ -108,7 +108,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH_HEALTH_CLI
     [BTC_PID_HEALTH_CLIENT]     = {btc_ble_mesh_health_client_call_handler,     btc_ble_mesh_health_client_cb_handler    },
 #endif /* CONFIG_BLE_MESH_HEALTH_CLI */
+#if CONFIG_BLE_MESH_HEALTH_SRV
     [BTC_PID_HEALTH_SERVER]     = {btc_ble_mesh_health_server_call_handler,     btc_ble_mesh_health_server_cb_handler    },
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */
 #if CONFIG_BLE_MESH_CFG_CLI
     [BTC_PID_CONFIG_CLIENT]     = {btc_ble_mesh_config_client_call_handler,     btc_ble_mesh_config_client_cb_handler    },
 #endif /* CONFIG_BLE_MESH_CFG_CLI */

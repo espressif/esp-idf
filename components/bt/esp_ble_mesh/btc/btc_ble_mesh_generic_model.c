@@ -16,10 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_generic_model.h"
-#include "generic_client.h"
 #include "esp_ble_mesh_generic_model_api.h"
 
 #if CONFIG_BLE_MESH_GENERIC_CLIENT
+#include "generic_client.h"
 
 /* Generic Client Models related functions */
 
