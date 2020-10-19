@@ -115,7 +115,7 @@ can be provided with
 3.  Store `HMAC_KEY` in one of the efuse key blocks (in the hardware).
     The ID of the efuse key block ( should be in range 1-5) can be provided with the following option. ( default value of 1 is used if not provided),
 ```
-    python configure_ds.py --efuse_key_id /* key id in range 1-5 */ --burn_key
+    python configure_ds.py --efuse_key_id /* key id in range 1-5 */
 ```
 
 Currently for development purposes, the `HMAC_KEY` is stored in the efuse key block  without read protection so that read operation can be performed on the same key block.
