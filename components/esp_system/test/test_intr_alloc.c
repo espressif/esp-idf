@@ -19,6 +19,8 @@
 #include "driver/timer.h"
 #include "sdkconfig.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #define TIMER_DIVIDER   16               /*!< Hardware timer clock divider */
 #define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
 #define TIMER_INTERVAL0_SEC   (3.4179)   /*!< test interval for timer 0 */
@@ -354,3 +356,4 @@ TEST_CASE("alloc and free isr handle on different core", "[intr_alloc]")
 }
 
 #endif
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
