@@ -499,6 +499,27 @@ menu "ESP32-specific"
             # Note about the use of "FRC1" name: currently FRC1 timer is not used for
             # high resolution timekeeping anymore. Instead the esp_timer API is used.
             # FRC1 name in the option name is kept for compatibility.
+
+    config ESP32_BROWNOUT_DET_SHUTDOWN_IF_EARLY
+        bool "Shutdown if a brownout is detected during boot"
+        depends on ESP32_BROWNOUT_DET
+        default n
+        help
+            Do not try to recover from brownouts that occur during boot and shutdown
+            instead of rebooting.
+
+            When battery-powered, a brownout during boot can indicate that the battery is
+            almost empty. In such cases, shutting down will help limit damage to the
+            battery. Since all wakeup sources will be disabled, only a power cycle will
+            boot the ESP32 again.
+            The usefulness of this feature depends on the battery technology, the actual
+            characteristics of the batteries used and the voltage regulator if you one is
+            being used. Check datasheets and experiment.
+            Note also that even after shutdown there will still be some current draw in
+            addition to the battery's self-discharge. This will simply limit the potential
+            damage.
+            If a dedicated power circuit is available, using it is probably a better option.
+
     choice ESP32_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
         default ESP32_TIME_SYSCALL_USE_RTC_FRC1

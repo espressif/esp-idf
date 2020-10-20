@@ -23,6 +23,7 @@
 #include "soc/rtc_periph.h"
 #include "hal/brownout_hal.h"
 #include "esp_private/system_internal.h"
+#include "esp_sleep.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_rom_sys.h"
@@ -42,6 +43,16 @@
 #endif // SOC_BROWNOUT_RESET_SUPPORTED
 
 
+static void brownout_warn(const char *s)
+{
+    /* Stall the other CPU to make sure the code running there doesn't use UART
+     * at the same time as the following ets_printf.
+     */
+    esp_cpu_stall(!xPortGetCoreID());
+    esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
+    ets_printf(s);
+}
+
 static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
@@ -49,12 +60,7 @@ static void rtc_brownout_isr_handler(void *arg)
      * cleared manually.
      */
     brownout_hal_intr_clear();
-    /* Stall the other CPU to make sure the code running there doesn't use UART
-     * at the same time as the following esp_rom_printf.
-     */
-    esp_cpu_stall(!xPortGetCoreID());
-    esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
-    esp_rom_printf("\r\nBrownout detector was triggered\r\n\r\n");
+    brownout_warn("\r\nBrownout detector was triggered\r\n\r\n");
     esp_restart_noos();
 }
 
@@ -70,6 +76,20 @@ void esp_brownout_init(void)
 
     brownout_hal_config(&cfg);
 
+#if CONFIG_ESP32_BROWNOUT_DET_SHUTDOWN_IF_EARLY || CONFIG_ESP32S2_BROWNOUT_DET_SHUTDOWN_IF_EARLY || CONFIG_ESP32S3_BROWNOUT_DET_SHUTDOWN_IF_EARLY
+    /* We're still booting: if a brownout is already happening, shut down
+     * rather than trying to recover. */
+    if (brownout_hal_intr_raw())
+    {
+      brownout_warn("\r\nBrownout detector was triggered during boot: shutting down.\r\n\r\n");
+      /* Disable all wakeup sources in order to fully shut down. */
+      esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+      esp_deep_sleep_start();
+    }
+#endif
+
+    /* Now that we've checked no brownout had occured until now in the boot
+     * sequence, install the handler that resets the system upon brownout. */
     rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M);
 
     brownout_hal_intr_enable(true);
