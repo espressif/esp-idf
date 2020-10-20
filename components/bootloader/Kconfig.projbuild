@@ -114,7 +114,8 @@ menu "Bootloader config"
     config BOOTLOADER_NUM_PIN_FACTORY_RESET
         int "Number of the GPIO input for factory reset"
         depends on BOOTLOADER_FACTORY_RESET
-        range 0 39
+        range 0 39 if IDF_TARGET_ESP32
+        range 0 44 if IDF_TARGET_ESP32S2
         default 4
         help
             The selected GPIO will be configured as an input with internal pull-up enabled.
