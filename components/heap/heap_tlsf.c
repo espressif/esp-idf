@@ -37,6 +37,7 @@
 #include "multi_heap_config.h"
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
+#include "heap_tlsf_config.h"
 #include "heap_tlsf.h"
 
 /*
