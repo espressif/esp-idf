@@ -346,6 +346,7 @@ typedef struct {
     UINT32          req_id;     /* The req_id in the associated BTA_JvRfcommWrite() */
     int             len;        /* The length of the data written. */
     BOOLEAN         cong;       /* congestion status */
+    BOOLEAN         old_cong;   /* congestion status */
 } tBTA_JV_RFCOMM_WRITE;
 
 /* data associated with BTA_JV_API_SET_PM_PROFILE_EVT */
@@ -893,6 +894,18 @@ extern tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size);
 **
 *******************************************************************************/
 extern tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p_data);
+
+/*******************************************************************************
+**
+** Function         BTA_JvRfcommFlowControl
+**
+** Description      This function gives the credit to the peer
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+extern tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given);
 
 /*******************************************************************************
  **
