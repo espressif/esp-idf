@@ -44,7 +44,7 @@ check_submodule_sync:
 check_ut_cmake_make:
   extends:
     - .post_check_job_template_with_filter
-    - .rules:dev_push-trigger
+    - .rules:dev
   tags:
     - build
   script:
@@ -59,7 +59,7 @@ check_artifacts_expire_time:
 check_pipeline_triggered_by_label:
   extends:
     - .post_check_job_template
-    - .rules:dev_push-trigger
+    - .rules:dev
   script:
     # If the pipeline is triggered with label, the pipeline will only succeeded if "regular_test" label is added.
     # We want to make sure some jobs are always executed to detect regression.

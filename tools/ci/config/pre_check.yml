@@ -38,7 +38,7 @@ check_version:
   # esp_idf_version.h in a branch before tagging the next version.
   extends:
     - .pre_check_job_template
-    - .rules:master-release
+    - .rules:protected
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
@@ -46,7 +46,7 @@ check_version:
 check_examples_cmake_make:
   extends:
     - .pre_check_job_template_with_filter
-    - .rules:dev_push-trigger
+    - .rules:dev
   script:
     - python ${IDF_PATH}/tools/ci/check_examples_cmake_make.py
 
@@ -123,7 +123,7 @@ check_public_headers:
 scan_tests:
   extends:
     - .scan_build_tests
-    - .rules:tests:build-ttfw_tests
+    - .rules:build_tests:target_test
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
@@ -193,6 +193,6 @@ check_codeowners:
 check_version_tag:
   extends:
     - .pre_check_job_template
-    - .rules:release-tag
+    - .rules:tag:release-no_label
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1

@@ -9,7 +9,7 @@
 .host_fuzzer_test_template:
   extends:
     - .host_test_template
-    - .rules:labels:fuzzer_test-weekend_test
+    - .rules:labels:fuzzer_test-weekend_test-only
   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
   artifacts:
     when: always
@@ -35,7 +35,7 @@ test_nvs_on_host:
 test_nvs_coverage:
   extends:
     - .host_test_template
-    - .rules:labels:nvs_coverage
+    - .rules:labels:nvs_coverage-only
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report

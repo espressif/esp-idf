@@ -1,6 +1,6 @@
 assign_test:
   extends:
-    - .rules:test:target_test-weekend_test
+    - .rules:tests:target_test-integration_test-weekend_test
   tags:
     - assign_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
@@ -49,7 +49,7 @@ assign_test:
     - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin -o $INTEGRATION_CONFIG_OUTPUT_PATH
 
 update_test_cases:
-  extends: .rules:master-schedule
+  extends: .rules:ref:master-schedule
   stage: assign_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env
   tags:

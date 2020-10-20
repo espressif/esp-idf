@@ -36,7 +36,7 @@ clang_tidy_deploy:
 clang_tidy_deploy_regular:
   extends:
     - .clang_tidy_deploy_template
-    - .rules:labels:static_analysis
+    - .rules:labels:static_analysis-only
   needs:
     - clang_tidy_check_regular
 
@@ -44,7 +44,7 @@ push_to_github:
   extends:
     - .deploy_job_template
     - .before_script_lesser
-    - .rules:deploy
+    - .rules:protected-no_label
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
@@ -91,7 +91,7 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-    - .rules:deploy
+    - .rules:protected-no_label
   variables:
     TYPE: "preview"
     DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
@@ -104,7 +104,7 @@ deploy_test_result:
   extends:
     - .deploy_job_template
     - .before_script_slim
-    - .rules:master-schedule-always
+    - .rules:ref:master-schedule-always
   image: $CI_DOCKER_REGISTRY/bot-env
   tags:
     - deploy_test
