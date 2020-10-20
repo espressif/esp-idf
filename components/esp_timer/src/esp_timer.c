@@ -36,16 +36,11 @@
 #include "esp32/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rtc.h"
 #endif
 
 #include "sdkconfig.h"
-
-#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_FRC1 ) || \
-    defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) || \
-    defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_FRC1 ) || \
-    defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )
-#define WITH_FRC 1
-#endif
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
@@ -396,7 +391,7 @@ esp_err_t esp_timer_init(void)
         goto out;
     }
 
-#if WITH_FRC
+#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
     // [refactor-todo] this logic, "esp_rtc_get_time_us() - g_startup_time", is also
     // the weak definition of esp_system_get_time; find a way to remove this duplication.
     esp_timer_private_advance(esp_rtc_get_time_us() - g_startup_time);
@@ -531,7 +526,7 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
 
 // Provides strong definition for system time functions relied upon
 // by core components.
-#if WITH_FRC
+#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
 int64_t IRAM_ATTR esp_system_get_time(void)
 {
     return esp_timer_get_time();

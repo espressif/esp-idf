@@ -296,7 +296,7 @@ menu "mbedTLS"
 
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time"
-        depends on !ESP32_TIME_SYSCALL_USE_NONE
+        depends on !ESP_TIME_FUNCS_USE_NONE
         default y
         help
             System has time.h and time().
