@@ -113,6 +113,9 @@
 //ESP32-S2 support hardware clear bus
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
+#define SOC_I2C_SUPPORT_REF_TICK   (1)
+#define SOC_I2C_SUPPORT_APB        (1)
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 have 2 I2S
 #define SOC_I2S_NUM            (1)

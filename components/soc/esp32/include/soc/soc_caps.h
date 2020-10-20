@@ -120,6 +120,8 @@
 
 #define SOC_I2C_FIFO_LEN        (32) /*!< I2C hardware FIFO depth */
 
+#define SOC_I2C_SUPPORT_APB     (1)
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 have 2 I2S
 #define SOC_I2S_NUM                 (2)

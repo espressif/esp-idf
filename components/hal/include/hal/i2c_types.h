@@ -38,14 +38,6 @@ typedef enum {
     I2C_MASTER_READ,        /*!< I2C read data */
 } i2c_rw_t;
 
-typedef enum{
-    I2C_CMD_RESTART = 0,   /*!<I2C restart command */
-    I2C_CMD_WRITE,         /*!<I2C write command */
-    I2C_CMD_READ,          /*!<I2C read command */
-    I2C_CMD_STOP,          /*!<I2C stop command */
-    I2C_CMD_END            /*!<I2C end command */
-} i2c_opmode_t;
-
 typedef enum {
     I2C_DATA_MODE_MSB_FIRST = 0,  /*!< I2C data msb first */
     I2C_DATA_MODE_LSB_FIRST = 1,  /*!< I2C data lsb first */
@@ -65,10 +57,35 @@ typedef enum {
     I2C_MASTER_ACK_MAX,
 } i2c_ack_type_t;
 
+/**
+ * @brief I2C clock source, sorting from smallest to largest,
+ *        place them in order.
+ *        This can be expanded in the future use.
+ */
 typedef enum {
-    I2C_SCLK_REF_TICK,       /*!< I2C source clock from REF_TICK */
-    I2C_SCLK_APB,            /*!< I2C source clock from APB */
+    I2C_SCLK_DEFAULT = 0,    /*!< I2C source clock not selected*/
+#if SOC_I2C_SUPPORT_APB
+    I2C_SCLK_APB,            /*!< I2C source clock from APB, 80M*/
+#endif
+#if SOC_I2C_SUPPORT_XTAL
+    I2C_SCLK_XTAL,           /*!< I2C source clock from XTAL, 40M */
+#endif
+#if SOC_I2C_SUPPORT_RTC
+    I2C_SCLK_RTC,            /*!< I2C source clock from 8M RTC, 8M */
+#endif
+#if SOC_I2C_SUPPORT_REF_TICK
+    I2C_SCLK_REF_TICK,       /*!< I2C source clock from REF_TICK, 1M */
+#endif
+    I2C_SCLK_MAX,
 } i2c_sclk_t;
+
+// I2C clk flags for users to use, can be expanded in the future.
+#define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
+#define I2C_SCLK_SRC_FLAG_AWARE_DFS       (1 << 0)    /*!< For REF tick clock, it won't change with APB.*/
+#define I2C_SCLK_SRC_FLAG_LIGHT_SLEEP     (1 << 1)    /*!< For light sleep mode.*/
+
+/// Use the highest speed that is available for the clock source picked by clk_flags
+#define I2C_CLK_FREQ_MAX                  (-1)
 
 /**
  * @brief I2C initialization parameters
@@ -89,7 +106,18 @@ typedef struct{
             uint16_t slave_addr;    /*!< I2C address for slave mode */
         } slave;                    /*!< I2C slave config */
     };
+    uint32_t clk_flags;             /*!< Bitwise of ``I2C_SCLK_SRC_FLAG_**FOR_DFS**`` for clk source choice*/
 } i2c_config_t;
+
+#if CONFIG_IDF_TARGET_ESP32
+typedef enum{
+    I2C_CMD_RESTART = 0,   /*!<I2C restart command */
+    I2C_CMD_WRITE,         /*!<I2C write command */
+    I2C_CMD_READ,          /*!<I2C read command */
+    I2C_CMD_STOP,          /*!<I2C stop command */
+    I2C_CMD_END            /*!<I2C end command */
+} i2c_opmode_t __attribute__((deprecated));
+#endif
 
 #ifdef __cplusplus
 }
