@@ -135,7 +135,7 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
     int listen_socket;
     struct timeval t;
     int sockfd;
-    int opt;
+    int opt = 1;
 
     listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listen_socket < 0) {
@@ -206,7 +206,7 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
     int want_recv = 0;
     uint8_t *buffer;
     int sockfd;
-    int opt;
+    int opt = 1;
     bool udp_recv_start = true ;
     
     sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -264,7 +264,7 @@ static esp_err_t iperf_run_udp_client(void)
     int want_send = 0;
     uint8_t *buffer;
     int sockfd;
-    int opt;
+    int opt = 1;
     int err;
     int id;
 
