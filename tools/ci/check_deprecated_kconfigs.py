@@ -20,6 +20,7 @@ import argparse
 import os
 import sys
 from io import open
+from idf_ci_utils import get_submodule_dirs
 
 # FILES_TO_CHECK used as "startswith" pattern to match sdkconfig.defaults variants
 FILES_TO_CHECK = ('sdkconfig.ci', 'sdkconfig.defaults')
@@ -52,10 +53,11 @@ def main():
 
     parser = argparse.ArgumentParser(description='Kconfig options checker')
     parser.add_argument('--directory', '-d', help='Path to directory to check recursively  '
-                        '(for example $IDF_PATH)',
+                                                  '(for example $IDF_PATH)',
                         type=_valid_directory,
                         required=default_path is None,
                         default=default_path)
+    parser.add_argument('--exclude-submodules', action='store_true', help='Exclude submodules')
     args = parser.parse_args()
 
     # IGNORE_DIRS makes sense when the required directory is IDF_PATH
@@ -64,7 +66,12 @@ def main():
     ignores = 0
     files_to_check = []
     deprecated_options = set()
-    errors = []
+    ret = 0
+
+    ignore_dirs = IGNORE_DIRS
+    if args.exclude_submodules:
+        for submodule in get_submodule_dirs():
+            ignore_dirs = ignore_dirs + tuple(submodule)
 
     for root, dirnames, filenames in os.walk(args.directory):
         for filename in filenames:
@@ -72,7 +79,7 @@ def main():
             path_in_idf = os.path.relpath(full_path, args.directory)
 
             if filename.startswith(FILES_TO_CHECK):
-                if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
+                if check_ignore_dirs and path_in_idf.startswith(ignore_dirs):
                     print('{}: Ignored'.format(path_in_idf))
                     ignores += 1
                     continue
@@ -84,16 +91,13 @@ def main():
         used_options = _parse_path(path, '=')
         used_deprecated_options = deprecated_options & used_options
         if len(used_deprecated_options) > 0:
-            errors.append('{}: The following options are deprecated: {}'.format(path,
-                                                                                ', '.join(used_deprecated_options)))
+            print('{}: The following options are deprecated: {}'.format(path, ', '.join(used_deprecated_options)))
+            ret = 1
 
     if ignores > 0:
         print('{} files have been ignored.'.format(ignores))
-
-    if len(errors) > 0:
-        print('\n\n'.join(errors))
-        sys.exit(1)
+    return ret
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

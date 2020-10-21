@@ -15,15 +15,27 @@
     - .pre_check_base_template
     - .before_script_lesser
 
-check_line_endings:
+.check_pre_commit_template:
   extends: .pre_check_job_template
-  script:
-    - tools/ci/check-line-endings.sh ${IDF_PATH}
+  stage: pre_check
+  image: "$CI_DOCKER_REGISTRY/esp-idf-pre-commit:1"
+  before_script:
+    - source tools/ci/utils.sh
+    - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
 
-check_permissions:
-  extends: .pre_check_job_template
+check_pre_commit_master_release:
+  extends:
+    - .check_pre_commit_template
+    - .rules:protected
   script:
-    - tools/ci/check-executable.sh
+    - git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA | xargs pre-commit run --files
+
+check_pre_commit_MR:
+  extends:
+    - .check_pre_commit_template
+    - .rules:dev
+  script:
+    - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_COMMIT_BRANCH} | xargs pre-commit run --files
 
 check_docs_lang_sync:
   extends: .pre_check_job_template
@@ -79,18 +91,8 @@ check_kconfigs:
       - tools/*/*/*/Kconfig*.new
     expire_in: 1 week
   script:
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/test_check_kconfigs.py
-    - ${IDF_PATH}/tools/check_kconfigs.py
-
-check_deprecated_kconfig_options:
-  extends: .pre_check_job_template_with_filter
-  script:
-    - ${IDF_PATH}/tools/ci/check_deprecated_kconfigs.py
-
-check_cmake_style:
-  extends: .pre_check_job_template
-  script:
-    tools/cmake/run_cmake_lint.sh
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/ci/test_check_kconfigs.py
+    - ${IDF_PATH}/tools/ci/check_kconfigs.py
 
 check_wifi_lib_md5:
   extends: .pre_check_base_template
@@ -182,11 +184,6 @@ clang_tidy_check_all:
   variables:
     BOT_NEEDS_TRIGGER_BY_NAME: 1
     BOT_LABEL_STATIC_ANALYSIS_ALL: 1
-
-check_codeowners:
-  extends: .pre_check_job_template
-  script:
-    - tools/codeowners.py ci-check
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'

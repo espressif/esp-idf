@@ -21,6 +21,7 @@ import sys
 import re
 import argparse
 from io import open
+from idf_ci_utils import get_submodule_dirs
 
 # regular expression for matching Kconfig files
 RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
@@ -377,15 +378,21 @@ def main():
     parser.add_argument('--verbose', '-v', help='Print more information (useful for debugging)',
                         action='store_true', default=False)
     parser.add_argument('--directory', '-d', help='Path to directory where Kconfigs should be recursively checked '
-                        '(for example $IDF_PATH)',
+                                                  '(for example $IDF_PATH)',
                         type=valid_directory,
                         required=default_path is None,
                         default=default_path)
+    parser.add_argument('--exclude-submodules', action='store_true', help='Exclude submodules')
     args = parser.parse_args()
 
-    success_couter = 0
+    success_counter = 0
     ignore_counter = 0
     failure = False
+
+    ignore_dirs = IGNORE_DIRS
+    if args.exclude_submodules:
+        for submodule in get_submodule_dirs():
+            ignore_dirs = ignore_dirs + tuple(submodule)
 
     # IGNORE_DIRS makes sense when the required directory is IDF_PATH
     check_ignore_dirs = default_path is not None and os.path.abspath(args.directory) == os.path.abspath(default_path)
@@ -395,7 +402,7 @@ def main():
             full_path = os.path.join(root, filename)
             path_in_idf = os.path.relpath(full_path, args.directory)
             if re.search(RE_KCONFIG, filename):
-                if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
+                if check_ignore_dirs and path_in_idf.startswith(ignore_dirs):
                     print('{}: Ignored'.format(path_in_idf))
                     ignore_counter += 1
                     continue
@@ -425,9 +432,9 @@ def main():
                           'for solving all issues'.format(path_in_idf + OUTPUT_SUFFIX))
                     print('Please fix the errors and run {} for checking the correctness of '
                           'Kconfigs.'.format(os.path.relpath(os.path.abspath(__file__), args.directory)))
-                    sys.exit(1)
+                    return 1
                 else:
-                    success_couter += 1
+                    success_counter += 1
                     print('{}: OK'.format(path_in_idf))
                     try:
                         os.remove(suggestions_full_path)
@@ -440,10 +447,10 @@ def main():
 
     if ignore_counter > 0:
         print('{} files have been ignored.'.format(ignore_counter))
-
-    if success_couter > 0:
-        print('{} files have been successfully checked.'.format(success_couter))
+    if success_counter > 0:
+        print('{} files have been successfully checked.'.format(success_counter))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
