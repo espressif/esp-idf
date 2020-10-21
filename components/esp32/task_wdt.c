@@ -129,6 +129,12 @@ void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
 
 }
 
+static void _task_wdt_assert(char* pro_addr, char* app_addr)
+{
+    ets_printf(DRAM_STR("pro: %08x, app: %08x\n"), pro_addr, app_addr);
+    asm volatile("ill\n");
+}
+
 /*
  * ISR for when TWDT times out. Checks for which tasks have not reset. Also
  * triggers panic if configured to do so
@@ -171,7 +177,8 @@ static void task_wdt_isr(void *arg)
         ESP_EARLY_LOGE(TAG, "Aborting.");
         portEXIT_CRITICAL_ISR(&twdt_spinlock);
         esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
-        abort();
+        // abort();
+        _task_wdt_assert(xTaskGetCurrentTaskHandleForCPU(0), xTaskGetCurrentTaskHandleForCPU(1));
     }
 
     portEXIT_CRITICAL_ISR(&twdt_spinlock);
