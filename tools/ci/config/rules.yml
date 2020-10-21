@@ -237,3 +237,13 @@
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
     - <<: *if-label-unit_test-all_targets
+
+.rules:build_tests:target_test-weekend_test:
+  rules:
+    - <<: *if-protected-no_label
+    - <<: *if-label-build
+    - <<: *if-label-regular_test
+    - <<: *if-label-example_test
+    - <<: *if-label-custom_test
+    - <<: *if-label-unit_test-all_targets
+    - <<: *if-label-weekend_test

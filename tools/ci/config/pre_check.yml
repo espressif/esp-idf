@@ -123,7 +123,7 @@ check_public_headers:
 scan_tests:
   extends:
     - .scan_build_tests
-    - .rules:build_tests:target_test
+    - .rules:build_tests:target_test-weekend_test
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
