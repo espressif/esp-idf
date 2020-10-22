@@ -40,7 +40,7 @@ extern "C" {
  */
 static inline void sigmadelta_ll_set_en(gpio_sd_dev_t *hw, bool en)
 {
-    // The clk enable register does not exist on ESP32.
+    hw->misc.function_clk_en = en;
 }
 
 /**
