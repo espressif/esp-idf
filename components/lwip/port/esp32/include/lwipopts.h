@@ -767,7 +767,9 @@
    ---------- Hook options ---------------
    ---------------------------------------
 */
+#define LWIP_HOOK_FILENAME              "esp32_hooks.h"
 #define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
+
 /*
    ---------------------------------------
    ---------- Debugging options ----------
