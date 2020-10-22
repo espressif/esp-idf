@@ -3007,7 +3007,7 @@ void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len
 {
     tBTM_BLE_INQ_CB     *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     UINT8 *p_cache;
-    UINT8 length;
+    //UINT8 length;
 
     /* cache adv report/scan response data */
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
@@ -3028,17 +3028,9 @@ void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len
 
     if (data_len > 0) {
         p_cache = &p_le_inq_cb->adv_data_cache[p_le_inq_cb->adv_len];
-        STREAM_TO_UINT8(length, p);
-        while ( length && ((p_le_inq_cb->adv_len + length + 1) <= BTM_BLE_CACHE_ADV_DATA_MAX)) {
-            /* copy from the length byte & data into cache */
-            memcpy(p_cache, p - 1, length + 1);
-            /* advance the cache pointer past data */
-            p_cache += length + 1;
-            /* increment cache length */
-            p_le_inq_cb->adv_len += length + 1;
-            /* skip the length of data */
-            p += length;
-            STREAM_TO_UINT8(length, p);
+        if((data_len + p_le_inq_cb->adv_len) <= BTM_BLE_CACHE_ADV_DATA_MAX) {
+            memcpy(p_cache, p, data_len);
+            p_le_inq_cb->adv_len += data_len;
         }
     }
 
