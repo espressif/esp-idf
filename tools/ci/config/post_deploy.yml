@@ -3,9 +3,12 @@
   image: $ESP_IDF_DOC_ENV_IMAGE
   tags: [ "build", "amd64", "internet" ]
   only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
   artifacts:
     when: always
     paths:
