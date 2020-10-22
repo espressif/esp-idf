@@ -165,7 +165,7 @@ void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb
     const int max_batch = 255;
     int sent = 0;
     while(sent < len) {
-        int batch = len > max_batch ? max_batch : len;
+        int batch = (len - sent) > max_batch ? max_batch : (len - sent);
         slipif_received_bytes(slip_ctx->esp_netif->lwip_netif, buffer+sent, batch);
         sent += batch;
     }
