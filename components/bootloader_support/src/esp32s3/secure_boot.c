@@ -284,7 +284,6 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 
     __attribute__((unused)) static const uint8_t enable = 1;
 
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
 
 #ifdef CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE

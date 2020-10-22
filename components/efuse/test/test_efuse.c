@@ -19,8 +19,6 @@
 #include "esp_rom_efuse.h"
 #include "bootloader_common.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
 static const char* TAG = "efuse_test";
 
 static void test_read_blob(void)
@@ -538,7 +536,7 @@ TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]"
         printf("EFUSE_CODING_SCHEME_REPEAT\n");
         count_useful_reg = 4;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#else
     if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
         printf("EFUSE_CODING_SCHEME_RS\n");
         count_useful_reg = 8;
@@ -601,7 +599,7 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
             printf("EFUSE_CODING_SCHEME_REPEAT\n");
             count_useful_reg = 4;
         }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#else
         if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
             printf("EFUSE_CODING_SCHEME_RS\n");
             if (num_block == EFUSE_BLK1) {
@@ -769,7 +767,7 @@ TEST_CASE("Test a write/read protection", "[efuse]")
     test_rp(EFUSE_BLK1, ESP_EFUSE_RD_DIS_BLK1, true);
     test_rp(EFUSE_BLK2, ESP_EFUSE_RD_DIS_BLK2, false);
     test_rp(EFUSE_BLK3, ESP_EFUSE_RD_DIS_BLK3, false);
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+#else
     test_wp(EFUSE_BLK2, ESP_EFUSE_WR_DIS_SYS_DATA_PART1);
     test_wp(EFUSE_BLK3, ESP_EFUSE_WR_DIS_USER_DATA);
 
@@ -778,8 +776,6 @@ TEST_CASE("Test a write/read protection", "[efuse]")
     test_rp(EFUSE_BLK4, ESP_EFUSE_RD_DIS_KEY0, true);
     test_rp(EFUSE_BLK5, ESP_EFUSE_RD_DIS_KEY1, false);
     test_rp(EFUSE_BLK6, ESP_EFUSE_RD_DIS_KEY2, false);
-#else
-#error New chip not supported!
 #endif
 
     esp_efuse_utility_debug_dump_blocks();
@@ -811,7 +807,7 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_HEX8_ARRAY(new_mac, mac, sizeof(new_mac));
         esp_efuse_utility_debug_dump_blocks();
     }
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifndef CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "2. Write KEY3");
     uint8_t key[32] = {0};
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
@@ -834,7 +830,7 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_INT(0, key[i]);
     }
     esp_efuse_utility_debug_dump_blocks();
-#endif // CONFIG_IDF_TARGET_ESP32S2
+#endif // not CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "4. Write SECURE_VERSION");
     int max_bits = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
     size_t read_sec_version;
@@ -860,5 +856,3 @@ TEST_CASE("Test chip_revision APIs return the same value", "[efuse]")
     esp_efuse_utility_update_virt_blocks();
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_chip_ver(), bootloader_common_get_chip_revision());
 }
-
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

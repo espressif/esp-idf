@@ -210,7 +210,6 @@ static esp_err_t initialise_flash_encryption(void)
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
 
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
 
     esp_err_t err = esp_efuse_batch_write_commit();
