@@ -287,7 +287,7 @@ int clock_getres (clockid_t clock_id, struct timespec *res)
     }
 
     res->tv_sec = 0;
-    res->tv_nsec = esp_system_get_time_resolution() * 1000;
+    res->tv_nsec = esp_system_get_time_resolution();
 
     return 0;
 #else
