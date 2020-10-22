@@ -130,4 +130,8 @@ bool NVSHandleSimple::nextEntry(nvs_opaque_iterator_t* it) {
     return mStoragePtr->nextEntry(it);
 }
 
+const char *NVSHandleSimple::get_partition_name() const {
+    return mStoragePtr->getPartName();
+}
+
 }
