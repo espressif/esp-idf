@@ -4,7 +4,6 @@ set(include_dirs
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
-    port/esp32/tcp_isn
     )
 
 set(srcs
@@ -87,6 +86,8 @@ set(srcs
     "lwip/src/netif/ppp/upap.c"
     "lwip/src/netif/ppp/utils.c"
     "lwip/src/netif/ppp/vj.c"
+    "port/esp32/hooks/tcp_isn_default.c"
+    "port/esp32/hooks/lwip_default_hooks.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/netif/dhcp_state.c"
@@ -134,10 +135,6 @@ if(CONFIG_VFS_SUPPORT_IO)
     list(APPEND srcs "port/esp32/vfs_lwip.c")
 else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
-endif()
-
-if(CONFIG_LWIP_TCP_ISN_HOOK)
-    list(APPEND srcs "port/esp32/tcp_isn/tcp_isn.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
