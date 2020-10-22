@@ -102,7 +102,7 @@ endif
 bootloader: $(BOOTLOADER_DIGEST_BIN)
 	@echo $(SEPARATOR)
 	@echo "Bootloader built and secure digest generated. First time flash command is:"
-	@echo "$(ESPEFUSEPY) burn_key secure_boot $(SECURE_BOOTLOADER_KEY)"
+	@echo "$(ESPEFUSEPY) burn_key secure_boot_v1 $(SECURE_BOOTLOADER_KEY)"
 	@echo "$(ESPTOOLPY_WRITE_FLASH) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
 	@echo $(SEPARATOR)
 	@echo "To reflash the bootloader after initial flash:"
