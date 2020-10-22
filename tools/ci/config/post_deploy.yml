@@ -1,8 +1,12 @@
 .check_doc_links_template:
-  extends: .rules:protected
+  extends: .rules:protected-no_label
   stage: post_deploy
   image: $ESP_IDF_DOC_ENV_IMAGE
   tags: [ "build", "amd64", "internet" ]
+  needs: # ensure runs after push_to_github succeeded
+    - build_docs_html
+    - build_docs_pdf
+    - push_to_github
   artifacts:
     when: always
     paths:
