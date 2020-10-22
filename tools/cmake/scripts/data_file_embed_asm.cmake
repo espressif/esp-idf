@@ -38,9 +38,7 @@ string(REGEX REPLACE "[^\n]+$" ".byte \\0\n" data "${data}")                    
 string(REGEX REPLACE "[0-9a-f][0-9a-f]" "0x\\0, " data "${data}")                      # hex formatted C bytes
 string(REGEX REPLACE ", \n" "\n" data "${data}")                                       # trim the last comma
 
-## Come up with C-friendly symbol name based on source file
-get_filename_component(source_filename "${DATA_FILE}" NAME)
-string(MAKE_C_IDENTIFIER "${source_filename}" varname)
+get_filename_component(varname "${DATA_FILE}" NAME)
 
 function(append str)
     file(APPEND "${SOURCE_FILE}" "${str}")
@@ -50,13 +48,14 @@ function(append_line str)
     append("${str}\n")
 endfunction()
 
-function(append_identifier symbol)
-append_line("\n.global ${symbol}")
-append("${symbol}:")
-if(${ARGC} GREATER 1) # optional comment
-    append(" /* ${ARGV1} */")
-endif()
-append("\n")
+function(make_and_append_identifier str)
+    string(MAKE_C_IDENTIFIER "${str}" symbol)
+    append_line("\n.global ${symbol}")
+    append("${symbol}:")
+    if(${ARGC} GREATER 1) # optional comment
+        append(" /* ${ARGV1} */")
+    endif()
+    append("\n")
 endfunction()
 
 file(WRITE "${SOURCE_FILE}" "/*")
@@ -68,16 +67,15 @@ append_line(" */")
 
 append_line(".data")
 append_line(".section .rodata.embedded")
-append_identifier("${varname}")
-append_identifier("_binary_${varname}_start" "for objcopy compatibility")
+make_and_append_identifier("${varname}")
+make_and_append_identifier("_binary_${varname}_start" "for objcopy compatibility")
 append("${data}")
-
-append_identifier("_binary_${varname}_end" "for objcopy compatibility")
+make_and_append_identifier("_binary_${varname}_end" "for objcopy compatibility")
 
 append_line("")
 if(FILE_TYPE STREQUAL "TEXT")
-    append_identifier("${varname}_length" "not including null byte")
+    make_and_append_identifier("${varname}_length" "not including null byte")
 else()
-    append_identifier("${varname}_length")
+    make_and_append_identifier("${varname}_length")
 endif()
 append_line(".word ${data_len}")
