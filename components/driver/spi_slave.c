@@ -125,6 +125,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
+    SPI_CHECK(slave_config->spics_io_num < 0 || GPIO_IS_VALID_GPIO(slave_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
 
     spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
@@ -152,7 +153,10 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         ret = err;
         goto cleanup;
     }
-    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+    if (slave_config->spics_io_num >= 0) {
+        spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+    }
+
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
     if (use_dma) freeze_cs(spihost[host]);
 
