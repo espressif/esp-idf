@@ -942,6 +942,7 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
 
     if (esp_wifi_scan_start(&prov_ctx->scan_cfg, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start scan");
+        RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
     }
 
