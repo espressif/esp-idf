@@ -24,16 +24,6 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.utils import int_to_bytes
 
 try:
-    import esptool
-    import espefuse
-except ImportError:
-    idf_path = os.getenv("IDF_PATH")
-    if not idf_path or not os.path.exists(idf_path):
-        raise Exception("IDF_PATH not found")
-    sys.path.insert(0, os.path.join(idf_path, "components", "esptool_py", "esptool"))
-    import esptool
-    import espefuse
-try:
     import nvs_partition_gen as nvs_gen
 except ImportError:
     idf_path = os.getenv("IDF_PATH")
@@ -122,68 +112,14 @@ def calculate_ds_parameters(privkey, priv_key_pass):
     return c, iv, key_size
 
 
-class DefineArgs(object):
-    def __init__(self, attributes):
-        for key, value in attributes.items():
-            self.__setattr__(key, value)
+def efuse_summary(args):
+    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s summary" % (args.port))
 
 
-def efuse_summary(esp,args):
-    efuses, _efuse_operations = espefuse.get_efuses(esp, esp.CHIP_NAME, False, False, False)
-
-    summary_args = DefineArgs({
-        'baud': 115200,
-        'before': 'default_reset',
-        'chip': esp.CHIP_NAME,
-        'debug': False,
-        'do_not_confirm': False,
-        'file': sys.stdout,
-        'mode':'w',
-        'encding': 'utf-8',
-        'format': 'summary',
-        'operation': 'summary',
-        'port':args.port,
-    })
-
-    print("\n\n\n\t---SUMMARY START---\n")
-    espefuse.summary(esp, efuses, summary_args)
-    print("\n\t---SUMMARY END---\n\n")
-
-
-def efuse_burn_key(esp, args):
-
-    efuses, efuse_operations = espefuse.get_efuses(esp, esp.CHIP_NAME, False, False, False)
-
-    if args.efuse_key_id is None:
-        print("efuse Key id cannot be None")
-        sys.exit(-1)
-
-    key_file = open(hmac_key_file, 'rb')
-    # First element of _KEYBLOCKS is config data so add offset of 1
-    key_block = efuses._KEYBLOCKS[args.efuse_key_id + 1][0]
-    burn_key_args = DefineArgs({
-        'baud': 115200,
-        'before': 'default_reset',
-        'chip': esp.CHIP_NAME,
-        'debug': False,
-        'do_not_confirm': False,
-        'block': [key_block],
-        'keyfile': [key_file],
-        'keypurpose': ['HMAC_DOWN_DIGITAL_SIGNATURE'],
-        'operation': 'burn_key',
-        'force_write_always': False,
-        'no_read_protect': True,
-        'no_write_protect': False,
-        'port': args.port,
-
-    })
-
-    try:
-        efuse_operations.burn_key(esp, efuses, burn_key_args, None)
-        key_file.close()
-    except esptool.FatalError:
-        print("\nERROR: The provided key block already contains previously burned key, please use a different key block ID")
-        sys.exit(-1)
+def efuse_burn_key(args):
+    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s burn_key"
+              "%s %s HMAC_DOWN_DIGITAL_SIGNATURE  --no-read-protect"
+              % ((args.port), ("BLOCK_KEY" + str(args.efuse_key_id)), (hmac_key_file)))
 
 
 def generate_csv_file(c, iv, hmac_key_id, key_size, csv_file):
@@ -195,6 +131,12 @@ def generate_csv_file(c, iv, hmac_key_id, key_size, csv_file):
         f.write("esp_ds_iv,data,hex2bin,%s\n" % (iv.hex()))
         f.write("esp_ds_key_id,data,u8,%d\n" % (hmac_key_id))
         f.write("esp_ds_rsa_len,data,u16,%d\n" % (key_size))
+
+
+class DefineArgs(object):
+    def __init__(self, attributes):
+        for key, value in attributes.items():
+            self.__setattr__(key, value)
 
 
 def generate_nvs_partition(input_filename, output_filename):
@@ -211,45 +153,16 @@ def generate_nvs_partition(input_filename, output_filename):
     nvs_gen.generate(nvs_args, is_encr_enabled=False, encr_key=None)
 
 
-def flash_nvs_partition(bin_path, addr, esp):
-    esp.connect()
-    print(bin_path)
-    abs_bin_path = os.path.dirname(os.path.abspath(__file__)) + '/' + bin_path
-    print(abs_bin_path)
-    if (os.path.exists(abs_bin_path) is False):
-        print("NVS partition not found")
-        sys.exit(-1)
-
-    with open(bin_path, 'rb') as nvs_file:
-
-        flash_file = [(addr, nvs_file)]
-
-        flash_args = DefineArgs({
-            'flash_size': '4MB',
-            'flash_mode': 'qio',
-            'flash_freq': '80m',
-            'addr_filename': flash_file,
-            'no_stub': False,
-            'compress': False,
-            'verify': False,
-            'encrypt': False,
-            'erase_all': False,
-        })
-
-        esp.change_baud(baud=921600)
-        esptool.write_flash(esp, flash_args)
-
-
 def main():
-    parser = argparse.ArgumentParser(description='''Provision the ESPWROOM32SE device with
-        device_certificate and signer_certificate required for TLS authentication''')
+    parser = argparse.ArgumentParser(description='''Genereate an nvs partition containing the DS private key parameters from the client private key,
+            Generate an HMAC key and burn it in the desired efuse key block (required for Digital Signature)''')
 
     parser.add_argument(
         '--private-key',
         dest='privkey',
         default='main/client.key',
         metavar='relative/path/to/client-priv-key',
-        help='relative path(from secure_cert_mfg.py) to signer certificate private key')
+        help='relative path to client private key')
 
     parser.add_argument(
         "--pwd", '--password',
@@ -283,13 +196,8 @@ def main():
 
     args = parser.parse_args()
 
-    esp = esptool.ESPLoader.detect_chip(args.port,baud=115200)
-    if (esp.CHIP_NAME != 'ESP32-S2'):
-        print("Only ESP32S2 chip is supported")
-        sys.exit(-1)
-
     if args.summary is not False:
-        efuse_summary(esp, args)
+        efuse_summary(args)
         sys.exit(0)
 
     if (os.path.exists(esp_ds_data_dir) is False):
@@ -303,11 +211,10 @@ def main():
             print("overwriting previous encrypted private key data, as you have provided \"--overwrite\" option")
 
     c, iv, key_size = calculate_ds_parameters(args.privkey, args.priv_key_pass)
-    efuse_burn_key(esp, args)
+    efuse_burn_key(args)
 
     generate_csv_file(c, iv, args.efuse_key_id, key_size, csv_filename)
     generate_nvs_partition(csv_filename, bin_filename)
-    flash_nvs_partition(bin_filename, 0x10000, esp)
 
 
 if __name__ == "__main__":
