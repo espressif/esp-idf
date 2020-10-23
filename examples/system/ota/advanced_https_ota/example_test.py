@@ -453,6 +453,70 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     dut1.reset()
 
 
+@ttfw_idf.idf_example_test(env_tag="Example_8Mflash_Ethernet")
+def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_data):
+    """
+    Working of OTA when anti_rollback is enabled and security version of new image is less than current one.
+    Application should return with error message in this case.
+    steps: |
+      1. join AP
+      2. Generate binary file with lower security version
+      3. Fetch OTA image over HTTPS
+      4. Check working of anti_rollback feature
+    """
+    dut1 = env.get_dut("advanced_https_ota_example", "examples/system/ota/advanced_https_ota", dut_class=ttfw_idf.ESP32DUT, app_config_name='anti_rollback')
+    server_port = 8001
+    # Original binary file generated after compilation
+    bin_name = "advanced_https_ota.bin"
+    # Modified firmware image to lower security version in its header. This is to enable negative test case
+    anti_rollback_bin_name = "advanced_https_ota_lower_sec_version.bin"
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, bin_name)
+    file_size = os.path.getsize(binary_file)
+    f = open(binary_file, "rb+")
+    fo = open(os.path.join(dut1.app.binary_path, anti_rollback_bin_name), "wb+")
+    fo.write(f.read(file_size))
+    # Change security_version to 0 for negative test case
+    fo.seek(36)
+    fo.write(b'\x00')
+    fo.close()
+    f.close()
+    binary_file = os.path.join(dut1.app.binary_path, anti_rollback_bin_name)
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
+    # start test
+    host_ip = get_my_ip()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
+    dut1.start_app()
+    # Positive Case
+    dut1.expect("Loaded app from partition at offset", timeout=30)
+    try:
+        ip_address = dut1.expect(re.compile(r" eth ip: ([^,]+),"), timeout=30)
+        print("Connected to AP with IP: {}".format(ip_address))
+    except DUT.ExpectTimeout:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+    dut1.expect("Starting Advanced OTA example", timeout=30)
+
+    # Use originally generated image with secure_version=1
+    print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + bin_name))
+    dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + bin_name)
+    dut1.expect("Loaded app from partition at offset", timeout=60)
+    dut1.expect(re.compile(r" eth ip: ([^,]+),"), timeout=30)
+    dut1.expect("App is valid, rollback cancelled successfully", 30)
+
+    # Negative Case
+    dut1.expect("Starting Advanced OTA example", timeout=30)
+    # Use modified image with secure_version=0
+    print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + anti_rollback_bin_name))
+    dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + anti_rollback_bin_name)
+    dut1.expect("New firmware security version is less than eFuse programmed, 0 < 1", timeout=30)
+    os.remove(anti_rollback_bin_name)
+
+
 if __name__ == '__main__':
     test_examples_protocol_advanced_https_ota_example()
     test_examples_protocol_advanced_https_ota_example_chunked()
@@ -460,3 +524,4 @@ if __name__ == '__main__':
     test_examples_protocol_advanced_https_ota_example_truncated_bin()
     test_examples_protocol_advanced_https_ota_example_truncated_header()
     test_examples_protocol_advanced_https_ota_example_random()
+    test_examples_protocol_advanced_https_ota_example_anti_rollback()
