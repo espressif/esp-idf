@@ -17,9 +17,10 @@
 
 #include "btc_ble_mesh_health_model.h"
 #include "foundation.h"
-#include "health_srv.h"
-#include "health_cli.h"
 #include "esp_ble_mesh_health_model_api.h"
+
+#if CONFIG_BLE_MESH_HEALTH_CLI
+#include "health_cli.h"
 
 /* Health Client Model related functions */
 
@@ -457,6 +458,11 @@ void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+#endif /* CONFIG_BLE_MESH_HEALTH_CLI */
+
+#if CONFIG_BLE_MESH_HEALTH_SRV
+#include "health_srv.h"
+
 /* Health Server Model related functions */
 
 static inline void btc_ble_mesh_health_server_cb_to_app(esp_ble_mesh_health_server_cb_event_t event,
@@ -636,3 +642,4 @@ void btc_ble_mesh_health_server_attention_off(struct bt_mesh_model *model)
 
     btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_OFF_EVT);
 }
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */

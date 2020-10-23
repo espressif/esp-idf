@@ -69,6 +69,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     return ESP_OK;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
 {
     btc_ble_mesh_prov_args_t arg = {0};
@@ -89,4 +90,4 @@ esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-
+#endif /* CONFIG_BLE_MESH_DEINIT */

@@ -426,6 +426,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 {
     int err = 0;
@@ -541,6 +542,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     mesh_init = false;
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 #if defined(CONFIG_BLE_MESH_PROVISIONER)
 int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)

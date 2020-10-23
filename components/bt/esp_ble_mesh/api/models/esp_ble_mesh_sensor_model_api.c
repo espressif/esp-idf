@@ -19,6 +19,7 @@
 #include "btc_ble_mesh_sensor_model.h"
 #include "esp_ble_mesh_sensor_model_api.h"
 
+#if CONFIG_BLE_MESH_SENSOR_CLI
 esp_err_t esp_ble_mesh_register_sensor_client_callback(esp_ble_mesh_sensor_client_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
@@ -75,12 +76,13 @@ esp_err_t esp_ble_mesh_sensor_client_set_state(esp_ble_mesh_client_common_param_
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_sensor_client_args_t), btc_ble_mesh_sensor_client_arg_deep_copy)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */
 
+#if CONFIG_BLE_MESH_SENSOR_SERVER
 esp_err_t esp_ble_mesh_register_sensor_server_callback(esp_ble_mesh_sensor_server_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_SENSOR_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
-
-
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */
