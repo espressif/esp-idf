@@ -8,10 +8,9 @@
 #include "esp_transport_tcp.h"
 #include "esp_transport_ws.h"
 #include "esp_transport_utils.h"
-#include "mbedtls/base64.h"
-#include "mbedtls/sha1.h"
 #include "esp_transport_internal.h"
 #include "errno.h"
+#include "esp_tls_crypto.h"
 
 static const char *TAG = "TRANSPORT_WS";
 
@@ -118,7 +117,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     const char *user_agent_ptr = (ws->user_agent)?(ws->user_agent):"ESP32 Websocket Client";
 
     size_t outlen = 0;
-    mbedtls_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
+    esp_crypto_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
     int len = snprintf(ws->buffer, WS_BUFFER_SIZE,
                          "GET %s HTTP/1.1\r\n"
                          "Connection: Upgrade\r\n"
@@ -183,7 +182,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         return -1;
     }
 
-    // See mbedtls_sha1_ret() arg size
+    // See esp_crypto_sha1() arg size
     unsigned char expected_server_sha1[20];
     // Size of base64 coded string see above
     unsigned char expected_server_key[33] = {0};
@@ -194,8 +193,8 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     strcat((char*)expected_server_text, expected_server_magic);
 
     size_t key_len = strlen((char*)expected_server_text);
-    mbedtls_sha1_ret(expected_server_text, key_len, expected_server_sha1);
-    mbedtls_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
+    esp_crypto_sha1(expected_server_text, key_len, expected_server_sha1);
+    esp_crypto_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
     expected_server_key[ (outlen < sizeof(expected_server_key)) ? outlen : (sizeof(expected_server_key) - 1) ] = 0;
     ESP_LOGD(TAG, "server key=%s, send_key=%s, expected_server_key=%s", (char *)server_key, (char*)client_key, expected_server_key);
     if (strcmp((char*)expected_server_key, (char*)server_key) != 0) {

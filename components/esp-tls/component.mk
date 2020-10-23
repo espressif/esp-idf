@@ -1,8 +1,8 @@
 
-COMPONENT_SRCDIRS := .
-COMPONENT_OBJS := esp_tls.o
+COMPONENT_SRCDIRS := . esp-tls-crypto
+COMPONENT_OBJS := esp_tls.o esp-tls-crypto/esp_tls_crypto.o
 
-COMPONENT_ADD_INCLUDEDIRS := . private_include
+COMPONENT_ADD_INCLUDEDIRS := . esp-tls-crypto private_include
 
 
 ifneq ($(CONFIG_ESP_TLS_USING_MBEDTLS), )
