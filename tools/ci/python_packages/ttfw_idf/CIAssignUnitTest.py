@@ -110,7 +110,7 @@ class Group(CIAssignTest.Group):
                 {
                     "name": test_function,
                     "extra_data": self._create_extra_data(test_cases, test_function),
-                } for test_function, test_cases in case_by_test_function.iteritems() if test_cases
+                } for test_function, test_cases in case_by_test_function.items() if test_cases
             ],
         }
         return output_data
