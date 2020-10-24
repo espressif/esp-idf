@@ -17,10 +17,14 @@
 from __future__ import print_function
 import os
 import re
-import Queue
 import traceback
 import threading
 import subprocess
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 from tiny_test_fw import Utility
 import ttfw_idf
