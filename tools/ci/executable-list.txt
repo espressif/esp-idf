@@ -49,6 +49,7 @@ tools/ci/get_supported_examples.sh
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
+tools/ci/retry_failed.sh
 tools/ci/test_build_system.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/test_configure_ci_environment.sh

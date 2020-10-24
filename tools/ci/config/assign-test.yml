@@ -13,10 +13,14 @@ assign_test:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
+    INTEGRATION_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
+    INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
+    ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
+    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
+    PYTHON_VER: 3.7.7
   artifacts:
     paths:
       - components/idf_test/*/CIConfigs
-      - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
       - build_examples/artifact_index.json
     expire_in: 1 week
@@ -32,11 +36,12 @@ assign_test:
     # assign unit test cases
     - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
-    - git clone $TEST_SCRIPT_REPOSITORY
+    # can not retry if downing git lfs files failed, so using empty_branch first.
+    - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
-    - cd auto_test_script
-    # assgin integration test cases
-    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin
+    # assign integration test cases
+    - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin -o $INTEGRATION_CONFIG_OUTPUT_PATH
 
 update_test_cases:
   stage: assign_test
@@ -60,7 +65,7 @@ update_test_cases:
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
-    PYTHON_VER: 3
+    PYTHON_VER: 3.7.7
   script:
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
     - git clone $TEST_MANAGEMENT_REPO
