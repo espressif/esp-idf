@@ -18,10 +18,14 @@ from __future__ import print_function
 import os
 import sys
 import re
-import Queue
 import traceback
 import threading
 import subprocess
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 try:
     # This environment variable is expected on the host machine
