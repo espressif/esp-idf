@@ -33,7 +33,7 @@ cmake_ver_minor=$(get_ver_from_cmake IDF_VERSION_MINOR)
 cmake_ver_patch=$(get_ver_from_cmake IDF_VERSION_PATCH)
 version_from_cmake="${cmake_ver_major}.${cmake_ver_minor}.${cmake_ver_patch}"
 
-git_desc=$(git describe --tags)
+git_desc=$(git describe)
 git_desc_regex="^v([0-9]+)\.([0-9]+)(\.([0-9]+))?.*$"
 if [[ ! ${git_desc} =~ ${git_desc_regex} ]]; then
     echo "Could not determine the version from 'git describe' output: ${git_desc}"
