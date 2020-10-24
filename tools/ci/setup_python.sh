@@ -1,11 +1,7 @@
 #! /bin/bash
 
-# Regexp for matching job names which are incompatible with Python 3
-py3_incomp='assign_test|UT|IT'
-
-if [ -z ${PYTHON_VER+x} ] || [[ $CI_JOB_NAME =~ $py3_incomp ]]; then
-    # Use this version of the Python interpreter if it was not defined before or
-    # the given job is not compatible with Python 3
+if [ -z ${PYTHON_VER+x} ]; then
+    # Use this version of the Python interpreter if it was not defined before
     PYTHON_VER=2.7.15
 fi
 
