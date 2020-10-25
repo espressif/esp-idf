@@ -350,8 +350,8 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     spi_slave_hal_context_t *hal = &host->hal;
 
 #ifdef DEBUG_SLAVE
-    dumpregs(host->hw);
-    if (host->dmadesc_rx) dumpll(&host->dmadesc_rx[0]);
+    dumpregs(hal->hw);
+    if (hal->dmadesc_rx) dumpll(&hal->dmadesc_rx[0]);
 #endif
 
     assert(spi_slave_hal_usr_is_done(hal));
