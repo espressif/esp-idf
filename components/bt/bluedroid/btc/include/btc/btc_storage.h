@@ -89,6 +89,6 @@ int btc_storage_get_num_bt_bond_devices(void);
 **                  BT_STATUS_FAIL otherwise
 **
 *******************************************************************************/
-bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int dev_num);
+bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *dev_num);
 
 #endif /* BTC_STORAGE_H */

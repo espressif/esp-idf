@@ -201,7 +201,6 @@ int btc_storage_get_num_bt_bond_devices(void)
         }
     }
     btc_config_unlock();
-
     return num_dev;
 }
 
@@ -215,15 +214,17 @@ int btc_storage_get_num_bt_bond_devices(void)
 **                  BT_STATUS_FAIL otherwise
 **
 *******************************************************************************/
-bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int dev_num)
+bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *dev_num)
 {
     bt_bdaddr_t bd_addr;
+    int in_dev_num = *dev_num; /* buffer size */
+    int out_dev_num = 0; /* bond_dev size */
 
     btc_config_lock();
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
             iter = btc_config_section_next(iter)) {
 
-        if (dev_num-- <= 0) {
+        if (in_dev_num <= 0) {
             break;
         }
 
@@ -236,9 +237,12 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int de
             btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
             string_to_bdaddr(name, &bd_addr);
             memcpy(bond_dev, &bd_addr, sizeof(bt_bdaddr_t));
+            in_dev_num--;
+            out_dev_num++;
             bond_dev++;
         }
     }
+    *dev_num = out_dev_num; /* out_dev_num <= in_dev_num */
     btc_config_unlock();
 
     return BT_STATUS_SUCCESS;
