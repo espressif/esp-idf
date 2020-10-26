@@ -41,9 +41,6 @@ enum bt_mesh_adv_type {
     BLE_MESH_ADV_BLE,
 };
 
-typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, uint16_t duration,
-                                   int err, void *user_data);
-
 struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
@@ -78,8 +75,6 @@ void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
                       void *cb_data);
 
-const bt_mesh_addr_t *bt_mesh_get_unprov_dev_addr(void);
-
 struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
                                          int32_t timeout);
 
@@ -92,12 +87,6 @@ void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
 void bt_mesh_adv_deinit(void);
-
-int bt_mesh_scan_enable(void);
-
-int bt_mesh_scan_disable(void);
-
-int bt_mesh_scan_with_wl_enable(void);
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
