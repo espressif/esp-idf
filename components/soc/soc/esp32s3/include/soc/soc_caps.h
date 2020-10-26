@@ -9,6 +9,7 @@
 #define SOC_PCNT_SUPPORTED 1
 #define SOC_TWAI_SUPPORTED 1
 #define SOC_GDMA_SUPPORTED 1
+#define SOC_DEDICATED_GPIO_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 2
 #define SOC_CACHE_SUPPORT_WRAP    1
 
@@ -29,6 +30,10 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 #include "gpio_caps.h"
+
+/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
+#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (4) /*!< 4 outward channels on each CPU core */
+#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (4) /*!< 4 inward channels on each CPU core */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #include "i2c_caps.h"

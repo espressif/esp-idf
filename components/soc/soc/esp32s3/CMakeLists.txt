@@ -1,6 +1,7 @@
 add_library(soc_esp32s3 STATIC
     "adc_periph.c"
     "dac_periph.c"
+    "dedic_gpio_periph.c"
     "gpio_periph.c"
     "i2c_periph.c"
     "i2s_periph.c"

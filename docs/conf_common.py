@@ -145,6 +145,8 @@ SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst']
 
 MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
+DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
+
 LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'gnu-make-legacy.rst',
                'api-guides/ulp-legacy.rst',
@@ -180,6 +182,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
                             'SOC_USB_SUPPORTED':USB_DOCS,
+                            'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS}
 
