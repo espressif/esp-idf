@@ -24,6 +24,7 @@
 #include "hal/spi_slave_hd_hal.h"
 #include "soc/soc_caps.h"
 
+//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
@@ -34,12 +35,8 @@
 #define spi_dma_ll_tx_enable_burst_data(dev, enable)         gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #define spi_dma_ll_rx_enable_burst_desc(dev, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #define spi_dma_ll_tx_enable_burst_desc(dev, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_set_rx_channel_priority(dev, priority)       gdma_ll_rx_set_priority(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, priority);
-#define spi_dma_set_tx_channel_priority(dev, priority)       gdma_ll_tx_set_priority(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, priority);
 #define spi_dma_enable_out_auto_wrback(dev, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #define spi_dma_set_out_eof_generation(dev, enable)          gdma_ll_tx_set_eof_mode(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_connect_rx_channel_to_periph(dev, periph_id) gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, periph_id);
-#define spi_dma_connect_tx_channel_to_periph(dev, periph_id) gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, periph_id);
 #define spi_dma_ll_rx_start(dev, addr) do {\
             gdma_ll_rx_set_desc_addr(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, (uint32_t)addr);\
             gdma_ll_rx_start(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL);\
@@ -48,7 +45,6 @@
             gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, (uint32_t)addr);\
             gdma_ll_tx_start(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL);\
         } while (0)
-
 #endif
 
 static void s_spi_slave_hd_hal_dma_init_config(const spi_slave_hd_hal_context_t *hal)
@@ -110,10 +106,13 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
 {
     lldesc_setup_link(hal->dmadesc_rx, out_buf, len, true);
 
+    spi_ll_dma_fifo_reset(hal->dev);
     spi_dma_ll_rx_reset(hal->dma_in);
+    spi_ll_slave_reset(hal->dev);
     spi_ll_infifo_full_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_WR_DONE);
 
+    spi_ll_slave_set_rx_bitlen(hal->dev, len * 8);
     spi_ll_dma_rx_enable(hal->dev, 1);
     spi_dma_ll_rx_start(hal->dma_in, &hal->dmadesc_rx[0]); 
 }
@@ -122,7 +121,9 @@ void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size
 {
     lldesc_setup_link(hal->dmadesc_tx, data, len, false);
 
+    spi_ll_dma_fifo_reset(hal->dev);
     spi_dma_ll_tx_reset(hal->dma_out);
+    spi_ll_slave_reset(hal->dev);
     spi_ll_outfifo_empty_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD8);
 

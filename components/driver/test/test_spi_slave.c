@@ -12,14 +12,12 @@
 #include "test/test_common_spi.h"
 #include "esp_rom_gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
 #ifndef CONFIG_SPIRAM
 //This test should be removed once the timing test is merged.
 
-
 #define MASTER_SEND {0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43}
 #define SLAVE_SEND { 0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0 }
+
 
 static inline void int_connect( uint32_t gpio, uint32_t sigo, uint32_t sigi )
 {
@@ -92,7 +90,7 @@ TEST_CASE("test slave send unaligned","[spi]")
 
     //do internal connection
     int_connect( PIN_NUM_MOSI,  spi_periph_signal[TEST_SPI_HOST].spid_out,      spi_periph_signal[TEST_SLAVE_HOST].spiq_in );
-    int_connect( PIN_NUM_MISO,  spi_periph_signal[TEST_SLAVE_HOST].spiq_out,      spi_periph_signal[TEST_SPI_HOST].spid_in );
+    int_connect( PIN_NUM_MISO,  spi_periph_signal[TEST_SLAVE_HOST].spiq_out,    spi_periph_signal[TEST_SPI_HOST].spid_in );
     int_connect( PIN_NUM_CS,    spi_periph_signal[TEST_SPI_HOST].spics_out[0],  spi_periph_signal[TEST_SLAVE_HOST].spics_in );
     int_connect( PIN_NUM_CLK,   spi_periph_signal[TEST_SPI_HOST].spiclk_out,    spi_periph_signal[TEST_SLAVE_HOST].spiclk_in );
 
@@ -104,6 +102,7 @@ TEST_CASE("test slave send unaligned","[spi]")
         slave_t.length=8*32;
         slave_t.tx_buffer=slave_txbuf+i;
         slave_t.rx_buffer=slave_rxbuf;
+
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
 
         //send
@@ -127,7 +126,6 @@ TEST_CASE("test slave send unaligned","[spi]")
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY( t.tx_buffer, slave_t.rx_buffer, t.length/8 );
         TEST_ASSERT_EQUAL_HEX8_ARRAY( slave_t.tx_buffer, t.rx_buffer, t.length/8 );
-
         TEST_ASSERT_EQUAL( t.length, slave_t.trans_len );
 
         //clean
@@ -144,5 +142,3 @@ TEST_CASE("test slave send unaligned","[spi]")
 }
 
 #endif // !CONFIG_SPIRAM
-
-#endif

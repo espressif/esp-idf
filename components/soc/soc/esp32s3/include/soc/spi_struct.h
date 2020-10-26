@@ -341,7 +341,7 @@ typedef volatile struct {
     uint32_t reserved_8c;
     uint32_t reserved_90;
     uint32_t reserved_94;
-    uint32_t data_buf[18];                                              /*data buffer*/
+    uint32_t data_buf[16];                                              /*data buffer*/
     uint32_t reserved_d8;
     uint32_t reserved_dc;
     union {

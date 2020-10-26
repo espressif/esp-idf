@@ -50,6 +50,11 @@ if(${target} STREQUAL "esp32s2")
     list(APPEND includes "esp32s2/include")
 endif()
 
+if(${target} STREQUAL "esp32s3")
+    list(APPEND srcs "spi_slave_hd.c"
+                    )
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"

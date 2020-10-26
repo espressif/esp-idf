@@ -3,8 +3,6 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 
 const char MASTER_TAG[] = "test_master";
@@ -207,5 +205,3 @@ void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
     GPIO.func_out_sel_cfg[gpio_num].func_sel=signal_idx;
 }
-
-#endif

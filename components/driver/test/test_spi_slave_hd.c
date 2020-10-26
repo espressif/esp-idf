@@ -13,11 +13,9 @@
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
-
+#include "esp_rom_gpio.h"
 #include "unity.h"
 #include "test/test_common_spi.h"
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #define TEST_DMA_MAX_SIZE    14000
 #define TEST_BUFFER_SIZE 256     ///< buffer size of each wrdma buffer in fifo mode
@@ -70,6 +68,21 @@ static uint32_t get_hd_flags(void)
         default:
             return 0;
     }
+}
+
+void config_single_board_test_pin(void)
+{
+    esp_rom_gpio_connect_out_signal(PIN_NUM_MOSI, spi_periph_signal[TEST_SPI_HOST].spid_out, 0, 0);
+    esp_rom_gpio_connect_in_signal(PIN_NUM_MOSI, spi_periph_signal[TEST_SLAVE_HOST].spid_in, 0);
+
+    esp_rom_gpio_connect_out_signal(PIN_NUM_MISO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out, 0, 0);
+    esp_rom_gpio_connect_in_signal(PIN_NUM_MISO, spi_periph_signal[TEST_SPI_HOST].spiq_in, 0);
+
+    esp_rom_gpio_connect_out_signal(PIN_NUM_CS, spi_periph_signal[TEST_SPI_HOST].spics_out[0], 0, 0);
+    esp_rom_gpio_connect_in_signal(PIN_NUM_CS, spi_periph_signal[TEST_SLAVE_HOST].spics_in, 0);
+
+    esp_rom_gpio_connect_out_signal(PIN_NUM_CLK, spi_periph_signal[TEST_SPI_HOST].spiclk_out, 0, 0);
+    esp_rom_gpio_connect_in_signal(PIN_NUM_CLK, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in, 0);
 }
 
 static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* config, int freq)
@@ -196,10 +209,8 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
     };
     init_slave_hd(cfg->mode, &callback);
 
-    spitest_gpio_output_sel(PIN_NUM_MOSI, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_output_sel(PIN_NUM_MISO, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_output_sel(PIN_NUM_CS, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
-    spitest_gpio_output_sel(PIN_NUM_CLK, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    //when test with single board via same set of mosi, miso, clk and cs pins.
+    config_single_board_test_pin();
 
     wait_wrbuf_sig(ctx, 0);
     wait_rdbuf_sig(ctx, 0);
@@ -232,7 +243,7 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
 }
 
 
-#define REG_REGION_SIZE 4*18
+#define REG_REGION_SIZE SOC_SPI_MAXIMUM_BUFFER_SIZE
 
 void check_no_signal(testhd_context_t* context)
 {
@@ -358,8 +369,8 @@ static void test_hd_loop(const void* arg1, void* arg2)
             wait_rdbuf_sig(context, portMAX_DELAY);
 
             ESP_LOGI("mem", "pos: %d, len: %d", pos, len);
-            //ESP_LOG_BUFFER_HEX("recv_buffer", recv_buffer, len);
-            //ESP_LOG_BUFFER_HEX("mem", &mem_ptr[pos], len);
+            // ESP_LOG_BUFFER_HEX("recv_buffer", recv_buffer, len);
+            // ESP_LOG_BUFFER_HEX("mem", &mem_ptr[pos], len);
             TEST_ASSERT_EQUAL_HEX8_ARRAY(&mem_ptr[pos], recv_buffer, len);
         }
 
@@ -490,10 +501,8 @@ TEST_CASE("test spi slave hd continuous mode, master too long", "[spi][spi_slv_h
     //no callback needed
     init_slave_hd(cfg->mode, NULL);
 
-    spitest_gpio_output_sel(PIN_NUM_MOSI, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_output_sel(PIN_NUM_MISO, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_output_sel(PIN_NUM_CS, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
-    spitest_gpio_output_sel(PIN_NUM_CLK, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    //Use GPIO matrix to connect signal of master and slave via same set of pins on one board.
+    config_single_board_test_pin();
 
     const int send_buf_size = 1024;
 
@@ -575,5 +584,3 @@ TEST_CASE("test spi slave hd continuous mode, master too long", "[spi][spi_slv_h
 }
 
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
-
-#endif
