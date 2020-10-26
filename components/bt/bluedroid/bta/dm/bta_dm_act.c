@@ -610,7 +610,7 @@ void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
     }
 }
 
-void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data)
+void bta_dm_read_rssi(tBTA_DM_MSG *p_data)
 {
     if (p_data->rssi.read_rssi_cb != NULL) {
         BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.transport, p_data->rssi.read_rssi_cb);
