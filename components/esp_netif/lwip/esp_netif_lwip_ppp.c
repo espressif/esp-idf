@@ -168,7 +168,7 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
             break;
     }
     if (obj->ppp_error_event_enabled) {
-        err = esp_event_post(NETIF_PPP_STATUS, err_code, netif, sizeof(netif), 0);
+        err = esp_event_post(NETIF_PPP_STATUS, err_code, &netif, sizeof(netif), 0);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_event_post failed with code %d", err);
         }
@@ -219,7 +219,7 @@ static void on_ppp_notify_phase(ppp_pcb *pcb, u8_t phase, void *ctx)
     lwip_peer2peer_ctx_t *obj = (lwip_peer2peer_ctx_t *)netif->related_data;
     assert(obj->base.netif_type == PPP_LWIP_NETIF);
     if (obj && obj->ppp_phase_event_enabled) {
-        esp_err_t err = esp_event_post(NETIF_PPP_STATUS, NETIF_PP_PHASE_OFFSET + phase, netif, sizeof(netif), 0);
+        esp_err_t err = esp_event_post(NETIF_PPP_STATUS, NETIF_PP_PHASE_OFFSET + phase, &netif, sizeof(netif), 0);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_event_post failed with code %d", err);
         }
