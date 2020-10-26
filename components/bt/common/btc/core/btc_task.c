@@ -159,9 +159,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH_TIME_SCENE_SERVER
     [BTC_PID_TIME_SCENE_SERVER] = {NULL,                                        btc_ble_mesh_time_scene_server_cb_handler},
 #endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
-#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
-    [BTC_PID_BLE_MESH_BLE_COEX]     = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
-#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
+    [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
+#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */
 #endif /* #if CONFIG_BLE_MESH */
 };
 
