@@ -312,30 +312,6 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
     return ESP_OK;
 }
 
-#ifdef DEBUG_SLAVE
-static void dumpregs(spi_dev_t *hw)
-{
-    esp_rom_printf("***REG DUMP ***\n");
-    esp_rom_printf("mosi_dlen         : %08X\n", hw->mosi_dlen.val);
-    esp_rom_printf("miso_dlen         : %08X\n", hw->miso_dlen.val);
-    esp_rom_printf("slv_wrbuf_dlen    : %08X\n", hw->slv_wrbuf_dlen.val);
-    esp_rom_printf("slv_rdbuf_dlen    : %08X\n", hw->slv_rdbuf_dlen.val);
-    esp_rom_printf("slave             : %08X\n", hw->slave.val);
-    esp_rom_printf("slv_rdata_bit     : %x\n", hw->slv_rd_bit.slv_rdata_bit);
-    esp_rom_printf("dma_rx_status     : %08X\n", hw->dma_rx_status);
-    esp_rom_printf("dma_tx_status     : %08X\n", hw->dma_tx_status);
-}
-
-
-static void dumpll(lldesc_t *ll)
-{
-    esp_rom_printf("****LL DUMP****\n");
-    esp_rom_printf("Size %d\n", ll->size);
-    esp_rom_printf("Len: %d\n", ll->length);
-    esp_rom_printf("Owner: %s\n", ll->owner ? "dma" : "cpu");
-}
-#endif
-
 static void SPI_SLAVE_ISR_ATTR spi_slave_restart_after_dmareset(void *arg)
 {
     spi_slave_t *host = (spi_slave_t *)arg;
@@ -352,11 +328,6 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     spi_slave_transaction_t *trans = NULL;
     spi_slave_t *host = (spi_slave_t *)arg;
     spi_slave_hal_context_t *hal = &host->hal;
-
-#ifdef DEBUG_SLAVE
-    dumpregs(host->hw);
-    if (host->dmadesc_rx) dumpll(&host->dmadesc_rx[0]);
-#endif
 
     assert(spi_slave_hal_usr_is_done(hal));
 
