@@ -22,7 +22,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include "esp_err.h"
-#include "soc/soc.h"
+#include "soc/soc.h"  // [refactor-todo] IDF-2297
 
 #define ESP_WATCHPOINT_LOAD 0x40000000
 #define ESP_WATCHPOINT_STORE 0x80000000

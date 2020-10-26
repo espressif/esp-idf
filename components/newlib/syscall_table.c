@@ -22,7 +22,6 @@
 #include <sys/signal.h>
 #include <sys/unistd.h>
 #include <sys/reent.h>
-#include "esp_vfs.h"
 #include "esp_newlib.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"

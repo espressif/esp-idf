@@ -16,7 +16,6 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 
-#include "esp_spi_flash.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/gdbstub.h"
 #include "esp_private/usb_console.h"

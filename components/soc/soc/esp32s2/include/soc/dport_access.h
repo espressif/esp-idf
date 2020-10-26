@@ -16,11 +16,8 @@
 #define _DPORT_ACCESS_H_
 
 #include <stdint.h>
-#include "esp_attr.h"
+
 #include "esp32s2/dport_access.h"
-#include "soc.h"
-#include "uart_reg.h"
-#include "xtensa/xtruntime.h"
 
 #ifdef __cplusplus
 extern "C" {

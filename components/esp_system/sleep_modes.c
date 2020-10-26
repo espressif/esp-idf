@@ -19,6 +19,7 @@
 #include "esp_attr.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_timer_private.h"
+#include "esp_private/system_internal.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -429,7 +430,7 @@ esp_err_t esp_light_sleep_start(void)
      */
     esp_timer_private_lock();
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
-    uint64_t frc_time_at_start = esp_timer_get_time();
+    uint64_t frc_time_at_start = esp_system_get_time();
     DPORT_STALL_OTHER_CPU_START();
 
     // Decide which power domains can be powered down
@@ -475,7 +476,7 @@ esp_err_t esp_light_sleep_start(void)
 
     // FRC1 has been clock gated for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t frc_time_at_end = esp_timer_get_time();
+    uint64_t frc_time_at_end = esp_system_get_time();
 
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start,
                                     esp_clk_slowclk_cal_get());

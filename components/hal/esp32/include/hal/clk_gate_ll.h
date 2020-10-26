@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/periph_defs.h"
 #include "soc/dport_reg.h"
 #include "soc/dport_access.h"

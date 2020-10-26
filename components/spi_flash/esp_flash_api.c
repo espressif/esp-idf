@@ -21,10 +21,9 @@
 #include "memspi_host_driver.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp_heap_caps.h"
 #include "esp_flash_internal.h"
-#include <freertos/task.h>
-#include "esp_timer.h"
+#include "esp_private/system_internal.h"
+
 
 static const char TAG[] = "spi_flash";
 
@@ -378,7 +377,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
 #endif
     while (err == ESP_OK && len >= sector_size) {
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        int64_t start_time_us = esp_timer_get_time();
+        int64_t start_time_us = esp_system_get_time();
 #endif
         err = rom_spiflash_api_funcs->start(chip);
         if (err != ESP_OK) {
@@ -403,7 +402,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         err = rom_spiflash_api_funcs->end(chip, err);
 
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        no_yield_time_us += (esp_timer_get_time() - start_time_us);
+        no_yield_time_us += (esp_system_get_time() - start_time_us);
         if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
             no_yield_time_us = 0;
             if (chip->os_func->yield) {
