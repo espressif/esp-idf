@@ -11,10 +11,13 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_ble.h"
+
 #include "mesh_config.h"
 #include "mesh_trace.h"
 #include "mesh_buf.h"
 #include "mesh_uuid.h"
+#include "scan.h"
 #include "beacon.h"
 #include "net.h"
 #include "prov.h"
@@ -140,6 +143,43 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
 #endif /* (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
            CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+static bool ble_scan_en;
+
+int bt_mesh_start_ble_scan(struct bt_mesh_ble_scan_param *param)
+{
+    if (ble_scan_en == true) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
+    ble_scan_en = true;
+
+    return 0;
+}
+
+int bt_mesh_stop_ble_scan(void)
+{
+    if (ble_scan_en == false) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
+    ble_scan_en = false;
+
+    return 0;
+}
+
+static void inline callback_ble_adv_pkt(const bt_mesh_addr_t *addr,
+                                        uint8_t adv_type, uint8_t data[],
+                                        uint16_t length, int8_t rssi)
+{
+    if (ble_scan_en) {
+        bt_mesh_ble_scan_cb_evt_to_btc(addr, adv_type, data, length, rssi);
+    }
+}
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_SCAN */
+
 static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
                             int8_t rssi, uint8_t adv_type,
                             struct net_buf_simple *buf)
@@ -148,8 +188,15 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
      CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     uint16_t uuid = 0U;
 #endif
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+    uint8_t *adv_data = buf->data;
+    uint16_t adv_len = buf->len;
+#endif
 
     if (adv_type != BLE_MESH_ADV_NONCONN_IND && adv_type != BLE_MESH_ADV_IND) {
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+        callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
         return;
     }
 
@@ -166,11 +213,17 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
         len = net_buf_simple_pull_u8(buf);
         /* Check for early termination */
         if (len == 0U) {
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+            callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
             return;
         }
 
         if (len > buf->len) {
-            BT_WARN("AD malformed");
+            BT_DBG("AD malformed");
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+            callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
             return;
         }
 
@@ -211,12 +264,18 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
         case BLE_MESH_DATA_FLAGS:
             if (!adv_flags_valid(buf)) {
                 BT_DBG("Adv Flags mismatch, ignore this adv pkt");
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+                callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
                 return;
             }
             break;
         case BLE_MESH_DATA_UUID16_ALL:
             if (!adv_service_uuid_valid(buf, &uuid)) {
                 BT_DBG("Adv Service UUID mismatch, ignore this adv pkt");
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+                callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
                 return;
             }
             break;
@@ -225,7 +284,10 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
             break;
 #endif
         default:
-            break;
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+            callback_ble_adv_pkt(addr, adv_type, adv_data, adv_len, rssi);
+#endif
+            return;
         }
 
         net_buf_simple_restore(buf, &state);

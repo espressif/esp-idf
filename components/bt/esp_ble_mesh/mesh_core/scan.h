@@ -24,6 +24,14 @@ int bt_mesh_scan_disable(void);
 
 int bt_mesh_scan_with_wl_enable(void);
 
+struct bt_mesh_ble_scan_param {
+    uint32_t duration;
+};
+
+int bt_mesh_start_ble_scan(struct bt_mesh_ble_scan_param *param);
+
+int bt_mesh_stop_ble_scan(void);
+
 #ifdef __cplusplus
 }
 #endif

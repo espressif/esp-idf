@@ -32,12 +32,24 @@ typedef union {
     struct {
         uint8_t index;
     } stop_ble_adv;
+    struct {
+        esp_ble_mesh_ble_scan_param_t param;
+    } start_ble_scan;
+    struct {
+        /* RFU */
+    } stop_ble_scan;
 } btc_ble_mesh_ble_args_t;
 
 typedef enum {
     BTC_BLE_MESH_ACT_START_BLE_ADV,
     BTC_BLE_MESH_ACT_STOP_BLE_ADV,
+    BTC_BLE_MESH_ACT_START_BLE_SCAN,
+    BTC_BLE_MESH_ACT_STOP_BLE_SCAN,
 } btc_ble_mesh_ble_act_t;
+
+void bt_mesh_ble_scan_cb_evt_to_btc(const bt_mesh_addr_t *addr,
+                                    uint8_t adv_type, uint8_t data[],
+                                    uint16_t length, int8_t rssi);
 
 void btc_ble_mesh_ble_call_handler(btc_msg_t *msg);
 
