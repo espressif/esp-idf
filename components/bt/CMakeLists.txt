@@ -391,6 +391,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/proxy_server.c"
                     "esp_ble_mesh/mesh_core/settings_uid.c"
                     "esp_ble_mesh/mesh_core/settings.c"
+                    "esp_ble_mesh/mesh_core/scan.c"
                     "esp_ble_mesh/mesh_core/test.c"
                     "esp_ble_mesh/mesh_core/transport.c"
                     "esp_ble_mesh/mesh_models/common/device_property.c"
