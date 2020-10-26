@@ -217,11 +217,27 @@ void test_fatfs_lseek(const char* filename)
     TEST_ASSERT_EQUAL(18, ftell(f));
     TEST_ASSERT_EQUAL(0, fseek(f, 0, SEEK_SET));
     char buf[20];
+
     TEST_ASSERT_EQUAL(18, fread(buf, 1, sizeof(buf), f));
     const char ref_buf[] = "0123456789\n\0\0\0abc\n";
     TEST_ASSERT_EQUAL_INT8_ARRAY(ref_buf, buf, sizeof(ref_buf) - 1);
-
     TEST_ASSERT_EQUAL(0, fclose(f));
+
+#ifdef CONFIG_FATFS_USE_FASTSEEK
+    f = fopen(filename, "rb+");
+    TEST_ASSERT_NOT_NULL(f);
+    TEST_ASSERT_EQUAL(0, fseek(f, 0, SEEK_END));
+    TEST_ASSERT_EQUAL(18, ftell(f));
+    TEST_ASSERT_EQUAL(0, fseek(f, -4, SEEK_CUR));
+    TEST_ASSERT_EQUAL(14, ftell(f));
+    TEST_ASSERT_EQUAL(0, fseek(f, -14, SEEK_CUR));
+    TEST_ASSERT_EQUAL(0, ftell(f));
+
+    TEST_ASSERT_EQUAL(18, fread(buf, 1, sizeof(buf), f));
+    TEST_ASSERT_EQUAL_INT8_ARRAY(ref_buf, buf, sizeof(ref_buf) - 1);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+#endif
+
 }
 
 void test_fatfs_truncate_file(const char* filename)
