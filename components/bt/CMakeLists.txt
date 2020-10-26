@@ -340,6 +340,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/api/models/esp_ble_mesh_lighting_model_api.c"
                     "esp_ble_mesh/api/models/esp_ble_mesh_sensor_model_api.c"
                     "esp_ble_mesh/api/models/esp_ble_mesh_time_scene_model_api.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_ble.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_config_model.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_generic_model.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_health_model.c"
