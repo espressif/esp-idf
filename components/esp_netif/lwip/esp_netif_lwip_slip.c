@@ -166,7 +166,13 @@ void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb
     ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
 
     // Update slip netif with data
-    slipif_received_bytes(netif->lwip_netif, buffer, len);
+    const int max_batch = 255;
+    int sent = 0;
+    while(sent < len) {
+        int batch = (len - sent) > max_batch ? max_batch : (len - sent);
+        slipif_received_bytes(netif->lwip_netif, buffer+sent, batch);
+        sent += batch;
+    }
 
     // Process incoming bytes
     for (int i = 0; i < len; i++) {
