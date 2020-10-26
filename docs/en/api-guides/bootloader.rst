@@ -61,7 +61,10 @@ The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` opti
 
 Customer bootloader
 ---------------------
-The current bootloader implementation allows the customer to override it. To do this, you must copy the folder `/esp-idf/components/bootloader` and then edit `/your_project/components/bootloader/subproject/main/bootloader_main.c`.
-In the bootloader space, you can not use the drivers and functions from other components. If necessary, then the required functionality should be placed in the folder bootloader (note that this will increase its size).
-It is necessary to monitor its size because there can be overlays in memory with a partition table leading to damage. At the moment the bootloader is limited to the partition table from the address `0x8000`.
+The current bootloader implementation allows a project to override it. To do this, you must copy the directory ``/esp-idf/components/bootloader`` to your project components directory and then edit ``/your_project/components/bootloader/subproject/main/bootloader_start.c``.
 
+In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's ``bootloader`` directory (note that this will increase its size).
+
+If the bootloader grows too large then it can collide with the partition table, which is flashed at offset 0x8000 by default. Increase the :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` value to place the partition table later in the flash. This increases the space available for the bootloader.
+
+.. note:: The first time you copy the bootloader into an existing project, the project may fail to build as paths have changed unexpectedly. If this happens, run ``idf.py fullclean`` (or delete the project build directory) and then build again.

@@ -353,6 +353,9 @@ contain component sub-directories with the same name, the component in the last 
 with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there.
 If used in this way, the ESP-IDF directory itself can remain untouched.
 
+.. note:: If a component is overridden in an existing project by moving it to a new location, the project will not automatically see the new component path. Run ``idf.py reconfigure`` (or delete the project build folder) and then build again.
+
+
 .. _cmake_minimal_component_cmakelists:
 
 Minimal Component CMakeLists
