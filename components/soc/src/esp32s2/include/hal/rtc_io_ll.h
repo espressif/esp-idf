@@ -275,6 +275,7 @@ static inline void rtcio_ll_force_unhold_all(void)
  */
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
+    SENS.sar_io_mux_conf.iomux_clk_gate_en = 1;
     RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
     RTCIO.pin[rtcio_num].int_type = type;
 }
@@ -286,6 +287,7 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
  */
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
+    SENS.sar_io_mux_conf.iomux_clk_gate_en = 0;
     RTCIO.pin[rtcio_num].wakeup_enable = 0;
     RTCIO.pin[rtcio_num].int_type = RTCIO_WAKEUP_DISABLE;
 }
