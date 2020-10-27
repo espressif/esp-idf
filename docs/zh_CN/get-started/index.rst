@@ -395,7 +395,7 @@ Windows 操作系统
 第九步：烧录到设备
 =============================
 
-请使用以下命令，将刚刚生成的二进制文件烧录至您的 {IDF_TARGET_NAME} 开发板：
+请使用以下命令，将刚刚生成的二进制文件烧录 (bootloader.bin, partition-table.bin 和 hello-world.bin)  至您的 {IDF_TARGET_NAME} 开发板：
 
     ``idf.py -p PORT [-b BAUD] flash``
 
@@ -531,6 +531,7 @@ Windows 操作系统
 
     establish-serial-connection
     eclipse-setup
+    vscode-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
     :esp32: ../get-started-legacy/index
