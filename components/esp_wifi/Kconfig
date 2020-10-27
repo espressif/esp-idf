@@ -331,6 +331,12 @@ menu "Wi-Fi"
             If neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.
             Wi-Fi power-save mode average current would be reduced if this option is enabled.
 
+    config ESP32_WIFI_OFFCHANNEL_OPS
+        bool "Enable Offchannel operations"
+        default n
+        help
+            Select this option to enable Offchannel Tx and Remain on Channel features.
+
 endmenu  # Wi-Fi
 
 menu "PHY"

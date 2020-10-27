@@ -13,8 +13,11 @@
 #ifdef CONFIG_DPP
 
 #include "utils/list.h"
-#include "common/wpa_common.h"
 #include "crypto/sha256.h"
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "esp_err.h"
+#include "esp_dpp.h"
 
 struct crypto_ecdh;
 struct hostapd_ip_addr;
@@ -147,12 +150,6 @@ struct dpp_curve_params {
 	const char *jws_alg;
 };
 
-enum dpp_bootstrap_type {
-	DPP_BOOTSTRAP_QR_CODE,
-	DPP_BOOTSTRAP_PKEX,
-	DPP_BOOTSTRAP_NFC_URI,
-};
-
 struct dpp_bootstrap_info {
 	struct dl_list list;
 	unsigned int id;
@@ -258,6 +255,7 @@ struct dpp_authentication {
 	 * Authentication exchange */
 	unsigned int freq[DPP_BOOTSTRAP_MAX_FREQ];
 	unsigned int num_freq, freq_idx;
+    unsigned int curr_chan;
 	unsigned int curr_freq;
 	unsigned int neg_freq;
 	unsigned int num_freq_iters;
@@ -488,8 +486,8 @@ void dpp_auth_deinit(struct dpp_authentication *auth);
 struct wpabuf *
 dpp_conf_req_rx(struct dpp_authentication *auth, const u8 *attr_start,
 		size_t attr_len);
-int dpp_conf_resp_rx(struct dpp_authentication *auth,
-		     const struct wpabuf *resp);
+int dpp_conf_resp_rx(struct dpp_authentication *auth, const u8 *resp,
+		             u32 resp_len);
 enum dpp_status_error dpp_conf_result_rx(struct dpp_authentication *auth,
 					 const u8 *hdr,
 					 const u8 *attr_start, size_t attr_len);
