@@ -61,7 +61,8 @@ esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl, dma_descriptor_t *ou
     gdma_ll_clear_interrupt_status(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, UINT32_MAX);
     gdma_ll_enable_m2m_mode(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
     gdma_ll_tx_enable_auto_write_back(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
-    gdma_ll_enable_owner_check(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
+    gdma_ll_tx_enable_owner_check(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
+    gdma_ll_rx_enable_owner_check(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
     gdma_ll_tx_set_desc_addr(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, (uint32_t)outlink_base);
     gdma_ll_rx_set_desc_addr(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, (uint32_t)inlink_base);
     return ESP_OK;

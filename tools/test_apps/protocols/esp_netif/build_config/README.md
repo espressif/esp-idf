@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
+
 # Build only test for C++/C configuration
 
 This test application aims to exercise different configuration options using standard espressif initialization pattern:
