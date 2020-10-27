@@ -1,10 +1,17 @@
-================
-ESP-LyraP-TouchA
-================
+=====================
+ESP-LyraP-TouchA v1.1
+=====================
 
 :link_to_translation:`zh_CN:[中文]`
 
-This user guide provides information on the ESP-LyraP-TouchA extension board. This board cannot be bought separately and is usually sold together with other Espressif development boards (e.g., ESP32-S2-Kaluga-1), which will be referred to as *main boards* below.
+This user guide provides information on the ESP-LyraP-TouchA extension board.
+
+This board cannot be bought separately and is usually sold together with other Espressif development boards (e.g., ESP32-S2-Kaluga-1), which will be referred to as *main boards* below.
+
+Currently, ESP-LyraP-TouchA v1.1 is sold as part of the following kits:
+
+* :doc:`user-guide-esp32-s2-kaluga-1-kit`
+* :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`
 
 The ESP-LyraP-TouchA extends the functionality of your main board by adding touch buttons.
 

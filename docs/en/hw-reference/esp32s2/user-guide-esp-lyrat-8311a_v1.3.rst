@@ -1,5 +1,5 @@
 ====================
-ESP-LyraT-8311A v1.2
+ESP-LyraT-8311A v1.3
 ====================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -8,7 +8,7 @@ This user guide provides information on the ESP-LyraT-8311A extension board.
 
 This board cannot be bought separately and is usually sold together with other Espressif development boards (e.g., ESP32-S2-Kaluga-1), which will be referred to as *main boards* below.
 
-Currently, ESP-LyraT-8311A v1.3 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`.
+Currently, ESP-LyraT-8311A v1.3 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit`.
 
 The ESP-LyraT-8311A extends the functionality of your main board by adding sound processing functionality:
 
@@ -18,10 +18,10 @@ The ESP-LyraT-8311A extends the functionality of your main board by adding sound
 
 This extension board can be used in many ways. The applications might include voice user interface, voice control, voice authorization, recording and playback of sound, etc.
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.2-3d.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.3-3d.png
     :align: center
-    :width: 2545px
-    :height: 1786px
+    :width: 1934px
+    :height: 1473px
     :scale: 30%
     :alt: ESP-LyraT-8311A
     :figclass: align-center
@@ -41,10 +41,11 @@ Overview
 
 The ESP-LyraT-8311A is mainly designed for audio applications. However, you can use your creativity to come up with any other use cases.
 
+
 Description of Components
 -------------------------
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.2-layout-front.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.3-layout-front.png
     :align: center
     :width: 934px
     :height: 565px
@@ -116,7 +117,7 @@ Software Setup
 Depending on your application, see:
 
 * `ESP-ADF Getting Started Guide <https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html#about-esp-adf>`_ if you develop with ESP-ADF (Espressif Audio Development Framework).
-* Section :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` of the ESP32-S2-Kaluga-1 kit user guide if you develop directly with ESP-IDF (Espressif IOT Development Framework).
+* Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-S2-Kaluga-1 kit user guide if you develop directly with ESP-IDF (Espressif IOT Development Framework).
 
 
 Hardware Reference
@@ -128,7 +129,7 @@ Block Diagram
 
 A block diagram below shows the components of ESP-LyraT-8311A and their interconnections.
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.2-block-diagram.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.3-block-diagram.png
     :align: center
     :alt: ESP-LyraT-8311A block diagram
     :figclass: align-center
@@ -139,13 +140,22 @@ A block diagram below shows the components of ESP-LyraT-8311A and their intercon
 Hardware Revision Details
 =========================
 
-No previous versions available.
+ESP-LyraT-8311A v1.3
+--------------------
+
+* ADC/ES7243 and ADC/ES7210 removed as the Mono Audio Codec chip provides all the needed functionality.
+
+
+ESP-LyraT-8311A v1.2
+--------------------
+
+:doc:`Initial release <user-guide-esp-lyrat-8311a_v1.2>`
 
 
 Related Documents
 =================
 
-- `ESP-LyraT-8311A Schematic <https://dl.espressif.com/dl/schematics/ESP-LyraT-8311A_V1_2_SCH_20200421A.pdf>`_ (PDF)
-- `ESP-LyraT-8311A PCB Layout <https://dl.espressif.com/dl/schematics/ESP-LyraT-8311A_V1_2_PCB_20200324AA.pdf>`_ (PDF)
+- `ESP-LyraT-8311A Schematic <https://dl.espressif.com/dl/schematics/ESP-LyraT-8311A_V1_3_SCH_20200522A.pdf>`_ (PDF)
+- `ESP-LyraT-8311A PCB Layout <https://dl.espressif.com/dl/schematics/ESP-LyraT-8311A_V1_3_PCB_20200522AA.pdf>`_ (PDF)
 
 For other design documentation for the board, please contact us at sales@espressif.com.

@@ -113,7 +113,7 @@ ESP-LyraT-8311A 上电前，请首先确认开发板完好无损。
 请根据您的具体应用，参考以下部分：
 
 * ESP-ADF（乐鑫音频开发框架）的用户，请前往 `ESP-ADF 入门指南 <https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html#about-esp-adf>`_。
-* ESP32-IDF（乐鑫 IoT 开发框架）的用户，请前往 ESP32-S2-Kaluga-1 开发套件用户指南的 :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` 章节。
+* ESP32-IDF（乐鑫 IoT 开发框架）的用户，请前往 ESP32-S2-Kaluga-1 开发套件用户指南的 :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` 章节。
 
 
 硬件参考

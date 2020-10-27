@@ -77,7 +77,7 @@ ESP-LyraP-CAM 上电前，请首先确认开发板完好无损。
 软件设置
 ^^^^^^^^
 
-请前往 ESP32-S2-Kaluga-1 开发套件用户指南的 :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` 章节。
+请前往 ESP32-S2-Kaluga-1 开发套件用户指南的 :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` 章节。
 
 
 硬件参考
