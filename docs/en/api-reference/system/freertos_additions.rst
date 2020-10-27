@@ -413,9 +413,6 @@ The :cpp:func:`xRingbufferCreateStatic` can be used to create ring buffers with 
 The manner in which these blocks are allocated will depend on the users requirements (e.g. all blocks being statically declared, or dynamically allocated with specific capabilities such as external RAM).
 
 .. note::
-    The :ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig` for statically allocated ring buffers to be available.
-
-.. note::
     When deleting a ring buffer created via :cpp:func:`xRingbufferCreateStatic`,
     the function :cpp:func:`vRingbufferDelete` will not free any of the memory blocks. This must be done manually by the user after :cpp:func:`vRingbufferDelete` is called.
 

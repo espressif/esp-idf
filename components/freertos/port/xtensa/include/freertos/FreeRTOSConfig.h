@@ -291,7 +291,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configUSE_NEWLIB_REENTRANT		1
 
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
-#define configSUPPORT_STATIC_ALLOCATION CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
+#define configSUPPORT_STATIC_ALLOCATION     1
 
 #ifndef __ASSEMBLER__
 #if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP

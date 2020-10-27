@@ -290,7 +290,6 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEE
 
 
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-#if CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 
 /* Version of prepare_wake_stub() that sets up the deep sleep call while running
    from RTC memory as stack, with a high frequency timer also writing RTC FAST
@@ -346,7 +345,6 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
         prepare_wake_stub_from_rtc,
         check_wake_stub);
 
-#endif // CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
