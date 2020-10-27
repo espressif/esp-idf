@@ -342,6 +342,13 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         totlen = BLE_HCI_EVENT_HDR_LEN + data[2];
         assert(totlen <= UINT8_MAX + BLE_HCI_EVENT_HDR_LEN);
 
+        if (totlen > MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE)) {
+            ESP_LOGE(TAG, "Received HCI data length at host (%d) exceeds maximum configured HCI event buffer size (%d).",
+                     totlen, MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE));
+            ble_hs_sched_reset(BLE_HS_ECONTROLLER);
+            return 0;
+        }
+
         if (data[1] == BLE_HCI_EVCODE_HW_ERROR) {
             assert(0);
         }
