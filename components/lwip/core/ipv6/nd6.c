@@ -1655,13 +1655,13 @@ nd6_queue_packet(s8_t neighbor_index, struct pbuf * q)
 #endif /* LWIP_ND6_QUEUEING */
       p = pbuf_alloc(PBUF_LINK, q->tot_len, PBUF_RAM);
     }
+#endif /* ESP_ND6_QUEUEING */
     if (p != NULL) {
       if (pbuf_copy(p, q) != ERR_OK) {
         pbuf_free(p);
         p = NULL;
       }
     }
-#endif
   } else {
     /* referencing the old pbuf is enough */
     p = q;
