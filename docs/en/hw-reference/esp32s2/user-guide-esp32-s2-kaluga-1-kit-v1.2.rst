@@ -1,12 +1,12 @@
 ==========================
-ESP32-S2-Kaluga-1 Kit v1.3
+ESP32-S2-Kaluga-1 Kit v1.2
 ==========================
 
 :link_to_translation:`zh_CN:[中文]`
 
-Older version: :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`
+New version available: :doc:`user-guide-esp32-s2-kaluga-1-kit`
 
-The ESP32-S2-Kaluga-1 kit v1.3 is a development kit by Espressif that is mainly created to:
+The ESP32-S2-Kaluga-1 kit v1.2 is a development kit by Espressif that is mainly created to:
 
 - Demonstrate the ESP32-S2's human-computer interaction functionalities
 - Provide the users with the tools for development of human-computer interaction applications based on the ESP32-S2
@@ -18,7 +18,6 @@ There are many ways of how the ESP32-S2's abundant functionalities can be used. 
 - **Industrial automation equipment**: Wireless control and robot technology, intelligent lighting, HVAC control equipment, etc.
 - **Retail and catering industry**: POS machines and service robots
 
-.. Image of v1.2 is used as there are no visual changes
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png
     :align: center
@@ -36,12 +35,12 @@ The ESP32-S2-Kaluga-1 kit consists of the following boards:
 - Main board: *ESP32-S2-Kaluga-1*
 - Extension boards:
 
-  - :doc:`user-guide-esp-lyrat-8311a_v1.3` - audio player
+  - :doc:`user-guide-esp-lyrat-8311a_v1.2` - audio player
   - :doc:`user-guide-esp-lyrap-toucha-v1.1` - touch panel
-  - :doc:`user-guide-esp-lyrap-lcd32-v1.2` - 3.2" LCD screen
-  - :doc:`user-guide-esp-lyrap-cam-v1.1` - camera board
+  - :doc:`user-guide-esp-lyrap-lcd32-v1.1` - 3.2" LCD screen
+  - :doc:`user-guide-esp-lyrap-cam-v1.0` - camera board
 
-Due to the presence of multiplexed pins on ESP32-S2, certain extension board combinations have limited compatibility. For more details, please see :ref:`user-guide-esp32-s2-kaluga-1-kit-ext-board-compatibility`.
+Due to the presence of multiplexed pins on ESP32-S2, certain extension board combinations have limited compatibility. For more details, please see :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-ext-board-compatibility`.
 
 This document is **mostly dedicated to the main board** and its interaction with the extension boards. For more detailed information on each extension board, click their respective links.
 
@@ -73,10 +72,10 @@ The ESP32-S2-Kaluga-1 board has connectors for boards with:
 - LCD FPC connector (no official extension boards yet)
 - I2C FPC connector (no official extension boards yet)
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32s2-kaluga-1-v1.3-3d.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-3d.png
     :align: center
-    :width: 3089px
-    :height: 2335px
+    :width: 2631px
+    :height: 1966px
     :scale: 25%
     :alt: ESP32-S2-Kaluga-1
     :figclass: align-center
@@ -108,7 +107,7 @@ All the four extension boards are specially desgined to support the following fe
 Description of Components
 -------------------------
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.3-layout-front.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-layout-front.png
     :align: center
     :width: 934px
     :height: 645px
@@ -117,16 +116,6 @@ Description of Components
     :figclass: align-center
 
     ESP32-S2-Kaluga-1 - front (click to enlarge)
-
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.3-layout-back.png
-    :align: center
-    :width: 934px
-    :height: 600px
-    :scale: 70%
-    :alt: ESP32-S2-Kaluga-1 - back
-    :figclass: align-center
-
-    ESP32-S2-Kaluga-1 - back (click to enlarge)
 
 
 The description of components starts from the ESP32-S2 module on the left side and then goes clockwise.
@@ -157,7 +146,7 @@ The description of components starts from the ESP32-S2 module on the left side a
    * - Extension Header
      - Mount the extension boards having such connectors here.
    * - Reset Button
-     - Press this button to restart the system
+     - Press this button to restart the system.
    * - Boot Button
      - Holding down **Boot** and then pressing **Reset** initiates Firmware Download mode for downloading firmware through the serial port.
    * - USB-UART/JTAG Port
@@ -215,7 +204,7 @@ Hardware Setup
 3. Turn the **Power Switch** to ON - the Power On LED will light up
 
 
-.. _user-guide-esp32-s2-kaluga-1-kit-software-setup:
+.. _user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup:
 
 Software Setup
 ^^^^^^^^^^^^^^
@@ -231,17 +220,7 @@ Contents and Packaging
 Retail orders
 ^^^^^^^^^^^^^
 
-If you order one or several samples of the kit, each ESP32-S2-Kaluga-1 development kit comes in an individual package.
-
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32s2-kaluga-1-kit-v1.3-package-3d.png
-    :align: center
-    :alt: ESP32-S2-Kaluga-1 - package
-    :figclass: align-center
-
-    ESP32-S2-Kaluga-1 - package
-
-
-The contents are as follows:
+If you order one or several samples of the kit, each ESP32-S2-Kaluga-1 development kit comes in an individual package containing:
 
 - Main Board
     - ESP32-S2-Kaluga-1
@@ -275,8 +254,6 @@ Hardware Reference
 Block Diagram
 -------------
 
-.. Image of v1.2 is used as there are no visual changes
-
 A block diagram below shows the components of the ESP32-S2-Kaluga-1 and their interconnections.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-block-diagram.png
@@ -298,7 +275,7 @@ There are four ways to provide power to the board:
 - 3V3 and GND header pins
 
 
-.. _user-guide-esp32-s2-kaluga-1-kit-ext-board-compatibility:
+.. _user-guide-esp32-s2-kaluga-1-kit-v1.2-ext-board-compatibility:
 
 Compatibility of Extension Boards
 ---------------------------------
@@ -306,65 +283,76 @@ Compatibility of Extension Boards
 If you want to use more than one extension board at the same time, please check the table given below.
 
 .. list-table::
-   :widths: 20 15 33 32
+   :widths: 20 10 30 40
    :header-rows: 1
 
    * - Boards Used
      - HW Conflict
      - Limitations
      - Solution
-   * - 8311A v1.3 + CAM v1.1
-     - I2S Controller
-     - ESP32-S2 has only one I2S interface. But both extension boards require connection via the ESP32-S2's I2S interface (LyraT-8311A in Standard mode, ESP-LyraP-CAM in Camera mode).
-     - Utilize time division multiple access, or use a different audio module that can be connected via other GPIOs or DAC.
-   * - TouchA v1.1 + LCD32 v1.2
+   * - 8311A v1.2 + CAM v1.0
+     - I2S Controller, IO46
+     - ESP32-S2 has only one I2S interface. But both extension boards require connection via the ESP32-S2's I2S interface (ESP-LyraT-8311A in Standard mode, ESP-LyraP-CAM in Camera mode). If IO46 is used by both extension boards at the same time, ESP-LyraP-CAM experiences interferences when used.
+     - No ready solution for now.
+   * - TouchA v1.1 + LCD32 v1.1
      - IO11, IO6
-     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 will not be affected because its BLCT pin will be disconnected fron IO6.
-     - Do not initialize IO11 (NETWORK) for your ESP-LyraP-TouchA, or configure the BLCT pin to `-1` (= do not use BLCT) for your ESP-LyraP-LCD32.
-   * - 8311A v1.3 + LCD32 v1.2
+     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 is also affected because its BK (BLCT) pin is connected to pin IO6. 
+     - Do not initialize IO11 (NETWORK) and IO6 (PHOTO) for your ESP-LyraP-TouchA.
+   * - 8311A v1.2 + LCD32 v1.1
      - IO6
-     - BLCT pin of ESP32-S2-Kaluga-1 will be disconnected from IO6.
-     - Configure the BK pin to `-1` (= do not use BLCT) for your ESP-LyraP-LCD32.
-   * - TouchA v1.1 + 8311A v1.3
+     - The two extension boards can be used at the same time. However, since the BK (BLCT) pin of ESP32-S2-Kaluga-1 is connected to IO6, ESP-LyraT-8311A's pin BT_ADC cannot be used and the board's six buttons will not be available.
+     - There is a solution that will allow you to use ESP-LyraT-8311A's pin BT_ADC, but will stop you from controlling the display background brightness with software: on your ESP-LyraP-LCD32 board, remove R39, change R41 to 100 Ohm, switch BLCT_L to on.
+   * - TouchA v1.1 + 8311A v1.2
      - Pin BT_ADC on ESP-LyraT-8311A
-     - This pin is required for initialization of the six button on ESP-LyraT-8311A. At the same time, ESP-LyraP-TouchA needs this pin for its touch actions.
-     - If you plan to use buttons on ESP-LyraT-8311A, do not initialize pin IO6 (PHOTO) for your ESP-LyraP-TouchA.
-   * - TouchA v1.1 + CAM v1.1
+     - The two extension boards can be used at the same time. However, ESP-LyraP-TouchA cannot be triggered if ESP-LyraT-8311A's pin BT_ADC is used to initialize the board's six buttons.
+     - If you plan to use ESP-LyraT-8311A's pin BT_ADC, do not initialize pin IO6 (PHOTO) for your ESP-LyraP-TouchA.
+   * - TouchA v1.1 + CAM v1.0
      - IO1, IO2, IO3
      - Cannot be used simultaneously because of the mentioned multiplexed pins.
      - For ESP-LyraP-TouchA, do not initialize IO1 (VOL_UP), IO2 (PLAY), and IO3 (VOL_DOWN).
-   * - TouchA v1.1 + LCD32 v1.2 + CAM v1.1
-     - IO1, IO2, IO3, IO11
+   * - TouchA v1.1 + LCD32 v1.1 + CAM v1.0
+     - IO1, IO2, IO3, IO6, IO11
      - Conflicts on the mentioned multiplexed pins.
-     - For ESP-LyraP-TouchA, do not initialize IO1 (VOL_UP), IO2 (PLAY), IO3 (VOL_DOWN), and IO11 (NETWORK).
-   * - TouchA v1.1 + LCD32 v1.2 + 8311A v1.3
+     - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO1 (VOL_UP), IO2 (PLAY), IO3 (VOL_DOWN), IO6 (PHOTO) and IO11 (NETWORK). **Solution 2**: It will allow you to initialize IO6 (PHOTO) properly, but will stop you from controlling the background brightness with software. On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on.
+   * - TouchA v1.1 + LCD32 v1.1 + 8311A v1.2
      - IO6, IO11
-     - If ESP-LyraT-8311A's pin BT_ADC is used to initialize the board's six buttons, IO6 and IO11 will not be available for the other boards.
-     - Do not initialize IO11 (NETWORK) for your ESP-LyraP-TouchA. Also, if you need to use BT_ADC, do not initialize IO6 (PHOTO).
+     - IO11 is multiplexed; IO11 is also multiplexed stopping you from using ESP-LyraT-8311A's pin BT_ADC that is needed to initialize the board's six buttons.
+     - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO6 (PHOTO) and IO11 (NETWORK). Please note that the six buttons on ESP-LyraT-8311A still cannot be used. **Solution 2**: On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on. For your ESP-LyraP-TouchA, do not initialize IO11 (NETWORK). If you want to use the six buttons on your ESP-LyraT-8311A, also do not initialize IO6 (PHOTO).
 
+
+Known issues
+============
+
+.. list-table::
+   :widths: 22 24 32 22
+   :header-rows: 1
+
+   * - Hardware Issue
+     - Description
+     - Reason for Failure
+     - Solution
+   * - ESP-LyraP-CAM v1.0, pin IO45, IO46
+     - Flashing firmware might be impossible with the extension board connected to the main board.
+     - Incorrect timing sequence is fed to strapping pins IO45 and IO46 when the board is powered on. It stops the board from booting successfully.
+     - While flashing the main board, keep the extension board disconnected.
+   * - ESP-LyraP-CAM v1.0, pin IO45, IO46
+     - Rebooting the board by pressing Reset might not lead to desired results.
+     - Incorrect timing sequence is fed to strapping pins IO45 and IO46 when the board is powered on. It stops the board from booting successfully.
+     - No ready solution for v1.2. This bug is fixed in ESP32-S2-Kaluga-1 V1.3.
+   * - ESP-LyraT-8311A v1.2, pin IO46
+     - Flashing firmware might be impossible with the extension board connected to the main board.
+     - Incorrect timing sequence is fed to strapping pin IO46 when the board is powered on. It stops the board from booting successfully.
+     - While flashing the main board, keep the extension board disconnected.
+   * - ESP-LyraT-8311A v1.2, pin IO46
+     - Rebooting the board by pressing Reset might not lead to desired results.
+     - Incorrect timing sequence is fed to strapping pin IO46 when the board is powered on. It stops the board from booting successfully.
+     - No ready solution for v1.2. This bug is fixed in ESP32-S2-Kaluga-1 V1.3.
 
 
 Hardware Revision Details
 =========================
 
-ESP32-S2-Kaluga-1 Kit v1.3
---------------------------
-
-* The following pins re-assigned to fix the download issue
-
-  * Camera D2： GPIO36
-  * Camera D3： GPIO37
-  * AU_I2S1_SDI： GPIO34
-  * AU_WAKE_INT： GPIO46
-
-* RGB pin header moved to the board's edge
-* All dip switches moved to the flip side for convenient operation
-
-
-ESP32-S2-Kaluga-1 Kit v1.2
---------------------------
-
-:doc:`Initial release <user-guide-esp32-s2-kaluga-1-kit-v1.2>`
+No previous versions available.
 
 
 Related Documents
@@ -373,20 +361,17 @@ Related Documents
 .. toctree::
     :hidden:
 
-    user-guide-esp32-s2-kaluga-1-kit-v1.2.rst
-    user-guide-esp-lyrap-cam-v1.1
-    user-guide-esp-lyrap-lcd32-v1.2
-    user-guide-esp-lyrat-8311a_v1.3
+    user-guide-esp-lyrap-cam-v1.0
+    user-guide-esp-lyrap-lcd32-v1.1
+    user-guide-esp-lyrap-toucha-v1.1
+    user-guide-esp-lyrat-8311a_v1.2
 
 - `ESP32-S2-WROVER Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf>`_ (PDF)
 - `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
 - :doc:`../../api-guides/jtag-debugging/index`
 
-- `ESP32-S2-Kaluga-1 Schematic <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_3_SCH_20200526A.pdf>`_ (PDF)
-- `ESP32-S2-Kaluga-1 PCB Layout <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_3_PCB_20200526AE.pdf>`_ (PDF)
-- `ESP32-S2-Kaluga-1 Pin Mapping <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1.3-Pin-Mapping-v0.1.xlsx>`_ (Excel)
+- `ESP32-S2-Kaluga-1 Schematic <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_SCH_20200424A.pdf>`_ (PDF)
+- `ESP32-S2-Kaluga-1 PCB Layout <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_PCB_20200325AF.pdf>`_ (PDF)
+- `ESP32-S2-Kaluga-1 Pin Mapping <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1.2_Pin-Mapping.xlsx>`_ (Excel)
 
 For other design documentation for the board, please contact us at sales@espressif.com.
-
-
-    
