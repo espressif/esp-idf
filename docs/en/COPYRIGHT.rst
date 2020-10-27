@@ -67,6 +67,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:` TLSF allocator <heap/heap_tlsf.c>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD license.
 
+* `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
+
 Build Tools
 -----------
 
@@ -179,3 +181,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
+.. _qrcode: https://github.com/nayuki/QR-Code-generator
