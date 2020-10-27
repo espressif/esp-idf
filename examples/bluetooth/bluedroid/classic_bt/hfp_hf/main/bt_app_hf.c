@@ -168,9 +168,9 @@ const char *c_inband_ring_state_str[] = {
     "Provided",
 };
 
-// esp_bd_addr_t peer_addr;
+extern esp_bd_addr_t peer_addr;
 // If you want to connect a specific device, add it's address here
-esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
+// esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
 #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
 
