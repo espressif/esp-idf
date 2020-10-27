@@ -484,6 +484,21 @@ typedef struct {
 } wifi_ant_config_t;
 
 /**
+ * @brief Management Frame Tx Request
+ *
+ *
+ */
+typedef struct {
+    wifi_interface_t ifx;    /**< WiFi interface to send request to */
+    uint8_t subtype;         /**< Frame Subtype of Management frame */
+    uint8_t dest_mac[6];     /**< Destination MAC address */
+    bool no_ack;             /**< Indicates no ack required for the frame */
+    uint32_t cookie;         /**< Context to identify the request */
+    uint32_t data_len;       /**< Length of the appended Data */
+    uint8_t data[0];         /**< Appended Data payload */
+} mgmt_tx_req_t;
+
+/**
   * @brief WiFi PHY rate encodings
   *
   */
@@ -551,6 +566,8 @@ typedef enum {
 
     /* Add next events after this only */
     WIFI_EVENT_STA_BSS_RSSI_LOW,         /**< AP's RSSI crossed configured threshold */
+    WIFI_EVENT_ACTION_TX_STATUS,         /**< Status indication of Action Tx operation */
+    WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
 
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
@@ -644,6 +661,19 @@ typedef struct {
 #define WIFI_STATIS_DIAG      (1<<3)
 #define WIFI_STATIS_PS        (1<<4)
 #define WIFI_STATIS_ALL       (-1)
+
+/** Argument structure for WIFI_EVENT_MGMT_TX_STATUS event */
+typedef struct {
+    wifi_interface_t ifx;     /**< WiFi interface to send request to */
+    uint32_t cookie;          /**< Context to identify the request */
+    uint8_t da[6];            /**< Destination MAC address */
+    uint8_t status;           /**< Status of the operation */
+} wifi_event_mgmt_tx_status_t;
+
+/** Argument structure for WIFI_EVENT_ROC_DONE event */
+typedef struct {
+    uint32_t cookie;          /**< Context to identify the request */
+} wifi_event_roc_done_t;
 
 #ifdef __cplusplus
 }
