@@ -136,7 +136,6 @@ struct wpa_funcs {
     uint8_t *(*wpa3_build_sae_msg)(uint8_t *bssid, uint32_t type, size_t *len);
     int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
     int (*wpa_sta_rx_mgmt)(u8 type, u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel, u64 current_tsf);
-    int (*offchan_rx_mgmt)(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 };
 
 struct wpa2_funcs {
@@ -262,9 +261,9 @@ bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
-esp_err_t esp_wifi_mgmt_tx_req(uint8_t action, uint8_t channel,
-                               uint32_t wait_time_ms, const mgmt_tx_req_t *req);
-esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t action, uint8_t channel,
-                                     uint32_t wait_time_ms, void *ctx);
+esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
+                                 uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
+esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
+                                     uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

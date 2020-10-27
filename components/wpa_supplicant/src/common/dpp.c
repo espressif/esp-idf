@@ -2406,8 +2406,16 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	size_t len[2];
 	u8 *unwrapped = NULL;
 	size_t unwrapped_len = 0;
-	const u8 *wrapped_data, *i_proto, *i_nonce, *i_capab, *i_bootstrap;
-	u16 wrapped_data_len, i_proto_len, i_nonce_len, i_capab_len, i_bootstrap_len;
+	const u8 *wrapped_data;
+	const u8 *i_proto;
+	const u8 *i_nonce;
+	const u8 *i_capab;
+	const u8 *i_bootstrap;
+	u16 wrapped_data_len;
+	u16 i_proto_len;
+	u16 i_nonce_len;
+	u16 i_capab_len;
+	u16 i_bootstrap_len;
 	struct dpp_authentication *auth = NULL;
 
 #ifdef CONFIG_WPA_TESTING_OPTIONS
@@ -4628,7 +4636,7 @@ static int dpp_parse_cred_legacy(struct dpp_config_obj *conf,
 				      (u8 *)pass->string, len);
 		if (len < 8 || len > 63)
 			return -1;
-		os_strncpy(conf->passphrase, pass->string,
+		os_strlcpy(conf->passphrase, pass->string,
 			   sizeof(conf->passphrase));
 	} else if (psk_hex && psk_hex->type == JSON_STRING) {
 		if (dpp_akm_sae(conf->akm) && !dpp_akm_psk(conf->akm)) {
@@ -6139,8 +6147,8 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 		    info ? "I:" : "", info ? info : "", info ? ";" : "",
 		    pk);
 
-    bi->id = dpp_next_id(dpp);
-    dl_list_add(&dpp->bootstrap, &bi->list);
+	bi->id = dpp_next_id(dpp);
+	dl_list_add(&dpp->bootstrap, &bi->list);
 	ret = bi->id;
 	bi = NULL;
 fail:

@@ -44,6 +44,9 @@
 #if __has_include("esp_spi_flash.h")
 #include "esp_spi_flash.h"
 #endif
+#if __has_include("esp_supplicant/esp_dpp.h")
+#include "esp_supplicant/esp_dpp.h"
+#endif
 #if __has_include("esp_supplicant/esp_wps.h")
 #include "esp_supplicant/esp_wps.h"
 #endif
@@ -61,9 +64,6 @@
 #endif
 #if __has_include("ulp_common.h")
 #include "ulp_common.h"
-#endif
-#if __has_include("esp_supplicant/esp_dpp.h")
-#include "esp_supplicant/esp_dpp.h"
 #endif
 
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
@@ -415,20 +415,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_DPP_FAILURE
     ERR_TBL_IT(ESP_ERR_DPP_FAILURE),                            /* 12439 0x3097 Generic failure during DPP Operation */
 #   endif
-#   ifdef      ESP_ERR_DPP_NO_MEM
-    ERR_TBL_IT(ESP_ERR_DPP_NO_MEM),                             /* 12440 0x3098 Failure to allocate memory in DPP Operation */
-#   endif
-#   ifdef      ESP_ERR_DPP_TIMEOUT
-    ERR_TBL_IT(ESP_ERR_DPP_TIMEOUT),                            /* 12441 0x3099 DPP Operation timed out */
-#   endif
 #   ifdef      ESP_ERR_DPP_TX_FAILURE
-    ERR_TBL_IT(ESP_ERR_DPP_TX_FAILURE),                         /* 12442 0x309a DPP Frame Tx failed OR not Acked */
+    ERR_TBL_IT(ESP_ERR_DPP_TX_FAILURE),                         /* 12440 0x3098 DPP Frame Tx failed OR not Acked */
 #   endif
 #   ifdef      ESP_ERR_DPP_INVALID_ATTR
-    ERR_TBL_IT(ESP_ERR_DPP_INVALID_ATTR),                       /* 12443 0x309b Encountered invalid DPP Attribute */
-#   endif
-#   ifdef      ESP_ERR_DPP_NOT_SUPPORTED
-    ERR_TBL_IT(ESP_ERR_DPP_NOT_SUPPORTED),                       /* 12444 0x309c DPP Configuration not supported */
+    ERR_TBL_IT(ESP_ERR_DPP_INVALID_ATTR),                       /* 12441 0x3099 Encountered invalid DPP Attribute */
 #   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_MESH_BASE

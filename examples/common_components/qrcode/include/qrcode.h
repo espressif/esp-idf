@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,9 +95,9 @@ bool esp_qrcode_get_module(esp_qrcode_handle_t qrcode, int x, int y);
 
 #define ESP_QRCODE_CONFIG_DEFAULT() (esp_qrcode_config_t) { \
     .display_func = esp_qrcode_print_console, \
-    .qrcode_ecc_level = ESP_QRCODE_ECC_LOW, \
     .max_qrcode_version = 10, \
-} \
+    .qrcode_ecc_level = ESP_QRCODE_ECC_LOW, \
+}
 
 #ifdef __cplusplus
 }

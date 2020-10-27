@@ -35,6 +35,12 @@ typedef enum {
     WIFI_IF_AP  = ESP_IF_WIFI_AP,
 } wifi_interface_t;
 
+#define WIFI_OFFCHAN_TX_REQ      1
+#define WIFI_OFFCHAN_TX_CANCEL   0
+
+#define WIFI_ROC_REQ     1
+#define WIFI_ROC_CANCEL  0
+
 typedef enum {
     WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
     WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
@@ -484,19 +490,30 @@ typedef struct {
 } wifi_ant_config_t;
 
 /**
- * @brief Management Frame Tx Request
+  * @brief     The Rx callback function of Action Tx operations
+  *
+  * @param     hdr pointer to the IEEE 802.11 Header structure
+  * @param     payload pointer to the Payload following 802.11 Header
+  * @param     len length of the Payload
+  * @param     channel channel number the frame is received on
+  *
+  */
+typedef int (* wifi_action_rx_cb_t)(uint8_t *hdr, uint8_t *payload,
+                                    size_t len, uint8_t channel);
+
+/**
+ * @brief Action Frame Tx Request
  *
  *
  */
 typedef struct {
-    wifi_interface_t ifx;    /**< WiFi interface to send request to */
-    uint8_t subtype;         /**< Frame Subtype of Management frame */
-    uint8_t dest_mac[6];     /**< Destination MAC address */
-    bool no_ack;             /**< Indicates no ack required for the frame */
-    uint32_t cookie;         /**< Context to identify the request */
-    uint32_t data_len;       /**< Length of the appended Data */
-    uint8_t data[0];         /**< Appended Data payload */
-} mgmt_tx_req_t;
+    wifi_interface_t ifx;       /**< WiFi interface to send request to */
+    uint8_t dest_mac[6];        /**< Destination MAC address */
+    bool no_ack;                /**< Indicates no ack required */
+    wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive any response */
+    uint32_t data_len;          /**< Length of the appended Data */
+    uint8_t data[0];            /**< Appended Data payload */
+} wifi_action_tx_req_t;
 
 /**
   * @brief WiFi PHY rate encodings
@@ -662,17 +679,17 @@ typedef struct {
 #define WIFI_STATIS_PS        (1<<4)
 #define WIFI_STATIS_ALL       (-1)
 
-/** Argument structure for WIFI_EVENT_MGMT_TX_STATUS event */
+/** Argument structure for WIFI_EVENT_ACTION_TX_STATUS event */
 typedef struct {
     wifi_interface_t ifx;     /**< WiFi interface to send request to */
-    uint32_t cookie;          /**< Context to identify the request */
+    uint32_t context;         /**< Context to identify the request */
     uint8_t da[6];            /**< Destination MAC address */
     uint8_t status;           /**< Status of the operation */
-} wifi_event_mgmt_tx_status_t;
+} wifi_event_action_tx_status_t;
 
 /** Argument structure for WIFI_EVENT_ROC_DONE event */
 typedef struct {
-    uint32_t cookie;          /**< Context to identify the request */
+    uint32_t context;         /**< Context to identify the request */
 } wifi_event_roc_done_t;
 
 #ifdef __cplusplus

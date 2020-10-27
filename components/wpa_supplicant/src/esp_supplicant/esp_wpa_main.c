@@ -36,7 +36,6 @@
 #include "esp_wpa3_i.h"
 #include "esp_wpa2.h"
 #include "esp_common_i.h"
-#include "esp_dpp_i.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
@@ -254,7 +253,6 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
-    wpa_cb->offchan_rx_mgmt = esp_dpp_rx_mgmt;
     esp_wifi_register_wpa3_cb(wpa_cb);
     esp_supplicant_common_init(wpa_cb);
 

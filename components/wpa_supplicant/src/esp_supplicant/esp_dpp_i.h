@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ enum SIG_DPP {
     SIG_DPP_RESET = 0,
     SIG_DPP_BOOTSTRAP_GEN,
     SIG_DPP_RX_ACTION,
+    SIG_DPP_LISTEN_NEXT_CHANNEL,
     SIG_DPP_DEL_TASK,
     SIG_DPP_MAX,
 };
@@ -38,14 +39,13 @@ typedef struct {
     uint32_t data;
 } dpp_event_t;
 
-#define BOOTSTRAP_ROC_WAIT_TIME 5000
+#define BOOTSTRAP_ROC_WAIT_TIME 500
 #define OFFCHAN_TX_WAIT_TIME 500
-
-#define BOOTSTRAP_ROC_COOKIE    0xABABABAB
 
 struct dpp_bootstrap_params_t {
     enum dpp_bootstrap_type type;
-    uint8_t channel;
+    uint8_t chan_list[14];
+    uint8_t num_chan;
     uint8_t mac[6];
     uint32_t key_len;
     char *key;
@@ -57,13 +57,12 @@ struct esp_dpp_context_t {
     struct dpp_bootstrap_params_t bootstrap_params;
     struct dpp_authentication *dpp_auth;
     int gas_dialog_token;
-    wifi_config_t wifi_config;
-    wifi_dpp_event_cb_t dpp_event_cb;
+    esp_supp_dpp_event_cb_t dpp_event_cb;
     struct dpp_global *dpp_global;
     wifi_config_t wifi_cfg;
     int id;
 };
 
-int esp_dpp_rx_mgmt(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
+int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 
 #endif /* ESP_DPP_I_H */

@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
 
 #include <stdio.h>
 #include <esp_err.h>
+#include "esp_log.h"
 
 #include "qrcodegen.h"
 #include "qrcode.h"
+
+static const char *TAG = "QRCODE";
 
 static const char *lt[] = {
     /* 0 */ "  ",
@@ -67,13 +70,14 @@ void esp_qrcode_print_console(esp_qrcode_handle_t qrcode)
 
 esp_err_t esp_qrcode_generate(esp_qrcode_config_t *cfg, const char *text)
 {
-	enum qrcodegen_Ecc ecc_lvl;
+    enum qrcodegen_Ecc ecc_lvl;
     uint8_t *qrcode, *tempbuf;
     esp_err_t err = ESP_FAIL;
 
     qrcode = calloc(1, qrcodegen_BUFFER_LEN_FOR_VERSION(cfg->max_qrcode_version));
-    if (!qrcode)
+    if (!qrcode) {
         return ESP_ERR_NO_MEM;
+    }
 
     tempbuf = calloc(1, qrcodegen_BUFFER_LEN_FOR_VERSION(cfg->max_qrcode_version));
     if (!tempbuf) {
@@ -99,12 +103,15 @@ esp_err_t esp_qrcode_generate(esp_qrcode_config_t *cfg, const char *text)
             break;
     }
 
-	// Make and print the QR Code symbol
-	bool ok = qrcodegen_encodeText(text, tempbuf, qrcode, ecc_lvl,
-		                           qrcodegen_VERSION_MIN, cfg->max_qrcode_version,
+    ESP_LOGI(TAG, "Encoding below text with ECC LVL %d & QR Code Version %d",
+             ecc_lvl, cfg->max_qrcode_version);
+    ESP_LOGI(TAG, "%s", text);
+    // Make and print the QR Code symbol
+    bool ok = qrcodegen_encodeText(text, tempbuf, qrcode, ecc_lvl,
+                                   qrcodegen_VERSION_MIN, cfg->max_qrcode_version,
                                    qrcodegen_Mask_AUTO, true);
-	if (ok && cfg->display_func) {
-		cfg->display_func((esp_qrcode_handle_t)qrcode);
+    if (ok && cfg->display_func) {
+        cfg->display_func((esp_qrcode_handle_t)qrcode);
         err = ESP_OK;
     }
 
