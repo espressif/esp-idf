@@ -193,7 +193,8 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
 /**
  *
  * @brief           Initialize the bluetooth A2DP sink module. This function should be called
- *                  after esp_bluedroid_enable() completes successfully
+ *                  after esp_bluedroid_enable() completes successfully. Note: A2DP can work independently.
+ *                  If you want to use AVRC together, you should initiate AVRC first.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -264,7 +265,8 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
 /**
  *
  * @brief           Initialize the bluetooth A2DP source module. This function should be called
- *                  after esp_bluedroid_enable() completes successfully
+ *                  after esp_bluedroid_enable() completes successfully. Note: A2DP can work independently.
+ *                  If you want to use AVRC together, you should initiate AVRC first.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully

@@ -33,6 +33,13 @@
 #include "bta/bta_av_api.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
+
+// global variable to inidcate avrc is initialized with a2dp
+extern bool g_av_with_rc;
+// global variable to indicate a2dp is initialized
+extern bool g_a2dp_on_init;
+// global variable to indicate a2dp is deinitialized
+extern bool g_a2dp_on_deinit;
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
@@ -77,6 +84,8 @@ typedef union {
     esp_a2d_mcc_t mcc;
     // BTC_AV_SINK_API_CONNECT_EVT
     bt_bdaddr_t connect;
+    // BTC_AV_SINK_API_DISCONNECT_EVT
+    bt_bdaddr_t disconn;
     // BTC_AV_SINK_API_REG_DATA_CB_EVT
     esp_a2d_sink_data_cb_t data_cb;
 #endif  /* BTC_AV_SINK_INCLUDED */
@@ -85,6 +94,8 @@ typedef union {
     esp_a2d_source_data_cb_t src_data_cb;
     // BTC_AV_SRC_API_CONNECT
     bt_bdaddr_t src_connect;
+    // BTC_AV_SRC_API_DISCONNECT_EVT
+    bt_bdaddr_t src_disconn;
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_API_MEDIA_CTRL_EVT
     esp_a2d_media_ctrl_t ctrl;
