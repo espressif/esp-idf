@@ -523,6 +523,59 @@ entries:
         with self.assertRaises(ParseFatalException):
             FragmentFile(test_fragment, self.sdkconfig)
 
+    def test_entries_grammar(self):
+
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    _valid1
+    valid2.
+    .valid3_-
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         {"_valid1", "valid2.", ".valid3_-"})
+
+        # invalid starting char
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    1invalid
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    -invalid
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        # + notation
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    valid+
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         {"valid+"})
+
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    inva+lid+
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
 
 class SchemeTest(FragmentTest):
 
