@@ -25,7 +25,7 @@ else()
     # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
-                           REQUIRES ${target} espcoredump esp_timer esp_ipc esp_pm
+                           REQUIRES ${target} espcoredump esp_timer esp_ipc esp_pm esp_hw_support
                            PRIV_REQUIRES soc
                            LDFRAGMENTS "linker.lf")
 

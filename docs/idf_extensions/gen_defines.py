@@ -26,7 +26,7 @@ def generate_defines(app, project_description):
     #
     # kind of a hack, be nicer to add a component info dict in project_description.json
     soc_path = [p for p in project_description["build_component_paths"] if p.endswith("/soc")][0]
-    soc_headers = glob.glob(os.path.join(soc_path, "soc", project_description["target"],
+    soc_headers = glob.glob(os.path.join(soc_path, project_description["target"],
                                          "include", "soc", "*_caps.h"))
     assert len(soc_headers) > 0
 

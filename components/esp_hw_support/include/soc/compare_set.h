@@ -21,6 +21,9 @@
 #include "soc/soc_memory_layout.h"
 #include "xtensa/xtruntime.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline void __attribute__((always_inline)) compare_and_set_native(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
@@ -52,5 +55,9 @@ static inline void __attribute__((always_inline)) compare_and_set_native(volatil
 
 
 void compare_and_set_extram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

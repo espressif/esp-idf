@@ -327,7 +327,7 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
    section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
    in order to be in compliance with Vanilla FreeRTOS.
 
-For more details see :component_file:`soc/include/soc/spinlock.h`
+For more details see :component_file:`esp_hw_support/include/soc/spinlock.h`
 and :component_file:`freertos/tasks.c`
 
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF

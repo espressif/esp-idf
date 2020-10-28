@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_rom_sys.h"
+
 /**
  * @file soc_log.h
  * @brief SOC library logging functions
