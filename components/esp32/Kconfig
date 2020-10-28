@@ -585,7 +585,7 @@ menu "ESP32-specific"
 
     config ESP32_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32_RTC_CLK_SRC_EXT_CRYS
+        default 3000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
         default 1024 if ESP32_RTC_CLK_SRC_INT_RC
         range 0 27000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
         range 0 32766 if ESP32_RTC_CLK_SRC_INT_RC
