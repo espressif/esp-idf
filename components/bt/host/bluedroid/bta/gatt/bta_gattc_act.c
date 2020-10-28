@@ -68,6 +68,8 @@ static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested);
 static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type, tGATTS_DATA *p_data);
 static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda);
 
+extern void btc_gattc_congest_callback(tBTA_GATTC *param);
+
 static const tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_conn_cback,
     bta_gattc_cmpl_cback,
@@ -2170,17 +2172,10 @@ static void bta_gattc_cmpl_sendmsg(UINT16 conn_id, tGATTC_OPTYPE op,
 ********************************************************************************/
 static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested)
 {
-    tBTA_GATTC_CLCB *p_clcb;
     tBTA_GATTC cb_data;
-
-    if ((p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id)) != NULL) {
-        if (p_clcb->p_rcb->p_cback) {
-            cb_data.congest.conn_id = conn_id;
-            cb_data.congest.congested = congested;
-
-            (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CONGEST_EVT, &cb_data);
-        }
-    }
+    cb_data.congest.conn_id = conn_id;
+    cb_data.congest.congested = congested;
+    btc_gattc_congest_callback(&cb_data);
 }
 
 /*******************************************************************************
