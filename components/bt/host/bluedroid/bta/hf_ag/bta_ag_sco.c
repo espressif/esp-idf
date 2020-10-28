@@ -618,7 +618,8 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
 
     p_bd_addr = p_scb->peer_addr;
 
-    status = BTM_CreateSco(p_bd_addr, is_orig, params.packet_types, &p_scb->sco_idx,  bta_ag_sco_conn_cback, bta_ag_sco_disc_cback);
+    status = BTM_CreateSco(p_bd_addr, is_orig, params.packet_types, &p_scb->sco_idx, bta_ag_sco_conn_cback,
+                           bta_ag_sco_disc_cback);
 
     if (status == BTM_CMD_STARTED)
     {
@@ -760,21 +761,18 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
             p_buf->offset = pkt_offset;
             len_to_send = bta_ag_sco_co_out_data(p_buf->data + pkt_offset);
             p_buf->len = len_to_send;
-            if (len_to_send == p_scb->out_pkt_len)
-            {
+            if (len_to_send == p_scb->out_pkt_len) {
                 if (p_sco->state == BTA_AG_SCO_OPEN_ST) {
                     tBTM_STATUS write_stat = BTM_WriteScoData(p_sco->p_curr_scb->sco_idx, p_buf);
                     if (write_stat != BTM_SUCCESS) {
                         break;
                     }
-                    else {
-                        osi_free(p_buf);
-                    }
-                }
-                else {
+                } else {
                     osi_free(p_buf);
-                    break;
                 }
+            } else {
+                osi_free(p_buf);
+                break;
             }
         }
         return;
