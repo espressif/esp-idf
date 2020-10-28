@@ -1,21 +1,23 @@
 assign_test:
-  extends: .before_script_for_component_ut
+  extends:
+    - .rules:tests:target_test-integration_test-weekend_test
   tags:
     - assign_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   stage: assign_test
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs. now we don't use dependencies, just download all artifacts of build stage.
-  dependencies:
+  dependencies: # Here is not a hard dependency relationship, could be skipped. so we do not use "needs" here.
     - build_ssc_esp32
     - build_esp_idf_tests_cmake_esp32
     - build_esp_idf_tests_cmake_esp32s2
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
-    EXAMPLE_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
-    TEST_APP_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
-    COMPONENT_UT_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
-    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
+    EXAMPLE_TEST_DIR: "${CI_PROJECT_DIR}/examples"
+    CUSTOM_TEST_DIR: "${CI_PROJECT_DIR}/tools/test_apps"
+    UNIT_TEST_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
+    # COMPONENT_UT_DIRS is set by `set_component_ut_vars` in `utils.sh`
+    COMPONENT_UT_OUTPUT_DIR: "${CI_PROJECT_DIR}/component_ut"
     INTEGRATION_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
@@ -32,42 +34,27 @@ assign_test:
       - build_component_ut/artifact_index.json
       - tools/unit-test-app/builds/artifact_index.json
     expire_in: 1 week
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_UNIT_TEST
-      - $BOT_LABEL_UNIT_TEST_S2
-      - $BOT_LABEL_INTEGRATION_TEST
-      - $BOT_LABEL_EXAMPLE_TEST
-      - $BOT_LABEL_CUSTOM_TEST
-      - $BOT_LABEL_WEEKEND_TEST
   script:
-    # assign example tests
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py example_test $IDF_PATH/examples -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_CONFIG_OUTPUT_PATH
-    # assign test apps
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py custom_test $IDF_PATH/tools/test_apps -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APP_CONFIG_OUTPUT_PATH
-    # assign component ut
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py component_ut $COMPONENT_UT_DIRS -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_CONFIG_OUTPUT_PATH
-    # assign unit test cases
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py unit_test $UNIT_TEST_CASE_FILE -c $CI_TARGET_TEST_CONFIG_FILE -o $IDF_PATH/components/idf_test/unit_test/CIConfigs
+    - set_component_ut_vars
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py example_test $EXAMPLE_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_DIR/test_configs
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py custom_test $CUSTOM_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $CUSTOM_TEST_DIR/test_configs
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py component_ut $COMPONENT_UT_DIRS -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR/test_configs
+    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py unit_test $UNIT_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $UNIT_TEST_DIR/CIConfigs
     # clone test script to assign tests
     # can not retry if downing git lfs files failed, so using empty_branch first.
-    - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     # assign integration test cases
     - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin -o $INTEGRATION_CONFIG_OUTPUT_PATH
 
 update_test_cases:
+  extends: .rules:ref:master-schedule
   stage: assign_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env
   tags:
     - deploy_test
-  only:
-    refs:
-      - master
-      - schedules
-  dependencies:
+  needs:
     - build_esp_idf_tests_cmake_esp32
     - build_esp_idf_tests_cmake_esp32s2
   artifacts:
@@ -77,18 +64,18 @@ update_test_cases:
     expire_in: 1 week
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
-    UNIT_TEST_CASE_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
+    UNIT_TEST_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
     PYTHON_VER: 3.7.7
   script:
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
+    - retry_failed git clone $TEST_MANAGEMENT_REPO
     - python $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
     # update unit test cases
-    - export UNIT_TEST_CASE_FILES=$(find $UNIT_TEST_CASE_DIR -maxdepth 1 -name "*.yml" | xargs)
+    - export UNIT_TEST_CASE_FILES=$(find $UNIT_TEST_DIR -maxdepth 1 -name "*.yml" | xargs)
     - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT unity -d $UNIT_TEST_CASE_FILES -r $GIT_SHA
     # update example test cases
     - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT tiny_test_fw -d ${CI_PROJECT_DIR}/examples -r $GIT_SHA

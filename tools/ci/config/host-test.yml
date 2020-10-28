@@ -1,31 +1,22 @@
 .host_test_template:
+  extends: .rules:labels:host_test
   stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
   dependencies: []
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_HOST_TEST
-      - $BOT_LABEL_REGULAR_TEST
 
 .host_fuzzer_test_template:
-  stage: host_test
+  extends:
+    - .host_test_template
+    - .rules:labels:fuzzer_test-weekend_test-only
   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
-  tags:
-    - host_test
-  dependencies: []
   artifacts:
     when: always
     paths:
       - ${FUZZER_TEST_DIR}/out/crashes
       - ${FUZZER_TEST_DIR}/fuzz_output.log
     expire_in: 1 week
-  only:
-    variables:
-      - $BOT_LABEL_FUZZER_TEST
-      - $BOT_LABEL_WEEKEND_TEST
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
     - cd ${FUZZER_TEST_DIR}
@@ -42,16 +33,13 @@ test_nvs_on_host:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh make test
 
 test_nvs_coverage:
-  extends: .host_test_template
+  extends:
+    - .host_test_template
+    - .rules:labels:nvs_coverage-only
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
     expire_in: 1 week
-  only:
-    refs:
-      - triggers
-    variables:
-      - $BOT_LABEL_NVS_COVERAGE
   script:
     - cd components/nvs_flash/test_nvs_host
     - make coverage_report
@@ -279,24 +267,16 @@ test_mkdfu:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
 
 test_docs:
-  stage: host_test
+  extends: .host_test_template
   image: $ESP_IDF_DOC_ENV_IMAGE
-  tags:
-    - host_test
-  dependencies: []
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_HOST_TEST
-      - $BOT_LABEL_REGULAR_TEST
   artifacts:
     when: on_failure
     paths:
-        - docs/test/_build/*/*/*/html/*
+      - docs/test/_build/*/*/*/html/*
     expire_in: 1 week
   script:
-  - cd ${IDF_PATH}/docs/test
-  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r ${IDF_PATH}/docs/requirements.txt
-  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
-  - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
+    - cd ${IDF_PATH}/docs/test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r ${IDF_PATH}/docs/requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
 
