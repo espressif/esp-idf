@@ -13,7 +13,7 @@
 # http://doxygen.nl/manual/config.html
 
 
-PROJECT_NAME = "ESP32 Programming Guide"
+PROJECT_NAME = "IDF Programming Guide"
 
 ## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
 ## to automatically generate API reference list files heder_file.inc
@@ -106,11 +106,11 @@ INPUT = \
     $(IDF_PATH)/components/soc/include/hal/uart_types.h \
     $(IDF_PATH)/components/soc/include/hal/twai_types.h \
     $(IDF_PATH)/components/soc/include/hal/touch_sensor_types.h \
-    $(IDF_PATH)/components/soc/soc/esp32/include/soc/adc_channel.h \
-    $(IDF_PATH)/components/soc/soc/esp32/include/soc/dac_channel.h \
-    $(IDF_PATH)/components/soc/soc/esp32/include/soc/touch_sensor_channel.h \
-    $(IDF_PATH)/components/soc/soc/esp32/include/soc/uart_channel.h \
-    $(IDF_PATH)/components/soc/soc/esp32/include/soc/rtc_io_channel.h \
+    $(IDF_PATH)/components/soc/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(IDF_PATH)/components/soc/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
+    $(IDF_PATH)/components/soc/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
+    $(IDF_PATH)/components/soc/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
+    $(IDF_PATH)/components/soc/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
     $(IDF_PATH)/components/esp-tls/esp_tls.h \
