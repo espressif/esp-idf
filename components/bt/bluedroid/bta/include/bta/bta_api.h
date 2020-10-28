@@ -926,7 +926,7 @@ typedef union {
     tBTA_DM_PIN_REQ             pin_req;            /* PIN request. */
     tBTA_DM_AUTH_CMPL           auth_cmpl;          /* Authentication complete indication. */
     tBTA_DM_AUTHORIZE           authorize;          /* Authorization request. */
-    tBTA_DM_LINK_UP             link_up;            /* ACL connection down event */
+    tBTA_DM_LINK_UP             link_up;            /* ACL connection up event */
     tBTA_DM_LINK_DOWN           link_down;          /* ACL connection down event */
     tBTA_DM_BUSY_LEVEL          busy_level;         /* System busy level */
     tBTA_DM_SP_CFM_REQ          cfm_req;            /* user confirm request */
@@ -2296,8 +2296,8 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, 
-                                                BD_ADDR device_info, 
+extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
+                                                BD_ADDR device_info,
                                                 tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback);
 
 /*******************************************************************************

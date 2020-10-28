@@ -164,6 +164,15 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
     return BT_STATUS_SUCCESS;
 }
 
+/**
+ * transfer an message to another module in the different task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @param  arg_len   length of paramter
+ * @param  copy_func deep copy function
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
 {
     btc_msg_t lmsg;
@@ -192,6 +201,32 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     return btc_task_post(&lmsg, TASK_POST_BLOCKING);
 }
 
+/**
+ * transfer an message to another module in tha same task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
+bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg)
+{
+    if (msg == NULL) {
+        return BT_STATUS_PARM_INVALID;
+    }
+
+    msg->arg = arg;
+    switch (msg->sig) {
+    case BTC_SIG_API_CALL:
+        profile_tab[msg->pid].btc_call(msg);
+        break;
+    case BTC_SIG_API_CB:
+        profile_tab[msg->pid].btc_cb(msg);
+        break;
+    default:
+        break;
+    }
+    return BT_STATUS_SUCCESS;
+}
 
 int btc_init(void)
 {
