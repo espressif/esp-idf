@@ -22,7 +22,7 @@
 #include "common/bt_target.h"
 #include "btc/btc_storage.h"
 #include "btc/btc_ble_storage.h"
-#include "esp_gap_ble_api.h"
+#include "btc_gap_ble.h"
 #include "btm_int.h"
 #include "bta/bta_api.h"
 #include "bta/bta_gatt_api.h"
@@ -407,11 +407,10 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     memcpy(param.auth_cmpl.bda, p_auth_cmpl->bd_addr, ESP_BD_ADDR_LEN);
     memcpy(param.auth_cmpl.device_name, p_auth_cmpl->bd_name, ESP_BT_GAP_MAX_BDNAME_LEN + 1);
 
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_inter_profile_call(&msg, &param);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
@@ -430,11 +429,10 @@ static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
     param.pin_req.min_16_digit = p_pin_req->min_16_digit;
     memcpy(param.pin_req.bda, p_pin_req->bd_addr, ESP_BD_ADDR_LEN);
 
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_inter_profile_call(&msg, &param);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
@@ -458,11 +456,10 @@ static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
     param.cfm_req.num_val = p_cfm_req->num_val;
     memcpy(param.cfm_req.bda, p_cfm_req->bd_addr, ESP_BD_ADDR_LEN);
 
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_inter_profile_call(&msg, &param);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
@@ -479,11 +476,10 @@ static void btc_dm_sp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF *p_key_notif)
     param.key_notif.passkey = p_key_notif->passkey;
     memcpy(param.key_notif.bda, p_key_notif->bd_addr, ESP_BD_ADDR_LEN);
 
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_inter_profile_call(&msg, &param);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
@@ -499,15 +495,42 @@ static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
     msg.act = BTC_GAP_BT_KEY_REQ_EVT;
     memcpy(param.key_req.bda, p_key_req->bd_addr, ESP_BD_ADDR_LEN);
 
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_inter_profile_call(&msg, &param);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
 #endif /// BT_SSP_INCLUDED == TRUE
+
+static void btc_dm_dev_unpaired_evt(tBTA_DM_LINK_DOWN *p_link_down)
+{
+    esp_bt_gap_cb_param_t param;
+    BTC_TRACE_DEBUG("%s",__func__);
+    memcpy(param.remove_bond_dev_cmpl.bda, p_link_down->bd_addr, ESP_BD_ADDR_LEN);
+    btm_set_bond_type_dev(p_link_down->bd_addr, BOND_TYPE_UNKNOWN);
+    if (p_link_down->status == HCI_SUCCESS) {
+        //remove the bonded key in the config and nvs flash.
+        param.remove_bond_dev_cmpl.status = btc_storage_remove_bonded_device((bt_bdaddr_t *)param.remove_bond_dev_cmpl.bda);
+    } else {
+        param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;
+    }
+
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT;
+
+    ret = btc_inter_profile_call(&msg, &param);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
+    }
+#endif /// BTC_GAP_BT_INCLUDED == TRUE
+}
 
 tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
 {
@@ -653,16 +676,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 #endif ///BT_SSP_INCLUDED == TRUE
 
     case BTA_DM_DEV_UNPAIRED_EVT: {
-#if (SMP_INCLUDED == TRUE)
-        bt_bdaddr_t bd_addr;
-        BTC_TRACE_DEBUG("BTA_DM_DEV_UNPAIRED_EVT");
-        memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
-        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
-        if (p_data->link_down.status == HCI_SUCCESS) {
-            //remove the bonded key in the config and nvs flash.
-            btc_storage_remove_bonded_device(&bd_addr);
-        }
-#endif /* #if (SMP_INCLUDED == TRUE) */
+        btc_dm_dev_unpaired_evt(&p_data->link_down);
         break;
     }
 #if (BLE_INCLUDED == TRUE)
@@ -867,11 +881,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
 
     if (rsp_app) {
-        ret = btc_transfer_context(&ble_msg, &param,
-                                   sizeof(esp_ble_gap_cb_param_t), NULL);
+        ret = btc_inter_profile_call(&ble_msg, &param);
 
         if (ret != BT_STATUS_SUCCESS) {
-            BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+            BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
         }
     }
     btc_dm_sec_arg_deep_free(msg);

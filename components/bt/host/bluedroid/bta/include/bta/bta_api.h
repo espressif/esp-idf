@@ -941,7 +941,7 @@ typedef union {
     tBTA_DM_PIN_REQ             pin_req;            /* PIN request. */
     tBTA_DM_AUTH_CMPL           auth_cmpl;          /* Authentication complete indication. */
     tBTA_DM_AUTHORIZE           authorize;          /* Authorization request. */
-    tBTA_DM_LINK_UP             link_up;            /* ACL connection down event */
+    tBTA_DM_LINK_UP             link_up;            /* ACL connection up event */
     tBTA_DM_LINK_DOWN           link_down;          /* ACL connection down event */
     tBTA_DM_BUSY_LEVEL          busy_level;         /* System busy level */
     tBTA_DM_SP_CFM_REQ          cfm_req;            /* user confirm request */

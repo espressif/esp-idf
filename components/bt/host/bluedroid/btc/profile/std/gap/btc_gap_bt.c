@@ -975,6 +975,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_PIN_REQ_EVT:
     case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:
     case BTC_GAP_BT_READ_REMOTE_NAME_EVT:
+    case BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT:
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:
     case BTC_GAP_BT_KEY_NOTIF_EVT:
@@ -1042,6 +1043,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
 #endif
+    case BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,(esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
