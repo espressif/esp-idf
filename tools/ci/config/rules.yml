@@ -183,9 +183,10 @@
     - <<: *if-protected-no_label
     - <<: *if-label-integration_test
 
-.rules:tests:target_test-integration_test-weekend_test:
+.rules:assign_test:target_test-integration_test-weekend_test:
   rules:
     - <<: *if-protected-no_label
+    - <<: *if-label-regular_test
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
     - <<: *if-label-unit_test-all_targets
