@@ -19,7 +19,15 @@ Overview
     - GPIO46 is fixed to pull-down and is input only
 
 
-There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when in deep sleep, when the :doc:`Ultra Low Power co-processor <../../api-guides/ulp>` is running, or when analog functions such as ADC/DAC/etc are in use.
+.. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+    There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+
+    .. list::
+
+        - In deep sleep
+        :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-guides/ulp>` is running
+        - Analog functions such as ADC/DAC/etc are in use.
 
 Application Example
 -------------------
@@ -32,10 +40,13 @@ API Reference - Normal GPIO
 .. include-build-file:: inc/gpio.inc
 .. include-build-file:: inc/gpio_types.inc
 
-API Reference - RTC GPIO
-------------------------
 
-.. include-build-file:: inc/rtc_io.inc
-.. include-build-file:: inc/rtc_io_types.inc
+.. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+    API Reference - RTC GPIO
+    ------------------------
+
+    .. include-build-file:: inc/rtc_io.inc
+    .. include-build-file:: inc/rtc_io_types.inc
 
 

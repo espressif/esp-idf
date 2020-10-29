@@ -172,7 +172,7 @@ Other Extensions
     Subscribes to ``idf-defines-generated`` as it relies on the sphinx tags to determine which documents to exclude
 
 :idf_file:`docs/idf_extensions/run_doxygen.py`
-    Subscribes to ``idf-defines-generated`` event and runs Doxygen (:idf_file:`docs/Doxyfile`) to generate XML files describing key headers, and then runs Breathe to convert these to ``.inc`` files which can be included directly into API reference pages.
+    Subscribes to ``idf-defines-generated`` event and runs Doxygen (:idf_file:`docs/doxygen/Doxyfile_common`) to generate XML files describing key headers, and then runs Breathe to convert these to ``.inc`` files which can be included directly into API reference pages.
 
     Pushes a number of target-specific custom environment variables into Doxygen, including all macros defined in the project's default ``sdkconfig.h`` file and all macros defined in all ``soc`` component ``xxx_caps.h`` headers. This means that public API headers can depend on target-specific configuration options or ``soc`` capabilities headers options as ``#ifdef`` & ``#if`` preprocessor selections in the header.
 

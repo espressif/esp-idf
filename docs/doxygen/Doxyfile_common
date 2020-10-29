@@ -109,9 +109,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
-    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
-    $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(IDF_PATH)/components/driver/include/driver/twai.h \
@@ -119,8 +117,6 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/dac_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
-    $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
-    $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
     $(IDF_PATH)/components/hal/include/hal/dma_types.h \
     $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
     $(IDF_PATH)/components/hal/include/hal/uart_types.h \
@@ -235,8 +231,6 @@ INPUT = \
     $(IDF_PATH)/components/heap/include/esp_heap_trace.h \
     $(IDF_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(IDF_PATH)/components/heap/include/multi_heap.h \
-    ## Himem
-    $(IDF_PATH)/components/esp32/include/esp32/himem.h \
     ## Interrupt Allocation
     $(IDF_PATH)/components/esp_system/include/esp_intr_alloc.h \
     ## Watchdogs
@@ -270,8 +264,6 @@ INPUT = \
     ## ULP Coprocessor - API Guides
     ##
     ## NOTE: for line below header_file.inc is not used
-    $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
-    $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
     $(IDF_PATH)/components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
@@ -317,6 +309,9 @@ INPUT = \
      $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
      $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_masks.h
 
+
+## Target specific headers are in seperate Doxyfile files
+@INCLUDE = $(IDF_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)
 
 ## Get warnings for functions that have no documentation for their parameters or return value
 ##

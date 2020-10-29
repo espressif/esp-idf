@@ -37,8 +37,10 @@ def generate_doxygen(app, defines):
         "IDF_PATH": app.config.idf_path,
         "IDF_TARGET": app.config.idf_target,
     })
-    doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
-    print("Running doxygen with doxyfile {}".format(doxyfile))
+    doxyfile_dir = os.path.join(app.config.docs_root, "doxygen")
+    doxyfile_main = os.path.join(doxyfile_dir, "Doxyfile_common")
+    doxyfile_target = os.path.join(doxyfile_dir, "Doxyfile_" + app.config.idf_target)
+    print("Running doxygen with doxyfiles {} and {}".format(doxyfile_main, doxyfile_target))
 
     # It's possible to have doxygen log warnings to a file using WARN_LOGFILE directive,
     # but in some cases it will still log an error to stderr and return success!
@@ -48,17 +50,18 @@ def generate_doxygen(app, defines):
 
     with open(logfile, "w") as f:
         # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
-        subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir, stderr=f)
+        subprocess.check_call(["doxygen", doxyfile_main], env=doxy_env, cwd=build_dir, stderr=f)
 
     # Doxygen has generated XML files in 'xml' directory.
     # Copy them to 'xml_in', only touching the files which have changed.
     copy_if_modified(os.path.join(build_dir, 'xml/'), os.path.join(build_dir, 'xml_in/'))
 
     # Generate 'api_name.inc' files from the Doxygen XML files
-    convert_api_xml_to_inc(app, doxyfile)
+    doxygen_paths = [doxyfile_main, doxyfile_target]
+    convert_api_xml_to_inc(app, doxygen_paths)
 
 
-def convert_api_xml_to_inc(app, doxyfile):
+def convert_api_xml_to_inc(app, doxyfiles):
     """ Generate header_file.inc files
     with API reference made of doxygen directives
     for each header file
@@ -75,7 +78,8 @@ def convert_api_xml_to_inc(app, doxyfile):
     if not os.path.exists(inc_directory_path):
         os.makedirs(inc_directory_path)
 
-    header_paths = get_doxyfile_input_paths(app, doxyfile)
+    header_paths = [p for d in doxyfiles for p in get_doxyfile_input_paths(app, d)]
+
     print("Generating 'api_name.inc' files with Doxygen directives")
     for header_file_path in header_paths:
         api_name = get_api_name(header_file_path)

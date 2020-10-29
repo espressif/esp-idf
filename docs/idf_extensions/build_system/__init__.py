@@ -15,6 +15,9 @@ import json
 # this directory also contains the dummy IDF project
 project_path = os.path.abspath(os.path.dirname(__file__))
 
+# Targets which needs --preview to build
+PREVIEW_TARGETS = ['esp32c3']
+
 
 def setup(app):
     # Setup some common paths
@@ -71,7 +74,12 @@ def generate_idf_info(app, config):
     # (not much slower than 'reconfigure', avoids any potential config & build versioning problems
     shutil.rmtree(cmake_build_dir, ignore_errors=True)
     print("Starting new dummy IDF project... ")
-    subprocess.check_call(idf_py + ["set-target", app.config.idf_target])
+
+    if (app.config.idf_target in PREVIEW_TARGETS):
+        subprocess.check_call(idf_py + ["--preview", "set-target", app.config.idf_target])
+    else:
+        subprocess.check_call(idf_py + ["set-target", app.config.idf_target])
+
     print("Running CMake on dummy project...")
     subprocess.check_call(idf_py + ["reconfigure"])
 

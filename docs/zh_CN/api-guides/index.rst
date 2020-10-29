@@ -18,13 +18,13 @@ API 指南
    FreeRTOS SMP Changes <freertos-smp>
    Thread Local Storage <thread-local-storage>
    硬件抽象层 <hardware-abstraction>
-   High Level Interrupts <hlinterrupts>
+   :CONFIG_IDF_TARGET_ARCH_XTENSA: High Level Interrupts <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
    引导加载程序 <bootloader>
    分区表 <partition-tables>
    :esp32: Secure Boot <../security/secure-boot-v1>
    Secure Boot V2 <../security/secure-boot-v2>
-   ULP 协处理器 <ulp>
+   :SOC_ULP_SUPPORTED: ULP 协处理器 <ulp>
    :esp32: ULP (传统 GNU Make) <ulp-legacy>
    :esp32s2: ULP-RISC-V Coprocessor <ulp-risc-v>
    单元测试 <unit-tests>
@@ -36,7 +36,7 @@ API 指南
    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
    :SOC_BT_SUPPORTED: BluFi <blufi>
-   External SPI-connected RAM <external-ram>
+   :SOC_SPIRAM_SUPPORTED: External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>
    LwIP <lwip>
    Tools <tools/index>

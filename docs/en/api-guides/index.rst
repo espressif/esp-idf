@@ -17,13 +17,13 @@ API Guides
     ESP-MESH (Wi-Fi) <mesh>
     Core Dump <core_dump>
     Event Handling <event-handling>
-    External SPI-connected RAM <external-ram>
+    :SOC_SPIRAM_SUPPORTED: External SPI-connected RAM <external-ram>
     Fatal Errors <fatal-errors>
     Flash Encryption <../security/flash-encryption>
     FreeRTOS SMP Changes <freertos-smp>
     General Notes <general-notes>
     Hardware Abstraction <hardware-abstraction>
-    High Level Interrupts <hlinterrupts>
+    :CONFIG_IDF_TARGET_ARCH_XTENSA: High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>
     lwIP TCP/IP Stack <lwip>
@@ -34,7 +34,7 @@ API Guides
     Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
-    ULP Coprocessor <ulp>
+    :SOC_ULP_SUPPORTED: ULP Coprocessor <ulp>
     :esp32: ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     :esp32s2: ULP-RISC-V Coprocessor <ulp-risc-v>
     Unit Testing <unit-tests>

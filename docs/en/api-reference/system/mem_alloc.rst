@@ -26,7 +26,9 @@ The {IDF_TARGET_NAME} contains multiple types of RAM:
 
 For more details on these internal memory types, see :ref:`memory-layout`.
 
-It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME} - :doc:`external RAM </api-guides/external-ram>` can be integrated into the {IDF_TARGET_NAME}'s memory map using the flash cache, and accessed similarly to DRAM.
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME} - :doc:`external RAM </api-guides/external-ram>` can be integrated into the {IDF_TARGET_NAME}'s memory map using the flash cache, and accessed similarly to DRAM.
 
 DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls ``heap_caps_malloc(size, MALLOC_CAP_8BIT)`` in order to allocate DRAM that is byte-addressable. To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
 
@@ -100,14 +102,16 @@ which it can't do for a normal malloc() call. This can help to use all the avail
 Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit reads and writes, any other type of access will
 generate a fatal LoadStoreError exception.
 
-External SPI Memory
-^^^^^^^^^^^^^^^^^^^
+.. only:: SOC_SPIRAM_SUPPORTED
 
-When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on configuration. See :ref:`external_ram_config` for more details.
+    External SPI Memory
+    ^^^^^^^^^^^^^^^^^^^
 
-.. only:: esp32
+    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on configuration. See :ref:`external_ram_config` for more details.
 
-    To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
+    .. only:: esp32
+
+        To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
 
 
 API Reference - Heap Allocation

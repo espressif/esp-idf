@@ -1,4 +1,4 @@
-API Documentation Template 
+API Documentation Template
 ==========================
 
 .. note::
@@ -23,7 +23,7 @@ Overview
 
     *INSTRUCTIONS*
 
-    1. Provide overview where and how this API may be used. 
+    1. Provide overview where and how this API may be used.
     2. Where applicable include code snippets to illustrate functionality of particular functions.
     3. To distinguish between sections, use the following `heading levels <http://www.sphinx-doc.org/en/stable/rest.html#sections>`_:
 
@@ -49,7 +49,7 @@ Application Example
     6. Depending on complexity of example, break down description of code into parts and provide overview of functionality of each part.
     7. Include flow diagram and screenshots of application output if applicable.
     8. Finally add in this section synopsis of each example together with link to respective folder in ``esp-idf/examples/``.
-  
+
 API Reference
 -------------
 
@@ -60,8 +60,8 @@ API Reference
     *INSTRUCTIONS*
 
     1. This repository provides for automatic update of API reference documentation using :doc:`code markup retrieved by Doxygen from header files <../contribute/documenting-code>`.
-    
-    1. Update is done on each documentation build by invoking Sphinx extension :idf_file:`docs/idf_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/Doxyfile`. 
+
+    1. Update is done on each documentation build by invoking Sphinx extension :idf_file:`docs/idf_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/doxygen/Doxyfile_common`.
 
     1. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that will be used to generate corresponding ``*.inc`` files::
 
@@ -80,7 +80,7 @@ API Reference
        .. include-build-file:: inc/esp_wifi.inc
 
        For example see :idf_file:`docs/en/api-reference/network/esp_wifi.rst`
-    
+
     1. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-guides/ulp.rst` for example.
 
        Below is the list of common ``.. doxygen...::`` directives:
@@ -98,6 +98,6 @@ API Reference
 
        * :component_file:`path_to/header_file.h`
 
-    1. In any case, to generate API reference, the file :idf_file:`docs/Doxyfile` should be updated with paths to ``*.h`` headers that are being documented.
-    
+    1. In any case, to generate API reference, the file :idf_file:`docs/doxygen/Doxyfile_common` should be updated with paths to ``*.h`` headers that are being documented.
+
     1. When changes are committed and documentation is build, check how this section has been rendered. :doc:`Correct annotations <../contribute/documenting-code>` in respective header files, if required.

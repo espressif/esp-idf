@@ -90,7 +90,7 @@ OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS task
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
-.. only:: esp32s2
+.. only:: not esp32
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 

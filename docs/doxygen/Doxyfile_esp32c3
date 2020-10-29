@@ -1,0 +1,3 @@
+INPUT += \
+         $(IDF_PATH)/components/driver/esp32c3/include/driver/temp_sensor.h \
+         $(IDF_PATH)/components/esp32c3/include/esp_hmac.h

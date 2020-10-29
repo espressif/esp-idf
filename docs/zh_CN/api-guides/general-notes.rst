@@ -292,26 +292,28 @@ DMA 能力要求
 
 在堆栈中放置 DMA 缓冲区仍然是允许的，但是你必须记住：
 
-1. 如果堆栈在 pSRAM 中，切勿尝试这么做，因为堆栈在 pSRAM 中的话就要按照
-   :doc:`片外SRAM <external-ram>` 文档介绍的步骤来操作（至少要在
-   ``menuconfig`` 中使能
-   ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` ），所以请确保你的任务不在
-   pSRAM 中。
+.. list::
 
-2. 在函数中使用 ``WORD_ALIGNED_ATTR``
-   宏来修饰变量，将其放在适当的位置上，比如：
+   :SOC_SPIRAM_SUPPORTED:- 如果堆栈在 pSRAM 中，切勿尝试这么做，因为堆栈在 pSRAM 中的话就要按照
+      :doc:`片外SRAM <external-ram>` 文档介绍的步骤来操作（至少要在
+      ``menuconfig`` 中使能
+      ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` ），所以请确保你的任务不在
+      pSRAM 中。
 
-   .. code:: c
+   - 在函数中使用 ``WORD_ALIGNED_ATTR``
+      宏来修饰变量，将其放在适当的位置上，比如：
 
-      void app_main()
-      {
-          uint8_t stuff;
-          WORD_ALIGNED_ATTR uint8_t buffer[]="I want to send something";   //否则buffer数组会被存储在stuff变量的后面
-          // 初始化代码...
-          spi_transaction_t temp = {
-              .tx_buffer = buffer,
-              .length = 8*sizeof(buffer),
-          };
-          spi_device_transmit( spi, &temp );
-          // 其他程序
-      }
+      .. code:: c
+
+         void app_main()
+         {
+            uint8_t stuff;
+            WORD_ALIGNED_ATTR uint8_t buffer[]="I want to send something";   //否则buffer数组会被存储在stuff变量的后面
+            // 初始化代码...
+            spi_transaction_t temp = {
+               .tx_buffer = buffer,
+               .length = 8*sizeof(buffer),
+            };
+            spi_device_transmit( spi, &temp );
+            // 其他程序
+         }

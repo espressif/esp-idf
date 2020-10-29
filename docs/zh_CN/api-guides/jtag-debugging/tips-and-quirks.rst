@@ -84,7 +84,7 @@ OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRT
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
-.. only:: esp32s2
+.. only:: not esp32
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
