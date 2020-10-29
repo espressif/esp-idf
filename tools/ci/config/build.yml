@@ -313,6 +313,8 @@ test_build_system_cmake_macos:
     - .rules:os:mac_os
   tags:
     - macos_shell
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
 
 build_docker:
   extends:
