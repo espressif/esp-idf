@@ -416,6 +416,7 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/include
                     host/nimble/nimble/nimble/host/services/ans/include
                     host/nimble/nimble/nimble/host/services/bas/include
+                    host/nimble/nimble/nimble/host/services/dis/include
                     host/nimble/nimble/nimble/host/services/gap/include
                     host/nimble/nimble/nimble/host/services/gatt/include
                     host/nimble/nimble/nimble/host/services/ias/include
@@ -458,6 +459,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/services/ans/src/ble_svc_ans.c"
                     "host/nimble/nimble/nimble/host/services/gap/src/ble_svc_gap.c"
                     "host/nimble/nimble/nimble/host/services/bas/src/ble_svc_bas.c"
+                    "host/nimble/nimble/nimble/host/services/dis/src/ble_svc_dis.c"
                     "host/nimble/nimble/nimble/host/services/lls/src/ble_svc_lls.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_conn.c"
                     "host/nimble/nimble/nimble/host/src/ble_store_util.c"
