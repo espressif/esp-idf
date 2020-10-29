@@ -20,8 +20,12 @@ import sys
 import re
 import threading
 import traceback
-import Queue
 import subprocess
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 try:
     # This environment variable is expected on the host machine

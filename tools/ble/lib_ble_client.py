@@ -35,8 +35,13 @@ except ImportError as e:
     print("Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue")
     raise
 
-from . import lib_gatt
-from . import lib_gap
+try:
+    import lib_gatt
+    import lib_gap
+except ImportError:
+    # for python3 assign_test
+    from . import lib_gatt
+    from . import lib_gap
 
 srv_added_old_cnt = 0
 srv_added_new_cnt = 0
