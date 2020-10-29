@@ -59,9 +59,6 @@ push_to_github:
   tags:
     - deploy
     - shiny
-  needs:
-    - build_docs_html
-    - build_docs_pdf
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
@@ -77,6 +74,9 @@ deploy_docs_preview:
     - .rules:labels:build_docs-slim
   # Override default stage to happen before the post_check
   stage: test_deploy
+  needs:
+    - build_docs_html
+    - build_docs_pdf
   variables:
     TYPE: "preview"
     # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
@@ -92,6 +92,11 @@ deploy_docs_production:
   extends:
     - .deploy_docs_template
     - .rules:protected-no_label
+  stage: post_deploy
+  needs: # ensure runs after push_to_github succeeded
+    - build_docs_html
+    - build_docs_pdf
+    - push_to_github
   variables:
     TYPE: "preview"
     DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
