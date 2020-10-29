@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-#define COUNT_EFUSE_BLOCKS        4      /* The number of blocks. */
 #define COUNT_EFUSE_REG_PER_BLOCK 8      /* The number of registers per block. */
 
 #define ESP_EFUSE_SECURE_VERSION_NUM_BLOCK EFUSE_BLK3
