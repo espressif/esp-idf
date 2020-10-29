@@ -26,7 +26,7 @@
 #if defined(MBEDTLS_SHA256_ALT)
 
 #include "hal/sha_types.h"
-#include "soc/sha_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

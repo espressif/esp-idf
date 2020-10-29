@@ -44,7 +44,7 @@
 
 #include "sha/sha_dma.h"
 #include "hal/sha_hal.h"
-#include "soc/sha_caps.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"

@@ -222,5 +222,43 @@
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_PERIPH_NUM 1
 
+
+/*--------------------------- SHA CAPS ---------------------------------------*/
+/* Max amount of bytes in a single DMA operation is 4095,
+   for SHA this means that the biggest safe amount of bytes is
+   31 blocks of 128 bytes = 3968
+*/
+#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
+#define SOC_SHA_SUPPORT_DMA             (1)
+
+/* The SHA engine is able to resume hashing from a user supplied context */
+#define SOC_SHA_SUPPORT_RESUME          (1)
+
+/* Has "crypto DMA", which is shared with AES */
+#define SOC_SHA_CRYPTO_DMA              (1)
+
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA224          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+#define SOC_SHA_SUPPORT_SHA512_224      (1)
+#define SOC_SHA_SUPPORT_SHA512_256      (1)
+#define SOC_SHA_SUPPORT_SHA512_T        (1)
+
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+
+
+/*--------------------------- RSA CAPS ---------------------------------------*/
+#define SOC_RSA_MAX_BIT_LEN    (4096)
+
+
+
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents

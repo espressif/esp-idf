@@ -93,6 +93,43 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 #include "uart_caps.h"
 
+
+/*--------------------------- SHA CAPS ---------------------------------------*/
+/* Max amount of bytes in a single DMA operation is 4095,
+   for SHA this means that the biggest safe amount of bytes is
+   31 blocks of 128 bytes = 3968
+*/
+#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
+#define SOC_SHA_SUPPORT_DMA             (1)
+
+/* The SHA engine is able to resume hashing from a user supplied context */
+#define SOC_SHA_SUPPORT_RESUME          (1)
+
+/* Has a centralized DMA, which is shared with all peripherals */
+#define SOC_SHA_GENERAL_DMA             (1)
+
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA224          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+#define SOC_SHA_SUPPORT_SHA512_224      (1)
+#define SOC_SHA_SUPPORT_SHA512_256      (1)
+#define SOC_SHA_SUPPORT_SHA512_T        (1)
+
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+
+
+/*--------------------------- RSA CAPS ---------------------------------------*/
+#define SOC_RSA_MAX_BIT_LEN    (4096)
+
+
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready
 #define SOC_GDMA_M2M_DMA_CHANNEL  (0)
