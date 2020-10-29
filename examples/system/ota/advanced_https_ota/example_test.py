@@ -1,8 +1,6 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
 from threading import Thread
 import ssl
 
@@ -10,6 +8,13 @@ from tiny_test_fw import DUT
 import ttfw_idf
 import random
 import subprocess
+
+try:
+    import BaseHTTPServer
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
+except ImportError:
+    import http.server as BaseHTTPServer
+    from http.server import SimpleHTTPRequestHandler
 
 server_cert = "-----BEGIN CERTIFICATE-----\n" \
               "MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n"\
@@ -98,7 +103,7 @@ def get_ca_cert(ota_image_dir):
 def start_https_server(ota_image_dir, server_ip, server_port):
     server_file, key_file = get_ca_cert(ota_image_dir)
     httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+                                      SimpleHTTPRequestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
@@ -116,7 +121,7 @@ def redirect_handler_factory(url):
     """
     Returns a request handler class that redirects to supplied `url`
     """
-    class RedirectHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    class RedirectHandler(SimpleHTTPRequestHandler):
         def do_GET(self):
             print("Sending resp, URL: " + url)
             self.send_response(301)

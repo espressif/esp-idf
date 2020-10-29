@@ -1,13 +1,18 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
 from threading import Thread
 import ssl
 
 from tiny_test_fw import DUT
 import ttfw_idf
+
+try:
+    import BaseHTTPServer
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
+except ImportError:
+    import http.server as BaseHTTPServer
+    from http.server import SimpleHTTPRequestHandler
 
 server_cert = "-----BEGIN CERTIFICATE-----\n" \
               "MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n"\
@@ -87,7 +92,7 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     key_file_handle.close()
 
     httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      SimpleHTTPServer.SimpleHTTPRequestHandler)
+                                      SimpleHTTPRequestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
