@@ -40,13 +40,13 @@ import textwrap
 import functools
 
 # list files here which should not be parsed
-ignore_files = ['components/mdns/test_afl_fuzz_host/esp32_compat.h']
+ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_compat.h')]
 
 # add directories here which should not be parsed
-ignore_dirs = ('examples')
+ignore_dirs = os.path.join('examples')
 
 # macros from here have higher priorities in case of collisions
-priority_headers = ['components/esp32/include/esp_err.h']
+priority_headers = [os.path.join('components', 'esp32', 'include', 'esp_err.h')]
 
 err_dict = collections.defaultdict(list)  # identified errors are stored here; mapped by the error code
 rev_err_dict = dict()  # map of error string to error code
