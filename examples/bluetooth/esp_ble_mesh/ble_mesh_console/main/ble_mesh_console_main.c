@@ -14,21 +14,17 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
 #include "driver/uart.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-
 #include "esp_bt.h"
 #include "esp_bt_main.h"
-
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
-
 #include "ble_mesh_console_decl.h"
 
 #if CONFIG_STORE_HISTORY
@@ -97,7 +93,6 @@ static void initialize_console(void)
     linenoiseHistoryLoad(HISTORY_PATH);
 #endif
 }
-
 
 esp_err_t bluetooth_init(void)
 {
