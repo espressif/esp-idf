@@ -34,16 +34,14 @@ repos:
         always_run: true
       - id: check-kconfigs
         name: Validate Kconfig files
-        entry: tools/ci/check_kconfigs.py --exclude-submodules
+        entry: tools/ci/check_kconfigs.py
         language: python
-        pass_filenames: false
-        always_run: true
+        files: '^Kconfig$|Kconfig.*$'
       - id: check-deprecated-kconfigs-options
         name: Check if any Kconfig Options Deprecated
-        entry: tools/ci/check_deprecated_kconfigs.py --exclude-submodules
+        entry: tools/ci/check_deprecated_kconfigs.py
         language: python
-        pass_filenames: false
-        always_run: true
+        files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
       - id: cmake-lint
         name: Check CMake Files Format
         entry: cmakelint --linelength=120 --spaces=4

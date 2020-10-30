@@ -20,10 +20,10 @@ import logging
 import os
 import subprocess
 
-IDF_PATH = os.getenv('IDF_PATH', os.getcwd())
+IDF_PATH = os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
-def get_submodule_dirs():  # type: () -> list
+def get_submodule_dirs(full_path=False):  # type: (bool) -> list
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -36,7 +36,10 @@ def get_submodule_dirs():  # type: () -> list
              '--get-regexp', 'path']).decode('utf8').strip().split('\n')
         for line in lines:
             _, path = line.split(' ')
-            dirs.append(path)
+            if full_path:
+                dirs.append(os.path.join(IDF_PATH, path))
+            else:
+                dirs.append(path)
     except Exception as e:
         logging.warning(str(e))
 
