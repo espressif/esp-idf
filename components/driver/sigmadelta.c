@@ -19,7 +19,7 @@
 #include "hal/sigmadelta_hal.h"
 #include "esp_rom_gpio.h"
 
-static const char *TAG = "SIGMADELTA";
+static const char *TAG = "sigma-delta";
 
 #define SIGMADELTA_CHECK(a,str,ret_val) if(!(a)) {                 \
         ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);   \
@@ -40,7 +40,7 @@ static sigmadelta_obj_t *p_sigmadelta_obj[SIGMADELTA_PORT_MAX] = {0};
 static inline esp_err_t _sigmadelta_set_duty(sigmadelta_port_t sigmadelta_port, sigmadelta_channel_t channel, int8_t duty)
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
-    
+
     sigmadelta_hal_set_duty(&(p_sigmadelta_obj[sigmadelta_port]->hal), channel, duty);
     return ESP_OK;
 }
@@ -59,7 +59,7 @@ static inline esp_err_t _sigmadelta_set_pin(sigmadelta_port_t sigmadelta_port, s
 
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(gpio_num, GPIO_SD0_OUT_IDX + channel, 0, 0);
+    esp_rom_gpio_connect_out_signal(gpio_num, sigma_delta_periph_signals.channels[channel].sd_sig, 0, 0);
     return ESP_OK;
 }
 

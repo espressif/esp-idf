@@ -59,7 +59,8 @@
 #include "rtc_io_caps.h"
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#include "sigmadelta_caps.h"
+#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
+#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #include "spi_caps.h"

@@ -13,5 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include "soc/gpio_sd_struct.h"
+
+#include <stdint.h>
+#include "soc/soc_caps.h"
 #include "soc/gpio_sd_reg.h"
+#include "soc/gpio_sd_struct.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    struct {
+        const uint32_t sd_sig;
+    } channels[SOC_SIGMADELTA_CHANNEL_NUM];
+} sigma_delta_signal_conn_t;
+
+extern const sigma_delta_signal_conn_t sigma_delta_periph_signals;
+
+#ifdef __cplusplus
+}
+#endif

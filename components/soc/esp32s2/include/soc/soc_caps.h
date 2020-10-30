@@ -154,8 +154,8 @@
 #define SOC_RTCIO_PIN_COUNT   22
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-// ESP32-S2 have 1 SIGMADELTA peripheral.
-#define SOC_SIGMADELTA_NUM            1
+#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
+#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM      3

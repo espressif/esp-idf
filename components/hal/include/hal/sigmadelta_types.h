@@ -38,10 +38,12 @@ typedef enum {
     SIGMADELTA_CHANNEL_1,   /*!< Sigma-delta channel 1 */
     SIGMADELTA_CHANNEL_2,   /*!< Sigma-delta channel 2 */
     SIGMADELTA_CHANNEL_3,   /*!< Sigma-delta channel 3 */
+#if SOC_SIGMADELTA_CHANNEL_NUM > 4
     SIGMADELTA_CHANNEL_4,   /*!< Sigma-delta channel 4 */
     SIGMADELTA_CHANNEL_5,   /*!< Sigma-delta channel 5 */
     SIGMADELTA_CHANNEL_6,   /*!< Sigma-delta channel 6 */
     SIGMADELTA_CHANNEL_7,   /*!< Sigma-delta channel 7 */
+#endif
     SIGMADELTA_CHANNEL_MAX, /*!< Sigma-delta channel max */
 } sigmadelta_channel_t;
 
