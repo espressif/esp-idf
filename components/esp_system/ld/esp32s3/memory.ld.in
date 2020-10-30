@@ -21,15 +21,34 @@
 #define ESP_BOOTLOADER_RESERVE_RTC 0
 #endif
 
+/*
+ * 40370000 <- IRAM/Icache -> 40378000 <- D/IRAM (I) -> 403E0000
+ *                            3FC88000 <- D/IRAM (D) -> 3FCF0000 <- DRAM/DCache -> 3FD00000
+ *
+ * Startup code uses the IRAM from 0x403BA000 to 0x403E0000, which is not available for static
+ * memory, but can only be used after app starts.
+ *
+ * D cache use the memory from high address, so when it's configured to 16K/32K, the region
+ * 0x3FCF000 ~ (3FD00000 - DATA_CACHE_SIZE) should be available. This region is not used as
+ * static memory, leaving to the heap.
+ */
+
 #define SRAM_IRAM_START     0x40370000
-#define SRAM_DRAM_START     0x3FC80000
-#define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403BA000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DIRAM_I_START  0x40378000
+#define SRAM_IRAM_END       0x403BA000
+#define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
+#define SRAM_DRAM_START     0x3FC88000
+#define SRAM_DRAM_END       (SRAM_IRAM_END - I_D_SRAM_OFFSET)  /* 2nd stage bootloader iram_loader_seg start address */
+#define I_D_SRAM_SIZE       (SRAM_DRAM_END - SRAM_DRAM_START)
+
+
+#define ICACHE_SIZE         0x8000
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
-#define SRAM_DRAM_ORG       (SRAM_DRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
+#define SRAM_IRAM_SIZE      (I_D_SRAM_SIZE + ICACHE_SIZE - CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
 
-#define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
+#define DCACHE_SIZE         0x10000
+#define SRAM_DRAM_ORG       (SRAM_DRAM_START)
 
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
 ASSERT((CONFIG_ESP32S3_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
@@ -47,11 +66,15 @@ MEMORY
    */
 
   /* IRAM for PRO CPU. */
-  iram0_0_seg (RX) :                 org = SRAM_IRAM_ORG, len = I_D_SRAM_SIZE
+  iram0_0_seg (RX) :                 org = SRAM_IRAM_ORG, len = SRAM_IRAM_SIZE
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
+<<<<<<< HEAD:components/esp_system/ld/esp32s3/memory.ld.in
   iram0_2_seg (RX) :                 org = 0x42000020, len = 0x2000000-0x20
+=======
+  iram0_2_seg (RX) :                 org = 0x42000020, len = 0x800000-0x20
+>>>>>>> ld: fix linker script for C3 and S3:components/esp32s3/ld/esp32s3.ld
 
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
@@ -70,7 +93,11 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
+<<<<<<< HEAD:components/esp_system/ld/esp32s3/memory.ld.in
   drom0_0_seg (R) :                  org = 0x3C000020, len = 0x2000000-0x20
+=======
+  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x800000-0x20
+>>>>>>> ld: fix linker script for C3 and S3:components/esp32s3/ld/esp32s3.ld
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS

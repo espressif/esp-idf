@@ -31,113 +31,95 @@ import sys
 
 from future.utils import iteritems
 
+try:
+    from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, TextIO, Tuple, Union
+    Section = Dict[str, Union[str, int]]
+    SectionDict = Dict[str, Section]
+except ImportError:
+    pass
+
+try:
+    basestring
+except NameError:
+    basestring = str
+
+
 GLOBAL_JSON_INDENT = 4
 GLOBAL_JSON_SEPARATORS = (',', ': ')
 
 
 class MemRegions(object):
-    (DRAM_ID, IRAM_ID, DIRAM_ID) = range(3)
+    # Regions determined by the chip target.
+
+    # DIRAM is not added here. The DIRAM is indicated by the `secondary_addr` of each MemRegDef
+    (DRAM_ID, IRAM_ID, CACHE_D_ID, CACHE_I_ID, RTC_FAST_D_ID, RTC_FAST_I_ID, RTC_SLOW_D_ID) = range(7)
+
+    # The order of variables in the tuple is the same as in the soc_memory_layout.c files
+    MemRegDef = collections.namedtuple('MemRegDef', ['primary_addr', 'length', 'type', 'secondary_addr'])
+
+    class Region(object):
+        # Helper class to store region information
+        def __init__(self, start, length, region, section=None):
+            # type: (MemRegions.Region, int, int, MemRegions.MemRegDef, Optional[str]) -> None
+            self.start = start
+            self.len = length
+            self.region = region
+            self.section = section
 
     @staticmethod
-    def get_mem_regions(target):
+    def get_mem_regions(target):  # type: (str) -> List
         # The target specific memory structure is deduced from soc_memory_types defined in
         # $IDF_PATH/components/soc/**/soc_memory_layout.c files.
 
-        # The order of variables in the tuple is the same as in the soc_memory_layout.c files
-        MemRegDef = collections.namedtuple('MemRegDef', ['primary_addr', 'length', 'type', 'secondary_addr'])
+        MemRegDef = MemRegions.MemRegDef
 
+        # Consecutive MemRegDefs of the same type are joined into one MemRegDef
         if target == 'esp32':
             return sorted([
-                # Consecutive MemRegDefs of the same type are joined into one MemRegDef
                 MemRegDef(0x3FFAE000, 17 * 0x2000 + 4 * 0x8000 + 4 * 0x4000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFAE000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFB0000, 0x8000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFB8000, 0x8000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFC0000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFC2000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFC4000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFC6000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFC8000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFCA000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFCC000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFCE000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFD0000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFD2000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFD4000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFD6000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFD8000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFDA000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFDC000, 0x2000, MemRegions.DRAM_ID, 0),
-                # MemRegDef(0x3FFDE000, 0x2000, MemRegions.DRAM_ID, 0),
-                #
-                # The bootloader is there and it has to been counted as DRAM
-                # MemRegDef(0x3FFE0000, 0x4000, MemRegions.DIRAM_ID, 0x400BC000),
-                # MemRegDef(0x3FFE4000, 0x4000, MemRegions.DIRAM_ID, 0x400B8000),
-                # MemRegDef(0x3FFE8000, 0x8000, MemRegions.DIRAM_ID, 0x400B0000),
-                # MemRegDef(0x3FFF0000, 0x8000, MemRegions.DIRAM_ID, 0x400A8000),
-                # MemRegDef(0x3FFF8000, 0x4000, MemRegions.DIRAM_ID, 0x400A4000),
-                # MemRegDef(0x3FFFC000, 0x4000, MemRegions.DIRAM_ID, 0x400A0000),
-                #
                 MemRegDef(0x40070000, 2 * 0x8000 + 16 * 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40070000, 0x8000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40078000, 0x8000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40080000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40082000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40084000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40086000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40088000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4008A000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4008C000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4008E000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40090000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40092000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40094000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40096000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x40098000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4009A000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4009C000, 0x2000, MemRegions.IRAM_ID, 0),
-                # MemRegDef(0x4009E000, 0x2000, MemRegions.IRAM_ID, 0),
+                MemRegDef(0x400C2000, 0xB3E000, MemRegions.CACHE_I_ID, 0),
+                MemRegDef(0x3F400000, 0x400000, MemRegions.CACHE_D_ID, 0),
+                MemRegDef(0x3F800000, 0x400000, MemRegions.CACHE_D_ID, 0),
+                MemRegDef(0x3FF80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x400C0000),
+                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
         elif target == 'esp32s2':
             return sorted([
-                MemRegDef(0x3FFB2000, 3 * 0x2000 + 18 * 0x4000, MemRegions.DIRAM_ID, 0x40022000),
-                # MemRegDef(0x3FFB2000, 0x2000, MemRegions.DIRAM_ID, 0x40022000),
-                # MemRegDef(0x3FFB4000, 0x2000, MemRegions.DIRAM_ID, 0x40024000),
-                # MemRegDef(0x3FFB6000, 0x2000, MemRegions.DIRAM_ID, 0x40026000),
-                # MemRegDef(0x3FFB8000, 0x4000, MemRegions.DIRAM_ID, 0x40028000),
-                # MemRegDef(0x3FFBC000, 0x4000, MemRegions.DIRAM_ID, 0x4002C000),
-                # MemRegDef(0x3FFC0000, 0x4000, MemRegions.DIRAM_ID, 0x40030000),
-                # MemRegDef(0x3FFC4000, 0x4000, MemRegions.DIRAM_ID, 0x40034000),
-                # MemRegDef(0x3FFC8000, 0x4000, MemRegions.DIRAM_ID, 0x40038000),
-                # MemRegDef(0x3FFCC000, 0x4000, MemRegions.DIRAM_ID, 0x4003C000),
-                # MemRegDef(0x3FFD0000, 0x4000, MemRegions.DIRAM_ID, 0x40040000),
-                # MemRegDef(0x3FFD4000, 0x4000, MemRegions.DIRAM_ID, 0x40044000),
-                # MemRegDef(0x3FFD8000, 0x4000, MemRegions.DIRAM_ID, 0x40048000),
-                # MemRegDef(0x3FFDC000, 0x4000, MemRegions.DIRAM_ID, 0x4004C000),
-                # MemRegDef(0x3FFE0000, 0x4000, MemRegions.DIRAM_ID, 0x40050000),
-                #
-                # MemRegDef(0x3FFE4000, 0x4000, MemRegions.DIRAM_ID, 0x40054000),
-                # MemRegDef(0x3FFE8000, 0x4000, MemRegions.DIRAM_ID, 0x40058000),
-                # MemRegDef(0x3FFEC000, 0x4000, MemRegions.DIRAM_ID, 0x4005C000),
-                # MemRegDef(0x3FFF0000, 0x4000, MemRegions.DIRAM_ID, 0x40060000),
-                # MemRegDef(0x3FFF4000, 0x4000, MemRegions.DIRAM_ID, 0x40064000),
-                # MemRegDef(0x3FFF8000, 0x4000, MemRegions.DIRAM_ID, 0x40068000),
-                # MemRegDef(0x3FFFC000, 0x4000, MemRegions.DIRAM_ID, 0x4006C000),
+                MemRegDef(0x3FFB2000, 3 * 0x2000 + 18 * 0x4000, MemRegions.DRAM_ID, 0x40022000),
+                MemRegDef(0x3F000000, 0x400000, MemRegions.CACHE_I_ID, 0),
+                MemRegDef(0x3F500000, 0xA80000, MemRegions.CACHE_D_ID, 0),
+                MemRegDef(0x40080000, 0x780000, MemRegions.CACHE_I_ID, 0),
+                MemRegDef(0x40070000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x3FF9E000),
+                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
         elif target == 'esp32s3':
             return sorted([
-                MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DIRAM_ID, 0x40378000),
+                # IRAM, usually used by Icache.
+                #
+                # The segment from the ld file lies across the boundary of the line below: it is
+                # partly IRAM and partly D/IRAM. Here's a workaround for this kind of segment: we
+                # only list the DIRAM part. If a segment from the ld file falls in any part of a
+                # DIRAM def region, we treat the whole segment D/IRAM.
+                #
+                # Uncomment the following line if sections of the same segment can be
+                # distinguished, or the ld file can give separated segment for the region.
+                #
+                MemRegDef(0x40370000, 0x8000, MemRegions.IRAM_ID, 0),
+                MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DRAM_ID, 0x40378000),
+                MemRegDef(0x3FCF0000, 0x10000, MemRegions.DRAM_ID, 0),
+                MemRegDef(0x42000000, 0x2000000, MemRegions.CACHE_I_ID, 0),
+                MemRegDef(0x3C000000, 0x2000000, MemRegions.CACHE_D_ID, 0),
+                MemRegDef(0x3ff80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x600FE000),
+                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
         elif target == 'esp32c3':
             return sorted([
-                MemRegDef(0x3FC80000, 0x60000, MemRegions.DIRAM_ID, 0x40380000),
-
-                # MemRegDef(0x3FC80000, 0x20000, MemRegions.DIRAM_ID, 0x40380000),
-                # MemRegDef(0x3FCA0000, 0x20000, MemRegions.DIRAM_ID, 0x403A0000),
-                # MemRegDef(0x3FCC0000, 0x20000, MemRegions.DIRAM_ID, 0x403C0000),
-
-                # Used by cache
+                MemRegDef(0x3FC80000, 0x60000, MemRegions.DRAM_ID, 0x40380000),
                 MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
+                MemRegDef(0x42000000, 0x800000, MemRegions.CACHE_I_ID, 0),
+                MemRegDef(0x3C000000, 0x800000, MemRegions.CACHE_D_ID, 0),
+                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
         elif target == 'esp32h2':
             return sorted([
@@ -151,44 +133,137 @@ class MemRegions(object):
                 MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
             ])
         else:
-            return None
+            raise RuntimeError('Target not detected.')
 
-    def __init__(self, target):
+    def __init__(self, target):  # type: (MemRegions, str) -> None
         self.chip_mem_regions = self.get_mem_regions(target)
         if not self.chip_mem_regions:
             raise RuntimeError('Target {} is not implemented in idf_size'.format(target))
 
-    def _address_in_range(self, address, length, reg_address, reg_length):
-        return address >= reg_address and (address - reg_address) <= (reg_length - length)
+    def _get_first_region(self, start, length):
+        # type: (int, int) -> Tuple[MemRegions.MemRegDef, int]
+        for region in self.chip_mem_regions:  # type: ignore
+            if region.primary_addr <= start < region.primary_addr + region.length:
+                return (region, min(length, region.primary_addr + region.length - start))
 
-    def get_names(self, dictionary, region_id):
-        def get_address(d):
-            try:
-                return d['address']
-            except KeyError:
-                return d['origin']
+            if (region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length):
+                return (region, min(length, region.secondary_addr + region.length - start))
 
-        def get_size(d):
-            try:
-                return d['size']
-            except KeyError:
-                return d['length']
+        raise RuntimeError('Given section not found in any memory region. '
+                           'Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
 
-        result = set()  # using a set will remove possible duplicates and consequent operations with sets are more
-        # efficient
-        for m in self.chip_mem_regions:
-            if m.type != region_id:
+    def _get_regions(self, start, length, name=None):  # type: (int, int, Optional[str]) -> List
+        ret = []
+        while length > 0:
+            (region, cur_len) = self._get_first_region(start, length)
+            ret.append(MemRegions.Region(start, cur_len, region, name))
+            length -= cur_len
+            start += cur_len
+
+        return ret
+
+    def fit_segments_into_regions(self, segments):  # type: (MemRegions, Dict) -> List
+        region_list = []
+        for segment in segments.values():
+            sorted_segments = self._get_regions(segment['origin'], segment['length'])
+            region_list.extend(sorted_segments)
+
+        return region_list
+
+    def fit_sections_into_regions(self, sections):  # type: (MemRegions, Dict) -> List
+        region_list = []
+
+        for section in sections.values():
+            sorted_sections = self._get_regions(section['address'], section['size'], section['name'])
+            region_list.extend(sorted_sections)
+
+        return region_list
+
+
+class LinkingSections(object):
+
+    _section_type_dict = {k: re.compile(v) for k, v in {
+        'text': r'.*\.text',
+        'data': r'.*\.data',
+        'bss': r'.*\.bss',
+        'rodata': r'.*\.rodata',
+        'noinit': r'.*noinit',
+        'vectors': r'.*\.vectors',
+        'flash': r'.*flash.*',
+    }.items()}
+
+    @staticmethod
+    def in_section(section, section_name_or_list):  # type: (str, Union[str, Iterable]) -> bool
+        if isinstance(section_name_or_list, basestring):
+            section_name_or_list = [section_name_or_list]
+
+        for section_name in section_name_or_list:
+            if LinkingSections._section_type_dict[section_name].match(section):
+                return True
+        return False
+
+    @staticmethod
+    def filter_sections(sections):  # type: (Dict) -> Dict
+        return {k: v for k, v in sections.items()
+                if LinkingSections.in_section(k, LinkingSections._section_type_dict.keys())}
+
+    @staticmethod
+    def get_display_name_order(section_name_list):  # type: (List[str]) -> Tuple[List[str], List[str]]
+        '''
+        Return two lists, in the suggested display order.
+        First list is the reordered section_name_list, second list is the suggested display name, corresponding to the first list
+        '''
+
+        def get_name_score(name):  # type: (str) -> int
+            score_dict = {
+                '.dram': 30,
+                '.iram': 20,
+                '.flash': 10,
+                'ram_st_total': -10,
+                'flash_total': -20,
+                '.data': 6,
+                '.bss': 5,
+                '.text': 4,
+                '.rodata': 3,
+                '.vectors': 2,
+                '.noinit': 1,
+                '.other': -1,
+            }
+            return sum([score if section in name else 0
+                        for section, score in score_dict.items()])
+
+        score_list = [get_name_score(section) for section in section_name_list]
+        ordered_name_list = sorted(section_name_list, key=lambda x: score_list[section_name_list.index(x)], reverse=True)
+        display_name_list = ordered_name_list.copy()
+
+        memory_name = ''
+        for i in range(len(section_name_list)):
+            section = ordered_name_list[i]
+
+            if memory_name and section.startswith(memory_name):
+                # If the section has same memory type with the previous one, use shorter name
+                display_name_list[i] = section.replace(memory_name, '& ')
                 continue
-            # the following code is intentionally not a one-liner for better readability
-            for (n, c) in iteritems(dictionary):
-                if (self._address_in_range(get_address(c), get_size(c), m.primary_addr, m.length) or
-                    (m.type == self.DIRAM_ID and
-                     self._address_in_range(get_address(c), get_size(c), m.secondary_addr, m.length))):
-                    result.add(n)
-        return result
+
+            memory_name = ''
+            split_name = section.split('.')
+            if len(split_name) > 1:
+                # If the section has a memory type, update the type and try to display the type properly
+                assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
+                memory_name = '.' + split_name[1]
+                display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
+                                       'IRAM .' + split_name[2] if 'iram' in split_name[1] else\
+                                       'Flash .' + split_name[2] if 'flash' in split_name[1] else\
+                                       section
+                continue
+
+            # Otherwise use its original name
+            display_name_list[i] = section
+
+        return ordered_name_list, display_name_list
 
 
-def scan_to_header(f, header_line):
+def scan_to_header(f, header_line):  # type: (Iterable, str) -> None
     """ Scan forward in a file until you reach 'header_line', then return """
     for line in f:
         if line.strip() == header_line:
@@ -196,23 +271,29 @@ def scan_to_header(f, header_line):
     raise RuntimeError("Didn't find line '%s' in file" % header_line)
 
 
-def format_json(json_object):
+def format_json(json_object):  # type: (Dict) -> str
     return json.dumps(json_object,
-                      allow_nan=False,
+                      allow_nan=True,
                       indent=GLOBAL_JSON_INDENT,
                       separators=GLOBAL_JSON_SEPARATORS) + os.linesep
 
 
-def load_map_data(map_file):
-    memory_config = load_memory_config(map_file)
+def load_map_data(map_file):  # type: (TextIO) -> Tuple[str, Dict, Dict]
+    segments = load_segments(map_file)
     detected_chip = detect_target_chip(map_file)
     sections = load_sections(map_file)
-    return detected_chip, memory_config, sections
+
+    # Exclude the .dummy section, which usually means shared region among I/D buses
+    dummy_keys = [key for key in sections if key.endswith(('.dummy'))]
+    if dummy_keys:
+        sections.pop(*dummy_keys)
+
+    return detected_chip, segments, sections
 
 
-def load_memory_config(map_file):
-    """ Memory Configuration section is the total size of each output section """
-    result = {}
+def load_segments(map_file):  # type: (TextIO) -> Dict
+    """ Memory Configuration section is the total size of each segment """
+    result = {}  # type: Dict[Any, Dict]
     scan_to_header(map_file, 'Memory Configuration')
     RE_MEMORY_SECTION = re.compile(r'(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)')
 
@@ -223,17 +304,17 @@ def load_memory_config(map_file):
                 continue  # whitespace or a header, before the content we want
             else:
                 return result  # we're at the end of the Memory Configuration
-        section = {
+        segment = {
             'name': m.group('name'),
             'origin': int(m.group('origin'), 16),
             'length': int(m.group('length'), 16),
         }
-        if section['name'] != '*default*':
-            result[section['name']] = section
+        if segment['name'] != '*default*':
+            result[segment['name']] = segment
     raise RuntimeError('End of file while scanning memory configuration?')
 
 
-def detect_target_chip(map_file):
+def detect_target_chip(map_file):  # type: (Iterable) -> str
     ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
     scan_to_header(map_file, 'Linker script and memory map')
 
@@ -258,98 +339,157 @@ def detect_target_chip(map_file):
             # This break is a failsafe to not process anything load_sections() might want to analyze.
             break
 
-    return None
+    raise RuntimeError('Target not detected')
 
 
-def load_sections(map_file):
+def load_sections(map_file):  # type: (TextIO) -> Dict
     """ Load section size information from the MAP file.
 
     Returns a dict of 'sections', where each key is a section name and the value
     is a dict with details about this section, including a "sources" key which holds a list of source file line
     information for each symbol linked into the section.
+
+    There are two kinds of lines:
+        - symbol_only: [optional space]<sym_name>
+        - full line: [optional space][optional sym_name] <address> <size> [optional file_info]
+          If <sym_name> doesn't exist, ues the symbol name from the symbol_only line above
+          If the line is the starting of a section, the <file> should be empty, otherwise if the line is for a source
+          line, the <file> must exist, or the <sym_name> should be is no *fill*. This rule is used to tell sections from
+          source lines.
     """
-    # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
-    RE_SECTION_HEADER = re.compile(r'(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$')
+
+    # Check for lines which only contain the sym name (and rest is on following lines)
+    RE_SYMBOL_ONLY_LINE = re.compile(r'^\s*(?P<sym_name>\S*)$')
+
+    # Fast check to see if line is a potential source line before running the slower full regex against it
+    RE_PRE_FILTER = re.compile(r'.*0x[\da-f]+\s*0x[\da-f]+.*')
 
     # source file line, ie
     # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
     # cmake build system links some object files directly, not part of any archive, so make that part optional
     #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
-    RE_SOURCE_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?')
+    #  *fill*         0x00000000400e2967        0x1
+    RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 
-    # Fast check to see if line is a potential source line before running the slower full regex against it
-    RE_PRE_FILTER = re.compile(r'.*\.(o|obj)\)?')
+    # Extract archive and object_file from the file_info field
+    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ ]+\.(o|obj))\)?)')
 
-    # Check for lines which only contain the sym name (and rest is on following lines)
-    RE_SYMBOL_ONLY_LINE = re.compile(r'^ (?P<sym_name>\S*)$')
+    def dump_src_line(src):  # type: (Dict) -> str
+        return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
 
-    sections = {}
-    section = None
-    sym_backup = None
+    sections = {}  # type: Dict[Any, Dict]
+    section = {}  # type: Dict[str, Any]
+    sym_backup = ''
     for line in map_file:
-
         if line.strip() == 'Cross Reference Table':
             # stop processing lines because we are at the next section in the map file
             break
 
-        m = RE_SECTION_HEADER.match(line)
-        if m is not None:  # start of a new section
+        m = RE_SYMBOL_ONLY_LINE.match(line)
+        if m:
+            # In some cases the section name appears on the previous line, back it up in here
+            sym_backup = m.group('sym_name')
+            continue
+
+        if not RE_PRE_FILTER.match(line):
+            # line does not match our quick check, so skip to next line
+            continue
+
+        m = RE_FULL_LINE.match(line)
+        if not m:
+            assert not sym_backup, 'Symbol only line must be followed by a line with address and size'
+            continue
+
+        name = m.group('sym_name') if m.group('sym_name') else sym_backup
+        sym_backup = ''
+
+        is_section = not m.group('file') and name != '*fill*'
+        if is_section:
+            # section
+
             section = {
-                'name': m.group('name'),
+                'name': name,
                 'address': int(m.group('address'), 16),
                 'size': int(m.group('size'), 16),
                 'sources': [],
             }
-            sections[section['name']] = section
-            continue
+            sections[name] = section
 
-        if section is not None:
-            m = RE_SYMBOL_ONLY_LINE.match(line)
-            if m is not None:
-                # In some cases the section name appears on the previous line, back it up in here
-                sym_backup = m.group('sym_name')
+        else:
+            # symbol
+            if not section:
                 continue
 
-            if not RE_PRE_FILTER.match(line):
-                # line does not match our quick check, so skip to next line
+            # There are some source lines in rodata section doesn't actually take any space, but have size
+            # Make size of those sections zero
+            srcs = section['sources']  # type: List[Dict]
+            if srcs:
+                last_src = srcs[-1]
+                if last_src['size'] > 0 and last_src['address'] == int(m.group('address'), 16):
+                    if '.comment' != section['name'] and '.debug_str' != section['name'] and\
+                            'rodata' not in last_src['sym_name']:
+
+                        raise RuntimeError('Due to overlap with following lines, size of the line set to 0:\n    %s' % dump_src_line(last_src))
+
+                    last_src['size'] = 0
+
+            # Count the padding size into the last valid (size > 0) source in the section
+            if name == '*fill*':
+                for src in reversed(srcs):
+                    if src['size'] > 0:
+                        src['fill'] += int(m.group('size'), 16)
+                        break
                 continue
 
-            m = RE_SOURCE_LINE.match(line)
-            if m is not None:  # input source file details=ma,e
-                sym_name = m.group('sym_name') if len(m.group('sym_name')) > 0 else sym_backup
-                archive = m.group('archive')
-                if archive is None:
-                    # optional named group "archive" was not matched, so assign a value to it
-                    archive = '(exe)'
+            # Extract archive and file information
+            n = RE_FILE.match(m.group('file'))
+            assert n
 
-                source = {
-                    'size': int(m.group('size'), 16),
-                    'address': int(m.group('address'), 16),
-                    'archive': os.path.basename(archive),
-                    'object_file': os.path.basename(m.group('object_file')),
-                    'sym_name': sym_name,
-                }
-                source['file'] = '%s:%s' % (source['archive'], source['object_file'])
-                section['sources'] += [source]
+            archive = n.group('archive')
+            if archive is None:
+                # optional named group "archive" was not matched, so assign a value to it
+                archive = '(exe)'
+
+            file = n.group('object_file')
+
+            assert name
+            source = {
+                'size': int(m.group('size'), 16),
+                'address': int(m.group('address'), 16),
+                'archive': os.path.basename(archive),
+                'object_file': os.path.basename(file),
+                'sym_name': name,
+                'fill': 0,  # padding size ofter the source
+            }
+            source['file'] = '%s:%s' % (source['archive'], source['object_file'])
+
+            section['sources'].append(source)  # type: ignore
+
+    # Validate the map file
+    for section in sections.values():
+        src_curr = {}  # type: Dict[str, Any]
+        for src in section['sources']:
+            if src['size'] == 0:
+                continue
+
+            expected_addr = src_curr['address'] + src_curr['size'] + src_curr['fill'] if src_curr else section['sources'][0]['address']
+            if src['address'] != expected_addr:
+                print('Warning: source line overlap:')
+                print('    ' + dump_src_line(src_curr))
+                print('    ' + dump_src_line(src))
+
+            src_curr = src
 
     return sections
 
 
-class MemRegNames(object):
-
-    @staticmethod
-    def get(mem_regions, memory_config, sections):
-        mreg = MemRegNames()
-        mreg.iram_names = mem_regions.get_names(memory_config, MemRegions.IRAM_ID)
-        mreg.dram_names = mem_regions.get_names(memory_config, MemRegions.DRAM_ID)
-        mreg.diram_names = mem_regions.get_names(memory_config, MemRegions.DIRAM_ID)
-        mreg.used_iram_names = mem_regions.get_names(sections, MemRegions.IRAM_ID)
-        mreg.used_dram_names = mem_regions.get_names(sections, MemRegions.DRAM_ID)
-        mreg.used_diram_names = mem_regions.get_names(sections, MemRegions.DIRAM_ID)
-        return mreg
+def check_target(target, map_file):  # type: (str, TextIO) -> None
+    if target is None:
+        raise RuntimeError('The target chip cannot be detected for {}. '
+                           'Please report the issue.'.format(map_file.name))
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(description='idf_size - a tool to print size information from an IDF MAP file')
 
     parser.add_argument(
@@ -388,157 +528,242 @@ def main():
 
     args = parser.parse_args()
 
-    detected_target, memory_config, sections = load_map_data(args.map_file)
+    detected_target, segments, sections = load_map_data(args.map_file)
     args.map_file.close()
-
-    def check_target(target, map_file):
-        if target is None:
-            raise RuntimeError('The target chip cannot be detected for {}. '
-                               'Please report the issue.'.format(map_file.name))
-
     check_target(detected_target, args.map_file)
-
-    if args.target is not None:
-        if args.target != detected_target:
-            print('WARNING: The detected chip target is {} but command line argument overwrites it to '
-                  '{}!'.format(detected_target, args.target))
-        detected_target = args.target
 
     if args.another_map_file:
         with open(args.another_map_file, 'r') as f:
-            detected_target_diff, memory_config_diff, sections_diff = load_map_data(f)
+            detected_target_diff, segments_diff, sections_diff = load_map_data(f)
             check_target(detected_target_diff, f)
             if detected_target_diff != detected_target:
                 print('WARNING: The target of the reference and other MAP files is {} and {}, respectively.'
                       ''.format(detected_target, detected_target_diff))
     else:
-        memory_config_diff, sections_diff = None, None
+        segments_diff, sections_diff, detected_target_diff = {}, {}, ''
 
-    mem_regions = MemRegions(detected_target)
-    mem_reg = MemRegNames.get(mem_regions, memory_config, sections)
-    mem_reg_diff = MemRegNames.get(mem_regions, memory_config_diff, sections_diff) if args.another_map_file else None
+    if args.target is not None:
+        if args.target != detected_target or (detected_target_diff and args.target != detected_target_diff):
+            print('WARNING: The detected chip target overwritten to {} by command line argument!'.format(args.target))
+
+        detected_target = args.target
+        detected_target_diff = args.target
 
     output = ''
 
     if not args.json or not (args.archives or args.files or args.archive_details):
-        output += get_summary(args.map_file.name, mem_reg, memory_config, sections,
+        output += get_summary(args.map_file.name, segments, sections, detected_target,
                               args.json,
-                              args.another_map_file, mem_reg_diff, memory_config_diff, sections_diff)
+                              args.another_map_file, segments_diff, sections_diff, detected_target_diff)
 
     if args.archives:
-        output += get_detailed_sizes(mem_reg, sections, 'archive', 'Archive File', args.json, sections_diff)
+        output += get_detailed_sizes(sections, 'archive', 'Archive File', args.json, sections_diff)
     if args.files:
-        output += get_detailed_sizes(mem_reg, sections, 'file', 'Object File', args.json, sections_diff)
+        output += get_detailed_sizes(sections, 'file', 'Object File', args.json, sections_diff)
 
     if args.archive_details:
-        output += get_archive_symbols(mem_reg, sections, args.archive_details, args.json, sections_diff)
+        output += get_archive_symbols(sections, args.archive_details, args.json, sections_diff)
 
     args.output_file.write(output)
     args.output_file.close()
 
 
 class StructureForSummary(object):
-    (dram_data_names, dram_bss_names, dram_other_names,
-     diram_data_names, diram_bss_names) = (frozenset(), ) * 5  # type: ignore
+    # this is from main branch
+    # used_dram_data, used_dram_bss, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 6
+    used_dram_data, used_dram_bss, used_dram_rodata, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 7
 
-    (total_iram, total_dram, total_dram, total_diram,
-     used_dram_data, used_dram_bss, used_dram_other,
-     used_dram, used_dram_ratio,
-     used_iram, used_iram_ratio,
-     used_diram_data, used_diram_bss,
-     used_diram, used_diram_ratio,
-     flash_code, flash_rodata,
-     total_size) = (0, ) * 18
+    used_dram_ratio = 0.
+    used_iram_vectors, used_iram_text, used_iram_other, used_iram, iram_total, iram_remain = (0, ) * 6
+    used_iram_ratio = 0.
+    used_diram_data, used_diram_bss, used_diram_text, used_diram_vectors, used_diram_rodata, used_diram_other, diram_total, used_diram, diram_remain = (0, ) * 9
+    used_diram_ratio = 0.
+    used_flash_text, used_flash_rodata, used_flash_other, used_flash, total_size = (0, ) * 5
+
+    def __sub__(self, rhs):  # type: (StructureForSummary) -> StructureForSummary
+        assert isinstance(rhs, StructureForSummary)
+        ret = self
+        for key in StructureForSummary.get_required_items():
+            setattr(ret, key, getattr(self, key) - getattr(rhs, key))
+
+        return ret
+
+    @classmethod
+    def get_required_items(cls):  # type: (Any) -> List
+        whole_list = list(filter(lambda x: not (x.startswith('__') or x.endswith('__') or callable(getattr(cls, x))), dir(cls)))
+        return whole_list
 
     @staticmethod
-    def get(reg, mem_conf, sects):
+    def get(segments, sections):  # type: (List, List) -> StructureForSummary
 
-        def _get_size(sects, section):
-            try:
-                return sects[section]['size']
-            except KeyError:
-                return 0
+        def get_size(sections):  # type: (Iterable) -> int
+            return sum([x.len for x in sections])
+
+        def in_diram(x):  # type: (MemRegions.Region) -> bool
+            return x.region.type in (MemRegions.DRAM_ID, MemRegions.IRAM_ID) and x.region.secondary_addr > 0
+
+        def in_dram(x):  # type: (MemRegions.Region) -> bool
+            return x.region.type == MemRegions.DRAM_ID and x.region.secondary_addr == 0  # type: ignore
+
+        def in_iram(x):  # type: (MemRegions.Region) -> bool
+            return x.region.type == MemRegions.IRAM_ID and x.region.secondary_addr == 0  # type: ignore
 
         r = StructureForSummary()
 
-        r.dram_data_names = frozenset([n for n in reg.used_dram_names if n.endswith('.data')])
-        r.dram_bss_names = frozenset([n for n in reg.used_dram_names if n.endswith('.bss')])
-        r.dram_other_names = reg.used_dram_names - r.dram_data_names - r.dram_bss_names
+        diram_filter = filter(in_diram, segments)
+        # TODO: We assume all DIRAM region are covered by both I/D segments. If not, the total size cannot be calculated accurately. Add check for this.
+        r.diram_total = int(get_size(diram_filter) / 2)
 
-        r.diram_data_names = frozenset([n for n in reg.used_diram_names if n.endswith('.data')])
-        r.diram_bss_names = frozenset([n for n in reg.used_diram_names if n.endswith('.bss')])
+        dram_filter = filter(in_dram, segments)
+        r.dram_total = get_size(dram_filter)
 
-        r.total_iram = sum(mem_conf[n]['length'] for n in reg.iram_names)
-        r.total_dram = sum(mem_conf[n]['length'] for n in reg.dram_names)
-        r.total_diram = sum(mem_conf[n]['length'] for n in reg.diram_names)
+        iram_filter = filter(in_iram, segments)
+        r.iram_total = get_size(iram_filter)
 
-        r.used_dram_data = sum(_get_size(sects, n) for n in r.dram_data_names)
-        r.used_dram_bss = sum(_get_size(sects, n) for n in r.dram_bss_names)
-        r.used_dram_other = sum(_get_size(sects, n) for n in r.dram_other_names)
-        r.used_dram = r.used_dram_data + r.used_dram_bss + r.used_dram_other
+        def filter_in_section(sections, section_to_check):  # type: (Iterable[MemRegions.Region], str) -> List[MemRegions.Region]
+            return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
+
+        dram_sections = list(filter(in_dram, sections))
+        iram_sections = list(filter(in_iram, sections))
+        diram_sections = list(filter(in_diram, sections))
+        flash_sections = filter_in_section(sections, 'flash')
+
+        dram_data_list = filter_in_section(dram_sections, 'data')
+        dram_bss_list = filter_in_section(dram_sections, 'bss')
+        dram_rodata_list = filter_in_section(dram_sections, 'rodata')
+        dram_other_list = [x for x in dram_sections if x not in dram_data_list + dram_bss_list + dram_rodata_list]
+
+        iram_vectors_list = filter_in_section(iram_sections, 'vectors')
+        iram_text_list = filter_in_section(iram_sections, 'text')
+        iram_other_list = [x for x in iram_sections if x not in iram_vectors_list + iram_text_list]
+
+        diram_vectors_list = filter_in_section(diram_sections, 'vectors')
+        diram_data_list = filter_in_section(diram_sections, 'data')
+        diram_bss_list = filter_in_section(diram_sections, 'bss')
+        diram_text_list = filter_in_section(diram_sections, 'text')
+        diram_rodata_list = filter_in_section(diram_sections, 'rodata')
+        diram_other_list = [x for x in diram_sections if x not in diram_data_list + diram_bss_list + diram_text_list + diram_vectors_list + diram_rodata_list]
+
+        flash_text_list = filter_in_section(flash_sections, 'text')
+        flash_rodata_list = filter_in_section(flash_sections, 'rodata')
+        flash_other_list = [x for x in flash_sections if x not in flash_text_list + flash_rodata_list]
+
+        r.used_dram_data = get_size(dram_data_list)
+        r.used_dram_bss = get_size(dram_bss_list)
+        r.used_dram_rodata = get_size(dram_rodata_list)
+        r.used_dram_other = get_size(dram_other_list)
+        r.used_dram = r.used_dram_data + r.used_dram_bss + r.used_dram_other + r.used_dram_rodata
         try:
-            r.used_dram_ratio = r.used_dram / r.total_dram
+            r.used_dram_ratio = r.used_dram / r.dram_total
         except ZeroDivisionError:
             r.used_dram_ratio = float('nan')
+        r.dram_remain = r.dram_total - r.used_dram
 
-        r.used_iram = sum(_get_size(sects, s) for s in sects if s in reg.used_iram_names)
+        r.used_iram_vectors = get_size((iram_vectors_list))
+        r.used_iram_text = get_size((iram_text_list))
+        r.used_iram_other = get_size((iram_other_list))
+        r.used_iram = r.used_iram_vectors + r.used_iram_text + r.used_iram_other
         try:
-            r.used_iram_ratio = r.used_iram / r.total_iram
+            r.used_iram_ratio = r.used_iram / r.iram_total
         except ZeroDivisionError:
             r.used_iram_ratio = float('nan')
+        r.iram_remain = r.iram_total - r.used_iram
 
-        r.used_diram_data = sum(_get_size(sects, n) for n in r.diram_data_names)
-        r.used_diram_bss = sum(_get_size(sects, n) for n in r.diram_bss_names)
-        r.used_diram = sum(_get_size(sects, n) for n in reg.used_diram_names)
+        r.used_diram_data = get_size(diram_data_list)
+        r.used_diram_bss = get_size(diram_bss_list)
+        r.used_diram_text = get_size(diram_text_list)
+        r.used_diram_vectors = get_size(diram_vectors_list)
+        r.used_diram_rodata = get_size(diram_rodata_list)
+        r.used_diram_other = get_size(diram_other_list)
+        r.used_diram = r.used_diram_data + r.used_diram_bss + r.used_diram_text + r.used_diram_vectors + r.used_diram_other + r.used_diram_rodata
         try:
-            r.used_diram_ratio = r.used_diram / r.total_diram
+            r.used_diram_ratio = r.used_diram / r.diram_total
         except ZeroDivisionError:
             r.used_diram_ratio = float('nan')
+        r.diram_remain = r.diram_total - r.used_diram
 
-        r.flash_code = _get_size(sects, '.flash.text')
-        r.flash_rodata = _get_size(sects, '.flash.rodata')
+        r.used_flash_text = get_size(flash_text_list)
+        r.used_flash_rodata = get_size(flash_rodata_list)
+
+        r.used_flash_other = get_size(flash_other_list)
+        r.used_flash = r.used_flash_text + r.used_flash_rodata + r.used_flash_other
+
         # The used DRAM BSS is counted into the "Used static DRAM" but not into the "Total image size"
-        r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.flash_code + r.flash_rodata
+        r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.used_flash
 
         return r
 
-    def get_json_dic(self):
-        return collections.OrderedDict([
-            ('dram_data', self.used_dram_data + self.used_diram_data),
-            ('dram_bss', self.used_dram_bss + self.used_diram_bss),
+    def get_json_dic(self):  # type: (StructureForSummary) -> collections.OrderedDict
+        ret = collections.OrderedDict([
+            ('dram_data', self.used_dram_data),
+            ('dram_bss', self.used_dram_bss),
+            ('dram_rodata', self.used_dram_rodata),
             ('dram_other', self.used_dram_other),
             ('used_dram', self.used_dram),
-            ('available_dram', self.total_dram - self.used_dram),
-            ('used_dram_ratio', self.used_dram_ratio if self.total_dram != 0 else 0),
+            ('dram_total', self.dram_total),
+            ('used_dram_ratio', self.used_dram_ratio if self.used_dram_ratio is not float('nan') else 0),
+            ('dram_remain', self.dram_remain),
+
+            ('iram_vectors', self.used_iram_vectors),
+            ('iram_text', self.used_iram_text),
+            ('iram_other', self.used_iram_other),
             ('used_iram', self.used_iram),
-            ('available_iram', self.total_iram - self.used_iram),
-            ('used_iram_ratio', self.used_iram_ratio if self.total_iram != 0 else 0),
+            ('iram_total', self.iram_total),
+            ('used_iram_ratio', self.used_iram_ratio),
+            ('iram_remain', self.iram_remain),
+
+            ('diram_data', self.used_diram_data),
+            ('diram_bss', self.used_diram_bss),
+            ('diram_text', self.used_diram_text),
+            ('diram_vectors', self.used_diram_vectors),
+            ('diram_rodata', self.used_diram_rodata),
+            ('diram_other', self.used_diram_other),
+            ('diram_total', self.diram_total),
             ('used_diram', self.used_diram),
-            ('available_diram', self.total_diram - self.used_diram),
-            ('used_diram_ratio', self.used_diram_ratio if self.total_diram != 0 else 0),
-            ('flash_code', self.flash_code),
-            ('flash_rodata', self.flash_rodata),
-            ('total_size', self.total_size)
+            ('used_diram_ratio', self.used_diram_ratio),
+            ('diram_remain', self.diram_remain),
+
+            ('flash_code', self.used_flash_text),
+            ('flash_rodata', self.used_flash_rodata),
+            ('flash_other', self.used_flash_other),
+            ('used_flash_non_ram', self.used_flash),    # text/data in D/I RAM not included
+
+            ('total_size', self.total_size)             # bss not included
         ])
+        assert len(ret) == len(StructureForSummary.get_required_items())
+        return ret
 
 
-def get_summary(path, mem_reg, memory_config, sections,
+def get_summary(path, segments, sections, target,
                 as_json=False,
-                path_diff=None, mem_reg_diff=None, memory_config_diff=None, sections_diff=None):
+                path_diff='', segments_diff=None, sections_diff=None, target_diff=''):
+    # type: (str, Dict, Dict, str, bool, str, Optional[Dict], Optional[Dict], str) -> str
+    if segments_diff is None:
+        segments_diff = {}
+    if sections_diff is None:
+        sections_diff = {}
 
-    diff_en = mem_reg_diff and memory_config_diff and sections_diff
+    mem_regions = MemRegions(target)
+    segment_layout = mem_regions.fit_segments_into_regions(segments)
+    section_layout = mem_regions.fit_sections_into_regions(LinkingSections.filter_sections(sections))
+    current = StructureForSummary.get(segment_layout, section_layout)
 
-    current = StructureForSummary.get(mem_reg, memory_config, sections)
-    reference = StructureForSummary.get(mem_reg_diff,
-                                        memory_config_diff,
-                                        sections_diff) if diff_en else StructureForSummary()
+    if path_diff:
+        diff_en = True
+        mem_regions_diff = MemRegions(target_diff)
+        segment_layout_diff = mem_regions_diff.fit_segments_into_regions(segments_diff)
+        section_layout_diff = mem_regions_diff.fit_sections_into_regions(LinkingSections.filter_sections(sections_diff))
+        reference = StructureForSummary.get(segment_layout_diff, section_layout_diff)
+    else:
+        diff_en = False
+        reference = StructureForSummary()
 
     if as_json:
         current_json_dic = current.get_json_dic()
         if diff_en:
             reference_json_dic = reference.get_json_dic()
-            diff_json_dic = collections.OrderedDict([(k,
-                                                      v - reference_json_dic[k]) for k, v in iteritems(current_json_dic)])
+            diff_json_dic = collections.OrderedDict([
+                (k, v - reference_json_dic[k]) for k, v in iteritems(current_json_dic)])
             output = format_json(collections.OrderedDict([('current', current_json_dic),
                                                           ('reference', reference_json_dic),
                                                           ('diff', diff_json_dic),
@@ -546,114 +771,109 @@ def get_summary(path, mem_reg, memory_config, sections,
         else:
             output = format_json(current_json_dic)
     else:
-        rows = []
+        class LineDef(object):
+            title = ''
+            name = ''
+
+            def __init__(self, title, name):  # type: (LineDef, str, str) -> None
+                self.title = title
+                self.name = name
+
+            def format_line(self):  # type: (LineDef) -> Tuple[str, str, str, str]
+                return (self.title + ': {%s:>7} bytes' % self.name,
+                        '{%s:>7}' % self.name,
+                        '{%s:+}' % self.name,
+                        '')
+
+        class HeadLineDef(LineDef):
+            remain = ''
+            ratio = ''
+            total = ''
+
+            def __init__(self, title, name, remain, ratio, total):  # type: (HeadLineDef, str, str, str, str, str) -> None
+                super(HeadLineDef, self).__init__(title, name)
+                self.remain = remain
+                self.ratio = ratio
+                self.total = total
+
+            def format_line(self):  # type: (HeadLineDef) -> Tuple[str, str, str, str]
+                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)' % (self.title, self.name, self.remain, self.ratio),
+                        '{%s:>7}' % self.name,
+                        '{%s:+}' % self.name,
+                        '({%s:>+7} remain, {%s:>+7} total)' % (self.remain, self.total))
+
+        class TotalLineDef(LineDef):
+
+            def format_line(self):  # type: (TotalLineDef) -> Tuple[str, str, str, str]
+                return (self.title + ': {%s:>7} bytes (.bin may be padded larger)' % self.name,
+                        '{%s:>7}' % self.name,
+                        '{%s:+}' % self.name,
+                        '')
+
+        format_list = [
+            HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total'),
+            LineDef('      .data size', 'used_dram_data'),
+            LineDef('      .bss  size', 'used_dram_bss'),
+            LineDef('   .rodata  size', 'used_dram_rodata'),
+            LineDef(' DRAM other size', 'used_dram_other'),
+
+            HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total'),
+            LineDef('      .text size', 'used_iram_text'),
+            LineDef('   .vectors size', 'used_iram_vectors'),
+
+            HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total'),
+            LineDef('      .data size', 'used_diram_data'),
+            LineDef('      .bss  size', 'used_diram_bss'),
+            LineDef('      .text size', 'used_diram_text'),
+            LineDef('   .vectors size', 'used_diram_vectors'),
+            LineDef('    .rodata size', 'used_diram_rodata'),
+            LineDef('      other     ', 'used_diram_other'),
+
+            LineDef('Used Flash size ', 'used_flash'),
+            LineDef('      .text     ', 'used_flash_text'),
+            LineDef('      .rodata   ', 'used_flash_rodata'),
+
+            TotalLineDef('Total image size', 'total_size')
+        ]
+
+        def convert_to_fmt_dict(summary, suffix=''):  # type: (StructureForSummary, str) -> Dict
+            required_items = StructureForSummary.get_required_items()
+            return dict([(key + suffix, getattr(summary, key)) for key in required_items])
+
+        f_dic1 = convert_to_fmt_dict(current)
         if diff_en:
-            rows += [('<CURRENT> MAP file: {}'.format(path), '', '', '')]
-            rows += [('<REFERENCE> MAP file: {}'.format(path_diff), '', '', '')]
-            rows += [('Difference is counted as <CURRENT> - <REFERENCE>, '
-                      'i.e. a positive number means that <CURRENT> is larger.',
-                      '', '', '')]
-        rows += [('Total sizes{}:'.format(' of <CURRENT>' if diff_en else ''), '<REFERENCE>', 'Difference', '')]
-        rows += [(' DRAM .data size: {f_dram_data:>7} bytes', '{f_dram_data_2:>7}', '{f_dram_data_diff:+}', '')]
-        rows += [(' DRAM .bss  size: {f_dram_bss:>7} bytes', '{f_dram_bss_2:>7}', '{f_dram_bss_diff:+}', '')]
+            f_dic2 = convert_to_fmt_dict(reference)
+            f_dic_diff = convert_to_fmt_dict(current - reference)
 
-        if current.used_dram_other > 0 or reference.used_dram_other > 0:
-            diff_list = ['+{}'.format(x) for x in current.dram_other_names - reference.dram_other_names]
-            diff_list += ['-{}'.format(x) for x in reference.dram_other_names - current.dram_other_names]
-            other_diff_str = '' if len(diff_list) == 0 else '({})'.format(', '.join(sorted(diff_list)))
-            rows += [(' DRAM other size: {f_dram_other:>7} bytes ' + '({})'.format(', '.join(current.dram_other_names)),
-                      '{f_dram_other_2:>7}',
-                      '{f_dram_other_diff:+}',
-                      other_diff_str)]
+        lf = '{:60}{:>15}{:>15} {}'  # Width for a, b, c, d columns
 
-        rows += [('Used static DRAM: {f_used_dram:>7} bytes ({f_dram_avail:>7} available, '
-                  '{f_used_dram_ratio:.1%} used)',
-                  '{f_used_dram_2:>7}',
-                  '{f_used_dram_diff:+}',
-                  '({f_dram_avail_diff:>+7} available, {f_dram_total_diff:>+7} total)')]
-        rows += [('Used static IRAM: {f_used_iram:>7} bytes ({f_iram_avail:>7} available, '
-                  '{f_used_iram_ratio:.1%} used)',
-                  '{f_used_iram_2:>7}',
-                  '{f_used_iram_diff:+}',
-                  '({f_iram_avail_diff:>+7} available, {f_iram_total_diff:>+7} total)')]
+        def print_in_columns(a, b='', c='', d=''):
+            # type: (str, Optional[str], Optional[str], Optional[str]) -> str
+            return lf.format(a, b, c, d).rstrip() + os.linesep
 
-        if current.total_diram > 0 or reference.total_diram > 0:
-            rows += [('Used stat D/IRAM: {f_used_diram:>7} bytes ({f_diram_avail:>7} available, '
-                      '{f_used_diram_ratio:.1%} used)',
-                      '{f_used_diram_2:>7}',
-                      '{f_used_diram_diff:+}',
-                      '({f_diram_avail_diff:>+7} available, {f_diram_total_diff:>+7} total)')]
+        output = ''
+        if diff_en:
+            output += print_in_columns('<CURRENT> MAP file: ' + path)
+            output += print_in_columns('<REFERENCE> MAP file: ' + path_diff)
+            output += print_in_columns('Difference is counted as <CURRENT> - <REFERENCE>, ',
+                                       'i.e. a positive number means that <CURRENT> is larger.')
+            output += print_in_columns('Total sizes of <CURRENT>:', '<REFERENCE>', 'Difference', '')
 
-        rows += [('      Flash code: {f_flash_code:>7} bytes',
-                  '{f_flash_code_2:>7}',
-                  '{f_flash_code_diff:+}',
-                  '')]
-        rows += [('    Flash rodata: {f_flash_rodata:>7} bytes',
-                  '{f_flash_rodata_2:>7}',
-                  '{f_flash_rodata_diff:+}',
-                  '')]
-        rows += [('Total image size:~{f_total_size:>7} bytes (.bin may be padded larger)',
-                  '{f_total_size_2:>7}',
-                  '{f_total_size_diff:+}',
-                  '')]
+            for line in format_list:
+                if getattr(current, line.name) > 0 or getattr(reference, line.name) > 0 or line.name == 'total_size':
+                    a, b, c, d = line.format_line()
+                    output += print_in_columns(
+                        a.format(**f_dic1),
+                        b.format(**f_dic2),
+                        c.format(**f_dic_diff) if not c.format(**f_dic_diff).startswith('+0') else '',
+                        d.format(**f_dic_diff))
+        else:
+            output += print_in_columns('Total sizes:')
 
-        f_dic = {'f_dram_data': current.used_dram_data + current.used_diram_data,
-                 'f_dram_bss': current.used_dram_bss + current.used_diram_bss,
-                 'f_dram_other': current.used_dram_other,
-                 'f_used_dram': current.used_dram,
-                 'f_dram_avail': current.total_dram - current.used_dram,
-                 'f_used_dram_ratio': current.used_dram_ratio,
-                 'f_used_iram': current.used_iram,
-                 'f_iram_avail': current.total_iram - current.used_iram,
-                 'f_used_iram_ratio': current.used_iram_ratio,
-                 'f_used_diram': current.used_diram,
-                 'f_diram_avail': current.total_diram - current.used_diram,
-                 'f_used_diram_ratio': current.used_diram_ratio,
-                 'f_flash_code': current.flash_code,
-                 'f_flash_rodata': current.flash_rodata,
-                 'f_total_size': current.total_size,
-
-                 'f_dram_data_2': reference.used_dram_data + reference.used_diram_data,
-                 'f_dram_bss_2': reference.used_dram_bss + reference.used_diram_bss,
-                 'f_dram_other_2': reference.used_dram_other,
-                 'f_used_dram_2': reference.used_dram,
-                 'f_used_iram_2': reference.used_iram,
-                 'f_used_diram_2': reference.used_diram,
-                 'f_flash_code_2': reference.flash_code,
-                 'f_flash_rodata_2': reference.flash_rodata,
-                 'f_total_size_2': reference.total_size,
-
-                 'f_dram_total_diff': current.total_dram - reference.total_dram,
-                 'f_iram_total_diff': current.total_iram - reference.total_iram,
-                 'f_diram_total_diff': current.total_diram - reference.total_diram,
-
-                 'f_dram_data_diff': current.used_dram_data + current.used_diram_data - (reference.used_dram_data +
-                                                                                         reference.used_diram_data),
-                 'f_dram_bss_diff': current.used_dram_bss + current.used_diram_bss - (reference.used_dram_bss +
-                                                                                      reference.used_diram_bss),
-                 'f_dram_other_diff': current.used_dram_other - reference.used_dram_other,
-                 'f_used_dram_diff': current.used_dram - reference.used_dram,
-                 'f_dram_avail_diff': current.total_dram - current.used_dram - (reference.total_dram -
-                                                                                reference.used_dram),
-                 'f_used_iram_diff': current.used_iram - reference.used_iram,
-                 'f_iram_avail_diff': current.total_iram - current.used_iram - (reference.total_iram -
-                                                                                reference.used_iram),
-                 'f_used_diram_diff': current.used_diram - reference.used_diram,
-                 'f_diram_avail_diff': current.total_diram - current.used_diram - (reference.total_diram -
-                                                                                   reference.used_diram),
-                 'f_flash_code_diff': current.flash_code - reference.flash_code,
-                 'f_flash_rodata_diff': current.flash_rodata - reference.flash_rodata,
-                 'f_total_size_diff': current.total_size - reference.total_size,
-                 }
-
-        lf = '{:70}{:>15}{:>15} {}'
-        output = os.linesep.join([lf.format(a.format(**f_dic),
-                                            b.format(**f_dic) if diff_en else '',
-                                            c.format(**f_dic) if (diff_en and
-                                                                  not c.format(**f_dic).startswith('+0')) else '',
-                                            d.format(**f_dic) if diff_en else ''
-                                            ).rstrip() for a, b, c, d in rows])
-        output += os.linesep  # last line need to be terminated because it won't be printed otherwise
+            for line in format_list:
+                if getattr(current, line.name) > 0 or line.name == 'total_size':
+                    a, b, c, d = line.format_line()
+                    output += print_in_columns(a.format(**f_dic1))
 
     return output
 
@@ -661,13 +881,13 @@ def get_summary(path, mem_reg, memory_config, sections,
 class StructureForDetailedSizes(object):
 
     @staticmethod
-    def sizes_by_key(sections, key):
+    def sizes_by_key(sections, key, include_padding=False):  # type: (SectionDict, str, Optional[bool]) -> Dict[str, Dict[str, int]]
         """ Takes a dict of sections (from load_sections) and returns
         a dict keyed by 'key' with aggregate output size information.
 
         Key can be either "archive" (for per-archive data) or "file" (for per-file data) in the result.
         """
-        result = {}
+        result = {}  # type: Dict[str, Dict[str, int]]
         for _, section in iteritems(sections):
             for s in section['sources']:
                 if not s[key] in result:
@@ -676,44 +896,53 @@ class StructureForDetailedSizes(object):
                 if not section['name'] in archive:
                     archive[section['name']] = 0
                 archive[section['name']] += s['size']
+                if include_padding:
+                    archive[section['name']] += s['fill']
         return result
 
     @staticmethod
-    def get(mem_reg, sections, key):
-        sizes = StructureForDetailedSizes.sizes_by_key(sections, key)
-
-        # these sets are also computed in get_summary() but they are small ones so it should not matter
-        dram_data_names = frozenset([n for n in mem_reg.used_dram_names if n.endswith('.data')])
-        dram_bss_names = frozenset([n for n in mem_reg.used_dram_names if n.endswith('.bss')])
-        dram_other_names = mem_reg.used_dram_names - dram_data_names - dram_bss_names
-
-        diram_data_names = frozenset([n for n in mem_reg.used_diram_names if n.endswith('.data')])
-        diram_bss_names = frozenset([n for n in mem_reg.used_diram_names if n.endswith('.bss')])
+    def get(sections, by_key):  # type: (SectionDict, str) -> collections.OrderedDict
+        # Get the detailed structure before using the filter to remove undesired sections,
+        # to show entries without desired sections
+        sizes = StructureForDetailedSizes.sizes_by_key(sections, by_key)
+        for key_name in sizes:
+            sizes[key_name] = LinkingSections.filter_sections(sizes[key_name])
 
         s = []
-        for k, v in iteritems(sizes):
-            r = [('data', sum(v.get(n, 0) for n in dram_data_names | diram_data_names)),
-                 ('bss', sum(v.get(n, 0) for n in dram_bss_names | diram_bss_names)),
-                 ('other', sum(v.get(n, 0) for n in dram_other_names)),
-                 ('iram', sum(t for (s,t) in iteritems(v) if s in mem_reg.used_iram_names)),
-                 ('diram', sum(t for (s,t) in iteritems(v) if s in mem_reg.used_diram_names)),
-                 ('flash_text', v.get('.flash.text', 0)),
-                 ('flash_rodata', v.get('.flash.rodata', 0))]
-            r.append(('total', sum([value for _, value in r])))
-            s.append((k, collections.OrderedDict(r)))
+        for key, section_dict in sizes.items():
+            ram_st_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], 'flash')])
+            flash_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], 'bss')])  # type: int
+
+            section_dict['ram_st_total'] = ram_st_total
+            section_dict['flash_total'] = flash_total
+
+            # TODO: keep the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+            s.append((key, collections.OrderedDict(section_dict)))
 
         s = sorted(s, key=lambda elem: elem[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
-        s = sorted(s, key=lambda elem: elem[1]['total'], reverse=True)
+        s = sorted(s, key=lambda elem: elem[1]['flash_total'], reverse=True)
 
         return collections.OrderedDict(s)
 
 
-def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_diff=None):
+def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None):  # type: (Dict, str, str, bool, Dict) -> str
 
-    diff_en = sections_diff is not None
-    current = StructureForDetailedSizes.get(mem_reg, sections, key)
-    reference = StructureForDetailedSizes.get(mem_reg, sections_diff, key) if diff_en else {}
+    key_name_set = set()
+    current = StructureForDetailedSizes.get(sections, key)
+    for section_dict in current.values():
+        key_name_set.update(section_dict.keys())
+
+    if sections_diff:
+        reference = StructureForDetailedSizes.get(sections_diff, key)
+        for section_dict in reference.values():
+            key_name_set.update(section_dict.keys())
+        diff_en = True
+    else:
+        diff_en = False
+
+    key_name_list = list(key_name_set)
+    ordered_key_list, display_name_list = LinkingSections.get_display_name_order(key_name_list)
 
     if as_json:
         if diff_en:
@@ -732,17 +961,15 @@ def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_d
         else:
             output = format_json(current)
     else:
-        def _get_output(data, selection):
-            header_format = '{:>24} {:>10} {:>6} {:>7} {:>6} {:>8} {:>10} {:>8} {:>7}' + os.linesep
-            output = header_format.format(header,
-                                          'DRAM .data',
-                                          '& .bss',
-                                          '& other',
-                                          'IRAM',
-                                          'D/IRAM',
-                                          'Flash code',
-                                          '& rodata',
-                                          'Total')
+        def _get_header_format(disp_list=display_name_list):  # type: (List) -> str
+            len_list = [len(x) for x in disp_list]
+            len_list.insert(0, 24)
+            return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
+
+        def _get_output(data, selection, key_list=ordered_key_list, disp_list=display_name_list):
+            # type: (Dict[str, Dict[str, int]], Collection, List, List) -> str
+            header_format = _get_header_format(disp_list)
+            output = header_format.format(header, *disp_list)
 
             for k, v in iteritems(data):
                 if k not in selection:
@@ -755,35 +982,35 @@ def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_d
                     # k remains the same
                     pass
 
-                output += header_format.format(k[:24],
-                                               v['data'],
-                                               v['bss'],
-                                               v['other'],
-                                               v['iram'],
-                                               v['diram'],
-                                               v['flash_text'],
-                                               v['flash_rodata'],
-                                               v['total'],
-                                               )
+                def get_section_size(section_dict):  # type: (Dict) -> Callable[[str], int]
+                    return lambda x: section_dict.get(x, 0)
+
+                section_size_list = map(get_section_size(section_dict=v), key_list)
+                output += header_format.format(k[:24], *(section_size_list))
             return output
 
-        def _get_output_diff(curr, ref):
-            header_format = '{:>24}' + ' {:>23}' * 8
-            output = header_format.format(header,
-                                          'DRAM .data',
-                                          'DRAM .bss',
-                                          'DRAM other',
-                                          'IRAM',
-                                          'D/IRAM',
-                                          'Flash code',
-                                          'Flash rodata',
-                                          'Total') + os.linesep
-            f_print = ('-' * 23, '') * 4
-            header_line = header_format.format('', *f_print).rstrip() + os.linesep
+        def _get_header_format_diff(disp_list=display_name_list, columns=False):  # type: (List, bool) -> str
+            if columns:
+                len_list = (24, ) + (7, ) * 3 * len(disp_list)
+                return '|'.join(['{:>%d}' % x for x in len_list]) + os.linesep
 
-            header_format = '{:>24}' + '|{:>7}|{:>7}|{:>7}' * 8
-            f_print = ('<C>', '<R>', '<C>-<R>') * 8
-            output += header_format.format('', *f_print) + os.linesep
+            len_list = (24, ) + (23, ) * len(disp_list)
+            return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
+
+        def _get_output_diff(curr, ref, key_list=ordered_key_list, disp_list=display_name_list):
+            # type: (Dict, Dict, List, List) -> str
+            # First header without Current/Ref/Diff columns
+            header_format = _get_header_format_diff(columns=False)
+            output = header_format.format(header, *disp_list)
+
+            f_print = ('-' * 23, '') * len(key_list)
+            f_print = f_print[0:len(key_list)]
+            header_line = header_format.format('', *f_print)
+
+            header_format = _get_header_format_diff(columns=True)
+            f_print = ('<C>', '<R>', '<C>-<R>') * len(key_list)
+
+            output += header_format.format('', *f_print)
             output += header_line
 
             for k, v in iteritems(curr):
@@ -799,32 +1026,20 @@ def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_d
                     # k remains the same
                     pass
 
-                def _get_items(name):
-                    a = v[name]
-                    b = v2[name]
+                def _get_items(name, section_dict=v, section_dict_ref=v2):
+                    # type: (str, Dict, Dict) -> Tuple[str, str, str]
+                    a = section_dict.get(name, 0)
+                    b = section_dict_ref.get(name, 0)
                     diff = a - b
                     # the sign is added here and not in header_format in order to be able to print empty strings
                     return (a or '', b or '', '' if diff == 0 else '{:+}'.format(diff))
 
-                v_data, v2_data, diff_data = _get_items('data')
-                v_bss, v2_bss, diff_bss = _get_items('bss')
-                v_other, v2_other, diff_other = _get_items('other')
-                v_iram, v2_iram, diff_iram = _get_items('iram')
-                v_diram, v2_diram, diff_diram = _get_items('diram')
-                v_flash_text, v2_flash_text, diff_flash_text = _get_items('flash_text')
-                v_flash_rodata, v2_flash_rodata, diff_flash_rodata = _get_items('flash_rodata')
-                v_total, v2_total, diff_total = _get_items('total')
+                x = []  # type: List[str]
+                for section in key_list:
+                    x.extend(_get_items(section))
 
-                output += header_format.format(k[:24],
-                                               v_data, v2_data, diff_data,
-                                               v_bss, v2_bss, diff_bss,
-                                               v_other, v2_other, diff_other,
-                                               v_iram, v2_iram, diff_iram,
-                                               v_diram, v2_diram, diff_diram,
-                                               v_flash_text, v2_flash_text, diff_flash_text,
-                                               v_flash_rodata, v2_flash_rodata, diff_flash_rodata,
-                                               v_total, v2_total, diff_total,
-                                               ).rstrip() + os.linesep
+                output += header_format.format(k[:24], *(x))
+
             return output
 
         output = 'Per-{} contributions to ELF file:{}'.format(key, os.linesep)
@@ -852,10 +1067,10 @@ def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_d
 
 class StructureForArchiveSymbols(object):
     @staticmethod
-    def get(mem_reg, archive, sections):
-        interested_sections = mem_reg.used_dram_names | mem_reg.used_iram_names | mem_reg.used_diram_names
-        interested_sections |= frozenset(['.flash.text', '.flash.rodata'])
-        result = dict([(t, {}) for t in interested_sections])
+    def get(archive, sections):  # type: (str, Dict) -> Dict
+        interested_sections = LinkingSections.filter_sections(sections)
+
+        result = dict([(t, {}) for t in interested_sections])  # type: Dict[str, Dict[str, int]]
         for _, section in iteritems(sections):
             section_name = section['name']
             if section_name not in interested_sections:
@@ -869,18 +1084,18 @@ class StructureForArchiveSymbols(object):
         # build a new ordered dict of each section, where each entry is an ordereddict of symbols to sizes
         section_symbols = collections.OrderedDict()
         for t in sorted(list(interested_sections)):
-            s = sorted(list(result[t].items()), key=lambda k_v: k_v[0])
+            s = sorted(result[t].items(), key=lambda k_v: str(k_v[0]))
             # do a secondary sort in order to have consistent order (for diff-ing the output)
-            s = sorted(s, key=lambda k_v: k_v[1], reverse=True)
+            s = sorted(s, key=lambda k_v: int(k_v[1]), reverse=True)
             section_symbols[t] = collections.OrderedDict(s)
 
         return section_symbols
 
 
-def get_archive_symbols(mem_reg, sections, archive, as_json=False, sections_diff=None):
+def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  # type: (Dict, str, bool, Dict) -> str
     diff_en = sections_diff is not None
-    current = StructureForArchiveSymbols.get(mem_reg, archive, sections)
-    reference = StructureForArchiveSymbols.get(mem_reg, archive, sections_diff) if diff_en else {}
+    current = StructureForArchiveSymbols.get(archive, sections)
+    reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
 
     if as_json:
         if diff_en:
@@ -899,10 +1114,10 @@ def get_archive_symbols(mem_reg, sections, archive, as_json=False, sections_diff
         else:
             output = format_json(current)
     else:
-        def _get_item_pairs(name, section):
+        def _get_item_pairs(name, section):  # type: (str, collections.OrderedDict) -> collections.OrderedDict
             return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])
 
-        def _get_output(section_symbols):
+        def _get_output(section_symbols):  # type: (Dict) -> str
             output = ''
             for t, s in iteritems(section_symbols):
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
@@ -918,6 +1133,7 @@ def get_archive_symbols(mem_reg, sections, archive, as_json=False, sections_diff
         if diff_en:
 
             def _generate_line_tuple(curr, ref, name):
+                # type: (collections.OrderedDict, collections.OrderedDict, str) -> Tuple[str, int, int, str]
                 cur_val = curr.get(name, 0)
                 ref_val = ref.get(name, 0)
                 diff_val = cur_val - ref_val
