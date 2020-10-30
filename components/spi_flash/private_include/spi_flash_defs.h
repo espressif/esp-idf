@@ -27,25 +27,34 @@
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
 
-#define CMD_FASTRD_QIO  0xEB
-#define CMD_FASTRD_QUAD 0x6B
-#define CMD_FASTRD_DIO  0xBB
-#define CMD_FASTRD_DUAL 0x3B
-#define CMD_FASTRD      0x0B
-#define CMD_READ        0x03 /* Speed limited */
+#define CMD_FASTRD_QIO      0xEB
+#define CMD_FASTRD_QIO_4B   0xEC
+#define CMD_FASTRD_QUAD     0x6B
+#define CMD_FASTRD_QUAD_4B  0x6C
+#define CMD_FASTRD_DIO      0xBB
+#define CMD_FASTRD_DIO_4B   0xBC
+#define CMD_FASTRD_DUAL     0x3B
+#define CMD_FASTRD_DUAL_4B  0x3C
+#define CMD_FASTRD          0x0B
+#define CMD_FASTRD_4B       0x0C
+#define CMD_READ            0x03 /* Speed limited */
+#define CMD_READ_4B         0x13 /* Speed limited */
 
-#define CMD_CHIP_ERASE 0xC7
-#define CMD_SECTOR_ERASE 0x20
-#define CMD_LARGE_BLOCK_ERASE 0xD8 /* 64KB block erase command */
-#define CMD_PROGRAM_PAGE 0x02
+#define CMD_CHIP_ERASE          0xC7
+#define CMD_SECTOR_ERASE        0x20
+#define CMD_SECTOR_ERASE_4B     0x21
+#define CMD_LARGE_BLOCK_ERASE   0xD8 /* 64KB block erase command */
+#define CMD_LARGE_BLOCK_ERASE_4B 0xDC /* 64KB block erase command */
+#define CMD_PROGRAM_PAGE        0x02
+#define CMD_PROGRAM_PAGE_4B     0x12
 
 #define CMD_RST_EN      0x66
 #define CMD_RST_DEV     0x99
 
-#define SPI_FLASH_DIO_ADDR_BITLEN       (24+4)
-#define SPI_FLASH_DIO_DUMMY_BITLEN      2
-#define SPI_FLASH_QIO_ADDR_BITLEN       (24+8)
-#define SPI_FLASH_QIO_DUMMY_BITLEN      4
+#define SPI_FLASH_DIO_ADDR_BITLEN       24
+#define SPI_FLASH_DIO_DUMMY_BITLEN      4
+#define SPI_FLASH_QIO_ADDR_BITLEN       24
+#define SPI_FLASH_QIO_DUMMY_BITLEN      6
 #define SPI_FLASH_QOUT_ADDR_BITLEN      24
 #define SPI_FLASH_QOUT_DUMMY_BITLEN     8
 #define SPI_FLASH_DOUT_ADDR_BITLEN      24

@@ -59,6 +59,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
 #endif
 
+//TODO: modify cs hold to meet requirements of all chips!!!
 #if CONFIG_IDF_TARGET_ESP32
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\

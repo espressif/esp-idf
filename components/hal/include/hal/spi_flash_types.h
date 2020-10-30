@@ -15,6 +15,7 @@
 #pragma once
 
 #include <esp_types.h>
+#include <esp_bit_defs.h>
 #include "esp_flash_err.h"
 
 #ifdef __cplusplus
@@ -23,13 +24,19 @@ extern "C" {
 
 /** Definition of a common transaction. Also holds the return value. */
 typedef struct {
-    uint8_t command;            ///< Command to send, always 8bits
+    uint8_t reserved;           ///< Reserved, must be 0.
     uint8_t mosi_len;           ///< Output data length, in bytes
     uint8_t miso_len;           ///< Input data length, in bytes
     uint8_t address_bitlen;     ///< Length of address in bits, set to 0 if command does not need an address
     uint32_t address;           ///< Address to perform operation on
     const uint8_t *mosi_data;   ///< Output data to salve
     uint8_t *miso_data;         ///< [out] Input data from slave, little endian
+    uint32_t flags;             ///< Flags for this transaction. Set to 0 for now.
+#define SPI_FLASH_TRANS_FLAG_CMD16          BIT(0)  ///< Send command of 16 bits
+#define SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO  BIT(1)  ///< Not applying the basic io mode configuration for this transaction
+#define SPI_FLASH_TRANS_FLAG_BYTE_SWAP      BIT(2)  ///< Used for DTR mode, to swap the bytes of a pair of rising/falling edge
+    uint16_t command;           ///< Command to send
+    uint8_t dummy_bitlen;       ///< Basic dummy bits to use
 } spi_flash_trans_t;
 
 /**
@@ -52,6 +59,9 @@ typedef enum {
 
 ///Lowest speed supported by the driver, currently 5 MHz
 #define ESP_FLASH_SPEED_MIN     ESP_FLASH_5MHZ
+
+// These bits are not quite like "IO mode", but are able to be appended into the io mode and used by the HAL.
+#define SPI_FLASH_CONFIG_CONF_BITS      BIT(31) ///< OR the io_mode with this mask, to enable the dummy output feature or replace the first several dummy bits into address to meet the requirements of conf bits. (Used in DIO/QIO/OIO mode)
 
 /** @brief Mode used for reading from SPI flash */
 typedef enum {

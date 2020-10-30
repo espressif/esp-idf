@@ -27,9 +27,10 @@
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3))
+// VSPI (SPI3) only support 1-bit mode
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)          ((host_id) != 2)
 
 // Peripheral supports output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    (!((void*)spi_dev == (void*)&SPIMEM1))
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT         1
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1

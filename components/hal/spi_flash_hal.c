@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// HAL for SPI Flash (non-IRAM part)
+// The IRAM part is in spi_flash_hal_iram.c, spi_flash_hal_gpspi.c, spi_flash_hal_common.inc.
+
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
 #include "string.h"
@@ -87,6 +90,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .cs_num = cfg->cs_num,
         .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, clock_cfg.freq),
         .clock_conf = clock_cfg.clock_reg_val,
+        .cs_hold = cfg->cs_hold,
     };
 
     ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);

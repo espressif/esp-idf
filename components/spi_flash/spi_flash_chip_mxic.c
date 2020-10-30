@@ -35,6 +35,7 @@ esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t
 // Use the same implementation as ISSI chips
 #define spi_flash_chip_mxic_set_io_mode spi_flash_chip_issi_set_io_mode
 #define spi_flash_chip_mxic_get_io_mode spi_flash_chip_issi_get_io_mode
+#define spi_flash_chip_mxic_read_reg        spi_flash_chip_generic_read_reg
 
 static const char chip_name[] = "mxic";
 
@@ -55,7 +56,6 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .get_chip_write_protect = spi_flash_chip_generic_get_write_protect,
     .set_chip_write_protect = spi_flash_chip_generic_set_write_protect,
 
-    // TODO support protected regions on MXIC flash
     .num_protectable_regions = 0,
     .protectable_regions = NULL,
     .get_protected_regions = NULL,
@@ -70,4 +70,6 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .wait_idle = spi_flash_chip_generic_wait_idle,
     .set_io_mode = spi_flash_chip_mxic_set_io_mode,
     .get_io_mode = spi_flash_chip_mxic_get_io_mode,
+
+    .read_reg = spi_flash_chip_mxic_read_reg,
 };

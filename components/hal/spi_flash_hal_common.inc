@@ -16,6 +16,7 @@
 #include "hal/spi_flash_hal.h"
 #include "string.h"
 #include "hal/hal_defs.h"
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
 #define ADDRESS_MASK_24BIT 0xFFFFFF
@@ -24,6 +25,12 @@
 static inline spi_dev_t *get_spi_dev(spi_flash_host_inst_t *host)
 {
     return ((spi_flash_hal_context_t*)host)->spi;
+}
+
+static inline int get_host_id(spi_flash_host_inst_t* host)
+{
+    spi_dev_t *dev = get_spi_dev(host);
+    return spi_flash_ll_hw_get_id(dev);
 }
 
 void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host)
@@ -35,10 +42,14 @@ void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host)
 
 esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
 {
+    spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
     spi_dev_t *dev = get_spi_dev(host);
+
     spi_flash_ll_reset(dev);
-    spi_flash_ll_set_cs_pin(dev, ((spi_flash_hal_context_t*)host)->cs_num);
-    spi_flash_ll_set_clock(dev, &((spi_flash_hal_context_t*)host)->clock_conf);
+    spi_flash_ll_set_cs_pin(dev, ctx->cs_num);
+    spi_flash_ll_set_clock(dev, &ctx->clock_conf);
+    int cs_hold = ctx->cs_hold;
+    spi_flash_ll_set_hold(dev, cs_hold);
     return ESP_OK;
 }
 
@@ -52,32 +63,39 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     spi_dev_t *dev = get_spi_dev(host);
     int host_id = spi_flash_ll_hw_get_id(dev);
 
+    uint32_t extra_bits = io_mode & 0xFFFF0000;
+    io_mode = io_mode & 0xFFFF;
+
+    /*
+     * Some flash chips, when working under some IO modes (DIO, QIO and OIO in the future), treat
+     * the first 8 bits of the dummy bits as the bits. When the bits meet some pattern, the chip
+     * will go into a "continuous (XIP)" mode, where the command field will be skipped in the next
+     * transaction. We have to output all ones in these cycles because we don't need this feature.
+     */
+    bool conf_required = ((extra_bits & SPI_FLASH_CONFIG_CONF_BITS) != 0);
+
     if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-    if (addr_bitlen > 24 && SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(host_id)) {
-        /*
-         * The extra address bits (24-addr_bitlen) are used to control the M7-M0 bits right after
-         * the address field, to avoid the flash going into continuous read mode.
-         *
-         * On ESP32-S2 the MEMSPI (that SUPPORT_CONTROL_DUMMY_OUTPUT), the least significant
-         * addr_bitlen bits of the address will be used, instead of the MSBs. The driver is
-         * required to set the address according to the extra address bits.
-         *
-         * To reduce the time consuming for the read() function to calculate the shift of address,
-         * the addr_bitlen is kept to 24 bits. And the CONTROL_DUMMY_OUTPUT feature is used to
-         * control those bits instead.
-         */
 
-        //This block is only reached when SPI_FLASH_QIO or SPI_FLASH_DIO
-        assert(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
+#if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT
+    // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
+    spi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
+#else
+    // On ESP32, dummy output is not supported. These dummy bits will be moved into the address
+    // phase (and appended as ones).
+    if (conf_required) {
         int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
-        dummy_cyclelen_base += (addr_bitlen - 24) / line_width;
-        addr_bitlen = 24;
-        spi_flash_ll_set_dummy_out(dev, 1, 1);
+        dummy_cyclelen_base -= 4 / line_width;
+        addr_bitlen += 4;   //extra 4 bits indicate the conf bits is included
     }
+#endif
 
-    spi_flash_ll_set_command8(dev, command);
+    if (command >= 0x100) {
+        spi_flash_ll_set_command(dev, command, 16);
+    } else {
+        spi_flash_ll_set_command(dev, command, 8);
+    }
     spi_flash_ll_set_addr_bitlen(dev, addr_bitlen);
     // Add dummy cycles to compensate for latency of GPIO matrix and external delay, if necessary...
     spi_flash_ll_set_dummy(dev, COMPUTE_DUMMY_CYCLELEN(host, dummy_cyclelen_base));
@@ -90,16 +108,23 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
 
 esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
 {
-    host->driver->configure_host_io_mode(host, trans->command, trans->address_bitlen, 0, SPI_FLASH_FASTRD);
-
     spi_dev_t *dev = get_spi_dev(host);
+    esp_flash_io_mode_t io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
+    uint16_t command = trans->command;
+    uint8_t dummy_bitlen = trans->dummy_bitlen;
 
-    //disable dummy if no input phase
-    if (trans->miso_len == 0) {
-        spi_flash_ll_set_dummy(dev, 0);
+    if ((trans->flags & SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO) != 0) {
+        io_mode = 0;
     }
 
-    spi_flash_ll_set_usr_address(dev, (trans->address & ADDRESS_MASK_24BIT), spi_flash_ll_get_addr_bitlen(dev));
+    host->driver->configure_host_io_mode(host, command, trans->address_bitlen, dummy_bitlen, io_mode);
+
+    spi_flash_ll_set_usr_address(dev, trans->address, trans->address_bitlen);
+    //No extra dummy cycles for compensation if no input data
+    if (trans->miso_len == 0) {
+        spi_flash_ll_set_dummy(dev, dummy_bitlen);
+    }
+
     spi_flash_ll_set_mosi_bitlen(dev, trans->mosi_len * 8);
     spi_flash_ll_set_buffer_data(dev, trans->mosi_data, trans->mosi_len);
 
@@ -114,7 +139,9 @@ esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t
 {
     spi_dev_t *dev = get_spi_dev(host);
     int bitlen = spi_flash_ll_get_addr_bitlen(dev);
-    spi_flash_ll_set_usr_address(dev, address << (bitlen - 24), bitlen);
+    //Only 24-bit and 32-bit address are supported. The extra length are for M7-M0, which should be
+    //filled with ones by the function below
+    spi_flash_ll_set_usr_address(dev, address, bitlen & (~7));
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
     host->driver->poll_cmd_done(host);

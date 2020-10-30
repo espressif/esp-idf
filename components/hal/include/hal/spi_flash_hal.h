@@ -40,10 +40,17 @@ typedef struct {
     spi_flash_host_inst_t inst; ///< Host instance, containing host data and function pointer table. May update with the host (hardware version).
     spi_dev_t *spi;             ///< Pointer to SPI peripheral registers (SP1, SPI2 or SPI3). Set before initialisation.
     int cs_num;                 ///< Which cs pin is used, 0-2.
-    int extra_dummy;            ///< Pre-calculated extra dummy used for compensation
+    struct {
+        uint8_t extra_dummy;            ///< Pre-calculated extra dummy used for compensation
+        uint8_t reserved1;              ///< Reserved, set to 0.
+        uint8_t cs_hold;                ///< CS hold time config used by the host
+        uint8_t reserved2;              ///< Reserved, set to 0.
+    };
     spi_flash_ll_clock_reg_t clock_conf;    ///< Pre-calculated clock configuration value
-    uint32_t reserved_config[2];            ///< The ROM has reserved some memory for configurations with one set of driver code. (e.g. QPI mode, 64-bit address mode, etc.)
+    esp_flash_io_mode_t base_io_mode;       ///< Default IO mode mask for common commands
+    uint32_t reserved_config[1];            ///< The ROM has reserved some memory for configurations with one set of driver code. (e.g. QPI mode, 64-bit address mode, etc.)
 } spi_flash_hal_context_t;
+_Static_assert(sizeof(spi_flash_hal_context_t) == 28, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
 /// Configuration structure for the SPI driver.
 typedef struct {
@@ -52,6 +59,7 @@ typedef struct {
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock， used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.
+    uint32_t cs_hold;       ///< CS hold time config used by the host
 } spi_flash_hal_config_t;
 
 /**
@@ -98,7 +106,7 @@ void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host);
 
 /**
  * Erase a specific sector by its start address through the sector erase (20h)
- * command.
+ * command. For 24bit address only.
  *
  * @param host The driver context.
  * @param start_address Start address of the sector to erase.
@@ -107,7 +115,7 @@ void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_addr
 
 /**
  * Erase a specific 64KB block by its start address through the 64KB block
- * erase (D8h) command.
+ * erase (D8h) command. For 24bit address only.
  *
  * @param host The driver context.
  * @param start_address Start address of the block to erase.
@@ -115,7 +123,7 @@ void spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_addr
 void spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
- * Program a page of the flash using the page program (02h) command.
+ * Program a page of the flash using the page program (02h) command. For 24bit address only.
  *
  * @param host The driver context.
  * @param address Address of the page to program

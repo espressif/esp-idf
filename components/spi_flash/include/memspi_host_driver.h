@@ -107,7 +107,7 @@ esp_err_t memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, ui
 void memspi_host_erase_chip(spi_flash_host_inst_t *host);
 
 /**
- *  Erase a sector starting from a given address.
+ *  Erase a sector starting from a given address. For 24bit address only.
  *
  * @param host The driver context.
  * @param start_address Starting address of the sector.
@@ -115,7 +115,7 @@ void memspi_host_erase_chip(spi_flash_host_inst_t *host);
 void memspi_host_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
- *  Erase a block starting from a given address.
+ *  Erase a block starting from a given address. For 24bit address only.
  *
  * @param host The driver context.
  * @param start_address Starting address of the block.
@@ -123,7 +123,7 @@ void memspi_host_erase_sector(spi_flash_host_inst_t *host, uint32_t start_addres
 void memspi_host_erase_block(spi_flash_host_inst_t *host, uint32_t start_address);
 
 /**
- * Program a page with contents of a buffer.
+ * Program a page with contents of a buffer. For 24bit address only.
  *
  * @param host The driver context.
  * @param buffer Buffer which contains the data to be flashed.

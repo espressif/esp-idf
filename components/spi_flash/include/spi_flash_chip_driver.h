@@ -29,6 +29,10 @@ typedef struct {
     uint32_t page_program_timeout;  ///< Timeout for page program operation
 } flash_chip_op_timeout_t;
 
+typedef enum {
+    SPI_FLASH_REG_STATUS = 1,
+} spi_flash_register_t;
+
 /** @brief SPI flash chip driver definition structure.
  *
  * The chip driver structure contains chip-specific pointers to functions to perform SPI flash operations, and some
@@ -167,6 +171,17 @@ struct spi_flash_chip_t {
      * enabled, otherwise disabled
      */
     esp_err_t (*get_io_mode)(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode);
+
+    /*
+     * Read the chip ID. Called when chip driver is set, but we want to know the exact chip id (to
+     * get the size, etc.).
+     */
+    esp_err_t (*read_id)(esp_flash_t *chip, uint32_t* out_chip_id);
+
+    /*
+     * Read the requested register (status, etc.).
+     */
+    esp_err_t (*read_reg)(esp_flash_t *chip, spi_flash_register_t reg_id, uint32_t* out_reg);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used
