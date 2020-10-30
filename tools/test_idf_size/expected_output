@@ -17750,10 +17750,4 @@ Producing text file output...
 ***
 Running idf_size_tests.py...
 Total sizes:
- DRAM .data size:       0 bytes
- DRAM .bss  size:       0 bytes
-Used static DRAM:       0 bytes (      0 available, nan% used)
-Used static IRAM:       0 bytes (      0 available, nan% used)
-      Flash code:       0 bytes
-    Flash rodata:       0 bytes
-Total image size:~      0 bytes (.bin may be padded larger)
+Total image size:       0 bytes (.bin may be padded larger)
