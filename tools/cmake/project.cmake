@@ -430,9 +430,9 @@ macro(project project_name)
 
     set(project_elf ${CMAKE_PROJECT_NAME}.elf)
 
-    # Create a dummy file to work around CMake requirement of having a source
-    # file while adding an executable
-    set(project_elf_src ${CMAKE_BINARY_DIR}/project_elf_src.c)
+    # Create a dummy file to work around CMake requirement of having a source file while adding an
+    # executable. This is also used by idf_size.py to detect the target
+    set(project_elf_src ${CMAKE_BINARY_DIR}/project_elf_src_${IDF_TARGET}.c)
     add_custom_command(OUTPUT ${project_elf_src}
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
         VERBATIM)
@@ -470,7 +470,7 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(idf_size ${python} ${idf_path}/tools/idf_size.py --target ${IDF_TARGET})
+    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
     if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
         list(APPEND idf_size "--json")
     endif()

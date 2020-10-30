@@ -128,6 +128,17 @@ class MemRegions(object):
             return sorted([
                 MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DIRAM_ID, 0x40378000),
             ])
+        elif target == 'esp32c3':
+            return sorted([
+                MemRegDef(0x3FC80000, 0x60000, MemRegions.DIRAM_ID, 0x40380000),
+
+                # MemRegDef(0x3FC80000, 0x20000, MemRegions.DIRAM_ID, 0x40380000),
+                # MemRegDef(0x3FCA0000, 0x20000, MemRegions.DIRAM_ID, 0x403A0000),
+                # MemRegDef(0x3FCC0000, 0x20000, MemRegions.DIRAM_ID, 0x403C0000),
+
+                # Used by cache
+                MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
+            ])
         else:
             return None
 
@@ -212,22 +223,30 @@ def load_memory_config(map_file):
 
 
 def detect_target_chip(map_file):
-    ''' Detect target chip based on the xtensa toolchain name in in the linker script part of the MAP file '''
+    ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
     scan_to_header(map_file, 'Linker script and memory map')
 
-    RE_TARGET = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
+    RE_TARGET = re.compile(r'project_elf_src_(.*)\.c.obj')
+    # For back-compatible with make
+    RE_TARGET_MAKE = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
 
     for line in map_file:
         m = RE_TARGET.search(line)
         if m:
             return m.group(1)
+
+        m = RE_TARGET_MAKE.search(line)
+        if m:
+            return m.group(1)
+
         line = line.strip()
         # There could be empty line(s) between the "Linker script and memory map" header and "LOAD lines". Therefore,
         # line stripping and length is checked as well. The "LOAD lines" are between START GROUP and END GROUP for
         # older MAP files.
-        if not line.startswith(('LOAD', 'START GROUP')) and len(line) > 0:
+        if not line.startswith(('LOAD', 'START GROUP', 'END GROUP')) and len(line) > 0:
             # This break is a failsafe to not process anything load_sections() might want to analyze.
             break
+
     return None
 
 
