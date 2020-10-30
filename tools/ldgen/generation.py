@@ -609,8 +609,8 @@ class SectionsInfo(dict):
 
         archive_path = (Literal("In archive").suppress() +
                         White().suppress() +
-                        # trim the last character (:) from archive_path
-                        restOfLine.setResultsName("archive_path").setParseAction(lambda t: t[0][:-1]))
+                        # trim the colon and line ending characters from archive_path
+                        restOfLine.setResultsName("archive_path").setParseAction(lambda s, loc, toks: s.rstrip(":\n\r ")))
         parser = archive_path
 
         results = None
