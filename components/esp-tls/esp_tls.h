@@ -135,6 +135,8 @@ typedef struct esp_tls {
     fd_set rset;                                                                /*!< read file descriptors */
 
     fd_set wset;                                                                /*!< write file descriptors */
+
+    bool is_tls;                                                                /*!< indicates connection type (TLS or NON-TLS) */
 } esp_tls_t;
 
 /**
