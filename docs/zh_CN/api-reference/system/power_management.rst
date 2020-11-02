@@ -89,7 +89,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 - **UART**：如果 REF_TICK 用作时钟源，则 UART 不受 APB 频率变更影响。请查看 :cpp:class:`uart_config_t` 中的 `use_ref_tick`。
 - **LEDC**：如果 REF_TICK 用作时钟源，则 LEDC 不受 APB 频率变更影响。请查看 :cpp:func:`ledc_timer_config` 函数。
-- **RMT**：如果 REF_TICK 用作时钟源，则 RMT 不受 APB 频率变更影响。请查看 :cpp:class:`rmt_config_t` 结构体中的 `flags` 成员以及 `RMT_CHANNEL_FLAGS_ALWAYS_ON` 宏。
+- **RMT**：如果 REF_TICK 或者 XTAL 被用作时钟源，则 RMT 不受 APB 频率变更影响。请查看 :cpp:class:`rmt_config_t` 结构体中的 `flags` 成员以及 `RMT_CHANNEL_FLAGS_AWARE_DFS` 宏。
 
 目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 

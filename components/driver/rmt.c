@@ -577,7 +577,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     RMT_ENTER_CRITICAL();
     rmt_ll_enable_mem_access(dev, true);
 
-    if (rmt_param->flags & RMT_CHANNEL_FLAGS_ALWAYS_ON) {
+    if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
         rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;

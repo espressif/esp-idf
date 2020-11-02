@@ -32,7 +32,7 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     if (tx_channel >= 0) {
         rmt_config_t tx_config = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, tx_channel);
         if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
-            tx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+            tx_config.flags |= RMT_CHANNEL_FLAGS_AWARE_DFS;
         }
         if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
             tx_config.tx_config.carrier_en = true;
@@ -49,7 +49,7 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     if (rx_channel >= 0) {
         rmt_config_t rx_config = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, rx_channel);
         if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
-            rx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+            rx_config.flags |= RMT_CHANNEL_FLAGS_AWARE_DFS;
         }
 #if SOC_RMT_SUPPORT_RX_DEMODULATION
         if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {

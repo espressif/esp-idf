@@ -28,7 +28,11 @@ extern "C" {
 #include "soc/rmt_struct.h"
 #include "hal/rmt_types.h"
 
-#define RMT_CHANNEL_FLAGS_ALWAYS_ON (1 << 0)    /*!< Channel can work during APB clock scaling */
+#define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
+
+/** @cond */
+#define RMT_CHANNEL_FLAGS_ALWAYS_ON RMT_CHANNEL_FLAGS_AWARE_DFS  /*!< Deprecated name, defined here for compatibility */
+/** @endcond */
 
 /**
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
