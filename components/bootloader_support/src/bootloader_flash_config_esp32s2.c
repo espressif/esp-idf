@@ -69,6 +69,7 @@ void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
             break;
     }
     esp_rom_spiflash_config_clk(spi_clk_div, 0);
+    esp_rom_spiflash_config_clk(spi_clk_div, 1);
 }
 
 void IRAM_ATTR bootloader_flash_set_dummy_out(void)
