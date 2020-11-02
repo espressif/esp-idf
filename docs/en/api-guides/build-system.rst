@@ -89,6 +89,12 @@ Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p 
 
 For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
 
+The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/bashcomplete/>`_ for bash, zsh and fish shells.
+In order to make `shell autocompletion <https://click.palletsprojects.com/bashcomplete/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
+To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`).
+Autocompletion is initiated by pressing the TAB key. 
+Type "idf.py -" and press the TAB key to autocomplete options. The autocomplete support for PowerShell is planned in the future.
+
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
 .. _idf.py-size:
@@ -123,7 +129,6 @@ Start a new project
 -------------------
 
 Use the command ``idf.py create-project`` for starting a new project. Execute ``idf.py create-project --help`` for more information.
-
 
 Example:
 
@@ -320,7 +325,7 @@ Renaming ``main`` component
 The build system provides special treatment to the ``main`` component. It is a component that gets automatically added to the build provided
 that it is in the expected location, PROJECT_DIR/main. All other components in the build are also added as its dependencies,
 saving the user from hunting down dependencies and providing a build that works right out of the box. Renaming the ``main`` component
-causes the loss of these behind-the-scences heavy lifting, requiring the user to specify the location of the newly renamed component
+causes the loss of these behind-the-scenes heavy lifting, requiring the user to specify the location of the newly renamed component
 and manually specifying its dependencies. Specifically, the steps to renaming ``main`` are as follows:
 
 1. Rename ``main`` directory.
@@ -1054,7 +1059,7 @@ To select the target before building the project, use ``idf.py set-target <targe
     2. removing the sdkconfig file (``mv sdkconfig sdkconfig.old``)
     3. configuring the project with the new target (``idf.py -DIDF_TARGET=esp32 reconfigure``)
 
-It is also possible to pass the desired ``IDF_TARGET`` as an environement variable (e.g. ``export IDF_TARGET=esp32s2``) or as a CMake variable (e.g. ``-DIDF_TARGET=esp32s2`` argument to CMake or idf.py). Setting the environment variable is a convenient method if you mostly work with one type of the chip.
+It is also possible to pass the desired ``IDF_TARGET`` as an environment variable (e.g. ``export IDF_TARGET=esp32s2``) or as a CMake variable (e.g. ``-DIDF_TARGET=esp32s2`` argument to CMake or idf.py). Setting the environment variable is a convenient method if you mostly work with one type of the chip.
 
 To specify the _default_ value of ``IDF_TARGET`` for a given project, add ``CONFIG_IDF_TARGET`` value to ``sdkconfig.defaults``. For example, ``CONFIG_IDF_TARGET="esp32s2"``. This value will be used if ``IDF_TARGET`` is not specified by other method: using an environment variable, CMake variable, or ``idf.py set-target`` command.
 
@@ -1173,7 +1178,7 @@ It is possible to do so by using the :ref:`build system APIs provided<cmake_buil
   include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
 
   # Include ESP-IDF components in the build, may be thought as an equivalent of 
-  # add_subdirectory() but with some additional procesing and magic for ESP-IDF build
+  # add_subdirectory() but with some additional processing and magic for ESP-IDF build
   # specific build processes.
   idf_build_process(esp32)
   
