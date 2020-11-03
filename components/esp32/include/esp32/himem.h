@@ -44,7 +44,7 @@ esp_err_t esp_himem_alloc(size_t size, esp_himem_handle_t *handle_out);
 
 /**
  * @brief Allocate a memory region to map blocks into
- * 
+ *
  * This allocates a contiguous CPU memory region that can be used to map blocks
  * of physical memory into.
  *
@@ -61,7 +61,7 @@ esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle
  * @brief Map a block of high memory into the CPUs address space
  *
  * This effectively makes the block available for read/write operations.
- * 
+ *
  * @note The region to be mapped needs to have offsets and sizes that are aligned to the
  *       SPI RAM MMU block size (32K)
  *
@@ -119,6 +119,16 @@ esp_err_t esp_himem_free_map_range(esp_himem_rangehandle_t handle);
  */
 esp_err_t esp_himem_unmap(esp_himem_rangehandle_t range, void *ptr, size_t len);
 
+/**
+ * @brief Unmap a region without saving cache content
+ *
+ * @param range Range handle
+ * @param ptr Pointer returned by esp_himem_map
+ * @param len Length of the block to be unmapped. Must be aligned to the SPI RAM MMU blocksize (32K)
+ * @returns - ESP_OK if the memory is succesfully unmapped,
+ *          - ESP_ERR_INVALID_ARG if ptr or len are invalid.
+ */
+esp_err_t esp_himem_unmap_discard(esp_himem_rangehandle_t range, void *ptr, size_t len);
 
 /**
  * @brief Get total amount of memory under control of himem API
