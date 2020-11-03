@@ -12,6 +12,13 @@ Shows how ESP32 acts as a BLE Peripheral.
 
 See the [README.md](./bleprph/README.md) file in the example [bleprph](./bleprph/).
 
+## bleprph_wifi_coex
+
+
+ESP32 acts as a BLE Peripheral and simultaneously performs WiFi ping to configured IP address.
+
+See the [README.md](./bleprph_wifi_coex/README.md) file in the example [bleprph_wifi_coex](./bleprph_wifi_coex/).
+
 ## blecent
 
 Shows how ESP32 acts as a BLE central.

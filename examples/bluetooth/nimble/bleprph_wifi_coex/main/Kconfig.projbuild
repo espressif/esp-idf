@@ -1,0 +1,32 @@
+menu "Example Configuration"
+
+    config EXAMPLE_ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_ESP_MAXIMUM_RETRY
+        int "WIFI Connect Maximum retry"
+        default 5
+        help
+            Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+
+    config EXAMPLE_ESP_PING_IP
+        string "Ping IP Address"
+        default "93.184.216.34"
+        help
+            Set IP address to ping.
+
+    config EXAMPLE_ESP_PING_COUNT
+        int "Count of pings"
+        default 10000
+        help
+            Set number of pings to be sent.
+endmenu
