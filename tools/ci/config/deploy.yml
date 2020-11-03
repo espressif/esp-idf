@@ -45,6 +45,7 @@ push_to_github:
     - .deploy_job_template
     - .before_script_lesser
     - .rules:protected-no_label
+  dependencies: []
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
