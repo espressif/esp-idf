@@ -77,8 +77,11 @@ build_ssc:
     - cd SSC
     - MAKEFLAGS= ./ci_build_ssc.sh
 
+<<<<<<< HEAD
 build_esp_idf_tests_make:
   extends: .build_esp_idf_unit_test_template
+  variables:
+      PYTHON_VER: 3
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
@@ -94,6 +97,8 @@ build_esp_idf_tests_make:
 
 build_esp_idf_tests_cmake:
   extends: .build_esp_idf_unit_test_template
+  variables:
+      PYTHON_VER: 3
   script:
     - export PATH="$IDF_PATH/tools:$PATH"
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
