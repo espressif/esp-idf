@@ -117,7 +117,7 @@
 typedef struct {
     esp_sleep_pd_option_t pd_options[ESP_PD_DOMAIN_MAX];
     uint64_t sleep_duration;
-    uint32_t wakeup_triggers : 11;
+    uint32_t wakeup_triggers : 15;
     uint32_t ext1_trigger_mode : 1;
     uint32_t ext1_rtc_gpio_mask : 18;
     uint32_t ext0_trigger_level : 1;
