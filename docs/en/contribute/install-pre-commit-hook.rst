@@ -1,6 +1,13 @@
 Install pre-commit Hook for ESP-IDF Project
 ===========================================
 
+Required Dependency
+-------------------
+
+Python 3.6.1 or above. This is our recommendation python version for IDF developers.
+
+If you still have versions not compatible, please do not install pre-commit hook and update your python versions.
+
 Install pre-commit
 ------------------
 

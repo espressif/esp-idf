@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v3.3.0
     hooks:
       - id: trailing-whitespace
         exclude: '.+\.(md|rst)'
@@ -14,7 +14,7 @@ repos:
       - id: mixed-line-ending
         args: ['-f=lf']
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.4
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
