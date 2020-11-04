@@ -26,9 +26,9 @@ assign_test:
   artifacts:
     paths:
       - components/idf_test/*/CIConfigs
-      - $EXAMPLE_CONFIG_OUTPUT_PATH
-      - $TEST_APP_CONFIG_OUTPUT_PATH
-      - $COMPONENT_UT_CONFIG_OUTPUT_PATH
+      - $EXAMPLE_TEST_DIR/test_configs
+      - $CUSTOM_TEST_DIR/test_configs
+      - $COMPONENT_UT_OUTPUT_DIR/test_configs
       - build_examples/artifact_index.json
       - build_test_apps/artifact_index.json
       - build_component_ut/artifact_index.json
