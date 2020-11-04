@@ -102,6 +102,7 @@ static UBaseType_t uxCriticalNesting = 0;
 static UBaseType_t uxSavedInterruptState = 0;
 BaseType_t uxSchedulerRunning = 0;
 UBaseType_t uxInterruptNesting = 0;
+BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
 
@@ -243,7 +244,7 @@ void vPortSysTickHandler(void)
     }
 
     if (xTaskIncrementTick() != pdFALSE) {
-        vTaskSwitchContext();
+        vPortYieldFromISR();
     }
 }
 
@@ -251,6 +252,7 @@ BaseType_t xPortStartScheduler(void)
 {
     vPortSetupTimer();
     vPortSetupSoftwareInterrupt();
+    uxInterruptNesting = 0;
     uxCriticalNesting = 0;
     uxSchedulerRunning = 0;          /* this means first yield */
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
@@ -270,7 +272,6 @@ void vPortEndScheduler(void)
 void vPortSoftwareInterrupt(void)
 {
     uxSchedulerRunning = 1;
-    vTaskSwitchContext();
     REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
 }
 
@@ -285,6 +286,7 @@ void vPortYield(void)
     if (uxInterruptNesting) {
         vPortYieldFromISR();
     } else {
+        xPortSwitchFlag = 1;
         REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 1);
 
         /* There are 3-4 instructions of latency between triggering the software
@@ -299,11 +301,12 @@ void vPortYield(void)
         */
         while(uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) { }
     }
+
 }
 
-void vPortYieldFromISR(void)
+void vPortYieldFromISR( void )
 {
-    vTaskSwitchContext();
+    xPortSwitchFlag = 1;
 }
 
 void vPortSetStackWatchpoint(void *pxStackStart)
