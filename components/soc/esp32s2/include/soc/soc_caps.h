@@ -190,7 +190,12 @@
 #define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUP_SUPPORT_XTAL        1
+#define SOC_TIMER_GROUP_SUPPORT_XTAL       (1)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH  (64)
+#define SOC_TIMER_GROUP_PRESCALE_BIT_WIDTH (16)
+#define SOC_TIMER_GROUPS                   (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP   (2)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*! 15 Touch channels */

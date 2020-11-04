@@ -186,7 +186,11 @@
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT             0
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-// No contents here
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH  (64)
+#define SOC_TIMER_GROUP_PRESCALE_BIT_WIDTH (16)
+#define SOC_TIMER_GROUPS                   (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP   (2)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM                (10)
