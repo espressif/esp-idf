@@ -72,6 +72,11 @@ If the output is similar to ``Python 3.8.5``, your installation has been done su
 
     This is system-wide change which may affect all of the applications.
 
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
+
 Next Steps
 ==========
 
