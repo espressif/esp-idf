@@ -302,8 +302,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     i2c_hw_enable(i2c_num);
     //Disable I2C interrupt.
     i2c_hal_disable_intr_mask(&(i2c_context[i2c_num].hal), I2C_INTR_MASK);
+    i2c_hal_clr_intsts_mask(&(i2c_context[i2c_num].hal), I2C_INTR_MASK);
     //hook isr handler
     i2c_isr_register(i2c_num, i2c_isr_handler_default, p_i2c_obj[i2c_num], intr_alloc_flags, &p_i2c_obj[i2c_num]->intr_handle);
+    //Enable I2C slave rx interrupt
+    if (mode == I2C_MODE_SLAVE) {
+        i2c_hal_enable_slave_rx_it(&(i2c_context[i2c_num].hal));
+    }
     return ESP_OK;
 
     err:
@@ -605,7 +610,6 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
         //set timing for data
         i2c_hal_set_sda_timing(&(i2c_context[i2c_num].hal), I2C_SLAVE_SDA_SAMPLE_DEFAULT, I2C_SLAVE_SDA_HOLD_DEFAULT);
         i2c_hal_set_tout(&(i2c_context[i2c_num].hal), I2C_SLAVE_TIMEOUT_DEFAULT);
-        i2c_hal_enable_slave_tx_it(&(i2c_context[i2c_num].hal));
         i2c_hal_enable_slave_rx_it(&(i2c_context[i2c_num].hal));
     } else {
         i2c_hal_master_init(&(i2c_context[i2c_num].hal), i2c_num);
