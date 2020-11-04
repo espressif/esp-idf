@@ -263,6 +263,16 @@ esp_err_t esp_mesh_set_announce_interval(int short_ms, int long_ms);
  */
 esp_err_t esp_mesh_get_announce_interval(int *short_ms, int *long_ms);
 
+/**
+ * @brief      Enable mesh print scan result
+ *
+ * @param[in]  enable  enable or not
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_print_scan_result(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
