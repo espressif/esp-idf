@@ -50,16 +50,6 @@ fast_template_app:
   stage: pre_check
   variables:
     BUILD_COMMAND_ARGS: "-p"
-
-check_docs_gh_links:
-  extends: .build_docs_template
-  stage: pre_check
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  script:
-    - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
 #------------------------------------------------------------------------------
 
 .build_ssc_template:
@@ -284,45 +274,6 @@ build_component_ut_esp32c3:
   extends: .build_component_ut
   variables:
     IDF_TARGET: esp32c3
-
-.build_docs_template:
-  stage: build
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  tags:
-    - build_docs
-  script:
-    - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
-  parallel:
-    matrix:
-      - DOCLANG: [ "en", "zh_CN" ]
-        DOCTGT: [ "esp32", "esp32s2",  "esp32c3"]
-
-build_docs_html:
-  extends:
-    - .build_docs_template
-    - .rules:labels:build_docs
-  artifacts:
-    when: always
-    paths:
-      - docs/_build/*/*/*.txt
-      - docs/_build/*/*/html/*
-    expire_in: 4 days
-  variables:
-    DOC_BUILDERS: "html"
-
-build_docs_pdf:
-  extends:
-    - .build_docs_template
-    - .rules:labels:build_docs-slim
-  artifacts:
-    when: always
-    paths:
-      - docs/_build/*/*/latex/*
-    expire_in: 4 days
-  variables:
-    DOC_BUILDERS: "latex"
 
 .test_build_system_template:
   extends:

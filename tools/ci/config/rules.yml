@@ -1,3 +1,13 @@
+# manually maintained patterns
+.patterns-docs: &patterns-docs
+  # - "tools/ci/config/docs.yml" # FIXME: after debug
+  - "docs/**/*"
+  - "components/**/*.h"
+  - "components/**/Kconfig"
+  - "components/**/CMakeList.txt"
+  - "components/**/sdkconfig*"
+  - "CONTRIBUTING.rst"
+
 # if anchors
 .if-ref-master: &if-ref-master
   if: '$CI_COMMIT_REF_NAME == "master"'
@@ -128,21 +138,18 @@
     - <<: *if-label-regular_test
     - <<: *if-label-build
 
-.rules:labels:build_docs:
+.rules:patterns:docs:
   rules:
-    - <<: *if-protected-no_label
-    - <<: *if-label-build
-    - <<: *if-label-regular_test
+    - <<: *if-protected
     - <<: *if-label-build_docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
 
-.rules:labels:build_docs-slim:
-  rules:
-    - <<: *if-protected-no_label
-    - <<: *if-label-build_docs
-
-.rules:labels:build_docs-preview:
+.rules:patterns:docs-preview:
   rules:
     - <<: *if-label-build_docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
 
 .rules:labels:weekend_test-only:
   rules:

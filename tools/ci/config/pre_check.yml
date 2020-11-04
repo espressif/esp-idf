@@ -37,14 +37,6 @@ check_pre_commit_MR:
   script:
     - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_COMMIT_BRANCH} | xargs pre-commit run --files
 
-check_docs_lang_sync:
-  extends: .pre_check_job_template
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  script:
-    - cd docs
-    - ./check_lang_folder_sync.sh
-
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
@@ -144,15 +136,6 @@ scan_tests:
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
-
-check_readme_links:
-  extends: .pre_check_job_template
-  tags: [ "amd64", "deploy", "internet" ]
-  allow_failure: true
-  variables:
-    PYTHON_VER: 3
-  script:
-    - python ${IDF_PATH}/tools/ci/check_readme_links.py
 
 .clang_tidy_check_template:
   extends: .pre_check_base_template
