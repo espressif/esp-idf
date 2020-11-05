@@ -398,11 +398,9 @@ static void psram_disable_qio_mode(psram_spi_num_t spi_num)
     psram_cmd_end(spi_num);
 }
 
-//read psram id
-static void psram_read_id(uint64_t* dev_id)
+//read psram id, should issue `psram_disable_qio_mode` before calling this
+static void psram_read_id(psram_spi_num_t spi_num, uint64_t* dev_id)
 {
-    psram_spi_num_t spi_num = PSRAM_SPI_1;
-    psram_disable_qio_mode(spi_num);
     uint32_t dummy_bits = 0 + extra_dummy;
     uint32_t psram_id[2] = {0};
     psram_cmd_t ps_cmd;
@@ -901,9 +899,20 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     bootloader_common_vddsdio_configure();
     // GPIO related settings
     psram_gpio_config(&psram_io, mode);
-    psram_read_id(&s_psram_id);
+
+    psram_spi_num_t spi_num = PSRAM_SPI_1;
+    psram_disable_qio_mode(spi_num);
+    psram_read_id(spi_num, &s_psram_id);
     if (!PSRAM_IS_VALID(s_psram_id)) {
-        return ESP_FAIL;
+        /* 16Mbit psram ID read error workaround:
+         * treat the first read id as a dummy one as the pre-condition,
+         * Send Read ID command again
+         */
+        psram_read_id(spi_num, &s_psram_id);
+        if (!PSRAM_IS_VALID(s_psram_id)) {
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", (uint32_t)s_psram_id);
+            return ESP_FAIL;
+        }
     }
 
     if (psram_is_32mbit_ver0()) {
