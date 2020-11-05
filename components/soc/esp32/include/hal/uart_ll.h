@@ -215,6 +215,8 @@ static inline void uart_ll_rxfifo_rst(uart_dev_t *hw)
 /**
  * @brief  Reset the UART hw txfifo.
  *
+ * Note:   Due to hardware issue, reset UART1's txfifo will also reset UART2's txfifo.
+ *
  * @param  hw Beginning address of the peripheral registers.
  *
  * @return None
