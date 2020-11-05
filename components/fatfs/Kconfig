@@ -187,8 +187,9 @@ menu "FAT Filesystem support"
         help
             The fast seek feature enables fast backward/long seek operations without
             FAT access by using an in-memory CLMT (cluster link map table).
-            It is applied to f_read and f_write function as well, however,
-            the file size cannot be expanded by write function.
+            Please note, fast-seek is only allowed for read-mode files, if a
+            file is opened in write-mode, the seek mechanism will automatically fallback
+            to the default implementation.
 
 
     config FATFS_FAST_SEEK_BUFFER_SIZE
