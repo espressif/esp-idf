@@ -40,12 +40,6 @@ typedef struct {
     uint32_t version;
 } i2s_hal_context_t;
 
-/**
- * @brief Reset I2S fifo
- *
- * @param hal Context of the HAL layer
- */
-void i2s_hal_reset_fifo(i2s_hal_context_t *hal);
 
 /**
  * @brief Get I2S interrupt status
@@ -212,7 +206,7 @@ void i2s_hal_set_tx_bits_mod(i2s_hal_context_t *hal, i2s_bits_per_sample_t bits)
 void i2s_hal_set_rx_bits_mod(i2s_hal_context_t *hal, i2s_bits_per_sample_t bits);
 
 /**
- * @brief Reset I2S tx
+ * @brief Reset I2S TX & RX module, including DMA and FIFO
  *
  * @param hal Context of the HAL layer
  */

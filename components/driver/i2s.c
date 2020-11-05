@@ -101,14 +101,6 @@ static int _i2s_adc_channel = -1;
 static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, int dma_buf_len);
 static esp_err_t i2s_destroy_dma_queue(i2s_port_t i2s_num, i2s_dma_t *dma);
 
-static esp_err_t i2s_reset_fifo(i2s_port_t i2s_num)
-{
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
-    I2S_ENTER_CRITICAL();
-    i2s_hal_reset_fifo(&(p_i2s_obj[i2s_num]->hal));
-    I2S_EXIT_CRITICAL();
-    return ESP_OK;
-}
 
 inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv)
 {
@@ -461,6 +453,15 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
             rate, real_rate, bits, clkmInteger, bck, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 64, clkmDecimals);
     }
 
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
+        p_i2s_obj[i2s_num]->tx->curr_ptr = NULL;
+        p_i2s_obj[i2s_num]->tx->rw_pos = 0;
+    }
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
+        p_i2s_obj[i2s_num]->rx->curr_ptr = NULL;
+        p_i2s_obj[i2s_num]->rx->rw_pos = 0;
+    }
+
     i2s_hal_set_tx_bits_mod(&(p_i2s_obj[i2s_num]->hal), bits);
     i2s_hal_set_rx_bits_mod(&(p_i2s_obj[i2s_num]->hal), bits);
 
@@ -646,7 +647,6 @@ esp_err_t i2s_start(i2s_port_t i2s_num)
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     //start DMA link
     I2S_ENTER_CRITICAL();
-    i2s_reset_fifo(i2s_num);
 
     i2s_hal_reset(&(p_i2s_obj[i2s_num]->hal));
 
@@ -831,7 +831,6 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         adc_power_always_on();
     }
     // configure I2S data port interface.
-    i2s_reset_fifo(i2s_num);
     i2s_hal_config_param(&(p_i2s_obj[i2s_num]->hal), i2s_config);
     if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) &&  (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX)) {
         i2s_hal_enable_sig_loopback(&(p_i2s_obj[i2s_num]->hal));
