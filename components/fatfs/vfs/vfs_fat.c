@@ -552,6 +552,7 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    memset(st, 0, sizeof(*st));
     st->st_size = f_size(file);
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
     st->st_mtime = 0;
