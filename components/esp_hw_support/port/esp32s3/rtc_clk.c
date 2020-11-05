@@ -42,6 +42,8 @@ static const char *TAG = "rtc_clk";
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static uint32_t s_cur_pll_freq;
 
+static uint32_t s_apb_freq;
+
 static void rtc_clk_cpu_freq_to_8m(void);
 
 void rtc_clk_32k_enable_internal(x32k_config_t cfg)
@@ -510,16 +512,12 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)
 {
-    WRITE_PERI_REG(RTC_APB_FREQ_REG, clk_val_to_reg_val(apb_freq >> 12));
+    s_apb_freq = apb_freq;
 }
 
 uint32_t rtc_clk_apb_freq_get(void)
 {
-    uint32_t freq_hz = reg_val_to_clk_val(READ_PERI_REG(RTC_APB_FREQ_REG)) << 12;
-    // round to the nearest MHz
-    freq_hz += MHZ / 2;
-    uint32_t remainder = freq_hz % MHZ;
-    return freq_hz - remainder;
+    return s_apb_freq;
 }
 
 void rtc_clk_divider_set(uint32_t div)

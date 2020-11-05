@@ -84,10 +84,8 @@ esp_reset_reason_t esp_reset_reason(void)
  * is only used for deep sleep reset, and in this case the reason provided by
  * rtc_get_reset_reason is unambiguous.
  *
- * Same layout is used as for RTC_APB_FREQ_REG (a.k.a. RTC_CNTL_STORE5_REG):
- * the value is replicated in low and high half-words. In addition to that,
- * MSB is set to 1, which doesn't happen when RTC_CNTL_STORE6_REG contains
- * deep sleep wake stub address.
+ * In addition to that, MSB is set to 1, which doesn't happen when
+ * RTC_CNTL_STORE6_REG contains deep sleep wake stub address.
  */
 
 #define RST_REASON_BIT  0x80000000

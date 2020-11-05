@@ -35,9 +35,8 @@ extern "C" {
 
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
-/* Values of RTC_XTAL_FREQ_REG and RTC_APB_FREQ_REG are stored as two copies in
- * lower and upper 16-bit halves. These are the routines to work with such a
- * representation.
+/* Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
+ * halves. These are the routines to work with that representation.
  */
 static inline bool clk_val_is_valid(uint32_t val)
 {
