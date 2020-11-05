@@ -27,13 +27,11 @@
 #include "soc/rtc.h"
 #include "regi2c_ctrl.h"
 
-#define RTC_CNTL_MEM_FOLW_CPU (RTC_CNTL_SLOWMEM_FOLW_CPU | RTC_CNTL_FASTMEM_FOLW_CPU)
-
 /**
- * Configure whether certain peripherals are powered down in deep sleep
- * @param cfg power down flags as rtc_sleep_pd_config_t structure
+ * Configure whether certain peripherals are powered up in sleep
+ * @param cfg power down flags as rtc_sleep_pu_config_t structure
  */
-void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
+void rtc_sleep_pu(rtc_sleep_pu_config_t cfg)
 {
     REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU, cfg.dig_fpu);
     REG_SET_FIELD(RTC_CNTL_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU, cfg.rtc_fpu);
@@ -48,13 +46,25 @@ void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
     REG_SET_FIELD(NRXPD_CTRL, NRX_DEMAP_FORCE_PU, cfg.nrx_fpu);
     REG_SET_FIELD(FE_GEN_CTRL, FE_IQ_EST_FORCE_PU, cfg.fe_fpu);
     REG_SET_FIELD(FE2_TX_INTERP_CTRL, FE2_TX_INF_FORCE_PU, cfg.fe_fpu);
+    if (cfg.sram_fpu) {
+        REG_SET_FIELD(SYSTEM_SRAM_CTRL_2_REG, SYSTEM_SRAM_POWER_UP, SYSTEM_SRAM_POWER_UP);
+    } else {
+        REG_SET_FIELD(SYSTEM_SRAM_CTRL_2_REG, SYSTEM_SRAM_POWER_UP, 0);
+    }
+    if (cfg.rom_ram_fpu) {
+        SET_PERI_REG_MASK(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_DRAM0_POWER_UP);
+        REG_SET_FIELD(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_POWER_UP, SYSTEM_ROM_IRAM0_POWER_UP);
+    } else {
+        CLEAR_PERI_REG_MASK(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_DRAM0_POWER_UP);
+        REG_SET_FIELD(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_POWER_UP, 0);
+    }
 }
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
     if (cfg.lslp_mem_inf_fpu) {
-        rtc_sleep_pd_config_t pd_cfg = RTC_SLEEP_PD_CONFIG_ALL(1);
-        rtc_sleep_pd(pd_cfg);
+        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
+        rtc_sleep_pu(pu_cfg);
     }
 
     if (cfg.rtc_mem_inf_follow_cpu) {
@@ -132,7 +142,7 @@ void rtc_sleep_set_wakeup_time(uint64_t t)
     WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
 }
 
-uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu)
+__attribute__((weak)) uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SLEEP_REJECT_ENA, reject_opt);
@@ -151,8 +161,8 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 
     /* restore config if it is a light sleep */
     if (lslp_mem_inf_fpu) {
-        rtc_sleep_pd_config_t pd_cfg = RTC_SLEEP_PD_CONFIG_ALL(0);
-        rtc_sleep_pd(pd_cfg);
+        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
+        rtc_sleep_pu(pu_cfg);
     }
     return reject;
 }

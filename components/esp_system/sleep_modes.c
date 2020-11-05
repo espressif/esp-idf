@@ -202,7 +202,7 @@ static void IRAM_ATTR flush_uarts(void)
     for (int i = 0; i < SOC_UART_NUM; ++i) {
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             esp_rom_uart_tx_wait_idle(i);
         }
@@ -219,7 +219,7 @@ static void IRAM_ATTR suspend_uarts(void)
         while (REG_GET_FIELD(UART_STATUS_REG(i), UART_ST_UTX_OUT) != 0) {
             ;
         }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
             REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
@@ -238,7 +238,7 @@ static void IRAM_ATTR resume_uarts(void)
         REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
         REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
         REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
             REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
@@ -298,7 +298,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         touch_wakeup_prepare();
     }
 #endif
-
     uint32_t reject_triggers = 0;
     if ((pd_flags & RTC_SLEEP_PD_DIG) == 0 && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
         /* Light sleep, enable sleep reject for faster return from this function,
