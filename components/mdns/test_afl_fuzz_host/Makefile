@@ -10,6 +10,7 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/esp_common/include \
                  -I$(COMPONENTS_DIR)/esp_event/include \
                  -I$(COMPONENTS_DIR)/esp_eth/include \
+                 -I$(COMPONENTS_DIR)/esp_hw_support/include \
                  -I$(COMPONENTS_DIR)/esp_netif/include \
                  -I$(COMPONENTS_DIR)/esp_netif/private_include \
                  -I$(COMPONENTS_DIR)/esp_netif/lwip \
