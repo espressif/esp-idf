@@ -42,9 +42,9 @@ extern "C" {
 #   endif
 
 #   if CFG_TUD_CDC
-#      if (CFG_TUD_CDC_EPSIZE < 4)
-#         define CFG_TUD_CDC_EPSIZE 4
-#         warning "CFG_TUD_CDC_EPSIZE was too low and was set to 4"
+#      if (CFG_TUD_CDC_EP_BUFSIZE < 4)
+#         define CFG_TUD_CDC_EP_BUFSIZE 4
+#         warning "CFG_TUD_CDC_EP_BUFSIZE was too low and was set to 4"
 #      endif
 #   endif
 
