@@ -46,7 +46,7 @@ menu "Ethernet"
                         This clock can be routed to the external PHY device.
                         ESP32 supports to route the RMII clock to GPIO0/16/17.
             endchoice
-        endif
+        endif # ETH_PHY_INTERFACE_RMII
 
         if ETH_RMII_CLK_INPUT
             config ETH_RMII_CLK_IN_GPIO
@@ -55,7 +55,7 @@ menu "Ethernet"
                 default 0
                 help
                     ESP32 only supports GPIO0 to input the RMII clock.
-        endif
+        endif # ETH_RMII_CLK_INPUT
 
         if ETH_RMII_CLK_OUTPUT
             config ETH_RMII_CLK_OUTPUT_GPIO0
@@ -77,8 +77,8 @@ menu "Ethernet"
                     default 17
                     help
                         Set the GPIO number to output RMII Clock.
-            endif
-        endif
+            endif # !ETH_RMII_CLK_OUTPUT_GPIO0
+        endif # ETH_RMII_CLK_OUTPUT
 
         config ETH_DMA_BUFFER_SIZE
             int "Ethernet DMA buffer size (Byte)"
@@ -102,7 +102,7 @@ menu "Ethernet"
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
-    endif
+    endif # ETH_USE_ESP32_EMAC
 
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"
@@ -117,8 +117,17 @@ menu "Ethernet"
             help
                 DM9051 is a fast Ethernet controller with an SPI interface.
                 It's also integrated with a 10/100M PHY and MAC.
-                Select to enable DM9051 driver.
-    endif
+                Select this to enable DM9051 driver.
+
+        config ETH_SPI_ETHERNET_W5500
+            bool "Use W5500 (MAC RAW)"
+            help
+                W5500 is a HW TCP/IP embedded Ethernet controller.
+                TCP/IP stack, 10/100 Ethernet MAC and PHY are embedded in a single chip.
+                However the driver in ESP-IDF only enables the RAW MAC mode,
+                making it compatible with the software TCP/IP stack.
+                Say yes to enable W5500 driver.
+    endif # ETH_USE_SPI_ETHERNET
 
     menuconfig ETH_USE_OPENETH
         bool "Support OpenCores Ethernet MAC (for use with QEMU)"
@@ -143,5 +152,5 @@ menu "Ethernet"
             default 1
             help
                 Number of DMA transmit buffers, each buffer is 1600 bytes.
-    endif
+    endif # ETH_USE_OPENETH
 endmenu
