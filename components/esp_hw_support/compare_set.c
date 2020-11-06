@@ -13,6 +13,9 @@
 // limitations under the License.
 #include "soc/compare_set.h"
 #include "soc/spinlock.h"
+#include "soc/soc_caps.h"
+
+#if __XTENSA__ && SOC_SPIRAM_SUPPORTED
 
 static spinlock_t global_extram_lock = SPINLOCK_INITIALIZER;
 
@@ -37,3 +40,10 @@ void compare_and_set_extram(volatile uint32_t *addr, uint32_t compare, uint32_t 
 
     *set = old_value;
 }
+#else // __XTENSA__ && SOC_SPIRAM_SUPPORTED
+
+void compare_and_set_extram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+    compare_and_set_native(addr, compare, set);
+}
+#endif // endif

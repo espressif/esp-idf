@@ -100,6 +100,9 @@ int _unlink_r(struct _reent *r, const char *path)
     __attribute__((weak,alias("syscall_not_implemented")));
 int _rename_r(struct _reent *r, const char *src, const char *dst)
     __attribute__((weak,alias("syscall_not_implemented")));
+int _isatty_r(struct _reent *r, int fd)
+    __attribute__((weak,alias("syscall_not_implemented")));
+
 
 /* These functions are not expected to be overridden */
 int system(const char* str)

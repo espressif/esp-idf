@@ -80,7 +80,7 @@ void   eapol_sm_notify_eap_success(Boolean success)
 
 }
 
-wifi_cipher_type_t cipher_type_map_supp_to_public(uint32_t wpa_cipher)
+wifi_cipher_type_t cipher_type_map_supp_to_public(unsigned wpa_cipher)
 {
     switch (wpa_cipher) {
     case WPA_CIPHER_NONE:
@@ -109,7 +109,7 @@ wifi_cipher_type_t cipher_type_map_supp_to_public(uint32_t wpa_cipher)
     }
 }
 
-uint32_t cipher_type_map_public_to_supp(wifi_cipher_type_t cipher)
+unsigned cipher_type_map_public_to_supp(wifi_cipher_type_t cipher)
 {
     switch (cipher) {
     case WIFI_CIPHER_TYPE_NONE:
@@ -2298,7 +2298,7 @@ void wpa_supplicant_stop_countermeasures(u16 *pisunicast)
 int wpa_michael_mic_failure(u16 isunicast)
 {
        struct wpa_sm *sm = &gWpaSm;
-       int32_t *pmic_errors_seen=(isunicast)? &((sm->install_ptk).mic_errors_seen) : &((sm->install_gtk).mic_errors_seen);
+       int *pmic_errors_seen=(isunicast)? &((sm->install_ptk).mic_errors_seen) : &((sm->install_gtk).mic_errors_seen);
 
     wpa_printf(MSG_DEBUG, "\nTKIP MIC failure occur\n");
 

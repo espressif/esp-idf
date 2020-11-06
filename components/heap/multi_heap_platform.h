@@ -15,7 +15,8 @@
 
 #ifdef MULTI_HEAP_FREERTOS
 
-#include <freertos/FreeRTOS.h>
+#include "freertos/FreeRTOS.h"
+
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32

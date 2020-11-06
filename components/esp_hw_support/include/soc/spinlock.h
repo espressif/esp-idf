@@ -11,15 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __SOC_SPINLOCK_H
-#define __SOC_SPINLOCK_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "soc/cpu.h"
+#include "hal/cpu_hal.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/compare_set.h"
+
+#if __XTENSA__
 #include "xtensa/xtruntime.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +66,7 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
  */
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
     uint32_t result;
     uint32_t irq_status;
     uint32_t ccount_start;
@@ -106,7 +110,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
 
         if (timeout != SPINLOCK_WAIT_FOREVER) {
             uint32_t ccount_now;
-            RSR(CCOUNT, ccount_now);
+            ccount_now = cpu_hal_get_cycle_count();
             if (ccount_now - ccount_start > (unsigned)timeout) {
                 XTOS_RESTORE_INTLEVEL(irq_status);
                 return false;
@@ -123,10 +127,9 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     XTOS_RESTORE_INTLEVEL(irq_status);
     return true;
 
-#else
+#else  // !CONFIG_FREERTOS_UNICORE
     return true;
 #endif
-
 }
 
 /**
@@ -135,8 +138,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
  */
 static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *lock)
 {
-
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
     uint32_t irq_status;
     uint32_t core_id;
 
@@ -159,6 +161,4 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

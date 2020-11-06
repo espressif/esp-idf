@@ -36,11 +36,11 @@ void esp_log_impl_unlock(void)
     s_lock = 0;
 }
 
-/* FIXME: define an API for getting the timestamp in soc/hal */
+/* FIXME: define an API for getting the timestamp in soc/hal IDF-2351 */
 uint32_t esp_log_early_timestamp(void)
 {
-    extern uint32_t g_ticks_per_us_pro;
-    return esp_cpu_get_ccount() / (g_ticks_per_us_pro * 1000);
+    extern uint32_t ets_get_cpu_frequency(void);
+    return esp_cpu_get_ccount() / (ets_get_cpu_frequency() * 1000);
 }
 
 uint32_t esp_log_timestamp(void) __attribute__((alias("esp_log_early_timestamp")));

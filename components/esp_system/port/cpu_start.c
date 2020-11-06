@@ -71,7 +71,9 @@
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
 #include "trax.h"
+#endif
 
 #include "bootloader_mem.h"
 
@@ -219,7 +221,7 @@ static void start_other_core(void)
 
 static void intr_matrix_clear(void)
 {
-    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i < ETS_MAX_INTR_SOURCE; i++) {
+    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
         intr_matrix_set(0, i, ETS_INVALID_INUM);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         intr_matrix_set(1, i, ETS_INVALID_INUM);
@@ -237,6 +239,18 @@ void IRAM_ATTR call_start_cpu0(void)
     RESET_REASON rst_reas[SOC_CPU_CORES_NUM];
 #else
     RESET_REASON rst_reas[1];
+#endif
+
+#ifdef __riscv
+    // Configure the global pointer register
+    // (This should be the first thing IDF app does, as any other piece of code could be
+    // relaxed by the linker to access something relative to __global_pointer$)
+    __asm__ __volatile__ (
+    	".option push\n"
+        ".option norelax\n"
+        "la gp, __global_pointer$\n"
+        ".option pop"
+                          );
 #endif
 
     // Move exception vectors to IRAM
@@ -361,7 +375,6 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     extern void instruction_flash_page_info_init(void);
     instruction_flash_page_info_init();
@@ -391,7 +404,6 @@ void IRAM_ATTR call_start_cpu0(void)
     extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
 #endif
-#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));

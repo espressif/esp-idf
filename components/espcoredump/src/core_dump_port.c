@@ -16,8 +16,14 @@
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/xtensa_context.h" // for exception register stack structure
 #include "esp_core_dump_priv.h"
+
+#if __XTENSA__
+#include "freertos/xtensa_context.h"
+#else // __XTENSA__
+#define XCHAL_NUM_AREGS 64 // TODO-ESP32C3 coredump support IDF-1758
+#endif // __XTENSA__
+
 #include "esp_rom_sys.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";

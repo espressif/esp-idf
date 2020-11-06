@@ -21,6 +21,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/portable.h"
+#include "esp_heap_caps.h"
 
 /* Notes on our newlib lock implementation:
  *
@@ -48,12 +49,6 @@ static portMUX_TYPE lock_init_spinlock = portMUX_INITIALIZER_UNLOCKED;
 */
 static void IRAM_ATTR lock_init_generic(_lock_t *lock, uint8_t mutex_type) {
     portENTER_CRITICAL(&lock_init_spinlock);
-    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
-        /* nothing to do until the scheduler is running */
-        portEXIT_CRITICAL(&lock_init_spinlock);
-        return;
-    }
-
     if (*lock) {
          /* Lock already initialised (either we didn't check earlier,
           or it got initialised while we were waiting for the
@@ -124,17 +119,20 @@ void _lock_close_recursive(_lock_t *lock) __attribute__((alias("_lock_close")));
 */
 static int IRAM_ATTR lock_acquire_generic(_lock_t *lock, uint32_t delay, uint8_t mutex_type) {
     xSemaphoreHandle h = (xSemaphoreHandle)(*lock);
+
     if (!h) {
         if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
             return 0; /* locking is a no-op before scheduler is up, so this "succeeds" */
         }
-        /* lazy initialise lock - might have had a static initializer in newlib (that we don't use),
-           or _lock_init might have been called before the scheduler was running... */
+        /* lazy initialise lock - might have had a static initializer (that we don't use) */
         lock_init_generic(lock, mutex_type);
         h = (xSemaphoreHandle)(*lock);
         configASSERT(h != NULL);
     }
 
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        return 0; /* locking is a no-op before scheduler is up, so this "succeeds" */
+    }
     BaseType_t success;
     if (!xPortCanYield()) {
         /* In ISR Context */
@@ -182,13 +180,11 @@ int IRAM_ATTR _lock_try_acquire_recursive(_lock_t *lock) {
    mutex_type is queueQUEUE_TYPE_RECURSIVE_MUTEX or queueQUEUE_TYPE_MUTEX
 */
 static void IRAM_ATTR lock_release_generic(_lock_t *lock, uint8_t mutex_type) {
-    xSemaphoreHandle h = (xSemaphoreHandle)(*lock);
-    if (h == NULL) {
-        /* This is probably because the scheduler isn't running yet,
-           or the scheduler just started running and some code was
-           "holding" a not-yet-initialised lock... */
-        return;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        return; /* locking is a no-op before scheduler is up */
     }
+    xSemaphoreHandle h = (xSemaphoreHandle)(*lock);
+    assert(h);
 
     if (!xPortCanYield()) {
         if (mutex_type == queueQUEUE_TYPE_RECURSIVE_MUTEX) {

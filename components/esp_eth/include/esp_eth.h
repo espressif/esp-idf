@@ -192,7 +192,7 @@ esp_err_t esp_eth_update_input_path(
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, uint32_t length);
+esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 
 /**
 * @brief General Receive

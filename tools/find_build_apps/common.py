@@ -264,6 +264,7 @@ class BuildItem(object):
             sys.executable,
             IDF_SIZE_PY,
             '--json',
+            '--target', self.target,
             '-o', size_json_fp,
             map_file
         ]

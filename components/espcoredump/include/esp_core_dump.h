@@ -16,7 +16,6 @@
 
 #include <stddef.h>
 #include "esp_err.h"
-#include "freertos/xtensa_context.h"
 #include "esp_private/panic_internal.h"
 
 /**************************************************************************************/

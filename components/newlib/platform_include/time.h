@@ -22,8 +22,12 @@ extern "C" {
 #include_next <time.h>
 
 #define _POSIX_TIMERS 1
+#ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC (clockid_t)4
+#endif
+#ifndef CLOCK_BOOTTIME
 #define CLOCK_BOOTTIME (clockid_t)4
+#endif
 
 int clock_settime(clockid_t clock_id, const struct timespec *tp);
 int clock_gettime(clockid_t clock_id, struct timespec *tp);

@@ -6,7 +6,7 @@ endif()
 
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32s2 is headers
-    idf_component_register(INCLUDE_DIRS include)
+    idf_component_register(INCLUDE_DIRS include REQUIRES xtensa)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")
 else()
     # Regular app build
@@ -26,7 +26,7 @@ else()
 
     set(include_dirs "include")
 
-    set(requires driver efuse)
+    set(requires driver efuse xtensa)
 
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     # esp_timer is added here because cpu_start.c uses esp_timer

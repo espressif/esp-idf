@@ -12,27 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp_log.h"
-#include "bootloader_common.h"
-#include "hal/cpu_hal.h"
-#include "esp_rom_sys.h"
+#pragma once
 
+#include_next<sys/reent.h>
 
-void __assert_func(const char *file, int line, const char *func, const char *expr)
-{
-    esp_rom_printf("Assert failed in %s, %s:%d (%s)\r\n", func, file, line, expr);
-    while (1) {
-    }
-}
-
-void abort(void)
-{
-#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-    esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
-#endif
-    if (cpu_hal_is_debugger_attached()) {
-        cpu_hal_break();
-    }
-    while (1) {
-    }
-}
+/* This function is not part of the newlib API, it is defined in libc/stdio/local.h
+ * There is no nice way to get __cleanup member populated while avoiding __sinit,
+ * so extern declaration is used here.
+ */
+extern void _cleanup_r(struct _reent* r);

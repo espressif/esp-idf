@@ -161,8 +161,10 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "soc/sensitive_reg.h"
 #endif
+#if __XTENSA__
 #include "eri.h"
 #include "trax.h"
+#endif
 #include "soc/timer_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"

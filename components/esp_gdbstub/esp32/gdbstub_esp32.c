@@ -42,7 +42,7 @@ void esp_gdbstub_putchar(int c)
 int esp_gdbstub_readmem(intptr_t addr)
 {
     if (addr < 0x20000000 || addr >= 0x80000000) {
-        /* see cpu_configure_region_protection */
+        /* see esp_cpu_configure_region_protection */
         return -1;
     }
     uint32_t val_aligned = *(uint32_t *)(addr & (~3));

@@ -35,18 +35,21 @@
 
 
 #include "sdkconfig.h"
-#include "esp_rom_sys.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
 #include "esp32/dport_access.h"
+#include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/cache_err_int.h"
+#include "esp32s2/rom/uart.h"
 #include "esp32s2/memprot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/cache_err_int.h"
+#include "esp32s3/rom/uart.h"
 #include "esp32s3/memprot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
@@ -187,7 +190,6 @@ static void print_registers(const void *f, int core)
 {
     XtExcFrame *frame = (XtExcFrame *) f;
     int *regs = (int *)frame;
-    int x, y;
     const char *sdesc[] = {
         "PC      ", "PS      ", "A0      ", "A1      ", "A2      ", "A3      ", "A4      ", "A5      ",
         "A6      ", "A7      ", "A8      ", "A9      ", "A10     ", "A11     ", "A12     ", "A13     ",
@@ -201,9 +203,9 @@ static void print_registers(const void *f, int core)
     panic_print_dec(core);
     panic_print_str(" register dump:");
 
-    for (x = 0; x < 24; x += 4) {
+    for (int x = 0; x < 24; x += 4) {
         panic_print_str("\r\n");
-        for (y = 0; y < 4; y++) {
+        for (int y = 0; y < 4; y++) {
             if (sdesc[x + y][0] != 0) {
                 panic_print_str(sdesc[x + y]);
                 panic_print_str(": 0x");

@@ -28,6 +28,7 @@
 #include "tusb.h"
 #include "tusb_tasks.h"
 #include "sdkconfig.h"
+#include "esp_rom_gpio.h"
 
 const static char *TAG = "TinyUSB";
 

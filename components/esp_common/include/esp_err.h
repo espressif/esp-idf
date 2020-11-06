@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-typedef int32_t esp_err_t;
+typedef int esp_err_t;
 
 /* Definitions for error constants. */
 #define ESP_OK          0       /*!< esp_err_t value indicating success (no error) */

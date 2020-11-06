@@ -280,7 +280,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             }
             if (FD_ISSET(tls->sockfd, &tls->rset) || FD_ISSET(tls->sockfd, &tls->wset)) {
                 int error;
-                unsigned int len = sizeof(error);
+                socklen_t len = sizeof(error);
                 /* pending error check */
                 if (getsockopt(tls->sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
                     ESP_LOGD(TAG, "Non blocking connect failed");

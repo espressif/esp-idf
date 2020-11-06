@@ -30,7 +30,7 @@ set(COMPONENTS
     efuse)
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req log esp_rom esp_common esp_hw_support hal xtensa)
+set(common_req log esp_rom esp_common esp_hw_support hal)
 if(LEGACY_INCLUDE_COMMON_HEADERS)
     list(APPEND common_req soc hal)
 endif()

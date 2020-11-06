@@ -21,6 +21,7 @@
 #include "hal/cpu_hal.h"
 #include "esp_debug_helpers.h"
 #include "hal/cpu_types.h"
+#include "hal/mpu_hal.h"
 
 #include "hal/soc_hal.h"
 #include "soc/soc_caps.h"
@@ -90,3 +91,21 @@ void IRAM_ATTR esp_set_breakpoint_if_jtag(void *fn)
         cpu_hal_set_breakpoint(0, fn);
     }
 }
+
+#if __XTENSA__
+
+void esp_cpu_configure_region_protection(void)
+{
+    /* Note: currently this is configured the same on all Xtensa targets
+     *
+     * Both chips have the address space divided into 8 regions, 512MB each.
+     */
+    const int illegal_regions[] = {0, 4, 5, 6, 7}; // 0x00000000, 0x80000000, 0xa0000000, 0xc0000000, 0xe0000000
+    for (int i = 0; i < sizeof(illegal_regions) / sizeof(illegal_regions[0]); ++i) {
+        mpu_hal_set_region_access(illegal_regions[i], MPU_REGION_ILLEGAL);
+    }
+
+    mpu_hal_set_region_access(1, MPU_REGION_RW); // 0x20000000
+}
+
+#endif

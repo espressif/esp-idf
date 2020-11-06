@@ -15,6 +15,7 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "soc/cpu.h"
+#include "hal/cpu_hal.h"
 #include "esp_rom_uart.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
@@ -75,12 +76,12 @@ void unity_gets(char *dst, size_t len)
 
 void unity_exec_time_start(void)
 {
-    RSR(CCOUNT, s_test_start);
+    s_test_start = cpu_hal_get_cycle_count();
 }
 
 void unity_exec_time_stop(void)
 {
-    RSR(CCOUNT, s_test_stop);
+    s_test_stop = cpu_hal_get_cycle_count();
 }
 
 uint32_t unity_exec_time_get_ms(void)

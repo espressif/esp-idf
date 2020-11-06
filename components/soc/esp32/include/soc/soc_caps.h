@@ -135,6 +135,9 @@
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_HS_MODE  (1)
+#define SOC_LEDC_SUPPORT_HS_MODE     (1)
+#define SOC_LEDC_CHANNEL_NUM         (8)
+#define SOC_LEDC_TIMER_BIT_WIDE_NUM  (20)
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_PERIPH_NUM        2   ///< MCPWM peripheral number
@@ -170,7 +173,7 @@
 #define SOC_RTCIO_PIN_COUNT 18
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
+#define SOC_SIGMADELTA_NUM            1
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
@@ -192,9 +195,10 @@
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH  (64)
 #define SOC_TIMER_GROUP_PRESCALE_BIT_WIDTH (16)
-#define SOC_TIMER_GROUPS                   (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP   (2)
+#define SOC_TIMER_GROUPS (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP (2)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+#define SOC_TIMER_GROUP_LAYOUT {2,2}
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM                (10)

@@ -275,7 +275,7 @@ esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size
     if (esp_spiffs_by_label(partition_label, &index) != ESP_OK) {
         return ESP_ERR_INVALID_STATE;
     }
-    SPIFFS_info(_efs[index]->fs, total_bytes, used_bytes);
+    SPIFFS_info(_efs[index]->fs, (uint32_t *)total_bytes, (uint32_t *)used_bytes);
     return ESP_OK;
 }
 
