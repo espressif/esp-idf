@@ -327,7 +327,9 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
-    esp_spiram_init_cache();
+    if (g_spiram_ok) {
+        esp_spiram_init_cache();
+    }
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
