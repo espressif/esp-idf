@@ -40,7 +40,6 @@ idf_component_register(SRCS "src/coexist.c"
 
 idf_build_get_property(build_dir BUILD_DIR)
 
-# ToDo: Rename esp32s2beta to esp32s2 next time update wifi lib
 set(target_name "${idf_target}")
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
