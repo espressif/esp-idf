@@ -1,0 +1,58 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.3.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '.+\.(md|rst)'
+      - id: end-of-file-fixer
+      - id: check-executables-have-shebangs
+      - id: file-contents-sorter
+        files: 'tools/ci/executable-list.txt'
+      - id: mixed-line-ending
+        args: ['-f=lf']
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+        args: ['--config=.flake8', '--tee', '--benchmark']
+  - repo: local
+    hooks:
+      - id: check-executables
+        name: Check File Permissions
+        entry: tools/ci/check_executables.py --action executables
+        language: python
+        types: [executable]
+        exclude: '\.pre-commit/.+'
+      - id: check-executable-list
+        name: Validate executable-list.txt
+        entry: tools/ci/check_executables.py --action list
+        language: python
+        pass_filenames: false
+        always_run: true
+      - id: check-kconfigs
+        name: Validate Kconfig files
+        entry: tools/ci/check_kconfigs.py
+        language: python
+        files: '^Kconfig$|Kconfig.*$'
+      - id: check-deprecated-kconfigs-options
+        name: Check if any Kconfig Options Deprecated
+        entry: tools/ci/check_deprecated_kconfigs.py
+        language: python
+        files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
+      - id: cmake-lint
+        name: Check CMake Files Format
+        entry: cmakelint --linelength=120 --spaces=4
+        language: python
+        additional_dependencies:
+          - https://github.com/richq/cmake-lint/archive/058c6c0ed2536.zip
+        files: 'CMakeLists.txt$|\.cmake$'
+        exclude: '\/third_party\/'
+      - id: check-codeowners
+        name: Validate Codeowner File
+        entry: tools/ci/check_codeowners.py ci-check
+        language: python
+        files: '\.gitlab/CODEOWNERS'
+        pass_filenames: false

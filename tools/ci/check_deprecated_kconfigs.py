@@ -16,10 +16,14 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import argparse
 import os
 import sys
 from io import open
+
+from check_kconfigs import valid_directory
+from idf_ci_utils import get_submodule_dirs
 
 # FILES_TO_CHECK used as "startswith" pattern to match sdkconfig.defaults variants
 FILES_TO_CHECK = ('sdkconfig.ci', 'sdkconfig.defaults')
@@ -48,52 +52,67 @@ def _valid_directory(path):
 
 
 def main():
-    default_path = os.getenv('IDF_PATH', None)
-
     parser = argparse.ArgumentParser(description='Kconfig options checker')
-    parser.add_argument('--directory', '-d', help='Path to directory to check recursively  '
-                        '(for example $IDF_PATH)',
-                        type=_valid_directory,
-                        required=default_path is None,
-                        default=default_path)
+    parser.add_argument('files', nargs='*',
+                        help='Kconfig files')
+    parser.add_argument('--includes', '-d', nargs='*',
+                        help='Extra paths for recursively searching Kconfig files. (for example $IDF_PATH)',
+                        type=valid_directory)
+    parser.add_argument('--exclude-submodules', action='store_true',
+                        help='Exclude submodules')
     args = parser.parse_args()
 
-    # IGNORE_DIRS makes sense when the required directory is IDF_PATH
-    check_ignore_dirs = default_path is not None and os.path.abspath(args.directory) == os.path.abspath(default_path)
+    success_counter = 0
+    failure_counter = 0
+    ignore_counter = 0
 
-    ignores = 0
-    files_to_check = []
     deprecated_options = set()
-    errors = []
 
-    for root, dirnames, filenames in os.walk(args.directory):
-        for filename in filenames:
-            full_path = os.path.join(root, filename)
-            path_in_idf = os.path.relpath(full_path, args.directory)
+    ignore_dirs = IGNORE_DIRS
+    if args.exclude_submodules:
+        for submodule in get_submodule_dirs(full_path=True):
+            ignore_dirs = ignore_dirs + tuple(submodule)
 
-            if filename.startswith(FILES_TO_CHECK):
-                if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
-                    print('{}: Ignored'.format(path_in_idf))
-                    ignores += 1
-                    continue
-                files_to_check.append(full_path)
-            elif filename == 'sdkconfig.rename':
-                deprecated_options |= _parse_path(full_path)
+    files = [os.path.abspath(file_path) for file_path in args.files]
 
-    for path in files_to_check:
-        used_options = _parse_path(path, '=')
+    if args.includes:
+        for directory in args.includes:
+            for root, dirnames, filenames in os.walk(directory):
+                for filename in filenames:
+                    full_path = os.path.join(root, filename)
+                    if filename.startswith(FILES_TO_CHECK):
+                        files.append(full_path)
+                    elif filename == 'sdkconfig.rename':
+                        deprecated_options |= _parse_path(full_path)
+
+    for full_path in files:
+        if full_path.startswith(ignore_dirs):
+            print('{}: Ignored'.format(full_path))
+            ignore_counter += 1
+            continue
+        used_options = _parse_path(full_path, '=')
         used_deprecated_options = deprecated_options & used_options
         if len(used_deprecated_options) > 0:
-            errors.append('{}: The following options are deprecated: {}'.format(path,
-                                                                                ', '.join(used_deprecated_options)))
+            print('{}: The following options are deprecated: {}'
+                  .format(full_path, ', '.join(used_deprecated_options)))
+            failure_counter += 1
+        else:
+            print('{}: OK'.format(full_path))
+            success_counter += 1
 
-    if ignores > 0:
-        print('{} files have been ignored.'.format(ignores))
+    if ignore_counter > 0:
+        print('{} files have been ignored.'.format(ignore_counter))
+    if success_counter > 0:
+        print('{} files have been successfully checked.'.format(success_counter))
+    if failure_counter > 0:
+        print('{} files have errors. Please take a look at the log.'.format(failure_counter))
+        return 1
 
-    if len(errors) > 0:
-        print('\n\n'.join(errors))
-        sys.exit(1)
+    if not files:
+        print('WARNING: no files specified. Please specify files or use '
+              '"--includes" to search Kconfig files recursively')
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

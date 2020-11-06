@@ -17,6 +17,8 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Does any new code conform to the esp-idf :doc:`Style Guide <style-guide>`?
 
+* Have you installed the :doc:`pre-commit hook <install-pre-commit-hook>` for esp-idf project?
+
 * Does the code documentation follow requirements in :doc:`documenting-code`?
 
 * Is the code adequately commented for people to understand how it is structured?
@@ -52,6 +54,7 @@ Related Documents
     :maxdepth: 1
 
     style-guide
+    install-pre-commit-hook
     documenting-code
     add-ons-reference
     creating-examples

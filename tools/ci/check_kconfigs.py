@@ -16,11 +16,14 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-import os
-import sys
-import re
+
 import argparse
+import os
+import re
+import sys
 from io import open
+
+from idf_ci_utils import get_submodule_dirs, IDF_PATH
 
 # regular expression for matching Kconfig files
 RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
@@ -33,10 +36,10 @@ OUTPUT_SUFFIX = '.new'
 # accepts tuples but no lists.
 IGNORE_DIRS = (
     # Kconfigs from submodules need to be ignored:
-    os.path.join('components', 'mqtt', 'esp-mqtt'),
+    os.path.join(IDF_PATH, 'components', 'mqtt', 'esp-mqtt'),
     # Test Kconfigs are also ignored
-    os.path.join('tools', 'ldgen', 'test', 'data'),
-    os.path.join('tools', 'kconfig_new', 'test'),
+    os.path.join(IDF_PATH, 'tools', 'ldgen', 'test', 'data'),
+    os.path.join(IDF_PATH, 'tools', 'kconfig_new', 'test'),
 )
 
 SPACES_PER_INDENT = 4
@@ -282,8 +285,8 @@ class IndentAndNameChecker(BaseChecker):
         common_prefix_len = len(common_prefix)
         if common_prefix_len < self.min_prefix_length:
             raise InputError(self.path_in_idf, line_number,
-                             'The common prefix for the config names of the menu ending at this line is "{}". '
-                             'All config names in this menu should start with the same prefix of {} characters '
+                             'The common prefix for the config names of the menu ending at this line is "{}".\n'
+                             '\tAll config names in this menu should start with the same prefix of {} characters '
                              'or more.'.format(common_prefix, self.min_prefix_length),
                              line)   # no suggested correction for this
         if len(self.prefix_stack) > 0:
@@ -370,80 +373,107 @@ def valid_directory(path):
     return path
 
 
-def main():
-    default_path = os.getenv('IDF_PATH', None)
+def validate_kconfig_file(kconfig_full_path, verbose=False):  # type: (str, bool) -> bool
+    suggestions_full_path = kconfig_full_path + OUTPUT_SUFFIX
+    fail = False
 
+    with open(kconfig_full_path, 'r', encoding='utf-8') as f, \
+            open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
+            LineRuleChecker(kconfig_full_path) as line_checker, \
+            SourceChecker(kconfig_full_path) as source_checker, \
+            IndentAndNameChecker(kconfig_full_path, debug=verbose) as indent_and_name_checker:
+        try:
+            for line_number, line in enumerate(f, start=1):
+                try:
+                    for checker in [line_checker, indent_and_name_checker, source_checker]:
+                        checker.process_line(line, line_number)
+                    # The line is correct therefore we echo it to the output file
+                    f_o.write(line)
+                except InputError as e:
+                    print(e)
+                    fail = True
+                    f_o.write(e.suggested_line)
+        except UnicodeDecodeError:
+            raise ValueError("The encoding of {} is not Unicode.".format(kconfig_full_path))
+
+    if fail:
+        print('\t{} has been saved with suggestions for resolving the issues.\n'
+              '\tPlease note that the suggestions can be wrong and '
+              'you might need to re-run the checker several times '
+              'for solving all issues'.format(suggestions_full_path))
+        print('\tPlease fix the errors and run {} for checking the correctness of '
+              'Kconfig files.'.format(os.path.abspath(__file__)))
+        return False
+    else:
+        print('{}: OK'.format(kconfig_full_path))
+        try:
+            os.remove(suggestions_full_path)
+        except Exception:
+            # not a serious error is when the file cannot be deleted
+            print('{} cannot be deleted!'.format(suggestions_full_path))
+        finally:
+            return True
+
+
+def main():
     parser = argparse.ArgumentParser(description='Kconfig style checker')
-    parser.add_argument('--verbose', '-v', help='Print more information (useful for debugging)',
-                        action='store_true', default=False)
-    parser.add_argument('--directory', '-d', help='Path to directory where Kconfigs should be recursively checked '
-                        '(for example $IDF_PATH)',
-                        type=valid_directory,
-                        required=default_path is None,
-                        default=default_path)
+    parser.add_argument('files', nargs='*',
+                        help='Kconfig files')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='Print more information (useful for debugging)')
+    parser.add_argument('--includes', '-d', nargs='*',
+                        help='Extra paths for recursively searching Kconfig files. (for example $IDF_PATH)',
+                        type=valid_directory)
+    parser.add_argument('--exclude-submodules', action='store_true',
+                        help='Exclude submodules')
     args = parser.parse_args()
 
-    success_couter = 0
+    success_counter = 0
+    failure_counter = 0
     ignore_counter = 0
-    failure = False
 
-    # IGNORE_DIRS makes sense when the required directory is IDF_PATH
-    check_ignore_dirs = default_path is not None and os.path.abspath(args.directory) == os.path.abspath(default_path)
+    ignore_dirs = IGNORE_DIRS
+    if args.exclude_submodules:
+        ignore_dirs = ignore_dirs + tuple(get_submodule_dirs(full_path=True))
 
-    for root, dirnames, filenames in os.walk(args.directory):
-        for filename in filenames:
-            full_path = os.path.join(root, filename)
-            path_in_idf = os.path.relpath(full_path, args.directory)
-            if re.search(RE_KCONFIG, filename):
-                if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
-                    print('{}: Ignored'.format(path_in_idf))
-                    ignore_counter += 1
-                    continue
-                suggestions_full_path = full_path + OUTPUT_SUFFIX
-                with open(full_path, 'r', encoding='utf-8') as f, \
-                        open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
-                        LineRuleChecker(path_in_idf) as line_checker, \
-                        SourceChecker(path_in_idf) as source_checker, \
-                        IndentAndNameChecker(path_in_idf, debug=args.verbose) as indent_and_name_checker:
-                    try:
-                        for line_number, line in enumerate(f, start=1):
-                            try:
-                                for checker in [line_checker, indent_and_name_checker, source_checker]:
-                                    checker.process_line(line, line_number)
-                                # The line is correct therefore we echo it to the output file
-                                f_o.write(line)
-                            except InputError as e:
-                                print(e)
-                                failure = True
-                                f_o.write(e.suggested_line)
-                    except UnicodeDecodeError:
-                        raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
+    files = [os.path.abspath(file_path) for file_path in args.files]
 
-                if failure:
-                    print('{} has been saved with suggestions for resolving the issues. Please note that the '
-                          'suggestions can be wrong and you might need to re-run the checker several times '
-                          'for solving all issues'.format(path_in_idf + OUTPUT_SUFFIX))
-                    print('Please fix the errors and run {} for checking the correctness of '
-                          'Kconfigs.'.format(os.path.relpath(os.path.abspath(__file__), args.directory)))
-                    sys.exit(1)
-                else:
-                    success_couter += 1
-                    print('{}: OK'.format(path_in_idf))
-                    try:
-                        os.remove(suggestions_full_path)
-                    except Exception:
-                        # not a serious error is when the file cannot be deleted
-                        print('{} cannot be deleted!'.format(suggestions_full_path))
-            elif re.search(RE_KCONFIG, filename, re.IGNORECASE):
-                # On Windows Kconfig files are working with different cases!
-                raise ValueError('Incorrect filename of {}. The case should be "Kconfig"!'.format(path_in_idf))
+    if args.includes:
+        for directory in args.includes:
+            for root, dirnames, filenames in os.walk(directory):
+                for filename in filenames:
+                    full_path = os.path.join(root, filename)
+                    if re.search(RE_KCONFIG, filename):
+                        files.append(full_path)
+                    elif re.search(RE_KCONFIG, filename, re.IGNORECASE):
+                        # On Windows Kconfig files are working with different cases!
+                        print('{}: Incorrect filename. The case should be "Kconfig"!'.format(full_path))
+                        failure_counter += 1
+
+    for full_path in files:
+        if full_path.startswith(ignore_dirs):
+            print('{}: Ignored'.format(full_path))
+            ignore_counter += 1
+            continue
+        is_valid = validate_kconfig_file(full_path, args.verbose)
+        if is_valid:
+            success_counter += 1
+        else:
+            failure_counter += 1
 
     if ignore_counter > 0:
         print('{} files have been ignored.'.format(ignore_counter))
+    if success_counter > 0:
+        print('{} files have been successfully checked.'.format(success_counter))
+    if failure_counter > 0:
+        print('{} files have errors. Please take a look at the log.'.format(failure_counter))
+        return 1
 
-    if success_couter > 0:
-        print('{} files have been successfully checked.'.format(success_couter))
+    if not files:
+        print('WARNING: no files specified. Please specify files or use '
+              '"--includes" to search Kconfig files recursively')
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

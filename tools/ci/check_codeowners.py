@@ -22,8 +22,9 @@ import re
 import subprocess
 import sys
 
+from idf_ci_utils import IDF_PATH
 
-CODEOWNERS_PATH = os.path.join(os.path.dirname(__file__), "..", ".gitlab", "CODEOWNERS")
+CODEOWNERS_PATH = os.path.join(IDF_PATH, ".gitlab", "CODEOWNERS")
 CODEOWNER_GROUP_PREFIX = "@esp-idf-codeowners/"
 
 
@@ -31,9 +32,8 @@ def get_all_files():
     """
     Get list of all file paths in the repository.
     """
-    idf_root = os.path.join(os.path.dirname(__file__), "..")
     # only split on newlines, since file names may contain spaces
-    return subprocess.check_output(["git", "ls-files"], cwd=idf_root).decode("utf-8").strip().split('\n')
+    return subprocess.check_output(["git", "ls-files"], cwd=IDF_PATH).decode("utf-8").strip().split('\n')
 
 
 def pattern_to_regex(pattern):
@@ -121,7 +121,7 @@ def action_ci_check(args):
     errors = []
 
     def add_error(msg):
-        errors.append("Error at CODEOWNERS:{}: {}".format(line_no, msg))
+        errors.append("{}:{}: {}".format(CODEOWNERS_PATH, line_no, msg))
 
     all_files = get_all_files()
     prev_path_pattern = ""

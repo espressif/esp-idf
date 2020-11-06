@@ -48,6 +48,7 @@
 
 /.*                                   @esp-idf-codeowners/tools
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
+/.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
 /Kconfig                              @esp-idf-codeowners/build-config
