@@ -370,7 +370,7 @@ menu "LWIP"
             help
                 Speed up the TCP retransmission interval. If disabled,
                 it is recommended to change the number of SYN retransmissions to 6,
-                TCP timer interval to 250, and TCP rto time to 3000.
+                and TCP initial rto time to 3000.
 
         config LWIP_TCP_MAXRTX
             int "Maximum number of retransmissions of data segments"
@@ -400,8 +400,7 @@ menu "LWIP"
 
         config LWIP_TCP_TMR_INTERVAL
             int "TCP timer interval(ms)"
-            default 250 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
-            default 125 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 250
             help
                 Set TCP timer interval in milliseconds.
 
