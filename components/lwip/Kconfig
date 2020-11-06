@@ -300,10 +300,10 @@ menu "LWIP"
             each request.
 
     config LWIP_IPV6_AUTOCONFIG
-        bool "Enable IPV6 stateless address autoconfiguration"
+        bool "Enable IPV6 stateless address autoconfiguration (SLAAC)"
         default n
         help
-            Enabling this option allows the devices to IPV6 stateless address autoconfiguration.
+            Enabling this option allows the devices to IPV6 stateless address autoconfiguration (SLAAC).
 
             See RFC 4862.
 

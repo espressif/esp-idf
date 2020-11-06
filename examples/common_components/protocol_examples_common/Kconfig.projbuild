@@ -183,6 +183,7 @@ menu "Example Connection Configuration"
             Disable this option if the network does not support IPv6.
             Choose the preferred IPv6 address type if the connection code should wait until other than
             the local link address gets assigned.
+            Consider enabling IPv6 stateless address autoconfiguration (SLAAC) in the LWIP component.
 
     if EXAMPLE_CONNECT_IPV6
         choice EXAMPLE_CONNECT_PREFERRED_IPV6
