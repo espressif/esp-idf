@@ -328,7 +328,7 @@ component_ut_test_001:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 43
+  parallel: 44
   tags:
     - ESP32_IDF
     - UT_T1_1

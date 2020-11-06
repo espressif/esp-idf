@@ -38,7 +38,8 @@ extern "C" void app_main(void)
 
         cout << "Current temperature: " << calc_temp(data[0], data[1]) << endl;
     } catch (const I2CException &e) {
-        cout << "I2C Exception with error: " << e.error << endl;
+        cout << "I2C Exception with error: "  << e.what();
+        cout << " (" << e.error<< ")" << endl;
         cout << "Coulnd't read sensor!" << endl;
     }
 }

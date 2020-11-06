@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstring>
 #include "unity.h"
 
 #include "unity_cxx.hpp"
@@ -46,6 +47,15 @@ TEST_CASE("CHECK_THROW throws", "[cxx exception][leaks=" LEAKS "]")
 {
     esp_err_t error = ESP_FAIL;
     TEST_THROW(CHECK_THROW(error), ESPException);
+}
+
+TEST_CASE("ESPException has working what() method", "[cxx exception][leaks=" LEAKS "]")
+{
+    try {
+        throw ESPException(ESP_FAIL);
+    } catch (ESPException &e) {
+        TEST_ASSERT(strcmp(esp_err_to_name(ESP_FAIL), e.what()) == 0);
+    }
 }
 
 #endif // __cpp_exceptions
