@@ -63,4 +63,3 @@ const spi_flash_counters_t* spi_flash_get_counters(void);
 #endif
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
-

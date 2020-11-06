@@ -224,6 +224,9 @@ protected:
     uint16_t mUsedEntryCount = 0;
     uint16_t mErasedEntryCount = 0;
 
+    /**
+     * This hash list stores hashes of namespace index, key, and ChunkIndex for quick lookup when searching items.
+     */
     HashList mHashList;
 
     Partition *mPartition;

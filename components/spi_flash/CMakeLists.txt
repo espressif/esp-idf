@@ -1,7 +1,6 @@
 idf_build_get_property(spi_flash_mock CONFIG_SPI_FLASH_MOCK)
 idf_build_get_property(target IDF_TARGET)
 if(${spi_flash_mock})
-
     message(STATUS "building SPI FLASH MOCKS")
 
     set(IDF_PATH $ENV{IDF_PATH})
@@ -41,13 +40,20 @@ if(${spi_flash_mock})
                         INCLUDE_DIRS ${include_dirs}
                         REQUIRES cmock)
 
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
     # This command builds the mocks.
     # First, environment variable UNITY_DIR is set. This is necessary to prevent unity from looking in its own submodule
     # which doesn't work in our CI yet...
     # The rest is a straight forward call to cmock.rb, consult cmock's documentation for more information.
     add_custom_command(
-      OUTPUT ${MOCK_OUTPUT}
-      COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+        OUTPUT ${MOCK_OUTPUT}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
             ruby
             ${CMOCK_DIR}/lib/cmock.rb
             -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml

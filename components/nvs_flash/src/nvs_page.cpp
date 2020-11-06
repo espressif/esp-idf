@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "nvs_page.hpp"
-#if defined(ESP_PLATFORM)
-#include <esp32/rom/crc.h>
-#else
+#if defined(LINUX_TARGET)
 #include "crc.h"
+#else
+#include <esp_rom_crc.h>
 #endif
 #include <cstdio>
 #include <cstring>
@@ -27,7 +27,7 @@ Page::Page() : mPartition(nullptr) { }
 
 uint32_t Page::Header::calculateCrc32()
 {
-    return crc32_le(0xffffffff,
+    return esp_rom_crc32_le(0xffffffff,
                     reinterpret_cast<uint8_t*>(this) + offsetof(Header, mSeqNumber),
                     offsetof(Header, mCrc32) - offsetof(Header, mSeqNumber));
 }
@@ -137,7 +137,7 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
 
     const uint8_t* buf = data;
 
-#ifdef ESP_PLATFORM
+#if !defined LINUX_TARGET
     // TODO: check whether still necessary with esp_partition* API
     /* On the ESP32, data can come from DROM, which is not accessible by spi_flash_write
      * function. To work around this, we copy the data to heap if it came from DROM.
@@ -153,15 +153,15 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
         }
         memcpy((void*)buf, data, size);
     }
-#endif //ESP_PLATFORM
+#endif // ! LINUX_TARGET
 
     auto rc = mPartition->write(getEntryAddress(mNextFreeEntry), buf, size);
 
-#ifdef ESP_PLATFORM
+#if !defined LINUX_TARGET
     if (buf != data) {
         free((void*)buf);
     }
-#endif //ESP_PLATFORM
+#endif // ! LINUX_TARGET
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -968,7 +968,7 @@ size_t Page::getVarDataTailroom() const
     } else if (mState == PageState::FULL) {
         return 0;
     }
-    /* Skip one entry for header*/
+    /* Skip one entry for blob data item precessing the data */
     return ((mNextFreeEntry < (ENTRY_COUNT-1)) ? ((ENTRY_COUNT - mNextFreeEntry - 1) * ENTRY_SIZE): 0);
 }
 
