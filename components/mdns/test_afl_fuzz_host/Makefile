@@ -67,7 +67,7 @@ all: $(TEST_NAME)
 
 mdns.o: ../mdns.c
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) --include mdns_mock.h $(MDNS_C_DEPENDENCY_INJECTION) -c $< -o $@
+	@$(CC) $(CFLAGS) -include mdns_mock.h $(MDNS_C_DEPENDENCY_INJECTION) -c $< -o $@
 
 $(TEST_NAME): $(OBJECTS)
 	@echo "[LD] $@"

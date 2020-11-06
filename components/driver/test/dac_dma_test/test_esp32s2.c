@@ -32,9 +32,11 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
+#include "soc/soc.h"
 #include "soc/spi_reg.h"
 #include "soc/adc_periph.h"
 #include "soc/dac_periph.h"
+#include "soc/spi_periph.h"
 #include "test/test_common_adc.h"
 
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32, ESP32S3) // This testcase for ESP32S2

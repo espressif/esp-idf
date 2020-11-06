@@ -39,6 +39,8 @@
 #if !DISABLED_FOR_TARGETS(ESP8266, ESP32, ESP32S3) // This testcase for ESP32S2
 
 #include "soc/system_reg.h"
+#include "soc/spi_reg.h"
+#include "soc/soc.h"
 #include "soc/lldesc.h"
 #include "test/test_adc_dac_dma.h"
 
