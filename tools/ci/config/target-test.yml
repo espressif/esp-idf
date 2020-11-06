@@ -71,7 +71,7 @@
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
-    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
+    - python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE
 
 .unit_test_template:
   extends:
