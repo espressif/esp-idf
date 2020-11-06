@@ -1,3 +1,9 @@
+if(BOOTLOADER_BUILD)
+    # Bootloader relies on some Kconfig options defined in esp_system.
+    idf_component_register()
+    return()
+endif()
+
 idf_component_register(SRCS "intr_alloc.c"
                             "esp_async_memcpy.c"
                             "panic.c"
