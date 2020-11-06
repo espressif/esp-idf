@@ -28,7 +28,11 @@ extern "C" {
 #include "soc/rmt_struct.h"
 #include "hal/rmt_types.h"
 
-#define RMT_CHANNEL_FLAGS_ALWAYS_ON (1 << 0)    /*!< Channel can work when APB frequency is changing (RMT channel adopts REF_TICK as clock source) */
+#define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
+
+/** @cond */
+#define RMT_CHANNEL_FLAGS_ALWAYS_ON RMT_CHANNEL_FLAGS_AWARE_DFS  /*!< Deprecated name, defined here for compatibility */
+/** @endcond */
 
 /**
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
@@ -357,7 +361,7 @@ esp_err_t rmt_rx_start(rmt_channel_t channel, bool rx_idx_rst);
 esp_err_t rmt_rx_stop(rmt_channel_t channel);
 
 /**
-* @brief Reset RMT TX/RX memory index.
+* @brief Reset RMT TX memory
 *
 * @param channel RMT channel
 *
@@ -365,7 +369,18 @@ esp_err_t rmt_rx_stop(rmt_channel_t channel);
 *     - ESP_ERR_INVALID_ARG Parameter error
 *     - ESP_OK Success
 */
-esp_err_t rmt_memory_rw_rst(rmt_channel_t channel);
+esp_err_t rmt_tx_memory_reset(rmt_channel_t channel);
+
+/**
+* @brief Reset RMT RX memory
+*
+* @param channel RMT channel
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_rx_memory_reset(rmt_channel_t channel);
 
 /**
 * @brief Set RMT memory owner.
@@ -503,22 +518,6 @@ esp_err_t rmt_get_idle_level(rmt_channel_t channel, bool *idle_out_en, rmt_idle_
 *     - ESP_OK Success
 */
 esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t *status);
-
-/**
-* @brief Set mask value to RMT interrupt enable register.
-*
-* @param mask Bit mask to set to the register
-*
-*/
-void rmt_set_intr_enable_mask(uint32_t mask);
-
-/**
-* @brief Clear mask value to RMT interrupt enable register.
-*
-* @param mask Bit mask to clear the register
-*
-*/
-void rmt_clr_intr_enable_mask(uint32_t mask);
 
 /**
 * @brief Set RMT RX interrupt enable
@@ -832,6 +831,36 @@ esp_err_t rmt_add_channel_to_group(rmt_channel_t channel);
 */
 esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel);
 #endif
+
+/**
+* @brief Reset RMT TX/RX memory index.
+*
+* @param channel RMT channel
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
+__attribute__((deprecated("use rmt_tx_memory_reset or rmt_rx_memory_reset instead")));
+
+/**
+* @brief Set mask value to RMT interrupt enable register.
+*
+* @param mask Bit mask to set to the register
+*
+*/
+void rmt_set_intr_enable_mask(uint32_t mask)
+__attribute__((deprecated("interrupt should be handled by driver")));
+
+/**
+* @brief Clear mask value to RMT interrupt enable register.
+*
+* @param mask Bit mask to clear the register
+*
+*/
+void rmt_clr_intr_enable_mask(uint32_t mask)
+__attribute__((deprecated("interrupt should be handled by driver")));
 
 #ifdef __cplusplus
 }

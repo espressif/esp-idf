@@ -34,6 +34,8 @@
 #include "driver/periph_ctrl.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
+#include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 #include "hal/pcnt_hal.h"
@@ -74,26 +76,26 @@ void ref_clock_init(void)
     };
 
     rmt_ll_enable_drive_clock(s_rmt_hal.regs, true);
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-    rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 0); // select REF_TICK (1MHz)
-#else
-    rmt_ll_set_sclk(s_rmt_hal.regs, 3, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
+#if SOC_RMT_SUPPORT_XTAL
+    rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_XTAL, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
+#elif SOC_RMT_SUPPORT_REF_TICK
+    rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_REF, 0, 0, 0); // select REF_TICK (1MHz)
 #endif
-    rmt_hal_set_counter_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
-    rmt_ll_enable_tx_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output
-    rmt_ll_set_tx_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // idle level: 1
-    rmt_ll_enable_carrier(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
+    rmt_hal_tx_set_counter_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
+    rmt_ll_tx_enable_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output
+    rmt_ll_tx_set_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // idle level: 1
+    rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
 #if !CONFIG_IDF_TARGET_ESP32
     rmt_ll_tx_set_carrier_always_on(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
 #endif
     rmt_hal_set_carrier_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 500000, 0.5); // set carrier to 500KHz
-    rmt_ll_set_carrier_on_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
+    rmt_ll_tx_set_carrier_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_enable_mem_access(s_rmt_hal.regs, true);
-    rmt_ll_reset_tx_pointer(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
-    rmt_ll_set_mem_blocks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
+    rmt_ll_tx_reset_pointer(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
+    rmt_ll_tx_set_mem_blocks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_write_memory(s_rmt_hal.mem, REF_CLOCK_RMT_CHANNEL, &data, 1, 0);
-    rmt_ll_enable_tx_loop(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
-    rmt_ll_start_tx(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
+    rmt_ll_tx_enable_loop(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
+    rmt_ll_tx_start(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
 
     // Route signal to PCNT
     esp_rom_gpio_connect_in_signal(REF_CLOCK_GPIO, PCNT_SIG_CH0_IN0_IDX, false);
@@ -148,7 +150,7 @@ void ref_clock_deinit()
     s_intr_handle = NULL;
 
     // Disable RMT
-    rmt_ll_enable_carrier(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
+    rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
     periph_module_disable(PERIPH_RMT_MODULE);
 
     // Disable PCNT

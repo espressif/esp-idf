@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 typedef volatile struct {
     uint32_t data_ch[8];
     union {
@@ -281,11 +283,11 @@ typedef volatile struct {
     } sys_conf;
     union {
         struct {
-            uint32_t tx_sim_ch0 : 1;
-            uint32_t tx_sim_ch1 : 1;
-            uint32_t tx_sim_ch2 : 1;
-            uint32_t tx_sim_ch3 : 1;
-            uint32_t tx_sim_en : 1;
+            uint32_t ch0 : 1;
+            uint32_t ch1 : 1;
+            uint32_t ch2 : 1;
+            uint32_t ch3 : 1;
+            uint32_t en : 1;
             uint32_t reserved5 : 27;
         };
         uint32_t val;

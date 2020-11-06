@@ -12,7 +12,8 @@
 #include "test_utils.h"
 #include "esp_rom_gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_NUM-SOC_RMT_TX_CHANNELS_NUM)
+#define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CHANNELS_NUM-1)
 
 // CI ONLY: Don't connect any other signals to this GPIO
 #define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
@@ -31,7 +32,7 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     if (tx_channel >= 0) {
         rmt_config_t tx_config = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, tx_channel);
         if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
-            tx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+            tx_config.flags |= RMT_CHANNEL_FLAGS_AWARE_DFS;
         }
         if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
             tx_config.tx_config.carrier_en = true;
@@ -48,7 +49,7 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     if (rx_channel >= 0) {
         rmt_config_t rx_config = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, rx_channel);
         if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
-            rx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+            rx_config.flags |= RMT_CHANNEL_FLAGS_AWARE_DFS;
         }
 #if SOC_RMT_SUPPORT_RX_DEMODULATION
         if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
@@ -123,7 +124,7 @@ TEST_CASE("RMT wrong configuration", "[rmt][error]")
 
 TEST_CASE("RMT miscellaneous functions", "[rmt]")
 {
-    rmt_channel_t channel = SOC_RMT_CHANNELS_NUM - 2;
+    rmt_channel_t channel = 0;
     uint8_t div_cnt;
     rmt_source_clk_t src_clk;
     uint8_t memNum;
@@ -141,13 +142,18 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
     TEST_ESP_OK(rmt_get_clk_div(channel, &div_cnt));
     TEST_ASSERT_EQUAL_UINT8(160, div_cnt);
 
+#if SOC_RMT_SUPPORT_REF_TICK
     TEST_ESP_OK(rmt_set_source_clk(channel, RMT_BASECLK_REF));
     TEST_ESP_OK(rmt_get_source_clk(channel, &src_clk));
     TEST_ASSERT_EQUAL_INT(RMT_BASECLK_REF, src_clk);
+#endif
 
-    TEST_ESP_OK(rmt_set_memory_owner(channel, RMT_MEM_OWNER_RX));
-    TEST_ESP_OK(rmt_get_memory_owner(channel, &owner));
-    TEST_ASSERT_EQUAL_INT(RMT_MEM_OWNER_RX, owner);
+#if SOC_RMT_SUPPORT_XTAL
+    TEST_ESP_OK(rmt_set_source_clk(channel, RMT_BASECLK_XTAL));
+    TEST_ESP_OK(rmt_get_source_clk(channel, &src_clk));
+    TEST_ASSERT_EQUAL_INT(RMT_BASECLK_XTAL, src_clk);
+#endif
+
 
     TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 1, 0, 1));
     TEST_ESP_OK(rmt_set_idle_level(channel, 1, 0));
@@ -155,6 +161,7 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
     rmt_clean_testbench(channel, -1);
 
     // RX related functions
+    channel = RMT_RX_CHANNEL_ENCODING_START;
     rmt_setup_testbench(-1, channel, 0);
 
     TEST_ESP_OK(rmt_set_rx_idle_thresh(channel, 200));
@@ -162,6 +169,10 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
     TEST_ASSERT_EQUAL_UINT16(200, idle_thres);
 
     TEST_ESP_OK(rmt_set_rx_filter(channel, 1, 100));
+
+    TEST_ESP_OK(rmt_set_memory_owner(channel, RMT_MEM_OWNER_RX));
+    TEST_ESP_OK(rmt_get_memory_owner(channel, &owner));
+    TEST_ASSERT_EQUAL_INT(RMT_MEM_OWNER_RX, owner);
 
     rmt_clean_testbench(-1, channel);
 }
@@ -188,7 +199,13 @@ TEST_CASE("RMT multiple channels", "[rmt]")
 
 TEST_CASE("RMT install/uninstall test", "[rmt][pressure]")
 {
-    rmt_config_t rx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, SOC_RMT_CHANNELS_NUM - 2);
+    rmt_config_t tx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, RMT_TX_CHANNEL_ENCODING_END);
+    TEST_ESP_OK(rmt_config(&tx_cfg));
+    for (int i = 0; i < 100; i++) {
+        TEST_ESP_OK(rmt_driver_install(tx_cfg.channel, 1000, 0));
+        TEST_ESP_OK(rmt_driver_uninstall(tx_cfg.channel));
+    }
+    rmt_config_t rx_cfg = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, RMT_RX_CHANNEL_ENCODING_START);
     TEST_ESP_OK(rmt_config(&rx_cfg));
     for (int i = 0; i < 100; i++) {
         TEST_ESP_OK(rmt_driver_install(rx_cfg.channel, 1000, 0));
@@ -205,7 +222,7 @@ static void do_nec_tx_rx(uint32_t flags)
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
-    int rx_channel = 1;
+    int rx_channel = RMT_RX_CHANNEL_ENCODING_START + 1;
 
     // test on different flags combinations
     rmt_setup_testbench(tx_channel, rx_channel, flags);
@@ -261,7 +278,7 @@ TEST_CASE("RMT NEC TX and RX (APB)", "[rmt]")
 }
 
 // test with RMT_TESTBENCH_FLAGS_ALWAYS_ON will take a long time (REF_TICK is much slower than APB CLOCK)
-TEST_CASE("RMT NEC TX and RX (REF_TICK)", "[rmt][timeout=240]")
+TEST_CASE("RMT NEC TX and RX (always on)", "[rmt][timeout=240]")
 {
     do_nec_tx_rx(RMT_TESTBENCH_FLAGS_ALWAYS_ON);
 }
@@ -302,7 +319,7 @@ TEST_CASE("RMT TX stop", "[rmt]")
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
-    int rx_channel = 1;
+    int rx_channel = RMT_RX_CHANNEL_ENCODING_START + 1;
 
     rmt_setup_testbench(tx_channel, rx_channel, 0);
 
@@ -361,7 +378,7 @@ TEST_CASE("RMT TX stop", "[rmt]")
 TEST_CASE("RMT Ping-Pong operation", "[rmt]")
 {
     int tx_channel = 0;
-    int rx_channel = 1;
+    int rx_channel = RMT_RX_CHANNEL_ENCODING_START + 1;
     rmt_item32_t frames[SOC_RMT_CHANNEL_MEM_WORDS * 2]; // send two block data using ping-pong
     RingbufHandle_t rb = NULL;
     uint32_t size = sizeof(frames) / sizeof(frames[0]);
@@ -478,7 +495,7 @@ TEST_CASE("RMT TX loop", "[rmt]")
     uint32_t cmd = 0x20;
     bool repeat = false;
     int tx_channel = 0;
-    int rx_channel = 1;
+    int rx_channel = RMT_RX_CHANNEL_ENCODING_START + 1;
     uint32_t count = 0;
 
     rmt_setup_testbench(tx_channel, rx_channel, RMT_TESTBENCH_FLAGS_LOOP_ON);
@@ -520,6 +537,4 @@ TEST_CASE("RMT TX loop", "[rmt]")
     TEST_ASSERT_EQUAL(10, count);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
-#endif
-
 #endif
