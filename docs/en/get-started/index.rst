@@ -259,6 +259,8 @@ or with Windows PowerShell
 
     .$HOME/esp/esp-idf/export.ps1
 
+.. _get-started-export:
+
 Linux and macOS
 ~~~~~~~~~~~~~~~
 
@@ -267,6 +269,12 @@ In the terminal where you are going to use ESP-IDF, run:
 .. code-block:: bash
 
     . $HOME/esp/esp-idf/export.sh
+
+or for fish (supported only since fish version 3.0.0):
+
+.. code-block:: bash
+
+    . $HOME/esp/esp-idf/export.fish
 
 Note the space between the leading dot and the path!
 

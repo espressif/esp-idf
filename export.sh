@@ -136,7 +136,19 @@ idf_export_main() {
     echo ""
 }
 
+enable_autocomplete() {
+    if [ -n "$ZSH_VERSION" ]
+    then
+        autoload -Uz compinit && compinit -u
+        eval "$(env _IDF.PY_COMPLETE=source_zsh idf.py)"
+    else
+        eval "$(env _IDF.PY_COMPLETE=source_bash idf.py)"
+    fi
+}
+
 idf_export_main
+enable_autocomplete
 
 unset realpath_int
 unset idf_export_main
+

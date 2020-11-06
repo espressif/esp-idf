@@ -38,7 +38,7 @@ from importlib import import_module
 from pkgutil import iter_modules
 
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
-# idf.py extentions. Therefore, pyc file generation is turned off:
+# idf.py extensions. Therefore, pyc file generation is turned off:
 sys.dont_write_bytecode = True
 
 from idf_py_actions.errors import FatalError  # noqa: E402
@@ -53,7 +53,7 @@ os.environ["PYTHON"] = sys.executable
 
 # Name of the program, normally 'idf.py'.
 # Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
-PROG = os.getenv("IDF_PY_PROGRAM_NAME", sys.argv[0])
+PROG = os.getenv("IDF_PY_PROGRAM_NAME", "idf.py")
 
 
 def check_environment():
@@ -184,7 +184,7 @@ def init_cli(verbose_output=None):
             return ("Deprecated! " + text) if self.deprecated else text
 
     def check_deprecation(ctx):
-        """Prints deprectation warnings for arguments in given context"""
+        """Prints deprecation warnings for arguments in given context"""
         for option in ctx.command.params:
             default = () if option.multiple else option.default
             if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
@@ -533,7 +533,7 @@ def init_cli(verbose_output=None):
                 print(
                     "WARNING: Command%s found in the list of commands more than once. " %
                     ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
-                    "Only first occurence will be executed.")
+                    "Only first occurrence will be executed.")
 
             for task in tasks:
                 # Show help and exit if help is in the list of commands
@@ -640,11 +640,11 @@ def init_cli(verbose_output=None):
             "ignore_unknown_options": True
         },
     )
-    @click.option("-C", "--project-dir", default=os.getcwd())
+    @click.option("-C", "--project-dir", default=os.getcwd(), type=click.Path())
     def parse_project_dir(project_dir):
         return realpath(project_dir)
-
-    project_dir = parse_project_dir(standalone_mode=False)
+    # Set `complete_var` to not existing environment variable name to prevent early cmd completion
+    project_dir = parse_project_dir(standalone_mode=False, complete_var="_IDF.PY_COMPLETE_NOT_EXISTING")
 
     all_actions = {}
     # Load extensions from components dir
@@ -660,7 +660,7 @@ def init_cli(verbose_output=None):
     extensions = {}
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
-            print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)
+            print('WARNING: Directory with idf.py extensions doesn\'t exist:\n    %s' % directory)
             continue
 
         sys.path.append(directory)
@@ -709,7 +709,8 @@ def init_cli(verbose_output=None):
 def main():
     checks_output = check_environment()
     cli = init_cli(verbose_output=checks_output)
-    cli(sys.argv[1:], prog_name=PROG)
+    # the argument `prog_name` must contain name of the file - not the absolute path to it!
+    cli(sys.argv[1:], prog_name=PROG, complete_var="_IDF.PY_COMPLETE")
 
 
 def _valid_unicode_config():

@@ -63,4 +63,6 @@ end
 
 idf_export_main
 
+eval (env _IDF.PY_COMPLETE=source_fish idf.py)
+
 set -e idf_export_main
