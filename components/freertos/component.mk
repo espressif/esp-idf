@@ -6,9 +6,9 @@ ifdef CONFIG_FREERTOS_DEBUG_OCDAWARE
 	COMPONENT_ADD_LDFLAGS += -Wl,--undefined=uxTopUsedPriority
 endif
 
-COMPONENT_ADD_INCLUDEDIRS := include xtensa/include
-COMPONENT_PRIV_INCLUDEDIRS := include/freertos xtensa/include/freertos xtensa .
-COMPONENT_SRCDIRS += xtensa
+COMPONENT_ADD_INCLUDEDIRS := include port/xtensa/include
+COMPONENT_PRIV_INCLUDEDIRS := include/freertos port/xtensa/include/freertos port/xtensa .
+COMPONENT_SRCDIRS += port port/xtensa
 
 ifndef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 	COMPONENT_OBJEXCLUDE := xtensa/xtensa_loadstore_handler.o

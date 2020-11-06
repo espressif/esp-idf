@@ -1,0 +1,87 @@
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+    .global uxInterruptNesting
+    .global uxSchedulerRunning
+    .global xIsrStackTop
+    .global pxCurrentTCB
+    .global vTaskSwitchContext
+    .global xPortSwitchFlag
+
+    .section .text
+
+/**
+ * This function makes the RTOS aware about a ISR entering, it takes the
+ * current task stack saved, places into the TCB, loads the ISR stack
+ * the interrupted stack must be passed in a0. It needs to receive the
+ * ISR nesting code improvements
+ */
+
+    .global rtos_int_enter
+    .type rtos_int_enter, @function
+rtos_int_enter:
+    /* preserve the return address */
+    mv t1, ra
+    mv t2, a0
+
+    /* scheduler not enabled, jump directly to ISR handler */
+    lw t0, uxSchedulerRunning
+    beq t0,zero, not_rtos_enter
+
+    /* Sabe current TCB and load the ISR stack */
+    lw  t0, pxCurrentTCB
+    sw 	t2, 0x0(t0)
+    lw  sp, xIsrStackTop
+
+not_rtos_enter:
+    mv  ra, t1
+    ret
+
+/**
+ * Recovers the next task to run stack pointer and place it into
+ * a0, then the interrupt handler can restore the context of
+ * the next task
+ */
+    .global rtos_int_exit
+    .type rtos_int_exit, @function
+rtos_int_exit:
+
+    /* may skip RTOS aware interrupt since scheduler was not started */
+    lw t0, uxSchedulerRunning
+    beq t0,zero, not_rtos_exit
+
+    /* Schedule the next task if a yield is pending */
+    la t0, xPortSwitchFlag
+    lw t2, 0x0(t0)
+    beq t2, zero, no_switch
+
+    /* preserve return address and schedule next task */
+    addi sp,sp,-4
+    sw  ra, 0x04(sp)
+    call vTaskSwitchContext
+    lw  ra, 0x04(sp)
+    addi sp, sp, 4
+
+    /* Clears the switch pending flag */
+    la t0, xPortSwitchFlag
+    mv t2, zero
+    sw  t2, 0x0(t0)
+
+no_switch:
+    /* Recover the stack of next task and prepare to exit : */
+    lw a0, pxCurrentTCB
+    lw a0, 0x0(a0)
+
+not_rtos_exit:
+    ret

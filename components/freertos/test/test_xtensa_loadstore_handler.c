@@ -5,9 +5,12 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include <esp_heap_caps.h>
+#include "sdkconfig.h"
 #include "esp_system.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#include "freertos/xtensa_api.h"
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("LoadStore Exception handler", "[freertos]")
@@ -119,4 +122,5 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
     heap_caps_free(arr);
 }
-#endif
+#endif // CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA

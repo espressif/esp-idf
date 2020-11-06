@@ -9,9 +9,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "soc/cpu.h"
+#include "hal/cpu_hal.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 
@@ -31,7 +31,7 @@ static void task_send_to_queue(void *param)
 
     while(!trigger) {}
 
-    RSR(CCOUNT, ccount);
+    ccount = cpu_hal_get_cycle_count();
     flag = true;
     xQueueSendToBack(queue, &ccount, 0);
     /* This is to ensure that higher priority task
@@ -60,7 +60,7 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
 
         uint32_t yield_ccount, now_ccount, delta;
         TEST_ASSERT( xQueueReceive(queue, &yield_ccount, 100 / portTICK_PERIOD_MS) );
-        RSR(CCOUNT, now_ccount);
+        now_ccount = cpu_hal_get_cycle_count();
         TEST_ASSERT( flag );
 
         delta = now_ccount - yield_ccount;
@@ -92,12 +92,12 @@ TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
 
         vTaskDelay(2); /* make sure everything is set up */
         trigger = true;
-        RSR(CCOUNT, trigger_ccount);
+        trigger_ccount = cpu_hal_get_cycle_count();
 
         // yield_ccount is not useful in this test as it's the other core's CCOUNT
         // so we use trigger_ccount instead
         TEST_ASSERT( xQueueReceive(queue, &yield_ccount, 100 / portTICK_PERIOD_MS) );
-        RSR(CCOUNT, now_ccount);
+        now_ccount = cpu_hal_get_cycle_count();
         TEST_ASSERT( flag );
 
         delta = now_ccount - trigger_ccount;

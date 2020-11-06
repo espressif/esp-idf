@@ -4,16 +4,49 @@ if(BOOTLOADER_BUILD)
     return()
 endif()
 
-set(srcs
-    "xtensa/port.c"
-    "xtensa/portasm.S"
-    "xtensa/xtensa_context.S"
-    "xtensa/xtensa_init.c"
-    "xtensa/xtensa_overlay_os_hook.c"
-    "xtensa/xtensa_vector_defaults.S"
-    "xtensa/xtensa_vectors.S")
+idf_build_get_property(target IDF_TARGET)
+
+if(NOT "${target}" STREQUAL "esp32c3")  # should test arch here not target, TODO ESP32-C3 IDF-1754
+    set(srcs
+        "port/xtensa/port.c"
+        "port/xtensa/portasm.S"
+        "port/xtensa/xtensa_context.S"
+        "port/xtensa/xtensa_init.c"
+        "port/xtensa/xtensa_overlay_os_hook.c"
+        "port/xtensa/xtensa_vector_defaults.S"
+        "port/xtensa/xtensa_vectors.S")
+
+    set(include_dirs
+        include
+        port/xtensa/include)
+
+    set(private_include_dirs
+        include/freertos
+        port/xtensa/include/freertos
+        port/xtensa
+        .)
+
+    set(required_components app_trace esp_timer)
+else()  # RISC-V
+    set(srcs
+        "port/riscv/port.c"
+        "port/riscv/portasm.S")
+
+    set(include_dirs
+        include
+        port/riscv/include)
+
+    set(private_include_dirs
+        include/freertos
+        port/riscv/include/freertos
+        port/riscv
+        .)
+
+    set(required_components esp_timer)
+endif()
 
 list(APPEND srcs
+    "port/port_common.c"
     "croutine.c"
     "event_groups.c"
     "list.c"
@@ -23,19 +56,9 @@ list(APPEND srcs
     "stream_buffer.c"
     "FreeRTOS-openocd.c")
 
-set(include_dirs
-    include
-    xtensa/include)
-
-set(private_include_dirs
-    include/freertos
-    xtensa/include/freertos
-    xtensa
-    .)
-
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-     list(APPEND srcs "xtensa/xtensa_loadstore_handler.S")
- endif()
+    list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
+endif()
 
 # app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
 # but requirements can't depend on config options, so always require it.
@@ -43,7 +66,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}
                     LDFRAGMENTS linker.lf
-                    REQUIRES app_trace esp_timer
+                    REQUIRES ${required_components}
                     PRIV_REQUIRES soc)
 
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)

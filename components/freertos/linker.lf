@@ -112,6 +112,6 @@ entries:
         queue: xQueueAddToSet (default)
         queue: xQueueRemoveFromSet (default)
         queue: xQueueSelectFromSet (default)
-    port:main_task (default)
+    port_common:main_task (default)
     port:esp_startup_start_app (default)
     port:esp_startup_start_app_other_cores (default)

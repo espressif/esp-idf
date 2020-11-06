@@ -5,7 +5,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "soc/cpu.h"
 #include "test_utils.h"

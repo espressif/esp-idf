@@ -9,9 +9,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "soc/cpu.h"
+#include "hal/cpu_hal.h"
 
 #include "test_utils.h"
 
@@ -20,11 +20,11 @@
 static uint32_t start, end;
 
 #define BENCHMARK_START() do {                  \
-        RSR(CCOUNT, start);                     \
+        start = cpu_hal_get_cycle_count();                     \
     } while(0)
 
 #define BENCHMARK_END(OPERATION) do {                       \
-        RSR(CCOUNT, end);                                           \
+        end = cpu_hal_get_cycle_count();                                          \
         printf("%s took %d cycles/op (%d cycles for %d ops)\n",     \
                OPERATION, (end - start)/REPEAT_OPS,                 \
                (end - start), REPEAT_OPS);                          \

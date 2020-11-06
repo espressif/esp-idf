@@ -1,16 +1,26 @@
 #include <esp_types.h>
 #include <stdio.h>
-
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "esp_intr_alloc.h"
-#include "xtensa/hal.h"
 #include "unity.h"
 #include "soc/cpu.h"
 #include "test_utils.h"
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#include "xtensa/hal.h"
+#include "freertos/xtensa_api.h"
+#define TEST_SET_INT_MASK(mask) xt_set_intset(mask)
+#define TEST_CLR_INT_MASK(mask) xt_set_intclear(mask)
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
+#include "riscv/interrupt.h"
+#define TEST_SET_INT_MASK(mask) esprv_intc_int_enable(mask)
+#define TEST_CLR_INT_MASK(mask) esprv_intc_int_disable(mask)
+#endif
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 
 #define SW_ISR_LEVEL_1  7
 
@@ -25,8 +35,7 @@ static void software_isr_using_parameter_vportyield(void *arg) {
     (void)arg;
     BaseType_t yield;
     delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
-
-    xt_set_intclear(1 << SW_ISR_LEVEL_1);
+    TEST_CLR_INT_MASK(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
     portYIELD_FROM_ISR(yield);
@@ -39,7 +48,7 @@ static void software_isr_using_no_argument_vportyield(void *arg) {
     BaseType_t yield;
     delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
 
-    xt_set_intclear(1 << SW_ISR_LEVEL_1);
+    TEST_CLR_INT_MASK(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
     if(yield) {
@@ -53,7 +62,7 @@ static void test_task(void *arg) {
 
     for(int i = 0;i < 10000; i++) {
         cycle_before_trigger = portGET_RUN_TIME_COUNTER_VALUE();
-        xt_set_intset(1 << SW_ISR_LEVEL_1);
+        TEST_SET_INT_MASK(1 << SW_ISR_LEVEL_1);
         xSemaphoreTake(sync, portMAX_DELAY);
         delta_exit_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_exit;
     }
@@ -103,3 +112,5 @@ TEST_CASE("isr latency test vport-yield-from-isr with parameter", "[freertos][ig
 
     esp_intr_free(handle);
 }
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
