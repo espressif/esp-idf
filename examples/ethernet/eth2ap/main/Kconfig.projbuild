@@ -2,7 +2,7 @@ menu "Example Configuration"
     choice EXAMPLE_USE_ETHERNET
         prompt "Ethernet Type"
         default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
-        default EXAMPLE_USE_DM9051 if !IDF_TARGET_ESP32
+        default EXAMPLE_USE_W5500
         help
             Select which kind of Ethernet will be used in the example.
 
@@ -18,8 +18,15 @@ menu "Example Configuration"
             select ETH_USE_SPI_ETHERNET
             select ETH_SPI_ETHERNET_DM9051
             help
-                Select external SPI-Ethernet module.
-    endchoice
+                Select external SPI-Ethernet module (DM9051).
+
+        config EXAMPLE_USE_W5500
+            bool "W5500 Module"
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_W5500
+            help
+                Select external SPI-Ethernet module (W5500).
+    endchoice # EXAMPLE_USE_ETHERNET
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
         choice EXAMPLE_ETH_PHY_MODEL
@@ -51,7 +58,13 @@ menu "Example Configuration"
                 help
                     DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
                     Goto http://www.ti.com/product/DP83848J for more information about it.
-        endchoice
+
+            config EXAMPLE_ETH_PHY_KSZ8041
+                bool "KSZ8041"
+                help
+                    The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
+        endchoice # EXAMPLE_ETH_PHY_MODEL
 
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
@@ -64,57 +77,57 @@ menu "Example Configuration"
             default 18
             help
                 Set the GPIO number used by SMI MDIO.
-    endif
+    endif # EXAMPLE_USE_INTERNAL_ETHERNET
 
-    if EXAMPLE_USE_DM9051
-        config EXAMPLE_DM9051_SPI_HOST
+    if ETH_USE_SPI_ETHERNET
+        config EXAMPLE_ETH_SPI_HOST
             int "SPI Host Number"
             range 0 2
             default 1
             help
-                Set the SPI host used to communicate with DM9051.
+                Set the SPI host used to communicate with the SPI Ethernet Controller.
 
-        config EXAMPLE_DM9051_SCLK_GPIO
+        config EXAMPLE_ETH_SPI_SCLK_GPIO
             int "SPI SCLK GPIO number"
             range 0 33
-            default 19
+            default 20
             help
                 Set the GPIO number used by SPI SCLK.
 
-        config EXAMPLE_DM9051_MOSI_GPIO
+        config EXAMPLE_ETH_SPI_MOSI_GPIO
             int "SPI MOSI GPIO number"
             range 0 33
-            default 23
+            default 19
             help
                 Set the GPIO number used by SPI MOSI.
 
-        config EXAMPLE_DM9051_MISO_GPIO
+        config EXAMPLE_ETH_SPI_MISO_GPIO
             int "SPI MISO GPIO number"
             range 0 33
-            default 25
+            default 18
             help
                 Set the GPIO number used by SPI MISO.
 
-        config EXAMPLE_DM9051_CS_GPIO
+        config EXAMPLE_ETH_SPI_CS_GPIO
             int "SPI CS GPIO number"
             range 0 33
-            default 22
+            default 21
             help
                 Set the GPIO number used by SPI CS.
 
-        config EXAMPLE_DM9051_SPI_CLOCK_MHZ
+        config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
-            range 20 80
-            default 20
+            range 5 80
+            default 36
             help
                 Set the clock speed (MHz) of SPI interface.
 
-        config EXAMPLE_DM9051_INT_GPIO
+        config EXAMPLE_ETH_SPI_INT_GPIO
             int "Interrupt GPIO number"
             default 4
             help
-                Set the GPIO number used by DM9051 interrupt.
-    endif
+                Set the GPIO number used by the SPI Ethernet module interrupt line.
+    endif # ETH_USE_SPI_ETHERNET
 
     config EXAMPLE_ETH_PHY_RST_GPIO
         int "PHY Reset GPIO number"
@@ -125,8 +138,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ETH_PHY_ADDR
         int "PHY Address"
-        range 0 31 if EXAMPLE_USE_INTERNAL_ETHERNET
-        range 1 1 if !EXAMPLE_USE_INTERNAL_ETHERNET
+        range 0 31
         default 1
         help
             Set PHY address according your board schematic.
