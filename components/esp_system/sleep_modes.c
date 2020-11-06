@@ -76,33 +76,32 @@
 // Time from VDD_SDIO power up to first flash read in ROM code
 #define VDD_SDIO_POWERUP_TO_FLASH_READ_US 700
 
+// Cycles for RTC Timer clock source (internal oscillator) calibrate
+#define RTC_CLK_SRC_CAL_CYCLES      (10)
+
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (212)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (60)
 #elif CONFIG_IDF_TARGET_ESP32S2
-#define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (147)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (28)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (0)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (0)
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
-#if defined(CONFIG_IDF_TARGET_ESP32)
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (650 + 30 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#else // CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (250 + 30 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#endif // CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
-
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-#if defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (1650 + 30 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#else // CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (1250 + 30 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#endif // CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2)
+#define LIGHT_SLEEP_TIME_OVERHEAD_US DEFAULT_HARDWARE_OUT_OVERHEAD_US
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined (CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
+#define DEEP_SLEEP_TIME_OVERHEAD_US    (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#else
+#define DEEP_SLEEP_TIME_OVERHEAD_US    (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#endif // defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined (CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
 
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 #ifdef CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS
@@ -113,11 +112,10 @@
 #define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
 #endif // CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS
 
-#else // other target
+#else   //  other target
 #define LIGHT_SLEEP_TIME_OVERHEAD_US 0
 #define DEEP_SLEEP_TIME_OVERHEAD_US 0
-#endif // CONFIG_IDF_TARGET_*
-
+#endif  //  CONFIG_IDF_TARGET_*
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY)
 #define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY
@@ -126,7 +124,9 @@
 #endif
 
 // Minimal amount of time we can sleep for
-#define LIGHT_SLEEP_MIN_TIME_US 200
+#define LIGHT_SLEEP_MIN_TIME_US     200
+
+#define RTC_MODULE_SLEEP_PREPARE_CYCLES (6)
 
 #define CHECK_SOURCE(source, value, mask) ((s_config.wakeup_triggers & mask) && \
                                             (source == value))
@@ -143,11 +143,16 @@ typedef struct {
     uint32_t ext0_trigger_level : 1;
     uint32_t ext0_rtc_gpio_num : 5;
     uint32_t sleep_time_adjustment;
+    uint32_t ccount_ticks_record;
+    uint32_t sleep_time_overhead_out;
+    uint32_t rtc_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
 } sleep_config_t;
 
 static sleep_config_t s_config = {
     .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
+    .ccount_ticks_record = 0,
+    .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0
 };
 
@@ -344,6 +349,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
 
+    // Set state machine time for light sleep
+    if(!deep_sleep) {
+        rtc_sleep_low_init(s_config.rtc_clk_cal_period);
+    }
+
     // Configure timer wakeup
     if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
         s_config.sleep_duration > 0) {
@@ -377,6 +387,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
 
+    if (!deep_sleep) {
+        s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+    }
+
     // re-enable UART output
     resume_uarts();
 
@@ -406,6 +420,8 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
+
+    s_config.rtc_clk_cal_period = esp_clk_slowclk_cal_get();
 
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
@@ -458,30 +474,73 @@ esp_err_t esp_light_sleep_start(void)
      * lock, otherwise there will be deadlock.
      */
     esp_timer_private_lock();
+
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
+    uint32_t ccount_at_sleep_start = cpu_ll_get_cycle_count();
     uint64_t frc_time_at_start = esp_system_get_time();
+    uint32_t sleep_time_overhead_in = (ccount_at_sleep_start-s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+
     DPORT_STALL_OTHER_CPU_START();
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
-    // Amount of time to subtract from actual sleep time.
-    // This is spent on entering and leaving light sleep.
-    s_config.sleep_time_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US;
+    // Re-calibrate the RTC Timer clock
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
+    uint64_t time_per_us = 1000000ULL;
+    s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+#elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
+    s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+#else
+    s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+#endif
+
+    /*
+     * Adjustment time consists of parts below:
+     * 1. Hardware time waiting for internal 8M oscilate clock and XTAL;
+     * 2. Hardware state swithing time of the rtc main state machine;
+     * 3. Code execution time when clock is not stable;
+     * 4. Code execution time which can be measured;
+     */
+
+    uint32_t rtc_cntl_xtl_buf_wait_slp_cycles = rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, s_config.rtc_clk_cal_period);
+    s_config.sleep_time_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out
+                    + rtc_time_slowclk_to_us(rtc_cntl_xtl_buf_wait_slp_cycles + RTC_CNTL_CK8M_WAIT_SLP_CYCLES + RTC_CNTL_WAKEUP_DELAY_CYCLES, s_config.rtc_clk_cal_period);
 
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US + DEEP_SLEEP_WAKEUP_DELAY;
 
-#ifndef CONFIG_SPIRAM
+#if CONFIG_ESP_SYSTEM_PD_FLASH
+    /*
+     * When SPIRAM is disabled in menuconfig, the minimum sleep time of the
+     * system needs to meet the sum below:
+     * 1. Wait time for the flash power-on after waking up;
+     * 2. The execution time of codes between RTC Timer get start time
+     *    with hardware starts to switch state to sleep;
+     * 3. The hardware state switching time of the rtc state machine during
+     *    sleep and wake-up. This process requires 6 cycles to complete.
+     *    The specific hardware state switching process and the cycles
+     *    consumed are rtc_cpu_run_stall(1), cut_pll_rtl(2), cut_8m(1),
+     *    min_protect(2);
+     * 4. All the adjustment time which is s_config.sleep_time_adjustment below.
+     */
     const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
-            flash_enable_time_us + LIGHT_SLEEP_TIME_OVERHEAD_US + LIGHT_SLEEP_MIN_TIME_US);
+                    flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
+                    + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
     if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
-        s_config.sleep_time_adjustment += flash_enable_time_us;
+        if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
+            s_config.sleep_time_adjustment += flash_enable_time_us;
+        }
+    } else {
+        if (s_config.sleep_time_overhead_out > flash_enable_time_us) {
+            s_config.sleep_time_adjustment -= flash_enable_time_us;
+        }
     }
-#endif //CONFIG_SPIRAM
+#endif //CONFIG_ESP_SYSTEM_PD_FLASH
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -507,8 +566,7 @@ esp_err_t esp_light_sleep_start(void)
     uint64_t rtc_ticks_at_end = rtc_time_get();
     uint64_t frc_time_at_end = esp_system_get_time();
 
-    uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start,
-                                    esp_clk_slowclk_cal_get());
+    uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
     uint64_t frc_time_diff = frc_time_at_end - frc_time_at_start;
 
     int64_t time_diff = rtc_time_diff - frc_time_diff;
@@ -529,6 +587,7 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
+    s_config.sleep_time_overhead_out = (cpu_ll_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
     return err;
 }
 
@@ -594,6 +653,7 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
+    s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
     return ESP_OK;
@@ -601,13 +661,12 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 
 static void timer_wakeup_prepare(void)
 {
-    uint32_t period = esp_clk_slowclk_cal_get();
     int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
     if (sleep_duration < 0) {
         sleep_duration = 0;
     }
 
-    int64_t ticks = rtc_time_us_to_slowclk(sleep_duration, period);
+    int64_t ticks = rtc_time_us_to_slowclk(sleep_duration, s_config.rtc_clk_cal_period);
     rtc_hal_set_wakeup_timer(s_config.rtc_ticks_at_sleep_start + ticks);
 }
 

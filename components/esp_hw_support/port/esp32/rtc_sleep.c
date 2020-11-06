@@ -30,27 +30,20 @@
 
 #define MHZ (1000000)
 
-/* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP   2
-#define RTC_CNTL_PLL_BUF_WAIT_SLP   2
-#define RTC_CNTL_CK8M_WAIT_SLP      4
-#define OTHER_BLOCKS_POWERUP        1
-#define OTHER_BLOCKS_WAIT           1
+#define ROM_RAM_POWERUP_CYCLES   RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES
+#define ROM_RAM_WAIT_CYCLES      RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES
 
-#define ROM_RAM_POWERUP_CYCLES   OTHER_BLOCKS_POWERUP
-#define ROM_RAM_WAIT_CYCLES      OTHER_BLOCKS_WAIT
+#define WIFI_POWERUP_CYCLES      RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES
+#define WIFI_WAIT_CYCLES         RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES
 
-#define WIFI_POWERUP_CYCLES      OTHER_BLOCKS_POWERUP
-#define WIFI_WAIT_CYCLES         OTHER_BLOCKS_WAIT
+#define RTC_POWERUP_CYCLES       RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES
+#define RTC_WAIT_CYCLES          RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES
 
-#define RTC_POWERUP_CYCLES       OTHER_BLOCKS_POWERUP
-#define RTC_WAIT_CYCLES          OTHER_BLOCKS_WAIT
+#define DG_WRAP_POWERUP_CYCLES   RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES
+#define DG_WRAP_WAIT_CYCLES      RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES
 
-#define DG_WRAP_POWERUP_CYCLES   OTHER_BLOCKS_POWERUP
-#define DG_WRAP_WAIT_CYCLES      OTHER_BLOCKS_WAIT
-
-#define RTC_MEM_POWERUP_CYCLES   OTHER_BLOCKS_POWERUP
-#define RTC_MEM_WAIT_CYCLES      OTHER_BLOCKS_WAIT
+#define RTC_MEM_POWERUP_CYCLES   RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES
+#define RTC_MEM_WAIT_CYCLES      RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES
 
 /**
  * @brief Power down flags for rtc_sleep_pd function
@@ -101,11 +94,6 @@ static void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
-    // set 5 PWC state machine times to fit in main state machine time
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_SLP);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, RTC_CNTL_XTL_BUF_WAIT_SLP);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP);
-
     // set shortest possible sleep time limit
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
 
@@ -218,6 +206,14 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, cfg.rtc_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, cfg.dig_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_SLP, cfg.dig_dbias_slp);
+}
+
+void rtc_sleep_low_init(uint32_t slowclk_period)
+{
+    // set 5 PWC state machine times to fit in main state machine time
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
 
 void rtc_sleep_set_wakeup_time(uint64_t t)
