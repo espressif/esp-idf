@@ -441,6 +441,9 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
             if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
+                if (fixed_queue_length(p_ccb->xmit_data_q) >= BTM_SCO_XMIT_QUEUE_HIGH_WM) {
+                    status = BTM_NO_RESOURCES;
+                }
                 fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
                 btm_sco_check_send_pkts (sco_inx);
             } else {
@@ -454,7 +457,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS) {
+    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
