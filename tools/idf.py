@@ -26,6 +26,7 @@
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
 # their specific function instead.
+from __future__ import print_function
 import codecs
 import json
 import locale
@@ -56,6 +57,14 @@ os.environ["PYTHON"] = sys.executable
 PROG = os.getenv("IDF_PY_PROGRAM_NAME", "idf.py")
 
 
+# function prints warning when autocompletion is not being performed
+# set argument stream to sys.stderr for errors and exceptions
+def print_warning(message, stream=None):
+    stream = stream or sys.stderr
+    if not os.getenv('_IDF.PY_COMPLETE'):
+        print(message, file=stream)
+
+
 def check_environment():
     """
     Verify the environment contains the top-level tools we need to operate
@@ -65,7 +74,7 @@ def check_environment():
     checks_output = []
 
     if not executable_exists(["cmake", "--version"]):
-        print_idf_version()
+        debug_print_idf_version()
         raise FatalError("'cmake' must be available on the PATH to use %s" % PROG)
 
     # verify that IDF_PATH env variable is set
@@ -74,12 +83,12 @@ def check_environment():
     if "IDF_PATH" in os.environ:
         set_idf_path = realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
-            print(
+            print_warning(
                 "WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
                 "Using the environment variable directory, but results may be unexpected..." %
                 (set_idf_path, PROG, detected_idf_path))
     else:
-        print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
+        print_warning("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
 
     # check Python dependencies
@@ -95,8 +104,8 @@ def check_environment():
 
         checks_output.append(out.decode('utf-8', 'ignore').strip())
     except subprocess.CalledProcessError as e:
-        print(e.output.decode('utf-8', 'ignore'))
-        print_idf_version()
+        print_warning(e.output.decode('utf-8', 'ignore'), stream=sys.stderr)
+        debug_print_idf_version()
         raise SystemExit(1)
 
     return checks_output
@@ -113,12 +122,12 @@ def _safe_relpath(path, start=None):
         return os.path.abspath(path)
 
 
-def print_idf_version():
+def debug_print_idf_version():
     version = idf_version()
     if version:
-        print("ESP-IDF %s" % version)
+        print_warning("ESP-IDF %s" % version)
     else:
-        print("ESP-IDF version unknown")
+        print_warning("ESP-IDF version unknown")
 
 
 class PropertyDict(dict):
@@ -192,7 +201,7 @@ def init_cli(verbose_output=None):
                 if deprecation.exit_with_error:
                     raise FatalError("Error: %s" % deprecation.full_message('Option "%s"' % option.name))
                 else:
-                    print("Warning: %s" % deprecation.full_message('Option "%s"' % option.name))
+                    print_warning("Warning: %s" % deprecation.full_message('Option "%s"' % option.name))
 
     class Task(object):
         def __init__(self, callback, name, aliases, dependencies, order_dependencies, action_args):
@@ -277,7 +286,7 @@ def init_cli(verbose_output=None):
                 if deprecation.exit_with_error:
                     raise FatalError("Error: %s" % message)
                 else:
-                    print("Warning: %s" % message)
+                    print_warning("Warning: %s" % message)
 
                 self.deprecated = False  # disable Click's built-in deprecation handling
 
@@ -530,7 +539,8 @@ def init_cli(verbose_output=None):
                 [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
             if dupplicated_tasks:
                 dupes = ", ".join('"%s"' % t for t in dupplicated_tasks)
-                print(
+
+                print_warning(
                     "WARNING: Command%s found in the list of commands more than once. " %
                     ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
                     "Only first occurrence will be executed.")
@@ -593,7 +603,7 @@ def init_cli(verbose_output=None):
                                 (task.name, dep))
                             dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
 
-                            # Remove options with global scope from invoke tasks because they are alread in global_args
+                            # Remove options with global scope from invoke tasks because they are already in global_args
                             for key in list(dep_task.action_args):
                                 option = next((o for o in ctx.command.params if o.name == key), None)
                                 if option and (option.scope.is_global or option.scope.is_shared):
@@ -660,7 +670,7 @@ def init_cli(verbose_output=None):
     extensions = {}
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
-            print('WARNING: Directory with idf.py extensions doesn\'t exist:\n    %s' % directory)
+            print_warning('WARNING: Directory with idf.py extensions doesn\'t exist:\n    %s' % directory)
             continue
 
         sys.path.append(directory)
@@ -683,7 +693,7 @@ def init_cli(verbose_output=None):
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
         except AttributeError:
-            print('WARNING: Cannot load idf.py extension "%s"' % name)
+            print_warning('WARNING: Cannot load idf.py extension "%s"' % name)
 
     # Load extensions from project dir
     if os.path.exists(os.path.join(project_dir, "idf_ext.py")):
@@ -691,8 +701,8 @@ def init_cli(verbose_output=None):
         try:
             from idf_ext import action_extensions
         except ImportError:
-            print("Error importing extension file idf_ext.py. Skipping.")
-            print("Please make sure that it contains implementation (even if it's empty) of add_action_extensions")
+            print_warning("Error importing extension file idf_ext.py. Skipping.")
+            print_warning("Please make sure that it contains implementation (even if it's empty) of add_action_extensions")
 
         try:
             all_actions = merge_action_lists(all_actions, action_extensions(all_actions, project_dir))
@@ -782,7 +792,7 @@ if __name__ == "__main__":
             # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()
 
-            print(
+            print_warning(
                 "Your environment is not configured to handle unicode filenames outside of ASCII range."
                 " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
 
@@ -795,5 +805,5 @@ if __name__ == "__main__":
             main()
 
     except FatalError as e:
-        print(e)
+        print(e, file=sys.stderr)
         sys.exit(2)

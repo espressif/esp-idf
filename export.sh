@@ -140,9 +140,9 @@ enable_autocomplete() {
     if [ -n "$ZSH_VERSION" ]
     then
         autoload -Uz compinit && compinit -u
-        eval "$(env _IDF.PY_COMPLETE=source_zsh idf.py)"
+        eval "$(env _IDF.PY_COMPLETE=source_zsh idf.py)" || echo "WARNING: Failed to load shell autocompletion!"
     else
-        eval "$(env _IDF.PY_COMPLETE=source_bash idf.py)"
+        eval "$(env _IDF.PY_COMPLETE=source_bash idf.py)"  || echo "WARNING: Failed to load shell autocompletion!"
     fi
 }
 
@@ -151,3 +151,4 @@ enable_autocomplete
 
 unset realpath_int
 unset idf_export_main
+unset enable_autocomplete
