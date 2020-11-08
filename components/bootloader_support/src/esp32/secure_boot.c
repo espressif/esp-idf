@@ -319,16 +319,26 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
     bool efuse_key_read_protected = dis_reg & EFUSE_RD_DIS_BLK2;
     bool efuse_key_write_protected = dis_reg & EFUSE_WR_DIS_BLK2;
-    if (efuse_key_write_protected == false 
-        && efuse_key_read_protected == false
-        && REG_READ(EFUSE_BLK2_RDATA0_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA1_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA2_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA3_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA4_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA5_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA6_REG) == 0
-        && REG_READ(EFUSE_BLK2_RDATA7_REG) == 0) {
+    uint32_t efuse_blk2_r0, efuse_blk2_r1, efuse_blk2_r2, efuse_blk2_r3, efuse_blk2_r4, efuse_blk2_r5, efuse_blk2_r6, efuse_blk2_r7;
+    efuse_blk2_r0 = REG_READ(EFUSE_BLK2_RDATA0_REG);
+    efuse_blk2_r1 = REG_READ(EFUSE_BLK2_RDATA1_REG);
+    efuse_blk2_r2 = REG_READ(EFUSE_BLK2_RDATA2_REG);
+    efuse_blk2_r3 = REG_READ(EFUSE_BLK2_RDATA3_REG);
+    efuse_blk2_r4 = REG_READ(EFUSE_BLK2_RDATA4_REG);
+    efuse_blk2_r5 = REG_READ(EFUSE_BLK2_RDATA5_REG);
+    efuse_blk2_r6 = REG_READ(EFUSE_BLK2_RDATA6_REG);
+    efuse_blk2_r7 = REG_READ(EFUSE_BLK2_RDATA7_REG);
+
+    if (efuse_key_read_protected == true) {
+        ESP_LOGE(TAG, "Secure Boot v2 digest(BLK2) read protected, aborting....");
+        return ESP_FAIL;
+    }
+
+    if (efuse_key_write_protected == false
+        && efuse_blk2_r0 == 0 && efuse_blk2_r1 == 0
+        && efuse_blk2_r2 == 0 && efuse_blk2_r3 == 0
+        && efuse_blk2_r4 == 0 && efuse_blk2_r5 == 0
+        && efuse_blk2_r6 == 0 && efuse_blk2_r7 == 0) {
         /* Verifies the signature block appended to the image matches with the signature block of the app to be loaded */
         ret = secure_boot_v2_digest_generate(bootloader_data.start_addr, bootloader_data.image_len - SIG_BLOCK_PADDING, boot_pub_key_digest);
         if (ret != ESP_OK) {
@@ -343,12 +353,28 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
             ESP_LOGD(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, boot_public_key_digest_ptr[i]);
         }
 
-        ESP_LOGI(TAG, "Write protecting public key digest...");
-        new_wdata0 |= EFUSE_WR_DIS_BLK2;
-        efuse_key_write_protected = true;
-        efuse_key_read_protected = false;
     } else {
+        uint32_t efuse_blk2_digest[8];
+        efuse_blk2_digest[0] = efuse_blk2_r0;
+        efuse_blk2_digest[1] = efuse_blk2_r1;
+        efuse_blk2_digest[2] = efuse_blk2_r2;
+        efuse_blk2_digest[3] = efuse_blk2_r3;
+        efuse_blk2_digest[4] = efuse_blk2_r4;
+        efuse_blk2_digest[5] = efuse_blk2_r5;
+        efuse_blk2_digest[6] = efuse_blk2_r6;
+        efuse_blk2_digest[7] = efuse_blk2_r7;
+        memcpy(boot_pub_key_digest, efuse_blk2_digest, DIGEST_LEN);
         ESP_LOGW(TAG, "Using pre-loaded secure boot v2 public key digest in EFUSE block 2");
+    }
+
+    if (efuse_key_write_protected == false) {
+        ESP_LOGI(TAG, "Write protecting public key digest...");
+        ret = esp_efuse_set_write_protect(EFUSE_BLK2);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Write protecting public key digest...failed.");
+            return ret;
+        }
+        efuse_key_write_protected = true;
     }
 
     uint8_t app_pub_key_digest[DIGEST_LEN];
