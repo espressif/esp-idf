@@ -47,7 +47,7 @@ repos:
         entry: cmakelint --linelength=120 --spaces=4
         language: python
         additional_dependencies:
-          - https://github.com/richq/cmake-lint/archive/058c6c0ed2536.zip
+          - cmakelint==1.4.1
         files: 'CMakeLists.txt$|\.cmake$'
         exclude: '\/third_party\/'
       - id: check-codeowners
