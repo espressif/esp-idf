@@ -537,7 +537,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
         }
 
 retry:
-        if (esp_ble_get_cur_sendable_packets_num(blufi_env.conn_id) > 0) {
+        if (esp_ble_get_cur_sendable_packets_num(BTC_GATT_GET_CONN_ID(blufi_env.conn_id)) > 0) {
             btc_blufi_send_notify((uint8_t *)hdr,
                 ((hdr->fc & BLUFI_FC_CHECK) ?
                  hdr->data_len + sizeof(struct blufi_hdr) + 2 :
