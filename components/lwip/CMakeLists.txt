@@ -4,6 +4,7 @@ set(include_dirs
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
+    port/esp32/tcp_isn
     )
 
 set(srcs
@@ -122,6 +123,10 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/md4.c"
         "lwip/src/netif/ppp/polarssl/md5.c"
         "lwip/src/netif/ppp/polarssl/sha1.c")
+endif()
+
+if(CONFIG_LWIP_TCP_ISN_HOOK)
+    list(APPEND srcs "port/esp32/tcp_isn/tcp_isn.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
