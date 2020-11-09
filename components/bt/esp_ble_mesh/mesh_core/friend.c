@@ -559,7 +559,10 @@ static struct net_buf *encode_update(struct bt_mesh_friend *frnd, u8_t md)
     NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*upd));
     struct bt_mesh_subnet *sub = friend_subnet_get(frnd->net_idx);
 
-    __ASSERT_NO_MSG(sub != NULL);
+    if (!sub) {
+        BT_ERR("Friend subnet 0x%04x not found", frnd->net_idx);
+        return NULL;
+    }
 
     BT_DBG("lpn 0x%04x md 0x%02x", frnd->lpn, md);
 
@@ -1194,7 +1197,10 @@ static void friend_timeout(struct k_work *work)
         .end = buf_send_end,
     };
 
-    __ASSERT_NO_MSG(frnd->pending_buf == 0U);
+    if (frnd->pending_buf != 0U) {
+        BT_ERR("Previous buffer not yet sent!");
+        return;
+    }
 
     BT_DBG("lpn 0x%04x send_last %u last %p", frnd->lpn,
            frnd->send_last, frnd->last);

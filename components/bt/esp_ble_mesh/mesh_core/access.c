@@ -447,7 +447,7 @@ static void mod_publish(struct k_work *work)
     BT_DBG("%s", __func__);
 
     period_ms = bt_mesh_model_pub_period_get(pub->mod);
-    BT_INFO("period %u ms", period_ms);
+    BT_INFO("Publish period %u ms", period_ms);
 
     if (pub->count) {
         err = publish_retransmit(pub->mod);
@@ -469,14 +469,11 @@ static void mod_publish(struct k_work *work)
         return;
     }
 
-    __ASSERT_NO_MSG(pub->update != NULL);
-
     /* Callback the model publish update event to the application layer.
      * In the event, users can update the context of the publish message
      * which will be published in the next period.
      */
-    err = pub->update(pub->mod);
-    if (err) {
+    if (pub->update && pub->update(pub->mod)) {
         /* Cancel this publish attempt. */
         BT_ERR("Update failed, skipping publish (err %d)", err);
         pub->period_start = k_uptime_get_32();
