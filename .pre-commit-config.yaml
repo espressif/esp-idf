@@ -44,7 +44,7 @@ repos:
         files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
       - id: cmake-lint
         name: Check CMake Files Format
-        entry: cmakelint --linelength=120 --spaces=4
+        entry: cmakelint --linelength=120 --spaces=4 --filter=-whitespace/indent
         language: python
         additional_dependencies:
           - cmakelint==1.4.1
