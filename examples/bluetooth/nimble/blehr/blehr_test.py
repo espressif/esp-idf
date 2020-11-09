@@ -19,12 +19,16 @@ import os
 import re
 import threading
 import traceback
-import Queue
 import subprocess
 
 from tiny_test_fw import Utility
 import ttfw_idf
 from ble import lib_ble_client
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
