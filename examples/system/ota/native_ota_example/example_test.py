@@ -1,8 +1,6 @@
 import re
 import os
 import socket
-import BaseHTTPServer
-import SimpleHTTPServer
 from threading import Thread
 import ssl
 
@@ -10,6 +8,13 @@ from tiny_test_fw import DUT
 import ttfw_idf
 import random
 import subprocess
+
+try:
+    import BaseHTTPServer
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
+except ImportError:
+    import http.server as BaseHTTPServer
+    from http.server import SimpleHTTPRequestHandler
 
 server_cert = "-----BEGIN CERTIFICATE-----\n" \
               "MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n"\
@@ -99,7 +104,7 @@ def https_request_handler():
     """
     Returns a request handler class that handles broken pipe exception
     """
-    class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    class RequestHandler(SimpleHTTPRequestHandler):
         def finish(self):
             try:
                 if not self.wfile.closed:
@@ -121,8 +126,7 @@ def https_request_handler():
 def start_https_server(ota_image_dir, server_ip, server_port):
     server_file, key_file = get_ca_cert(ota_image_dir)
     requestHandler = https_request_handler()
-    httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
-                                      requestHandler)
+    httpd = BaseHTTPServer.HTTPServer((server_ip, server_port), requestHandler)
 
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
