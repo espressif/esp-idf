@@ -451,44 +451,55 @@ uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t
     if (lastlen) {
         bufcount++;
     }
+    if (bufcount > CONFIG_ETH_DMA_TX_BUFFER_NUM) {
+        goto err;
+    }
+
+    eth_dma_tx_descriptor_t *desc_iter = hal->tx_desc;
     /* A frame is transmitted in multiple descriptor */
-    for (uint32_t i = 0; i < bufcount; i++) {
+    for (int i = 0; i < bufcount; i++) {
         /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-        if (hal->tx_desc->TDES0.Own != EMAC_DMADESC_OWNER_CPU) {
+        if (desc_iter->TDES0.Own != EMAC_DMADESC_OWNER_CPU) {
             goto err;
         }
         /* Clear FIRST and LAST segment bits */
-        hal->tx_desc->TDES0.FirstSegment = 0;
-        hal->tx_desc->TDES0.LastSegment = 0;
+        desc_iter->TDES0.FirstSegment = 0;
+        desc_iter->TDES0.LastSegment = 0;
+        desc_iter->TDES0.InterruptOnComplete = 0;
         if (i == 0) {
             /* Setting the first segment bit */
-            hal->tx_desc->TDES0.FirstSegment = 1;
+            desc_iter->TDES0.FirstSegment = 1;
         }
         if (i == (bufcount - 1)) {
             /* Setting the last segment bit */
-            hal->tx_desc->TDES0.LastSegment = 1;
+            desc_iter->TDES0.LastSegment = 1;
             /* Enable transmit interrupt */
-            hal->tx_desc->TDES0.InterruptOnComplete = 1;
+            desc_iter->TDES0.InterruptOnComplete = 1;
             /* Program size */
-            hal->tx_desc->TDES1.TransmitBuffer1Size = lastlen;
+            desc_iter->TDES1.TransmitBuffer1Size = lastlen;
             /* copy data from uplayer stack buffer */
-            memcpy((void *)(hal->tx_desc->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, lastlen);
+            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, lastlen);
             sentout += lastlen;
         } else {
             /* Program size */
-            hal->tx_desc->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+            desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
             /* copy data from uplayer stack buffer */
-            memcpy((void *)(hal->tx_desc->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, CONFIG_ETH_DMA_BUFFER_SIZE);
+            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, CONFIG_ETH_DMA_BUFFER_SIZE);
             sentout += CONFIG_ETH_DMA_BUFFER_SIZE;
         }
-        /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
-        hal->tx_desc->TDES0.Own = EMAC_DMADESC_OWNER_DMA;
         /* Point to next descriptor */
+        desc_iter = (eth_dma_tx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+    }
+
+    /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
+    for (int i = 0; i < bufcount; i++) {
+        hal->tx_desc->TDES0.Own = EMAC_DMADESC_OWNER_DMA;
         hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
     }
-err:
     hal->dma_regs->dmatxpolldemand = 0;
     return sentout;
+err:
+    return 0;
 }
 
 uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain)
@@ -562,70 +573,56 @@ IRAM_ATTR void emac_hal_isr(void *arg)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     typeof(hal->dma_regs->dmastatus) dma_status = hal->dma_regs->dmastatus;
+    hal->dma_regs->dmastatus.val = dma_status.val;
     /* DMA Normal Interrupt */
     if (dma_status.norm_int_summ) {
         /* Transmit Interrupt */
         if (dma_status.trans_int) {
             emac_hal_tx_complete_cb(arg);
-            hal->dma_regs->dmastatus.trans_int = 1;
         }
         /* Transmit Buffer Unavailable */
         if (dma_status.trans_buf_unavail) {
             emac_hal_tx_unavail_cb(arg);
-            hal->dma_regs->dmastatus.trans_buf_unavail = 1;
         }
         /* Receive Interrupt */
         if (dma_status.recv_int) {
             emac_hal_rx_complete_cb(arg);
-            hal->dma_regs->dmastatus.recv_int = 1;
         }
         /* Early Receive Interrupt */
         if (dma_status.early_recv_int) {
             emac_hal_rx_early_cb(arg);
-            hal->dma_regs->dmastatus.early_recv_int = 1;
         }
-        hal->dma_regs->dmastatus.norm_int_summ = 1;
     }
     /* DMA Abnormal Interrupt */
     if (dma_status.abn_int_summ) {
         /* Transmit Process Stopped */
         if (dma_status.trans_proc_stop) {
-            hal->dma_regs->dmastatus.trans_proc_stop = 1;
         }
         /* Transmit Jabber Timeout */
         if (dma_status.trans_jabber_to) {
-            hal->dma_regs->dmastatus.trans_jabber_to = 1;
         }
         /* Receive FIFO Overflow */
         if (dma_status.recv_ovflow) {
-            hal->dma_regs->dmastatus.recv_ovflow = 1;
         }
         /* Transmit Underflow */
         if (dma_status.trans_undflow) {
-            hal->dma_regs->dmastatus.trans_undflow = 1;
         }
         /* Receive Buffer Unavailable */
         if (dma_status.recv_buf_unavail) {
             emac_hal_rx_unavail_cb(arg);
-            hal->dma_regs->dmastatus.recv_buf_unavail = 1;
         }
         /* Receive Process Stopped */
         if (dma_status.recv_proc_stop) {
-            hal->dma_regs->dmastatus.recv_proc_stop = 1;
         }
         /* Receive Watchdog Timeout */
         if (dma_status.recv_wdt_to) {
-            hal->dma_regs->dmastatus.recv_wdt_to = 1;
         }
         /* Early Transmit Interrupt */
         if (dma_status.early_trans_int) {
-            hal->dma_regs->dmastatus.early_trans_int = 1;
         }
         /* Fatal Bus Error */
         if (dma_status.fatal_bus_err_int) {
-            hal->dma_regs->dmastatus.fatal_bus_err_int = 1;
         }
-        hal->dma_regs->dmastatus.abn_int_summ = 1;
     }
 }
 

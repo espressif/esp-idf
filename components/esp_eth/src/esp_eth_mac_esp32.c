@@ -511,3 +511,15 @@ IRAM_ATTR void emac_hal_rx_unavail_cb(void *arg)
         emac->isr_need_yield = true;
     }
 }
+
+IRAM_ATTR void emac_hal_rx_early_cb(void *arg)
+{
+    emac_hal_context_t *hal = (emac_hal_context_t *)arg;
+    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
+    BaseType_t high_task_wakeup;
+    /* notify receive task */
+    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
+    if (high_task_wakeup == pdTRUE) {
+        emac->isr_need_yield = true;
+    }
+}
