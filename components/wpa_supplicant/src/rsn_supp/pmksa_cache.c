@@ -18,7 +18,7 @@
 #ifdef IEEE8021X_EAPOL
 
 static const int pmksa_cache_max_entries = 10;
-static const int dot11RSNAConfigPMKLifetime = 43200;
+static const int dot11RSNAConfigPMKLifetime = 8640000; // 100 days = 3600 x 24 x 100 Seconds
 static const int dot11RSNAConfigPMKReauthThreshold = 70;
 
 struct rsn_pmksa_cache {
