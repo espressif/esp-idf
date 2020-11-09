@@ -71,7 +71,7 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             new_cache_values["TEST_COMPONENTS"] = config.get("TEST_COMPONENTS", "''")
             new_cache_values["TESTS_ALL"] = int(new_cache_values["TEST_COMPONENTS"] == "''")
 
-            with tempfile.NamedTemporaryFile() as sdkconfig_temp:
+            with tempfile.NamedTemporaryFile(delete=False) as sdkconfig_temp:
                 # Use values from the combined defaults and the values from
                 # config folder to build config
                 sdkconfig_default = os.path.join(project_path, "sdkconfig.defaults")
@@ -84,13 +84,18 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                     sdkconfig_temp.write(b"\n")
                     sdkconfig_temp.write(sdkconfig_config_file.read())
 
-                sdkconfig_temp.flush()
                 new_cache_values["SDKCONFIG_DEFAULTS"] = sdkconfig_temp.name
 
+            try:
                 args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
 
                 reconfigure = base_actions["actions"]["reconfigure"]["callback"]
                 reconfigure(None, ctx, args)
+            finally:
+                try:
+                    os.unlink(sdkconfig_temp.name)
+                except OSError:
+                    pass
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.
