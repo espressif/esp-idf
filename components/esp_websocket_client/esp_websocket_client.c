@@ -75,6 +75,7 @@ typedef enum {
 
 struct esp_websocket_client {
     esp_event_loop_handle_t     event_handle;
+    TaskHandle_t                task_handle;
     esp_transport_list_handle_t transport_list;
     esp_transport_handle_t      transport;
     websocket_config_storage_t *config;
@@ -565,7 +566,7 @@ esp_err_t esp_websocket_client_start(esp_websocket_client_handle_t client)
         ESP_LOGE(TAG, "The client has started");
         return ESP_FAIL;
     }
-    if (xTaskCreate(esp_websocket_client_task, "websocket_task", client->config->task_stack, client, client->config->task_prio, NULL) != pdTRUE) {
+    if (xTaskCreate(esp_websocket_client_task, "websocket_task", client->config->task_stack, client, client->config->task_prio, &client->task_handle) != pdTRUE) {
         ESP_LOGE(TAG, "Error create websocket task");
         return ESP_FAIL;
     }
@@ -582,6 +583,15 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client)
         ESP_LOGW(TAG, "Client was not started");
         return ESP_FAIL;
     }
+
+    /* A running client cannot be stopped from the websocket task/event handler */
+    TaskHandle_t running_task = xTaskGetCurrentTaskHandle();
+    if (running_task == client->task_handle) {
+        ESP_LOGE(TAG, "Client cannot be stopped from websocket task");
+        return ESP_FAIL;
+    }
+
+
     client->run = false;
     xEventGroupWaitBits(client->status_bits, STOPPED_BIT, false, true, portMAX_DELAY);
     client->state = WEBSOCKET_STATE_UNKNOW;
