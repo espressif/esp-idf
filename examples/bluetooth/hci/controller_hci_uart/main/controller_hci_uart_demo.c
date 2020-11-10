@@ -34,7 +34,7 @@ static void uart_gpio_reset(void)
 }
 
 void app_main(void)
-{ 
+{
     esp_err_t ret;
 
     /* Initialize NVS — it is used to store PHY calibration data */
@@ -62,4 +62,3 @@ void app_main(void)
         return;
     }
 }
-

@@ -418,4 +418,3 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     &SECURE_VERSION[0],    		// Secure version for anti-rollback
     NULL
 };
-

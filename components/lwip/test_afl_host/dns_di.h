@@ -1,6 +1,6 @@
 /*
  * dns.c dependecy injection -- preincluded to inject interface test functions into static variables
- * 
+ *
  */
 #include "no_warn_host.h"
 
@@ -54,7 +54,7 @@ void dns_test_dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
 
 void dns_test_inject_port_and_txid(int port, int txid)
 {
-    // inject random numbers 
+    // inject random numbers
     g_random_numbers[0] = port; //for port
     g_random_numbers[1] = txid; //for txid
     g_random_numbers_cnt = 0;   // let's start with the port

@@ -86,7 +86,7 @@ begin
 
     if not RegGetSubkeyNames(RootKey, CompanySubKey, TagNames) then
       continue;
-    
+
     for TagId := 0 to GetArrayLength(TagNames) - 1 do
     begin
       TagName := TagNames[TagId];

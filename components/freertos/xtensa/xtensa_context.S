@@ -70,7 +70,7 @@ interrupt stack frame defined in xtensa_rtos.h.
 Its counterpart is _xt_context_restore (which also restores A12, A13).
 
 Caller is expected to have saved PC, PS, A0, A1 (SP), A12, A13 in the frame.
-This function preserves A12 & A13 in order to provide the caller with 2 scratch 
+This function preserves A12 & A13 in order to provide the caller with 2 scratch
 regs that need not be saved over the call to this function. The choice of which
 2 regs to provide is governed by xthal_window_spill_nw and xthal_save_extra_nw,
 to avoid moving data more than necessary. Caller can assign regs accordingly.
@@ -79,7 +79,7 @@ Entry Conditions:
     A0  = Return address in caller.
     A1  = Stack pointer of interrupted thread or handler ("interruptee").
     Original A12, A13 have already been saved in the interrupt stack frame.
-    Other processor state except PC, PS, A0, A1 (SP), A12, A13, is as at the 
+    Other processor state except PC, PS, A0, A1 (SP), A12, A13, is as at the
     point of interruption.
     If windowed ABI, PS.EXCM = 1 (exceptions disabled).
 
@@ -143,8 +143,8 @@ _xt_context_save:
     #endif
 
     s32i    a12, sp, XT_STK_TMP0        /* temp. save stuff in stack frame */
-    s32i    a13, sp, XT_STK_TMP1    
-    s32i    a9,  sp, XT_STK_TMP2    
+    s32i    a13, sp, XT_STK_TMP1
+    s32i    a9,  sp, XT_STK_TMP2
 
     l32i    a12, sp, XT_STK_A12         /* recover original a9,12,13 */
     l32i    a13, sp, XT_STK_A13
@@ -192,7 +192,7 @@ _xt_context_save:
     rsr     a0, EPC1                   /* to be restored after SPILL_ALL_WINDOWS */
 
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
-    SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
+    SPILL_ALL_WINDOWS                  /* place the live register windows there */
     addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
 
     wsr     a2, PS                     /* restore to the value at entry */
@@ -203,7 +203,7 @@ _xt_context_save:
 
     l32i    a12, sp, XT_STK_TMP0       /* restore the temp saved registers */
     l32i    a13, sp, XT_STK_TMP1       /* our return address is there */
-    l32i    a9,  sp, XT_STK_TMP2  
+    l32i    a9,  sp, XT_STK_TMP2
 
     #if XCHAL_EXTRA_SA_SIZE > 0 || !defined(__XTENSA_CALL0_ABI__)
     mov     a0, a9                      /* retrieve ret addr */
@@ -218,7 +218,7 @@ _xt_context_restore
     !! MUST BE CALLED ONLY BY 'CALL0' INSTRUCTION !!
 
 Restores all Xtensa processor state except PC, PS, A0, A1 (SP) (and in Call0
-ABI, A14, A15 which are preserved by all interrupt handlers) from an interrupt 
+ABI, A14, A15 which are preserved by all interrupt handlers) from an interrupt
 stack frame defined in xtensa_rtos.h .
 Its counterpart is _xt_context_save (whose caller saved A12, A13).
 
@@ -231,7 +231,7 @@ Entry Conditions:
 Exit conditions:
     A0  = Return address in caller.
     A1  = Stack pointer of interrupted thread or handler ("interruptee").
-    Other processor state except PC, PS, A0, A1 (SP), is as at the point 
+    Other processor state except PC, PS, A0, A1 (SP), is as at the point
     of interruption.
 
 *******************************************************************************/
@@ -244,7 +244,7 @@ Exit conditions:
 _xt_context_restore:
 
     #if XCHAL_EXTRA_SA_SIZE > 0
-    /*  
+    /*
     NOTE: Normally the xthal_restore_extra_nw macro only affects address
     registers a2-a5. It is theoretically possible for Xtensa processor
     designers to write TIE that causes more address registers to be
@@ -314,7 +314,7 @@ _xt_context_restore:
 
     /*
     Call0 ABI callee-saved regs a12-15 do not need to be restored here.
-    However a12-13 were saved for scratch before XT_RTOS_INT_ENTER(), 
+    However a12-13 were saved for scratch before XT_RTOS_INT_ENTER(),
     so need to be restored anyway, despite being callee-saved in Call0.
     */
     l32i    a12, sp, XT_STK_A12
@@ -337,7 +337,7 @@ to "unowned". Leaves CPENABLE as it found it (does NOT clear it).
 Called during initialization of the RTOS, before any threads run.
 
 This may be called from normal Xtensa single-threaded application code which
-might use co-processors. The Xtensa run-time initialization enables all 
+might use co-processors. The Xtensa run-time initialization enables all
 co-processors. They must remain enabled here, else a co-processor exception
 might occur outside of a thread, which the exception handler doesn't expect.
 
@@ -380,13 +380,13 @@ _xt_coproc_init:
 
 _xt_coproc_release
 
-Releases any and all co-processors owned by a given thread. The thread is 
+Releases any and all co-processors owned by a given thread. The thread is
 identified by it's co-processor state save area defined in xtensa_context.h .
 
 Must be called before a thread's co-proc save area is deleted to avoid
 memory corruption when the exception handler tries to save the state.
 May be called when a thread terminates or completes but does not delete
-the co-proc save area, to avoid the exception handler having to save the 
+the co-proc save area, to avoid the exception handler having to save the
 thread's co-proc state before another thread can use it (optimization).
 
 Needs to be called on the processor the thread was running on. Unpinned threads
@@ -586,13 +586,13 @@ _xt_coproc_restorecs:
     s32i    a3, a15, XT_CP_CS_ST        /* update saved CP mask            */
     movi    a13, _xt_coproc_sa_offset   /* array of CP save offsets        */
     l32i    a15, a15, XT_CP_ASA         /* a15 = base of aligned save area */
-    
+
 #if XCHAL_CP0_SA_SIZE
     bbci.l  a2, 0, 2f                   /* CP 0 not enabled                */
     l32i    a14, a13, 0                 /* a14 = _xt_coproc_sa_offset[0]   */
     add     a3, a14, a15                /* a3 = save area for CP 0         */
     xchal_cp0_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
-2:  
+2:
 #endif
 
 #if XCHAL_CP1_SA_SIZE
@@ -655,5 +655,3 @@ _xt_coproc_restorecs:
     ret
 
 #endif
-
-

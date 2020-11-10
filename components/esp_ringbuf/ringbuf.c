@@ -1402,4 +1402,3 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
            pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
            pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
 }
-

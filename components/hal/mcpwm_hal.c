@@ -227,4 +227,3 @@ void mcpwm_hal_capture_disable(mcpwm_hal_context_t *hal, int cap_sig)
 {
     mcpwm_ll_capture_enable(hal->dev, cap_sig, 0);
 }
-

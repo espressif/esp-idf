@@ -27,7 +27,7 @@
 static const char* TAG = "trax";
 
 
-int trax_start_trace(trax_downcount_unit_t units_until_stop) 
+int trax_start_trace(trax_downcount_unit_t units_until_stop)
 {
 #if !WITH_TRAX
     ESP_EARLY_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
@@ -51,7 +51,7 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop)
 }
 
 
-int trax_trigger_traceend_after_delay(int delay) 
+int trax_trigger_traceend_after_delay(int delay)
 {
 #if !WITH_TRAX
     ESP_EARLY_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");

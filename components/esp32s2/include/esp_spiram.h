@@ -45,7 +45,7 @@ void esp_spiram_init_cache(void);
 
 /**
  * @brief Memory test for SPI RAM. Should be called after SPI RAM is initialized and
- * (in case of a dual-core system) the app CPU is online. This test overwrites the 
+ * (in case of a dual-core system) the app CPU is online. This test overwrites the
  * memory with crap, so do not call after e.g. the heap allocator has stored important
  * stuff in SPI RAM.
  *

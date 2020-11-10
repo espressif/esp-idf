@@ -6,4 +6,3 @@
 PROJECT_NAME := adc
 
 include $(IDF_PATH)/make/project.mk
-

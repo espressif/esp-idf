@@ -286,4 +286,3 @@ TEST_CASE("S32C1I vs AHB test (needs I2S)", "[hw][ignore]")
         vTaskDelete(th[i]);
     }
 }
-

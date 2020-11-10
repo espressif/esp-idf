@@ -226,7 +226,7 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
     /* update mode database */
     if ( ((pm_id != BTM_PM_SET_ONLY_ID) &&
             (btm_cb.pm_reg_db[pm_id].mask & BTM_PM_REG_SET))
-            || ((pm_id == BTM_PM_SET_ONLY_ID) 
+            || ((pm_id == BTM_PM_SET_ONLY_ID)
 		&& (btm_cb.pm_pend_link_hdl != BTM_INVALID_HANDLE)) ) {
 #if BTM_PM_DEBUG == TRUE
         BTM_TRACE_DEBUG( "BTM_SetPowerMode: Saving cmd acl handle %d temp_pm_id %d", p_acl_cb->hci_handle, temp_pm_id);

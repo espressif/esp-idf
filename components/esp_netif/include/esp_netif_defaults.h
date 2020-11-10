@@ -134,7 +134,7 @@ extern "C" {
         .driver = NULL,                                \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_SLIP,      \
     }
-    
+
 
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA

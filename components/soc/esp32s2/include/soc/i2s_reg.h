@@ -1442,5 +1442,3 @@ extern "C" {
 
 
 #endif /*_SOC_I2S_REG_H_ */
-
-

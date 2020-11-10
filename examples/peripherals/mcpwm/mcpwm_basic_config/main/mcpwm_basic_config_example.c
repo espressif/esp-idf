@@ -164,7 +164,7 @@ static void IRAM_ATTR isr_handler(void)
     uint32_t mcpwm_intr_status;
     capture evt;
     mcpwm_intr_status = MCPWM[MCPWM_UNIT_0]->int_st.val; //Read interrupt status
-    //calculate the interval in the ISR, 
+    //calculate the interval in the ISR,
     //so that the interval will be always correct even when cap_queue is not handled in time and overflow.
     if (mcpwm_intr_status & CAP0_INT_EN) { //Check for interrupt on rising edge on CAP0 signal
         current_cap_value[0] = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP0); //get capture signal counter value
@@ -292,4 +292,3 @@ void app_main(void)
     xTaskCreate(gpio_test_signal, "gpio_test_signal", 4096, NULL, 5, NULL); //comment if you don't want to use capture module
     xTaskCreate(mcpwm_example_config, "mcpwm_example_config", 4096, NULL, 5, NULL);
 }
-

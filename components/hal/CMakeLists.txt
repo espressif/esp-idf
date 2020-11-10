@@ -76,5 +76,3 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc
                        LDFRAGMENTS linker.lf)
-
-

@@ -279,7 +279,7 @@ static tGATT_STATUS read_attr_value (void *p_attr,
 			/*if offset equal to max_len, should respond with zero byte value
             //if offset is greater than max_len, should respond with an error*/
                 status = GATT_INVALID_OFFSET;
-            } else { 
+            } else {
                 UINT8 *value = (UINT8 *)(p_attr16->p_value->attr_val.attr_val) + offset;
                 UINT16 len_left = p_attr16->p_value->attr_val.attr_len - offset;
                 len = (mtu >= len_left) ? (len_left) : mtu;
@@ -557,7 +557,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                 //add mask to indicate that p_value->attr_val.attr_val is dynamic allocated
                 p_char_val->mask |= GATT_ATTR_VALUE_ALLOCATED;
             }
-            
+
             //initiate characteristic attribute value part
             memset(p_char_val->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
             if (attr_val->attr_val != NULL) {
@@ -961,15 +961,15 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                     return GATT_APP_RSP;
                 }
 
-                if ((p_attr->p_value != NULL) && 
-                    (p_attr->p_value->attr_val.attr_max_len >= offset + len) && 
+                if ((p_attr->p_value != NULL) &&
+                    (p_attr->p_value->attr_val.attr_max_len >= offset + len) &&
                     p_attr->p_value->attr_val.attr_val != NULL) {
                     memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
                     p_attr->p_value->attr_val.attr_len = len + offset;
                     return GATT_SUCCESS;
                 } else if (p_attr->p_value->attr_val.attr_max_len < offset + len){
                     GATT_TRACE_DEBUG("Remote device try to write with a length larger then attribute's max length\n");
-                    return GATT_INVALID_ATTR_LEN;               
+                    return GATT_INVALID_ATTR_LEN;
                 } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
                     GATT_TRACE_ERROR("Error in %s, line=%d, %s should not be NULL here\n", __func__, __LINE__, \
                                     (p_attr->p_value == NULL) ? "p_value" : "attr_val.attr_val");
@@ -1425,7 +1425,7 @@ static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB *p_tcb, UINT8 op_code,
 
         gatt_sr_send_req_callback(conn_id,
                                   trans_id, GATTS_REQ_TYPE_READ, &sr_data);
-        
+
         if (need_rsp) {
             return (tGATT_STATUS) GATT_PENDING;
         }

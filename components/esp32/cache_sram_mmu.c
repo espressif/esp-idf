@@ -69,11 +69,11 @@ unsigned int IRAM_ATTR cache_sram_mmu_set(int cpu_no, int pid, unsigned int vadd
     unsigned int i,shift,mask_s;
     unsigned int mmu_addr;
     unsigned int mmu_table_val;
-    //address check 
+    //address check
     if( (ADDRESS_CHECK(vaddr,psize)) || (ADDRESS_CHECK(paddr,psize)) ){
         return MMU_SET_ADDR_ALIGNED_ERROR;
     }
-    //psize check 
+    //psize check
     if(psize == 32) {
         shift  = 15;
         mask_s = 0;
@@ -94,7 +94,7 @@ unsigned int IRAM_ATTR cache_sram_mmu_set(int cpu_no, int pid, unsigned int vadd
     }
     //mmu value
     mmu_table_val = paddr >> shift;
-    //mmu_addr 
+    //mmu_addr
     if(pid == 0 || pid == 1){
         if(vaddr >= PRO_DRAM1_START_ADDR && vaddr < PRO_DRAM1_END_ADDR(psize)){
             mmu_addr = 1152 + ((vaddr & (0x3FFFFF >> mask_s)) >> shift);

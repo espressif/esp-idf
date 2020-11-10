@@ -6,4 +6,3 @@
 PROJECT_NAME := deep_sleep
 
 include $(IDF_PATH)/make/project.mk
-

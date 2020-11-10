@@ -278,5 +278,3 @@ void app_main(void)
      */
     wss_server_send_messages(&server);
 }
-
-

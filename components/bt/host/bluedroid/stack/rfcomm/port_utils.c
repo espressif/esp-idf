@@ -241,7 +241,7 @@ void port_release_port (tPORT *p_port)
         p_port->tx.queue = NULL;
         fixed_queue_free(p_port->rx.queue, NULL);
         p_port->rx.queue = NULL;
-		
+
         RFCOMM_TRACE_DEBUG ("port_release_port:p_port->keep_port_handle:%d", p_port->keep_port_handle);
         if ( p_port->keep_port_handle ) {
             RFCOMM_TRACE_DEBUG ("port_release_port:Initialize handle:%d", p_port->inx);

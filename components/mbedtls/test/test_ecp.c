@@ -74,4 +74,3 @@ TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
     mbedtls_ctr_drbg_free(&ctxRandom);
     mbedtls_entropy_free(&ctxEntropy);
 }
-

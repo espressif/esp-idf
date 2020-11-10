@@ -163,4 +163,3 @@ menu "Example Configuration"
         help
             The number of devices over the network(max: 300).
 endmenu
-

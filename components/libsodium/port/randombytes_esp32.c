@@ -34,4 +34,3 @@ const struct randombytes_implementation randombytes_esp32_implementation = {
     .buf = esp_fill_random,
     .close = NULL,
 };
-

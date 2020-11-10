@@ -487,7 +487,3 @@ xt_highint4:
 
     .global ld_include_panic_highint_hdl
 ld_include_panic_highint_hdl:
-
-
-
-

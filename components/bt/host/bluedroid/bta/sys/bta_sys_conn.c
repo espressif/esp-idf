@@ -567,4 +567,3 @@ BOOLEAN bta_sys_vs_hdl(UINT16 evt, void *p)
 
     return FALSE;
 }
-

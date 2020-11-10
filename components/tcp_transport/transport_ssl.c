@@ -322,4 +322,3 @@ esp_transport_handle_t esp_transport_ssl_init(void)
     t->_get_socket = ssl_get_socket;
     return t;
 }
-

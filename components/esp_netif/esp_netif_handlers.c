@@ -103,4 +103,3 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
              IP2STR(&event->ip_info.netmask),
              IP2STR(&event->ip_info.gw));
 }
-

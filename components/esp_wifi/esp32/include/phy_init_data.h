@@ -152,7 +152,7 @@ static const char phy_init_magic_post[] = PHY_INIT_MAGIC;
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
 /**
- * @brief PHY init data control infomation structure   
+ * @brief PHY init data control infomation structure
  */
 typedef struct {
     uint8_t control_info_checksum[4];     /*!< 4-byte control infomation checksum */
@@ -173,4 +173,3 @@ typedef struct {
 } phy_country_to_bin_type_t;
 #endif
 #endif /* PHY_INIT_DATA_H */
-

@@ -19,7 +19,7 @@
 
 #define BLE_ANCS_TAG  "BLE_ANCS"
 
-/* 
+/*
 | EventID(1 Byte) | EventFlags(1 Byte) | CategoryID(1 Byte) | CategoryCount(1 Byte) | NotificationUID(4 Bytes) |
 
 A GATT notification delivered through the Notification Source characteristic contains the following information:
@@ -28,7 +28,7 @@ A GATT notification delivered through the Notification Source characteristic con
 * EventFlags: A bitmask whose set bits inform an NC of specificities with the iOS notification. For example, if an iOS notification is considered “important”,
               the NC may want to display a more aggressive user interface (UI) to make sure the user is properly alerted. The enumerated bits for this field
               are defined in EventFlags.
-* CategoryID: A numerical value providing a category in which the iOS notification can be classified. The NP will make a best effort to provide an accurate category 
+* CategoryID: A numerical value providing a category in which the iOS notification can be classified. The NP will make a best effort to provide an accurate category
               for each iOS notification. The enumerated values for this field are defined in CategoryID Values.
 * CategoryCount: The current number of active iOS notifications in the given category. For example, if two unread emails are sitting in a user’s email inbox, and a new
                  email is pushed to the user’s iOS device, the value of CategoryCount is 3.
@@ -104,7 +104,7 @@ char *CategoryID_to_String(uint8_t CategoryID)
     return Cidstr;
 }
 
-/* 
+/*
 | EventID(1 Byte) | EventFlags(1 Byte) | CategoryID(1 Byte) | CategoryCount(1 Byte) | NotificationUID(4 Bytes) |
 */
 
@@ -124,7 +124,7 @@ void esp_receive_apple_notification_source(uint8_t *message, uint16_t message_le
     ESP_LOGI(BLE_ANCS_TAG, "EventID:%s EventFlags:0x%x CategoryID:%s CategoryCount:%d NotificationUID:%d", EventIDS, EventFlags, Cidstr, CategoryCount, NotificationUID);
 }
 
-void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len) 
+void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
 {
     //esp_log_buffer_hex("data source", message, message_len);
     if (!message || message_len == 0) {
@@ -195,7 +195,7 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
     }
 }
 
-char *Errcode_to_String(uint16_t status) 
+char *Errcode_to_String(uint16_t status)
 {
     char *Errstr = NULL;
     switch (status) {
@@ -218,11 +218,3 @@ char *Errcode_to_String(uint16_t status)
     return Errstr;
 
 }
-
-
-
-
-
-
-
-

@@ -166,7 +166,7 @@ static struct crypto_cipher * pkcs5_crypto_init(struct pkcs5_params *params,
 	wpa_hexdump_key(MSG_DEBUG, "PKCS #5: DES IV", hash + 8, 8);
 
 	return crypto_cipher_init(CRYPTO_CIPHER_ALG_DES, hash + 8, hash, 8);
-	
+
 }
 
 u8 * pkcs5_decrypt(const u8 *enc_alg, size_t enc_alg_len,

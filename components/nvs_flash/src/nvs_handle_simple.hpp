@@ -103,4 +103,3 @@ private:
 } // nvs
 
 #endif // NVS_HANDLE_SIMPLE_HPP_
-

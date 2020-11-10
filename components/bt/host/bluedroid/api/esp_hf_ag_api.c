@@ -57,11 +57,11 @@ esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_INIT_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.init), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -76,11 +76,11 @@ esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_DEINIT_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.deinit), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -95,11 +95,11 @@ esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_CONNECT_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.connect), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -114,11 +114,11 @@ esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_DISCONNECT_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.disconnect), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -133,7 +133,7 @@ esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_CONNECT_AUDIO_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.connect_audio), remote_addr, sizeof(esp_bd_addr_t));
@@ -152,11 +152,11 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_addr)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_DISCONNECT_AUDIO_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.disconnect_audio), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -171,12 +171,12 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_VRA_EVT;
-       
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     arg.vra_rep.value = value;
     memcpy(&(arg.volcon.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -191,13 +191,13 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_cont
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_VOLUME_CONTROL_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     arg.volcon.target_type = type;
     arg.volcon.volume = volume;
     memcpy(&(arg.volcon.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -212,12 +212,12 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_UNAT_RESPONSE_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     arg.unat_rep.unat = unat;
     memcpy(&(arg.unat_rep.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -232,19 +232,19 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_addr, esp_hf_at_response_
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_CME_ERR_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     arg.ext_at.response_code = response_code;
     arg.ext_at.error_code = error_code;
     memcpy(&(arg.ext_at.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
-    
+
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, 
+esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr,
                                             esp_hf_call_status_t call_state,
                                             esp_hf_call_setup_status_t call_setup_state,
                                             esp_hf_network_state_t ntk_state, int signal)
@@ -256,7 +256,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr,
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_IND_NOTIFICATION_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.ind_change.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
@@ -283,7 +283,7 @@ esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_CIND_RESPONSE_EVT;
-    
+
     btc_hf_args_t arg;
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.cind_rep.remote_addr), remote_addr, sizeof(esp_bd_addr_t));

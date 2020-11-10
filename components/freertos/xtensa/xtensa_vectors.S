@@ -601,7 +601,7 @@ _xt_user_exc:
     addi    a0, a0, 1
 .LS_exit:
 #endif
-    
+
     /* Handle all other exceptions. All can have user-defined handlers. */
     /* NOTE: we'll stay on the user stack for exception handling.       */
 
@@ -897,10 +897,10 @@ _xt_coproc_exc:
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
 
-    #ifndef CONFIG_FREERTOS_FPU_IN_ISR     
+    #ifndef CONFIG_FREERTOS_FPU_IN_ISR
     beqz    a15, .L_goto_invalid
     #endif
-    
+
     /*When FPU in ISR is enabled we could deal with zeroed a15 */
 
     /* Enable the co-processor's bit in CPENABLE. */
@@ -947,7 +947,7 @@ locking.
     /* below, because on restoring from ISR we may have new == old condition used
      * to force cp restore to next thread
      */
-    #ifndef CONFIG_FREERTOS_FPU_IN_ISR     
+    #ifndef CONFIG_FREERTOS_FPU_IN_ISR
     beq     a15, a2, .L_goto_done           /* new owner == old, we're done */
     #endif
 
@@ -1931,6 +1931,3 @@ _WindowUnderflow12:
     .type       call_user_start,@function
     .align      4
     .literal_position
-
-
-

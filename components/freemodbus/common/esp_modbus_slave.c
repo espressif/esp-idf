@@ -56,13 +56,13 @@ esp_err_t mbc_slave_destroy(void)
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     // Check if interface has been initialized
-    MB_SLAVE_CHECK((slave_interface_ptr->destroy != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->destroy != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     // Call the slave port destroy function
     error = slave_interface_ptr->destroy();
-    MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+    MB_SLAVE_CHECK((error == ESP_OK),
+                    ESP_ERR_INVALID_STATE,
                     "Slave destroy failure error=(0x%x).",
                     error);
     return error;
@@ -77,12 +77,12 @@ esp_err_t mbc_slave_setup(void* comm_info)
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->setup != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->setup != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->setup(comm_info);
-    MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+    MB_SLAVE_CHECK((error == ESP_OK),
+                    ESP_ERR_INVALID_STATE,
                     "Slave setup failure error=(0x%x).",
                     error);
     return error;
@@ -97,7 +97,7 @@ esp_err_t mbc_slave_start(void)
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->start != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->start != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
 #ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
@@ -106,12 +106,12 @@ esp_err_t mbc_slave_start(void)
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack set slave ID failure.");
 #endif
     error = slave_interface_ptr->start();
-    MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+    MB_SLAVE_CHECK((error == ESP_OK),
+                    ESP_ERR_INVALID_STATE,
                     "Slave start failure error=(0x%x).",
                     error);
     return error;
-} 
+}
 
 /**
  * Blocking function to get event on parameter group change for application task
@@ -121,7 +121,7 @@ mb_event_group_t mbc_slave_check_event(mb_event_group_t group)
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     MB_EVENT_NO_EVENTS,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->check_event != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->check_event != NULL),
                     MB_EVENT_NO_EVENTS,
                     "Slave interface is not correctly initialized.");
     mb_event_group_t event = slave_interface_ptr->check_event(group);
@@ -137,12 +137,12 @@ esp_err_t mbc_slave_get_param_info(mb_param_info_t* reg_info, uint32_t timeout)
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->get_param_info != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->get_param_info != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->get_param_info(reg_info, timeout);
-    MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+    MB_SLAVE_CHECK((error == ESP_OK),
+                    ESP_ERR_INVALID_STATE,
                     "Slave get parameter info failure error=(0x%x).",
                     error);
     return error;
@@ -157,12 +157,12 @@ esp_err_t mbc_slave_set_descriptor(mb_register_area_descriptor_t descr_data)
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->set_descriptor != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->set_descriptor != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->set_descriptor(descr_data);
-    MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+    MB_SLAVE_CHECK((error == ESP_OK),
+                    ESP_ERR_INVALID_STATE,
                     "Slave set descriptor failure error=(0x%x).",
                     (uint16_t)error);
     return error;
@@ -178,11 +178,11 @@ eMBErrorCode eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress,
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_discrete != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_discrete != NULL),
                     error,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->slave_reg_cb_discrete(pucRegBuffer, usAddress, usNDiscrete);
-    
+
     return error;
 }
 
@@ -193,7 +193,7 @@ eMBErrorCode eMBRegCoilsCB(UCHAR* pucRegBuffer, USHORT usAddress,
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_coils != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_coils != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->slave_reg_cb_coils(pucRegBuffer, usAddress,
@@ -208,7 +208,7 @@ eMBErrorCode eMBRegHoldingCB(UCHAR * pucRegBuffer, USHORT usAddress,
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_holding != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_holding != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->slave_reg_cb_holding(pucRegBuffer, usAddress,
@@ -223,7 +223,7 @@ eMBErrorCode eMBRegInputCB(UCHAR * pucRegBuffer, USHORT usAddress,
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_input != NULL), 
+    MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_input != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->slave_reg_cb_input(pucRegBuffer, usAddress, usNRegs);

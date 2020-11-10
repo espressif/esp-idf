@@ -872,4 +872,3 @@ void *btm_ble_multi_adv_get_ref(UINT8 inst_id)
     return NULL;
 }
 #endif
-

@@ -24,7 +24,7 @@ typedef struct _Sec0Payload Sec0Payload;
 /* --- enums --- */
 
 /*
- * A message must be of type Cmd or Resp 
+ * A message must be of type Cmd or Resp
  */
 typedef enum _Sec0MsgType {
   SEC0_MSG_TYPE__S0_Session_Command = 0,
@@ -35,7 +35,7 @@ typedef enum _Sec0MsgType {
 /* --- messages --- */
 
 /*
- * Data structure of Session command/request packet 
+ * Data structure of Session command/request packet
  */
 struct  _S0SessionCmd
 {
@@ -47,7 +47,7 @@ struct  _S0SessionCmd
 
 
 /*
- * Data structure of Session response packet 
+ * Data structure of Session response packet
  */
 struct  _S0SessionResp
 {
@@ -67,23 +67,23 @@ typedef enum {
 } Sec0Payload__PayloadCase;
 
 /*
- * Payload structure of session data 
+ * Payload structure of session data
  */
 struct  _Sec0Payload
 {
   ProtobufCMessage base;
   /*
-   *!< Type of message 
+   *!< Type of message
    */
   Sec0MsgType msg;
   Sec0Payload__PayloadCase payload_case;
   union {
     /*
-     *!< Payload data interpreted as Cmd 
+     *!< Payload data interpreted as Cmd
      */
     S0SessionCmd *sc;
     /*
-     *!< Payload data interpreted as Resp 
+     *!< Payload data interpreted as Resp
      */
     S0SessionResp *sr;
   };

@@ -55,7 +55,7 @@ function(get_git_head_revision _refspecvar _hashvar _repo_dir)
         GIT_DIR
         ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-        
+
     if(NOT res EQUAL 0)
         return()
     endif()
@@ -95,7 +95,7 @@ function(git_describe _var _repo_dir)
     if(NOT hash)
         set(${_var} "HEAD-HASH-NOTFOUND" PARENT_SCOPE)
         return()
-        
+
     endif()
 
     # TODO sanitize

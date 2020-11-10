@@ -809,7 +809,7 @@ void IRAM_ATTR ets_isr_mask(unsigned int mask) {
     interrupt_controller_hal_disable_interrupts(mask);
 }
 
-void esp_intr_enable_source(int inum) 
+void esp_intr_enable_source(int inum)
 {
     interrupt_controller_hal_enable_interrupts(1 << inum);
 }

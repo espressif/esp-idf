@@ -4,7 +4,7 @@
 #define LOCAL_ULP_COPROC_RESERVE_MEM CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
 #else
 #define LOCAL_ULP_COPROC_RESERVE_MEM CONFIG_ESP32_ULP_COPROC_RESERVE_MEM
-#endif 
+#endif
 
 #define ULP_BIN_MAGIC		0x00706c75
 #define HEADER_SIZE			12
@@ -33,7 +33,7 @@ SECTIONS
     .header : AT(0)
     {
         LONG(ULP_BIN_MAGIC)
-        SHORT(LOADADDR(.text)) 
+        SHORT(LOADADDR(.text))
         SHORT(SIZEOF(.text))
         SHORT(SIZEOF(.data))
         SHORT(SIZEOF(.bss))

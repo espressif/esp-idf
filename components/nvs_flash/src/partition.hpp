@@ -57,4 +57,3 @@ public:
 } // nvs
 
 #endif // PARTITION_HPP_
-

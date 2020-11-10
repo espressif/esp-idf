@@ -135,7 +135,7 @@ TEST_CASE("power down test", "[wear_levelling]")
     // Perform test
     int32_t max_count = 100;
     int32_t max_check_count = TEST_COUNT_MAX;
-    
+
     printf("used_sectors_count=%d\n", max_check_count);
 
     for (int32_t k = 0; k < max_check_count; k++) {

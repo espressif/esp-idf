@@ -6,4 +6,3 @@
 PROJECT_NAME := secure_boot
 
 include $(IDF_PATH)/make/project.mk
-

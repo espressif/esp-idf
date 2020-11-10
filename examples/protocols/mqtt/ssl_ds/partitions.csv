@@ -4,4 +4,3 @@ nvs,data,nvs,0x9000,24K,
 phy_init,data,phy,0xf000,4K,
 pre_prov,data,nvs,0x10000,0x3000,
 factory,app,factory,0x20000,1M,
-

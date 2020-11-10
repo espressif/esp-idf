@@ -1,7 +1,7 @@
 #Diagram of TWAI controller signal lines
 
 blockdiag controller_signals_diagram {
-    
+
     orientation = portrait;
     span_width = 80;
 

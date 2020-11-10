@@ -133,7 +133,7 @@ esp_err_t esp_bluedroid_init(void)
     osi_mem_dbg_init();
 #endif
 
-    /* 
+    /*
     * BTC Init
     */
     ret = btc_init();
@@ -211,4 +211,3 @@ esp_err_t esp_bluedroid_deinit(void)
 
     return ESP_OK;
 }
-

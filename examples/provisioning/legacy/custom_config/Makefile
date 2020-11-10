@@ -6,4 +6,3 @@
 PROJECT_NAME := custom_config
 
 include $(IDF_PATH)/make/project.mk
-

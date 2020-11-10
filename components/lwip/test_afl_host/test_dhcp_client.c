@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     size_t len = 1460;
 
     dhcp_test_init_di();
-    
+
     mynetif.flags = NETIF_FLAG_UP | NETIF_FLAG_ETHARP;
     mynetif.mtu = 576;
 
@@ -79,6 +79,6 @@ int main(int argc, char** argv)
     }
 
 
-    
+
     return 0;
 }

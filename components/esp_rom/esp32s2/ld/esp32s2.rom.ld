@@ -1,7 +1,7 @@
 /**
  * ESP32-S2 ROM address table (except symbols from libgcc and libc)
  * Generated for ROM with MD5sum: 0a2c7ec5109c17884606d23b47045796
- * 
+ *
  * These are all weak symbols that could be overwritten in ESP-IDF.
  */
 

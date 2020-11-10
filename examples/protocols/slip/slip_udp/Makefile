@@ -6,4 +6,3 @@
 PROJECT_NAME := slip_client
 
 include $(IDF_PATH)/make/project.mk
-

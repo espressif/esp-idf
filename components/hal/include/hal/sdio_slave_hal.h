@@ -526,4 +526,3 @@ uint8_t sdio_slave_hal_host_get_reg(sdio_slave_context_t *hal, int pos);
  * @param reg Value to set.
  */
 void sdio_slave_hal_host_set_reg(sdio_slave_context_t *hal, int pos, uint8_t reg);
-

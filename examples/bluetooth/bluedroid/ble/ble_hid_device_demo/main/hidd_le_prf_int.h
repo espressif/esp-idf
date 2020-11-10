@@ -153,7 +153,7 @@ enum {
     HIDD_LE_IDX_REPORT_CC_IN_VAL,
     HIDD_LE_IDX_REPORT_CC_IN_CCC,
     HIDD_LE_IDX_REPORT_CC_IN_REP_REF,
-    
+
     // Boot Keyboard Input Report
     HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
     HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL,
@@ -341,4 +341,3 @@ esp_err_t hidd_register_cb(void);
 
 
 #endif  ///__HID_DEVICE_LE_PRF__
-

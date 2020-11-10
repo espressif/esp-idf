@@ -300,8 +300,8 @@ static esp_err_t encrypt_bootloader(void)
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt bootloader in place: 0x%x", err);
             return err;
-        } 
-        
+        }
+
         ESP_LOGI(TAG, "bootloader encrypted successfully");
         return err;
     }

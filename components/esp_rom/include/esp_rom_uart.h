@@ -64,7 +64,7 @@ int esp_rom_uart_tx_one_char(uint8_t c);
 /**
  * @brief Transmit one character to the console channel.
  * @note This function is a wrapper over esp_rom_uart_tx_one_char, it can help handle line ending issue by replacing '\n' with '\r\n'.
- * 
+ *
  * @param c Character to send
  */
 void esp_rom_uart_putc(char c);

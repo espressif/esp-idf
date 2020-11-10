@@ -30,7 +30,7 @@ void esp_newlib_time_init(void);
  */
 void esp_reent_init(struct _reent* r);
 
-/** 
+/**
  * Clean up some of lazily allocated buffers in REENT structures.
  */
 void esp_reent_cleanup(void);

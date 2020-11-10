@@ -486,5 +486,3 @@ void OI_CODEC_SBC_DumpConfig(OI_CODEC_SBC_FRAME_INFO *frameInfo);
 
 
 #endif /* _OI_CODEC_SBC_CORE_H */
-
-

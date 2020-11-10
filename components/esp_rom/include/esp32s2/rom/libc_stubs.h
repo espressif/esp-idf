@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-/* 
+/*
 ESP32-S2 ROM code contains implementations of some of C library functions.
 Whenever a function in ROM needs to use a syscall, it calls a pointer to the corresponding syscall
 implementation defined in the following struct.
@@ -39,7 +39,7 @@ application must allocate syscall table structure for each CPU being used, and p
 to actual implementations of corresponding syscalls.
 */
 
-struct syscall_stub_table 
+struct syscall_stub_table
 {
     struct _reent* (*__getreent)(void);
     void* (*_malloc_r)(struct _reent *r, size_t);

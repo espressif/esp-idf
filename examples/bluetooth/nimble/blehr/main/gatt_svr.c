@@ -183,4 +183,3 @@ gatt_svr_init(void)
 
     return 0;
 }
-

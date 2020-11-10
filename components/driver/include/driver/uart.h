@@ -867,4 +867,3 @@ void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout_en)
 #ifdef __cplusplus
 }
 #endif
-

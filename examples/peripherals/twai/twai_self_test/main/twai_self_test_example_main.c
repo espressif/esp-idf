@@ -139,4 +139,3 @@ void app_main(void)
     vSemaphoreDelete(ctrl_sem);
     vQueueDelete(done_sem);
 }
-

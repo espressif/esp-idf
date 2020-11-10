@@ -29,7 +29,7 @@
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 on failure
  */
-int 
+int
 hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 		     const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -104,7 +104,7 @@ hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 of failure
  */
-int 
+int
 hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
 	       u8 *mac)
 {
@@ -125,7 +125,7 @@ hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
  * This function is used to derive new, cryptographically separate keys from a
  * given key (e.g., PMK in IEEE 802.11i).
  */
-int 
+int
 sha1_prf(const u8 *key, size_t key_len, const char *label,
 	     const u8 *data, size_t data_len, u8 *buf, size_t buf_len)
 {
@@ -163,4 +163,3 @@ sha1_prf(const u8 *key, size_t key_len, const char *label,
 
 	return 0;
 }
-

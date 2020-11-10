@@ -44,7 +44,7 @@ esp_err_t esp_himem_alloc(size_t size, esp_himem_handle_t *handle_out);
 
 /**
  * @brief Allocate a memory region to map blocks into
- * 
+ *
  * This allocates a contiguous CPU memory region that can be used to map blocks
  * of physical memory into.
  *
@@ -61,7 +61,7 @@ esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle
  * @brief Map a block of high memory into the CPUs address space
  *
  * This effectively makes the block available for read/write operations.
- * 
+ *
  * @note The region to be mapped needs to have offsets and sizes that are aligned to the
  *       SPI RAM MMU block size (32K)
  *
@@ -149,4 +149,3 @@ size_t esp_himem_reserved_area_size(void);
 #ifdef __cplusplus
 }
 #endif
-

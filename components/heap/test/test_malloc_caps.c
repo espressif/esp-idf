@@ -150,7 +150,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 
     free(b);
     heap_caps_get_info(&after, MALLOC_CAP_8BIT);
-    
+
     printf("\n\n After test, heap status:\n");
     heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
@@ -187,10 +187,10 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
     TEST_ASSERT( iram_malloc_test() );
 }
 
-#ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS 
+#ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 TEST_CASE("When enabled, allocation operation failure generates an abort", "[heap][reset=abort,SW_CPU_RESET]")
 {
-    const size_t stupid_allocation_size = (128 * 1024 * 1024); 
+    const size_t stupid_allocation_size = (128 * 1024 * 1024);
     void *ptr = heap_caps_malloc(stupid_allocation_size, MALLOC_CAP_DEFAULT);
     (void)ptr;
     TEST_FAIL_MESSAGE("should not be reached");
@@ -199,7 +199,7 @@ TEST_CASE("When enabled, allocation operation failure generates an abort", "[hea
 
 static bool called_user_failed_hook = false;
 
-void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name) 
+void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name)
 {
     printf("%s was called but failed to allocate %d bytes with 0x%X capabilities. \n",function_name, requested_size, caps);
     called_user_failed_hook = true;
@@ -209,15 +209,15 @@ TEST_CASE("user provided alloc failed hook must be called when allocation fails"
 {
     TEST_ASSERT(heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook) == ESP_OK);
 
-    const size_t stupid_allocation_size = (128 * 1024 * 1024); 
+    const size_t stupid_allocation_size = (128 * 1024 * 1024);
     void *ptr = heap_caps_malloc(stupid_allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT(called_user_failed_hook != false);
 
-    called_user_failed_hook = false; 
+    called_user_failed_hook = false;
     ptr = heap_caps_realloc(ptr, stupid_allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT(called_user_failed_hook != false);
 
-    called_user_failed_hook = false; 
+    called_user_failed_hook = false;
     ptr = heap_caps_aligned_alloc(0x200, stupid_allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT(called_user_failed_hook != false);
 
@@ -231,15 +231,15 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 
     TEST_ASSERT(heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook) == ESP_OK);
 
-    called_user_failed_hook = false; 
+    called_user_failed_hook = false;
     void *ptr = heap_caps_malloc(allocation_size, invalid_cap);
     TEST_ASSERT(called_user_failed_hook != false);
 
-    called_user_failed_hook = false; 
+    called_user_failed_hook = false;
     ptr = heap_caps_realloc(ptr, allocation_size, invalid_cap);
     TEST_ASSERT(called_user_failed_hook != false);
 
-    called_user_failed_hook = false; 
+    called_user_failed_hook = false;
     ptr = heap_caps_aligned_alloc(0x200, allocation_size, invalid_cap);
     TEST_ASSERT(called_user_failed_hook != false);
 

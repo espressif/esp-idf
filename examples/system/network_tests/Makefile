@@ -6,4 +6,3 @@
 PROJECT_NAME := net_suite
 
 include $(IDF_PATH)/make/project.mk
-

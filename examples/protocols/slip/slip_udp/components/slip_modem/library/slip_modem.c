@@ -233,4 +233,3 @@ static void esp_slip_modem_uart_rx_task(void *arg)
         vTaskDelay(1 * portTICK_PERIOD_MS);
     }
 }
-

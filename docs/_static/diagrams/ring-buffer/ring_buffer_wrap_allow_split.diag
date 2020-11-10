@@ -27,7 +27,7 @@ packetdiag ring_buffer_wrap_allow_split {
     #Send second part
     256-263: 8 [color = lightblue];
     264-283: 20 [color = lightyellow];
-    284-295: 12 Free 
+    284-295: 12 Free
     296-303: 8 [color = lightblue];
     304-319: 16 [color = lightyellow];
     320-327: 8 [color = lightblue];

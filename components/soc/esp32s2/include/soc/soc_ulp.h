@@ -43,4 +43,3 @@
 // Write immediate value into a field in rtc_reg, up to 8 bits
 #define WRITE_RTC_FIELD(rtc_reg, field, value) \
     WRITE_RTC_REG(rtc_reg, field ## _S, MASK_TO_WIDTH_HELPER8(field ## _V, 0), ((value) & field ## _V))
-

@@ -43,7 +43,7 @@ typedef enum {
     PCNT_UNIT_7 = 7,                 /*!< PCNT unit 7 */
 #endif
     PCNT_UNIT_MAX,
-} pcnt_unit_t; 
+} pcnt_unit_t;
 
 /**
  * @brief Selection of available modes that determine the counter's action depending on the state of the control signal's input GPIO

@@ -1950,5 +1950,3 @@
 
 
 #endif /*_SOC_RTC_IO_REG_H_ */
-
-

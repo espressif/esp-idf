@@ -139,7 +139,7 @@ static void handle_m_command(const unsigned char* cmd, int len)
 int esp_gdbstub_handle_command(unsigned char *cmd, int len)
 {
     unsigned char *data = cmd + 1;
-    if (cmd[0] == 'g') 
+    if (cmd[0] == 'g')
     {
         handle_g_command(data, len - 1);
     } else if (cmd[0] == 'G') {
@@ -383,4 +383,3 @@ static int handle_task_commands(unsigned char *cmd, int len)
 }
 
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
-

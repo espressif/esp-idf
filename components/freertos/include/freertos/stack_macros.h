@@ -138,4 +138,3 @@
 #endif /* #if( configCHECK_FOR_STACK_OVERFLOW > 1 ) */
 
 #endif /* STACK_MACROS_H */
-

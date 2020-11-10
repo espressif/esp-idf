@@ -155,4 +155,3 @@ int __wrap_mbedtls_ssl_close_notify(mbedtls_ssl_context *ssl)
 
     return ret;
 }
-

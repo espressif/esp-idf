@@ -52,4 +52,3 @@ static void print_banner(const char* text)
 {
     printf("\n#### %s #####\n\n", text);
 }
-

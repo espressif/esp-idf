@@ -875,7 +875,7 @@
 
 #define SPI_CACHE_FCTRL_REG(i)          (REG_SPI_BASE(i) + 0x50)
 /* SPI_CACHE_FLASH_PES_EN : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: For SPI0  spi1 send suspend command before cache read flash 
+/*description: For SPI0  spi1 send suspend command before cache read flash
  1: enable  0:disable.*/
 #define SPI_CACHE_FLASH_PES_EN  (BIT(3))
 #define SPI_CACHE_FLASH_PES_EN_M  (BIT(3))
@@ -1709,5 +1709,3 @@
 
 
 #endif /*__SPI_REG_H__ */
-
-

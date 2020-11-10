@@ -125,4 +125,3 @@ bool coex_env_str_to_mac(uint8_t *str, uint8_t *dest)
 
     return true;
 }
-

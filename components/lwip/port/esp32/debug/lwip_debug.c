@@ -64,7 +64,7 @@ static void dbg_lwip_tcp_pcb_cnt_show(struct tcp_pcb *pcb)
         len += sprintf(p + len, "%-2d=%-5d ", i+1, pcb->rto_cnt[i]);
     }
     ESP_LWIP_LOGI("%s", buf);
- 
+
     free(buf);
 }
 #endif
@@ -104,7 +104,7 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
 
     ESP_LWIP_LOGI("unsent segments:");
     seg = pcb->unsent;
-    DBG_LWIP_SEG_SHOW(seg) 
+    DBG_LWIP_SEG_SHOW(seg)
 
     ESP_LWIP_LOGI("unacked segments:");
     seg = pcb->unacked;
@@ -211,4 +211,3 @@ void dbg_lwip_cnt_show(void)
 
 
 #endif
-

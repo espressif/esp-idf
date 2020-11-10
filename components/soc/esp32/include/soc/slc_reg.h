@@ -3240,5 +3240,3 @@
 
 
 #endif /*_SOC_SLC_REG_H_ */
-
-

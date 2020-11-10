@@ -203,5 +203,3 @@ void esp_sha_wait_idle(void);
 #ifdef __cplusplus
 }
 #endif
-
-

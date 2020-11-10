@@ -93,7 +93,7 @@ Filename: "powershell.exe"; \
   Parameters: "-ExecutionPolicy Bypass -File ""{app}\dist\tools_WD_clean.ps1"" -RmExclPath ""{app}"""; \
   WorkingDir: {app}; Flags: runhidden
 
-[Registry]                                                                                                        
+[Registry]
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "IDF_TOOLS_PATH"; \
     ValueData: "{app}"; Flags: preservestringtype createvalueifdoesntexist uninsdeletevalue deletevalue;
 

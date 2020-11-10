@@ -143,4 +143,3 @@ esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg)
 {
     return esp_ipc_call_and_wait(cpu_id, func, arg, IPC_WAIT_FOR_END);
 }
-

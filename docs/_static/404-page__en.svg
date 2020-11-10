@@ -37,7 +37,7 @@
 	<stop  offset="0.5227" style="stop-color:#D7D8D8;stop-opacity:0.4381"/>
 	<stop  offset="0.8926" style="stop-color:#FFFFFF;stop-opacity:0"/>
 </linearGradient>
-<polygon id="polygon12" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st1" points="608.7,371.9 
+<polygon id="polygon12" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st1" points="608.7,371.9
 	511.9,134.7 490.9,134.1 430.7,377.1 ">
 </polygon>
 <linearGradient id="polygon21_1_" gradientUnits="userSpaceOnUse" x1="197.9478" y1="434.8972" x2="282.0578" y2="791.6389" gradientTransform="matrix(0.9983 -5.887031e-02 5.887031e-02 0.9983 28.0536 -430.7623)">
@@ -45,7 +45,7 @@
 	<stop  offset="0.5874" style="stop-color:#D7D7D7;stop-opacity:0.3616"/>
 	<stop  offset="0.8926" style="stop-color:#FFFFFF;stop-opacity:0"/>
 </linearGradient>
-<polygon id="polygon21" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st2" points="325.4,155.1 
+<polygon id="polygon21" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st2" points="325.4,155.1
 	289.2,163.9 291.9,437 480.9,450.4 ">
 </polygon>
 <radialGradient id="circle42_1_" cx="836.3" cy="506.5986" r="65.7125" gradientTransform="matrix(1 0 0 1 12 -19.0997)" gradientUnits="userSpaceOnUse">
@@ -59,21 +59,21 @@
 	<stop  offset="0.5874" style="stop-color:#D7D7D7;stop-opacity:0.3616"/>
 	<stop  offset="0.8926" style="stop-color:#FFFFFF;stop-opacity:0"/>
 </linearGradient>
-<polygon id="polygon58" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st4" points="547.4,383 
+<polygon id="polygon58" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st4" points="547.4,383
 	763.1,428.2 713.7,163.4 683.8,156 ">
 </polygon>
 <g id="g94" transform="rotate(9.0573675,796.06564,263.99283)" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476">
 	<path id="path60" inkscape:connector-curvature="0" class="st5" d="M520,160.2l-75.8,10.4c-5.6,0.8-10.8-3.2-11.5-8.7l0,0
 		c-0.8-5.6,3.2-10.8,8.7-11.5l75.8-10.4c5.6-0.8,10.8,3.2,11.5,8.7l0,0C529.5,154.3,525.6,159.4,520,160.2L520,160.2z"/>
-	
+
 		<ellipse id="circle62" transform="matrix(0.1574 -0.9875 0.9875 0.1574 220.2397 577.3303)" class="st6" cx="448.4" cy="159.6" rx="5.6" ry="5.6"/>
-	
+
 		<ellipse id="circle64" transform="matrix(0.1574 -0.9875 0.9875 0.1574 241.8959 596.7076)" class="st6" cx="470.6" cy="156.6" rx="5.6" ry="5.6"/>
-	
+
 		<ellipse id="circle66" transform="matrix(0.1574 -0.9875 0.9875 0.1574 304.0202 547.2599)" class="st7" cx="472.7" cy="95.5" rx="3.9" ry="3.9"/>
-	
+
 		<ellipse id="circle68" transform="matrix(0.1574 -0.9875 0.9875 0.1574 263.9857 616.4264)" class="st6" cx="493.2" cy="153.5" rx="5.6" ry="5.6"/>
-	
+
 		<ellipse id="circle70" transform="matrix(0.1574 -0.9875 0.9875 0.1574 285.6079 635.2634)" class="st6" cx="515.1" cy="150.3" rx="5.6" ry="5.6"/>
 	<path id="path72" inkscape:connector-curvature="0" class="st8" d="M510,139.5l-61.3,8.4l-0.4-2.8c-0.2-1.5,0.8-2.9,2.3-3.1
 		l55.7-7.7c1.5-0.2,2.9,0.8,3.1,2.3L510,139.5z"/>
@@ -181,11 +181,11 @@
 	<path id="path182" inkscape:connector-curvature="0" class="st21" d="M152.4,574.1c0-1.4,0.1-2.7,0.4-4"/>
 </g>
 <g id="g192" transform="translate(-0.2304,235.22748)" inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476">
-	<polygon id="polygon186" class="st19" points="843.4,216.1 850,204.1 856.6,216.1 868.7,222.7 856.6,229.3 850,241.4 843.4,229.3 
+	<polygon id="polygon186" class="st19" points="843.4,216.1 850,204.1 856.6,216.1 868.7,222.7 856.6,229.3 850,241.4 843.4,229.3
 		831.4,222.7 	"/>
-	<polygon id="polygon188" class="st19" points="868.4,248.1 873.4,239.1 878.3,248.1 887.4,253.1 878.3,258 873.4,267.1 868.4,258 
+	<polygon id="polygon188" class="st19" points="868.4,248.1 873.4,239.1 878.3,248.1 887.4,253.1 878.3,258 873.4,267.1 868.4,258
 		859.4,253.1 	"/>
-	<polygon id="polygon190" class="st19" points="884.1,207.8 887.4,201.7 890.7,207.8 896.7,211.1 890.7,214.4 887.4,220.4 
+	<polygon id="polygon190" class="st19" points="884.1,207.8 887.4,201.7 890.7,207.8 896.7,211.1 890.7,214.4 887.4,220.4
 		884.1,214.4 878,211.1 	"/>
 </g>
 <g inkscape:export-xdpi="96.009476" inkscape:export-ydpi="96.009476" class="st22">

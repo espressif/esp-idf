@@ -133,7 +133,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
     case WIFI_IF_STA:
         rxcb = wifi_sta_receive;
         break;
-    
+
     case WIFI_IF_AP:
         rxcb = wifi_ap_receive;
         break;

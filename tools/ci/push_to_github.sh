@@ -11,4 +11,3 @@ else
     # for branches
     git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 fi
-

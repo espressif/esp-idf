@@ -462,4 +462,3 @@ const spi_flash_counters_t* spi_flash_get_counters(void);
 
 
 #endif /* ESP_SPI_FLASH_H */
-

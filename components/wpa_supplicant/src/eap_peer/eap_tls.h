@@ -10,9 +10,9 @@
 #define EAP_TLS_H
 
 #include "eap_i.h"
-#include "eap_common.h" 
-#include "eap.h" 
-#include "utils/wpabuf.h" 
+#include "eap_common.h"
+#include "eap.h"
+#include "utils/wpabuf.h"
 
 void * eap_tls_init(struct eap_sm *sm);
 void eap_tls_deinit(struct eap_sm *sm, void *priv);

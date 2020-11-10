@@ -1172,4 +1172,3 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_ttls_phase2_method(esp_eap_ttls_phase2_types
     }
     return ESP_OK;
 }
-

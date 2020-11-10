@@ -33,4 +33,3 @@ protected:
 };
 
 #endif // _Partition_H_
-

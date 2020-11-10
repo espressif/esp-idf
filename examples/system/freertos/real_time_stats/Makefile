@@ -6,4 +6,3 @@
 PROJECT_NAME := real_time_stats
 
 include $(IDF_PATH)/make/project.mk
-

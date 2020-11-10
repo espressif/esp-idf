@@ -359,4 +359,3 @@ typedef struct {
 //extern const bt_vendor_interface_t BLUETOOTH_VENDOR_LIB_INTERFACE;
 
 #endif /* BT_VENDOR_LIB_H */
-

@@ -392,4 +392,3 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     }
     if (do_yield) portYIELD_FROM_ISR();
 }
-

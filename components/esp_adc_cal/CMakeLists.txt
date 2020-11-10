@@ -11,5 +11,3 @@ elseif(${target} STREQUAL "esp32s2")
                     REQUIRES driver efuse)
 
 endif()
-
-

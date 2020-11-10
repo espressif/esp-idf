@@ -38,4 +38,3 @@
 esp_err_t mbc_tcp_slave_create(void** handler);
 
 #endif // _MODBUS_TCP_CONTROLLER_SLAVE
-

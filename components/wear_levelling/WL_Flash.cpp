@@ -23,7 +23,7 @@
 static const char *TAG = "wl_flash";
 #ifndef WL_CFG_CRC_CONST
 #define WL_CFG_CRC_CONST UINT32_MAX
-#endif // WL_CFG_CRC_CONST 
+#endif // WL_CFG_CRC_CONST
 
 #define WL_RESULT_CHECK(result) \
     if (result != ESP_OK) { \

@@ -33,7 +33,7 @@ static const char *TAG = "smartconfig_example";
 
 static void smartconfig_example_task(void * parm);
 
-static void event_handler(void* arg, esp_event_base_t event_base, 
+static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -102,7 +102,7 @@ static void smartconfig_example_task(void * parm)
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_smartconfig_start(&cfg) );
     while (1) {
-        uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY); 
+        uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
         if(uxBits & CONNECTED_BIT) {
             ESP_LOGI(TAG, "WiFi Connected to ap");
         }
@@ -119,4 +119,3 @@ void app_main(void)
     ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
 }
-

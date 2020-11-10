@@ -52,4 +52,3 @@ TEST_CASE("Test for per-task non-reentrant tasks", "[freertos]")
     }
     TEST_ASSERT(error == 0);
 }
-

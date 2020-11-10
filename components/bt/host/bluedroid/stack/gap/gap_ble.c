@@ -790,8 +790,3 @@ BOOLEAN GAP_BleCancelReadPeerDevName (BD_ADDR peer_bda)
 }
 
 #endif  /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE*/
-
-
-
-
-

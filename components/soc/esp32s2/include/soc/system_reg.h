@@ -912,5 +912,3 @@ extern "C" {
 
 
 #endif /*_SOC_SYSTEM_REG_H_ */
-
-

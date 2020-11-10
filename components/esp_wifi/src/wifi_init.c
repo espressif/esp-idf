@@ -64,7 +64,7 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level(void)
        so set it at runtime startup. Done here not in esp_wifi_init() to allow
        the user to set the level again before esp_wifi_init() is called.
     */
-    esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL); 
+    esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
     esp_log_level_set("mesh", CONFIG_LOG_DEFAULT_LEVEL);
     esp_log_level_set("smartconfig", CONFIG_LOG_DEFAULT_LEVEL);
     esp_log_level_set("ESPNOW", CONFIG_LOG_DEFAULT_LEVEL);
@@ -123,7 +123,7 @@ esp_err_t esp_wifi_deinit(void)
 
     if (esp_wifi_get_user_init_flag_internal()) {
         ESP_LOGE(TAG, "Wi-Fi not stop");
-        return ESP_FAIL; 
+        return ESP_FAIL;
     }
 
     esp_supplicant_deinit();
@@ -226,7 +226,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             }
 
             return result;
-        } 
+        }
     }
 #if CONFIG_IDF_TARGET_ESP32S2
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
@@ -251,4 +251,3 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
-

@@ -30,4 +30,3 @@
  * Enable wakeup from ULP coprocessor.
  */
 #define rtc_hal_ulp_wakeup_enable()                       rtc_cntl_ll_ulp_wakeup_enable()
-

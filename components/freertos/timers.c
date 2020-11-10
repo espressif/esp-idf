@@ -599,13 +599,13 @@ BaseType_t xTimerListsWereSwitched;
 				vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
 				taskEXIT_CRITICAL( &xTimerMux);
-				
+
 				/* Yield to wait for either a command to arrive, or the
 				block time to expire.  If a command arrived between the
 				critical section being exited and this yield then the yield
 				will not cause the task to block. */
 				portYIELD_WITHIN_API();
-				
+
 			}
 		}
 		else
@@ -918,7 +918,7 @@ static void prvCheckForValidListAndQueue( void )
 	/* Check that the list from which active timers are referenced, and the
 	queue used to communicate with the timer service, have been
 	initialised. */
-	
+
 	if( xTimerQueue == NULL ) vPortCPUInitializeMutex( &xTimerMux );
 
 	taskENTER_CRITICAL( &xTimerMux);
@@ -1100,6 +1100,3 @@ Timer_t * const pxTimer = xTimer;
 to include software timer functionality.  If you want to include software timer
 functionality then ensure configUSE_TIMERS is set to 1 in FreeRTOSConfig.h. */
 #endif /* configUSE_TIMERS == 1 */
-
-
-

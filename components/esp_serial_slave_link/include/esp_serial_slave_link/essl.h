@@ -210,5 +210,3 @@ esp_err_t essl_get_intr_ena(essl_handle_t handle, uint32_t *ena_mask_o, uint32_t
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_send_slave_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wait_ms);
-
-

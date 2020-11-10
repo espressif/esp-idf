@@ -94,4 +94,3 @@ menu "Core dump"
         default "info" if ESP_COREDUMP_DECODE_INFO
 
 endmenu
-

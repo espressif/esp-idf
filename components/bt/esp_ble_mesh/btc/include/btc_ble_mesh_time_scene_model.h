@@ -81,4 +81,3 @@ void btc_ble_mesh_time_scene_server_cb_handler(btc_msg_t *msg);
 #endif
 
 #endif /* _BTC_BLE_MESH_TIME_SCENE_MODEL_H_ */
-

@@ -3,7 +3,7 @@
 #
 # (Uses default behaviour of compiling all source files in directory, adding 'include' to include path.)
 
-# esp_app_desc structure is added as an undefined symbol because otherwise the 
+# esp_app_desc structure is added as an undefined symbol because otherwise the
 # linker will ignore this structure as it has no other files depending on it.
 COMPONENT_ADD_LDFLAGS += -u esp_app_desc
 

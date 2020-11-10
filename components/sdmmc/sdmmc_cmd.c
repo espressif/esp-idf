@@ -117,7 +117,7 @@ esp_err_t sdmmc_send_cmd_send_if_cond(sdmmc_card_t* card, uint32_t ocr)
 esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t *ocrp)
 {
     esp_err_t err;
-    
+
     sdmmc_command_t cmd = {
             .arg = ocr,
             .flags = SCF_CMD_BCR | SCF_RSP_R3,
@@ -138,7 +138,7 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
             cmd.opcode = MMC_SEND_OP_COND;
             err = sdmmc_send_cmd(card, &cmd);
         }
-        
+
         if (err != ESP_OK) {
             if (--err_cnt == 0) {
                 ESP_LOGD(TAG, "%s: sdmmc_send_app_cmd err=0x%x", __func__, err);
@@ -511,4 +511,3 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
     }
     return ESP_OK;
 }
-

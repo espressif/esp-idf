@@ -117,4 +117,3 @@ static void esp_reset_reason_clear_hint(void)
 {
     REG_WRITE(RTC_RESET_CAUSE_REG, 0);
 }
-

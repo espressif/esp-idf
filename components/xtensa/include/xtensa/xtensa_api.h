@@ -64,7 +64,7 @@ extern xt_exc_handler xt_set_exception_handler(int n, xt_exc_handler f);
 -------------------------------------------------------------------------------
   Call this function to set a handler for the specified interrupt. The handler
   will be installed on the core that calls this function.
- 
+
     n        - Interrupt number.
     f        - Handler function address, NULL to uninstall handler.
     arg      - Argument to be passed to handler.
@@ -120,7 +120,7 @@ static inline void xt_set_intclear(unsigned int arg)
 /*
 -------------------------------------------------------------------------------
   Call this function to get handler's argument for the specified interrupt.
- 
+
     n        - Interrupt number.
 -------------------------------------------------------------------------------
 */
@@ -129,7 +129,7 @@ extern void * xt_get_interrupt_handler_arg(int n);
 /*
 -------------------------------------------------------------------------------
   Call this function to check if the specified interrupt is free to use.
- 
+
     intr       - Interrupt number.
     cpu        - cpu number.
 -------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ bool xt_int_has_handler(int intr, int cpu);
 /*
 -------------------------------------------------------------------------------
   Call this function to disable non iram located interrupts.
- 
+
     newmask       - mask containing the interrupts to disable.
 -------------------------------------------------------------------------------
 */
@@ -154,14 +154,14 @@ static inline uint32_t xt_int_disable_mask(uint32_t newmask)
         "wsr a3,INTENABLE\n"    //write back
         "rsync\n"
         :"=&r"(oldint):"r"(newmask):"a3");
-    
-    return oldint;  
+
+    return oldint;
 }
 
 /*
 -------------------------------------------------------------------------------
   Call this function to enable non iram located interrupts.
- 
+
     newmask       - mask containing the interrupts to enable.
 -------------------------------------------------------------------------------
 */
@@ -178,4 +178,3 @@ static inline void xt_int_enable_mask(uint32_t newmask)
 }
 
 #endif /* __XTENSA_API_H__ */
-

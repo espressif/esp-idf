@@ -521,4 +521,3 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
 #endif
 
 #endif /* FREERTOS_RINGBUF_H */
-

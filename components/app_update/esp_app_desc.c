@@ -80,7 +80,7 @@ __attribute__((constructor)) void esp_ota_init_app_elf_sha256(void)
 /* The esp_app_desc.app_elf_sha256 should be possible to print in panic handler during cache is disabled.
  * But because the cache is disabled the reading esp_app_desc.app_elf_sha256 is not right and
  * can lead to a complete lock-up of the CPU.
- * For this reason we do a reading of esp_app_desc.app_elf_sha256 while start up in esp_ota_init_app_elf_sha256() 
+ * For this reason we do a reading of esp_app_desc.app_elf_sha256 while start up in esp_ota_init_app_elf_sha256()
  * and keep it in the static s_app_elf_sha256 value.
  */
 int IRAM_ATTR esp_ota_get_app_elf_sha256(char* dst, size_t size)

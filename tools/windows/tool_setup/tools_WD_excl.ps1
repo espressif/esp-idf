@@ -5,7 +5,7 @@
 #
 ################################################################################
 #
-# PS utility to add/remove PROCESS exceptions to/from MS WD real-time 
+# PS utility to add/remove PROCESS exceptions to/from MS WD real-time
 # scanning. Files (referenced by 'path' or 'path\filemask') are expected
 # to be Windows process executables, for obvious reasons.
 #
@@ -29,7 +29,7 @@
 #     adds file to the WD exception list exactly as specified by 'filepath'
 #
 #   -logFile <filepath>
-#     stdout/stderr redirection file. Used internally for elevated process (generated in tempdir, deleted after the script finishing) 
+#     stdout/stderr redirection file. Used internally for elevated process (generated in tempdir, deleted after the script finishing)
 #     use manually at your own risk
 #
 # Returns 0 on success or -1 on failure
@@ -39,7 +39,7 @@
 #   PowerShell -ExecutionPolicy ByPass -File tools_WD_excl.ps1 -AddExclPath "C:\Program Files\Espressif\ESP-IDF Tools\*.exe"
 #
 # Notes:
-#      - default scenario is set to the following 
+#      - default scenario is set to the following
 #     -AddExclPath "$Env:ProgramFiles\Espressif\ESP-IDF Tools\*.exe"
 #     (eg when called with no params)
 #    - only named parameters are supported, any other use-cases redirect to the default
@@ -66,7 +66,7 @@ function Check-Command($cmdname)
 
 function Log-Msg($msg, $logF = $null)
 {
-  if( ![string]::IsNullOrEmpty($logF) ) { Write-Output $msg *>> $logF } 
+  if( ![string]::IsNullOrEmpty($logF) ) { Write-Output $msg *>> $logF }
   else { Write-Output $msg }
   [Console]::Out.Flush()
 }
@@ -74,9 +74,9 @@ function Log-Msg($msg, $logF = $null)
 $retVal = 1
 
 Try
-{ 
+{
   $bDebug = $false
-  
+
   #parameter sanity check
   if( $Args.Count -gt 0 ) {
     if( $Args.Count -eq 1 -And $Args[0] -eq "Debug" ) {
@@ -95,13 +95,13 @@ Try
   $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
   $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
 
-  if( -not $myWindowsPrincipal.IsInRole($adminRole) ) { 
+  if( -not $myWindowsPrincipal.IsInRole($adminRole) ) {
 
     $params = ""
     foreach($key in $PSBoundParameters.keys) {
       $params = -join( $params, "-", $key, " `"", $PSBoundParameters[$key], "`"" )
     }
-    
+
     $arguments = ""
     foreach($a in $Args) {
       $arguments = -join( $arguments, "-", $a )
@@ -121,7 +121,7 @@ Try
 
     #show the process window for -Debug
     if( !$bDebug ) { $newProcess.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden }
-    
+
     $proc = [System.Diagnostics.Process]::Start($newProcess)
     $proc.WaitForExit()
 
@@ -130,10 +130,10 @@ Try
         Log-Msg -msg $line
       }
     }
-    
+
     if( $bDebug ) { Log-Msg -msg "Process finished with code " + $proc.ExitCode -logF $lf }
         if( $bOwnLogFile -And !$bDebug) { Remove-Item $lf }
-        
+
     [Environment]::Exit($proc.ExitCode)
   }
 
@@ -149,7 +149,7 @@ Try
     $bAddFile = ![string]::IsNullOrEmpty($AddExclFile)
     $bRmPath = ![string]::IsNullOrEmpty($RmExclPath)
     $bRmFile = ![string]::IsNullOrEmpty($RmExclFile)
-    
+
     if( !$bAddPath -And !$bAddFile -And !$bRmPath -And !$bRmFile ) {
       throw (New-Object -TypeName System.ArgumentException -ArgumentList "Invalid parameter(s)")
     }

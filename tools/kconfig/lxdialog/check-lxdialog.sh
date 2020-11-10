@@ -9,7 +9,7 @@ fi
 # What library to link
 ldflags()
 {
-	if [ $(uname -s) == "Darwin" ]; then 
+	if [ $(uname -s) == "Darwin" ]; then
 		#OSX seems to need ncurses too
 		echo -n "-lncurses "
 	elif [ $(uname -s) == "FreeBSD" ]; then

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once 
+#pragma once
 
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
@@ -24,7 +24,7 @@ extern "C" {
 typedef enum {
     INTDESC_NORMAL=0,
     INTDESC_RESVD,
-    INTDESC_SPECIAL 
+    INTDESC_SPECIAL
 } int_desc_flag_t;
 
 typedef enum {

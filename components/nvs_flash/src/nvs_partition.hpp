@@ -113,4 +113,3 @@ protected:
 } // nvs
 
 #endif // ESP_PARTITION_HPP_
-

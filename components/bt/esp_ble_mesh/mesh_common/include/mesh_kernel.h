@@ -57,4 +57,3 @@ void k_sleep(s32_t duration);
 #endif
 
 #endif /* _BLE_MESH_KERNEL_H_ */
-

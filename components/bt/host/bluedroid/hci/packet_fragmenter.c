@@ -236,4 +236,3 @@ const packet_fragmenter_t *packet_fragmenter_get_interface(void)
     controller = controller_get_interface();
     return &interface;
 }
-

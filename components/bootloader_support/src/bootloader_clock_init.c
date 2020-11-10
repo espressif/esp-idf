@@ -78,5 +78,3 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     }
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 }
-
-

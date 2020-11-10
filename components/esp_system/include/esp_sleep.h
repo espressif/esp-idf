@@ -93,9 +93,9 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 
 /**
  * @brief Enable wakeup by ULP coprocessor
- * @note In revisions 0 and 1 of the ESP32, ULP wakeup source 
+ * @note In revisions 0 and 1 of the ESP32, ULP wakeup source
  *       cannot be used when RTC_PERIPH power domain is forced
- *       to be powered on (ESP_PD_OPTION_ON) or when 
+ *       to be powered on (ESP_PD_OPTION_ON) or when
  *       ext0 wakeup source is used.
  * @return
  *      - ESP_OK on success

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (c) 2006 Christian Walter <wolti@sil.at>
  * All rights reserved.
@@ -98,7 +98,7 @@ typedef enum
  * registers should be updated and reading means that the modbus protocol
  * stack needs to know the current register values.
  *
- * \see eMBRegHoldingCB( ), eMBRegCoilsCB( ), eMBRegDiscreteCB( ) and 
+ * \see eMBRegHoldingCB( ), eMBRegCoilsCB( ), eMBRegDiscreteCB( ) and
  *   eMBRegInputCB( ).
  */
 typedef enum
@@ -142,7 +142,7 @@ typedef enum
  *
  * \return If no error occurs the function returns eMBErrorCode::MB_ENOERR.
  *   The protocol is then in the disabled state and ready for activation
- *   by calling eMBEnable( ). Otherwise one of the following error codes 
+ *   by calling eMBEnable( ). Otherwise one of the following error codes
  *   is returned:
  *    - eMBErrorCode::MB_EINVAL If the slave address was not valid. Valid
  *        slave addresses are in the range 1 - 247.
@@ -171,10 +171,10 @@ eMBErrorCode    eMBTCPInit( USHORT usTCPPort );
  * \brief Release resources used by the protocol stack.
  *
  * This function disables the Modbus protocol stack and release all
- * hardware resources. It must only be called when the protocol stack 
- * is disabled. 
+ * hardware resources. It must only be called when the protocol stack
+ * is disabled.
  *
- * \note Note all ports implement this function. A port which wants to 
+ * \note Note all ports implement this function. A port which wants to
  *   get an callback must define the macro MB_PORT_HAS_CLOSE to 1.
  *
  * \return If the resources where released it return eMBErrorCode::MB_ENOERR.
@@ -189,8 +189,8 @@ eMBErrorCode    eMBClose( void );
  * This function enables processing of Modbus frames. Enabling the protocol
  * stack is only possible if it is in the disabled state.
  *
- * \return If the protocol stack is now in the state enabled it returns 
- *   eMBErrorCode::MB_ENOERR. If it was not in the disabled state it 
+ * \return If the protocol stack is now in the state enabled it returns
+ *   eMBErrorCode::MB_ENOERR. If it was not in the disabled state it
  *   return eMBErrorCode::MB_EILLSTATE.
  */
 eMBErrorCode    eMBEnable( void );
@@ -200,7 +200,7 @@ eMBErrorCode    eMBEnable( void );
  *
  * This function disables processing of Modbus frames.
  *
- * \return If the protocol stack has been disabled it returns 
+ * \return If the protocol stack has been disabled it returns
  *  eMBErrorCode::MB_ENOERR. If it was not in the enabled state it returns
  *  eMBErrorCode::MB_EILLSTATE.
  */
@@ -212,10 +212,10 @@ eMBErrorCode    eMBDisable( void );
  * This function must be called periodically. The timer interval required
  * is given by the application dependent Modbus slave timeout. Internally the
  * function calls xMBPortEventGet() and waits for an event from the receiver or
- * transmitter state machines. 
+ * transmitter state machines.
  *
  * \return If the protocol stack is not in the enabled state the function
- *   returns eMBErrorCode::MB_EILLSTATE. Otherwise it returns 
+ *   returns eMBErrorCode::MB_EILLSTATE. Otherwise it returns
  *   eMBErrorCode::MB_ENOERR.
  */
 eMBErrorCode    eMBPoll( void );
@@ -249,7 +249,7 @@ eMBErrorCode    eMBSetSlaveID( UCHAR ucSlaveID, BOOL xIsRunning,
  * The callback handler supplied is responsible for interpreting the Modbus PDU and
  * the creation of an appropriate response. In case of an error it should return
  * one of the possible Modbus exceptions which results in a Modbus exception frame
- * sent by the protocol stack. 
+ * sent by the protocol stack.
  *
  * \param ucFunctionCode The Modbus function code for which this handler should
  *   be registers. Valid function codes are in the range 1 to 127.
@@ -262,7 +262,7 @@ eMBErrorCode    eMBSetSlaveID( UCHAR ucSlaveID, BOOL xIsRunning,
  *   case the values in mbconfig.h should be adjusted. If the argument was not
  *   valid it returns eMBErrorCode::MB_EINVAL.
  */
-eMBErrorCode    eMBRegisterCB( UCHAR ucFunctionCode, 
+eMBErrorCode    eMBRegisterCB( UCHAR ucFunctionCode,
                                pxMBFunctionHandler pxHandler );
 
 /* ----------------------- Callback -----------------------------------------*/
@@ -300,7 +300,7 @@ eMBErrorCode    eMBRegisterCB( UCHAR ucFunctionCode,
  *   - eMBErrorCode::MB_ENOERR If no error occurred. In this case a normal
  *       Modbus response is sent.
  *   - eMBErrorCode::MB_ENOREG If the application can not supply values
- *       for registers within this range. In this case a 
+ *       for registers within this range. In this case a
  *       <b>ILLEGAL DATA ADDRESS</b> exception frame is sent as a response.
  *   - eMBErrorCode::MB_ETIMEDOUT If the requested register block is
  *       currently not available and the application dependent response
@@ -324,18 +324,18 @@ eMBErrorCode    eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress,
  *   this buffer.
  * \param usAddress The starting address of the register.
  * \param usNRegs Number of registers to read or write.
- * \param eMode If eMBRegisterMode::MB_REG_WRITE the application register 
+ * \param eMode If eMBRegisterMode::MB_REG_WRITE the application register
  *   values should be updated from the values in the buffer. For example
- *   this would be the case when the Modbus master has issued an 
+ *   this would be the case when the Modbus master has issued an
  *   <b>WRITE SINGLE REGISTER</b> command.
- *   If the value eMBRegisterMode::MB_REG_READ the application should copy 
+ *   If the value eMBRegisterMode::MB_REG_READ the application should copy
  *   the current values into the buffer \c pucRegBuffer.
  *
  * \return The function must return one of the following error codes:
  *   - eMBErrorCode::MB_ENOERR If no error occurred. In this case a normal
  *       Modbus response is sent.
  *   - eMBErrorCode::MB_ENOREG If the application can not supply values
- *       for registers within this range. In this case a 
+ *       for registers within this range. In this case a
  *       <b>ILLEGAL DATA ADDRESS</b> exception frame is sent as a response.
  *   - eMBErrorCode::MB_ETIMEDOUT If the requested register block is
  *       currently not available and the application dependent response
@@ -370,7 +370,7 @@ eMBErrorCode    eMBRegHoldingCB( UCHAR * pucRegBuffer, USHORT usAddress,
  *   - eMBErrorCode::MB_ENOERR If no error occurred. In this case a normal
  *       Modbus response is sent.
  *   - eMBErrorCode::MB_ENOREG If the application does not map an coils
- *       within the requested address range. In this case a 
+ *       within the requested address range. In this case a
  *       <b>ILLEGAL DATA ADDRESS</b> is sent as a response.
  *   - eMBErrorCode::MB_ETIMEDOUT If the requested register block is
  *       currently not available and the application dependent response
@@ -399,7 +399,7 @@ eMBErrorCode    eMBRegCoilsCB( UCHAR * pucRegBuffer, USHORT usAddress,
  *   - eMBErrorCode::MB_ENOERR If no error occurred. In this case a normal
  *       Modbus response is sent.
  *   - eMBErrorCode::MB_ENOREG If no such discrete inputs exists.
- *       In this case a <b>ILLEGAL DATA ADDRESS</b> exception frame is sent 
+ *       In this case a <b>ILLEGAL DATA ADDRESS</b> exception frame is sent
  *       as a response.
  *   - eMBErrorCode::MB_ETIMEDOUT If the requested register block is
  *       currently not available and the application dependent response

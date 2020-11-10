@@ -133,4 +133,3 @@ TEST_CASE("malloc(0) should return a NULL pointer", "[heap]")
     p = malloc(0);
     TEST_ASSERT(p == NULL);
 }
-

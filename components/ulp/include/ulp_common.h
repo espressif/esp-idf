@@ -86,7 +86,7 @@ esp_err_t ulp_run(uint32_t entry_point);
  *
  * ULP coprocessor starts running the program when the wakeup timer counts up
  * to a given value (called period). There are 5 period values which can be
- * programmed into SENS_ULP_CP_SLEEP_CYCx_REG registers, x = 0..4 for ESP32, and 
+ * programmed into SENS_ULP_CP_SLEEP_CYCx_REG registers, x = 0..4 for ESP32, and
  * one period value which can be programmed into RTC_CNTL_ULP_CP_TIMER_1_REG register for ESP32-S2.
  * By default, for ESP32, wakeup timer will use the period set into SENS_ULP_CP_SLEEP_CYC0_REG,
  * i.e. period number 0. ULP program code can use SLEEP instruction to select
@@ -94,7 +94,7 @@ esp_err_t ulp_run(uint32_t entry_point);
  *
  * However, please note that SLEEP instruction issued (from ULP program) while the system
  * is in deep sleep mode does not have effect, and sleep cycle count 0 is used.
- * 
+ *
  * For ESP32-s2 the SLEEP instruction not exist. Instead a WAKE instruction will be used.
  *
  * @param period_index wakeup period setting number (0 - 4)

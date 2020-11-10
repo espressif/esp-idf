@@ -46,11 +46,11 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
     }
 
     esp_ble_gatts_app_register(BATTRAY_APP_ID);
-    
+
     if((hidd_status = esp_ble_gatts_app_register(HIDD_APP_ID)) != ESP_OK) {
         return hidd_status;
     }
-   
+
     return hidd_status;
 }
 
@@ -80,7 +80,7 @@ esp_err_t esp_hidd_profile_deinit(void)
     } else {
 	return ESP_FAIL;
    }
-    
+
     /* register the HID device profile to the BTA_GATTS module*/
     esp_ble_gatts_app_unregister(hidd_le_env.gatt_if);
 
@@ -111,11 +111,11 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
         ESP_LOGE(HID_LE_PRF_TAG, "%s(), the number key should not be more than %d", __func__, HID_KEYBOARD_IN_RPT_LEN);
         return;
     }
-   
+
     uint8_t buffer[HID_KEYBOARD_IN_RPT_LEN] = {0};
-   
+
     buffer[0] = special_key_mask;
-    
+
     for (int i = 0; i < num_key; i++) {
         buffer[i+2] = keyboard_cmd[i];
     }
@@ -129,7 +129,7 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
 void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y)
 {
     uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
-    
+
     buffer[0] = mouse_button;   // Buttons
     buffer[1] = mickeys_x;           // X
     buffer[2] = mickeys_y;           // Y
@@ -140,6 +140,3 @@ void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mi
                         HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT, HID_MOUSE_IN_RPT_LEN, buffer);
     return;
 }
-
-
-

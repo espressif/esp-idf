@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     size_t len = 1460;
 
     dns_test_init_di();
-    
+
 #ifdef INSTR_IS_OFF
     p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
     buf = p->payload;
@@ -72,10 +72,10 @@ int main(int argc, char** argv)
         dns_test_dns_enqueue("test", 4, NULL, NULL, 0);
 
         // Process the packet
-        dns_test_dns_recv(NULL, NULL, p, &ip_addr_any, 0);        
+        dns_test_dns_recv(NULL, NULL, p, &ip_addr_any, 0);
     }
 
 
-    
+
     return 0;
 }

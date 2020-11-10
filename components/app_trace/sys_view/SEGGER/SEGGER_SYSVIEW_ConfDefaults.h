@@ -118,7 +118,7 @@ extern "C" {
 #endif
 
 // Lowest Id reported by the Application.
-#ifndef   SEGGER_SYSVIEW_ID_BASE 
+#ifndef   SEGGER_SYSVIEW_ID_BASE
   #define SEGGER_SYSVIEW_ID_BASE            0
 #endif
 

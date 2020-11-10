@@ -37,4 +37,3 @@
 esp_err_t mbc_serial_slave_create(void** handler);
 
 #endif // _MODBUS_SERIAL_CONTROLLER_SLAVE
-

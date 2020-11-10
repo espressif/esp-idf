@@ -74,8 +74,8 @@ void periph_module_reset(periph_module_t periph);
  *       wifi_bt_common_module_disable has to be called the same number of times
  *       in order to put the peripheral into disabled state.
  *
- * @return     NULL 
- * 
+ * @return     NULL
+ *
  */
 void wifi_bt_common_module_enable(void);
 
@@ -86,8 +86,8 @@ void wifi_bt_common_module_enable(void);
  *       wifi_bt_common_module_disable has to be called the same number of times
  *       in order to put the peripheral into disabled state.
  *
- * @return     NULL 
- * 
+ * @return     NULL
+ *
  */
 void wifi_bt_common_module_disable(void);
 

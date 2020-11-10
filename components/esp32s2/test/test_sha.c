@@ -101,4 +101,3 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_espsha, sha512_mbedtls, sizeof(sha512_espsha), "SHA512 results should match");
 }
-

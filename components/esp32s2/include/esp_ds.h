@@ -197,4 +197,3 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 #ifdef __cplusplus
 }
 #endif
-

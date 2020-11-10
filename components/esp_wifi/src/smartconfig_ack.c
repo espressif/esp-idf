@@ -110,7 +110,7 @@ static void sc_ack_send_task(void *pvParameters)
             send_sock = socket(AF_INET, SOCK_DGRAM, 0);
             if ((send_sock < LWIP_SOCKET_OFFSET) || (send_sock > (FD_SETSIZE - 1))) {
                 ESP_LOGE(TAG,  "Creat udp socket failed");
-                goto _end;	
+                goto _end;
             }
 
             setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
@@ -213,4 +213,3 @@ void sc_send_ack_stop(void)
 }
 
 #endif
-

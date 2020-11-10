@@ -6,4 +6,3 @@
 PROJECT_NAME := wps_example
 
 include $(IDF_PATH)/make/project.mk
-

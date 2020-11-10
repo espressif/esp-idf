@@ -394,4 +394,3 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns);
 #ifdef __cplusplus
 }
 #endif
-

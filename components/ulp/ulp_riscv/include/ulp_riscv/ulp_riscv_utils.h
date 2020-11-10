@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once 
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,13 +30,13 @@ extern "C" {
 void ulp_riscv_wakeup_main_processor(void);
 
 /**
- * @brief Rescues the cpu from monitor mode 
- * 
- * This function cancels the low power mode 
+ * @brief Rescues the cpu from monitor mode
+ *
+ * This function cancels the low power mode
  * of the ULP-RISC-V, should be called
  * every time the co-processor starts.
- * 
- * @note by convenience this function is 
+ *
+ * @note by convenience this function is
  *       automatically called in startup code.
  */
 void ulp_riscv_rescue_from_monitor(void);
@@ -44,17 +44,17 @@ void ulp_riscv_rescue_from_monitor(void);
 /**
  * @brief Finishes the ULP program and powers down the ULP
  *        until next wakeup.
- *   
+ *
  * @note This function does not return. After called it will
  *       fully reset the ULP.
- * 
- * @note Returning from main() in the ULP program results on 
+ *
+ * @note Returning from main() in the ULP program results on
  *       calling this function.
- * 
+ *
  * This function should be called after the ULP program Finishes
- * its processing, it will trigger the timer for the next wakeup, 
- * put the ULP in monitor mode and triggers a reset. 
- * 
+ * its processing, it will trigger the timer for the next wakeup,
+ * put the ULP in monitor mode and triggers a reset.
+ *
  */
 void __attribute__((noreturn)) ulp_riscv_shutdown(void);
 

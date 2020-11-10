@@ -1,4 +1,4 @@
-set(srcs 
+set(srcs
     "unity/src/unity.c"
     "unity_port_esp32.c")
 

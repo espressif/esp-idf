@@ -1,4 +1,4 @@
-/* 
+/*
  * tie.h -- compile-time HAL definitions dependent on CORE & TIE configuration
  *
  *  NOTE:  This header file is not meant to be included directly.
@@ -179,4 +179,3 @@
 	3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3, 3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3
 
 #endif /*_XTENSA_CORE_TIE_H*/
-

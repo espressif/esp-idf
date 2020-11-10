@@ -6,4 +6,3 @@
 PROJECT_NAME := scan
 
 include $(IDF_PATH)/make/project.mk
-

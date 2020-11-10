@@ -4,4 +4,3 @@ CaseConfig:
     dut:
       class: ESP32QEMUDUT
       package: ttfw_idf
-

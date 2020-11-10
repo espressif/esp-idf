@@ -220,7 +220,7 @@ static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
 
 /**
  * Clear in fifo full error
- * 
+ *
  * @param hw Beginning address of the peripheral registers.
  */
 static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
@@ -231,7 +231,7 @@ static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
 
 /**
  * Clear out fifo empty error
- * 
+ *
  * @param hw Beginning address of the peripheral registers.
  */
 static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
@@ -1105,7 +1105,7 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, bool e
  * Configuration of RX DMA EOF interrupt generation way
  *
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
- * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans. 
+ * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.
  */
 static inline void spi_dma_ll_set_rx_eof_generation(spi_dma_dev_t *dma_in, bool enable)
 {

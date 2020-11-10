@@ -193,7 +193,7 @@ end;
 function UseBundledIDFToolsPy(Version: String) : Boolean;
 begin
   Result := False;
-  { Use bundled copy of idf_tools.py, as the copy shipped with these IDF versions can not work due to 
+  { Use bundled copy of idf_tools.py, as the copy shipped with these IDF versions can not work due to
     the --no-site-packages bug.
   }
   if (Version = 'v4.0') or (Version = 'v3.3.1') then
@@ -257,7 +257,7 @@ var
   Command: String;
 begin
   ForceDirectories(ExpandConstant(LnkString));
-  Destination := ExpandConstant(LnkString + '\{#IDFCmdExeShortcutFile}');  
+  Destination := ExpandConstant(LnkString + '\{#IDFCmdExeShortcutFile}');
   Description := '{#IDFCmdExeShortcutDescription}';
   { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
     will be removed by cmd.exe; each argument needs to be surrounded by quotes as well. }
@@ -305,9 +305,9 @@ begin
     listPSModulePath.Delimiter := ';';
     listPSModulePath.StrictDelimiter := True;
     listPSModulePath.DelimitedText := GetEnv('PsModulePath');
-    
+
     Log('Checking PSMODULEPATH for Windows Defender module...');
-    
+
     for x:=0 to (listPSModulePath.Count-1) do
     begin
       szWDPath := listPSModulePath[x] + '\Defender'
@@ -317,13 +317,13 @@ begin
         szHasWD := 'YES (' + szWDPath + ')';
         Break;
       end
-      else 
+      else
         szHasWD := 'NO';
     end;
-    
+
     Log('CheckWinDefenderAvailable: ' + szHasWD);
-    
-    { WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption. 
+
+    { WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption.
       Please, keep this in mind when making changes }
     for x:=0 to (WizardForm.TasksList.Items.Count-1) do
     begin

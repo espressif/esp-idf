@@ -209,7 +209,7 @@ void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t eve
                srv->state.onoff = param->value.set.onoff.onoff;
             }
         }
-       
+
         switch (opcode) {
             case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
                 ESP_LOGI(TAG, "GenOnOffServer:SetStatus,OK,%d", param->value.set.onoff.onoff);
@@ -347,7 +347,7 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
 {
     uint16_t result;
     uint8_t data[4];
-    
+
     ESP_LOGD(TAG, "enter %s, event=%x\n", __func__, event);
 
     switch (event) {
@@ -493,7 +493,7 @@ int ble_mesh_init(int argc, char **argv)
     }
 
     ESP_LOGD(TAG, "enter %s, module %x\n", __func__, component.model_type->ival[0]);
-    local_component = ble_mesh_get_component(component.model_type->ival[0]); 
+    local_component = ble_mesh_get_component(component.model_type->ival[0]);
 
     if (component.dev_uuid->count != 0) {
         device_uuid = malloc((ESP_BLE_MESH_OCTET16_LEN + 1) * sizeof(uint8_t));
@@ -516,7 +516,7 @@ int ble_mesh_init(int argc, char **argv)
         ESP_LOGI(TAG, "Bm:Init,OK\n");
         return err;
     }
-    
+
     free(device_uuid);
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
@@ -531,7 +531,7 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
     int nerrors = arg_parse(argc, argv, (void **) &bearer);
     if (nerrors != 0) {
         arg_print_errors(stderr, bearer.end, argv[0]);
-        
+
         return 1;
     }
 
@@ -788,7 +788,7 @@ int ble_mesh_provisioner_add_node(int argc, char **argv)
         get_value_string((char *)provisioner_add_node.dev_key->sval[0], (char *)node_info.dev_key);
     }
     if (provisioner_add_node.uuid->count != 0) {
-        get_value_string((char *)provisioner_add_node.uuid->sval[0], (char *)node_info.dev_uuid); 
+        get_value_string((char *)provisioner_add_node.uuid->sval[0], (char *)node_info.dev_uuid);
         get_value_string((char *)provisioner_add_node.uuid->sval[0], (char *)node_info.dev_uuid);
     }
 

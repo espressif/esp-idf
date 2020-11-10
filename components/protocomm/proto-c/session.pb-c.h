@@ -24,11 +24,11 @@ typedef struct _SessionData SessionData;
 
 /*
  * Allowed values for the type of security
- * being used in a protocomm session 
+ * being used in a protocomm session
  */
 typedef enum _SecSchemeVersion {
   /*
-   *!< Unsecured - plaintext communication 
+   *!< Unsecured - plaintext communication
    */
   SEC_SCHEME_VERSION__SecScheme0 = 0,
   /*
@@ -49,23 +49,23 @@ typedef enum {
 
 /*
  * Data structure exchanged when establishing
- * secure session between Host and Client 
+ * secure session between Host and Client
  */
 struct  _SessionData
 {
   ProtobufCMessage base;
   /*
-   *!< Type of security 
+   *!< Type of security
    */
   SecSchemeVersion sec_ver;
   SessionData__ProtoCase proto_case;
   union {
     /*
-     *!< Payload data in case of security 0 
+     *!< Payload data in case of security 0
      */
     Sec0Payload *sec0;
     /*
-     *!< Payload data in case of security 1 
+     *!< Payload data in case of security 1
      */
     Sec1Payload *sec1;
   };

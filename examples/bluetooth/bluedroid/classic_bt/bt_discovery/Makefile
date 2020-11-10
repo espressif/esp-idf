@@ -6,4 +6,3 @@
 PROJECT_NAME := bt_discovery
 
 include $(IDF_PATH)/make/project.mk
-

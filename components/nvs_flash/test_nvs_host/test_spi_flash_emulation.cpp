@@ -183,4 +183,3 @@ TEST_CASE("data is randomized predictably", "[spi_flash_emu]")
 
     CHECK(std::equal(emu1.bytes(), emu1.bytes() + emu1.size(), emu2.bytes()));
 }
-

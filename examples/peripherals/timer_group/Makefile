@@ -6,4 +6,3 @@
 PROJECT_NAME := timer_group
 
 include $(IDF_PATH)/make/project.mk
-

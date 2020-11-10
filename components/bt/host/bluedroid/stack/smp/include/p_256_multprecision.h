@@ -58,5 +58,3 @@ DWORD multiprecision_lshift(DWORD *c, DWORD *a, uint32_t keyLength);
 void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength);
 void multiprecision_fast_mod(DWORD *c, DWORD *a);
 void multiprecision_fast_mod_P256(DWORD *c, DWORD *a);
-
-

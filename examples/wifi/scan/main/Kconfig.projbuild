@@ -8,4 +8,3 @@ menu "Example Configuration"
             The size of array that will be used to retrieve the list of access points.
 
 endmenu
-

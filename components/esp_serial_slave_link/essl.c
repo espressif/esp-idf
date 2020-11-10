@@ -241,4 +241,3 @@ esp_err_t essl_send_slave_intr(essl_handle_t handle, uint32_t intr_mask, uint32_
 {
     CHECK_EXECUTE_CMD(handle, send_slave_intr, intr_mask, wait_ms);
 }
-

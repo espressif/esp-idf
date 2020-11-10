@@ -149,7 +149,7 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
     input[26] = 0xff;
     input[27] = 0xff;
     SMEMCPY(&input[28], &remote_ip4->addr, 4);
-  }   
+  }
 #endif /* LWIP_IPV4 */
 
   input[32] = (u8_t)(local_port >> 8);

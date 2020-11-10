@@ -9,7 +9,7 @@ nvs:
     sub module: NVS
     sub module abbr: NVS
 partition:
-    module: System    
+    module: System
     module abbr: SYS
     sub module: Misc
     sub module abbr: MISC
@@ -133,5 +133,3 @@ wifi_init:
     module abbr: SYS
     sub module: Misc
     sub module abbr: MISC
-
-

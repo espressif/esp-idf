@@ -144,7 +144,7 @@ begin
   Delete(MinorStr, Delim, Length(MinorStr));
   Delete(Version, 1, Delim);
   Minor := StrToInt(MinorStr);
-  
+
   { Sanity check }
   ExpectedPrefix := IntToStr(Major) + '.' + IntToStr(Minor);
   if Pos(ExpectedPrefix, OrigVersion) <> 1 then

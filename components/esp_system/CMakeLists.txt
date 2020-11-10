@@ -15,8 +15,8 @@ idf_component_register(SRCS "intr_alloc.c"
 
 add_subdirectory(port)
 
-# After system initialization, `start_app` (and its other cores variant) is called. 
-# This is provided by the user or from another component. Since we can't establish 
+# After system initialization, `start_app` (and its other cores variant) is called.
+# This is provided by the user or from another component. Since we can't establish
 # dependency on what we don't know, force linker to not drop the symbol regardless
 # of link line order.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app")

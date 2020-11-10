@@ -479,4 +479,3 @@ static inline void sdio_slave_ll_slvint_fetch_clear(slc_dev_t *slc, sdio_slave_l
     *out_slv_int = slv_int;
     slc->slc0_int_clr.val = slv_int;
 }
-

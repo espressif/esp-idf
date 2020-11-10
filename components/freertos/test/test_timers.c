@@ -76,12 +76,12 @@ TEST_CASE("Static timer creation", "[freertos]")
     TimerHandle_t created_timer;
     volatile int count = 0;
 
-    created_timer = xTimerCreateStatic("oneshot", 100 / portTICK_PERIOD_MS, 
+    created_timer = xTimerCreateStatic("oneshot", 100 / portTICK_PERIOD_MS,
                                     pdTRUE,
-                                    (void *)&count, 
-                                    timer_callback, 
+                                    (void *)&count,
+                                    timer_callback,
                                     &static_timer);
-    
+
     TEST_ASSERT_NOT_NULL(created_timer);
 }
 #endif

@@ -8,4 +8,3 @@ PROJECT_NAME := esp_event_cxx
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/cxx/experimental/experimental_cpp_component
 
 include $(IDF_PATH)/make/project.mk
-

@@ -83,7 +83,7 @@ static esp_err_t esp_ping_send(esp_ping_t *ep)
     if (ep->packet_hdr->type == ICMP_ECHO) {
         ep->packet_hdr->chksum = inet_chksum(ep->packet_hdr, ep->icmp_pkt_size);
     }
-    
+
     int sent = sendto(ep->sock, ep->packet_hdr, ep->icmp_pkt_size, 0,
                       (struct sockaddr *)&ep->target_addr, sizeof(ep->target_addr));
 

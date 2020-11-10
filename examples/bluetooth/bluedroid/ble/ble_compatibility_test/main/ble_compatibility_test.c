@@ -32,7 +32,7 @@
 #if DEBUG_ON
 #define EXAMPLE_DEBUG ESP_LOGI
 #else
-#define EXAMPLE_DEBUG( tag, format, ... )  
+#define EXAMPLE_DEBUG( tag, format, ... )
 #endif
 
 #define EXAMPLE_TAG "BLE_COMP"
@@ -43,8 +43,8 @@
 #define SAMPLE_DEVICE_NAME          "BLE_COMP_TEST"
 #define SVC_INST_ID                 0
 
-/* The max length of characteristic value. When the gatt client write or prepare write, 
-*  the data length must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX. 
+/* The max length of characteristic value. When the gatt client write or prepare write,
+*  the data length must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
 */
 #define GATTS_EXAMPLE_CHAR_VAL_LEN_MAX 500
 #define LONG_CHAR_VAL_LEN           500
@@ -241,8 +241,8 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
     /* Characteristic Client Configuration Descriptor */
     [IDX_CHAR_CFG_C_2]  =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      sizeof(uint16_t), sizeof(char_ccc), (uint8_t *)char_ccc}},    
- 
+      sizeof(uint16_t), sizeof(char_ccc), (uint8_t *)char_ccc}},
+
 };
 
 static void show_bonded_devices(void)
@@ -335,7 +335,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GAP_BLE_PASSKEY_REQ_EVT");
             //esp_ble_passkey_reply(heart_rate_profile_tab[HEART_PROFILE_APP_IDX].remote_bda, true, 0x00);
             break;
-        
+
         case ESP_GAP_BLE_NC_REQ_EVT:
             /* The app will receive this event when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
             show the passkey number to the user to confirm it with the number displayed by peer device. */
@@ -374,7 +374,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
             #if DEBUG_ON
             esp_log_buffer_hex(EXAMPLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
-            #endif 
+            #endif
             EXAMPLE_DEBUG(EXAMPLE_TAG, "------------------------------------");
             break;
         }
@@ -534,7 +534,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         ESP_LOGI(EXAMPLE_TAG, "(3)***** short write success ***** \n");
                     }
                 }
-                
+
                 /* send response when param->write.need_rsp is true*/
                 if (param->write.need_rsp){
                     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
@@ -544,8 +544,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 example_prepare_write_event_env(gatts_if, &prepare_write_env, param);
             }
       	    break;
-        case ESP_GATTS_EXEC_WRITE_EVT: 
-            // the length of gattc prepare write data must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX. 
+        case ESP_GATTS_EXEC_WRITE_EVT:
+            // the length of gattc prepare write data must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
             ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT, Length=%d",  prepare_write_env.prepare_len);
             example_exec_write_event_env(&prepare_write_env, param);
             break;
@@ -696,5 +696,5 @@ void app_main(void)
     and the init key means which key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
-  
+
 }

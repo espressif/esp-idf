@@ -289,5 +289,3 @@ tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR *p_info)
     return st;
 }
 #endif  /* BLE_INCLUDED */
-
-

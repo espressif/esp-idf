@@ -176,4 +176,3 @@ void app_main(void)
 
     xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
 }
-

@@ -152,7 +152,7 @@ bool spicommon_dma_chan_free(int dma_chan);
 
 /**
  * @brief Connect SPI and DMA peripherals
- * 
+ *
  * @param host     SPI peripheral
  * @param dma_chan DMA channel
  */

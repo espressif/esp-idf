@@ -29,9 +29,9 @@
  * @file atomic.h
  * @brief FreeRTOS atomic operation support.
  *
- * This file implements atomic by disabling interrupts globally. 
- * Implementation with architecture specific atomic instructions  
- * are to be provided under each compiler directory. 
+ * This file implements atomic by disabling interrupts globally.
+ * Implementation with architecture specific atomic instructions
+ * are to be provided under each compiler directory.
  */
 
 #ifndef ATOMIC_H
@@ -71,14 +71,14 @@ extern "C" {
 
 #endif /* portSET_INTERRUPT_MASK_FROM_ISR() */
 
-/* Port specific definition -- "always inline". 
- * Inline is compiler specific, and may not always get inlined depending on your optimization level. 
- * Also, inline is considerred as performance optimization for atomic. 
+/* Port specific definition -- "always inline".
+ * Inline is compiler specific, and may not always get inlined depending on your optimization level.
+ * Also, inline is considerred as performance optimization for atomic.
  * Thus, if portFORCE_INLINE is not provided by portmacro.h, instead of resulting error,
- * simply define it. 
+ * simply define it.
  */
 #ifndef portFORCE_INLINE
-    #define portFORCE_INLINE 
+    #define portFORCE_INLINE
 #endif
 
 #define ATOMIC_COMPARE_AND_SWAP_SUCCESS     0x1U        /**< Compare and swap succeeded, swapped. */

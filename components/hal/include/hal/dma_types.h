@@ -22,7 +22,7 @@ extern "C" {
 
 /**
  * @brief Type of DMA descriptor
- * 
+ *
  */
 typedef struct dma_descriptor_s {
     struct {

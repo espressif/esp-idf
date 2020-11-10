@@ -6,4 +6,3 @@
 PROJECT_NAME := esp_timer_example
 
 include $(IDF_PATH)/make/project.mk
-

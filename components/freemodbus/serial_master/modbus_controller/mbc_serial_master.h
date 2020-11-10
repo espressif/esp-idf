@@ -35,4 +35,3 @@
 esp_err_t mbc_serial_master_create(void** handler);
 
 #endif // _MODBUS_SERIAL_CONTROLLER_MASTER
-

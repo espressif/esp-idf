@@ -18,4 +18,3 @@ TEST_CASE("Panic handler", "[freertos][ignore]")
     i = (volatile int *)0x0;
     *i = 1;
 }
-

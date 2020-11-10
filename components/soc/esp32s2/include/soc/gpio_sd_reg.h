@@ -168,5 +168,3 @@ extern "C" {
 
 
 #endif /*_SOC_GPIO_SD_REG_H_ */
-
-

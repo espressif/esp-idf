@@ -56,10 +56,10 @@ port_switch_flag:
 *******************************************************************************
 * _frxt_setup_switch
 * void _frxt_setup_switch(void);
-* 
+*
 * Sets an internal flag indicating that a task switch is required on return
 * from interrupt handling.
-* 
+*
 *******************************************************************************
 */
     .global     _frxt_setup_switch
@@ -152,7 +152,7 @@ _frxt_int_enter:
     #if XCHAL_CP_NUM > 0
     movi    a3,  0              /* whilst ISRs pending keep CPENABLE exception active */
     wsr     a3,  CPENABLE
-    rsync               
+    rsync
     #endif
     #endif
 
@@ -192,10 +192,10 @@ _frxt_int_exit:
     s32i    a2,  a3, 0                  /* save nesting count              */
     bnez    a2,  .Lnesting              /* !=0 after decr so still nested  */
 
-    #ifdef CONFIG_FREERTOS_FPU_IN_ISR 
+    #ifdef CONFIG_FREERTOS_FPU_IN_ISR
     #if XCHAL_CP_NUM > 0
     l32i    a3,  sp, 0                  /* Grab last CPENABLE before leave ISR */
-    addi    sp,  sp, 4                    
+    addi    sp,  sp, 4
     wsr     a3, CPENABLE
     rsync                               /* ensure CPENABLE was modified */
     #endif
@@ -387,7 +387,7 @@ _frxt_tick_timer_init:
     #else
     movi    a6, XT_TIMER_INTEN
     movi    a3, xt_ints_on
-    callx4  a3  
+    callx4  a3
     #endif
 
     RET(16)

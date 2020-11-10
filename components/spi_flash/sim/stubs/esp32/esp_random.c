@@ -11,4 +11,3 @@ uint32_t esp_random(void)
 {
     return (uint32_t)rand();
 }
-

@@ -192,4 +192,3 @@
 
 
 #endif /*XTENSA_COREBITS_H*/
-

@@ -7,7 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-// Include the prebuilt library's header file so as to be able 
+// Include the prebuilt library's header file so as to be able
 // to reference `prebuilt_func` here.
 #include "prebuilt.h"
 

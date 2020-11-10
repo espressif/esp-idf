@@ -759,4 +759,3 @@ TEST_CASE("ESPEventAPICustom no mem", "[cxx event]")
 }
 
 #endif // __cpp_exceptions
-

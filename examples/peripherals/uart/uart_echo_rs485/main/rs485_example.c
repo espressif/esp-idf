@@ -46,8 +46,8 @@
 // Timeout threshold for UART = number of symbols (~10 tics) with unchanged state on receive pin
 #define ECHO_READ_TOUT          (3) // 3.5T * 8 = 28 ticks, TOUT=3 -> ~24..33 ticks
 
-static void echo_send(const int port, const char* str, uint8_t length) 
-{    
+static void echo_send(const int port, const char* str, uint8_t length)
+{
     if (uart_write_bytes(port, str, length) != length) {
         ESP_LOGE(TAG, "Send data critical failure.");
         // add your code to handle sending failure here
@@ -68,10 +68,10 @@ static void echo_task(void *arg)
         .rx_flow_ctrl_thresh = 122,
         .source_clk = UART_SCLK_APB,
     };
-    
+
     // Set UART log level
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    
+
     ESP_LOGI(TAG, "Start RS485 application test and configure UART.");
 
     // Install UART driver (we don't need an event queue here)
@@ -80,7 +80,7 @@ static void echo_task(void *arg)
 
     // Configure UART parameters
     ESP_ERROR_CHECK(uart_param_config(uart_num, &uart_config));
-    
+
     ESP_LOGI(TAG, "UART set pins, mode and install driver.");
 
     // Set UART pins as per KConfig settings
@@ -88,7 +88,7 @@ static void echo_task(void *arg)
 
     // Set RS485 half duplex mode
     ESP_ERROR_CHECK(uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX));
-    
+
     // Set read timeout of UART TOUT feature
     ESP_ERROR_CHECK(uart_set_rx_timeout(uart_num, ECHO_READ_TOUT));
 
@@ -101,7 +101,7 @@ static void echo_task(void *arg)
     while(1) {
         //Read data from UART
         int len = uart_read_bytes(uart_num, data, BUF_SIZE, PACKET_READ_TICS);
-        
+
         //Write data back to UART
         if (len > 0) {
             echo_send(uart_num, "\r\n", 2);

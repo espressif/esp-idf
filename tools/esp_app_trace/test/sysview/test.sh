@@ -27,4 +27,3 @@
     && diff output.json expected_output_mcore.json \
     && coverage report \
 ; } || { echo 'The test for mcore sysviewtrace_proc JSON functionality has failed. Please examine the artifacts.' ; exit 1; }
-

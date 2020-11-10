@@ -89,7 +89,7 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
 
     mapping[iram0_text]
-    
+
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 

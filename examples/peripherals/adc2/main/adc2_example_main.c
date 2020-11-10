@@ -43,7 +43,7 @@ void app_main(void)
 
     dac_output_enable( DAC_EXAMPLE_CHANNEL );
 
-    //be sure to do the init before using adc2. 
+    //be sure to do the init before using adc2.
     printf("adc2_init...\n");
     adc2_config_channel_atten( ADC2_EXAMPLE_CHANNEL, ADC_ATTEN_11db );
 

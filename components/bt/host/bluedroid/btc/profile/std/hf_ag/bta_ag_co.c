@@ -32,7 +32,7 @@
 #if (BTA_AG_INCLUDED == TRUE)
 
 /*******************************************************************************
- *                                 CONST 
+ *                                 CONST
 ********************************************************************************/
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 #include "oi_codec_sbc.h"
@@ -85,7 +85,7 @@ static bta_ag_co_cb_t *bta_ag_co_cb_ptr;
 static UINT8 hf_air_mode = BTM_SCO_AIR_MODE_TRANSPNT;
 static UINT8 hf_inout_pkt_size = 0;
 
-/* ========================================================================= 
+/* =========================================================================
 *                   AG pass-through mode handle
 *===========================================================================*/
 /*******************************************************************************
@@ -123,7 +123,7 @@ void bta_ag_ci_rx_write(UINT16 handle, char *p_data, UINT16 len)
     char *p_data_area;
 
     if (len > (BT_DEFAULT_BUFFER_SIZE - sizeof(tBTA_AG_CI_RX_WRITE) - 1)) {
-        len = BT_DEFAULT_BUFFER_SIZE - sizeof(tBTA_AG_CI_RX_WRITE) - 1;        
+        len = BT_DEFAULT_BUFFER_SIZE - sizeof(tBTA_AG_CI_RX_WRITE) - 1;
     }
 
     while (len_remaining) {
@@ -211,7 +211,7 @@ static void bta_ag_h2_header(UINT16 *p_buf)
  ** Returns        void
  **
  *******************************************************************************/
-static void bta_hf_dec_init(void) 
+static void bta_hf_dec_init(void)
 {
 #if (PLC_INCLUDED == TRUE)
     sbc_plc_init(&(bta_hf_ct_plc.plc_state));
@@ -285,7 +285,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
             bta_hf_ct_plc.first_good_frame_found = TRUE;
             sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)bta_ag_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
         }
-        
+
         case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_BODY_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_AUDIO_DATA:
@@ -307,7 +307,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
             APPL_TRACE_DEBUG("bad frame, using PLC to fix it.");
             break;
         }
-            
+
         case OI_STATUS_INVALID_PARAMETERS:
         {
             // This caused by corrupt frames.
@@ -391,7 +391,7 @@ tBTA_HFP_SCO_ROUTE_TYPE bta_ag_sco_co_init(UINT32 rx_bw, UINT32 tx_bw, tBTA_HFP_
 ** Function         bta_ag_sco_co_open
 **
 ** Description      This function is executed by AG when a service level connection
-**                  is opened. 
+**                  is opened.
 **
 **
 ** Returns          void

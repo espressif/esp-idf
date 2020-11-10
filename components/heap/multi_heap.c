@@ -103,8 +103,8 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
     pool_t pool = tlsf_get_pool(heap->heap_data);
     void *ptr = block_to_ptr(block);
 
-    MULTI_HEAP_ASSERT((ptr >= pool) && 
-                    (ptr < pool + heap->pool_size), 
+    MULTI_HEAP_ASSERT((ptr >= pool) &&
+                    (ptr < pool + heap->pool_size),
                     (uintptr_t)ptr);
 }
 
@@ -171,7 +171,7 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
     assert(heap != NULL);
     assert_valid_block(heap, block);
     block_header_t* next = block_next(block);
- 
+
     if(block_data_size(next) == 0) {
         //Last block:
         return NULL;
@@ -200,7 +200,7 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
         if (heap->free_bytes < heap->minimum_free_bytes) {
             heap->minimum_free_bytes = heap->free_bytes;
         }
-    }    
+    }
     multi_heap_internal_unlock(heap);
 
     return result;
@@ -245,7 +245,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
             heap->minimum_free_bytes = heap->free_bytes;
         }
     }
-    
+
     multi_heap_internal_unlock(heap);
 
     return result;
@@ -301,7 +301,7 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
 static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
-    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n", 
+    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n",
                             (void *)ptr,
                             size,
                             used ? "No" : "Yes");
@@ -338,18 +338,18 @@ size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
 static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
 {
     multi_heap_info_t *info = user;
-    
+
     if(used) {
         info->allocated_blocks++;
     } else {
         info->free_blocks++;
-        
+
         if(size > info->largest_free_block ) {
             info->largest_free_block = size;
-        }   
+        }
     }
-    
-    info->total_blocks++; 
+
+    info->total_blocks++;
 }
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)

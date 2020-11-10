@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once 
+#pragma once
 
 #include <stdint.h>
 #include "soc/soc_caps.h"
@@ -25,18 +25,18 @@ extern "C" {
 
 /**
  * @brief enable interrupts specified by the mask
- * 
- * @param mask bitmask of interrupts that needs to be enabled 
+ *
+ * @param mask bitmask of interrupts that needs to be enabled
  */
-static inline void intr_cntrl_ll_enable_interrupts(uint32_t mask) 
+static inline void intr_cntrl_ll_enable_interrupts(uint32_t mask)
 {
     xt_ints_on(mask);
 }
 
 /**
  * @brief disable interrupts specified by the mask
- * 
- * @param mask bitmask of interrupts that needs to be disabled 
+ *
+ * @param mask bitmask of interrupts that needs to be disabled
  */
 static inline void intr_cntrl_ll_disable_interrupts(uint32_t mask)
 {
@@ -45,10 +45,10 @@ static inline void intr_cntrl_ll_disable_interrupts(uint32_t mask)
 
 /**
  * @brief checks if given interrupt number has a valid handler
- * 
+ *
  * @param intr interrupt number ranged from 0 to 31
  * @param cpu cpu number ranged betweeen 0 to SOC_CPU_CORES_NUM - 1
- * @return true for valid handler, false otherwise 
+ * @return true for valid handler, false otherwise
  */
 static inline bool intr_cntrl_ll_has_handler(uint8_t intr, uint8_t cpu)
 {
@@ -56,8 +56,8 @@ static inline bool intr_cntrl_ll_has_handler(uint8_t intr, uint8_t cpu)
 }
 
 /**
- * @brief sets interrupt handler and optional argument of a given interrupt number 
- * 
+ * @brief sets interrupt handler and optional argument of a given interrupt number
+ *
  * @param intr interrupt number ranged from 0 to 31
  * @param handler handler invoked when an interrupt occurs
  * @param arg optional argument to pass to the handler
@@ -68,10 +68,10 @@ static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler
 }
 
 /**
- * @brief Gets argument passed to handler of a given interrupt number 
- * 
+ * @brief Gets argument passed to handler of a given interrupt number
+ *
  * @param intr interrupt number ranged from 0 to 31
- * 
+ *
  * @return argument used by handler of passed interrupt number
  */
 static inline void * intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
@@ -81,18 +81,18 @@ static inline void * intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
 
 /**
  * @brief Disables interrupts that are not located in iram
- * 
+ *
  * @param newmask mask of interrupts needs to be disabled
  * @return oldmask where to store old interrupts state
  */
-static inline uint32_t intr_cntrl_ll_disable_int_mask(uint32_t newmask) 
+static inline uint32_t intr_cntrl_ll_disable_int_mask(uint32_t newmask)
 {
     return xt_int_disable_mask(newmask);
 }
 
 /**
  * @brief Enables interrupts that are not located in iram
- * 
+ *
  * @param newmask mask of interrupts needs to be disabled
  */
 static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)

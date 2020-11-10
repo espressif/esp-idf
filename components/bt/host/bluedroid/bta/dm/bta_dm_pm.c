@@ -1170,4 +1170,3 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
 }
 
 #endif
-

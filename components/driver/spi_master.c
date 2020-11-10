@@ -357,8 +357,8 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
         .use_gpio = use_gpio
     };
 
-    //output values of timing configuration 
-    spi_hal_timing_conf_t temp_timing_conf;          
+    //output values of timing configuration
+    spi_hal_timing_conf_t temp_timing_conf;
     int freq;
     esp_err_t ret = spi_hal_cal_clock_conf(&timing_param, &freq, &temp_timing_conf);
     SPI_CHECK(ret==ESP_OK, "assigned clock speed not supported", ret);
@@ -708,7 +708,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     }
     //Dummy phase is not available when both data out and in are enabled, regardless of FD or HD mode.
     SPI_CHECK(!tx_enabled || !rx_enabled || !dummy_enabled || !extra_dummy_enabled, "Dummy phase is not available when both data out and in are enabled", ESP_ERR_INVALID_ARG);
-    
+
     return ESP_OK;
 }
 
@@ -978,4 +978,3 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t ha
 
     return spi_device_polling_end(handle, portMAX_DELAY);
 }
-

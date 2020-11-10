@@ -62,7 +62,7 @@ static void openssl_example_task(void *p)
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
-    const unsigned int prvtkey_pem_bytes = prvtkey_pem_end - prvtkey_pem_start;   
+    const unsigned int prvtkey_pem_bytes = prvtkey_pem_end - prvtkey_pem_start;
 
     ESP_LOGI(TAG, "SSL server context create ......");
     /* For security reasons, it is best if you can use
@@ -168,7 +168,7 @@ reconnect:
             break;
         }
     } while (1);
-    
+
     SSL_shutdown(ssl);
 failed5:
     close(new_sockfd);
@@ -186,7 +186,7 @@ failed2:
 failed1:
     vTaskDelete(NULL);
     return ;
-} 
+}
 
 static void openssl_server_init(void)
 {
@@ -198,7 +198,7 @@ static void openssl_server_init(void)
                       OPENSSL_EXAMPLE_TASK_STACK_WORDS,
                       NULL,
                       OPENSSL_EXAMPLE_TASK_PRIORITY,
-                      &openssl_handle); 
+                      &openssl_handle);
 
     if (ret != pdPASS)  {
         ESP_LOGI(TAG, "create task %s failed", OPENSSL_EXAMPLE_TASK_NAME);

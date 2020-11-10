@@ -2705,6 +2705,3 @@ Changes between V1.00 and V1.01
 	+ Prevent the call to kbhit() in main.c for debug builds as the debugger
 	  seems to have problems stepping over the call.  This if for the PC port
 	  only.
-
-
-

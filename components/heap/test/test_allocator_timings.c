@@ -33,11 +33,11 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
                of using malloc/free
             */
             size_t new_size = esp_random() % 1024;
-           
+
             cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
             void *new_p = heap_caps_realloc(p[n], new_size, MALLOC_CAP_DEFAULT);
             realloc_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
-           
+
             printf("realloc %p -> %p (%zu -> %zu) time spent cycles: %lld \n", p[n], new_p, s[n], new_size, realloc_time_average);
             heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true);
             if (new_size == 0 || new_p != NULL) {
@@ -58,7 +58,7 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
                 TEST_ASSERT(( memcmp(compare, p[n], s[n]) == 0 ));
             }
             TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true));
-            
+
             cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
             heap_caps_free(p[n]);
             free_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
@@ -77,7 +77,7 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
         cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
         p[n] = heap_caps_malloc(s[n], MALLOC_CAP_DEFAULT);
         alloc_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
-        
+
         printf("malloc %p (%zu) time spent cycles: %lld \n", p[n], s[n], alloc_time_average);
 
         if (!heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true)) {
@@ -102,7 +102,7 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
             TEST_ASSERT(0);
         }
     }
-    
+
     TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true));
 }
 #endif

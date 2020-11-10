@@ -5,4 +5,3 @@ if(IDF_TARGET STREQUAL "esp32")
                         )
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_test_dport_xt_highint5")
 endif()
-

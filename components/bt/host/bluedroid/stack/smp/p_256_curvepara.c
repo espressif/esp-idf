@@ -76,4 +76,3 @@ void p_256_init_curve(UINT32 keyLength)
         ec->G.y[0] =  0x37bf51f5;
     }
 }
-

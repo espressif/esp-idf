@@ -128,4 +128,3 @@ int bt_mesh_set_client_model_role(struct bt_mesh_model *model, u8_t role);
 #endif
 
 #endif /* _CLIENT_COMMON_H_ */
-

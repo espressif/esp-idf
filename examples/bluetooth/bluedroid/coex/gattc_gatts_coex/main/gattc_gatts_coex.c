@@ -46,7 +46,7 @@
 #define GATTS_PROFILE_B_APP_ID      1
 #define GATTC_PROFILE_NUM           1
 #define GATTC_PROFILE_C_APP_ID      0
-// gattc 
+// gattc
 #define REMOTE_SERVICE_UUID         0x00FF
 #define REMOTE_NOTIFY_CHAR_UUID     0xFF01
 #define INVALID_HANDLE              0
@@ -89,7 +89,7 @@ struct gattc_profile_inst {
     esp_bd_addr_t remote_bda;
 };
 
-///Declare the static function 
+///Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 /* Declare static functions */
@@ -130,8 +130,8 @@ static esp_ble_adv_data_t adv_data = {
     .min_interval = 0x20,
     .max_interval = 0x40,
     .appearance = 0x00,
-    .manufacturer_len = 0, 
-    .p_manufacturer_data =  NULL, 
+    .manufacturer_len = 0,
+    .p_manufacturer_data =  NULL,
     .service_data_len = 0,
     .p_service_data = NULL,
     .service_uuid_len = 32,
@@ -147,8 +147,8 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .min_interval = 0x0006,
     .max_interval = 0x0010,
     .appearance = 0x00,
-    .manufacturer_len = 0, 
-    .p_manufacturer_data =  NULL, 
+    .manufacturer_len = 0,
+    .p_manufacturer_data =  NULL,
     .service_data_len = 0,
     .p_service_data = NULL,
     .service_uuid_len = 0,
@@ -723,7 +723,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                  param->start.status, param->start.service_handle);
         break;
     case ESP_GATTS_CONNECT_EVT: {
-        
+
         ESP_LOGI(COEX_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x\n",
                  param->connect.conn_id,
                  param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
@@ -1025,4 +1025,3 @@ void app_main(void)
 
     return;
 }
-

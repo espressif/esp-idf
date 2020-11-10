@@ -43,4 +43,3 @@ bool sdmmc_host_card_busy(void);
 esp_err_t sdmmc_host_transaction_handler_init(void);
 
 void sdmmc_host_transaction_handler_deinit(void);
-

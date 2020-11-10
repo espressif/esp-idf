@@ -6,4 +6,3 @@
 PROJECT_NAME := power_save
 
 include $(IDF_PATH)/make/project.mk
-

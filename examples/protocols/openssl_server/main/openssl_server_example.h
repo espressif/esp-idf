@@ -21,4 +21,3 @@
 #define OPENSSL_EXAMPLE_LOCAL_TCP_PORT     443
 
 #endif
-

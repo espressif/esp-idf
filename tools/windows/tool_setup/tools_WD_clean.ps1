@@ -34,7 +34,7 @@ function Log-Msg($msg, $logF = $null)
 $retVal = 1
 
 Try
-{ 
+{
 
   Import-Module Defender
 
@@ -43,7 +43,7 @@ Try
   $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
   $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
 
-  if( -not $myWindowsPrincipal.IsInRole($adminRole) ) { 
+  if( -not $myWindowsPrincipal.IsInRole($adminRole) ) {
 
     $params = ""
     foreach($key in $PSBoundParameters.keys) {
@@ -60,7 +60,7 @@ Try
     $newProcess.Arguments = "-ExecutionPolicy ByPass -File " + $script:MyInvocation.MyCommand.Definition + " " + $params + " -logFile $lf"
     $newProcess.Verb = "RunAs"
     $newProcess.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-    
+
     $proc = [System.Diagnostics.Process]::Start($newProcess)
     $proc.WaitForExit()
 
@@ -90,19 +90,19 @@ Try
 
   Log-Msg -msg " Found total $cnt of ExclusionProcess items" -logF $logFile
 
-  foreach( $pref in $Preferences.ExclusionProcess ) { 
+  foreach( $pref in $Preferences.ExclusionProcess ) {
 
     if( $bRmPath ) { $bGoAhead = $pref.Contains($RmExclPath) }
     else { $bGoAhead = $true }
 
     if( $bGoAhead ) {
       Log-Msg -msg "  removing $pref" -logF $logFile
-      Try 
+      Try
       {
         Remove-MpPreference -ExclusionProcess $pref
         $cntRemoved++
       }
-      Catch 
+      Catch
       {
         if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
         Write-Error -Exception $_.Exception
@@ -117,7 +117,7 @@ Try
   #ExclusionPath
   $cnt = $Preferences.ExclusionPath.Count
   $cntRemovedTotal = $cntRemoved
-  $cntRemoved = 0 
+  $cntRemoved = 0
   $cntMissedTotal = $cntMissed
   $cntMissed = 0
 
@@ -130,11 +130,11 @@ Try
 
     if( $bGoAhead ) {
       Log-Msg -msg "  removing $pref" -logF $logFile
-      Try 
+      Try
       {
         Remove-MpPreference -ExclusionPath $pref
         $cntRemoved++
-      } 
+      }
       Catch
       {
         if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
@@ -169,4 +169,3 @@ Finally
 {
   [Environment]::Exit($retVal)
 }
-

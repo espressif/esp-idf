@@ -3138,5 +3138,3 @@
 
 
 #endif /*_SOC_HOST_REG_H_ */
-
-

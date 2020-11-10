@@ -22,5 +22,3 @@ int mbedtls_hardware_poll( void *data,
     *olen = len;
     return 0;
 }
-
-

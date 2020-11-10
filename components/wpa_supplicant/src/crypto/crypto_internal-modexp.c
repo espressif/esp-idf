@@ -77,7 +77,7 @@ crypto_mod_exp(const uint8_t *base, size_t base_len,
 	return ret;
 }
 #else /* USE_MBEDTLS_CRYPTO */
-int 
+int
 crypto_mod_exp(const u8 *base, size_t base_len,
 		   const u8 *power, size_t power_len,
 		   const u8 *modulus, size_t modulus_len,

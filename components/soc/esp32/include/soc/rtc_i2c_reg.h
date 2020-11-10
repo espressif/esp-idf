@@ -285,4 +285,3 @@
 #define RTC_I2C_VAL_M  ((RTC_I2C_VAL_V)<<(RTC_I2C_VAL_S))
 #define RTC_I2C_VAL_V  0x3FFF
 #define RTC_I2C_VAL_S  0
-

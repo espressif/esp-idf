@@ -102,4 +102,3 @@ menu "Example Configuration"
              Mesh IE crypto enable/disable.
 
 endmenu
-

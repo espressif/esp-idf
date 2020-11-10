@@ -36,7 +36,7 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/tcpip_adapter/include \
                  -I$(COMPONENTS_DIR)/xtensa/include \
                  -I$(COMPONENTS_DIR)/xtensa/esp32/include \
-                 -I$(COMPILER_ICLUDE_DIR)/include 
+                 -I$(COMPILER_ICLUDE_DIR)/include
 
 
 MDNS_C_DEPENDENCY_INJECTION=-include mdns_di.h

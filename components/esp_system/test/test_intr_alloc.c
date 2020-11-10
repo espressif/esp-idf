@@ -267,7 +267,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[int
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
-    
+
     #ifdef CONFIG_IDF_TARGET_ESP32
     //enable HSPI(spi2)
     periph_module_enable(PERIPH_HSPI_MODULE);
@@ -306,7 +306,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[int
     r=esp_intr_free(handle2);
 
     printf("trigger second time.\n");
-    
+
     #ifdef CONFIG_IDF_TARGET_ESP32
     SPI2.slave.trans_done = 1;
     #else

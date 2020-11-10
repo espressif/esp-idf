@@ -142,7 +142,7 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
     if (gen_onoff_state.action_type->count != 0) {
         if (strcmp(gen_onoff_state.action_type->sval[0], "get") == 0) {
             err = esp_ble_mesh_generic_client_get_state(&onoff_common, &gen_client_get);
-        } 
+        }
         else if (strcmp(gen_onoff_state.action_type->sval[0], "set") == 0) {
             err = esp_ble_mesh_generic_client_set_state(&onoff_common, &gen_client_set);
         } else if (strcmp(gen_onoff_state.action_type->sval[0], "reg") == 0) {

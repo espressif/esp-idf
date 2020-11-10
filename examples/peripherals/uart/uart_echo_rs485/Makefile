@@ -6,4 +6,3 @@
 PROJECT_NAME := echo_rs485
 
 include $(IDF_PATH)/make/project.mk
-

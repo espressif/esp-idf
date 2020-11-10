@@ -183,4 +183,3 @@ typedef struct {
 #endif
 
 #endif /* PHY_INIT_DATA_H */
-

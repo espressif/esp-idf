@@ -197,8 +197,8 @@ TEST_CASE("can erase all items in the list using clear method", "[list]")
     TestNode n4("four", 4);
     TestNode n5("five", 5);
     TestNode n6("six", 6);
-    
-    
+
+
     list.push_back(&n1);
     list.push_back(&n2);
     list.insert(++list.begin(), &n3);
@@ -207,7 +207,6 @@ TEST_CASE("can erase all items in the list using clear method", "[list]")
     list.insert(list.begin(), &n6);
 
     list.clear();
-    
+
     REQUIRE(std::begin(list) == std::end(list));
 }
-

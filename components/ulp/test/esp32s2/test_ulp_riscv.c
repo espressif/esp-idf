@@ -44,7 +44,7 @@ static bool  firmware_loaded = false;
 static void load_and_start_ulp_firmware(void)
 {
     if (!firmware_loaded) {
-        TEST_ASSERT(ulp_riscv_load_binary(ulp_main_bin_start, 
+        TEST_ASSERT(ulp_riscv_load_binary(ulp_main_bin_start,
                             (ulp_main_bin_end - ulp_main_bin_start)) == ESP_OK);
 
         TEST_ASSERT(ulp_set_wakeup_period(0, 1000000) == ESP_OK);
@@ -55,7 +55,7 @@ static void load_and_start_ulp_firmware(void)
 }
 
 TEST_CASE("ULP-RISC-V and main CPU are able to exchange data", "[ulp][ignore]")
-{   
+{
     const uint32_t test_data = 0x12345678;
 
     load_and_start_ulp_firmware();
@@ -67,7 +67,7 @@ TEST_CASE("ULP-RISC-V and main CPU are able to exchange data", "[ulp][ignore]")
     TEST_ASSERT(esp_light_sleep_start() == ESP_OK);
     TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
     TEST_ASSERT(ulp_main_cpu_reply == RISCV_COMMAND_OK);
-    
+
     printf("data out: 0x%X, expected: 0x%X \n", ulp_riscv_test_data_out, test_data);
     TEST_ASSERT(test_data == ulp_riscv_test_data_out);
 

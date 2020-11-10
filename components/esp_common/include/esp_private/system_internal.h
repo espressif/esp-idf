@@ -62,16 +62,16 @@ void esp_reset_reason_set_hint(esp_reset_reason_t hint);
 esp_reset_reason_t esp_reset_reason_get_hint(void);
 
 
-/** 
+/**
  * @brief Get the time in microseconds since startup
- * 
+ *
  * @returns time since startup in microseconds
  */
 int64_t esp_system_get_time(void);
 
-/** 
+/**
  * @brief Get the resolution of the time returned by `esp_system_get_time`.
- * 
+ *
  * @returns the resolution in nanoseconds
  */
 uint32_t esp_system_get_time_resolution(void);

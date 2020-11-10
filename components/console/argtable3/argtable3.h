@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 #define ARG_REX_ICASE 1
-    
+
 /* bit masks for arg_hdr.flag */
 enum
 {
@@ -218,7 +218,7 @@ struct arg_str* arg_str0(const char* shortopts,
     const char* datatype,
     const char* glossary);
 struct arg_str* arg_str1(const char* shortopts,
-    const char* longopts,                    
+    const char* longopts,
     const char* datatype,
     const char *glossary);
 struct arg_str* arg_strn(const char* shortopts,

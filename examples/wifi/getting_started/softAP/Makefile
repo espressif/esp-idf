@@ -6,4 +6,3 @@
 PROJECT_NAME := wifi_softAP
 
 include $(IDF_PATH)/make/project.mk
-

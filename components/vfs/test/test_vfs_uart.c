@@ -98,7 +98,7 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
 
     rb = fread(dst, 1, 6, stdin);           // ask for 6
     TEST_ASSERT_EQUAL(6, rb);               // get 6
-    
+
     TEST_ASSERT_EQUAL_UINT8_ARRAY("1234567890\n", buf, 11);
     dst += rb;
 
@@ -117,7 +117,7 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
     TEST_ASSERT_EQUAL(2, rb);               // get two characters
     TEST_ASSERT_EQUAL_UINT8_ARRAY("\r1", dst, 2);
     dst += rb;
-    
+
     fwrite_str_loopback(send_str + 13, 6);  // Send the rest
     vTaskDelay(10 / portTICK_PERIOD_MS);
 

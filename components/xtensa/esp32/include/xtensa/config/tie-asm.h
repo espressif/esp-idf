@@ -1,4 +1,4 @@
-/* 
+/*
  * tie-asm.h -- compile-time HAL assembler definitions dependent on CORE & TIE
  *
  *  NOTE:  This header file is not meant to be included directly.
@@ -216,7 +216,7 @@
 
 #define XCHAL_NCP_NUM_ATMPS	1
 
-    /* 
+    /*
      *  Macro to store the state of TIE coprocessor FPU.
      *  Required parameters:
      *      ptr         Save area pointer address register (clobbered)
@@ -258,7 +258,7 @@
 	.endif
     .endm	// xchal_cp0_store
 
-    /* 
+    /*
      *  Macro to load the state of TIE coprocessor FPU.
      *  Required parameters:
      *      ptr         Save area pointer address register (clobbered)
@@ -320,4 +320,3 @@
 	.macro xchal_cp7_load	p a b c d continue=0 ofs=-1 select=-1 ; .endm
 
 #endif /*_XTENSA_CORE_TIE_ASM_H*/
-

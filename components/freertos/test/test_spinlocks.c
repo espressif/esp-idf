@@ -141,4 +141,3 @@ TEST_CASE("portMUX high contention", "[freertos]")
 }
 
 #endif // portNUM_PROCESSORS == 2
-

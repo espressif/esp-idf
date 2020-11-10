@@ -26,7 +26,7 @@ typedef struct _Sec1Payload Sec1Payload;
 /* --- enums --- */
 
 /*
- * A message must be of type Cmd0 / Cmd1 / Resp0 / Resp1 
+ * A message must be of type Cmd0 / Cmd1 / Resp0 / Resp1
  */
 typedef enum _Sec1MsgType {
   SEC1_MSG_TYPE__Session_Command0 = 0,
@@ -39,7 +39,7 @@ typedef enum _Sec1MsgType {
 /* --- messages --- */
 
 /*
- * Data structure of Session command1 packet 
+ * Data structure of Session command1 packet
  */
 struct  _SessionCmd1
 {
@@ -52,7 +52,7 @@ struct  _SessionCmd1
 
 
 /*
- * Data structure of Session response1 packet 
+ * Data structure of Session response1 packet
  */
 struct  _SessionResp1
 {
@@ -66,7 +66,7 @@ struct  _SessionResp1
 
 
 /*
- * Data structure of Session command0 packet 
+ * Data structure of Session command0 packet
  */
 struct  _SessionCmd0
 {
@@ -79,7 +79,7 @@ struct  _SessionCmd0
 
 
 /*
- * Data structure of Session response0 packet 
+ * Data structure of Session response0 packet
  */
 struct  _SessionResp0
 {
@@ -103,31 +103,31 @@ typedef enum {
 } Sec1Payload__PayloadCase;
 
 /*
- * Payload structure of session data 
+ * Payload structure of session data
  */
 struct  _Sec1Payload
 {
   ProtobufCMessage base;
   /*
-   *!< Type of message 
+   *!< Type of message
    */
   Sec1MsgType msg;
   Sec1Payload__PayloadCase payload_case;
   union {
     /*
-     *!< Payload data interpreted as Cmd0 
+     *!< Payload data interpreted as Cmd0
      */
     SessionCmd0 *sc0;
     /*
-     *!< Payload data interpreted as Resp0 
+     *!< Payload data interpreted as Resp0
      */
     SessionResp0 *sr0;
     /*
-     *!< Payload data interpreted as Cmd1 
+     *!< Payload data interpreted as Cmd1
      */
     SessionCmd1 *sc1;
     /*
-     *!< Payload data interpreted as Resp1 
+     *!< Payload data interpreted as Resp1
      */
     SessionResp1 *sr1;
   };

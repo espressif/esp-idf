@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (C) 2013 Armink <armink.ztl@gmail.com>
  * All rights reserved.
@@ -148,7 +148,7 @@ eMBMasterFuncReadCoils( UCHAR * pucFrame, USHORT * usLen )
         }
 
         /* Check if the number of registers to read is valid. If not
-         * return Modbus illegal data value exception. 
+         * return Modbus illegal data value exception.
          */
         if( ( usCoilCount >= 1 ) &&
             ( ucByteCount == pucFrame[MB_PDU_FUNC_READ_COILCNT_OFF] ) )

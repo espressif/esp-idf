@@ -72,7 +72,7 @@ static void read_efuse_fields(device_desc_t *desc)
     ESP_LOGI(TAG, "2. read secure_version: %d", secure_version);
 
     ESP_LOGI(TAG, "3. read custom fields");
-    read_device_desc_efuse_fields(desc);   
+    read_device_desc_efuse_fields(desc);
 }
 
 
@@ -131,7 +131,7 @@ static esp_efuse_coding_scheme_t get_coding_scheme(void)
 void app_main(void)
 {
     esp_efuse_coding_scheme_t coding_scheme = get_coding_scheme();
-    
+
     device_desc_t device_desc = { 0 };
     read_efuse_fields(&device_desc);
 

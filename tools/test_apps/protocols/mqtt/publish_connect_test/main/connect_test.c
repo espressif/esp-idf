@@ -233,5 +233,3 @@ void connection_test(const char* line)
     }
     ESP_LOGI(TAG, "Test case:%d started", test_case);
 }
-
-

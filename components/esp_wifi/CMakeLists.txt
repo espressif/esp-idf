@@ -49,7 +49,7 @@ if(link_binary_libs)
     set(blobs coexist core espnow mesh net80211 pp rtc smartconfig ${phy})
 
     foreach(blob ${blobs})
-        add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a" 
+        add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                             REQUIRES ${COMPONENT_NAME})
         set(blob_reqs ${blobs})
         list(REMOVE_ITEM blob_reqs ${blob}) # remove itself from requirements
@@ -61,7 +61,7 @@ endif()
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     idf_component_get_property(esp_common_dir esp_common COMPONENT_DIR)
     partition_table_get_partition_info(phy_partition_offset "--partition-type data --partition-subtype phy" "offset")
-    
+
     if(CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN)
         set(phy_init_data_bin "${CMAKE_CURRENT_SOURCE_DIR}/phy_multiple_init_data.bin")
     else()

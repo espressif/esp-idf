@@ -516,4 +516,3 @@ const char *esp_hid_disconnect_reason_str(esp_hid_transport_t transport, int rea
     }
     return s_unknown_str;
 }
-

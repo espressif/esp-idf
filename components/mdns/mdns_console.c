@@ -1057,4 +1057,3 @@ void mdns_console_register(void)
     register_mdns_query_ip();
     register_mdns_query_svc();
 }
-

@@ -1,8 +1,8 @@
 [sections:text]
-entries: 
+entries:
     .text+
     .literal+
-    
+
 [sections:data]
 entries:
     .data+

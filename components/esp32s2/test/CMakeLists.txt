@@ -4,4 +4,3 @@ if(IDF_TARGET STREQUAL "esp32s2")
                         PRIV_REQUIRES cmock test_utils nvs_flash mbedtls ulp esp_common
                         )
 endif()
-

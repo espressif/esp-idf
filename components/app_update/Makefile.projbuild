@@ -24,7 +24,7 @@ $(BLANK_OTA_DATA_FILE): partition_table_get_info $(PARTITION_TABLE_CSV_PATH) | c
 
 blank_ota_data: $(BLANK_OTA_DATA_FILE)
 
-# If there is no otadata partition, both OTA_DATA_OFFSET and BLANK_OTA_DATA_FILE 
+# If there is no otadata partition, both OTA_DATA_OFFSET and BLANK_OTA_DATA_FILE
 # expand to empty values.
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
 
@@ -36,8 +36,8 @@ erase_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_pyth
 	erase_otadata
 
 read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \ 
-	--partition-table-offset $(partition_table_offset) \ 
+	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
+	--partition-table-offset $(partition_table_offset) \
 	read_otadata
 
 all: blank_ota_data

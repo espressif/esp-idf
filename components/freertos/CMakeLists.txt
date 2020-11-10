@@ -13,7 +13,7 @@ set(srcs
     "xtensa/xtensa_vector_defaults.S"
     "xtensa/xtensa_vectors.S")
 
-list(APPEND srcs 
+list(APPEND srcs
     "croutine.c"
     "event_groups.c"
     "list.c"
@@ -23,7 +23,7 @@ list(APPEND srcs
     "stream_buffer.c"
     "FreeRTOS-openocd.c")
 
-set(include_dirs 
+set(include_dirs
     include
     xtensa/include)
 
@@ -41,11 +41,11 @@ if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
 # but requirements can't depend on config options, so always require it.
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
-                    PRIV_INCLUDE_DIRS  ${private_include_dirs} 
+                    PRIV_INCLUDE_DIRS  ${private_include_dirs}
                     LDFRAGMENTS linker.lf
                     REQUIRES app_trace esp_timer
                     PRIV_REQUIRES soc)
-    
+
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")
 
@@ -63,9 +63,9 @@ set_source_files_properties(
     _ESP_FREERTOS_INTERNAL
     )
 
-# The freertos component provides the `start_app` and `start_app_other_cores` 
-# if it is included in the build. It then calls `app_main` 
-# from the main task created, which must be provided by the user. 
+# The freertos component provides the `start_app` and `start_app_other_cores`
+# if it is included in the build. It then calls `app_main`
+# from the main task created, which must be provided by the user.
 # Like for `start_app` and `start_app_other_cores`,
 # we can't establish dependency on what we don't yet know, so we force the
 # linker to not drop this symbol.

@@ -692,5 +692,3 @@ extern "C" {
 
 
 #endif /*_SOC_RTC_I2C_REG_H_ */
-
-

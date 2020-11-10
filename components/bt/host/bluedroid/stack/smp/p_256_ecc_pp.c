@@ -281,5 +281,3 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
         return true;
     }
 }
-
-

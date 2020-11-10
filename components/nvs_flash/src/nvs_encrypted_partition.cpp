@@ -119,4 +119,3 @@ esp_err_t NVSEncryptedPartition::write(size_t addr, const void* src, size_t size
 }
 
 } // nvs
-

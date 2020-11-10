@@ -431,7 +431,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
             fs = rate / 100;
             i2s_hal_tx_pdm_cfg(&(p_i2s_obj[i2s_num]->hal), fp, fs);
             b_clk = rate * I2S_PDM_BCK_FACTOR * fp / fs;
-            
+
         } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
             uint32_t dsr;
             i2s_hal_get_rx_pdm(&(p_i2s_obj[i2s_num]->hal), &dsr);

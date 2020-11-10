@@ -832,5 +832,3 @@ extern "C" {
 
 
 #endif /*_SOC_INTERRUPT_REG_H_ */
-
-

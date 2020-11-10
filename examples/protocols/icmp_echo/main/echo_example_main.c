@@ -111,7 +111,7 @@ static int do_ping_cmd(int argc, char **argv)
     struct sockaddr_in6 sock_addr6;
     ip_addr_t target_addr;
     memset(&target_addr, 0, sizeof(target_addr));
-    
+
     if (inet_pton(AF_INET6, ping_args.host->sval[0], &sock_addr6.sin6_addr) == 1) {
         /* convert ip6 string to ip6 address */
         ipaddr_aton(ping_args.host->sval[0], &target_addr);

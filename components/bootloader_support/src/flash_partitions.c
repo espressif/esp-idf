@@ -82,4 +82,3 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
     }
     return ESP_ERR_INVALID_STATE;
 }
-

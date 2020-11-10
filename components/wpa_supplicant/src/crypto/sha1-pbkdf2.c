@@ -71,7 +71,7 @@ exit:
 }
 #else
 
-static int 
+static int
 pbkdf2_sha1_f(const char *passphrase, const char *ssid,
         size_t ssid_len, int iterations, unsigned int count,
         u8 *digest)
@@ -130,7 +130,7 @@ pbkdf2_sha1_f(const char *passphrase, const char *ssid,
  * iterations is set to 4096 and buflen to 32. This function is described in
  * IEEE Std 802.11-2004, Clause H.4. The main construction is from PKCS#5 v2.0.
  */
-int 
+int
 pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 		int iterations, u8 *buf, size_t buflen)
 {

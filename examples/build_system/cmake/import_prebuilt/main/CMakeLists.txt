@@ -8,5 +8,3 @@ add_prebuilt_library(prebuilt "libprebuilt.a"
 
 # `main` calls a function from the library, so link it to `main`
 target_link_libraries(${COMPONENT_LIB} PRIVATE prebuilt)
-
-

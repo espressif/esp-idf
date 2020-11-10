@@ -75,7 +75,7 @@ TEST_CASE("Test freertos trace facility functions", "[freertos]")
         xSemaphoreTake(test_queues[i], portMAX_DELAY);
         vSemaphoreDelete(test_queues[i]);
     }
-    
+
     vTaskDelay(10);     //Give time for idle task to clean up
 }
 
@@ -99,7 +99,7 @@ TEST_CASE("Test freertos uxTaskGetSystemState", "[freertos]")
     for(int i = 0; i < TASKS_TO_CREATE; i++){
         xTaskCreatePinnedToCore(created_task, "Created Task", 1024, NULL, TSK_PRIORITY, &created_handles[i], 0);
     }
-    
+
     //Get System states
     int no_of_tasks = uxTaskGetSystemState(tsk_status_array, MAX_TASKS, NULL);
     TEST_ASSERT((no_of_tasks > 0) && (no_of_tasks <= MAX_TASKS));
@@ -130,4 +130,3 @@ TEST_CASE("Test freertos uxTaskGetSystemState", "[freertos]")
 }
 
 #endif //CONFIG_FREERTOS_USE_TRACE_FACILITY
-

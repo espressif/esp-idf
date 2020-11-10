@@ -6,4 +6,3 @@
 PROJECT_NAME := ble_prov
 
 include $(IDF_PATH)/make/project.mk
-

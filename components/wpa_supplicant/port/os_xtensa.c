@@ -48,4 +48,3 @@ int os_get_random(unsigned char *buf, size_t len)
     esp_fill_random(buf, len);
     return 0;
 }
-

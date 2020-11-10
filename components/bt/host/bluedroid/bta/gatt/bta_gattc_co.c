@@ -664,4 +664,3 @@ BOOLEAN bta_gattc_co_cache_clear_assoc_addr(BD_ADDR src_addr)
 // #endif /* #if( defined GATTC_CACHE_NVS ) && (GATTC_CACHE_NVS == TRUE) */
 #endif /* #if( defined BLE_INCLUDED ) && (BLE_INCLUDED == TRUE) */
 #endif /* #if( defined BTA_GATT_INCLUDED ) && (BTA_GATT_INCLUDED == TRUE) */
-

@@ -932,4 +932,3 @@ int btc_storage_get_num_ble_bond_devices(void)
 }
 #endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE
-

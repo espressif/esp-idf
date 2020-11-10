@@ -31,8 +31,8 @@ and macros for use primarily by Xtensa assembly coded source files.
 Macros in this header map callouts from generic Xtensa files to specific
 RTOS functions. It may also be included in C source files.
 
-Xtensa RTOS ports support all RTOS-compatible configurations of the Xtensa 
-architecture, using the Xtensa hardware abstraction layer (HAL) to deal 
+Xtensa RTOS ports support all RTOS-compatible configurations of the Xtensa
+architecture, using the Xtensa hardware abstraction layer (HAL) to deal
 with configuration specifics.
 
 Should be included by all Xtensa generic and RTOS port-specific sources.
@@ -116,7 +116,7 @@ Some of these functions may call back to generic functions in xtensa_context.h .
 *******************************************************************************/
 
 /*
-Inform RTOS of entry into an interrupt handler that will affect it. 
+Inform RTOS of entry into an interrupt handler that will affect it.
 Allows RTOS to manage switch to any system stack and count nesting level.
 Called after minimal context has been saved, with interrupts disabled.
 RTOS port can call0 _xt_context_save to save the rest of the context.
@@ -149,12 +149,12 @@ RTOS may optionally define XT_TICK_PER_SEC in its own way (eg. macro).
 #define XT_TICK_PER_SEC     configTICK_RATE_HZ
 
 /*
-Return in a15 the base address of the co-processor state save area for the 
+Return in a15 the base address of the co-processor state save area for the
 thread that triggered a co-processor exception, or 0 if no thread was running.
-The state save area is structured as defined in xtensa_context.h and has size 
+The state save area is structured as defined in xtensa_context.h and has size
 XT_CP_SIZE. Co-processor instructions should only be used in thread code, never
 in interrupt handlers or the RTOS kernel. May only be called from assembly code
-and by the 'call0' instruction. A result of 0 indicates an unrecoverable error. 
+and by the 'call0' instruction. A result of 0 indicates an unrecoverable error.
 The implementation may use only a2-4, a15 (all other regs must be preserved).
 */
 // void* XT_RTOS_CP_STATE(void)
@@ -170,7 +170,7 @@ and interrupt handlers to facilitate automated testing where each test
 case can install its own handler for user exceptions and each interrupt
 priority (level). This consists of an array of function pointers indexed
 by interrupt priority, with index 0 being the user exception handler hook.
-Each entry in the array is initially 0, and may be replaced by a function 
+Each entry in the array is initially 0, and may be replaced by a function
 pointer of type XT_INTEXC_HOOK. A handler may be uninstalled by installing 0.
 
 The handler for low and medium priority obeys ABI conventions so may be coded
@@ -229,4 +229,3 @@ Xtensa Port Version.
 #define XTENSA_PORT_VERSION_STRING      "1.4.2"
 
 #endif /* XTENSA_RTOS_H */
-

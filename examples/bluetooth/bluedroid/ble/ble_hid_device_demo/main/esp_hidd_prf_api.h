@@ -24,10 +24,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    ESP_HIDD_EVENT_REG_FINISH = 0,                     
+    ESP_HIDD_EVENT_REG_FINISH = 0,
     ESP_BAT_EVENT_REG,
-    ESP_HIDD_EVENT_DEINIT_FINISH,                       
-    ESP_HIDD_EVENT_BLE_CONNECT,                         
+    ESP_HIDD_EVENT_DEINIT_FINISH,
+    ESP_HIDD_EVENT_BLE_CONNECT,
     ESP_HIDD_EVENT_BLE_DISCONNECT,
     ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT,
 } esp_hidd_cb_event_t;
@@ -61,7 +61,7 @@ typedef enum {
 
 typedef uint8_t key_mask_t;
 /**
- * @brief HIDD callback parameters union 
+ * @brief HIDD callback parameters union
  */
 typedef union {
     /**
@@ -148,7 +148,7 @@ esp_err_t esp_hidd_profile_deinit(void);
 /**
  *
  * @brief           Get hidd profile version
- * 
+ *
  * @return          Most 8bit significant is Great version, Least 8bit is Sub version
  *
  */
@@ -165,4 +165,3 @@ void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mi
 #endif
 
 #endif /* __ESP_HIDD_API_H__ */
-

@@ -1924,4 +1924,3 @@ static void btu_ble_rc_param_req_evt(UINT8 *p)
 #endif /* BLE_LLT_INCLUDED */
 
 #endif /* BLE_INCLUDED */
-

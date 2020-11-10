@@ -11,7 +11,7 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")
 else()
     # Regular app build
-    set(srcs 
+    set(srcs
         "cache_err_int.c"
         "cache_sram_mmu.c"
         "clk.c"
@@ -50,7 +50,7 @@ else()
 
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in" 
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in"
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")

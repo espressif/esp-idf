@@ -88,7 +88,7 @@ Purpose : Global types
   #else
     #define U64_C(x) x##ULL
   #endif
-#else 
+#else
   //
   // C99 compliant compiler
   //

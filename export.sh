@@ -151,4 +151,3 @@ enable_autocomplete
 
 unset realpath_int
 unset idf_export_main
-

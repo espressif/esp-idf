@@ -545,7 +545,7 @@ extern "C" {
 #define SPI_MEM_FSUB_PIN_V  0x1
 #define SPI_MEM_FSUB_PIN_S  7
 /* SPI_MEM_CS_POL : R/W ;bitpos:[6:5] ;default: 2'b0 ; */
-/*description: In the master mode the bits are the polarity of spi cs line 
+/*description: In the master mode the bits are the polarity of spi cs line
  the value is equivalent to spi_mem_cs ^ spi_mem_master_cs_pol.*/
 #define SPI_MEM_CS_POL  0x00000003
 #define SPI_MEM_CS_POL_M  ((SPI_MEM_CS_POL_V)<<(SPI_MEM_CS_POL_S))
@@ -1817,5 +1817,3 @@ extern "C" {
 
 
 #endif /*_SOC_SPI_MEM_REG_H_ */
-
-

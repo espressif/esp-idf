@@ -754,7 +754,7 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 		wpabuf_free(data->pending_phase2_req);
 		data->pending_phase2_req = wpabuf_alloc_copy(hdr, len);
 	}
-/*	
+/*
     if (*resp == NULL &&
 	    (config->pending_req_identity || config->pending_req_password ||
 	     config->pending_req_otp || config->pending_req_new_password)) {
@@ -1117,7 +1117,7 @@ eap_peap_process(struct eap_sm *sm, void *priv,
 				eap_peer_tls_derive_key(sm, &data->ssl, label,
 							EAP_TLS_KEY_LEN);
 			if (data->key_data) {
-				wpa_hexdump_key(MSG_DEBUG, 
+				wpa_hexdump_key(MSG_DEBUG,
 						"EAP-PEAP: Derived key",
 						data->key_data,
 						EAP_TLS_KEY_LEN);

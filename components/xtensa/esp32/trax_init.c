@@ -26,7 +26,7 @@
 
 static const char* __attribute__((unused)) TAG = "trax";
 
-int trax_enable(trax_ena_select_t which) 
+int trax_enable(trax_ena_select_t which)
 {
 #ifndef CONFIG_ESP32_TRAX
     ESP_LOGE(TAG, "Trax_enable called, but trax is disabled in menuconfig!");

@@ -45,16 +45,16 @@ esp_err_t ulp_riscv_run(void)
     /* Select RISC-V as the ULP_TIMER trigger target. */
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);
     /* Select ULP_TIMER sleep trigger source. 1: REG_COCPU_DONE; 0: ULP END.*/
-    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);   
- 
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
+
     /* start ULP_TIMER */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP); 
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
     SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
 
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_size_bytes) 
+esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_size_bytes)
 {
     if (program_binary == NULL) {
         return ESP_ERR_INVALID_ARG;

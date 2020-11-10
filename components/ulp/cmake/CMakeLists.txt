@@ -38,7 +38,7 @@ else()
                         the toolchain, or proceed at your own risk.")
     endif()
 
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)    
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
 endif()
 
 
@@ -70,14 +70,14 @@ add_custom_target(${ULP_APP_NAME}_ld_script
 
 if(ULP_COCPU_IS_RISCV)
     #risc-v ulp uses extra files for building:
-    list(APPEND ULP_S_SOURCES 
+    list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/ulp_riscv/start.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_riscv_utils.c")
 
     #dummy loop to force pre-processed linker file generation:
     foreach(ulp_s_source ${ULP_S_SOURCES})
         set(noop ${ulp_s_source})
-        
+
         add_custom_command(OUTPUT ${noop}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMAND cmake -E echo
@@ -88,7 +88,7 @@ if(ULP_COCPU_IS_RISCV)
     endforeach()
 
     #creates the executable:
-    add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})    
+    add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})
     set(DUMP_SYMBOL_ARGS -g)
     set(MAP_GEN_EXTRA_ARGS --riscv)
     set(EXTRA_LINKER_ARGS "-nostartfiles -Wl,--gc-sections -Xlinker \
@@ -114,7 +114,7 @@ else()
                                     "-al=${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.lst")
         list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
     endforeach()
-    
+
     # Create an executable
     add_executable(${ULP_APP_NAME} ${ULP_PS_SOURCES})
     set(DUMP_SYMBOL_ARGS -g -f posix)

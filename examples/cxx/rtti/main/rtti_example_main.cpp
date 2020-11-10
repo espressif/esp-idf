@@ -73,7 +73,7 @@ extern "C" void app_main()
     for (auto &obj: objects) {
         cout << "obj->name() is: " << obj->name() << endl << '\t';
         cout << "typeid(*obj).name() is: " << demangle(typeid(*obj).name()) << endl << '\t';
-        
+
         const DerivedA* cast_to_derived_a = dynamic_cast<DerivedA*>(obj.get());
         const DerivedB* cast_to_derived_b = dynamic_cast<DerivedB*>(obj.get());
 

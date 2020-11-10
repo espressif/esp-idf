@@ -371,4 +371,3 @@ static void start_ulp_temperature_monitoring(void)
 }
 #endif // CONFIG_IDF_TARGET_ESP32
 #endif // CONFIG_EXAMPLE_ULP_TEMPERATURE_WAKEUP
-

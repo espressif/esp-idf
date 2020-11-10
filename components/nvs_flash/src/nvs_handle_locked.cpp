@@ -80,4 +80,3 @@ esp_err_t NVSHandleLocked::get_typed_item(ItemType datatype, const char *key, vo
 }
 
 } // namespace nvs
-

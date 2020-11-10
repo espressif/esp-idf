@@ -23,7 +23,7 @@ extensions defined in the TIE language, with certain minimum
 requirements. You must use Xtensa Tools to compile and link FreeRTOS and
 your application for your Xtensa configuration. The port uses the Xtensa
 Hardware Abstraction Layer (HAL) to adapt to your Xtensa configuration.
-NOTE: It may be possible to build and run this with the open-source 
+NOTE: It may be possible to build and run this with the open-source
 xtensa-linux tools provided you have the correct overlay for your Xtensa
 configuration. However, this has not been tested and is currently not
 supported by Cadence.
@@ -42,7 +42,7 @@ a supported board or the Xtensa instruction set simulator (ISS). There
 are also a couple of test programs used in maintaining the port, which
 serve as additional examples.
 
-FreeRTOS for Xtensa configurable processors requires the following minimum 
+FreeRTOS for Xtensa configurable processors requires the following minimum
 processor configuration options:
 - Timer interrupt option with at least one interruptible timer.
 - Interrupt option (implied by the timer interrupt option).
@@ -86,7 +86,7 @@ FreeRTOS
 |   |
 |   |-- Xtensa_XCC
 |       `-- ParTest
-|   
+|
 `-- Source
     |-- include
     `-- portable
@@ -107,7 +107,7 @@ configuration.
 Building FreeRTOS for Xtensa
 ----------------------------
 
-The Makefiles are provided for your convenience and you do not need to 
+The Makefiles are provided for your convenience and you do not need to
 use them. Essentially you need to compile all the FreeRTOS common files,
 the port files, and your application, and link them all. However all the
 build instructions in this note use the Makefiles.
@@ -154,11 +154,11 @@ which builds for a supported board. Note that the board type does not
 need to be specified when building the FreeRTOS library.
 
 If you are building for an Xtensa processor configuration that is not the
-default you selected when you installed Xtensa Tools, you need to define the 
-environment variable XTENSA_CORE. If your configuration is not in the 
+default you selected when you installed Xtensa Tools, you need to define the
+environment variable XTENSA_CORE. If your configuration is not in the
 default registry you selected when you installed Xtensa Tools, you also
 need to define the environment variable XTENSA_SYSTEM. See tools manuals.
-You can avoid defining these in your environment if you pass the variables 
+You can avoid defining these in your environment if you pass the variables
 you need to redefine into xt-make as follows:
 
 > xt-make XTENSA_CORE=<your_config_name> XTENSA_SYSTEM=<your_registry> ...
@@ -194,7 +194,7 @@ or
 > xt-make example TARGET=kc705
 
 To build in a location other than the default, specify the new location
-using the BLDROOT variable. Note that this makefile will invoke the 
+using the BLDROOT variable. Note that this makefile will invoke the
 FreeRTOS library build makefile automatically, passing on the relevant
 parameters based on what you specified.
 
@@ -336,8 +336,8 @@ CFLAGS variable in the make command line, for example:
     -g                      Specifies debug information.
     -c                      Specifies object code generation.
     -On                     Sets compiler optimization level n (default -O0).
-    -mlongcalls             Allows assembler and linker to convert call 
-                            instructions to longer indirect call sequences 
+    -mlongcalls             Allows assembler and linker to convert call
+                            instructions to longer indirect call sequences
                             when target is out of range.
     -x assembler-with-cpp   Passes .s and .S files through C preprocessor.
     -Dmacro                 Define a preprocessor macro with no value.
@@ -346,7 +346,7 @@ CFLAGS variable in the make command line, for example:
 See the compiler / linker documentation for a full list of switches and
 their use.
 
-Many definitions can be provided at compile-time via the -D option 
+Many definitions can be provided at compile-time via the -D option
 without editing the source code. Here are some of the more useful ones:
 
     XT_USE_THREAD_SAFE_CLIB Enable support for the reentrancy to provide
@@ -358,7 +358,7 @@ without editing the source code. Here are some of the more useful ones:
 
     XT_SIMULATOR            Set this if building to run on the simulator.
                             Takes advantage of certain simulator control
-                            and reporting facilities, and adjusts timing 
+                            and reporting facilities, and adjusts timing
                             of periodic tick to provide a more acceptable
                             performance in simulation (see XT_CLOCK_FREQ).
                             Set by default unless PLATFORM is overridden.
@@ -367,26 +367,26 @@ without editing the source code. Here are some of the more useful ones:
                             Be sure to specify the correct LSP for the
                             board. See the example makefile for usage.
 
-    XT_CLOCK_FREQ=freq      Specifies the target processor's clock 
-                            frequency in Hz. Used primarily to set the 
+    XT_CLOCK_FREQ=freq      Specifies the target processor's clock
+                            frequency in Hz. Used primarily to set the
                             timer that generates the periodic interrupt.
                             Defaults are provided and may be edited in
                             xtensa_timer.h (see comments there also).
                             Default for simulator provides more acceptable
                             performance, but cannot provide real-time
                             performance due to variation in simulation
-                            speed per host platform and insufficient 
+                            speed per host platform and insufficient
                             cycles between interrupts to process them.
-                            Supported board platforms by default leave 
-                            this undefined and compute the clock frequency 
-                            at initialization unless this is explicitly 
+                            Supported board platforms by default leave
+                            this undefined and compute the clock frequency
+                            at initialization unless this is explicitly
                             defined.
 
     XT_TICK_PER_SEC=n       Specifies the frequency of the periodic tick.
 
     XT_TIMER_INDEX=n        Specifies which timer to use for periodic tick.
-                            Set this if your Xtensa processor configuration 
-                            provides more than one suitable timer and you 
+                            Set this if your Xtensa processor configuration
+                            provides more than one suitable timer and you
                             want to override the default. See xtensa_timer.h .
 
     XT_INTEXC_HOOKS         Enables hooks in interrupt vector handlers
@@ -429,7 +429,7 @@ In the windowed ABI the registers of the current window are used as follows:
 There are no callee-save registers. The windowed hardware automatically
 saves registers a0-a3 on a call4, a0-a8 on a call8, a0-a12 on a call12,
 by rotating the register window. Hardware triggers window overflow and
-underflow exceptions as necessary when registers outside the current 
+underflow exceptions as necessary when registers outside the current
 window need to be spilled to preallocated space in the stack frame, or
 restored. Complete details are in the Xtensa manuals. The entire windowed
 register file is saved and restored on interrupt or task context switch.
@@ -487,7 +487,7 @@ compiler optimizations (-O0). This makes debugging easier. Of course,
 FreeRTOS run faster you can change the Makefile to enable the desired
 optimizations or set a predefined optimization level (-O<level>) .
 
-Maximum performance is achieved with -O3 -ipa, but that might increase 
+Maximum performance is achieved with -O3 -ipa, but that might increase
 the footprint substantially. A good compromise is -O2. See the compiler
 manual for details.
 
@@ -523,7 +523,7 @@ classes of exceptions and interrupts. Being a configurable architecture,
 many of these are optional, and the vector locations are determined by
 your processor configuration. (Note that Diamond cores are pre-configured
 with specific vector locations.) The handlers provided use conditional
-compilation to adapt to your processor configuration and include only 
+compilation to adapt to your processor configuration and include only
 the code that is needed.
 
 Xtensa vector locations may reside almost anywhere, including in ROM.
@@ -629,12 +629,12 @@ Medium Priority Interrupt Handlers:
 
 High Priority Interrupt Handlers:
 
-    High priority interrupts are those strictly above XCHAL_EXCM_LEVEL, 
-    a configuration-specific maximum interrupt level affected by the 
+    High priority interrupts are those strictly above XCHAL_EXCM_LEVEL,
+    a configuration-specific maximum interrupt level affected by the
     global 'exception mode' bit in the processor status word (PS.EXCM).
     High priority handlers may not directly interact with FreeRTOS at all,
     and are described here only for the sake of completeness. They must
-    be coded in assembler (may not be coded in C) and are intended to be 
+    be coded in assembler (may not be coded in C) and are intended to be
     used for handling extremely high frequency hardware events that need
     to be handled in only a few cycles. A high priority interrupt handler
     may trigger a software interrupt at a medium or low priority level to
@@ -644,7 +644,7 @@ High Priority Interrupt Handlers:
     priority interrupt, providing for fast dispatch and efficient nesting
     on top of lower priority interrupts. Handlers are templates included
     only for the vectors that exist in your Xtensa processor configuration.
-    These templates are written for only one interrupt per high priority 
+    These templates are written for only one interrupt per high priority
     level to minimize latency servicing very fast time-critical interrupts.
     The vector code jumps to the corresponding first-level interrupt handler,
     which then executes application-provided assembler code before returning
@@ -654,7 +654,7 @@ Kernel Exception Handler:
 
     Kernel mode is not used in this port of FreeRTOS, and therefore kernel
     exceptions should not happen. A stub is provided for the vector that
-    triggers the debugger (if connected) or calls _xt_panic to freeze the 
+    triggers the debugger (if connected) or calls _xt_panic to freeze the
     processor should a kernel exception occur.
 
 Alloca Exception Handler:
@@ -691,8 +691,8 @@ Co-Processor Exception Handler:
     Co-processors may not be used by any code outside the context of a
     task. A co-processor exception triggered by code that is not part
     of a running task is a fatal error and FreeRTOS for Xtensa will panic.
-    This restriction is intended to reduce the overhead of saving and 
-    restoring co-processor state (which can be quite large) and in 
+    This restriction is intended to reduce the overhead of saving and
+    restoring co-processor state (which can be quite large) and in
     particular remove that overhead from interrupt handlers.
 
 Debug Exception Handler:
@@ -714,7 +714,7 @@ Double Exception Handler:
     A double exception is a general exception that happens while the
     processor is in exception mode (PS.EXCM set), and thus indicates a
     bug in kernel code. The double exception vector handler triggers
-    the debugger (if connected) or calls _xt_panic to freeze the 
+    the debugger (if connected) or calls _xt_panic to freeze the
     processor.
 
 Window Overflow and Underflow Exception Handlers:
@@ -766,4 +766,3 @@ The Makefiles are also provided by Cadence so have much in common with
 other RTOS Makefiles provided by Cadence.
 
 -End-
-

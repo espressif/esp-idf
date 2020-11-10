@@ -1037,7 +1037,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 		    p_lcb = list_node(p_node);
 		    break;
 		}
-	    } 
+	    }
         }
 
         /* Loop through, starting at the next */

@@ -34,7 +34,7 @@ int uECC_verify_antifault(const uint8_t *public_key,
     uECC_word_t *_public = (uECC_word_t *)public_key;
 #else
     uECC_word_t _public[uECC_MAX_WORDS * 2];
-#endif    
+#endif
     uECC_word_t r[uECC_MAX_WORDS], s[uECC_MAX_WORDS];
     wordcount_t num_words = curve->num_words;
     wordcount_t num_n_words = BITS_TO_WORDS(curve->num_n_bits);

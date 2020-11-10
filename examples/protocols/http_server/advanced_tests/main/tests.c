@@ -27,8 +27,8 @@ static esp_err_t hello_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-/* This handler is intended to check what happens in case of empty values of headers. 
- * Here `Header2` is an empty header and `Header1` and `Header3` will have `Value1` 
+/* This handler is intended to check what happens in case of empty values of headers.
+ * Here `Header2` is an empty header and `Header1` and `Header3` will have `Value1`
  * and `Value3` in them. */
 static esp_err_t test_header_get_handler(httpd_req_t *req)
 {

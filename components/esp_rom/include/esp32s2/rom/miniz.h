@@ -671,7 +671,7 @@ size_t tdefl_compress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void 
 
 // Compresses an image to a compressed PNG file in memory.
 // On entry:
-//  pImage, w, h, and num_chans describe the image to compress. num_chans may be 1, 2, 3, or 4. 
+//  pImage, w, h, and num_chans describe the image to compress. num_chans may be 1, 2, 3, or 4.
 //  The image pitch in bytes per scanline will be w*num_chans. The leftmost pixel on the top scanline is stored first in memory.
 //  level may range from [0,10], use MZ_NO_COMPRESSION, MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc. or a decent default is MZ_DEFAULT_LEVEL
 //  If flip is true, the image will be flipped on the Y axis (useful for OpenGL apps).
@@ -774,4 +774,3 @@ mz_uint tdefl_create_comp_flags_from_zip_params(int level, int window_bits, int 
 #endif
 
 #endif // MINIZ_HEADER_INCLUDED
-

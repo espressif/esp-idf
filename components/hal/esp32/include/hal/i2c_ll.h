@@ -859,4 +859,3 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
 #ifdef __cplusplus
 }
 #endif
-

@@ -59,7 +59,7 @@
 #define AVRC_RSP_REJ        10  /* The target implements the command specified by the
                                    opcode but cannot respond because the current state
                                    of the target doesn't allow it */
-#define AVRC_RSP_IN_TRANS   11  /* The target implements the status command but it is 
+#define AVRC_RSP_IN_TRANS   11  /* The target implements the status command but it is
                                    in a state of transition; the status command may
                                    be retried at a future time */
 #define AVRC_RSP_IMPL_STBL  12  /* For specific inquiry or general inquiy commands,

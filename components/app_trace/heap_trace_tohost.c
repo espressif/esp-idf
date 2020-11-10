@@ -111,4 +111,3 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 #include "heap_trace.inc"
 
 #endif /*CONFIG_HEAP_TRACING_TOHOST*/
-

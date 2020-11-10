@@ -1,8 +1,8 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(SRCS "patches/esp_rom_crc.c" 
-                            "patches/esp_rom_sys.c" 
-                            "patches/esp_rom_uart.c" 
+idf_component_register(SRCS "patches/esp_rom_crc.c"
+                            "patches/esp_rom_sys.c"
+                            "patches/esp_rom_uart.c"
                        INCLUDE_DIRS include
                        PRIV_INCLUDE_DIRS "${target}"
                        PRIV_REQUIRES soc hal)

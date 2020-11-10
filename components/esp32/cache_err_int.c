@@ -13,9 +13,9 @@
 // limitations under the License.
 
 /*
- The cache has an interrupt that can be raised as soon as an access to a cached 
- region (flash, psram) is done without the cache being enabled. We use that here 
- to panic the CPU, which from a debugging perspective is better than grabbing bad 
+ The cache has an interrupt that can be raised as soon as an access to a cached
+ region (flash, psram) is done without the cache being enabled. We use that here
+ to panic the CPU, which from a debugging perspective is better than grabbing bad
  data from the bus.
 */
 

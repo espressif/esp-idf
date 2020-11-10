@@ -6,4 +6,3 @@
 PROJECT_NAME := spi_eeprom
 
 include $(IDF_PATH)/make/project.mk
-

@@ -148,12 +148,12 @@ static void master_operation_func(void *arg)
     float value = 0;
     bool alarm_state = false;
     const mb_parameter_descriptor_t* param_descriptor = NULL;
-    
+
     ESP_LOGI(MASTER_TAG, "Start modbus test...");
-    
+
     for(uint16_t retry = 0; retry <= MASTER_MAX_RETRY && (!alarm_state); retry++) {
         // Read all found characteristics from slave(s)
-        for (uint16_t cid = 0; (err != ESP_ERR_NOT_FOUND) && cid < MASTER_MAX_CIDS; cid++) 
+        for (uint16_t cid = 0; (err != ESP_ERR_NOT_FOUND) && cid < MASTER_MAX_CIDS; cid++)
         {
             // Get data from parameters description table
             // and use this information to fill the characteristics description table
@@ -244,10 +244,10 @@ static void master_operation_func(void *arg)
                 vTaskDelay(POLL_TIMEOUT_TICS); // timeout between polls
             }
         }
-        vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS); // 
+        vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS); //
     }
-    
-    if (alarm_state) {   
+
+    if (alarm_state) {
         ESP_LOGI(MASTER_TAG, "Alarm triggered by cid #%d.",
                                         param_descriptor->cid);
     } else {
@@ -315,6 +315,6 @@ void app_main(void)
     // Initialization of device peripheral and objects
     ESP_ERROR_CHECK(master_init());
     vTaskDelay(10);
-    
+
     master_operation_func(NULL);
 }

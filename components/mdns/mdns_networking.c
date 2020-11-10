@@ -1,7 +1,7 @@
 
 /*
  * MDNS Server Networking
- * 
+ *
  */
 #include <string.h>
 #include "mdns_networking.h"

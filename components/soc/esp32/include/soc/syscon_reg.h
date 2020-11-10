@@ -290,5 +290,3 @@
 
 
 #endif /*_SOC_SYSCON_REG_H_ */
-
-

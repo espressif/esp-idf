@@ -6,4 +6,3 @@
 PROJECT_NAME := otatool
 
 include $(IDF_PATH)/make/project.mk
-

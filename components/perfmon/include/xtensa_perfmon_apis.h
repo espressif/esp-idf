@@ -35,8 +35,8 @@ typedef struct xtensa_perfmon_config {
     void (*call_function)(void *params); /*!< pointer to the function that have to be called */
     void (*callback)(void *params, uint32_t select, uint32_t mask, uint32_t value); /*!< pointer to the function that will be called with result parameters */
     void *callback_params;  /*!<  parameter that will be passed to the callback */
-    int tracelevel;         /*!<  trace level for all counters. 
-                                  In case of negative value, the filter will be ignored. 
+    int tracelevel;         /*!<  trace level for all counters.
+                                  In case of negative value, the filter will be ignored.
                                   If it's >=0, then the perfmon will count only when interrupt level > tracelevel. It's useful to monitor interrupts. */
     uint32_t  counters_size;/*!<  amount of counter in the list */
     const uint32_t *select_mask;  /*!<  list of the select/mask parameters */

@@ -72,12 +72,12 @@ typedef struct {
 
 typedef void (*dhcps_cb_t)(u8_t client_ip[4]);
 
-static inline bool dhcps_router_enabled (dhcps_offer_t offer) 
+static inline bool dhcps_router_enabled (dhcps_offer_t offer)
 {
     return (offer & OFFER_ROUTER) != 0;
 }
 
-static inline bool dhcps_dns_enabled (dhcps_offer_t offer) 
+static inline bool dhcps_dns_enabled (dhcps_offer_t offer)
 {
     return (offer & OFFER_DNS) != 0;
 }
@@ -92,4 +92,3 @@ ip4_addr_t dhcps_dns_getserver(void);
 void dhcps_set_new_lease_cb(dhcps_cb_t cb);
 
 #endif
-

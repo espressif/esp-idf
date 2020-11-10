@@ -242,4 +242,3 @@ Storage* NVSPartitionManager::lookup_storage_from_name(const char* name)
 }
 
 } // nvs
-

@@ -127,4 +127,3 @@ void os_timer_disarm(ETSTimer *ptimer) __attribute__((alias("ets_timer_disarm"))
 void os_timer_arm_us(ETSTimer *ptimer,uint32_t u_seconds,bool repeat_flag) __attribute__((alias("ets_timer_arm_us")));
 void os_timer_arm(ETSTimer *ptimer,uint32_t milliseconds,bool repeat_flag) __attribute__((alias("ets_timer_arm")));
 void os_timer_done(ETSTimer *ptimer) __attribute__((alias("ets_timer_done")));
-

@@ -955,6 +955,3 @@ JRESULT jd_decomp (
 
 	return rc;
 }
-
-
-

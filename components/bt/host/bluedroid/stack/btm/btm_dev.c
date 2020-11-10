@@ -605,7 +605,7 @@ tBTM_SEC_DEV_REC *btm_find_oldest_dev (void)
     tBTM_SEC_DEV_REC *p_oldest  = NULL;
     list_node_t *p_node              = NULL;
     UINT32 ot                   = 0xFFFFFFFF;
-    
+
     /* First look for the non-paired devices for the oldest entry */
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
 	p_dev_rec = list_node(p_node);

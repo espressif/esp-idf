@@ -124,7 +124,7 @@ typedef bool (* skip_light_sleep_cb_t)(void);
   *
   * This function allows you to register a callback that gets the result
   * that if light sleep should be skipped by peripherals.
-  * @param cb function to get the result 
+  * @param cb function to get the result
   * @return
   *   - ESP_OK on success
   *   - ESP_ERR_NO_MEM if no more callback slots are available
@@ -132,11 +132,11 @@ typedef bool (* skip_light_sleep_cb_t)(void);
 esp_err_t esp_pm_register_skip_light_sleep_callback(skip_light_sleep_cb_t cb);
 
 /**
-  * @brief  Unregisterperipherals skip light sleep callback 
+  * @brief  Unregisterperipherals skip light sleep callback
   *
   * This function allows you to unregister a callback which was previously
   * registered using esp_register_skip_light_sleep_callback.
-  * @param cb function to get the result 
+  * @param cb function to get the result
   * @return
   *   - ESP_OK on success
   *   - ESP_ERR_INVALID_STATE if the given callback hasn't been registered before

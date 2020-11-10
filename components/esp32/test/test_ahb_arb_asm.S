@@ -47,5 +47,5 @@ unlockloop:
 	mov a6, a4
 	s32c1i a6, a2, 0
 	bne a3, a6, unlockloop
-	
+
 	retw

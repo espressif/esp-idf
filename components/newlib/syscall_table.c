@@ -107,5 +107,3 @@ void esp_setup_syscall_table(void)
     environ = malloc(sizeof(char*));
     environ[0] = NULL;
 }
-
-

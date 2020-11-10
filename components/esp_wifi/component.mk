@@ -17,4 +17,3 @@ ifndef CONFIG_ESP32_NO_BLOBS
     ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/$(IDF_TARGET)/lib%.a,$(LIBS))
     COMPONENT_ADD_LINKER_DEPS += $(ALL_LIB_FILES)
 endif
-

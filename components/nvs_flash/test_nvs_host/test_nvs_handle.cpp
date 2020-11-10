@@ -279,4 +279,3 @@ TEST_CASE("NVSHandleSimple correctly sets/gets char enum", "[partition_mgr]")
 
     REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME) == ESP_OK);
 }
-

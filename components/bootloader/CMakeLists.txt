@@ -23,4 +23,3 @@ if(NOT CONFIG_SECURE_BOOT)
         ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH}
         "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
 endif()
-

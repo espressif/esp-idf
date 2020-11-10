@@ -134,4 +134,3 @@ config CHIPA_FEATURE_FROM_V1
 config CHIPA_FEATURE_FROM_V3
     depends on CONFIG_FOR_CHIPA && (CHIPA_REV_MIN <= 3)
     bool "Feature available from version 3"
-

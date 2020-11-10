@@ -401,4 +401,3 @@
     to avoid confusion.  */
 
 #endif /*XTENSA_VERSIONS_H*/
-

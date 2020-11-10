@@ -1,5 +1,5 @@
 /* HTTP2 GET Example using nghttp2
- 
+
    Contacts http2.golang.org and executes the GET/PUT requests. A thin API
    wrapper on top of nghttp2, to properly demonstrate the interactions.
 

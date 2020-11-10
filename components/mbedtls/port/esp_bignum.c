@@ -528,4 +528,3 @@ cleanup:
 }
 
 #endif /* MBEDTLS_MPI_MUL_MPI_ALT */
-

@@ -59,7 +59,7 @@ extern UINT16 L2CA_GetFreePktBufferNum_LE(void);
  *                  sendable packets number on controller
  *
  */
- 
+
 uint16_t esp_ble_get_sendable_packets_num (void)
 {
     return L2CA_GetFreePktBufferNum_LE();
@@ -69,12 +69,12 @@ uint16_t esp_ble_get_sendable_packets_num (void)
  * @brief           This function is used to query the number of available buffers for the current connection.
  *                  When you need to query the current available buffer number, it is recommended to use this API.
  * @param[in]       conn_id: current connection id.
- * 
+ *
  * @return
  *                  Number of available buffers for the current connection
  *
  */
- 
+
 extern UINT16 L2CA_GetCurFreePktBufferNum_LE(UINT16 conn_id);
 uint16_t esp_ble_get_cur_sendable_packets_num (uint16_t connid)
 {

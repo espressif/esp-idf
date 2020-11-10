@@ -272,7 +272,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     portENTER_CRITICAL(&s_switch_lock);
 
     bool res = false;
-    res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]); 
+    res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
     assert(res);
     res = rtc_clk_cpu_freq_mhz_to_config(apb_max_freq, &s_cpu_freq_by_mode[PM_MODE_APB_MAX]);
     assert(res);
@@ -499,7 +499,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     int core_id = xPortGetCoreID();
     ESP_PM_TRACE_ENTER(ISR_HOOK, core_id);
     /* Prevent higher level interrupts (than the one this function was called from)
-     * from happening in this section, since they will also call into esp_pm_impl_isr_hook. 
+     * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
     uint32_t state = portENTER_CRITICAL_NESTED();
 #if portNUM_PROCESSORS == 2

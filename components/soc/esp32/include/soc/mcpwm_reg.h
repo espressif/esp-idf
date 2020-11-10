@@ -3024,5 +3024,3 @@
 
 
 #endif /*_SOC_MCPWM_REG_H_ */
-
-

@@ -152,7 +152,7 @@ static inline int wpa_auth_get_seqnum(struct wpa_authenticator *wpa_auth,
 /* fix buf for tx for now */
 #define WPA_TX_MSG_BUFF_MAXLEN 200
 
-static inline int 
+static inline int
 wpa_auth_send_eapol(struct wpa_authenticator *wpa_auth, const u8 *addr,
             const u8 *data, size_t data_len, int encrypt)
 {
@@ -350,7 +350,7 @@ struct wpa_authenticator * wpa_init(const u8 *addr,
     return wpa_auth;
 }
 
-struct wpa_state_machine * 
+struct wpa_state_machine *
 wpa_auth_sta_init(struct wpa_authenticator *wpa_auth, const u8 *addr)
 {
     struct wpa_state_machine *sm;
@@ -1215,7 +1215,7 @@ int wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 
     if (sm == NULL)
         return -1;
-    
+
     switch (event) {
     case WPA_AUTH:
     case WPA_ASSOC:
@@ -2399,7 +2399,7 @@ bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len)
         return false;
     }
 
-   
+
     wpa_sm = (struct wpa_state_machine  **)sm;
 
     if (hapd) {
@@ -2436,4 +2436,3 @@ bool wpa_ap_remove(void* sm)
 
     return true;
 }
-

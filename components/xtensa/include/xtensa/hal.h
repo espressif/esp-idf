@@ -1505,4 +1505,3 @@ extern unsigned int xthal_get_npc(XTHAL_STATE *user_state);
 #endif /*!_ASMLANGUAGE && !_NOCLANGUAGE && !__ASSEMBLER__ */
 
 #endif /*XTENSA_HAL_H*/
-

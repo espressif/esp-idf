@@ -1,4 +1,4 @@
-﻿idf_component_register(SRCS "src/core_dump_common.c" 
+﻿idf_component_register(SRCS "src/core_dump_common.c"
                             "src/core_dump_flash.c"
                             "src/core_dump_port.c"
                             "src/core_dump_uart.c"

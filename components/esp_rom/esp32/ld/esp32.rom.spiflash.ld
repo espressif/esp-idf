@@ -18,7 +18,7 @@ PROVIDE ( esp_rom_spiflash_write = 0x40062d50 );
 PROVIDE ( esp_rom_spiflash_enable_write = 0x40062320 );
 PROVIDE ( esp_rom_spiflash_write_status = 0x400622f0 );
 
-/* always using patched versions of these functions 
+/* always using patched versions of these functions
 PROVIDE ( esp_rom_spiflash_wait_idle = 0x400622c0 );
 PROVIDE ( esp_rom_spiflash_unlock = 0x400????? );
 */

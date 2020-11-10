@@ -17,5 +17,3 @@ void prebuilt_func(void)
     const esp_partition_t* running_partition = esp_ota_get_running_partition();
     ESP_LOGI(TAG, "The running partition is '%s'!", running_partition->label);
 }
-
-

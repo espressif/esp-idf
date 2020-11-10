@@ -1,4 +1,4 @@
-set(srcs 
+set(srcs
     "nghttp2/lib/nghttp2_buf.c"
     "nghttp2/lib/nghttp2_callbacks.c"
     "nghttp2/lib/nghttp2_debug.c"

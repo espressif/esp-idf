@@ -148,7 +148,7 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
 
 /**
  * Initialize SPI peripheral (slave half duplex mode)
- * 
+ *
  * @param hw Beginning address of the peripheral registers.
  */
 static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
@@ -158,7 +158,7 @@ static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
     hw->ctrl.val = 0;
     hw->user.doutdin = 0;
     hw->user.sio = 0;
-    
+
     hw->slave.soft_reset = 1;
     hw->slave.soft_reset = 0;
     hw->slave.slave_mode = 1;
@@ -246,7 +246,7 @@ static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
 
 /**
  * Clear in fifo full error
- * 
+ *
  * @param hw Beginning address of the peripheral registers.
  */
 static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
@@ -256,7 +256,7 @@ static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
 
 /**
  * Clear out fifo empty error
- * 
+ *
  * @param hw Beginning address of the peripheral registers.
  */
 static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
@@ -293,7 +293,7 @@ static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
  * Configuration of RX DMA EOF interrupt generation way
  *
  * @param hw     Beginning address of the peripheral registers.
- * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans. 
+ * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.
  */
 static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
 {
@@ -322,7 +322,7 @@ static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_s
 
 /**
  * Write to SPI hardware data buffer by buffer ID (address)
- * 
+ *
  * @param hw      Beginning address of the peripheral registers
  * @param byte_id Start ID (address) of the hardware buffer to be written
  * @param data    Address of the data to be written to the hardware data buffer.
@@ -373,7 +373,7 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
 
 /**
  * Read from SPI hardware data buffer by buffer ID (address)
- * 
+ *
  * @param hw      Beginning address of the peripheral registers
  * @param byte_id Start ID (address) of the hardware buffer to be read
  * @param data    Address of a buffer to read data from hardware data buffer
@@ -555,7 +555,7 @@ static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_
 
 /**
  * Set the SPI slave to work in segment transaction mode
- * 
+ *
  * @param hw        Beginning address of the peripheral registers.
  * @param seg_trans True to work in seg mode, otherwise false.
  */

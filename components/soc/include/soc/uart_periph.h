@@ -37,4 +37,3 @@ extern const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM];
 #ifdef __cplusplus
 }
 #endif
-

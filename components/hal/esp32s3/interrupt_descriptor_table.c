@@ -69,7 +69,7 @@ const static int_desc_t interrupt_descriptor_table [32]={
     { 5, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //31
 };
 
-const int_desc_t *interrupt_controller_hal_desc_table(void) 
+const int_desc_t *interrupt_controller_hal_desc_table(void)
 {
     return interrupt_descriptor_table;
 }

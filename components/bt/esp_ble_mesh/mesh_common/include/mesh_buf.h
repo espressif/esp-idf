@@ -1755,4 +1755,3 @@ static inline size_t net_buf_frags_len(struct net_buf *buf)
 #endif
 
 #endif /* _BLE_MESH_BUF_H_ */
-

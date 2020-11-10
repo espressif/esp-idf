@@ -271,5 +271,3 @@ void app_main(void)
         vTaskDelay(1);
     }
 }
-
-

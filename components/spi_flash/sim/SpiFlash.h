@@ -47,7 +47,7 @@ public:
 
     uint32_t get_erase_cycles(uint32_t sector);
     uint32_t get_total_erase_cycles();
-    
+
     void set_erase_cycles_limit(uint32_t limit);
     void set_total_erase_cycles_limit(uint32_t limit);
 

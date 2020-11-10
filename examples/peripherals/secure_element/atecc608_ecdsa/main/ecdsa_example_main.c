@@ -238,4 +238,3 @@ exit:
     close_mbedtls_rng();
 
 }
-

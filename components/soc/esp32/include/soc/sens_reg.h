@@ -1064,5 +1064,3 @@
 
 
 #endif /*_SOC_SENS_REG_H_ */
-
-

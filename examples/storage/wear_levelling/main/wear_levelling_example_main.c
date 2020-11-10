@@ -6,7 +6,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 
    This sample shows how to store files inside a FAT filesystem.
-   FAT filesystem is stored in a partition inside SPI flash, using the 
+   FAT filesystem is stored in a partition inside SPI flash, using the
    flash wear levelling library.
 */
 

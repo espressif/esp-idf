@@ -6,4 +6,3 @@
 PROJECT_NAME := generic-gpio
 
 include $(IDF_PATH)/make/project.mk
-

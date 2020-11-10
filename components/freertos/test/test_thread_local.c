@@ -108,4 +108,3 @@ TEST_CASE("TLS test", "[freertos]")
     }
     vTaskDelay(10); /* Make sure idle task can clean up s_task, before it goes out of scope */
 }
-

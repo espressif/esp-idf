@@ -321,7 +321,7 @@ BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBLE_A
 *******************************************************************************/
 void BTM_BleClearWhitelist(void)
 {
-   btm_ble_clear_white_list(); 
+   btm_ble_clear_white_list();
 }
 
 /*******************************************************************************

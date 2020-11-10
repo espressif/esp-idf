@@ -32,4 +32,3 @@ INCLUDE_DIRS := \
 	hal/include \
 	spi_flash/include \
 	)
-

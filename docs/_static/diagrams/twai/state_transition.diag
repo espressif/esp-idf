@@ -21,11 +21,10 @@ blockdiag state_transition_diagram {
     bus_off -> uninstalled [folded, thick, fontsize = 14, label = "F"];
     bus_off -> recovering [thick, fontsize = 14, label = "G"];
     recovering -> stopped [folded, thick, color = blue, fontsize = 14, label = "H"];
-    
+
     uninstalled <-> stopped [thick, fontsize = 14, label = "A/B"];
     stopped <-> running [thick, fontsize = 14, label = "C/D"];
     running -> bus_off [folded, thick, color = red, fontsize = 14, label = "E"];
-    
+
     app_start -> uninstalled [folded, style = dashed]
 }
-

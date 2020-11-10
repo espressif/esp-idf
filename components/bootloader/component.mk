@@ -4,4 +4,3 @@
 #
 # See Makefile.projbuild for the targets which actually build the bootloader.
 COMPONENT_CONFIG_ONLY := 1
-

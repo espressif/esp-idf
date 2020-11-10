@@ -249,4 +249,3 @@ system_event_cb_t esp_event_loop_set_cb(system_event_cb_t cb, void *ctx) __attri
 #ifdef __cplusplus
 }
 #endif
-

@@ -207,4 +207,3 @@ int  BIO_test_flags(const BIO *b, int flags)
 {
     return (b->flags & flags);
 }
-

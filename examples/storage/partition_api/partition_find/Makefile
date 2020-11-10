@@ -6,4 +6,3 @@
 PROJECT_NAME := partition_find
 
 include $(IDF_PATH)/make/project.mk
-

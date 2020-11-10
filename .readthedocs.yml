@@ -16,6 +16,6 @@ python:
     - requirements: docs/requirements.txt
 
 # We need to list all the submodules included in documenation build by DOxygen
-submodules: 
+submodules:
   include:
     - components/mqtt/esp-mqtt

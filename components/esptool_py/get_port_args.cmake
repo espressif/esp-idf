@@ -15,4 +15,3 @@ if(NOT ESPBAUD)
 else()
     set(baud_arg "-b ${ESPBAUD}")
 endif()
-

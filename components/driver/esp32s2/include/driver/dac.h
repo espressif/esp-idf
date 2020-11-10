@@ -40,7 +40,7 @@ esp_err_t dac_digi_deinit(void);
  * @brief Setting the DAC digital controller.
  *
  * @param cfg Pointer to digital controller paramter. See ``dac_digi_config_t``.
- * 
+ *
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error

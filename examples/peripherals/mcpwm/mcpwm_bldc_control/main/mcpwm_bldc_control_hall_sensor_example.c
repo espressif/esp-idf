@@ -320,4 +320,3 @@ void app_main(void)
     xTaskCreate(disp_captured_signal, "mcpwm_config", 4096, NULL, 2, NULL);  //comment if you don't want to use capture module
     xTaskCreate(mcpwm_example_bldc_control, "mcpwm_example_bldc_control", 4096, NULL, 2, NULL);
 }
-

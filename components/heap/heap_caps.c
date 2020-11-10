@@ -57,7 +57,7 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 }
 
 
-static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name) 
+static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name)
 {
     if (alloc_failed_callback) {
         alloc_failed_callback(requested_size, caps, function_name);
@@ -310,7 +310,7 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     bool ptr_in_diram_case = false;
     heap_t *heap = NULL;
     void *dram_ptr = NULL;
-    
+
     if (ptr == NULL) {
         return heap_caps_malloc(size, caps);
     }
@@ -326,20 +326,20 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return NULL;
     }
 
-    //The pointer to memory may be aliased, we need to 
+    //The pointer to memory may be aliased, we need to
     //recover the corresponding address before to manage a new allocation:
     if(esp_ptr_in_diram_iram((void *)ptr)) {
         uint32_t *dram_addr = (uint32_t *)ptr;
         dram_ptr  = (void *)dram_addr[-1];
-        
+
         heap = find_containing_heap(dram_ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
-        
-        //with pointers that reside on diram space, we avoid using 
+
+        //with pointers that reside on diram space, we avoid using
         //the realloc implementation due to address translation issues,
         //instead force a malloc/copy/free
         ptr_in_diram_case = true;
-    
+
     } else {
         heap = find_containing_heap(ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
@@ -583,7 +583,7 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
                 //doesn't cover, see if they're available in other prios.
                 if ((get_all_caps(heap) & caps) == caps) {
                     //Just try to alloc, nothing special.
-                    ret = multi_heap_aligned_alloc(heap->heap, size, alignment); 
+                    ret = multi_heap_aligned_alloc(heap->heap, size, alignment);
                     if (ret != NULL) {
                         return ret;
                     }
@@ -604,7 +604,7 @@ IRAM_ATTR void heap_caps_aligned_free(void *ptr)
 }
 
 void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps)
-{    
+{
     size_t size_bytes;
     if (__builtin_mul_overflow(n, size, &size_bytes)) {
         return NULL;

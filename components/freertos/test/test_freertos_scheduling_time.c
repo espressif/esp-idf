@@ -28,7 +28,7 @@ static void test_task_1(void *arg) {
         vPortYield();
     }
 
-    vTaskDelete(NULL); 
+    vTaskDelete(NULL);
 }
 
 static void test_task_2(void *arg) {
@@ -52,7 +52,7 @@ static void test_task_2(void *arg) {
 
 TEST_CASE("scheduling time test", "[freertos]")
 {
-    test_context_t context; 
+    test_context_t context;
 
     context.end_sema = xSemaphoreCreateBinary();
     TEST_ASSERT(context.end_sema != NULL);
@@ -65,7 +65,7 @@ TEST_CASE("scheduling time test", "[freertos]")
     xTaskCreatePinnedToCore(test_task_2, "test2" , 4096, &context, CONFIG_UNITY_FREERTOS_PRIORITY - 1, NULL,0);
 #endif
 
-    BaseType_t result = xSemaphoreTake(context.end_sema, portMAX_DELAY);    
+    BaseType_t result = xSemaphoreTake(context.end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
     TEST_PERFORMANCE_LESS_THAN(SCHEDULING_TIME , "scheduling time %d cycles" ,context.cycles_to_sched);
 }

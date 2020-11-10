@@ -319,4 +319,3 @@
 
 
 #endif /*XTENSA_CONFIG_CORE_MATMAP_H*/
-

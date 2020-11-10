@@ -118,7 +118,3 @@ char *CategoryID_to_String(uint8_t CategoryID);
 void esp_receive_apple_notification_source(uint8_t *message, uint16_t message_len);
 void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len);
 char *Errcode_to_String(uint16_t status);
-
-
-
-

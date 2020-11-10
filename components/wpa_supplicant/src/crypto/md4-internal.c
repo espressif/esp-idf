@@ -1,6 +1,6 @@
 /*
  * MD4 hash implementation
- * 
+ *
  * This software may be distributed under the terms of BSD license.
  */
 

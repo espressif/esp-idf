@@ -89,4 +89,3 @@ TEST_CASE("Partition manager invalidates handle on partition de-init", "[partiti
 
     delete handle;
 }
-

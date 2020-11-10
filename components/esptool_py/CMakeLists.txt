@@ -43,10 +43,9 @@ consist of two ota app without factory partition.")
         file(READ "flasher_args.json.in" flasher_args_content)
         string(CONFIGURE "${flasher_args_content}" flasher_args_content)
 
-        file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in" 
+        file_generate("${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in"
                     CONTENT "${flasher_args_content}")
-        file_generate("${CMAKE_BINARY_DIR}/flasher_args.json" 
+        file_generate("${CMAKE_BINARY_DIR}/flasher_args.json"
                     INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
     endif()
 endif()
-

@@ -64,4 +64,3 @@ private:
 } // namespace nvs
 
 #endif // NVS_HANDLE_LOCKED_HPP_
-

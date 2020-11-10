@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (c) 2006 Christian Walter <wolti@sil.at>
  * All rights reserved.
@@ -54,10 +54,10 @@
  *  +-----------+---------------+------------------------------------------+
  *  | TID | PID | Length | UID  |Code | Data                               |
  *  +-----------+---------------+------------------------------------------+
- *  |     |     |        |      |                                           
- * (2)   (3)   (4)      (5)    (6)                                          
+ *  |     |     |        |      |
+ * (2)   (3)   (4)      (5)    (6)
  *
- * (2)  ... MB_TCP_TID          = 0 (Transaction Identifier - 2 Byte) 
+ * (2)  ... MB_TCP_TID          = 0 (Transaction Identifier - 2 Byte)
  * (3)  ... MB_TCP_PID          = 2 (Protocol Identifier - 2 Byte)
  * (4)  ... MB_TCP_LEN          = 4 (Number of bytes - 2 Byte)
  * (5)  ... MB_TCP_UID          = 6 (Unit Identifier - 1 Byte)
@@ -135,9 +135,9 @@ eMBMasterTCPSend( UCHAR _unused, const UCHAR * pucFrame, USHORT usLength )
     USHORT          usTCPLength = usLength + MB_TCP_FUNC;
 
     /* The MBAP header is already initialized because the caller calls this
-     * function with the buffer returned by the previous call. Therefore we 
-     * only have to update the length in the header. Note that the length 
-     * header includes the size of the Modbus PDU and the UID Byte. Therefore 
+     * function with the buffer returned by the previous call. Therefore we
+     * only have to update the length in the header. Note that the length
+     * header includes the size of the Modbus PDU and the UID Byte. Therefore
      * the length is usLength plus one.
      */
     pucMBTCPFrame[MB_TCP_LEN] = ( usLength + 1 ) >> 8U;

@@ -99,8 +99,3 @@ void app_ble_security_start(void)
 {
 
 }
-
-
-
-
-

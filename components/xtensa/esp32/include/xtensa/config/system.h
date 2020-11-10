@@ -1,4 +1,4 @@
-/* 
+/*
  * xtensa/config/system.h -- HAL definitions that are dependent on SYSTEM configuration
  *
  *  NOTE: The location and contents of this file are highly subject to change.
@@ -271,4 +271,3 @@
 
 
 #endif /*XTENSA_CONFIG_SYSTEM_H*/
-

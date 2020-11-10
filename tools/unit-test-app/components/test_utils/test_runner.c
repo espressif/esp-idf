@@ -163,4 +163,3 @@ void tearDown(void)
 
     Unity.TestFile = real_testfile; // go back to the real filename
 }
-

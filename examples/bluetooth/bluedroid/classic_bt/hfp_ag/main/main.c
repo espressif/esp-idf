@@ -46,7 +46,7 @@ static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
             esp_bt_dev_set_device_name(dev_name);
 
             esp_bt_hf_register_callback(bt_app_hf_cb);
-            
+
             // init and register for HFP_AG functions
             esp_bt_hf_init(hf_peer_addr);
 

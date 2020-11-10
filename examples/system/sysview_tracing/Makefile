@@ -6,4 +6,3 @@
 PROJECT_NAME := sysview_tracing
 
 include $(IDF_PATH)/make/project.mk
-

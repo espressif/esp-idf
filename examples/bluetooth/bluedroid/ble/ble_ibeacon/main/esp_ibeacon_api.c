@@ -10,7 +10,7 @@
 
 /****************************************************************************
 *
-* This file is for iBeacon APIs. It supports both iBeacon encode and decode. 
+* This file is for iBeacon APIs. It supports both iBeacon encode and decode.
 *
 * iBeacon is a trademark of Apple Inc. Before building devices which use iBeacon technology,
 * visit https://developer.apple.com/ibeacon/ to obtain a license.
@@ -68,5 +68,3 @@ esp_err_t esp_ble_config_ibeacon_data (esp_ble_ibeacon_vendor_t *vendor_config, 
 
     return ESP_OK;
 }
-
-

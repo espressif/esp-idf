@@ -85,7 +85,7 @@ FORCE_INLINE_ATTR bool rwdt_ll_check_if_enabled(rtc_cntl_dev_t *hw)
  * @param stage Which stage to configure
  * @param timeout Number of timer ticks for the stage to timeout (see note).
  * @param behavior What action to take when the stage times out
- * 
+ *
  * @note The value of of RWDT stage 0 timeout register is special, in
  *       that an implicit multiplier is applied to that value to produce
  *       and effective timeout tick value. The multiplier is dependent

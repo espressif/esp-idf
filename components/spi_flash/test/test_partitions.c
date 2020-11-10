@@ -145,4 +145,3 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
 
     spi_flash_munmap(handle);
 }
-

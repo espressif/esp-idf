@@ -725,4 +725,3 @@ void sdio_slave_hal_slvint_fetch_clear(sdio_slave_context_t *hal, sdio_slave_ll_
 {
     sdio_slave_ll_slvint_fetch_clear(hal->slc, out_int_mask);
 }
-

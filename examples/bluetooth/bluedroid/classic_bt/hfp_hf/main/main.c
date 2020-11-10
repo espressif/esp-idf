@@ -106,7 +106,7 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
         pin_code[2] = '0';
         pin_code[3] = '0';
         esp_bt_gap_set_pin(pin_type, 4, pin_code);
-    
+
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         break;

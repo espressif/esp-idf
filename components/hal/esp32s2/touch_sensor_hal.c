@@ -155,5 +155,3 @@ void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config)
     touch_ll_sleep_get_channel_num(&slp_config->touch_num);
     slp_config->en_proximity = touch_ll_sleep_get_approach_status();
 }
-
-

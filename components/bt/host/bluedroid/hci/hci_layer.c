@@ -563,4 +563,3 @@ const hci_t *hci_layer_get_interface(void)
     init_layer_interface();
     return &interface;
 }
-

@@ -58,4 +58,3 @@ TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs
 
     REQUIRE(NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
 }
-

@@ -24,7 +24,7 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     esp_err_t esp_result;
 
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, "storage");
-    
+
     // Mount wear-levelled partition
     wl_handle_t wl_handle;
     esp_result = wl_mount(partition, &wl_handle);

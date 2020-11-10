@@ -304,4 +304,3 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
 
     return ret;
 }
-

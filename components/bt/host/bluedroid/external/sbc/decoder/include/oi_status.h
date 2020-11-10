@@ -576,4 +576,3 @@ typedef enum {
 /**@}*/
 
 #endif /* _OI_STATUS_H */
-

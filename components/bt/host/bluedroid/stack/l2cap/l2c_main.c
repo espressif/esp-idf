@@ -1008,5 +1008,3 @@ UINT8 l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flags)
     return (L2CAP_DW_SUCCESS);
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-
-

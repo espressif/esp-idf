@@ -124,4 +124,3 @@ esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle, uint
 #endif
 
 #endif /* _ESP_BLE_MESH_PROXY_API_H_ */
-

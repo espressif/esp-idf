@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-/* File adapted to use on IDF FreeRTOS component, extracted 
+/* File adapted to use on IDF FreeRTOS component, extracted
  * originally from zephyr RTOS code base:
  * https://github.com/zephyrproject-rtos/zephyr/blob/dafd348/arch/xtensa/include/xtensa-asm2-s.h
  */
@@ -58,7 +58,7 @@
  *   just a little bit, it's MUCH faster.  With a mostly full register
  *   file on an LX6 core (ESP-32) I'm measuring 145 cycles to spill
  *   registers with this vs. 279 (!) to do it with
- *   xthal_spill_windows().  
+ *   xthal_spill_windows().
  */
 
 .macro SPILL_ALL_WINDOWS
