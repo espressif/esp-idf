@@ -187,8 +187,8 @@ esp_err_t esp_ble_mesh_node_add_local_app_key(const uint8_t app_key[16], uint16_
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t model_id,
-                                                        uint16_t company_id, uint16_t app_idx)
+esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t company_id,
+                                                        uint16_t model_id, uint16_t app_idx)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
