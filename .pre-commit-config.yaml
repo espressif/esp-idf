@@ -1,13 +1,29 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
+whitespace_excludes: &common_whitespace_excludes
+    # note: whitespace exclusions use multiline regex, see https://pre-commit.com/#regular-expressions
+    # items are:
+    # 1 - some file extensions
+    # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
+    # 3 - any directory named 'testdata'
+    # 4 - IDF monitor test data
+    exclude: |
+        (?x)^(
+            .+\.(md|rst|map|bin)|
+            .+test.*\/.*expected.*|
+            .+\/testdata\/.+|
+            .+test_idf_monitor\/tests\/.+
+        )$
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.3.0
     hooks:
       - id: trailing-whitespace
-        exclude: '.+\.(md|rst)'
+        <<: *common_whitespace_excludes
       - id: end-of-file-fixer
+        <<: *common_whitespace_excludes
       - id: check-executables-have-shebangs
       - id: file-contents-sorter
         files: 'tools/ci/executable-list.txt'
