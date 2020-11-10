@@ -1960,8 +1960,8 @@ typedef struct {
     int64_t  timestamp; /*!< Time when the last message is received */
 } esp_ble_mesh_last_msg_info_t;
 
-#define ESP_BLE_MESH_SERVER_RSP_BY_APP  0   /*!< Response will be sent internally */
-#define ESP_BLE_MESH_SERVER_AUTO_RSP    1   /*!< Response need to be sent in the application */
+#define ESP_BLE_MESH_SERVER_RSP_BY_APP  0   /*!< Response need to be sent in the application */
+#define ESP_BLE_MESH_SERVER_AUTO_RSP    1   /*!< Response will be sent internally */
 
 /** Parameters of the Server Model response control */
 typedef struct {
