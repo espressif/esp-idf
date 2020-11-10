@@ -1,4 +1,4 @@
-if (CONFIG_ESP_HTTPS_SERVER_ENABLE)
+if(CONFIG_ESP_HTTPS_SERVER_ENABLE)
     set(src "src/https_server.c")
     set(inc "include")    
 endif()

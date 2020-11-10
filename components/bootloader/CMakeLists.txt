@@ -13,9 +13,14 @@ if(NOT CONFIG_SECURE_BOOT)
 endif()
 
 esptool_py_custom_target(bootloader-flash bootloader "bootloader")
-esptool_py_flash_target_image(bootloader-flash bootloader ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH} "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
+esptool_py_flash_target_image(bootloader-flash bootloader
+    ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH}
+    "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
 
 # Also attach an image to the project flash target
 if(NOT CONFIG_SECURE_BOOT)
-    esptool_py_flash_target_image(flash bootloader ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH} "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
+    esptool_py_flash_target_image(flash bootloader
+        ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH}
+        "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
 endif()
+

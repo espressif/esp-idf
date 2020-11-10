@@ -522,7 +522,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/esp-hci/src/esp_nimble_hci.c"
                     "host/nimble/port/src/esp_nimble_mem.c")
 
-        if (CONFIG_BLE_MESH)
+        if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
         endif()
 

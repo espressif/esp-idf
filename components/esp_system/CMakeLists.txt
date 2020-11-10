@@ -1,4 +1,10 @@
-idf_component_register(SRCS "intr_alloc.c" "esp_async_memcpy.c" "panic.c" "system_api.c" "startup.c" "sleep_modes.c" "system_time.c"
+idf_component_register(SRCS "intr_alloc.c"
+                            "esp_async_memcpy.c"
+                            "panic.c"
+                            "system_api.c"
+                            "startup.c"
+                            "sleep_modes.c"
+                            "system_time.c"
                     INCLUDE_DIRS include
                     PRIV_REQUIRES spi_flash
                                   # [refactor-todo] requirements due to init code,
@@ -15,7 +21,7 @@ add_subdirectory(port)
 # of link line order.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app")
 
-if (NOT CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
+if(NOT CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app_other_cores")
 endif()
 

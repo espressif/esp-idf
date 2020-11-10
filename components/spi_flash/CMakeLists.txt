@@ -1,5 +1,5 @@
 if(BOOTLOADER_BUILD)
-    if (CONFIG_IDF_TARGET_ESP32)
+    if(CONFIG_IDF_TARGET_ESP32)
         # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
         # need other parts of this component
         set(srcs "esp32/spi_flash_rom_patch.c")
@@ -19,7 +19,7 @@ else()
     set(srcs
         "partition.c")
 
-    if (CONFIG_IDF_TARGET_ESP32)
+    if(CONFIG_IDF_TARGET_ESP32)
         list(APPEND srcs
             "esp32/spi_flash_rom_patch.c")
     endif()
