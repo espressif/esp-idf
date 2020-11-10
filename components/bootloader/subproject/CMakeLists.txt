@@ -147,7 +147,7 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         COMMAND ${CMAKE_COMMAND} -E echo
             "Burn secure boot key to efuse using:"
         COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${espefusepy} burn_key secure_boot ${secure_bootloader_key}"
+            "\t${espefusepy} burn_key secure_boot_v1 ${secure_bootloader_key}"
         COMMAND ${CMAKE_COMMAND} -E echo
             "First time flash command is:"
         COMMAND ${CMAKE_COMMAND} -E echo
