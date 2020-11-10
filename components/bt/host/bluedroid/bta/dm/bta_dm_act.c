@@ -3820,9 +3820,9 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                         BTM_SwitchRole (bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
                                         HCI_ROLE_MASTER, NULL);
                     } else {
-                        bta_dm_cb.switch_delay_timer.p_cback =
+                        bta_dm_cb.switch_delay_timer[i].p_cback =
                             (TIMER_CBACK *)&bta_dm_delay_role_switch_cback;
-                        bta_sys_start_timer(&bta_dm_cb.switch_delay_timer, 0, 500);
+                        bta_sys_start_timer(&bta_dm_cb.switch_delay_timer[i], 0, 500);
                     }
                 }
 

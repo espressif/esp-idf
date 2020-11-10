@@ -186,6 +186,36 @@ bool list_remove(list_t *list, void *data)
     return false;
 }
 
+bool list_delete(list_t *list, void *data)
+{
+    assert(list != NULL);
+    assert(data != NULL);
+
+    if (list_is_empty(list)) {
+        return false;
+    }
+
+    if (list->head->data == data) {
+        list_node_t *next = list_delete_node(list, list->head);
+        if (list->tail == list->head) {
+            list->tail = next;
+        }
+        list->head = next;
+        return true;
+    }
+
+    for (list_node_t *prev = list->head, *node = list->head->next; node; prev = node, node = node->next)
+        if (node->data == data) {
+            prev->next = list_delete_node(list, node);
+            if (list->tail == node) {
+                list->tail = prev;
+            }
+            return true;
+        }
+
+    return false;
+}
+
 void list_clear(list_t *list)
 {
     assert(list != NULL);
@@ -246,6 +276,20 @@ list_node_t *list_free_node(list_t *list, list_node_t *node)
     if (list->free_cb) {
         list->free_cb(node->data);
     }
+    osi_free(node);
+    --list->length;
+
+    return next;
+}
+
+// remove the element from list but do not free the node data
+list_node_t *list_delete_node(list_t *list, list_node_t *node)
+{
+    assert(list != NULL);
+    assert(node != NULL);
+
+    list_node_t *next = node->next;
+
     osi_free(node);
     --list->length;
 
