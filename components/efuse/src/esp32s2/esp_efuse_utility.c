@@ -24,7 +24,7 @@
 static const char *TAG = "efuse";
 
 #ifdef CONFIG_EFUSE_VIRTUAL
-extern uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
+extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
 
 /*Range addresses to read blocks*/
@@ -42,7 +42,7 @@ const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_SYS_PART2_DATA0_REG,   EFUSE_RD_SYS_PART2_DATA7_REG}         // range address of EFUSE_BLK10 KEY6
 };
 
-static uint32_t write_mass_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK] = { 0 };
+static uint32_t write_mass_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK] = { 0 };
 
 /*Range addresses to write blocks (it is not real regs, it is buffer) */
 const esp_efuse_range_addr_t range_write_addr_blocks[] = {
@@ -80,7 +80,7 @@ void esp_efuse_utility_burn_efuses(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
         int subblock = 0;
         for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             virt_blocks[num_block][subblock++] |= REG_READ(addr_wr_block);
@@ -91,7 +91,8 @@ void esp_efuse_utility_burn_efuses(void)
         ESP_LOGE(TAG, "Efuse fields are not burnt");
     } else {
         // Permanently update values written to the efuse write registers
-        for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+        // It is necessary to process blocks in the order from MAX-> EFUSE_BLK0, because EFUSE_BLK0 has protection bits for other blocks.
+        for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
             for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
                 if (REG_READ(addr_wr_block) != 0) {
                     if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
@@ -118,7 +119,7 @@ void esp_efuse_utility_burn_efuses(void)
 esp_err_t esp_efuse_utility_apply_new_coding_scheme()
 {
     // start with EFUSE_BLK1. EFUSE_BLK0 - always uses EFUSE_CODING_SCHEME_NONE.
-    for (int num_block = 1; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK1; num_block < EFUSE_BLK_MAX; num_block++) {
         if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
             for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
                 if (REG_READ(addr_wr_block)) {
