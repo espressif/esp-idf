@@ -14,6 +14,7 @@
 
 // The HAL layer for ADC (esp32s2 specific part)
 
+#include "sdkconfig.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal_conf.h"
@@ -178,6 +179,10 @@ static uint32_t adc_hal_read_self_cal(adc_ll_num_t adc_n, int channel)
 
 uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd, bool force_cal)
 {
+#ifdef CONFIG_IDF_ENV_FPGA
+    return 0;
+#endif
+
     if (!force_cal) {
         if (s_adc_cali_param[adc_n][atten]) {
             return (uint32_t)s_adc_cali_param[adc_n][atten];

@@ -820,15 +820,17 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
                            30, 31};
     TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY3, &new_key, 256));
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(new_mac));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
     esp_efuse_utility_debug_dump_blocks();
 
     ESP_LOGI(TAG, "3. Set a read protection for KEY3");
     TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK7));
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
-    for (int i = 0; i < sizeof(key); ++i) {
-        TEST_ASSERT_EQUAL_INT(0, key[i]);
-    }
+#ifndef CONFIG_EFUSE_VIRTUAL
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, key, sizeof(key));
+#else
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+#endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_debug_dump_blocks();
 #endif // not CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "4. Write SECURE_VERSION");
@@ -856,3 +858,32 @@ TEST_CASE("Test chip_revision APIs return the same value", "[efuse]")
     esp_efuse_utility_update_virt_blocks();
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_chip_ver(), bootloader_common_get_chip_revision());
 }
+
+#ifndef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+TEST_CASE("Test writing order is BLK_MAX->BLK0", "[efuse]")
+{
+    uint8_t new_key[32] = {33,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                           10, 11, 12, 12, 14, 15, 16, 17, 18, 19,
+                           20, 21, 22, 22, 24, 25, 26, 27, 28, 29,
+                           30, 31};
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY4, &new_key, 256));
+    // If the order of writing blocks is wrong (ex. BLK0 -> BLK_MAX)
+    // then the write protection bit will be set early and the key was left un-updated.
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY4));
+
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    esp_efuse_utility_debug_dump_blocks();
+
+    uint8_t key[32] = { 0xEE };
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY4, &key, 256));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+}
+
+#endif  // CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+#endif  // not CONFIG_IDF_TARGET_ESP32

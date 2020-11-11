@@ -25,9 +25,15 @@ void bootloader_clock_configure(void)
 {
     esp_rom_uart_tx_wait_idle(0);
 
-    uint32_t clock = 40000000;
-    ets_update_cpu_frequency(clock / 1000000);
-    REG_WRITE(RTC_CNTL_STORE5_REG, (clock >> 12) | ((clock >> 12) << 16));
+    uint32_t xtal_freq_mhz = 40;
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    uint32_t apb_freq_hz = 20000000;
+#else
+    uint32_t apb_freq_hz = 40000000;
+#endif // CONFIG_IDF_TARGET_ESP32S2
+    ets_update_cpu_frequency(apb_freq_hz / 1000000);
+    REG_WRITE(RTC_CNTL_STORE5_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
+    REG_WRITE(RTC_CNTL_STORE4_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 
 void bootloader_fill_random(void *buffer, size_t length)
