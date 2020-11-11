@@ -478,7 +478,6 @@ ACTIONS = {
     "fullclean":             (fullclean,    [], []),
     "reconfigure":           (reconfigure,  [], ["menuconfig"]),
     "menuconfig":            (build_target, [], []),
-    "defconfig":             (build_target, [], []),
     "confserver":            (build_target, [], []),
     "size":                  (build_target, ["app"], []),
     "size-components":       (build_target, ["app"], []),
