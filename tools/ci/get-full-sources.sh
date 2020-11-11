@@ -29,6 +29,12 @@ die() {
 [ -z ${CI_PROJECT_DIR} ] && die "This internal script should only be run by a Gitlab CI runner."
 [ -z ${GITLAB_SSH_SERVER} ] && die "GITLAB_SSH_SERVER should be defined to run mirror-submodule-update.sh"
 [ -z ${CI_REPOSITORY_URL} ] && die "CI_REPOSITORY_URL should be defined to run mirror-submodule-update.sh"
+
+REPOSITORY_URL="${CI_REPOSITORY_URL}"
+if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then
+    REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"
+fi
+
 [ -z ${CI_COMMIT_SHA} ] && die "CI_COMMIT_SHA should be defined to run mirror-submodule-update.sh"
 DONT_USE_MIRROR=${DONT_USE_MIRROR:-"0"}
 
@@ -81,7 +87,7 @@ for try in `seq $RETRIES`; do
     cd ${CI_PROJECT_DIR}  # we are probably already here but pays to be certain
     echo "Trying a clean clone of IDF..."
     del_files
-    git clone ${CI_REPOSITORY_URL} . &&
+    git clone ${REPOSITORY_URL} . &&
         git checkout ${CI_COMMIT_SHA} &&
         update_submodules &&
         echo "Clone strategy succeeded" &&
