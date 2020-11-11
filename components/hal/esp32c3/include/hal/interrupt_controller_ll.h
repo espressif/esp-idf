@@ -116,27 +116,40 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
 }
 
 /**
- * @brief Set the interrupt type given an interrupt number.
- *
- * @param interrupt_number number of the interrupt
- * @param type new type for this interrupt
+ * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
+ * 
+ * @param intr interrupt number ranged from 0 to 31
  */
-static inline void intr_cntrl_ll_set_type(int interrupt_number, int_type_t type)
+static inline void intr_cntrl_ll_edge_int_acknowledge (int intr)
 {
-    esprv_intc_int_set_type(BIT(interrupt_number), type);
+    intr_cntrl_ll_disable_interrupts(1 << intr);
+    esprv_intc_int_set_priority(intr, 0);
 }
 
 /**
- * @brief Set the interrupt level (priority) given an interrupt number.
- *
- * @param interrupt_number number of the interrupt
- * @param level new level for this interrupt
+ * @brief Sets the interrupt level int the interrupt controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param level priority between 1 (lowest) to 7 (highest)
  */
-static inline void intr_cntrl_ll_set_level(int interrupt_number, int level)
+static inline void intr_cntrl_ll_set_int_level(int intr, int level)
 {
-    esprv_intc_int_set_priority(interrupt_number, level);
+    esprv_intc_int_set_priority(intr, level);
 }
 
+/**
+ * @brief Set the type of an interrupt in the controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void intr_cntrl_ll_set_int_type(int intr, int_type_t type)
+{
+    /* Not needed currently for xtensa platforms since the type is already set
+     *  in interrupt table
+     */
+    esprv_intc_int_set_type(BIT(intr), type);
+}
 
 #ifdef __cplusplus
 }

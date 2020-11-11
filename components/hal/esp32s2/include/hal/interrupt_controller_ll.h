@@ -100,6 +100,47 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
     xt_int_enable_mask(newmask);
 }
 
+/**
+ * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
+ * 
+ * @param intr interrupt number ranged from 0 to 31
+ */
+static inline void intr_cntrl_ll_edge_int_acknowledge (int intr)
+{
+    xthal_set_intclear(1 << intr);
+}
+
+/**
+ * @brief Sets the interrupt level int the interrupt controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param level priority between 1 (lowest) to 7 (highest)
+ */
+static inline void intr_cntrl_ll_set_int_level(int intr, int level)
+{
+    /* Not needed currently for xtensa platforms since the level is already set
+     *  in interrupt table
+     */
+    (void)intr;
+    (void)level;
+}
+
+/**
+ * @brief Set the type of an interrupt in the controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void intr_cntrl_ll_set_int_type(int intr, int_type_t type)
+{
+    /* Not needed currently for xtensa platforms since the type is already set
+     *  in interrupt table
+     */
+    (void)intr;
+    (void)type;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

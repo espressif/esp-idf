@@ -551,14 +551,11 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             interrupt_controller_hal_set_int_handler(intr, handler, arg);
 #endif
         }
-#ifdef __XTENSA__ // TODO ESP32-C3 IDF-2126
-        if (flags&ESP_INTR_FLAG_EDGE) xthal_set_intclear(1 << intr);
-#else
+
         if (flags & ESP_INTR_FLAG_EDGE) {
-            ESP_INTR_DISABLE(intr);
-            esprv_intc_int_set_priority(intr, 0);
-        }
-#endif
+            interrupt_controller_hal_edge_int_acknowledge(intr);
+        }      
+
         vd->source=source;
     }
     if (flags&ESP_INTR_FLAG_IRAM) {
@@ -585,12 +582,12 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         esp_intr_disable(ret);
     }
 
-#if CONFIG_IDF_TARGET_ESP32C3
-    // TODO ESP32-C3 IDF-2126, these need to be set or the new interrupt won't fire, but are currently hard-coded
-    // for priority and level...
-    esprv_intc_int_set_priority(intr, 1);
-    esprv_intc_int_set_type(BIT(intr), INTR_TYPE_LEVEL);
-#endif
+    //Set the level and type at controller level if needed:
+    interrupt_controller_hal_set_int_level(intr,
+                            interrupt_controller_hal_desc_level(intr));
+
+    interrupt_controller_hal_set_int_type(intr,
+                            interrupt_controller_hal_desc_type(intr));
 
     portEXIT_CRITICAL(&spinlock);
 

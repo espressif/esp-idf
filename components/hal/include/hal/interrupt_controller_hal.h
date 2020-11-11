@@ -85,6 +85,17 @@ static inline int_type_t interrupt_controller_hal_get_type(int interrupt_number)
 }
 
 /**
+ * @brief Set the type of an interrupt in the controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void interrupt_controller_hal_set_int_type(int intr, int_type_t type)
+{
+    intr_cntrl_ll_set_int_type(intr, type);
+}
+
+/**
  * @brief Gets the interrupt level given an interrupt number.
  *
  * @param interrupt_number Interrupt number 0 to 31
@@ -93,6 +104,17 @@ static inline int_type_t interrupt_controller_hal_get_type(int interrupt_number)
 static inline int interrupt_controller_hal_get_level(int interrupt_number)
 {
     return interrupt_controller_hal_desc_level(interrupt_number);
+}
+
+/**
+ * @brief Sets the interrupt level int the interrupt controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param level priority between 1 (lowest) to 7 (highest)
+ */
+static inline void interrupt_controller_hal_set_int_level(int intr, int level)
+{
+    intr_cntrl_ll_set_int_level(intr, level);
 }
 
 /**
@@ -182,6 +204,16 @@ static inline uint32_t interrupt_controller_hal_disable_int_mask(uint32_t newmas
 static inline void interrupt_controller_hal_enable_int_mask(uint32_t newmask)
 {
     intr_cntrl_ll_enable_int_mask(newmask);
+}
+
+/**
+ * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
+ * 
+ * @param intr interrupt number ranged from 0 to 31
+ */
+static inline void interrupt_controller_hal_edge_int_acknowledge(int intr) 
+{
+    intr_cntrl_ll_edge_int_acknowledge(intr);
 }
 
 #ifdef __cplusplus
