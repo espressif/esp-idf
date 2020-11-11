@@ -194,9 +194,9 @@ esp_err_t esp_ble_mesh_node_add_local_app_key(const uint8_t app_key[16], uint16_
  * @brief         This function is called by Node to bind AppKey to model locally.
  *
  * @param[in]     element_addr: Node local element address
- * @param[in]     app_idx: Node local appkey index
- * @param[in]     model_id: Node local model id
  * @param[in]     company_id: Node local company id
+ * @param[in]     model_id: Node local model id
+ * @param[in]     app_idx: Node local appkey index
  *
  * @note          If going to bind app_key with local vendor model, the company_id
  *                shall be set to 0xFFFF.
@@ -205,8 +205,8 @@ esp_err_t esp_ble_mesh_node_add_local_app_key(const uint8_t app_key[16], uint16_
  * @return        ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t app_idx,
-                                                        uint16_t model_id, uint16_t company_id);
+esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t company_id,
+                                                        uint16_t model_id, uint16_t app_idx);
 
 #ifdef __cplusplus
 }
