@@ -109,22 +109,22 @@ class TestDependencyManagement(unittest.TestCase):
 
     def test_dupplicated_commands_warning(self):
         capturedOutput = StringIO()
-        sys.stdout = capturedOutput
+        sys.stderr = capturedOutput
         idf.init_cli()(
             args=['--dry-run', 'clean', 'monitor', 'build', 'clean', 'fullclean', 'all'],
             standalone_mode=False,
         )
-        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         self.assertIn(
             'WARNING: Commands "all", "clean" are found in the list of commands more than once.',
             capturedOutput.getvalue())
 
-        sys.stdout = capturedOutput
+        sys.stderr = capturedOutput
         idf.init_cli()(
             args=['--dry-run', 'clean', 'clean'],
             standalone_mode=False,
         )
-        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         self.assertIn(
             'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue())
 
@@ -177,18 +177,18 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
 class TestDeprecations(unittest.TestCase):
     def test_exit_with_error_for_subcommand(self):
         try:
-            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "test-2"], env=os.environ)
+            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "test-2"], env=os.environ,
+                                    stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             self.assertIn('Error: Command "test-2" is deprecated and was removed.', e.output.decode('utf-8', 'ignore'))
 
     def test_exit_with_error_for_option(self):
         try:
-            subprocess.check_output(
-                [sys.executable, idf_py_path, "-C%s" % current_dir, "--test-5=asdf"], env=os.environ)
+            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "--test-5=asdf"],
+                                    env=os.environ, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            self.assertIn(
-                'Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
-                e.output.decode('utf-8', 'ignore'))
+            self.assertIn('Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
+                          e.output.decode('utf-8', 'ignore'))
 
     def test_deprecation_messages(self):
         output = subprocess.check_output(
@@ -206,7 +206,7 @@ class TestDeprecations(unittest.TestCase):
                 "ta",
                 "test-1",
             ],
-            env=os.environ).decode('utf-8', 'ignore')
+            env=os.environ, stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
 
         self.assertIn('Warning: Option "test_sub_1" is deprecated and will be removed in future versions.', output)
         self.assertIn(
