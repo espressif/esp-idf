@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
 
-# py2_incomp='assign_test|nvs_compatible_test|IT'
-# - auto_test_script do not support python2 anymore
-# but there are still some jobs incompatible with Python 3 (eg: example_test)
-# keep the default python interpreter as 2.7.15 until all the jobs support python3
-
-# Regexp for matching job names which are incompatible with Python 3
-# - UT_009_ - multi-device tests are not compatible
-# - UT_017_ - multi-device tests are not compatible
-py3_incomp='UT_009_|UT_017_'
-
-if [ -z ${PYTHON_VER+x} ] || [[ $CI_JOB_NAME =~ $py3_incomp ]]; then
-    # Use this version of the Python interpreter if it was not defined before or
-    # the given job is not compatible with Python 3
-    PYTHON_VER=2.7.15
+if [ -z ${PYTHON_VER+x} ]; then
+    # Use this version of the Python interpreter if it was not defined before.
+    # 3.4.8 is the default python3 interpreter in esp32-ci-env
+    # Jobs which doesn't support this version should define PYTHON_VER themselves
+    PYTHON_VER=3.4.8
 fi
 
 if [ -f /opt/pyenv/activate ];

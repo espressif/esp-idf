@@ -74,6 +74,8 @@ test_ldgen_on_host:
     - cd tools/ldgen/test
     - ./test_fragments.py
     - ./test_generation.py
+  variables:
+    LC_ALL: C.UTF-8
 
 test_mdns_fuzzer_on_host:
   extends: .host_fuzzer_test_template

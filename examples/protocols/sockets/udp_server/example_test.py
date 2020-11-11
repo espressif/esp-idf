@@ -31,7 +31,7 @@ def udp_client(address, payload):
         print('Could not create socket: ' + str(msg[0]) + ': ' + msg[1])
         raise
     try:
-        sock.sendto(payload, addr)
+        sock.sendto(payload.encode(), addr)
         reply, addr = sock.recvfrom(128)
         if not reply:
             return
@@ -40,7 +40,7 @@ def udp_client(address, payload):
         print('Error Code : ' + str(msg[0]) + ' Message: ' + msg[1])
         sock.close()
         raise
-    return reply
+    return reply.decode()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
