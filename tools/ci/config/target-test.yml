@@ -163,6 +163,12 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
+example_test_001D:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_8Mflash_Ethernet
+
 example_test_002:
   extends: .example_test_template
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
