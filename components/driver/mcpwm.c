@@ -137,9 +137,9 @@ esp_err_t mcpwm_set_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, u
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&mcpwm_spinlock);
     mcpwm_num_of_pulse = MCPWM_CLK / (frequency * (TIMER_CLK_PRESCALE + 1));
-    previous_period = MCPWM[mcpwm_num]->timer[timer_num].period.period;
+    previous_period = MCPWM[mcpwm_num]->timer[timer_num].period.period + 1;
     MCPWM[mcpwm_num]->timer[timer_num].period.prescale = TIMER_CLK_PRESCALE;
-    MCPWM[mcpwm_num]->timer[timer_num].period.period = mcpwm_num_of_pulse;
+    MCPWM[mcpwm_num]->timer[timer_num].period.period = mcpwm_num_of_pulse - 1;
     MCPWM[mcpwm_num]->timer[timer_num].period.upmethod = 0;
     set_duty_a = (((MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[0].cmpr_val) * mcpwm_num_of_pulse) / previous_period);
     set_duty_b = (((MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[1].cmpr_val) * mcpwm_num_of_pulse) / previous_period);
@@ -158,7 +158,7 @@ esp_err_t mcpwm_set_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(op_num < MCPWM_OPR_MAX, MCPWM_OP_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&mcpwm_spinlock);
-    set_duty = (MCPWM[mcpwm_num]->timer[timer_num].period.period) * (duty) / 100;
+    set_duty = (MCPWM[mcpwm_num]->timer[timer_num].period.period + 1) * (duty) / 100;
     MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[op_num].cmpr_val = set_duty;
     MCPWM[mcpwm_num]->channel[timer_num].cmpr_cfg.a_upmethod = BIT(0);
     MCPWM[mcpwm_num]->channel[timer_num].cmpr_cfg.b_upmethod = BIT(0);
@@ -284,7 +284,7 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
     uint32_t frequency;
     MCPWM_CHECK(mcpwm_num < MCPWM_UNIT_MAX, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
-    frequency = MCPWM_CLK / ((MCPWM[mcpwm_num]->timer[timer_num].period.period) * (TIMER_CLK_PRESCALE + 1));
+    frequency = MCPWM_CLK / ((MCPWM[mcpwm_num]->timer[timer_num].period.period + 1) * (TIMER_CLK_PRESCALE + 1));
     return frequency;
 }
 
@@ -295,7 +295,7 @@ float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_oper
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(op_num < MCPWM_OPR_MAX, MCPWM_OP_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&mcpwm_spinlock);
-    duty = 100.0 * (MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[op_num].cmpr_val) / (MCPWM[mcpwm_num]->timer[timer_num].period.period);
+    duty = 100.0 * (MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[op_num].cmpr_val) / (MCPWM[mcpwm_num]->timer[timer_num].period.period + 1);
     portEXIT_CRITICAL(&mcpwm_spinlock);
     return duty;
 }
@@ -701,7 +701,7 @@ esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcp
     MCPWM_CHECK(mcpwm_num < MCPWM_UNIT_MAX, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&mcpwm_spinlock);
-    set_phase = (MCPWM[mcpwm_num]->timer[timer_num].period.period) * (phase_val) / 1000;
+    set_phase = (MCPWM[mcpwm_num]->timer[timer_num].period.period + 1) * (phase_val) / 1000;
     MCPWM[mcpwm_num]->timer[timer_num].sync.timer_phase = set_phase;
     if (timer_num == MCPWM_TIMER_0) {
         MCPWM[mcpwm_num]->timer_synci_cfg.t0_in_sel = sync_sig;
