@@ -952,7 +952,7 @@ int wps_stop_process(wifi_event_sta_wps_fail_reason_t reason_code)
     esp_wifi_disconnect();
 
     wpa_printf(MSG_DEBUG, "Write wps_fail_information");
-    
+
     esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
 
     return ESP_OK;
@@ -2190,4 +2190,3 @@ wifi_set_wps_cb(wps_st_cb_t cb)
 
     return false;
 }
-

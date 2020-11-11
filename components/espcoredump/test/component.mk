@@ -7,7 +7,3 @@ else
     COMPONENT_PRIV_INCLUDEDIRS := .
     COMPONENT_REQUIRES := unity nvs_flash
 endif # TESTS_ALL
-
-
-
-

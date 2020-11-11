@@ -74,7 +74,7 @@ void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t e
                 } else {
                     ESP_LOGI(TAG, "CfgClient:PublishGet,Fail");
                 }
-                
+
                 break;
             case ESP_BLE_MESH_MODEL_OP_FRIEND_GET:
                 ESP_LOGI(TAG, "CfgClient:friend,0x%x", param->status_cb.friend_status.friend_state);
@@ -121,7 +121,7 @@ void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t e
                     ESP_LOGI(TAG, "CfgClient:PublishSet,OK,0x%x", param->status_cb.model_pub_status.publish_addr);
                 } else {
                     ESP_LOGI(TAG, "CfgClient:PublishSet,Fail");
-                }                
+                }
                 break;
             case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD:
                 if (param->status_cb.model_sub_status.status == ESP_OK) {

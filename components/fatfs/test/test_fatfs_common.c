@@ -256,17 +256,17 @@ void test_fatfs_truncate_file(const char* filename)
 
     f = fopen(filename, "rb");
     TEST_ASSERT_NOT_NULL(f);
-    
+
     memset(output, 0, sizeof(output));
     read = fread(output, 1, sizeof(output), f);
-    
+
     TEST_ASSERT_EQUAL(truncated_len, read);
     TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
 
     TEST_ASSERT_EQUAL(0, fclose(f));
 
 
-    // Once truncated, the new file size should be the basis 
+    // Once truncated, the new file size should be the basis
     // whether truncation should succeed or not
     TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
     TEST_ASSERT_EQUAL(EPERM, errno);
@@ -289,10 +289,10 @@ void test_fatfs_truncate_file(const char* filename)
 
     f = fopen(filename, "rb");
     TEST_ASSERT_NOT_NULL(f);
-    
+
     memset(output, 0, sizeof(output));
     read = fread(output, 1, sizeof(output), f);
-    
+
     TEST_ASSERT_EQUAL(truncated_len, read);
     TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
 

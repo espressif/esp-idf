@@ -128,7 +128,7 @@ void app_main(void)
 
     // Starts of modbus controller and stack
     ESP_ERROR_CHECK(mbc_slave_start());
-    
+
     // Set UART pin numbers
     ESP_ERROR_CHECK(uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD,
                             CONFIG_MB_UART_RXD, CONFIG_MB_UART_RTS,
@@ -136,7 +136,7 @@ void app_main(void)
 
     // Set UART driver mode to Half Duplex
     ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));
-                                    
+
     ESP_LOGI(SLAVE_TAG, "Modbus slave stack initialized.");
     ESP_LOGI(SLAVE_TAG, "Start modbus test...");
 

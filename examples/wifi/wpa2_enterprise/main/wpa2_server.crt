@@ -32,9 +32,9 @@ Certificate:
                     3b:e3
                 Exponent: 65537 (0x10001)
         X509v3 extensions:
-            X509v3 Extended Key Usage: 
+            X509v3 Extended Key Usage:
                 TLS Web Server Authentication
-            X509v3 CRL Distribution Points: 
+            X509v3 CRL Distribution Points:
 
                 Full Name:
                   URI:http://www.example.com/example_ca.crl

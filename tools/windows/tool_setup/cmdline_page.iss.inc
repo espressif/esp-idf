@@ -151,4 +151,3 @@ begin
   if not Result then
     RaiseException('Installation has failed at step: ' + caption);
 end;
-

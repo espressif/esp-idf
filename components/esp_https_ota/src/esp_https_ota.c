@@ -76,7 +76,7 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
         ESP_LOGE(TAG, "Server error occurred(%d)", status_code);
         return ESP_FAIL;
     }
-    
+
     char upgrade_data_buf[DEFAULT_OTA_BUF_SIZE];
     // process_again() returns true only in case of redirection.
     if (process_again(status_code)) {
@@ -165,7 +165,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         *handle = NULL;
         return ESP_ERR_NO_MEM;
     }
-    
+
     /* Initiate HTTP Connection */
     https_ota_handle->http_client = esp_http_client_init(ota_config->http_config);
     if (https_ota_handle->http_client == NULL) {
@@ -264,7 +264,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
     }
     handle->binary_file_len = bytes_read;
     memcpy(new_app_info, &handle->ota_upgrade_buf[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
-    return ESP_OK;                                
+    return ESP_OK;
 }
 
 esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
@@ -398,7 +398,7 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
     if (!config) {
         ESP_LOGE(TAG, "esp_http_client config not found");
         return ESP_ERR_INVALID_ARG;
-    }    
+    }
 
     esp_https_ota_config_t ota_config = {
         .http_config = config,

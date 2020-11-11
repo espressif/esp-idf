@@ -3,4 +3,3 @@ if(IDF_TARGET STREQUAL "esp32")
                     PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES cmock test_utils)
 endif()
-

@@ -6,4 +6,3 @@
 PROJECT_NAME := ethernet_basic
 
 include $(IDF_PATH)/make/project.mk
-

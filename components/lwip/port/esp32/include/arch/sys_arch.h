@@ -102,4 +102,3 @@ sys_sem_t* sys_thread_sem_get(void);
 #endif
 
 #endif /* __SYS_ARCH_H__ */
-

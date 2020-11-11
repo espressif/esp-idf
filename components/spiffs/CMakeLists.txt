@@ -11,4 +11,3 @@ idf_component_register(SRCS "esp_spiffs.c"
                     PRIV_REQUIRES bootloader_support)
 
 set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
-

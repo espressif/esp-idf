@@ -6,4 +6,3 @@
 PROJECT_NAME := wifi_prov_mgr
 
 include $(IDF_PATH)/make/project.mk
-

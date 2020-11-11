@@ -1030,7 +1030,7 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
     BTM_TRACE_API ("BTM_ReadRemoteDeviceName: bd addr [%02x%02x%02x%02x%02x%02x]\n",
                    remote_bda[0], remote_bda[1], remote_bda[2],
                    remote_bda[3], remote_bda[4], remote_bda[5]);
-    
+
     /* Use the remote device's clock offset if it is in the local inquiry database */
     if ((p_i = btm_inq_db_find (remote_bda)) != NULL) {
         p_cur = &p_i->inq_info;

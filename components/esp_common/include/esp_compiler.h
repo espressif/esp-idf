@@ -16,18 +16,18 @@
 
 /*
  * The likely and unlikely macro pairs:
- * These macros are useful to place when application  
+ * These macros are useful to place when application
  * knows the majority ocurrence of a decision paths,
  * placing one of these macros can hint the compiler
- * to reorder instructions producing more optimized 
+ * to reorder instructions producing more optimized
  * code.
- */ 
+ */
 #if (CONFIG_COMPILER_OPTIMIZATION_PERF)
-#define likely(x)      __builtin_expect(!!(x), 1) 
-#define unlikely(x)    __builtin_expect(!!(x), 0) 
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
 #else
 #define likely(x)      (x)
-#define unlikely(x)    (x) 
+#define unlikely(x)    (x)
 #endif
 
 /*

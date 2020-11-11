@@ -39,9 +39,9 @@ void hf_msg_parser_register_callback(hf_msg_prs_cb_t *prs, hf_msg_callback cb)
 hf_msg_prs_err_t hf_msg_parse(char c, hf_msg_prs_cb_t *prs)
 {
     hf_msg_prs_err_t err = HF_MSG_PRS_ERR_IN_PROGRESS;
-    switch (prs->state) 
+    switch (prs->state)
     {
-        case HF_MSG_PRS_IDLE: 
+        case HF_MSG_PRS_IDLE:
         {
             if (c == hf_msg_hdr[0]) {
                 prs->state = HF_MSG_PRS_HDR;
@@ -53,8 +53,8 @@ hf_msg_prs_err_t hf_msg_parse(char c, hf_msg_prs_cb_t *prs)
             }
         }
         break;
-        
-        case HF_MSG_PRS_HDR: 
+
+        case HF_MSG_PRS_HDR:
         {
             if (c == hf_msg_hdr[prs->h_idx]) {
                 prs->buf[prs->cnt++] = c;
@@ -68,8 +68,8 @@ hf_msg_prs_err_t hf_msg_parse(char c, hf_msg_prs_cb_t *prs)
             }
         }
         break;
-        
-        case HF_MSG_PRS_PAYL: 
+
+        case HF_MSG_PRS_PAYL:
         {
             prs->buf[prs->cnt++] = c;
             if (c == hf_msg_tail[prs->t_idx]) {

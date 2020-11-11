@@ -353,7 +353,7 @@ int X509_STORE_add_cert(X509_STORE *store, X509 *x) {
 
 /**
  * @brief load a character certification context into system context.
- * 
+ *
  * If '*cert' is pointed to the certification, then load certification
  * into it, or create a new X509 certification object.
  */

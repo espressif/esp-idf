@@ -886,4 +886,3 @@ void esp_deep_sleep_disable_rom_logging(void)
 {
     esp_rom_disable_logging();
 }
-

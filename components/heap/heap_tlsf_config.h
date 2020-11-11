@@ -8,10 +8,10 @@
 **
 ** This implementation was written to the specification
 ** of the document, therefore no GPL restrictions apply.
-** 
+**
 ** Copyright (c) 2006-2016, Matthew Conte
 ** All rights reserved.
-** 
+**
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
 **     * Redistributions of source code must retain the above copyright
@@ -22,7 +22,7 @@
 **     * Neither the name of the copyright holder nor the
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
-** 
+**
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -60,9 +60,9 @@ enum tlsf_config
 	** blocks below that size into the 0th first-level list.
 	*/
 
-	/* Tunning the first level, we can reduce TLSF pool overhead 
+	/* Tunning the first level, we can reduce TLSF pool overhead
 	 * in exchange of manage a pool smaller than 4GB
-	 */ 
+	 */
 	FL_INDEX_MAX = 30,
 
 	SL_INDEX_COUNT = (1 << SL_INDEX_COUNT_LOG2),

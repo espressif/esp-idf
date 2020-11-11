@@ -37,7 +37,7 @@ typedef struct {
 /**
  * @brief Creates a default pthread configuration based
  * on the values set via menuconfig.
- * 
+ *
  * @return
  *      A default configuration structure.
  */

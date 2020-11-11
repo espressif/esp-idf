@@ -211,7 +211,7 @@ void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t ali
     }
 
     multi_heap_internal_unlock(heap);
-    
+
     return data;
 }
 
@@ -220,7 +220,7 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     if (!size) {
         return NULL;
     }
-    
+
     if(size > SIZE_MAX - POISON_OVERHEAD) {
         return NULL;
     }
@@ -311,8 +311,8 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     new_head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
     if (new_head != NULL) {
         result = poison_allocated_region(new_head, size);
-        memcpy(result, p, MIN(size, orig_alloc_size));      
-        multi_heap_free(heap, p);        
+        memcpy(result, p, MIN(size, orig_alloc_size));
+        multi_heap_free(heap, p);
     }
 #endif
 

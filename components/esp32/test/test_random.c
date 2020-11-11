@@ -64,4 +64,3 @@ TEST_CASE("call esp_fill_random()", "[random]")
         TEST_ASSERT_EQUAL_HEX8(0xFF, one_buf[x]);
     }
 }
-

@@ -7,7 +7,7 @@
 #include "xtensa/hal.h"
 #if defined(XCHAL_HAVE_WINDOWED)
 /* Regression test for a0 register being corrupted in _xt_context_save.
- * 
+ *
  * The idea in this test is to have a function which recursively calls itself
  * with call4, eventually filling up all the register windows. At that point,
  * it does some lengthy operation. If an interrupt occurs at that point, and

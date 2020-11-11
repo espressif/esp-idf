@@ -491,4 +491,3 @@ std::future<typename TransferT::TransferReturnT> I2CMaster::transfer(std::shared
 }
 
 } // idf
-

@@ -128,4 +128,3 @@ TEST_CASE("Fast I/O bus test", "[hw][ignore]")
     }
     xt_ints_off(1 << ETS_UART0_INUM);
 }
-

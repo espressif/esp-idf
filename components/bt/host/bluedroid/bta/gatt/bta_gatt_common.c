@@ -33,4 +33,3 @@ uint16_t BTA_GATT_GetLocalMTU(void)
 {
     return gatt_get_local_mtu();
 }
-

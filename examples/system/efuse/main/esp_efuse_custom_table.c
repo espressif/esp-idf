@@ -78,4 +78,3 @@ const esp_efuse_desc_t* ESP_EFUSE_CUSTOM_SECURE_VERSION[] = {
     &CUSTOM_SECURE_VERSION[0],    		// Custom secure version
     NULL
 };
-

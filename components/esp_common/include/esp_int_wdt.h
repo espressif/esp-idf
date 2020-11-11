@@ -25,12 +25,12 @@ extern "C" {
 
 /*
 This routine enables a watchdog to catch instances of processes disabling
-interrupts for too long, or code within interrupt handlers taking too long. 
+interrupts for too long, or code within interrupt handlers taking too long.
 It does this by setting up a watchdog which gets fed from the FreeRTOS
 task switch interrupt. When this watchdog times out, initially it will call
 a high-level interrupt routine that will panic FreeRTOS in order to allow
 for forensic examination of the state of the both CPUs. When this interrupt
-handler is not called and the watchdog times out a second time, it will 
+handler is not called and the watchdog times out a second time, it will
 reset the SoC.
 
 This uses the TIMERG1 WDT.

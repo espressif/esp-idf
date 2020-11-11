@@ -16,7 +16,7 @@
         ESP32 will receive SSID and password, and connect to the router.
 
    WPS_TYPE_PIN:
-        Start ESP32, you'll see an eight-digit PIN number in log output. 
+        Start ESP32, you'll see an eight-digit PIN number in log output.
         Enter the PIN code on the router and then the ESP32 will get connected to router.
 */
 

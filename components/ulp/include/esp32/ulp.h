@@ -1009,8 +1009,8 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 /**
  *  Perform an I2C transaction with a slave device.
  *  I_I2C_READ and I_I2C_WRITE are provided for convenience, instead of using this directly.
- * 
- *  Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
+ *
+ *  Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
  *  For read operations, 8 bits of read result is stored into R0 register.
  *  For write operations, val will be written to sub_addr at [high_bit:low_bit]. Bits outside of this range are masked.
  */
@@ -1026,14 +1026,14 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 
 /**
  * Read a byte from the sub address of an I2C slave, and store the result in R0.
- * 
- * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
+ *
+ * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
  */
 #define I_I2C_READ(slave_sel, sub_addr) I_I2C_RW(sub_addr, 0, 0, 0, slave_sel, SUB_OPCODE_I2C_RD)
 
 /**
  * Write a byte to the sub address of an I2C slave.
- * 
+ *
  * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
  */
 #define I_I2C_WRITE(slave_sel, sub_addr, val) I_I2C_RW(sub_addr, val, 0, 7, slave_sel, SUB_OPCODE_I2C_WR)

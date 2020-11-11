@@ -7,4 +7,3 @@ ifndef CONFIG_BT_BLUEDROID_ENABLED
         COMPONENT_OBJEXCLUDE := src/scheme_ble.o
     endif
 endif
-

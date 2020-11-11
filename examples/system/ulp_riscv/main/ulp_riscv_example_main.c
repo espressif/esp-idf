@@ -44,14 +44,14 @@ void app_main(void)
     /* ULP Risc-V read and detected a change in GPIO_0, prints */
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
         printf("ULP-RISC-V woke up the main CPU! \n");
-        printf("ULP-RISC-V read changes in GPIO_0 current is: %s \n", 
-            (bool)(ulp_gpio_level_previous == 0) ? "Low" : "High" ); 
+        printf("ULP-RISC-V read changes in GPIO_0 current is: %s \n",
+            (bool)(ulp_gpio_level_previous == 0) ? "Low" : "High" );
 
     }
 
     /* Go back to sleep, only the ULP Risc-V will run */
     printf("Entering in deep sleep\n\n");
-    
+
     /* Small delay to ensure the messages are printed */
     vTaskDelay(100);
 
@@ -64,12 +64,12 @@ static void init_ulp_program(void)
     esp_err_t err = ulp_riscv_load_binary(ulp_main_bin_start, (ulp_main_bin_end - ulp_main_bin_start));
     ESP_ERROR_CHECK(err);
 
-    /* The first argument is the period index, which is not used by the ULP-RISC-V timer 
+    /* The first argument is the period index, which is not used by the ULP-RISC-V timer
      * The second argument is the period in microseconds, which gives a wakeup time period of: 20ms
      */
     ulp_set_wakeup_period(0, 20000);
 
     /* Start the program */
     err = ulp_riscv_run();
-    ESP_ERROR_CHECK(err);       
+    ESP_ERROR_CHECK(err);
 }

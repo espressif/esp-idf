@@ -191,7 +191,7 @@ static void task_wdt_isr(void *arg)
         esp_crosscore_int_send_print_backtrace(!current_core);
     #endif
     }
-    
+
     portEXIT_CRITICAL_ISR(&twdt_spinlock);
 }
 

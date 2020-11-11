@@ -91,7 +91,7 @@ typedef uint32_t esp_cpu_ccount_t;
 
 static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
 {
-    uint32_t result; 
+    uint32_t result;
     RSR(CCOUNT, result);
     return result;
 }

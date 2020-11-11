@@ -6,4 +6,3 @@
 PROJECT_NAME := twai_self_test_example
 
 include $(IDF_PATH)/make/project.mk
-

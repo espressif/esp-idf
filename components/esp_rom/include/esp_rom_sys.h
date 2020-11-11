@@ -40,7 +40,7 @@ void esp_rom_delay_us(uint32_t us);
 /**
  * @brief esp_rom_printf can print message to different channels simultaneously.
  *        This function can help install the low level putc function for esp_rom_printf.
- * 
+ *
  * @param channel Channel number (startting from 1)
  * @param putc Function pointer to the putc implementation. Set NULL can disconnect esp_rom_printf with putc.
  */

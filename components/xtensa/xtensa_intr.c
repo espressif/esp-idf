@@ -160,4 +160,3 @@ void * xt_get_interrupt_handler_arg(int n)
 #endif
 
 #endif /* XCHAL_HAVE_INTERRUPTS */
-

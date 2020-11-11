@@ -54,4 +54,3 @@ extern void EncQuantizer(SBC_ENC_PARAMS *);
 SINT32 SBC_Multiply_32_16_Simplified(SINT32 s32In2Temp, SINT32 s32In1Temp);
 #endif
 #endif
-

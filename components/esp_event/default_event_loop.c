@@ -37,7 +37,7 @@ esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
                                               int32_t event_id,
                                               esp_event_handler_t event_handler,
                                               void *event_handler_arg,
-                                              esp_event_handler_instance_t *context) 
+                                              esp_event_handler_instance_t *context)
 {
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -69,7 +69,7 @@ esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base,
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     return esp_event_handler_instance_unregister_with(s_default_loop, event_base, event_id, context);
 }
 

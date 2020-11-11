@@ -6,4 +6,3 @@
 PROJECT_NAME := i2s-adc-dac
 
 include $(IDF_PATH)/make/project.mk
-

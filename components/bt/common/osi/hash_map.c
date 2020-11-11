@@ -177,7 +177,7 @@ bool hash_map_erase(hash_map_t *hash_map, const void *key)
         list_free(hash_map->bucket[hash_key].list);
         hash_map->bucket[hash_key].list = NULL;
     }
-                
+
     return remove;
 }
 

@@ -146,10 +146,10 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             //No need to setup anything; we'll copy the result out of the work registers directly later.
         } else {
             lldesc_setup_link(hal->dma_config.dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
-            
+
             spi_dma_ll_rx_reset(hal->dma_in);
 
-            spi_ll_dma_rx_enable(hal->hw, 1);     
+            spi_ll_dma_rx_enable(hal->hw, 1);
             spi_dma_ll_rx_start(hal->dma_in, hal->dma_config.dmadesc_rx);
         }
 
@@ -167,7 +167,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             spi_ll_write_buffer(hw, trans->send_buffer, trans->tx_bitlen);
         } else {
             lldesc_setup_link(hal->dma_config.dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
-            
+
             spi_dma_ll_tx_reset(hal->dma_out);
 
             spi_ll_dma_tx_enable(hal->hw, 1);

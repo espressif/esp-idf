@@ -295,7 +295,7 @@ esp_err_t esp_netif_init(void)
             return ESP_FAIL;
         }
     }
-    
+
     if (!api_lock_sem) {
         if (ERR_OK != sys_sem_new(&api_lock_sem, 1)) {
             ESP_LOGE(TAG, "esp netif api lock sem init fail");
@@ -319,7 +319,7 @@ esp_err_t esp_netif_deinit(void)
         sys_sem_free(&api_lock_sem);
          */
         return ESP_ERR_NOT_SUPPORTED;
-        
+
     }
     return ESP_ERR_INVALID_STATE;
 }
@@ -1772,7 +1772,7 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
 
 esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
                                  uint32_t opt_len)
-{   
+{
     if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
         return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
@@ -1787,9 +1787,9 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
         switch (opt_id) {
             case ESP_NETIF_IP_REQUEST_RETRY_TIME:
                 if (opt_len == sizeof(dhcp->tries)) {
-                    *(uint8_t *)opt_val = dhcp->tries;  
-                }  
-                break;    
+                    *(uint8_t *)opt_val = dhcp->tries;
+                }
+                break;
             default:
                 return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                 break;
@@ -1807,10 +1807,10 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
             default:
                 return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                 break;
-        } 
+        }
     } else {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }   
+    }
     return ESP_OK;
 }
 

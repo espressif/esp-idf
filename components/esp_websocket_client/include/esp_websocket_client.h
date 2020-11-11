@@ -133,7 +133,7 @@ esp_err_t esp_websocket_client_start(esp_websocket_client_handle_t client);
  * using esp_websocket_client_close().
  *
  *  Notes:
- *  - Cannot be called from the websocket event handler 
+ *  - Cannot be called from the websocket event handler
  *
  * @param[in]  client  The client
  *
@@ -149,7 +149,7 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client);
  *
  *  Notes:
  *  - Cannot be called from the websocket event handler
- * 
+ *
  * @param[in]  client  The client
  *
  * @return     esp_err_t
@@ -208,7 +208,7 @@ int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const c
  * * Client is stopped the same way as by the `esp_websocket_client_stop()`
  *
  *  Notes:
- *  - Cannot be called from the websocket event handler 
+ *  - Cannot be called from the websocket event handler
  *
  * @param[in]  client  The client
  * @param[in]  timeout Timeout in RTOS ticks for waiting
@@ -222,7 +222,7 @@ esp_err_t esp_websocket_client_close(esp_websocket_client_handle_t client, TickT
  *             Closing sequence is the same as for esp_websocket_client_close()
  *
  *  Notes:
- *  - Cannot be called from the websocket event handler 
+ *  - Cannot be called from the websocket event handler
  *
  * @param[in]  client  The client
  * @param[in]  code    Close status code as defined in RFC6455 section-7.4

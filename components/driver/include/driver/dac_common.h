@@ -96,4 +96,3 @@ esp_err_t dac_cw_generator_config(dac_cw_config_t *cw);
 #ifdef __cplusplus
 }
 #endif
-

@@ -44,7 +44,7 @@ SECTIONS
   {
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
-    
+
     _coredump_rtc_fast_start = ABSOLUTE(.);
     mapping[rtc_fast_coredump]
     _coredump_rtc_fast_end = ABSOLUTE(.);
@@ -69,7 +69,7 @@ SECTIONS
     _coredump_rtc_start = ABSOLUTE(.);
     mapping[rtc_coredump]
     _coredump_rtc_end = ABSOLUTE(.);
-    
+
     /* should be placed after coredump mapping */
     mapping[rtc_data]
 
@@ -212,7 +212,7 @@ SECTIONS
     _coredump_dram_start = ABSOLUTE(.);
     mapping[dram_coredump]
     _coredump_dram_end = ABSOLUTE(.);
-    
+
     /* should be placed after coredump mapping */
     _esp_system_init_fn_array_start = ABSOLUTE(.);
     KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))

@@ -1,6 +1,6 @@
 /*
  * MDNS Dependecy injection -- preincluded to inject interface test functions into static variables
- * 
+ *
  */
 
 #include "mdns.h"

@@ -1519,4 +1519,3 @@ TEST_CASE("mbedtls AES GCM crypt-and-tag", "[aes]")
 
     free(buf);
 }
-

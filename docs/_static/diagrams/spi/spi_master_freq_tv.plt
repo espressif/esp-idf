@@ -28,6 +28,4 @@ plot [0:125]\
     "tv.csv" using 1:2 with circles notitle fill solid fc rgb "blue", \
     "tv.csv" using 1:4 with circles notitle fc rgb "blue",\
     "tv.csv" using 1:3 with circles notitle fill solid fc rgb "red" ,\
-    "tv.csv" using 1:5 with circles notitle fc rgb "red" 
-    
-
+    "tv.csv" using 1:5 with circles notitle fc rgb "red"

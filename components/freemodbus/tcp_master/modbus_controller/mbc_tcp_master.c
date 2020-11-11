@@ -161,7 +161,7 @@ static esp_err_t mbc_tcp_master_set_descriptor(const mb_parameter_descriptor_t* 
     MB_MASTER_CHECK((num_elements >= 1), ESP_ERR_INVALID_ARG, "mb table size is incorrect.");
     mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
     MB_MASTER_CHECK((mbm_opts != NULL), ESP_ERR_INVALID_ARG, "mb options.");
-    
+
     const char** comm_ip_table = (const char**)mbm_opts->mbm_comm.ip_addr;
     MB_MASTER_CHECK((comm_ip_table != NULL), ESP_ERR_INVALID_ARG, "mb ip table address is incorrect.");
 

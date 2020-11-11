@@ -2633,7 +2633,7 @@ TEST_CASE("check and read data from partition generated via partition generation
             CHECK(childpid > 0);
             int status;
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
         }
     }
 
@@ -2649,7 +2649,7 @@ TEST_CASE("check and read data from partition generated via partition generation
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 }
@@ -2666,7 +2666,7 @@ TEST_CASE("check and read data from partition generated via partition generation
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
 
@@ -2684,7 +2684,7 @@ TEST_CASE("check and read data from partition generated via partition generation
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
         }
     }
 
@@ -2700,7 +2700,7 @@ TEST_CASE("check and read data from partition generated via partition generation
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 }
@@ -2720,7 +2720,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
         if (childpid == 0) {
@@ -2739,7 +2739,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
 
             childpid = fork();
             if (childpid == 0) {
@@ -2755,7 +2755,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             } else {
                 CHECK(childpid > 0);
                 waitpid(childpid, &status, 0);
-                CHECK(WEXITSTATUS(status) != -1);
+                CHECK(WEXITSTATUS(status) == 0);
 
             }
 
@@ -2780,7 +2780,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 
@@ -2801,7 +2801,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
         if (childpid == 0) {
@@ -2820,7 +2820,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
 
             childpid = fork();
             if (childpid == 0) {
@@ -2836,7 +2836,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             } else {
                 CHECK(childpid > 0);
                 waitpid(childpid, &status, 0);
-                CHECK(WEXITSTATUS(status) != -1);
+                CHECK(WEXITSTATUS(status) == 0);
 
             }
 
@@ -2860,7 +2860,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 
@@ -3016,7 +3016,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
 
@@ -3034,7 +3034,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
         }
     }
 
@@ -3056,7 +3056,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 
@@ -3105,7 +3105,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
 
@@ -3116,7 +3116,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
 
             childpid = fork();
             if (childpid == 0) {
@@ -3133,7 +3133,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
             } else {
                 CHECK(childpid > 0);
                 waitpid(childpid, &status, 0);
-                CHECK(WEXITSTATUS(status) != -1);
+                CHECK(WEXITSTATUS(status) == 0);
 
             }
         }
@@ -3226,7 +3226,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
     }
 
     SpiFlashEmulator emu("../nvs_partition_generator/partition_encrypted_using_keyfile.bin");
@@ -3256,7 +3256,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
 
@@ -3267,7 +3267,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
         }
     }
 
@@ -3288,7 +3288,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
         if (childpid == 0) {
@@ -3309,7 +3309,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
 
             childpid = fork();
             if (childpid == 0) {
@@ -3327,7 +3327,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             } else {
                 CHECK(childpid > 0);
                 waitpid(childpid, &status, 0);
-                CHECK(WEXITSTATUS(status) != -1);
+                CHECK(WEXITSTATUS(status) == 0);
 
             }
 
@@ -3360,7 +3360,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 
@@ -3381,7 +3381,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
         childpid = fork();
         if (childpid == 0) {
@@ -3396,7 +3396,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
-            CHECK(WEXITSTATUS(status) != -1);
+            CHECK(WEXITSTATUS(status) == 0);
 
             childpid = fork();
             if (childpid == 0) {
@@ -3417,7 +3417,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             } else {
                 CHECK(childpid > 0);
                 waitpid(childpid, &status, 0);
-                CHECK(WEXITSTATUS(status) != -1);
+                CHECK(WEXITSTATUS(status) == 0);
 
                 childpid = fork();
                 if (childpid == 0) {
@@ -3435,7 +3435,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
                 } else {
                     CHECK(childpid > 0);
                     waitpid(childpid, &status, 0);
-                    CHECK(WEXITSTATUS(status) != -1);
+                    CHECK(WEXITSTATUS(status) == 0);
 
                 }
 
@@ -3480,7 +3480,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
-        CHECK(WEXITSTATUS(status) != -1);
+        CHECK(WEXITSTATUS(status) == 0);
 
     }
 

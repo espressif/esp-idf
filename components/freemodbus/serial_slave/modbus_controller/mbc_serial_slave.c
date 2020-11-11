@@ -33,7 +33,7 @@ static mb_slave_interface_t* mbs_interface_ptr = NULL;
 // Modbus task function
 static void modbus_slave_task(void *pvParameters)
 {
-    // Modbus interface must be initialized before start 
+    // Modbus interface must be initialized before start
     MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
 
@@ -250,9 +250,9 @@ static esp_err_t mbc_serial_slave_get_param_info(mb_param_info_t* reg_info, uint
 eMBErrorCode eMBRegInputCBSerialSlave(UCHAR * pucRegBuffer, USHORT usAddress,
                                 USHORT usNRegs)
 {
-    MB_SLAVE_CHECK((mbs_interface_ptr != NULL), 
+    MB_SLAVE_CHECK((mbs_interface_ptr != NULL),
                     MB_EILLSTATE, "Slave stack uninitialized.");
-    MB_SLAVE_CHECK((pucRegBuffer != NULL), 
+    MB_SLAVE_CHECK((pucRegBuffer != NULL),
                     MB_EINVAL, "Slave stack call failed.");
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
     USHORT usRegInputNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_INPUT].size >> 1); // Number of input registers
@@ -292,9 +292,9 @@ eMBErrorCode eMBRegInputCBSerialSlave(UCHAR * pucRegBuffer, USHORT usAddress,
 eMBErrorCode eMBRegHoldingCBSerialSlave(UCHAR * pucRegBuffer, USHORT usAddress,
         USHORT usNRegs, eMBRegisterMode eMode)
 {
-    MB_SLAVE_CHECK((mbs_interface_ptr != NULL), 
+    MB_SLAVE_CHECK((mbs_interface_ptr != NULL),
                     MB_EILLSTATE, "Slave stack uninitialized.");
-    MB_SLAVE_CHECK((pucRegBuffer != NULL), 
+    MB_SLAVE_CHECK((pucRegBuffer != NULL),
                     MB_EINVAL, "Slave stack call failed.");
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
     USHORT usRegHoldingNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_HOLDING].size >> 1);
@@ -350,9 +350,9 @@ eMBErrorCode eMBRegHoldingCBSerialSlave(UCHAR * pucRegBuffer, USHORT usAddress,
 eMBErrorCode eMBRegCoilsCBSerialSlave(UCHAR* pucRegBuffer, USHORT usAddress,
         USHORT usNCoils, eMBRegisterMode eMode)
 {
-    MB_SLAVE_CHECK((mbs_interface_ptr != NULL), 
+    MB_SLAVE_CHECK((mbs_interface_ptr != NULL),
                     MB_EILLSTATE, "Slave stack uninitialized.");
-    MB_SLAVE_CHECK((pucRegBuffer != NULL), 
+    MB_SLAVE_CHECK((pucRegBuffer != NULL),
                     MB_EINVAL, "Slave stack call failed.");
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
     USHORT usRegCoilNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_COIL].size >> 1); // number of registers in storage area
@@ -407,9 +407,9 @@ eMBErrorCode eMBRegCoilsCBSerialSlave(UCHAR* pucRegBuffer, USHORT usAddress,
 eMBErrorCode eMBRegDiscreteCBSerialSlave(UCHAR* pucRegBuffer, USHORT usAddress,
                             USHORT usNDiscrete)
 {
-    MB_SLAVE_CHECK((mbs_interface_ptr != NULL), 
+    MB_SLAVE_CHECK((mbs_interface_ptr != NULL),
                     MB_EILLSTATE, "Slave stack uninitialized.");
-    MB_SLAVE_CHECK((pucRegBuffer != NULL), 
+    MB_SLAVE_CHECK((pucRegBuffer != NULL),
                     MB_EINVAL, "Slave stack call failed.");
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
     USHORT usRegDiscreteNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_DISCRETE].size >> 1); // number of registers in storage area
@@ -518,4 +518,3 @@ esp_err_t mbc_serial_slave_create(void** handler)
 
     return ESP_OK;
 }
-

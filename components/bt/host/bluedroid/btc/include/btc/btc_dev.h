@@ -35,4 +35,3 @@ typedef union {
 void btc_dev_call_handler(btc_msg_t *msg);
 
 #endif /* __BTC_DEV_H__ */
-

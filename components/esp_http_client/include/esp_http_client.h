@@ -503,7 +503,7 @@ void esp_http_client_add_auth(esp_http_client_handle_t client);
  * @brief      Checks if entire data in the response has been read without any error.
  *
  * @param[in]  client   The esp_http_client handle
- * 
+ *
  * @return
  *     - true
  *     - false

@@ -120,4 +120,3 @@ private:
 } // idf
 
 #endif // ESP_EVENT_API_HPP_
-

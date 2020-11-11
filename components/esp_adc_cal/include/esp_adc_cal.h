@@ -72,10 +72,10 @@ esp_err_t esp_adc_cal_check_efuse(esp_adc_cal_value_t value_type);
  * Characterization can be based on Two Point values, eFuse Vref, or default Vref
  * and the calibration values will be prioritized in that order.
  *
- * @note 
+ * @note
  * For ESP32, Two Point values and eFuse Vref calibration can be enabled/disabled using menuconfig.
  * For ESP32s2, only Two Point values calibration and only ADC_WIDTH_BIT_13 is supported. The parameter default_vref is unused.
- * 
+ *
  *
  * @param[in]   adc_num         ADC to characterize (ADC_UNIT_1 or ADC_UNIT_2)
  * @param[in]   atten           Attenuation to characterize

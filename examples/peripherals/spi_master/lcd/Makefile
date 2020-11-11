@@ -6,4 +6,3 @@
 PROJECT_NAME := spi_master
 
 include $(IDF_PATH)/make/project.mk
-

@@ -245,4 +245,3 @@ const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 
     return NULL;
 }
-

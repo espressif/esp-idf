@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (C) 2013 Armink <armink.ztl@gmail.com>
  * All rights reserved.
@@ -143,10 +143,10 @@ eMBErrorCode    eMBMasterTCPInit( USHORT usTCPPort );
  * \brief Release resources used by the protocol stack.
  *
  * This function disables the Modbus Master protocol stack and release all
- * hardware resources. It must only be called when the protocol stack 
- * is disabled. 
+ * hardware resources. It must only be called when the protocol stack
+ * is disabled.
  *
- * \note Note all ports implement this function. A port which wants to 
+ * \note Note all ports implement this function. A port which wants to
  *   get an callback must define the macro MB_PORT_HAS_CLOSE to 1.
  *
  * \return If the resources where released it return eMBErrorCode::MB_ENOERR.
@@ -161,8 +161,8 @@ eMBErrorCode    eMBMasterClose( void );
  * This function enables processing of Modbus Master frames. Enabling the protocol
  * stack is only possible if it is in the disabled state.
  *
- * \return If the protocol stack is now in the state enabled it returns 
- *   eMBErrorCode::MB_ENOERR. If it was not in the disabled state it 
+ * \return If the protocol stack is now in the state enabled it returns
+ *   eMBErrorCode::MB_ENOERR. If it was not in the disabled state it
  *   return eMBErrorCode::MB_EILLSTATE.
  */
 eMBErrorCode    eMBMasterEnable( void );
@@ -172,7 +172,7 @@ eMBErrorCode    eMBMasterEnable( void );
  *
  * This function disables processing of Modbus frames.
  *
- * \return If the protocol stack has been disabled it returns 
+ * \return If the protocol stack has been disabled it returns
  *  eMBErrorCode::MB_ENOERR. If it was not in the enabled state it returns
  *  eMBErrorCode::MB_EILLSTATE.
  */
@@ -184,10 +184,10 @@ eMBErrorCode    eMBMasterDisable( void );
  * This function must be called periodically. The timer interval required
  * is given by the application dependent Modbus slave timeout. Internally the
  * function calls xMBMasterPortEventGet() and waits for an event from the receiver or
- * transmitter state machines. 
+ * transmitter state machines.
  *
  * \return If the protocol stack is not in the enabled state the function
- *   returns eMBErrorCode::MB_EILLSTATE. Otherwise it returns 
+ *   returns eMBErrorCode::MB_EILLSTATE. Otherwise it returns
  *   eMBErrorCode::MB_ENOERR.
  */
 eMBErrorCode    eMBMasterPoll( void );

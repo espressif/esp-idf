@@ -715,5 +715,3 @@ esp_err_t esp_ble_mesh_register_sensor_server_callback(esp_ble_mesh_sensor_serve
 #endif
 
 #endif /* _ESP_BLE_MESH_SENSOR_MODEL_API_H_ */
-
-

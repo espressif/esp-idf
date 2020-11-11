@@ -161,7 +161,7 @@ esp_noti_attr_list_t p_attr[8] = {
 
 };
 
-/* 
+/*
     | CommandID(1 Byte) | NotificationUID(4 Bytes) | AttributeIDs |
 */
 
@@ -238,7 +238,7 @@ static void periodic_timer_callback(void* arg)
         esp_receive_apple_data_source(data_buffer.buffer, data_buffer.len);
         memset(data_buffer.buffer, 0, data_buffer.len);
         data_buffer.len = 0;
-    } 
+    }
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -405,7 +405,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
                         for (int i = 0; i < count; i ++) {
                             if (char_elem_result[i].uuid.len == ESP_UUID_LEN_128) {
-                                if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY 
+                                if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY
                                     && memcmp(char_elem_result[i].uuid.uuid.uuid128, notification_source, 16) == 0) {
                                     gl_profile_tab[PROFILE_A_APP_ID].notification_source_handle = char_elem_result[i].char_handle;
                                     esp_ble_gattc_register_for_notify (gattc_if,
@@ -413,7 +413,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                        char_elem_result[i].char_handle);
                                     ESP_LOGI(BLE_ANCS_TAG, "Find Apple noticification source char");
 
-                                } else if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY 
+                                } else if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY
                                             && memcmp(char_elem_result[i].uuid.uuid.uuid128, data_source, 16) == 0) {
                                     gl_profile_tab[PROFILE_A_APP_ID].data_source_handle = char_elem_result[i].char_handle;
                                     esp_ble_gattc_register_for_notify (gattc_if,
@@ -421,7 +421,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                        char_elem_result[i].char_handle);
                                     ESP_LOGI(BLE_ANCS_TAG, "Find Apple data source char");
 
-                                } else if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_WRITE 
+                                } else if (char_elem_result[i].properties & ESP_GATT_CHAR_PROP_BIT_WRITE
                                             && memcmp(char_elem_result[i].uuid.uuid.uuid128, control_point, 16) == 0) {
                                     gl_profile_tab[PROFILE_A_APP_ID].contol_point_handle = char_elem_result[i].char_handle;
                                     ESP_LOGI(BLE_ANCS_TAG, "Find Apple control point char");
@@ -503,7 +503,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 //get more information
                 ESP_LOGI(BLE_ANCS_TAG, "Get detailed information");
                 esp_get_notification_attributes(notificationUID, sizeof(p_attr)/sizeof(esp_noti_attr_list_t), p_attr);
-             } 
+             }
         } else if (param->notify.handle == gl_profile_tab[PROFILE_A_APP_ID].data_source_handle) {
             memcpy(&data_buffer.buffer[data_buffer.len], param->notify.value, param->notify.value_len);
             data_buffer.len += param->notify.value_len;
@@ -514,7 +514,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 esp_timer_stop(periodic_timer);
                 esp_receive_apple_data_source(data_buffer.buffer, data_buffer.len);
                 memset(data_buffer.buffer, 0, data_buffer.len);
-                data_buffer.len = 0;    
+                data_buffer.len = 0;
             }
         } else {
             ESP_LOGI(BLE_ANCS_TAG, "unknown handle, receive notify value:");
@@ -683,6 +683,3 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 }
-
-
-

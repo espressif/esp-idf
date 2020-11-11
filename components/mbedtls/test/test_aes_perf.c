@@ -139,5 +139,3 @@ TEST_CASE("mbedtls AES GCM performance", "[aes]")
     TEST_PERFORMANCE_GREATER_THAN(AES_GCM_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
-
-

@@ -2600,5 +2600,3 @@
 
 
 #endif /*_SOC_RMT_REG_H_ */
-
-

@@ -17,7 +17,7 @@ typedef struct {
     bool produce_isr;
 }test_context;
 
-static void producer_task(void *arg) 
+static void producer_task(void *arg)
 {
     test_context *tc  = arg;
     uint8_t produced = 0;
@@ -50,9 +50,9 @@ static void receiver_task(void *arg)
     printf("Starting receiver task... \n");
 
     for(;;){
-         uint8_t read_byte = 0xFF; 
+         uint8_t read_byte = 0xFF;
          uint32_t result = xStreamBufferReceive(tc->sb, &read_byte, 1, 1000);
-         
+
          if((read_byte != expected_consumed) || !result) {
             tc->receive_fail = true;
             xSemaphoreGive(tc->end_test);
@@ -77,7 +77,7 @@ TEST_CASE("Send-receive stream buffer test", "[freertos]")
 
     tc.sb = xStreamBufferCreate(128, 1);
     tc.end_test = xSemaphoreCreateBinary();
-    
+
     TEST_ASSERT(tc.sb);
     TEST_ASSERT(tc.end_test);
 

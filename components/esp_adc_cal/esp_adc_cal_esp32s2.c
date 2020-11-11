@@ -290,4 +290,3 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
     *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
     return ESP_OK;
 }
-

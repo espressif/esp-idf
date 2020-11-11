@@ -402,7 +402,7 @@ static U8 *_EncodeStr(U8 *pPayload, const char *pText, unsigned int Limit) {
   // Write Len
   //
   if (Len < 255)  {
-    *pPayload++ = Len; 
+    *pPayload++ = Len;
   } else {
     *pPayload++ = 255;
     *pPayload++ = (Len & 255);
@@ -556,7 +556,7 @@ static int _TrySendOverflowPacket(void) {
 *       _SendSyncInfo()
 *
 *  Function description
-*    Send SystemView sync packet and system information in 
+*    Send SystemView sync packet and system information in
 *    post mortem mode.
 *
 *  Additional information
@@ -792,7 +792,7 @@ static void _VPrintHost(const char* s, U32 Options, va_list* pParamList) {
   U32 aParas[SEGGER_SYSVIEW_MAX_ARGUMENTS];
   U32 NumArguments;
   const char* p;
-  
+
   p = s;
   NumArguments = 0;
   while (*p) {

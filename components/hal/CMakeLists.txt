@@ -33,7 +33,7 @@ if(NOT BOOTLOADER_BUILD)
                 "twai_hal.c"
                 "twai_hal_iram.c"
                 "interrupt_controller_hal.c"
-		 "sha_hal.c"
+                "sha_hal.c"
                 "${target}/interrupt_descriptor_table.c")
 
     if(${target} STREQUAL "esp32")
@@ -76,5 +76,3 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc
                        LDFRAGMENTS linker.lf)
-
-

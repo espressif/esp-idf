@@ -10,4 +10,3 @@ EXTRA_COMPONENT_DIRS += $(IDF_PATH)/examples/wifi/iperf/components
 
 
 include $(IDF_PATH)/make/project.mk
-

@@ -20,7 +20,7 @@ end;
 { If IDF_TOOLS_PATH is set in the environment,
   set the default installation directory accordingly.
   Note: here we read IDF_TOOLS_PATH using GetEnv rather than
-  by getting it from registry, in case the user has set 
+  by getting it from registry, in case the user has set
   IDF_TOOLS_PATH as a system environment variable manually. }
 <event('InitializeWizard')>
 procedure UpdateInstallDir();
@@ -124,7 +124,7 @@ begin
   begin
     CreateIDFCommandPromptShortcut('{autostartmenu}\Programs\ESP-IDF');
   end;
-   
+
   if WizardIsTaskSelected('createdsk') then
   begin
     CreateIDFCommandPromptShortcut('{autodesktop}');
@@ -133,7 +133,7 @@ begin
   if WizardIsTaskSelected('wdexcl') then
   begin
     RegisterIDFToolsExecutablesInWD();
-  end;	
+  end;
 
   except
     SetupAborted := True;

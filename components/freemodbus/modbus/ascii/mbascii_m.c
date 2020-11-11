@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (c) 2006 Christian Walter <wolti@sil.at>
  * All rights reserved.
@@ -108,7 +108,7 @@ eMBErrorCode
 eMBMasterASCIIInit( UCHAR ucPort, ULONG ulBaudRate, eMBParity eParity )
 {
     eMBErrorCode    eStatus = MB_ENOERR;
-    
+
     ENTER_CRITICAL_SECTION(  );
     ucMBLFCharacter = MB_ASCII_DEFAULT_LF;
 
@@ -237,14 +237,14 @@ xMBMasterASCIIReceiveFSM( void )
     case STATE_M_RX_INIT:
         vMBMasterPortTimersT35Enable( );
         break;
-    
+
          /* In the error state we wait until all characters in the
          * damaged frame are transmitted.
          */
     case STATE_M_RX_ERROR:
         vMBMasterPortTimersRespondTimeoutEnable( );
         break;
-    
+
         /* In the idle state we wait for a new character. If a character
          * is received the t1.5 and t3.5 timers are started and the
          * receiver is in the state STATE_RX_RECEIVE and disable early
@@ -254,7 +254,7 @@ xMBMasterASCIIReceiveFSM( void )
         /* Waiting for the start of frame character during respond timeout */
         vMBMasterPortTimersRespondTimeoutEnable(  );
         if( ucByte == ':' )
-        {           
+        {
             /* Reset the input buffers to store the frame in receive state. */
             usMasterRcvBufferPos = 0;
             eBytePos = BYTE_HIGH_NIBBLE;
@@ -358,19 +358,19 @@ xMBMasterASCIITransmitFSM( void )
     BOOL            xFrameIsBroadcast = FALSE;
 
     assert( eRcvState == STATE_M_RX_IDLE );
-    
+
     switch ( eSndState )
     {
          /* We should not get a transmitter event if the transmitter is in
           * idle state.  */
     case STATE_M_TX_XFWR:
-        break;    
-            
+        break;
+
          /* We should not get a transmitter event if the transmitter is in
           * idle state.  */
     case STATE_M_TX_IDLE:
         break;
-        
+
         /* Start of transmission. The start of a frame is defined by sending
          * the character ':'. */
     case STATE_M_TX_START:
@@ -446,22 +446,22 @@ BOOL
 xMBMasterASCIITimerT1SExpired( void )
 {
     BOOL xNeedPoll = FALSE;
-    
+
     switch ( eRcvState )
     {
         /* Timer t35 expired. Startup phase is finished. */
     case STATE_M_RX_INIT:
         xNeedPoll = xMBMasterPortEventPost(EV_MASTER_READY);
         ESP_EARLY_LOGI("xMBMasterASCIITimerT1SExpired", "RX_INIT_EXPIRED");
-        break;    
-        
+        break;
+
         /* Start of message is not received during respond timeout.
          * Process error. */
     case STATE_M_RX_IDLE:
         eRcvState = STATE_M_RX_ERROR;
         break;
-    
-        /* A recieve timeout expired and no any new character received.  
+
+        /* A recieve timeout expired and no any new character received.
          * Wait for respond time and go to error state to inform listener about error */
     case STATE_M_RX_RCV:
         eRcvState = STATE_M_RX_ERROR;
@@ -472,7 +472,7 @@ xMBMasterASCIITimerT1SExpired( void )
         vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
         xNeedPoll = xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
         break;
-        
+
         /* If we have a timeout we go back to the idle state and wait for
          * the next frame.
          */
@@ -485,7 +485,7 @@ xMBMasterASCIITimerT1SExpired( void )
         break;
     }
     eRcvState = STATE_M_RX_IDLE;
-    
+
     switch (eSndState)
     {
         /* A frame was send finish and convert delay or respond timeout expired.
@@ -497,11 +497,11 @@ xMBMasterASCIITimerT1SExpired( void )
             xNeedPoll = xMBMasterPortEventPost(EV_MASTER_ERROR_PROCESS);
         }
         break;
-        
+
         /* Function called in an illegal state. */
-    default:      
+    default:
         assert( ( eSndState == STATE_M_TX_START ) || ( eSndState == STATE_M_TX_IDLE )
-                || ( eSndState == STATE_M_TX_DATA ) || ( eSndState == STATE_M_TX_END ) 
+                || ( eSndState == STATE_M_TX_DATA ) || ( eSndState == STATE_M_TX_END )
                 || ( eSndState == STATE_M_TX_NOTIFY ) );
         break;
     }
@@ -512,9 +512,9 @@ xMBMasterASCIITimerT1SExpired( void )
     if (xMBMasterGetCurTimerMode() == MB_TMODE_CONVERT_DELAY) {
         xNeedPoll = xMBMasterPortEventPost( EV_MASTER_EXECUTE );
     }
-    
+
     vMBMasterPortTimersDisable(  );
-    
+
     /* no context switch required. */
     return xNeedPoll;
 }

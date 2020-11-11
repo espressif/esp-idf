@@ -77,7 +77,7 @@
 
 #define MB_MDNS_INSTANCE(pref) pref"mb_master_tcp"
 
-// Enumeration of modbus device addresses accessed by master device 
+// Enumeration of modbus device addresses accessed by master device
 // Each address in the table is a index of TCP slave ip address in mb_communication_info_t::tcp_ip_addr table
 enum {
     MB_DEVICE_ADDR1 = 1, // Slave address 1
@@ -432,12 +432,12 @@ static void master_operation_func(void *arg)
     float value = 0;
     bool alarm_state = false;
     const mb_parameter_descriptor_t* param_descriptor = NULL;
-    
+
     ESP_LOGI(MASTER_TAG, "Start modbus test...");
-    
+
     for(uint16_t retry = 0; retry <= MASTER_MAX_RETRY && (!alarm_state); retry++) {
         // Read all found characteristics from slave(s)
-        for (uint16_t cid = 0; (err != ESP_ERR_NOT_FOUND) && cid < MASTER_MAX_CIDS; cid++) 
+        for (uint16_t cid = 0; (err != ESP_ERR_NOT_FOUND) && cid < MASTER_MAX_CIDS; cid++)
         {
             // Get data from parameters description table
             // and use this information to fill the characteristics description table
@@ -447,7 +447,7 @@ static void master_operation_func(void *arg)
                 void* temp_data_ptr = master_get_param_data(param_descriptor);
                 assert(temp_data_ptr);
                 uint8_t type = 0;
-                err = mbc_master_get_parameter(cid, (char*)param_descriptor->param_key, 
+                err = mbc_master_get_parameter(cid, (char*)param_descriptor->param_key,
                                                     (uint8_t*)&value, &type);
                 if (err == ESP_OK) {
                     *(float*)temp_data_ptr = value;
@@ -455,9 +455,9 @@ static void master_operation_func(void *arg)
                         (param_descriptor->mb_param_type == MB_PARAM_INPUT)) {
                         ESP_LOGI(MASTER_TAG, "Characteristic #%d %s (%s) value = %f (0x%x) read successful.",
                                         param_descriptor->cid,
-                                        (char*)param_descriptor->param_key, 
+                                        (char*)param_descriptor->param_key,
                                         (char*)param_descriptor->param_units,
-                                        value, 
+                                        value,
                                         *(uint32_t*)temp_data_ptr);
                         if (((value > param_descriptor->param_opts.max) ||
                             (value < param_descriptor->param_opts.min))) {
@@ -469,7 +469,7 @@ static void master_operation_func(void *arg)
                         const char* rw_str = (state & param_descriptor->param_opts.opt1) ? "ON" : "OFF";
                         ESP_LOGI(MASTER_TAG, "Characteristic #%d %s (%s) value = %s (0x%x) read successful.",
                                         param_descriptor->cid,
-                                        (char*)param_descriptor->param_key, 
+                                        (char*)param_descriptor->param_key,
                                         (char*)param_descriptor->param_units,
                                         (const char*)rw_str,
                                         *(uint16_t*)temp_data_ptr);
@@ -490,8 +490,8 @@ static void master_operation_func(void *arg)
         }
         vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS);
     }
-    
-    if (alarm_state) {   
+
+    if (alarm_state) {
         ESP_LOGI(MASTER_TAG, "Alarm triggered by cid #%d.",
                                         param_descriptor->cid);
     } else {
@@ -591,7 +591,7 @@ void app_main(void)
     // Initialization of device peripheral and objects
     ESP_ERROR_CHECK(master_init());
     vTaskDelay(10);
-    
+
     master_operation_func(NULL);
 #if CONFIG_MB_MDNS_IP_RESOLVER
     master_destroy_slave_list(slave_ip_address_table);

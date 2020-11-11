@@ -6,4 +6,3 @@
 PROJECT_NAME := ulp-adc-example
 
 include $(IDF_PATH)/make/project.mk
-

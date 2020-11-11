@@ -300,7 +300,7 @@ void BTA_AgSetCodec(UINT16 handle, tBTA_AG_PEER_CODEC codec)
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
 /************************************************************************************************
  * Function        BTA_AgCiData
- * 
+ *
  * Description      Trigger the lower-layer to fetch and send audio data. This function is only
  *                  only used in the case that Voice Over HCI is enabled. Precondition is that
  *                  the HFP audio connection is connected. After this function is called, lower

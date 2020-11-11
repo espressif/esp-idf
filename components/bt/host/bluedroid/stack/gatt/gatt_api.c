@@ -1636,4 +1636,3 @@ BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr)
 }
 
 #endif
-

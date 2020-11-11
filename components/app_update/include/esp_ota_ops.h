@@ -50,7 +50,7 @@ typedef uint32_t esp_ota_handle_t;
 
 /**
  * @brief   Return esp_app_desc structure. This structure includes app version.
- * 
+ *
  * Return description for running app.
  * @return Pointer to esp_app_desc structure.
  */
@@ -225,7 +225,7 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
 
 /**
  * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
- * 
+ *
  * Returns a description for the requested app partition.
  * @param[in] partition     Pointer to app partition. (only app partition)
  * @param[out] app_desc     Structure of info about app.

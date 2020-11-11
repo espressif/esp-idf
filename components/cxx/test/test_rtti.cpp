@@ -93,4 +93,3 @@ TEST_CASE("typeid on nullptr throws bad_typeid", "[cxx]")
 
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 #endif // CONFIG_COMPILER_CXX_RTTI
-

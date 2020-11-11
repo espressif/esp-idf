@@ -8,4 +8,3 @@ EXTRA_COMPONENT_DIRS += ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_c
 PROJECT_NAME := sensor_mcp9808
 
 include $(IDF_PATH)/make/project.mk
-

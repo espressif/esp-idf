@@ -2194,4 +2194,3 @@ void bta_gattc_cache_reset(BD_ADDR server_bda)
 
 //#endif /* GATTC_CACHE_NVS */
 #endif /* BTA_GATT_INCLUDED */
-

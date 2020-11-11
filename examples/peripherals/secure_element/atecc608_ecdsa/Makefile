@@ -6,4 +6,3 @@
 PROJECT_NAME := atecc608a_ecdsa
 
 include $(IDF_PATH)/make/project.mk
-

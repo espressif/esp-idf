@@ -101,7 +101,7 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
     }
 
 app_multiple_handle_fail:
-    close(sock); 
+    close(sock);
 }
 
 static void app_connection_task(void *pvParameters)
@@ -129,7 +129,7 @@ static void app_connection_task(void *pvParameters)
 
         /* Connect the host using the corresponding network interface */
         app_multiple_handle(&ip4_addr, netif);
-        
+
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     ESP_LOGE(TAG, "%s with netif desc:%s Failed! exiting", __func__, netif_desc);

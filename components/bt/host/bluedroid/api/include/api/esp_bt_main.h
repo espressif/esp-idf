@@ -37,7 +37,7 @@ typedef enum {
  *
  */
 esp_bluedroid_status_t esp_bluedroid_get_status(void);
-    
+
 /**
  * @brief     Enable bluetooth, must after esp_bluedroid_init()
  *

@@ -440,7 +440,7 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
 
     TEST_ESP_OK( adc_check_patt_table(adc, adc_test_num, adc_list[adc_test_num - 1]) );
     adc_dma_data_multi_st_check(adc, (void *)dma_addr, int_mask);
-    
+
     adc_dac_dma_linker_deinit();
     adc_dac_dma_isr_deregister(adc_dma_isr, NULL);
     TEST_ESP_OK( adc_digi_deinit() );

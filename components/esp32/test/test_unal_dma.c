@@ -196,4 +196,3 @@ TEST_CASE("Unaligned DMA test (needs I2S)", "[hw][ignore]")
     dmaMemcpy(src, dest + 1, 2048 + 2);
     TEST_ASSERT(mymemcmp(src, dest + 1, 2048) == 0);
 }
-

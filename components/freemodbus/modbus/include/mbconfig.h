@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (c) 2006 Christian Walter <wolti@sil.at>
  * All rights reserved.
@@ -90,7 +90,7 @@ PR_BEGIN_EXTERN_C
  * MB_ASCII_TIMEOUT_WAIT_BEFORE_SEND_MS to allow for a delay before
  * the serial transmitter is enabled. This is required because some
  * targets are so fast that there is no time between receiving and
- * transmitting the frame. If the master is to slow with enabling its 
+ * transmitting the frame. If the master is to slow with enabling its
  * receiver then he will not receive the response correctly.
  */
 #ifndef MB_ASCII_TIMEOUT_WAIT_BEFORE_SEND_MS

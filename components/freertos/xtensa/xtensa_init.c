@@ -59,4 +59,3 @@ int xt_clock_freq(void)
 }
 
 #endif /* XT_RTOS_TIMER_INT */
-

@@ -680,7 +680,7 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
     }
 }
 
-static void btc_spp_stop_srv(void) 
+static void btc_spp_stop_srv(void)
 {
     esp_spp_status_t ret = ESP_SPP_SUCCESS;
     do {
@@ -940,7 +940,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_JV_RFCOMM_WRITE_EVT:
-        osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT); 
+        osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         slot = spp_find_slot_by_handle(p_data->rfc_write.handle);
         if (!slot) {
             BTC_TRACE_ERROR("%s unable to find RFCOMM slot!, handle:%d", __func__, p_data->rfc_write.handle);

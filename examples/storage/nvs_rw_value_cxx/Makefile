@@ -6,4 +6,3 @@
 PROJECT_NAME := nvs-rw-value-cxx
 
 include $(IDF_PATH)/make/project.mk
-

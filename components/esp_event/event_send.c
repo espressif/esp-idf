@@ -164,4 +164,3 @@ esp_err_t esp_event_send_internal(esp_event_base_t event_base,
 
     return esp_event_send_legacy(&event);
 }
-

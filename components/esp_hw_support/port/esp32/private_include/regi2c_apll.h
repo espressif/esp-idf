@@ -133,4 +133,3 @@
 #define I2C_APLL_DSDM0        9
 #define I2C_APLL_DSDM0_MSB    7
 #define I2C_APLL_DSDM0_LSB    0
-

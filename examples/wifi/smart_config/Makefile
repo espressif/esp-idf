@@ -6,4 +6,3 @@
 PROJECT_NAME := smart_config
 
 include $(IDF_PATH)/make/project.mk
-

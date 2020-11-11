@@ -369,7 +369,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
-#if defined(CONFIG_PM_ENABLE) 
+#if defined(CONFIG_PM_ENABLE)
     esp_pm_impl_init();
 #endif
 
@@ -395,4 +395,3 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     _Unwind_SetEnableExceptionFdeSorting(0);
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 }
-

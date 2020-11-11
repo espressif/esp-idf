@@ -359,7 +359,7 @@ void gatt_profile_db_init (void)
 
     GATT_TRACE_DEBUG ("gatt_profile_db_init:  handle of service changed%d\n",
                       gatt_cb.handle_of_h_r);
-    
+
     tBT_UUID descr_uuid = {LEN_UUID_16, {GATT_UUID_CHAR_CLIENT_CONFIG}};
     uint8_t ccc_value[2] ={ 0x00, 0x00};
 

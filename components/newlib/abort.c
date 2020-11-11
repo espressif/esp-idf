@@ -23,20 +23,20 @@ void __attribute__((noreturn)) abort(void)
 {
     #define ERR_STR1  "abort() was called at PC 0x"
     #define ERR_STR2  " on core "
-   
+
     _Static_assert(UINTPTR_MAX == 0xffffffff, "abort() assumes 32-bit addresses");
     _Static_assert(SOC_CPU_CORES_NUM < 10, "abort() assumes number of cores is 1 to 9");
-   
+
     char addr_buf[9] = { 0 };
     char core_buf[2] = { 0 };
-   
+
     char buf[sizeof(ERR_STR1) + sizeof(addr_buf) + sizeof(core_buf) + sizeof(ERR_STR2) + 1 /* null char */] = { 0 };
-   
+
     itoa((uint32_t)(__builtin_return_address(0) - 3), addr_buf, 16);
     itoa(cpu_ll_get_core_id(), core_buf, 10);
-   
+
     const char *str[] = { ERR_STR1, addr_buf, ERR_STR2, core_buf };
-   
+
     char *dest = buf;
 
     for (int i = 0; i < sizeof(str) / sizeof(str[0]); i++) {

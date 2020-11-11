@@ -36,12 +36,12 @@
 
 /*******************************************************************************
 **
-** Function         gatt_send_packet 
+** Function         gatt_send_packet
 **
 ** Description      This function is called to send gatt packets directly
 
 **
-** Returns          status 
+** Returns          status
 **
 *******************************************************************************/
 tGATT_STATUS gatt_send_packet (tGATT_TCB *p_tcb, UINT8 *p_data, UINT16 len)
@@ -67,7 +67,7 @@ tGATT_STATUS gatt_send_packet (tGATT_TCB *p_tcb, UINT8 *p_data, UINT16 len)
 
     status = attp_send_sr_msg(p_tcb, p_msg);
     return status;
-} 
+}
 
 /*******************************************************************************
 **
@@ -385,31 +385,31 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     prepare_record = &(p_tcb->prepare_write_record);
     queue_num = fixed_queue_length(prepare_record->queue);
 
-    //if received prepare_write packets include stack_rsp and app_rsp, 
+    //if received prepare_write packets include stack_rsp and app_rsp,
     //stack respond to execute_write only when stack_rsp handle has invalid_offset
-    //or invalid_length error; 
+    //or invalid_length error;
     //app need to respond to execute_write if it has received app_rsp handle packets
-    if (((prepare_record->error_code_app == GATT_SUCCESS) && 
+    if (((prepare_record->error_code_app == GATT_SUCCESS) &&
         (prepare_record->total_num == queue_num))
         || (flag == GATT_PREP_WRITE_CANCEL)){
         tGATT_EXEC_WRITE_RSP gatt_exec_write_rsp;
         gatt_exec_write_rsp.op_code = GATT_RSP_EXEC_WRITE;
-        gatt_send_packet(p_tcb, (UINT8 *)(&gatt_exec_write_rsp), sizeof(gatt_exec_write_rsp)); 
+        gatt_send_packet(p_tcb, (UINT8 *)(&gatt_exec_write_rsp), sizeof(gatt_exec_write_rsp));
         gatt_dequeue_sr_cmd(p_tcb);
         if (flag != GATT_PREP_WRITE_CANCEL){
             is_prepare_write_valid = TRUE;
         }
         GATT_TRACE_DEBUG("Send execute_write_rsp\n");
-    } else if ((prepare_record->error_code_app == GATT_SUCCESS) && 
+    } else if ((prepare_record->error_code_app == GATT_SUCCESS) &&
         (prepare_record->total_num > queue_num)){
-        //No error for stack_rsp's handles and there exist some app_rsp's handles, 
+        //No error for stack_rsp's handles and there exist some app_rsp's handles,
         //so exec_write_rsp depends to app's response; but stack_rsp's data is valid
         //TODO: there exist problem if stack_rsp's data is valid but app_rsp's data is not valid.
         is_prepare_write_valid = TRUE;
     } else if(prepare_record->total_num < queue_num) {
         GATT_TRACE_ERROR("Error in %s, line=%d, prepare write total number (%d) \
                         should not smaller than prepare queue number (%d)\n", \
-                        __func__, __LINE__,prepare_record->total_num, queue_num); 
+                        __func__, __LINE__,prepare_record->total_num, queue_num);
     } else if (prepare_record->error_code_app != GATT_SUCCESS){
         GATT_TRACE_DEBUG("Send error code for execute_write, code=0x%x\n", prepare_record->error_code_app);
         is_need_dequeue_sr_cmd = (prepare_record->total_num == queue_num) ? TRUE : FALSE;
@@ -436,7 +436,7 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     fixed_queue_free(prepare_record->queue, NULL);
     prepare_record->queue = NULL;
 
-    /* according to ble spec, even if there is no prep write queued, 
+    /* according to ble spec, even if there is no prep write queued,
      * need to respond execute_write_response
      * Note: exec_write_rsp callback should be called after all data has been written*/
     if (!gatt_sr_is_prep_cnt_zero(p_tcb)) {
@@ -989,7 +989,7 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
 **                  - discover characteristic by UUID
 **                  - relationship discovery
 **
-** Returns          void 
+** Returns          void
 **
 *******************************************************************************/
 void gatts_process_read_by_type_req(tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, UINT8 *p_data)
@@ -1171,8 +1171,8 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
     if ((op_code == GATT_REQ_WRITE) && (sr_data.write_req.need_rsp == FALSE)){
         if (status == GATT_SUCCESS){
             tGATT_WRITE_REQ_RSP gatt_write_req_rsp;
-            gatt_write_req_rsp.op_code = GATT_RSP_WRITE;                      
-            gatt_send_packet(p_tcb, (UINT8 *)(&gatt_write_req_rsp), sizeof(gatt_write_req_rsp)); 
+            gatt_write_req_rsp.op_code = GATT_RSP_WRITE;
+            gatt_send_packet(p_tcb, (UINT8 *)(&gatt_write_req_rsp), sizeof(gatt_write_req_rsp));
             gatt_dequeue_sr_cmd(p_tcb);
         } else if (status != GATT_PENDING){
             /* note: in case of GATT_BUSY, will respond this application error to remote device */
@@ -1202,11 +1202,11 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     tGATT_ATTR16  *p_attr;
     tGATT_ATTR16  *p_attr_temp;
     tGATTS_DATA     sr_data;
-    UINT32          trans_id = 0; 
+    UINT32          trans_id = 0;
     UINT8           sec_flag, key_size, *p = p_data;
     tGATT_SR_REG    *p_sreg;
     UINT16          conn_id, offset = 0;
-    tGATT_SVC_DB    *p_db; 
+    tGATT_SVC_DB    *p_db;
     BOOLEAN is_need_prepare_write_rsp = FALSE;
     BOOLEAN is_need_queue_data = FALSE;
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
@@ -1251,7 +1251,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                             status = GATT_APP_RSP;
                         } else if (p_attr->p_value != NULL &&
                             offset > p_attr->p_value->attr_val.attr_max_len) {
-                            status = GATT_INVALID_OFFSET; 
+                            status = GATT_INVALID_OFFSET;
                              is_need_prepare_write_rsp = TRUE;
                              is_need_queue_data = TRUE;
                         } else if (p_attr->p_value != NULL &&
@@ -1295,7 +1295,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
         }
     }
-    
+
     if (is_need_prepare_write_rsp){
         //send prepare write response
         if (queue_data != NULL){
@@ -1304,7 +1304,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             tGATT_STATUS rsp_send_status = gatt_send_packet(p_tcb, &(queue_data->op_code), queue_data->len + 5);
             gatt_sr_update_prep_cnt(p_tcb, p_sreg->gatt_if, TRUE, FALSE);
             gatt_dequeue_sr_cmd(p_tcb);
-            
+
             if (rsp_send_status != GATT_SUCCESS){
                 GATT_TRACE_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
                             __func__, __LINE__, rsp_send_status);
@@ -1315,7 +1315,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         }
     }
 
-    if ((status == GATT_APP_RSP) || (is_need_prepare_write_rsp)){ 
+    if ((status == GATT_APP_RSP) || (is_need_prepare_write_rsp)){
         prepare_record->total_num++;
         memset(&sr_data, 0, sizeof(sr_data));
         sr_data.write_req.is_prep = TRUE;
@@ -1329,7 +1329,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         gatt_send_error_rsp(p_tcb, status, GATT_REQ_PREPARE_WRITE, handle, TRUE);
     }
 
-    if ((prepare_record->error_code_app == GATT_SUCCESS) 
+    if ((prepare_record->error_code_app == GATT_SUCCESS)
             && ((status == GATT_INVALID_OFFSET) || (status == GATT_INVALID_ATTR_LEN))){
             prepare_record->error_code_app = status;
     }
@@ -1468,7 +1468,7 @@ void gatts_process_attribute_req (tGATT_TCB *p_tcb, UINT8 op_code,
                         case GATT_SIGN_CMD_WRITE:
                             gatts_process_write_req(p_tcb, i, handle, op_code, len, p);
                             break;
-                        
+
                         case GATT_REQ_PREPARE_WRITE:
                             gatt_attr_process_prepare_write (p_tcb, i, handle, op_code, len, p);
                         default:

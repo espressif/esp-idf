@@ -15,7 +15,19 @@ if(NOT IDF_TARGET)
         "in by the parent build process.")
 endif()
 
-set(COMPONENTS bootloader esptool_py esp_hw_support hal partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
+set(COMPONENTS
+    bootloader
+    esptool_py
+    esp_hw_support
+    hal
+    partition_table
+    soc
+    bootloader_support
+    log
+    spi_flash
+    micro-ecc
+    main
+    efuse)
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req log esp_rom esp_common esp_hw_support hal xtensa)
@@ -87,7 +99,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         DEPENDS gen_secure_bootloader_key gen_project_binary
         VERBATIM)
 
-    add_custom_target (gen_bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
+    add_custom_target(gen_bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
 endif()
 
 if(CONFIG_SECURE_BOOT_V2_ENABLED)
@@ -105,12 +117,14 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
 
         set(bootloader_unsigned_bin "bootloader-unsigned.bin")
         add_custom_command(OUTPUT ".signed_bin_timestamp"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+            "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
             COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile "${secure_boot_signing_key}"
             -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
             COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
             "from ${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
-            COMMAND ${CMAKE_COMMAND} -E md5sum "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" > "${CMAKE_BINARY_DIR}/.signed_bin_timestamp"
+            COMMAND ${CMAKE_COMMAND} -E md5sum "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+            > "${CMAKE_BINARY_DIR}/.signed_bin_timestamp"
             DEPENDS "${build_dir}/.bin_timestamp"
             VERBATIM
             COMMENT "Generated the signed Bootloader")
@@ -120,7 +134,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
         COMMENT "Bootloader generated but not signed")
     endif()
 
-    add_custom_target (gen_signed_bootloader ALL DEPENDS "${build_dir}/.signed_bin_timestamp")
+    add_custom_target(gen_signed_bootloader ALL DEPENDS "${build_dir}/.signed_bin_timestamp")
 endif()
 
 if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
@@ -175,7 +189,8 @@ elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_IDF_TARGET_ESP32S2)
     COMMAND ${CMAKE_COMMAND} -E echo
         "To sign the bootloader with additional private keys."
     COMMAND ${CMAKE_COMMAND} -E echo
-        "\t${espsecurepy} sign_data -k secure_boot_signing_key2.pem -v 2 --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
+        "\t${espsecurepy} sign_data -k secure_boot_signing_key2.pem -v 2 \
+--append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "Secure boot enabled, so bootloader not flashed automatically."
     COMMAND ${CMAKE_COMMAND} -E echo

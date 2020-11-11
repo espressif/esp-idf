@@ -24,4 +24,3 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param);
 
 
 #endif /* __BT_APP_HF_H__*/
- 

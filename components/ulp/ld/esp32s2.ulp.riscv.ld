@@ -10,7 +10,7 @@ MEMORY
 SECTIONS
 {
     . = ORIGIN(ram);
-    .text : 
+    .text :
     {
         *(.text)
         *(.text*)
@@ -22,7 +22,7 @@ SECTIONS
         *(.data*)
         *(.sdata)
         *(.sdata*)
-    } > ram 
+    } > ram
 
     .bss ALIGN(4) :
     {

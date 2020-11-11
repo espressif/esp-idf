@@ -135,7 +135,7 @@ static int esp_mbedtls_alloc_tx_buf(mbedtls_ssl_context *ssl, int len)
 
     /**
      * Mark the out_msg offset from ssl->out_buf.
-     * 
+     *
      * In mbedtls, ssl->out_msg = ssl->out_buf + offset;
      */
     ssl->out_msg = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
@@ -198,14 +198,14 @@ int esp_mbedtls_reset_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     /**
      * Mark the in_msg offset from ssl->in_buf.
-     * 
+     *
      * In mbedtls, ssl->in_msg = ssl->in_buf + offset;
      */
     ssl->in_msg = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
 
     init_rx_buffer(ssl, buf);
 
-    return 0;  
+    return 0;
 }
 
 void esp_mbedtls_reset_free_rx_buffer(mbedtls_ssl_context *ssl)
@@ -214,7 +214,7 @@ void esp_mbedtls_reset_free_rx_buffer(mbedtls_ssl_context *ssl)
 
     mbedtls_free(ssl->in_buf);
 
-    init_rx_buffer(ssl, NULL);    
+    init_rx_buffer(ssl, NULL);
 }
 
 int esp_mbedtls_add_tx_buffer(mbedtls_ssl_context *ssl, size_t buffer_len)
@@ -333,7 +333,7 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
         } else {
             ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=-0x%x", -ret);
         }
-        
+
         goto exit;
     }
 
@@ -375,7 +375,7 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 exit:
     ESP_LOGV(TAG, "<-- add rx");
 
-    return ret; 
+    return ret;
 }
 
 int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
@@ -434,7 +434,7 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
     while (cert) {
         bytes += cert->raw.len;
         n++;
-    
+
         cert = cert->next;
     }
 

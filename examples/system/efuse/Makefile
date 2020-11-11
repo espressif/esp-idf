@@ -6,4 +6,3 @@
 PROJECT_NAME := efuse
 
 include $(IDF_PATH)/make/project.mk
-

@@ -342,4 +342,3 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
 }
 
 #endif // CONFIG_SPIRAM
-

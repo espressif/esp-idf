@@ -691,4 +691,3 @@ extern void bta_av_reg_vdp (tAVDT_CS *p_cs, char *p_service_name, void *p_data);
 #endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_INT_H */
-

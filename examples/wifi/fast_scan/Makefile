@@ -6,4 +6,3 @@
 PROJECT_NAME := fast_scan
 
 include $(IDF_PATH)/make/project.mk
-

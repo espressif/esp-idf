@@ -7,4 +7,3 @@ COMPONENT_OBJEXCLUDE += ./spi_slave_hd_hal.o ./spi_flash_hal_gpspi.o ./spi_slave
 ifndef CONFIG_ETH_USE_ESP32_EMAC
     COMPONENT_OBJEXCLUDE += esp32/emac_hal.o
 endif
-

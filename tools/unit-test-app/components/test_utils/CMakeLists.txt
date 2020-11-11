@@ -7,5 +7,3 @@ idf_component_register(SRCS "ccomp_timer.c"
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES spi_flash idf_test cmock
                     PRIV_REQUIRES perfmon esp_ipc)
-
-

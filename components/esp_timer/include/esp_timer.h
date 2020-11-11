@@ -229,4 +229,3 @@ esp_err_t esp_timer_dump(FILE* stream);
 #ifdef __cplusplus
 }
 #endif
-

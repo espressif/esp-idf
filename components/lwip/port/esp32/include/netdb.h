@@ -35,7 +35,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
 #ifdef ESP_PLATFORM
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
                 char *host, socklen_t hostlen,

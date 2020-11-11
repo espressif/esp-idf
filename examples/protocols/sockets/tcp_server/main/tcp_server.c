@@ -44,7 +44,7 @@ static void do_retransmit(const int sock)
             ESP_LOGI(TAG, "Received %d bytes: %s", len, rx_buffer);
 
             // send() can return less bytes than supplied length.
-            // Walk-around for robust implementation. 
+            // Walk-around for robust implementation.
             int to_write = len;
             while (to_write > 0) {
                 int written = send(sock, rx_buffer + (len - to_write), to_write, 0);

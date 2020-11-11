@@ -168,10 +168,10 @@ void app_main(void)
     void* mbc_slave_handler = NULL;
 
     ESP_ERROR_CHECK(mbc_slave_init_tcp(&mbc_slave_handler)); // Initialization of Modbus controller
-    
+
     mb_param_info_t reg_info; // keeps the Modbus registers access information
     mb_register_area_descriptor_t reg_area; // Modbus register area descriptor structure
-    
+
     mb_communication_info_t comm_info = { 0 };
     comm_info.ip_port = MB_TCP_PORT_NUMBER;
 #if !CONFIG_EXAMPLE_CONNECT_IPV6

@@ -485,7 +485,7 @@ extern "C" {
 #define DPORT_BT_RST (BIT(3))
 #define DPORT_MAC_RST (BIT(2))
 #define DPORT_FE_RST (BIT(1))
-#define DPORT_BB_RST (BIT(0))  
+#define DPORT_BB_RST (BIT(0))
 
 #define SYSCON_FRONT_END_MEM_PD_REG          (DR_REG_SYSCON_BASE + 0x098)
 /* SYSCON_DC_MEM_FORCE_PD : R/W ;bitpos:[5] ;default: 1'b0 ; */
@@ -540,5 +540,3 @@ extern "C" {
 
 
 #endif /*_SOC_SYSCON_REG_H_ */
-
-

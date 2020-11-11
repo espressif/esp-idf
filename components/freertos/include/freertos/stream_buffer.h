@@ -174,7 +174,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *       // Defines the memory that will actually hold the streams within the stream
  *       // buffer.
  *       static uint8_t ucStorageBuffer[ STORAGE_SIZE_BYTES ];
- * 
+ *
  *       // The variable used to hold the stream buffer structure.
  *       StaticStreamBuffer_t xStreamBufferStruct;
  *
@@ -187,7 +187,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *                                                      xTriggerLevel,
  *                                                      ucBufferStorage,
  *                                                      &xStreamBufferStruct );
- *  
+ *
  *           // As neither the pucStreamBufferStorageArea or pxStaticStreamBuffer
  *           // parameters were NULL, xStreamBuffer will not be NULL, and can be used to
  *           // reference the created stream buffer in other stream buffer API calls.
@@ -359,7 +359,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  *           // There was not enough free space in the stream buffer for the entire
  *           // string to be written, ut xBytesSent bytes were written.
  *       }
- * 
+ *
  *       // If xHigherPriorityTaskWoken was set to pdTRUE inside
  *       // xStreamBufferSendFromISR() then a task that has a priority above the
  *       // priority of the currently executing task was unblocked and a context

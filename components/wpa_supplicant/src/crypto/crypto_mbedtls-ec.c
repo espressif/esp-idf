@@ -976,10 +976,10 @@ int crypto_ec_write_pub_key(struct crypto_key *key, unsigned char **key_buf)
 	if (len <= 0)
 		return 0;
 
-	*key_buf = os_malloc(len); 
+	*key_buf = os_malloc(len);
 	if (!*key_buf) {
 		wpa_printf(MSG_ERROR, "%s: memory allocation failed\n", __func__);
-		return 0; 
+		return 0;
 	}
 	os_memcpy(*key_buf, output_buf + 1600 - len, len);
 

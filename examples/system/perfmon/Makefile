@@ -6,4 +6,3 @@
 PROJECT_NAME := perfmon_example
 
 include $(IDF_PATH)/make/project.mk
-

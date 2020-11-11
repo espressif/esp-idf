@@ -6,4 +6,3 @@
 PROJECT_NAME := cpp_rtti
 
 include $(IDF_PATH)/make/project.mk
-

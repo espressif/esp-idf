@@ -109,4 +109,3 @@ void ble_mesh_register_server_operation(void)
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&msg_publish_cmd));
 }
-

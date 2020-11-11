@@ -596,7 +596,7 @@ void BTA_GATTS_SendServiceChangeIndication(tBTA_GATTS_IF server_if, BD_ADDR remo
         p_buf->hdr.event = BTA_GATTS_API_SEND_SERVICE_CHANGE_EVT;
         p_buf->server_if = server_if;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
-        
+
         bta_sys_sendmsg(p_buf);
     }
     return;

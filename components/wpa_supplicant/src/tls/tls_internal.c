@@ -394,7 +394,7 @@ struct wpabuf * tls_connection_handshake2(void *tls_ctx,
 			*appl_data = NULL;
 	} else
 		os_free(ad);
-    
+
 	return out;
 #else /* CONFIG_TLS_INTERNAL_CLIENT */
 	return NULL;

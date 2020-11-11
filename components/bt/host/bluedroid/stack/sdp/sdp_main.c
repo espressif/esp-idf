@@ -706,6 +706,3 @@ void sdp_conn_timeout (tCONN_CB *p_ccb)
 }
 
 #endif  ///SDP_INCLUDED == TRUE
-
-
-

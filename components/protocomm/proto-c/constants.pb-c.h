@@ -21,7 +21,7 @@ PROTOBUF_C__BEGIN_DECLS
 
 /*
  * Allowed values for the status
- * of a protocomm instance 
+ * of a protocomm instance
  */
 typedef enum _Status {
   STATUS__Success = 0,

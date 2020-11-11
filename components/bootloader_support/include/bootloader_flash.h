@@ -27,4 +27,3 @@
  */
 esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode);
 #endif
-

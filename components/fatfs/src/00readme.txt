@@ -18,4 +18,3 @@ FILES
   module is only a generic file system layer and it does not depend on any specific
   storage device. You need to provide a low level disk I/O module written to
   control the storage device that attached to the target system.
-

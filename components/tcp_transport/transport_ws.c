@@ -599,4 +599,3 @@ int esp_transport_ws_poll_connection_closed(esp_transport_handle_t t, int timeou
     return ret;
 
 }
-

@@ -135,4 +135,3 @@ extern "C" {
 #endif
 
 #endif /*_XTENSA_CORE_TIE_ASM_H*/
-

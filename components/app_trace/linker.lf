@@ -1,6 +1,6 @@
 [mapping:app_trace]
 archive: libapp_trace.a
-entries: 
+entries:
     app_trace (noflash)
     app_trace_util (noflash)
     SEGGER_SYSVIEW (noflash)

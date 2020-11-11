@@ -342,4 +342,3 @@ component_project_vars.mk:: # no need to add variables via component.mk
 	@echo '# COMPONENT_CONFIG_ONLY target sets no variables here' > $@
 
 endif  # COMPONENT_CONFIG_ONLY
-

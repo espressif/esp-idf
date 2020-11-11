@@ -155,7 +155,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 // Fix failure on ESP32 when running alone; passes when the previous test is run before this one
-TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]") 
+TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 {
 #if CONFIG_IDF_TARGET_ESP32
     assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");

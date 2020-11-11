@@ -31,7 +31,7 @@ newlib:
 	xtensa-esp108-elf-ar d lib/libc_rom.a lib_a-nano-vfprintf_float.o
 	xtensa-esp108-elf-ar d lib/libc_rom.a lib_a-nano-vfscanf_float.o
 	while read obj; do xtensa-esp108-elf-ar d lib/libc.a $$obj; done <libc_discard.list
-	
+
 
 clean:
 	rm -rf newlib_xtensa-2.2.0 .build include lib

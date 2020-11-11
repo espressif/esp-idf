@@ -486,4 +486,3 @@ BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg)
     }
     return TRUE;
 }
-

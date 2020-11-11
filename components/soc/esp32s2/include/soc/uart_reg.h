@@ -1108,5 +1108,3 @@ extern "C" {
 
 
 #endif /*_SOC_UART_REG_H_ */
-
-

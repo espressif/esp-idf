@@ -201,7 +201,7 @@ static void button_gpio_isr_handler(void* arg)
             #if !USE_ESP_TIMER
             xTimerStopFromISR(btn->tap_psh_cb.tmr, &HPTaskAwoken);
             xTimerResetFromISR(btn->tap_psh_cb.tmr, &HPTaskAwoken);
-            #else 
+            #else
             esp_timer_stop(btn->tap_psh_cb.tmr);
             esp_timer_start_once(btn->tap_psh_cb.tmr, btn->tap_psh_cb.interval * portTICK_PERIOD_MS * 1000);
             #endif

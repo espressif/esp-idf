@@ -21,7 +21,7 @@ size_t convert_chip_size_string(const char* chip_size_str)
     }
     else if (strcmp(chip_size_str, "2MB") == 0) {
         size = 0x200000;
-    } 
+    }
     else if (strcmp(chip_size_str, "4MB") == 0) {
         size = 0x400000;
     }

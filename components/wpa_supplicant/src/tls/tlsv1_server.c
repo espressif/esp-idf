@@ -191,7 +191,7 @@ failed:
  * @in_data: Pointer to plaintext data to be encrypted
  * @in_len: Input buffer length
  * @out_data: Pointer to output buffer (encrypted TLS data)
- * @out_len: Maximum out_data length 
+ * @out_len: Maximum out_data length
  * Returns: Number of bytes written to out_data, -1 on failure
  *
  * This function is used after TLS handshake has been completed successfully to
@@ -463,7 +463,7 @@ int tlsv1_server_prf(struct tlsv1_server *conn, const char *label,
 int tlsv1_server_get_cipher(struct tlsv1_server *conn, char *buf,
 			    size_t buflen)
 {
-#ifndef ESPRESSIF_USE	
+#ifndef ESPRESSIF_USE
     char *cipher;
 
 	switch (conn->rl.cipher_suite) {

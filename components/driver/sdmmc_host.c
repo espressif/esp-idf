@@ -640,4 +640,3 @@ esp_err_t sdmmc_host_pullup_en(int slot, int width)
     }
     return ESP_OK;
 }
-

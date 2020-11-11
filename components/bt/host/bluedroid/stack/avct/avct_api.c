@@ -38,7 +38,7 @@
 /* Control block for AVCT */
 #if AVCT_DYNAMIC_MEMORY == FALSE
 tAVCT_CB avct_cb;
-#else 
+#else
 tAVCT_CB *avct_cb_ptr;
 #endif
 

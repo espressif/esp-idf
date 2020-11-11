@@ -32,8 +32,8 @@ extern "C" {
 #endif
 
 #define SPINLOCK_FREE          0xB33FFFFF
-#define SPINLOCK_WAIT_FOREVER  (-1)  
-#define SPINLOCK_NO_WAIT        0  
+#define SPINLOCK_WAIT_FOREVER  (-1)
+#define SPINLOCK_NO_WAIT        0
 #define SPINLOCK_INITIALIZER   {.owner = SPINLOCK_FREE,.count = 0}
 #define CORE_ID_REGVAL_XOR_SWAP (0xCDCD ^ 0xABAB)
 
@@ -67,23 +67,23 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     uint32_t irq_status;
     uint32_t ccount_start;
     uint32_t core_id, other_core_id;
-   
+
     assert(lock);
-    irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);    
- 
+    irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+
     if(timeout != SPINLOCK_WAIT_FOREVER){
-        RSR(CCOUNT, ccount_start);   
+        RSR(CCOUNT, ccount_start);
     }
 
     /*spin until we own a core */
     RSR(PRID, core_id);
 
     /* Note: coreID is the full 32 bit core ID (CORE_ID_REGVAL_PRO/CORE_ID_REGVAL_APP) */
-    
+
     other_core_id = CORE_ID_REGVAL_XOR_SWAP ^ core_id;
     do {
 
-        /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO, 
+        /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO,
          * CORE_ID_REGVAL_APP:
          *  - If SPINLOCK_FREE, we want to atomically set to 'core_id'.
          *  - If "our" core_id, we can drop through immediately.
@@ -115,7 +115,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     }while(1);
 
     /* any other value implies memory corruption or uninitialized mux */
-    assert(result == core_id || result == SPINLOCK_FREE); 
+    assert(result == core_id || result == SPINLOCK_FREE);
     assert((result == SPINLOCK_FREE) == (lock->count == 0)); /* we're first to lock iff count is zero */
     assert(lock->count < 0xFF); /* Bad count value implies memory corruption */
 
@@ -123,9 +123,9 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     XTOS_RESTORE_INTLEVEL(irq_status);
     return true;
 
-#else 
+#else
     return true;
-#endif    
+#endif
 
 }
 
@@ -135,14 +135,14 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
  */
 static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *lock)
 {
-    
+
 #if !CONFIG_FREERTOS_UNICORE
-    uint32_t irq_status;  
+    uint32_t irq_status;
     uint32_t core_id;
 
     assert(lock);
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
-        
+
     RSR(PRID, core_id);
     assert(core_id == lock->owner); // This is a mutex we didn't lock, or it's corrupt
     lock->count--;
@@ -154,7 +154,7 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
     }
 
     XTOS_RESTORE_INTLEVEL(irq_status);
-#endif    
+#endif
 }
 
 #ifdef __cplusplus
@@ -162,4 +162,3 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 #endif
 
 #endif
-

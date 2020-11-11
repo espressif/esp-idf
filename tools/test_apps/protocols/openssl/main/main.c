@@ -20,8 +20,8 @@ static const char *TAG = "OPENSSL_TEST";
 void connection_test(char *line);
 
 static void get_string(char *line, size_t size)
-{ 
-    int count = 0; 
+{
+    int count = 0;
     while (count < size) {
         int c = fgetc(stdin);
         if (c == '\n') {

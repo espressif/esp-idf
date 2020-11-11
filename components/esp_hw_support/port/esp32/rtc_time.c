@@ -167,4 +167,3 @@ void rtc_clk_wait_for_slow_cycle(void)
         esp_rom_delay_us(1);
     }
 }
-

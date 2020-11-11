@@ -164,7 +164,7 @@ typedef struct esp_netif_inherent_config {
     const char * if_key;             /*!< string identifier of the interface */
     const char * if_desc;            /*!< textual description of the interface */
     int route_prio;                  /*!< numeric priority of this interface to become a default
-                                          routing if (if other netifs are up). 
+                                          routing if (if other netifs are up).
                                           A higher value of route_prio indicates
                                           a higher priority */
 } esp_netif_inherent_config_t;

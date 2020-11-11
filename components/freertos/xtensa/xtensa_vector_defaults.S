@@ -161,4 +161,3 @@ _xt_nmi:
     rfi     XCHAL_NMILEVEL
 
 #endif  /* NMI */
-

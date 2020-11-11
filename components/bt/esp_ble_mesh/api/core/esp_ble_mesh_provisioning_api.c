@@ -530,4 +530,3 @@ esp_err_t esp_ble_mesh_set_fast_prov_action(esp_ble_mesh_fast_prov_action_t acti
 }
 
 #endif /* CONFIG_BLE_MESH_FAST_PROV */
-

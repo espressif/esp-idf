@@ -317,5 +317,3 @@ BOOLEAN utl_isdialstr(const char *p_s)
 
     return TRUE;
 }
-
-

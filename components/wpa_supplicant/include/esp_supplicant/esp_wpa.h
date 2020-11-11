@@ -49,7 +49,7 @@ const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs;
 /**
   * @brief     Supplicant initialization
   *
-  * @return    
+  * @return
   *          - ESP_OK : succeed
   *          - ESP_ERR_NO_MEM : out of memory
   */
@@ -58,7 +58,7 @@ esp_err_t esp_supplicant_init(void);
 /**
   * @brief     Supplicant deinitialization
   *
-  * @return    
+  * @return
   *          - ESP_OK : succeed
   *          - others: failed
   */

@@ -458,4 +458,3 @@ TEST_CASE("can use ADC in deep sleep", "[ulp][ignore]")
     esp_sleep_enable_timer_wakeup(4000000);
     esp_deep_sleep_start();
 }
-

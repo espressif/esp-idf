@@ -153,13 +153,13 @@ public:
 
     /**
      * @brief constructor of CButton
-     * 
+     *
      * @param gpio_num GPIO index of the pin that the button uses
      * @param active_level button hardware active level.
      *        For "BUTTON_ACTIVE_LOW" it means when the button pressed, the GPIO will read low level.
      */
     CButton(gpio_num_t gpio_num, button_active_t active_level = BUTTON_ACTIVE_LOW);
-    
+
     ~CButton();
 
     /**

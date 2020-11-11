@@ -68,4 +68,3 @@ vMBMasterPortClose( void )
     vMBMasterPortTimerClose(  );
     vMBMasterPortEventClose(  );
 }
-

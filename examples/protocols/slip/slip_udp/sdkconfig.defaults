@@ -1,3 +1,2 @@
 # Override some defaults to enable SLIP
 CONFIG_LWIP_SLIP_SUPPORT=y
-

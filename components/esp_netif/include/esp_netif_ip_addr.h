@@ -105,7 +105,7 @@ typedef struct _ip_addr {
     } u_addr;
     uint8_t type;
 } esp_ip_addr_t;
- 
+
 typedef enum {
     ESP_IP6_ADDR_IS_UNKNOWN,
     ESP_IP6_ADDR_IS_GLOBAL,

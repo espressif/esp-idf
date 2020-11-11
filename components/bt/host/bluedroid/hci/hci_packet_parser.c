@@ -254,4 +254,3 @@ const hci_packet_parser_t *hci_packet_parser_get_interface(void)
 {
     return &interface;
 }
-

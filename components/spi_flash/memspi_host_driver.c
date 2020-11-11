@@ -214,4 +214,3 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
     *align_address = address;
     return MIN(max_len, len);
 }
-

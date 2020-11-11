@@ -65,7 +65,7 @@ tSDP_RECORD *sdp_db_service_search (tSDP_RECORD *p_rec, tSDP_UUID_SEQ *p_seq)
     UINT16          xx, yy;
     tSDP_ATTRIBUTE *p_attr;
     list_node_t *p_node = NULL;
-    
+
     /* If NULL, start at the beginning, else start at the first specified record */
     if (!p_rec) {
 	p_node = list_begin(sdp_cb.server_db.p_record_list);
@@ -82,7 +82,7 @@ tSDP_RECORD *sdp_db_service_search (tSDP_RECORD *p_rec, tSDP_UUID_SEQ *p_seq)
     /* Look through the records. The spec says that a match occurs if */
     /* the record contains all the passed UUIDs in it.                */
     for( ; p_node; p_node = list_next(p_node)) {
-        p_rec = list_node(p_node); 
+        p_rec = list_node(p_node);
         for (yy = 0; yy < p_seq->num_uids; yy++) {
             p_attr = &p_rec->attribute[0];
             for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++) {
@@ -302,7 +302,7 @@ UINT32 SDP_CreateRecord (void)
     	    }
     	    /* Append new record */
     	    list_append(p_db->p_record_list, p_rec);
-    
+
             /* We will use a handle of the first unreserved handle plus last record
             ** number + 1 */
             if (p_db->num_records) {
@@ -310,16 +310,16 @@ UINT32 SDP_CreateRecord (void)
             } else {
                 handle = 0x10000;
             }
-    
+
             p_rec->record_handle = handle;
-    
+
             p_db->num_records++;
             SDP_TRACE_DEBUG("SDP_CreateRecord ok, num_records:%d\n", p_db->num_records);
             /* Add the first attribute (the handle) automatically */
             UINT32_TO_BE_FIELD (buf, handle);
             SDP_AddAttribute (handle, ATTR_ID_SERVICE_RECORD_HDL, UINT_DESC_TYPE,
                               4, buf);
-    
+
             return (p_rec->record_handle);
 	} else {
             SDP_TRACE_ERROR("SDP_CreateRecord fail, memory allocation failed\n");
@@ -367,7 +367,7 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
 	    p_rec = list_node(p_node);
             if (p_rec->record_handle == handle) {
                 /* Found it. Shift everything up one */
-                list_remove(sdp_cb.server_db.p_record_list, p_rec);                
+                list_remove(sdp_cb.server_db.p_record_list, p_rec);
 
                 sdp_cb.server_db.num_records--;
 

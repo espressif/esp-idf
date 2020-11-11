@@ -113,7 +113,7 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
     ESP_COREDUMP_LOGI("Found tasks: %d!", task_num);
 
     // Verifies all tasks in the snapshot
-    
+
     for (task_id = 0; task_id < task_num; task_id++) {
         bool is_current_task = false, stack_is_valid = false;
         bool tcb_is_valid = esp_core_dump_check_task(info, tasks[task_id], &is_current_task, &stack_is_valid);
@@ -201,7 +201,7 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
     if (esp_core_dump_in_isr_context()) {
         hdr.mem_segs_num++; // stack of interrupted task
     }
-    hdr.mem_segs_num += esp_core_dump_get_user_ram_segments(); // stack of user mapped memory 
+    hdr.mem_segs_num += esp_core_dump_get_user_ram_segments(); // stack of user mapped memory
     hdr.tcb_sz    = tcb_sz;
     err = write_cfg->write(write_cfg->priv, &hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
@@ -238,7 +238,7 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
         }
     }
 
-    // save user memory regions 
+    // save user memory regions
     if (esp_core_dump_get_user_ram_segments() > 0) {
         core_dump_mem_seg_header_t user_ram_stack_size;
         for (coredump_region_t i = COREDUMP_MEMORY_START; i < COREDUMP_MEMORY_MAX; i++) {

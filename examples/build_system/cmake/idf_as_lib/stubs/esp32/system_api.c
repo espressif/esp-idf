@@ -5,7 +5,7 @@
 
 extern jmp_buf buf;
 
-void esp_restart(void) 
+void esp_restart(void)
 {
     printf("\n");
     sleep(1); // pause for dramatic effect

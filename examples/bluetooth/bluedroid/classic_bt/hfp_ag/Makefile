@@ -6,4 +6,3 @@
 PROJECT_NAME := hfp_ag
 
 include $(IDF_PATH)/make/project.mk
-

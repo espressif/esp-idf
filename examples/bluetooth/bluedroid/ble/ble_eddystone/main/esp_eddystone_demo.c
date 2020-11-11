@@ -110,7 +110,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
                         // error:The received data is not an eddystone frame packet or a correct eddystone frame packet.
                         // just return
                         return;
-                    } else {   
+                    } else {
                         // The received adv data is a correct eddystone frame packet.
                         // Here, we get the eddystone infomation in eddystone_res, we can use the data in res to do other things.
                         // For example, just print them:
@@ -143,7 +143,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
 void esp_eddystone_appRegister(void)
 {
     esp_err_t status;
-    
+
     ESP_LOGI(DEMO_TAG,"Register callback");
 
     /*<! register the scan callback function to the gap module */
@@ -167,7 +167,7 @@ void app_main(void)
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     esp_bt_controller_init(&bt_cfg);
     esp_bt_controller_enable(ESP_BT_MODE_BLE);
- 
+
     esp_eddystone_init();
 
     /*<! set scan parameters */

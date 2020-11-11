@@ -1123,4 +1123,3 @@ if BLE_MESH
     endmenu
 
 endif # BLE_MESH
-

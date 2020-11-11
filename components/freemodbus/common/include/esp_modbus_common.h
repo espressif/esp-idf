@@ -153,4 +153,3 @@ typedef esp_err_t (*iface_start)(void);         /*!< Interface method start */
 #endif
 
 #endif // _MB_IFACE_COMMON_H
-

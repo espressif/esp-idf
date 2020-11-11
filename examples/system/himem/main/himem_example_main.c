@@ -94,4 +94,3 @@ void app_main(void)
     assert(test_region(memfree, 0xaaaa));
     printf("Done!\n");
 }
-

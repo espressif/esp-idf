@@ -30,7 +30,7 @@ void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X)
     }
 }
 
-/* 
+/*
     Assert E == X, X=A*B if res_operands_overlap==0
     Assert E == A, A=A*B if res_operands_overlap==1
     Assert E == B, B=A*B if res_operands_overlap==2
@@ -268,4 +268,3 @@ TEST_CASE("test MPI modexp", "[bignum]")
 
     TEST_ASSERT_FALSE_MESSAGE(test_error, "mbedtls_mpi_exp_mod incorrect for some tests\n");
 }
-

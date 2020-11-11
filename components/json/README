@@ -49,12 +49,12 @@ philosophy as JSON itself. Simple, dumb, out of the way.
 
 Some JSON:
 {
-    "name": "Jack (\"Bee\") Nimble", 
+    "name": "Jack (\"Bee\") Nimble",
     "format": {
-        "type":       "rect", 
-        "width":      1920, 
-        "height":     1080, 
-        "interlace":  false, 
+        "type":       "rect",
+        "width":      1920,
+        "height":     1080,
+        "interlace":  false,
         "frame rate": 24
     }
 }
@@ -73,7 +73,7 @@ What's the framerate?
 
 Want to change the framerate?
 	cJSON_GetObjectItem(format,"frame rate")->valueint=25;
-	
+
 Back to disk?
 	char *rendered=cJSON_Print(root);
 
@@ -83,7 +83,7 @@ Finished? Delete the root (this takes care of everything else).
 That's AUTO mode. If you're going to use Auto mode, you really ought to check pointers
 before you dereference them. If you want to see how you'd build this struct in code?
 	cJSON *root,*fmt;
-	root=cJSON_CreateObject();	
+	root=cJSON_CreateObject();
 	cJSON_AddItemToObject(root, "name", cJSON_CreateString("Jack (\"Bee\") Nimble"));
 	cJSON_AddItemToObject(root, "format", fmt=cJSON_CreateObject());
 	cJSON_AddStringToObject(fmt,"type",		"rect");
@@ -182,7 +182,7 @@ void parse_object(cJSON *item)
 	int i; for (i=0;i<cJSON_GetArraySize(item);i++)
 	{
 		cJSON *subitem=cJSON_GetArrayItem(item,i);
-		// handle subitem.	
+		// handle subitem.
 	}
 }
 
@@ -195,7 +195,7 @@ void parse_object(cJSON *item)
 	{
 		// handle subitem
 		if (subitem->child) parse_object(subitem->child);
-		
+
 		subitem=subitem->next;
 	}
 }
@@ -225,7 +225,7 @@ cJSON *Create_array_of_anything(cJSON **items,int num)
 	}
 	return root;
 }
-	
+
 and simply: Create_array_of_anything(objects,24);
 
 cJSON doesn't make any assumptions about what order you create things in.

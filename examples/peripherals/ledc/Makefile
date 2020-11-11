@@ -6,4 +6,3 @@
 PROJECT_NAME := ledc
 
 include $(IDF_PATH)/make/project.mk
-

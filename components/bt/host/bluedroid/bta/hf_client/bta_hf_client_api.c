@@ -45,7 +45,7 @@ static const uint8_t bta_hf_client_cb_data_size[] = {
     0,                                  // #define BTA_HF_CLIENT_CLOSE_EVT             3
     sizeof(tBTA_HF_CLIENT_CONN),        // #define BTA_HF_CLIENT_CONN_EVT              4
     sizeof(tBTA_HF_CLIENT_HDR),         // #define BTA_HF_CLIENT_AUDIO_OPEN_EVT        5
-    sizeof(tBTA_HF_CLIENT_HDR),         //#define BTA_HF_CLIENT_AUDIO_MSBC_OPEN_EVT   6 
+    sizeof(tBTA_HF_CLIENT_HDR),         //#define BTA_HF_CLIENT_AUDIO_MSBC_OPEN_EVT   6
     sizeof(tBTA_HF_CLIENT_HDR),         // #define BTA_HF_CLIENT_AUDIO_CLOSE_EVT       7
     sizeof(tBTA_HF_CLIENT_VAL),         // #define BTA_HF_CLIENT_SPK_EVT               8
     sizeof(tBTA_HF_CLIENT_VAL),         // #define BTA_HF_CLIENT_MIC_EVT               9

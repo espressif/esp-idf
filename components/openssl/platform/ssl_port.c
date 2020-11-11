@@ -26,4 +26,3 @@ void *ssl_mem_zalloc(size_t size)
 
     return p;
 }
-

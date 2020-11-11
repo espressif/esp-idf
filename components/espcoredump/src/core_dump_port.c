@@ -583,13 +583,13 @@ uint32_t esp_core_dump_get_extra_info(void **info)
 uint32_t esp_core_dump_get_user_ram_segments(void)
 {
     uint32_t total_sz = 0;
-    
+
     // count number of memory segments to insert into ELF structure
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start) > 0 ? 1 : 0;
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start) > 0 ? 1 : 0;
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start) > 0 ? 1 : 0;
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start) > 0 ? 1 : 0;
-    
+
     return total_sz;
 }
 
@@ -601,7 +601,7 @@ uint32_t esp_core_dump_get_user_ram_size(void)
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start);
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start);
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start);
-    
+
     return total_sz;
 }
 

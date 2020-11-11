@@ -891,7 +891,7 @@ BOOLEAN gatt_is_bda_connected(BD_ADDR bda)
     tGATT_TCB   *p_tcb  = NULL;
     list_node_t *p_node = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+	p_tcb = list_node(p_node);
         if (p_tcb->in_use &&
                 !memcmp(p_tcb->peer_bda, bda, BD_ADDR_LEN)) {
             connected = TRUE;
@@ -915,7 +915,7 @@ UINT8 gatt_find_i_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport)
     list_node_t *p_node = NULL;
     tGATT_TCB   *p_tcb  = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+	p_tcb = list_node(p_node);
         if (!memcmp(p_tcb->peer_bda, bda, BD_ADDR_LEN) &&
                 p_tcb->transport == transport) {
 	    i = p_tcb->tcb_idx;
@@ -939,7 +939,7 @@ tGATT_TCB *gatt_get_tcb_by_idx(UINT8 tcb_idx)
     tGATT_TCB   *p_tcb  = NULL;
     list_node_t *p_node = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+	p_tcb = list_node(p_node);
         if ( (tcb_idx < GATT_MAX_PHY_CHANNEL) && p_tcb->in_use && p_tcb->tcb_idx == tcb_idx ) {
             break;
         } else {
@@ -1756,7 +1756,7 @@ tGATT_CLCB *gatt_clcb_alloc (UINT16 conn_id)
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
 
-    if (list_length(gatt_cb.p_clcb_list) < GATT_CL_MAX_LCB) {	
+    if (list_length(gatt_cb.p_clcb_list) < GATT_CL_MAX_LCB) {
 	p_clcb = (tGATT_CLCB *)osi_malloc(sizeof(tGATT_CLCB));
 	if (p_clcb) {
 	   list_append(gatt_cb.p_clcb_list, p_clcb);
@@ -1808,7 +1808,7 @@ tGATT_TCB *gatt_find_tcb_by_cid (UINT16 lcid)
     tGATT_TCB   *p_tcb  = NULL;
     list_node_t *p_node = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+	p_tcb = list_node(p_node);
         if (p_tcb->in_use && p_tcb->att_lcid == lcid) {
             break;
         }
@@ -2890,5 +2890,3 @@ BOOLEAN gatt_update_listen_mode(void)
 
 }
 #endif
-
-

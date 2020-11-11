@@ -123,12 +123,12 @@ esp_rom_spiflash_result_t SpiFlash::erase_block(uint32_t block)
 
 esp_rom_spiflash_result_t SpiFlash::erase_sector(uint32_t sector)
 {
-    if (this->total_erase_cycles_limit != 0 && 
+    if (this->total_erase_cycles_limit != 0 &&
         this->total_erase_cycles >= this->total_erase_cycles_limit) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
 
-    if (this->erase_cycles_limit != 0 && 
+    if (this->erase_cycles_limit != 0 &&
         this->erase_cycles[sector] >= this->erase_cycles_limit) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
@@ -165,7 +165,7 @@ esp_rom_spiflash_result_t SpiFlash::write(uint32_t dest_addr, const void *src, u
     int start = 0;
     int end = 0;
 
-    if (this->total_erase_cycles_limit != 0 && 
+    if (this->total_erase_cycles_limit != 0 &&
         this->total_erase_cycles >= this->total_erase_cycles_limit) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
@@ -174,7 +174,7 @@ esp_rom_spiflash_result_t SpiFlash::write(uint32_t dest_addr, const void *src, u
     end = size > 0 ? (dest_addr + size - 1) / this->get_sector_size() : start;
 
     for (int i = start; i <= end; i++) {
-        if (this->erase_cycles_limit != 0 && 
+        if (this->erase_cycles_limit != 0 &&
             this->erase_cycles[i] >= this->erase_cycles_limit) {
             return ESP_ROM_SPIFLASH_RESULT_ERR;
         }
@@ -203,7 +203,7 @@ esp_rom_spiflash_result_t SpiFlash::read(uint32_t src_addr, void *dest, uint32_t
     int start = 0;
     int end = 0;
 
-    if (this->total_erase_cycles_limit != 0 && 
+    if (this->total_erase_cycles_limit != 0 &&
         this->total_erase_cycles >= this->total_erase_cycles_limit) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
@@ -212,7 +212,7 @@ esp_rom_spiflash_result_t SpiFlash::read(uint32_t src_addr, void *dest, uint32_t
     end = size > 0 ? (src_addr + size - 1) / this->get_sector_size() : start;
 
     for (int i = start; i <= end; i++) {
-        if (this->erase_cycles_limit != 0 && 
+        if (this->erase_cycles_limit != 0 &&
             this->erase_cycles[i] >= this->erase_cycles_limit) {
             return ESP_ROM_SPIFLASH_RESULT_ERR;
         }

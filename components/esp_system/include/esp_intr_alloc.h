@@ -297,13 +297,13 @@ void esp_intr_noniram_enable(void);
 /**
  * @brief enable the interrupt source based on its number
  * @param inum interrupt number from 0 to 31
- */ 
+ */
 void esp_intr_enable_source(int inum);
 
 /**
  * @brief disable the interrupt source based on its number
  * @param inum interrupt number from 0 to 31
- */ 
+ */
 void esp_intr_disable_source(int inum);
 
 /**@}*/

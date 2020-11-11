@@ -37,7 +37,7 @@
 **  Type Defs
 ********************************************************************************/
 /* btc_hf_act_t */
-typedef enum 
+typedef enum
 {
     //INIT
     BTC_HF_INIT_EVT,
@@ -67,7 +67,7 @@ typedef enum
 } btc_hf_act_t;
 
 /* btc_hf_args_t */
-typedef union 
+typedef union
 {
     // BTC_HF_INIT_EVT
     bt_bdaddr_t init;
@@ -77,13 +77,13 @@ typedef union
 
     // BTC_HF_CONNECT_EVT
     bt_bdaddr_t connect;
-    
+
     // BTC_HF_DISCONNECT_EVT
     bt_bdaddr_t disconnect;
-    
+
     // BTC_HF_CONNECT_AUDIO_EVT
     bt_bdaddr_t connect_audio;
-    
+
     // BTC_HF_DISCONNECT_AUDIO_EVT
     bt_bdaddr_t disconnect_audio;
 
@@ -139,7 +139,7 @@ typedef union
         bt_bdaddr_t remote_addr;
         char        *name;
     } cops_rep;
-    
+
     // BTC_HF_CLCC_RESPONSE_EVT
     struct clcc_args {
         bt_bdaddr_t                     remote_addr;
@@ -151,7 +151,7 @@ typedef union
         char                            *number;
         esp_hf_call_addr_type_t         type;
     } clcc_rep;
-    
+
     // BTC_HF_CNUM_RESPONSE_EVT
     struct cnum_args {
         bt_bdaddr_t                      remote_addr;
@@ -171,7 +171,7 @@ typedef union
     //BTC_HF_INBAND_RING_EVT
     struct bsir_args {
         bt_bdaddr_t remote_addr;
-        esp_hf_in_band_ring_state_t state;  
+        esp_hf_in_band_ring_state_t state;
     } bsir;
 
     // BTC_HF_AC_INCALL_EVT
@@ -258,4 +258,3 @@ bt_status_t btc_hf_ci_sco_data(void);
 #endif  // BTC_HF_INCLUDED == TRUE
 
 #endif /* __BTC_HF_AG_H__ */
-

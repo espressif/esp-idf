@@ -124,8 +124,8 @@ static int reloc_sort_func(const void* p_lhs, const void* p_rhs)
  *    Label address is recorded, and all subsequent
  *    entries which point to the same label number
  *    are processed. For each entry, correct offset
- *    or absolute address is calculated, depending on 
- *    type and subtype, and written into the appropriate 
+ *    or absolute address is calculated, depending on
+ *    type and subtype, and written into the appropriate
  *    field of the instruction.
  *
  */

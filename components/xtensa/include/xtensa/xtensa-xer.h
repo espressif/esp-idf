@@ -1,8 +1,8 @@
-/* xer-constants.h -- various constants describing external registers accessed 
+/* xer-constants.h -- various constants describing external registers accessed
       via wer and rer.
 
       TODO: find a better prefix. Also conditionalize certain constants based
-      on number of cores and interrupts actually present.  
+      on number of cores and interrupts actually present.
 */
 
 /*
@@ -33,7 +33,7 @@
 #define NUM_INTERRUPTS 27
 #define NUM_CORES       4
 
-/* Routing of NMI (BInterrupt2)	and interrupts 0..n-1 (BInterrupt3+) 
+/* Routing of NMI (BInterrupt2)	and interrupts 0..n-1 (BInterrupt3+)
    RER reads
    WER writes
  */
@@ -42,8 +42,8 @@
 #define XER_MIROUT_LAST      (XER_MIROUT + NUM_INTERRUPTS)
 
 
-/* IPI to core M (all 16 causes). 
-   
+/* IPI to core M (all 16 causes).
+
    RER reads
    WER clears
  */
@@ -58,7 +58,7 @@
 #define XER_MIPICAUSE_FIELD_D_LAST  0xF
 
 
-/* IPI from cause bit 0..15  
+/* IPI from cause bit 0..15
 
    RER invalid
    WER sets
@@ -145,5 +145,3 @@
    WER write
 */
 #define XER_CCON           0x0220
-
-

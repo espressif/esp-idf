@@ -76,7 +76,7 @@ Packet Length: 262
 Answers: 2 + 6
   A: Hristo’s Mac mini._device-info._tcp.local. TXT IN 4500 [28] model=Macmini6,2; osxvers=16
   A: _smb._tcp.local. PTR IN 4500 [22] Hristo’s Mac mini._smb._tcp.local.
-  A: Hristo’s Mac mini._smb._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Hristo’s Mac mini._smb._tcp.local. TXT IN FLUSH 4500 [1]
   A: Hristo’s Mac mini._smb._tcp.local. SRV IN FLUSH 120 [18] 445 minifritz.local.
   A: minifritz.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:142e:54ff:b8c4:fd09
   A: minifritz.local. A IN FLUSH 120 [4] 192.168.254.16
@@ -97,7 +97,7 @@ Packet Length: 269
 Answers: 2 + 6
   A: Hristo’s Mac mini._device-info._tcp.local. TXT IN 4500 [28] model=Macmini6,2; osxvers=16
   A: _afpovertcp._tcp.local. PTR IN 4500 [22] Hristo’s Mac mini._afpovertcp._tcp.local.
-  A: Hristo’s Mac mini._afpovertcp._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Hristo’s Mac mini._afpovertcp._tcp.local. TXT IN FLUSH 4500 [1]
   A: Hristo’s Mac mini._afpovertcp._tcp.local. SRV IN FLUSH 120 [18] 548 minifritz.local.
   A: minifritz.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:142e:54ff:b8c4:fd09
   A: minifritz.local. A IN FLUSH 120 [4] 192.168.254.16
@@ -135,7 +135,7 @@ Packet Length: 279
 Answers: 2 + 6
   A: Sofiya Ivanova’s MacBook._device-info._tcp.local. TXT IN 4500 [17] model=Macmini2,1
   A: _rfb._tcp.local. PTR IN 4500 [29] Sofiya Ivanova’s MacBook._rfb._tcp.local.
-  A: Sofiya Ivanova’s MacBook._rfb._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Sofiya Ivanova’s MacBook._rfb._tcp.local. TXT IN FLUSH 4500 [1]
   A: Sofiya Ivanova’s MacBook._rfb._tcp.local. SRV IN FLUSH 120 [32] 5900 Sofiya-Ivanovas-MacBook.local.
   A: Sofiya-Ivanovas-MacBook.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:021c:b3ff:feb2:72a3
   A: Sofiya-Ivanovas-MacBook.local. A IN FLUSH 120 [4] 192.168.254.20

@@ -1,4 +1,4 @@
-/* 
+/*
    ROM Functions defined in this file are not used in ESP-IDF as is,
    and different definitions for functions with the same names are provided.
    This file is not used when linking ESP-IDF and is intended for reference only
@@ -36,4 +36,3 @@ PROVIDE ( sha1_vector = 0x40060b64 );
 PROVIDE ( sha256_prf = 0x40060d70 );
 PROVIDE ( sha256_vector = 0x40060e08 );
 PROVIDE ( uart_tx_wait_idle = 0x40009278 );
-

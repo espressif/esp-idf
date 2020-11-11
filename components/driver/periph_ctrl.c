@@ -67,4 +67,4 @@ IRAM_ATTR void wifi_bt_common_module_disable(void)
         periph_ll_wifi_bt_module_disable_clk_set_rst();
     }
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
-} 
+}

@@ -26,7 +26,10 @@ else()
 
     # Check the supported assembler version
     file(STRINGS ${IDF_PATH}/components/ulp/toolchain_ulp_version.mk version_file_contents)
-    string(REGEX MATCH "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})" as_supported_version ${version_file_contents})
+    string(REGEX MATCH
+        "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})"
+        as_supported_version
+        ${version_file_contents})
     set(as_supported_version ${CMAKE_MATCH_1})
 
     if(NOT as_version STREQUAL as_supported_version)
@@ -35,7 +38,7 @@ else()
                         the toolchain, or proceed at your own risk.")
     endif()
 
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)    
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
 endif()
 
 
@@ -56,25 +59,25 @@ list(APPEND ULP_PREPROCESSOR_ARGS -D__ASSEMBLER__)
 
 # Preprocess linker script, pre-linking
 get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
-add_custom_command( OUTPUT ${ULP_LD_SCRIPT}
-                    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    DEPENDS ${ULP_LD_TEMPLATE}
-                    VERBATIM)
+add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
+                   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                   DEPENDS ${ULP_LD_TEMPLATE}
+                   VERBATIM)
 add_custom_target(${ULP_APP_NAME}_ld_script
-                    DEPENDS ${ULP_LD_SCRIPT}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+                  DEPENDS ${ULP_LD_SCRIPT}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 if(ULP_COCPU_IS_RISCV)
     #risc-v ulp uses extra files for building:
-    list(APPEND ULP_S_SOURCES 
+    list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/ulp_riscv/start.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_riscv_utils.c")
 
     #dummy loop to force pre-processed linker file generation:
     foreach(ulp_s_source ${ULP_S_SOURCES})
         set(noop ${ulp_s_source})
-        
+
         add_custom_command(OUTPUT ${noop}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMAND cmake -E echo
@@ -85,10 +88,11 @@ if(ULP_COCPU_IS_RISCV)
     endforeach()
 
     #creates the executable:
-    add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})    
+    add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})
     set(DUMP_SYMBOL_ARGS -g)
     set(MAP_GEN_EXTRA_ARGS --riscv)
-    set(EXTRA_LINKER_ARGS "-nostartfiles -Wl,--gc-sections -Xlinker -Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map")
+    set(EXTRA_LINKER_ARGS "-nostartfiles -Wl,--gc-sections -Xlinker \
+-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map")
     #Makes the csr utillies for riscv visible:
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/include")
 
@@ -98,18 +102,19 @@ else()
         get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
         set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
         # Generate preprocessed assembly files.
-        add_custom_command( OUTPUT ${ulp_ps_output}
-                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                            COMMAND ${CMAKE_C_COMPILER} -E -P -xc ${ULP_PREPROCESSOR_ARGS} -o ${ulp_ps_output} ${ulp_s_source}
-                            DEPENDS ${ulp_s_source} ${ULP_LD_SCRIPT}
-                            VERBATIM)
+        add_custom_command(OUTPUT ${ulp_ps_output}
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                           COMMAND ${CMAKE_C_COMPILER} -E -P -xc ${ULP_PREPROCESSOR_ARGS}
+                           -o ${ulp_ps_output} ${ulp_s_source}
+                           DEPENDS ${ulp_s_source} ${ULP_LD_SCRIPT}
+                           VERBATIM)
         # During assembly file compilation, output listing files as well.
         set_source_files_properties(${ulp_ps_output}
                                     PROPERTIES COMPILE_FLAGS
                                     "-al=${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.lst")
         list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
     endforeach()
-    
+
     # Create an executable
     add_executable(${ULP_APP_NAME} ${ULP_PS_SOURCES})
     set(DUMP_SYMBOL_ARGS -g -f posix)
@@ -119,21 +124,21 @@ else()
 endif()
 
 # Dump the list of global symbols in a convenient format
-add_custom_command( OUTPUT ${ULP_APP_NAME}.sym
-                    COMMAND ${CMAKE_NM} ${DUMP_SYMBOL_ARGS} $<TARGET_FILE:${ULP_APP_NAME}> > ${ULP_APP_NAME}.sym
-                    DEPENDS ${ULP_APP_NAME}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_command(OUTPUT ${ULP_APP_NAME}.sym
+                   COMMAND ${CMAKE_NM} ${DUMP_SYMBOL_ARGS} $<TARGET_FILE:${ULP_APP_NAME}> > ${ULP_APP_NAME}.sym
+                   DEPENDS ${ULP_APP_NAME}
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Dump the binary for inclusion into the project
-add_custom_command( OUTPUT ${ULP_APP_NAME}.bin
-                    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${ULP_APP_NAME}> ${ULP_APP_NAME}.bin
-                    DEPENDS ${ULP_APP_NAME}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_command(OUTPUT ${ULP_APP_NAME}.bin
+                   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${ULP_APP_NAME}> ${ULP_APP_NAME}.bin
+                   DEPENDS ${ULP_APP_NAME}
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-add_custom_command( OUTPUT ${ULP_APP_NAME}.ld ${ULP_APP_NAME}.h
-                    COMMAND ${ULP_MAP_GEN} ${MAP_GEN_EXTRA_ARGS} -s ${ULP_APP_NAME}.sym -o ${ULP_APP_NAME}
-                    DEPENDS ${ULP_APP_NAME}.sym
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_command(OUTPUT ${ULP_APP_NAME}.ld ${ULP_APP_NAME}.h
+                   COMMAND ${ULP_MAP_GEN} ${MAP_GEN_EXTRA_ARGS} -s ${ULP_APP_NAME}.sym -o ${ULP_APP_NAME}
+                   DEPENDS ${ULP_APP_NAME}.sym
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Building the component separately from the project should result in
 # ULP files being built.

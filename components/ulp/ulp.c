@@ -74,13 +74,13 @@ esp_err_t ulp_run(uint32_t entry_point)
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
     esp_rom_delay_us(10);
-    // set entry point  
+    // set entry point
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_PC_INIT, entry_point);
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);         // Select ULP_TIMER trigger target for ULP.
     // start ULP clock gate.
     SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG ,RTC_CNTL_ULP_CP_CLK_FO);
     // ULP FSM sends the DONE signal.
-    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);  
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
     /* Set the number of cycles of ULP_TIMER sleep, the wait time required to start ULP */
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, 100);
     /* Clear interrupt COCPU status */
@@ -172,7 +172,7 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     }
     uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
     uint64_t period_cycles = rtc_time_us_to_slowclk(period_us_64, slow_clk_period);
-    
+
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_1_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, ((uint32_t)period_cycles));
 #endif
     return ESP_OK;

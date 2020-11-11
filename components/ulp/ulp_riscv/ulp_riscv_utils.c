@@ -23,7 +23,7 @@ void ulp_riscv_rescue_from_monitor(void)
 
 void ulp_riscv_wakeup_main_processor(void)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SW_CPU_INT);    
+    SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SW_CPU_INT);
 }
 
 void ulp_riscv_shutdown(void)
@@ -33,7 +33,7 @@ void ulp_riscv_shutdown(void)
 
     /* suspends the ulp operation*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
-    
+
     /* Resets the processor */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 

@@ -46,8 +46,8 @@ typedef struct {
     uint32_t no_compensate;             ///< No need to add dummy to compensate the timing, device specific
     uint32_t clock_speed_hz;            ///< Desired frequency.
     uint32_t duty_cycle;                ///< Desired duty cycle of SPI clock
-    uint32_t input_delay_ns;            /**< Maximum delay between SPI launch clock and the data to be valid. 
-                                         *   This is used to compensate/calculate the maximum frequency allowed. 
+    uint32_t input_delay_ns;            /**< Maximum delay between SPI launch clock and the data to be valid.
+                                         *   This is used to compensate/calculate the maximum frequency allowed.
                                          *   Left 0 if not known.
                                          */
     bool use_gpio;                      ///< True if the GPIO matrix is used, otherwise false
@@ -67,7 +67,7 @@ typedef struct {
 /**
  * DMA configuration structure
  * Should be set by driver at initialization
- */ 
+ */
 typedef struct {
     spi_dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
     spi_dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
@@ -116,7 +116,7 @@ typedef struct {
 
 /**
  * Device configuration structure, this should be initialised by driver based on different devices respectively.
- * All these parameters will be updated to the peripheral only when ``spi_hal_setup_device``. 
+ * All these parameters will be updated to the peripheral only when ``spi_hal_setup_device``.
  * They may not get updated when ``spi_hal_setup_trans``.
  */
 typedef struct {
@@ -250,4 +250,3 @@ void spi_hal_cal_timing(int eff_clk, bool gpio_is_used, int input_delay_ns, int 
  *                       allowed. Left 0 if not known.
  */
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns);
-

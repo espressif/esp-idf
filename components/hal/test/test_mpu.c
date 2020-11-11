@@ -24,12 +24,12 @@ static void trigger_illegal_access(void)
     printf("Sucessfully accessed location %p\r\n", (void*)addr);
 
     // Make access to region illegal again.
-    mpu_hal_set_region_access(4, MPU_REGION_ILLEGAL); 
+    mpu_hal_set_region_access(4, MPU_REGION_ILLEGAL);
     ++access;
 
     // Since access to region is illegal, this should fail (causing a reset), and the increment
     // to access count is not performed.
-    val = *((int*) addr); 
+    val = *((int*) addr);
     ++access;
 }
 

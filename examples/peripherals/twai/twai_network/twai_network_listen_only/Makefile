@@ -6,4 +6,3 @@
 PROJECT_NAME := twai_network_listen_only
 
 include $(IDF_PATH)/make/project.mk
-

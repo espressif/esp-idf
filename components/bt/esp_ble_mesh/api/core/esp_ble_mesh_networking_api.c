@@ -536,4 +536,3 @@ const uint8_t *esp_ble_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app
     return bt_mesh_get_fast_prov_app_key(net_idx, app_idx);
 }
 #endif  /* CONFIG_BLE_MESH_FAST_PROV */
-

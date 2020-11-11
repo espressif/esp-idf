@@ -288,7 +288,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
                     status = ESP_GATT_NO_RESOURCES;
                 }
             } else {
-                if(param->write.offset > PREPARE_BUF_MAX_SIZE || 
+                if(param->write.offset > PREPARE_BUF_MAX_SIZE ||
                     prepare_write_env->prepare_len > param->write.offset) {
                     status = ESP_GATT_INVALID_OFFSET;
                 } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
@@ -303,7 +303,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
             gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
             memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
             esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
-            
+
             if (response_err != ESP_OK) {
                ESP_LOGE(GATTS_TAG, "Send response error\n");
             }
@@ -400,7 +400,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                 uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
                 if (descr_value == 0x0001){
                     if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY){
-                        
+
                         ESP_LOGI(GATTS_TAG, "notify enable");
                         can_send_notify = true;
                         xSemaphoreGive(gatts_semaphore);
@@ -437,7 +437,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->write.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
             // The last value byte is the checksum data, should used to check the data is received corrected or not.
-            if (param->write.value[param->write.len - 1] == 
+            if (param->write.value[param->write.len - 1] ==
                 check_sum(param->write.value, param->write.len - 1)) {
                 write_len += param->write.len;
             }
@@ -618,7 +618,7 @@ void throughput_server_task(void *param)
 #endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
     while(1) {
-#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) 
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         if (!can_send_notify) {
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
@@ -706,12 +706,12 @@ void app_main(void)
         ESP_LOGE(GATTS_TAG, "gatts app register error, error code = %x", ret);
         return;
     }
-    
+
     esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(517);
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-    // The task is only created on the CPU core that Bluetooth is working on, 
+    // The task is only created on the CPU core that Bluetooth is working on,
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_server_task, "throughput_server_task", 4096, NULL, 15, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)

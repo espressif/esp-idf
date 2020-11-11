@@ -57,5 +57,3 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop);
  * @return esp_err_t
  */
 int trax_trigger_traceend_after_delay(int delay);
-
-

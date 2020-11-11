@@ -221,5 +221,3 @@ xt_ints_off:
     RET0
 
     .size   xt_ints_off, . - xt_ints_off
-
-

@@ -445,4 +445,3 @@ void mbedtls_net_free( mbedtls_net_context *ctx )
 #endif /* MBEDTLS_NET_C */
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
-

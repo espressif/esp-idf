@@ -37,7 +37,7 @@ typedef struct {
  *
  * @param   conf                      Pointer to esp_vfs_spiffs_conf_t configuration structure
  *
- * @return  
+ * @return
  *          - ESP_OK                  if success
  *          - ESP_ERR_NO_MEM          if objects could not be allocated
  *          - ESP_ERR_INVALID_STATE   if already mounted or partition is encrypted
@@ -51,7 +51,7 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf);
  *
  * @param partition_label  Same label as passed to esp_vfs_spiffs_register.
  *
- * @return  
+ * @return
  *          - ESP_OK if successful
  *          - ESP_ERR_INVALID_STATE already unregistered
  */
@@ -63,7 +63,7 @@ esp_err_t esp_vfs_spiffs_unregister(const char* partition_label);
  * @param partition_label  Optional, label of the partition to check.
  *                         If not specified, first partition with subtype=spiffs is used.
  *
- * @return  
+ * @return
  *          - true    if mounted
  *          - false   if not mounted
  */
@@ -73,7 +73,7 @@ bool esp_spiffs_mounted(const char* partition_label);
  * Format the SPIFFS partition
  *
  * @param partition_label  Same label as passed to esp_vfs_spiffs_register.
- * @return  
+ * @return
  *          - ESP_OK      if successful
  *          - ESP_FAIL    on error
  */
@@ -86,7 +86,7 @@ esp_err_t esp_spiffs_format(const char* partition_label);
  * @param[out] total_bytes          Size of the file system
  * @param[out] used_bytes           Current used bytes in the file system
  *
- * @return  
+ * @return
  *          - ESP_OK                  if success
  *          - ESP_ERR_INVALID_STATE   if not mounted
  */

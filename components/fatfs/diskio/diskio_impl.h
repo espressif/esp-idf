@@ -70,4 +70,3 @@ esp_err_t ff_diskio_get_drive(BYTE* out_pdrv);
 #ifdef __cplusplus
 }
 #endif
-

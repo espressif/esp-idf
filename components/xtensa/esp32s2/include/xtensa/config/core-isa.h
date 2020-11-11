@@ -709,4 +709,3 @@
 
 
 #endif /* _XTENSA_CORE_CONFIGURATION_H */
-

@@ -362,5 +362,3 @@ esp_err_t esp_himem_unmap(esp_himem_rangehandle_t range, void *ptr, size_t len)
     portEXIT_CRITICAL(&spinlock);
     return ESP_OK;
 }
-
-

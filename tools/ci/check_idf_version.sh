@@ -43,7 +43,7 @@ version_from_git="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[4]:-0}"
 
 echo "From esp_idf_version.h: ${version_from_header}"
 echo "From version.mk: ${version_from_make}"
-echo "From version.cmake: ${version_from_cmake}" 
+echo "From version.cmake: ${version_from_cmake}"
 echo "From git describe: ${version_from_git}"
 
 if [[ "${version_from_header}" != "${version_from_git}" ]]; then

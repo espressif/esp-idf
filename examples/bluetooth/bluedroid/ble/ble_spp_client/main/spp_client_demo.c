@@ -637,7 +637,7 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
- 
+
     ble_client_appRegister();
     spp_uart_init();
 }

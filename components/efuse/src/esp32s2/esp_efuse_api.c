@@ -102,4 +102,3 @@ const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block)
         return NULL;
     }
 }
-

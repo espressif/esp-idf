@@ -99,7 +99,7 @@ static void osi_thread_stop(osi_thread_t *thread)
 
     //join
     ret = osi_thread_join(thread, 1000); //wait 1000ms
-   
+
     //if join failed, delete the task here
     if (ret != 0 && thread->thread_handle) {
         vTaskDelete(thread->thread_handle);
@@ -160,7 +160,7 @@ osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priorit
 
     osi_sem_take(&start_arg.start_sem, OSI_SEM_MAX_TIMEOUT);
     osi_sem_free(&start_arg.start_sem);
-    
+
     return thread;
 
 _err:

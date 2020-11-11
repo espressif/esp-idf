@@ -813,4 +813,3 @@ static void hid_add_id_tbl(void)
   // Setup report ID map
   hid_dev_register_reports(HID_NUM_REPORTS, hid_rpt_map);
 }
-

@@ -120,7 +120,7 @@ void EVP_PKEY_free(EVP_PKEY *x);
  *
  * @return result
  *     0 : failed
- *     1 : OK 
+ *     1 : OK
  */
  int SSL_use_PrivateKey_ASN1(int type, SSL *ssl, const unsigned char *d, long len);
 

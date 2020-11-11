@@ -144,8 +144,8 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
 /**
  * @brief Erase PHY calibration data which is stored in the NVS
  *
- * This is a function which can be used to trigger full calibration as a last-resort remedy 
- * if partial calibration is used. It can be called in the application based on some conditions 
+ * This is a function which can be used to trigger full calibration as a last-resort remedy
+ * if partial calibration is used. It can be called in the application based on some conditions
  * (e.g. an option provided in some diagnostic mode).
  *
  * @return ESP_OK on success
@@ -203,7 +203,7 @@ int64_t esp_phy_rf_get_on_ts(void);
 esp_err_t esp_phy_update_country_info(const char *country);
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
-/** 
+/**
  * @brief Apply PHY init bin to PHY
  * @return ESP_OK on success.
  * @return ESP_FAIL on fail.
@@ -214,4 +214,3 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
 #ifdef __cplusplus
 }
 #endif
-

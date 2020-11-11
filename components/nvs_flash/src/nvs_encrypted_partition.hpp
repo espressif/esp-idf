@@ -41,4 +41,3 @@ protected:
 } // nvs
 
 #endif // NVS_ENCRYPTED_PARTITION_HPP_
-

@@ -41,4 +41,3 @@ void __wrap_esp_panic_handler(panic_info_t *info)
         __real_esp_panic_handler(info);
     }
 }
-

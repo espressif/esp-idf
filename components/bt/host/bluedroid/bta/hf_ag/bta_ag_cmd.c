@@ -56,7 +56,7 @@
 #define BTA_AG_CLIP_TYPE_VOIP       255
 
 /*******************************************
-*              HSP callback 
+*              HSP callback
 ********************************************/
 /* callback event lookup table for HSP */
 const tBTA_AG_EVT bta_ag_hsp_cb_evt[] =
@@ -82,7 +82,7 @@ const tBTA_AG_AT_CMD bta_ag_hsp_cmd[] =
 };
 
 /*******************************************
-*              HFP callback 
+*              HFP callback
 ********************************************/
 /* callback event lookup table for HFP  (Indexed by command) */
 const tBTA_AG_EVT bta_ag_hfp_cb_evt[] =
@@ -180,7 +180,7 @@ const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] =
 };
 
 /*******************************************
-*              AT Result 
+*              AT Result
 ********************************************/
 const tBTA_AG_AT_CMD *bta_ag_at_tbl[BTA_AG_NUM_IDX] =
 {
@@ -331,7 +331,7 @@ const UINT8 bta_ag_callsetup_ind_tbl[] =
 #endif
 
 /*******************************************
-*              Funcitons Result 
+*              Funcitons Result
 ********************************************/
 /*******************************************************************************
 **
@@ -533,7 +533,7 @@ static void bta_ag_send_ind(tBTA_AG_SCB *p_scb, UINT16 id, UINT16 value, BOOLEAN
     }
     if ((id == BTA_AG_IND_ROAM) && (on_demand == FALSE)) {
         if (value == p_scb->roam_ind) {
-            return;            
+            return;
         }
         p_scb->roam_ind = (UINT8)value;
     }
@@ -658,14 +658,14 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
         }
         uuid_codec = utl_str2int(p_s);
         switch(uuid_codec) {
-            case UUID_CODEC_CVSD:   
-                retval |= BTA_AG_CODEC_CVSD;     
+            case UUID_CODEC_CVSD:
+                retval |= BTA_AG_CODEC_CVSD;
                 break;
-            
-            case UUID_CODEC_MSBC:   
-                retval |= BTA_AG_CODEC_MSBC;     
+
+            case UUID_CODEC_MSBC:
+                retval |= BTA_AG_CODEC_MSBC;
                 break;
-            
+
             default:
                 APPL_TRACE_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
                 return BTA_AG_CODEC_NONE;
@@ -864,7 +864,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                     bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_DSTR);
                 }
             } else if (p_arg[0] == 'V') {
-                /* ATDV : Dial VoIP Call */ 
+                /* ATDV : Dial VoIP Call */
                 /* We do not check string. Code will be added later if needed. */
                 if(!((p_scb->peer_features & BTA_AG_PEER_FEAT_VOIP) && (p_scb->features & BTA_AG_FEAT_VOIP))) {
                     event = 0;
@@ -1093,7 +1093,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
             }
             break;
-        
+
         case BTA_AG_HF_CMD_CLCC:
             if(!(p_scb->features & BTA_AG_FEAT_ECS)) {
                 event = 0;
@@ -1139,14 +1139,14 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             bta_sys_stop_timer(&p_scb->cn_timer);
 
             switch(int_arg) {
-                case UUID_CODEC_CVSD:   
-                    codec_type = BTA_AG_CODEC_CVSD;     
+                case UUID_CODEC_CVSD:
+                    codec_type = BTA_AG_CODEC_CVSD;
                     break;
-                
-                case UUID_CODEC_MSBC:   
+
+                case UUID_CODEC_MSBC:
                     codec_type = BTA_AG_CODEC_MSBC;
                     break;
-                
+
                 default:
                     APPL_TRACE_ERROR("Unknown codec_uuid %d", int_arg);
                     codec_type = 0xFFFF;
@@ -1483,7 +1483,7 @@ void bta_ag_hfp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
             p_scb->roam_ind = p_result->data.str[8] - '0';
             p_scb->battchg_ind = p_result->data.str[10] - '0';
             p_scb->callheld_ind = p_result->data.str[12] - '0';
-            
+
             APPL_TRACE_DEBUG("cind call:%d callsetup:%d", p_scb->call_ind, p_scb->callsetup_ind);
             bta_ag_send_result(p_scb, code, p_result->data.str, 0);
             bta_ag_send_ok(p_scb);
@@ -1607,15 +1607,15 @@ void bta_ag_send_bcs(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
             case BTA_AG_CODEC_NONE:
                 codec_uuid = UUID_CODEC_CVSD;
                 break;
-            
+
             case BTA_AG_CODEC_CVSD:
                 codec_uuid = UUID_CODEC_CVSD;
                 break;
-            
+
             case BTA_AG_CODEC_MSBC:
                 codec_uuid = UUID_CODEC_MSBC;
                 break;
-            
+
             default:
                 APPL_TRACE_ERROR("bta_ag_send_bcs: unknown codec %d, use CVSD", p_scb->sco_codec);
                 codec_uuid = UUID_CODEC_CVSD;

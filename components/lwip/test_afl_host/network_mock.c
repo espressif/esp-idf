@@ -152,7 +152,7 @@ void dns_setserver(u8_t numdns, const ip_addr_t *dnsserver)
 
 uint32_t esp_random(void)
 {
-    // Preparation for injecting favorable random numbers 
+    // Preparation for injecting favorable random numbers
     return g_random_numbers[g_random_numbers_cnt++ % 8];
 }
 

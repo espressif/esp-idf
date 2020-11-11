@@ -6,4 +6,3 @@
 PROJECT_NAME := enc28j60
 
 include $(IDF_PATH)/make/project.mk
-

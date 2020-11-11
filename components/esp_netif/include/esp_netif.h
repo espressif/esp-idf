@@ -564,12 +564,12 @@ esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
  *
  * This function behaves differently if DHCP server or client is enabled
  *
- *   If DHCP client is enabled, main and backup DNS servers will be updated automatically 
- *   from the DHCP lease if the relevant DHCP options are set. Fallback DNS Server is never updated from the DHCP lease 
+ *   If DHCP client is enabled, main and backup DNS servers will be updated automatically
+ *   from the DHCP lease if the relevant DHCP options are set. Fallback DNS Server is never updated from the DHCP lease
  *   and is designed to be set via this API.
  *   If DHCP client is disabled, all DNS server types can be set via this API only.
- *   
- *   If DHCP server is enabled, the Main DNS Server setting is used by the DHCP server to provide a DNS Server option 
+ *
+ *   If DHCP server is enabled, the Main DNS Server setting is used by the DHCP server to provide a DNS Server option
  *   to DHCP clients (Wi-Fi stations).
  *   - The default Main DNS server is typically the IP of the Wi-Fi AP interface itself.
  *   - This function can override it by setting server type ESP_NETIF_DNS_MAIN.
@@ -722,36 +722,36 @@ uint32_t esp_ip4addr_aton(const char *addr);
 
 /**
  * @brief Gets media driver handle for this esp-netif instance
- * 
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
- * 
+ *
  * @return opaque pointer of related IO driver
  */
 esp_netif_iodriver_handle esp_netif_get_io_driver(esp_netif_t *esp_netif);
 
 /**
  * @brief Searches over a list of created objects to find an instance with supplied if key
- * 
+ *
  * @param if_key Textual description of network interface
- * 
+ *
  * @return Handle to esp-netif instance
  */
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key);
 
 /**
  * @brief Returns configured flags for this interface
- * 
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
- * 
- * @return Configuration flags 
+ *
+ * @return Configuration flags
  */
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif);
 
 /**
  * @brief Returns configured interface key for this esp-netif instance
- * 
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
- * 
+ *
  * @return Textual description of related interface
  */
 const char *esp_netif_get_ifkey(esp_netif_t *esp_netif);
@@ -780,7 +780,7 @@ int esp_netif_get_route_prio(esp_netif_t *esp_netif);
  * @param[in]  esp_netif Handle to esp-netif instance
  *
  * @param event_type (either get or lost IP)
- * 
+ *
  * @return specific event id which is configured to be raised if the interface lost or acquired IP address
  *         -1 if supplied event_type is not known
  */

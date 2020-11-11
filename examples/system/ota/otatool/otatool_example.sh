@@ -24,7 +24,7 @@ function assert_file_same()
     sz_a=$(stat -c %s $1)
     sz_b=$(stat -c %s $2)
     sz=$((sz_a < sz_b ? sz_a : sz_b))
-    res=$(cmp -s -n $sz $1 $2) || 
+    res=$(cmp -s -n $sz $1 $2) ||
         (echo "!!!!!!!!!!!!!!!!!!!"
         echo "FAILURE: $3"
         echo "!!!!!!!!!!!!!!!!!!!")
@@ -59,36 +59,36 @@ assert_file_same $BINARY app1.bin "Slot 1 app does not match factory app"
 # Switch to factory app
 echo "Switching to factory app"
 $OTATOOL_PY erase_otadata
-assert_running_partition factory 
+assert_running_partition factory
 
 # Switch to slot 0
 echo "Switching to OTA slot 0"
 $OTATOOL_PY switch_ota_partition --slot 0
-assert_running_partition ota_0 
+assert_running_partition ota_0
 
 # Switch to slot 1 twice in a row
 echo "Switching to OTA slot 1 (twice in a row)"
 $OTATOOL_PY switch_ota_partition --slot 1
-assert_running_partition ota_1 
+assert_running_partition ota_1
 $OTATOOL_PY switch_ota_partition --name ota_1
-assert_running_partition ota_1 
+assert_running_partition ota_1
 
 # Switch to slot 0 twice in a row
 echo "Switching to OTA slot 0 (twice in a row)"
 $OTATOOL_PY switch_ota_partition --slot 0
-assert_running_partition ota_0 
+assert_running_partition ota_0
 $OTATOOL_PY switch_ota_partition --name ota_0
-assert_running_partition ota_0 
+assert_running_partition ota_0
 
 # Switch to factory app
 echo "Switching to factory app"
 $OTATOOL_PY erase_otadata
-assert_running_partition factory 
+assert_running_partition factory
 
 # Switch to slot 1
 echo "Switching to OTA slot 1"
 $OTATOOL_PY switch_ota_partition --slot 1
-assert_running_partition ota_1 
+assert_running_partition ota_1
 
 # Example end and cleanup
 printf "\nPartition tool operations performed successfully\n"

@@ -318,7 +318,7 @@ ifdef SECURE_SIGNED_APPS_ECDSA_SCHEME
 	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
 	@echo "espsecure.py sign_data --version 1 --keyfile KEYFILE $(APP_BIN)"
 	@echo "espsecure.py sign_data --version 1 --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
-else 
+else
 	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
 	@echo "espsecure.py sign_data --version 2 --keyfile KEYFILE $(APP_BIN)"
 endif
@@ -770,4 +770,3 @@ endif #CONFIG_SDK_TOOLPREFIX
 
 #####################################################################
 endif #CONFIG_IDF_TARGET
-

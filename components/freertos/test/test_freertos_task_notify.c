@@ -209,5 +209,3 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     isr_handle_1 = NULL;
 #endif
 }
-
-

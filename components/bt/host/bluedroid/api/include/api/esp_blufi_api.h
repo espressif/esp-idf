@@ -116,7 +116,7 @@ typedef struct {
 } esp_blufi_ap_record_t;
 
 /**
- * @brief BLUFI callback parameters union 
+ * @brief BLUFI callback parameters union
  */
 typedef union {
     /**
@@ -175,7 +175,7 @@ typedef union {
     } sta_ssid;                                     /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_STA_SSID */
 
     /**
-     * @brief 
+     * @brief
      * ESP_BLUFI_EVENT_RECV_STA_PASSWD
      */
     struct blufi_recv_sta_passwd_evt_param {
@@ -192,7 +192,7 @@ typedef union {
     } softap_ssid;                                  /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_SOFTAP_SSID */
 
     /**
-     * @brief 
+     * @brief
      * ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD
      */
     struct blufi_recv_softap_passwd_evt_param {
@@ -208,7 +208,7 @@ typedef union {
     } softap_max_conn_num;                          /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_SOFTAP_MAX_CONN_NUM */
 
     /**
-     * @brief 
+     * @brief
      * ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE
      */
     struct blufi_recv_softap_auth_mode_evt_param {
@@ -216,7 +216,7 @@ typedef union {
     } softap_auth_mode;                             /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE */
 
     /**
-     * @brief 
+     * @brief
      * ESP_BLUFI_EVENT_RECV_SOFTAP_CHANNEL
      */
     struct blufi_recv_softap_channel_evt_param {
@@ -229,7 +229,7 @@ typedef union {
     struct blufi_recv_username_evt_param {
         uint8_t *name;                              /*!< Username point */
         int name_len;                               /*!< Username length */
-    } username;                                     /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_USERNAME*/ 
+    } username;                                     /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_USERNAME*/
 
     /**
      * @brief ESP_BLUFI_EVENT_RECV_CA_CERT
@@ -277,7 +277,7 @@ typedef union {
         esp_blufi_error_state_t state;              /*!< Blufi error state */
     } report_error;                                 /*!< Blufi callback param of ESP_BLUFI_EVENT_REPORT_ERROR */
     /**
-     * @brief 
+     * @brief
      * ESP_BLUFI_EVENT_RECV_CUSTOM_DATA
      */
     struct blufi_recv_custom_data_evt_param {
@@ -296,7 +296,7 @@ typedef void (* esp_blufi_event_cb_t)(esp_blufi_cb_event_t event, esp_blufi_cb_p
 /* security function declare */
 
 /**
- * @brief BLUFI negotiate data handler 
+ * @brief BLUFI negotiate data handler
  * @param data : data from phone
  * @param len  : length of data from phone
  * @param output_data : data want to send to phone
@@ -307,7 +307,7 @@ typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8
 /**
  * @brief BLUFI  encrypt the data after negotiate a share key
  * @param iv8  : initial vector(8bit), normally, blufi core will input packet sequence number
- * @param crypt_data : plain text and encrypted data, the encrypt function must support autochthonous encrypt 
+ * @param crypt_data : plain text and encrypted data, the encrypt function must support autochthonous encrypt
  * @param crypt_len  : length of plain text
  * @return  Nonnegative number is encrypted length, if error, return negative number;
  */
@@ -316,7 +316,7 @@ typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int c
 /**
  * @brief BLUFI  decrypt the data after negotiate a share key
  * @param iv8  : initial vector(8bit), normally, blufi core will input packet sequence number
- * @param crypt_data : encrypted data and plain text, the encrypt function must support autochthonous decrypt 
+ * @param crypt_data : encrypted data and plain text, the encrypt function must support autochthonous decrypt
  * @param crypt_len  : length of encrypted text
  * @return  Nonnegative number is decrypted length, if error, return negative number;
  */
@@ -376,7 +376,7 @@ esp_err_t esp_blufi_profile_deinit(void);
  * @param opmode :  wifi opmode
  * @param sta_conn_state   : station is already in connection or not
  * @param softap_conn_num  : softap connection number
- * @param extra_info       : extra information, such as sta_ssid, softap_ssid and etc. 
+ * @param extra_info       : extra information, such as sta_ssid, softap_ssid and etc.
  *
  * @return          ESP_OK - success, other - failed
  *
@@ -397,7 +397,7 @@ esp_err_t esp_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list
 /**
  *
  * @brief           Get BLUFI profile version
- * 
+ *
  * @return          Most 8bit significant is Great version, Least 8bit is Sub version
  *
  */

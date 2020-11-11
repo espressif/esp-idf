@@ -6,4 +6,3 @@
 PROJECT_NAME := wpa2-enterprise
 
 include $(IDF_PATH)/make/project.mk
-

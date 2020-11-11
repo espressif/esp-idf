@@ -839,7 +839,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
     FIL* file;
 
     int ret = 0;
-    
+
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
 
     _lock_acquire(&fat_ctx->lock);

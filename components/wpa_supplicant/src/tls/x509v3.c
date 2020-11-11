@@ -469,7 +469,7 @@ static int x509_parse_name(const u8 *buf, size_t len, struct x509_name *name,
 
 static char * x509_name_attr_str(enum x509_name_attr_type type)
 {
-#ifndef ESPRESSIF_USE	
+#ifndef ESPRESSIF_USE
 	switch (type) {
 	case X509_NAME_ATTR_NOT_USED:
 		return "[N/A]";
@@ -520,7 +520,7 @@ static char * x509_name_attr_str(enum x509_name_attr_type type)
             strcpy(name_attr, "?");
 	}
 	return name_attr;
-#endif 
+#endif
 }
 
 
@@ -1109,7 +1109,7 @@ static int x509_parse_extension(struct x509_certificate *cert,
 	if (res == 1 && critical_ext) {
 		wpa_printf(MSG_INFO, "X509: Unknown critical extension %s",
 			   buf);
-		//return -1;  //for wpa2 certification , commenout , ignore the error 
+		//return -1;  //for wpa2 certification , commenout , ignore the error
 	}
 
 	return 0;
@@ -1770,7 +1770,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 	os_get_time(&now);
 
 	for (cert = chain, idx = 0; cert; cert = cert->next, idx++) {
-		x509_name_string(&cert->subject, buf, sizeof(buf)); 
+		x509_name_string(&cert->subject, buf, sizeof(buf));
 		wpa_printf(MSG_DEBUG, "X509: %lu: %s", idx, buf);
 
 		if (chain_trusted)
@@ -1794,11 +1794,11 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 				wpa_printf(MSG_DEBUG, "X509: Certificate "
 					   "chain issuer name mismatch");
 				x509_name_string(&cert->issuer, buf,
-						 sizeof(buf)); 
+						 sizeof(buf));
 				wpa_printf(MSG_DEBUG, "X509: cert issuer: %s",
 					   buf);
 				x509_name_string(&cert->next->subject, buf,
-						 sizeof(buf)); 
+						 sizeof(buf));
 				wpa_printf(MSG_DEBUG, "X509: next cert "
 					   "subject: %s", buf);
 				*reason = X509_VALIDATE_CERTIFICATE_UNKNOWN;

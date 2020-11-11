@@ -111,7 +111,7 @@ static int process_get_mac_addr_cmd(int argc, char **argv)
 
     if (mac != NULL) {
         ESP_LOGI(TAG_CNSL, "+BTMAC:"MACSTR"\n", MAC2STR(mac));
-    } 
+    }
     return 0;
 }
 void register_coex_cmd(void)

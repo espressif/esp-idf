@@ -158,4 +158,3 @@ extern "C" {
 #endif
 
 #endif /* __H_LIBDB_MACROS */
-

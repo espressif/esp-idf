@@ -1047,4 +1047,3 @@ BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels)
 }
 
 #endif
-

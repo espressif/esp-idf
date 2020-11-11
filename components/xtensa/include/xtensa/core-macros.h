@@ -503,4 +503,3 @@ static inline void xthal_mpu_set_entry_ (xthal_MPU_entry entry)
 #endif /* C code */
 
 #endif /*XTENSA_CACHE_H*/
-

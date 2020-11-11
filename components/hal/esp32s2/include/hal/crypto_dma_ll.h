@@ -76,6 +76,3 @@ static inline void crypto_dma_ll_outlink_start(void)
 #ifdef __cplusplus
 }
 #endif
-
-
-

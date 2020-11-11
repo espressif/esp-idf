@@ -11,7 +11,7 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")
 else()
     # Regular app build
-    set(srcs 
+    set(srcs
         "cache_err_int.c"
         "cache_sram_mmu.c"
         "clk.c"
@@ -50,7 +50,7 @@ else()
 
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in" 
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in"
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")
@@ -71,7 +71,8 @@ else()
     add_dependencies(${COMPONENT_LIB} esp32_linker_script)
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
+        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all
+        # components that depend on esp32.
         #
         # To handle some corner cases, the same flag is set in project_include.cmake
         target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)

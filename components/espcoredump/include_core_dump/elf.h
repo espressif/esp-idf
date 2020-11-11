@@ -40,9 +40,9 @@ typedef int64_t Elf64_Sxword;
 #define PT_NOTE 4
 #define PT_SHLIB 5
 #define PT_PHDR 6
-#define PT_TLS 7  
-#define PT_LOOS 0x60000000  
-#define PT_HIOS 0x6fffffff  
+#define PT_TLS 7
+#define PT_LOOS 0x60000000
+#define PT_HIOS 0x6fffffff
 #define PT_LOPROC 0x70000000
 #define PT_HIPROC 0x7fffffff
 #define PT_GNU_EH_FRAME 0x6474e550
@@ -284,7 +284,7 @@ typedef struct elf64_shdr {
  Elf64_Xword sh_entsize;
 } Elf64_Shdr;
 
-#define EI_MAG0 0  
+#define EI_MAG0 0
 #define EI_MAG1 1
 #define EI_MAG2 2
 #define EI_MAG3 3
@@ -294,23 +294,23 @@ typedef struct elf64_shdr {
 #define EI_OSABI 7
 #define EI_PAD 8
 
-#define ELFMAG0 0x7f  
+#define ELFMAG0 0x7f
 #define ELFMAG1 'E'
 #define ELFMAG2 'L'
 #define ELFMAG3 'F'
 #define ELFMAG "\177ELF"
 #define SELFMAG 4
 
-#define ELFCLASSNONE 0  
+#define ELFCLASSNONE 0
 #define ELFCLASS32 1
 #define ELFCLASS64 2
 #define ELFCLASSNUM 3
 
-#define ELFDATANONE 0  
+#define ELFDATANONE 0
 #define ELFDATA2LSB 1
 #define ELFDATA2MSB 2
 
-#define EV_NONE 0  
+#define EV_NONE 0
 #define EV_CURRENT 1
 #define EV_NUM 2
 
@@ -326,7 +326,7 @@ typedef struct elf64_shdr {
 #define NT_PRPSINFO 3
 #define NT_TASKSTRUCT 4
 #define NT_AUXV 6
-#define NT_PRXFPREG 0x46e62b7f  
+#define NT_PRXFPREG 0x46e62b7f
 
 typedef struct elf32_note {
  Elf32_Word n_namesz;

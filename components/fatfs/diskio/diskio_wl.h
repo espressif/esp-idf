@@ -23,7 +23,7 @@ extern "C" {
 
 
 /**
- * Register spi flash partition 
+ * Register spi flash partition
  *
  * @param pdrv  drive number
  * @param flash_handle  handle of the wear levelling partition.

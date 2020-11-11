@@ -137,4 +137,3 @@ uint32_t cipher_type_map_supp_to_public(wifi_cipher_type_t cipher);
 void wpa_sta_clear_curr_pmksa(void);
 
 #endif /* WPA_H */
-

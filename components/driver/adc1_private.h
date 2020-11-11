@@ -67,4 +67,3 @@ esp_err_t adc1_lock_release(void);
 #ifdef __cplusplus
 }
 #endif
-

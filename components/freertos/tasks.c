@@ -477,7 +477,7 @@ static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters );
 
 /* Function to call the Thread Local Storage Pointer Deletion Callbacks. Will be
  * called during task deletion before prvDeleteTCB is called.
- */ 
+ */
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
 	static void prvDeleteTLS( TCB_t *pxTCB );
 #endif
@@ -886,7 +886,7 @@ static void prvInitialiseNewTask( 	TaskFunction_t pxTaskCode,
 StackType_t *pxTopOfStack;
 UBaseType_t x;
 
-	#if (portNUM_PROCESSORS < 2) 
+	#if (portNUM_PROCESSORS < 2)
 	xCoreID = 0;
 	#endif
 
@@ -1142,7 +1142,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 {
 	TCB_t *curTCB, *tcb0, *tcb1;
 
-	#if (portNUM_PROCESSORS < 2) 
+	#if (portNUM_PROCESSORS < 2)
 	xCoreID = 0;
 	#endif
 
@@ -1359,7 +1359,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
 				prvDeleteTLS( pxTCB );
 			#endif
-			
+
 			prvDeleteTCB( pxTCB );
 		}
 
@@ -2015,7 +2015,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xStateListItem ) ) != pdFALSE )
 		{
 			/* Has the task already been resumed from within an ISR? */
-			if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) || 
+			if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) ||
 				listIS_CONTAINED_WITHIN( &xPendingReadyList[!xPortGetCoreID()], &( pxTCB->xEventListItem ))  == pdFALSE )
 			{
 				/* Is it in the suspended list because it is in the	Suspended
@@ -2109,7 +2109,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	TCB_t * const pxTCB = xTaskToResume;
 
 		configASSERT( xTaskToResume );
-		
+
 		/* RTOS ports that support interrupt nesting have the concept of a
 		maximum	system call (or maximum API call) interrupt priority.
 		Interrupts that are	above the maximum system call priority are keep
@@ -2127,7 +2127,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		provided on the following link:
 		https://www.freertos.org/RTOS-Cortex-M3-M4.html */
 		//portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
-		
+
 		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		{
 			if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
@@ -2186,7 +2186,7 @@ StackType_t *pxIdleTaskStackBuffer[portNUM_PROCESSORS]  = {NULL};
 uint32_t ulIdleTaskStackSize;
 #endif
 
-	for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++) 
+	for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++)
 	{
 		/* Add the idle task at the lowest priority. */
         #if( 0 ) /* configSUPPORT_STATIC_ALLOCATION == 1 ) Temporarily unsupported IDF-2243 */
@@ -2413,7 +2413,7 @@ void vTaskSuspendAll( void )
 
 		return xReturn;
 	}
-	
+
 #endif /* configUSE_TICKLESS_IDLE */
 /*----------------------------------------------------------*/
 
@@ -2829,8 +2829,8 @@ TCB_t *pxTCB;
 
 	TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid )
 	{
-		configASSERT( cpuid < portNUM_PROCESSORS );		
-		configASSERT( ( xIdleTaskHandle[cpuid] != NULL ) );		
+		configASSERT( cpuid < portNUM_PROCESSORS );
+		configASSERT( ( xIdleTaskHandle[cpuid] != NULL ) );
 		return xIdleTaskHandle[cpuid];
 	}
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
@@ -3380,11 +3380,11 @@ void vTaskSwitchContext( void )
 			--uxDynamicTopReady;
 		}
 
-		#else 
+		#else
 		//For Unicore targets we can keep the current FreeRTOS O(1)
-		//Scheduler. I hope to optimize better the scheduler for 
+		//Scheduler. I hope to optimize better the scheduler for
 		//Multicore settings -- This will involve to create a per
-		//affinity ready task list which will impact hugely on 
+		//affinity ready task list which will impact hugely on
 		//tasks module
 		taskSELECT_HIGHEST_PRIORITY_TASK();
 		#endif
@@ -3502,32 +3502,32 @@ UBaseType_t i, uxTargetCPU;
 
 	This function assumes that a check has already been made to ensure that
 	pxEventList is not empty. */
-	if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE ) 
+	if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE )
 	{
 		pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 		configASSERT( pxUnblockedTCB );
 		( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
-	} 
-	else 
+	}
+	else
 	{
 		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 		return pdFALSE;
 	}
 
 	xTaskCanBeReady = pdFALSE;
-	if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) 
+	if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY )
 	{
 		uxTargetCPU = xPortGetCoreID();
-		for (i = 0; i < portNUM_PROCESSORS; i++) 
+		for (i = 0; i < portNUM_PROCESSORS; i++)
 		{
-			if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE ) 
+			if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE )
 			{
 				xTaskCanBeReady = pdTRUE;
 				break;
 			}
 		}
-	} 
-	else 
+	}
+	else
 	{
 		uxTargetCPU = pxUnblockedTCB->xCoreID;
 		xTaskCanBeReady = uxSchedulerSuspended[ uxTargetCPU ] == ( UBaseType_t ) pdFALSE;
@@ -4033,7 +4033,7 @@ UBaseType_t uxPriority;
 	for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++) {
 		vListInitialise( &xPendingReadyList[ i ] );
 	}
-	#else 
+	#else
 	vListInitialise( &xPendingReadyList[xPortGetCoreID()] );
 	#endif
 
@@ -4704,7 +4704,7 @@ TCB_t *pxTCB;
 	TCB_t * const pxTCB = pxMutexHolder;
 	UBaseType_t uxPriorityUsedOnEntry, uxPriorityToUse;
 	const UBaseType_t uxOnlyOneMutexHeld = ( UBaseType_t ) 1;
-		
+
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		if( pxMutexHolder != NULL )
 		{
@@ -5557,7 +5557,7 @@ TickType_t uxReturn;
 	{
 	TCB_t * pxTCB;
 	uint8_t ucOriginalNotifyState;
-	
+
 
 		configASSERT( xTaskToNotify );
 
@@ -5675,7 +5675,7 @@ TickType_t uxReturn;
 	uint32_t ulTaskGetIdleRunTimeCounter( void )
 	{
 		taskENTER_CRITICAL(&xTaskQueueMutex);
-		tskTCB *pxTCB = (tskTCB *)xIdleTaskHandle[xPortGetCoreID()]; 
+		tskTCB *pxTCB = (tskTCB *)xIdleTaskHandle[xPortGetCoreID()];
 		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 		return pxTCB->ulRunTimeCounter;
@@ -5684,7 +5684,7 @@ TickType_t uxReturn;
 #endif
 /*-----------------------------------------------------------*/
 
-static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const TickType_t xTicksToWait ) 
+static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const TickType_t xTicksToWait )
 {
 TickType_t xTimeToWake;
 const TickType_t xConstTickCount = xTickCount;
@@ -5901,6 +5901,3 @@ BaseType_t  __attribute__((weak)) xTimerCreateTimerTask( void )
 {
 	return pdPASS;
 }
-
-
-

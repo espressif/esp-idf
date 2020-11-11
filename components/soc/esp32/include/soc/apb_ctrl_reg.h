@@ -290,5 +290,3 @@
 
 
 #endif /*_SOC_APB_CTRL_REG_H_ */
-
-

@@ -179,5 +179,3 @@ static void register_make(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
-
-

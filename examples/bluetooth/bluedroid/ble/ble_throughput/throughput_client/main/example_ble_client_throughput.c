@@ -296,7 +296,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_NOTIFY_EVT: {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
-        if (p_data->notify.is_notify && 
+        if (p_data->notify.is_notify &&
             (p_data->notify.value[p_data->notify.value_len - 1] ==
              check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
             notify_len += p_data->notify.value_len;
@@ -308,7 +308,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             start = true;
             break;
         }
-        
+
 #else /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
         esp_log_buffer_hex(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
@@ -498,7 +498,7 @@ static void throughput_client_task(void *param)
             }
         }
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)        
+#if (CONFIG_GATTC_WRITE_THROUGHPUT)
             if (!can_send_write) {
                 int res = xSemaphoreTake(gattc_semaphore, portMAX_DELAY);
                 assert(res == pdTRUE);
@@ -586,7 +586,7 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-    // The task is only created on the CPU core that Bluetooth is working on, 
+    // The task is only created on the CPU core that Bluetooth is working on,
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 
@@ -598,4 +598,3 @@ void app_main(void)
     }
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 }
-

@@ -581,6 +581,3 @@ void app_main(void)
      * remove_all_bonded_devices();
      */
 }
-
-
-

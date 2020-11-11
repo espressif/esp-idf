@@ -53,5 +53,3 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
     TEST_PERFORMANCE_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
-
-

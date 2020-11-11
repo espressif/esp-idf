@@ -9,7 +9,7 @@
 
 /****************************************************************************
 * This is a demo for bluetooth config wifi connection to ap. You can config ESP32 to connect a softap
-* or config ESP32 as a softap to be connected by other device. APP can be downloaded from github 
+* or config ESP32 as a softap to be connected by other device. APP can be downloaded from github
 * android source code: https://github.com/EspressifApp/EspBlufi
 * iOS source code: https://github.com/EspressifApp/EspBlufiForiOS
 ****************************************************************************/
@@ -141,7 +141,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         memcpy(gl_sta_bssid, event->bssid, 6);
         memcpy(gl_sta_ssid, event->ssid, event->ssid_len);
         gl_sta_ssid_len = event->ssid_len;
-        break; 
+        break;
     case WIFI_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
            auto-reassociate. */
@@ -157,7 +157,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
         /* TODO: get config or information of softap, then set to report extra_info */
         if (ble_is_connected == true) {
-            if (gl_sta_connected) {  
+            if (gl_sta_connected) {
                 esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
             } else {
                 esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
@@ -192,7 +192,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
             blufi_ap_list[i].rssi = ap_list[i].rssi;
             memcpy(blufi_ap_list[i].ssid, ap_list[i].ssid, sizeof(ap_list[i].ssid));
         }
-        
+
         if (ble_is_connected == true) {
             esp_blufi_send_wifi_list(apCount, blufi_ap_list);
         } else {
@@ -288,7 +288,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 
         esp_wifi_get_mode(&mode);
 
-        if (gl_sta_connected) {  
+        if (gl_sta_connected) {
             memset(&info, 0, sizeof(esp_blufi_extra_info_t));
             memcpy(info.sta_bssid, gl_sta_bssid, 6);
             info.sta_bssid_set = true;

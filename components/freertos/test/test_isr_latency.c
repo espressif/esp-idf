@@ -25,7 +25,7 @@ static void software_isr_using_parameter_vportyield(void *arg) {
     (void)arg;
     BaseType_t yield;
     delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
-    
+
     xt_set_intclear(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
@@ -38,7 +38,7 @@ static void software_isr_using_no_argument_vportyield(void *arg) {
     (void)arg;
     BaseType_t yield;
     delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
-    
+
     xt_set_intclear(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
@@ -77,7 +77,7 @@ TEST_CASE("isr latency test vport-yield-from-isr with no parameter", "[freertos]
     TEST_ASSERT(end_sema != NULL);
     xTaskCreatePinnedToCore(test_task, "tst" , 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
     vTaskDelay(100);
-    BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);    
+    BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
     TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%d cycles" ,delta_enter_cycles);
     TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%d cycles" ,delta_exit_cycles);
@@ -96,7 +96,7 @@ TEST_CASE("isr latency test vport-yield-from-isr with parameter", "[freertos][ig
     end_sema = xSemaphoreCreateBinary();
     TEST_ASSERT(end_sema != NULL);
     xTaskCreatePinnedToCore(test_task, "tst" , 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
-    BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);    
+    BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
     TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%d cycles" ,delta_enter_cycles);
     TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%d cycles" ,delta_exit_cycles);

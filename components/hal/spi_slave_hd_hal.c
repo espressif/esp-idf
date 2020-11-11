@@ -114,7 +114,7 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
 
     spi_ll_slave_set_rx_bitlen(hal->dev, len * 8);
     spi_ll_dma_rx_enable(hal->dev, 1);
-    spi_dma_ll_rx_start(hal->dma_in, &hal->dmadesc_rx[0]); 
+    spi_dma_ll_rx_start(hal->dma_in, &hal->dmadesc_rx[0]);
 }
 
 void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len)
@@ -128,7 +128,7 @@ void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD8);
 
     spi_ll_dma_tx_enable(hal->dev, 1);
-    spi_dma_ll_tx_start(hal->dma_out, &hal->dmadesc_tx[0]); 
+    spi_dma_ll_tx_start(hal->dma_out, &hal->dmadesc_tx[0]);
 }
 
 static spi_ll_intr_t get_event_intr(spi_event_t ev)

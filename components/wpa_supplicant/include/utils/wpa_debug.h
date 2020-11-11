@@ -28,7 +28,7 @@
 #define MSG_DEBUG ESP_LOG_DEBUG
 #define MSG_MSGDUMP ESP_LOG_VERBOSE
 
-#else 
+#else
 enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 #endif
 

@@ -137,7 +137,7 @@ esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
   *        - 2.5 dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5 V
   *        - 6 dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2 V
   *        - 11 dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9 V (see note below)
-  * 
+  *
   * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
   *
   *         +----------+------------+--------------------------+
@@ -159,7 +159,7 @@ esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
   *         |          +------------+--------------------------+
   *         |          |  11        |     150 ~ 2600           |
   *         +----------+------------+--------------------------+
-  * 
+  *
   * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
   * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured bit width,
   *       this value in ESP32 is 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.

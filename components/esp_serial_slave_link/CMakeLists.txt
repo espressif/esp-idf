@@ -7,4 +7,3 @@ idf_component_register(SRCS "essl.c"
             PRIV_INCLUDE_DIRS "."
                 "include/esp_serial_slave_link"
 )
-

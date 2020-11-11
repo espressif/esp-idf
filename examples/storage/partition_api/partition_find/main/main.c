@@ -47,21 +47,21 @@ static void find_partition(esp_partition_type_t type, esp_partition_subtype_t su
 {
     ESP_LOGI(TAG, "Find partition with type %s, subtype %s, label %s...", get_type_str(type), get_subtype_str(subtype),
                     name == NULL ? "NULL (unspecified)" : name);
-    const esp_partition_t * part  = esp_partition_find_first(type, subtype, name); 
-    ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size); 
+    const esp_partition_t * part  = esp_partition_find_first(type, subtype, name);
+    ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
 }
 
 void app_main(void)
 {
-    /* 
+    /*
     * This example uses the partition table from ../partitions_example.csv. For reference, its contents are as follows:
-    * 
+    *
     *  nvs,        data, nvs,      0x9000,  0x6000,
     *  phy_init,   data, phy,      0xf000,  0x1000,
     *  factory,    app,  factory,  0x10000, 1M,
     *  storage1,   data, fat,             , 0x40000,
     *  storage2,   data, fat,             , 0x40000,
-    * 
+    *
     * Display the partition table to the user for reference.
     */
     extern const char csv_start[] asm("_binary_partitions_example_csv_start");
@@ -87,13 +87,13 @@ void app_main(void)
     /* Second Part - Iterating over partitions */
 
     ESP_LOGI(TAG, "----------------Iterate through partitions---------------");
-    
+
     esp_partition_iterator_t it;
 
     ESP_LOGI(TAG, "Iterating through app partitions...");
     it = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
-    // Loop through all matching partitions, in this case, all with the type 'data' until partition with desired 
+    // Loop through all matching partitions, in this case, all with the type 'data' until partition with desired
     // label is found. Verify if its the same instance as the one found before.
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *part = esp_partition_get(it);
@@ -105,7 +105,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Iterating through data partitions...");
     it = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
-    // Loop through all matching partitions, in this case, all with the type 'data' until partition with desired 
+    // Loop through all matching partitions, in this case, all with the type 'data' until partition with desired
     // label is found. Verify if its the same instance as the one found before.
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *part = esp_partition_get(it);
@@ -117,4 +117,3 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Example end");
 }
-

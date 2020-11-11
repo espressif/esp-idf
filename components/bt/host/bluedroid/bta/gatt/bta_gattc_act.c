@@ -1665,7 +1665,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
             } else {
                 APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
             }
-        } 
+        }
         p_buf->int_conn.hdr.layer_specific   = conn_id;
         p_buf->int_conn.client_if            = gattc_if;
         p_buf->int_conn.role                 = L2CA_GetBleConnRole(bda);

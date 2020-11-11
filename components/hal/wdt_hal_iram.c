@@ -197,4 +197,3 @@ bool wdt_hal_is_enabled(wdt_hal_context_t *hal)
         return mwdt_ll_check_if_enabled(hal->mwdt_dev);
     }
 }
-

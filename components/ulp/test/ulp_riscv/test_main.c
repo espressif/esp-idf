@@ -38,7 +38,7 @@ volatile riscv_test_command_reply_t main_cpu_reply = RISCV_COMMAND_INVALID;
 volatile uint32_t riscv_test_data_in = 0;
 volatile uint32_t riscv_test_data_out = 0;
 
-void handle_commands(riscv_test_commands_t cmd) 
+void handle_commands(riscv_test_commands_t cmd)
 {
     switch (cmd) {
         case RISCV_READ_WRITE_TEST:

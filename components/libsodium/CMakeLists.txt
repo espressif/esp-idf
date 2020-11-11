@@ -1,7 +1,7 @@
 set(SRC libsodium/src/libsodium)
 # Derived from libsodium/src/libsodium/Makefile.am
 # (ignoring the !MINIMAL set)
-set(srcs 
+set(srcs
     "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly1305.c"
     "${SRC}/crypto_aead/xchacha20poly1305/sodium/aead_xchacha20poly1305.c"
     "${SRC}/crypto_auth/crypto_auth.c"
@@ -117,11 +117,11 @@ set(srcs
     "port/randombytes_esp32.c")
 
 if(CONFIG_LIBSODIUM_USE_MBEDTLS_SHA)
-    list(APPEND srcs 
+    list(APPEND srcs
         "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
         "port/crypto_hash_mbedtls/crypto_hash_sha512_mbedtls.c")
 else()
-    list(APPEND srcs 
+    list(APPEND srcs
         "${SRC}/crypto_hash/sha256/cp/hash_sha256_cp.c"
         "${SRC}/crypto_hash/sha512/cp/hash_sha512_cp.c")
 endif()
@@ -133,7 +133,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     REQUIRES mbedtls)
 
-target_compile_definitions(${COMPONENT_LIB} PRIVATE 
+target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIGURED
     NATIVE_LITTLE_ENDIAN
     HAVE_WEAK_SYMBOLS

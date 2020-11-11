@@ -1122,7 +1122,7 @@ static void dhcps_poll_set(u32_t ip)
 
 /******************************************************************************
  * FunctionName : dhcps_set_new_lease_cb
- * Description  : set callback for dhcp server when it assign an IP 
+ * Description  : set callback for dhcp server when it assign an IP
  *                to the connected dhcp client
  * Parameters   : cb -- callback for dhcp server
  * Returns      : none
@@ -1320,7 +1320,7 @@ dhcps_dns_setserver(const ip_addr_t *dnsserver)
         dns_server = *(ip_2_ip4(dnsserver));
     } else {
         dns_server = *(ip_2_ip4(IP_ADDR_ANY));
-    } 
+    }
 }
 
 /******************************************************************************
@@ -1329,10 +1329,9 @@ dhcps_dns_setserver(const ip_addr_t *dnsserver)
  * Parameters   : none
  * Returns      : ip4_addr_t
 *******************************************************************************/
-ip4_addr_t 
+ip4_addr_t
 dhcps_dns_getserver(void)
 {
     return dns_server;
 }
 #endif // ESP_DHCP
-

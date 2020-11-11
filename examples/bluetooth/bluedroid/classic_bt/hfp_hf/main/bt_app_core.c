@@ -83,7 +83,7 @@ static void bt_app_task_handler(void *arg)
                     bt_app_work_dispatched(&msg);
                     break;
                 }
-                
+
                 default:
                     ESP_LOGW(BT_APP_CORE_TAG, "%s, unhandled sig: %d", __func__, msg.sig);
                     break;

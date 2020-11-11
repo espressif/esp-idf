@@ -62,21 +62,21 @@ Byte offset	    Field	       Description
    0	      Frame Type	   Value = 0x00
    1	     Ranging Data	   Calibrated Tx power at 0 m
    2	       NID[0]	       10-byte Namespace
-   3	       NID[1]	
-   4	       NID[2]	
-   5	       NID[3]	
-   6	       NID[4]	
-   7	       NID[5]	
-   8	       NID[6]	
-   9	       NID[7]	
-   10	       NID[8]	
-   11	       NID[9]	
+   3	       NID[1]
+   4	       NID[2]
+   5	       NID[3]
+   6	       NID[4]
+   7	       NID[5]
+   8	       NID[6]
+   9	       NID[7]
+   10	       NID[8]
+   11	       NID[9]
    12	       BID[0]	       6-byte Instance
-   13	       BID[1]	
-   14	       BID[2]	
-   15	       BID[3]	
-   16	       BID[4]	
-   17	       BID[5]	
+   13	       BID[1]
+   14	       BID[2]
+   15	       BID[3]
+   16	       BID[4]
+   17	       BID[5]
    18	        RFU	           Reserved for future use, must be0x00
    19	        RFU	           Reserved for future use, must be0x00
 *********************************************/
@@ -135,7 +135,7 @@ static esp_err_t esp_eddystone_url_received(const uint8_t* buf, uint8_t len, esp
         //ERROR:too long url
         return -1;
     }
-    res->inform.url.tx_power = buf[pos++];   
+    res->inform.url.tx_power = buf[pos++];
     url_res = esp_eddystone_resolve_url_scheme(buf+pos, buf+len-1);
     memcpy(&res->inform.url.url, url_res, strlen(url_res));
     res->inform.url.url[strlen(url_res)] = '\0';
@@ -148,17 +148,17 @@ Byte offset	       Field	     Description
     0	          Frame Type	 Value = 0x20
     1	           Version	     TLM version, value = 0x00
     2	           VBATT[0]	     Battery voltage, 1 mV/bit
-    3	           VBATT[1]	
+    3	           VBATT[1]
     4	           TEMP[0]	     Beacon temperature
-    5	           TEMP[1]	
+    5	           TEMP[1]
     6	          ADV_CNT[0]	 Advertising PDU count
-    7	          ADV_CNT[1]	
-    8	          ADV_CNT[2]	
-    9	          ADV_CNT[3]	
+    7	          ADV_CNT[1]
+    8	          ADV_CNT[2]
+    9	          ADV_CNT[3]
     10	          SEC_CNT[0]	 Time since power-on or reboot
-    11	          SEC_CNT[1]	
-    12	          SEC_CNT[2]	
-    13	          SEC_CNT[3]	
+    11	          SEC_CNT[1]
+    12	          SEC_CNT[2]
+    13	          SEC_CNT[3]
 ************************************************/
 /* decode and store received TLM */
 static esp_err_t esp_eddystone_tlm_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
@@ -211,14 +211,14 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
         return -1;
     }
     uint8_t pos=0;
-    while(res->common.srv_data_type != EDDYSTONE_SERVICE_UUID) 
+    while(res->common.srv_data_type != EDDYSTONE_SERVICE_UUID)
     {
         pos++;
-        if(pos >= len ) { 
+        if(pos >= len ) {
             return -1;
         }
         uint8_t ad_type = buf[pos++];
-        switch(ad_type) 
+        switch(ad_type)
         {
             case ESP_BLE_AD_TYPE_FLAG: {
                 res->common.flags = buf[pos++];
@@ -227,7 +227,7 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
             case ESP_BLE_AD_TYPE_16SRV_CMPL: {
                 uint16_t uuid = little_endian_read_16(buf, pos);
                 if(uuid != EDDYSTONE_SERVICE_UUID) {
-                    return -1; 
+                    return -1;
                 }
                 res->common.srv_uuid = uuid;
                 pos += 2;
@@ -237,7 +237,7 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
                 uint16_t type = little_endian_read_16(buf, pos);
                 pos += 2;
                 uint8_t frame_type = buf[pos++];
-                if(type != EDDYSTONE_SERVICE_UUID || !(frame_type == EDDYSTONE_FRAME_TYPE_UID || frame_type == EDDYSTONE_FRAME_TYPE_URL || 
+                if(type != EDDYSTONE_SERVICE_UUID || !(frame_type == EDDYSTONE_FRAME_TYPE_UID || frame_type == EDDYSTONE_FRAME_TYPE_URL ||
                    frame_type == EDDYSTONE_FRAME_TYPE_TLM)) {
                     return -1;
                 }
@@ -251,4 +251,3 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
     }
     return esp_eddystone_get_inform(buf+pos, len-pos, res);
 }
-

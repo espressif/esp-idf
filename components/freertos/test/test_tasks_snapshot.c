@@ -20,7 +20,7 @@ TEST_CASE("Tasks snapshot", "[freertos]")
     int other_core_id = xPortGetCoreID() == 0 ? 1 : 0;
 #endif
 
-    // uxTaskGetSnapshotAll is supposed to be called when all tasks on both CPUs are 
+    // uxTaskGetSnapshotAll is supposed to be called when all tasks on both CPUs are
     // inactive and can not alter FreeRTOS internal tasks lists, e.g. from panic handler
     unsigned state = portENTER_CRITICAL_NESTED();
 #ifndef CONFIG_FREERTOS_UNICORE

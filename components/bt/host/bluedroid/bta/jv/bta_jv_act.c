@@ -543,7 +543,7 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
                         p_cb = &p_pcb->p_pm_cb;
                     }
                 }
-            } 
+            }
 #if BTA_JV_L2CAP_INCLUDED
             else {
                 if (jv_handle < BTA_JV_MAX_L2C_CONN) {
@@ -1880,7 +1880,7 @@ void bta_jv_rfcomm_close(tBTA_JV_MSG *p_data)
         cc->p_cback(BTA_JV_RFCOMM_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
     }
     bta_jv_free_rfc_cb(p_cb, p_pcb);
-    APPL_TRACE_DEBUG("%s: sec id in use:%d, rfc_cb in use:%d",__func__, 
+    APPL_TRACE_DEBUG("%s: sec id in use:%d, rfc_cb in use:%d",__func__,
                      get_sec_id_used(), get_rfc_cb_used());
 }
 

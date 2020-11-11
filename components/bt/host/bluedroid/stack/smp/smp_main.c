@@ -808,4 +808,3 @@ const char *smp_get_event_name(tSMP_EVENT event)
 }
 
 #endif
-

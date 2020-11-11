@@ -706,4 +706,3 @@ xMBTCPPortSendResponse( UCHAR * pucMBTCPFrame, USHORT usTCPLength )
     }
     return bFrameSent;
 }
-

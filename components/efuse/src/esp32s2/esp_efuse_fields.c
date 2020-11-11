@@ -73,4 +73,3 @@ esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
     }
     return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
 }
-

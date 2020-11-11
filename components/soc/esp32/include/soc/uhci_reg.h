@@ -1256,5 +1256,3 @@
 
 
 #endif /*_SOC_UHCI_REG_H_ */
-
-

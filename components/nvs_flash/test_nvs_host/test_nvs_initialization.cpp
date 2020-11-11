@@ -44,5 +44,3 @@ TEST_CASE("nvs_flash_init_partition_ptr inits one partition", "[nvs_custom_part]
     CHECK(NVSPartitionManager::get_instance()->lookup_storage_from_name("test") != nullptr);
     CHECK(NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
 }
-
-

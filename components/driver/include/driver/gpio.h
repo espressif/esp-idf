@@ -444,4 +444,3 @@ esp_err_t gpio_force_unhold_all(void);
 #ifdef __cplusplus
 }
 #endif
-

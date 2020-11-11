@@ -3019,7 +3019,3 @@ static void bta_hh_process_cache_rpt (tBTA_HH_DEV_CB *p_cb,
 }
 
 #endif
-
-
-
-

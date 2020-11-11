@@ -348,4 +348,3 @@ esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr)
     out_scr->bus_width = SCR_SD_BUS_WIDTHS(resp);
     return ESP_OK;
 }
-

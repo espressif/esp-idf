@@ -6,4 +6,3 @@
 PROJECT_NAME := spiffs
 
 include $(IDF_PATH)/make/project.mk
-

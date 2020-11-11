@@ -60,4 +60,3 @@ protected:
 } // nvs
 
 #endif // NVS_PARTITION_MANAGER_HPP_
-

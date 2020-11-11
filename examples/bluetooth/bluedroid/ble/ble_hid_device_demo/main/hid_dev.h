@@ -258,4 +258,3 @@ void hid_mouse_build_report(uint8_t *buffer, mouse_cmd_t cmd);
 #endif
 
 #endif /* HID_DEV_H__ */
-

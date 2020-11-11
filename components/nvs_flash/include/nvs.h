@@ -555,4 +555,3 @@ void nvs_release_iterator(nvs_iterator_t iterator);
 #endif
 
 #endif //ESP_NVS_H
-

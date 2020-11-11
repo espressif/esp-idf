@@ -50,4 +50,3 @@ void osi_mutex_global_lock(void);
 void osi_mutex_global_unlock(void);
 
 #endif /* __MUTEX_H__ */
-

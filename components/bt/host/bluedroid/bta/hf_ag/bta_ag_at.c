@@ -155,7 +155,7 @@ void bta_ag_at_parse(tBTA_AG_AT_CB *p_cb, char *p_buf, UINT16 len)
 {
     int i = 0;
     char* p_save;
-    
+
     if (p_cb->p_cmd_buf == NULL) {
         if ((p_cb->p_cmd_buf = (char *) osi_malloc(p_cb->cmd_max_len)) == NULL) {
             APPL_TRACE_ERROR("%s: osi_malloc() failed allocation", __func__);
@@ -191,7 +191,7 @@ void bta_ag_at_parse(tBTA_AG_AT_CB *p_cb, char *p_buf, UINT16 len)
                 ++p_cb->cmd_pos;
             }
         }
-        
+
         if (i < len) {
             p_cb->cmd_pos = 0;
         }

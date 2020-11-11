@@ -80,7 +80,7 @@ struct eap_mschapv2_data {
 	struct wpabuf *prev_challenge;
 };
 
-static void 
+static void
 eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_mschapv2_data *data = priv;
@@ -91,7 +91,7 @@ eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 	os_free(data);
 }
 
-static void * 
+static void *
 eap_mschapv2_init(struct eap_sm *sm)
 {
 	struct eap_mschapv2_data *data;
@@ -109,7 +109,7 @@ eap_mschapv2_init(struct eap_sm *sm)
 	return data;
 }
 
-static struct wpabuf * 
+static struct wpabuf *
 eap_mschapv2_challenge_reply(
 	struct eap_sm *sm, struct eap_mschapv2_data *data,
 	u8 id, u8 mschapv2_id, const u8 *auth_challenge)
@@ -173,7 +173,7 @@ eap_mschapv2_challenge_reply(
 	return resp;
 }
 
-static struct wpabuf * 
+static struct wpabuf *
 eap_mschapv2_challenge(
 	struct eap_sm *sm, struct eap_mschapv2_data *data,
 	struct eap_method_ret *ret, const struct eap_mschapv2_hdr *req,
@@ -219,7 +219,7 @@ eap_mschapv2_challenge(
 					    challenge);
 }
 
-static void 
+static void
 eap_mschapv2_password_changed(struct eap_sm *sm,
 			      struct eap_mschapv2_data *data)
 {
@@ -291,11 +291,11 @@ eap_mschapv2_success(struct eap_sm *sm,
 	return resp;
 }
 
-static int 
+static int
 eap_mschapv2_failure_txt(struct eap_sm *sm,
 			 struct eap_mschapv2_data *data, char *txt)
 {
-	char *pos; 
+	char *pos;
 	int retry = 1;
 	struct eap_peer_config *config = eap_get_config(sm);
 
@@ -361,7 +361,7 @@ eap_mschapv2_failure_txt(struct eap_sm *sm,
 	return retry == 1;
 }
 
-static struct wpabuf * 
+static struct wpabuf *
 eap_mschapv2_change_password(
 	struct eap_sm *sm, struct eap_mschapv2_data *data,
 	struct eap_method_ret *ret, const struct eap_mschapv2_hdr *req, u8 id)
@@ -454,7 +454,7 @@ fail:
 	return NULL;
 }
 
-static struct wpabuf * 
+static struct wpabuf *
 eap_mschapv2_failure(struct eap_sm *sm,
 		     struct eap_mschapv2_data *data,
 		     struct eap_method_ret *ret,
@@ -517,10 +517,10 @@ eap_mschapv2_check_config(struct eap_sm *sm)
 		return -1;
 	}
 
-	return 0; 
+	return 0;
 }
 
-static int 
+static int
 eap_mschapv2_check_mslen(struct eap_sm *sm, size_t len,
 		         const struct eap_mschapv2_hdr *ms)
 {
@@ -541,7 +541,7 @@ eap_mschapv2_check_mslen(struct eap_sm *sm, size_t len,
 	return -1;
 }
 
-static void 
+static void
 eap_mschapv2_copy_challenge(struct eap_mschapv2_data *data,
 			    const struct wpabuf *reqData)
 {
@@ -549,7 +549,7 @@ eap_mschapv2_copy_challenge(struct eap_mschapv2_data *data,
 	data->prev_challenge = wpabuf_dup(reqData);
 }
 
-static struct wpabuf * 
+static struct wpabuf *
 eap_mschapv2_process(struct eap_sm *sm, void *priv,
 		     struct eap_method_ret *ret,
 		     const struct wpabuf *reqData)
@@ -606,14 +606,14 @@ eap_mschapv2_process(struct eap_sm *sm, void *priv,
 	}
 }
 
-static bool 
+static bool
 eap_mschapv2_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
 	struct eap_mschapv2_data *data = priv;
 	return data->success && data->master_key_valid;
 }
 
-static u8 * 
+static u8 *
 eap_mschapv2_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_mschapv2_data *data = priv;
@@ -638,7 +638,7 @@ eap_mschapv2_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-int 
+int
 eap_peer_mschapv2_register(void)
 {
 	struct eap_method *eap;

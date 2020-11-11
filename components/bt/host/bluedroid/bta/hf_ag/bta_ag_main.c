@@ -850,7 +850,7 @@ static void bta_ag_api_result(tBTA_AG_DATA *p_data)
 {
     tBTA_AG_SCB     *p_scb;
     int i;
-    
+
     if (p_data->hdr.layer_specific != BTA_AG_HANDLE_ALL) {
         if ((p_scb = bta_ag_scb_by_idx(p_data->hdr.layer_specific)) != NULL) {
             APPL_TRACE_DEBUG("bta_ag_api_result: p_scb 0x%08x ", (unsigned int)p_scb);
@@ -880,7 +880,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB *p_scb, UINT16 event, tBTA_AG_DATA *p_data)
 {
     tBTA_AG_ST_TBL      state_table;
     UINT8               action;
-    
+
 #if BTA_AG_DEBUG == TRUE
     UINT16  in_event = event;
     UINT8   in_state = p_scb->state;

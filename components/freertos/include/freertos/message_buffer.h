@@ -106,7 +106,7 @@ typedef void * MessageBufferHandle_t;
  * buffer.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  *
  * void vAFunction( void )
  * {
@@ -129,7 +129,7 @@ typedef void * MessageBufferHandle_t;
  *       // The message buffer was created successfully and can now be used.
  *   }
  *
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferCreate( xBufferSizeBytes ) ( MessageBufferHandle_t ) xStreamBufferGenericCreate( xBufferSizeBytes, ( size_t ) 0, pdTRUE )
@@ -159,7 +159,7 @@ typedef void * MessageBufferHandle_t;
  * pxStaticmessageBuffer are NULL then NULL is returned.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  *
  * // Used to dimension the array used to hold the messages.  The available space
  * // will actually be one less than this, so 999.
@@ -187,7 +187,7 @@ typedef void * MessageBufferHandle_t;
  *   // Other code that uses the message buffer can go here.
  * }
  *
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferCreateStatic( xBufferSizeBytes, pucMessageBufferStorageArea, pxStaticMessageBuffer ) ( MessageBufferHandle_t ) xStreamBufferGenericCreateStatic( xBufferSizeBytes, 0, pdTRUE, pucMessageBufferStorageArea, pxStaticMessageBuffer )
@@ -248,7 +248,7 @@ typedef void * MessageBufferHandle_t;
  * time out then xDataLengthBytes is returned.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  * void vAFunction( MessageBufferHandle_t xMessageBuffer )
  * {
  * size_t xBytesSent;
@@ -276,7 +276,7 @@ typedef void * MessageBufferHandle_t;
  *       // not enough free space in the buffer.
  *   }
  * }
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferSend( xMessageBuffer, pvTxData, xDataLengthBytes, xTicksToWait ) xStreamBufferSend( ( StreamBufferHandle_t ) xMessageBuffer, pvTxData, xDataLengthBytes, xTicksToWait )
@@ -338,7 +338,7 @@ typedef void * MessageBufferHandle_t;
  * then 0 is returned, otherwise xDataLengthBytes is returned.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  * // A message buffer that has already been created.
  * MessageBufferHandle_t xMessageBuffer;
  *
@@ -370,7 +370,7 @@ typedef void * MessageBufferHandle_t;
  *   // documentation for the port in use for port specific instructions.
  *   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferSendFromISR( xMessageBuffer, pvTxData, xDataLengthBytes, pxHigherPriorityTaskWoken ) xStreamBufferSendFromISR( ( StreamBufferHandle_t ) xMessageBuffer, pvTxData, xDataLengthBytes, pxHigherPriorityTaskWoken )
@@ -427,7 +427,7 @@ typedef void * MessageBufferHandle_t;
  * zero is returned.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  * void vAFunction( MessageBuffer_t xMessageBuffer )
  * {
  * uint8_t ucRxData[ 20 ];
@@ -448,7 +448,7 @@ typedef void * MessageBufferHandle_t;
  *       // the message here....
  *   }
  * }
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferReceive( xMessageBuffer, pvRxData, xBufferLengthBytes, xTicksToWait ) xStreamBufferReceive( ( StreamBufferHandle_t ) xMessageBuffer, pvRxData, xBufferLengthBytes, xTicksToWait )
@@ -507,7 +507,7 @@ typedef void * MessageBufferHandle_t;
  * any.
  *
  * Example use:
- * @code{c}       
+ * @code{c}
  * // A message buffer that has already been created.
  * MessageBuffer_t xMessageBuffer;
  *
@@ -539,7 +539,7 @@ typedef void * MessageBufferHandle_t;
  *   // documentation for the port in use for port specific instructions.
  *   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
- * @endcode       
+ * @endcode
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferReceiveFromISR( xMessageBuffer, pvRxData, xBufferLengthBytes, pxHigherPriorityTaskWoken ) xStreamBufferReceiveFromISR( ( StreamBufferHandle_t ) xMessageBuffer, pvRxData, xBufferLengthBytes, pxHigherPriorityTaskWoken )

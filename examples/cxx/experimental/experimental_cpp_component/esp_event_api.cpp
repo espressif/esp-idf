@@ -113,4 +113,3 @@ esp_err_t ESPEventAPICustom::run(TickType_t ticks_to_run)
 } // idf
 
 #endif // __cpp_exceptions
-

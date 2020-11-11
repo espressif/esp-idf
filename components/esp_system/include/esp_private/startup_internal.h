@@ -52,7 +52,7 @@ typedef struct {
 /*
  * Declare an component initialization function that will execute on the specified cores (ex. if BIT0 == 1, will execute
  * on CORE0, CORE1 if BIT1 and so on).
- * 
+ *
  * @note Initialization functions should be placed in a compilation unit where at least one other
  * symbol is referenced 'meaningfully' in another compilation unit, otherwise this gets discarded during linking. (By
  * 'meaningfully' we mean the reference should not itself get optimized out by the compiler/discarded by the linker).
@@ -61,14 +61,13 @@ typedef struct {
 static void  __attribute__((used)) __VA_ARGS__ __esp_system_init_fn_##f(void); \
 static __attribute__((used)) esp_system_init_fn_t _SECTION_ATTR_IMPL(".esp_system_init_fn", f) \
                     esp_system_init_fn_##f = { .fn = ( __esp_system_init_fn_##f), .cores = (c) }; \
-static __attribute__((used)) __VA_ARGS__ void __esp_system_init_fn_##f(void) // [refactor-todo] this can be made public API if we allow components to declare init functions, 
+static __attribute__((used)) __VA_ARGS__ void __esp_system_init_fn_##f(void) // [refactor-todo] this can be made public API if we allow components to declare init functions,
                                                                              // instead of calling them explicitly
 
-extern uint64_t g_startup_time;   // Startup time that serves as the point of origin for system time. Should be set by the entry 
+extern uint64_t g_startup_time;   // Startup time that serves as the point of origin for system time. Should be set by the entry
                                   // function in the port layer. May be 0 as well if this is not backed by a persistent counter, in which case
                                   // startup time = system time = 0 at the point the entry function sets this variable.
 
 #ifdef __cplusplus
 }
 #endif
-

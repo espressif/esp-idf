@@ -173,7 +173,7 @@ void gatt_free(void)
     list_node_t *p_node = NULL;
     tGATT_TCB   *p_tcb  = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node); 
+	p_tcb = list_node(p_node);
         fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
         p_tcb->pending_enc_clcb = NULL;
 

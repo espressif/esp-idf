@@ -76,7 +76,7 @@ esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx)
     return ESP_OK;
 }
 
-esp_err_t esp_event_loop_deinit(void) 
+esp_err_t esp_event_loop_deinit(void)
 {
     if (!s_initialized) {
         ESP_LOGE(TAG, "system event loop not initialized");
@@ -98,4 +98,3 @@ esp_err_t esp_event_loop_deinit(void)
     s_event_ctx = NULL;
     return ESP_OK;
 }
-

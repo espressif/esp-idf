@@ -1,6 +1,6 @@
 The newlib subdirectory is a collection of software from several sources.
 
-Each file may have its own copyright/license that is embedded in the source 
+Each file may have its own copyright/license that is embedded in the source
 file.  Unless otherwise noted in the body of the source file(s), the following copyright
 notices will apply to the contents of the newlib subdirectory:
 
@@ -10,10 +10,10 @@ Copyright (c) 1994-2009  Red Hat, Inc. All rights reserved.
 
 This copyrighted material is made available to anyone wishing to use,
 modify, copy, or redistribute it subject to the terms and conditions
-of the BSD License.   This program is distributed in the hope that 
-it will be useful, but WITHOUT ANY WARRANTY expressed or implied, 
-including the implied warranties of MERCHANTABILITY or FITNESS FOR 
-A PARTICULAR PURPOSE.  A copy of this license is available at 
+of the BSD License.   This program is distributed in the hope that
+it will be useful, but WITHOUT ANY WARRANTY expressed or implied,
+including the implied warranties of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.  A copy of this license is available at
 http://www.opensource.org/licenses. Any Red Hat trademarks that are
 incorporated in the source code or documentation are not subject to
 the BSD License and may only be used or replicated with the express
@@ -27,23 +27,23 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, 
+    * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
     * Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
-    * Neither the name of the University nor the names of its contributors 
-      may be used to endorse or promote products derived from this software 
+    * Neither the name of the University nor the names of its contributors
+      may be used to endorse or promote products derived from this software
       without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 
@@ -117,7 +117,7 @@ Mail Stop 573
 Austin, TX 78741
 800-292-9263
 
-(5) 
+(5)
 
 (6)
 
@@ -633,7 +633,7 @@ SUCH DAMAGE.
   Copyright (c) 1995 Alex Tatmanjants <alex@elvisti.kiev.ua>
  		at Electronni Visti IA, Kiev, Ukraine.
  			All rights reserved.
- 
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
   are met:
@@ -642,7 +642,7 @@ SUCH DAMAGE.
   2. Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -659,7 +659,7 @@ SUCH DAMAGE.
 
   Copyright (c) 1998, M. Warner Losh <imp@freebsd.org>
   All rights reserved.
- 
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
   are met:
@@ -668,7 +668,7 @@ SUCH DAMAGE.
   2. Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -685,7 +685,7 @@ SUCH DAMAGE.
 
   Copyright (C) 1996 by Andrey A. Chernov, Moscow, Russia.
   All rights reserved.
- 
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
   are met:
@@ -694,7 +694,7 @@ SUCH DAMAGE.
   2. Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -711,7 +711,7 @@ SUCH DAMAGE.
 
   Copyright (c) 2001 Daniel Eischen <deischen@FreeBSD.org>.
   All rights reserved.
- 
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
   are met:
@@ -720,7 +720,7 @@ SUCH DAMAGE.
   2. Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -764,7 +764,7 @@ SUCH DAMAGE.
 
  Copyright (c) 2009 ARM Ltd
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -866,7 +866,7 @@ license, or royalty fee is required for any of the authorized uses.
 Modifications to this software may be copyrighted by their authors
 and need not follow the licensing terms described here, provided that
 the new terms are clearly indicated on the first page of each file where
-they apply. 
+they apply.
 
 (39) - Adapteva, Inc. (epiphany-* targets)
 
@@ -905,14 +905,14 @@ modification, are permitted provided that the following conditions
 are met:
 
    o Redistributions of source code must retain the above copyright
-     notice, this list of conditions and the following disclaimer. 
+     notice, this list of conditions and the following disclaimer.
    o Redistributions in binary form must reproduce the above copyright
-     notice, this list of conditions and the following disclaimer in the 
-     documentation and/or other materials provided with the distribution. 
-   o Neither the name of Altera Corporation nor the names of its 
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+   o Neither the name of Altera Corporation nor the names of its
      contributors may be used to endorse or promote products derived from
-     this software without specific prior written permission. 
- 
+     this software without specific prior written permission.
+
 THIS SOFTWARE IS PROVIDED BY ALTERA CORPORATION, THE COPYRIGHT HOLDER,
 AND ITS CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
 INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
@@ -923,7 +923,7 @@ BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
 OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (41) Ed Schouten - Free BSD
 
@@ -950,4 +950,3 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
-

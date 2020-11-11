@@ -6,4 +6,3 @@
 PROJECT_NAME := ir_protocols
 
 include $(IDF_PATH)/make/project.mk
-

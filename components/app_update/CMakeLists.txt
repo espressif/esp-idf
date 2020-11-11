@@ -1,4 +1,4 @@
-idf_component_register(SRCS "esp_ota_ops.c" 
+idf_component_register(SRCS "esp_ota_ops.c"
                             "esp_app_desc.c"
                     INCLUDE_DIRS "include"
                     REQUIRES spi_flash partition_table bootloader_support)
@@ -52,7 +52,7 @@ if(NOT BOOTLOADER_BUILD)
 
         add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"
                         COMMAND ${otatool_py} ${esptool_args}
-                        --partition-table-file ${PARTITION_CSV_PATH} 
+                        --partition-table-file ${PARTITION_CSV_PATH}
                         --partition-table-offset ${PARTITION_TABLE_OFFSET}
                         read_otadata)
 

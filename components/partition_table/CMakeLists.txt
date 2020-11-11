@@ -35,7 +35,7 @@ idf_build_get_property(python PYTHON)
 
 set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" "-q"
                         "--offset" "${PARTITION_TABLE_OFFSET}" "${md5_opt}" "${flashsize_opt}"
-                        "${partition_secure_opt}" )
+                        "${partition_secure_opt}")
 
 set(partition_table_display
     COMMAND ${CMAKE_COMMAND} -E echo "Partition table binary generated. Contents:"

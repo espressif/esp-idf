@@ -17,5 +17,3 @@
 #include "sha/sha_dma.h"
 
 #warning esp32s2/sha.h is deprecated, please use sha/sha_dma.h instead
-
-

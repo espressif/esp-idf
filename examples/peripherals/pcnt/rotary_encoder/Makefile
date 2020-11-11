@@ -6,4 +6,3 @@
 PROJECT_NAME := rotary_encoder
 
 include $(IDF_PATH)/make/project.mk
-

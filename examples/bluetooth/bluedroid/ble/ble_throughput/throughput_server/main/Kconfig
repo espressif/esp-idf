@@ -23,5 +23,3 @@ menu "Example 'GATT SERVER THROUGHPUT' Config"
             If this config item is set, then the 'EXAMPLE_GATTS_NOTIFY_THROUGHPUT' config should be close, it can't
             test both write or notify at the same time at this demo
 endmenu
-
-

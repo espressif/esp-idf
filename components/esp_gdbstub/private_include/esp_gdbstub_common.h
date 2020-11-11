@@ -148,4 +148,3 @@ int esp_gdbstub_read_command(unsigned char **out_cmd, size_t *out_size);
 
 /** Handle a command received from gdb */
 int esp_gdbstub_handle_command(unsigned char *cmd, int len);
-

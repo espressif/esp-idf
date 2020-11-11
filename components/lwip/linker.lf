@@ -83,5 +83,5 @@ entries:
     wlanif:low_level_output (noflash_text)
     wlanif:wlanif_input (noflash_text)
   else:
-    
+
     * (default)

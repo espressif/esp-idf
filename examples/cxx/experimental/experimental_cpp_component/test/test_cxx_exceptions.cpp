@@ -59,4 +59,3 @@ TEST_CASE("ESPException has working what() method", "[cxx exception][leaks=" LEA
 }
 
 #endif // __cpp_exceptions
-

@@ -621,5 +621,3 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
 #endif
 }
 #endif
-
-

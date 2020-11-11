@@ -29,7 +29,7 @@ static const char* TAG = "test_ccomp_timer";
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 15)
 // Only test half due to lack of memory
-#define TEST_SIZE               (CACHE_SIZE / 2) 
+#define TEST_SIZE               (CACHE_SIZE / 2)
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 // Default cache configuration - no override specified on
 // test_utils config
@@ -126,7 +126,7 @@ static ccomp_test_time_t perform_test_at_hit_rate(int hit_rate, const uint8_t *m
     };
 
     free(access.accesses);
-    
+
     return t;
 }
 
@@ -165,7 +165,7 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
 
         ESP_LOGI(TAG, "Hit Rate(%%): %d    Wall Time(us): %lld    Compensated Time(us): %lld    Error(%%): %f", i, (long long)t_hr.wall, (long long)t_hr.ccomp, error);
 
-        // Check if the measured time is at least within some percent of the 
+        // Check if the measured time is at least within some percent of the
         // reference.
         TEST_ASSERT(error <= 5.0f);
     }

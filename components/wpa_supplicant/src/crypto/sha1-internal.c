@@ -39,7 +39,7 @@ void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
  * @mac: Buffer for the hash
  * Returns: 0 on success, -1 of failure
  */
-int 
+int
 sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	SHA1_CTX ctx;
@@ -51,7 +51,7 @@ sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	SHA1Final(mac, &ctx);
 	return 0;
 }
-#else 
+#else
 /**
  * sha1_vector - SHA-1 hash for data vector
  * @num_elem: Number of elements in the data vector
@@ -79,7 +79,7 @@ sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
             goto exit;
         }
     }
- 
+
     if ((ret = mbedtls_sha1_finish_ret( &ctx, mac)) != 0) {
         goto exit;
     }
@@ -103,7 +103,7 @@ By Steve Reid <sreid@sea-to-sky.net>
 100% Public Domain
 
 -----------------
-Modified 7/98 
+Modified 7/98
 By James H. Brown <jbrown@burgoyne.com>
 Still 100% Public Domain
 
@@ -125,7 +125,7 @@ Since the file IO in main() reads 16K at a time, any file 8K or larger would
 be guaranteed to generate the wrong hash (e.g. Test Vector #3, a million
 "a"s).
 
-I also changed the declaration of variables i & j in SHA1Update to 
+I also changed the declaration of variables i & j in SHA1Update to
 unsigned long from unsigned int for the same reason.
 
 These changes should make no difference to any 32 bit implementations since
@@ -152,7 +152,7 @@ Still 100% public domain
 Modified 4/01
 By Saul Kravitz <Saul.Kravitz@celera.com>
 Still 100% PD
-Modified to run on Compaq Alpha hardware.  
+Modified to run on Compaq Alpha hardware.
 
 -----------------
 Modified 4/01
@@ -212,7 +212,7 @@ void SHAPrintContext(SHA1_CTX *context, char *msg)
 {
 	printf("%s (%d,%d) %x %x %x %x %x\n",
 	       msg,
-	       context->count[0], context->count[1], 
+	       context->count[0], context->count[1],
 	       context->state[0],
 	       context->state[1],
 	       context->state[2],
@@ -223,7 +223,7 @@ void SHAPrintContext(SHA1_CTX *context, char *msg)
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void 
+void
 SHA1Transform(u32 state[5], const unsigned char buffer[64])
 {
 	u32 a, b, c, d, e;
@@ -282,7 +282,7 @@ SHA1Transform(u32 state[5], const unsigned char buffer[64])
 
 /* SHA1Init - Initialize new context */
 
-void 
+void
 SHA1Init(SHA1_CTX* context)
 {
 	/* SHA1 initialization constants */
@@ -297,7 +297,7 @@ SHA1Init(SHA1_CTX* context)
 
 /* Run your data through this. */
 
-void 
+void
 SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 {
 	u32 i, j;
@@ -328,7 +328,7 @@ SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 
 /* Add padding and return the message digest. */
 
-void 
+void
 SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
 	u32 i;

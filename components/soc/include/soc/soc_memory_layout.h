@@ -294,4 +294,3 @@ inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
     return esp_stack_ptr_in_dram(sp);
 #endif
 }
-

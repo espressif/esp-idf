@@ -6,7 +6,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 
-   This code runs on ULP-RISC-V  coprocessor 
+   This code runs on ULP-RISC-V  coprocessor
 */
 
 #include <stdio.h>

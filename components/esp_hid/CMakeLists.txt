@@ -1,7 +1,7 @@
 set(srcs "src/esp_hidd.c"
          "src/esp_hidh.c"
          "src/esp_hid_common.c")
-         
+
 set(include_dirs "include")
 set(priv_include_dirs "private")
 

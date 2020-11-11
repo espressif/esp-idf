@@ -205,4 +205,3 @@
 #define I2C_BBPLL_BBADC_CAL_7_0        12
 #define I2C_BBPLL_BBADC_CAL_7_0_MSB    7
 #define I2C_BBPLL_BBADC_CAL_7_0_LSB    0
-

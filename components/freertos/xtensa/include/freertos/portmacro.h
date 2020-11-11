@@ -170,7 +170,7 @@ This all assumes that interrupts are either entirely disabled or enabled. Interr
 will break this scheme.
 
 Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vTaskEnterCritical, meaning
-that either function can be called both from ISR as well as task context. This is not standard FreeRTOS 
+that either function can be called both from ISR as well as task context. This is not standard FreeRTOS
 behaviour; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
 */
 /* "mux" data structure (spinlock) */
@@ -179,21 +179,21 @@ typedef spinlock_t portMUX_TYPE;
 #define portMUX_FREE_VAL		SPINLOCK_FREE
 #define portMUX_NO_TIMEOUT      SPINLOCK_WAIT_FOREVER  /* When passed for 'timeout_cycles', spin forever if necessary */
 #define portMUX_TRY_LOCK        SPINLOCK_NO_WAIT       /* Try to acquire the spinlock a single time only */
-#define portMUX_INITIALIZER_UNLOCKED  SPINLOCK_INITIALIZER 
+#define portMUX_INITIALIZER_UNLOCKED  SPINLOCK_INITIALIZER
 
 #define portCRITICAL_NESTING_IN_TCB 0
 
-static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux) 
+static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux)
 {
     spinlock_initialize(mux);
 }
 
-static inline void __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux) 
+static inline void __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux)
 {
     spinlock_acquire(mux, portMUX_NO_TIMEOUT);
 }
 
-static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout) 
+static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout)
 {
     return (spinlock_acquire(mux, timeout));
 }
@@ -217,8 +217,8 @@ BaseType_t xPortInIsrContext(void);
 
 static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(portMUX_TYPE *mux)
 {
-    if(!xPortInIsrContext()) {                                                                  
-        vPortEnterCritical(mux);                                                                
+    if(!xPortInIsrContext()) {
+        vPortEnterCritical(mux);
     } else {
         esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
                        __FILE__, __LINE__, __FUNCTION__);
@@ -228,8 +228,8 @@ static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(p
 
 static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(portMUX_TYPE *mux)
 {
-    if(!xPortInIsrContext()) {                                                                  
-        vPortExitCritical(mux);                                                                 
+    if(!xPortInIsrContext()) {
+        vPortExitCritical(mux);
     } else {
         esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
                        __FILE__, __LINE__, __FUNCTION__);
@@ -242,7 +242,7 @@ static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(po
  * If the parent function is called from both ISR and Non-ISR context then call port*_CRITICAL_SAFE
  */
 #define portENTER_CRITICAL(mux)        vPortEnterCriticalCompliance(mux)
-#define portEXIT_CRITICAL(mux)         vPortExitCriticalCompliance(mux) 
+#define portEXIT_CRITICAL(mux)         vPortExitCriticalCompliance(mux)
 #else
 #define portENTER_CRITICAL(mux)        vPortEnterCritical(mux)
 #define portEXIT_CRITICAL(mux)         vPortExitCritical(mux)
@@ -253,20 +253,20 @@ static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(po
 
 static inline void __attribute__((always_inline)) vPortEnterCriticalSafe(portMUX_TYPE *mux)
 {
-    if (xPortInIsrContext()) {                    
-        portENTER_CRITICAL_ISR(mux);              
-    } else {                                      
-        portENTER_CRITICAL(mux);                  
-    }                                             
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(mux);
+    } else {
+        portENTER_CRITICAL(mux);
+    }
 }
 
 static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_TYPE *mux)
 {
-    if (xPortInIsrContext()) {                    
-        portEXIT_CRITICAL_ISR(mux);               
-    } else {                                      
-        portEXIT_CRITICAL(mux);                   
-    }                                            
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(mux);
+    } else {
+        portEXIT_CRITICAL(mux);
+    }
 }
 
 #define portENTER_CRITICAL_SAFE(mux)  vPortEnterCriticalSafe(mux)
@@ -313,11 +313,11 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
 #endif
 
 
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) 
+static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
-#ifdef CONFIG_SPIRAM   
+#ifdef CONFIG_SPIRAM
     compare_and_set_extram(addr, compare, set);
-#endif    
+#endif
 }
 
 
@@ -344,9 +344,9 @@ void vPortYield( void );
 void vPortEvaluateYieldFromISR(int argc, ...);
 void _frxt_setup_switch( void );
 /**
- * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with, 
+ * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with,
  * or without arguments.
- */ 
+ */
 #define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
 #define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
@@ -356,7 +356,7 @@ _Static_assert(portGET_ARGUMENT_COUNT(1) == 1, "portGET_ARGUMENT_COUNT() result 
 #define portYIELD()	vPortYield()
 
 /**
- * @note    The macro below could be used when passing a single argument, or without any argument, 
+ * @note    The macro below could be used when passing a single argument, or without any argument,
  *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
  *          might result in undesired behaviour
  */
@@ -523,4 +523,3 @@ void exit(int);
 #endif
 
 #endif /* PORTMACRO_H */
-

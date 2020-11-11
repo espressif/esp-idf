@@ -252,7 +252,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 			}
 		}
 	}
-	
+
 	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 	if( xTicksToWait != ( TickType_t ) 0 )
@@ -751,5 +751,3 @@ BaseType_t xWaitConditionMet = pdFALSE;
 
 #endif /* configUSE_TRACE_FACILITY */
 /*-----------------------------------------------------------*/
-
-

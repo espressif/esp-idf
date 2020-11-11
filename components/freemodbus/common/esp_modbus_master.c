@@ -18,7 +18,7 @@
 #include "esp_modbus_master.h"  // for public interface defines
 #include "esp_modbus_callbacks.h"   // for callback functions
 
-// This file implements public API for Modbus master controller. 
+// This file implements public API for Modbus master controller.
 // These functions are wrappers for interface functions of the controller
 static mb_master_interface_t* master_interface_ptr = NULL;
 
@@ -40,8 +40,8 @@ esp_err_t mbc_master_destroy(void)
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->destroy();
-    MB_MASTER_CHECK((error == ESP_OK), 
-                    error, 
+    MB_MASTER_CHECK((error == ESP_OK),
+                    error,
                     "Master destroy failure, error=(0x%x).",
                     error);
     return error;
@@ -57,8 +57,8 @@ esp_err_t mbc_master_get_cid_info(uint16_t cid, const mb_parameter_descriptor_t*
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->get_cid_info(cid, param_info);
-    MB_MASTER_CHECK((error == ESP_OK), 
-                    error, 
+    MB_MASTER_CHECK((error == ESP_OK),
+                    error,
                     "Master get cid info failure, error=(0x%x).",
                     error);
     return error;
@@ -77,7 +77,7 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->get_parameter(cid, name, value, type);
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master get parameter failure, error=(0x%x) (%s).",
                     error, esp_err_to_name(error));
@@ -97,7 +97,7 @@ esp_err_t mbc_master_send_request(mb_param_request_t* request, void* data_ptr)
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->send_request(request, data_ptr);
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master send request failure error=(0x%x) (%s).",
                     error, esp_err_to_name(error));
@@ -118,7 +118,7 @@ esp_err_t mbc_master_set_descriptor(const mb_parameter_descriptor_t* descriptor,
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->set_descriptor(descriptor, num_elements);
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master set descriptor failure, error=(0x%x) (%s).",
                     error, esp_err_to_name(error));
@@ -138,7 +138,7 @@ esp_err_t mbc_master_set_parameter(uint16_t cid, char* name, uint8_t* value, uin
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->set_parameter(cid, name, value, type);
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master set parameter failure, error=(0x%x) (%s).",
                     error, esp_err_to_name(error));
@@ -158,7 +158,7 @@ esp_err_t mbc_master_setup(void* comm_info)
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->setup(comm_info);
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master setup failure, error=(0x%x) (%s).",
                     error, esp_err_to_name(error));
@@ -178,7 +178,7 @@ esp_err_t mbc_master_start(void)
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->start();
-    MB_MASTER_CHECK((error == ESP_OK), 
+    MB_MASTER_CHECK((error == ESP_OK),
                     error,
                     "Master start failure, error=(0x%x) (%s).",
                     error, esp_err_to_name(error));

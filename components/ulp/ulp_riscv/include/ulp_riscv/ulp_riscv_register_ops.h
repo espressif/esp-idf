@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once 
+#pragma once
 #define ULP_RISCV_REGISTER_OPS
 
 #ifdef __cplusplus
@@ -23,14 +23,14 @@ extern "C" {
 //Registers Operation {{
 
 /*
- * When COCPU accesses the RTC register, it needs to convert the access address. 
+ * When COCPU accesses the RTC register, it needs to convert the access address.
  * When COCPU accesses the RTC memory, dont need to convert the access address.
  */
 #define WRITE_RTC_MEM(addr, val)    (*((volatile int*)(addr))) = (int) (val)
 #define READ_RTC_MEM(addr)		    (*(volatile int*)(addr))
 
-/* 
- * When COCPU accesses the RTC register, it needs to convert the access address. 
+/*
+ * When COCPU accesses the RTC register, it needs to convert the access address.
  * When COCPU accesses the RTC memory, dont need to convert the access address.
  */
 #define RISCV_REG_CONV(addr)        (((addr&0xffff)<<3 & 0xe000) | (addr & 0x1fff) | 0x8000)
@@ -126,9 +126,9 @@ extern "C" {
         })
 
 //get bits of register controlled by highest bit and lowest bit
-// #define GET_PERI_REG_BITS(reg, hipos,lowpos) ({                                                                        
-//             ASSERT_IF_DPORT_REG((reg), GET_PERI_REG_BITS);                                                             
-//             ((READ_PERI_REG(reg)>>(lowpos))&((1UL<<((hipos)-(lowpos)+1))-1));                                            
+// #define GET_PERI_REG_BITS(reg, hipos,lowpos) ({
+//             ASSERT_IF_DPORT_REG((reg), GET_PERI_REG_BITS);
+//             ((READ_PERI_REG(reg)>>(lowpos))&((1UL<<((hipos)-(lowpos)+1))-1));
 //         })
 #define GET_PERI_REG_BITS(reg, bit_map, shift)    ((READ_PERI_REG(reg))&((bit_map)<<(shift)))>>shift
 

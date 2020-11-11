@@ -1,6 +1,6 @@
-# If the Newlib functions in ROM aren't used (eg because the external SPI RAM workaround is active), these functions will 
+# If the Newlib functions in ROM aren't used (eg because the external SPI RAM workaround is active), these functions will
 # be linked into the application directly instead. Normally, they would end up in flash, which is undesirable because esp-idf
-# and/or applications may assume that because these functions normally are in ROM, they are accessible even when flash is 
+# and/or applications may assume that because these functions normally are in ROM, they are accessible even when flash is
 # inaccessible. To work around this, this ld fragment places these functions in RAM instead. If the ROM functions are used,
 # these defines do nothing, so they can still be included in that situation.
 #

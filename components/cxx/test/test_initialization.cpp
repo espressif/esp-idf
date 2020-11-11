@@ -191,4 +191,3 @@ TEST_CASE("init_priority extension works", "[cxx]")
     TEST_ASSERT_EQUAL(1, g_static_init_priority_test2.index);
     TEST_ASSERT_EQUAL(2, g_static_init_priority_test3.index);
 }
-

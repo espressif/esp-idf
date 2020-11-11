@@ -1122,4 +1122,3 @@ extern "C" {
 
 
 #endif /*_SOC_I2C_REG_H_ */
-

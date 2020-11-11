@@ -59,7 +59,8 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"
                     PRIV_REQUIRES efuse esp_pm esp_timer esp_ipc
-                    REQUIRES esp_ringbuf freertos soc hal) #cannot totally hide soc headers, since there are a lot arguments in the driver are chip-dependent
+                    REQUIRES esp_ringbuf freertos soc hal)
+# (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
 
 # uses C11 atomic feature
 set_source_files_properties(spi_master.c PROPERTIES COMPILE_FLAGS -std=gnu11)

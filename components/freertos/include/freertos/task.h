@@ -629,7 +629,7 @@ is used in assert() statements. */
 /*
  * xTaskCreateRestrictedStatic() should only be used in systems that include an
  * MPU implementation.
- * 
+ *
  * Only available when configSUPPORT_STATIC_ALLOCATION is set to 1.
  *
  * Internally, within the FreeRTOS implementation, tasks use two blocks of
@@ -702,7 +702,7 @@ is used in assert() statements. */
  *	// and/or timer task.
  *	for( ;; );
  * }
- * @endcode 
+ * @endcode
  * \ingroup Tasks
  */
 #if( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
@@ -920,7 +920,7 @@ BaseType_t xTaskAbortDelay( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
 /**
  * Obtain the priority of any task.
- * 
+ *
  * INCLUDE_uxTaskPriorityGet must be defined as 1 for this function to be available.
  * See the configuration section for more information.
  *
@@ -1036,8 +1036,8 @@ eTaskState eTaskGetState( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 void vTaskGetInfo( TaskHandle_t xTask, TaskStatus_t *pxTaskStatus, BaseType_t xGetFreeStackSpace, eTaskState eState ) PRIVILEGED_FUNCTION;
 
 /**
- * Set the priority of any task. 
- * 
+ * Set the priority of any task.
+ *
  * INCLUDE_vTaskPrioritySet must be defined as 1 for this function to be available.
  * See the configuration section for more information.
  *
@@ -1912,8 +1912,8 @@ uint32_t ulTaskGetIdleRunTimeCounter( void ) PRIVILEGED_FUNCTION;
  * updated.  ulValue is not used and xTaskNotify() always returns pdPASS in
  * this case.
  *
- * @param pulPreviousNotificationValue Can be used to pass out the subject 
- * task's notification value before any bits are modified by the notify 
+ * @param pulPreviousNotificationValue Can be used to pass out the subject
+ * task's notification value before any bits are modified by the notify
  * function.
  *
  * @return Dependent on the value of eAction.  See the description of the
@@ -1995,10 +1995,10 @@ BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNo
  * The task receives a notification without its notification value being
  * updated.  ulValue is not used and xTaskNotify() always returns pdPASS in
  * this case.
- * 
- * @param pulPreviousNotificationValue Can be used to pass out the subject task's 
+ *
+ * @param pulPreviousNotificationValue Can be used to pass out the subject task's
  * notification value before any bits are modified by the notify function.
- * 
+ *
  * @param pxHigherPriorityTaskWoken  xTaskNotifyFromISR() will set
  * *pxHigherPriorityTaskWoken to pdTRUE if sending the notification caused the
  * task to which the notification was sent to leave the Blocked state, and the
@@ -2263,7 +2263,7 @@ uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit, TickType_t xTicksToWait
  *
  * @return pdTRUE if the task's notification state was set to
  * eNotWaitingNotification, otherwise pdFALSE.
- * 
+ *
  * \ingroup TaskNotifications
  */
 BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask );
@@ -2539,6 +2539,3 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, co
 }
 #endif
 #endif /* INC_TASK_H */
-
-
-

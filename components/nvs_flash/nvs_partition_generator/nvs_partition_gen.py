@@ -360,10 +360,12 @@ class Page(object):
 
         if datalen > Page.PAGE_PARAMS["max_old_blob_size"]:
             if self.version == Page.VERSION1:
-                raise InputError(" Input File: Size exceeds max allowed length `%s` bytes for key `%s`." % (Page.PAGE_PARAMS["max_old_blob_size"], key))
+                raise InputError(" Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`."
+                                 % (datalen, Page.PAGE_PARAMS["max_old_blob_size"], key))
             else:
                 if encoding == "string":
-                    raise InputError(" Input File: Size exceeds max allowed length `%s` bytes for key `%s`." % (Page.PAGE_PARAMS["max_old_blob_size"], key))
+                    raise InputError(" Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`."
+                                     % (datalen, Page.PAGE_PARAMS["max_old_blob_size"], key))
 
         # Calculate no. of entries data will require
         rounded_size = (datalen + 31) & ~31
@@ -544,6 +546,7 @@ class NVS(object):
     """
     def write_entry(self, key, value, encoding):
         if encoding == "hex2bin":
+            value = value.strip()
             if len(value) % 2 != 0:
                 raise InputError("%s: Invalid data length. Should be multiple of 2." % key)
             value = binascii.a2b_hex(value)

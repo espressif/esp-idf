@@ -560,4 +560,3 @@ const controller_t *controller_get_interface(void)
 
     return &interface;
 }
-

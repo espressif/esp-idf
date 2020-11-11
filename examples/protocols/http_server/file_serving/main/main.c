@@ -158,7 +158,7 @@ void sdcard_mount(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-    
+
     esp_err_t ret = spi_bus_initialize(host.slot, &bus_cfg, SPI_DMA_CHAN);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize bus.");
@@ -181,7 +181,7 @@ void sdcard_mount(void)
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                 "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
         }
-        ESP_ERROR_CHECK(ret);        
+        ESP_ERROR_CHECK(ret);
     }
     sdmmc_card_print_info(stdout, card);
 
@@ -211,7 +211,7 @@ void app_main(void)
 #ifdef CONFIG_EXAMPLE_MOUNT_SD_CARD
     sdcard_mount();
 #endif
-    
+
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());

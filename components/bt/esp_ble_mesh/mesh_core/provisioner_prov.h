@@ -147,7 +147,7 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
  *        related information.
  *
  * @param[in] erase: Indicate if erasing provisioning information from flash.
- * 
+ *
  * @return Zero - success, otherwise - fail
  */
 int bt_mesh_provisioner_prov_deinit(bool erase);

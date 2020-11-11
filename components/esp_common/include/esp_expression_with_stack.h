@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef void (*shared_stack_function)(void); 
+typedef void (*shared_stack_function)(void);
 
 #define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, stack_size, expression) \
     esp_execute_shared_stack_function(lock, stack, stack_size, expression)
@@ -38,7 +38,7 @@ typedef void (*shared_stack_function)(void);
  * @note  if either lock, stack or stack size is invalid, the expression will
  *          be called using the current stack.
  */
-void esp_execute_shared_stack_function(SemaphoreHandle_t lock, 
+void esp_execute_shared_stack_function(SemaphoreHandle_t lock,
                                       void *stack,
                                       size_t stack_size,
                                       shared_stack_function function);

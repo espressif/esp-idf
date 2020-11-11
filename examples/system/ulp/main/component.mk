@@ -17,7 +17,7 @@ ULP_S_SOURCES = $(addprefix $(COMPONENT_PATH)/ulp/, \
 #    generated ULP export file, $(ULP_APP_NAME).h:
 ULP_EXP_DEP_OBJECTS := ulp_example_main.o
 #
-# 4. Include build rules for ULP program 
+# 4. Include build rules for ULP program
 include $(IDF_PATH)/components/ulp/component_ulp_common.mk
 #
 # End of ULP support additions to component makefile.

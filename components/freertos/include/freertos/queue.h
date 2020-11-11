@@ -857,7 +857,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 #define xQueueSendToFrontFromISR( xQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) xQueueGenericSendFromISR( ( xQueue ), ( pvItemToQueue ), ( pxHigherPriorityTaskWoken ), queueSEND_TO_FRONT )
 
 
-/** 
+/**
  * This is a macro that calls xQueueGenericSendFromISR().
  *
  * Post an item to the back of a queue.  It is safe to use this macro from
@@ -1478,4 +1478,3 @@ uint8_t ucQueueGetQueueType( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 #endif
 
 #endif /* QUEUE_H */
-

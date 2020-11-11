@@ -29,4 +29,3 @@ void eri_write(int addr, uint32_t data) {
         ::"r"(data),"r"(addr)
     );
 }
-

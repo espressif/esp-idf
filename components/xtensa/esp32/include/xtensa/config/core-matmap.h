@@ -1,4 +1,4 @@
-/* 
+/*
  * xtensa/config/core-matmap.h -- Memory access and translation mapping
  *	parameters (CHAL) of the Xtensa processor core configuration.
  *
@@ -315,4 +315,3 @@
 
 
 #endif /*XTENSA_CONFIG_CORE_MATMAP_H*/
-

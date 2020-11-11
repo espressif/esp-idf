@@ -77,7 +77,7 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end);
  * @param start Start address of new region.
  * @param end End address of new region.
  *
- * @return 
+ * @return
  *         - ESP_OK on success
  *         - ESP_ERR_INVALID_ARG if a parameter is invalid
  *         - ESP_ERR_NO_MEM if no memory to register new heap.

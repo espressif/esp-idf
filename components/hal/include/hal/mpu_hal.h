@@ -24,7 +24,7 @@ extern "C" {
 
 /**
  * Specify the type of access allowed on a memory region.
- *  
+ *
  * @param id index to the region table; on targets not SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED,
  * the region divisions is predefined in hardware which is likely reflected in LL implementation.
  * @param access type of access allowed

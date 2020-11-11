@@ -197,4 +197,3 @@ OI_BOOL  OI_Time_NowReachedTime(OI_TIME *pTargetTime);
 
 /*****************************************************************************/
 #endif /* _OI_TIME_H */
-

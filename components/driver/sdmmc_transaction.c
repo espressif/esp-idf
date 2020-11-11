@@ -487,4 +487,3 @@ static bool wait_for_busy_cleared(int timeout_ms)
     }
     return false;
 }
-

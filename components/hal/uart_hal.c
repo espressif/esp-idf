@@ -103,12 +103,12 @@ void uart_hal_set_txfifo_empty_thr(uart_hal_context_t *hal, uint32_t empty_thrhd
 
 void uart_hal_set_wakeup_thrd(uart_hal_context_t *hal, uint32_t wakeup_thrd)
 {
-    uart_ll_set_wakeup_thrd(hal->dev, wakeup_thrd); 
+    uart_ll_set_wakeup_thrd(hal->dev, wakeup_thrd);
 }
 
 void uart_hal_get_wakeup_thrd(uart_hal_context_t *hal, uint32_t *wakeup_thrd)
 {
-   *wakeup_thrd = uart_ll_get_wakeup_thrd(hal->dev); 
+   *wakeup_thrd = uart_ll_get_wakeup_thrd(hal->dev);
 }
 
 void uart_hal_set_mode(uart_hal_context_t *hal, uart_mode_t mode)

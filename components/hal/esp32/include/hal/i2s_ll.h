@@ -797,7 +797,7 @@ static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool pdm_en)
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param fp The fp value of TX PDM filter module group0.
- * @param fs The fs value of TX PDM filter module group0. 
+ * @param fs The fs value of TX PDM filter module group0.
  */
 static inline void i2s_ll_tx_pdm_cfg(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
 {

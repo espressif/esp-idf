@@ -14,7 +14,7 @@
 
 #include "hal/interrupt_controller_hal.h"
 
-int_type_t interrupt_controller_hal_desc_type(int interrupt_number) 
+int_type_t interrupt_controller_hal_desc_type(int interrupt_number)
 {
     const int_desc_t *int_desc = interrupt_controller_hal_desc_table();
     return(int_desc[interrupt_number].type);
@@ -26,7 +26,7 @@ int interrupt_controller_hal_desc_level(int interrupt_number)
     return(int_desc[interrupt_number].level);
 }
 
-int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number) 
+int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number)
 {
     const int_desc_t *int_desc = interrupt_controller_hal_desc_table();
     return(int_desc[interrupt_number].cpuflags[cpu_number]);

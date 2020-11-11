@@ -6,4 +6,3 @@
 PROJECT_NAME := manual_networking
 
 include $(IDF_PATH)/make/project.mk
-

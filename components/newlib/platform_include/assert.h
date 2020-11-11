@@ -26,16 +26,16 @@
 #if defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT) && !defined(NDEBUG)
     #undef assert
     #define assert(__e) (likely(__e)) ? (void)0 : abort()
-#else 
+#else
     /* moved part of toolchain provided assert to there then
      * we can tweak the original assert macro to perform likely
-     * before deliver it to original toolchain implementation 
+     * before deliver it to original toolchain implementation
      */
     #undef assert
-    #ifdef NDEBUG 
+    #ifdef NDEBUG
     # define assert(__e) ((void)0)
     #else
     # define assert(__e) (likely(__e) ? (void)0 : __assert_func (__FILE__, __LINE__, \
                                 __ASSERT_FUNC, #__e))
-    #endif                            
+    #endif
 #endif

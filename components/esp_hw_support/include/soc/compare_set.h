@@ -27,7 +27,7 @@ extern "C" {
 
 static inline void __attribute__((always_inline)) compare_and_set_native(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
-#if (XCHAL_HAVE_S32C1I > 0) 
+#if (XCHAL_HAVE_S32C1I > 0)
     __asm__ __volatile__ (
         "WSR 	    %2,SCOMPARE1 \n"
         "S32C1I     %0, %1, 0	 \n"

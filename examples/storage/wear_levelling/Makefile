@@ -6,4 +6,3 @@
 PROJECT_NAME := wear_levelling_example
 
 include $(IDF_PATH)/make/project.mk
-

@@ -44,7 +44,7 @@ uint32_t twai_hal_decode_interrupt_events(twai_hal_context_t *hal_ctx)
         } else {
             //Not in BUS OFF
             if (status & TWAI_LL_STATUS_ES) {       //Just Exceeded EWL
-                events |= TWAI_HAL_EVENT_ABOVE_EWL;  
+                events |= TWAI_HAL_EVENT_ABOVE_EWL;
                 TWAI_HAL_SET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_ERR_WARN);
             } else if (hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_RECOVERING) {
                 //Previously undergoing bus recovery. Thus means bus recovery complete

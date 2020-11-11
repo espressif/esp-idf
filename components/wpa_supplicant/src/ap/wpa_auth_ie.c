@@ -5,7 +5,7 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
- 
+
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "common/ieee802_11_defs.h"

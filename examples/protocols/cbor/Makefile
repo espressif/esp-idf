@@ -6,4 +6,3 @@
 PROJECT_NAME := cbor
 
 include $(IDF_PATH)/make/project.mk
-

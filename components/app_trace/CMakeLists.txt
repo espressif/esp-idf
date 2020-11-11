@@ -1,4 +1,4 @@
-set(srcs 
+set(srcs
     "app_trace.c"
     "app_trace_util.c"
     "host_file_io.c"
@@ -12,7 +12,7 @@ if(CONFIG_SYSVIEW_ENABLE)
         sys_view/SEGGER
         sys_view/Sample/OS)
 
-    list(APPEND srcs 
+    list(APPEND srcs
         "sys_view/SEGGER/SEGGER_SYSVIEW.c"
         "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
         "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"

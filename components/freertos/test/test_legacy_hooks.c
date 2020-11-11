@@ -74,5 +74,3 @@ TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
 }
 
 #endif // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-
-

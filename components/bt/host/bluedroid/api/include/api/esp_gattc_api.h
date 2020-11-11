@@ -358,8 +358,8 @@ esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 
 /**
- * @brief           This function is called to get service from local cache. 
- *                  This function report service search result by a callback 
+ * @brief           This function is called to get service from local cache.
+ *                  This function report service search result by a callback
  *                  event, and followed by a service search complete event.
  *
  * @param[in]       gattc_if: Gatt client access interface.
@@ -815,10 +815,10 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
 
 /**
 * @brief           Add or delete the associated address with the source address.
-*                  Note: The role of this API is mainly when the client side has stored a server-side database, 
-*                        when it needs to connect another device, but the device's attribute database is the same 
-*                        as the server database stored on the client-side, calling this API can use the database 
-*                        that the device has stored used as the peer server database to reduce the attribute 
+*                  Note: The role of this API is mainly when the client side has stored a server-side database,
+*                        when it needs to connect another device, but the device's attribute database is the same
+*                        as the server database stored on the client-side, calling this API can use the database
+*                        that the device has stored used as the peer server database to reduce the attribute
 *                        database search and discovery process and speed up the connection time.
 *                        The associated address mains that device want to used the database has stored in the local cache.
 *                        The source address mains that device want to share the database to the associated address device.
@@ -832,7 +832,7 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
 *                  - other: failed
 *
 */
-esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
+esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr,
                                       esp_bd_addr_t assoc_addr, bool is_assoc);
 /**
 * @brief           Get the address list which has store the attribute table in the gattc cache. There will
@@ -847,7 +847,7 @@ esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_ad
 esp_err_t esp_ble_gattc_cache_get_addr_list(esp_gatt_if_t gattc_if);
 
 /**
-* @brief           Clean the service cache of this device in the gattc stack, 
+* @brief           Clean the service cache of this device in the gattc stack,
 *
 * @param[in]       remote_bda: remote device BD address.
 *

@@ -30,7 +30,7 @@ namespace detail {
 template <typename Exception>
 void throw_exception(const Exception& e)
 {
-  ESP_LOGE("esp32_asio_exception", "Caught exception: %s!", e.what());   
+  ESP_LOGE("esp32_asio_exception", "Caught exception: %s!", e.what());
   abort();
 }
 }}

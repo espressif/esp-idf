@@ -6,4 +6,3 @@
 PROJECT_NAME := pcnt_event
 
 include $(IDF_PATH)/make/project.mk
-

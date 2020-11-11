@@ -14,15 +14,15 @@ static const char *TAG = "example";
 
 void app_main(void)
 {
-    /* 
+    /*
     * This example uses the partition table from ../partitions_example.csv. For reference, its contents are as follows:
-    * 
+    *
     *  nvs,        data, nvs,      0x9000,  0x6000,
     *  phy_init,   data, phy,      0xf000,  0x1000,
     *  factory,    app,  factory,  0x10000, 1M,
     *  storage,    data, ,             , 0x40000,
     */
-   
+
     // Find the partition map in the partition table
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
     assert(partition != NULL);
@@ -37,7 +37,7 @@ void app_main(void)
     // Write the data, starting from the beginning of the partition
     ESP_ERROR_CHECK(esp_partition_write(partition, 0, store_data, sizeof(store_data)));
     ESP_LOGI(TAG, "Written data: %s", store_data);
-    
+
     // Read back the data, checking that read data and written data match
     ESP_ERROR_CHECK(esp_partition_read(partition, 0, read_data, sizeof(read_data)));
     assert(memcmp(store_data, read_data, sizeof(read_data)) == 0);
@@ -56,4 +56,3 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Example end");
 }
-

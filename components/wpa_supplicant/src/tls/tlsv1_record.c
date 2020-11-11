@@ -83,7 +83,7 @@ int tlsv1_record_change_write_cipher(struct tlsv1_record_layer *rl)
 	if (rl->write_cbc) {
 		crypto_cipher_deinit(rl->write_cbc);
 		rl->write_cbc = NULL;
-		
+
 	}
 	if (rl->cipher_alg != CRYPTO_CIPHER_NULL) {
 		rl->write_cbc = crypto_cipher_init(rl->cipher_alg,
@@ -223,7 +223,7 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Not "
 				   "enough room for MAC");
 			crypto_hash_finish(hmac, NULL, NULL);
-			
+
 			return -1;
 		}
 
@@ -231,7 +231,7 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed to calculate HMAC");
 			return -1;
 		}
-		
+
 		wpa_hexdump(MSG_MSGDUMP, "TLSv1: Record Layer - Write HMAC",
 			    pos, clen);
 		pos += clen;
@@ -363,7 +363,7 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 			*alert = TLS_ALERT_DECRYPTION_FAILED;
 			return -1;
 		}
-		
+
 		plen = in_len;
 		wpa_hexdump_key(MSG_MSGDUMP, "TLSv1: Record Layer - Decrypted "
 				"data", out_data, plen);
@@ -453,14 +453,14 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 		WPA_PUT_BE16(len, plen);
 		crypto_hash_update(hmac, len, 2);
 		crypto_hash_update(hmac, out_data, plen);
-		
+
 		hlen = sizeof(hash);
 		if ((int)crypto_hash_finish(hmac, hash, &hlen) < 0) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed to calculate HMAC");
 			*alert = TLS_ALERT_INTERNAL_ERROR;
 			return -1;
 		}
-		
+
 		if (hlen != rl->hash_size ||
 		    os_memcmp(hash, out_data + plen, hlen) != 0 ||
 		    force_mac_error) {

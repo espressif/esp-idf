@@ -272,4 +272,3 @@ TEST_CASE("Test FreeRTOS thread local storage pointers and del cb", "[freertos]"
         }
     }
 }
-

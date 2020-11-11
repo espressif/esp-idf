@@ -75,4 +75,3 @@ uint32_t NVSPartition::get_size()
 }
 
 } // nvs
-

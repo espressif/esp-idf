@@ -169,4 +169,3 @@ void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint
 }
 #endif
 #endif /* _ESP_TRANSPORT_SSL_H_ */
-

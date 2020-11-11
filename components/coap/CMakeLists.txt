@@ -1,6 +1,6 @@
 set(include_dirs port/include port/include/coap libcoap/include libcoap/include/coap2)
 
-set(srcs 
+set(srcs
     "libcoap/src/address.c"
     "libcoap/src/async.c"
     "libcoap/src/block.c"
@@ -33,4 +33,3 @@ set_source_files_properties(port/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-form
 #
 # TODO: find a way to move this to a port header
 target_compile_definitions(${COMPONENT_LIB} PUBLIC WITH_POSIX)
-

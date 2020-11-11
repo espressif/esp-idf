@@ -6,4 +6,3 @@
 PROJECT_NAME := internal_communication
 
 include $(IDF_PATH)/make/project.mk
-

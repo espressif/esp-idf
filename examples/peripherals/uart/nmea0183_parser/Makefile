@@ -6,4 +6,3 @@
 PROJECT_NAME := nmea_parser
 
 include $(IDF_PATH)/make/project.mk
-

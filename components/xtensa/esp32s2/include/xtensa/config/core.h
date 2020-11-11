@@ -1,4 +1,4 @@
-/* 
+/*
  * xtensa/config/core.h -- HAL definitions dependent on CORE configuration
  *
  *  This header file is sometimes referred to as the "compile-time HAL" or CHAL.
@@ -1412,4 +1412,3 @@ extern const unsigned int  XCJOIN(Xthal_cp_mask_,XCHAL_CP7_IDENT);
 #endif
 
 #endif /*XTENSA_CONFIG_CORE_H*/
-

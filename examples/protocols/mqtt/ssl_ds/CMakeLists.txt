@@ -10,7 +10,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(mqtt_ssl_ds)
 
 # Flash the custom partition named `pre_prov`.
-set (partition pre_prov)
+set(partition pre_prov)
 idf_build_get_property(project_dir PROJECT_DIR)
 set(image_file ${project_dir}/esp_ds_data/${partition}.bin)
 partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")

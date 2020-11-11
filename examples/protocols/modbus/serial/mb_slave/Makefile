@@ -8,4 +8,3 @@ PROJECT_NAME := modbus_slave
 EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/protocols/modbus/mb_example_common
 
 include $(IDF_PATH)/make/project.mk
-

@@ -1,6 +1,6 @@
 /* This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this software is 
-   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR  
+   Unless required by applicable law or agreed to in writing, this software is
+   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
@@ -35,12 +35,12 @@
  * BLE HID profile inheritance and USB HID class.
  */
 
-/** 
+/**
  * Note:
  * 1. Win10 does not support vendor report , So SUPPORT_REPORT_VENDOR is always set to FALSE, it defines in hidd_le_prf_int.h
- * 2. Update connection parameters are not allowed during iPhone HID encryption, slave turns 
+ * 2. Update connection parameters are not allowed during iPhone HID encryption, slave turns
  * off the ability to automatically update connection parameters during encryption.
- * 3. After our HID device is connected, the iPhones write 1 to the Report Characteristic Configuration Descriptor, 
+ * 3. After our HID device is connected, the iPhones write 1 to the Report Characteristic Configuration Descriptor,
  * even if the HID encryption is not completed. This should actually be written 1 after the HID encryption is completed.
  * we modify the permissions of the Report Characteristic Configuration Descriptor to `ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE_ENCRYPTED`.
  * if you got `GATT_INSUF_ENCRYPTION` error, please ignore.
@@ -99,7 +99,7 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
                 //esp_bd_addr_t rand_addr = {0x04,0x11,0x11,0x11,0x11,0x05};
                 esp_ble_gap_set_device_name(HIDD_DEVICE_NAME);
                 esp_ble_gap_config_adv_data(&hidd_adv_data);
-                
+
             }
             break;
         }
@@ -122,7 +122,7 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
         case ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT: {
             ESP_LOGI(HID_DEMO_TAG, "%s, ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT", __func__);
             ESP_LOG_BUFFER_HEX(HID_DEMO_TAG, param->vendor_write.data, param->vendor_write.length);
-        }    
+        }
         default:
             break;
     }
@@ -241,11 +241,10 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
     /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribute to you,
     and the response key means which key you can distribute to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribute to you, 
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribute to you,
     and the init key means which key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048, NULL, 5, NULL);
 }
-

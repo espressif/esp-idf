@@ -1639,4 +1639,3 @@ BOOLEAN smp_request_oob_data(tSMP_CB *p_cb)
 
 
 #endif
-

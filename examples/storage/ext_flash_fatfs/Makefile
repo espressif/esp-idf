@@ -6,4 +6,3 @@
 PROJECT_NAME := ext_flash_fatfs
 
 include $(IDF_PATH)/make/project.mk
-

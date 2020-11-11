@@ -1302,4 +1302,3 @@ esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_ser
 #endif
 
 #endif /* _ESP_BLE_MESH_GENERIC_MODEL_API_H_ */
-

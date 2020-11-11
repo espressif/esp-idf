@@ -264,4 +264,3 @@ void bt_mesh_timer_deinit(void);
 #endif
 
 #endif /* _BLE_MESH_TIMER_H_ */
-

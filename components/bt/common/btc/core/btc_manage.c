@@ -50,5 +50,3 @@ void *btc_profile_cb_get(btc_pid_t profile_id)
 
     return btc_profile_cb_tab[profile_id];
 }
-
-

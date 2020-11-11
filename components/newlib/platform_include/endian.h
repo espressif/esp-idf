@@ -24,7 +24,7 @@
 #include <machine/endian.h>
 
 /*
- * All the code below is a rework of 
+ * All the code below is a rework of
  * https://github.com/freebsd/freebsd/blob/master/sys/sys/endian.h
  * to import symbols defining non-standard endian handling functions.
  * The aforementioned source code license terms are included here.

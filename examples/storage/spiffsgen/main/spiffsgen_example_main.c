@@ -122,7 +122,7 @@ void app_main(void)
     // Read and display the contents of a small text file (hello.txt)
     read_hello_txt();
 
-    // Compute and display the MD5 hash of a large text file (alice.txt) 
+    // Compute and display the MD5 hash of a large text file (alice.txt)
     compute_alice_txt_md5();
 
     // All done, unmount partition and disable SPIFFS

@@ -32,7 +32,7 @@
 #define EDDYSTONE_TLM_ADV_COUNT_LEN        4
 #define EDDYSTONE_TLM_TIME_LEN             4
 #define EDDYSTONE_TLM_DATA_LEN             (EDDYSTONE_TLM_VERSION_LEN + EDDYSTONE_TLM_BATTERY_VOLTAGE_LEN + \
-EDDYSTONE_TLM_TEMPERATURE_LEN + EDDYSTONE_TLM_ADV_COUNT_LEN + EDDYSTONE_TLM_TIME_LEN)           
+EDDYSTONE_TLM_TEMPERATURE_LEN + EDDYSTONE_TLM_ADV_COUNT_LEN + EDDYSTONE_TLM_TIME_LEN)
 //URL
 #define EDDYSTONE_URL_SCHEME_LEN        1
 #define EDDYSTONE_URL_ENCODED_MAX_LEN   17
@@ -49,8 +49,8 @@ typedef struct {
 } __attribute__((packed))esp_eddystone_uid_t;
 
 /* Eddystone URL frame */
-typedef struct { 
-    int8_t    tx_power;         /*<! calibrated Tx power at 0m */    
+typedef struct {
+    int8_t    tx_power;         /*<! calibrated Tx power at 0m */
     uint8_t   url_scheme;       /*<! encoded scheme prefix */
     uint8_t   encoded_url[0];   /*<! length 1-17 */
 } __attribute__((packed))esp_eddystone_url_t;
@@ -98,9 +98,9 @@ typedef struct {
     esp_eddystone_frame_t   frame;
 } __attribute__((packed)) esp_eddystone_packet_t;
 
-/* 
- * URLs are written only with the graphic printable characters of the US-ASCII coded character set. 
- * The octets 00-20 and 7F-FF hexadecimal are not used. 
+/*
+ * URLs are written only with the graphic printable characters of the US-ASCII coded character set.
+ * The octets 00-20 and 7F-FF hexadecimal are not used.
  * See “Excluded US-ASCII Characters” in RFC 2936.
  *
  */

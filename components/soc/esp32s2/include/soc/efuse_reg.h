@@ -2310,5 +2310,3 @@ extern "C" {
 
 
 #endif /*_SOC_EFUSE_REG_H_ */
-
-

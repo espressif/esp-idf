@@ -138,4 +138,3 @@ size_t SpiFlashEmulator::getEraseOpTime()
 {
     return blockEraseTime;
 }
-

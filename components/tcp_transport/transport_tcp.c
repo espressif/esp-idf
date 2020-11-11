@@ -33,7 +33,7 @@ typedef struct {
     int sock;
 } transport_tcp_t;
 
-static int resolve_dns(const char *host, struct sockaddr_in *ip) 
+static int resolve_dns(const char *host, struct sockaddr_in *ip)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,

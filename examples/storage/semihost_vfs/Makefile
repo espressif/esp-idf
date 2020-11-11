@@ -6,4 +6,3 @@
 PROJECT_NAME := semihost_vfs
 
 include $(IDF_PATH)/make/project.mk
-

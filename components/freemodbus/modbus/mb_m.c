@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (C) 2013 Armink <armink.ztl@gmail.com>
  * All rights reserved.
@@ -348,7 +348,7 @@ eMBMasterPoll( void )
             eStatus = peMBMasterFrameReceiveCur( &ucRcvAddress, &ucMBFrame, &usLength);
 
             // Check if the frame is for us. If not ,send an error process event.
-            if ( ( eStatus == MB_ENOERR ) && ( ( ucRcvAddress == ucMBMasterGetDestAddress() ) 
+            if ( ( eStatus == MB_ENOERR ) && ( ( ucRcvAddress == ucMBMasterGetDestAddress() )
                                           || ( ucRcvAddress == MB_TCP_PSEUDO_ADDRESS ) ) )
             {
                 ( void ) xMBMasterPortEventPost( EV_MASTER_EXECUTE );
