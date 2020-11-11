@@ -641,7 +641,7 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    xSemaphoreTakeRecursive(loop->profiling_mutex, portMAX_DELAY);
+    xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
     portENTER_CRITICAL(&s_event_loops_spinlock);
     SLIST_REMOVE(&s_event_loops, loop, esp_event_loop_instance, next);
     portEXIT_CRITICAL(&s_event_loops_spinlock);
@@ -672,7 +672,7 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     // Free loop mutex before deleting
     xSemaphoreGiveRecursive(loop_mutex);
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    xSemaphoreGiveRecursive(loop_profiling_mutex);
+    xSemaphoreGive(loop_profiling_mutex);
     vSemaphoreDelete(loop_profiling_mutex);
 #endif
     vSemaphoreDelete(loop_mutex);
