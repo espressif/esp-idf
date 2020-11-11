@@ -117,7 +117,7 @@ menu "ESP-MQTT Configurations"
 
     config MQTT_OUTBOX_EXPIRED_TIMEOUT_MS
         int "Outbox message expired timeout[ms]"
-        default 300000
+        default 30000
         depends on MQTT_USE_CUSTOM_CONFIG
         help
             Messages which stays in the outbox longer than this value before being published will be discarded.
