@@ -1,7 +1,9 @@
 from __future__ import print_function
 import os.path
 import sys
+import time
 
+from .. import Env
 
 _COLOR_CODES = {
     "white": u'\033[0m',
@@ -17,6 +19,19 @@ _COLOR_CODES = {
     "B": u'\033[34m',
     "P": u'\033[35m'
 }
+
+
+def _get_log_file_name():
+    if Env.Env.CURRENT_LOG_FOLDER:
+        file_name = os.path.join(Env.Env.CURRENT_LOG_FOLDER, "console.log")
+    else:
+        raise OSError("env log folder does not exist, will not save to log file")
+    return file_name
+
+
+def format_timestamp():
+    ts = time.time()
+    return "{}:{}".format(time.strftime("%m-%d %H:%M:%S", time.localtime(ts)), str(ts % 1)[2:5])
 
 
 def console_log(data, color="white", end="\n"):
@@ -37,6 +52,13 @@ def console_log(data, color="white", end="\n"):
         # reset color to white for later logs
         print(_COLOR_CODES["white"] + u"\r")
     sys.stdout.flush()
+    log_data = "[{}] ".format(format_timestamp()) + data
+    try:
+        log_file = _get_log_file_name()
+        with open(log_file, "a+") as f:
+            f.write(log_data + end)
+    except OSError:
+        pass
 
 
 __LOADED_MODULES = dict()
