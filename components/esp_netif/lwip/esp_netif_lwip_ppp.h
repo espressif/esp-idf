@@ -70,6 +70,8 @@ esp_err_t esp_netif_stop_ppp(lwip_ppp_ctx_t *ppp);
 /**
  * @brief  Sets default netif for routing priority config
  *
+ * @note: This function must be called from lwip thread
+ *
  */
 void esp_netif_ppp_set_default_netif(lwip_ppp_ctx_t* ppp_ctx);
 
