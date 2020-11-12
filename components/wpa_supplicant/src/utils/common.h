@@ -13,6 +13,7 @@
 #endif /* ets */
 #include "os.h"
 #include "esp_bit_defs.h"
+#include "list.h"
 
 /* Define platform specific variable type macros */
 #if defined(ESP_PLATFORM)
@@ -115,6 +116,12 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #define WPA_BYTE_SWAP_DEFINED
 #endif /* !WPA_BYTE_SWAP_DEFINED */
 
+#define SSID_MAX_LEN 32
+
+struct wpa_ssid_value {
+	u8 ssid[SSID_MAX_LEN];
+	size_t ssid_len;
+};
 
 /* Macros for handling unaligned memory accesses */
 
@@ -379,6 +386,10 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 			       size_t len);
 
 int hwaddr_mask_txt(char *buf, size_t len, const u8 *addr, const u8 *mask);
+u8 rssi_to_rcpi(int rssi);
+int os_time_expired(struct os_time *now,
+		struct os_time *ts,
+		os_time_t timeout_secs);
 
 #ifdef CONFIG_NATIVE_WINDOWS
 void wpa_unicode2ascii_inplace(TCHAR *str);

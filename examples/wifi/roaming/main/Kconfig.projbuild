@@ -1,0 +1,21 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "roaming_test"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "password"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_WIFI_RSSI_THRESHOLD
+        int "WiFi RSSI threshold to trigger roaming"
+        default 0
+        help
+            WiFi RSSI threshold to trigger roaming value in dbm (-100 to 0). 0 denotes feature is disabled.
+
+endmenu

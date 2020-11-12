@@ -91,22 +91,22 @@ void  wpa_hexdump(int level, const char *title, const u8 *buf, size_t len)
 	size_t i;
 	char output[50];
 
-	if (level < MSG_MSGDUMP)
+	if (level < MSG_ERROR)
 		return;
 
-	wpa_printf(MSG_DEBUG, "%s - hexdump(len=%lu):", title, (unsigned long) len);
+	wpa_printf(level, "%s - hexdump(len=%lu):", title, (unsigned long) len);
 	if (buf == NULL) {
-		wpa_printf(MSG_DEBUG, " [NULL]");
+		wpa_printf(level, " [NULL]");
 	} else {
 		for (i = 0; i < len / 16; i++) {
 			_wpa_snprintf_hex(output, 50, buf + i * 16, 16, 0, 1);
-			wpa_printf(MSG_DEBUG, "%s", output);
+			wpa_printf(level, "%s", output);
 		}
 		if (len % 16) {
 			int bytes_printed = (len / 16) * 16;
 			_wpa_snprintf_hex(output, 50, buf + bytes_printed,
 							  len - bytes_printed, 0, 1);
-			wpa_printf(MSG_DEBUG, "%s", output);
+			wpa_printf(level, "%s", output);
 		}
 	}
 #endif

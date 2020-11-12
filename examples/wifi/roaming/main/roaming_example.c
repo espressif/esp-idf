@@ -1,0 +1,364 @@
+#include <string.h>
+#include <stdlib.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_wifi.h"
+#include "esp_wnm.h"
+#include "esp_rrm.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
+#include "esp_netif.h"
+
+/* Configuration */
+#define EXAMPLE_WIFI_SSID CONFIG_EXAMPLE_WIFI_SSID
+#define EXAMPLE_WIFI_PASSWORD CONFIG_EXAMPLE_WIFI_PASSWORD
+#define EXAMPLE_WIFI_RSSI_THRESHOLD CONFIG_EXAMPLE_WIFI_RSSI_THRESHOLD
+
+/* rrm ctx */
+int rrm_ctx = 0;
+
+/* FreeRTOS event group to signal when we are connected & ready to make a request */
+static EventGroupHandle_t wifi_event_group;
+
+/* esp netif object representing the WIFI station */
+static esp_netif_t *sta_netif = NULL;
+
+static const char *TAG = "roaming_example";
+
+static inline uint32_t WPA_GET_LE32(const uint8_t *a)
+{
+	return ((uint32_t) a[3] << 24) | (a[2] << 16) | (a[1] << 8) | a[0];
+}
+
+static void event_handler(void* arg, esp_event_base_t event_base,
+		int32_t event_id, void* event_data)
+{
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+		esp_wifi_connect();
+	} else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+		wifi_event_sta_disconnected_t *disconn = event_data;
+		if (disconn->reason == WIFI_REASON_ROAMING) {
+			ESP_LOGI(TAG, "station roaming, do nothing");
+		} else {
+			esp_wifi_connect();
+		}
+	} else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+#if EXAMPLE_WIFI_RSSI_THRESHOLD
+		if (EXAMPLE_WIFI_RSSI_THRESHOLD) {
+			ESP_LOGI(TAG, "setting rssi threshold as %d\n", EXAMPLE_WIFI_RSSI_THRESHOLD);
+			esp_wifi_set_rssi_threshold(EXAMPLE_WIFI_RSSI_THRESHOLD);
+		}
+#endif
+	}
+}
+
+#ifndef WLAN_EID_MEASURE_REPORT
+#define WLAN_EID_MEASURE_REPORT 39
+#endif
+#ifndef MEASURE_TYPE_LCI
+#define MEASURE_TYPE_LCI 9
+#endif
+#ifndef MEASURE_TYPE_LOCATION_CIVIC
+#define MEASURE_TYPE_LOCATION_CIVIC 11
+#endif
+#ifndef WLAN_EID_NEIGHBOR_REPORT
+#define WLAN_EID_NEIGHBOR_REPORT 52
+#endif
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
+
+#define MAX_NEIGHBOR_LEN 512
+#if 1
+static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
+{
+	size_t len = 0;
+	const uint8_t *data;
+	int ret = 0;
+
+	/*
+	 * Neighbor Report element (IEEE P802.11-REVmc/D5.0)
+	 * BSSID[6]
+	 * BSSID Information[4]
+	 * Operating Class[1]
+	 * Channel Number[1]
+	 * PHY Type[1]
+	 * Optional Subelements[variable]
+	 */
+#define NR_IE_MIN_LEN (ETH_ALEN + 4 + 1 + 1 + 1)
+
+	if (!report || report_len == 0) {
+		ESP_LOGI(TAG, "RRM neighbor report is not valid");
+		return NULL;
+	}
+
+	char *buf = calloc(1, MAX_NEIGHBOR_LEN);
+	data = report;
+
+	while (report_len >= 2 + NR_IE_MIN_LEN) {
+		const uint8_t *nr;
+		char lci[256 * 2 + 1];
+		char civic[256 * 2 + 1];
+		uint8_t nr_len = data[1];
+		const uint8_t *pos = data, *end;
+
+		if (pos[0] != WLAN_EID_NEIGHBOR_REPORT ||
+		    nr_len < NR_IE_MIN_LEN) {
+			ESP_LOGI(TAG, "CTRL: Invalid Neighbor Report element: id=%u len=%u",
+					data[0], nr_len);
+			ret = -1;
+			goto cleanup;
+		}
+
+		if (2U + nr_len > report_len) {
+			ESP_LOGI(TAG, "CTRL: Invalid Neighbor Report element: id=%u len=%zu nr_len=%u",
+					data[0], report_len, nr_len);
+			ret = -1;
+			goto cleanup;
+		}
+		pos += 2;
+		end = pos + nr_len;
+
+		nr = pos;
+		pos += NR_IE_MIN_LEN;
+
+		lci[0] = '\0';
+		civic[0] = '\0';
+		while (end - pos > 2) {
+			uint8_t s_id, s_len;
+
+			s_id = *pos++;
+			s_len = *pos++;
+			if (s_len > end - pos) {
+				ret = -1;
+				goto cleanup;
+			}
+			if (s_id == WLAN_EID_MEASURE_REPORT && s_len > 3) {
+				/* Measurement Token[1] */
+				/* Measurement Report Mode[1] */
+				/* Measurement Type[1] */
+				/* Measurement Report[variable] */
+				switch (pos[2]) {
+					case MEASURE_TYPE_LCI:
+						if (lci[0])
+							break;
+						memcpy(lci, pos, s_len);
+						break;
+					case MEASURE_TYPE_LOCATION_CIVIC:
+						if (civic[0])
+							break;
+						memcpy(civic, pos, s_len);
+						break;
+				}
+			}
+
+			pos += s_len;
+		}
+
+		ESP_LOGI(TAG, "RMM neigbor report bssid=" MACSTR
+				" info=0x%x op_class=%u chan=%u phy_type=%u%s%s%s%s",
+				MAC2STR(nr), WPA_GET_LE32(nr + ETH_ALEN),
+				nr[ETH_ALEN + 4], nr[ETH_ALEN + 5],
+				nr[ETH_ALEN + 6],
+				lci[0] ? " lci=" : "", lci,
+				civic[0] ? " civic=" : "", civic);
+
+		/* neighbor start */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, " neighbor=");
+		/* bssid */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, MACSTR, MAC2STR(nr));
+		/* , */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, ",");
+		/* bssid info */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, "0x%04x", WPA_GET_LE32(nr + ETH_ALEN));
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, ",");
+		/* operating class */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, "%u", nr[ETH_ALEN + 4]);
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, ",");
+		/* channel number */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, "%u", nr[ETH_ALEN + 5]);
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, ",");
+		/* phy type */
+		len += snprintf(buf + len, MAX_NEIGHBOR_LEN - len, "%u", nr[ETH_ALEN + 6]);
+		/* optional elements, skip */
+
+		data = end;
+		report_len -= 2 + nr_len;
+	}
+
+cleanup:
+	if (ret < 0) {
+		free(buf);
+		buf = NULL;
+	}
+	return buf;
+}
+
+#else
+
+/* Sample API to create neighbor list */
+char * get_tmp_neighbor_list(uint8_t *report, size_t report_len)
+{
+#define MAC1 "00:01:02:03:04:05"
+#define MAC2 "00:02:03:04:05:06"
+
+	char * buf = calloc(1, MAX_NEIGHBOR_LEN);
+	size_t len = 0;
+	char *pos;
+	if (!buf)
+		return NULL;
+
+	pos = buf;
+	/* create two temp neighbors */
+	/* format for neighbor list : neighbor=11:22:33:44:55:66,0x0000,81,3,7,0301ff */
+
+	/* neighbor1 start */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, " neighbor=");
+	/* bssid */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, MAC1);
+	/* , */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* bssid info */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "0x0000");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* operating class */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "81");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* channel number */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "6");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* phy type */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "7");
+	/* optional elements, skip */
+
+	/* neighbor2 start */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, " neighbor=");
+	/* bssid */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, MAC2);
+	/* , */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* bssid info */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "0x0000");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* operating class */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "81");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* channel number */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "6");
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, ",");
+	/* phy type */
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, "7");
+	/* optional elements, skip */
+
+	len += snprintf(pos + len, MAX_NEIGHBOR_LEN - len, " ");
+
+#undef MAC1
+#undef MAC2
+	return buf;
+}
+#endif
+
+void neighbor_report_recv_cb(void *ctx, const uint8_t *report, size_t report_len)
+{
+	int *val = ctx;
+	uint8_t *pos = (uint8_t *)report;
+	int cand_list = 0;
+
+	if (!report) {
+		ESP_LOGE(TAG, "report is null");
+		return;
+	}
+	if (*val != rrm_ctx) {
+		ESP_LOGE(TAG, "rrm_ctx value didn't match, not initiated by us");
+		return;
+	}
+	/* dump report info */
+	ESP_LOGI(TAG, "rrm: neighbor report len=%d", report_len);
+	ESP_LOG_BUFFER_HEXDUMP(TAG, pos, report_len, ESP_LOG_INFO);
+
+	/* create neighbor list */
+	char *neighbor_list = get_btm_neighbor_list(pos + 1, report_len - 1);
+
+	/* In case neighbor list is not present issue a scan and get the list from that */
+	if (!neighbor_list) {
+		/* issue scan */
+		wifi_scan_config_t params;
+		memset(&params, 0, sizeof(wifi_scan_config_t));
+		if (esp_wifi_scan_start(&params, true) < 0) {
+			goto cleanup;
+		}
+		/* cleanup from net802.11 */
+		uint16_t number = 1;
+		wifi_ap_record_t ap_records;
+		esp_wifi_scan_get_ap_records(&number, &ap_records);
+		cand_list = 1;
+	}
+	/* send AP btm query, this will cause STA to roam as well */
+	esp_wnm_send_bss_transition_mgmt_query(REASON_FRAME_LOSS, neighbor_list, cand_list);
+
+cleanup:
+	if (neighbor_list)
+		free(neighbor_list);
+}
+
+#if EXAMPLE_WIFI_RSSI_THRESHOLD
+static void esp_bss_rssi_low_handler(void* arg, esp_event_base_t event_base,
+		int32_t event_id, void* event_data)
+{
+	wifi_event_bss_rssi_low_t *event = event_data;
+
+	ESP_LOGI(TAG, "%s:bss rssi is=%d", __func__, event->rssi);
+	/* Lets check channel conditions */
+	rrm_ctx++;
+	if (esp_rrm_send_neighbor_rep_request(neighbor_report_recv_cb, &rrm_ctx) < 0) {
+		/* failed to send neighbor report request */
+		ESP_LOGI(TAG, "failed to send neighbor report request");
+		if (esp_wnm_send_bss_transition_mgmt_query(REASON_FRAME_LOSS, NULL, 0) < 0) {
+			ESP_LOGI(TAG, "failed to send btm query");
+		}
+	}
+}
+#endif
+
+static void initialise_wifi(void)
+{
+	ESP_ERROR_CHECK(esp_netif_init());
+	wifi_event_group = xEventGroupCreate();
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
+	sta_netif = esp_netif_create_default_wifi_sta();
+	assert(sta_netif);
+
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+	ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
+	ESP_ERROR_CHECK( esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL) );
+#if EXAMPLE_WIFI_RSSI_THRESHOLD
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
+				&esp_bss_rssi_low_handler, NULL));
+#endif
+
+
+	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+	wifi_config_t wifi_config = {
+		.sta = {
+			.ssid = EXAMPLE_WIFI_SSID,
+			.password = EXAMPLE_WIFI_PASSWORD,
+			.rm_enabled =1,
+			.btm_enabled =1,
+		},
+	};
+
+	ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
+	ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+	ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+	ESP_ERROR_CHECK( esp_wifi_start() );
+}
+
+void app_main(void)
+{
+	ESP_ERROR_CHECK( nvs_flash_init() );
+	initialise_wifi();
+}

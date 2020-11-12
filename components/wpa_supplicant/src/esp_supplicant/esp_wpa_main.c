@@ -35,6 +35,7 @@
 #include "esp_private/wifi.h"
 #include "esp_wpa3_i.h"
 #include "esp_wpa2.h"
+#include "esp_common_i.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
@@ -103,6 +104,7 @@ void  wpa_config_assoc_ie(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len)
     } else {
         esp_wifi_set_appie_internal(WIFI_APPIE_RSN, assoc_buf, assoc_wpa_ie_len, 1);
     }
+    esp_set_rm_enabled_ie();
 }
 
 void  wpa_neg_complete(void)
@@ -156,6 +158,7 @@ bool  wpa_deattach(void)
 
 void  wpa_sta_connect(uint8_t *bssid)
 {
+
     int ret = 0;
     wpa_config_profile();
     ret = wpa_config_bss(bssid);
@@ -200,6 +203,13 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     }
 }
 
+#ifndef ROAMING_SUPPORT
+static inline void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
+{
+	wpa_cb->wpa_sta_rx_mgmt = NULL;
+}
+#endif
+
 int esp_supplicant_init(void)
 {
     struct wpa_funcs *wpa_cb;
@@ -228,6 +238,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     esp_wifi_register_wpa3_cb(wpa_cb);
+    esp_supplicant_common_init(wpa_cb);
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 
