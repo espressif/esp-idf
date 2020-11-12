@@ -201,7 +201,7 @@ class TestResult(object):
 
     @staticmethod
     def _convert_to_draw_format(data, label):
-        keys = data.keys()
+        keys = list(data.keys())
         keys.sort()
         return {
             "x-axis": keys,
@@ -235,8 +235,8 @@ class TestResult(object):
 
         LineChart.draw_line_chart(os.path.join(path, file_name),
                                   "Throughput Vs {} ({} {})".format(type_name, self.proto, self.direction),
-                                  "Throughput (Mbps)",
                                   "{} (dbm)".format(type_name),
+                                  "Throughput (Mbps)",
                                   data_list)
         return file_name
 
@@ -324,7 +324,7 @@ class IperfTestUtility(object):
         except subprocess.CalledProcessError:
             pass
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect_any("iperf>", "esp32>")
         self.dut.write("scan {}".format(self.ap_ssid))
         for _ in range(SCAN_RETRY_COUNT):
             try:
@@ -450,7 +450,7 @@ class IperfTestUtility(object):
         :return: True or False
         """
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect_any("iperf>", "esp32>")
         for _ in range(WAIT_AP_POWER_ON_TIMEOUT // SCAN_TIMEOUT):
             try:
                 self.dut.write("scan {}".format(self.ap_ssid))
@@ -518,7 +518,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
         # 2. get DUT and download
         dut = env.get_dut("iperf", "examples/wifi/iperf")
         dut.start_app()
-        dut.expect("esp32>")
+        dut.expect_any("iperf>", "esp32>")
 
         # 3. run test for each required att value
         test_result[config_name] = {
@@ -576,7 +576,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     # 2. get DUT and download
     dut = env.get_dut("iperf", "examples/wifi/iperf")
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect_any("iperf>", "esp32>")
 
     # 3. run test for each required att value
     for ap_info in ap_list:
@@ -625,7 +625,7 @@ def test_wifi_throughput_basic(env, extra_data):
     # 2. get DUT
     dut = env.get_dut("iperf", "examples/wifi/iperf")
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect_any("iperf>", "esp32>")
 
     # 3. preparing
     test_result = {
