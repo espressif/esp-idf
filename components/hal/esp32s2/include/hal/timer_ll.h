@@ -99,6 +99,7 @@ static inline void timer_ll_set_counter_value(timg_dev_t *hw, timer_idx_t timer_
 FORCE_INLINE_ATTR void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t *timer_val)
 {
     hw->hw_timer[timer_num].update.update = 1;
+    while (hw->hw_timer[timer_num].update.update) {}
     *timer_val = ((uint64_t) hw->hw_timer[timer_num].cnt_high << 32) | (hw->hw_timer[timer_num].cnt_low);
 }
 
