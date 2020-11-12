@@ -344,13 +344,18 @@ class GenerationModel:
                 try:
                     if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
                             scheme_name == GenerationModel.DEFAULT_SCHEME):
-
                         if self.check_mappings and mapping.name not in self.check_mapping_exceptions:
                             if not obj == Mapping.MAPPING_ALL_OBJECTS:
-                                obj_section = sections_infos.get_obj_sections(archive, obj)
-                                if not obj_section:
-                                    message = "'%s\:%s' not found" % (archive, obj)
+                                obj_sections = sections_infos.get_obj_sections(archive, obj)
+                                if not obj_sections:
+                                    message = "'%s:%s' not found" % (archive, obj)
                                     raise GenerationException(message, mapping)
+
+                                if symbol:
+                                    obj_sym = fnmatch.filter(obj_sections, "*%s" % symbol)
+                                    if not obj_sym:
+                                        message = "'%s:%s %s' not found" % (archive, obj, symbol)
+                                        raise GenerationException(message, mapping)
 
                         self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
                 except KeyError:
