@@ -209,8 +209,26 @@ inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
 }
 
 
-inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
+inline static bool IRAM_ATTR esp_stack_ptr_in_dram(uint32_t sp)
 {
     //Check if stack ptr is in between SOC_DRAM_LOW and SOC_DRAM_HIGH, and 16 byte aligned.
     return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }
+
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+inline static bool IRAM_ATTR esp_stack_ptr_in_extram(uint32_t sp)
+{
+    //Check if stack ptr is in between SOC_EXTRAM_DATA_LOW and SOC_EXTRAM_DATA_HIGH, and 16 byte aligned.
+    return !(sp < SOC_EXTRAM_DATA_LOW + 0x10 || sp > SOC_EXTRAM_DATA_HIGH - 0x10 || ((sp & 0xF) != 0));
+}
+#endif
+
+inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
+{
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    return (esp_stack_ptr_in_dram(sp) || esp_stack_ptr_in_extram(sp));
+#else
+    return esp_stack_ptr_in_dram(sp);
+#endif
+}
+
