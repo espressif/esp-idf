@@ -19,6 +19,7 @@
 import logging
 import os
 import subprocess
+import sys
 
 IDF_PATH = os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -44,3 +45,27 @@ def get_submodule_dirs(full_path=False):  # type: (bool) -> list
         logging.warning(str(e))
 
     return dirs
+
+
+def _check_git_filemode(full_path):  # type: (str) -> bool
+    try:
+        stdout = subprocess.check_output(['git', 'ls-files', '--stage', full_path]).strip().decode('utf-8')
+    except subprocess.CalledProcessError:
+        return True
+
+    mode = stdout.split(' ', 1)[0]  # e.g. 100644 for a rw-r--r--
+    if any([int(i, 8) & 1 for i in mode[-3:]]):
+        return False
+    return True
+
+
+def is_executable(full_path):  # type: (str) -> bool
+    """
+    os.X_OK will always return true on windows. Use git to check file mode.
+    :param full_path: file full path
+    :return: True is it's an executable file
+    """
+    if sys.platform == 'win32':
+        return _check_git_filemode(full_path)
+    else:
+        return os.access(full_path, os.X_OK)
