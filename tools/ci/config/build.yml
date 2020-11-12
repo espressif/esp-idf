@@ -435,7 +435,7 @@ code_quality_check:
     - export CI_MR_IID=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py id ${CI_COMMIT_BRANCH})
     - export CI_MR_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_BRANCH} | tr '\n' ',')
     # test if this branch have merge request, if not, exit 0
-    - test -n "$CI_MERGE_REQUEST_IID" || exit 0
+    - test -n "$CI_MR_IID" || exit 0
     - test -n "$CI_MR_COMMITS" || exit 0
     - sonar-scanner
       -Dsonar.analysis.mode=preview
@@ -447,7 +447,7 @@ code_quality_check:
       -Dsonar.projectBaseDir=$CI_PROJECT_DIR
       -Dsonar.exclusions=$EXCLUSIONS
       -Dsonar.gitlab.project_id=$CI_PROJECT_ID
-      -Dsonar.gitlab.commit_sha=CI_MR_COMMITS
+      -Dsonar.gitlab.commit_sha=$CI_MR_COMMITS
       -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
       -Dsonar.cxx.includeDirectories=components,/usr/include
