@@ -2,4 +2,6 @@
 archive: libfreertos.a
 entries:
     * (noflash_text)
-
+    tasks:vTaskStartScheduler (default)
+    port:xPortStartScheduler (default)
+    port:pxPortInitialiseStack (default)
