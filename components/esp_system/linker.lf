@@ -3,6 +3,7 @@ archive: libesp_system.a
 entries:
     panic (noflash)
     panic_handler (noflash)
+    panic_arch (noflash)
     reset_reason (noflash)
     system_api:esp_system_abort (noflash)
     startup:do_core_init (default)

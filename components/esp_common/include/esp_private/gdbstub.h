@@ -11,12 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GDBSTUB_H
-#define GDBSTUB_H
+#pragma once
 
-#include <xtensa/config/core.h>
-#include "freertos/xtensa_api.h"
+/* This header exists to avoid making esp_common depend on gdbstub component for panic handler support */
 
-void esp_gdbstub_panic_handler(XtExcFrame *frame) __attribute__((noreturn));
+typedef void esp_gdbstub_frame_t;
 
-#endif
+void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame) __attribute__((noreturn));

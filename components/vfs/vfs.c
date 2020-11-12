@@ -18,6 +18,7 @@
 #include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/reent.h>
 #include <sys/unistd.h>
 #include <sys/lock.h>
 #include <sys/param.h>

@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"

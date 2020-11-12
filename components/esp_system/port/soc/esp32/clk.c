@@ -177,7 +177,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
-    rtc_cpu_freq_config_t old_config, new_config;
+    rtc_cpu_freq_config_t old_config;
+    rtc_cpu_freq_config_t new_config;
     rtc_clk_cpu_freq_get_config(&old_config);
     const uint32_t old_freq_mhz = old_config.freq_mhz;
     const uint32_t new_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
@@ -205,7 +206,9 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
+    uint32_t common_perip_clk;
+    uint32_t hwcrypto_perip_clk;
+    uint32_t wifi_bt_sdio_clk;
 
 #if CONFIG_FREERTOS_UNICORE
     RESET_REASON rst_reas[1];

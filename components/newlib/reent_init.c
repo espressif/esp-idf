@@ -19,12 +19,6 @@
 #include <sys/reent.h>
 #include "esp_attr.h"
 
-/* This function is not part on newlib API, it is defined in libc/stdio/local.h
- * There is no nice way to get __cleanup member populated while avoiding __sinit,
- * so extern declaration is used here.
- */
-extern void _cleanup_r(struct _reent* r);
-
 /**
  * This is the replacement for newlib's _REENT_INIT_PTR and __sinit.
  * The problem with __sinit is that it allocates three FILE structures

@@ -7,7 +7,7 @@ endif()
 
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32s3 is headers
-    idf_component_register(INCLUDE_DIRS include)
+    idf_component_register(INCLUDE_DIRS include REQUIRES xtensa)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s3.peripherals.ld")
 else()
     # Regular app build
@@ -25,7 +25,7 @@ else()
              "system_api_esp32s3.c")
     set(include_dirs "include")
 
-    set(requires driver efuse soc) #unfortunately rom/uart uses SOC registers directly
+    set(requires driver efuse soc xtensa) #unfortunately rom/uart uses SOC registers directly
 
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.

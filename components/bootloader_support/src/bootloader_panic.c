@@ -14,7 +14,7 @@
 
 #include "esp_log.h"
 #include "bootloader_common.h"
-#include "soc/cpu.h"
+#include "hal/cpu_hal.h"
 #include "esp_rom_sys.h"
 
 
@@ -30,8 +30,8 @@ void abort(void)
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
     esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
-    if (esp_cpu_in_ocd_debug_mode()) {
-        __asm__("break 0,0");
+    if (cpu_hal_is_debugger_attached()) {
+        cpu_hal_break();
     }
     while (1) {
     }

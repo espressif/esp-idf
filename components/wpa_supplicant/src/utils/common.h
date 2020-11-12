@@ -27,16 +27,14 @@ typedef int16_t s16;
 typedef int8_t s8;
 #endif /*ESP_PLATFORM*/
 
-#if defined(__XTENSA__)
+#if defined(__linux__) || defined(__GLIBC__)
+#include <endian.h>
+#include <byteswap.h>
+#else
 #include <machine/endian.h>
 #define __BYTE_ORDER     BYTE_ORDER
 #define __LITTLE_ENDIAN  LITTLE_ENDIAN
 #define __BIG_ENDIAN     BIG_ENDIAN
-#endif /*__XTENSA__*/
-
-#if defined(__linux__) || defined(__GLIBC__) || defined(__ets__)
-#include <endian.h>
-#include <byteswap.h>
 #endif /* __linux__ */
 
 /* Define platform specific byte swapping macros */
@@ -85,16 +83,16 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define le_to_host16(n) ((__force u16) (le16) (n))
 #define host_to_le16(n) ((__force le16) (u16) (n))
-#define be_to_host16(n) __bswap_16((__force u16) (be16) (n))
-#define host_to_be16(n) ((__force be16) __bswap_16((n)))
+#define be_to_host16(n) __builtin_bswap16((__force u16) (be16) (n))
+#define host_to_be16(n) ((__force be16) __builtin_bswap16((n)))
 #define le_to_host32(n) ((__force u32) (le32) (n))
 #define host_to_le32(n) ((__force le32) (u32) (n))
-#define be_to_host32(n) __bswap_32((__force u32) (be32) (n))
-#define host_to_be32(n) ((__force be32) __bswap_32((n)))
+#define be_to_host32(n) __builtin_bswap32((__force u32) (be32) (n))
+#define host_to_be32(n) ((__force be32) __builtin_bswap32((n)))
 #define le_to_host64(n) ((__force u64) (le64) (n))
 #define host_to_le64(n) ((__force le64) (u64) (n))
-#define be_to_host64(n) __bswap_64((__force u64) (be64) (n))
-#define host_to_be64(n) ((__force be64) bswap_64((n)))
+#define be_to_host64(n) __builtin_bswap64((__force u64) (be64) (n))
+#define host_to_be64(n) ((__force be64) __builtin_bswap64((n)))
 #elif __BYTE_ORDER == __BIG_ENDIAN
 #define le_to_host16(n) __bswap_16(n)
 #define host_to_le16(n) __bswap_16(n)

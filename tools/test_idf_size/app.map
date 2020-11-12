@@ -17299,7 +17299,7 @@ END GROUP
  .literal.commonErrorHandler
                 0x0000000040080b80        0x4 /home/user/esp/esp-idf/tools/unit-test-app/build/esp32/libesp32.a(panic.o)
                                          0x28 (size before relaxing)
- .literal.panicHandler
+ .literal.panic_handle_pseudo_exception
                 0x0000000040080b84       0x38 /home/user/esp/esp-idf/tools/unit-test-app/build/esp32/libesp32.a(panic.o)
                                          0xc0 (size before relaxing)
  .literal.xt_unhandled_exception
@@ -18250,10 +18250,10 @@ END GROUP
                 0x0000000040087c34       0x44 /home/user/esp/esp-idf/tools/unit-test-app/build/esp32/libesp32.a(panic.o)
                                          0x56 (size before relaxing)
  *fill*         0x0000000040087c78        0x0 
- .text.panicHandler
+ .text.panic_handle_pseudo_exception
                 0x0000000040087c78      0x1a0 /home/user/esp/esp-idf/tools/unit-test-app/build/esp32/libesp32.a(panic.o)
                                         0x1cc (size before relaxing)
-                0x0000000040087c78                panicHandler
+                0x0000000040087c78                panic_handle_pseudo_exception
  .text.xt_unhandled_exception
                 0x0000000040087e18       0x77 /home/user/esp/esp-idf/tools/unit-test-app/build/esp32/libesp32.a(panic.o)
                                          0xa1 (size before relaxing)

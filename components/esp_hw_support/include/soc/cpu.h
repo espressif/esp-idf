@@ -18,11 +18,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#if __XTENSA__
+#include "xt_instr_macros.h"
+// [refactor-todo] not actually needed in this header now,
+// but kept for compatibility
 #include "xtensa/corebits.h"
 #include "xtensa/config/core.h"
 
 #include "xtensa/config/specreg.h"
-#include "xt_instr_macros.h"
+#endif
 
 #include "hal/cpu_hal.h"
 
@@ -91,10 +96,14 @@ typedef uint32_t esp_cpu_ccount_t;
 
 static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
 {
-    uint32_t result;
-    RSR(CCOUNT, result);
-    return result;
+    return cpu_hal_get_cycle_count();
 }
+
+/**
+ * @brief Configure CPU to disable access to invalid memory regions
+ *
+ */
+void esp_cpu_configure_region_protection(void);
 
 #ifdef __cplusplus
 }

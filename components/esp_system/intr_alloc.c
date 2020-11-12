@@ -531,7 +531,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         vd->shared_vec_info=sh_vec;
         vd->flags|=VECDESC_FL_SHARED;
         //(Re-)set shared isr handler to new value.
-        xt_set_interrupt_handler(intr, shared_intr_isr, vd);
+        interrupt_controller_hal_set_int_handler(intr, shared_intr_isr, vd);
     } else {
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags=VECDESC_FL_NONSHARED;
@@ -801,11 +801,11 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 //equivalents here.
 
 
-void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
+void IRAM_ATTR ets_isr_unmask(uint32_t mask) {
     interrupt_controller_hal_enable_interrupts(mask);
 }
 
-void IRAM_ATTR ets_isr_mask(unsigned int mask) {
+void IRAM_ATTR ets_isr_mask(uint32_t mask) {
     interrupt_controller_hal_disable_interrupts(mask);
 }
 

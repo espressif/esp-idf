@@ -27,7 +27,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
 #if CONFIG_IDF_TARGET_ESP32

@@ -18,7 +18,7 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/esp_system/include \
                  -I$(COMPONENTS_DIR)/esp_timer/include \
                  -I$(COMPONENTS_DIR)/esp_wifi/include \
-                 -I$(COMPONENTS_DIR)/freertos/xtensa/include \
+                 -I$(COMPONENTS_DIR)/freertos/port/xtensa/include \
                  -I$(COMPONENTS_DIR)/freertos \
                  -I$(COMPONENTS_DIR)/freertos/include \
                  -I$(COMPONENTS_DIR)/hal/include \

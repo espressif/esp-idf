@@ -19,6 +19,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "esp_heap_caps.h"
 
 static const char *TAG = "esp_eth";
 #define ETH_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -317,7 +318,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, uint32_t length)
+esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;

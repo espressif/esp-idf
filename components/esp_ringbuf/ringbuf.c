@@ -20,8 +20,9 @@
 #include "freertos/ringbuf.h"
 
 //32-bit alignment macros
-#define rbALIGN_SIZE( xSize )       ( ( xSize + portBYTE_ALIGNMENT_MASK ) & ~portBYTE_ALIGNMENT_MASK )
-#define rbCHECK_ALIGNED( pvPtr )    ( ( ( UBaseType_t ) ( pvPtr ) & portBYTE_ALIGNMENT_MASK ) == 0 )
+#define rbALIGN_MASK (0x03)
+#define rbALIGN_SIZE( xSize )       ( ( xSize + rbALIGN_MASK ) & ~rbALIGN_MASK )
+#define rbCHECK_ALIGNED( pvPtr )    ( ( ( UBaseType_t ) ( pvPtr ) & rbALIGN_MASK ) == 0 )
 
 //Ring buffer flags
 #define rbALLOW_SPLIT_FLAG          ( ( UBaseType_t ) 1 )   //The ring buffer allows items to be split
