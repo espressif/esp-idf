@@ -20,6 +20,7 @@ extern "C"
 #ifndef __ASSEMBLER__
 
 #include "esp_err.h"
+#include "soc/soc.h"
 
 
 /**
@@ -62,11 +63,35 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
 void esp_clear_watchpoint(int no);
 
 /**
+ * @brief Checks stack pointer in dram
+ */
+inline static bool esp_stack_ptr_in_dram(uint32_t sp)
+{
+    //Check if stack ptr is in between SOC_DRAM_LOW and SOC_DRAM_HIGH, and 16 byte aligned.
+    return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
+}
+
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+/**
+ * @brief Checks stack pointer in external ram
+ */
+inline static bool esp_stack_ptr_in_extram(uint32_t sp)
+{
+    //Check if stack ptr is in between SOC_EXTRAM_DATA_LOW and SOC_EXTRAM_DATA_HIGH, and 16 byte aligned.
+    return !(sp < SOC_EXTRAM_DATA_LOW + 0x10 || sp > SOC_EXTRAM_DATA_HIGH - 0x10 || ((sp & 0xF) != 0));
+}
+#endif
+
+/**
  * @brief Checks stack pointer
  */
 static inline bool esp_stack_ptr_is_sane(uint32_t sp)
 {
-	return !(sp < 0x3ffae010UL || sp > 0x3ffffff0UL || ((sp & 0xf) != 0));
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    return (esp_stack_ptr_in_dram(sp) || esp_stack_ptr_in_extram(sp));
+#else
+    return esp_stack_ptr_in_dram(sp);
+#endif
 }
 #endif
 
