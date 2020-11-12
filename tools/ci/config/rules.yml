@@ -32,14 +32,14 @@
 .if-label-integration_test: &if-label-integration_test
   if: '$BOT_LABEL_INTEGRATION_TEST'
 
-.if-label-unit_test: &if-label-unit_test
-  if: '$BOT_LABEL_UNIT_TEST'
+.if-label-unit_test-32_only: &if-label-unit_test-32_only
+  if: '$BOT_LABEL_UNIT_TEST_32'
 
-.if-label-unit_test_s2: &if-label-unit_test_s2
+.if-label-unit_test-s2_only: &if-label-unit_test-s2_only
   if: '$BOT_LABEL_UNIT_TEST_S2'
 
 .if-label-unit_test-all_targets: &if-label-unit_test-all_targets
-  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_S2'
+  if: '$BOT_LABEL_UNIT_TEST'
 
 .if-label-weekend_test: &if-label-weekend_test
   if: '$BOT_LABEL_WEEKEND_TEST'
@@ -176,11 +176,17 @@
 .rules:tests:unit_test:
   rules:
     - <<: *if-protected-no_label
-    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test-all_targets
+
+.rules:tests:unit_test_32-only:
+  rules:
+    - <<: *if-protected-no_label
+    - <<: *if-label-unit_test-32_only
 
 .rules:tests:unit_test_s2-only:
   rules:
-    - <<: *if-label-unit_test_s2
+    - <<: *if-protected-no_label
+    - <<: *if-label-unit_test-s2_only
 
 .rules:tests:integration_test:
   rules:
