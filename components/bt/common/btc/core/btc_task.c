@@ -65,7 +65,7 @@
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTC_TASK_STACK_SIZE             (BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
-#define BTC_TASK_NAME                   "btcT"
+#define BTC_TASK_NAME                   "BTC_TASK"
 #define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
 
 osi_thread_t *btc_thread;
@@ -325,9 +325,9 @@ error_exit:;
 }
 #endif ///BTC_DYNAMIC_MEMORY
 
-int btc_init(void)
+bt_status_t btc_init(void)
 {
-    btc_thread = osi_thread_create("BTC_TASK", BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
+    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
     if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }

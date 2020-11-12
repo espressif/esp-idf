@@ -117,6 +117,7 @@ esp_err_t esp_bluedroid_init(void)
 {
     btc_msg_t msg;
     future_t **future_p;
+    bt_status_t ret;
 
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         LOG_ERROR("Controller not initialised\n");
@@ -132,12 +133,19 @@ esp_err_t esp_bluedroid_init(void)
     osi_mem_dbg_init();
 #endif
 
-    btc_init();
+    /* 
+    * BTC Init
+    */
+    ret = btc_init();
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("Bluedroid Initialize Fail");
+        return ESP_FAIL;
+    }
 
     future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("Bluedroid initialise failed\n");
+        LOG_ERROR("Bluedroid Initialize Fail!");
         return ESP_ERR_NO_MEM;
     }
 
@@ -146,12 +154,12 @@ esp_err_t esp_bluedroid_init(void)
     msg.act = BTC_MAIN_ACT_INIT;
 
     if (btc_transfer_context(&msg, NULL, 0, NULL) != BT_STATUS_SUCCESS) {
-        LOG_ERROR("Bluedroid initialise failed\n");
+        LOG_ERROR("Bluedroid Initialize Fail");
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("Bluedroid initialise failed\n");
+        LOG_ERROR("Bluedroid Initialize Fail");
         return ESP_FAIL;
     }
 

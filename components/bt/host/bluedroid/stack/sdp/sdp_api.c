@@ -169,9 +169,8 @@ BOOLEAN SDP_ServiceSearchRequest (UINT8 *p_bd_addr, tSDP_DISCOVERY_DB *p_db,
 ** Description      This function queries an SDP server for information.
 **
 **                  The difference between this API function and the function
-**                  SDP_ServiceSearchRequest is that this one does a
+**                  SDP_ServiceSearchRequest2 is that this one does a
 **                  combined ServiceSearchAttributeRequest SDP function.
-**                  (This is for Unplug Testing)
 **
 ** Returns          TRUE if discovery started, FALSE if failed.
 **
@@ -208,8 +207,8 @@ BOOLEAN SDP_ServiceSearchAttributeRequest (UINT8 *p_bd_addr, tSDP_DISCOVERY_DB *
 **
 **                  The difference between this API function and the function
 **                  SDP_ServiceSearchRequest is that this one does a
-**                  combined ServiceSearchAttributeRequest SDP function.
-**                  (This is for Unplug Testing)
+**                  combined ServiceSearchAttributeRequest SDP function with the
+**                  user data piggyback
 **
 ** Returns          TRUE if discovery started, FALSE if failed.
 **

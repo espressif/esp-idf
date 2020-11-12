@@ -94,8 +94,11 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
             bta_sys_sendmsg(p_buf);
             status = BTA_JV_SUCCESS;
         }
+    } else if (p_cback == NULL) {
+        APPL_TRACE_ERROR("No p_cback.");
     } else {
-        APPL_TRACE_ERROR("JVenable fails");
+        APPL_TRACE_WARNING("No need to Init again.");
+        // status = BTA_JV_SUCCESS;
     }
     return (status);
 }
