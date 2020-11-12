@@ -381,5 +381,14 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
  */
 esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, bool addr_32bit);
 
+/**
+ * @brief Handle explicit yield requests
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param wip  Write (erase) in progress, `true` if this function is called during waiting idle of a erase/write command; else `false`.
+ * @return ESP_OK if success, otherwise failed.
+ */
+esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, bool wip);
+
 /// Default timeout configuration used by most chips
 const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;
