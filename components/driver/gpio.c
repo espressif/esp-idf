@@ -704,3 +704,177 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv)
 {
     gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, (uint32_t)oen_inv);
 }
+
+#if SOC_GPIO_SUPPORT_SLP_SWITCH
+static esp_err_t gpio_sleep_pullup_en(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_pullup_en(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_pullup_dis(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_pullup_dis(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_pulldown_en(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_pulldown_en(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_pulldown_dis(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_pulldown_dis(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_input_disable(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_input_disable(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_input_enable(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_input_enable(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_output_disable(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_output_disable(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+
+static esp_err_t gpio_sleep_output_enable(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_output_enable(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+
+esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    if ((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) != true) && (mode & GPIO_MODE_DEF_OUTPUT)) {
+        ESP_LOGE(GPIO_TAG, "io_num=%d can only be input", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = ESP_OK;
+
+    if (mode & GPIO_MODE_DEF_INPUT) {
+        gpio_sleep_input_enable(gpio_num);
+    } else {
+        gpio_sleep_input_disable(gpio_num);
+    }
+
+    if (mode & GPIO_MODE_DEF_OUTPUT) {
+        gpio_sleep_output_enable(gpio_num);
+    } else {
+        gpio_sleep_output_disable(gpio_num);
+    }
+
+    return ret;
+}
+
+esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(pull <= GPIO_FLOATING, "GPIO pull mode error", ESP_ERR_INVALID_ARG);
+    esp_err_t ret = ESP_OK;
+
+    switch (pull) {
+        case GPIO_PULLUP_ONLY:
+            gpio_sleep_pulldown_dis(gpio_num);
+            gpio_sleep_pullup_en(gpio_num);
+            break;
+
+        case GPIO_PULLDOWN_ONLY:
+            gpio_sleep_pulldown_en(gpio_num);
+            gpio_sleep_pullup_dis(gpio_num);
+            break;
+
+        case GPIO_PULLUP_PULLDOWN:
+            gpio_sleep_pulldown_en(gpio_num);
+            gpio_sleep_pullup_en(gpio_num);
+            break;
+
+        case GPIO_FLOATING:
+            gpio_sleep_pulldown_dis(gpio_num);
+            gpio_sleep_pullup_dis(gpio_num);
+            break;
+
+        default:
+            ESP_LOGE(GPIO_TAG, "Unknown pull up/down mode,gpio_num=%u,pull=%u", gpio_num, pull);
+            ret = ESP_ERR_INVALID_ARG;
+            break;
+    }
+
+    return ret;
+}
+
+esp_err_t gpio_sleep_sel_en(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+esp_err_t gpio_sleep_pupd_config_apply(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_pupd_config_apply(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+
+esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_sleep_pupd_config_unapply(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+#endif
+#endif

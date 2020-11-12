@@ -77,4 +77,17 @@ menu "Power Management"
             This feature is intended to be used when lower power consumption is needed
             while there is enough place in IRAM to place source code.
 
+    config PM_SLP_DISABLE_GPIO
+        bool "Disable all GPIO when chip at sleep"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        help
+            This feature is intended to disable all GPIO pins at automantic sleep to get a lower power mode.
+            If enabled, chips will disable all GPIO pins at automantic sleep to reduce about 200~300 uA current.
+            If you want to specifically use some pins normally as chip wakes when chip sleeps,
+            you can call 'gpio_sleep_sel_dis' to disable this feature on those pins.
+            You can also keep this feature on and call 'gpio_sleep_set_direction' and 'gpio_sleep_set_pull_mode'
+            to have a different GPIO configuration at sleep.
+            Waring: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
+            at first, otherwise you will not be able to switch pullup/pulldown mode.
+
 endmenu # "Power Management"
