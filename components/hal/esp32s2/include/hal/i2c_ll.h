@@ -68,6 +68,13 @@ typedef struct {
     uint16_t tout;              /*!< I2C bus timeout period */
 } i2c_clk_cal_t;
 
+// I2C operation mode command
+#define I2C_LL_CMD_RESTART    0    /*!<I2C restart command */
+#define I2C_LL_CMD_WRITE      1    /*!<I2C write command */
+#define I2C_LL_CMD_READ       2    /*!<I2C read command */
+#define I2C_LL_CMD_STOP       3    /*!<I2C stop command */
+#define I2C_LL_CMD_END        4    /*!<I2C end command */
+
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 // Get the I2C hardware FIFO address
@@ -80,8 +87,8 @@ typedef struct {
 #define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
-
-
+// I2C source clock
+#define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_REF_TICK) ? 1000*1000 : 80*1000*1000); // Another clock is APB clock
 /**
  * @brief  Calculate I2C bus frequency
  *
@@ -781,7 +788,8 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
 {
-    hw->ctr.ref_always_on = src_clk;
+    // src_clk : (1) for APB_CLK, (0) for REF_CLK
+    hw->ctr.ref_always_on = (src_clk == I2C_SCLK_REF_TICK) ? 0 : 1;
 }
 
 /**
@@ -846,8 +854,6 @@ static inline void i2c_ll_master_init(i2c_dev_t *hw)
     ctrl_reg.ms_mode = 1;
     ctrl_reg.sda_force_out = 1;
     ctrl_reg.scl_force_out = 1;
-    //Disable REF tick;
-    ctrl_reg.ref_always_on = 1;
     hw->ctr.val = ctrl_reg.val;
 }
 
@@ -881,11 +887,21 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
     //Open-drain output via GPIO
     ctrl_reg.sda_force_out = 1;
     ctrl_reg.scl_force_out = 1;
-    //Disable REF tick;
-    ctrl_reg.ref_always_on = 1;
     hw->ctr.val = ctrl_reg.val;
     hw->fifo_conf.fifo_addr_cfg_en = 0;
     hw->scl_stretch_conf.slave_scl_stretch_en = 0;
+}
+
+/**
+ * @brief  Update I2C configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_update(i2c_dev_t *hw)
+{
+    ;// ESP32S2 do not support
 }
 
 #ifdef __cplusplus

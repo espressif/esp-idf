@@ -28,6 +28,9 @@ extern "C" {
 //ESP32-S3 support hardware clear bus
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
+#define SOC_I2C_SUPPORT_XTAL       (1)
+#define SOC_I2C_SUPPORT_RTC        (1)
+
 #ifdef __cplusplus
 }
 #endif

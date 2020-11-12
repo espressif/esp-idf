@@ -522,3 +522,13 @@ void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
  * @return None
  */
 void i2c_hal_slave_handle_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
+
+/**
+ * @brief Synchronize I2C status
+ *
+ * @param hal Context of the HAL layer
+ *
+ * @return None
+ *
+ */
+void i2c_hal_update_config(i2c_hal_context_t *hal);

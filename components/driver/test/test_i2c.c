@@ -19,8 +19,6 @@
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 #define DELAY_TIME_BETWEEN_ITEMS_MS   1234 /*!< delay time between different test items */
@@ -75,6 +73,7 @@ static i2c_config_t i2c_master_init(void)
         .master.clk_speed = I2C_MASTER_FREQ_HZ,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .scl_io_num = I2C_MASTER_SCL_IO,
+        .clk_flags = 0,
     };
     return conf_master;
 }
@@ -249,7 +248,7 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 // print the reading buffer
 static void disp_buf(uint8_t *buf, int len)
@@ -590,7 +589,12 @@ TEST_CASE("test i2c_slave_write_buffer is not blocked when ticks_to_wait=0", "[i
 
 TEST_CASE("I2C general API test", "[i2c]")
 {
-    const int i2c_num = 1;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#define I2C_TEST_TIME 0x3ff
+#else
+#define I2C_TEST_TIME 0x1f
+#endif
+    const int i2c_num = 0;
     i2c_config_t conf_master = {
         .mode = I2C_MODE_MASTER,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
@@ -601,7 +605,7 @@ TEST_CASE("I2C general API test", "[i2c]")
     };
     TEST_ESP_OK(i2c_param_config( i2c_num, &conf_master));
     int time_get0, time_get1;
-    for(int i = 10; i < 0x3ff; i++) {
+    for(int i = 10; i < I2C_TEST_TIME; i++) {
         //set period test
         TEST_ESP_OK(i2c_set_period(i2c_num, i, i));
         TEST_ESP_OK(i2c_get_period(i2c_num, &time_get0, &time_get1));
@@ -625,6 +629,7 @@ TEST_CASE("I2C general API test", "[i2c]")
     }
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 //Init uart baud rate detection
 static void uart_aut_baud_det_init(int rxd_io_num)
 {
