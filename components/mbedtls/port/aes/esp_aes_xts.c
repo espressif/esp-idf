@@ -38,19 +38,7 @@
 #include <sys/lock.h>
 #include "mbedtls/aes.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/aes.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/aes.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/aes.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/aes.h"
-#endif
+#include "aes/esp_aes.h"
 
 void esp_aes_xts_init( esp_aes_xts_context *ctx )
 {

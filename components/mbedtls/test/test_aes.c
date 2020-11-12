@@ -335,9 +335,9 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -383,113 +383,6 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
     free(decryptedtext);
 }
 
-TEST_CASE("mbedtls GCM stream test", "[aes]")
-{
-
-    const unsigned SZ = 100;
-    mbedtls_gcm_context ctx;
-    uint8_t nonce[16];
-    uint8_t key[16];
-    uint8_t tag[16];
-    mbedtls_cipher_id_t cipher = MBEDTLS_CIPHER_ID_AES;
-
-    /* Cipher produced via this Python:
-        import os, binascii
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-        key = b'\x56' * 16
-        iv = b'\x89' * 16
-        data = b'\xab' * 100
-
-        aesgcm = AESGCM(key)
-
-        ct = aesgcm.encrypt(iv, data, '')
-
-        ct_arr = ""
-        for idx, b in enumerate(ct):
-            if idx % 8 == 0:
-                ct_arr += '\n'
-            ct_arr += "0x{}, ".format(binascii.hexlify(b))
-        print(ct_arr)
-    */
-    const uint8_t expected_cipher[] = {
-        0x03, 0x92, 0x13, 0x49, 0x1f, 0x1f, 0x24, 0x41,
-        0xe8, 0xeb, 0x89, 0x47, 0x50, 0x0a, 0xce, 0xa3,
-        0xc7, 0x1c, 0x10, 0x70, 0xb0, 0x89, 0x82, 0x5e,
-        0x0f, 0x4a, 0x23, 0xee, 0xd2, 0xfc, 0xff, 0x45,
-        0x61, 0x4c, 0xd1, 0xfb, 0x6d, 0xe2, 0xbe, 0x67,
-        0x6f, 0x94, 0x72, 0xa3, 0xe7, 0x04, 0x99, 0xb3,
-        0x4a, 0x46, 0xf9, 0x2b, 0xaf, 0xac, 0xa9, 0x0e,
-        0x43, 0x7e, 0x8b, 0xc4, 0xbf, 0x49, 0xa4, 0x83,
-        0x9c, 0x31, 0x11, 0x1c, 0x09, 0xac, 0x90, 0xdf,
-        0x00, 0x34, 0x08, 0xe5, 0x70, 0xa3, 0x7e, 0x4b,
-        0x36, 0x48, 0x5a, 0x3f, 0x28, 0xc7, 0x1c, 0xd9,
-        0x1b, 0x1b, 0x49, 0x96, 0xe9, 0x7c, 0xea, 0x54,
-        0x7c, 0x71, 0x29, 0x0d
-    };
-    const uint8_t expected_tag[] = {
-        0x35, 0x1c, 0x21, 0xc6, 0xbc, 0x6b, 0x18, 0x52,
-        0x90, 0xe1, 0xf2, 0x5b, 0xe1, 0xf6, 0x15, 0xee,
-    };
-
-
-    memset(nonce, 0x89, 16);
-    memset(key, 0x56, 16);
-
-    // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-
-    TEST_ASSERT_NOT_NULL(chipertext);
-    TEST_ASSERT_NOT_NULL(plaintext);
-    TEST_ASSERT_NOT_NULL(decryptedtext);
-
-    memset(plaintext, 0xAB, SZ);
-    /* Test that all the end results are the same
-        no matter how many bytes we encrypt each call
-        */
-    for (int bytes_to_process = 16; bytes_to_process < SZ; bytes_to_process = bytes_to_process + 16) {
-        memset(nonce, 0x89, 16);
-        memset(chipertext, 0x0, SZ);
-        memset(decryptedtext, 0x0, SZ);
-        memset(tag, 0x0, 16);
-
-        mbedtls_gcm_init(&ctx);
-        mbedtls_gcm_setkey(&ctx, cipher, key, 128);
-        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce), NULL, 0 );
-
-        // Encrypt
-        for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
-            // Limit length of last call to avoid exceeding buffer size
-            size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, length, plaintext + idx, chipertext + idx );
-        }
-        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag, sizeof(tag));
-
-        // Decrypt
-        memset(nonce, 0x89, 16);
-        mbedtls_gcm_free( &ctx );
-        mbedtls_gcm_init(&ctx);
-        mbedtls_gcm_setkey(&ctx, cipher, key, 128);
-        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, nonce, sizeof(nonce), NULL, 0 );
-
-        for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
-            // Limit length of last call to avoid exceeding buffer size
-
-            size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, length, chipertext + idx, decryptedtext + idx );
-        }
-        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
-        mbedtls_gcm_free( &ctx );
-    }
-    free(plaintext);
-    free(chipertext);
-    free(decryptedtext);
-}
 
 TEST_CASE("mbedtls OFB stream test", "[aes]")
 {
@@ -534,9 +427,9 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -620,9 +513,9 @@ TEST_CASE("mbedtls CFB8 stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -703,9 +596,9 @@ TEST_CASE("mbedtls CFB128 stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -790,7 +683,7 @@ void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     // allocate memory according the requested caps
     uint8_t *chipertext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, output_buf_caps);
     uint8_t *plaintext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, input_buf_caps);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -1392,7 +1285,7 @@ const uint8_t expected_cipher_long_input_end[] = {
     0x6a, 0xde, 0xe3, 0x53,
 };
 
-void aes_icache_ctr_test(uint32_t output_buf_caps)
+void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
 {
     mbedtls_aes_context ctx;
     uint8_t nonce[16];
@@ -1402,9 +1295,8 @@ void aes_icache_ctr_test(uint32_t output_buf_caps)
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
-    // allocate internal memory
     uint8_t *chipertext = heap_caps_malloc(SZ, output_buf_caps);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL(chipertext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
@@ -1414,7 +1306,7 @@ void aes_icache_ctr_test(uint32_t output_buf_caps)
 
     size_t offset;
 
-    // Encrypt with input buffer in external ram
+    // Encrypt with input buffer in external flash
     offset = 0;
     memset(nonce, 0x2F, 16);
     mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, long_input, chipertext);
@@ -1423,7 +1315,7 @@ void aes_icache_ctr_test(uint32_t output_buf_caps)
     // Decrypt
     offset = 0;
     memset(nonce, 0x2F, 16);
-    // Decrypt with input buffer in instruction memory, the crypto DMA can't access this
+    // Decrypt with input buffer in external flash, the crypto DMA can't access this
     mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, chipertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(long_input, decryptedtext, SZ);
@@ -1435,87 +1327,16 @@ void aes_icache_ctr_test(uint32_t output_buf_caps)
 /* Tests how crypto DMA handles data in external memory */
 TEST_CASE("mbedtls AES PSRAM tests", "[aes]")
 {
-    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    aes_psram_ctr_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     aes_psram_one_buf_ctr_test();
 }
 
-/* Tests how crypto DMA handles data from iCache */
-TEST_CASE("mbedtls AES iCache tests", "[aes]")
+/* Tests how crypto DMA handles data from external flash */
+TEST_CASE("mbedtls AES external flash tests", "[aes]")
 {
-    aes_icache_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    aes_icache_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    aes_ext_flash_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_ext_flash_ctr_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 }
 #endif // CONFIG_SPIRAM_USE_MALLOC
-
-TEST_CASE("mbedtls AES GCM self-tests", "[aes]")
-{
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_gcm_self_test(1), "AES GCM self-test should pass.");
-}
-
-
-TEST_CASE("mbedtls AES GCM crypt-and-tag", "[aes]")
-{
-    const unsigned CALL_SZ = 32 * 1024;
-    mbedtls_gcm_context ctx;
-    unsigned char tag_buf[16];
-    mbedtls_cipher_id_t cipher = MBEDTLS_CIPHER_ID_AES;
-    uint8_t iv[16];
-    uint8_t key[16];
-
-    memset(iv, 0xEE, 16);
-    memset(key, 0x44, 16);
-
-    // allocate internal memory
-    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    TEST_ASSERT_NOT_NULL(buf);
-    uint8_t aad[16];
-    memset(aad, 0x22, 16);
-
-    mbedtls_gcm_init(&ctx);
-    mbedtls_gcm_setkey( &ctx, cipher, key, 128);
-
-    memset(buf, 0xAA, CALL_SZ);
-    mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_AES_ENCRYPT, CALL_SZ, iv, sizeof(iv), aad, sizeof(aad), buf, buf, 16, tag_buf);
-
-
-    /* Sanity check: make sure the last ciphertext block matches
-       what we expect to see.
-
-       Last block and tag produced via this Python:
-
-        import os, binascii
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-        key = b'\x44' * 16
-        iv = b'\xEE' * 16
-        data = b'\xAA' * 100
-        aad = b'\x22 * 16
-
-        aesgcm = AESGCM(key)
-
-        ct = aesgcm.encrypt(iv, data, aad)
-    */
-    const uint8_t expected_last_block[] = {
-        0x7d, 0x3d, 0x16, 0x84, 0xd0, 0xb4, 0x38, 0x30,
-        0xd1, 0x24, 0x6f, 0x7e, 0x9a, 0x9c, 0x81, 0x58,
-    };
-
-    const uint8_t expected_tag[] = {
-        0x7e, 0x16, 0x04, 0x07, 0x4b, 0x7e, 0x6b, 0xf7,
-        0x5d, 0xce, 0x9e, 0x7d, 0x3f, 0x85, 0xc5, 0xa5,
-    };
-
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_last_block, buf + CALL_SZ - 16, 16);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag_buf, 16);
-
-
-    memset(iv, 0xEE, 16);
-
-    TEST_ASSERT_EQUAL(mbedtls_gcm_auth_decrypt(&ctx, CALL_SZ, iv, sizeof(iv), aad, sizeof(aad), expected_tag, sizeof(expected_tag), buf, buf), 0);
-    TEST_ASSERT_EACH_EQUAL_HEX8(0xAA, buf, CALL_SZ);
-
-
-    free(buf);
-}

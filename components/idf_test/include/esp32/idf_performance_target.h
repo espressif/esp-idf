@@ -2,7 +2,6 @@
 
 // AES-CBC hardware throughput (accounts for worst-case performance with PSRAM workaround)
 #define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            8.2
-#define IDF_PERFORMANCE_MIN_AES_GCM_THROUGHPUT_MBSEC                            0.5
 
 // SHA256 hardware throughput at 240MHz, threshold set lower than worst case
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             8.0

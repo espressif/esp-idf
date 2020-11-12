@@ -28,6 +28,7 @@ if(NOT BOOTLOADER_BUILD)
                 "soc_hal.c"
                 "interrupt_controller_hal.c"
                 "sha_hal.c"
+                "aes_hal.c"
                 "twai_hal.c"
                 "twai_hal_iram.c"
                 "${target}/interrupt_descriptor_table.c")

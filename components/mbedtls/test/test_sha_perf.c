@@ -20,7 +20,7 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
     unsigned char sha256[32];
 
     // allocate internal memory
-    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(buf);
     memset(buf, 0x55, CALL_SZ);
 

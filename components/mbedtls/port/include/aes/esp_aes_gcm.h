@@ -1,5 +1,5 @@
 /**
- * \brief AES block cipher, ESP32C hardware accelerated version
+ * \brief AES GCM block cipher, ESP hardware accelerated version
  * Based on mbedTLS FIPS-197 compliant version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
@@ -21,11 +21,12 @@
  *
  */
 
-#ifndef ESP_GCM_H
-#define ESP_GCM_H
+#pragma once
 
-#include "aes.h"
+#include "aes/esp_aes.h"
 #include "mbedtls/cipher.h"
+#include "soc/lldesc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +37,7 @@ extern "C" {
 
 typedef enum {
     ESP_AES_GCM_STATE_INIT,
+    ESP_AES_GCM_STATE_START,
     ESP_AES_GCM_STATE_UPDATE,
     ESP_AES_GCM_STATE_FINISH
 } esp_aes_gcm_state;
@@ -58,6 +60,7 @@ typedef struct {
     esp_aes_context aes_ctx;
     esp_aes_gcm_state gcm_state;
 } esp_gcm_context;
+
 
 /**
  * \brief           This function initializes the specified GCM context
@@ -96,8 +99,8 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
  * \param iv        The initialization vector.
  * \param iv_len    The length of the IV.
  * \param add       The buffer holding the additional data, or NULL
- *                  if \p add_len is 0.
- * \param add_len   The length of the additional data. If 0,
+ *                  if \p aad_len is 0.
+ * \param aad_len   The length of the additional data. If 0,
  *                  \p add is NULL.
  *
  * \return          \c 0 on success.
@@ -176,7 +179,7 @@ void esp_aes_gcm_free( esp_gcm_context *ctx);
  * \param iv        The initialization vector.
  * \param iv_len    The length of the IV.
  * \param add       The buffer holding the additional data.
- * \param add_len   The length of the additional data.
+ * \param aad_len   The length of the additional data.
  * \param input     The buffer holding the input data.
  * \param output    The buffer for holding the output data.
  * \param tag_len   The length of the tag to generate.
@@ -190,7 +193,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
                                const unsigned char *iv,
                                size_t iv_len,
                                const unsigned char *add,
-                               size_t add_len,
+                               size_t aad_len,
                                const unsigned char *input,
                                unsigned char *output,
                                size_t tag_len,
@@ -211,7 +214,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
  * \param iv        The initialization vector.
  * \param iv_len    The length of the IV.
  * \param add       The buffer holding the additional data.
- * \param add_len   The length of the additional data.
+ * \param aad_len   The length of the additional data.
  * \param tag       The buffer holding the tag.
  * \param tag_len   The length of the tag.
  * \param input     The buffer holding the input data.
@@ -225,7 +228,7 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
                               const unsigned char *iv,
                               size_t iv_len,
                               const unsigned char *add,
-                              size_t add_len,
+                              size_t aad_len,
                               const unsigned char *tag,
                               size_t tag_len,
                               const unsigned char *input,
@@ -234,5 +237,3 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* gcm.h */
