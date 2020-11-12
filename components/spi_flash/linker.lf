@@ -1,7 +1,8 @@
 [mapping:spi_flash]
 archive: libspi_flash.a
 entries:
-    spi_flash_rom_patch (noflash)
+    if IDF_TARGET_ESP32 = y:
+        spi_flash_rom_patch (noflash)
     spi_flash_chip_generic (noflash)
     spi_flash_chip_issi (noflash)
     spi_flash_chip_mxic (noflash)
