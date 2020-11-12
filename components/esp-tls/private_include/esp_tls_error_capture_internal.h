@@ -24,43 +24,36 @@ extern "C" {
 #endif
 
 /**
-* Definition of different types/sources of error codes reported
-* from different components
-*/
-typedef enum {
-    ERR_TYPE_UNKNOWN = 0,
-    ERR_TYPE_SYSTEM,
-    ERR_TYPE_MBEDTLS,
-    ERR_TYPE_MBEDTLS_CERT_FLAGS,
-    ERR_TYPE_ESP,
-    ERR_TYPE_WOLFSSL,
-    ERR_TYPE_WOLFSSL_CERT_FLAGS,
-} err_type_t;
+ * Error tracker logging macro to enable mapping tracking errors internally
+ * or using an external/global implementation
+ */
+#define ESP_INT_EVENT_TRACKER_CAPTURE(h, type, code)    esp_tls_internal_event_tracker_capture(h, type, code)
 
 /**
- * Error tracker logging macro, this implementation saves latest errors of
- *  ERR_TYPE_ESP, ERR_TYPE_ESP_TLS and ERR_TYPE_ESP_TLS_CERT_FLAGS types
+ * @brief Internal tracker capture error
+ *
+ * This implementation saves latest errors of available types
+ *
+ * @param[in]  h        esp-tls error handle
+ * @param[in]  err_type Specific error type
+ * @param[int] code     Error code to capture
+ *
  */
-#define ESP_INT_EVENT_TRACKER_CAPTURE(h, type, code)    esp_int_event_tracker_capture(h, type, code)
+void esp_tls_internal_event_tracker_capture(esp_tls_error_handle_t h, uint32_t type, int code);
 
-static inline void esp_int_event_tracker_capture(esp_tls_error_handle_t h, uint32_t type, int code)
-{
-    if (h) {
-        if (type == ERR_TYPE_ESP) {
-            h->last_error = code;
-        } else if (type == ERR_TYPE_MBEDTLS) {
-            h->esp_tls_error_code = code;
-        } else if (type == ERR_TYPE_MBEDTLS_CERT_FLAGS) {
-            h->esp_tls_flags = code;
-        } else if (type == ERR_TYPE_WOLFSSL) {
-            h->esp_tls_error_code = code;
-        } else if (type == ERR_TYPE_WOLFSSL_CERT_FLAGS) {
-            h->esp_tls_flags = code;
-        }
-    }
-}
+/**
+ * @brief Create internal tracker storage
+ *
+ * @return Error tracker handle if success or NULL if allocation error
+ */
+esp_tls_error_handle_t esp_tls_internal_event_tracker_create(void);
 
-
+/**
+ * @brief Destroy internal tracker storage
+ *
+ * @param[in]  h        esp-tls error handle
+ */
+ void esp_tls_internal_event_tracker_destroy(esp_tls_error_handle_t h);
 
 #ifdef __cplusplus
 }
