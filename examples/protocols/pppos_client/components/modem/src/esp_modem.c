@@ -137,6 +137,13 @@ static void esp_handle_uart_pattern(esp_modem_dte_t *esp_dte)
  */
 static void esp_handle_uart_data(esp_modem_dte_t *esp_dte)
 {
+    if (esp_dte->parent.dce->mode != MODEM_PPP_MODE) {
+        ESP_LOGE(MODEM_TAG, "Error: Got data event in PPP mode");
+        /* pattern detection mode -> ignore date event on uart
+         * (should never happen, but if it does, we could still
+         * read the valid data once pattern detect event fired) */
+        return;
+    }
     size_t length = 0;
     uart_get_buffered_data_len(esp_dte->uart_port, &length);
     length = MIN(ESP_MODEM_LINE_BUFFER_SIZE, length);
@@ -380,16 +387,9 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
         .data_bits = config->data_bits,
         .parity = config->parity,
         .stop_bits = config->stop_bits,
-        .source_clk = UART_SCLK_APB,
+        .source_clk = UART_SCLK_REF_TICK,
         .flow_ctrl = (config->flow_control == MODEM_FLOW_CONTROL_HW) ? UART_HW_FLOWCTRL_CTS_RTS : UART_HW_FLOWCTRL_DISABLE
     };
-    /* Install UART driver and get event queue used inside driver */
-    res = uart_driver_install(esp_dte->uart_port, CONFIG_EXAMPLE_UART_RX_BUFFER_SIZE, CONFIG_EXAMPLE_UART_TX_BUFFER_SIZE,
-                              CONFIG_EXAMPLE_UART_EVENT_QUEUE_SIZE, &(esp_dte->event_queue), 0);
-    MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
-    res = uart_set_rx_timeout(esp_dte->uart_port, 1);
-    MODEM_CHECK(res == ESP_OK, "set rx timeout failed", err_uart_config);
-
     MODEM_CHECK(uart_param_config(esp_dte->uart_port, &uart_config) == ESP_OK, "config uart parameter failed", err_uart_config);
     if (config->flow_control == MODEM_FLOW_CONTROL_HW) {
         res = uart_set_pin(esp_dte->uart_port, CONFIG_EXAMPLE_UART_MODEM_TX_PIN, CONFIG_EXAMPLE_UART_MODEM_RX_PIN,
@@ -406,10 +406,20 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
         res = uart_set_sw_flow_ctrl(esp_dte->uart_port, true, 8, UART_FIFO_LEN - 8);
     }
     MODEM_CHECK(res == ESP_OK, "config uart flow control failed", err_uart_config);
+    /* Install UART driver and get event queue used inside driver */
+    res = uart_driver_install(esp_dte->uart_port, CONFIG_EXAMPLE_UART_RX_BUFFER_SIZE, CONFIG_EXAMPLE_UART_TX_BUFFER_SIZE,
+                              CONFIG_EXAMPLE_UART_EVENT_QUEUE_SIZE, &(esp_dte->event_queue), 0);
+    MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
+    res = uart_set_rx_timeout(esp_dte->uart_port, 1);
+    MODEM_CHECK(res == ESP_OK, "set rx timeout failed", err_uart_config);
+
     /* Set pattern interrupt, used to detect the end of a line. */
     res = uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
     /* Set pattern queue size */
     res |= uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_EXAMPLE_UART_PATTERN_QUEUE_SIZE);
+    /* Starting in command mode -> explicitly disable RX interrupt */
+    uart_disable_rx_intr(esp_dte->uart_port);
+
     MODEM_CHECK(res == ESP_OK, "config uart pattern failed", err_uart_pattern);
     /* Create Event loop */
     esp_event_loop_args_t loop_args = {
