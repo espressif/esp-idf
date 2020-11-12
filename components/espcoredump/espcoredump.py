@@ -1303,7 +1303,8 @@ def gdbmi_freertos_get_task_name(p, tcb_addr):  # type: (GdbController, int) -> 
     """ Get FreeRTOS task name given the TCB address """
     try:
         val = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
-    except ESPCoreDumpError:
+    except (ESPCoreDumpError, KeyError):
+        # KeyError is raised when "value" is not in "payload"
         return ''
 
     # Value is of form '0x12345678 "task_name"', extract the actual name
