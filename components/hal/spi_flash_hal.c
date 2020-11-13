@@ -26,29 +26,33 @@
 static const char TAG[] = "FLASH_HAL";
 
 typedef struct {
-    int freq;
+    int div;
     spi_flash_ll_clock_reg_t clock_reg_val;
 } spi_flash_hal_clock_config_t;
 
 
+
+
 static const spi_flash_hal_clock_config_t spi_flash_clk_cfg_reg[ESP_FLASH_SPEED_MAX] = {
-    {5e6,  SPI_FLASH_LL_CLKREG_VAL_5MHZ},
-    {10e6, SPI_FLASH_LL_CLKREG_VAL_10MHZ},
-    {20e6, SPI_FLASH_LL_CLKREG_VAL_20MHZ},
-    {26e6, SPI_FLASH_LL_CLKREG_VAL_26MHZ},
-    {40e6, SPI_FLASH_LL_CLKREG_VAL_40MHZ},
-    {80e6, SPI_FLASH_LL_CLKREG_VAL_80MHZ},
+    {16,    SPI_FLASH_LL_CLKREG_VAL_5MHZ},
+    {8,     SPI_FLASH_LL_CLKREG_VAL_10MHZ},
+    {4,     SPI_FLASH_LL_CLKREG_VAL_20MHZ},
+    {3,     SPI_FLASH_LL_CLKREG_VAL_26MHZ},
+    {2,     SPI_FLASH_LL_CLKREG_VAL_40MHZ},
+    {1,     SPI_FLASH_LL_CLKREG_VAL_80MHZ},
 };
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static const spi_flash_hal_clock_config_t spi_flash_gpspi_clk_cfg_reg[ESP_FLASH_SPEED_MAX] = {
-    {5e6,  {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_5MHZ}},
-    {10e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_10MHZ}},
-    {20e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_20MHZ}},
-    {26e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_26MHZ}},
-    {40e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_40MHZ}},
-    {80e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_80MHZ}},
+    {16,    {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_5MHZ}},
+    {8,     {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_10MHZ}},
+    {4,     {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_20MHZ}},
+    {3,     {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_26MHZ}},
+    {2,     {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_40MHZ}},
+    {1,     {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_80MHZ}},
 };
+#else
+#define spi_flash_gpspi_clk_cfg_reg spi_flash_clk_cfg_reg
 #endif
 
 static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk)
@@ -76,20 +80,15 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         return ESP_ERR_INVALID_ARG;
     }
 
-    spi_flash_hal_clock_config_t clock_cfg = spi_flash_clk_cfg_reg[cfg->speed];
-
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    if (cfg->host_id > SPI_HOST) {
-        clock_cfg = spi_flash_gpspi_clk_cfg_reg[cfg->speed];
-    }
-#endif
+    bool gpspi = (cfg->host_id > SPI_HOST);
+    const spi_flash_hal_clock_config_t *clock_cfg = gpspi? &spi_flash_gpspi_clk_cfg_reg[cfg->speed]: &spi_flash_clk_cfg_reg[cfg->speed];
 
     *data_out = (spi_flash_hal_context_t) {
         .inst = data_out->inst, // Keeps the function pointer table
         .spi = spi_flash_ll_get_hw(cfg->host_id),
         .cs_num = cfg->cs_num,
-        .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, clock_cfg.freq),
-        .clock_conf = clock_cfg.clock_reg_val,
+        .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, APB_CLK_FREQ/clock_cfg->div),
+        .clock_conf = clock_cfg->clock_reg_val,
         .cs_hold = cfg->cs_hold,
     };
 
