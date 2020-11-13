@@ -244,6 +244,13 @@ esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module);
  *                   microsecond since boot when phy/rf was last switched on
 */
 int64_t esp_phy_rf_get_on_ts(void);
+
+/**
+ * @brief Get PHY lib version
+ * @return PHY lib version.
+ */
+char * get_phy_version_str(void);
+
 #ifdef __cplusplus
 }
 #endif
