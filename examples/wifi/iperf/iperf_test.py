@@ -63,8 +63,8 @@ class TestResult(object):
 
     ZERO_POINT_THRESHOLD = -88  # RSSI, dbm
     ZERO_THROUGHPUT_THRESHOLD = -92  # RSSI, dbm
-    BAD_POINT_RSSI_THRESHOLD = -85  # RSSI, dbm
-    BAD_POINT_MIN_THRESHOLD = 3  # Mbps
+    BAD_POINT_RSSI_THRESHOLD = -75  # RSSI, dbm
+    BAD_POINT_MIN_THRESHOLD = 10  # Mbps
     BAD_POINT_PERCENTAGE_THRESHOLD = 0.3
 
     # we need at least 1/2 valid points to qualify the test result
