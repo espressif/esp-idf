@@ -73,7 +73,8 @@ ESPEventRegTimed::ESPEventRegTimed(std::function<void(const ESPEvent &, void*)> 
         timer_cb_hook,
         static_cast<void*>(this),
         ESP_TIMER_TASK,
-        "event"
+        "event",
+        false // skip_unhandled_events
     };
 
     esp_err_t res = esp_timer_create(&oneshot_timer_args, &timer);

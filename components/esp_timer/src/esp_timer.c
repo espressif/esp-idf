@@ -55,9 +55,15 @@
 
 #define EVENT_ID_DELETE_TIMER   0xF0DE1E1E
 
+typedef enum {
+    FL_DISPATCH_METHOD       = (1 << 0),  //!< 0=Callback is called from timer task, 1=Callback is called from timer ISR
+    FL_SKIP_UNHANDLED_EVENTS = (1 << 1),  //!< 0=NOT skip unhandled events for periodic timers, 1=Skip unhandled events for periodic timers
+} flags_t;
+
 struct esp_timer {
     uint64_t alarm;
-    uint64_t period;
+    uint64_t period:56;
+    flags_t flags:8;
     union {
         esp_timer_cb_t callback;
         uint32_t event_id;
@@ -67,6 +73,7 @@ struct esp_timer {
     const char* name;
     size_t times_triggered;
     size_t times_armed;
+    size_t times_skipped;
     uint64_t total_callback_run_time;
 #endif // WITH_PROFILING
     LIST_ENTRY(esp_timer) list_entry;
@@ -117,6 +124,8 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     }
     result->callback = args->callback;
     result->arg = args->arg;
+    result->flags = (args->dispatch_method ? FL_DISPATCH_METHOD : 0) |
+                    (args->skip_unhandled_events ? FL_SKIP_UNHANDLED_EVENTS : 0);
 #if WITH_PROFILING
     result->name = args->name;
     timer_insert_inactive(result);
@@ -158,6 +167,7 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
     timer->period = period_us;
 #if WITH_PROFILING
     timer->times_armed++;
+    timer->times_skipped = 0;
 #endif
     esp_err_t err = timer_insert(timer);
     timer_list_unlock();
@@ -282,47 +292,51 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     (void) dispatch_method;
 
     timer_list_lock();
-    int64_t now = esp_timer_impl_get_time();
-    esp_timer_handle_t it = LIST_FIRST(&s_timers);
-    while (it != NULL &&
-            it->alarm < now) {  // NOLINT(clang-analyzer-unix.Malloc)
-            // Static analyser reports "Use of memory after it is freed" since the "it" variable
-            // is freed below (if EVENT_ID_DELETE_TIMER) and assigned to the (new) LIST_FIRST()
-            // so possibly (if the "it" hasn't been removed from the list) it might keep the same ptr.
-            // Ignoring this warning, as this couldn't happen if queue.h used to populate the list
+    esp_timer_handle_t it;
+    while (1) {
+        it = LIST_FIRST(&s_timers);
+        int64_t now = esp_timer_impl_get_time();
+        if (it == NULL || it->alarm > now) {
+            break;
+        }
         LIST_REMOVE(it, list_entry);
         if (it->event_id == EVENT_ID_DELETE_TIMER) {
             free(it);
-            it = LIST_FIRST(&s_timers);
-            continue;
-        }
-        if (it->period > 0) {
-            it->alarm += it->period;
-            timer_insert(it);
+            it = NULL;
         } else {
-            it->alarm = 0;
+            if (it->period > 0) {
+                int skipped = (now - it->alarm) / it->period;
+                if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) && (skipped > 1)) {
+                    it->alarm = now + it->period;
 #if WITH_PROFILING
-            timer_insert_inactive(it);
+                    it->times_skipped += skipped;
+#endif
+                } else {
+                    it->alarm += it->period;
+                }
+                timer_insert(it);
+            } else {
+                it->alarm = 0;
+#if WITH_PROFILING
+                timer_insert_inactive(it);
+#endif
+            }
+#if WITH_PROFILING
+            uint64_t callback_start = now;
+#endif
+            esp_timer_cb_t callback = it->callback;
+            void* arg = it->arg;
+            timer_list_unlock();
+            (*callback)(arg);
+            timer_list_lock();
+#if WITH_PROFILING
+            it->times_triggered++;
+            it->total_callback_run_time += esp_timer_impl_get_time() - callback_start;
 #endif
         }
-#if WITH_PROFILING
-        uint64_t callback_start = now;
-#endif
-        esp_timer_cb_t callback = it->callback;
-        void* arg = it->arg;
-        timer_list_unlock();
-        (*callback)(arg);
-        timer_list_lock();
-        now = esp_timer_impl_get_time();
-#if WITH_PROFILING
-        it->times_triggered++;
-        it->total_callback_run_time += now - callback_start;
-#endif
-        it = LIST_FIRST(&s_timers);
     }
-    esp_timer_handle_t first = LIST_FIRST(&s_timers);
-    if (first) {
-        esp_timer_impl_set_alarm(first->alarm);
+    if (it) {
+        esp_timer_impl_set_alarm(it->alarm);
     }
     timer_list_unlock();
 }
@@ -415,15 +429,21 @@ esp_err_t esp_timer_deinit(void)
 
 static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
 {
-    size_t cb = snprintf(*dst, *dst_size,
 #if WITH_PROFILING
-            "%-12s  %12lld  %12lld  %9d  %9d  %12lld\n",
-            t->name, t->period, t->alarm,
-            t->times_armed, t->times_triggered, t->total_callback_run_time);
+    size_t cb;
+    // name is optional, might be missed.
+    if (t->name) {
+        cb = snprintf(*dst, *dst_size, "%-12s  ", t->name);
+    } else {
+        cb = snprintf(*dst, *dst_size, "timer@%p  ", t);
+    }
+    cb += snprintf(*dst + cb, *dst_size + cb, "%12lld  %12lld  %9d  %9d  %6d  %12lld\n",
+                    (uint64_t)t->period, t->alarm, t->times_armed,
+                    t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
-#define TIMER_INFO_LINE_LEN 78
+#define TIMER_INFO_LINE_LEN 90
 #else
-            "timer@%p  %12lld  %12lld\n", t, t->period, t->alarm);
+    size_t cb = snprintf(*dst, *dst_size, "timer@%p  %12lld  %12lld\n", t, (uint64_t)t->period, t->alarm);
 #define TIMER_INFO_LINE_LEN 46
 #endif
     *dst += cb;

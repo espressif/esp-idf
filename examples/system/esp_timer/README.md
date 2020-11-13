@@ -49,31 +49,31 @@ The example should have the following log output:
 ```
 ...
 I (294) example: Started timers, time since boot: 9662 us
-periodic            500000        509644          1          0             0
-one-shot                 0       5009654          1          0             0
+periodic            500000        509644          1          0          0             0
+one-shot                 0       5009654          1          0          0             0
 I (794) example: Periodic timer called, time since boot: 509694 us
 I (1294) example: Periodic timer called, time since boot: 1009671 us
 I (1794) example: Periodic timer called, time since boot: 1509671 us
 I (2294) example: Periodic timer called, time since boot: 2009671 us
-periodic            500000       2509644          1          4           542
-one-shot                 0       5009654          1          0             0
+periodic            500000       2509644          1          4          0           542
+one-shot                 0       5009654          1          0          0             0
 I (2794) example: Periodic timer called, time since boot: 2509671 us
 I (3294) example: Periodic timer called, time since boot: 3009671 us
 I (3794) example: Periodic timer called, time since boot: 3509671 us
 I (4294) example: Periodic timer called, time since boot: 4009671 us
-periodic            500000       4509644          1          8          1026
-one-shot                 0       5009654          1          0             0
+periodic            500000       4509644          1          8          0          1026
+one-shot                 0       5009654          1          0          0             0
 I (4794) example: Periodic timer called, time since boot: 4509671 us
 I (5294) example: Periodic timer called, time since boot: 5009669 us
 I (5294) example: One-shot timer called, time since boot: 5009788 us
 I (5294) example: Restarted periodic timer with 1s period, time since boot: 5012675 us
 I (6294) example: Periodic timer called, time since boot: 6012692 us
-periodic           1000000       7012666          2         11          1391
-one-shot                 0             0          1          1         11472
+periodic           1000000       7012666          2         11          0          1391
+one-shot                 0             0          1          1          0         11472
 I (7294) example: Periodic timer called, time since boot: 7012692 us
 I (8294) example: Periodic timer called, time since boot: 8012692 us
-periodic           1000000       9012666          2         13          1639
-one-shot                 0             0          1          1         11472
+periodic           1000000       9012666          2         13          0          1639
+one-shot                 0             0          1          1          0         11472
 I (9294) example: Periodic timer called, time since boot: 9012692 us
 I (10294) example: Periodic timer called, time since boot: 10012692 us
 I (10314) example: Entering light sleep for 0.5s, time since boot: 10024351 us
@@ -96,12 +96,12 @@ I (265) example: Starting timers, time since boot: 2479 us
 These two repeating lines are the output of `esp_timer_dump()` function. There is one line for each of the timers created. This function can be useful for debugging purposes. Note that such debugging information is available because the example sets `CONFIG_ESP_TIMER_PROFILING` option in sdkconfig. Without this option, less information will be available. See documentation of `esp_timer_dump()` in ESP-IDF programming guide for more details.
 
 ```
-timer               period     next time      times        times         callback
-name                            to fire      started       fired       run time (us)
-------------------------------------------------------------------------------------
+timer               period     next time      times        times       times        callback
+name                            to fire      started       fired      skipped      run time (us)
+-------------------------------------------------------------------------------------------------
 
-periodic            500000        502455          1          0             0
-one-shot                 0       5002469          1          0             0
+periodic            500000        502455          1          0           0              0
+one-shot                 0       5002469          1          0           0              0
 ```
 
 ### 3. Periodic timer keeps running at 500ms period:
@@ -111,14 +111,14 @@ I (765) example: Periodic timer called, time since boot: 502506 us
 I (1265) example: Periodic timer called, time since boot: 1002478 us
 I (1765) example: Periodic timer called, time since boot: 1502478 us
 I (2265) example: Periodic timer called, time since boot: 2002478 us
-periodic            500000       2502455          1          4           511
-one-shot                 0       5002469          1          0             0
+periodic            500000       2502455          1          4          0          511
+one-shot                 0       5002469          1          0          0            0
 I (2765) example: Periodic timer called, time since boot: 2502478 us
 I (3265) example: Periodic timer called, time since boot: 3002478 us
 I (3765) example: Periodic timer called, time since boot: 3502478 us
 I (4265) example: Periodic timer called, time since boot: 4002478 us
-periodic            500000       4502455          1          8           971
-one-shot                 0       5002469          1          0             0
+periodic            500000       4502455          1          8          0          971
+one-shot                 0       5002469          1          0          0            0
 I (4765) example: Periodic timer called, time since boot: 4502478 us
 I (5265) example: Periodic timer called, time since boot: 5002476 us
 ```
@@ -131,12 +131,12 @@ The one-shot timer runs and changes the period of the periodic timer. Now the pe
 I (5265) example: One-shot timer called, time since boot: 5002586 us
 I (5265) example: Restarted periodic timer with 1s period, time since boot: 5005475 us
 I (6265) example: Periodic timer called, time since boot: 6005492 us
-periodic           1000000       7005469          2         11          1316
-one-shot                 0             0          1          1         11474
+periodic           1000000       7005469          2         11          0          1316
+one-shot                 0             0          1          1          0         11474
 I (7265) example: Periodic timer called, time since boot: 7005492 us
 I (8265) example: Periodic timer called, time since boot: 8005492 us
-periodic           1000000       9005469          2         13          1550
-one-shot                 0             0          1          1         11474
+periodic           1000000       9005469          2         13          0          1550
+one-shot                 0             0          1          1          0         11474
 I (9265) example: Periodic timer called, time since boot: 9005492 us
 I (10265) example: Periodic timer called, time since boot: 10005492 us
 ```
