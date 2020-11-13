@@ -97,7 +97,10 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t
 {
     mbedtls_x509_crt *child = crt;
 
-    if (*flags != MBEDTLS_X509_BADCERT_NOT_TRUSTED) {
+    if (!*flags) {
+        return 0;
+    }
+    if (*flags & ~(MBEDTLS_X509_BADCERT_NOT_TRUSTED | MBEDTLS_X509_BADCERT_BAD_MD)) {
         return 0;
     }
 
