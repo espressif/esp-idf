@@ -211,6 +211,12 @@ esp_err_t esp_phy_update_country_info(const char *country);
 esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
 #endif
 
+/**
+ * @brief Get PHY lib version
+ * @return PHY lib version.
+ */
+char * get_phy_version_str(void);
+
 #ifdef __cplusplus
 }
 #endif
