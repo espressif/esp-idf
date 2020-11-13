@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "hal/sha_types.h"
-#include "soc/sha_caps.h"
+#include "soc/soc_caps.h"
 #include "esp_log.h"
 
 #include <mbedtls/sha1.h>

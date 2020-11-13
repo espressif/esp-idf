@@ -237,6 +237,22 @@
 #define SOC_UART_FIFO_LEN       (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX    (5000000)  /*!< Max bit rate supported by UART */
 
+
+/*--------------------------- SHA CAPS ---------------------------------------*/
+/* ESP32 style SHA engine, where multiple states can be stored in parallel */
+#define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
+
+/* Supported HW algorithms */
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+
+
+/*--------------------------- RSA CAPS ---------------------------------------*/
+#define SOC_RSA_MAX_BIT_LEN    (4096)
+
+
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
 #define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN

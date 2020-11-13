@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "soc/sha_caps.h"
+#include "soc/soc_caps.h"
 #include "soc/lldesc.h"
 #include "hal/sha_types.h"
 
