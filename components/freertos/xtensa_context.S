@@ -156,7 +156,7 @@ _xt_context_save:
     movi    a3, -XCHAL_EXTRA_SA_ALIGN
     and     a2, a2, a3                  /* align dynamically >16 bytes */
     # endif
-    call0   xthal_save_extra_nw         /* destroys a0,2,3,4,5 */
+    call0   xthal_save_extra_nw         /* destroys a0,2,3 */
     #endif
 
     #ifndef __XTENSA_CALL0_ABI__
@@ -173,17 +173,23 @@ _xt_context_save:
      * at entry (CINTLEVEL=max(PS.INTLEVEL, XCHAL_EXCM_LEVEL) when PS.EXCM is set.
      * Since WindowOverflow exceptions will trigger inside SPILL_ALL_WINDOWS,
      * need to save/restore EPC1 as well.
+     * Note: even though a4-a15 are saved into the exception frame, we should not
+     * clobber them until after SPILL_ALL_WINDOWS. This is because these registers
+     * may contain live windows belonging to previous frames in the call stack.
+     * These frames will be spilled by SPILL_ALL_WINDOWS, and if the register was
+     * used as a temporary by this code, the temporary value would get stored
+     * onto the stack, instead of the real value.
      */
     rsr     a2, PS                     /* to be restored after SPILL_ALL_WINDOWS */
-    movi    a4, PS_INTLEVEL_MASK
-    and     a3, a2, a4                 /* get the current INTLEVEL */
+    movi    a0, PS_INTLEVEL_MASK
+    and     a3, a2, a0                 /* get the current INTLEVEL */
     bgeui   a3, XCHAL_EXCM_LEVEL, 1f   /* calculate max(INTLEVEL, XCHAL_EXCM_LEVEL) */
     movi    a3, XCHAL_EXCM_LEVEL
 1:
-    movi    a4, PS_UM | PS_WOE         /* clear EXCM, enable window overflow, set new INTLEVEL */
-    or      a3, a3, a4
+    movi    a0, PS_UM | PS_WOE         /* clear EXCM, enable window overflow, set new INTLEVEL */
+    or      a3, a3, a0
     wsr     a3, ps
-    rsr     a4, EPC1                   /* to be restored after SPILL_ALL_WINDOWS */
+    rsr     a0, EPC1                   /* to be restored after SPILL_ALL_WINDOWS */
 
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
     SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
@@ -191,7 +197,7 @@ _xt_context_save:
 
     wsr     a2, PS                     /* restore to the value at entry */
     rsync
-    wsr     a4, EPC1                   /* likewise */
+    wsr     a0, EPC1                   /* likewise */
 
     #endif /* __XTENSA_CALL0_ABI__ */
 

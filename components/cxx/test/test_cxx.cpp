@@ -245,6 +245,60 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks=3
 #endif
 }
 
+
+#define TIMEOUT 19
+
+#define RECURSION 19
+
+static esp_timer_handle_t crash_timer;
+
+static uint32_t result = 0;
+
+uint32_t calc_fac(uint32_t n) {
+    if (n == 1 || n == 0) {
+        return 1;
+    } else {
+        return n * calc_fac(n - 1);
+    }
+}
+
+static void timer_cb(void *arg) {
+    result = calc_fac(RECURSION);
+}
+
+// TODO: Not a unit test, refactor to integration test/system test, etc.
+TEST_CASE("frequent interrupts don't interfere with c++ exceptions", "[cxx] [exceptions] [leaks=800]")
+{// if exception workaround is disabled, this is almost guaranteed to fail
+    const esp_timer_create_args_t timer_args {
+        timer_cb,
+        NULL,
+        ESP_TIMER_TASK,
+        "crash_timer"
+    };
+
+    TEST_ESP_OK(esp_timer_create(&timer_args, &crash_timer));
+    TEST_ESP_OK(esp_timer_start_periodic(crash_timer, TIMEOUT));
+
+    for (int i = 0; i < 500; i++) {
+        bool thrown_value = false;
+        try {
+            throw true;
+        } catch (bool e) {
+            thrown_value = e;
+        }
+
+        if (thrown_value) {
+            printf("ex thrown %d\n", i);
+        } else {
+            printf("ex not thrown\n");
+            TEST_ASSERT(false);
+        }
+    }
+
+    TEST_ESP_OK(esp_timer_stop(crash_timer));
+    TEST_ESP_OK(esp_timer_delete(crash_timer));
+}
+
 #else // !CONFIG_COMPILER_CXX_EXCEPTIONS
 
 TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
