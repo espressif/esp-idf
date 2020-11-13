@@ -16,9 +16,6 @@
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
 
-// TODO ESP32-C3 IDF-2126 check this table is correct, some interrupts may be unnecessarily reserved or not reserved
-// or marked as the wrong type
-
 //This is basically a software-readable version of the interrupt usage table in include/soc/soc.h
 const int_desc_t interrupt_descriptor_table[32] = {
     { 1, INTTP_LEVEL, {INTDESC_RESVD } }, //0

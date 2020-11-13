@@ -70,18 +70,18 @@ rtos_int_exit:
     beq t0,zero, rtos_exit_end 
 
     /* update nesting interrupts counter */
-	la t2, uxInterruptNesting
-	lw t3, 0x0(t2)
+    la t2, uxInterruptNesting
+    lw t3, 0x0(t2)
 
-	/* Already zero, protect againts underflow */
-	beq t3, zero, isr_skip_decrement
-	addi t3,t3, -1
-	sw  t3, 0x0(t2)
+    /* Already zero, protect againts underflow */
+    beq t3, zero, isr_skip_decrement
+    addi t3,t3, -1
+    sw  t3, 0x0(t2)
 
 isr_skip_decrement:
 
-	/* may still have interrupts pending, skip section below and exit */
-	bne t3,zero,rtos_exit_end 
+    /* may still have interrupts pending, skip section below and exit */
+    bne t3,zero,rtos_exit_end 
 
     /* Schedule the next task if a yield is pending */
     la t0, xPortSwitchFlag

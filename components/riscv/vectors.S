@@ -99,7 +99,6 @@
 
 	.global rtos_int_enter
 	.global rtos_int_exit
-	.global uxInterruptNesting	
 	.global _global_interrupt_handler
 
 	.section .exception_vectors.text
