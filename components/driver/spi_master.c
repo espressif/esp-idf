@@ -344,14 +344,9 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     int freq;
     spi_hal_context_t *hal = &(host->hal);
     hal->half_duplex = dev_config->flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
-#ifdef SOC_SPI_SUPPORT_AS_CS
-    hal->as_cs = dev_config->flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
-#endif
-    hal->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
     hal->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
 
     spi_hal_timing_conf_t temp_timing_conf;
-
     esp_err_t ret = spi_hal_get_clock_conf(hal, dev_config->clock_speed_hz, duty_cycle,
                                         !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
                                         dev_config->input_delay_ns, &freq,
@@ -453,16 +448,20 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev)
     hal->mode = dev->cfg.mode;
     hal->tx_lsbfirst = dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
     hal->rx_lsbfirst = dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
-    hal->no_compensate = dev->cfg.flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
     hal->sio = dev->cfg.flags & SPI_DEVICE_3WIRE ? 1 : 0;
-    hal->dummy_bits = dev->cfg.dummy_bits;
     hal->cs_setup = dev->cfg.cs_ena_pretrans;
-    hal->cs_hold =dev->cfg.cs_ena_posttrans;
+    hal->cs_hold = dev->cfg.cs_ena_posttrans;
     //set hold_time to 0 will not actually append delay to CS
     //set it to 1 since we do need at least one clock of hold time in most cases
     if (hal->cs_hold == 0) hal->cs_hold = 1;
     hal->cs_pin_id = dev->id;
     hal->timing_conf = &dev->timing_conf;
+    hal->half_duplex = dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
+#ifdef SOC_SPI_SUPPORT_AS_CS
+    hal->as_cs = dev->cfg.flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
+#endif
+    hal->positive_cs = dev->cfg.flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
+    hal->no_compensate = dev->cfg.flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
 
     spi_hal_setup_device(hal);
 }
@@ -517,7 +516,6 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     hal->rx_bitlen = trans->rxlength;
     hal->rcv_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_rcv;
     hal->send_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_send;
-    hal->half_duplex = dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
     hal->cmd = trans->cmd;
     hal->addr = trans->addr;
     //Set up QIO/DIO if needed
