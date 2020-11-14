@@ -11,11 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <stdint.h>
 
 #include <sdkconfig.h>
 
 #ifndef _ESP_DPORT_ACCESS_H_
 #define _ESP_DPORT_ACCESS_H_
+
+#include "xtensa/xtruntime.h"
 
 #ifdef __cplusplus
 extern "C" {

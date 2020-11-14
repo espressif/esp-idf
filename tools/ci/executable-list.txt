@@ -58,10 +58,10 @@ tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
-tools/ci/retry_failed.sh
 tools/ci/test_build_system.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/test_configure_ci_environment.sh
+tools/ci/utils.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/codeowners.py

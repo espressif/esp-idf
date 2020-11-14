@@ -1,4 +1,4 @@
-set(srcs esp_tls.c)
+set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c)
 if(CONFIG_ESP_TLS_USING_MBEDTLS)
     list(APPEND srcs
         "esp_tls_mbedtls.c")
@@ -10,7 +10,7 @@ if(CONFIG_ESP_TLS_USING_WOLFSSL)
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "."
+                    INCLUDE_DIRS . esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
                     REQUIRES mbedtls
                     PRIV_REQUIRES lwip nghttp)

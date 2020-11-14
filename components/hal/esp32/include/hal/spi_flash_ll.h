@@ -316,17 +316,18 @@ static inline void spi_flash_ll_set_mosi_bitlen(spi_dev_t *dev, uint32_t bitlen)
 }
 
 /**
- * Set the command with fixed length (8 bits).
+ * Set the command.
  *
  * @param dev Beginning address of the peripheral registers.
  * @param command Command to send
+ * @param bitlen Length of the command
  */
-static inline void spi_flash_ll_set_command8(spi_dev_t *dev, uint8_t command)
+static inline void spi_flash_ll_set_command(spi_dev_t *dev, uint8_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
     typeof(dev->user2) user2 = {
         .usr_command_value = command,
-        .usr_command_bitlen = (8 - 1),
+        .usr_command_bitlen = (bitlen - 1),
     };
     dev->user2 = user2;
 }
@@ -362,7 +363,14 @@ static inline void spi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitlen)
  */
 static inline void spi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, int bit_len)
 {
-    dev->addr = (addr << (32 - bit_len));
+    // The blank region should be all ones
+    if (bit_len >= 32) {
+        dev->addr = addr;
+        dev->slv_wr_status = UINT32_MAX;
+    } else {
+        uint32_t padding_ones = (bit_len == 32? 0 : UINT32_MAX >> bit_len);
+        dev->addr = (addr << (32 - bit_len)) | padding_ones;
+    }
 }
 
 /**
@@ -386,6 +394,12 @@ static inline void spi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
     dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+}
+
+static inline void spi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)
+{
+    dev->ctrl2.hold_time = hold_n;
+    dev->user.cs_hold = (hold_n > 0? 1: 0);
 }
 
 #ifdef __cplusplus

@@ -1,60 +1,32 @@
-/*
- * Sigamadelta Test:
- * 1. basic configuration test
- * 2. pin, duty, prescale test
- */
-#include "unity.h"
-#include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "unity.h"
+#include "test_utils.h"
+#include "soc/soc_caps.h"
 #include "driver/sigmadelta.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
-TEST_CASE("SigmaDelta config test", "[sigma_delta]")
+TEST_CASE("Sigma-Delta config test", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
-        .channel = SIGMADELTA_CHANNEL_0,
         .sigmadelta_prescale = 80,
         .sigmadelta_duty = 45,
         .sigmadelta_gpio = 4,
     };
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
+    for (int i = 0; i < SOC_SIGMADELTA_CHANNEL_NUM; i++) {
+        sigmadelta_cfg.channel = i;
+        TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
+    }
 
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_1;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_2;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_3;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_4;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_5;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_6;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_7;
-    TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
-
-     //ERROR PARAM
-    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_MAX;
-    TEST_ASSERT(sigmadelta_config(&sigmadelta_cfg) == ESP_ERR_INVALID_ARG);
-
+    sigmadelta_cfg.channel = SOC_SIGMADELTA_CHANNEL_NUM;
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG, sigmadelta_config(&sigmadelta_cfg), "wrong channel number should be inspected");
 }
 
 // connect GPIO4 with LED positive pin, and the GND pin connect LED negative pin
 // logic analyzer help also to see the wave form(more standard and accurate)
-// can't test it in CI, ignore
 TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
-        .channel = SIGMADELTA_CHANNEL_0,
+        .channel = 0,
         .sigmadelta_prescale = 80,
         .sigmadelta_duty = 0,
         .sigmadelta_gpio = 4,
@@ -63,8 +35,8 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
 
     int8_t duty = 0;
     int inc = 1;
-    for(int i=0; i<1000; i++) {
-        sigmadelta_set_duty(SIGMADELTA_CHANNEL_0, duty);
+    for (int i = 0; i < 1000; i++) {
+        sigmadelta_set_duty(0, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         duty += inc;
@@ -73,9 +45,9 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
         }
     }
 
-    TEST_ESP_OK(sigmadelta_set_prescale(SIGMADELTA_CHANNEL_0, 200));
-    for(int i=0; i<1000; i++) {
-        sigmadelta_set_duty(SIGMADELTA_CHANNEL_0, duty);
+    TEST_ESP_OK(sigmadelta_set_prescale(0, 200));
+    for (int i = 0; i < 1000; i++) {
+        sigmadelta_set_duty(0, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         duty += inc;
@@ -84,8 +56,6 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
         }
     }
 
-    TEST_ESP_OK(sigmadelta_set_pin(SIGMADELTA_CHANNEL_0, 5));
+    TEST_ESP_OK(sigmadelta_set_pin(0, 5));
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 }
-
-#endif

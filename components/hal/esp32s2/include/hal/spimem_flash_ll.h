@@ -308,17 +308,18 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
 }
 
 /**
- * Set the command with fixed length (8 bits).
+ * Set the command.
  *
  * @param dev Beginning address of the peripheral registers.
  * @param command Command to send
+ * @param bitlen Length of the command
  */
-static inline void spimem_flash_ll_set_command8(spi_mem_dev_t *dev, uint8_t command)
+static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
     typeof(dev->user2) user2 = {
         .usr_command_value = command,
-        .usr_command_bitlen = (8 - 1),
+        .usr_command_bitlen = (bitlen - 1),
     };
     dev->user2 = user2;
 }
@@ -358,6 +359,18 @@ static inline void spimem_flash_ll_set_address(spi_mem_dev_t *dev, uint32_t addr
 }
 
 /**
+ * Set the address to send in user mode. Should be called before commands that requires the address e.g. erase sector, read, write...
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param addr Address to send
+ */
+static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t addr, uint32_t bitlen)
+{
+    (void)bitlen;
+    spimem_flash_ll_set_address(dev, addr);
+}
+
+/**
  * Set the length of dummy cycles.
  *
  * @param dev Beginning address of the peripheral registers.
@@ -382,6 +395,13 @@ static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t ou
     dev->ctrl.q_pol = out_lev;
     dev->ctrl.d_pol = out_lev;
 }
+
+static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
+{
+    dev->ctrl2.cs_hold_time = hold_n - 1;
+    dev->user.cs_hold = (hold_n > 0? 1: 0);
+}
+
 
 #ifdef __cplusplus
 }

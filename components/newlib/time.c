@@ -42,7 +42,7 @@ _Static_assert(sizeof(time_t) == 8, "The toolchain does not support time_t wide 
 _Static_assert(sizeof(time_t) == 4, "The toolchain supports time_t wide 64-bits. Please enable CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS.");
 #endif
 
-#if !CONFIG_ESP32_TIME_SYSCALL_USE_NONE && !CONFIG_ESP32S2_TIME_SYSCALL_USE_NONE
+#if !CONFIG_ESP_TIME_FUNCS_USE_NONE
 #define IMPL_NEWLIB_TIME_FUNCS 1
 #endif
 
@@ -287,7 +287,7 @@ int clock_getres (clockid_t clock_id, struct timespec *res)
     }
 
     res->tv_sec = 0;
-    res->tv_nsec = esp_system_get_time_resolution() * 1000;
+    res->tv_nsec = esp_system_get_time_resolution();
 
     return 0;
 #else

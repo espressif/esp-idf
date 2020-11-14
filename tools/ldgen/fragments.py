@@ -31,6 +31,7 @@ from pyparsing import Optional
 from pyparsing import originalTextFor
 from pyparsing import Forward
 from pyparsing import indentedBlock
+from pyparsing import Combine
 from collections import namedtuple
 import abc
 
@@ -216,8 +217,14 @@ class Fragment():
 
 class Sections(Fragment):
 
+    # Unless quoted, symbol names start with a letter, underscore, or point
+    # and may include any letters, underscores, digits, points, and hyphens.
+    GNU_LD_SYMBOLS = Word(alphas + "_.", alphanums + "._-")
+
+    entries_grammar = Combine(GNU_LD_SYMBOLS + Optional("+"))
+
     grammars = {
-        "entries": KeyGrammar(Word(alphanums + "+.").setResultsName("section"), 1, None, True)
+        "entries": KeyGrammar(entries_grammar.setResultsName("section"), 1, None, True)
     }
 
     """

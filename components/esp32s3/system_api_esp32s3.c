@@ -17,7 +17,6 @@
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
-#include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp32s3/rom/cache.h"
 #include "esp_rom_uart.h"
@@ -55,7 +54,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = xPortGetCoreID();
+    const uint32_t core_id = cpu_hal_get_core_id();
 #if !CONFIG_FREERTOS_UNICORE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);

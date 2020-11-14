@@ -2341,6 +2341,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
                 GATT_TRACE_DEBUG ("found p_clcb conn_id=%d clcb_idx=%d", p_clcb->conn_id, p_clcb->clcb_idx);
                 if (p_clcb->operation != GATTC_OPTYPE_NONE) {
                     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+                    p_clcb = NULL;
                 }
                 gatt_clcb_dealloc(p_clcb);
             }

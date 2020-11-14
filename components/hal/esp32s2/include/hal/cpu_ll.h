@@ -154,7 +154,7 @@ static inline bool cpu_ll_is_debugger_attached(void)
     uint32_t dcr = 0;
     uint32_t reg = DSRSET;
     RER(reg, dcr);
-    return (dcr&0x1);
+    return (dcr & 0x1);
 }
 
 
@@ -166,6 +166,30 @@ static inline void cpu_ll_break(void)
 static inline void cpu_ll_set_vecbase(const void* vecbase)
 {
     asm volatile ("wsr %0, vecbase" :: "r" (vecbase));
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
+{
+    uint32_t value = 0;
+    asm volatile("get_gpio_in %0" : "=r"(value) : :);
+    return value;
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_out(void)
+{
+    uint32_t value = 0;
+    asm volatile("rur.gpio_out %0" : "=r"(value) : :);
+    return value;
+}
+
+static inline void cpu_ll_write_dedic_gpio_all(uint32_t value)
+{
+    asm volatile("wur.gpio_out %0"::"r"(value):);
+}
+
+static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
+{
+    asm volatile("wr_mask_gpio_out %0, %1" : : "r"(value), "r"(mask):);
 }
 
 #ifdef __cplusplus

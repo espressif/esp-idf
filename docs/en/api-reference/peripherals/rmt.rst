@@ -269,11 +269,11 @@ Setting or clearing an interrupt enable mask for specific channels and events ma
 
 .. only:: esp32
 
-    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/soc/esp32/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
+    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/esp32/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 
 .. only:: esp32s2
 
-    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/soc/esp32s2/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
+    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/esp32s2/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 
 If you do not need an ISR anymore, you can deregister it by calling a function :cpp:func:`rmt_isr_deregister`.
 

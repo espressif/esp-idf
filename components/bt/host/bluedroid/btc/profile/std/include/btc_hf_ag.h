@@ -253,6 +253,8 @@ void btc_hf_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 void btc_hf_arg_deep_free(btc_msg_t *msg);
 
+bt_status_t btc_hf_ci_sco_data(void);
+
 #endif  // BTC_HF_INCLUDED == TRUE
 
 #endif /* __BTC_HF_AG_H__ */

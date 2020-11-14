@@ -18,22 +18,13 @@
 #include "hal/spi_hal.h"
 #include "soc/soc_caps.h"
 
+//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 
 #define spi_dma_ll_rx_reset(dev)                             gdma_ll_rx_reset_channel(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL)
 #define spi_dma_ll_tx_reset(dev)                             gdma_ll_tx_reset_channel(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);
-#define spi_dma_ll_rx_enable_burst_data(dev, enable)         gdma_ll_rx_enable_data_burst(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, enable)         gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_set_rx_channel_priority(dev, priority)       gdma_ll_rx_set_priority(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, priority);
-#define spi_dma_set_tx_channel_priority(dev, priority)       gdma_ll_tx_set_priority(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, priority);
-#define spi_dma_enable_out_auto_wrback(dev, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_set_out_eof_generation(dev, enable)          gdma_ll_tx_set_eof_mode(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, enable);
-#define spi_dma_connect_rx_channel_to_periph(dev, periph_id) gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, periph_id);
-#define spi_dma_connect_tx_channel_to_periph(dev, periph_id) gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, periph_id);
 #define spi_dma_ll_rx_start(dev, addr) do {\
             gdma_ll_rx_set_desc_addr(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, (uint32_t)addr);\
             gdma_ll_rx_start(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);\
@@ -42,7 +33,6 @@
             gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, (uint32_t)addr);\
             gdma_ll_tx_start(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);\
         } while (0)
-
 #endif
 
 void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev)
@@ -196,7 +186,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 
 void spi_hal_user_start(const spi_hal_context_t *hal)
 {
-    spi_ll_user_start(hal->hw);
+    spi_ll_master_user_start(hal->hw);
 }
 
 bool spi_hal_usr_is_done(const spi_hal_context_t *hal)

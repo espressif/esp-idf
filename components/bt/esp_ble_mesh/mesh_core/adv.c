@@ -110,7 +110,9 @@ static struct ble_adv_tx {
 
 #define SEND_BLE_ADV_INFINITE    0xFFFF
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_ble_adv_deinit(void);
+#endif /* CONFIG_BLE_MESH_DEINIT */
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 struct bt_mesh_adv_task {
@@ -857,6 +859,7 @@ void bt_mesh_adv_init(void)
 #endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_adv_deinit(void)
 {
     if (adv_queue.handle == NULL) {
@@ -910,6 +913,7 @@ void bt_mesh_adv_deinit(void)
     bt_mesh_ble_adv_deinit();
 #endif
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 int bt_mesh_scan_enable(void)
 {
@@ -1225,6 +1229,7 @@ int bt_mesh_stop_ble_advertising(u8_t index)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_ble_adv_deinit(void)
 {
     for (int i = 0; i < ARRAY_SIZE(ble_adv_tx); i++) {
@@ -1234,4 +1239,5 @@ static void bt_mesh_ble_adv_deinit(void)
     bt_mesh_unref_buf_from_pool(&ble_adv_buf_pool);
     memset(ble_adv_pool, 0, sizeof(ble_adv_pool));
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */

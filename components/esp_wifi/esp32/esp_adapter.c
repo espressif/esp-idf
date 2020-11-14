@@ -48,6 +48,7 @@
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
 #include "esp32/dport_access.h"
+#include "esp_timer.h"
 
 #define TAG "esp_adapter"
 

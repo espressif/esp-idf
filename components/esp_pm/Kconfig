@@ -23,7 +23,7 @@ menu "Power Management"
 
     config PM_USE_RTC_TIMER_REF
         bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
-        depends on (PM_ENABLE && ESP_TIMER_IMPL_FRC2 && ESP_TIMER_RTC_USE)
+        depends on (PM_ENABLE && ESP_TIMER_IMPL_FRC2 && ESP_TIME_FUNCS_USE_RTC_TIMER)
         default n
         help
             When APB clock frequency changes, high-resolution timer (esp_timer)

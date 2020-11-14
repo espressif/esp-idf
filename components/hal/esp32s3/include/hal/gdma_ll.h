@@ -13,15 +13,15 @@
 // limitations under the License.
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define GDMA_LL_EVENT_TX_L3_FIFO_UDF (1<<17)
 #define GDMA_LL_EVENT_TX_L3_FIFO_OVF (1<<16)
@@ -59,18 +59,11 @@ extern "C" {
 static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->conf0[channel].mem_trans_en = enable;
-    if (!enable) {
+    if (enable) {
+        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
         dev->peri_sel[channel].peri_in_sel = 0;
         dev->peri_sel[channel].peri_out_sel = 0;
     }
-}
-
-/**
- * @brief Enable DMA to check the owner bit in the descriptor, disabled by default
- */
-static inline void gdma_ll_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
-{
-    dev->conf1[channel].check_owner = enable;
 }
 
 /**
@@ -110,6 +103,14 @@ static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////
+/**
+ * @brief Enable DMA RX channel to check the owner bit in the descriptor, disabled by default
+ */
+static inline void gdma_ll_rx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->conf1[channel].check_owner = enable;
+}
+
 /**
  * @brief Enable DMA RX channel burst reading data, disabled by default
  */
@@ -305,6 +306,14 @@ static inline void gdma_ll_rx_extend_l2_fifo_size_to(gdma_dev_t *dev, uint32_t c
 
 
 ///////////////////////////////////// TX /////////////////////////////////////////
+/**
+ * @brief Enable DMA TX channel to check the owner bit in the descriptor, disabled by default
+ */
+static inline void gdma_ll_tx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->conf1[channel].check_owner = enable;
+}
+
 /**
  * @brief Enable DMA TX channel burst sending data, disabled by default
  */

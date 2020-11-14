@@ -637,8 +637,9 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 	TCB_t *pxNewTCB;
 	TaskHandle_t xReturn;
 
-		configASSERT( pxStackBuffer != NULL );
-		configASSERT( pxTaskBuffer != NULL );
+		configASSERT( portVALID_TCB_MEM(pxTaskBuffer) );
+		configASSERT( portVALID_STACK_MEM(pxStackBuffer) );
+		configASSERT( (xCoreID>=0 && xCoreID<portNUM_PROCESSORS) || (xCoreID==tskNO_AFFINITY) );
 
 		#if( configASSERT_DEFINED == 1 )
 		{
@@ -4134,7 +4135,7 @@ static void prvCheckTasksWaitingTermination( void )
 		pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
 
 		#if ( configTASKLIST_INCLUDE_COREID == 1 )
-		pxTaskStatus.xCoreID = pxTCB->xCoreID;
+		pxTaskStatus->xCoreID = pxTCB->xCoreID;
 		#endif /* configTASKLIST_INCLUDE_COREID */
 
 		#if ( configUSE_MUTEXES == 1 )

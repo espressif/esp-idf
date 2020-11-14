@@ -4,6 +4,9 @@
 #include "unity.h"
 #include "test_utils.h"
 
+/* If assertions aren't set to fail this code still crashes, but not with an abort... */
+#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER && CONFIG_FREERTOS_ASSERT_FAIL_ABORT
+
 static void mutex_release_task(void* arg)
 {
     SemaphoreHandle_t mutex = (SemaphoreHandle_t) arg;
@@ -18,3 +21,5 @@ TEST_CASE("mutex released not by owner causes an assert", "[freertos][reset=abor
     xTaskCreate(&mutex_release_task, "mutex_release", 2048, mutex, UNITY_FREERTOS_PRIORITY + 1, NULL);
     vTaskDelay(1);
 }
+
+#endif

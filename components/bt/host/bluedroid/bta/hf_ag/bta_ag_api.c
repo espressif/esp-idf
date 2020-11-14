@@ -307,11 +307,13 @@ void BTA_AgSetCodec(UINT16 handle, tBTA_AG_PEER_CODEC codec)
  *                  layer will invoke esp_hf_client_outgoing_data_cb_t to fetch data
  *
  ***********************************************************************************************/
-void BTA_AgCiData(void)
+void BTA_AgCiData(UINT16 handle)
 {
     BT_HDR *p_buf;
-    if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
+    tBTA_AG_SCB *p_scb;
+    if ((p_scb = bta_ag_scb_by_idx(handle)) != NULL && (p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AG_CI_SCO_DATA_EVT;
+        p_buf->layer_specific = handle;
         bta_sys_sendmsg(p_buf);
     }
 }

@@ -121,11 +121,21 @@ static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 }
 
 /**
- * Trigger start of user-defined transaction.
+ * Trigger start of user-defined transaction for master.
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_user_start(spi_dev_t *hw)
+static inline void spi_ll_master_user_start(spi_dev_t *hw)
+{
+    hw->cmd.usr = 1;
+}
+
+/**
+ * Trigger start of user-defined transaction for slave.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_slave_user_start(spi_dev_t *hw)
 {
     hw->cmd.usr = 1;
 }

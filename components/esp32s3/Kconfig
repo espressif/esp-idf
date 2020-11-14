@@ -430,14 +430,17 @@ menu "ESP32S3-Specific"
 
         config ESP32S3_TIME_SYSCALL_USE_RTC_FRC1
             bool "RTC and high-resolution timer"
-            select ESP_TIMER_RTC_USE
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
         config ESP32S3_TIME_SYSCALL_USE_RTC
             bool "RTC"
-            select ESP_TIMER_RTC_USE
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
         config ESP32S3_TIME_SYSCALL_USE_FRC1
             bool "High-resolution timer"
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
         config ESP32S3_TIME_SYSCALL_USE_NONE
             bool "None"
+            select ESP_TIME_FUNCS_USE_NONE
     endchoice
 
     choice ESP32S3_RTC_CLK_SRC
@@ -459,7 +462,7 @@ menu "ESP32S3-Specific"
 
     config ESP32S3_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS
+        default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
         default 1024 if ESP32S3_RTC_CLK_SRC_INT_RC
         range 0 125000
         help
@@ -523,53 +526,3 @@ menu "ESP32S3-Specific"
             wise RTC fast memory operates on APB clock and hence does not have much performance impact.
 
 endmenu  # ESP32S3-Specific
-
-menu "Power Management"
-    config PM_ENABLE
-        bool "Support for power management"
-        default n
-        help
-            If enabled, application is compiled with support for power management.
-            This option has run-time overhead (increased interrupt latency,
-            longer time to enter idle state), and it also reduces accuracy of
-            RTOS ticks and timers used for timekeeping.
-            Enable this option if application uses power management APIs.
-
-    config PM_DFS_INIT_AUTO
-        bool "Enable dynamic frequency scaling (DFS) at startup"
-        depends on PM_ENABLE
-        default n
-        help
-            If enabled, startup code configures dynamic frequency scaling.
-            Max CPU frequency is set to CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ setting,
-            min frequency is set to XTAL frequency.
-            If disabled, DFS will not be active until the application
-            configures it using esp_pm_configure function.
-
-    config PM_PROFILING
-        bool "Enable profiling counters for PM locks"
-        depends on PM_ENABLE
-        default n
-        help
-            If enabled, esp_pm_* functions will keep track of the amount of time
-            each of the power management locks has been held, and esp_pm_dump_locks
-            function will print this information.
-            This feature can be used to analyze which locks are preventing the chip
-            from going into a lower power state, and see what time the chip spends
-            in each power saving mode. This feature does incur some run-time
-            overhead, so should typically be disabled in production builds.
-
-    config PM_TRACE
-        bool "Enable debug tracing of PM using GPIOs"
-        depends on PM_ENABLE
-        default n
-        help
-            If enabled, some GPIOs will be used to signal events such as RTOS ticks,
-            frequency switching, entry/exit from idle state. Refer to pm_trace.c
-            file for the list of GPIOs.
-            This feature is intended to be used when analyzing/debugging behavior
-            of power management implementation, and should be kept disabled in
-            applications.
-
-
-endmenu # "Power Management"

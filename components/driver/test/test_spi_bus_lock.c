@@ -18,7 +18,7 @@
 #define TEST_BUS_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
 #define TEST_BUS_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
 
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define TEST_BUS_PIN_NUM_MISO   FSPI_IOMUX_PIN_NUM_MISO
 #define TEST_BUS_PIN_NUM_MOSI   FSPI_IOMUX_PIN_NUM_MOSI
 #define TEST_BUS_PIN_NUM_CLK    FSPI_IOMUX_PIN_NUM_CLK
@@ -256,9 +256,9 @@ static void test_bus_lock(bool test_flash)
     }
     ESP_LOGI(TAG, "Start testing...");
 
-    xTaskCreate( spi_task1, "task1", 2048, &context1, 0, &task1 );
-    xTaskCreate( spi_task2, "task2", 2048, &context2, 0, &task2 );
-    xTaskCreate( spi_task3, "task3", 2048, &context3, 0, &task3 );
+    xTaskCreate( spi_task1, "task1", 4096, &context1, 0, &task1 );
+    xTaskCreate( spi_task2, "task2", 4096, &context2, 0, &task2 );
+    xTaskCreate( spi_task3, "task3", 4096, &context3, 0, &task3 );
     if (test_flash) {
         xTaskCreate( spi_task4, "task4", 2048, &context4, 0, &task4 );
     } else {

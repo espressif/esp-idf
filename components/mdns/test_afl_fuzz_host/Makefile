@@ -28,8 +28,8 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/lwip/port/esp32/include \
                  -I$(COMPONENTS_DIR)/lwip/lwip/src/include/lwip/apps \
                  -I$(COMPONENTS_DIR)/soc/include \
-                 -I$(COMPONENTS_DIR)/soc/soc/include \
-                 -I$(COMPONENTS_DIR)/soc/soc/esp32/include \
+                 -I$(COMPONENTS_DIR)/soc/include \
+                 -I$(COMPONENTS_DIR)/soc/esp32/include \
                  -I$(COMPONENTS_DIR)/soc/src/esp32/include \
                  -I$(COMPONENTS_DIR)/tcpip_adapter/include \
                  -I$(COMPONENTS_DIR)/xtensa/include \

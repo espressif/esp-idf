@@ -220,9 +220,10 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 #define rtcio_hal_wakeup_disable(rtcio_num) rtcio_ll_wakeup_disable(rtcio_num)
 
 /**
- * Disable wakeup function from light sleep status for rtcio.
+ * Set specific logic level on an RTC IO pin as a wakeup trigger.
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @param level Logic level (0)
  */
 #define rtcio_hal_ext0_set_wakeup_pin(rtcio_num, level)     rtcio_ll_ext0_set_wakeup_pin(rtcio_num, level)
 

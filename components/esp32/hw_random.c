@@ -20,7 +20,6 @@
 #include "esp_attr.h"
 #include "esp32/clk.h"
 #include "soc/wdev_reg.h"
-#include "freertos/FreeRTOSConfig.h"
 #include "xtensa/core-macros.h"
 
 uint32_t IRAM_ATTR esp_random(void)

@@ -44,7 +44,7 @@ static inline uint32_t cpu_ll_get_cycle_count(void)
     return result;
 }
 
-static inline void* cpu_ll_get_sp(void)
+static inline void *cpu_ll_get_sp(void)
 {
     void *sp;
     asm volatile ("mov %0, sp;" : "=r" (sp));
@@ -94,21 +94,21 @@ static inline void cpu_ll_clear_breakpoint(int id)
     WSR(IBREAKENABLE, en);
 }
 
-static inline uint32_t cpu_ll_ptr_to_pc(const void* addr)
+static inline uint32_t cpu_ll_ptr_to_pc(const void *addr)
 {
     return ((uint32_t) addr);
 }
 
-static inline void* cpu_ll_pc_to_ptr(uint32_t pc)
+static inline void *cpu_ll_pc_to_ptr(uint32_t pc)
 {
-    return (void*) ((pc & 0x3fffffff) | 0x40000000);
+    return (void *) ((pc & 0x3fffffff) | 0x40000000);
 }
 
 static inline void cpu_ll_set_watchpoint(int id,
-                                        const void* addr,
-                                        size_t size,
-                                        bool on_read,
-                                        bool on_write)
+        const void *addr,
+        size_t size,
+        bool on_read,
+        bool on_write)
 {
     uint32_t dbreakc = 0x3F;
 
@@ -158,7 +158,7 @@ static inline bool cpu_ll_is_debugger_attached(void)
     uint32_t dcr = 0;
     uint32_t reg = DSRSET;
     RER(reg, dcr);
-    return (dcr&0x1);
+    return (dcr & 0x1);
 }
 
 static inline void cpu_ll_break(void)
@@ -166,9 +166,38 @@ static inline void cpu_ll_break(void)
     __asm__ ("break 0,0");
 }
 
-static inline void cpu_ll_set_vecbase(const void* vecbase)
+static inline void cpu_ll_set_vecbase(const void *vecbase)
 {
     asm volatile ("wsr %0, vecbase" :: "r" (vecbase));
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
+{
+    uint32_t value = 0;
+    asm volatile("get_gpio_in %0" : "=r"(value) : :);
+    return value;
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_out(void)
+{
+    uint32_t value = 0;
+    asm volatile("rur.gpio_out %0" : "=r"(value) : :);
+    return value;
+}
+
+static inline void cpu_ll_write_dedic_gpio_all(uint32_t value)
+{
+    asm volatile("wur.gpio_out %0"::"r"(value):);
+}
+
+static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
+{
+    // ToDo: check if ESP32-S3 supports mask write instruction
+    uint32_t orig = 0;
+    asm volatile("rur.gpio_out %0" : "=r"(orig) : :);
+    orig &= ~mask;
+    orig |= value & mask;
+    asm volatile("wur.gpio_out %0"::"r"(orig):);
 }
 
 #ifdef __cplusplus

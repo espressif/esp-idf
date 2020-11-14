@@ -8,7 +8,8 @@ COMPONENT_ADD_INCLUDEDIRS := \
 	include/apps/sntp \
 	lwip/src/include \
 	port/esp32/include \
-	port/esp32/include/arch
+	port/esp32/include/arch \
+	port/esp32/tcp_isn
 
 COMPONENT_SRCDIRS := \
 	apps/dhcpserver \
@@ -37,6 +38,10 @@ endif
 
 ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
+endif
+
+ifdef CONFIG_LWIP_TCP_ISN_HOOK
+    COMPONENT_SRCDIRS += port/esp32/tcp_isn
 endif
 
 CFLAGS += -Wno-address  # lots of LWIP source files evaluate macros that check address of stack variables

@@ -49,21 +49,21 @@ variables:
   IDF_PATH: "$CI_PROJECT_DIR"
   BATCH_BUILD: "1"
   V: "0"
-  APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
-# Docker images
+  # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
-# target test config file, used by assign test job
+
+  # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/tools/ci/config/target-test.yml"
+
+  # target test repo parameters
+  TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
+  CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
+  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
 
   # Versioned esp-idf-doc env image to use for all document building jobs
   ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v7"
-
-
-# before each job, we need to check if this job is filtered by bot stage/job filter
-.apply_bot_filter: &apply_bot_filter
-  python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
@@ -73,92 +73,41 @@ variables:
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
-.fetch_submodules: &fetch_submodules |
-  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
-
-.add_ssh_keys: &add_ssh_keys |
-  mkdir -p ~/.ssh
-  chmod 700 ~/.ssh
-  echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-  base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-  chmod 600 ~/.ssh/id_rsa
-  echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-
 before_script:
+  - source tools/ci/utils.sh
   - source tools/ci/setup_python.sh
-  # apply bot filter in before script
-  - *apply_bot_filter
-  # add gitlab ssh key
-  - *add_ssh_keys
-  # Set some options and environment for CI
+  - apply_bot_filter
+  - add_gitlab_ssh_keys
   - source tools/ci/configure_ci_environment.sh
   - *setup_tools_unless_target_test
-  - *fetch_submodules
-
-# used for component-based unit test apps
-.before_script_for_component_ut:
-  variables:
-    COMPONENT_UT_EXCLUDE_LIST_FP: ${CI_PROJECT_DIR}/tools/ci/component_ut_excludes.txt
-  before_script:
-    - source tools/ci/setup_python.sh
-    - *apply_bot_filter
-    - *add_ssh_keys
-    - source tools/ci/configure_ci_environment.sh
-    - *setup_tools_unless_target_test
-    - *fetch_submodules
-    - export COMPONENT_UT_DIRS=`find components/ -name test_apps -type d`
-    - export COMPONENT_UT_EXCLUDES=`[ -r $COMPONENT_UT_EXCLUDE_LIST_FP ] && cat $COMPONENT_UT_EXCLUDE_LIST_FP | xargs`
+  - fetch_submodules
 
 # used for check scripts which we want to run unconditionally
 .before_script_lesser_nofilter:
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules, not applying bot filter"
+    - source tools/ci/utils.sh
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
 
 # used for everything else where we want to do no prep, except for bot filter
 .before_script_lesser:
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
+    - source tools/ci/utils.sh
     - source tools/ci/setup_python.sh
-    # apply bot filter in before script
-    - *apply_bot_filter
+    - apply_bot_filter
     - source tools/ci/configure_ci_environment.sh
 
-.check_job_template:
-  stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
-  extends: .before_script_lesser_nofilter
-
-.check_job_template_with_filter:
-  stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
-  extends: .before_script_lesser
-
-.python_lint_template:
-  stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
-
-.macos_build_template:
-  stage: build
-  tags:
-    - macos_shell
-  dependencies: []
+.before_script_slim:
   before_script:
-    - *apply_bot_filter
+    - echo "Only load utils.sh inside"
+    - source tools/ci/utils.sh
+
+.before_script_macos:
+  before_script:
+    - source tools/ci/utils.sh
+    - apply_bot_filter
     - $IDF_PATH/tools/idf_tools.py install-python-env
     # On macOS, these tools need to be installed
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
@@ -169,51 +118,10 @@ before_script:
     - source tools/ci/configure_ci_environment.sh
     # Part of tools/ci/setup_python.sh; we don't use pyenv on macOS, so can't run the rest of the script.
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
-    - *fetch_submodules
-
-.build_template_app_template:
-  stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  variables:
-    BATCH_BUILD: "1"
-    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
-    SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
-    BUILD_DIR: "@t/@w"
-    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
-    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
-    BUILD_COMMAND_ARGS: ""
-  artifacts:
-    when: always
-    paths:
-      - log_template_app/*
-      - size_info.txt
-      - build_template_app/**/size.json
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - ./tools/ci/retry_failed.sh git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
-    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-    # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd components/esp_wifi/lib
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
+    - fetch_submodules
 
 include:
+  - '/tools/ci/config/rules.yml'
   - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
   - '/tools/ci/config/assign-test.yml'

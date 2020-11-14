@@ -447,10 +447,12 @@ void bt_mesh_beacon_init(void)
     k_delayed_work_init(&beacon_timer, beacon_send);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_beacon_deinit(void)
 {
     k_delayed_work_free(&beacon_timer);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_beacon_ivu_initiator(bool enable)
 {

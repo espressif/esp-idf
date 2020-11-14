@@ -1,6 +1,6 @@
 #ifndef XTENSA_DEBUG_MODULE_H
 #define XTENSA_DEBUG_MODULE_H
-#include "soc/cpu.h"
+
 /*
 ERI registers / OCD offsets and field definitions
 */

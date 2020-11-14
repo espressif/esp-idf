@@ -21,10 +21,9 @@
 #include "memspi_host_driver.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp_heap_caps.h"
 #include "esp_flash_internal.h"
-#include <freertos/task.h>
-#include "esp_timer.h"
+#include "esp_private/system_internal.h"
+
 
 static const char TAG[] = "spi_flash";
 
@@ -150,6 +149,11 @@ bool esp_flash_chip_driver_initialized(const esp_flash_t *chip)
 
 esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
 {
+    // Chip init flow
+    // 1. Read chip id
+    // 2. (optional) Detect chip vendor
+    // 3. Get basic parameters of the chip (size, dummy count, etc.)
+    // 4. Init chip into desired mode (without breaking the cache!)
     esp_err_t err = ESP_OK;
     if (chip == NULL || chip->host == NULL || chip->host->driver == NULL ||
         ((memspi_host_inst_t*)chip->host)->spi == NULL) {
@@ -202,27 +206,55 @@ esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
     return rom_spiflash_api_funcs->end(chip, err);
 }
 
-//this is not public, but useful in unit tests
-esp_err_t IRAM_ATTR esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id)
+static esp_err_t IRAM_ATTR read_id_core(esp_flash_t* chip, uint32_t* out_id, bool sanity_check)
 {
+    bool installed = esp_flash_chip_driver_initialized(chip);
     esp_err_t err = rom_spiflash_api_funcs->start(chip);
     if (err != ESP_OK) {
         return err;
     }
 
-    // Send generic RDID command twice, check for a matching result and retry in case we just powered on (inner
-    // function fails if it sees all-ones or all-zeroes.)
-    err = chip->host->driver->read_id(chip->host, flash_id);
+    esp_err_t (*read_id_func)(void*, uint32_t*);
+    void* read_id_arg;
+    if (installed && chip->chip_drv->read_id) {
+        read_id_func = (void*)chip->chip_drv->read_id;
+        read_id_arg = (void*)chip;
+    } else {
+        //default option if the chip is not detected/chosen yet.
+        read_id_func = (void*)chip->host->driver->read_id;
+        read_id_arg = (void*)chip->host;
+    }
 
-    if (err == ESP_OK) { // check we see the same ID twice, in case of transient power-on errors
+    // Inner function fails if it sees all-ones or all-zeroes.
+    err = read_id_func(read_id_arg, out_id);
+
+    if (sanity_check && err == ESP_OK) {
+        // Send RDID command twice, check for a matching result and retry in case we just powered on
         uint32_t new_id;
-        err = chip->host->driver->read_id(chip->host, &new_id);
-        if (err == ESP_OK && (new_id != *flash_id)) {
+        err = read_id_func(read_id_arg, &new_id);
+        if (err == ESP_OK && (new_id != *out_id)) {
             err = ESP_ERR_FLASH_NOT_INITIALISED;
         }
     }
 
     return rom_spiflash_api_funcs->end(chip, err);
+}
+
+// Faster version with sanity check.
+// Called in esp_flash_init and unit test (though not public)
+esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* out_id)
+{
+    return read_id_core(chip, out_id, true);
+}
+
+esp_err_t esp_flash_read_id(esp_flash_t* chip, uint32_t* out_id)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    //Accept uninitialized chip when reading chip id
+    if (err != ESP_OK && !(err == ESP_ERR_FLASH_NOT_INITIALISED && chip != NULL)) return err;
+    if (out_id == NULL) return ESP_ERR_INVALID_ARG;
+
+    return read_id_core(chip, out_id, false);
 }
 
 static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
@@ -271,23 +303,6 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
             return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
         }                                                   \
     } while (0)
-
-esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *out_id)
-{
-    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    //Accept uninitialized chip when reading chip id
-    if (err != ESP_OK && !(err == ESP_ERR_FLASH_NOT_INITIALISED && chip != NULL)) return err;
-    if (out_id == NULL) return ESP_ERR_INVALID_ARG;
-
-    err = rom_spiflash_api_funcs->start(chip);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    err = chip->host->driver->read_id(chip->host, out_id);
-
-    return rom_spiflash_api_funcs->end(chip, err);
-}
 
 esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
 {
@@ -378,7 +393,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
 #endif
     while (err == ESP_OK && len >= sector_size) {
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        int64_t start_time_us = esp_timer_get_time();
+        int64_t start_time_us = esp_system_get_time();
 #endif
         err = rom_spiflash_api_funcs->start(chip);
         if (err != ESP_OK) {
@@ -403,7 +418,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         err = rom_spiflash_api_funcs->end(chip, err);
 
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-        no_yield_time_us += (esp_timer_get_time() - start_time_us);
+        no_yield_time_us += (esp_system_get_time() - start_time_us);
         if (no_yield_time_us / 1000 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
             no_yield_time_us = 0;
             if (chip->os_func->yield) {

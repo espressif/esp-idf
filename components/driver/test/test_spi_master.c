@@ -26,8 +26,6 @@
 #include "soc/soc_memory_layout.h"
 #include "driver/spi_common_internal.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-
 const static char TAG[] = "test_spi";
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
@@ -757,7 +755,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
         int addr_bits =
 #ifdef CONFIG_IDF_TARGET_ESP32
                 56-8*i;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         //ESP32S2 only supportes up to 32 bits address
                 28-4*i;
 #endif
@@ -957,6 +955,8 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ)
 #endif
 
 static void speed_setup(spi_device_handle_t* spi, bool use_dma)
@@ -1094,6 +1094,4 @@ TEST_CASE("spi_speed","[spi]")
     spi_device_release_bus(spi);
     master_free_device_bus(spi);
 }
-#endif
-
 #endif

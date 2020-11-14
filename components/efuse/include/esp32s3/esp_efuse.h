@@ -56,6 +56,14 @@ typedef enum {
     EFUSE_BLK_MAX
 } esp_efuse_block_t;
 
+struct esp_efuse_desc_s;
+
+/**
+ * @brief Given a key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY5, return
+ * efuse field for setting the key purpose
+ */
+const struct esp_efuse_desc_s **esp_efuse_get_purpose_field(esp_efuse_block_t block);
+
 /**
  * @brief Type of coding scheme
  */

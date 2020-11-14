@@ -31,6 +31,7 @@
 #include "esp32s3/rom/rtc.h"
 #endif
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -527,3 +528,5 @@ static void check_time_deepsleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

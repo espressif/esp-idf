@@ -5,7 +5,7 @@ menu "ESP HTTP client"
         bool "Enable https"
         default y
         help
-            This option will enable https protocol by linking mbedtls library and initializing SSL transport
+            This option will enable https protocol by linking esp-tls library and initializing SSL transport
 
     config ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
         bool "Enable HTTP Basic Authentication"

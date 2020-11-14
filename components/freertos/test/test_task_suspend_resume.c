@@ -129,6 +129,7 @@ void IRAM_ATTR timer_group0_isr(void *vp_arg)
     timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
 
     timer_isr_fired = true;
+
     TaskHandle_t handle = vp_arg;
     BaseType_t higherPriorityTaskWoken = pdFALSE;
     higherPriorityTaskWoken = xTaskResumeFromISR(handle);
@@ -137,44 +138,70 @@ void IRAM_ATTR timer_group0_isr(void *vp_arg)
     }
 }
 
+/* Task suspends itself, then sets parameter value to the current timer group counter and deletes itself */
+static void task_suspend_self_with_timer(void *vp_resumed)
+{
+    volatile uint64_t *resumed_counter = vp_resumed;
+    *resumed_counter = 0;
+    vTaskSuspend(NULL);
+    timer_get_counter_value(TIMER_GROUP_0, TIMER_0, vp_resumed);
+    vTaskDelete(NULL);
+}
+
+
 /* Create a task which suspends itself, then resume it from a timer
  * interrupt. */
 static void test_resume_task_from_isr(int target_core)
 {
-    volatile bool resumed = false;
+    volatile uint64_t resumed_counter = 99;
     TaskHandle_t suspend_task;
 
-    xTaskCreatePinnedToCore(task_suspend_self, "suspend_self", 2048,
-                            (void *)&resumed, UNITY_FREERTOS_PRIORITY + 1,
+    xTaskCreatePinnedToCore(task_suspend_self_with_timer, "suspend_self", 2048,
+                            (void *)&resumed_counter, UNITY_FREERTOS_PRIORITY + 1,
                             &suspend_task, target_core);
 
     vTaskDelay(1);
-    TEST_ASSERT_FALSE(resumed);
+    TEST_ASSERT_EQUAL(0, resumed_counter);
+
+    const unsigned APB_CYCLES_PER_TICK = TIMER_BASE_CLK / configTICK_RATE_HZ;
+    const unsigned TEST_TIMER_DIV = 2;
+    const unsigned TEST_TIMER_CYCLES_PER_TICK = APB_CYCLES_PER_TICK / TEST_TIMER_DIV;
+    const unsigned TEST_TIMER_CYCLES_PER_MS = TIMER_BASE_CLK / 1000 / TEST_TIMER_DIV;
+    const unsigned TEST_TIMER_ALARM = TEST_TIMER_CYCLES_PER_TICK / 2; // half an RTOS tick
 
     /* Configure timer ISR */
+    timer_isr_handle_t isr_handle;
     const timer_config_t config = {
         .alarm_en = 1,
         .auto_reload = 0,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = 2,       //Range is 2 to 65536
+        .divider = TEST_TIMER_DIV,
         .intr_type = TIMER_INTR_LEVEL,
         .counter_en = TIMER_PAUSE,
     };
     /*Configure timer*/
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
-    timer_pause(TIMER_GROUP_0, TIMER_0);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void*)suspend_task, ESP_INTR_FLAG_IRAM, NULL);
+    ESP_ERROR_CHECK( timer_init(TIMER_GROUP_0, TIMER_0, &config) );
+    ESP_ERROR_CHECK( timer_pause(TIMER_GROUP_0, TIMER_0) );
+    ESP_ERROR_CHECK( timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0) );
+    ESP_ERROR_CHECK( timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TEST_TIMER_ALARM) );
+    ESP_ERROR_CHECK( timer_enable_intr(TIMER_GROUP_0, TIMER_0) );
+    ESP_ERROR_CHECK( timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void*)suspend_task, ESP_INTR_FLAG_IRAM, &isr_handle) );
     timer_isr_fired = false;
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    vTaskDelay(1); // Make sure we're at the start of a new tick
 
-    vTaskDelay(1);
+    ESP_ERROR_CHECK( timer_start(TIMER_GROUP_0, TIMER_0) );
 
-    timer_deinit(TIMER_GROUP_0, TIMER_0);
+    vTaskDelay(1); // We expect timer group will fire half-way through this delay
+
     TEST_ASSERT_TRUE(timer_isr_fired);
-    TEST_ASSERT_TRUE(resumed);
+    TEST_ASSERT_NOT_EQUAL(0, resumed_counter);
+    // The task should have woken within 500us of the timer interrupt event (note: task may be a flash cache miss)
+    printf("alarm value %u task resumed at %u\n", TEST_TIMER_ALARM, (unsigned)resumed_counter);
+    TEST_ASSERT_UINT32_WITHIN(TEST_TIMER_CYCLES_PER_MS/2, TEST_TIMER_ALARM, (unsigned)resumed_counter);
+
+    // clean up
+    timer_deinit(TIMER_GROUP_0, TIMER_0);
+    ESP_ERROR_CHECK( esp_intr_free(isr_handle) );
 }
 
 TEST_CASE("Resume task from ISR (same core)", "[freertos]")
@@ -293,11 +320,11 @@ TEST_CASE("Test the waiting task not missed due to scheduler suspension on one C
     test_scheduler_suspend1(1);
 }
 
-static uint32_t count_tick[2];
+static uint32_t tick_hook_ms[2];
 
 static void IRAM_ATTR tick_hook(void)
 {
-    ++count_tick[xPortGetCoreID()];
+    tick_hook_ms[xPortGetCoreID()] += portTICK_PERIOD_MS;
 }
 
 static void test_scheduler_suspend2(int cpu)
@@ -305,7 +332,7 @@ static void test_scheduler_suspend2(int cpu)
     esp_register_freertos_tick_hook_for_cpu(tick_hook, 0);
     esp_register_freertos_tick_hook_for_cpu(tick_hook, 1);
 
-    memset(count_tick, 0, sizeof(count_tick));
+    memset(tick_hook_ms, 0, sizeof(tick_hook_ms));
 
     printf("Test for CPU%d\n", cpu);
     xTaskCreatePinnedToCore(&control_task, "control_task", 8192, NULL, 5, NULL, cpu);
@@ -313,10 +340,10 @@ static void test_scheduler_suspend2(int cpu)
     vTaskDelay(waiting_ms * 2 / portTICK_PERIOD_MS);
     esp_deregister_freertos_tick_hook(tick_hook);
 
-    printf("count_tick[cpu0] = %d, count_tick[cpu1] = %d\n", count_tick[0], count_tick[1]);
+    printf("tick_hook_ms[cpu0] = %d, tick_hook_ms[cpu1] = %d\n", tick_hook_ms[0], tick_hook_ms[1]);
 
-    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[0]);
-    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[1]);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS, waiting_ms * 2, tick_hook_ms[0]);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS, waiting_ms * 2, tick_hook_ms[1]);
     printf("\n");
 }
 
@@ -337,7 +364,7 @@ static int duration_timer_ms;
 
 static void timer_callback(void *arg)
 {
-    ++duration_timer_ms;
+    duration_timer_ms += portTICK_PERIOD_MS;
 }
 
 static void test_scheduler_suspend3(int cpu)

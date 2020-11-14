@@ -42,6 +42,6 @@ menu "eFuse Bit Manager"
         default 256 if EFUSE_CODE_SCHEME_COMPAT_NONE
         default 192 if EFUSE_CODE_SCHEME_COMPAT_3_4
         default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
-        default 256 if IDF_TARGET_ESP32S2
+        default 256 if !IDF_TARGET_ESP32
 
 endmenu

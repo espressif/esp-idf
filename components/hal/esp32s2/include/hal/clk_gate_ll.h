@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
@@ -84,6 +85,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_WIFI_CLK_WIFI_BT_COMMON_M;
     case PERIPH_SYSTIMER_MODULE:
         return DPORT_SYSTIMER_CLK_EN;
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return DPORT_CLK_EN_DEDICATED_GPIO;
     case PERIPH_AES_MODULE:
         return DPORT_CRYPTO_AES_CLK_EN;
     case PERIPH_SHA_MODULE:
@@ -156,6 +159,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_TWAI_RST;
     case PERIPH_SYSTIMER_MODULE:
         return DPORT_SYSTIMER_RST;
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return DPORT_RST_EN_DEDICATED_GPIO;
     case PERIPH_AES_MODULE:
         if (enable == true) {
             // Clear reset on digital signature, otherwise AES unit is held in reset also.
@@ -207,6 +212,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return DPORT_CPU_PERI_CLK_EN_REG;
     case PERIPH_RNG_MODULE:
     case PERIPH_WIFI_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
@@ -226,6 +233,8 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_DEDIC_GPIO_MODULE:
+        return DPORT_CPU_PERI_RST_EN_REG;
     case PERIPH_RNG_MODULE:
     case PERIPH_WIFI_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:

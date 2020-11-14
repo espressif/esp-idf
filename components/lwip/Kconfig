@@ -327,6 +327,17 @@ menu "LWIP"
 
     menu "TCP"
 
+        config LWIP_TCP_ISN_HOOK
+            bool "Enable TCP ISN Hook"
+            default y
+            help
+                Enables custom TCP ISN hook to randomize initial sequence
+                number in TCP connection. This is recommended as default
+                lwIP implementation (`tcp_next_iss`) is not very strong,
+                as it does not take into consideration any platform
+                specific entropy source.
+
+
         config LWIP_MAX_ACTIVE_TCP
             int "Maximum active TCP Connections"
             range 1 1024
@@ -353,6 +364,13 @@ menu "LWIP"
                 change the memory usage of LWIP, except for preventing
                 new listening TCP connections after the limit is reached.
 
+        config LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            bool "TCP high speed retransmissions"
+            default y
+            help
+                Speed up the TCP retransmission interval. If disabled,
+                it is recommended to change the number of SYN retransmissions to 6,
+                TCP timer interval to 250, and TCP rto time to 3000.
 
         config LWIP_TCP_MAXRTX
             int "Maximum number of retransmissions of data segments"
@@ -363,7 +381,8 @@ menu "LWIP"
 
         config LWIP_TCP_SYNMAXRTX
             int "Maximum number of retransmissions of SYN segments"
-            default 6
+            default 6 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 12 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             range 3 12
             help
                 Set maximum number of retransmissions of SYN segments.
@@ -381,7 +400,8 @@ menu "LWIP"
 
         config LWIP_TCP_TMR_INTERVAL
             int "TCP timer interval(ms)"
-            default 250
+            default 250 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 125 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             help
                 Set TCP timer interval in milliseconds.
 
@@ -512,7 +532,8 @@ menu "LWIP"
 
         config LWIP_TCP_RTO_TIME
             int "Default TCP rto time"
-            default 3000
+            default 3000 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 1500 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             help
                 Set default TCP rto time for a reasonable initial rto.
                 In bad network environment, recommend set value of rto time to 1500.

@@ -77,6 +77,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
             spicommon_periph_free(host_id);
             SPIHD_CHECK(dma_chan_claimed, "dma channel already in use", ESP_ERR_INVALID_STATE);
         }
+
+        spicommon_connect_spi_and_dma(host_id, config->dma_chan);
     }
 
     spi_slave_hd_slot_t* host = malloc(sizeof(spi_slave_hd_slot_t));

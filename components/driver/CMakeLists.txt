@@ -3,6 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "adc_common.c"
     "dac_common.c"
+    "dedic_gpio.c"
     "gpio.c"
     "i2c.c"
     "i2s.c"
@@ -47,6 +48,11 @@ if(${target} STREQUAL "esp32s2")
                      "spi_slave_hd.c"
                      "esp32s2/dac.c")
     list(APPEND includes "esp32s2/include")
+endif()
+
+if(${target} STREQUAL "esp32s3")
+    list(APPEND srcs "spi_slave_hd.c"
+                    )
 endif()
 
 idf_component_register(SRCS "${srcs}"
