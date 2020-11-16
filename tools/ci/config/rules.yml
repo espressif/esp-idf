@@ -134,6 +134,10 @@
     - <<: *if-protected-no_label
     - <<: *if-label-build_docs
 
+.rules:labels:build_docs-preview:
+  rules:
+    - <<: *if-label-build_docs
+
 .rules:labels:weekend_test-only:
   rules:
     - <<: *if-label-weekend_test

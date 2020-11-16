@@ -71,7 +71,7 @@ push_to_github:
 deploy_docs_preview:
   extends:
     - .deploy_docs_template
-    - .rules:labels:build_docs-slim
+    - .rules:labels:build_docs-preview
   # Override default stage to happen before the post_check
   stage: test_deploy
   needs:
