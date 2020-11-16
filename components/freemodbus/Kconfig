@@ -45,7 +45,7 @@ menu "Modbus configuration"
 
     config FMB_SERIAL_TASK_PRIO
         int "Modbus serial task priority"
-        range 3 10
+        range 3 23
         default 10
         help
                 Modbus UART driver event task priority.
@@ -113,7 +113,7 @@ menu "Modbus configuration"
         range 0 1
         default 0
         help
-            Modbus Timer group number that is used for timeout measurement.
+                Modbus Timer group number that is used for timeout measurement.
 
     config FMB_TIMER_INDEX
         int "Modbus Timer index in the group"
