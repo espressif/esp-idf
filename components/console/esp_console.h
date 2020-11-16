@@ -101,6 +101,20 @@ typedef struct {
 #endif
 
 /**
+ * @brief Parameters for console device: USB CDC
+ *
+ * @note It's an empty structure for now, reserved for future
+ *
+ */
+typedef struct {
+
+} esp_console_dev_usb_cdc_config_t;
+
+#define ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT() \
+{                                            \
+}
+
+/**
  * @brief initialize console module
  * @param config console configuration
  * @note  Call this once before using other console module features
@@ -303,6 +317,27 @@ struct esp_console_repl_s {
  *      - ESP_FAIL Parameter error
  */
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+
+/**
+ * @brief Establish a console REPL environment over USB CDC
+ *
+ * @param[in] dev_config USB CDC configuration
+ * @param[in] repl_config REPL configuration
+ * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
+ *
+ * @note This is a all-in-one function to establish the environment needed for REPL, includes:
+ *       - Initializes linenoise
+ *       - Spawn new thread to run REPL in the background
+ *
+ * @attention This function is meant to be used in the examples to make the code more compact.
+ *            Applications which use console functionality should be based on
+ *            the underlying linenoise and esp_console functions.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL Parameter error
+ */
+esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
 
 /**
  * @brief Start REPL environment

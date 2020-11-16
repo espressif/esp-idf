@@ -14,18 +14,20 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <sys/cdefs.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
+#include "esp_vfs_cdcacm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "linenoise/linenoise.h"
 
-static const char *TAG = "console.repl.uart";
+static const char *TAG = "console.repl";
 
 #define CONSOLE_PROMPT_MAX_LEN (32)
 
@@ -48,11 +50,80 @@ typedef struct {
     int uart_channel;                // uart channel number
 } esp_console_repl_uart_t;
 
+typedef struct {
+    esp_console_repl_com_t repl_com; // base class
+} esp_console_repl_usb_cdc_t;
+
 static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
+static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
 static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
+
+esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_console_repl_usb_cdc_t *cdc_repl = NULL;
+    if (!repl_config | !dev_config | !ret_repl) {
+        ret = ESP_ERR_INVALID_ARG;
+        goto _exit;
+    }
+    // allocate memory for console REPL context
+    cdc_repl = calloc(1, sizeof(esp_console_repl_usb_cdc_t));
+    if (!cdc_repl) {
+        ret = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+
+    /* Disable buffering on stdin */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+    /* Enable non-blocking mode on stdin and stdout */
+    fcntl(fileno(stdout), F_SETFL, 0);
+    fcntl(fileno(stdin), F_SETFL, 0);
+
+    // initialize console, common part
+    ret = esp_console_common_init(&cdc_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // setup history
+    ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &cdc_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // setup prompt
+    esp_console_setup_prompt(repl_config->prompt, &cdc_repl->repl_com);
+
+    /* spawn a single thread to run REPL */
+    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    &cdc_repl->repl_com, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
+        ret = ESP_FAIL;
+        goto _exit;
+    }
+
+    cdc_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
+    *ret_repl = &cdc_repl->repl_com.repl_core;
+    return ESP_OK;
+_exit:
+    if (cdc_repl) {
+        esp_console_deinit();
+        free(cdc_repl);
+    }
+    if (ret_repl) {
+        *ret_repl = NULL;
+    }
+    return ret;
+}
 
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
@@ -262,6 +333,24 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
     esp_vfs_dev_uart_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
     free(uart_repl);
+_exit:
+    return ret;
+}
+
+static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
+    esp_console_repl_usb_cdc_t *cdc_repl = __containerof(repl_com, esp_console_repl_usb_cdc_t, repl_com);
+    // check if already de-initialized
+    if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
+        ESP_LOGE(TAG, "already de-initialized");
+        ret = ESP_ERR_INVALID_STATE;
+        goto _exit;
+    }
+    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+    esp_console_deinit();
+    free(cdc_repl);
 _exit:
     return ret;
 }

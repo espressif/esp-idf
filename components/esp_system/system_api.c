@@ -15,7 +15,7 @@
 #endif
 
 
-#define SHUTDOWN_HANDLERS_NO 2
+#define SHUTDOWN_HANDLERS_NO 3
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)

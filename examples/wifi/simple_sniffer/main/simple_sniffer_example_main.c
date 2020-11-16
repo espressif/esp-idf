@@ -181,14 +181,20 @@ void app_main(void)
     initialize_wifi();
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
 #if CONFIG_SNIFFER_STORE_HISTORY
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_FILE_PATH;
 #endif
     repl_config.prompt = "sniffer>";
-    // init console REPL environment
+
+    // install console REPL environment
+#if CONFIG_ESP_CONSOLE_UART
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+#elif CONFIG_ESP_CONSOLE_USB_CDC
+    esp_console_dev_usb_cdc_config_t cdc_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&cdc_config, &repl_config, &repl));
+#endif
 
     /* Register commands */
 #if CONFIG_SNIFFER_PCAP_DESTINATION_SD
