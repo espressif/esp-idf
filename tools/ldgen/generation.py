@@ -21,7 +21,7 @@ import fnmatch
 
 from fragments import Sections, Scheme, Mapping, Fragment
 from pyparsing import Suppress, White, ParseException, Literal, Group, ZeroOrMore
-from pyparsing import Word, OneOrMore, nums, alphanums, alphas, Optional, restOfLine
+from pyparsing import Word, OneOrMore, nums, alphas, restOfLine, SkipTo
 from ldgen_common import LdGenFailure
 
 
@@ -608,7 +608,7 @@ class SectionsInfo(dict):
         results = None
 
         try:
-            results = parser.parseString(first_line)
+            results = parser.parseString(first_line, parseAll=True)
         except ParseException as p:
             raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.message)
 
@@ -616,26 +616,26 @@ class SectionsInfo(dict):
         self.sections[archive] = SectionsInfo.__info(sections_info_dump.name, sections_info_dump.read())
 
     def _get_infos_from_file(self, info):
-        # Object file line: '{object}:  file format elf32-xtensa-le'
-        object = Fragment.ENTITY.setResultsName("object") + Literal(":").suppress() + Literal("file format elf32-xtensa-le").suppress()
+        # {object}:  file format elf32-xtensa-le
+        object_line = SkipTo(":").setResultsName("object") + Suppress(restOfLine)
 
-        # Sections table
-        header = Suppress(Literal("Sections:") + Literal("Idx") + Literal("Name") + Literal("Size") + Literal("VMA") +
-                          Literal("LMA") + Literal("File off") + Literal("Algn"))
-        entry = Word(nums).suppress() + Fragment.ENTITY + Suppress(OneOrMore(Word(alphanums, exact=8)) +
-                                                                   Word(nums + "*") + ZeroOrMore(Word(alphas.upper()) +
-                                                                   Optional(Literal(","))))
+        # Sections:
+        # Idx Name ...
+        section_start = Suppress(Literal("Sections:"))
+        section_header = Suppress(OneOrMore(Word(alphas)))
 
-        # Content is object file line + sections table
-        content = Group(object + header + Group(ZeroOrMore(entry)).setResultsName("sections"))
+        # 00 {section} 0000000 ...
+        #              CONTENTS, ALLOC, ....
+        section_entry = Suppress(Word(nums)) + SkipTo(' ') + Suppress(restOfLine) + \
+            Suppress(ZeroOrMore(Word(alphas) + Literal(",")) + Word(alphas))
 
+        content = Group(object_line + section_start + section_header + Group(OneOrMore(section_entry)).setResultsName("sections"))
         parser = Group(ZeroOrMore(content)).setResultsName("contents")
 
-        sections_info_text = info.content
         results = None
 
         try:
-            results = parser.parseString(sections_info_text)
+            results = parser.parseString(info.content, parseAll=True)
         except ParseException as p:
             raise ParseException("Unable to parse section info file " + info.filename + ". " + p.message)
 
