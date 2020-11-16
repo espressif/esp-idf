@@ -1422,6 +1422,19 @@ entries:
         self.assertListEqual(actual["flash_text"], expected["flash_text"])
         self.assertListEqual(actual["iram0_text"], expected["iram0_text"])
 
+    def test_sections_info_parsing(self):
+
+        self.sections_info = SectionsInfo()
+
+        with open("data/sections_parse.info") as sections_info_file_obj:
+            self.sections_info.add_sections_info(sections_info_file_obj)
+
+        sections = self.sections_info.get_obj_sections("libsections_parse.a", "croutine")
+        self.assertEqual(set(sections), set([".text", ".data", ".bss"]))
+
+        sections = self.sections_info.get_obj_sections("libsections_parse.a", "FreeRTOS-openocd")
+        self.assertEqual(set(sections), set([".literal.prvCheckPendingReadyList"]))
+
 
 if __name__ == "__main__":
     unittest.main()
