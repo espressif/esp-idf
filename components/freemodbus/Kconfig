@@ -68,11 +68,11 @@ menu "Modbus configuration"
         depends on FMB_COMM_MODE_ASCII_EN
         help
                 This option defines response timeout of slave in milliseconds for ASCII communication mode.
-                Thus the timeout will expire and allow the master’s program to handle the error.
+                Thus the timeout will expire and allow the master program to handle the error.
 
     config FMB_SERIAL_TASK_PRIO
         int "Modbus serial task priority"
-        range 3 10
+        range 3 23
         default 10
         help
                 Modbus UART driver event task priority.
