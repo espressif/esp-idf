@@ -147,3 +147,124 @@ TEST_CASE("test slave send unaligned","[spi]")
 #endif // !CONFIG_SPIRAM
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS
+
+
+#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
+//These tests are for chips which only have 1 SPI controller
+/********************************************************************************
+ *      Test By Master & Slave (2 boards)
+ *
+ *      PIN | Master(C3) | Slave (C3) |
+ *      ----| ---------  | ---------  |
+ *      CS  | 10         | 10         |
+ *      CLK | 6          | 6          |
+ *      MOSI| 7          | 7          |
+ *      MISO| 2          | 2          |
+ *      GND | GND        | GND        |
+ *
+ ********************************************************************************/
+#define BUF_SIZE 320
+
+static void unaligned_test_master(void)
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, 0));
+
+    spi_device_handle_t spi;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.clock_speed_hz = 4 * 1000 * 1000;
+    devcfg.queue_size = 7;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
+
+    uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    uint8_t *master_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
+    //This buffer is used for 2-board test and should be assigned totally the same as the ``test_slave_loop`` does.
+    uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    srand(199);
+    for (int i = 0; i < BUF_SIZE; i++) {
+        master_send_buf[i] = rand();
+    }
+    srand(299);
+    for (int i = 0; i < BUF_SIZE; i++) {
+        slave_send_buf[i] = rand();
+    }
+
+    for (int i = 0; i < 4; i++) {
+        uint32_t length_in_bytes = 4 * (i + 1);
+        spi_transaction_t t = {
+            .tx_buffer = master_send_buf + i,
+            .rx_buffer = master_recv_buf,
+            .length = length_in_bytes * 8,
+        };
+
+        unity_wait_for_signal("slave ready");
+        TEST_ESP_OK(spi_device_transmit(spi, (spi_transaction_t*)&t));
+
+        //show result
+        ESP_LOG_BUFFER_HEX("master tx:", master_send_buf+i, length_in_bytes);
+        ESP_LOG_BUFFER_HEX("master rx:", master_recv_buf, length_in_bytes);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_send_buf+i, master_recv_buf, length_in_bytes);
+
+        //clean
+        memset(master_recv_buf, 0x00, BUF_SIZE);
+    }
+
+    free(master_send_buf);
+    free(master_recv_buf);
+    free(slave_send_buf);
+    TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
+    TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
+}
+
+static void unaligned_test_slave(void)
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, TEST_SLAVE_HOST));
+
+    uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
+    //This buffer is used for 2-board test and should be assigned totally the same as the ``test_slave_loop`` does.
+    uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    srand(199);
+    for (int i = 0; i < BUF_SIZE; i++) {
+        master_send_buf[i] = rand();
+    }
+    srand(299);
+    for (int i = 0; i < BUF_SIZE; i++) {
+        slave_send_buf[i] = rand();
+    }
+
+    for (int i = 0; i < 4; i++) {
+        uint32_t mst_length_in_bytes = 4 * (i + 1);
+        spi_slave_transaction_t slave_t = {
+            .tx_buffer = slave_send_buf + i,
+            .rx_buffer = slave_recv_buf,
+            .length = 32 * 8,
+        };
+
+        unity_send_signal("slave ready");
+        TEST_ESP_OK(spi_slave_transmit(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+
+        //show result
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
+        ESP_LOG_BUFFER_HEX("slave tx:", slave_send_buf + i, mst_length_in_bytes);
+        ESP_LOG_BUFFER_HEX("slave rx:", slave_recv_buf, mst_length_in_bytes);
+
+        TEST_ASSERT_EQUAL(mst_length_in_bytes * 8, slave_t.trans_len);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(master_send_buf + i, slave_recv_buf, mst_length_in_bytes);
+
+        //clean
+        memset(slave_recv_buf, 0x00, BUF_SIZE);
+    }
+
+    free(slave_send_buf);
+    free(slave_recv_buf);
+    free(master_send_buf);
+    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][spi_slave]", unaligned_test_master, unaligned_test_slave);
+
+
+#endif  //#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
