@@ -15,7 +15,10 @@
 #include "esp_wifi_default.h"
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
 #include "esp_eth.h"
-#endif
+#if CONFIG_ETH_USE_SPI_ETHERNET
+#include "driver/spi_master.h"
+#endif // CONFIG_ETH_USE_SPI_ETHERNET
+#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "driver/gpio.h"
@@ -60,17 +63,17 @@ static const char *s_ipv6_addr_types[] = {
     "ESP_IP6_ADDR_IS_SITE_LOCAL",
     "ESP_IP6_ADDR_IS_UNIQUE_LOCAL",
     "ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6"
-    };
+};
 #endif
 
 static const char *TAG = "example_connect";
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
-static esp_netif_t* wifi_start(void);
+static esp_netif_t *wifi_start(void);
 static void wifi_stop(void);
 #endif
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
-static esp_netif_t* eth_start(void);
+static esp_netif_t *eth_start(void);
 static void eth_stop(void);
 #endif
 
@@ -81,7 +84,7 @@ static void eth_stop(void);
  */
 static bool is_our_netif(const char *prefix, esp_netif_t *netif)
 {
-    return strncmp(prefix, esp_netif_get_desc(netif), strlen(prefix)-1) == 0;
+    return strncmp(prefix, esp_netif_get_desc(netif), strlen(prefix) - 1) == 0;
 }
 
 /* set up connection, Wi-Fi and/or Ethernet */
@@ -153,7 +156,7 @@ static void on_got_ipv6(void *arg, esp_event_base_t event_base,
     }
     esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&event->ip6_info.ip);
     ESP_LOGI(TAG, "Got IPv6 event: Interface \"%s\" address: " IPV6STR ", type: %s", esp_netif_get_desc(event->esp_netif),
-            IPV62STR(event->ip6_info.ip), s_ipv6_addr_types[ipv6_type]);
+             IPV62STR(event->ip6_info.ip), s_ipv6_addr_types[ipv6_type]);
     if (ipv6_type == EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE) {
         memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
         xSemaphoreGive(s_semph_get_ip_addrs);
@@ -172,13 +175,13 @@ esp_err_t example_connect(void)
     start();
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&stop));
     ESP_LOGI(TAG, "Waiting for IP(s)");
-    for (int i=0; i<NR_OF_IP_ADDRESSES_TO_WAIT_FOR; ++i) {
+    for (int i = 0; i < NR_OF_IP_ADDRESSES_TO_WAIT_FOR; ++i) {
         xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
     }
     // iterate over active interfaces, and print out IPs of "our" netifs
     esp_netif_t *netif = NULL;
     esp_netif_ip_info_t ip;
-    for (int i=0; i<esp_netif_get_nr_of_ifs(); ++i) {
+    for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
         netif = esp_netif_next(netif);
         if (is_our_netif(TAG, netif)) {
             ESP_LOGI(TAG, "Connected to %s", esp_netif_get_desc(netif));
@@ -188,7 +191,7 @@ esp_err_t example_connect(void)
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
             esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
             int ip6_addrs = esp_netif_get_all_ip6(netif, ip6);
-            for (int j=0; j< ip6_addrs; ++j) {
+            for (int j = 0; j < ip6_addrs; ++j) {
                 esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
                 ESP_LOGI(TAG, "- IPv6 address: " IPV6STR ", type: %s", IPV62STR(ip6[j]), s_ipv6_addr_types[ipv6_type]);
             }
@@ -234,7 +237,7 @@ static void on_wifi_connect(void *esp_netif, esp_event_base_t event_base,
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6
 
-static esp_netif_t* wifi_start(void)
+static esp_netif_t *wifi_start(void)
 {
     char *desc;
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -318,7 +321,7 @@ static esp_eth_mac_t *s_mac = NULL;
 static esp_eth_phy_t *s_phy = NULL;
 static void *s_eth_glue = NULL;
 
-static esp_netif_t* eth_start(void)
+static esp_netif_t *eth_start(void)
 {
     char *desc;
     esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_ETH();
@@ -328,8 +331,8 @@ static esp_netif_t* eth_start(void)
     esp_netif_config.if_desc = desc;
     esp_netif_config.route_prio = 64;
     esp_netif_config_t netif_config = {
-            .base = &esp_netif_config,
-            .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH
+        .base = &esp_netif_config,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH
     };
     esp_netif_t *netif = esp_netif_new(&netif_config);
     assert(netif);
@@ -359,31 +362,48 @@ static esp_netif_t* eth_start(void)
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     s_phy = esp_eth_phy_new_dp83848(&phy_config);
 #endif
-#elif CONFIG_EXAMPLE_USE_DM9051
+#elif CONFIG_ETH_USE_SPI_ETHERNET
     gpio_install_isr_service(0);
     spi_device_handle_t spi_handle = NULL;
     spi_bus_config_t buscfg = {
-        .miso_io_num = CONFIG_EXAMPLE_DM9051_MISO_GPIO,
-        .mosi_io_num = CONFIG_EXAMPLE_DM9051_MOSI_GPIO,
-        .sclk_io_num = CONFIG_EXAMPLE_DM9051_SCLK_GPIO,
+        .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
+        .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
+        .sclk_io_num = CONFIG_EXAMPLE_ETH_SPI_SCLK_GPIO,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_DM9051_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+#if CONFIG_EXAMPLE_USE_DM9051
     spi_device_interface_config_t devcfg = {
         .command_bits = 1,
         .address_bits = 7,
         .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_DM9051_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_DM9051_CS_GPIO,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
         .queue_size = 20
     };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_DM9051_SPI_HOST, &devcfg, &spi_handle));
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
     /* dm9051 ethernet driver is based on spi driver */
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
-    dm9051_config.int_gpio_num = CONFIG_EXAMPLE_DM9051_INT_GPIO;
+    dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
     s_mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     s_phy = esp_eth_phy_new_dm9051(&phy_config);
+#elif CONFIG_EXAMPLE_USE_W5500
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 16, // Actually it's the address phase in W5500 SPI frame
+        .address_bits = 8,  // Actually it's the control phase in W5500 SPI frame
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    /* w5500 ethernet driver is based on spi driver */
+    eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(spi_handle);
+    w5500_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    s_mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
+    s_phy = esp_eth_phy_new_w5500(&phy_config);
+#endif
 #elif CONFIG_EXAMPLE_USE_OPENETH
     phy_config.autonego_timeout_ms = 100;
     s_mac = esp_eth_mac_new_openeth(&mac_config);
@@ -393,6 +413,14 @@ static esp_netif_t* eth_start(void)
     // Install Ethernet driver
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
+#if !CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
+    /* The SPI Ethernet module might doesn't have a burned factory MAC address, we cat to set it manually.
+       02:00:00 is a Locally Administered OUI range so should not be used except when testing on a LAN under your control.
+    */
+    ESP_ERROR_CHECK(esp_eth_ioctl(s_eth_handle, ETH_CMD_S_MAC_ADDR, (uint8_t[]) {
+        0x02, 0x00, 0x00, 0x12, 0x34, 0x56
+    }));
+#endif
     // combine driver with netif
     s_eth_glue = esp_eth_new_netif_glue(s_eth_handle);
     esp_netif_attach(netif, s_eth_glue);

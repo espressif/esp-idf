@@ -16,9 +16,6 @@
 #include <stdbool.h>
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
-#if CONFIG_ETH_USE_SPI_ETHERNET
-#include "driver/spi_master.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -339,8 +336,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
  *
  */
 typedef struct {
-    spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
-    int int_gpio_num;            /*!< Interrupt GPIO number */
+    void *spi_hdl;     /*!< Handle of SPI device driver */
+    int int_gpio_num;  /*!< Interrupt GPIO number */
 } eth_dm9051_config_t;
 
 /**
@@ -365,6 +362,39 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif // CONFIG_ETH_SPI_ETHERNET_DM9051
+
+#if CONFIG_ETH_SPI_ETHERNET_W5500
+/**
+ * @brief W5500 specific configuration
+ *
+ */
+typedef struct {
+    void *spi_hdl;     /*!< Handle of SPI device driver */
+    int int_gpio_num;  /*!< Interrupt GPIO number */
+} eth_w5500_config_t;
+
+/**
+ * @brief Default W5500 specific configuration
+ *
+ */
+#define ETH_W5500_DEFAULT_CONFIG(spi_device) \
+    {                                        \
+        .spi_hdl = spi_device,               \
+        .int_gpio_num = 4,                   \
+    }
+
+/**
+* @brief Create W5500 Ethernet MAC instance
+*
+* @param w5500_config: W5500 specific configuration
+* @param mac_config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, const eth_mac_config_t *mac_config);
+#endif // CONFIG_ETH_SPI_ETHERNET_W5500
 
 #if CONFIG_ETH_USE_OPENETH
 /**

@@ -408,7 +408,7 @@ static void emac_dm9051_task(void *arg)
     uint32_t length = 0;
     while (1) {
         // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         /* clear interrupt status */
         dm9051_register_read(emac, DM9051_ISR, &status);
         dm9051_register_write(emac, DM9051_ISR, status);
@@ -686,13 +686,12 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
         rx_len = header.length_low + (header.length_high << 8);
         /* check if the buffer can hold all the incoming data */
         if (*length < rx_len - 4) {
-            ESP_LOGE(TAG, "buffer size too small");
+            ESP_LOGE(TAG, "buffer size too small, needs %d", rx_len - 4);
             /* tell upper layer the size we need */
             *length = rx_len - 4;
             ret = ESP_ERR_INVALID_SIZE;
             goto err;
         }
-        MAC_CHECK(*length >= rx_len - 4, "buffer size too small", err, ESP_ERR_INVALID_SIZE);
         MAC_CHECK(dm9051_memory_read(emac, (uint8_t *)&header, sizeof(header)) == ESP_OK,
                   "read rx header failed", err, ESP_FAIL);
         MAC_CHECK(dm9051_memory_read(emac, buf, rx_len) == ESP_OK, "read rx data failed", err, ESP_FAIL);

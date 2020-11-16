@@ -8,6 +8,7 @@
 */
 #include <stdio.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_netif.h"
@@ -16,7 +17,7 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "enc28j60.h"
-#include "sdkconfig.h"
+#include "driver/spi_master.h"
 
 static const char *TAG = "eth_example";
 
