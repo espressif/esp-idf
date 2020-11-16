@@ -107,7 +107,7 @@ menu "Modbus configuration"
 
     config FMB_PORT_TASK_PRIO
         int "Modbus port task priority"
-        range 3 10
+        range 3 23
         default 10
         help
                 Modbus port data processing task priority.
