@@ -15,3 +15,4 @@
     Previous Versions of Modules and Boards <modules-and-boards-previous>
     Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
     Regulatory Certificates <https://www.espressif.com/en/certificates>
+    Chip Series Comparison <chip-series-comparison>
