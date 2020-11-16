@@ -288,6 +288,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         memcpy(blufi_env.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
         blufi_env.conn_id = p_data->conn.conn_id;
         blufi_env.is_connected = true;
+        blufi_env.recv_seq = blufi_env.send_seq = 0;
 
         msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_BLUFI;
@@ -310,7 +311,6 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
         memcpy(blufi_env.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
         blufi_env.conn_id = p_data->conn.conn_id;
-        blufi_env.is_connected = false;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
         blufi_env.sec_mode = 0x0;
 
@@ -467,6 +467,11 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
     int remain_len = total_data_len;
     uint16_t checksum;
     int ret;
+
+    if (blufi_env.is_connected == false) {
+        BTC_TRACE_ERROR("blufi connection has been disconnected \n");
+        return;
+    }
 
     while (remain_len > 0) {
         if (remain_len > blufi_env.frag_size) {
