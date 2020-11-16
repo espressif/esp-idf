@@ -180,4 +180,26 @@ menu "FAT Filesystem support"
             Disable this option if optimizing for performance. Enable this option if
             optimizing for internal memory size.
 
+
+    config FATFS_USE_FASTSEEK
+        bool "Enable fast seek algorithm when using lseek function through VFS FAT"
+        default n
+        help
+            The fast seek feature enables fast backward/long seek operations without
+            FAT access by using an in-memory CLMT (cluster link map table).
+            Please note, fast-seek is only allowed for read-mode files, if a
+            file is opened in write-mode, the seek mechanism will automatically fallback
+            to the default implementation.
+
+
+    config FATFS_FAST_SEEK_BUFFER_SIZE
+        int "Fast seek CLMT buffer size"
+        default 64
+        depends on FATFS_USE_FASTSEEK
+        help
+            If fast seek algorithm is enabled, this defines the size of
+            CLMT buffer used by this algorithm in 32-bit word units.
+            This value should be chosen based on prior knowledge of
+            maximum elements of each file entry would store.
+
 endmenu
