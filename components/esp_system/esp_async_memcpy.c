@@ -70,7 +70,7 @@ esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_me
     // context memory size + stream pool size
     size_t total_malloc_size = sizeof(async_memcpy_context_t) + sizeof(async_memcpy_stream_t) * config->backlog * 2;
     // to work when cache is disabled, the driver handle should located in SRAM
-    mcp_hdl = heap_caps_calloc(1, total_malloc_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    mcp_hdl = heap_caps_calloc(1, total_malloc_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ASMCP_CHECK(mcp_hdl, "allocate context memory failed", err, ESP_ERR_NO_MEM);
 
     int int_flags = ESP_INTR_FLAG_IRAM; // interrupt can still work when cache is disabled

@@ -22,8 +22,8 @@ static void async_memcpy_setup_testbench(uint32_t seed, uint32_t *buffer_size, u
     srand(seed);
     printf("allocating memory buffer...\r\n");
     // memory copy from/to PSRAM is not allowed
-    *src_buf = heap_caps_malloc(*buffer_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    *dst_buf = heap_caps_calloc(1, *buffer_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    *src_buf = heap_caps_malloc(*buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    *dst_buf = heap_caps_calloc(1, *buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
     TEST_ASSERT_NOT_NULL_MESSAGE(*src_buf, "allocate source buffer failed");
     TEST_ASSERT_NOT_NULL_MESSAGE(*dst_buf, "allocate destination buffer failed");
