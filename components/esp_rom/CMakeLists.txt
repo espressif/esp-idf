@@ -7,99 +7,95 @@ idf_component_register(SRCS "patches/esp_rom_crc.c"
                        PRIV_INCLUDE_DIRS "${target}"
                        PRIV_REQUIRES soc hal)
 
+# Append a target linker script at the target-specific path,
+# only the 'name' part is different for each script
+function(rom_linker_script name)
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.${name}.ld")
+endfunction()
+
+target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.ld")
+rom_linker_script("api")
+rom_linker_script("libgcc")
+
 if(BOOTLOADER_BUILD)
-    set(scripts
-        "${target}/ld/${target}.rom.api.ld"
-        "${target}/ld/${target}.rom.ld"
-        "${target}/ld/${target}.rom.libgcc.ld"
-        )
-
-    if(NOT target STREQUAL "esp32c3")
-        list(APPEND scripts "${target}/ld/${target}.rom.newlib-funcs.ld"
-    endif()
-
-    if(target STREQUAL "esp32s2")
-        list(APPEND scripts "esp32s2/ld/esp32s2.rom.spiflash.ld")
-    endif()
-
-    if(target STREQUAL "esp32s3")
-        list(APPEND scripts "esp32s3/ld/esp32s3.rom.spiflash.ld")
-    endif()
-
-    if(CONFIG_ESP32_REV_MIN_3)
-        list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
-    endif()
-
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
-else() # Regular app build
-    set(scripts
-        "${target}/ld/${target}.rom.api.ld"
-        "${target}/ld/${target}.rom.ld"
-        "${target}/ld/${target}.rom.libgcc.ld")
-
-    if(NOT target STREQUAL "esp32c3")
-        list(APPEND scripts
-            "${target}/ld/${target}.rom.newlib-data.ld")
-    endif()
-
     if(target STREQUAL "esp32")
-        list(APPEND scripts "${target}/ld/${target}.rom.syscalls.ld")
+        rom_linker_script("newlib-funcs")
+        if(CONFIG_ESP32_REV_MIN_3)
+            rom_linker_script("eco3")
+        endif()
+
+    elseif(target STREQUAL "esp32s2")
+        rom_linker_script("newlib-funcs")
+        rom_linker_script("spiflash")
+
+    elseif(target STREQUAL "esp32s3")
+        rom_linker_script("newlib-funcs")
+        rom_linker_script("spiflash")
+
+    elseif(target STREQUAL "esp32c3")
+        # currently nothing additional here
+
+    endif()
+
+else() # Regular app build
+    if(target STREQUAL "esp32")
+        rom_linker_script("newlib-data")
+        rom_linker_script("syscalls")
 
         if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)
-            list(APPEND scripts "esp32/ld/esp32.rom.newlib-funcs.ld")
+            rom_linker_script("newlib-funcs")
             if(NOT CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS)
                 # If SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS option is defined
                 # then all time functions from the ROM memory will not be linked.
                 # Instead, those functions can be used from the toolchain by ESP-IDF.
-                target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.newlib-time.ld")
+                rom_linker_script("newlib-time")
             endif()
 
             # Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
             if(CONFIG_NEWLIB_NANO_FORMAT)
-                list(APPEND scripts "esp32/ld/esp32.rom.newlib-nano.ld")
+                rom_linker_script("newlib-nano")
             endif()
 
         endif()
 
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            list(APPEND scripts "esp32/ld/esp32.rom.spiflash.ld")
+            rom_linker_script("spiflash")
         endif()
 
         if(CONFIG_ESP32_REV_MIN_3)
-            list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
+            rom_linker_script("eco3")
         endif()
 
     elseif(target STREQUAL "esp32s2")
-        # no SPIRAM workaround for esp32s2
-        # no nano formatting function in ROM
-
-        list(APPEND scripts "esp32s2/ld/esp32s2.rom.newlib-funcs.ld"
-                            "esp32s2/ld/esp32s2.rom.spiflash.ld")
+        rom_linker_script("newlib-funcs")
+        rom_linker_script("newlib-data")
+        rom_linker_script("spiflash")
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
-            list(APPEND scripts "esp32s2/ld/esp32s2.rom.newlib-nano.ld")
+            rom_linker_script("newlib-nano")
         endif()
 
+        # descirptors used by ROM code
+        target_sources(${COMPONENT_LIB} PRIVATE "esp32s2/usb_descriptors.c")
+
     elseif(target STREQUAL "esp32s3")
-        # no SPIRAM workaround for esp32s3
-        list(APPEND scripts "esp32s3/ld/esp32s3.rom.newlib-funcs.ld"
-                            "esp32s3/ld/esp32s3.rom.spiflash.ld")
+        rom_linker_script("newlib-funcs")
+        rom_linker_script("newlib-data")
+        rom_linker_script("spiflash")
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
-            list(APPEND scripts "esp32s3/ld/esp32s3.rom.newlib-nano.ld")
+            rom_linker_script("newlib-nano")
         endif()
 
     elseif(target STREQUAL "esp32c3")
-        list(APPEND scripts "esp32c3/ld/esp32c3.rom.newlib.ld"
-                            "esp32c3/ld/esp32c3.rom.version.ld"
-                            )
+        rom_linker_script("newlib")
+        rom_linker_script("version")
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
-                list(APPEND scripts "esp32c3/ld/esp32c3.rom.newlib-nano.ld")
+            rom_linker_script("newlib-nano")
         endif()
     endif()
 
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 endif()
 
 if(target STREQUAL "esp32s2")
