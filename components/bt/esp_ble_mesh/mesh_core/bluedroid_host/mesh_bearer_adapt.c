@@ -1209,12 +1209,12 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
 
     BT_DBG("Create conn with %s", bt_hex(addr->val, BLE_MESH_ADDR_LEN));
 
-    /* Min_interval: 3.75ms
-     * Max_interval: 3.75ms
+    /* Min_interval: 15ms
+     * Max_interval: 15ms
      * Slave_latency: 0x0
      * Supervision_timeout: 1s
      */
-    BTA_DmSetBlePrefConnParams(bt_mesh_gattc_info[i].addr.val, 0x6, 0x6, 0x00, 0x64);
+    BTA_DmSetBlePrefConnParams(bt_mesh_gattc_info[i].addr.val, 0x18, 0x18, 0x00, 0x64);
 
     BTA_GATTC_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
                    bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE);
