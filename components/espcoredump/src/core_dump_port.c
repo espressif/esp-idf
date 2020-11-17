@@ -134,6 +134,10 @@ extern uint8_t port_IntStack;
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 
+#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
+#error Coredump functionality is not implemented for this target!
+#endif
+
 static uint32_t s_total_length = 0;
 
 static XtExcFrame s_fake_stack_frame = {
