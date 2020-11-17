@@ -9,6 +9,8 @@ else()
     set(srcs
         "interrupt.c"
         "stdatomic.c"
+        "expression_with_stack_riscv.c"
+        "expression_with_stack_riscv_asm.S"
         "vectors.S")
 endif()
 
