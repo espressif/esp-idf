@@ -41,7 +41,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
     FD_ZERO(&writefds);
     FD_ZERO(&errorfds);
 
-    for (int i = 0; i < nfds; ++i) {
+    for (unsigned int i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
 
         if (fds[i].fd < 0) {
@@ -73,7 +73,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
     if (select_ret > 0) {
         ret += select_ret;
 
-        for (int i = 0; i < nfds; ++i) {
+        for (unsigned int i = 0; i < nfds; ++i) {
             if (FD_ISSET(fds[i].fd, &readfds)) {
                 fds[i].revents |= POLLIN;
             }

@@ -233,8 +233,8 @@ DRAM_ATTR static const char TAG[] = "bus_lock";
         return (ret_val); \
     }
 
-static inline uint32_t mask_get_id(uint32_t mask);
-static inline uint32_t dev_lock_get_id(spi_bus_lock_dev_t *dev_lock);
+static inline int mask_get_id(uint32_t mask);
+static inline int dev_lock_get_id(spi_bus_lock_dev_t *dev_lock);
 
 /*******************************************************************************
  * atomic operations to the status
@@ -631,12 +631,12 @@ void spi_bus_lock_unregister_dev(spi_bus_lock_dev_handle_t dev_handle)
     free(dev_handle);
 }
 
-IRAM_ATTR static inline uint32_t mask_get_id(uint32_t mask)
+IRAM_ATTR static inline int mask_get_id(uint32_t mask)
 {
     return ID_DEV_MASK(mask);
 }
 
-IRAM_ATTR static inline uint32_t dev_lock_get_id(spi_bus_lock_dev_t *dev_lock)
+IRAM_ATTR static inline int dev_lock_get_id(spi_bus_lock_dev_t *dev_lock)
 {
     return mask_get_id(dev_lock->mask);
 }

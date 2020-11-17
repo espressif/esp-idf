@@ -301,7 +301,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             uint32_t load_addr = data->segments[i].load_addr;
             if (should_load(load_addr)) {
                 uint32_t *loaded = (uint32_t *)load_addr;
-                for (int j = 0; j < data->segments[i].data_len / sizeof(uint32_t); j++) {
+                for (size_t j = 0; j < data->segments[i].data_len / sizeof(uint32_t); j++) {
                     loaded[j] ^= (j & 1) ? ram_obfs_value[0] : ram_obfs_value[1];
                 }
             }
@@ -555,7 +555,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     uint32_t free_page_count = bootloader_mmap_get_free_pages();
     ESP_LOGD(TAG, "free data page_count 0x%08x", free_page_count);
 
-    int32_t data_len_remain = data_len;
+    uint32_t data_len_remain = data_len;
     while (data_len_remain > 0) {
 #if SECURE_BOOT_CHECK_SIGNATURE && defined(BOOTLOADER_BUILD)
         /* Double check the address verification done above */
@@ -619,7 +619,7 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
 
     const uint32_t *src = data;
 
-    for (int i = 0; i < data_len; i += 4) {
+    for (size_t i = 0; i < data_len; i += 4) {
         int w_i = i / 4; // Word index
         uint32_t w = src[w_i];
         if (checksum != NULL) {

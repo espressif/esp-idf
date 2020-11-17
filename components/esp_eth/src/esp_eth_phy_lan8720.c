@@ -160,7 +160,7 @@ typedef union {
 typedef struct {
     esp_eth_phy_t parent;
     esp_eth_mediator_t *eth;
-    uint32_t addr;
+    int addr;
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
@@ -301,7 +301,7 @@ static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     pscsr_reg_t pscsr;
-    int32_t to = 0;
+    uint32_t to = 0;
     for (to = 0; to < lan8720->autonego_timeout_ms / 10; to++) {
         vTaskDelay(pdMS_TO_TICKS(10));
         PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,

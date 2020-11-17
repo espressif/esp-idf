@@ -122,7 +122,7 @@ static inline void sha_ll_fill_text_block(const void *input_text, size_t block_w
     uint32_t *data_words = NULL;
     reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
     data_words = (uint32_t *)input_text;
-    for (int i = 0; i < block_word_len; i++) {
+    for (size_t i = 0; i < block_word_len; i++) {
         reg_addr_buf[i] = __builtin_bswap32(data_words[i]);
     }
 }
@@ -141,7 +141,7 @@ static inline void sha_ll_read_digest(esp_sha_type sha_type, void *digest_state,
     if (sha_type == SHA2_384 || sha_type == SHA2_512) {
         /* for these ciphers using 64-bit states, swap each pair of words */
         DPORT_INTERRUPT_DISABLE(); // Disable interrupt only on current CPU.
-        for (int i = 0; i < digest_word_len; i += 2) {
+        for (size_t i = 0; i < digest_word_len; i += 2) {
             digest_state_words[i + 1] = DPORT_SEQUENCE_REG_READ((uint32_t)&reg_addr_buf[i]);
             digest_state_words[i]   = DPORT_SEQUENCE_REG_READ((uint32_t)&reg_addr_buf[i + 1]);
         }

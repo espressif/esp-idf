@@ -103,7 +103,7 @@ void heap_caps_free( void *ptr);
  *
  * @return Pointer to a new buffer of size 'size' with capabilities 'caps', or NULL if allocation failed.
  */
-void *heap_caps_realloc( void *ptr, size_t size, int caps);
+void *heap_caps_realloc( void *ptr, size_t size, uint32_t caps);
 
 /**
  * @brief Allocate a aligned chunk of memory which has the given capabilities
@@ -119,7 +119,7 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
  *
  *
  */
-void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
+void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps);
 
 /**
  * @brief Used to deallocate memory previously allocated with heap_caps_aligned_alloc

@@ -548,7 +548,7 @@ static void sdio_intr_send(void* arg)
             assert(ret == pdTRUE);
         }
         //get_next_finished_arg returns the total amount of returned descs.
-        for(int i = 0; i < returned_cnt; i++) {
+        for(size_t i = 0; i < returned_cnt; i++) {
             portBASE_TYPE ret = xSemaphoreGiveFromISR(context.remain_cnt, &yield);
             assert(ret == pdTRUE);
         }
@@ -611,7 +611,7 @@ static esp_err_t send_flush_data(void)
         if (err == ESP_OK) {
             portBASE_TYPE ret = xQueueSend(context.ret_queue, &finished_arg, portMAX_DELAY);
             assert(ret == pdTRUE);
-            for (int i = 0; i < return_cnt; i++) {
+            for (size_t i = 0; i < return_cnt; i++) {
                 portBASE_TYPE ret = xSemaphoreGive(context.remain_cnt);
                 assert(ret == pdTRUE);
             }

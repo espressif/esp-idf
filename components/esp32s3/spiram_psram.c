@@ -275,7 +275,7 @@ static void psram_reset_mode(int spi_num)
 
 esp_err_t psram_enable_wrap(uint32_t wrap_size)
 {
-    static int current_wrap_size = 0;
+    static uint32_t current_wrap_size = 0;
     if (current_wrap_size == wrap_size) {
         return ESP_OK;
     }

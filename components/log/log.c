@@ -136,7 +136,7 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
     }
 
     // search in the cache and update the entry it if exists
-    for (int i = 0; i < s_log_cache_entry_count; ++i) {
+    for (uint32_t i = 0; i < s_log_cache_entry_count; ++i) {
 #ifdef LOG_BUILTIN_CHECKS
         assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
 #endif
@@ -203,7 +203,7 @@ void esp_log_write(esp_log_level_t level,
 static inline bool get_cached_log_level(const char *tag, esp_log_level_t *level)
 {
     // Look for `tag` in cache
-    int i;
+    uint32_t i;
     for (i = 0; i < s_log_cache_entry_count; ++i) {
 #ifdef LOG_BUILTIN_CHECKS
         assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);

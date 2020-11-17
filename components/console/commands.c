@@ -162,7 +162,7 @@ void esp_console_get_completion(const char *buf, linenoiseCompletions *lc)
 
 const char *esp_console_get_hint(const char *buf, int *color, int *bold)
 {
-    int len = strlen(buf);
+    size_t len = strlen(buf);
     cmd_item_t *it;
     SLIST_FOREACH(it, &s_cmd_list, next) {
         if (strlen(it->command) == len &&
@@ -179,7 +179,7 @@ static const cmd_item_t *find_command_by_name(const char *name)
 {
     const cmd_item_t *cmd = NULL;
     cmd_item_t *it;
-    int len = strlen(name);
+    size_t len = strlen(name);
     SLIST_FOREACH(it, &s_cmd_list, next) {
         if (strlen(it->command) == len &&
                 strcmp(name, it->command) == 0) {

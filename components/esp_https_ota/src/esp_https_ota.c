@@ -19,6 +19,7 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <errno.h>
+#include <sys/param.h>
 
 #define IMAGE_HEADER_SIZE sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t) + 1
 #define DEFAULT_OTA_BUF_SIZE IMAGE_HEADER_SIZE
@@ -199,8 +200,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
         https_ota_handle->update_partition->subtype, https_ota_handle->update_partition->address);
 
-    const int alloc_size = (ota_config->http_config->buffer_size > DEFAULT_OTA_BUF_SIZE) ?
-                            ota_config->http_config->buffer_size : DEFAULT_OTA_BUF_SIZE;
+    const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
     https_ota_handle->ota_upgrade_buf = (char *)malloc(alloc_size);
     if (!https_ota_handle->ota_upgrade_buf) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");

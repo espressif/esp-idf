@@ -84,10 +84,10 @@ static esp_err_t esp_ping_send(esp_ping_t *ep)
         ep->packet_hdr->chksum = inet_chksum(ep->packet_hdr, ep->icmp_pkt_size);
     }
 
-    int sent = sendto(ep->sock, ep->packet_hdr, ep->icmp_pkt_size, 0,
+    ssize_t sent = sendto(ep->sock, ep->packet_hdr, ep->icmp_pkt_size, 0,
                       (struct sockaddr *)&ep->target_addr, sizeof(ep->target_addr));
 
-    if (sent != ep->icmp_pkt_size) {
+    if (sent != (ssize_t)ep->icmp_pkt_size) {
         int opt_val;
         socklen_t opt_len = sizeof(opt_val);
         getsockopt(ep->sock, SOL_SOCKET, SO_ERROR, &opt_val, &opt_len);

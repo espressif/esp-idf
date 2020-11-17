@@ -44,7 +44,7 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
     const int ESCAPE = '\\';
     const int SPACE = ' ';
     split_state_t state = SS_SPACE;
-    int argc = 0;
+    size_t argc = 0;
     char *next_arg_start = line;
     char *out_ptr = line;
     for (char *in_ptr = line; argc < argv_size - 1; ++in_ptr) {

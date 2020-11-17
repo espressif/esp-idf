@@ -24,10 +24,10 @@
 #define mem_check(x) assert(x)
 #endif
 
-char *http_utils_join_string(const char *first_str, int len_first, const char *second_str, int len_second)
+char *http_utils_join_string(const char *first_str, size_t len_first, const char *second_str, size_t len_second)
 {
-    int first_str_len = len_first > 0 ? len_first : strlen(first_str);
-    int second_str_len = len_second > 0 ? len_second : strlen(second_str);
+    size_t first_str_len = len_first > 0 ? len_first : strlen(first_str);
+    size_t second_str_len = len_second > 0 ? len_second : strlen(second_str);
     char *ret = NULL;
     if (first_str_len + second_str_len > 0) {
         ret = calloc(1, first_str_len + second_str_len + 1);

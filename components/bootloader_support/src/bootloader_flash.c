@@ -300,7 +300,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 {
     uint32_t *dest_words = (uint32_t *)dest;
 
-    for (int word = 0; word < size / 4; word++) {
+    for (size_t word = 0; word < size / 4; word++) {
         uint32_t word_src = src_addr + word * 4;  /* Read this offset from flash */
         uint32_t map_at = word_src & MMU_FLASH_MASK; /* Map this 64KB block from flash */
         uint32_t *map_ptr;

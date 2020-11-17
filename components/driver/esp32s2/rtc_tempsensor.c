@@ -92,7 +92,7 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
     tsens->dac_offset = REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);
     for (int i = TSENS_DAC_L0; i < TSENS_DAC_MAX; i++) {
-        if (tsens->dac_offset == dac_offset[i].set_val) {
+        if ((int)tsens->dac_offset == dac_offset[i].set_val) {
             tsens->dac_offset = dac_offset[i].index;
             break;
         }

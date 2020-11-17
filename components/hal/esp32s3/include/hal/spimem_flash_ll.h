@@ -135,7 +135,7 @@ static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buf
     } else {
         // Otherwise, slow(er) path copies word by word
         int copy_len = read_len;
-        for (int i = 0; i < (read_len + 3) / 4; i++) {
+        for (uint32_t i = 0; i < (read_len + 3) / 4; i++) {
             int word_len = MIN(sizeof(uint32_t), copy_len);
             uint32_t word = dev->data_buf[i];
             memcpy(buffer, &word, word_len);

@@ -93,7 +93,7 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 /*-----------------------------------------------------------*/
 #include "portbenchmark.h"
 
-static inline uint32_t IRAM_ATTR xPortGetCoreID(void) {
+static inline BaseType_t IRAM_ATTR xPortGetCoreID(void) {
     return cpu_hal_get_core_id();
 }
 

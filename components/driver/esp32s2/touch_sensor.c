@@ -75,7 +75,7 @@ static void touch_pad_workaround_isr_internal(void *arg)
 {
     uint16_t ch_mask = 0;
     uint32_t intr_mask = touch_hal_read_intr_status_mask();
-    uint32_t pad_num = touch_hal_get_current_meas_channel();
+    int pad_num = touch_hal_get_current_meas_channel();
     /* Make sure that the scan done interrupt is generated after the last channel measurement is completed. */
     if (intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
         touch_hal_get_channel_mask(&ch_mask);

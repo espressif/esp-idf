@@ -276,7 +276,7 @@ ssize_t esp_usb_console_flush_internal(size_t last_write_size)
     assert(s_usb_tx_buf_pos >= last_write_size);
     ssize_t ret;
     size_t tx_buf_pos_before = s_usb_tx_buf_pos - last_write_size;
-    int sent = cdc_acm_fifo_fill(s_cdc_acm_device, (const uint8_t*) s_usb_tx_buf, s_usb_tx_buf_pos);
+    size_t sent = cdc_acm_fifo_fill(s_cdc_acm_device, (const uint8_t*) s_usb_tx_buf, s_usb_tx_buf_pos);
     if (sent == last_write_size) {
         /* everything was sent */
         ret = last_write_size;

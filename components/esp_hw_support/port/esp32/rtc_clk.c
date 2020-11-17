@@ -109,7 +109,7 @@ static void rtc_clk_bbpll_enable(void);
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz);
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
-static int s_cur_pll_freq;
+static uint32_t s_cur_pll_freq;
 
 static const char* TAG = "rtc_clk";
 

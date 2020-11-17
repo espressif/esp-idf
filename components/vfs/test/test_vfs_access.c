@@ -41,7 +41,7 @@ TEST_CASE("Can use access() for UART", "[vfs]")
     uart_driver_install(UART_NUM_2, 256, 0, 0, NULL, 0);
 #endif
 
-    for (int i = 0; i < sizeof(uarts)/sizeof(uarts[0]); ++i) {
+    for (size_t i = 0; i < sizeof(uarts)/sizeof(uarts[0]); ++i) {
         TEST_ASSERT_EQUAL_MESSAGE(access(uarts[i], F_OK), 0, uarts[i]);
 
         TEST_ASSERT_EQUAL_MESSAGE(access(uarts[i], R_OK), 0, uarts[i]);

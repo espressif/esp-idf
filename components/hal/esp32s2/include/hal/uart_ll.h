@@ -204,7 +204,7 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
 {
     //Get the UART fifo addr, ESP32-S2 have 2 UART
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_AHB_REG(0) : UART_FIFO_AHB_REG(1);
-    for(int i = 0; i < rd_len; i++) {
+    for(uint32_t i = 0; i < rd_len; i++) {
         buf[i] = READ_PERI_REG(fifo_addr);
     }
 }
@@ -222,7 +222,7 @@ static inline void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint
 {
     //Get the UART fifo addr, ESP32-S2 have 2 UART
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_AHB_REG(0) : UART_FIFO_AHB_REG(1);
-    for(int i = 0; i < wr_len; i++) {
+    for(uint32_t i = 0; i < wr_len; i++) {
         WRITE_PERI_REG(fifo_addr, buf[i]);
     }
 }

@@ -167,7 +167,7 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
     }
 
     uint8_t *p = data;
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         if (p[i] != (uint8_t)EXPECT_WORD) {
             if (print_errors) {
                 MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);

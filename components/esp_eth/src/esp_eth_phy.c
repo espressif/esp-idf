@@ -19,13 +19,13 @@
 
 static const char *TAG = "esp_eth.phy";
 
-esp_err_t esp_eth_detect_phy_addr(esp_eth_mediator_t *eth, uint32_t *detected_addr)
+esp_err_t esp_eth_detect_phy_addr(esp_eth_mediator_t *eth, int *detected_addr)
 {
     if (!eth || !detected_addr) {
         ESP_LOGE(TAG, "eth and detected_addr can't be null");
         return ESP_ERR_INVALID_ARG;
     }
-    uint32_t addr_try = 0;
+    int addr_try = 0;
     uint32_t reg_value = 0;
     for (; addr_try < 16; addr_try++) {
         eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);

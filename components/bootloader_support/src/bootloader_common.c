@@ -88,7 +88,7 @@ bool bootloader_common_label_search(const char *list, char *label)
 
         // [start_delim] + label + [end_delim] was not found.
         // Position is moving to next delimiter if it is not the end of list.
-        int pos_delim = strcspn(sub_list_start_like_label, ", ");
+        size_t pos_delim = strcspn(sub_list_start_like_label, ", ");
         if (pos_delim == strlen(sub_list_start_like_label)) {
             break;
         }

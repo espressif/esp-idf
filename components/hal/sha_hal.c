@@ -177,7 +177,7 @@ void sha_hal_read_digest(esp_sha_type sha_type, void *digest_state)
     /* Fault injection check: verify SHA engine actually ran,
        state is not all zeroes.
     */
-    for (int i = 0; i < word_len; i++) {
+    for (size_t i = 0; i < word_len; i++) {
         if (digest_state_words[i] != 0) {
             return;
         }

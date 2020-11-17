@@ -42,7 +42,7 @@ static volatile esp_ipc_wait_t s_ipc_wait[portNUM_PROCESSORS];// This variable t
 
 static void IRAM_ATTR ipc_task(void* arg)
 {
-    const uint32_t cpuid = (uint32_t) arg;
+    const int cpuid = (int) arg;
     assert(cpuid == xPortGetCoreID());
     while (true) {
         // Wait for IPC to be initiated.

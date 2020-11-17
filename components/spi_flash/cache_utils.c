@@ -129,7 +129,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 
     spi_flash_op_lock();
 
-    const uint32_t cpuid = xPortGetCoreID();
+    const int cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 #ifndef NDEBUG
     // For sanity check later: record the CPU which has started doing flash operation
@@ -178,7 +178,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 {
-    const uint32_t cpuid = xPortGetCoreID();
+    const int cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 #ifndef NDEBUG
     // Sanity check: flash operation ends on the same CPU as it has started

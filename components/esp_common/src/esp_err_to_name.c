@@ -741,7 +741,7 @@ static const char esp_unknown_msg[] =
 const char *esp_err_to_name(esp_err_t code)
 {
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {
@@ -756,7 +756,7 @@ const char *esp_err_to_name(esp_err_t code)
 const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen)
 {
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {

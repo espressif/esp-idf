@@ -24,7 +24,7 @@ static void mdns_print_results(mdns_result_t * results)
 {
     mdns_result_t * r = results;
     mdns_ip_addr_t * a = NULL;
-    int i = 1, t;
+    int i = 1;
     while (r) {
         printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
         if (r->instance_name) {
@@ -35,7 +35,7 @@ static void mdns_print_results(mdns_result_t * results)
         }
         if (r->txt_count) {
             printf("  TXT : [%u] ", r->txt_count);
-            for (t=0; t<r->txt_count; t++) {
+            for (size_t t=0; t<r->txt_count; t++) {
                 printf("%s=%s; ", r->txt[t].key, r->txt[t].value);
             }
             printf("\n");

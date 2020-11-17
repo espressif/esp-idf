@@ -4429,7 +4429,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 	static void prvDeleteTLS( TCB_t *pxTCB )
 	{
 		configASSERT( pxTCB );
-		for( int x = 0; x < ( UBaseType_t ) configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
+		for( int x = 0; x < configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
 		{
 			if (pxTCB->pvThreadLocalStoragePointersDelCallback[ x ] != NULL)	//If del cb is set
 			{

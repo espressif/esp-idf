@@ -130,7 +130,7 @@ static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *ale
 {
     uint32_t msg_count = twai_hal_get_rx_msg_count(&twai_context);
 
-    for (int i = 0; i < msg_count; i++) {
+    for (uint32_t i = 0; i < msg_count; i++) {
         twai_hal_frame_t frame;
         twai_hal_read_rx_buffer_and_clear(&twai_context, &frame);
         //Copy frame into RX Queue

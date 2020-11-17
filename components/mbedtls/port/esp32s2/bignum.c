@@ -70,12 +70,12 @@ static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, s
     uint32_t copy_words = MIN(num_words, mpi->n);
 
     /* Copy MPI data to memory block registers */
-    for (int i = 0; i < copy_words; i++) {
+    for (uint32_t i = 0; i < copy_words; i++) {
         pbase[i] = mpi->p[i];
     }
 
     /* Zero any remaining memory block data */
-    for (int i = copy_words; i < num_words; i++) {
+    for (uint32_t i = copy_words; i < num_words; i++) {
         pbase[i] = 0;
     }
 }
@@ -201,7 +201,7 @@ void esp_mpi_mul_mpi_hw_op(const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t nu
 void esp_mpi_mult_mpi_failover_mod_mult_hw_op(const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words)
 {
     /* M = 2^num_words - 1, so block is entirely FF */
-    for (int i = 0; i < num_words; i++) {
+    for (size_t i = 0; i < num_words; i++) {
         DPORT_REG_WRITE(RSA_MEM_M_BLOCK_BASE + i * 4, UINT32_MAX);
     }
 
@@ -217,7 +217,7 @@ void esp_mpi_mult_mpi_failover_mod_mult_hw_op(const mbedtls_mpi *X, const mbedtl
     DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE, 1);
 
      /* Zero out rest of the Rinv words */
-    for (int i = 1; i < num_words; i++) {
+    for (size_t i = 1; i < num_words; i++) {
         DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
     }
 

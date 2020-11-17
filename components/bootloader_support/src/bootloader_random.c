@@ -34,7 +34,7 @@
 
     assert(buffer != NULL);
 
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         if (i == 0 || i % 4 == 0) { /* redundant check is for a compiler warning */
             /* in bootloader with ADC feeding HWRNG, we accumulate 1
                bit of entropy per 40 APB cycles (==80 CPU cycles.)

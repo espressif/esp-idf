@@ -123,7 +123,7 @@ void bootloader_enable_qio_mode(void)
     uint32_t raw_flash_id;
     uint8_t mfg_id;
     uint16_t flash_id;
-    int i;
+    size_t i;
 
     ESP_LOGD(TAG, "Probing for QIO mode enable...");
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);

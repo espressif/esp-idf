@@ -103,7 +103,7 @@ void esp_cpu_configure_region_protection(void)
      * Both chips have the address space divided into 8 regions, 512MB each.
      */
     const int illegal_regions[] = {0, 4, 5, 6, 7}; // 0x00000000, 0x80000000, 0xa0000000, 0xc0000000, 0xe0000000
-    for (int i = 0; i < sizeof(illegal_regions) / sizeof(illegal_regions[0]); ++i) {
+    for (size_t i = 0; i < sizeof(illegal_regions) / sizeof(illegal_regions[0]); ++i) {
         mpu_hal_set_region_access(illegal_regions[i], MPU_REGION_ILLEGAL);
     }
 
