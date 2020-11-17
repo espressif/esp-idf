@@ -195,6 +195,28 @@ if BLE_MESH
                 This option specifies how many application keys the Provisioner can have.
                 Indeed, this value decides the number of the application keys which can be added by a Provisioner.
 
+        config BLE_MESH_PROVISIONER_RECV_HB
+            bool "Support receiving Heartbeat messages"
+            default n
+            help
+                When this option is enabled, Provisioner can call specific functions to enable
+                or disable receiving Heartbeat messages and notify them to the application layer.
+
+        if BLE_MESH_PROVISIONER_RECV_HB
+
+            config BLE_MESH_PROVISIONER_RECV_HB_FILTER_SIZE
+                int "Maximum number of filter entries for receiving Heartbeat messages"
+                default 3
+                range 1 1000
+                help
+                    This option specifies how many heartbeat filter entries Provisioner supports.
+                    The heartbeat filter (acceptlist or rejectlist) entries are used to store a
+                    list of SRC and DST which can be used to decide if a heartbeat message will
+                    be processed and notified to the application layer by Provisioner.
+                    Note: The filter is an empty rejectlist by default.
+
+        endif # BLE_MESH_PROVISIONER_RECV_HB
+
     endif # BLE_MESH_PROVISIONER
 
     # Virtual option enabled whenever Generic Provisioning layer is needed
