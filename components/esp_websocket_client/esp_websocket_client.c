@@ -45,6 +45,11 @@ static const char *TAG = "WEBSOCKET_CLIENT";
         action;                                                                                     \
         }
 
+#define ESP_WS_CLIENT_STATE_CHECK(TAG, a, action) if ((a->state) < WEBSOCKET_STATE_INIT) {           \
+        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Websocket already stop");  \
+        action;                                                                                      \
+        }
+
 const static int STOPPED_BIT = BIT0;
 
 ESP_EVENT_DEFINE_BASE(WEBSOCKET_EVENTS);
@@ -131,11 +136,15 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
 
 static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_handle_t client)
 {
+    ESP_WS_CLIENT_STATE_CHECK(TAG, client, return ESP_FAIL);
     esp_transport_close(client->transport);
-    client->wait_timeout_ms = WEBSOCKET_RECONNECT_TIMEOUT_MS;
-    client->reconnect_tick_ms = _tick_get_ms();
+
+    if (client->config->auto_reconnect) {
+        client->wait_timeout_ms = WEBSOCKET_RECONNECT_TIMEOUT_MS;
+        client->reconnect_tick_ms = _tick_get_ms();
+        ESP_LOGI(TAG, "Reconnect after %d ms", client->wait_timeout_ms);
+    }
     client->state = WEBSOCKET_STATE_WAIT_TIMEOUT;
-    ESP_LOGI(TAG, "Reconnect after %d ms", client->wait_timeout_ms);
     esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DISCONNECTED, NULL, 0);
     return ESP_OK;
 }
@@ -458,7 +467,6 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
         rlen = esp_transport_read(client->transport, client->rx_buffer, client->buffer_size, client->config->network_timeout_ms);
         if (rlen < 0) {
             ESP_LOGE(TAG, "Error read data");
-            esp_websocket_client_abort_connection(client);
             return ESP_FAIL;
         }
         client->payload_len = esp_transport_ws_get_read_payload_len(client->transport);
