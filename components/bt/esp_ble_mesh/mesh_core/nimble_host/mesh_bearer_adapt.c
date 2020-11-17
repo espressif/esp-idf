@@ -1424,14 +1424,14 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
 
     BT_DBG("Create conn with %s", bt_hex(addr->val, BLE_MESH_ADDR_LEN));
 
-    /* Min_interval: 3.75ms
-     * Max_interval: 3.75ms
+    /* Min_interval: 15ms
+     * Max_interval: 15ms
      * Slave_latency: 0x0
      * Supervision_timeout: 1s
      */
     struct ble_gap_conn_params conn_params = {0};
-    conn_params.itvl_min = 0x6;
-    conn_params.itvl_max = 0x6;
+    conn_params.itvl_min = 0x18;
+    conn_params.itvl_max = 0x18;
     conn_params.latency = 0;
     conn_params.supervision_timeout = 0x64;
     conn_params.scan_itvl = 0x0020;
