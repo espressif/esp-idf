@@ -63,6 +63,9 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
+    BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -217,6 +220,17 @@ typedef union {
     struct ble_mesh_provisioner_delete_node_with_addr_args {
         uint16_t unicast_addr;
     } delete_node_with_addr;
+    struct {
+        bool enable;
+    } enable_heartbeat_recv;
+    struct {
+        uint8_t type;
+    } set_heartbeat_filter_type;
+    struct {
+        uint8_t  op;
+        uint16_t hb_src;
+        uint16_t hb_dst;
+    } set_heartbeat_filter_info;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;
