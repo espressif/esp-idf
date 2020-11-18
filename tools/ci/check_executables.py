@@ -18,6 +18,8 @@ import argparse
 import os
 from sys import exit
 
+from idf_ci_utils import is_executable
+
 
 def _strip_each_item(iterable):
     res = []
@@ -44,6 +46,8 @@ def check_executable_list():
 def check_executables(files):
     ret = 0
     for fn in files:
+        if not is_executable(fn):
+            continue
         if fn not in known_executables:
             print('"{}" is not in {}'.format(fn, EXECUTABLE_LIST_FN))
             ret = 1
