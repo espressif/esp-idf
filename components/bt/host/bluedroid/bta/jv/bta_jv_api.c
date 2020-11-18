@@ -1136,6 +1136,38 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p
     return (status);
 }
 
+/*******************************************************************************
+**
+** Function         BTA_JvRfcommFlowControl
+**
+** Description      This function gives credits to the peer
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given)
+{
+    tBTA_JV_STATUS status = BTA_JV_FAILURE;
+    tBTA_JV_API_RFCOMM_FLOW_CONTROL *p_msg;
+    UINT32  hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
+    UINT32  si = BTA_JV_RFC_HDL_TO_SIDX(handle);
+
+    APPL_TRACE_API( "BTA_JvRfcommFlowControl");
+    APPL_TRACE_DEBUG( "handle:0x%x, hi:%d, si:%d", handle, hi, si);
+    if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
+            si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si] &&
+            (p_msg = (tBTA_JV_API_RFCOMM_FLOW_CONTROL *)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_FLOW_CONTROL))) != NULL) {
+        p_msg->hdr.event = BTA_JV_API_RFCOMM_FLOW_CONTROL_EVT;
+        p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
+        p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
+        p_msg->credits_given = credits_given;
+        APPL_TRACE_API( "credits given %d", credits_given);
+        bta_sys_sendmsg(p_msg);
+        status = BTA_JV_SUCCESS;
+    }
+    return (status);
+}
 
 /*******************************************************************************
  **
