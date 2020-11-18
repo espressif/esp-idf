@@ -17,6 +17,7 @@
 
 #include "wpabuf.h"
 #include "esp_log.h"
+#include "supplicant_opt.h"
 
 #ifdef ESPRESSIF_USE
 
@@ -60,6 +61,7 @@ void wpa_debug_print_timestamp(void);
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
 #define wpa_printf(level,fmt, args...) ESP_LOG_LEVEL_LOCAL(level, TAG, fmt, ##args)
+#define wpa_dbg(ctx, level, fmt, args...) wpa_printf(level, fmt, ##args)
 
 void wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len);
 static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
@@ -153,6 +155,7 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #define wpa_hexdump_buf_key(...) do {} while(0)
 #define wpa_hexdump_ascii(...) do {} while(0)
 #define wpa_hexdump_ascii_key(...) do {} while(0)
+#define wpa_dbg(...) do {} while(0)
 #endif
 
 #define wpa_auth_logger

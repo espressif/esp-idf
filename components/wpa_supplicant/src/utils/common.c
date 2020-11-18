@@ -491,3 +491,59 @@ int hwaddr_aton2(const char *txt, u8 *addr)
 
 	return pos - txt;
 }
+
+static inline int os_reltime_expired(struct os_time *now,
+				     struct os_time *ts,
+				     os_time_t timeout_secs)
+{
+	struct os_time age;
+
+	os_time_sub(now, ts, &age);
+	return (age.sec > timeout_secs) ||
+		(age.sec == timeout_secs && age.usec > 0);
+}
+
+int os_time_expired(struct os_time *now,
+		struct os_time *ts,
+		os_time_t timeout_secs)
+{
+	return os_reltime_expired(now, ts, timeout_secs);
+}
+
+u8 rssi_to_rcpi(int rssi)
+{
+	if (!rssi)
+		return 255; /* not available */
+	if (rssi < -110)
+		return 0;
+	if (rssi > 0)
+		return 220;
+	return (rssi + 110) * 2;
+}
+
+/**
+ * wpa_ssid_txt - Convert SSID to a printable string
+ * @ssid: SSID (32-octet string)
+ * @ssid_len: Length of ssid in octets
+ * Returns: Pointer to a printable string
+ *
+ * This function can be used to convert SSIDs into printable form. In most
+ * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
+ * does not limit the used character set, so anything could be used in an SSID.
+ *
+ * This function uses a static buffer, so only one call can be used at the
+ * time, i.e., this is not re-entrant and the returned buffer must be used
+ * before calling this again.
+ */
+const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
+{
+	static char ssid_txt[SSID_MAX_LEN * 4 + 1];
+
+	if (ssid == NULL) {
+		ssid_txt[0] = '\0';
+		return ssid_txt;
+	}
+
+	printf_encode(ssid_txt, sizeof(ssid_txt), ssid, ssid_len);
+	return ssid_txt;
+}

@@ -55,6 +55,12 @@ typedef enum {
     WIFI_APPIE_MAX,
 } wifi_appie_t;
 
+/* wifi_appie_t is in rom code and can't be changed anymore, use wifi_appie_ram_t for new app IEs */
+typedef enum {
+    WIFI_APPIE_RM_ENABLED_CAPS = WIFI_APPIE_MAX,
+    WIFI_APPIE_RAM_MAX,
+} wifi_appie_ram_t;
+
 enum {
     NONE_AUTH           = 0x01,
     WPA_AUTH_UNSPEC     = 0x02,
@@ -126,6 +132,7 @@ struct wpa_funcs {
     int (*wpa_michael_mic_failure)(u16 is_unicast);
     uint8_t *(*wpa3_build_sae_msg)(uint8_t *bssid, uint32_t type, size_t *len);
     int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
+    int (*wpa_sta_rx_mgmt)(u8 type, u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel, u64 current_tsf);
 };
 
 struct wpa2_funcs {
@@ -175,6 +182,13 @@ typedef struct {
     uint8_t pn[6];
     uint8_t igtk[WPA_IGTK_LEN];
 } wifi_wpa_igtk_t;
+
+typedef struct {
+    wifi_interface_t ifx;
+    uint8_t subtype;
+    uint32_t data_len;
+    uint8_t data[0];
+} wifi_mgmt_frm_req_t;
 
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);
 struct wifi_ssid *esp_wifi_ap_get_prof_ap_ssid_internal(void);
@@ -237,5 +251,9 @@ wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
 int esp_wifi_set_igtk_internal(uint8_t if_index, const wifi_wpa_igtk_t *igtk);
 esp_err_t esp_wifi_internal_issue_disconnect(uint8_t reason_code);
 bool esp_wifi_skip_supp_pmkcaching(void);
+bool esp_wifi_is_rm_enabled_internal(uint8_t if_index);
+bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
+esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
+esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

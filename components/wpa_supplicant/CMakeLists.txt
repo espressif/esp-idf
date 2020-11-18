@@ -6,6 +6,7 @@ set(srcs "port/os_xtensa.c"
     "src/common/sae.c"
     "src/common/wpa_common.c"
     "src/common/dpp.c"
+    "src/utils/bitfield.c"
     "src/crypto/aes-ctr.c"
     "src/crypto/aes-siv.c"
     "src/crypto/sha256-kdf.c"
@@ -106,7 +107,21 @@ else()
     )
 endif()
 
-idf_component_register(SRCS "${srcs}" "${tls_src}"
+if(CONFIG_WPA_11KV_SUPPORT)
+    set(roaming_src
+    "src/common/rrm.c"
+    "src/common/wnm_sta.c"
+    "src/common/bss.c"
+    "src/common/scan.c"
+    "src/common/ieee802_11_common.c"
+    "src/esp_supplicant/esp_common.c"
+    "src/esp_supplicant/esp_scan.c"
+    )
+else()
+    set(roaming_src "")
+endif()
+
+idf_component_register(SRCS "${srcs}" "${tls_src}" "${roaming_src}"
                     INCLUDE_DIRS include port/include include/esp_supplicant
                     PRIV_INCLUDE_DIRS src
                     PRIV_REQUIRES mbedtls esp_timer)
@@ -132,6 +147,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_WPA3_SAE
     CONFIG_SHA256
     CONFIG_DPP
+    CONFIG_WNM
     )
 
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
