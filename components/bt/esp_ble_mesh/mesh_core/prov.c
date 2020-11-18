@@ -196,24 +196,26 @@ static const struct bt_mesh_prov *prov;
 #if defined(CONFIG_BLE_MESH_PB_ADV)
 static bt_mesh_mutex_t pb_buf_lock;
 
-static void bt_mesh_pb_buf_mutex_new(void)
+static inline void bt_mesh_pb_buf_mutex_new(void)
 {
     if (!pb_buf_lock.mutex) {
         bt_mesh_mutex_create(&pb_buf_lock);
     }
 }
 
-static void bt_mesh_pb_buf_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_pb_buf_mutex_free(void)
 {
     bt_mesh_mutex_free(&pb_buf_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_pb_buf_lock(void)
+static inline void bt_mesh_pb_buf_lock(void)
 {
     bt_mesh_mutex_lock(&pb_buf_lock);
 }
 
-static void bt_mesh_pb_buf_unlock(void)
+static inline void bt_mesh_pb_buf_unlock(void)
 {
     bt_mesh_mutex_unlock(&pb_buf_lock);
 }
@@ -1776,6 +1778,7 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_prov_deinit(void)
 {
     if (prov == NULL) {
@@ -1805,6 +1808,7 @@ int bt_mesh_prov_deinit(void)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_prov_complete(u16_t net_idx, const u8_t net_key[16],
                            u16_t addr, u8_t flags, u32_t iv_index)

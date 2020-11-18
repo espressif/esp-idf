@@ -16,8 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_sensor_model.h"
-#include "sensor_client.h"
 #include "esp_ble_mesh_sensor_model_api.h"
+
+#if CONFIG_BLE_MESH_SENSOR_CLI
+#include "sensor_client.h"
 
 /* Sensor Client Models related functions */
 
@@ -612,6 +614,10 @@ void btc_ble_mesh_sensor_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */
+
+#if CONFIG_BLE_MESH_SENSOR_SERVER
+
 /* Sensor Server Models related functions */
 
 static inline void btc_ble_mesh_sensor_server_cb_to_app(esp_ble_mesh_sensor_server_cb_event_t event,
@@ -888,3 +894,5 @@ void btc_ble_mesh_sensor_server_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_sensor_server_free_req_data(msg);
     return;
 }
+
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */

@@ -164,6 +164,7 @@ esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     return btc_ble_mesh_client_model_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 {
     if (model == NULL) {
@@ -174,6 +175,7 @@ esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
 
     return btc_ble_mesh_client_model_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
                                              esp_ble_mesh_msg_ctx_t *ctx,
@@ -220,6 +222,7 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
                                    length, data, 0, false, device_role);
 }
 
+#if CONFIG_BLE_MESH_SERVER_MODEL
 esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
                                                  esp_ble_mesh_server_state_type_t type,
                                                  esp_ble_mesh_server_state_value_t *value)
@@ -244,6 +247,7 @@ esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */
 
 esp_err_t esp_ble_mesh_node_local_reset(void)
 {

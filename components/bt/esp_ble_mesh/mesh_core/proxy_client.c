@@ -998,6 +998,7 @@ int bt_mesh_proxy_client_init(void)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_proxy_client_deinit(void)
 {
     int i;
@@ -1015,5 +1016,6 @@ int bt_mesh_proxy_client_deinit(void)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 #endif /* (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
