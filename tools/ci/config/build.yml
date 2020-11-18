@@ -184,6 +184,8 @@ build_examples_make:
       - build_${TEST_PREFIX}/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
       - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 4 days
   variables:
     BUILD_SYSTEM: cmake
 
