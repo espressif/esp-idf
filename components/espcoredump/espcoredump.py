@@ -1271,7 +1271,8 @@ def gdbmi_start(gdb_path, gdb_cmds, core_filename, prog_filename):  # type: (str
     gdb_args.append(prog_filename)
     res = GdbController(gdb_path=gdb_path, gdb_args=gdb_args)
     # Consume initial output by issuing a dummy command
-    res.write("-data-list-register-values x pc", timeout_sec=5)
+    gdbmi_run_cmd_get_responses(res, "-data-list-register-values x pc", None, "console", multiple=True,
+                                done_message="done", done_type="result")
     return res
 
 
