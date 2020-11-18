@@ -32,8 +32,10 @@ struct settings_context {
     int (*settings_init)(void);
     int (*settings_load)(void);
     int (*settings_commit)(void);
+#if CONFIG_BLE_MESH_DEINIT
     int (*settings_deinit)(void);
     int (*settings_erase)(void);
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 static struct settings_context settings_ctx[] = {
@@ -42,8 +44,10 @@ static struct settings_context settings_ctx[] = {
         .settings_init = settings_core_init,
         .settings_load = settings_core_load,
         .settings_commit = settings_core_commit,
+#if CONFIG_BLE_MESH_DEINIT
         .settings_deinit = settings_core_deinit,
         .settings_erase = settings_core_erase,
+#endif /* CONFIG_BLE_MESH_DEINIT */
     },
 };
 
@@ -92,6 +96,7 @@ void bt_mesh_settings_init_foreach(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_settings_deinit_foreach(bool erase)
 {
     int i;
@@ -116,6 +121,7 @@ void bt_mesh_settings_deinit_foreach(bool erase)
     nvs_flash_deinit_partition(CONFIG_BLE_MESH_PARTITION_NAME);
 #endif
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 /* API used to get BLE Mesh related nvs handle */
 

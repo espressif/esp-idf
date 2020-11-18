@@ -1444,6 +1444,7 @@ int bt_mesh_proxy_server_init(void)
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_proxy_server_deinit(void)
 {
     int i;
@@ -1474,5 +1475,6 @@ int bt_mesh_proxy_server_deinit(void)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */

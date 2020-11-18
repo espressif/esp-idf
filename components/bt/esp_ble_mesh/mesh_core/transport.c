@@ -116,46 +116,50 @@ static u16_t hb_sub_dst = BLE_MESH_ADDR_UNASSIGNED;
 static bt_mesh_mutex_t tx_seg_lock;
 static bt_mesh_mutex_t rx_seg_lock;
 
-static void bt_mesh_tx_seg_mutex_new(void)
+static inline void bt_mesh_tx_seg_mutex_new(void)
 {
     if (!tx_seg_lock.mutex) {
         bt_mesh_mutex_create(&tx_seg_lock);
     }
 }
 
-static void bt_mesh_tx_seg_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_tx_seg_mutex_free(void)
 {
     bt_mesh_mutex_free(&tx_seg_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_tx_seg_lock(void)
+static inline void bt_mesh_tx_seg_lock(void)
 {
     bt_mesh_mutex_lock(&tx_seg_lock);
 }
 
-static void bt_mesh_tx_seg_unlock(void)
+static inline void bt_mesh_tx_seg_unlock(void)
 {
     bt_mesh_mutex_unlock(&tx_seg_lock);
 }
 
-static void bt_mesh_rx_seg_mutex_new(void)
+static inline void bt_mesh_rx_seg_mutex_new(void)
 {
     if (!rx_seg_lock.mutex) {
         bt_mesh_mutex_create(&rx_seg_lock);
     }
 }
 
-static void bt_mesh_rx_seg_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_rx_seg_mutex_free(void)
 {
     bt_mesh_mutex_free(&rx_seg_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_rx_seg_lock(void)
+static inline void bt_mesh_rx_seg_lock(void)
 {
     bt_mesh_mutex_lock(&rx_seg_lock);
 }
 
-static void bt_mesh_rx_seg_unlock(void)
+static inline void bt_mesh_rx_seg_unlock(void)
 {
     bt_mesh_mutex_unlock(&rx_seg_lock);
 }
@@ -1859,6 +1863,7 @@ void bt_mesh_trans_init(void)
     bt_mesh_rx_seg_mutex_new();
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_trans_deinit(bool erase)
 {
     int i;
@@ -1877,6 +1882,7 @@ void bt_mesh_trans_deinit(bool erase)
     bt_mesh_tx_seg_mutex_free();
     bt_mesh_rx_seg_mutex_free();
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_heartbeat_send(void)
 {

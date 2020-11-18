@@ -1572,6 +1572,7 @@ void bt_mesh_net_init(void)
     k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_net_deinit(void)
 {
     k_delayed_work_free(&bt_mesh.ivu_timer);
@@ -1595,3 +1596,4 @@ void bt_mesh_net_deinit(void)
     bt_mesh.iv_index = 0U;
     bt_mesh.seq = 0U;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */

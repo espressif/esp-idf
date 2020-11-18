@@ -51,6 +51,7 @@ void bt_mesh_timer_init(void)
     __ASSERT(bm_alarm_hash_map, "Failed to create hash map");
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_timer_deinit(void)
 {
     if (bm_alarm_hash_map) {
@@ -58,6 +59,7 @@ void bt_mesh_timer_deinit(void)
         bm_alarm_hash_map = NULL;
     }
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {

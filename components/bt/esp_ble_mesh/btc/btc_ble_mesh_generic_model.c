@@ -16,8 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_generic_model.h"
-#include "generic_client.h"
 #include "esp_ble_mesh_generic_model_api.h"
+
+#if CONFIG_BLE_MESH_GENERIC_CLIENT
+#include "generic_client.h"
 
 /* Generic Client Models related functions */
 
@@ -530,6 +532,10 @@ void btc_ble_mesh_generic_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+#endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
+
+#if CONFIG_BLE_MESH_GENERIC_SERVER
+
 /* Generic Server Models related functions */
 
 static inline void btc_ble_mesh_generic_server_cb_to_app(esp_ble_mesh_generic_server_cb_event_t event,
@@ -756,3 +762,5 @@ void btc_ble_mesh_generic_server_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_generic_server_free_req_data(msg);
     return;
 }
+
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
