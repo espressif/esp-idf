@@ -18,6 +18,7 @@ import threading
 import functools
 
 import netifaces
+import traceback
 
 import EnvConfig
 
@@ -180,6 +181,7 @@ class Env(object):
             try:
                 dut.close()
             except Exception as e:
+                traceback.print_exc()
                 dut_close_errors.append(e)
         self.allocated_duts = dict()
         return dut_close_errors
