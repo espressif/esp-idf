@@ -226,7 +226,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 
     /* Copy to internal buf if buf is in non DMA capable memory */
     if (!esp_ptr_dma_ext_capable(buf) && !esp_ptr_dma_capable(buf) && (buf_len != 0)) {
-        dma_cap_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_DMA);
+        dma_cap_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
         if (dma_cap_buf == NULL) {
             ESP_LOGE(TAG, "Failed to allocate buf memory");
             ret = -1;
@@ -301,6 +301,7 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
 
     sha_hal_hash_dma(sha_type, dma_descr_head, num_blks, is_first_block);
 
+    sha_hal_wait_idle();
 
     return ret;
 }
