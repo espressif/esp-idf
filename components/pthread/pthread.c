@@ -593,6 +593,15 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
         return EBUSY;
     }
 
+    if (mux->type == PTHREAD_MUTEX_RECURSIVE) {
+        res = xSemaphoreGiveRecursive(mux->sem);
+    } else {
+        res = xSemaphoreGive(mux->sem);
+    }
+    if (res != pdTRUE) {
+        assert(false && "Failed to release mutex!");
+    }
+
     vSemaphoreDelete(mux->sem);
     free(mux);
 
