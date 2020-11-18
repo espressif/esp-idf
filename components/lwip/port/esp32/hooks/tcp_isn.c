@@ -70,13 +70,13 @@
  * Author: David van Moolenbroek <david@minix3.org>
  */
 
-#include "tcp_isn.h"
+#include "esp32_hooks.h"
 #include "lwip/ip_addr.h"
 #include "lwip/sys.h"
 #include <string.h>
 #include "esp_rom_md5.h"
 
-#ifdef LWIP_HOOK_TCP_ISN
+#ifdef CONFIG_LWIP_HOOK_TCP_ISN_MINIX
 
 static u8_t input[64];
 static u32_t base_time;
