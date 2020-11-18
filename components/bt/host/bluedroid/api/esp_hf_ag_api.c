@@ -522,7 +522,7 @@ esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_h
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 void esp_hf_outgoing_data_ready(void)
 {
-    BTA_AgCiData();
+    btc_hf_ci_sco_data();
 }
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 
