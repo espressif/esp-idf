@@ -641,6 +641,16 @@ static void btc_ble_mesh_reset_cb(void)
     btc_ble_mesh_prov_callback(NULL, ESP_BLE_MESH_NODE_PROV_RESET_EVT);
     return;
 }
+
+const uint8_t *btc_ble_mesh_node_get_local_net_key(uint16_t net_idx)
+{
+    return bt_mesh_node_get_local_net_key(net_idx);
+}
+
+const uint8_t *btc_ble_mesh_node_get_local_app_key(uint16_t app_idx)
+{
+    return bt_mesh_node_get_local_app_key(app_idx);
+}
 #endif /* CONFIG_BLE_MESH_NODE */
 
 static void btc_ble_mesh_prov_register_complete_cb(int err_code)
@@ -1762,6 +1772,34 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_INPUT_STRING:
         act = ESP_BLE_MESH_NODE_PROV_INPUT_STRING_COMP_EVT;
         param.node_prov_input_str_comp.err_code = bt_mesh_input_string(arg->input_string.string);
+        break;
+    case BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_NET_KEY:
+        act = ESP_BLE_MESH_NODE_ADD_LOCAL_NET_KEY_COMP_EVT;
+        param.node_add_net_key_comp.net_idx = arg->node_add_local_net_key.net_idx;
+        param.node_add_net_key_comp.err_code =
+            bt_mesh_node_local_net_key_add(arg->node_add_local_net_key.net_idx,
+                                           arg->node_add_local_net_key.net_key);
+        break;
+    case BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_APP_KEY:
+        act = ESP_BLE_MESH_NODE_ADD_LOCAL_APP_KEY_COMP_EVT;
+        param.node_add_app_key_comp.net_idx = arg->node_add_local_app_key.net_idx;
+        param.node_add_app_key_comp.app_idx = arg->node_add_local_app_key.app_idx;
+        param.node_add_app_key_comp.err_code =
+            bt_mesh_node_local_app_key_add(arg->node_add_local_app_key.net_idx,
+                                           arg->node_add_local_app_key.app_idx,
+                                           arg->node_add_local_app_key.app_key);
+        break;
+    case BTC_BLE_MESH_ACT_NODE_BIND_APP_KEY_TO_MODEL:
+        act = ESP_BLE_MESH_NODE_BIND_APP_KEY_TO_MODEL_COMP_EVT;
+        param.node_bind_app_key_to_model_comp.element_addr = arg->node_local_mod_app_bind.element_addr;
+        param.node_bind_app_key_to_model_comp.model_id = arg->node_local_mod_app_bind.model_id;
+        param.node_bind_app_key_to_model_comp.company_id = arg->node_local_mod_app_bind.company_id;
+        param.node_bind_app_key_to_model_comp.app_idx = arg->node_local_mod_app_bind.app_idx;
+        param.node_bind_app_key_to_model_comp.err_code =
+            bt_mesh_node_bind_app_key_to_model(arg->node_local_mod_app_bind.element_addr,
+                                               arg->node_local_mod_app_bind.model_id,
+                                               arg->node_local_mod_app_bind.company_id,
+                                               arg->node_local_mod_app_bind.app_idx);
         break;
 #endif /* CONFIG_BLE_MESH_NODE */
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
