@@ -32,7 +32,7 @@ static void udp_rx_tx_task(void *arg)
 
     int sock = (int)arg;
 
-    struct sockaddr_in6 source_addr;
+    struct sockaddr_storage source_addr;
     socklen_t socklen = sizeof(source_addr);
 
 
@@ -47,10 +47,10 @@ static void udp_rx_tx_task(void *arg)
         }
 
         // Parse out address to string
-        if (source_addr.sin6_family == PF_INET) {
+        if (source_addr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-        } else if (source_addr.sin6_family == PF_INET6) {
-            inet6_ntoa_r(source_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+        } else if (source_addr.ss_family == PF_INET6) {
+            inet6_ntoa_r(((struct sockaddr_in6 *)&source_addr)->sin6_addr, addr_str, sizeof(addr_str) - 1);
         }
 
         // Force null termination of received data and print

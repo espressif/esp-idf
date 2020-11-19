@@ -84,7 +84,7 @@ static void udp_client_task(void *pvParameters)
             }
             ESP_LOGI(TAG, "Message sent");
 
-            struct sockaddr_in source_addr; // Large enough for both IPv4 or IPv6
+            struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
             int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
 
