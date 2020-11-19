@@ -73,7 +73,17 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                     CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
                 }
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-                esp_mbedtls_free_peer_cert(ssl);
+                /**
+                 * If current ciphersuite is RSA, we should free peer'
+                 * certificate at step  MBEDTLS_SSL_CLIENT_KEY_EXCHANGE.
+                 *
+                 * And if it is other kinds of ciphersuite, we can free
+                 * peer certificate here.
+                 */
+
+                if (esp_mbedtls_ssl_is_rsa(ssl) == false) {
+                    esp_mbedtls_free_peer_cert(ssl);
+                }
 #endif
             }
             break;
@@ -123,6 +133,12 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 size_t buffer_len = MBEDTLS_SSL_OUT_BUFFER_LEN;
 
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
+            } else {
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
+                if (esp_mbedtls_ssl_is_rsa(ssl) == true) {
+                    esp_mbedtls_free_peer_cert(ssl);
+                }
+#endif
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_VERIFY:
