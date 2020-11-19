@@ -628,6 +628,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_module_enable(uart_num);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
+    uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_config->source_clk);
     uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->source_clk, uart_config->baud_rate);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);

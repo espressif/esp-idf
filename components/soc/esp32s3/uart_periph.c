@@ -33,5 +33,13 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .cts_sig = U1CTS_IN_IDX,
         .irq = ETS_UART1_INTR_SOURCE,
         .module = PERIPH_UART1_MODULE,
-    }
+    },
+    {
+        .tx_sig = U2TXD_OUT_IDX,
+        .rx_sig = U2RXD_IN_IDX,
+        .rts_sig = U2RTS_OUT_IDX,
+        .cts_sig = U2CTS_IN_IDX,
+        .irq = ETS_UART2_INTR_SOURCE,
+        .module = PERIPH_UART2_MODULE,
+    },
 };

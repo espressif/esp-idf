@@ -14,7 +14,23 @@
 
 // The HAL layer for UART (common part)
 #include "hal/uart_hal.h"
+#include "soc/rtc_cntl_reg.h"
 
+void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk)
+{
+    uart_ll_set_sclk(hal->dev, sclk);
+
+#if SOC_UART_SUPPORT_RTC_CLK
+    if (sclk == UART_SCLK_RTC) {
+        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    }
+#endif
+}
+
+void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
+{
+    uart_ll_get_sclk(hal->dev, sclk);
+}
 
 void uart_hal_set_baudrate(uart_hal_context_t *hal, uart_sclk_t source_clk, uint32_t baud_rate)
 {
@@ -76,11 +92,6 @@ void uart_hal_set_at_cmd_char(uart_hal_context_t *hal, uart_at_cmd_t *at_cmd)
     uart_ll_set_at_cmd_char(hal->dev, at_cmd);
 }
 
-void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
-{
-    uart_ll_get_sclk(hal->dev, sclk);
-}
-
 void uart_hal_set_tx_idle_num(uart_hal_context_t *hal, uint16_t idle_num)
 {
     uart_ll_set_tx_idle_num(hal->dev, idle_num);
@@ -133,6 +144,8 @@ void uart_hal_set_loop_back(uart_hal_context_t *hal, bool loop_back_en)
 
 void uart_hal_init(uart_hal_context_t *hal, int uart_num)
 {
+    // Set clock source
+    uart_ll_set_sclk(hal->dev, UART_SCLK_APB);
     // Set default baud: 115200, use APB clock.
     const uint32_t baud_def = 115200;
     uart_ll_set_baudrate(hal->dev, UART_SCLK_APB, baud_def);

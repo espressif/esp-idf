@@ -229,10 +229,10 @@
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
-#define SOC_UART_NUM            (3)
-
-#define SOC_UART_FIFO_LEN       (128)      /*!< The UART hardware FIFO length */
-#define SOC_UART_BITRATE_MAX    (5000000)  /*!< Max bit rate supported by UART */
+#define SOC_UART_NUM                (3)
+#define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
+#define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
