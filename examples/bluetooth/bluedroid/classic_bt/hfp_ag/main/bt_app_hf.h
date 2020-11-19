@@ -21,6 +21,4 @@ esp_bd_addr_t hf_peer_addr; // Declaration of peer device bdaddr
  * @brief     callback function for HF client
  */
 void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param);
-
-
 #endif /* __BT_APP_HF_H__*/

@@ -16,7 +16,7 @@
 #include "esp_log.h"
 
 // if you want to connect a specific device, add it's bda here
-esp_bd_addr_t hf_peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x79, 0xda};
+esp_bd_addr_t hf_peer_addr = {0xB0, 0xF1, 0xA3, 0x01, 0x2D,0x2E};
 void hf_msg_show_usage(void)
 {
     printf("########################################################################\n");

@@ -190,8 +190,10 @@ void app_main(void)
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_hf_client_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
 
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */
     app_gpio_pcm_io_cfg();
+#endif
 
     /* configure externel chip for acoustic echo cancellation */
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
