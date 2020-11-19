@@ -24,13 +24,13 @@ extern "C" {
 typedef enum {
     INTDESC_NORMAL=0,
     INTDESC_RESVD,
-    INTDESC_SPECIAL
+    INTDESC_SPECIAL,
 } int_desc_flag_t;
 
 typedef enum {
     INTTP_LEVEL=0,
     INTTP_EDGE,
-    INTTP_NA
+    INTTP_ANY,
 } int_type_t;
 
 typedef struct {

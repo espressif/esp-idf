@@ -89,6 +89,12 @@ uint32_t esprv_intc_get_interrupt_unmask(void)
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
 }
 
+void esprv_intc_set_interrupt_clear(int intr)
+{
+    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr);
+}
+
+
 /*************************** Exception names. Used in .gdbinit file. ***************************/
 
 const char *riscv_excp_names[16] __attribute__((used)) = {

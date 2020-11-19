@@ -122,8 +122,7 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
  */
 static inline void intr_cntrl_ll_edge_int_acknowledge (int intr)
 {
-    intr_cntrl_ll_disable_interrupts(1 << intr);
-    esprv_intc_int_set_priority(intr, 0);
+    esprv_intc_set_interrupt_clear(intr);
 }
 
 /**
@@ -145,9 +144,6 @@ static inline void intr_cntrl_ll_set_int_level(int intr, int level)
  */
 static inline void intr_cntrl_ll_set_int_type(int intr, int_type_t type)
 {
-    /* Not needed currently for xtensa platforms since the type is already set
-     *  in interrupt table
-     */
     esprv_intc_int_set_type(BIT(intr), type);
 }
 

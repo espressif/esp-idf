@@ -48,7 +48,7 @@ Define this to debug the choices made when allocating the interrupt. This leads 
 output within a critical region, which can lead to weird effects like e.g. the interrupt watchdog
 being triggered, that is why it is separate from the normal LOG* scheme.
 */
-//define DEBUG_INT_ALLOC_DECISIONS
+//#define DEBUG_INT_ALLOC_DECISIONS
 #ifdef DEBUG_INT_ALLOC_DECISIONS
 # define ALCHLOG(...) ESP_EARLY_LOGD(TAG, __VA_ARGS__)
 #else
@@ -238,13 +238,14 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         return false;
     }
     //Check if the interrupt level is acceptable
-    if (!(flags&(1<<interrupt_controller_hal_get_level(x)))) {
+    if (!(flags&(1<<interrupt_controller_hal_get_level(x))) && 
+            (interrupt_controller_hal_get_type(x)!=INTTP_ANY)) {
         ALCHLOG("....Unusable: incompatible level");
-        return false;
+    return false;
     }
     //check if edge/level type matches what we want
-    if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL)) ||
-            (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)))) {
+    if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL) && (interrupt_controller_hal_get_type(x)!= INTTP_ANY)) ||
+            (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)&& (interrupt_controller_hal_get_type(x)!= INTTP_ANY)))) {
         ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
@@ -582,12 +583,16 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         esp_intr_disable(ret);
     }
 
-    //Set the level and type at controller level if needed:
-    interrupt_controller_hal_set_int_level(intr,
-                            interrupt_controller_hal_desc_level(intr));
+    //Extract the level from the interrupt passed flags
+    int level = (__builtin_ffs((flags >> 1) & ESP_INTR_FLAG_LEVELMASK)) + 1;
 
-    interrupt_controller_hal_set_int_type(intr,
-                            interrupt_controller_hal_desc_type(intr));
+    interrupt_controller_hal_set_int_level(intr,level);
+
+    if (flags & ESP_INTR_FLAG_EDGE) {
+        interrupt_controller_hal_set_int_type(intr,INTTP_EDGE);
+    } else {
+        interrupt_controller_hal_set_int_type(intr,INTTP_LEVEL);
+    }
 
     portEXIT_CRITICAL(&spinlock);
 

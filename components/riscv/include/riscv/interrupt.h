@@ -110,6 +110,13 @@ void esprv_intc_set_threshold(int priority_threshold);
  */
 uint32_t esprv_intc_get_interrupt_unmask(void);
 
+/**
+ * @brief Set a bit in int clear register
+ * @param intr bit to set from 0 to 31
+ * @return none
+ */
+void esprv_intc_set_interrupt_clear(int intr); 
+
 #ifdef __cplusplus
 }
 #endif

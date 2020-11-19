@@ -73,7 +73,7 @@ rtos_int_exit:
     la t2, uxInterruptNesting
     lw t3, 0x0(t2)
 
-    /* Already zero, protect againts underflow */
+    /* Already zero, protect against underflow */
     beq t3, zero, isr_skip_decrement
     addi t3,t3, -1
     sw  t3, 0x0(t2)
