@@ -492,7 +492,8 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
 /**
  * @brief   This function is for responding a WebSocket handshake
  *
- * @param[in] req    Pointer to handshake request that will be handled
+ * @param[in] req                       Pointer to handshake request that will be handled
+ * @param[in] supported_subprotocol     Pointer to the subprotocol supported by this URI
  * @return
  *  - ESP_OK                        : When handshake is sucessful
  *  - ESP_ERR_NOT_FOUND             : When some headers (Sec-WebSocket-*) are not found
@@ -501,7 +502,7 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
  *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
  *  - ESP_FAIL                      : Socket failures
  */
-esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req);
+esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *supported_subprotocol);
 
 /**
  * @brief   This function is for getting a frame type

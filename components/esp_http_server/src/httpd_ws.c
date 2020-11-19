@@ -15,6 +15,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/random.h>
 #include <esp_log.h>
 #include <esp_err.h>
@@ -44,7 +45,50 @@ static const char *TAG="httpd_ws";
  */
 static const char ws_magic_uuid[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req)
+/* Checks if any subprotocols from the comma seperated list matches the supported one
+ *
+ * Returns true if the response should contain a protocol field
+*/
+
+/**
+ * @brief Checks if any subprotocols from the comma seperated list matches the supported one
+ *
+ * @param supported_subprotocol[in] The subprotocol supported by the URI
+ * @param subprotocol[in],  [in]: A comma seperate list of subprotocols requested
+ * @param buf_len Length of the buffer
+ * @return true: found a matching subprotocol
+ * @return false
+ */
+static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol, char *subprotocol, size_t buf_len)
+{
+    /* Request didnt contain any subprotocols */
+    if (strnlen(subprotocol, buf_len) == 0) {
+        return false;
+    }
+
+    if (supported_subprotocol == NULL) {
+        ESP_LOGW(TAG, "Sec-WebSocket-Protocol %s not supported, URI do not support any subprotocols", subprotocol);
+        return false;
+    }
+
+    /* Get first subprotocol from comma seperated list */
+    char *rest = NULL;
+    char *s = strtok_r(subprotocol, ", ", &rest);
+    do {
+        if (strncmp(s, supported_subprotocol, sizeof(subprotocol)) == 0) {
+            ESP_LOGD(TAG, "Requested subprotocol supported: %s", s);
+            return true;
+        }
+    } while ((s = strtok_r(NULL, ", ", &rest)) != NULL);
+
+    ESP_LOGW(TAG, "Sec-WebSocket-Protocol %s not supported, supported subprotocol is %s", subprotocol, supported_subprotocol);
+
+    /* No matches */
+    return false;
+
+}
+
+esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *supported_subprotocol)
 {
     /* Probe if input parameters are valid or not */
     if (!req || !req->aux) {
@@ -101,15 +145,53 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req)
 
     ESP_LOGD(TAG, LOG_FMT("Generated server key: %s"), server_key_encoded);
 
+    char subprotocol[50] = { '\0' };
+    if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Protocol", subprotocol, sizeof(subprotocol) - 1) == ESP_ERR_HTTPD_RESULT_TRUNC) {
+        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %d, was trunctated", sizeof(subprotocol));
+    }
+
+
     /* Prepare the Switching Protocol response */
     char tx_buf[192] = { '\0' };
     int fmt_len = snprintf(tx_buf, sizeof(tx_buf),
                            "HTTP/1.1 101 Switching Protocols\r\n"
                            "Upgrade: websocket\r\n"
                            "Connection: Upgrade\r\n"
-                           "Sec-WebSocket-Accept: %s\r\n\r\n", server_key_encoded);
+                           "Sec-WebSocket-Accept: %s\r\n", server_key_encoded);
+
     if (fmt_len < 0 || fmt_len > sizeof(tx_buf)) {
         ESP_LOGW(TAG, LOG_FMT("Failed to prepare Tx buffer"));
+        return ESP_FAIL;
+    }
+
+    if ( httpd_ws_get_response_subprotocol(supported_subprotocol, subprotocol, sizeof(subprotocol))) {
+        ESP_LOGD(TAG, "subprotocol: %s", subprotocol);
+        int r = snprintf(tx_buf + fmt_len, sizeof(tx_buf) - fmt_len, "Sec-WebSocket-Protocol: %s\r\n", supported_subprotocol);
+        if (r <= 0) {
+            ESP_LOGE(TAG, "Error in response generation"
+                          "(snprintf of subprotocol returned %d, buffer size: %d", r, sizeof(tx_buf));
+            return ESP_FAIL;
+        }
+
+        fmt_len += r;
+
+        if (fmt_len >= sizeof(tx_buf)) {
+            ESP_LOGE(TAG, "Error in response generation"
+                          "(snprintf of subprotocol returned %d, desired response len: %d, buffer size: %d", r, fmt_len, sizeof(tx_buf));
+            return ESP_FAIL;
+        }
+    }
+
+    int r = snprintf(tx_buf + fmt_len, sizeof(tx_buf) - fmt_len, "\r\n");
+    if (r <= 0) {
+        ESP_LOGE(TAG, "Error in response generation"
+                        "(snprintf of subprotocol returned %d, buffer size: %d", r, sizeof(tx_buf));
+        return ESP_FAIL;
+    }
+    fmt_len += r;
+    if (fmt_len >= sizeof(tx_buf)) {
+        ESP_LOGE(TAG, "Error in response generation"
+                       "(snprintf of header terminal returned %d, desired response len: %d, buffer size: %d", r, fmt_len, sizeof(tx_buf));
         return ESP_FAIL;
     }
 

@@ -412,6 +412,11 @@ typedef struct httpd_uri {
      * This is used if a custom processing of the control frames is needed
      */
     bool handle_ws_control_frames;
+
+    /**
+     * Pointer to subprotocol supported by URI
+     */
+    const char *supported_subprotocol;
 #endif
 } httpd_uri_t;
 
