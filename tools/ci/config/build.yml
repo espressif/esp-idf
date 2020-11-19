@@ -5,6 +5,7 @@
     - build
   variables:
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+  dependencies: []
 
 .build_template_app_template:
   extends:
