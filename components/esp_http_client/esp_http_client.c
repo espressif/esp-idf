@@ -563,9 +563,11 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
 
+    const char *user_agent = config->user_agent == NULL ? DEFAULT_HTTP_USER_AGENT : config->user_agent;
+
     if (config->host != NULL && config->path != NULL) {
         _success = (
-            (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+            (esp_http_client_set_header(client, "User-Agent", user_agent) == ESP_OK) &&
             (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
         );
 
@@ -576,7 +578,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     } else if (config->url != NULL) {
         _success = (
                     (esp_http_client_set_url(client, config->url) == ESP_OK) &&
-                    (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "User-Agent", user_agent) == ESP_OK) &&
                     (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
                 );
 
