@@ -39,6 +39,9 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROXY_IDENTITY_ENABLE,
     BTC_BLE_MESH_ACT_PROXY_GATT_ENABLE,
     BTC_BLE_MESH_ACT_PROXY_GATT_DISABLE,
+    BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_NET_KEY,
+    BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_APP_KEY,
+    BTC_BLE_MESH_ACT_NODE_BIND_APP_KEY_TO_MODEL,
     BTC_BLE_MESH_ACT_PROVISIONER_READ_OOB_PUB_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_INPUT_STR,
     BTC_BLE_MESH_ACT_PROVISIONER_INPUT_NUM,
@@ -110,6 +113,21 @@ typedef union {
     struct ble_mesh_set_device_name_args {
         char name[ESP_BLE_MESH_DEVICE_NAME_MAX_LEN + 1];
     } set_device_name;
+    struct ble_mesh_node_add_local_net_key_args {
+        uint8_t  net_key[16];
+        uint16_t net_idx;
+    } node_add_local_net_key;
+    struct ble_mesh_node_add_local_app_key_args {
+        uint8_t  app_key[16];
+        uint16_t net_idx;
+        uint16_t app_idx;
+    } node_add_local_app_key;
+    struct ble_mesh_node_bind_local_mod_app_args {
+        uint16_t element_addr;
+        uint16_t company_id;
+        uint16_t model_id;
+        uint16_t app_idx;
+    } node_local_mod_app_bind;
     struct ble_mesh_provisioner_read_oob_pub_key_args {
         uint8_t link_idx;
         uint8_t pub_key_x[32];
@@ -295,6 +313,10 @@ typedef union {
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+const uint8_t *btc_ble_mesh_node_get_local_net_key(uint16_t net_idx);
+
+const uint8_t *btc_ble_mesh_node_get_local_app_key(uint16_t app_idx);
 
 esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_uuid(const uint8_t uuid[16]);
 
