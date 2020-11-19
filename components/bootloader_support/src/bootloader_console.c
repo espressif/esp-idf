@@ -24,10 +24,13 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/ets_sys.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_caps.h"
 
 #ifdef CONFIG_ESP_CONSOLE_UART_NONE
 void bootloader_console_init(void)
@@ -42,7 +45,12 @@ void bootloader_console_init(void)
 {
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
+#if !ESP_ROM_SUPPORT_MULTIPLE_UART
+    /* esp_rom_install_channel_put is not available unless multiple UARTs are supported */
     esp_rom_install_uart_printf();
+#else
+    esp_rom_install_channel_putc(1, esp_rom_uart_putc);
+#endif
 
     // Wait for UART FIFO to be empty.
     esp_rom_uart_tx_wait_idle(0);
