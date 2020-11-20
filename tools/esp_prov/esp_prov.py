@@ -16,7 +16,7 @@
 #
 
 from __future__ import print_function
-from builtins import input
+from builtins import input as binput
 import argparse
 import textwrap
 import time
@@ -471,7 +471,7 @@ if __name__ == '__main__':
 
             while True:
                 try:
-                    select = int(input("Select AP by number (0 to rescan) : "))
+                    select = int(binput("Select AP by number (0 to rescan) : "))
                     if select < 0 or select > len(APs):
                         raise ValueError
                     break

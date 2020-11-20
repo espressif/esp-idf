@@ -89,7 +89,7 @@ def bleprph_client_task(prph_obj, dut, dut_addr):
     - write 'A' to characteristic with write permission
     '''
     chars_ret_on_write = {}
-    chars_ret_on_write = ble_client_obj.write_chars('A')
+    chars_ret_on_write = ble_client_obj.write_chars(b'A')
     if chars_ret_on_write:
         Utility.console_log("\nCharacteristics after write operation")
         for path, props in chars_ret_on_write.items():

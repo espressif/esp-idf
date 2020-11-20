@@ -167,7 +167,7 @@ class Security1(Security):
             return -1
 
     def encrypt_data(self, data):
-        return self.cipher.update(data)
+        return self.cipher.update(tobytes(data))
 
     def decrypt_data(self, data):
-        return self.cipher.update(data)
+        return self.cipher.update(tobytes(data))

@@ -22,6 +22,7 @@ assign_test:
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
+    # auto_test_script only supports python 3.7.x
     PYTHON_VER: 3.7.7
   artifacts:
     paths:
