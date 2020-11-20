@@ -459,23 +459,6 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
  */
 esp_err_t esp_bt_sleep_enable(void);
 
-
-/**
- * @brief disable bluetooth modem sleep
- *
- * Note that this function shall not be invoked before esp_bt_controller_enable()
- *
- * If esp_bt_sleep_disable() is called, bluetooth controller will not be allowed to enter modem sleep;
- *
- * If ORIG modem sleep mode is in use, if this function is called, bluetooth controller may not immediately wake up if it is dormant then.
- * In this case, esp_bt_controller_wakeup_request() can be used to shorten the time for wakeup.
- *
- * @return
- *                  - ESP_OK : success
- *                  - other  : failed
- */
-esp_err_t esp_bt_sleep_disable(void);
-
 /**
  * @brief to check whether bluetooth controller is sleeping at the instant, if modem sleep is enabled
  *
