@@ -1312,4 +1312,14 @@ int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if)
     return netif_get_index(esp_netif[tcpip_if]);
 }
 
+void esp_netif_netstack_buf_ref(void *pbuf)
+{
+    pbuf_ref(pbuf);
+}
+
+void esp_netif_netstack_buf_free(void *pbuf)
+{
+    pbuf_free(pbuf);
+}
+
 #endif /* CONFIG_TCPIP_LWIP */
