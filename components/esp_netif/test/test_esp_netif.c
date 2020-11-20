@@ -275,5 +275,13 @@ TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
     TEST_ASSERT_EQUAL_STRING(hostname, "new_name");
 
+    // test that setting the long name is refused and the previously set value retained
+    #define ESP_NETIF_HOSTNAME_MAX_SIZE    32
+    char long_name[ESP_NETIF_HOSTNAME_MAX_SIZE + 2] = { 0 };
+    memset(long_name, 'A', ESP_NETIF_HOSTNAME_MAX_SIZE+1); // construct the long name
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_set_hostname(esp_netif, long_name));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+    TEST_ASSERT_EQUAL_STRING(hostname, "new_name");
+
     esp_netif_destroy(esp_netif);
 }
