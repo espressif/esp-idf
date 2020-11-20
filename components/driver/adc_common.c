@@ -246,7 +246,6 @@ static inline void adc_set_init_code(adc_ll_num_t adc_n, adc_channel_t channel)
     adc_atten_t atten = adc_hal_get_atten(adc_n, channel);
     uint32_t cal_val = adc_hal_calibration(adc_n, channel, atten, true, false);
     adc_hal_set_calibration_param(adc_n, cal_val);
-    ESP_LOGD(ADC_TAG, "Set cal adc %d\n", cal_val);
 }
 #endif
 
