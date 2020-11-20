@@ -347,11 +347,12 @@ void _frxt_setup_switch( void );
  * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with, 
  * or without arguments.
  */ 
-#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
-#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
+#define GET_11TH_ARG(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10, NAME,...) NAME
+#define portGET_ARGUMENT_COUNT(...) GET_11TH_ARG( 42,##__VA_ARGS__ , 9,8,7,4,5,4,3,2,1,0)
 
 _Static_assert(portGET_ARGUMENT_COUNT() == 0, "portGET_ARGUMENT_COUNT() result does not match for 0 arguments");
 _Static_assert(portGET_ARGUMENT_COUNT(1) == 1, "portGET_ARGUMENT_COUNT() result does not match for 1 argument");
+_Static_assert(portGET_ARGUMENT_COUNT(1,1) == 2, "portGET_ARGUMENT_COUNT() result does not match for 2 arguments");
 
 #define portYIELD()	vPortYield()
 
