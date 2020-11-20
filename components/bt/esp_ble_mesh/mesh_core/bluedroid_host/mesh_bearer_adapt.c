@@ -1219,7 +1219,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     BTA_GATTC_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
                    bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE);
 
-    return i;
+    return 0;
 }
 
 void bt_mesh_gattc_exchange_mtu(u8_t index)
