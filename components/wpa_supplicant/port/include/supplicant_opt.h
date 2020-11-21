@@ -19,9 +19,8 @@
 
 #if CONFIG_WPA_MBEDTLS_CRYPTO
 #define USE_MBEDTLS_CRYPTO 1
-#endif
-
-#if CONFIG_WPA_TLS_V12
+#else
+#define CONFIG_TLS_INTERNAL_CLIENT
 #define CONFIG_TLSV12
 #endif
 

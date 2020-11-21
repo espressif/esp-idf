@@ -409,9 +409,11 @@ static int tls_process_certificate(struct tlsv1_client *conn, u8 ct,
 
 
 static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
-					const u8 *buf, size_t len)
+					const u8 *buf, size_t len,
+					tls_key_exchange key_exchange)
 {
-	const u8 *pos, *end;
+	const u8 *pos, *end, *server_params, *server_params_end;
+	u8 alert;
 
 	tlsv1_client_free_dh(conn);
 
@@ -420,6 +422,7 @@ static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
 
 	if (end - pos < 3)
 		goto fail;
+	server_params = pos;
 	conn->dh_p_len = WPA_GET_BE16(pos);
 	pos += 2;
 	if (conn->dh_p_len == 0 || end - pos < (int) conn->dh_p_len) {
@@ -464,6 +467,60 @@ static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
 	pos += conn->dh_ys_len;
 	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Ys (server's public value)",
 		    conn->dh_ys, conn->dh_ys_len);
+	server_params_end = pos;
+
+	if (key_exchange == TLS_KEY_X_DHE_RSA) {
+		u8 hash[64];
+		int hlen;
+
+		if (conn->rl.tls_version == TLS_VERSION_1_2) {
+#ifdef CONFIG_TLSV12
+			/*
+			 * RFC 5246, 4.7:
+			 * TLS v1.2 adds explicit indication of the used
+			 * signature and hash algorithms.
+			 *
+			 * struct {
+			 *   HashAlgorithm hash;
+			 *   SignatureAlgorithm signature;
+			 * } SignatureAndHashAlgorithm;
+			 */
+			if (end - pos < 2)
+				goto fail;
+			if ((pos[0] != TLS_HASH_ALG_SHA256) ||
+			    pos[1] != TLS_SIGN_ALG_RSA) {
+				wpa_printf(MSG_DEBUG, "TLSv1.2: Unsupported hash(%u)/signature(%u) algorithm",
+					   pos[0], pos[1]);
+				goto fail;
+			}
+
+			hlen = tlsv12_key_x_server_params_hash(
+				conn->rl.tls_version, pos[0],
+				conn->client_random,
+				conn->server_random, server_params,
+				server_params_end - server_params, hash);
+			pos += 2;
+#else /* CONFIG_TLSV12 */
+			goto fail;
+#endif /* CONFIG_TLSV12 */
+		} else {
+			hlen = tls_key_x_server_params_hash(
+				conn->rl.tls_version, conn->client_random,
+				conn->server_random, server_params,
+				server_params_end - server_params, hash);
+		}
+
+		if (hlen < 0)
+			goto fail;
+		wpa_hexdump(MSG_MSGDUMP, "TLSv1: ServerKeyExchange hash",
+			    hash, hlen);
+
+		if (tls_verify_signature(conn->rl.tls_version,
+					 conn->server_rsa_key,
+					 hash, hlen, pos, end - pos,
+					 &alert) < 0)
+			goto fail;
+	}
 
 	return 0;
 
@@ -542,8 +599,10 @@ static int tls_process_server_key_exchange(struct tlsv1_client *conn, u8 ct,
 
 	wpa_hexdump(MSG_DEBUG, "TLSv1: ServerKeyExchange", pos, len);
 	suite = tls_get_cipher_suite(conn->rl.cipher_suite);
-	if (suite && suite->key_exchange == TLS_KEY_X_DH_anon) {
-		if (tlsv1_process_diffie_hellman(conn, pos, len) < 0) {
+	if (suite && (suite->key_exchange == TLS_KEY_X_DH_anon ||
+		      suite->key_exchange == TLS_KEY_X_DHE_RSA)) {
+		if (tlsv1_process_diffie_hellman(conn, pos, len,
+						 suite->key_exchange) < 0) {
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
 				  TLS_ALERT_DECODE_ERROR);
 			return -1;
