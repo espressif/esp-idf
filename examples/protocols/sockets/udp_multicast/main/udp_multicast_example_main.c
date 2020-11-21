@@ -364,7 +364,7 @@ static void mcast_example_task(void *pvParameters)
                     char recvbuf[48];
                     char raddr_name[32] = { 0 };
 
-                    struct sockaddr_in6 raddr; // Large enough for both IPv4 or IPv6
+                    struct sockaddr_storage raddr; // Large enough for both IPv4 or IPv6
                     socklen_t socklen = sizeof(raddr);
                     int len = recvfrom(sock, recvbuf, sizeof(recvbuf)-1, 0,
                                        (struct sockaddr *)&raddr, &socklen);
@@ -376,14 +376,14 @@ static void mcast_example_task(void *pvParameters)
 
                     // Get the sender's address as a string
 #ifdef CONFIG_EXAMPLE_IPV4
-                    if (raddr.sin6_family == PF_INET) {
-                        inet_ntoa_r(((struct sockaddr_in *)&raddr)->sin_addr.s_addr,
+                    if (raddr.ss_family == PF_INET) {
+                        inet_ntoa_r(((struct sockaddr_in *)&raddr)->sin_addr,
                                     raddr_name, sizeof(raddr_name)-1);
                     }
 #endif
 #ifdef CONFIG_EXAMPLE_IPV6
-                    if (raddr.sin6_family == PF_INET6) {
-                        inet6_ntoa_r(raddr.sin6_addr, raddr_name, sizeof(raddr_name)-1);
+                    if (raddr.ss_family== PF_INET6) {
+                        inet6_ntoa_r(((struct sockaddr_in6 *)&raddr)->sin6_addr, raddr_name, sizeof(raddr_name)-1);
                     }
 #endif
                     ESP_LOGI(TAG, "received %d bytes from %s:", len, raddr_name);

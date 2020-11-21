@@ -32,20 +32,22 @@ typedef struct {
     int sock;
 } transport_tcp_t;
 
-static int resolve_dns(const char *host, struct sockaddr_in *ip) {
+static int resolve_dns(const char *host, struct sockaddr_in *ip) 
+{
+    const struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+    };
+    struct addrinfo *res;
 
-    struct hostent *he;
-    struct in_addr **addr_list;
-    he = gethostbyname(host);
-    if (he == NULL) {
-        return ESP_FAIL;
-    }
-    addr_list = (struct in_addr **)he->h_addr_list;
-    if (addr_list[0] == NULL) {
+    int err = getaddrinfo(host, NULL, &hints, &res);
+    if(err != 0 || res == NULL) {
+        ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
         return ESP_FAIL;
     }
     ip->sin_family = AF_INET;
-    memcpy(&ip->sin_addr, addr_list[0], sizeof(ip->sin_addr));
+    memcpy(&ip->sin_addr, &((struct sockaddr_in *)(res->ai_addr))->sin_addr, sizeof(ip->sin_addr));
+    freeaddrinfo(res);
     return ESP_OK;
 }
 
