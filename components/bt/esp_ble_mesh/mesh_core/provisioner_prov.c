@@ -1001,18 +1001,10 @@ int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t ad
 
 int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
 {
-    /**
-     * Three Situations:
-     * 1. device is not being/been provisioned, just remove from device queue.
-     * 2. device is being provisioned, need to close link & remove from device queue.
-     * 3. device is been provisioned, need to send config_node_reset and may need to
-     *    remove from device queue. config _node_reset can be added in function
-     *    provisioner_reset_node() in provisioner_main.c.
-     */
     bt_mesh_addr_t del_addr = {0};
-    u8_t zero[16] = {0};
     bool addr_match = false;
     bool uuid_match = false;
+    u8_t zero[16] = {0};
     int addr_cmp = 0;
     int uuid_cmp = 0;
     u16_t i = 0U;
@@ -1046,7 +1038,7 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
     for (i = 0U; i < ARRAY_SIZE(link); i++) {
         if (addr_cmp && (del_dev->addr_type <= BLE_MESH_ADDR_RANDOM)) {
             if (!memcmp(link[i].addr.val, del_dev->addr, BLE_MESH_ADDR_LEN) &&
-                    link[i].addr.type == del_dev->addr_type) {
+                link[i].addr.type == del_dev->addr_type) {
                 addr_match = true;
             }
         }
@@ -1059,15 +1051,6 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
             close_link(i, CLOSE_REASON_FAILED);
             break;
         }
-    }
-
-    /* Third: find if the device is been provisioned */
-    if (addr_cmp && (del_dev->addr_type <= BLE_MESH_ADDR_RANDOM)) {
-        bt_mesh_provisioner_delete_node_with_dev_addr(&del_addr);
-    }
-
-    if (uuid_cmp) {
-        bt_mesh_provisioner_delete_node_with_uuid(del_dev->uuid);
     }
 
     return 0;
