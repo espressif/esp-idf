@@ -108,6 +108,12 @@
 
 #endif /* UC_BT_CLASSIC_ENABLED */
 
+/* This is set to enable use of GAP L2CAP connections. */
+#if (VND_BT_JV_BTA_L2CAP == TRUE)
+#define BTA_JV_L2CAP_INCLUDED       TRUE
+#define GAP_CONN_INCLUDED           TRUE
+#endif /* VND_BT_JV_BTA_L2CAP */
+
 #ifndef CLASSIC_BT_INCLUDED
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
@@ -296,6 +302,19 @@
 
 #ifndef BTA_SDP_INCLUDED
 #define BTA_SDP_INCLUDED FALSE
+#endif
+
+/* This is set to enable use of GAP L2CAP connections. */
+#ifndef VND_BT_JV_BTA_L2CAP
+#define VND_BT_JV_BTA_L2CAP        FALSE
+#endif
+
+#ifndef BTA_JV_L2CAP_INCLUDED
+#define BTA_JV_L2CAP_INCLUDED       FALSE
+#endif
+
+#ifndef GAP_CONN_INCLUDED
+#define GAP_CONN_INCLUDED           FALSE
 #endif
 
 /******************************************************************************
@@ -1717,15 +1736,6 @@ Range: 2 octets
 
 #ifndef GAP_INCLUDED
 #define GAP_INCLUDED                TRUE
-#endif
-
-/* This is set to enable use of GAP L2CAP connections. */
-#ifndef GAP_CONN_INCLUDED
-#if (GAP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
-#define GAP_CONN_INCLUDED           TRUE
-#else
-#define GAP_CONN_INCLUDED           FALSE
-#endif
 #endif
 
 /* This is set to enable posting event for data write */
