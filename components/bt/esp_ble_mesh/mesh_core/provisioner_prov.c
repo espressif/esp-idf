@@ -237,7 +237,7 @@ struct bt_mesh_prov_ctx {
     u16_t curr_net_idx;
 
     /* Current flags going to be used in provisioning data */
-    u16_t curr_flags;
+    u8_t  curr_flags;
 
     /* Current iv_index going to be used in provisioning data */
     u16_t curr_iv_index;
@@ -1128,10 +1128,8 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info)
     return 0;
 }
 
-int bt_mesh_provisioner_set_prov_info(void)
+int bt_mesh_provisioner_init_prov_info(void)
 {
-    const struct bt_mesh_comp *comp = NULL;
-
     if (prov_ctx.primary_addr == BLE_MESH_ADDR_UNASSIGNED) {
         /* If unicast address of primary element of Provisioner has not been set
          * before, then the following initialization procedure will be used.
@@ -1143,7 +1141,7 @@ int bt_mesh_provisioner_set_prov_info(void)
             return -EINVAL;
         }
 
-        comp = bt_mesh_comp_get();
+        const struct bt_mesh_comp *comp = bt_mesh_comp_get();
         if (!comp) {
             BT_ERR("Invalid composition data");
             return -EINVAL;
@@ -1156,15 +1154,19 @@ int bt_mesh_provisioner_set_prov_info(void)
         } else {
             prov_ctx.curr_alloc_addr = prov->prov_start_address;
         }
+
+        /* Update primary element address with the initialized value here. */
         prov_ctx.primary_addr = prov->prov_unicast_addr;
 
         if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
             bt_mesh_store_prov_info(prov_ctx.primary_addr, prov_ctx.curr_alloc_addr);
         }
     }
+
     prov_ctx.curr_net_idx = BLE_MESH_KEY_PRIMARY;
-    prov_ctx.curr_flags = prov->flags;
-    prov_ctx.curr_iv_index = prov->iv_index;
+    struct bt_mesh_subnet *sub = bt_mesh_provisioner_subnet_get(BLE_MESH_KEY_PRIMARY);
+    prov_ctx.curr_flags = bt_mesh_net_flags(sub);
+    prov_ctx.curr_iv_index = bt_mesh.iv_index;
 
     return 0;
 }
@@ -1241,7 +1243,8 @@ int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr)
     if (addr + comp->elem_count > prov_ctx.curr_alloc_addr) {
         prov_ctx.curr_alloc_addr = addr + comp->elem_count;
     }
-    BT_INFO("Provisioner primary address updated, old 0x%04x, new 0x%04x", prov_ctx.primary_addr, addr);
+
+    BT_INFO("Primary address updated, old 0x%04x, new 0x%04x", prov_ctx.primary_addr, addr);
     prov_ctx.primary_addr = addr;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {

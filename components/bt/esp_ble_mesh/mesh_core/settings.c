@@ -249,7 +249,7 @@ static int iv_set(const char *name)
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS, iv.iv_update);
     bt_mesh.ivu_duration = iv.iv_duration;
 
-    BT_INFO("Restored IV Index 0x%04x (IV Update Flag %u) duration %u hours",
+    BT_INFO("Restored IV Index 0x%08x (IV Update Flag %u) duration %u hours",
            iv.iv_index, iv.iv_update, iv.iv_duration);
 
     return 0;
@@ -1365,8 +1365,6 @@ int settings_core_commit(void)
 
         BT_INFO("p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
 
-        bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
-
         for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
             sub = bt_mesh.p_sub[i];
 
@@ -1378,7 +1376,6 @@ int settings_core_commit(void)
             if (err) {
                 BT_ERR("Failed to init subnet 0x%03x", sub->net_idx);
             }
-            sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
         }
     }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
@@ -1416,12 +1413,6 @@ int settings_core_commit(void)
         bt_mesh_net_start();
     }
 #endif /* CONFIG_BLE_MESH_NODE */
-
-#if defined(CONFIG_BLE_MESH_PROVISIONER)
-    if (bt_mesh_is_provisioner()) {
-        bt_mesh_provisioner_net_start(BLE_MESH_PROV_ADV | BLE_MESH_PROV_GATT);
-    }
-#endif /* CONFIG_BLE_MESH_PROVISIONER */
 
     return 0;
 }

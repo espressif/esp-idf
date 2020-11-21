@@ -83,11 +83,6 @@ int bt_mesh_provisioner_net_create(void)
         return -EINVAL;
     }
 
-    /* If the device only acts as a Provisioner, need to initialize
-     * each element's address.
-     */
-    bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
-
     if (bt_mesh.p_sub[0]) {
         /* Provisioner is already enabled (enable -> disable -> enable),
          * or Provisioner is restored from flash.

@@ -383,14 +383,6 @@ int bt_mesh_prov_input_string(const char *str);
  */
 int bt_mesh_prov_input_number(u32_t num);
 
-/** @brief Enable Provisioner corresponding functionalities, e.g. scan, etc.
- *
- *  @param bearers Bit-wise OR of provisioning bearers.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers);
-
 /** @brief Enable specific provisioning bearers
  *
  *  Enable one or more provisioning bearers.
