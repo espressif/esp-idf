@@ -33,7 +33,7 @@ static inline uint32_t mpu_ll_id_to_addr(int id)
     // 0xa0000000 = 5
     // 0xc0000000 = 6
     // 0xe0000000 = 7
-    return id * SOC_MPU_MIN_REGION_SIZE;
+    return (unsigned)id * SOC_MPU_MIN_REGION_SIZE;
 }
 
 static inline void mpu_ll_set_region_rw(uint32_t addr)

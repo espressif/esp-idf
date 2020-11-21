@@ -13,3 +13,6 @@ CONFIG_ESP_TASK_WDT_PANIC=y
 
 # For vTaskGetInfo() used in test_stack_overflow()
 CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+
+# Reduce IRAM size
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y

@@ -19,6 +19,10 @@ ifndef CONFIG_IDF_ENV_FPGA
 COMPONENT_OBJEXCLUDE += fpga_overrides.o
 endif
 
+# Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
+# due to -ffunction-sections -Wl,--gc-sections options.
+COMPONENT_ADD_LDFLAGS += -u __ubsan_include
+
 include $(COMPONENT_PATH)/port/soc/$(SOC_NAME)/component.mk
 
 # disable stack protection in files which are involved in initialization of that feature
