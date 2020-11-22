@@ -563,10 +563,11 @@ static void example_ble_mesh_sensor_client_cb(esp_ble_mesh_sensor_client_cb_even
                     if (data_len != ESP_BLE_MESH_SENSOR_DATA_ZERO_LEN) {
                         ESP_LOG_BUFFER_HEX("Sensor Data", data + mpid_len, data_len + 1);
                         length += mpid_len + data_len + 1;
+                        data += mpid_len + data_len + 1;
                     } else {
                         length += mpid_len;
+                        data += mpid_len;
                     }
-                    data += length;
                 }
             }
             break;
