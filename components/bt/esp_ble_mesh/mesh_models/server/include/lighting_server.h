@@ -503,34 +503,6 @@ void light_hsl_publish(struct bt_mesh_model *model, u16_t opcode);
 void light_xyl_publish(struct bt_mesh_model *model, u16_t opcode);
 void light_lc_publish(struct bt_mesh_model *model, u16_t opcode);
 
-int bt_mesh_light_lightness_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lightness_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_temp_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_hue_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_sat_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_xyl_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_xyl_setup_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lc_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lc_setup_srv_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_light_lightness_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lightness_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_ctl_temp_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_hue_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_hsl_sat_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_xyl_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_xyl_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lc_srv_deinit(struct bt_mesh_model *model, bool primary);
-int bt_mesh_light_lc_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
-
 #ifdef __cplusplus
 }
 #endif

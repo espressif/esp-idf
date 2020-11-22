@@ -190,12 +190,12 @@ struct bt_mesh_model_op {
                                         { BLE_MESH_MODEL_OP_END })
 
 /** Helper to define an empty model array */
-#define BLE_MESH_MODEL_NONE ((struct bt_mesh_model []){})
+#define BLE_MESH_MODEL_NONE             ((struct bt_mesh_model []){})
 
 /** Length of a short Mesh MIC. */
-#define BLE_MESH_MIC_SHORT  4
+#define BLE_MESH_MIC_SHORT              4
 /** Length of a long Mesh MIC. */
-#define BLE_MESH_MIC_LONG   8
+#define BLE_MESH_MIC_LONG               8
 
 /** @def BLE_MESH_MODEL_OP_LEN
  *
@@ -240,31 +240,54 @@ struct bt_mesh_model_op {
  * @param _payload_len Length of the model message payload.
  */
 #define BLE_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)       \
-        NET_BUF_SIMPLE_DEFINE(_buf, BLE_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
+        NET_BUF_SIMPLE_DEFINE(_buf, BLE_MESH_MODEL_BUF_LEN((_op), (_payload_len)))
 
-#define BLE_MESH_MODEL(_id, _op, _pub, _user_data)                  \
+/** @def BLE_MESH_MODEL_CB
+ *
+ *  @brief Composition data SIG model entry with callback functions.
+ *
+ *  @param _id        Model ID.
+ *  @param _op        Array of model opcode handlers.
+ *  @param _pub       Model publish parameters.
+ *  @param _user_data User data for the model.
+ *  @param _cb        Callback structure, or NULL to keep no callbacks.
+ */
+#define BLE_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)          \
 {                                                                   \
     .id = (_id),                                                    \
-    .op = _op,                                                      \
+    .op = (_op),                                                    \
     .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =       \
             BLE_MESH_KEY_UNUSED },                                  \
-    .pub = _pub,                                                    \
+    .pub = (_pub),                                                  \
     .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =   \
             BLE_MESH_ADDR_UNASSIGNED },                             \
-    .user_data = _user_data,                                        \
+    .user_data = (_user_data),                                      \
+    .cb = (_cb),                                                    \
 }
 
-#define BLE_MESH_MODEL_VND(_company, _id, _op, _pub, _user_data)    \
+/** @def BLE_MESH_MODEL_VND_CB
+ *
+ *  @brief Composition data vendor model entry with callback functions.
+ *
+ *  @param _company   Company ID.
+ *  @param _id        Model ID.
+ *  @param _op        Array of model opcode handlers.
+ *  @param _pub       Model publish parameters.
+ *  @param _user_data User data for the model.
+ *  @param _cb        Callback structure, or NULL to keep no callbacks.
+ */
+#define BLE_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb) \
 {                                                                   \
     .vnd.company = (_company),                                      \
     .vnd.id = (_id),                                                \
-    .op = _op,                                                      \
-    .pub = _pub,                                                    \
+    .op = (_op),                                                    \
+    .pub = (_pub),                                                  \
     .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =       \
             BLE_MESH_KEY_UNUSED },                                  \
     .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =   \
             BLE_MESH_ADDR_UNASSIGNED },                             \
-    .user_data = _user_data,                                        \
+    .user_data = (_user_data),                                      \
+    .cb = (_cb),                                                    \
 }
 
 /** @def BLE_MESH_TRANSMIT
@@ -278,7 +301,7 @@ struct bt_mesh_model_op {
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.
  */
-#define BLE_MESH_TRANSMIT(count, int_ms) ((count) | (((int_ms / 10) - 1) << 3))
+#define BLE_MESH_TRANSMIT(count, int_ms) ((count) | ((((int_ms) / 10) - 1) << 3))
 
 /** @def BLE_MESH_TRANSMIT_COUNT
  *
@@ -311,7 +334,7 @@ struct bt_mesh_model_op {
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.
  */
-#define BLE_MESH_PUB_TRANSMIT(count, int_ms) BLE_MESH_TRANSMIT(count, (int_ms) / 5)
+#define BLE_MESH_PUB_TRANSMIT(count, int_ms) BLE_MESH_TRANSMIT((count), (int_ms) / 5)
 
 /** @def BLE_MESH_PUB_TRANSMIT_COUNT
  *
@@ -400,6 +423,36 @@ struct bt_mesh_model_pub {
         .msg = &bt_mesh_pub_msg_##_name, \
     }
 
+/** Model callback functions. */
+struct bt_mesh_model_cb {
+    /** @brief Model init callback.
+     *
+     *  Called on every model instance during mesh initialization.
+     *
+     *  If any of the model init callbacks return an error, the mesh
+     *  subsystem initialization will be aborted, and the error will
+     *  be returned to the caller of @ref bt_mesh_init.
+     *
+     *  @param model Model to be initialized.
+     *
+     *  @return 0 on success, error otherwise.
+     */
+    int (*const init)(struct bt_mesh_model *model);
+
+    /** @brief Model deinit callback.
+     *
+     *  Called on every model instance during mesh deinitialization.
+     *  All model data is deleted, and the model should clear its state.
+     *
+     *  If any of the model deinit callbacks return an error, the mesh
+     *  subsystem deinitialization will be aborted, and the error will
+     *  be returned to the caller of @ref bt_mesh_deinit.
+     *
+     *  @param model Model to be de-initialized.
+     */
+    int (*const deinit)(struct bt_mesh_model *model);
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
     union {
@@ -427,7 +480,11 @@ struct bt_mesh_model {
     /* Subscription List (group or virtual addresses) */
     u16_t groups[CONFIG_BLE_MESH_MODEL_GROUP_COUNT];
 
+    /** Opcode handler list */
     const struct bt_mesh_model_op *const op;
+
+    /** Model callback structure. */
+    const struct bt_mesh_model_cb *const cb;
 
     /* Model-specific user data */
     void *user_data;
@@ -487,6 +544,39 @@ int bt_mesh_model_publish(struct bt_mesh_model *model);
  * @return Pointer to the element that the given model belongs to.
  */
 struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
+
+/** @brief Find a SIG model.
+ *
+ *  @param elem Element to search for the model in.
+ *  @param id   Model ID of the model.
+ *
+ *  @return A pointer to the Mesh model matching the given parameters, or NULL
+ *          if no SIG model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem, u16_t id);
+
+/** @brief Find a vendor model.
+ *
+ *  @param elem    Element to search for the model in.
+ *  @param company Company ID of the model.
+ *  @param id      Model ID of the model.
+ *
+ *  @return A pointer to the Mesh model matching the given parameters, or NULL
+ *          if no vendor model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
+                                             u16_t company, u16_t id);
+
+/** @brief Get whether the model is in the primary element of the device.
+ *
+ *  @param mod Mesh model.
+ *
+ *  @return true if the model is on the primary element, false otherwise.
+ */
+static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
+{
+    return (mod->elem_idx == 0);
+}
 
 /** Node Composition */
 struct bt_mesh_comp {

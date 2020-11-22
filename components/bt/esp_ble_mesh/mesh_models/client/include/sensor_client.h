@@ -25,8 +25,11 @@
 extern "C" {
 #endif
 
+/* Sensor Client Model Callback */
+extern const struct bt_mesh_model_cb bt_mesh_sensor_client_cb;
+
 /* Sensor Client Model Context */
-extern const struct bt_mesh_model_op sensor_cli_op[];
+extern const struct bt_mesh_model_op bt_mesh_sensor_cli_op[];
 
 /** @def BLE_MESH_MODEL_SENSOR_CLI
  *
@@ -39,8 +42,8 @@ extern const struct bt_mesh_model_op sensor_cli_op[];
  *  @return New sensor client model instance.
  */
 #define BLE_MESH_MODEL_SENSOR_CLI(cli_pub, cli_data)    \
-        BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SENSOR_CLI,    \
-                    sensor_cli_op, cli_pub, cli_data)
+        BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_SENSOR_CLI,    \
+            bt_mesh_sensor_cli_op, cli_pub, cli_data, &bt_mesh_sensor_client_cb)
 
 typedef bt_mesh_client_user_data_t      bt_mesh_sensor_client_t;
 typedef bt_mesh_client_internal_data_t  sensor_internal_data_t;
@@ -132,26 +135,6 @@ struct bt_mesh_sensor_series_get {
     struct net_buf_simple *raw_value_x1; /* Raw value identifying a starting column (optional) */
     struct net_buf_simple *raw_value_x2; /* Raw value identifying a ending column (C.1) */
 };
-
-/**
- * @brief This function is called to initialize sensor client model user_data.
- *
- * @param[in] model:   Pointer to sensor client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary);
-
-/**
- * @brief This function is called to de-initialize sensor client model user_data.
- *
- * @param[in] model:   Pointer to sensor client model
- * @param[in] primary: Whether belongs to primary element
- *
- * @return Zero-success, other-fail
- */
-int bt_mesh_sensor_cli_deinit(struct bt_mesh_model *model, bool primary);
 
 /**
  * @brief This function is called to get sensor states.

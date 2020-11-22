@@ -303,17 +303,17 @@ int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid)
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
+static int health_cli_init(struct bt_mesh_model *model)
 {
     health_internal_data_t *internal = NULL;
     bt_mesh_health_client_t *client = NULL;
 
-    BT_DBG("primary %u", primary);
-
     if (!model) {
-        BT_ERR("%s, Invalid parameter", __func__);
+        BT_ERR("Invalid Health Client model");
         return -EINVAL;
     }
+
+    BT_DBG("primary %u", bt_mesh_model_in_primary(model));
 
     client = (bt_mesh_health_client_t *)model->user_data;
     if (!client) {
@@ -343,14 +343,16 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
     return 0;
 }
 
-int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
+static int health_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_health_client_t *client = NULL;
 
     if (!model) {
-        BT_ERR("%s, Invalid parameter", __func__);
+        BT_ERR("Invalid Health Client model");
         return -EINVAL;
     }
+
+    BT_DBG("primary %u", bt_mesh_model_in_primary(model));
 
     client = (bt_mesh_health_client_t *)model->user_data;
     if (!client) {
@@ -371,3 +373,8 @@ int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
 
     return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_health_cli_cb = {
+    .init = health_cli_init,
+    .deinit = health_cli_deinit,
+};

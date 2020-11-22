@@ -142,7 +142,7 @@ static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
 }
 
 static u32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
-        int size, u32_t opcode)
+                                          int size, u32_t opcode)
 {
     if (!op_pair || size == 0) {
         return 0;
@@ -381,25 +381,20 @@ void bt_mesh_client_model_unlock(void)
 int bt_mesh_client_init(struct bt_mesh_model *model)
 {
     bt_mesh_client_internal_data_t *data = NULL;
-    bt_mesh_client_user_data_t *cli = NULL;
+    bt_mesh_client_user_data_t *client = NULL;
 
-    if (!model) {
-        BT_ERR("%s, Invalid parameter", __func__);
+    if (!model || !model->op) {
+        BT_ERR("Invalid vendor client model");
         return -EINVAL;
     }
 
-    if (!model->op) {
-        BT_ERR("Invalid vendor client model op");
+    client = (bt_mesh_client_user_data_t *)model->user_data;
+    if (!client) {
+        BT_ERR("No vendor client context provided");
         return -EINVAL;
     }
 
-    cli = model->user_data;
-    if (!cli) {
-        BT_ERR("Invalid vendor client user data");
-        return -EINVAL;
-    }
-
-    if (!cli->internal_data) {
+    if (!client->internal_data) {
         data = bt_mesh_calloc(sizeof(bt_mesh_client_internal_data_t));
         if (!data) {
             BT_ERR("%s, Out of memory", __func__);
@@ -409,10 +404,10 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
         /* Init the client data queue */
         sys_slist_init(&data->queue);
 
-        cli->model = model;
-        cli->internal_data = data;
+        client->model = model;
+        client->internal_data = data;
     } else {
-        bt_mesh_client_clear_list(cli->internal_data);
+        bt_mesh_client_clear_list(client->internal_data);
     }
 
     bt_mesh_client_model_mutex_new();
@@ -425,13 +420,13 @@ int bt_mesh_client_deinit(struct bt_mesh_model *model)
     bt_mesh_client_user_data_t *client = NULL;
 
     if (!model) {
-        BT_ERR("%s, Invalid parameter", __func__);
+        BT_ERR("Invalid vendor client model");
         return -EINVAL;
     }
 
     client = (bt_mesh_client_user_data_t *)model->user_data;
     if (!client) {
-        BT_ERR("Invalid vendor client user data");
+        BT_ERR("No vendor client context provided");
         return -EINVAL;
     }
 
