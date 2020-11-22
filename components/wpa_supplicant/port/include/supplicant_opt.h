@@ -28,4 +28,8 @@
 #define DEBUG_PRINT
 #endif
 
+#if CONFIG_WPA_DEBUG_PRINT
+#define DEBUG_PRINT
+#endif
+
 #endif /* _SUPPLICANT_OPT_H */

@@ -48,6 +48,7 @@
 #define WPA_TX_MSG_BUFF_MAXLEN 200
 
 #define ASSOC_IE_LEN 24 + 2 + PMKID_LEN + RSN_SELECTOR_LEN
+#define MAX_EAPOL_RETRIES 3
 u8 assoc_ie_buf[ASSOC_IE_LEN+2]; 
 
 void set_assoc_ie(u8 * assoc_buf);
@@ -1938,6 +1939,14 @@ int   wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
             wpa_supplicant_process_3_of_4(sm, key, ver);
         } else {
             /* 1/4 4-Way Handshake */
+            sm->eapol1_count++;
+            if (sm->eapol1_count > MAX_EAPOL_RETRIES) {
+#ifdef DEBUG_PRINT
+                wpa_printf(MSG_INFO, "EAPOL1 received for %d times, sending deauth", sm->eapol1_count);
+#endif
+                esp_wifi_internal_issue_disconnect(WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT);
+                goto out;
+            }
             wpa_supplicant_process_1_of_4(sm, src_addr, key,
                               ver);
         }
@@ -2119,10 +2128,22 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         (esp_wifi_sta_prof_is_wpa2_internal() &&
          esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT)) {
-        pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
-        wpa_sm_set_pmk_from_pmksa(sm);
+        if (!esp_wifi_skip_supp_pmkcaching()) {
+            pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
+            wpa_sm_set_pmk_from_pmksa(sm);
+        } else {
+            struct rsn_pmksa_cache_entry *entry = NULL;
+
+            if (sm->pmksa) {
+                entry = pmksa_cache_get(sm->pmksa, (const u8 *)bssid, NULL, NULL);
+            }
+            if (entry) {
+                pmksa_cache_flush(sm->pmksa, NULL, entry->pmk, entry->pmk_len);
+            }
+        }
     }
 
+    sm->eapol1_count = 0;
 #ifdef CONFIG_IEEE80211W
     if (esp_wifi_sta_pmf_enabled()) {
         wifi_config_t wifi_cfg;

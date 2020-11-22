@@ -346,6 +346,13 @@ menu "LWIP"
                 change the memory usage of LWIP, except for preventing
                 new listening TCP connections after the limit is reached.
 
+        config LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            bool "TCP high speed retransmissions"
+            default y
+            help
+                Speed up the TCP retransmission interval. If disabled,
+                it is recommended to change the number of SYN retransmissions to 6,
+                and TCP initial rto time to 3000.
 
         config LWIP_TCP_MAXRTX
             int "Maximum number of retransmissions of data segments"
@@ -356,7 +363,8 @@ menu "LWIP"
 
         config LWIP_TCP_SYNMAXRTX
             int "Maximum number of retransmissions of SYN segments"
-            default 6
+            default 6 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 12 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             range 3 12
             help
                 Set maximum number of retransmissions of SYN segments.
@@ -505,7 +513,8 @@ menu "LWIP"
 
         config LWIP_TCP_RTO_TIME
             int "Default TCP rto time"
-            default 3000
+            default 3000 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 1500 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             help
                 Set default TCP rto time for a reasonable initial rto.
                 In bad network environment, recommend set value of rto time to 1500.

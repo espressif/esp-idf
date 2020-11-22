@@ -187,7 +187,6 @@ void wpa2_task(void *pvParameters )
     ETSEvent *e;
     struct eap_sm *sm = gEapSm;
     bool task_del = false;
-    uint32_t sig = 0;
 
     if (!sm) {
         return;
@@ -195,7 +194,6 @@ void wpa2_task(void *pvParameters )
 
     for (;;) {
         if ( pdPASS == xQueueReceive(s_wpa2_queue, &e, portMAX_DELAY) ) {
-            sig = e->sig;
             if (e->sig < SIG_WPA2_MAX) {
                 DATA_MUTEX_TAKE();
                 if(sm->wpa2_sig_cnt[e->sig]) {
@@ -232,7 +230,7 @@ void wpa2_task(void *pvParameters )
             break;
         } else {
             if (s_wifi_wpa2_sync_sem) {
-                wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", sig);
+                wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", e->sig);
                 xSemaphoreGive(s_wifi_wpa2_sync_sem);
             } else {
                 wpa_printf(MSG_ERROR, "WPA2: null wifi->wpa2 sync sem");
@@ -245,7 +243,7 @@ void wpa2_task(void *pvParameters )
     wpa_printf(MSG_DEBUG, "WPA2: task deleted");
     s_wpa2_queue = NULL;
     if (s_wifi_wpa2_sync_sem) {
-        wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", sig);
+        wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", e->sig);
         xSemaphoreGive(s_wifi_wpa2_sync_sem);
     } else {
         wpa_printf(MSG_ERROR, "WPA2: null wifi->wpa2 sync sem");
