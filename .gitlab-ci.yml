@@ -815,7 +815,7 @@ check_version_tag:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
   script:
-    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
 
 assign_test:
   tags:
