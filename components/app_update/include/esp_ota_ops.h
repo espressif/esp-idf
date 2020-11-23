@@ -158,6 +158,18 @@ esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, s
 esp_err_t esp_ota_end(esp_ota_handle_t handle);
 
 /**
+ * @brief Abort OTA update, free the handle and memory associated with it.
+ *
+ * @param handle obtained from esp_ota_begin().
+ *
+ * @return
+ *    - ESP_OK: Handle and its associated memory is freed successfully.
+ *    - ESP_ERR_NOT_FOUND: OTA handle was not found.
+ */
+esp_err_t esp_ota_abort(esp_ota_handle_t handle);
+
+
+/**
  * @brief Configure OTA data for a new boot partition
  *
  * @note If this function returns ESP_OK, calling esp_restart() will boot the newly configured app partition.
