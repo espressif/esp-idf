@@ -38,6 +38,7 @@ static const char *TAG = "rtc_clk";
 
 #define RTC_PLL_FREQ_320M   320
 #define RTC_PLL_FREQ_480M   480
+#define DELAY_RTC_CLK_SWITCH 5
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static int s_cur_pll_freq = RTC_PLL_FREQ_480M;
@@ -554,6 +555,18 @@ void rtc_clk_8m_divider_set(uint32_t div)
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL_VLD);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, div);
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL_VLD);
+}
+
+void rtc_dig_clk8m_enable(void)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
+}
+
+void rtc_dig_clk8m_disable(void)
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
 }
 
 /* Name used in libphy.a:phy_chip_v7.o
