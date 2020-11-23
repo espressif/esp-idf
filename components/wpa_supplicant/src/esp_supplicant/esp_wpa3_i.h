@@ -31,5 +31,9 @@ static inline void esp_wifi_register_wpa3_cb(struct wpa_funcs *wpa_cb)
     wpa_cb->wpa3_parse_sae_msg = NULL;
 }
 
+static inline void esp_wpa3_free_sae_data(void)
+{
+}
+
 #endif /* CONFIG_WPA3_SAE */
 #endif /* ESP_WPA3_H */
