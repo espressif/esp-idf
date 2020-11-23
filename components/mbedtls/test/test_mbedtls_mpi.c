@@ -64,13 +64,13 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
     mbedtls_mpi_write_string(&X, 16, x_buf, sizeof(x_buf)-1, &x_buf_len);
     TEST_ASSERT_EQUAL_STRING_MESSAGE(e_str, x_buf, "mbedtls_mpi_mul_mpi result wrong");
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_MPI
     /* if mod_bits arg is set, also do a esp_mpi_mul_mod() call */
     if (mod_bits > 0) {
         mbedtls_mpi_init(&M);
         for(int i = 0; i < mod_bits; i++) {
             mbedtls_mpi_set_bit(&M, i, 1);
         }
-
         TEST_ASSERT_FALSE(esp_mpi_mul_mpi_mod(&X, &A, &B, &M));
 
         mbedtls_mpi_write_string(&X, 16, x_buf, sizeof(x_buf)-1, &x_buf_len);
@@ -78,7 +78,7 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
 
         mbedtls_mpi_free(&M);
     }
-
+#endif
 
     mbedtls_mpi_free(&A);
     mbedtls_mpi_free(&B);

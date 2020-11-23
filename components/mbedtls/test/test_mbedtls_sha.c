@@ -15,6 +15,7 @@
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
 #include "sodium/utils.h"
+#include "soc/soc_caps.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
@@ -369,7 +370,7 @@ TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
 #if !DISABLED_FOR_TARGETS(ESP32)
 
 /* Function are not implemented in SW */
-#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+#if CONFIG_MBEDTLS_HARDWARE_SHA && SOC_SHA_SUPPORT_SHA512_T
 
 /*
  * FIPS-180-2 test vectors

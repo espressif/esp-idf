@@ -57,7 +57,7 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
 #if !CONFIG_IDF_TARGET_ESP32
-    return ESP_ERR_NOT_SUPPORTED;
+    return ESP_ERR_NOT_SUPPORTED; // TODO IDF-1326
 #else
     uint8_t version;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_VER, &version, 8);
