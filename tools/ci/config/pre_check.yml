@@ -192,4 +192,4 @@ check_version_tag:
     - .pre_check_job_template
     - .rules:tag:release-no_label
   script:
-    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || echo "ESP-IDF versions must be annotated tags." && exit 1
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
