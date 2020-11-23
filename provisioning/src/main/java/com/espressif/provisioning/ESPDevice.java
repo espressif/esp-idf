@@ -85,7 +85,7 @@ public class ESPDevice {
     private ESPConstants.TransportType transportType;
     private ESPConstants.SecurityType securityType;
 
-    private String proofOfPossession;
+    private String proofOfPossession = "";
     private String versionInfo;
     private int totalCount;
     private int startIndex;
