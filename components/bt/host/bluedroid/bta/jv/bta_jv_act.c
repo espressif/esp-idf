@@ -2257,22 +2257,39 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
     evt_data.status = BTA_JV_FAILURE;
     evt_data.handle = p_pcb->handle;
     evt_data.req_id = wc->req_id;
-    evt_data.cong   = p_pcb->cong;
+    evt_data.old_cong = p_pcb->cong;
     bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
-    evt_data.len = wc->len;
-    if (!evt_data.cong &&
+    evt_data.len = -1;
+    if (!evt_data.old_cong &&
             PORT_WriteDataCO(p_pcb->port_handle, &evt_data.len, wc->len, wc->p_data) ==
             PORT_SUCCESS) {
         evt_data.status = BTA_JV_SUCCESS;
     }
     // update congestion flag
-    evt_data.cong   = p_pcb->cong;
+    evt_data.cong = p_pcb->cong;
     if (p_cb->p_cback) {
         p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, (tBTA_JV *)&evt_data, p_pcb->user_data);
     } else {
         APPL_TRACE_ERROR("bta_jv_rfcomm_write :: WARNING ! No JV callback set");
     }
 
+}
+
+/*******************************************************************************
+**
+** Function     bta_jv_rfcomm_flow_control
+**
+** Description  give credits to the peer
+**
+** Returns      void
+**
+*******************************************************************************/
+void bta_jv_rfcomm_flow_control(tBTA_JV_MSG *p_data)
+{
+    tBTA_JV_API_RFCOMM_FLOW_CONTROL *fc = &(p_data->rfcomm_fc);
+
+    tBTA_JV_PCB *p_pcb = fc->p_pcb;
+    PORT_FlowControl_GiveCredit(p_pcb->port_handle, TRUE, fc->credits_given);
 }
 
 /*******************************************************************************

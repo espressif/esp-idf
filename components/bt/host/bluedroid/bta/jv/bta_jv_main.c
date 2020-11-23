@@ -68,6 +68,7 @@ const tBTA_JV_ACTION bta_jv_action[] = {
     bta_jv_rfcomm_stop_server,      /* BTA_JV_API_RFCOMM_STOP_SERVER_EVT */
     bta_jv_rfcomm_read,             /* BTA_JV_API_RFCOMM_READ_EVT */
     bta_jv_rfcomm_write,            /* BTA_JV_API_RFCOMM_WRITE_EVT */
+    bta_jv_rfcomm_flow_control,     /* BTA_JV_API_RFCOMM_FLOW_CONTROL_EVT */
     bta_jv_set_pm_profile,          /* BTA_JV_API_SET_PM_PROFILE_EVT */
     bta_jv_change_pm_state,         /* BTA_JV_API_PM_STATE_CHANGE_EVT */
 #if BTA_JV_L2CAP_INCLUDED
