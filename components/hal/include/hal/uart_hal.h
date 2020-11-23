@@ -200,12 +200,11 @@ void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
  * @brief  Configure the UART baud-rate and select the source clock
  *
  * @param  hal Context of the HAL layer
- * @param  source_clk The UART source clock.
  * @param  baud_rate The baud-rate to be set
  *
  * @return None
  */
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uart_sclk_t source_clk, uint32_t baud_rate);
+void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate);
 
 /**
  * @brief  Configure the UART stop bit

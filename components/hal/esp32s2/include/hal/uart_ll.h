@@ -99,16 +99,13 @@ static inline uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set. When the source clock is APB, the max baud rate is `UART_LL_BITRATE_MAX`
- * @param  source_clk The UART source clock. The source clock can be APB clock or REF_TICK.
- *                    If the source clock is REF_TICK, the UART can still work when the APB changes.
- *
+
  * @return None
  */
-static inline void uart_ll_set_baudrate(uart_dev_t *hw, uart_sclk_t source_clk, uint32_t baud)
+static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 {
     uint32_t sclk_freq, clk_div;
 
-    uart_ll_set_sclk(hw, source_clk);
     sclk_freq = uart_ll_get_sclk_freq(hw);
     clk_div = ((sclk_freq) << 4) / baud;
     // The baud rate configuration register is divided into
