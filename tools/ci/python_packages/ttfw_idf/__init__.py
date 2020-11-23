@@ -286,14 +286,16 @@ def check_performance(item, value, target):
 
     for performance_file in performance_files:
         try:
-            op, value = _find_perf_item(performance_file)
+            op, standard = _find_perf_item(performance_file)
         except (IOError, AttributeError):
             # performance file doesn't exist or match is not found in it
             continue
 
-        _check_perf(op, value)
+        _check_perf(op, standard)
         # if no exception was thrown then the performance is met and no need to continue
         break
+    else:
+        raise AssertionError("Failed to get performance standard for {}".format(item))
 
 
 MINIMUM_FREE_HEAP_SIZE_RE = re.compile(r'Minimum free heap size: (\d+) bytes')
