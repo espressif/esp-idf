@@ -141,6 +141,17 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void);
 touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
 
 /**
+ * @brief Returns true if a GPIO number is valid for use as wakeup source.
+ *
+ * @note For SoCs with RTC IO capability, this can be any valid RTC IO input pin.
+ *
+ * @param gpio_num Number of the GPIO to test for wakeup source capability
+ *
+ * @return True if this GPIO number will be accepted as a sleep wakeup source.
+ */
+bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
+
+/**
  * @brief Enable wakeup using a pin
  *
  * This function uses external wakeup feature of RTC_IO peripheral.
