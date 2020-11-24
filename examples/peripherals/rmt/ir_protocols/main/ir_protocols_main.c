@@ -47,10 +47,11 @@ static void example_ir_rx_task(void *arg)
 
     //get RMT RX ringbuffer
     rmt_get_ringbuf_handle(example_rx_channel, &rb);
+    assert(rb != NULL);
     // Start receive
     rmt_rx_start(example_rx_channel, true);
-    while (rb) {
-        items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
+    while (1) {
+        items = (rmt_item32_t *) xRingbufferReceive(rb, &length, portMAX_DELAY);
         if (items) {
             length /= 4; // one RMT = 4 Bytes
             if (ir_parser->input(ir_parser, items, length) == ESP_OK) {
@@ -60,8 +61,6 @@ static void example_ir_rx_task(void *arg)
             }
             //after parsing the data, return spaces to ringbuffer.
             vRingbufferReturnItem(rb, (void *) items);
-        } else {
-            break;
         }
     }
     ir_parser->del(ir_parser);
