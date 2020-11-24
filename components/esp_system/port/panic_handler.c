@@ -64,7 +64,15 @@ void *g_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 */
 static void print_state_for_core(const void *f, int core)
 {
+    /* On Xtensa (with Window ABI), register dump is not required for backtracing.
+     * Don't print it on abort to reduce clutter.
+     * On other architectures, register values need to be known for backtracing.
+     */
+#if defined(__XTENSA__) && defined(XCHAL_HAVE_WINDOWED)
     if (!g_panic_abort) {
+#else
+    if (true) {
+#endif
         panic_print_registers(f, core);
         panic_print_str("\r\n");
     }
