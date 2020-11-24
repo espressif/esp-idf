@@ -389,6 +389,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/provisioner_prov.c"
                     "esp_ble_mesh/mesh_core/proxy_client.c"
                     "esp_ble_mesh/mesh_core/proxy_server.c"
+                    "esp_ble_mesh/mesh_core/settings_uid.c"
                     "esp_ble_mesh/mesh_core/settings.c"
                     "esp_ble_mesh/mesh_core/test.c"
                     "esp_ble_mesh/mesh_core/transport.c"
