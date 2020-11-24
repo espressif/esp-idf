@@ -151,7 +151,7 @@ void app_main(void)
 {
     // Initialize touch pad peripheral, it will start a timer to run a filter
     ESP_LOGI(TAG, "Initializing touch pad");
-    touch_pad_init();
+    ESP_ERROR_CHECK(touch_pad_init());
     // If use interrupt trigger mode, should set touch sensor FSM mode at 'TOUCH_FSM_MODE_TIMER'.
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     // Set reference voltage for charging/discharging

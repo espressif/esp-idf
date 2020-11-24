@@ -233,6 +233,7 @@ static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_
  */
 static inline void touch_ll_set_fsm_mode(touch_fsm_mode_t mode)
 {
+    SENS.sar_touch_ctrl2.touch_start_fsm_en = 1;
     SENS.sar_touch_ctrl2.touch_start_en = 0;
     SENS.sar_touch_ctrl2.touch_start_force = mode;
 }

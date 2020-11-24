@@ -57,7 +57,7 @@ void app_main(void)
 {
     // Initialize touch pad peripheral.
     // The default fsm mode is software trigger mode.
-    touch_pad_init();
+    ESP_ERROR_CHECK(touch_pad_init());
     // Set reference voltage for charging/discharging
     // In this case, the high reference valtage will be 2.7V - 1V = 1.7V
     // The low reference voltage will be 0.5
