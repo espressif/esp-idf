@@ -21,6 +21,12 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
     .. note::
         Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
 
+.. note::
+    Limitation: the installation path of Python or ESP-IDF must not contain white spaces or parentheses.
+
+    Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
+    System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
+
 .. _get-started-windows-tools-installer:
 
 ESP-IDF Tools Installer
@@ -30,7 +36,7 @@ The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF To
 
 https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
-The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
+The installer includes the cross-compilers, OpenOCD, CMake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
 The installer also offers to download one of the ESP-IDF release versions. Please choose a directory for downloading ESP-IDF. The recommended directory is ``%userprofile%\esp`` where ``%userprofile%`` is your home directory. If you do not have it yet, please run the following command to create a new one:
 
@@ -69,8 +75,8 @@ For advanced users who want to customize the install process:
 
 
 .. _MSYS2: https://www.msys2.org/
-.. _cmake: https://cmake.org/download/
-.. _ninja: https://ninja-build.org/
+.. _CMake: https://cmake.org/download/
+.. _Ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
 .. _Git for Windows: https://gitforwindows.org/
 .. _Github Desktop: https://desktop.github.com/
