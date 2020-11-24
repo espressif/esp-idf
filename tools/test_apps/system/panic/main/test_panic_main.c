@@ -112,7 +112,11 @@ static void test_stack_overflow(void)
 
 static void test_illegal_instruction(void)
 {
+#if __XTENSA__
     __asm__ __volatile__("ill");
+#elif __riscv
+    __asm__ __volatile__("unimp");
+#endif
 }
 
 static void test_instr_fetch_prohibited(void)
