@@ -3271,8 +3271,7 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
-#if CONFIG_BLE_MESH_DEINIT
-int bt_mesh_provisioner_prov_deinit(bool erase)
+int bt_mesh_provisioner_prov_reset(bool erase)
 {
     int i;
 
@@ -3281,20 +3280,71 @@ int bt_mesh_provisioner_prov_deinit(bool erase)
         return -EINVAL;
     }
 
-#if defined(CONFIG_BLE_MESH_PB_ADV)
-    for (i = 0; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
-        prov_clear_tx(i);
-        k_delayed_work_free(&link[i].tx.retransmit);
-#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-        /* Remove the link id from exceptional list */
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[i].link_id);
-#endif /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
-    }
+    for (i = 0; i < BLE_MESH_PROV_SAME_TIME; i++) {
+        k_delayed_work_cancel(&link[i].timeout);
+
+        prov_memory_free(i);
+
+        if (i < CONFIG_BLE_MESH_PBA_SAME_TIME) {
+#if CONFIG_BLE_MESH_PB_ADV
+            prov_clear_tx(i);
+#if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
+            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
+                BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[i].link_id);
+#endif
+            memset(&link[i], 0, offsetof(struct prov_link, tx.retransmit));
+            link[i].pending_ack = XACT_NVAL;
+            link[i].rx.prev_id = XACT_NVAL;
+            link[i].rx.buf = bt_mesh_pba_get_buf(i);
 #endif /* CONFIG_BLE_MESH_PB_ADV */
+        } else {
+            memset(&link[i], 0, offsetof(struct prov_link, timeout));
+        }
+
+        if (bt_mesh_pub_key_get()) {
+            bt_mesh_atomic_set_bit(link[i].flags, LOCAL_PUB_KEY);
+        }
+    }
+
+    /* static_oob_len & static_oob_val are initialized during mesh init.
+     * When reset the Provisioner, they should not be reset. Otherwise
+     * users need to invoke the corresponding function to set the static
+     * oob information before using them.
+     */
+    memset(&prov_ctx, 0, offsetof(struct bt_mesh_prov_ctx, static_oob_len));
+    prov_ctx.match_offset = 0;
+    prov_ctx.match_length = 0;
+    prov_ctx.prov_after_match = false;
+    memset(prov_ctx.match_value, 0, sizeof(prov_ctx.match_value));
+    memset(&prov_ctx.fast_prov, 0, sizeof(prov_ctx.fast_prov));
+
+    memset(unprov_dev, 0, sizeof(unprov_dev));
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && erase) {
+        bt_mesh_clear_prov_info();
+    }
+
+    return 0;
+}
+
+#if CONFIG_BLE_MESH_DEINIT
+int bt_mesh_provisioner_prov_deinit(bool erase)
+{
+    int i;
+
+    if (prov == NULL) {
+        BT_ERR("%s, No provisioning context provided", __func__);
+        return -EINVAL;
+    }
+
+    bt_mesh_provisioner_prov_reset(erase);
 
     for (i = 0; i < BLE_MESH_PROV_SAME_TIME; i++) {
-        prov_memory_free(i);
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+        if (i < CONFIG_BLE_MESH_PBA_SAME_TIME) {
+            k_delayed_work_free(&link[i].tx.retransmit);
+        }
+#endif
         k_delayed_work_free(&link[i].timeout);
         memset(&link[i], 0, sizeof(link[i]));
     }
@@ -3306,17 +3356,13 @@ int bt_mesh_provisioner_prov_deinit(bool erase)
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     bt_mesh_pb_gatt_mutex_free();
 #endif
-    memset(&prov_ctx, 0, sizeof(prov_ctx));
+    prov_ctx.static_oob_len = 0U;
+    memset(prov_ctx.static_oob_val, 0, sizeof(prov_ctx.static_oob_val));
 
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     memset(adv_buf, 0, sizeof(adv_buf));
     memset(adv_buf_data, 0, sizeof(adv_buf_data));
 #endif
-    memset(unprov_dev, 0, sizeof(unprov_dev));
-
-    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_clear_prov_info();
-    }
 
     prov = NULL;
 
