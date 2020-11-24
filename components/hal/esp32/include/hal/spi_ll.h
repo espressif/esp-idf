@@ -219,6 +219,17 @@ static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
     //This is not used in esp32
 }
 
+/**
+ * Configuration of RX DMA EOF interrupt generation way
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.
+ */
+static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
+{
+    //This is not used in esp32
+}
+
 /*------------------------------------------------------------------------------
  * Buffer
  *----------------------------------------------------------------------------*/
@@ -936,7 +947,7 @@ static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, lldesc_t *addr)
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_out, bool enable)
+static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, bool enable)
 {
     //This is not supported in esp32
 }
@@ -950,17 +961,6 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_out, bool 
 static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, bool enable)
 {
     dma_in->dma_conf.indscr_burst_en = enable;
-}
-
-/**
- * Configuration of RX DMA EOF interrupt generation way
- *
- * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
- * @param enable 1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.
- */
-static inline void spi_dma_ll_set_rx_eof_generation(spi_dma_dev_t *dma_in, bool enable)
-{
-    //does not available in ESP32
 }
 
 /**
@@ -1007,6 +1007,17 @@ static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, bool 
 static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, bool enable)
 {
     dma_out->dma_conf.outdscr_burst_en = enable;
+}
+
+/**
+ * Configuration of OUT EOF flag generation way
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param enable  1: when dma pop all data from fifo  0:when ahb push all data to fifo.
+ */
+static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, bool enable)
+{
+    dma_out->dma_conf.out_eof_mode = enable;
 }
 
 /**
