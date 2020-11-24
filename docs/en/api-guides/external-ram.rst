@@ -15,27 +15,13 @@ Introduction
 Hardware
 ========
 
-{IDF_TARGET_NAME} supports SPI PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF only supports the ESP-PSRAM32 chip at the moment.
+{IDF_TARGET_NAME} supports SPI PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (ESP-PSRAM32, ESP-PSRAM64, etc).
 
-The ESP-PSRAM32 chip is a 1.8 V device which can only be used in parallel with a 1.8 V flash component. Make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+.. note:: Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
 
-.. only:: esp32
+.. note:: Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information.
 
-    To connect the ESP-PSRAM32 chip to ESP32D0W*, connect the following signals:
-
-    * PSRAM /CE (pin 1) > ESP32 GPIO 16
-    * PSRAM SO (pin 2) > flash DO
-    * PSRAM SIO[2] (pin 3) > flash WP
-    * PSRAM SI (pin 5) > flash DI
-    * PSRAM SCLK (pin 6) > ESP32 GPIO 17
-    * PSRAM SIO[3] (pin 7) > flash HOLD
-    * PSRAM Vcc (pin 8) > ESP32 VCC_SDIO
-
-    Connections for ESP32D2W* chips are TBD.
-
-    .. note::
-
-        Espressif produces the line of ESP32-WROVER modules which contain ESP32, 1.8 V flash, and ESP-PSRAM32. These modules are ready to be mounted on an end product PCB.
+For specific details about connecting the SoC or module pins to an external PSRAM chip, consult the SoC or module datasheet.
 
 .. _external_ram_config:
 
