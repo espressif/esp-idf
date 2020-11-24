@@ -18,15 +18,18 @@
 #include "bt_app_core.h"
 #include "driver/i2s.h"
 #include "freertos/ringbuf.h"
+#include "bt_app_av.h"
 
 static void bt_app_task_handler(void *arg);
 static bool bt_app_send_msg(bt_app_msg_t *msg);
 static void bt_app_work_dispatched(bt_app_msg_t *msg);
+static void adjust_volume(uint8_t *data, size_t size);
 
 static xQueueHandle s_bt_app_task_queue = NULL;
 static xTaskHandle s_bt_app_task_handle = NULL;
 static xTaskHandle s_bt_i2s_task_handle = NULL;
-static RingbufHandle_t s_ringbuf_i2s = NULL;;
+static RingbufHandle_t s_ringbuf_i2s = NULL;
+static int32_t s_volume = 0;
 
 bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
 {
@@ -125,6 +128,7 @@ static void bt_i2s_task_handler(void *arg)
     for (;;) {
         data = (uint8_t *)xRingbufferReceive(s_ringbuf_i2s, &item_size, (portTickType)portMAX_DELAY);
         if (item_size != 0){
+            adjust_volume(data, item_size);
             i2s_write(0, data, item_size, &bytes_written, portMAX_DELAY);
             vRingbufferReturnItem(s_ringbuf_i2s,(void *)data);
         }
@@ -163,4 +167,34 @@ size_t write_ringbuf(const uint8_t *data, size_t size)
     } else {
         return 0;
     }
+}
+
+void bt_i2s_set_volume(uint8_t level) {
+    if (level < 0x80) {
+        s_volume = level; // 7 bits, 0 - 127 levels
+    }
+}
+
+static void adjust_volume(uint8_t *data, size_t size) {
+    size_t items = size / BT_SBC_BITS_PER_SAMPLE / 8 ; // 8 is bits per byte.
+
+    if (BT_SBC_BITS_PER_SAMPLE == 8) {
+        int8_t* ptr = (int8_t*) data;
+        for (size_t i = 0; i < items; i++, ptr++) {
+            *ptr = (*ptr * s_volume) >> 7;
+        }
+    } else if (BT_SBC_BITS_PER_SAMPLE == 16) {
+        int16_t* ptr = (int16_t*) data;
+        for (size_t i = 0; i < items; i++, ptr++) {
+            *ptr = (*ptr * s_volume) >> 7;
+        }
+    } else if (BT_SBC_BITS_PER_SAMPLE == 32) {
+        int32_t* ptr = (int32_t*) data;
+        for (size_t i = 0; i < items; i++, ptr++) {
+            *ptr = (*ptr * s_volume) >> 7;
+        }
+    } else {
+        ESP_LOGE(BT_APP_CORE_TAG, "%s, unsupported bit depth", __func__); 
+        return;
+    }   
 }
