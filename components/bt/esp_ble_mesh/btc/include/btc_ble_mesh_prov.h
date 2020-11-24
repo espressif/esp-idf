@@ -66,6 +66,13 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO,
+    BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS,
+    BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_UID,
+    BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_UID,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_UID,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -231,6 +238,26 @@ typedef union {
         uint16_t hb_src;
         uint16_t hb_dst;
     } set_heartbeat_filter_info;
+    struct {
+        uint8_t index;
+    } open_settings_with_index;
+    struct {
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];
+    } open_settings_with_uid;
+    struct {
+        uint8_t index;
+        bool erase;
+    } close_settings_with_index;
+    struct {
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];
+        bool erase;
+    } close_settings_with_uid;
+    struct {
+        uint8_t index;
+    } delete_settings_with_index;
+    struct {
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];
+    } delete_settings_with_uid;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;
@@ -362,6 +389,12 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find_vnd(const esp_ble_mesh_elem_t *ele
 esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem, uint16_t id);
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
+
+const char *btc_ble_mesh_provisioner_get_settings_uid(uint8_t index);
+
+uint8_t btc_ble_mesh_provisioner_get_settings_index(const char *uid);
+
+uint8_t btc_ble_mesh_provisioner_get_free_settings_count(void);
 
 void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);

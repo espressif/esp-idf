@@ -51,6 +51,12 @@ extern "C" {
 /*!< The maximum length of a BLE Mesh unprovisioned device name */
 #define ESP_BLE_MESH_DEVICE_NAME_MAX_LEN    DEVICE_NAME_SIZE
 
+/*!< The maximum length of settings user id */
+#define ESP_BLE_MESH_SETTINGS_UID_SIZE      20
+
+/*!< Invalid settings index */
+#define ESP_BLE_MESH_INVALID_SETTINGS_IDX   0xFF
+
 /*!< Define the BLE Mesh octet 16 bytes size */
 #define ESP_BLE_MESH_OCTET16_LEN    16
 typedef uint8_t esp_ble_mesh_octet16_t[ESP_BLE_MESH_OCTET16_LEN];
@@ -869,7 +875,14 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT,     /*!< Provisioner start to receive heartbeat message completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT, /*!< Provisioner set the heartbeat filter type completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT, /*!< Provisioner set the heartbeat filter information completion event */
-    ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT,        /*!< Provisioner receive heartbeat message event */
+    ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT,         /*!< Provisioner receive heartbeat message event */
+    ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT,        /*!< Provisioner directly erase settings completion event */
+    ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT,     /*!< Provisioner open settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_UID_COMP_EVT,       /*!< Provisioner open settings with user id completion event */
+    ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT,    /*!< Provisioner close settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_UID_COMP_EVT,      /*!< Provisioner close settings with user id completion event */
+    ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT,   /*!< Provisioner delete settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_UID_COMP_EVT,     /*!< Provisioner delete settings with user id completion event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
@@ -1272,6 +1285,57 @@ typedef union {
         uint16_t feature;           /*!< Bit field of currently active features of the node */
         int8_t   rssi;              /*!< RSSI of the heartbeat message */
     } provisioner_recv_heartbeat;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT
+     */
+    struct {
+        int err_code;                           /*!< Indicate the result of directly erasing settings by the Provisioner */
+    } provisioner_direct_erase_settings_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct {
+        int err_code;                               /*!< Indicate the result of opening settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_open_settings_with_index_comp;    /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_UID_COMP_EVT
+     */
+    struct {
+        int err_code;                                   /*!< Indicate the result of opening settings with user id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];   /*!< Provisioner settings user id */
+    } provisioner_open_settings_with_uid_comp;          /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_UID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct {
+        int err_code;                               /*!< Indicate the result of closing settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_close_settings_with_index_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_UID_COMP_EVT
+     */
+    struct {
+        int err_code;                                   /*!< Indicate the result of closing settings with user id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];   /*!< Provisioner settings user id */
+    } provisioner_close_settings_with_uid_comp;         /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_UID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct {
+        int err_code;                               /*!< Indicate the result of deleting settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_delete_settings_with_index_comp;  /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_UID_COMP_EVT
+     */
+    struct {
+        int err_code;                                   /*!< Indicate the result of deleting settings with user id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+        char uid[ESP_BLE_MESH_SETTINGS_UID_SIZE + 1];   /*!< Provisioner settings user id */
+    } provisioner_delete_settings_with_uid_comp;        /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_UID_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT
      */
