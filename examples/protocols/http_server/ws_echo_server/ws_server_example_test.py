@@ -63,7 +63,6 @@ def test_examples_protocol_http_ws_echo_server(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "ws_echo_server.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("http_ws_server_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("http_ws_server_bin_size", bin_size // 1024, dut1.TARGET)
 
     # Upload binary and start testing
     Utility.console_log("Starting ws-echo-server test app based on http_server")
