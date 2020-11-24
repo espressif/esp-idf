@@ -598,6 +598,176 @@ esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble
 }
 #endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
 
+#if CONFIG_BLE_MESH_SETTINGS
+esp_err_t esp_ble_mesh_provisioner_direct_erase_settings(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif /* CONFIG_BLE_MESH_SETTINGS */
+
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_index(uint8_t index)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (index >= CONFIG_BLE_MESH_MAX_NVS_NAMESPACE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_INDEX;
+
+    arg.open_settings_with_index.index = index;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_uid(const char *uid)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!uid || strlen(uid) > ESP_BLE_MESH_SETTINGS_UID_SIZE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_UID;
+
+    strncpy(arg.open_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_index(uint8_t index, bool erase)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (index >= CONFIG_BLE_MESH_MAX_NVS_NAMESPACE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX;
+
+    arg.close_settings_with_index.index = index;
+    arg.close_settings_with_index.erase = erase;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_uid(const char *uid, bool erase)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!uid || strlen(uid) > ESP_BLE_MESH_SETTINGS_UID_SIZE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_UID;
+
+    strncpy(arg.close_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
+    arg.close_settings_with_uid.erase = erase;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_index(uint8_t index)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (index >= CONFIG_BLE_MESH_MAX_NVS_NAMESPACE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_INDEX;
+
+    arg.delete_settings_with_index.index = index;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_uid(const char *uid)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!uid || strlen(uid) > ESP_BLE_MESH_SETTINGS_UID_SIZE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_UID;
+
+    strncpy(arg.delete_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+const char *esp_ble_mesh_provisioner_get_settings_uid(uint8_t index)
+{
+    if (index >= CONFIG_BLE_MESH_MAX_NVS_NAMESPACE) {
+        return NULL;
+    }
+
+    return btc_ble_mesh_provisioner_get_settings_uid(index);
+}
+
+uint8_t esp_ble_mesh_provisioner_get_settings_index(const char *uid)
+{
+    if (!uid || strlen(uid) > ESP_BLE_MESH_SETTINGS_UID_SIZE) {
+        return ESP_BLE_MESH_INVALID_SETTINGS_IDX;
+    }
+
+    return btc_ble_mesh_provisioner_get_settings_index(uid);
+}
+
+uint8_t esp_ble_mesh_provisioner_get_free_settings_count(void)
+{
+    return btc_ble_mesh_provisioner_get_free_settings_count();
+}
+#endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
+
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)
