@@ -57,7 +57,6 @@ def test_examples_protocol_socket(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "udp_server.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("udp_server_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("udp_server_bin_size", bin_size // 1024, dut1.TARGET)
 
     # start test
     dut1.start_app()

@@ -16,7 +16,6 @@ def test_examples_protocol_https_x509_bundle(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "https_x509_bundle.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("https_x509_bundle_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("https_x509_bundle_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     dut1.start_app()
     num_URLS = dut1.expect(re.compile(r"Connecting to (\d+) URLs"), timeout=30)
@@ -29,7 +28,6 @@ def test_examples_protocol_https_x509_bundle(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "https_x509_bundle.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("https_x509_bundle_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("https_x509_bundle_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     dut1.start_app()
     num_URLS = dut1.expect(re.compile(r"Connecting to (\d+) URLs"), timeout=30)
