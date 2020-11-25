@@ -2,6 +2,7 @@
 Getting Started with VS Code IDE
 ********************************
 
+:link_to_translation:`zh_CN:[中文]`
 
 We have official support for VS Code and we aim to provide complete end to end support for all actions related to ESP-IDF namely build, flash, monitor, debug, tracing, core-dump, System Trace Viewer, etc.
 
@@ -22,7 +23,7 @@ Supported Features
 * **App & Heap Tracing**, provides support for collecting traces from your application and simplified UI for analyzing them.
 * **System View Tracing Viewer**, aims to read and display the *.svdat* files into trace UI, we also support multiple core tracing views.
 * **IDF Size Analysis Overview** presents an UI for binary size analysis.
-* **`Rainmaker Cloud <https://rainmaker.espressif.com/>`_**, we have inbuilt Rainmaker Cloud support where you can edit/read state of your connected IoT devices easily.
+* `Rainmaker Cloud <https://rainmaker.espressif.com/>`_, we have inbuilt Rainmaker Cloud support where you can edit/read state of your connected IoT devices easily.
 * **Code Coverage**, we have inbuilt code coverage support which shall highlight in color which line have been covered. We also render the existing HTML report directly inside the IDE.
 
 
