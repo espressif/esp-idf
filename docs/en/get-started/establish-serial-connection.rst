@@ -7,7 +7,7 @@ This section provides guidance how to establish serial connection between {IDF_T
 
 
 Connect {IDF_TARGET_NAME} to PC
--------------------------------
+----------------------------------
 
 Connect the {IDF_TARGET_NAME} board to the PC using the USB cable. If device driver does not install automatically, identify USB to serial converter chip on your {IDF_TARGET_NAME} board (or external converter dongle), search for drivers in internet and install them.
 
@@ -36,7 +36,7 @@ Below are the links to drivers for {IDF_TARGET_NAME} boards produced by Espressi
 * CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 * FTDI: `FTDI Virtual COM Port Drivers <https://www.ftdichip.com/Drivers/VCP.htm>`_
 
-The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with and operating system and automatically installed upon connecting one of the listed boards to the PC.
+The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with an operating system and automatically installed upon connecting one of the listed boards to the PC.
 
 
 Check port on Windows
@@ -61,7 +61,7 @@ Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
     Two USB Serial Ports of ESP-WROVER-KIT in Windows Device Manager
 
 
-Check port on Linux and MacOS
+Check port on Linux and macOS
 -----------------------------
 
 To check the device name for the serial port of your {IDF_TARGET_NAME} board (or external converter dongle), run this command two times, first with the board / dongle unplugged, then with plugged in. The port which appears the second time is the one you need:
@@ -70,13 +70,13 @@ Linux ::
 
     ls /dev/tty*
 
-MacOS ::
+macOS ::
 
     ls /dev/cu.*
 
 .. note::
 
-    MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+    macOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For macOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
 
 
 .. _linux-dialout-group:
@@ -128,12 +128,12 @@ Then open serial port in terminal and check, if you see any log printed out by {
 
    Close the serial terminal after verification that communication is working. If you keep the terminal session open, the serial port will be inaccessible for uploading firmware later.
 
-MacOS
-^^^^^
+macOS
+^^^^^^^^
 
-To spare you the trouble of installing a serial terminal program, MacOS offers the **screen** command.
+To spare you the trouble of installing a serial terminal program, macOS offers the **screen** command.
 
-- As discussed in `Check port on Linux and MacOS`_, run::
+- As discussed in `Check port on Linux and macOS`_, run::
 
     ls /dev/cu.*
 
