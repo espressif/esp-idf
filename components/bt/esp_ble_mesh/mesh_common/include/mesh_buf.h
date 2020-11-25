@@ -11,7 +11,7 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
-#include "sdkconfig.h"
+#include "mesh_config.h"
 #include "mesh_slist.h"
 #include "mesh_compiler.h"
 
@@ -717,7 +717,7 @@ static inline void net_buf_simple_save(struct net_buf_simple *buf,
  * @param state Stored state.
  */
 static inline void net_buf_simple_restore(struct net_buf_simple *buf,
-        struct net_buf_simple_state *state)
+                                          struct net_buf_simple_state *state)
 {
     buf->data = buf->__buf + state->offset;
     buf->len = state->len;
@@ -963,7 +963,7 @@ int net_buf_id(struct net_buf *buf);
  */
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool, s32_t timeout,
-        const char *func, int line);
+                                          const char *func, int line);
 #define net_buf_alloc_fixed(_pool, _timeout) \
     net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
 #else
@@ -1631,8 +1631,8 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
  */
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
 struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
-                       struct net_buf *frag,
-                       const char *func, int line);
+                                       struct net_buf *frag,
+                                       const char *func, int line);
 #define net_buf_frag_del(_parent, _frag) \
     net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
 #else
@@ -1655,7 +1655,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
  * @return number of bytes actually copied
  */
 size_t net_buf_linearize(void *dst, size_t dst_len,
-             struct net_buf *src, size_t offset, size_t len);
+                         struct net_buf *src, size_t offset, size_t len);
 
 /**
  * @typedef net_buf_allocator_cb
@@ -1694,8 +1694,8 @@ typedef struct net_buf *(*net_buf_allocator_cb)(s32_t timeout, void *user_data);
  *         were no free fragments in a pool to accommodate all data.
  */
 size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
-                const void *value, s32_t timeout,
-                net_buf_allocator_cb allocate_cb, void *user_data);
+                            const void *value, s32_t timeout,
+                            net_buf_allocator_cb allocate_cb, void *user_data);
 
 /**
  * @brief Skip N number of bytes in a net_buf

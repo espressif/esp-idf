@@ -387,6 +387,7 @@ esp_err_t example_send_generic_onoff_get(esp_ble_mesh_model_t *model,
     return esp_ble_mesh_generic_client_get_state(&common, &get);
 }
 
+#if CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
 esp_err_t example_send_generic_onoff_set(esp_ble_mesh_model_t *model,
         example_msg_common_info_t *info,
         uint8_t onoff, uint8_t tid, bool need_ack)
@@ -418,6 +419,7 @@ esp_err_t example_send_generic_onoff_set(esp_ble_mesh_model_t *model,
 
     return esp_ble_mesh_generic_client_set_state(&common, &set);
 }
+#endif /* CONFIG_BLE_MESH_GENERIC_ONOFF_CLI */
 
 esp_err_t example_send_fast_prov_info_set(esp_ble_mesh_model_t *model,
         example_msg_common_info_t *info,

@@ -1277,6 +1277,7 @@ int bt_mesh_friend_init(void)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_friend_deinit(void)
 {
     int i;
@@ -1304,6 +1305,7 @@ int bt_mesh_friend_deinit(void)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static bool is_segack(struct net_buf *buf, const u64_t *seqauth, u16_t src)
 {

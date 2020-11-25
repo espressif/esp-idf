@@ -16,9 +16,12 @@
 #include "btc_ble_mesh_config_model.h"
 
 #include "mesh.h"
+#include "mesh_config.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "cfg_cli.h"
+
+#if CONFIG_BLE_MESH_CFG_CLI
 
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
@@ -72,24 +75,26 @@ static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
 
 static bt_mesh_mutex_t cfg_client_lock;
 
-static void bt_mesh_cfg_client_mutex_new(void)
+static inline void bt_mesh_cfg_client_mutex_new(void)
 {
     if (!cfg_client_lock.mutex) {
         bt_mesh_mutex_create(&cfg_client_lock);
     }
 }
 
-static void bt_mesh_cfg_client_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_cfg_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&cfg_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_cfg_client_lock(void)
+static inline void bt_mesh_cfg_client_lock(void)
 {
     bt_mesh_mutex_lock(&cfg_client_lock);
 }
 
-static void bt_mesh_cfg_client_unlock(void)
+static inline void bt_mesh_cfg_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&cfg_client_lock);
 }
@@ -1286,6 +1291,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int cfg_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_config_client_t *client = NULL;
@@ -1319,8 +1325,13 @@ static int cfg_cli_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
     .init = cfg_cli_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = cfg_cli_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
