@@ -7,9 +7,6 @@
  * above. Forgetting this will produce compile-time warnings.
  */
 
-#ifndef IDF_PERFORMANCE_MAX_HTTPS_REQUEST_BIN_SIZE
-#define IDF_PERFORMANCE_MAX_HTTPS_REQUEST_BIN_SIZE                              900
-#endif
 #ifndef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     200
 #endif
