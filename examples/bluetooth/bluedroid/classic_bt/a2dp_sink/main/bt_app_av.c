@@ -15,6 +15,7 @@
 
 #include "bt_app_core.h"
 #include "bt_app_av.h"
+#include "bt_app_volume_control.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
@@ -284,7 +285,7 @@ static void volume_set_by_controller(uint8_t volume)
     _lock_acquire(&s_volume_lock);
     s_volume = volume;
     _lock_release(&s_volume_lock);
-    bt_i2s_set_volume(volume);
+    bt_app_set_volume(volume);
 }
 
 static void volume_set_by_local_host(uint8_t volume)
