@@ -117,7 +117,7 @@ def efuse_summary(args):
 
 
 def efuse_burn_key(args):
-    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s burn_key"
+    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s burn_key "
               "%s %s HMAC_DOWN_DIGITAL_SIGNATURE  --no-read-protect"
               % ((args.port), ("BLOCK_KEY" + str(args.efuse_key_id)), (hmac_key_file)))
 

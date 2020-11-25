@@ -175,6 +175,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         if (!cfg->cacert_buf) {
             ESP_LOGE(TAG, "Could not allocate memory");
             free(cfg);
+            free(ssl_ctx);
             return NULL;
         }
         memcpy((char *)cfg->cacert_buf, config->client_verify_cert_pem, config->client_verify_cert_len);
@@ -186,6 +187,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         ESP_LOGE(TAG, "Could not allocate memory");
         free((void *)cfg->cacert_buf);
         free(cfg);
+        free(ssl_ctx);
         return NULL;
     }
     memcpy((char *)cfg->servercert_buf, config->cacert_pem, config->cacert_len);
@@ -197,6 +199,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         free((void *)cfg->servercert_buf);
         free((void *)cfg->cacert_buf);
         free(cfg);
+        free(ssl_ctx);
         return NULL;
     }
     memcpy((char *)cfg->serverkey_buf, config->prvtkey_pem, config->prvtkey_len);
