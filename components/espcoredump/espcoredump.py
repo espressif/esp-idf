@@ -30,6 +30,8 @@ import time
 
 from pygdbmi.gdbcontroller import GdbController, DEFAULT_GDB_TIMEOUT_SEC
 
+_gdb_timeout_sec = DEFAULT_GDB_TIMEOUT_SEC
+
 IDF_PATH = os.getenv('IDF_PATH')
 if not IDF_PATH:
     sys.stderr.write("IDF_PATH is not found! Set proper IDF_PATH in environment.\n")
@@ -1234,7 +1236,7 @@ def gdbmi_run_cmd_get_responses(p, cmd, resp_message, resp_type, multiple=True, 
         # type: (GdbController, str, typing.Optional[str], str, bool, typing.Optional[str], typing.Optional[str]) -> list
 
     p.write(cmd, read_response=False)
-    t_end = time.time() + DEFAULT_GDB_TIMEOUT_SEC
+    t_end = time.time() + _gdb_timeout_sec
     filtered_response_list = []
     all_responses = []
     while time.time() < t_end:
@@ -1269,7 +1271,8 @@ def gdbmi_start(gdb_path, gdb_cmds, core_filename, prog_filename):  # type: (str
     gdb_args.append(prog_filename)
     res = GdbController(gdb_path=gdb_path, gdb_args=gdb_args)
     # Consume initial output by issuing a dummy command
-    res.write("-data-list-register-values x pc", timeout_sec=5)
+    gdbmi_run_cmd_get_responses(res, "-data-list-register-values x pc", None, "console", multiple=True,
+                                done_message="done", done_type="result")
     return res
 
 
@@ -1303,7 +1306,8 @@ def gdbmi_freertos_get_task_name(p, tcb_addr):  # type: (GdbController, int) -> 
     """ Get FreeRTOS task name given the TCB address """
     try:
         val = gdbmi_data_evaluate_expression(p, "(char*)((TCB_t *)0x%x)->pcTaskName" % tcb_addr)
-    except ESPCoreDumpError:
+    except (ESPCoreDumpError, KeyError):
+        # KeyError is raised when "value" is not in "payload"
         return ''
 
     # Value is of form '0x12345678 "task_name"', extract the actual name
@@ -1493,6 +1497,12 @@ def main():
         type=int,
         default=os.environ.get('ESPTOOL_BAUD', esptool.ESPLoader.ESP_ROM_BAUD))
 
+    parser.add_argument(
+        '--gdb-timeout-sec',
+        help='Overwrite the default internal delay for gdb responses',
+        type=int,
+        default=DEFAULT_GDB_TIMEOUT_SEC)
+
     subparsers = parser.add_subparsers(
         dest='operation',
         help='Run coredumper {command} -h for additional help')
@@ -1535,6 +1545,9 @@ def main():
         assert operation in globals(), "%s should be a module function" % operation
 
     args = parser.parse_args()
+
+    global _gdb_timeout_sec
+    _gdb_timeout_sec = args.gdb_timeout_sec
 
     log_level = logging.CRITICAL
     if args.debug == 0:
