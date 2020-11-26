@@ -41,7 +41,6 @@ typedef struct crt_bundle_t {
 
 static crt_bundle_t s_crt_bundle;
 
-static int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
 static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_key_buf, size_t pub_key_len);
 
 
@@ -93,14 +92,15 @@ cleanup:
  * only verify the first untrusted link in the chain is signed by the
  * root certificate in the trusted bundle
 */
-int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags)
+int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_t *flags)
 {
     mbedtls_x509_crt *child = crt;
 
-    if (!*flags) {
-        return 0;
-    }
-    if (*flags & ~(MBEDTLS_X509_BADCERT_NOT_TRUSTED | MBEDTLS_X509_BADCERT_BAD_MD)) {
+    /* It's OK for a trusted cert to have a weak signature hash alg.
+       as we already trust this certificate */
+    uint32_t flags_filtered = *flags & ~(MBEDTLS_X509_BADCERT_BAD_MD);
+
+    if (flags_filtered != MBEDTLS_X509_BADCERT_NOT_TRUSTED) {
         return 0;
     }
 
