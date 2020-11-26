@@ -34,6 +34,8 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define RTCIO_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
 #define RTCIO_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
 /*---------------------------------------------------------------
                         RTC IO
 ---------------------------------------------------------------*/
@@ -155,6 +157,8 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
 
     return ESP_OK;
 }
+
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
 {

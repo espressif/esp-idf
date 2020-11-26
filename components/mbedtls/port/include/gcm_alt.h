@@ -29,8 +29,12 @@ extern "C" {
 
 #if defined(MBEDTLS_GCM_ALT)
 
-#if CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3
 #include "esp32s3/gcm.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/gcm.h"
+#endif
 
 
 typedef esp_gcm_context mbedtls_gcm_context;
@@ -44,7 +48,7 @@ typedef esp_gcm_context mbedtls_gcm_context;
 #define mbedtls_gcm_auth_decrypt    esp_aes_gcm_auth_decrypt
 #define mbedtls_gcm_crypt_and_tag   esp_aes_gcm_crypt_and_tag
 
-#endif // CONFIG_IDF_TARGET_ESP32S3
+#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/gcm.h"

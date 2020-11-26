@@ -20,7 +20,6 @@
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/ringbuf.h"
 #include "hal/uart_hal.h"
 #include "soc/uart_periph.h"
@@ -38,6 +37,8 @@
 #include "esp32s2/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
 #endif
 
 #ifdef CONFIG_UART_ISR_IN_IRAM

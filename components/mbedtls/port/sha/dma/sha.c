@@ -32,7 +32,6 @@
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
 #include "soc/lldesc.h"
-#include "soc/dport_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/periph_defs.h"
 
@@ -49,6 +48,8 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32s3/rom/cache.h"
 #endif
 

@@ -130,7 +130,7 @@ struct ir_builder_s {
     *      - ESP_ERR_INVALID_ARG: Get result data failed because of invalid arguments
     *      - ESP_FAIL: Get result data failed because some other errors occurred
     */
-    esp_err_t (*get_result)(ir_builder_t *builder, void *result, uint32_t *length);
+    esp_err_t (*get_result)(ir_builder_t *builder, void *result, size_t *length);
 
     /**
     * @brief Free resources used by IR builder

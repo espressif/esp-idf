@@ -162,7 +162,7 @@ static void uart_tx_char(int fd, int c)
     }
 #if CONFIG_IDF_TARGET_ESP32
     uart->fifo.rw_byte = c;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else // CONFIG_IDF_TARGET_ESP32
     uart->ahb_fifo.rw_byte = c;
 #endif
 }
@@ -181,7 +181,7 @@ static int uart_rx_char(int fd)
     }
 #if CONFIG_IDF_TARGET_ESP32
     return uart->fifo.rw_byte;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else // CONFIG_IDF_TARGET_ESP32
     return READ_PERI_REG(UART_FIFO_AHB_REG(fd));
 #endif
 }

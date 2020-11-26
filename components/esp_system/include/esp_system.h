@@ -262,6 +262,7 @@ typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
     CHIP_ESP32S2 = 2, //!< ESP32-S2
     CHIP_ESP32S3 = 4, //!< ESP32-S3
+    CHIP_ESP32C3 = 5, //!< ESP32-C3
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

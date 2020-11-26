@@ -15,7 +15,6 @@
 #include <esp_types.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"

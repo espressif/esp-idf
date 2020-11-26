@@ -30,6 +30,7 @@
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
 #include "esp32/rtc.h"
 #include "esp32/cache_err_int.h"
 #include "esp32/rom/cache.h"
@@ -55,6 +56,13 @@
 #include "esp32s3/memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/cache_memory.h"
+#include "soc/system_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rtc.h"
+#include "esp32c3/cache_err_int.h"
+#include "esp32s3/rom/cache.h"
+#include "esp32c3/rom/rtc.h"
+#include "soc/cache_memory.h"
 #endif
 
 #include "bootloader_flash_config.h"
@@ -64,7 +72,6 @@
 #include "hal/rtc_io_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
-#include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/periph_defs.h"
 #include "soc/cpu.h"
@@ -434,7 +441,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #ifdef CONFIG_ESP_CONSOLE_UART
     uint32_t clock_hz = rtc_clk_apb_freq_get();
-#if CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
     esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);

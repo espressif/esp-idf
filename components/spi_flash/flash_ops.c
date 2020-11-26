@@ -22,7 +22,6 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <soc/soc.h>
-#include <soc/dport_reg.h>
 #include <soc/soc_memory_layout.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
@@ -30,17 +29,21 @@
 #include "esp_log.h"
 #include "esp_private/system_internal.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
+#include "esp32/rom/spi_flash.h"
 #include "esp32/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/cache.h"
+#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/cache.h"
+#include "esp32c3/rom/spi_flash.h"
+#include "esp32c3/clk.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"
@@ -68,11 +71,11 @@ static const char *TAG __attribute__((unused)) = "spi_flash";
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 static spi_flash_counters_t s_flash_stats;
 
-#define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
+#define COUNTER_START()     uint32_t ts_begin = cpu_hal_get_cycle_count()
 #define COUNTER_STOP(counter)  \
     do{ \
         s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
+        s_flash_stats.counter.time += (cpu_hal_get_cycle_count() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
     } while(0)
 
 #define COUNTER_ADD_BYTES(counter, size) \
@@ -784,8 +787,7 @@ void spi_flash_dump_counters(void)
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
-
-#if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && (defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3))
-// TODO esp32s2: Remove once ESP32S2 has new SPI Flash API support
+#if CONFIG_SPI_FLASH_USE_LEGACY_IMPL && !CONFIG_IDF_TARGET_ESP32
+// TODO esp32s2: Remove once ESP32-S2 & later chips has new SPI Flash API support
 esp_flash_t *esp_flash_default_chip = NULL;
 #endif

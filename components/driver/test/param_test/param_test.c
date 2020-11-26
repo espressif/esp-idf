@@ -1,3 +1,5 @@
+#include <stddef.h>
+#include <stdlib.h>
 #include "param_test.h"
 #include "esp_log.h"
 

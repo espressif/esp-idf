@@ -19,18 +19,18 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
 
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
-
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/dac.h"
 #include "hal/i2s_hal.h"
 #include "adc1_private.h"
 #endif
+
+#include "soc/rtc.h"
 
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
@@ -39,6 +39,8 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
+
+#include "sdkconfig.h"
 
 static const char* I2S_TAG = "I2S";
 

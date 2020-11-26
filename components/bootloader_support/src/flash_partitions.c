@@ -14,8 +14,14 @@
 #include <string.h>
 #include "esp_flash_partitions.h"
 #include "esp_log.h"
-#include "esp32/rom/spi_flash.h"
 #include "esp_rom_md5.h"
+#if CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#else
+#include "esp32/rom/spi_flash.h"
+#endif
 
 static const char *TAG = "flash_parts";
 

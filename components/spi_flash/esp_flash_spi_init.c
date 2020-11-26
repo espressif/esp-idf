@@ -31,6 +31,8 @@
 #include "esp32s2/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
 #endif
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
@@ -224,7 +226,7 @@ esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
 
-    #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    #if !CONFIG_IDF_TARGET_ESP32
     // For esp32s2 spi IOs are configured as from IO MUX by default
     cfg.iomux = esp_rom_efuse_get_flash_gpio_info() == 0 ?  true : false;
     #endif

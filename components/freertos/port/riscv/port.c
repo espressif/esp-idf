@@ -80,6 +80,7 @@
 #include "sdkconfig.h"
 #include "portmacro.h"
 #include "riscv/interrupt.h"
+#include "riscv/rvruntime-frames.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #include "soc/interrupt_reg.h"
@@ -220,8 +221,9 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
 
     /* Simulate the stack frame as it would be created by a context switch
     interrupt. */
+    pxTopOfStack -= RV_STK_FRMSZ;
+
     RvExcFrame *frame = (RvExcFrame *)pxTopOfStack;
-    frame--;
     frame->ra = (UBaseType_t)prvTaskExitError;
     frame->mepc = (UBaseType_t)pxCode;
     frame->a0 = (UBaseType_t)pvParameters;

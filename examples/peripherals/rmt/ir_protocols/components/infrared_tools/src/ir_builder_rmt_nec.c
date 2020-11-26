@@ -142,7 +142,7 @@ static esp_err_t nec_build_repeat_frame(ir_builder_t *builder)
     return ESP_OK;
 }
 
-static esp_err_t nec_builder_get_result(ir_builder_t *builder, void *result, uint32_t *length)
+static esp_err_t nec_builder_get_result(ir_builder_t *builder, void *result, size_t *length)
 {
     esp_err_t ret = ESP_OK;
     nec_builder_t *nec_builder = __containerof(builder, nec_builder_t, parent);

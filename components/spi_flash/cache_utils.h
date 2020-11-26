@@ -15,6 +15,7 @@
 #ifndef ESP_SPI_FLASH_CACHE_UTILS_H
 #define ESP_SPI_FLASH_CACHE_UTILS_H
 
+#include "sdkconfig.h"
 #include <stdbool.h>
 
 /**
@@ -57,10 +58,10 @@ void spi_flash_enable_interrupts_caches_no_os(void);
 //
 // Only call this while holding spi_flash_op_lock()
 // Returns true if cache was flushed, false otherwise
-bool spi_flash_check_and_flush_cache(uint32_t start_addr, uint32_t length);
+bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length);
 
 //config cache mode
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if !CONFIG_IDF_TARGET_ESP32
 //config instrcutin cache size and cache block size by menuconfig
 void esp_config_instruction_cache_mode(void);
 //config data cache size and cache block size by menuconfig

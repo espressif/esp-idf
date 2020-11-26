@@ -4,7 +4,6 @@
 #include "esp_system.h"
 
 #include "driver/adc.h"
-#include "driver/dac.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -14,7 +13,8 @@
 #include "test_utils.h"
 #include "driver/i2s.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !DISABLED_FOR_TARGETS(ESP32C3) && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#include "driver/dac.h"
 #include "esp_adc_cal.h"
 
 static const char *TAG = "test_dac";
@@ -182,4 +182,4 @@ TEST_CASE("esp32s2 adc2-dac with adc2 calibration", "[adc-dac]")
 }
 #endif
 
-#endif
+#endif // !DISABLED_FOR_TARGETS(ESP32C3) && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

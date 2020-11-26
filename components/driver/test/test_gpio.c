@@ -16,7 +16,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 

@@ -7,12 +7,15 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_spi_flash.h"
+#include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"  // for ETSTimer type
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/ets_sys.h"
 #endif
 
 TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
@@ -26,7 +29,7 @@ TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
     ETSTimer timer1 = {0};
 
     const int delays_ms[] = {20, 100, 200, 250};
-    const size_t delays_count = sizeof(delays_ms)/sizeof(delays_ms[0]);
+    const size_t delays_count = sizeof(delays_ms) / sizeof(delays_ms[0]);
 
     for (size_t i = 0; i < delays_count; ++i) {
         struct timeval tv_end = {0};
@@ -39,7 +42,7 @@ TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
 
         vTaskDelay(delays_ms[i] * 2 / portTICK_PERIOD_MS);
         int32_t ms_diff = (tv_end.tv_sec - tv_start.tv_sec) * 1000 +
-                (tv_end.tv_usec - tv_start.tv_usec) / 1000;
+                          (tv_end.tv_usec - tv_start.tv_usec) / 1000;
         printf("%d %d\n", delays_ms[i], ms_diff);
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
@@ -54,24 +57,23 @@ TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
 #define NUM_INTERVALS 16
 
     typedef struct {
-        ETSTimer* timer;
+        ETSTimer *timer;
         size_t cur_interval;
         int intervals[NUM_INTERVALS];
         struct timeval tv_start;
     } test_args_t;
 
-    void timer_func(void* arg)
-    {
-        test_args_t* p_args = (test_args_t*) arg;
+    void timer_func(void *arg) {
+        test_args_t *p_args = (test_args_t *) arg;
         struct timeval tv_now;
         gettimeofday(&tv_now, NULL);
         int32_t ms_diff = (tv_now.tv_sec - p_args->tv_start.tv_sec) * 1000 +
-                        (tv_now.tv_usec - p_args->tv_start.tv_usec) / 1000;
+                          (tv_now.tv_usec - p_args->tv_start.tv_usec) / 1000;
         printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
         p_args->intervals[p_args->cur_interval++] = ms_diff;
         // Deliberately make timer handler run longer.
         // We check that this doesn't affect the result.
-        esp_rom_delay_us(10*1000);
+        esp_rom_delay_us(10 * 1000);
         if (p_args->cur_interval == NUM_INTERVALS) {
             printf("done\n");
             ets_timer_disarm(p_args->timer);

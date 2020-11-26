@@ -156,9 +156,12 @@
 
 #include <string.h>
 #include <sys/param.h>
+#include "sdkconfig.h"
 #include "soc/soc.h"
+#include "soc/dport_access.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#if CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2
 #include "soc/sensitive_reg.h"
 #endif
 #if __XTENSA__

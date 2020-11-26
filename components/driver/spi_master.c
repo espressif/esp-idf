@@ -128,6 +128,7 @@ We have two bits to control the interrupt:
 #include "soc/soc_memory_layout.h"
 #include "driver/gpio.h"
 #include "hal/spi_hal.h"
+#include "esp_heap_caps.h"
 
 
 typedef struct spi_device_t spi_device_t;
@@ -189,8 +190,8 @@ static inline bool is_valid_host(spi_host_device_t host)
 {
 #if CONFIG_IDF_TARGET_ESP32
     return host >= SPI1_HOST && host <= SPI3_HOST;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Master driver on ESP32-S2
+#else
+// SPI_HOST (SPI1_HOST) is not supported by the SPI Master driver on ESP32-S2 and later
     return host >= SPI2_HOST && host <= SPI3_HOST;
 #endif
 }
