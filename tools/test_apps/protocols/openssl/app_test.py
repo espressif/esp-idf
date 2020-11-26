@@ -85,7 +85,6 @@ def test_app_esp_openssl(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "openssl_connect_test.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("openssl_connect_test_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("openssl_connect_test_bin_size_vin_size", bin_size // 1024, dut1.TARGET)
     dut1.start_app()
     esp_ip = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
     print("Got IP={}".format(esp_ip[0]))
