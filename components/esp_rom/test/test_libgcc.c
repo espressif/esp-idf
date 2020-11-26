@@ -23,7 +23,7 @@ TEST_CASE("libgcc math functions", "[rom][libgcc]")
     TEST_ASSERT(__bswapdi2(0xaabbccddeeff0011ULL) == 0x1100ffeeddccbbaaULL);
     extern int32_t __bswapsi2(int32_t x);
     TEST_ASSERT(__bswapsi2(0xaabbccdd) == 0xddccbbaa);
-    extern int64_t __clrsbdi2(int64_t x);
+    extern int __clrsbdi2(int64_t x);
     TEST_ASSERT(__clrsbdi2(-1) == 63);
     extern int __clrsbsi2(int x);
     TEST_ASSERT(__clrsbsi2(-1) == 31);
@@ -175,8 +175,10 @@ TEST_CASE("libgcc math functions", "[rom][libgcc]")
     TEST_ASSERT(__umoddi3(15, 2) == 1);
     extern unsigned __umodsi3(unsigned x, unsigned y);
     TEST_ASSERT(__umodsi3(15, 2) == 1);
+#if !CONFIG_IDF_TARGET_ESP32C3
     extern uint64_t __umulsidi3(unsigned x, unsigned y);
     TEST_ASSERT(__umulsidi3(0x10000000, 0x10000000) == 0x100000000000000ULL);
+#endif
     extern int __unorddf2(double x, double y);
     TEST_ASSERT(__unorddf2(1.0, 2.0) == 0);
     extern int __unordsf2(float x, float y);

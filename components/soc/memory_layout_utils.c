@@ -13,9 +13,16 @@
 // limitations under the License.
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "soc/soc_memory_layout.h"
-#include "sdkconfig.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/rom_layout.h"
+#define ROM_HAS_LAYOUT_TABLE 1
+#else
+#define ROM_HAS_LAYOUT_TABLE 0
+#endif
 
 static const char *TAG = "memory_layout";
 
@@ -28,8 +35,13 @@ extern soc_reserved_region_t soc_reserved_memory_region_end;
 
 static size_t s_get_num_reserved_regions(void)
 {
-    return ( &soc_reserved_memory_region_end
+    size_t result = ( &soc_reserved_memory_region_end
              - &soc_reserved_memory_region_start );
+#if ROM_HAS_LAYOUT_TABLE
+    return result + 1; // ROM table means one entry needs to be added at runtime
+#else
+    return result;
+#endif
 }
 
 size_t soc_get_available_memory_region_max_count(void)
@@ -53,7 +65,16 @@ static int s_compare_reserved_regions(const void *a, const void *b)
 */
 static void s_prepare_reserved_regions(soc_reserved_region_t *reserved, size_t count)
 {
+#if ROM_HAS_LAYOUT_TABLE
+    /* Get the ROM layout to find which part of DRAM is reserved */
+    const ets_rom_layout_t *layout = ets_rom_layout_p;
+    reserved[0].start = (intptr_t)layout->dram0_rtos_reserved_start;
+    reserved[0].end = SOC_DIRAM_DRAM_HIGH;
+
+    memcpy(reserved + 1, &soc_reserved_memory_region_start, (count - 1) * sizeof(soc_reserved_region_t));
+#else
     memcpy(reserved, &soc_reserved_memory_region_start, count * sizeof(soc_reserved_region_t));
+#endif
 
     /* Sort by starting address */
     qsort(reserved, count, sizeof(soc_reserved_region_t), s_compare_reserved_regions);

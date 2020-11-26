@@ -1,4 +1,4 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,6 @@
 
 #include "esp_attr.h"
 
-#include "sdkconfig.h"
-
-#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
-#include "soc/spi_reg.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,95 +32,57 @@ extern "C" {
   * @{
   */
 
-/*************************************************************
- *                            Note
- *************************************************************
- * 1. ESP32 chip have 4 SPI slave/master, however, SPI0 is
- *    used as an SPI master to access Flash and ext-SRAM by
- *    Cache module. It will support Decryto read for Flash,
- *    read/write for ext-SRAM. And SPI1 is also used as an
- *    SPI master for Flash read/write and ext-SRAM read/write.
- *    It will support Encrypto write for Flash.
- * 2. As an SPI master, SPI support Highest clock to 80M,
- *    however, Flash with 80M Clock should be configured
- *    for different Flash chips. If you want to use 80M
- *    clock We should use the SPI that is certified by
- *    Espressif. However, the certification is not started
- *    at the time, so please use 40M clock at the moment.
- * 3. SPI Flash can use 2 lines or 4 lines mode. If you
- *    use 2 lines mode, you can save two pad SPIHD and
- *    SPIWP for gpio. ESP32 support configured SPI pad for
- *    Flash, the configuration is stored in efuse and flash.
- *    However, the configurations of pads should be certified
- *    by Espressif. If you use this function, please use 40M
- *    clock at the moment.
- * 4. ESP32 support to use Common SPI command to configure
- *    Flash to QIO mode, if you failed to configure with fix
- *    command. With Common SPI Command, ESP32 can also provide
- *    a way to use same Common SPI command groups on different
- *    Flash chips.
- * 5. This functions are not protected by packeting, Please use the
- *************************************************************
- */
+#define PERIPHS_SPI_FLASH_CMD                 SPI_MEM_CMD_REG(1)
+#define PERIPHS_SPI_FLASH_ADDR                SPI_MEM_ADDR_REG(1)
+#define PERIPHS_SPI_FLASH_CTRL                SPI_MEM_CTRL_REG(1)
+#define PERIPHS_SPI_FLASH_CTRL1               SPI_MEM_CTRL1_REG(1)
+#define PERIPHS_SPI_FLASH_STATUS              SPI_MEM_RD_STATUS_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG              SPI_MEM_USER_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG1             SPI_MEM_USER1_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG2             SPI_MEM_USER2_REG(1)
+#define PERIPHS_SPI_FLASH_C0                  SPI_MEM_W0_REG(1)
+#define PERIPHS_SPI_FLASH_C1                  SPI_MEM_W1_REG(1)
+#define PERIPHS_SPI_FLASH_C2                  SPI_MEM_W2_REG(1)
+#define PERIPHS_SPI_FLASH_C3                  SPI_MEM_W3_REG(1)
+#define PERIPHS_SPI_FLASH_C4                  SPI_MEM_W4_REG(1)
+#define PERIPHS_SPI_FLASH_C5                  SPI_MEM_W5_REG(1)
+#define PERIPHS_SPI_FLASH_C6                  SPI_MEM_W6_REG(1)
+#define PERIPHS_SPI_FLASH_C7                  SPI_MEM_W7_REG(1)
+#define PERIPHS_SPI_FLASH_TX_CRC              SPI_MEM_TX_CRC_REG(1)
 
-#define PERIPHS_SPI_FLASH_CMD                 SPI_CMD_REG(1)
-#define PERIPHS_SPI_FLASH_ADDR                SPI_ADDR_REG(1)
-#define PERIPHS_SPI_FLASH_CTRL                SPI_CTRL_REG(1)
-#define PERIPHS_SPI_FLASH_CTRL1               SPI_CTRL1_REG(1)
-#define PERIPHS_SPI_FLASH_STATUS              SPI_RD_STATUS_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG              SPI_USER_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG1             SPI_USER1_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG2             SPI_USER2_REG(1)
-#define PERIPHS_SPI_FLASH_C0                  SPI_W0_REG(1)
-#define PERIPHS_SPI_FLASH_C1                  SPI_W1_REG(1)
-#define PERIPHS_SPI_FLASH_C2                  SPI_W2_REG(1)
-#define PERIPHS_SPI_FLASH_C3                  SPI_W3_REG(1)
-#define PERIPHS_SPI_FLASH_C4                  SPI_W4_REG(1)
-#define PERIPHS_SPI_FLASH_C5                  SPI_W5_REG(1)
-#define PERIPHS_SPI_FLASH_C6                  SPI_W6_REG(1)
-#define PERIPHS_SPI_FLASH_C7                  SPI_W7_REG(1)
-#define PERIPHS_SPI_FLASH_TX_CRC              SPI_TX_CRC_REG(1)
-
-#define SPI0_R_QIO_DUMMY_CYCLELEN             3
-#define SPI0_R_QIO_ADDR_BITSLEN               31
+#define SPI0_R_QIO_DUMMY_CYCLELEN             5
+#define SPI0_R_QIO_ADDR_BITSLEN               23
 #define SPI0_R_FAST_DUMMY_CYCLELEN            7
-#define SPI0_R_DIO_DUMMY_CYCLELEN             1
-#define SPI0_R_DIO_ADDR_BITSLEN               27
+#define SPI0_R_DIO_DUMMY_CYCLELEN             3
 #define SPI0_R_FAST_ADDR_BITSLEN              23
 #define SPI0_R_SIO_ADDR_BITSLEN               23
 
-#define SPI1_R_QIO_DUMMY_CYCLELEN             3
-#define SPI1_R_QIO_ADDR_BITSLEN               31
+#define SPI1_R_QIO_DUMMY_CYCLELEN             5
+#define SPI1_R_QIO_ADDR_BITSLEN               23
 #define SPI1_R_FAST_DUMMY_CYCLELEN            7
 #define SPI1_R_DIO_DUMMY_CYCLELEN             3
-#define SPI1_R_DIO_ADDR_BITSLEN               31
+#define SPI1_R_DIO_ADDR_BITSLEN               23
 #define SPI1_R_FAST_ADDR_BITSLEN              23
 #define SPI1_R_SIO_ADDR_BITSLEN               23
 
 #define ESP_ROM_SPIFLASH_W_SIO_ADDR_BITSLEN   23
 
-#define ESP_ROM_SPIFLASH_TWO_BYTE_STATUS_EN   SPI_WRSR_2B
+#define ESP_ROM_SPIFLASH_TWO_BYTE_STATUS_EN   SPI_MEM_WRSR_2B
 
 //SPI address register
 #define ESP_ROM_SPIFLASH_BYTES_LEN            24
 #define ESP_ROM_SPIFLASH_BUFF_BYTE_WRITE_NUM  32
-#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM   64
-#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_BITS  0x3f
+#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM   16
+#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_BITS  0xf
 
 //SPI status register
-#define ESP_ROM_SPIFLASH_BUSY_FLAG            BIT0
-#define ESP_ROM_SPIFLASH_WRENABLE_FLAG        BIT1
-#define ESP_ROM_SPIFLASH_BP0                  BIT2
-#define ESP_ROM_SPIFLASH_BP1                  BIT3
-#define ESP_ROM_SPIFLASH_BP2                  BIT4
-#define ESP_ROM_SPIFLASH_WR_PROTECT           (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
-#define ESP_ROM_SPIFLASH_QE                   BIT9
-#define ESP_ROM_SPIFLASH_BP_MASK_ISSI         (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
-
-//Extra dummy for flash read
-#define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M   0
-#define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M   1
-#define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M   2
+#define  ESP_ROM_SPIFLASH_BUSY_FLAG           BIT0
+#define  ESP_ROM_SPIFLASH_WRENABLE_FLAG       BIT1
+#define  ESP_ROM_SPIFLASH_BP0                 BIT2
+#define  ESP_ROM_SPIFLASH_BP1                 BIT3
+#define  ESP_ROM_SPIFLASH_BP2                 BIT4
+#define  ESP_ROM_SPIFLASH_WR_PROTECT          (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
+#define  ESP_ROM_SPIFLASH_QE                  BIT9
 
 #define FLASH_ID_GD25LQ32C  0xC86016
 
@@ -371,7 +327,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Update timeout.
   */
 esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size,
-                                                        uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
+        uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**
   * @brief Erase whole flash chip.
@@ -512,6 +468,18 @@ void esp_rom_spiflash_write_encrypted_disable(void);
 esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, uint32_t *data, uint32_t len);
 
 
+/* TODO: figure out how to map these to their new names */
+typedef enum {
+    SPI_ENCRYPT_DESTINATION_FLASH,
+} SpiEncryptDest;
+
+typedef esp_rom_spiflash_result_t SpiFlashOpResult;
+
+SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, const void *data, uint32_t len);
+SpiFlashOpResult SPI_Encrypt_Write_Dest(SpiEncryptDest dest, uint32_t flash_addr, const void *data, uint32_t len);
+void SPI_Write_Encrypt_Enable(void);
+void SPI_Write_Encrypt_Disable(void);
+
 /** @brief Wait until SPI flash write operation is complete
  *
  * @note Please do not call this function in SDK.
@@ -543,19 +511,53 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
  */
 void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
 
+
+typedef void (* spi_flash_func_t)(void);
+typedef SpiFlashOpResult (* spi_flash_op_t)(void);
+typedef SpiFlashOpResult (* spi_flash_erase_t)(uint32_t);
+typedef SpiFlashOpResult (* spi_flash_rd_t)(uint32_t, uint32_t*, int);
+typedef SpiFlashOpResult (* spi_flash_wr_t)(uint32_t, const uint32_t*, int);
+typedef SpiFlashOpResult (* spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
+typedef SpiFlashOpResult (* spi_flash_wren_t)(void*);
+
+typedef struct {
+    uint32_t read_sub_len;
+    uint32_t write_sub_len;
+    spi_flash_op_t unlock;
+    spi_flash_erase_t erase_sector;
+    spi_flash_erase_t erase_block;
+    spi_flash_rd_t read;
+    spi_flash_wr_t write;
+    spi_flash_ewr_t encrypt_write;
+    spi_flash_func_t check_sus;
+    spi_flash_wren_t wren;
+    spi_flash_op_t wait_idle;
+} spiflash_legacy_funcs_t;
+
+
+extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
+
+/** @brief Global ROM spiflash data, as used by legacy
+    SPI flash functions
+*/
+typedef struct {
+    esp_rom_spiflash_chip_t chip;
+    uint8_t dummy_len_plus[3];
+    uint8_t sig_matrix;
+} spiflash_legacy_data_t;
+
+extern spiflash_legacy_data_t *rom_spiflash_legacy_data;
+
+/* Defines to make the C3 ROM legacvy data access compatible with previous chips */
+#define g_rom_flashchip (rom_spiflash_legacy_data->chip)
+#define g_rom_spiflash_dummy_len_plus (rom_spiflash_legacy_data->dummy_len_plus)
+
 /**
  * @brief Clear WEL bit unconditionally.
  *
  * @return always ESP_ROM_SPIFLASH_RESULT_OK
  */
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
-
-/** @brief Global esp_rom_spiflash_chip_t structure used by ROM functions
- *
- */
-extern esp_rom_spiflash_chip_t g_rom_flashchip;
-
-extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
 /**
   * @}

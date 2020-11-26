@@ -11,9 +11,13 @@ if(BOOTLOADER_BUILD)
     set(scripts
         "${target}/ld/${target}.rom.api.ld"
         "${target}/ld/${target}.rom.ld"
-        "${target}/ld/${target}.rom.newlib-funcs.ld"
         "${target}/ld/${target}.rom.libgcc.ld"
         )
+
+    if(NOT target STREQUAL "esp32c3")
+        list(APPEND scripts "${target}/ld/${target}.rom.newlib-funcs.ld"
+    endif()
+
     if(target STREQUAL "esp32s2")
         list(APPEND scripts "esp32s2/ld/esp32s2.rom.spiflash.ld")
     endif()
@@ -31,8 +35,12 @@ else() # Regular app build
     set(scripts
         "${target}/ld/${target}.rom.api.ld"
         "${target}/ld/${target}.rom.ld"
-        "${target}/ld/${target}.rom.libgcc.ld"
-        "${target}/ld/${target}.rom.newlib-data.ld")
+        "${target}/ld/${target}.rom.libgcc.ld")
+
+    if(NOT target STREQUAL "esp32c3")
+        list(APPEND scripts
+            "${target}/ld/${target}.rom.newlib-data.ld")
+    endif()
 
     if(target STREQUAL "esp32")
         list(APPEND scripts "${target}/ld/${target}.rom.syscalls.ld")
@@ -81,6 +89,14 @@ else() # Regular app build
             list(APPEND scripts "esp32s3/ld/esp32s3.rom.newlib-nano.ld")
         endif()
 
+    elseif(target STREQUAL "esp32c3")
+        list(APPEND scripts "esp32c3/ld/esp32c3.rom.newlib.ld"
+                            "esp32c3/ld/esp32c3.rom.version.ld"
+                            )
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+                list(APPEND scripts "esp32c3/ld/esp32c3.rom.newlib-nano.ld")
+        endif()
     endif()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
