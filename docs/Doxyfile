@@ -301,6 +301,7 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     __attribute__(x)= \
+    _Static_assert()= \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \

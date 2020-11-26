@@ -1,17 +1,15 @@
 # This is a list of python packages used to generate documentation. This file is used with pip:
 # pip install --user -r requirements.txt
 #
-sphinx>=1.8.4
-breathe==4.11.1
-sphinx-rtd-theme
+sphinx==2.3.1
+breathe==4.14.1
 sphinx-notfound-page
-sphinxcontrib-blockdiag>=1.5.5, <2.0.0
-sphinxcontrib-seqdiag>=0.8.5, <2.0.0
-sphinxcontrib-actdiag>=0.8.5, <2.0.0
-sphinxcontrib-nwdiag>=0.9.5, <2.0.0
-blockdiag>=1.5.4, <2.0.0
-seqdiag>=0.9.6, <2.0.0
-actdiag>=0.5.4, <2.0.0
-nwdiag>=1.0.4, <2.0.0
+sphinxcontrib-blockdiag==2.0.0
+sphinxcontrib-seqdiag==2.0.0
+sphinxcontrib-actdiag==2.0.0
+sphinxcontrib-nwdiag==2.0.0
+sphinxcontrib-wavedrom==2.0.0
+nwdiag==2.0.0
 recommonmark
 future>=0.16.0 # for ../tools/gen_esp_err_to_name.py
+sphinx_idf_theme==0.2

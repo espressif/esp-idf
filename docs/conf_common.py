@@ -20,15 +20,20 @@ import sys
 import os
 import re
 import subprocess
+from sanitize_version import sanitize_version
+from get_github_rev import get_github_rev
+
 
 # Note: If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute
 
-from local_util import run_cmd_get_output, copy_if_modified
+from local_util import copy_if_modified
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
+
+config_dir = os.path.abspath(os.path.dirname(__file__))
 
 try:
     builddir = os.environ['BUILDDIR']
@@ -165,6 +170,7 @@ suppress_warnings = ['image.nonlocal_uri']
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['breathe',
+              'sphinx_idf_theme',
               'link-roles',
               'sphinxcontrib.blockdiag',
               'sphinxcontrib.seqdiag',
@@ -174,6 +180,7 @@ extensions = ['breathe',
               'sphinxcontrib.packetdiag',
               'html_redirects',
               'sphinx.ext.todo',
+              'latex_builder',
               ]
 
 # sphinx.ext.todo extension parameters
@@ -213,16 +220,14 @@ master_doc = 'index'
 # built documents.
 #
 
-# Readthedocs largely ignores 'version' and 'release', and displays one of
-# 'latest', tag name, or branch name, depending on the build type.
-# Still, this is useful for non-RTD builds.
-# This is supposed to be "the short X.Y version", but it's the only version
+# This is the full exact version, canonical git version description
 # visible when you open index.html.
-# Display full version to make things less confusing.
-version = run_cmd_get_output('git describe')
-# The full version, including alpha/beta/rc tags.
-# If needed, nearest tag is returned by 'git describe --abbrev=0'.
-release = version
+version = subprocess.check_output(['git', 'describe']).strip().decode('utf-8')
+
+# The 'release' version is the same as version for non-CI builds, but for CI
+# builds on a branch then it's replaced with the branch name
+release = sanitize_version(version)
+
 print('Version: {0}  Release: {1}'.format(version, release))
 
 # There are two options for replacing |today|: either, you set today to some
@@ -253,6 +258,13 @@ exclude_patterns = ['_build','README.md']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Extra options required by sphinx_idf_theme
+project_slug = 'esp-idf'
+versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
+
+languages = ['en', 'zh_CN']
+
+
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
@@ -275,7 +287,15 @@ html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_idf_theme'
+
+# context used by sphinx_idf_theme
+html_context = {
+    "display_github": True,  # Add 'Edit on Github' link instead of 'View page source'
+    "github_user": "espressif",
+    "github_repo": "esp-idf",
+    "github_version": get_github_rev(),
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -358,28 +378,41 @@ htmlhelp_basename = 'ReadtheDocsTemplatedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    # 'papersize': 'letterpaper',
-    #
-    # The font size ('10pt', '11pt' or '12pt').
-    # 'pointsize': '10pt',
-    #
-    # Additional stuff for the LaTeX preamble.
-    # 'preamble': '',
-}
+latex_template_dir = os.path.join(config_dir, 'latex_templates')
 
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    ('index', 'ReadtheDocsTemplate.tex', u'Read the Docs Template Documentation',
-     u'Read the Docs', 'manual'),
-]
+preamble = ''
+with open(os.path.join(latex_template_dir, 'preamble.tex')) as f:
+    preamble = f.read()
+
+titlepage = ''
+with open(os.path.join(latex_template_dir, 'titlepage.tex')) as f:
+    titlepage = f.read()
+
+
+latex_elements = {
+    'papersize': 'a4paper',
+
+    # Latex figure (float) alignment
+    'figure_align':'htbp',
+
+    'pointsize': '10pt',
+
+    # Additional stuff for the LaTeX preamble.
+    'fncychap': '\\usepackage[Sonny]{fncychap}',
+
+    'preamble': preamble,
+
+    'maketitle': titlepage,
+}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-# latex_logo = None
+
+# The name of an image file (relative to this directory) to place at the bottom of
+# the title page.
+latex_logo = "../_static/espressif2.pdf"
+latex_engine = 'xelatex'
+latex_use_xindy = False
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
@@ -440,3 +473,25 @@ texinfo_documents = [
 def setup(app):
     app.add_stylesheet('theme_overrides.css')
     generate_version_specific_includes(app)
+
+    # Not all config variables are set when setup is called
+    app.connect('config-inited',  setup_config_values)
+    app.connect('config-inited',  setup_html_context)
+
+
+def setup_config_values(app, config):
+    # Sets up global config values needed by other extensions
+    idf_target_title_dict = {
+        'esp32': 'ESP32',
+        'esp32s2': 'ESP32-S2'
+    }
+
+    app.add_config_value('idf_target_title_dict', idf_target_title_dict, 'env')
+
+    pdf_name = "esp-idf-{}-{}-{}".format(app.config.language, app.config.version, "esp32")
+    app.add_config_value('pdf_file', pdf_name, 'env')
+
+
+def setup_html_context(app, config):
+    # Setup path for 'edit on github'-link
+    app.config.html_context['conf_py_path'] = "/docs/{}/".format(app.config.language)

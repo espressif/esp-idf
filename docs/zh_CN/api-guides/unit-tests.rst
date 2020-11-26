@@ -32,9 +32,9 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
     没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
     来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``。
 
-``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 
+``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了
 ``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件
-：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。 
+：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。
 
 总的来说，``test`` 子目录下最小的 CMakeLists.txt 文件可能如下所示:
 
@@ -175,7 +175,7 @@ DUT2（slave）终端：
 
 当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目。
 
-.. code:: bash
+.. code::
 
    Here's the test menu, pick your combo:
    (1)     "esp_ota_begin() verifies arguments" [ota]
@@ -222,7 +222,7 @@ DUT2（slave）终端：
 
 一旦选择了多设备测试用例，它会打印一个子菜单：
 
-.. code:: bash
+.. code::
 
    Running gpio master/slave test example...
    gpio master/slave test example
@@ -233,7 +233,7 @@ DUT2（slave）终端：
 
 与多设备测试用例相似，多阶段测试用例也会打印子菜单：
 
-.. code:: bash
+.. code::
 
    Running reset reason check for deepsleep...
    reset reason check for deepsleep
