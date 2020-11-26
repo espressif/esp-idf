@@ -151,6 +151,8 @@ static inline periph_module_t get_dma_periph(int dma_chan)
     }
 #elif CONFIG_IDF_TARGET_ESP32
     return PERIPH_SPI_DMA_MODULE;
+#elif SOC_GDMA_SUPPORTED
+    return PERIPH_GDMA_MODULE;
 #else
     return 0;
 #endif
@@ -168,17 +170,7 @@ bool spicommon_dma_chan_claim(int dma_chan)
         ret = true;
     }
 
-#if CONFIG_IDF_TARGET_ESP32
     periph_module_enable(get_dma_periph(dma_chan));
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if (dma_chan==1) {
-        periph_module_enable(PERIPH_SPI2_DMA_MODULE);
-    } else if (dma_chan==2) {
-        periph_module_enable(PERIPH_SPI3_DMA_MODULE);
-    }
-#elif SOC_GDMA_SUPPORTED
-    periph_module_enable(PERIPH_GDMA_MODULE);
-#endif
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
     return ret;
@@ -197,20 +189,7 @@ bool spicommon_dma_chan_free(int dma_chan)
 
     portENTER_CRITICAL(&spi_dma_spinlock);
     spi_dma_chan_enabled &= ~DMA_CHANNEL_ENABLED(dma_chan);
-#if CONFIG_IDF_TARGET_ESP32
-    if ( spi_dma_chan_enabled == 0 ) {
-        //disable the DMA only when all the channels are freed.
-        periph_module_disable(get_dma_periph(dma_chan));
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if (dma_chan==1) {
-        periph_module_disable(PERIPH_SPI2_DMA_MODULE);
-    } else if (dma_chan==2) {
-        periph_module_disable(PERIPH_SPI3_DMA_MODULE);
-    }
-#elif SOC_GDMA_SUPPORTED
-    periph_module_disable(PERIPH_GDMA_MODULE);
-#endif
+    periph_module_disable(get_dma_periph(dma_chan));
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
     return true;
