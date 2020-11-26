@@ -1,4 +1,4 @@
-{ Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Downloading ESP-IDF ------------------------------ }
@@ -88,6 +88,24 @@ begin
   DoCmdlineInstall('Finishing ESP-IDF installation', 'Re-packing the submodules', CmdLine);
 
   FindFileRecursive(Path + '\.git', 'alternates', @RemoveAlternatesFile);
+end;
+
+{
+  Run git config fileMode is repairing problem when git repo was zipped on Linux and extracted on Windows.
+  The repo and submodules are marked as dirty which confuses users that fresh installation already contains changes.
+  More information: https://mirrors.edge.kernel.org/pub/software/scm/git/docs/git-config.html
+}
+procedure GitRepoFixFileMode(Path: String);
+var
+  CmdLine: String;
+begin
+  CmdLine := GitExecutablePath + ' -C ' + Path + ' config --local core.fileMode false';
+  Log('Setting core.fileMode on repository: ' + CmdLine);
+  DoCmdlineInstall('Finishing ESP-IDF installation', 'Updating fileMode', CmdLine);
+
+  Log('Setting core.fileMode on repository for submodules: ' + CmdLine);
+  CmdLine := GitExecutablePath + ' -C ' + Path + ' submodule foreach --recursive git config --local core.fileMode false';
+  DoCmdlineInstall('Finishing ESP-IDF installation', 'Updating fileMode in submodules', CmdLine);
 end;
 
 { Run git reset --hard in the repo and in the submodules, to fix the newlines. }
@@ -183,6 +201,7 @@ begin
     }
     CmdLine := ExpandConstant('cmd.exe /c ""xcopy" /s /e /i /h /q "' + IDFTempPath + '" "' + IDFPath + '""');
     DoCmdlineInstall('Extracting ESP-IDF', 'Copying ESP-IDF into the destination directory', CmdLine);
+    GitRepoFixFileMode(IDFPath);
     GitRepoFixNewlines(IDFPath);
     DelTree(IDFTempPath, True, True, True);
   end;
@@ -248,20 +267,95 @@ begin
   DoCmdlineInstall('Installing Python environment', '', CmdLine);
 end;
 
+{ Find Major and Minor version in esp_idf_version.h file. }
+function GetIDFVersionFromHeaderFile():String;
+var
+  HeaderFileName: String;
+  HeaderLines: TArrayOfString;
+  LineIndex: Integer;
+  LineCount: Longint;
+  Line: String;
+  MajorVersion: String;
+  MinorVersion: String;
+begin
+  HeaderFileName := GetIDFPath('') + '\components\esp_common\include\esp_idf_version.h';
+  if (not FileExists(HeaderFileName)) then begin
+    Result := '';
+    Exit;
+  end;
+
+  LoadStringsFromFile(HeaderFileName, HeaderLines);
+  LineCount := GetArrayLength(HeaderLines);
+  for LineIndex := 0 to LineCount - 1 do begin
+    Line := HeaderLines[LineIndex];
+    if (pos('define ESP_IDF_VERSION_MAJOR', Line) > 0) then begin
+      Delete(Line, 1, 29);
+      MajorVersion := Trim(Line);
+    end else if (pos('define ESP_IDF_VERSION_MINOR', Line) > 0) then begin
+      Delete(Line, 1, 29);
+      MinorVersion := Trim(Line);
+      Result := MajorVersion + '.' + MinorVersion;
+      Exit;
+    end
+  end;
+end;
+
 { ------------------------------ Start menu shortcut ------------------------------ }
 
 procedure CreateIDFCommandPromptShortcut(LnkString: String);
 var
   Destination: String;
   Description: String;
+  VersionIndex: Integer;
+  MajorString: String;
+  MinorString: String;
+  DotIndex: Integer;
+  IDFVersionString: String;
+  PythonVirtualEnvPath: String;
   Command: String;
 begin
   ForceDirectories(ExpandConstant(LnkString));
   Destination := ExpandConstant(LnkString + '\{#IDFCmdExeShortcutFile}');
   Description := '{#IDFCmdExeShortcutDescription}';
+
+  IDFVersionString := IDFDownloadVersion;
+  { Transform version vx.y or release/vx.y to x.y }
+  VersionIndex := pos('v', IDFVersionString);
+  if (VersionIndex > 0) then begin
+    Delete(IDFVersionString, 1, VersionIndex);
+  end;
+
+  { Transform version x.y.z to x.y }
+  DotIndex := pos('.', IDFVersionString);
+  if (DotIndex > 0) then begin
+    MajorString := Copy(IDFVersionString, 1, DotIndex - 1);
+    Delete(IDFVersionString, 1, DotIndex);
+    { Trim trailing version numbers. }
+    DotIndex := pos('.', IDFVersionString);
+    if (DotIndex > 0) then begin
+      MinorString := Copy(IDFVersionString, 1, DotIndex - 1);
+      IDFVersionString := MajorString + '.' + MinorString;
+    end else begin
+     IDFVersionString :=  MajorString + '.' + IDFVersionString;
+    end;
+  end;
+
+  { Transform master to x.y }
+  if (IDFVersionString = 'master') then begin
+    IDFVersionString := GetIDFVersionFromHeaderFile();
+  end;
+
+  { The links should contain reference to Python vitual env }
+  PythonVirtualEnvPath := ExpandConstant('{app}\python_env\idf') + IDFVersionString + '_py' + PythonVersion + '_env\Scripts';
+
+  { Fallback in case of not existing environment. }
+  if (not FileExists(PythonVirtualEnvPath + '\python.exe')) then begin
+    PythonVirtualEnvPath := PythonPath;
+  end;
+
   { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
     will be removed by cmd.exe; each argument needs to be surrounded by quotes as well. }
-  Command := ExpandConstant('/k ""{app}\idf_cmd_init.bat" "') + PythonPath + '" "' + GitPath + '""';
+  Command := ExpandConstant('/k ""{app}\idf_cmd_init.bat" "') + PythonVirtualEnvPath + '" "' + GitPath + '""';
   Log('CreateShellLink Destination=' + Destination + ' Description=' + Description + ' Command=' + Command)
   try
     CreateShellLink(
@@ -290,47 +384,22 @@ begin
 end;
 
 
+
 <event('CurPageChanged')>
 procedure CheckWinDefenderAvailable(CurPageID: Integer);
 var
-  bHasWD: Boolean;
-  szHasWD: String;
-  szWDPath: String;
-  listPSModulePath: TStringList;
   x: Integer;
 begin
   if CurPageID = wpSelectTasks then
   begin
-    listPSModulePath := TStringList.Create;
-    listPSModulePath.Delimiter := ';';
-    listPSModulePath.StrictDelimiter := True;
-    listPSModulePath.DelimitedText := GetEnv('PsModulePath');
-
-    Log('Checking PSMODULEPATH for Windows Defender module...');
-
-    for x:=0 to (listPSModulePath.Count-1) do
-    begin
-      szWDPath := listPSModulePath[x] + '\Defender'
-      bHasWD := DirExists(szWDPath);
-      if bHasWD then
-      begin
-        szHasWD := 'YES (' + szWDPath + ')';
-        Break;
-      end
-      else
-        szHasWD := 'NO';
-    end;
-
-    Log('CheckWinDefenderAvailable: ' + szHasWD);
-
     { WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption.
       Please, keep this in mind when making changes }
     for x:=0 to (WizardForm.TasksList.Items.Count-1) do
     begin
       if Pos('Windows Defender',  WizardForm.TasksList.ItemCaption[x]) > 0 then
       begin
-        WizardForm.TasksList.ItemEnabled[x] := bHasWD;
-        WizardForm.TasksList.Checked[x] := bHasWD;
+        WizardForm.TasksList.ItemEnabled[x] := isWindowsDefenderEnabled;
+        WizardForm.TasksList.Checked[x] := isWindowsDefenderEnabled;
         break;
       end;
     end;

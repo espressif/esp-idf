@@ -14,6 +14,14 @@ Some functionality of the installer depends on additional programs:
 
 * [cmdlinerunner](cmdlinerunner/cmdlinerunner.c) — a helper DLL used to run external command line programs from the installer, capture live console output, and get the exit code.
 
+## Instalation of dependencies via Chocolatey
+
+Run with Administrator privileges:
+
+```
+choco install inno-download-plugin
+```
+
 ## Building the installer 
 
 ### In Docker

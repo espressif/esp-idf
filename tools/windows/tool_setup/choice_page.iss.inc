@@ -1,9 +1,12 @@
+{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+  SPDX-License-Identifier: Apache-2.0 }
+
 var
   ChoicePagePrepare: array of TNotifyEvent;
   ChoicePageSelectionChange: array of TNotifyEvent;
   ChoicePageValidate: array of TWizardPageButtonEvent;
   ChoicePageMaxTag: Integer;
-  ChoicePages: array of TInputOptionWizardPage;
+  ChoicePages: array of TWizardPage;
 
 procedure ChoicePageOnClickCheck(Sender: TObject);
 var
