@@ -33,8 +33,8 @@
 #include "lwip/dns.h"
 #endif
 
-#if CONFIG_LWIP_TCP_ISN_HOOK
-#include "tcp_isn.h"
+#if CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
+#include "lwip_default_hooks.h"
 #endif
 
 #include "esp_netif_lwip_ppp.h"
@@ -273,7 +273,7 @@ esp_err_t esp_netif_init(void)
 {
     if (tcpip_initialized == false) {
         tcpip_initialized = true;
-#if CONFIG_LWIP_TCP_ISN_HOOK
+#if CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
         uint8_t rand_buf[16];
         /*
          * This is early startup code where WiFi/BT is yet to be enabled and hence
