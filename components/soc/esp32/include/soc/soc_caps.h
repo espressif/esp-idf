@@ -69,7 +69,8 @@
 #define SOC_EMAC_SUPPORTED          1
 #define SOC_RISCV_COPROC_SUPPORTED  0   //TODO: correct the caller and remove this line
 #define SOC_CPU_CORES_NUM           2
-
+#define SOC_ULP_SUPPORTED           1
+#define SOC_RTC_SLOW_MEM_SUPPORTED  1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #define SOC_ADC_PERIPH_NUM              (2)
@@ -173,6 +174,9 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT 18
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+#define SOC_RTCIO_HOLD_SUPPORTED 1
+#define SOC_RTCIO_WAKE_SUPPORTED 1
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
 #define SOC_SIGMADELTA_NUM            1
@@ -185,6 +189,7 @@
 #define SOC_SPI_PERIPH_CS_NUM(i)    3
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE 64
+#define SOC_SPI_MAX_PRE_DIVIDER     8192
 
 #define SOC_SPI_SUPPORT_AS_CS       1 //Support to toggle the CS while the clock toggles
 
@@ -234,6 +239,9 @@
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
+
+/*-------------------------- SPIRAM CAPS -------------------------------------*/
+#define SOC_SPIRAM_SUPPORTED    1
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
