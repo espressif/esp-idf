@@ -395,6 +395,7 @@ typedef volatile struct {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
+extern uart_dev_t UART2;
 
 #ifdef __cplusplus
 }

@@ -15,10 +15,19 @@
 // The HAL layer for UART (common part)
 #include "hal/uart_hal.h"
 
-
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uart_sclk_t source_clk, uint32_t baud_rate)
+void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk)
 {
-    uart_ll_set_baudrate(hal->dev, source_clk, baud_rate);
+    uart_ll_set_sclk(hal->dev, sclk);
+}
+
+void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
+{
+    uart_ll_get_sclk(hal->dev, sclk);
+}
+
+void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate)
+{
+    uart_ll_set_baudrate(hal->dev, baud_rate);
 }
 
 void uart_hal_get_baudrate(uart_hal_context_t *hal, uint32_t *baud_rate)
@@ -76,11 +85,6 @@ void uart_hal_set_at_cmd_char(uart_hal_context_t *hal, uart_at_cmd_t *at_cmd)
     uart_ll_set_at_cmd_char(hal->dev, at_cmd);
 }
 
-void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
-{
-    uart_ll_get_sclk(hal->dev, sclk);
-}
-
 void uart_hal_set_tx_idle_num(uart_hal_context_t *hal, uint16_t idle_num)
 {
     uart_ll_set_tx_idle_num(hal->dev, idle_num);
@@ -133,9 +137,11 @@ void uart_hal_set_loop_back(uart_hal_context_t *hal, bool loop_back_en)
 
 void uart_hal_init(uart_hal_context_t *hal, int uart_num)
 {
+    // Set default clock source
+    uart_ll_set_sclk(hal->dev, UART_SCLK_APB);
     // Set default baud: 115200, use APB clock.
     const uint32_t baud_def = 115200;
-    uart_ll_set_baudrate(hal->dev, UART_SCLK_APB, baud_def);
+    uart_ll_set_baudrate(hal->dev, baud_def);
     // Set UART mode.
     uart_ll_set_mode(hal->dev, UART_MODE_UART);
     // Disable UART parity

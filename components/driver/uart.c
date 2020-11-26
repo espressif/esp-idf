@@ -24,6 +24,7 @@
 #include "freertos/ringbuf.h"
 #include "hal/uart_hal.h"
 #include "soc/uart_periph.h"
+#include "soc/rtc_cntl_reg.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
@@ -83,6 +84,10 @@ static const char* UART_TAG = "uart";
     .spinlock = portMUX_INITIALIZER_UNLOCKED,\
     .hw_enabled = false,\
 }
+
+#if SOC_UART_SUPPORT_RTC_CLK
+#define RTC_ENABLED(uart_num)    (BIT(uart_num))
+#endif
 
 typedef struct {
     uart_event_type_t type;        /*!< UART TX data type */
@@ -157,6 +162,34 @@ static uart_context_t uart_context[UART_NUM_MAX] = {
 };
 
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
+
+#if SOC_UART_SUPPORT_RTC_CLK
+
+static uint8_t rtc_enabled = 0;
+static portMUX_TYPE rtc_num_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+static void rtc_clk_enable(uart_port_t uart_num)
+{
+    portENTER_CRITICAL(&rtc_num_spinlock);
+    if (!(rtc_enabled & RTC_ENABLED(uart_num))) {
+        rtc_enabled |= RTC_ENABLED(uart_num);
+    }
+    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    portEXIT_CRITICAL(&rtc_num_spinlock);
+}
+
+static void rtc_clk_disable(uart_port_t uart_num)
+{
+    assert(rtc_enabled & RTC_ENABLED(uart_num));
+
+    portENTER_CRITICAL(&rtc_num_spinlock);
+    rtc_enabled &= ~RTC_ENABLED(uart_num);
+    if (rtc_enabled == 0) {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    }
+    portEXIT_CRITICAL(&rtc_num_spinlock);
+}
+#endif
 
 static void uart_module_enable(uart_port_t uart_num)
 {
@@ -236,10 +269,8 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    uart_sclk_t source_clk = 0;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_get_sclk(&(uart_context[uart_num].hal), &source_clk);
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), source_clk, baud_rate);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -626,9 +657,15 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_CHECK((uart_config->flow_ctrl < UART_HW_FLOWCTRL_MAX), "hw_flowctrl mode error", ESP_FAIL);
     UART_CHECK((uart_config->data_bits < UART_DATA_BITS_MAX), "data bit error", ESP_FAIL);
     uart_module_enable(uart_num);
+#if SOC_UART_SUPPORT_RTC_CLK
+    if (uart_config->source_clk == UART_SCLK_RTC) {
+        rtc_clk_enable(uart_num);
+    }
+#endif
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->source_clk, uart_config->baud_rate);
+    uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_config->source_clk);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -1416,6 +1453,14 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     heap_caps_free(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
 
+#if SOC_UART_SUPPORT_RTC_CLK
+
+    uart_sclk_t sclk = 0;
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &sclk);
+    if (sclk == UART_SCLK_RTC) {
+        rtc_clk_disable(uart_num);
+    }
+#endif
     uart_module_disable(uart_num);
     return ESP_OK;
 }

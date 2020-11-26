@@ -6,12 +6,12 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_PCNT_SUPPORTED 1
-#define SOC_TWAI_SUPPORTED 1
-#define SOC_GDMA_SUPPORTED 1
-#define SOC_DEDICATED_GPIO_SUPPORTED 1
-#define SOC_CPU_CORES_NUM 2
-#define SOC_CACHE_SUPPORT_WRAP    1
+#define SOC_PCNT_SUPPORTED              1
+#define SOC_TWAI_SUPPORTED              1
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
+#define SOC_CACHE_SUPPORT_WRAP          1
+#define SOC_CPU_CORES_NUM               2
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #include "adc_caps.h"
@@ -93,6 +93,8 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 #include "uart_caps.h"
 
+#define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* Max amount of bytes in a single DMA operation is 4095,

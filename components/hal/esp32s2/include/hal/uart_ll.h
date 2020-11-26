@@ -55,27 +55,63 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1<<18),
 } uart_intr_t;
 
+/**
+ * @brief  Set the UART source clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  source_clk The UART source clock. The source clock can be APB clock or REF_TICK.
+ *                    If the source clock is REF_TICK, the UART can still work when the APB changes.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
+{
+    hw->conf0.tick_ref_always_on = (source_clk == UART_SCLK_APB) ? 1 : 0;
+}
+
+/**
+ * @brief  Get the UART source clock type.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  source_clk The pointer to accept the UART source clock type.
+ *
+ * @return None.
+ */
+static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
+{
+    *source_clk = hw->conf0.tick_ref_always_on ? UART_SCLK_APB : UART_SCLK_REF_TICK;
+}
+
+/**
+ * @brief  Get the UART source clock frequency.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return Current source clock frequency
+ */
+static inline uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
+{
+    return (hw->conf0.tick_ref_always_on) ? APB_CLK_FREQ : REF_CLK_FREQ;
+}
 
 /**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set. When the source clock is APB, the max baud rate is `UART_LL_BITRATE_MAX`
- * @param  source_clk The UART source clock. The source clock can be APB clock or REF_TICK.
- *                    If the source clock is REF_TICK, the UART can still work when the APB changes.
- *
+
  * @return None
  */
-static inline void uart_ll_set_baudrate(uart_dev_t *hw, uart_sclk_t source_clk, uint32_t baud)
+static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 {
-    uint32_t sclk_freq = (source_clk == UART_SCLK_APB) ? APB_CLK_FREQ : REF_CLK_FREQ;
-    uint32_t clk_div = ((sclk_freq) << 4) / baud;
+    uint32_t sclk_freq, clk_div;
+
+    sclk_freq = uart_ll_get_sclk_freq(hw);
+    clk_div = ((sclk_freq) << 4) / baud;
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clk_div.div_int = clk_div >> 4;
     hw->clk_div.div_frag = clk_div &  0xf;
-    // Configure the UART source clock.
-    hw->conf0.tick_ref_always_on = (source_clk == UART_SCLK_APB);
 }
 
 /**
@@ -87,9 +123,9 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uart_sclk_t source_clk, 
  */
 static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
 {
-    uint32_t src_clk = hw->conf0.tick_ref_always_on ? APB_CLK_FREQ : REF_CLK_FREQ;
+    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     typeof(hw->clk_div) div_reg = hw->clk_div;
-    return ((src_clk << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
+    return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
 }
 
 /**
@@ -474,19 +510,6 @@ static inline void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_ch
 static inline void uart_ll_set_data_bit_num(uart_dev_t *hw, uart_word_length_t data_bit)
 {
     hw->conf0.bit_num = data_bit;
-}
-
-/**
- * @brief  Get the UART source clock.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  source_clk The pointer to accept the UART source clock configuration.
- *
- * @return None.
- */
-static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
-{
-    *source_clk = hw->conf0.tick_ref_always_on ? UART_SCLK_APB : UART_SCLK_REF_TICK;
 }
 
 /**

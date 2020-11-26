@@ -99,8 +99,16 @@ typedef enum {
  * @brief UART source clock
  */
 typedef enum {
-    UART_SCLK_APB = 0x0,           /*!< UART source clock from APB*/
-    UART_SCLK_REF_TICK = 0x01,     /*!< UART source clock from REF_TICK*/
+    UART_SCLK_APB = 0x0,            /*!< UART source clock from APB*/
+#if SOC_UART_SUPPORT_RTC_CLK
+    UART_SCLK_RTC = 0x1,            /*!< UART source clock from RTC*/
+#endif
+#if SOC_UART_SUPPORT_XTAL_CLK
+    UART_SCLK_XTAL = 0x2,           /*!< UART source clock from XTAL*/
+#endif
+#if SOC_UART_SUPPORT_REF_TICK
+    UART_SCLK_REF_TICK = 0x3,       /*!< UART source clock from REF_TICK*/
+#endif
 } uart_sclk_t;
 
 /**

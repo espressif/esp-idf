@@ -178,15 +178,33 @@ void uart_hal_rxfifo_rst(uart_hal_context_t *hal);
 void uart_hal_init(uart_hal_context_t *hal, uart_port_t uart_num);
 
 /**
+ * @brief Set the UART source clock type
+ * @param  hal Context of the HAL layer
+ * @param  sclk The UART source clock type.
+ *
+ * @return None
+ */
+void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk);
+
+/**
+ * @brief Get the UART source clock type
+ *
+ * @param  hal Context of the HAL layer
+ * @param  sclk The poiter to accept the UART source clock type
+ *
+ * @return None
+ */
+void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
+
+/**
  * @brief  Configure the UART baud-rate and select the source clock
  *
  * @param  hal Context of the HAL layer
- * @param  source_clk The UART source clock. Support `UART_SCLK_REF_TICK` and `UART_SCLK_APB`
  * @param  baud_rate The baud-rate to be set
  *
  * @return None
  */
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uart_sclk_t source_clk, uint32_t baud_rate);
+void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate);
 
 /**
  * @brief  Configure the UART stop bit
@@ -411,16 +429,6 @@ void uart_hal_get_hw_flow_ctrl(uart_hal_context_t *hal, uart_hw_flowcontrol_t *f
  * @return True if rts flow control is enabled, otherwise false will be returned
  */
 bool uart_hal_is_hw_rts_en(uart_hal_context_t *hal);
-
-/**
- * @brief Get the UART source clock configuration
- *
- * @param  hal Context of the HAL layer
- * @param  sclk The poiter to accept the UART source clock configuration
- *
- * @return None
- */
-void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
 
 /**
  * @brief Configure TX signal loop back to RX module, just for the testing purposes
