@@ -341,6 +341,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/friend.c"
                     "esp_ble_mesh/mesh_core/health_cli.c"
                     "esp_ble_mesh/mesh_core/health_srv.c"
+                    "esp_ble_mesh/mesh_core/local_operation.c"
                     "esp_ble_mesh/mesh_core/lpn.c"
                     "esp_ble_mesh/mesh_core/main.c"
                     "esp_ble_mesh/mesh_core/net.c"

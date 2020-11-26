@@ -38,6 +38,7 @@
 #include "client_common.h"
 #include "state_binding.h"
 #include "settings.h"
+#include "local_operation.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_config_model.h"
@@ -2014,6 +2015,30 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+    case BTC_BLE_MESH_ACT_MODEL_SUBSCRIBE_GROUP_ADDR:
+        act = ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT;
+        param.model_sub_group_addr_comp.element_addr = arg->model_sub_group_addr.element_addr;
+        param.model_sub_group_addr_comp.company_id = arg->model_sub_group_addr.company_id;
+        param.model_sub_group_addr_comp.model_id = arg->model_sub_group_addr.model_id;
+        param.model_sub_group_addr_comp.group_addr = arg->model_sub_group_addr.group_addr;
+        param.model_sub_group_addr_comp.err_code =
+            bt_mesh_model_subscribe_group_addr(arg->model_sub_group_addr.element_addr,
+                                               arg->model_sub_group_addr.company_id,
+                                               arg->model_sub_group_addr.model_id,
+                                               arg->model_sub_group_addr.group_addr);
+        break;
+    case BTC_BLE_MESH_ACT_MODEL_UNSUBSCRIBE_GROUP_ADDR:
+        act = ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT;
+        param.model_unsub_group_addr_comp.element_addr = arg->model_unsub_group_addr.element_addr;
+        param.model_unsub_group_addr_comp.company_id = arg->model_unsub_group_addr.company_id;
+        param.model_unsub_group_addr_comp.model_id = arg->model_unsub_group_addr.model_id;
+        param.model_unsub_group_addr_comp.group_addr = arg->model_unsub_group_addr.group_addr;
+        param.model_unsub_group_addr_comp.err_code =
+            bt_mesh_model_unsubscribe_group_addr(arg->model_unsub_group_addr.element_addr,
+                                                 arg->model_unsub_group_addr.company_id,
+                                                 arg->model_unsub_group_addr.model_id,
+                                                 arg->model_unsub_group_addr.group_addr);
+        break;
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);

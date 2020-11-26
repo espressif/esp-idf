@@ -643,6 +643,10 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key
         return -EIO;
     }
 
+    if (exist == true) {
+        BT_INFO("Restored Model Bound AppKey, index %s", bt_hex(model->keys, sizeof(model->keys)));
+    }
+
     return 0;
 }
 
@@ -663,6 +667,10 @@ static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     if (err) {
         BT_ERR("%s, Failed to get model subscriptions", __func__);
         return -EIO;
+    }
+
+    if (exist == true) {
+        BT_INFO("Restored Model Subscription, address %s", bt_hex(model->groups, sizeof(model->groups)));
     }
 
     return 0;

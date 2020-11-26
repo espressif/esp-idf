@@ -830,6 +830,8 @@ typedef enum {
     ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
     ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
     ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
+    ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT,           /*!< Local model subscribes group address completion event */
+    ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT,         /*!< Local model unsubscribes group address completion event */
     ESP_BLE_MESH_DEINIT_MESH_COMP_EVT,                          /*!< De-initialize BLE Mesh stack completion event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
@@ -1409,6 +1411,26 @@ typedef union {
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT
+     */
+    struct {
+        int err_code;                           /*!< Indicate the result of local model subscribing group address */
+        uint16_t element_addr;                  /*!< Element address */
+        uint16_t company_id;                    /*!< Company ID */
+        uint16_t model_id;                      /*!< Model ID */
+        uint16_t group_addr;                    /*!< Group Address */
+    } model_sub_group_addr_comp;                /*!< Event parameters of ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT
+     */
+    struct {
+        int err_code;                           /*!< Indicate the result of local model unsubscribing group address */
+        uint16_t element_addr;                  /*!< Element address */
+        uint16_t company_id;                    /*!< Company ID */
+        uint16_t model_id;                      /*!< Model ID */
+        uint16_t group_addr;                    /*!< Group Address */
+    } model_unsub_group_addr_comp;              /*!< Event parameters of ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_DEINIT_MESH_COMP_EVT
      */
