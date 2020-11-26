@@ -29,7 +29,6 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (&UART1))
 
-// TODO ESP32-C3 IDF-2117 check these values are correct (copied from S2)
 #define UART_LL_MIN_WAKEUP_THRESH (2)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
@@ -74,19 +73,86 @@ static inline void uart_ll_sclk_disable(uart_dev_t *hw) {
 }
 
 /**
+ * @brief  Set the UART source clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  source_clk The UART source clock. The source clock can be APB clock, RTC clock or XTAL clock.
+ *                    If the source clock is RTC/XTAL, the UART can still work when the APB changes.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
+{
+    switch (source_clk) {
+        default:
+        case UART_SCLK_APB:
+            hw->clk_conf.sclk_sel = 1;
+            break;
+        case UART_SCLK_RTC:
+            hw->clk_conf.sclk_sel = 2;
+            break;
+        case UART_SCLK_XTAL:
+            hw->clk_conf.sclk_sel = 3;
+            break;
+    }
+}
+
+/**
+ * @brief  Get the UART source clock type.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  source_clk The pointer to accept the UART source clock type.
+ *
+ * @return None.
+ */
+static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
+{
+    switch (hw->clk_conf.sclk_sel) {
+        default:
+        case 1:
+            *source_clk = UART_SCLK_APB;
+            break;
+        case 2:
+            *source_clk = UART_SCLK_RTC;
+            break;
+        case 3:
+            *source_clk = UART_SCLK_XTAL;
+            break;
+    }
+}
+
+/**
+ * @brief  Get the UART source clock frequency.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return Current source clock frequency
+ */
+static inline uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
+{
+    switch (hw->clk_conf.sclk_sel) {
+        default:
+        case 1:
+            return APB_CLK_FREQ;
+        case 2:
+            return RTC_CLK_FREQ;
+        case 3:
+            return XTAL_CLK_FREQ;
+    }
+}
+
+/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set. When the source clock is APB, the max baud rate is `UART_LL_BITRATE_MAX`
- * @param  source_clk The UART source clock. The source clock can be APB clock or REF_TICK.
- *                    If the source clock is REF_TICK, the UART can still work when the APB changes.
  *
  * @return None
  */
-static inline void uart_ll_set_baudrate(uart_dev_t *hw, uart_sclk_t source_clk, uint32_t baud)
+static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 {
     const int sclk_div = 1;
-    uint32_t sclk_freq = (source_clk == UART_SCLK_APB) ? APB_CLK_FREQ : REF_CLK_FREQ;
+    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     uint32_t clk_div = ((sclk_freq) << 4) / baud;
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
@@ -104,9 +170,9 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uart_sclk_t source_clk, 
  */
 static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
 {
-    uint32_t src_clk = APB_CLK_FREQ;
+    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     typeof(hw->clk_div) div_reg = hw->clk_div;
-    return ((src_clk << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
+    return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
 }
 
 /**
@@ -490,19 +556,6 @@ static inline void uart_ll_set_data_bit_num(uart_dev_t *hw, uart_word_length_t d
 }
 
 /**
- * @brief  Get the UART source clock.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  source_clk The pointer to accept the UART source clock configuration.
- *
- * @return None.
- */
-static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
-{
-    *source_clk = UART_SCLK_APB;
-}
-
-/**
  * @brief  Set the rts active level.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -539,7 +592,7 @@ static inline void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 static inline void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
-    hw->sleep_conf.active_threshold = wakeup_thrd - SOC_UART_MIN_WAKEUP_THRESH;
+    hw->sleep_conf.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
 
 /**
@@ -585,6 +638,8 @@ static inline void uart_ll_set_mode_rs485_app_ctrl(uart_dev_t *hw)
  */
 static inline void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
 {
+    // Enable receiver, sw_rts = 1  generates low level on RTS pin
+    hw->conf0.sw_rts = 1;
     // Half duplex mode
     hw->rs485_conf.tx_rx_en = 0;
     // Setting this bit will allow data to be transmitted while receiving data(full-duplex mode).
@@ -612,6 +667,7 @@ static inline void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
     hw->rs485_conf.rx_busy_tx_en = 1;
     hw->rs485_conf.dl0_en = 1;
     hw->rs485_conf.dl1_en = 1;
+    hw->conf0.sw_rts = 0;
     hw->rs485_conf.en = 1;
 }
 
@@ -685,7 +741,7 @@ static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, ui
  */
 static inline uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf.active_threshold + SOC_UART_MIN_WAKEUP_THRESH;
+    return hw->sleep_conf.active_threshold + UART_LL_MIN_WAKEUP_THRESH;
 }
 
 /**

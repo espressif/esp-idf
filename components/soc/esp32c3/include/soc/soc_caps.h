@@ -40,6 +40,7 @@
 #include "rmt_caps.h"
 #include "sha_caps.h"
 #include "spi_caps.h"
+#include "uart_caps.h"
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */

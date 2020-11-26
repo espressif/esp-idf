@@ -21,9 +21,11 @@ extern "C" {
 #define SOC_UART_FIFO_LEN          (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX       (5000000)  /*!< Max bit rate supported by UART */
 
+#define SOC_UART_SUPPORT_RTC_CLK    (1)
+#define SOC_UART_SUPPORT_XTAL_CLK   (1)
+
 // ESP32-C3 have 2 UART
 #define SOC_UART_NUM           (2)
-#define SOC_UART_MIN_WAKEUP_THRESH (2)
 
 #ifdef __cplusplus
 }
