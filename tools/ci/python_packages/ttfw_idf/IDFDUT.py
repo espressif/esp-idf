@@ -216,9 +216,28 @@ class IDFDUT(DUT.SerialDUT):
         Structured this way so @_uses_esptool will reconnect each time
         """
         flash_files = []
+        encrypt_files = []
         try:
-            # note: opening here prevents us from having to seek back to 0 each time
-            flash_files = [(offs, open(path, "rb")) for (offs, path) in self.app.flash_files]
+            # Open the files here to prevents us from having to seek back to 0
+            # each time. Before opening them, we have to organize the lists the
+            # way esptool.write_flash needs:
+            # If encrypt is provided, flash_files contains all the files to
+            # flash.
+            # Else, flash_files contains the files to be flashed as plain text
+            # and encrypt_files contains the ones to flash encrypted.
+            flash_files = self.app.flash_files
+            encrypt_files = self.app.encrypt_files
+            encrypt = self.app.flash_settings.get("encrypt", False)
+            if encrypt:
+                flash_files = encrypt_files
+                encrypt_files = []
+            else:
+                flash_files = [entry
+                               for entry in flash_files
+                               if entry not in encrypt_files]
+
+            flash_files = [(offs, open(path, "rb")) for (offs, path) in flash_files]
+            encrypt_files = [(offs, open(path, "rb")) for (offs, path) in encrypt_files]
 
             if erase_nvs:
                 address = self.app.partition_table["nvs"]["offset"]
@@ -228,7 +247,18 @@ class IDFDUT(DUT.SerialDUT):
                 nvs_file.seek(0)
                 if not isinstance(address, int):
                     address = int(address, 0)
-                flash_files.append((address, nvs_file))
+                # We have to check whether this file needs to be added to
+                # flash_files list or encrypt_files.
+                # Get the CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT macro
+                # value. If it is set to True, then NVS is always encrypted.
+                sdkconfig_dict = self.app.get_sdkconfig()
+                macro_encryption = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
+                # If the macro is not enabled (plain text flash) or all files
+                # must be encrypted, add NVS to flash_files.
+                if not macro_encryption or encrypt:
+                    flash_files.append((address, nvs_file))
+                else:
+                    encrypt_files.append((address, nvs_file))
 
             # fake flasher args object, this is a hack until
             # esptool Python API is improved
@@ -237,15 +267,18 @@ class IDFDUT(DUT.SerialDUT):
                     for key, value in attributes.items():
                         self.__setattr__(key, value)
 
+            # write_flash expects the parameter encrypt_files to be None and not
+            # an empty list, so perform the check here
             flash_args = FlashArgs({
                 'flash_size': self.app.flash_settings["flash_size"],
                 'flash_mode': self.app.flash_settings["flash_mode"],
                 'flash_freq': self.app.flash_settings["flash_freq"],
                 'addr_filename': flash_files,
+                'encrypt_files': encrypt_files or None,
                 'no_stub': False,
                 'compress': True,
                 'verify': False,
-                'encrypt': self.app.flash_settings.get("encrypt", False),
+                'encrypt': encrypt,
                 'erase_all': False,
             })
 
@@ -254,6 +287,8 @@ class IDFDUT(DUT.SerialDUT):
             esptool.write_flash(esp, flash_args)
         finally:
             for (_, f) in flash_files:
+                f.close()
+            for (_, f) in encrypt_files:
                 f.close()
 
     def start_app(self, erase_nvs=ERASE_NVS):
