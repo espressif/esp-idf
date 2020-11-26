@@ -40,7 +40,8 @@ extern "C" {
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_TRANS_DONE_EN | SPI_INT_WR_DMA_DONE_EN | SPI_INT_RD_DMA_DONE_EN | SPI_INT_WR_BUF_DONE_EN | SPI_INT_RD_BUF_DONE_EN)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
-
+/// This is the expected clock frequency
+#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
 
 /**
@@ -198,21 +199,46 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 }
 
 /**
- * Reset SPI CPU FIFO
+ * Reset SPI CPU TX FIFO
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_cpu_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 {
     //This is not used in esp32s2
 }
 
 /**
- * Reset SPI DMA FIFO
+ * Reset SPI CPU RX FIFO
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
+{
+    //This is not used in esp32s2
+}
+
+/**
+ * Reset SPI DMA TX FIFO
+ *
+ * On ESP32S2, this function is not seperated
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
+{
+    hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
+    hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;
+}
+
+/**
+ * Reset SPI DMA RX FIFO
+ *
+ * On ESP32S2, this function is not seperated
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
 {
     hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
     hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;

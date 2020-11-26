@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #include "hal/rtc_io_ll.h"
 #include <esp_err.h>
 
@@ -37,6 +38,8 @@ extern "C" {
  * @param func Select pin function.
  */
 #define rtcio_hal_function_select(rtcio_num, func) rtcio_ll_function_select(rtcio_num, func)
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * Enable rtcio output.
@@ -164,6 +167,10 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  */
 #define rtcio_hal_pulldown_disable(rtcio_num) rtcio_ll_pulldown_disable(rtcio_num)
 
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+#if SOC_RTCIO_HOLD_SUPPORTED
+
 /**
  * Enable force hold function for RTC IO pad.
  *
@@ -204,6 +211,10 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  */
 #define rtcio_hal_unhold_all() rtcio_ll_force_unhold_all()
 
+#endif // SOC_RTCIO_HOLD_SUPPORTED
+
+#if SOC_RTCIO_WAKE_SUPPORTED
+
 /**
  * Enable wakeup function and set wakeup type from light sleep status for rtcio.
  *
@@ -227,6 +238,10 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  */
 #define rtcio_hal_ext0_set_wakeup_pin(rtcio_num, level)     rtcio_ll_ext0_set_wakeup_pin(rtcio_num, level)
 
+#endif
+
+#if SOC_RTCIO_HOLD_SUPPORTED || SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
 /**
  * Helper function to disconnect internal circuits from an RTC IO
  * This function disables input, output, pullup, pulldown, and enables
@@ -241,6 +256,8 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 void rtcio_hal_isolate(int rtc_num);
+
+#endif
 
 #ifdef __cplusplus
 }

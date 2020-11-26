@@ -16,6 +16,8 @@
 
 #include "hal/rtc_io_hal.h"
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
 void rtcio_hal_set_direction(int rtcio_num, rtc_gpio_mode_t mode)
 {
     switch (mode) {
@@ -90,3 +92,5 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode)
         break;
     }
 }
+
+#endif

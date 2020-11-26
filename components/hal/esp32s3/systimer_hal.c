@@ -52,18 +52,26 @@ uint64_t systimer_hal_get_time(systimer_counter_id_t counter_id)
     return systimer_hal_get_counter_value(counter_id) / SYSTIMER_TICKS_PER_US;
 }
 
-void systimer_hal_set_alarm_value(systimer_alarm_id_t alarm_id, uint64_t timestamp)
+void systimer_hal_set_alarm_target(systimer_alarm_id_t alarm_id, uint64_t target)
 {
-    systimer_counter_value_t alarm = { .val = timestamp * SYSTIMER_TICKS_PER_US};
+    systimer_counter_value_t alarm = { .val = target * SYSTIMER_TICKS_PER_US};
     systimer_ll_disable_alarm(alarm_id);
-    systimer_ll_set_alarm_value(alarm_id, alarm.val);
+    systimer_ll_set_alarm_target(alarm_id, alarm.val);
+    systimer_ll_apply_alarm_value(alarm_id);
+    systimer_ll_enable_alarm(alarm_id);
+}
+
+void systimer_hal_set_alarm_period(systimer_alarm_id_t alarm_id, uint32_t period)
+{
+    systimer_ll_disable_alarm(alarm_id);
+    systimer_ll_set_alarm_period(alarm_id, period * SYSTIMER_TICKS_PER_US);
     systimer_ll_apply_alarm_value(alarm_id);
     systimer_ll_enable_alarm(alarm_id);
 }
 
 uint64_t systimer_hal_get_alarm_value(systimer_alarm_id_t alarm_id)
 {
-    return systimer_ll_get_alarm_value(alarm_id);
+    return systimer_ll_get_alarm_target(alarm_id);
 }
 
 void systimer_hal_enable_alarm_int(systimer_alarm_id_t alarm_id)

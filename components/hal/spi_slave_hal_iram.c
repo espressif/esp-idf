@@ -33,7 +33,6 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal)
 void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
 {
     if (hal->use_dma) {
-        spi_ll_dma_fifo_reset(hal->hw);
 
         //Fill DMA descriptors
         if (hal->rx_buffer) {
@@ -41,6 +40,7 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
 
             //reset dma inlink, this should be reset before spi related reset
             spi_dma_ll_rx_reset(hal->dma_in);
+            spi_ll_dma_rx_fifo_reset(hal->dma_in);
             spi_ll_slave_reset(hal->hw);
             spi_ll_infifo_full_clr(hal->hw);
 
@@ -49,9 +49,9 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
         }
         if (hal->tx_buffer) {
             lldesc_setup_link(hal->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
-
             //reset dma outlink, this should be reset before spi related reset
             spi_dma_ll_tx_reset(hal->dma_out);
+            spi_ll_dma_tx_fifo_reset(hal->dma_out);
             spi_ll_slave_reset(hal->hw);
             spi_ll_outfifo_empty_clr(hal->hw);
 
@@ -65,7 +65,7 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
             spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->bitlen);
         }
 
-        spi_ll_cpu_fifo_reset(hal->hw);
+        spi_ll_cpu_tx_fifo_reset(hal->hw);
     }
 
     spi_ll_slave_set_rx_bitlen(hal->hw, hal->bitlen);

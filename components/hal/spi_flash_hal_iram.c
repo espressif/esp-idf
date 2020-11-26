@@ -11,6 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "sdkconfig.h"
+
+#ifndef CONFIG_SPI_FLASH_NEW_ROM_API
+
+// HAL for
+//  - MEMSPI
+//  - SPI1~3 on ESP32
+// The common part is in spi_flash_hal_common.inc
+
+// HAL for
+//  - MEMSPI
+//  - SPI1~3 on ESP32
+// The common part is in spi_flash_hal_common.inc
 
 // HAL for
 //  - MEMSPI
@@ -74,12 +87,12 @@ bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host)
     if ((void*) dev == spi_flash_ll_get_hw(SPI_HOST)) {
 #if CONFIG_IDF_TARGET_ESP32
         idle &= spi_flash_ll_host_idle(&SPI0);
-#elif CONFIG_IDF_TARGET_ESP32S2
-        idle &= spi_flash_ll_host_idle(&SPIMEM0);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else
         idle &= spi_flash_ll_host_idle(&SPIMEM0);
 #endif
     }
 
     return idle;
 }
+
+#endif // !CONFIG_SPI_FLASH_NEW_ROM_API

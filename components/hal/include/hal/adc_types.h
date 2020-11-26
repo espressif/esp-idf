@@ -129,7 +129,7 @@ typedef struct {
 -                                         1: 10 bit;
 -                                         2: 11 bit;
 -                                         3: 12 bit. */
-#elif CONFIG_IDF_TARGET_ESP32S2
+#else
             uint8_t reserved:  2;   /*!< reserved0 */
 #endif
             uint8_t channel:   4;   /*!< ADC channel index. */
@@ -238,7 +238,7 @@ typedef struct {
     adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
     adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
     adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if !CONFIG_IDF_TARGET_ESP32
     uint32_t interval;          /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
                                     The unit is the divided clock. Range: 40 ~ 4095.
                                     Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
@@ -251,7 +251,8 @@ typedef struct {
 #endif
 } adc_digi_config_t;
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if !CONFIG_IDF_TARGET_ESP32
+
 /**
  * @brief ADC arbiter work mode option.
  *

@@ -84,8 +84,10 @@ typedef enum {
     LEDC_CHANNEL_3,     /*!< LEDC channel 3 */
     LEDC_CHANNEL_4,     /*!< LEDC channel 4 */
     LEDC_CHANNEL_5,     /*!< LEDC channel 5 */
+#if SOC_LEDC_CHANNEL_NUM > 6
     LEDC_CHANNEL_6,     /*!< LEDC channel 6 */
     LEDC_CHANNEL_7,     /*!< LEDC channel 7 */
+#endif
     LEDC_CHANNEL_MAX,
 } ledc_channel_t;
 
@@ -104,12 +106,14 @@ typedef enum {
     LEDC_TIMER_12_BIT,      /*!< LEDC PWM duty resolution of 12 bits */
     LEDC_TIMER_13_BIT,      /*!< LEDC PWM duty resolution of 13 bits */
     LEDC_TIMER_14_BIT,      /*!< LEDC PWM duty resolution of 14 bits */
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
     LEDC_TIMER_15_BIT,      /*!< LEDC PWM duty resolution of 15 bits */
     LEDC_TIMER_16_BIT,      /*!< LEDC PWM duty resolution of 16 bits */
     LEDC_TIMER_17_BIT,      /*!< LEDC PWM duty resolution of 17 bits */
     LEDC_TIMER_18_BIT,      /*!< LEDC PWM duty resolution of 18 bits */
     LEDC_TIMER_19_BIT,      /*!< LEDC PWM duty resolution of 19 bits */
     LEDC_TIMER_20_BIT,      /*!< LEDC PWM duty resolution of 20 bits */
+#endif
     LEDC_TIMER_BIT_MAX,
 } ledc_timer_bit_t;
 
