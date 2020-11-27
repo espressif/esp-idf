@@ -136,6 +136,13 @@ config BT_GATTS_PPCP_CHAR_GAP
         This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04) in GAP service that has
         connection parameters like min/max connection interval, slave latency and supervision timeout multiplier
 
+config BT_BLE_BLUFI_ENABLE
+    bool "Include blufi function"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option can be close when the app does not require blufi function.
+
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
     prompt "GATTS Service Change Mode"
     default BT_GATTS_SEND_SERVICE_CHANGE_AUTO
