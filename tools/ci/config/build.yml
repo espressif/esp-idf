@@ -92,6 +92,7 @@ build_ssc_esp32s2:
   extends:
     - .build_template
     - .rules:build_tests:unit_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
@@ -139,6 +140,7 @@ build_esp_idf_tests_cmake_esp32s3:
   extends:
     - .build_template
     - .rules:build_tests:example_test-weekend_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
@@ -300,6 +302,7 @@ build_docs_pdf:
   extends:
     - .build_template
     - .rules:build_tests:weekend_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
@@ -394,6 +397,7 @@ build_installer:
   image: $CI_DOCKER_REGISTRY/wine-innosetup:1
   tags:
     - build
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - build_cmdlinerunner
   script:
@@ -440,6 +444,7 @@ build_template_app:
     REPORT_DIR: examples/get-started/hello_world/tidybuild/report
   tags:
     - host_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - clang_tidy_check_regular
 
