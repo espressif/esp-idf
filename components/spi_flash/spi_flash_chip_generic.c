@@ -58,9 +58,9 @@ const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
     .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
 };
 
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
-
 static const char TAG[] = "chip_generic";
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
 esp_err_t spi_flash_chip_generic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -463,6 +463,27 @@ esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip)
 }
 #endif // CONFIG_SPI_FLASH_ROM_IMPL
 
+esp_err_t spi_flash_chip_generic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id)
+{
+    uint64_t unique_id_buf = 0;
+    spi_flash_trans_t transfer = {
+        .command = CMD_RDUID,
+        .miso_len = 8,
+        .miso_data = ((uint8_t *)&unique_id_buf),
+        .dummy_bitlen = 32, //RDUID command followed by 4 bytes (32 bits) of dummy clocks.
+    };
+    esp_err_t err = chip->host->driver->common_command(chip->host, &transfer);
+
+    if (unique_id_buf == 0 || unique_id_buf == UINT64_MAX) {
+        ESP_EARLY_LOGE(TAG, "No response from device when trying to retrieve Unique ID\n");
+        *flash_unique_id = unique_id_buf;
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    *flash_unique_id = __builtin_bswap64(unique_id_buf);
+    return err;
+}
+
 static const char chip_name[] = "generic";
 
 const spi_flash_chip_t esp_flash_chip_generic = {
@@ -501,6 +522,7 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
+    .read_unique_id = spi_flash_chip_generic_read_unique_id,
 };
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL

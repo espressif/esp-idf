@@ -188,6 +188,11 @@ struct spi_flash_chip_t {
 
     /** Setup flash suspend configuration. */
     esp_err_t (*sus_setup)(esp_flash_t *chip);
+
+    /**
+     * Read the chip unique ID.
+     */
+    esp_err_t (*read_unique_id)(esp_flash_t *chip, uint64_t* flash_unique_id);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used
