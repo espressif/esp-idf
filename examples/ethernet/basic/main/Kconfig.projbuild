@@ -1,5 +1,9 @@
 menu "Example Configuration"
-    choice EXAMPLE_USE_ETHERNET
+
+    config EXAMPLE_USE_SPI_ETHERNET
+        bool
+
+    choice EXAMPLE_ETHERNET_TYPE
         prompt "Ethernet Type"
         default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
         default EXAMPLE_USE_W5500
@@ -15,6 +19,7 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_DM9051
             bool "DM9051 Module"
+            select EXAMPLE_USE_SPI_ETHERNET
             select ETH_USE_SPI_ETHERNET
             select ETH_SPI_ETHERNET_DM9051
             help
@@ -22,11 +27,12 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_W5500
             bool "W5500 Module"
+            select EXAMPLE_USE_SPI_ETHERNET
             select ETH_USE_SPI_ETHERNET
             select ETH_SPI_ETHERNET_W5500
             help
                 Select external SPI-Ethernet module (W5500).
-    endchoice # EXAMPLE_USE_ETHERNET
+    endchoice # EXAMPLE_ETHERNET_TYPE
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
         choice EXAMPLE_ETH_PHY_MODEL
@@ -79,7 +85,7 @@ menu "Example Configuration"
                 Set the GPIO number used by SMI MDIO.
     endif # EXAMPLE_USE_INTERNAL_ETHERNET
 
-    if ETH_USE_SPI_ETHERNET
+    if EXAMPLE_USE_SPI_ETHERNET
         config EXAMPLE_ETH_SPI_HOST
             int "SPI Host Number"
             range 0 2
@@ -127,7 +133,7 @@ menu "Example Configuration"
             default 4
             help
                 Set the GPIO number used by the SPI Ethernet module interrupt line.
-    endif # ETH_USE_SPI_ETHERNET
+    endif # EXAMPLE_USE_SPI_ETHERNET
 
     config EXAMPLE_ETH_PHY_RST_GPIO
         int "PHY Reset GPIO number"

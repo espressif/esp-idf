@@ -30,7 +30,10 @@ menu "Example Connection Configuration"
             Choose this option to connect with Ethernet
 
     if EXAMPLE_CONNECT_ETHERNET
-        choice EXAMPLE_USE_ETHERNET
+        config EXAMPLE_USE_SPI_ETHERNET
+            bool
+
+        choice EXAMPLE_ETHERNET_TYPE
             prompt "Ethernet Type"
             default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
             default EXAMPLE_USE_W5500
@@ -46,6 +49,7 @@ menu "Example Connection Configuration"
 
             config EXAMPLE_USE_DM9051
                 bool "DM9051 Module"
+                select EXAMPLE_USE_SPI_ETHERNET
                 select ETH_USE_SPI_ETHERNET
                 select ETH_SPI_ETHERNET_DM9051
                 help
@@ -53,6 +57,7 @@ menu "Example Connection Configuration"
 
             config EXAMPLE_USE_W5500
                 bool "W5500 Module"
+                select EXAMPLE_USE_SPI_ETHERNET
                 select ETH_USE_SPI_ETHERNET
                 select ETH_SPI_ETHERNET_W5500
                 help
@@ -68,7 +73,7 @@ menu "Example Connection Configuration"
                     not officially supported. Examples built with this option enabled
                     will not run on a real ESP32 chip.
 
-        endchoice
+        endchoice # EXAMPLE_ETHERNET_TYPE
 
         if EXAMPLE_USE_INTERNAL_ETHERNET
             choice EXAMPLE_ETH_PHY_MODEL
@@ -115,7 +120,7 @@ menu "Example Connection Configuration"
                     Set the GPIO number used by SMI MDIO.
         endif
 
-        if ETH_USE_SPI_ETHERNET
+        if EXAMPLE_USE_SPI_ETHERNET
             config EXAMPLE_ETH_SPI_HOST
                 int "SPI Host Number"
                 range 0 2
@@ -163,7 +168,7 @@ menu "Example Connection Configuration"
                 default 4
                 help
                     Set the GPIO number used by the SPI Ethernet module interrupt line.
-        endif # ETH_USE_SPI_ETHERNET
+        endif # EXAMPLE_USE_SPI_ETHERNET
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
@@ -178,7 +183,7 @@ menu "Example Connection Configuration"
             default 1
             help
                 Set PHY address according your board schematic.
-    endif
+    endif # EXAMPLE_CONNECT_ETHERNET
 
     config EXAMPLE_CONNECT_IPV6
         bool "Obtain IPv6 address"
