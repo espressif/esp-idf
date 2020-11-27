@@ -86,7 +86,7 @@ extern "C" {
 #define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
 
 #define ESP_ERR_WIFI_POST        (ESP_ERR_WIFI_BASE + 18)  /*!< Failed to post the event to WiFi task */
-#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalod WiFi state when init/deinit is called */
+#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalid WiFi state when init/deinit is called */
 #define ESP_ERR_WIFI_STOP_STATE  (ESP_ERR_WIFI_BASE + 20)  /*!< Returned when WiFi is stopping */
 #define ESP_ERR_WIFI_NOT_ASSOC   (ESP_ERR_WIFI_BASE + 21)  /*!< The WiFi connection is not associated */
 #define ESP_ERR_WIFI_TX_DISALLOW (ESP_ERR_WIFI_BASE + 22)  /*!< The WiFi TX is disallowed */
@@ -313,7 +313,7 @@ esp_err_t esp_wifi_stop(void);
  * @brief  Restore WiFi stack persistent settings to default values
  *
  * This function will reset settings made using the following APIs:
- * - esp_wifi_get_auto_connect,
+ * - esp_wifi_set_bandwidth,
  * - esp_wifi_set_protocol,
  * - esp_wifi_set_config related
  * - esp_wifi_set_mode
@@ -889,32 +889,8 @@ esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
   * @attention 3. Mapping Table {Power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
   *                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {78, 20}}.
   * @attention 4. Param power unit is 0.25dBm, range is [8, 78] corresponding to 2dBm - 20dBm.
-  * @attention 5. Relationship between set value and actual value. As follows:
-  *              +------------+--------------+
-  *              | set value  | actual value |
-  *              +============+==============+
-  *              |  [8,  19]  |      8       |
-  *              +------------+--------------+
-  *              |  [20, 27]  |      20      |
-  *              +------------+--------------+
-  *              |  [28, 33]  |      28      |
-  *              +------------+--------------+
-  *              |  [34, 43]  |      34      |
-  *              +------------+--------------+
-  *              |  [44, 51]  |      44      |
-  *              +------------+--------------+
-  *              |  [52, 55]  |      52      |
-  *              +------------+--------------+
-  *              |  [56, 59]  |      56      |
-  *              +------------+--------------+
-  *              |  [60, 65]  |      60      |
-  *              +------------+--------------+
-  *              |  [66, 71]  |      66      |
-  *              +------------+--------------+
-  *              |  [72, 77]  |      72      |
-  *              +------------+--------------+
-  *              |     78     |      78      |
-  *              +------------+--------------+
+  * @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 77],72}, {78,78}}
+  *
   * @param     power  Maximum WiFi transmitting power.
   *
   * @return
