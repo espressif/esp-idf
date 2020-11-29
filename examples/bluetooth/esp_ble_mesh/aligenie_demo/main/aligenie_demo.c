@@ -503,57 +503,53 @@ esp_err_t local_operation(uint16_t app_idx)
 {
     ESP_LOGD(TAG, "app_idx: %d, primary element address: %d", app_idx, esp_ble_mesh_get_primary_element_address());
 
-    ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_CONFIG_SRV, GENIE_LIGHT_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_CONFIG_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_CONFIG_SRV, BLE_MESH_CID_NVAL, app_idx));
-
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_HEALTH_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_HEALTH_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_HEALTH_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_HEALTH_SRV, app_idx));
 
 #ifdef CONFIG_MESH_MODEL_GEN_ONOFF_SRV
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, app_idx));
 
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address() + 1, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address() + 1, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address() + 1, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address() + 1, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, app_idx));
 
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address() + 2, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address() + 2, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address() + 2, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address() + 2, BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, app_idx));
 #endif
 #ifdef CONFIG_MESH_MODEL_LIGHTNESS_SRV
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV, app_idx));
 
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, app_idx));
 #endif
 #ifdef CONFIG_MESH_MODEL_CTL_SRV
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV, app_idx));
 
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV, app_idx));
 #endif
 #ifdef CONFIG_MESH_MODEL_HSL_SRV
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV, app_idx));
 
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV, BLE_MESH_CID_NVAL, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), BLE_MESH_CID_NVAL, ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV, app_idx));
 #endif
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), CID_ALIBABA, GENIE_VENDOR_MODEL_SRV_ID, GENIE_LIGHT_GROUP_ADDR));
     ESP_ERROR_CHECK(esp_ble_mesh_model_subscribe_group_addr(esp_ble_mesh_get_primary_element_address(), CID_ALIBABA, GENIE_VENDOR_MODEL_SRV_ID, GENIE_ALL_GROUP_ADDR));
-    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), GENIE_VENDOR_MODEL_SRV_ID, CID_ALIBABA, app_idx));
+    ESP_ERROR_CHECK(esp_ble_mesh_node_bind_app_key_to_local_model(esp_ble_mesh_get_primary_element_address(), CID_ALIBABA, GENIE_VENDOR_MODEL_SRV_ID, app_idx));
 
     return ESP_OK;
 }
