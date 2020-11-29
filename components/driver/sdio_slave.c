@@ -662,7 +662,8 @@ static esp_err_t recv_flush_data(void)
 static void sdio_intr_recv(void* arg)
 {
     portBASE_TYPE yield = 0;
-    while (sdio_slave_hal_recv_done(context.hal)) {
+    bool triggered = sdio_slave_hal_recv_done(context.hal);
+    while (triggered) {
         portENTER_CRITICAL_ISR(&context.recv_spinlock);
         bool has_next_item = sdio_slave_hal_recv_has_next_item(context.hal);
         portEXIT_CRITICAL_ISR(&context.recv_spinlock);
@@ -671,8 +672,9 @@ static void sdio_intr_recv(void* arg)
             xSemaphoreGiveFromISR(context.recv_event, &yield);
             continue;   //check the linked list again skip the interrupt checking
         }
-        // if no more items on the list, go back and check again the interrupt,
+        // if no more items on the list, check the interrupt again,
         // will loop until the interrupt bit is kept cleared.
+        triggered = sdio_slave_hal_recv_done(context.hal);
     }
     if (yield) portYIELD_FROM_ISR();
 }
