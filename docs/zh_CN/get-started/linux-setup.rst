@@ -19,10 +19,10 @@ Linux 平台工具链的标准设置
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python-pip python-pyserial cmake ninja ccache dfu-util
+    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache dfu-util
 
-.. note::
-    使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早版本的 Linux 可能需要升级才能向后移植仓库，或安装 "cmake3" 软件包，而不是安装 "cmake"。
+.. 注解::
+    使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
 
 其他提示
 ===============
@@ -30,7 +30,7 @@ Linux 平台工具链的标准设置
 权限问题 /dev/ttyUSB0
 ------------------------------------------------------------
 
-使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧写固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时，可以将当前用户增加至 :ref:` Linux Dialout 组 <linux-dialout-group>`。
+使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧录固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时可以将用户添加至 :ref:`Linux Dialout 组<linux-dialout-group>`。
 
 设置 Python 3 为 Ubuntu 和 Debian 默认 Python 版本
 ----------------------------------------------------
@@ -43,7 +43,7 @@ Ubuntu v20.04 和 Debian v7 之前的版本默认解释器为 Python 2.7，但�
 
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
-.. note::
+.. 注解::
     上述设置为全局设置，同时会影响到其它应用。
 
 后续步骤
@@ -53,4 +53,3 @@ Ubuntu v20.04 和 Debian v7 之前的版本默认解释器为 Python 2.7，但�
 
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
-
