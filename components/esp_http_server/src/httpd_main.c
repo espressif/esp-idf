@@ -67,8 +67,6 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         close(new_fd);
         return ESP_FAIL;
     }
-    httpd_sess_update_lru_counter(hd->hd_sd->handle, new_fd);
-
     ESP_LOGD(TAG, LOG_FMT("complete"));
     return ESP_OK;
 }
