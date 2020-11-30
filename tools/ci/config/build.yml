@@ -77,7 +77,6 @@ build_ssc:
     - cd SSC
     - MAKEFLAGS= ./ci_build_ssc.sh
 
-<<<<<<< HEAD
 build_esp_idf_tests_make:
   extends: .build_esp_idf_unit_test_template
   variables:
