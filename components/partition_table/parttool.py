@@ -294,7 +294,7 @@ def main():
     elif args.partition_type:
         if not args.partition_subtype:
             raise RuntimeError("--partition-subtype should be defined when --partition-type is defined")
-        partition_id = PartitionType(args.partition_type, args.partition_subtype, args.part_list)
+        partition_id = PartitionType(args.partition_type, args.partition_subtype, getattr(args, 'part_list', None))
     elif args.partition_boot_default:
         partition_id = PARTITION_BOOT_DEFAULT
     else:
