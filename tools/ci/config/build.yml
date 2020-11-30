@@ -79,6 +79,8 @@ build_esp_idf_tests_cmake_esp32s2:
 
 .build_examples_template:
   extends: .build_template
+  variables:
+      PYTHON_VER: 3
   parallel: 9
   artifacts:
     when: always
@@ -91,8 +93,6 @@ build_esp_idf_tests_cmake_esp32s2:
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
-      - PYTHON_VER: 3
-
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing

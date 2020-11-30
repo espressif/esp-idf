@@ -84,9 +84,9 @@ def check_environment():
 
     # check Python version
     if sys.version_info[0] < 3:
-        print_warning("WARNING: Support for Python 2 is deprecated and will be removed in future versions.")
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.")
     elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print_warning("WARNING: Python 3 versions older than 3.6 are not supported.")
+        print("WARNING: Python 3 versions older than 3.6 are not supported.")
 
     # check Python dependencies
     checks_output.append("Checking Python dependencies...")
