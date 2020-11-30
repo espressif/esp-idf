@@ -58,7 +58,6 @@
     - .target_test_job_template
     - .rules:tests:unit_test
   variables:
-    TEST_CASE_PATH: "$COMPONENT_UT_DIRS"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
   script:
     - *define_config_file_name

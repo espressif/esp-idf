@@ -5,6 +5,7 @@
     - build
   variables:
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+  dependencies: []
 
 .build_template_app_template:
   extends:
@@ -43,7 +44,9 @@
 # build-related-pre-check-jobs ------------------------------------------------
 # Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
 fast_template_app:
-  extends: .build_template_app_template
+  extends:
+    - .build_template_app_template
+    - .rules:build_tests:target_test-weekend_test
   stage: pre_check
   variables:
     BUILD_COMMAND_ARGS: "-p"
@@ -89,6 +92,11 @@ build_ssc_esp32s2:
   extends:
     - .build_template
     - .rules:build_tests:unit_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - scan_tests
   artifacts:
     paths:
       - tools/unit-test-app/output/${IDF_TARGET}
@@ -132,6 +140,11 @@ build_esp_idf_tests_cmake_esp32s3:
   extends:
     - .build_template
     - .rules:build_tests:example_test-weekend_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - scan_tests
   variables:
     TEST_PREFIX: examples
     TEST_RELATIVE_DIR: examples
@@ -168,8 +181,6 @@ build_examples_make:
 # same as above, but for CMake
 .build_examples_cmake:
   extends: .build_examples_template
-  needs:
-    - scan_tests
   artifacts:
     paths:
       - build_${TEST_PREFIX}/list.json
@@ -291,6 +302,10 @@ build_docs_pdf:
   extends:
     - .build_template
     - .rules:build_tests:weekend_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
@@ -382,6 +397,7 @@ build_installer:
   image: $CI_DOCKER_REGISTRY/wine-innosetup:1
   tags:
     - build
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - build_cmdlinerunner
   script:
@@ -390,6 +406,9 @@ build_installer:
 
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:
+  needs:
+    - job: fast_template_app
+      artifacts: false
   extends: .build_template_app_template
 
 # Sonarqube related jobs put here for this reason:
@@ -425,6 +444,7 @@ build_template_app:
     REPORT_DIR: examples/get-started/hello_world/tidybuild/report
   tags:
     - host_test
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - clang_tidy_check_regular
 
