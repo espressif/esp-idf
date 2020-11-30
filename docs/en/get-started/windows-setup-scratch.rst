@@ -43,7 +43,7 @@ Consult :doc:`/versions` for information about which ESP-IDF version to use in a
 Tools
 =====
 
-cmake
+CMake
 ^^^^^
 
 Download the latest stable release of CMake_ for Windows and run the installer.
@@ -56,7 +56,7 @@ Ninja build
 .. note::
     Ninja currently only provides binaries for 64-bit Windows. It is possible to use CMake and ``idf.py`` with other build tools, such as mingw-make, on 32-bit windows. However this is currently undocumented.
 
-Download the ninja_ latest stable Windows release from the (`download page <ninja-dl_>`_).
+Download the Ninja_ latest stable Windows release from the (`download page <ninja-dl_>`_).
 
 The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>` (or you can choose a directory which is already on your Path).
 
@@ -107,7 +107,7 @@ Next Steps
 To carry on with development environment setup, proceed to :ref:`get-started-set-up-tools`.
 
 .. _CMake: https://cmake.org/download/
-.. _ninja: https://ninja-build.org/
+.. _Ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
 .. _MSYS2: https://www.msys2.org/
