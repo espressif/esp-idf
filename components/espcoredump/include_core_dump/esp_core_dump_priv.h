@@ -73,22 +73,29 @@ typedef esp_err_t (*esp_core_dump_flash_write_data_t)(void *priv, void * data, u
 
 typedef uint32_t core_dump_crc_t;
 
+/**
+ * The following macro defines the size of the cache used to write the coredump
+ * to the flash. When the flash is encrypted, the smallest data block we can
+ * write to it is 16 bytes long. Thus, this macro MUST be a multiple of 16.
+ */
+#define COREDUMP_CACHE_SIZE 32
+
+#if (COREDUMP_CACHE_SIZE % 16) != 0
+    #error "Coredump cache size must be a multiple of 16"
+#endif
+
 typedef struct _core_dump_write_data_t
 {
     // TODO: move flash related data to flash-specific code
-    uint32_t                off; // current offset in partition
-    union
-    {
-        uint8_t    data8[4];
-        uint32_t   data32;
-    }                       cached_data;
-    uint8_t                 cached_bytes;
+    uint32_t        off; // current offset in partition
+    uint8_t         cached_data[COREDUMP_CACHE_SIZE];
+    uint8_t         cached_bytes;
 #if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     // TODO: move this to portable part of the code
     mbedtls_sha256_context  ctx;
-    char                    sha_output[COREDUMP_SHA256_LEN];
+    char            sha_output[COREDUMP_SHA256_LEN];
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
-    core_dump_crc_t         crc; // CRC of dumped data
+    core_dump_crc_t crc; // CRC of dumped data
 #endif
 } core_dump_write_data_t;
 

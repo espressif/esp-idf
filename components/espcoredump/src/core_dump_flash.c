@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_core_dump_priv.h"
 #include "esp_flash_internal.h"
+#include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
@@ -24,32 +25,45 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash
 
 typedef struct _core_dump_partition_t
 {
-    // core dump partition start
+    /* Core dump partition start. */
     uint32_t start;
-    // core dump partition size
+    /* Core dump partition size. */
     uint32_t size;
 } core_dump_partition_t;
 
 typedef struct _core_dump_flash_config_t
 {
-    // core dump partition config
+    /* Core dump partition config. */
     core_dump_partition_t partition;
-    // CRC of core dump partition config
-    core_dump_crc_t       partition_config_crc;
+    /* CRC of core dump partition config. */
+    core_dump_crc_t partition_config_crc;
 } core_dump_flash_config_t;
 
-// core dump flash data
+/* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
 #ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)  spi_flash_write(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_READ(_off_, _data_, _len_)   spi_flash_read(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)          spi_flash_erase_range(_off_, _len_)
+#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           spi_flash_write(_off_, _data_, _len_)
+#define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) spi_flash_write_encrypted(_off_, _data_, _len_)
+#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   spi_flash_erase_range(_off_, _len_)
 #else
-#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)  esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
-#define ESP_COREDUMP_FLASH_READ(_off_, _data_, _len_)   esp_flash_read(esp_flash_default_chip, _data_, _off_, _len_)
-#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)          esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
+#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
+#define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
+#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
 #endif
+
+static esp_err_t esp_core_dump_flash_custom_write(uint32_t address, const void *buffer, uint32_t length)
+{
+    esp_err_t err = ESP_OK;
+
+    if (esp_flash_encryption_enabled()) {
+        err = ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(address, buffer, length);
+    } else {
+        err = ESP_COREDUMP_FLASH_WRITE(address, buffer, length);
+    }
+
+    return err;
+}
 
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
 
@@ -60,8 +74,9 @@ static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
 
 void esp_core_dump_flash_init(void)
 {
-    const esp_partition_t *core_part;
+    const esp_partition_t *core_part = NULL;
 
+    /* Look for the core dump partition on the flash. */
     ESP_COREDUMP_LOGI("Init core dump to flash");
     core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
     if (!core_part) {
@@ -76,45 +91,79 @@ void esp_core_dump_flash_init(void)
 
 static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint32_t data_size)
 {
-    esp_err_t err;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
-    uint32_t written = 0, wr_sz;
+    esp_err_t err = ESP_OK;
+    uint32_t written = 0;
+    uint32_t wr_sz = 0;
 
+    /* Make sure that the partition is large enough to hold the data. */
     assert((wr_data->off + data_size) < s_core_flash_config.partition.size);
 
     if (wr_data->cached_bytes) {
-        if ((sizeof(wr_data->cached_data)-wr_data->cached_bytes) > data_size)
+        /* Some bytes are in the cache, let's continue filling the cache
+         * with the data received as parameter. Let's calculate the maximum
+         * amount of bytes we can still fill the cache with. */
+        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size)
             wr_sz = data_size;
         else
-            wr_sz = sizeof(wr_data->cached_data)-wr_data->cached_bytes;
-        // append to data cache
-        memcpy(&wr_data->cached_data.data8[wr_data->cached_bytes], data, wr_sz);
+            wr_sz = COREDUMP_CACHE_SIZE - wr_data->cached_bytes;
+
+        /* Append wr_sz bytes from data parameter to the cache. */
+        memcpy(&wr_data->cached_data[wr_data->cached_bytes], data, wr_sz);
         wr_data->cached_bytes += wr_sz;
-        if (wr_data->cached_bytes == sizeof(wr_data->cached_data)) {
-            err = ESP_COREDUMP_FLASH_WRITE(s_core_flash_config.partition.start + wr_data->off, &wr_data->cached_data, sizeof(wr_data->cached_data));
+
+        if (wr_data->cached_bytes == COREDUMP_CACHE_SIZE) {
+            /* The cache is full, we can flush it to the flash. */
+            err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off,
+                                                   wr_data->cached_data,
+                                                   COREDUMP_CACHE_SIZE);
             if (err != ESP_OK) {
                 ESP_COREDUMP_LOGE("Failed to write cached data to flash (%d)!", err);
                 return err;
             }
-            // update checksum according to padding
-            esp_core_dump_checksum_update(wr_data, &wr_data->cached_data, sizeof(wr_data->cached_data));
-            // reset data cache
+            /* The offset of the next data that will be written onto the flash
+             * can now be increased. */
+            wr_data->off += COREDUMP_CACHE_SIZE;
+
+            /* Update checksum with the newly written data on the flash. */
+            esp_core_dump_checksum_update(wr_data, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
+
+            /* Reset cache from the next use. */
             wr_data->cached_bytes = 0;
-            memset(&wr_data->cached_data, 0, sizeof(wr_data->cached_data));
+            memset(wr_data->cached_data, 0, COREDUMP_CACHE_SIZE);
         }
-        wr_data->off += sizeof(wr_data->cached_data);
+
         written += wr_sz;
         data_size -= wr_sz;
     }
 
-    wr_sz = (data_size / sizeof(wr_data->cached_data)) * sizeof(wr_data->cached_data);
+    /* Figure out how many bytes we can write onto the flash directly, without
+     * using the cache. In our case the cache size is a multiple of the flash's
+     * minimum writing block size, so we will use it for our calculation.
+     * For example, if COREDUMP_CACHE_SIZE equals 32, here are interesting
+     * values:
+     * +---------+-----------------------+
+     * |         |       data_size       |
+     * +---------+---+----+----+----+----+
+     * |         | 0 | 31 | 32 | 40 | 64 |
+     * +---------+---+----+----+----+----+
+     * | (blocks | 0 | 0  | 1  | 1  | 2) |
+     * +---------+---+----+----+----+----+
+     * | wr_sz   | 0 | 0  | 32 | 32 | 64 |
+     * +---------+---+----+----+----+----+
+     */
+    wr_sz = (data_size / COREDUMP_CACHE_SIZE) * COREDUMP_CACHE_SIZE;
     if (wr_sz) {
-        err = ESP_COREDUMP_FLASH_WRITE(s_core_flash_config.partition.start + wr_data->off, data + written, wr_sz);
+        /* Write the contiguous amount of bytes to the flash,
+         * without using the cache */
+        err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off, data + written, wr_sz);
+
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to write data to flash (%d)!", err);
             return err;
         }
-        // update checksum of data written
+
+        /* Update the checksum with the newly written bytes */
         esp_core_dump_checksum_update(wr_data, data + written, wr_sz);
         wr_data->off += wr_sz;
         written += wr_sz;
@@ -122,7 +171,9 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
     }
 
     if (data_size > 0) {
-        // append to data cache
+        /* There still some bytes from the data parameter that need to be sent,
+         * append it to cache in order to write them later. (i.e. when there
+         * will be enough bytes to fill the cache) */
         memcpy(&wr_data->cached_data, data + written, data_size);
         wr_data->cached_bytes = data_size;
     }
@@ -132,33 +183,53 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
 
 static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_len)
 {
-    esp_err_t err;
-    uint32_t sec_num;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
-    uint32_t cs_len;
+    esp_err_t err = ESP_OK;
+    uint32_t sec_num = 0;
+    uint32_t cs_len = 0;
+
+    /* Get the length, in bytes, of the checksum. */
     cs_len = esp_core_dump_checksum_finish(wr_data, NULL);
 
-    // check for available space in partition
-    if ((*data_len + cs_len) > s_core_flash_config.partition.size) {
+    /* At the end of the core dump file, a padding may be added, according to the
+     * cache size. We must take that padding into account. */
+    uint32_t padding = 0;
+    const uint32_t modulo = *data_len % COREDUMP_CACHE_SIZE;
+    if (modulo != 0) {
+        /* The data length is not a multiple of the cache size,
+         * so there will be a padding. */
+        padding = COREDUMP_CACHE_SIZE - modulo;
+    }
+
+    /* Now we can check whether we have enough space in our core dump parition
+     * or not. */
+    if ((*data_len + padding + cs_len) > s_core_flash_config.partition.size) {
         ESP_COREDUMP_LOGE("Not enough space to save core dump!");
         return ESP_ERR_NO_MEM;
     }
-    // add space for checksum
-    *data_len += cs_len;
+
+    /* We have enough space in the partition, add the padding and the checksum
+     * in the core dump file calculation. */
+    *data_len += padding + cs_len;
 
     memset(wr_data, 0, sizeof(core_dump_write_data_t));
 
+    /* In order to erase the right amount of data in the flash, we have to
+     * calculate how many SPI flash sectors will be needed by the core dump
+     * file. */
     sec_num = *data_len / SPI_FLASH_SEC_SIZE;
     if (*data_len % SPI_FLASH_SEC_SIZE) {
         sec_num++;
     }
+
+    /* Erase the amount of sectors needed. */
     ESP_COREDUMP_LOGI("Erase flash %d bytes @ 0x%x", sec_num * SPI_FLASH_SEC_SIZE, s_core_flash_config.partition.start + 0);
     assert(sec_num * SPI_FLASH_SEC_SIZE <= s_core_flash_config.partition.size);
     err = ESP_COREDUMP_FLASH_ERASE(s_core_flash_config.partition.start + 0, sec_num * SPI_FLASH_SEC_SIZE);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to erase flash (%d)!", err);
-        return err;
     }
+
     return err;
 }
 
@@ -171,82 +242,90 @@ static esp_err_t esp_core_dump_flash_write_start(void *priv)
 
 static esp_err_t esp_core_dump_flash_write_end(void *priv)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
+    void* checksum = NULL;
+    uint32_t cs_len = 0;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
-    void* checksum;
-    uint32_t cs_len = esp_core_dump_checksum_finish(wr_data, &checksum);
 
-    // flush cached bytes with zero padding
+    /* Get the size, in bytes of the checksum. */
+    cs_len  = esp_core_dump_checksum_finish(wr_data, NULL);
+
+    /* Flush cached bytes, including the zero padding at the end (if any). */
     if (wr_data->cached_bytes) {
-        err = ESP_COREDUMP_FLASH_WRITE(s_core_flash_config.partition.start + wr_data->off, &wr_data->cached_data, sizeof(wr_data->cached_data));
+        err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off,
+                                               wr_data->cached_data,
+                                               COREDUMP_CACHE_SIZE);
+
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to flush cached data to flash (%d)!", err);
             return err;
         }
-        // update checksum according to padding
-        esp_core_dump_checksum_update(wr_data, &wr_data->cached_data, sizeof(wr_data->cached_data));
-        wr_data->off += sizeof(wr_data->cached_data);
+
+        /* Update the checksum with the data written, including the padding. */
+        esp_core_dump_checksum_update(wr_data, wr_data->cached_data, COREDUMP_CACHE_SIZE);
+        wr_data->off += COREDUMP_CACHE_SIZE;
+        wr_data->cached_bytes = 0;
     }
-    err = ESP_COREDUMP_FLASH_WRITE(s_core_flash_config.partition.start + wr_data->off, checksum, cs_len);
+
+    /* All data have been written to the flash, the cache is now empty, we can
+     * terminate the checksum calculation. */
+    esp_core_dump_checksum_finish(wr_data, &checksum);
+
+    /* Use the cache to write the checksum if its size doesn't match the requirements.
+     * (e.g. its size is not a multiple of 32) */
+    if (cs_len < COREDUMP_CACHE_SIZE) {
+        /* Copy the checksum into the cache. */
+        memcpy(wr_data->cached_data, checksum, cs_len);
+
+        /* Fill the rest of the cache with zeros. */
+        memset(wr_data->cached_data + cs_len, 0, COREDUMP_CACHE_SIZE - cs_len);
+
+        /* Finally, write the checksum on the flash, using the cache. */
+        err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off,
+                                               wr_data->cached_data,
+                                               COREDUMP_CACHE_SIZE);
+    } else {
+        /* In that case, the length of the checksum must be a multiple of 16. */
+        assert(cs_len % 16 == 0);
+        err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off, checksum, cs_len);
+    }
+
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to flush cached data to flash (%d)!", err);
         return err;
     }
     wr_data->off += cs_len;
     ESP_COREDUMP_LOGI("Write end offset 0x%x, check sum length %d", wr_data->off, cs_len);
-#if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
-    union
-    {
-        uint8_t    data8[sizeof(core_dump_header_t)];
-        uint32_t   data32[sizeof(core_dump_header_t)/sizeof(uint32_t)];
-    } rom_data;
-    err = ESP_COREDUMP_FLASH_READ(s_core_flash_config.partition.start + 0, &rom_data, sizeof(rom_data));
-    if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to read back coredump header (%d)!", err);
-        return err;
-    } else {
-        ESP_COREDUMP_LOG_PROCESS("Core dump header words from flash:");
-        for (uint32_t i = 0; i < sizeof(rom_data)/sizeof(uint32_t); i++) {
-            ESP_COREDUMP_LOG_PROCESS("0x%x", rom_data.data32[i]);
-        }
-    }
-    uint32_t crc;
-    err = ESP_COREDUMP_FLASH_READ(s_core_flash_config.partition.start + wr_data->off - cs_len, &crc, sizeof(crc));
-    if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to read back checksum word (%d)!", err);
-        return err;
-    } else {
-        ESP_COREDUMP_LOG_PROCESS("Checksum word from flash: 0x%x @ 0x%x", crc, wr_data->off - cs_len);
-    }
-#endif
     return err;
 }
 
 void esp_core_dump_to_flash(panic_info_t *info)
 {
-    static core_dump_write_config_t wr_cfg;
-    static core_dump_write_data_t wr_data;
+    static core_dump_write_config_t wr_cfg = { 0 };
+    static core_dump_write_data_t wr_data = { 0 };
 
+    /* Check core dump partition configuration. */
     core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
     if (s_core_flash_config.partition_config_crc != crc) {
         ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
         return;
     }
-    // check that partition can hold at least core dump data length
+
+    /* Make sure that the partition can at least data length. */
     if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
         ESP_COREDUMP_LOGE("Invalid flash partition config!");
         return;
     }
 
-    // init non-OS flash access critical section
+    /* Initialize non-OS flash access critical section. */
     spi_flash_guard_set(&g_flash_guard_no_os_ops);
     esp_flash_app_disable_protect(true);
 
-    memset(&wr_cfg, 0, sizeof(wr_cfg));
+    /* Register the callbacks that will be called later by the generic part. */
     wr_cfg.prepare = esp_core_dump_flash_write_prepare;
     wr_cfg.start = esp_core_dump_flash_write_start;
     wr_cfg.end = esp_core_dump_flash_write_end;
-    wr_cfg.write = (esp_core_dump_flash_write_data_t)esp_core_dump_flash_write_data;
+    wr_cfg.write = (esp_core_dump_flash_write_data_t) esp_core_dump_flash_write_data;
     wr_cfg.priv = &wr_data;
 
     ESP_COREDUMP_LOGI("Save core dump to flash...");
@@ -267,14 +346,15 @@ void esp_core_dump_init(void)
 
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 {
-    esp_err_t err;
-    const void *core_data;
-    spi_flash_mmap_handle_t core_data_handle;
+    spi_flash_mmap_handle_t core_data_handle = { 0 };
+    esp_err_t err = ESP_OK;
+    const void *core_data = NULL;
 
     if (out_addr == NULL || out_size == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Find the partition that could potentially contain a (previous) core dump. */
     const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
                                                                 ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
                                                                 NULL);
@@ -287,6 +367,8 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return ESP_ERR_INVALID_SIZE;
     }
 
+    /* The partition has been found, map its first uint32_t value, which
+     * describes the core dump file size. */
     err = esp_partition_mmap(core_part, 0,  sizeof(uint32_t),
                              SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
     if (err != ESP_OK) {
@@ -294,6 +376,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return err;
     }
 
+    /* Extract the size and unmap the partition. */
     uint32_t *dw = (uint32_t *)core_data;
     *out_size = *dw;
     spi_flash_munmap(core_data_handle);
@@ -305,19 +388,22 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return ESP_ERR_INVALID_SIZE;
     }
 
-    // remap full core dump with CRC
+    /* Remap the full core dump parition, including the final checksum. */
     err = esp_partition_mmap(core_part, 0, *out_size,
                              SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mmap core dump data (%d)!", err);
         return err;
     }
-    // TODO: check CRC or SHA basing on the version of coredump image stored in flash
+
+    // TODO: check CRC or SHA basing on the version of core dump image stored in flash
 #if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
     uint32_t *crc = (uint32_t *)(((uint8_t *)core_data) + *out_size);
-    crc--; // Point to CRC field
+    /* Decrement crc to make it point onto our CRC checksum. */
+    crc--;
 
-    // Calculate CRC over core dump data except for CRC field
+    /* Calculate CRC checksum again over core dump data read from the flash,
+     * excluding CRC field. */
     core_dump_crc_t cur_crc = esp_rom_crc32_le(0, (uint8_t const *)core_data, *out_size - sizeof(core_dump_crc_t));
     if (*crc != cur_crc) {
         ESP_LOGD(TAG, "Core dump CRC offset 0x%x, data size: %u",
@@ -327,14 +413,21 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return ESP_ERR_INVALID_CRC;
     }
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
+    /* sha256_ptr will point to our checksum. */
     uint8_t* sha256_ptr = (uint8_t*)(((uint8_t *)core_data) + *out_size);
     sha256_ptr -= COREDUMP_SHA256_LEN;
     ESP_LOGD(TAG, "Core dump data offset, size: %d, %u!",
                     (uint32_t)((uint32_t)sha256_ptr - (uint32_t)core_data), *out_size);
+
+    /* The following array will contain the SHA256 value of the core dump data
+     * read from the flash. */
     unsigned char sha_output[COREDUMP_SHA256_LEN];
     mbedtls_sha256_context ctx;
     ESP_LOGI(TAG, "Calculate SHA256 for coredump:");
     (void)esp_core_dump_sha(&ctx, core_data, *out_size - COREDUMP_SHA256_LEN, sha_output);
+
+    /* Compare the two checksums, if they are different, the file on the flash
+     * may be corrupted. */
     if (memcmp((uint8_t*)sha256_ptr, (uint8_t*)sha_output, COREDUMP_SHA256_LEN) != 0) {
         ESP_LOGE(TAG, "Core dump data SHA256 check failed:");
         esp_core_dump_print_sha256("Calculated SHA256", (uint8_t*)sha_output);
