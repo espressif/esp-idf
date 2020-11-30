@@ -38,7 +38,7 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 安装并设置 Python 3 为默认版本
 ---------------------------------------------
 
-`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python。执行以下命令来检查您当前使用的 Python 版本::
+`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查您当前使用的 Python 版本::
 
   python --version
 
@@ -55,7 +55,7 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
       brew install python3
       ln -s /usr/local/bin/python3.8 /usr/local/bin/python
 
-    将上述的目录名 ``/usr/local/bin/python3.8`` 修改为 Python 3 所在的目录。您可以运行 ``which -a python`` 来查看 Python 3 所在的目录。
+    将上述的目录名 ``/usr/local/bin/python3.8`` 修改为 Python 3 所在的目录。您可以运行 ``which -a python3`` 来查看 Python 3 所在的目录。
 
   - 使用 MacPorts_ 进行安装的方法如下::
 
@@ -73,6 +73,13 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
     上述设置为全局设置，同时会影响到其它应用。
 
 
+
+停用 Python 2 
+====================
+
+Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。
+
+
 后续步骤
 ==========
 
@@ -85,3 +92,4 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 .. _homebrew: https://brew.sh/
 .. _MacPorts: https://www.macports.org/install.php
 .. _Catalina 10.15 发布说明: https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes
+
