@@ -11,10 +11,6 @@ Install Prerequisites
 =====================
 
 To compile with ESP-IDF you need to get the following packages:
-
-- CentOS 7::
-
-    sudo yum -y update && sudo yum install git wget flex bison gperf python3
     
 - Ubuntu and Debian::
 

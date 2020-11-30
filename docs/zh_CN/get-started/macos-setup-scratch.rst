@@ -1,5 +1,5 @@
 **********************************
-从零开始设置 Mac OS 环境下的工具链
+从零开始设置 macOS 环境下的工具链
 **********************************
 :link_to_translation:`en:[English]`
 
@@ -64,6 +64,11 @@
     chmod -R u+w builds/xtensa-esp32-elf
 
 编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``。根据 :ref:`Mac OS 下设置环境变量的标准方法 <setup-macos-toolchain-add-it-to-path>` 中的介绍，将工具链添加到 ``PATH`` 中。
+
+停用 Python 2 
+====================
+
+Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。
 
 
 下一步

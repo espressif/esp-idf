@@ -174,6 +174,8 @@ library/error\.o\
 \|reassigning to symbol\
 \|changes choice state\
 \|crosstool_version_check\.cmake\
+\|Python 3 versions older than 3.6 are not supported\
+\|Python 2 is deprecated and will be removed in future versions\
 "
 
 sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \
