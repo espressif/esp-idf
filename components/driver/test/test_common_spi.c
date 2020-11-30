@@ -203,5 +203,32 @@ void master_free_device_bus(spi_device_handle_t spi)
 void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
 {
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
-    GPIO.func_out_sel_cfg[gpio_num].func_sel=signal_idx;
+    GPIO.func_out_sel_cfg[gpio_num].func_sel = signal_idx;
+}
+
+void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
+{
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+    GPIO.func_in_sel_cfg[signal_idx].func_sel = gpio_num;
+}
+
+//Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
+//then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
+void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num)
+{
+    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
+    spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spid_in);
+
+    spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
+    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiq_in);
+
+    spitest_gpio_output_sel(dev.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[cs_num]);
+    spitest_gpio_input_sel(dev.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spics_in);
+
+    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
+
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    GPIO.func_in_sel_cfg[FSPIQ_IN_IDX].sig_in_sel = 1;
+#endif
 }
