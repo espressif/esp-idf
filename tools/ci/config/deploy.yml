@@ -4,42 +4,6 @@
   tags:
     - deploy
 
-.clang_tidy_deploy_template:
-  extends: .deploy_job_template
-  tags:
-    - deploy
-    - shiny
-  script:
-    - add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_SERVER $DOCS_SERVER_USER
-    - export GIT_VER=$(git describe --always)
-    - cd $IDF_PATH/examples/get-started/hello_world/tidybuild
-    - mv report $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - export STATIC_REPORT_PATH="web/static_analysis/esp-idf/"
-    - ssh $DOCS_SERVER -x "mkdir -p $STATIC_REPORT_PATH/clang-tidy"
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$STATIC_REPORT_PATH/clang-tidy
-    - ssh $DOCS_SERVER -x "cd $STATIC_REPORT_PATH/clang-tidy && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-    # add link to view the report
-    - echo "[static analysis][clang tidy] $CI_DOCKER_REGISTRY/static_analysis/esp-idf/clang-tidy/${GIT_VER}/index.html"
-    - test ! -e ${GIT_VER}/FAILED_RULES || { echo 'Failed static analysis rules!'; cat ${GIT_VER}/FAILED_RULES; exit 1; }
-
-clang_tidy_deploy:
-  extends: .clang_tidy_deploy_template
-  # Override default stage to happen before the post_check
-  stage: test_deploy
-  needs:
-    - clang_tidy_check
-    - clang_tidy_check_all
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-
-clang_tidy_deploy_regular:
-  extends:
-    - .clang_tidy_deploy_template
-    - .rules:labels:static_analysis-only
-  needs:
-    - clang_tidy_check_regular
-
 push_to_github:
   extends:
     - .deploy_job_template

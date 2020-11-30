@@ -61,7 +61,9 @@ check_rom_api_header:
     - tools/ci/check_rom_apis.sh
 
 check_python_style:
-  extends: .pre_check_base_template
+  extends:
+    - .pre_check_base_template
+    - .rules:patterns:python-files
   artifacts:
     when: on_failure
     paths:
@@ -136,37 +138,6 @@ scan_tests:
     - python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
     - python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
-
-.clang_tidy_check_template:
-  extends: .pre_check_base_template
-  image: ${CI_DOCKER_REGISTRY}/clang-static-analysis
-  artifacts:
-    reports:
-      junit: $IDF_PATH/output.xml
-    when: always
-    paths:
-      - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
-    expire_in: 1 day
-  script:
-    - retry_failed git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
-    # Setup parameters of triggered/regular job
-    - export TRIGGERED_RELATIVE=${BOT_LABEL_STATIC_ANALYSIS-} && export TRIGGERED_ABSOLUTE=${BOT_LABEL_STATIC_ANALYSIS_ALL-} && export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
-    - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
-
-clang_tidy_check:
-  extends: .clang_tidy_check_template
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-    BOT_LABEL_STATIC_ANALYSIS: 1
-
-clang_tidy_check_regular:
-  extends: .clang_tidy_check_template
-
-clang_tidy_check_all:
-  extends: .clang_tidy_check_template
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-    BOT_LABEL_STATIC_ANALYSIS_ALL: 1
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'

@@ -8,6 +8,19 @@
   - "components/**/sdkconfig*"
   - "CONTRIBUTING.rst"
 
+.patterns-c-files: &patterns-c-files
+  - "**/*.{c,C}"
+  - "**/*.{h,H}"
+
+.patterns-python-files: &patterns-python-files
+  - "**/*.py"
+
+.patterns-static-code-analysis: &patterns-static-code-analysis
+  # - "tools/ci/config/static-code-analysis.yml"  # FIXME: after debug
+  - "**/*.{c,C}"
+  - "**/*.{h,H}"
+  - "**/*.py"
+
 # if anchors
 .if-ref-master: &if-ref-master
   if: '$CI_COMMIT_REF_NAME == "master"'
@@ -75,9 +88,6 @@
 .if-label-nvs_coverage: &if-label-nvs_coverage
   if: '$BOT_LABEL_NVS_COVERAGE'
 
-.if-label-static_analysis: &if-label-static_analysis
-  if: '$BOT_LABEL_STATIC_ANALYSIS || $BOT_LABEL_STATIC_ANALYSIS_ALL'
-
 .if-label-iperf_stress_test: &if-label-iperf_stress_test
   if: '$BOT_LABEL_IPERF_STRESS_TEST'
 
@@ -128,10 +138,6 @@
     - <<: *if-schedule
       when: always
 
-.rules:labels:static_analysis-only:
-  rules:
-    - <<: *if-label-static_analysis
-
 .rules:labels:build:
   rules:
     - <<: *if-protected-no_label
@@ -150,6 +156,28 @@
     - <<: *if-label-build_docs
     - <<: *if-dev-push
       changes: *patterns-docs
+
+.rules:patterns:clang_tidy:
+  rules:
+    - <<: *if-protected-no_label
+    - <<: *if-dev-push
+      changes: *patterns-c-files
+
+.rules:patterns:clang_tidy-preview:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-c-files
+
+.rules:patterns:python-files:
+  rules:
+    - <<: *if-protected-no_label
+    - <<: *if-dev-push
+      changes: *patterns-python-files
+
+.rules:patterns:static-code-analysis-preview:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-static-code-analysis
 
 .rules:labels:weekend_test-only:
   rules:

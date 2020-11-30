@@ -118,6 +118,7 @@ before_script:
 include:
   - '/tools/ci/config/rules.yml'
   - '/tools/ci/config/docs.yml'
+  - '/tools/ci/config/static-code-analysis.yml'
   - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
   - '/tools/ci/config/assign-test.yml'
