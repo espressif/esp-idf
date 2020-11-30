@@ -72,6 +72,16 @@
     # run test
     - python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE
 
+.component_ut_32_template:
+  extends:
+    - .component_ut_template
+    - .rules:tests:unit_test_32
+
+.component_ut_s2_template: # unused yet
+  extends:
+    - .component_ut_template
+    - .rules:tests:unit_test_s2
+
 .unit_test_template:
   extends:
     - .target_test_job_template
@@ -336,7 +346,7 @@ test_app_test_004:
     - Example_GENERIC
 
 component_ut_test_001:
-  extends: .component_ut_template
+  extends: .component_ut_32_template
   tags:
     - ESP32
     - COMPONENT_UT_GENERIC
