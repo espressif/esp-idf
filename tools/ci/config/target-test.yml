@@ -83,14 +83,12 @@
 .unit_test_32_template:
   extends:
     - .unit_test_template
-    - .rules:tests:unit_test_32-only
-    - .rules:tests:unit_test
+    - .rules:tests:unit_test_32
 
 .unit_test_s2_template:
   extends:
     - .unit_test_template
-    - .rules:tests:unit_test_s2-only
-    - .rules:tests:unit_test
+    - .rules:tests:unit_test_s2
 
 .integration_test_template:
   extends:
