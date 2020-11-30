@@ -271,19 +271,18 @@ def write_menu_item(f, node, visibility):
 
     if is_menu:
         # enumerate links to child items
-        first = True
+        child_list = []
         child = node.list
         while child:
-            try:
-                if not is_choice(child) and child.prompt and visibility.visible(child):
-                    if first:
-                        f.write("Contains:\n\n")
-                        first = False
-                    f.write('- :ref:`%s`\n' % get_link_anchor(child))
-            except AttributeError:
-                pass
+            if not is_choice(child) and child.prompt and visibility.visible(child):
+                child_list.append((child.prompt[0], get_link_anchor(child)))
             child = child.next
-        f.write('\n')
+        if len(child_list) > 0:
+            f.write("Contains:\n\n")
+            sorted_child_list = sorted(child_list, key=lambda pair: pair[0].lower())
+            ref_list = ['- :ref:`{}`'.format(anchor) for _, anchor in sorted_child_list]
+            f.write('\n'.join(ref_list))
+            f.write('\n\n')
 
 
 if __name__ == '__main__':
