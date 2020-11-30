@@ -7,11 +7,11 @@ Setup Toolchain for Mac OS from Scratch
 Package Manager
 ===============
 
-To set up the toolchain from scratch, rather than :doc:`downloading a pre-compiled toolchain<macos-setup>`, you will need to install either the MacPorts_ or homebrew_ package manager.
+To set up the toolchain from scratch, rather than :doc:`downloading a pre-compiled toolchain<macos-setup>`, you will need to install either the MacPorts_ or Homebrew_ package manager.
 
-MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
+MacPorts needs a full XCode installation, while Homebrew only needs XCode command line tools.
 
-    .. _homebrew: https://brew.sh/
+    .. _Homebrew: https://brew.sh/
     .. _MacPorts: https://www.macports.org/install.php
 
 See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
@@ -29,7 +29,7 @@ Install Prerequisites
 
 - install CMake & Ninja build:
 
-  - If you have HomeBrew, you can run::
+  - If you have Homebrew, you can run::
 
       brew install cmake ninja dfu-util
 
@@ -46,7 +46,7 @@ Compile the Toolchain from Source
 
         sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake make
 
-  - with homebrew::
+  - with Homebrew::
 
         brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake make
 
