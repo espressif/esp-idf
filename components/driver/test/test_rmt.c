@@ -217,7 +217,7 @@ static void do_nec_tx_rx(uint32_t flags)
 {
     RingbufHandle_t rb = NULL;
     rmt_item32_t *items = NULL;
-    uint32_t length = 0;
+    size_t length = 0;
     uint32_t addr = 0x10;
     uint32_t cmd = 0x20;
     bool repeat = false;
@@ -313,7 +313,7 @@ TEST_CASE("RMT TX stop", "[rmt]")
 {
     RingbufHandle_t rb = NULL;
     rmt_item32_t *frames = NULL;
-    uint32_t length = 0;
+    size_t length = 0;
     uint32_t count = 10;
     uint32_t addr = 0x10;
     uint32_t cmd = 0x20;
@@ -409,7 +409,7 @@ TEST_CASE("RMT Ping-Pong operation", "[rmt]")
         TEST_ESP_OK(rmt_write_items(tx_channel, frames, size, true));
 
         // parse received data
-        uint32_t length = 0;
+        size_t length = 0;
         rmt_item32_t *items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
         if (items) {
             vRingbufferReturnItem(rb, (void *) items);
@@ -490,7 +490,7 @@ TEST_CASE("RMT TX loop", "[rmt]")
 {
     RingbufHandle_t rb = NULL;
     rmt_item32_t *items = NULL;
-    uint32_t length = 0;
+    size_t length = 0;
     uint32_t addr = 0x10;
     uint32_t cmd = 0x20;
     bool repeat = false;

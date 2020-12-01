@@ -70,6 +70,9 @@
 #include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
 #include "esp32s3/brownout.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
+#include "esp32c3/brownout.h"
 #endif
 /***********************************************/
 

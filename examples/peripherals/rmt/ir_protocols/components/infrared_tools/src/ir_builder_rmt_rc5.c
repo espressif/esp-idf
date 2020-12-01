@@ -135,7 +135,7 @@ static esp_err_t rc5_build_repeat_frame(ir_builder_t *builder)
     return ESP_OK;
 }
 
-static esp_err_t rc5_builder_get_result(ir_builder_t *builder, void *result, uint32_t *length)
+static esp_err_t rc5_builder_get_result(ir_builder_t *builder, void *result, size_t *length)
 {
     esp_err_t ret = ESP_OK;
     rc5_builder_t *rc5_builder = __containerof(builder, rc5_builder_t, parent);

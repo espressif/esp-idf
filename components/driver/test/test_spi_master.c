@@ -11,7 +11,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
@@ -40,7 +39,7 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
         .clock_speed_hz=clk,
         .duty_cycle_pos=128,
         .mode=0,
-        .spics_io_num=21,
+        .spics_io_num=PIN_NUM_CS,
         .queue_size=3
     };
     char sendbuf[16]="";
@@ -65,7 +64,6 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
     TEST_ASSERT(ret==ESP_OK);
 }
 
-
 TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 {
     spi_bus_config_t buscfg={
@@ -86,7 +84,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     check_spi_pre_n_for(100000, 16, 50);
     check_spi_pre_n_for(333333, 4, 60);
     check_spi_pre_n_for(900000, 2, 44);
-    check_spi_pre_n_for(1, 8192, 64); //Actually should generate the minimum clock speed, 152Hz
+    check_spi_pre_n_for(1, SOC_SPI_MAX_PRE_DIVIDER, 64); //Actually should generate the minimum clock speed, 152Hz
     check_spi_pre_n_for(26000000, 1, 3);
 
     ret=spi_bus_free(TEST_SPI_HOST);

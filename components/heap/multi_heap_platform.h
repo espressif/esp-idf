@@ -92,8 +92,6 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 
 #include <assert.h>
 
-typedef int multi_heap_lock_t;
-
 #define MULTI_HEAP_PRINTF printf
 #define MULTI_HEAP_STDERR_PRINTF(MSG, ...) fprintf(stderr, MSG, __VA_ARGS__)
 #define MULTI_HEAP_LOCK(PLOCK)  (void) (PLOCK)

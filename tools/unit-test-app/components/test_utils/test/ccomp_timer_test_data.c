@@ -15,6 +15,8 @@
 #include "esp32s2/clk.h"
 #elif CONFIG_IDF_TARTGET_ESP32S3
 #include "esp32s3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
 #endif
 
 #include "unity.h"
@@ -35,6 +37,11 @@ static const char* TAG = "test_ccomp_timer";
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 13)
+#define TEST_SIZE               (CACHE_SIZE)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define CACHE_WAYS              8
+#define CACHE_LINE_SIZE         32
+#define CACHE_SIZE              (1 << 14)
 #define TEST_SIZE               (CACHE_SIZE)
 #endif
 

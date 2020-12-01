@@ -23,7 +23,6 @@
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "soc/dport_reg.h"
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
@@ -33,9 +32,14 @@
 #include "hal/spi_hal.h"
 #include "esp_rom_gpio.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
+#endif
+
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
+#include "soc/spi_caps.h"
 
 #define spi_dma_set_rx_channel_priority(gdma_chan, priority)       gdma_ll_rx_set_priority(&GDMA, gdma_chan, priority);
 #define spi_dma_set_tx_channel_priority(gdma_chan, priority)       gdma_ll_tx_set_priority(&GDMA, gdma_chan, priority);
@@ -134,7 +138,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
     return spi_periph_signal[host].irq_dma;
 }
 
-static inline uint32_t get_dma_periph(int dma_chan)
+static inline periph_module_t get_dma_periph(int dma_chan)
 {
 #if CONFIG_IDF_TARGET_ESP32S2
     if (dma_chan == 1) {
@@ -147,6 +151,8 @@ static inline uint32_t get_dma_periph(int dma_chan)
     }
 #elif CONFIG_IDF_TARGET_ESP32
     return PERIPH_SPI_DMA_MODULE;
+#elif SOC_GDMA_SUPPORTED
+    return PERIPH_GDMA_MODULE;
 #else
     return 0;
 #endif
@@ -164,17 +170,7 @@ bool spicommon_dma_chan_claim(int dma_chan)
         ret = true;
     }
 
-#if CONFIG_IDF_TARGET_ESP32
     periph_module_enable(get_dma_periph(dma_chan));
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if (dma_chan==1) {
-        periph_module_enable(PERIPH_SPI2_DMA_MODULE);
-    } else if (dma_chan==2) {
-        periph_module_enable(PERIPH_SPI3_DMA_MODULE);
-    }
-#elif SOC_GDMA_SUPPORTED
-    periph_module_enable(PERIPH_GDMA_MODULE);
-#endif
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
     return ret;
@@ -193,20 +189,7 @@ bool spicommon_dma_chan_free(int dma_chan)
 
     portENTER_CRITICAL(&spi_dma_spinlock);
     spi_dma_chan_enabled &= ~DMA_CHANNEL_ENABLED(dma_chan);
-#if CONFIG_IDF_TARGET_ESP32
-    if ( spi_dma_chan_enabled == 0 ) {
-        //disable the DMA only when all the channels are freed.
-        periph_module_disable(get_dma_periph(dma_chan));
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if (dma_chan==1) {
-        periph_module_disable(PERIPH_SPI2_DMA_MODULE);
-    } else if (dma_chan==2) {
-        periph_module_disable(PERIPH_SPI3_DMA_MODULE);
-    }
-#elif SOC_GDMA_SUPPORTED
-    periph_module_disable(PERIPH_GDMA_MODULE);
-#endif
+    periph_module_disable(get_dma_periph(dma_chan));
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
     return true;
@@ -223,9 +206,11 @@ void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
     if (dma_chan == 1) {
         gdma_chan = SOC_GDMA_SPI2_DMA_CHANNEL;
         periph_id = GDMA_LL_TRIG_SRC_SPI2;
+#ifdef GDMA_LL_TRIG_SRC_SPI3
     } else if (dma_chan == 2) {
         gdma_chan = SOC_GDMA_SPI3_DMA_CHANNEL;
         periph_id = GDMA_LL_TRIG_SRC_SPI3;
+#endif
     } else {
         abort();
     }
@@ -240,15 +225,25 @@ void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
 {
     if (bus_config->sclk_io_num>=0 &&
-        bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) return false;
+        bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) {
+            return false;
+        }
     if (bus_config->quadwp_io_num>=0 &&
-        bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) return false;
+        bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) {
+            return false;
+        }
     if (bus_config->quadhd_io_num>=0 &&
-        bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) return false;
+        bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) {
+            return false;
+            }
     if (bus_config->mosi_io_num >= 0 &&
-        bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) return false;
+        bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) {
+            return false;
+        }
     if (bus_config->miso_io_num>=0 &&
-        bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) return false;
+        bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) {
+            return false;
+        }
 
     return true;
 }
@@ -441,11 +436,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_in(cs_io_num, spi_periph_signal[host].spics_in);
-#if CONFIG_IDF_TARGET_ESP32
         gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2
-        gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
-#endif
     } else {
         //Use GPIO matrix
         if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {

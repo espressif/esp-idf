@@ -25,6 +25,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/ets_sys.h"
 #include "esp32s3/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/ets_sys.h"
+#include "esp32c3/rom/cache.h"
 #endif
 
 #include "esp_attr.h"
@@ -63,6 +66,10 @@ static IRAM_ATTR esp_err_t end(void *arg)
     Cache_Invalidate_ICache_All();
     Cache_Resume_ICache(spi_arg->icache_autoload);
     Cache_Resume_DCache(spi_arg->dcache_autoload);
+#elif CONFIG_IDF_TARGET_ESP32C3
+    spi_noos_arg_t *spi_arg = arg;
+    Cache_Invalidate_ICache_All();
+    Cache_Resume_ICache(spi_arg->icache_autoload);
 #endif
     return ESP_OK;
 }
@@ -88,7 +95,7 @@ esp_err_t IRAM_ATTR esp_flash_app_disable_os_functions(esp_flash_t* chip)
 {
     chip->os_func = &esp_flash_noos_functions;
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if !CONFIG_IDF_TARGET_ESP32
     chip->os_func_data = &spi_arg;
 #endif
 

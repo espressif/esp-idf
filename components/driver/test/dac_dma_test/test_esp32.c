@@ -13,14 +13,15 @@
 // limitations under the License.
 
 /*
- Tests for the dac device driver
+ Tests for the dac device driver on ESP32 only
  Hardware connection:
  - ESP32: GPIO25  <--->  GPIO26
- - ESP32S2: GPIO17  <--->  GPIO18
 */
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+
 #include "esp_system.h"
 #include "driver/adc.h"
-#include "driver/dac.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -30,8 +31,7 @@
 #include "test_utils.h"
 #include "test_dac_audio_file.h"
 #include "driver/i2s.h"
-
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32S2, ESP32S3) // This testcase for ESP32
+#include "driver/dac.h"
 
 /*
  * DAC DMA config.
@@ -166,4 +166,4 @@ TEST_CASE("DAC DMA output", "[dac]")
     example_i2s_deinit();
 }
 
-#endif // !DISABLED_FOR_TARGETS(ESP8266, ESP32S2)
+#endif // CONFIG_IDF_TARGET_ESP32

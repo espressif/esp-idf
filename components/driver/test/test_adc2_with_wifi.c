@@ -3,7 +3,6 @@
 */
 #include "esp_system.h"
 #include "driver/adc.h"
-#include "driver/dac.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -12,7 +11,8 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
+#include "driver/dac.h"
 
 static const char* TAG = "test_adc2";
 

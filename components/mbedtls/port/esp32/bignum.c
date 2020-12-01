@@ -22,6 +22,7 @@
  */
 
 #include "soc/hwcrypto_periph.h"
+#include "soc/dport_reg.h"
 #include "driver/periph_ctrl.h"
 #include <mbedtls/bignum.h>
 #include "bignum_impl.h"

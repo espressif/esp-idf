@@ -44,6 +44,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/aes.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/aes.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S3

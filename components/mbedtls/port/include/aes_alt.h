@@ -34,6 +34,8 @@ extern "C" {
 #include "esp32s2/aes.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/aes.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/aes.h"
 #endif
 
 typedef esp_aes_context mbedtls_aes_context;

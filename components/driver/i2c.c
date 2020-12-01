@@ -20,10 +20,8 @@
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
-#include "soc/dport_reg.h"
 #include "esp_pm.h"
 #include "soc/soc_memory_layout.h"
 #include "hal/i2c_hal.h"
@@ -176,7 +174,9 @@ typedef struct
 
 static i2c_context_t i2c_context[I2C_NUM_MAX] = {
     I2C_CONTEX_INIT_DEF(I2C_NUM_0),
+#if I2C_NUM_MAX > 1
     I2C_CONTEX_INIT_DEF(I2C_NUM_1),
+#endif
 };
 
 // i2c clock characteristic, The order is the same as i2c_sclk_t.

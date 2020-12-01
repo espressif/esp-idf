@@ -29,6 +29,8 @@ extern "C" {
 #include "esp32s2/esp_efuse_utility.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/esp_efuse_utility.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/esp_efuse_utility.h"
 #endif
 
 /**

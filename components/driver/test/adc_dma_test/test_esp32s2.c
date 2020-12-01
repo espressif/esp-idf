@@ -13,8 +13,11 @@
 // limitations under the License.
 
 /*
- Tests for the adc device driver
+ Tests for the adc device driver on ESP32-S2 only
 */
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32S2
+
 
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
@@ -22,7 +25,6 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/adc.h"
-#include "driver/dac.h"
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
 #include "unity.h"
@@ -35,8 +37,7 @@
 #include "soc/adc_periph.h"
 #include "test/test_common_adc.h"
 #include "esp_rom_sys.h"
-
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32, ESP32S3) // This testcase for ESP32S2
+#include "driver/dac.h"
 
 #include "soc/system_reg.h"
 #include "soc/spi_reg.h"
@@ -636,4 +637,4 @@ TEST_CASE("test_adc_digi_slope_debug", "[adc_dma][ignore]")
     }
 }
 
-#endif // !DISABLED_FOR_TARGETS(ESP8266, ESP32)
+#endif // CONFIG_IDF_TARGET_ESP32S2

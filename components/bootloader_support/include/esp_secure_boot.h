@@ -22,6 +22,10 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/efuse.h"
 #endif
 
 typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;

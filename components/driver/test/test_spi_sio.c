@@ -12,7 +12,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
