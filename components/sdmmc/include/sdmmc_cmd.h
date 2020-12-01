@@ -62,7 +62,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_sector, size_t sector_count);
 
 /**
- * Write given number of sectors to SD/MMC card
+ * Read given number of sectors from the SD/MMC card
  *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
