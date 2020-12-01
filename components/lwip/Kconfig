@@ -859,12 +859,20 @@ menu "LWIP"
             bool "Enable ICMP debug messages"
             default n
 
+        config LWIP_DHCP_DEBUG
+            bool "Enable DHCP debug messages"
+            default n
+
         config LWIP_IP6_DEBUG
             bool "Enable IP6 debug messages"
             default n
 
         config LWIP_ICMP6_DEBUG
             bool "Enable ICMP6 debug messages"
+            default n
+
+        config LWIP_TCP_DEBUG
+            bool "Enable TCP debug messages"
             default n
 
     endmenu #debug

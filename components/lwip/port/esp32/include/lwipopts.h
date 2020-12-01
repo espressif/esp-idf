@@ -838,6 +838,15 @@
 #endif
 
 /**
+ * DHCP_DEBUG: Enable debugging in dhcp.c.
+ */
+#ifdef CONFIG_LWIP_DHCP_DEBUG
+#define DHCP_DEBUG                      LWIP_DBG_ON
+#else
+#define DHCP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+/**
  * IP_DEBUG: Enable debugging for IP.
  */
 #ifdef CONFIG_LWIP_IP_DEBUG
@@ -847,12 +856,21 @@
 #endif
 
 /**
- * IP_DEBUG: Enable debugging for IP.
+ * IP6_DEBUG: Enable debugging for IP6.
  */
 #ifdef CONFIG_LWIP_IP6_DEBUG
 #define IP6_DEBUG                        LWIP_DBG_ON
 #else
 #define IP6_DEBUG                        LWIP_DBG_OFF
+#endif
+
+/**
+ * TCP_DEBUG: Enable debugging for TCP.
+ */
+#ifdef CONFIG_LWIP_TCP_DEBUG
+#define TCP_DEBUG                        LWIP_DBG_ON
+#else
+#define TCP_DEBUG                        LWIP_DBG_OFF
 #endif
 
 /**
@@ -962,11 +980,9 @@
 #define TCP_WND                         CONFIG_LWIP_TCP_WND_DEFAULT
 
 /**
- * DHCP_DEBUG: Enable debugging in dhcp.c.
+ * LWIP_DEBUG: Enable lwip debugging in other modules.
  */
-#define DHCP_DEBUG                      LWIP_DBG_OFF
 #define LWIP_DEBUG                      LWIP_DBG_OFF
-#define TCP_DEBUG                       LWIP_DBG_OFF
 
 #define CHECKSUM_CHECK_UDP              CONFIG_LWIP_CHECKSUM_CHECK_UDP
 #define CHECKSUM_CHECK_IP               CONFIG_LWIP_CHECKSUM_CHECK_IP
