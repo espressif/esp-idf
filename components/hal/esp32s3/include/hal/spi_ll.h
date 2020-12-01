@@ -34,17 +34,12 @@
 extern "C" {
 #endif
 
-/// Registers to reset during initialization. Don't use in app.
-#define SPI_LL_CPU_FIFO_RST_MASK (SPI_BUF_AFIFO_RST | SPI_RX_AFIFO_RST)
-/// Registers to reset during initialization. Don't use in app.
-#define SPI_LL_DMA_FIFO_RST_MASK (SPI_DMA_AFIFO_RST | SPI_RX_AFIFO_RST)
-
-
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_TRANS_DONE_INT_ENA | SPI_SLV_WR_DMA_DONE_INT_ENA | SPI_SLV_RD_DMA_DONE_INT_ENA | SPI_SLV_WR_BUF_DONE_INT_ENA | SPI_SLV_RD_BUF_DONE_INT_ENA)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
-
+/// This is the expected clock frequency
+#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
 
 /**
@@ -223,25 +218,51 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 }
 
 /**
- * Reset SPI CPU FIFO
+ * Reset SPI CPU TX FIFO
+ *
+ * On ESP32S3, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_cpu_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 {
-    hw->dma_conf.val |= SPI_LL_CPU_FIFO_RST_MASK;
-    hw->dma_conf.val &= ~SPI_LL_CPU_FIFO_RST_MASK;
+    hw->dma_conf.buf_afifo_rst = 1;
+    hw->dma_conf.buf_afifo_rst = 0;
 }
 
 /**
- * Reset SPI DMA FIFO
+ * Reset SPI CPU RX FIFO
+ *
+ * On ESP32S3, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
 {
-    hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
-    hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;
+    hw->dma_conf.rx_afifo_rst = 1;
+    hw->dma_conf.rx_afifo_rst = 0;
+}
+
+/**
+ * Reset SPI DMA TX FIFO
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
+{
+    hw->dma_conf.dma_afifo_rst = 1;
+    hw->dma_conf.dma_afifo_rst = 0;
+}
+
+/**
+ * Reset SPI DMA RX FIFO
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
+{
+    hw->dma_conf.rx_afifo_rst = 1;
+    hw->dma_conf.rx_afifo_rst = 0;
 }
 
 /**

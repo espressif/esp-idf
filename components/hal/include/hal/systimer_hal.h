@@ -36,10 +36,15 @@ uint64_t systimer_hal_get_counter_value(systimer_counter_id_t counter_id);
  */
 uint64_t systimer_hal_get_time(systimer_counter_id_t counter_id);
 
-/**
- * @brief set alarm time
+/*
+ * @brief set alarm target value (used in one-shot mode)
  */
-void systimer_hal_set_alarm_value(systimer_alarm_id_t alarm_id, uint64_t timestamp);
+void systimer_hal_set_alarm_target(systimer_alarm_id_t alarm_id, uint64_t target);
+
+/**
+ * @brief set alarm period value (used in period mode)
+ */
+void systimer_hal_set_alarm_period(systimer_alarm_id_t alarm_id, uint32_t period);
 
 /**
  * @brief get alarm time

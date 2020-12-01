@@ -106,7 +106,7 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
 {
     lldesc_setup_link(hal->dmadesc_rx, out_buf, len, true);
 
-    spi_ll_dma_fifo_reset(hal->dev);
+    spi_ll_dma_rx_fifo_reset(hal->dev);
     spi_dma_ll_rx_reset(hal->dma_in);
     spi_ll_slave_reset(hal->dev);
     spi_ll_infifo_full_clr(hal->dev);
@@ -121,7 +121,7 @@ void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size
 {
     lldesc_setup_link(hal->dmadesc_tx, data, len, false);
 
-    spi_ll_dma_fifo_reset(hal->dev);
+    spi_ll_dma_tx_fifo_reset(hal->dev);
     spi_dma_ll_tx_reset(hal->dma_out);
     spi_ll_slave_reset(hal->dev);
     spi_ll_outfifo_empty_clr(hal->dev);

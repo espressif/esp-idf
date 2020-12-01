@@ -10,8 +10,10 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
-#define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_CPU_CORES_NUM               2
+#define SOC_CACHE_SUPPORT_WRAP          1
+#define SOC_ULP_SUPPORTED               1
+#define SOC_RTC_SLOW_MEM_SUPPORTED      1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #include "adc_caps.h"
@@ -73,6 +75,9 @@
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #include "spi_caps.h"
 
+/*-------------------------- SPIRAM CAPS ----------------------------------------*/
+#define SOC_SPIRAM_SUPPORTED            1
+
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
 #include "systimer_caps.h"
 
@@ -83,6 +88,7 @@
 #define SOC_TIMER_GROUPS                   (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP   (2)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+#define SOC_TIMER_GROUP_LAYOUT             {2,2}
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #include "touch_sensor_caps.h"

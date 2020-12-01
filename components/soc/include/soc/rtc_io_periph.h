@@ -17,9 +17,15 @@
 #include "soc/soc.h"
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
 #include "soc/rtc_io_channel.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
+
+#endif
+
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_struct.h"
@@ -28,6 +34,8 @@
 extern "C"
 {
 #endif
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * @brief Pin function information for a single RTCIO pad's.
@@ -102,7 +110,9 @@ typedef struct {
  */
 extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
 
-#endif // CONFIG_IDF_TARGET_ESP32
+#endif // CONFIG_RTCIO_SUPPORT_RTC_GPIO_DESC
+
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -39,7 +39,8 @@ extern "C" {
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
-
+/// This is the expected clock frequency
+#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))
 
 /**
@@ -157,7 +158,7 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_cpu_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 {
     //This is not used in esp32
 }
@@ -167,7 +168,32 @@ static inline void spi_ll_cpu_fifo_reset(spi_dev_t *hw)
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_dma_fifo_reset(spi_dev_t *hw)
+static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
+{
+    //This is not used in esp32
+}
+
+/**
+ * Reset SPI DMA TX FIFO
+ *
+ * On ESP32, this function is not seperated
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
+{
+    hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
+    hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;
+}
+
+/**
+ * Reset SPI DMA RX FIFO
+ *
+ * On ESP32, this function is not seperated
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
 {
     hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
     hw->dma_conf.val &= ~SPI_LL_DMA_FIFO_RST_MASK;

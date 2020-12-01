@@ -555,6 +555,8 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
  */
 extern esp_rom_spiflash_chip_t g_rom_flashchip;
 
+extern uint8_t g_rom_spiflash_dummy_len_plus[];
+
 /**
   * @}
   */

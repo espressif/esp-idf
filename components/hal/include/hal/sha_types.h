@@ -26,6 +26,9 @@ typedef SHA_TYPE esp_sha_type;
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/sha.h"
 typedef SHA_TYPE esp_sha_type;
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/sha.h"
+typedef SHA_TYPE esp_sha_type;
 #endif
 
 #ifdef __cplusplus

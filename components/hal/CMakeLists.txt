@@ -9,14 +9,10 @@ if(NOT BOOTLOADER_BUILD)
                 "cpu_hal.c"
                 "rmt_hal.c"
                 "rtc_io_hal.c"
-                "dac_hal.c"
-                "adc_hal.c"
                 "spi_hal.c"
                 "spi_hal_iram.c"
                 "spi_slave_hal.c"
                 "spi_slave_hal_iram.c"
-                "touch_sensor_hal.c"
-                "pcnt_hal.c"
                 "i2s_hal.c"
                 "sigmadelta_hal.c"
                 "timer_hal.c"
@@ -30,16 +26,20 @@ if(NOT BOOTLOADER_BUILD)
                 "spi_flash_hal.c"
                 "spi_flash_hal_iram.c"
                 "soc_hal.c"
-                "twai_hal.c"
-                "twai_hal_iram.c"
                 "interrupt_controller_hal.c"
                 "sha_hal.c"
+                "twai_hal.c"
+                "twai_hal_iram.c"
                 "${target}/interrupt_descriptor_table.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
+                    "adc_hal.c"
+                    "dac_hal.c"
                     "mcpwm_hal.c"
+                    "pcnt_hal.c"
                     "sdio_slave_hal.c"
+                    "touch_sensor_hal.c"
                     "esp32/adc_hal.c"
                     "esp32/brownout_hal.c"
                     "esp32/touch_sensor_hal.c")
@@ -50,8 +50,12 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
+                    "adc_hal.c"
+                    "dac_hal.c"
+                    "pcnt_hal.c"
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
+                    "touch_sensor_hal.c"
                     "esp32s2/adc_hal.c"
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
@@ -63,11 +67,24 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
+            "adc_hal.c"
+            "dac_hal.c"
+            "pcnt_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
+            "touch_sensor_hal.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/systimer_hal.c"
             "esp32s3/touch_sensor_hal.c")
+    endif()
+
+    if(${target} STREQUAL "esp32c3")
+        list(APPEND srcs
+              "esp32c3/adc_hal.c"
+              "esp32c3/brownout_hal.c"
+              "esp32c3/systimer_hal.c"
+              "esp32c3/hmac_hal.c"
+              "spi_slave_hd_hal.c")
     endif()
 endif()
 

@@ -20,7 +20,9 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_reg.h"
 #include "soc/sens_struct.h"
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "soc/rtc_io_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

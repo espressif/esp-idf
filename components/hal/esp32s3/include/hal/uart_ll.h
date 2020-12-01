@@ -233,10 +233,8 @@ static inline uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
  */
 static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd_len)
 {
-    //Get the UART fifo addr, ESP32-S2 have 2 UART
-    uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_AHB_REG(0) : UART_FIFO_AHB_REG(1);
-    for (int i = 0; i < rd_len; i++) {
-        buf[i] = READ_PERI_REG(fifo_addr);
+    for (int i = 0; i < (int)rd_len; i++) {
+        buf[i] = hw->ahb_fifo.rw_byte;
     }
 }
 
@@ -251,10 +249,8 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
  */
 static inline void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
-    //Get the UART fifo addr, ESP32-S2 have 2 UART
-    uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_AHB_REG(0) : UART_FIFO_AHB_REG(1);
-    for (int i = 0; i < wr_len; i++) {
-        WRITE_PERI_REG(fifo_addr, buf[i]);
+    for (int i = 0; i < (int)wr_len; i++) {
+        hw->ahb_fifo.rw_byte = buf[i];
     }
 }
 
@@ -798,14 +794,14 @@ static inline void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
     typeof(hw->conf0) conf0_reg = hw->conf0;
-    conf0_reg.irda_tx_inv |= (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
-    conf0_reg.irda_rx_inv |= (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
-    conf0_reg.rxd_inv |= (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
-    conf0_reg.cts_inv |= (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
-    conf0_reg.dsr_inv |= (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
-    conf0_reg.txd_inv |= (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
-    conf0_reg.rts_inv |= (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
-    conf0_reg.dtr_inv |= (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
+    conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
+    conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
+    conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
+    conf0_reg.cts_inv = (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
+    conf0_reg.dsr_inv = (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
+    conf0_reg.txd_inv = (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
+    conf0_reg.rts_inv = (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
+    conf0_reg.dtr_inv = (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     hw->conf0.val = conf0_reg.val;
 }
 

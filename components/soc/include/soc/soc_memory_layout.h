@@ -18,6 +18,7 @@
 #include <stdbool.h>
 
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
@@ -207,7 +208,11 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
 
 
 inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
+#if SOC_SPIRAM_SUPPORTED
     return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+#else
+    return false; // SoC has no external RAM
+#endif
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {

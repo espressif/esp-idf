@@ -53,7 +53,7 @@ uint64_t systimer_hal_get_time(systimer_counter_id_t counter_id)
     return systimer_hal_get_counter_value(counter_id) / SYSTIMER_TICKS_PER_US;
 }
 
-void systimer_hal_set_alarm_value(systimer_alarm_id_t alarm_id, uint64_t timestamp)
+void systimer_hal_set_alarm_target(systimer_alarm_id_t alarm_id, uint64_t timestamp)
 {
     int64_t offset = SYSTIMER_TICKS_PER_US * 2;
     uint64_t now_time = systimer_hal_get_counter_value(SYSTIMER_COUNTER_0);

@@ -37,16 +37,18 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_TWAI_SUPPORTED 1
-#define SOC_CP_DMA_SUPPORTED 1
-#define SOC_CPU_CORES_NUM 1
-#define SOC_DEDICATED_GPIO_SUPPORTED 1
-#define SOC_SUPPORTS_SECURE_DL_MODE 1
-#define SOC_RISCV_COPROC_SUPPORTED 1
-#define SOC_USB_SUPPORTED 1
-#define SOC_PCNT_SUPPORTED 1
+#define SOC_TWAI_SUPPORTED              1
+#define SOC_CP_DMA_SUPPORTED            1
+#define SOC_CPU_CORES_NUM               1
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
+#define SOC_RISCV_COPROC_SUPPORTED      1
+#define SOC_USB_SUPPORTED               1
+#define SOC_PCNT_SUPPORTED              1
+#define SOC_ULP_SUPPORTED               1
+#define SOC_RTC_SLOW_MEM_SUPPORTED      1
 
-#define SOC_CACHE_SUPPORT_WRAP    1
+#define SOC_CACHE_SUPPORT_WRAP          1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #define SOC_ADC_PERIPH_NUM              (2)
@@ -161,6 +163,10 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT   22
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+#define SOC_RTCIO_HOLD_SUPPORTED 1
+#define SOC_RTCIO_WAKE_SUPPORTED 1
+
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
 #define SOC_SIGMADELTA_NUM            1
@@ -172,6 +178,7 @@
 #define SOC_SPI_PERIPH_CS_NUM(i)    (((i)==0)? 2: (((i)==1)? 6: 3))
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     72
+#define SOC_SPI_MAX_PRE_DIVIDER         8192
 
 //#define SOC_SPI_SUPPORT_AS_CS         //don't support to toggle the CS while the clock toggles
 #define SOC_SPI_SUPPORT_DDRCLK              1
@@ -225,6 +232,9 @@
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
+
+/*-------------------------- SPIRAM CAPS -------------------------------------*/
+#define SOC_SPIRAM_SUPPORTED    1
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_PERIPH_NUM 1

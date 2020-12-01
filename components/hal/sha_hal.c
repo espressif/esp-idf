@@ -101,9 +101,11 @@ static inline void sha_hal_dma_init(lldesc_t *input)
 
     gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, DMA_PERIPH_SHA);
 
+#if SOC_GDMA_SUPPORT_EXTMEM
     /* Atleast 40 bytes when accessing external RAM */
     gdma_ll_tx_extend_fifo_size_to(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, 40);
     gdma_ll_tx_set_block_size_psram(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
+#endif //SOC_GDMA_SUPPORT_EXTMEM
 
     /* Set descriptors */
     gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, (uint32_t)input);

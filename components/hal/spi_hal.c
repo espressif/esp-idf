@@ -81,7 +81,7 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int
 {
     spi_hal_timing_conf_t temp_conf;
 
-    int eff_clk_n = spi_ll_master_cal_clock(APB_CLK_FREQ, timing_param->clock_speed_hz, timing_param->duty_cycle, &temp_conf.clock_reg);
+    int eff_clk_n = spi_ll_master_cal_clock(SPI_LL_PERIPH_CLK_FREQ, timing_param->clock_speed_hz, timing_param->duty_cycle, &temp_conf.clock_reg);
 
     //When the speed is too fast, we may need to use dummy cycles to compensate the reading.
     //But these don't work for full-duplex connections.

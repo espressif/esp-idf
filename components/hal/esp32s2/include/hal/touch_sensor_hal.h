@@ -18,7 +18,7 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The HAL layer for touch sensor (esp32s2 specific part)
+// The HAL layer for touch sensor (ESP32-S2 specific part)
 
 #pragma once
 
@@ -202,7 +202,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
  * Set filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
+ * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
  */
 #define touch_hal_filter_set_filter_mode(mode) touch_ll_filter_set_filter_mode(mode)
 
@@ -210,7 +210,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
  * Get filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
+ * @param mode Filter mode type. Refer to `touch_filter_mode_t`.
  */
 #define touch_hal_filter_get_filter_mode(mode) touch_ll_filter_get_filter_mode(mode)
 

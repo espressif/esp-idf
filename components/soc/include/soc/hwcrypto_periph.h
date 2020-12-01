@@ -13,5 +13,13 @@
 // limitations under the License.
 
 #pragma once
+
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+/* included here for ESP-IDF v4.x compatibility */
 #include "soc/dport_reg.h"
+#include "soc/dport_access.h"
+#endif
+
 #include "soc/hwcrypto_reg.h"

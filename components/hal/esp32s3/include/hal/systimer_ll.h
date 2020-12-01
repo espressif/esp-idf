@@ -79,13 +79,13 @@ __attribute__((always_inline)) static inline void systimer_ll_apply_counter_valu
 
 /*******************alarm*************************/
 
-__attribute__((always_inline)) static inline void systimer_ll_set_alarm_value(uint32_t alarm_id, uint64_t value)
+__attribute__((always_inline)) static inline void systimer_ll_set_alarm_target(uint32_t alarm_id, uint64_t value)
 {
     REG_WRITE(SYS_TIMER_SYSTIMER_TARGET0_LO_REG + alarm_id * 8, value & 0xFFFFFFFF);
     REG_WRITE(SYS_TIMER_SYSTIMER_TARGET0_HI_REG + alarm_id * 8,  (value >> 32) & 0xFFFFF);
 }
 
-__attribute__((always_inline)) static inline uint64_t systimer_ll_get_alarm_value(uint32_t alarm_id)
+__attribute__((always_inline)) static inline uint64_t systimer_ll_get_alarm_target(uint32_t alarm_id)
 {
     return ((uint64_t) REG_READ(SYS_TIMER_SYSTIMER_TARGET0_HI_REG + alarm_id * 8) << 32) \
            | REG_READ(SYS_TIMER_SYSTIMER_TARGET0_LO_REG + alarm_id * 8);

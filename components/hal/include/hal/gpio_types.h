@@ -158,12 +158,13 @@ typedef enum {
     GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
+#if SOC_GPIO_PIN_COUNT > 22
 #if CONFIG_IDF_TARGET_ESP32
     GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */
     GPIO_NUM_23 = 23,   /*!< GPIO23, input and output */
 
     GPIO_NUM_25 = 25,   /*!< GPIO25, input and output */
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32
     /* Note: The missing IO is because it is used inside the chip. */
     GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
     GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
@@ -179,6 +180,7 @@ typedef enum {
     GPIO_NUM_37 = 37,   /*!< GPIO37, input mode only(ESP32) / input and output(ESP32-S2) */
     GPIO_NUM_38 = 38,   /*!< GPIO38, input mode only(ESP32) / input and output(ESP32-S2) */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input mode only(ESP32) / input and output(ESP32-S2) */
+#endif // SOC_GPIO_PIN_COUNT > 22
 #if SOC_GPIO_PIN_COUNT > 40
     GPIO_NUM_40 = 40,   /*!< GPIO40, input and output */
     GPIO_NUM_41 = 41,   /*!< GPIO41, input and output */
@@ -187,7 +189,7 @@ typedef enum {
     GPIO_NUM_44 = 44,   /*!< GPIO44, input and output */
     GPIO_NUM_45 = 45,   /*!< GPIO45, input and output */
     GPIO_NUM_46 = 46,   /*!< GPIO46, input mode only */
-#endif
+#endif // GPIO_PIN_COUNT > 40
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;

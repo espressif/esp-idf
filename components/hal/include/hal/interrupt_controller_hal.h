@@ -52,7 +52,7 @@ __attribute__((pure))  int interrupt_controller_hal_desc_level(int interrupt_num
  * @param cpu_number CPU number between 0 and SOC_CPU_CORES_NUM - 1
  * @return flags for that interrupt number
  */
-__attribute__((pure))  uint32_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number);
+__attribute__((pure))  int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number);
 
 /**
  * @brief Gets the interrupt type given an interrupt number.
