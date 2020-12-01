@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-static inline uint32_t mpu_ll_id_to_addr(int id)
+static inline uint32_t mpu_ll_id_to_addr(unsigned id)
 {
     // vpn - id
     // 0x00000000 = 0
