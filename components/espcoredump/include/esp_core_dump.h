@@ -79,7 +79,7 @@ void esp_core_dump_to_uart(panic_info_t *info);
  *         This function is always available, even when core dump is disabled in menuconfig.
  *
  * @param  out_addr   pointer to store image address in flash.
- * @param  out_size   pointer to store image size in flash (including CRC). In bytes.
+ * @param  out_size   pointer to store image size in flash (including checksum). In bytes.
  *
  * @return ESP_OK on success, otherwise \see esp_err_t
  */

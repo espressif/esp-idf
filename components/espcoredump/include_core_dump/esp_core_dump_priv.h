@@ -66,6 +66,8 @@ extern "C" {
 #define COREDUMP_VERSION                    COREDUMP_VERSION_BIN_CURRENT
 #endif
 
+#define COREDUMP_CHECKSUM_MAX_LEN           32
+
 typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
 typedef esp_err_t (*esp_core_dump_write_start_t)(void *priv);
 typedef esp_err_t (*esp_core_dump_write_end_t)(void *priv);
