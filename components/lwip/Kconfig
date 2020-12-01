@@ -559,6 +559,28 @@ menu "LWIP"
 
     endmenu # UDP
 
+    menu "Checksums"
+
+        config LWIP_CHECKSUM_CHECK_IP
+            bool "Enable LWIP IP checksums"
+            default n
+            help
+                Enable checksum checking for received IP messages
+
+        config LWIP_CHECKSUM_CHECK_UDP
+            bool "Enable LWIP UDP checksums"
+            default n
+            help
+                Enable checksum checking for received UDP messages
+
+        config LWIP_CHECKSUM_CHECK_ICMP
+            bool "Enable LWIP ICMP checksums"
+            default y
+            help
+                Enable checksum checking for received ICMP messages
+
+    endmenu # Checksums
+
     config LWIP_TCPIP_TASK_STACK_SIZE
         int "TCP/IP Task Stack Size"
         default 3072
