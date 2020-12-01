@@ -607,6 +607,11 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
     // Set up the obfuscation value to use for loading
     while (ram_obfs_value[0] == 0 || ram_obfs_value[1] == 0) {
         bootloader_fill_random(ram_obfs_value, sizeof(ram_obfs_value));
+#if CONFIG_IDF_ENV_FPGA
+        /* FPGA doesn't always emulate the RNG */
+        ram_obfs_value[0] ^= 0x33;
+        ram_obfs_value[1] ^= 0x66;
+#endif
     }
     uint32_t *dest = (uint32_t *)load_addr;
 #endif
