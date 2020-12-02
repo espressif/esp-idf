@@ -23,7 +23,7 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 
 .. 注解::
     限定条件：Python 或 ESP-IDF 的安装路径中一定不能包含空格或括号。与此同时，除非操作系统配置为支持 Unicode UTF-8，否则 Python 或 ESP-IDF 的安装路径中也不能包括特殊字符（非 ASCII 码字符）
-    
+   
     系统管理员可以通过如下方式将操作系统配置为支持 Unicode UTF-8：控制面板-更改日期、时间或数字格式-管理选项卡-更改系统地域-勾选选项 “Beta：使用 Unicode UTF-8 支持全球语言”-点击确定-重启电脑。
 
 .. _get-started-windows-tools-installer:
