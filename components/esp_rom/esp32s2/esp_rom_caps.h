@@ -14,4 +14,5 @@
 
 #pragma once
 
-#define ESP_ROM_HAS_CRC_LE      (1) // ROM CRC library supports Little Endian
+#define ESP_ROM_HAS_CRC_LE            (1) // ROM CRC library supports Little Endian
+#define ESP_ROM_SUPPORT_MULTIPLE_UART (1) // ROM has multiple UARTs available for logging
