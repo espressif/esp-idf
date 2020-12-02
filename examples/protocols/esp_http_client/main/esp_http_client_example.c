@@ -629,6 +629,50 @@ static void http_native_request(void)
     esp_http_client_cleanup(client);
 }
 
+static void http_partial_download(void)
+{
+    esp_http_client_config_t config = {
+        .url = "http://jigsaw.w3.org/HTTP/TE/foo.txt",
+        .event_handler = _http_event_handler,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    // Download a file excluding first 10 bytes
+    esp_http_client_set_header(client, "Range", "bytes=10-");
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP Status = %d, content_length = %d",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
+    }
+
+    // Download last 10 bytes of a file
+    esp_http_client_set_header(client, "Range", "bytes=-10");
+    err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP Status = %d, content_length = %d",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
+    }
+
+    // Download 10 bytes from 11 to 20
+    esp_http_client_set_header(client, "Range", "bytes=11-20");
+    err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP Status = %d, content_length = %d",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+}
+
 static void http_test_task(void *pvParameters)
 {
     http_rest_with_url();
@@ -648,6 +692,7 @@ static void http_test_task(void *pvParameters)
     https_async();
     https_with_invalid_url();
     http_native_request();
+    http_partial_download();
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
