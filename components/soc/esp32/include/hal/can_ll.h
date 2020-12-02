@@ -366,6 +366,8 @@ static inline void can_ll_set_bus_timing(can_dev_t *hw, uint32_t brp, uint32_t s
         //Need to set brp_div bit
         hw->interrupt_enable_reg.brp_div = 1;
         brp /= 2;
+    } else {
+        hw->interrupt_enable_reg.brp_div = 0;
     }
 #endif
     hw->bus_timing_0_reg.brp = (brp / 2) - 1;
