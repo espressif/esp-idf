@@ -306,8 +306,11 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
                 p_srcb->p_srvc_cache = NULL;
             }
         }
-        osi_free(p_clcb->p_q_cmd);
-        p_clcb->p_q_cmd = NULL;
+
+        if ( p_clcb->p_q_cmd != NULL && !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd)){
+            osi_free(p_clcb->p_q_cmd);
+            p_clcb->p_q_cmd = NULL;
+        }
         // don't forget to clear the command queue before dealloc the clcb.
         list_clear(p_clcb->p_cmd_list);
         osi_free((void *)p_clcb->p_cmd_list);
