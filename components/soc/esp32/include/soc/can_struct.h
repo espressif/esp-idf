@@ -147,8 +147,8 @@ typedef struct {
 
 typedef union {
     struct {
-        uint32_t rx_message_counter: 5;                     /* RMC[4:0] RX Message Counter */
-        uint32_t reserved27: 27;                            /* Internal Reserved */
+        uint32_t rx_message_counter: 7;                     /* RMC[6:0] RX Message Counter */
+        uint32_t reserved25: 25;                            /* Internal Reserved */
     };
     uint32_t val;
 } can_rx_msg_cnt_reg_t;
