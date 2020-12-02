@@ -42,6 +42,7 @@ static util_timer_t g_pbadv_timer;
 static util_timer_t g_prov_timer;
 #ifdef CONFIG_MESH_MODEL_VENDOR_SRV
 static util_timer_t g_indc_timer;
+static util_timer_t g_time_sync_timer;
 #endif
 
 #ifdef CONFIG_MESH_MODEL_TRANS
@@ -51,12 +52,12 @@ void mesh_timer_stop(elem_state_t *p_elem)
     util_timer_stop(&p_elem->state.trans_timer);
 }
 
-static void mesh_delay_timer_cb(void *p_timer, void *p_arg)
+static void mesh_delay_timer_cb(void *p_timer)
 {
-    elem_state_t *p_elem = (elem_state_t *)p_arg;
+    elem_state_t *p_elem = (elem_state_t *)p_timer;
 
     mesh_timer_stop(p_elem);
-    genie_event(GENIE_EVT_SDK_DELAY_END, p_arg);
+    genie_event(GENIE_EVT_SDK_DELAY_END, p_timer);
 }
 
 void clear_trans_para(elem_state_t *p_elem)
@@ -66,19 +67,19 @@ void clear_trans_para(elem_state_t *p_elem)
     p_elem->state.trans_end_time   = 0;
 }
 
-static void mesh_trans_timer_cycle(void *p_timer, void *p_arg)
+static void mesh_trans_timer_cycle(void *p_timer)
 {
-    elem_state_t  *p_elem  = (elem_state_t *)p_arg;
+    elem_state_t  *p_elem  = (elem_state_t *)p_timer;
     model_state_t *p_state = &p_elem->state;
 
     mesh_timer_stop(p_elem);
 
     // do cycle
-    genie_event(GENIE_EVT_SDK_TRANS_CYCLE, p_arg);
+    genie_event(GENIE_EVT_SDK_TRANS_CYCLE, p_timer);
     // ESP_LOGI(TAG, ">>>>>%d %d", (uint32_t)cur_time, (uint32_t)p_elem->state.trans_end_time);
 
     if (p_state->trans == 0) {
-        genie_event(GENIE_EVT_SDK_TRANS_END, p_arg);
+        genie_event(GENIE_EVT_SDK_TRANS_END, p_timer);
     } else {
         util_timer_start(&p_state->trans_timer, GENIE_MESH_TRNSATION_CYCLE);
     }
@@ -240,7 +241,7 @@ void poweron_indicate_start(void)
         util_timer_init(&g_indc_timer, poweron_indicate_cb, NULL);
         inited = 1;
     }
-    bt_mesh_rand(&random_time, 1);
+    esp_fill_random(&random_time, 1);
 #ifdef CONFIG_MESH_MODEL_TRANS
     random_time = 2000 + 8000 * random_time / 255;
 #else
@@ -777,6 +778,34 @@ uint8_t get_seg_count(uint16_t msg_len)
 }
 
 #ifdef CONFIG_MESH_MODEL_VENDOR_SRV
+static int genie_timer_event(uint8_t event, uint8_t index, genie_timer_attr_data_t *data);
+
+static void time_sync_request_cb(void *p_timer)
+{
+    ENTER_FUNC();
+    genie_timer_event(GENIE_TIME_EVT_TIMING_SYNC, 0, NULL);
+}
+
+void time_sync_request_start(void)
+{
+    ENTER_FUNC();
+    static   uint8_t inited = 0;
+    uint16_t random_time    = 0;
+
+    if (!inited) {
+        util_timer_init(&g_time_sync_timer, time_sync_request_cb, NULL);
+        inited = 1;
+    }
+    esp_fill_random(&random_time, 1);
+#ifdef CONFIG_MESH_MODEL_TRANS
+    random_time = 10000 + 5000 * random_time / 255;
+#else
+    random_time = 5000 + 10000 * random_time / 255;
+#endif
+    ESP_LOGD(TAG, "time sync indicate random: %d ms", random_time);
+    util_timer_start(&g_time_sync_timer, random_time);
+}
+
 void genie_standart_indication(elem_state_t *p_elem)
 {
     ENTER_FUNC();
@@ -866,6 +895,8 @@ void genie_standart_indication(elem_state_t *p_elem)
         buff[i++] = (GENIE_MODEL_ATTR_DEVICE_EVENT >> 8) & 0xff;
         buff[i++] = EVENT_DEV_UP;
         cur_indication_flag &= ~INDICATION_FLAG_POWERON;
+        // 1. request to sync time with random delay
+        time_sync_request_start();
     }
     ESP_LOGD(TAG, "end flag %02x", g_indication_flag);
 

@@ -1317,6 +1317,13 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
+    /* Open nvs namespace for storing/restoring mesh example info */
+    err = ble_mesh_nvs_open(&NVS_HANDLE);
+    if (err) {
+        ESP_LOGE(TAG, "ble_mesh_nvs_open failed (err %d)", err);
+        return;
+    }
+
 #ifdef CONFIG_GENIE_RESET_BY_REPEAT
     genie_reset_by_repeat_init();
 #endif
@@ -1326,13 +1333,6 @@ void app_main(void)
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
-        return;
-    }
-
-    /* Open nvs namespace for storing/restoring mesh example info */
-    err = ble_mesh_nvs_open(&NVS_HANDLE);
-    if (err) {
-        ESP_LOGE(TAG, "ble_mesh_nvs_open failed (err %d)", err);
         return;
     }
 
