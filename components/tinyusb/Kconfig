@@ -103,6 +103,20 @@ menu "TinyUSB"
 
     endmenu
 
+    config USB_MSC_ENABLED
+        bool "Enable USB MSC TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable USB MSC TinyUSB driver.
+
+    config USB_MSC_BUFSIZE
+        int "MSC FIFO size"
+        default 512
+        depends on USB_MSC_ENABLED
+        help
+            MSC FIFO size
+
     config USB_CDC_ENABLED
         bool "Enable USB Serial (CDC) TinyUSB driver"
         default n
