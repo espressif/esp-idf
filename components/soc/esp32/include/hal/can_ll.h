@@ -28,6 +28,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "hal/can_types.h"
 #include "soc/can_periph.h"
 
@@ -334,8 +335,8 @@ static inline uint32_t can_ll_get_and_clear_intrs(can_dev_t *hw)
  */
 static inline void can_ll_set_enabled_intrs(can_dev_t *hw, uint32_t intr_mask)
 {
-#ifdef CAN_BRP_DIV_SUPPORTED
-    //ESP32 Rev 2 has brp div. Need to mask when setting
+#if (CONFIG_ESP32_REV_MIN >= 2)
+    //ESP32 Rev 2 or later has brp div field. Need to mask it out
     hw->interrupt_enable_reg.val = (hw->interrupt_enable_reg.val & 0x10) | intr_mask;
 #else
     hw->interrupt_enable_reg.val = intr_mask;
@@ -360,7 +361,7 @@ static inline void can_ll_set_enabled_intrs(can_dev_t *hw, uint32_t intr_mask)
  */
 static inline void can_ll_set_bus_timing(can_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)
 {
-#ifdef CAN_BRP_DIV_SUPPORTED
+#if (CONFIG_ESP32_REV_MIN >= 2)
     if (brp > CAN_BRP_DIV_THRESH) {
         //Need to set brp_div bit
         hw->interrupt_enable_reg.brp_div = 1;

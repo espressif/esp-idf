@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 /**
  * @brief   CAN2.0B Constants
@@ -53,7 +54,7 @@ extern "C" {
  * @note These timing values are based on the assumption APB clock is at 80MHz
  * @note The 20K, 16K and 12.5K bit rates are only available from ESP32 Revision 2 onwards
  */
-#ifdef CAN_BRP_DIV_SUPPORTED
+#if (CONFIG_ESP32_REV_MIN >= 2)
 #define CAN_TIMING_CONFIG_12_5KBITS()   {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_16KBITS()     {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_20KBITS()     {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
