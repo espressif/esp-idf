@@ -457,7 +457,7 @@ uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t
 
     eth_dma_tx_descriptor_t *desc_iter = hal->tx_desc;
     /* A frame is transmitted in multiple descriptor */
-    for (int i = 0; i < bufcount; i++) {
+    for (uint32_t i = 0; i < bufcount; i++) {
         /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
         if (desc_iter->TDES0.Own != EMAC_DMADESC_OWNER_CPU) {
             goto err;
@@ -492,7 +492,7 @@ uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t
     }
 
     /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
-    for (int i = 0; i < bufcount; i++) {
+    for (uint32_t i = 0; i < bufcount; i++) {
         hal->tx_desc->TDES0.Own = EMAC_DMADESC_OWNER_DMA;
         hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
     }
