@@ -535,7 +535,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     do_load = do_load && should_load(load_addr);
 
     if (!silent) {
-        ESP_LOGI(TAG, "segment %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s",
+        ESP_LOGI(TAG, "segment %d: paddr=%08x vaddr=%08x size=%05xh (%6d) %s",
                  index, data_addr, load_addr,
                  data_len, data_len,
                  (do_load) ? "load" : (is_mapping) ? "map" : "");
