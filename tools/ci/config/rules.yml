@@ -35,11 +35,14 @@
 .if-label-unit_test: &if-label-unit_test
   if: '$BOT_LABEL_UNIT_TEST'
 
-.if-label-unit_test_s2: &if-label-unit_test_s2
+.if-label-unit_test-32: &if-label-unit_test-32
+  if: '$BOT_LABEL_UNIT_TEST_32'
+
+.if-label-unit_test-s2: &if-label-unit_test-s2
   if: '$BOT_LABEL_UNIT_TEST_S2'
 
-.if-label-unit_test-all_targets: &if-label-unit_test-all_targets
-  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_S2'
+.if-label-unit_test-all_labels: &if-label-unit_test-all_labels
+  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_32 || $BOT_LABEL_UNIT_TEST_S2'
 
 .if-label-weekend_test: &if-label-weekend_test
   if: '$BOT_LABEL_WEEKEND_TEST'
@@ -176,11 +179,19 @@
 .rules:tests:unit_test:
   rules:
     - <<: *if-protected-no_label
-    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test-all_labels
 
-.rules:tests:unit_test_s2-only:
+.rules:tests:unit_test_32:
   rules:
-    - <<: *if-label-unit_test_s2
+    - <<: *if-protected-no_label
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test-32
+
+.rules:tests:unit_test_s2:
+  rules:
+    - <<: *if-protected-no_label
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test-s2
 
 .rules:tests:integration_test:
   rules:
@@ -193,7 +204,7 @@
     - <<: *if-label-regular_test
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
-    - <<: *if-label-unit_test-all_targets
+    - <<: *if-label-unit_test-all_labels
     - <<: *if-label-integration_test
     - <<: *if-label-weekend_test
 
@@ -216,7 +227,7 @@
     - <<: *if-protected-no_label
     - <<: *if-label-build
     - <<: *if-label-regular_test
-    - <<: *if-label-unit_test-all_targets
+    - <<: *if-label-unit_test-all_labels
 
 .rules:build_tests:example_test-weekend_test:
   rules:
@@ -241,7 +252,7 @@
     - <<: *if-label-regular_test
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
-    - <<: *if-label-unit_test-all_targets
+    - <<: *if-label-unit_test-all_labels
 
 .rules:build_tests:target_test-weekend_test:
   rules:
@@ -250,5 +261,5 @@
     - <<: *if-label-regular_test
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
-    - <<: *if-label-unit_test-all_targets
+    - <<: *if-label-unit_test-all_labels
     - <<: *if-label-weekend_test
