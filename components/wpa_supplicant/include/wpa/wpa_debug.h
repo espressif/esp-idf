@@ -47,6 +47,11 @@ void wpa_debug_close_file(void);
  */
 void wpa_debug_print_timestamp(void);
 
+#if CONFIG_WPA_DEBUG_PRINT
+#define DEBUG_PRINT
+#endif
+
+#ifdef DEBUG_PRINT
 /**
  * wpa_printf - conditional printf
  * @level: priority level (MSG_*) of the message
@@ -58,8 +63,17 @@ void wpa_debug_print_timestamp(void);
  *
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
-#define  DEBUG_PRINT
-#define   MSG_PRINT
+
+#define wpa_printf(level,fmt, args...) ESP_LOG_LEVEL_LOCAL(level, TAG, fmt, ##args)
+
+static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
+{
+
+}
+
+static inline void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf, size_t len)
+{
+}
 
 /**
  * wpa_hexdump - conditional hex dump
@@ -72,19 +86,6 @@ void wpa_debug_print_timestamp(void);
  * output may be directed to stdout, stderr, and/or syslog based on
  * configuration. The contents of buf is printed out has hex dump.
  */
-#ifdef DEBUG_PRINT
-#define wpa_printf(level,fmt, args...) ESP_LOG_LEVEL_LOCAL(level, TAG, fmt, ##args)
-
-static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
-{
-
-}
-
-static inline void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf, size_t len)
-{
-}
-
-
 void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
 
 static inline void wpa_hexdump_buf(int level, const char *title,
@@ -148,13 +149,14 @@ void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 			   size_t len);
 #else
-#define wpa_printf(level,fmt, args...)
-#define wpa_hexdump(...)
-#define wpa_hexdump_buf(...)
-#define wpa_hexdump_key(...)
-#define wpa_hexdump_buf_key(...)
-#define wpa_hexdump_ascii(...)
-#define wpa_hexdump_ascii_key(...)
+#define wpa_printf(level,fmt, args...) do {} while(0)
+#define wpa_hexdump(...) do {} while(0)
+#define wpa_dump_mem(...) do {} while(0)
+#define wpa_hexdump_buf(...) do {} while(0)
+#define wpa_hexdump_key(...) do {} while(0)
+#define wpa_hexdump_buf_key(...) do {} while(0)
+#define wpa_hexdump_ascii(...) do {} while(0)
+#define wpa_hexdump_ascii_key(...) do {} while(0)
 #endif
 
 #define wpa_auth_logger
