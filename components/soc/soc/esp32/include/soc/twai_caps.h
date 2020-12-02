@@ -18,22 +18,10 @@
 extern "C" {
 #endif
 
-#include "sdkconfig.h"
-
-//Chip specific TWAI related macros
-#if __DOXYGEN__ || (CONFIG_ESP32_REV_MIN >= 2)
-#define TWAI_BRP_DIV_SUPPORTED      1
-#define TWAI_BRP_DIV_THRESH         128
-//Any even number from 2 to 128, or multiples of 4 from 132 to 256
-#define TWAI_BRP_IS_VALID(brp)      (((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0) || ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0))
-#define TWAI_BRP_MAX                256
-#else
-//Any even number from 2 to 128
-#define TWAI_BRP_IS_VALID(brp)      ((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0)
-#define TWAI_BRP_MAX                128
-#endif
-
-//Chip specific TWAI capabilities
+#define TWAI_BRP_MIN                        2
+#define TWAI_BRP_MAX                        128
+#define TWAI_BRP_MAX_ECO                    256
+#define TWAI_BRP_DIV_THRESH                 128
 #define TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
 
 #ifdef __cplusplus

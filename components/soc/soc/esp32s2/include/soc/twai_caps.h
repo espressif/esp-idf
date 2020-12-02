@@ -18,10 +18,8 @@
 extern "C" {
 #endif
 
-//Chip specific TWAI related macros
-//Any even number from 2 to 32768
-#define TWAI_BRP_IS_VALID(brp)       ((brp) >= 2 && (brp) <= 32768 && ((brp) & 0x1) == 0)
-#define TWAI_BRP_MAX                 32768
+#define TWAI_BRP_MIN                2
+#define TWAI_BRP_MAX                32768
 
 #ifdef __cplusplus
 }

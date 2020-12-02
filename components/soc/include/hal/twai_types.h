@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 /**
  * @brief   TWAI Constants
@@ -59,7 +60,7 @@ extern "C" {
 #define TWAI_TIMING_CONFIG_5KBITS()     {.brp = 800, .tseg_1 = 15, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_10KBITS()    {.brp = 400, .tseg_1 = 15, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #endif
-#if (TWAI_BRP_MAX > 128)
+#if (TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN >= 2)
 #define TWAI_TIMING_CONFIG_12_5KBITS()  {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_16KBITS()    {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_20KBITS()    {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
