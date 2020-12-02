@@ -80,10 +80,10 @@ static uint16_t bt_mesh_model_get_netkey_id(esp_ble_mesh_elem_t *elem)
 static uint8_t genie_model_msg_gen_tid(void)
 {
     ENTER_FUNC();
-    static uint8_t tid = 0x80;
+    static uint8_t tid = 0xFF;
 
     if (tid == 0xFF) {
-        bt_mesh_rand(&tid, 1);
+        esp_fill_random(&tid, 1);
         tid &= 0x3F;
     } else {
         tid = (tid + 1) & 0x3F;
@@ -123,13 +123,13 @@ static uint16_t genie_model_init(void)
  *
  *  @return 0 for success; negative for failure
  */
-static int16_t genie_model_msg_node_free(genie_model_msg_node_t *p_node)
+static esp_err_t genie_model_msg_node_free(genie_model_msg_node_t *p_node)
 {
     ENTER_FUNC();
 
     free(p_node);
 
-    return 0;
+    return ESP_OK;
 }
 
 /** @def genie_model_msg_node_generate
@@ -161,7 +161,7 @@ static genie_model_msg_node_t *genie_model_msg_node_generate(genie_model_msg_t *
     ESP_LOGD(TAG, "p_node->msg: %p, data: %p, %p", &p_node->msg, &p_node->msg.data, &p_node->msg.data + 1);
     p_node->msg.data = (uint8_t *)(&p_node->msg.data + 1);
     memcpy(p_node->msg.data, p_model_msg->data, p_model_msg->len);
-    ESP_LOGD(TAG, "p_model_msg->data: %p, data: %s, p_node->msg.data: %p, data: %s",
+    ESP_LOGD(TAG, "p_model_msg->data: %p, data: 0x%s, p_node->msg.data: %p, data: 0x%s",
              p_model_msg->data, util_hex2str(p_model_msg->data, p_model_msg->len),
              p_node->msg.data, util_hex2str(p_node->msg.data, p_node->msg.len));
     p_node->timeout = esp_timer_get_time() + p_model_msg->retry_period;
@@ -179,7 +179,7 @@ static genie_model_msg_node_t *genie_model_msg_node_generate(genie_model_msg_t *
  *
  *  @return 0 for success; negative for failure
  */
-static int16_t genie_model_msg_list_append(genie_model_msg_t *p_model_msg)
+static esp_err_t genie_model_msg_list_append(genie_model_msg_t *p_model_msg)
 {
     ENTER_FUNC();
     genie_model_msg_node_t *p_msg_node = NULL;
@@ -187,13 +187,13 @@ static int16_t genie_model_msg_list_append(genie_model_msg_t *p_model_msg)
     p_msg_node = genie_model_msg_node_generate(p_model_msg);
 
     if (!p_msg_node) {
-        return -2;
+        return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_LOGD(TAG, "append msg: %p, opid: %x, retry: %d, head: %p, node: %p", p_model_msg, p_model_msg->opid, p_model_msg->retry, &g_vnd_msg_list, &p_msg_node->node);
+    ESP_LOGD(TAG, "append msg: %p, opid: 0x%02x, retry: %d, head: %p, node: %p", p_model_msg, p_model_msg->opid, p_model_msg->retry, &g_vnd_msg_list, &p_msg_node->node);
     if (genie_dlist_node_number(&g_vnd_msg_list) >= GENIE_VENDOR_MSG_LIST_MAXSIZE) {
         ESP_LOGW(TAG, "List Full, discard!!!");
-        return 0;
+        return ESP_OK;
     }
 
     genie_dlist_append(&g_vnd_msg_list, &p_msg_node->node);
@@ -203,7 +203,7 @@ static int16_t genie_model_msg_list_append(genie_model_msg_t *p_model_msg)
         util_timer_start(&g_vnd_msg_timer, p_model_msg->retry_period);
     }
 
-    return 0;
+    return ESP_OK;
 }
 
 /** @def genie_model_retry_timer_cb
@@ -233,10 +233,10 @@ static void genie_model_retry_timer_cb(void *args)
         p_msg_node = CONTAINER_OF(p_node, genie_model_msg_node_t, node);
         nearest    = p_msg_node->msg.retry_period;
         p_msg      = &p_msg_node->msg;
-        ESP_LOGD(TAG, "msg: %p, opid: %d, left: %d", p_msg, p_msg->opid, p_msg_node->left_retry);
+        ESP_LOGD(TAG, "msg: %p, opid: 0x%02x, left: %d", p_msg, p_msg->opid, p_msg_node->left_retry);
 
         if (p_msg_node->timeout <= esp_timer_get_time()) {
-            ESP_LOGD(TAG, "timeout - msg: %p, opid: %x, left: %d", p_msg, p_msg->opid, p_msg_node->left_retry);
+            ESP_LOGD(TAG, "timeout - msg: %p, opid: 0x%02x, left: %d", p_msg, p_msg->opid, p_msg_node->left_retry);
             genie_model_msg_send(p_msg);
             if (--p_msg_node->left_retry <= 0) {
                 genie_dlist_remove(p_node);
@@ -259,6 +259,7 @@ static void genie_model_retry_timer_cb(void *args)
         util_timer_stop(&g_vnd_msg_timer);
         ESP_LOGD(TAG, "list empty, stop timer");
     }
+
     return;
 }
 
@@ -270,17 +271,17 @@ static void genie_model_retry_timer_cb(void *args)
  *
  *  @return 0 for success; negative for failure
  */
-static int16_t genie_model_msg_check_tid(genie_dlist_t *p_head, uint8_t tid)
+static esp_err_t genie_model_msg_check_tid(genie_dlist_t *p_head, uint8_t tid)
 {
     ENTER_FUNC();
     genie_dnode_t *p_node = NULL;
 
     if (!p_head) {
-        return -1;
+        return ESP_FAIL;
     }
 
     if (genie_dlist_is_empty(p_head)) {
-        return 0;
+        return ESP_OK;
     }
 
     /**
@@ -295,14 +296,14 @@ static int16_t genie_model_msg_check_tid(genie_dlist_t *p_head, uint8_t tid)
         p_msg      = &p_msg_node->msg;
 
         if (p_msg->tid == tid) {
-            ESP_LOGD(TAG, "dequeue msg: %p, opid: %x, retry: %2d", p_msg, p_msg->opid, p_msg->retry);
+            ESP_LOGD(TAG, "dequeue msg: %p, opid: 0x%02x, retry: %2d", p_msg, p_msg->opid, p_msg->retry);
             genie_dlist_remove(p_node);
             genie_model_msg_node_free((genie_model_msg_node_t *)p_node);
             break;
         }
     }
 
-    return 0;
+    return ESP_OK;
 }
 
 
@@ -314,10 +315,10 @@ static int16_t genie_model_msg_check_tid(genie_dlist_t *p_head, uint8_t tid)
  *
  *  @return 0 for success; negative for failure
  */
-int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
+esp_err_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
 {
     ENTER_FUNC();
-    int16_t err                     = -1;
+    esp_err_t err                   = ESP_FAIL;
     bool resend_flag                = false;
     esp_ble_mesh_msg_ctx_t ctx      = {0};
     esp_ble_mesh_model_t *p_model   = esp_ble_mesh_find_vendor_model(p_model_msg->p_elem, CID_ALIBABA, GENIE_VENDOR_MODEL_SRV_ID);
@@ -329,7 +330,13 @@ int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
         return err;
     }
 
-    ESP_LOGD(TAG, "p_model: 0x%p, cid: 0x%04x, id: 0x%04x, retry: %d", p_model, p_model->vnd.company_id, p_model->vnd.model_id, p_model_msg->retry);
+    ESP_LOGD(TAG, "p_model: %p, cid: 0x%04x, id: 0x%04x, opcode: 0x%02x, retry: %d", p_model, p_model->vnd.company_id, p_model->vnd.model_id, p_model_msg->opid, p_model_msg->retry);
+
+    if(p_model_msg->tid == 0) {
+        p_model_msg->tid = genie_model_msg_gen_tid();
+        ESP_LOGD(TAG, "genie_model_msg_gen_tid: 0x%02x", p_model_msg->tid);
+    }
+
     /**
      * no need to duplicate the following messages
      * 1. retry <= 0 - the message won't want to be resent
@@ -338,35 +345,42 @@ int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
      * 4. already duplicated or CONFIME/CONFIME_TG
      * */
     if ((p_model_msg->retry > 1) &&
-            (p_model_msg->tid >= 0x7F && p_model_msg->tid < 0xC0) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_SET_UNACK) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_CONFIME) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_CONFIME_TG) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_TRANS_MSG) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_TRANS_ACK) ) {
+        (p_model_msg->tid >= 0x7F && p_model_msg->tid < 0xC0) &&
+        ((p_model_msg->opid == GENIE_OP_ATTR_INDICATE) ||
+        (p_model_msg->opid == GENIE_OP_ATTR_INDICATE_TG) ||
+        (p_model_msg->opid == GENIE_OP_ATTR_TRANS_INDICATE))) {
         resend_flag = true;
-        ESP_LOGD(TAG, "resend_flag");
-    }
-    /**
-     * only when opid is one of  GENIE_OP_ATTR_CONFIME, GENIE_OP_ATTR_CONFIME_TG and GENIE_OP_ATTR_TRANS_ACK, shall we keep tid as it is
-     * */
-    if (!(p_model_msg->tid) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_CONFIME) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_CONFIME_TG) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_TRANS_MSG) &&
-            (p_model_msg->opid != GENIE_OP_ATTR_TRANS_ACK)) {
-        p_model_msg->tid = genie_model_msg_gen_tid();
-        ESP_LOGD(TAG, "genie_model_msg_gen_tid");
+        ESP_LOGD(TAG, "set resend flag");
+
+        genie_dnode_t *p_node = NULL;
+        GENIE_DLIST_FOR_EACH_NODE(&g_vnd_msg_list, p_node) {
+            genie_model_msg_t *p_msg = NULL;
+            genie_model_msg_node_t *p_msg_node = NULL;
+
+            p_msg_node = CONTAINER_OF(p_node, genie_model_msg_node_t, node);
+            p_msg = &p_msg_node->msg;
+
+            if (p_msg->tid == p_model_msg->tid) {
+                ESP_LOGI(TAG, "no resend");
+                resend_flag = false;
+                break;
+            }
+        }
     }
 
     // prepare buffer
-    uint8_t *data = malloc(p_model_msg->len + 1);
+    uint8_t *data = NULL;
+    data = malloc(p_model_msg->len + 1);
+    if (!data) {
+        ESP_LOGE(TAG, "malloc failed");
+        return ESP_FAIL;
+    }
     data[0] = p_model_msg->tid;
     memcpy(data + 1, p_model_msg->data, p_model_msg->len);
 
     p_model_msg->retry--;
 
-    ESP_LOGD(TAG, "p_model_msg->opid: 0x%04x, p_model_msg->data: 0x%p, len: %d, data: %s",
+    ESP_LOGD(TAG, "p_model_msg->opid: 0x%02x, p_model_msg->data: %p, len: %d, data: 0x%s",
              p_model_msg->opid, p_model_msg, p_model_msg->len, util_hex2str(p_model_msg->data, p_model_msg->len));
 
     if (resend_flag) {
@@ -379,10 +393,9 @@ int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
     ctx.addr     = GENIE_RECV_ADDR;
     ctx.send_ttl = BLE_MESH_TTL_DEFAULT;
     ctx.send_rel = 0;
-    ctx.srv_send = true;
 
-    ESP_LOGI(TAG, "vendor message send: tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%x, data: 0x%s", p_model_msg->tid, p_model_msg->retry, p_model_msg->len, p_model_msg->opid, util_hex2str(p_model_msg->data, p_model_msg->len));
-    ESP_LOGD(TAG, "vendor message send: element: 0x%p, app_idx: %d, net_idx: %d, tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%x, data: 0x%s",
+    ESP_LOGI(TAG, "vendor message send: tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%02x, data: 0x%s", p_model_msg->tid, p_model_msg->retry, p_model_msg->len, p_model_msg->opid, util_hex2str(p_model_msg->data, p_model_msg->len));
+    ESP_LOGD(TAG, "vendor message send: element: %p, app_idx: %d, net_idx: %d, tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%02x, data: 0x%s",
              p_model_msg->p_elem, ctx.app_idx, ctx.net_idx, p_model_msg->tid, p_model_msg->retry, p_model_msg->len, p_model_msg->opid, util_hex2str(p_model_msg->data, p_model_msg->len));
 
     err = esp_ble_mesh_server_model_send_msg(p_model, &ctx, ESP_BLE_MESH_MODEL_OP_3(p_model_msg->opid, CID_ALIBABA), p_model_msg->len + 1, data);
@@ -394,7 +407,7 @@ int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
     }
 
     if (p_model_msg->retry == 0) {
-        ESP_LOGW(TAG, "The message has been retried 9 times and may be lost. This is the last retry. tid: %02x", p_model_msg->tid);
+        ESP_LOGW(TAG, "The message has been retried 9 times and may be lost. This is the last retry. tid: 0x%02x", p_model_msg->tid);
     }
 
     free(data);
@@ -410,7 +423,7 @@ int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
  *
  *  @return if success return 0; if fails return error no.
  */
-static int16_t genie_model_analyze(esp_ble_mesh_model_t *p_model,
+static esp_err_t genie_model_analyze(esp_ble_mesh_model_t *p_model,
                                    esp_ble_mesh_msg_ctx_t *p_ctx,
                                    struct net_buf_simple *p_buf,
                                    uint8_t opid)
@@ -438,7 +451,7 @@ static int16_t genie_model_analyze(esp_ble_mesh_model_t *p_model,
     }
 
     msg.len = p_buf->len;
-    ESP_LOGD(TAG, "opcode: 0x%x, tid: %02x, len: %d", msg.opid, msg.tid, msg.len);
+    ESP_LOGD(TAG, "opcode: 0x%02x, tid: 0x%02x, len: %d", msg.opid, msg.tid, msg.len);
 
     if (msg.len) {
         msg.data = (uint8_t *)p_buf->data;
@@ -450,7 +463,7 @@ static int16_t genie_model_analyze(esp_ble_mesh_model_t *p_model,
 
     genie_event(GENIE_EVT_SDK_VENDOR_MSG, (void *)&msg);
 
-    return 0;
+    return ESP_OK;
 }
 
 /** @def genie_model_get_status
@@ -522,7 +535,7 @@ static void genie_model_confirm(esp_ble_mesh_model_t *model,
     }
 
     tid = net_buf_simple_pull_u8(buf);
-    ESP_LOGI(TAG, "confirm tid: %02x", tid);
+    ESP_LOGI(TAG, "confirm tid: 0x%02x", tid);
     genie_model_msg_check_tid(&g_vnd_msg_list, tid);
 }
 
@@ -547,7 +560,7 @@ static void genie_model_confirm_tg(esp_ble_mesh_model_t *model,
     }
 
     tid = net_buf_simple_pull_u8(buf);
-    ESP_LOGI(TAG, "confirm_tg tid: %02x", tid);
+    ESP_LOGI(TAG, "confirm_tg tid: 0x%02x", tid);
     genie_model_msg_check_tid(&g_vnd_msg_list, tid);
 }
 
@@ -625,5 +638,5 @@ void genie_model_dispatch(uint32_t opcode, esp_ble_mesh_model_t *model,
             return;
         }
     }
-    ESP_LOGW(TAG, "not find callback function for opcode: 0x%04x", opcode);
+    ESP_LOGW(TAG, "not find callback function for opcode: 0x%02x", opcode);
 }

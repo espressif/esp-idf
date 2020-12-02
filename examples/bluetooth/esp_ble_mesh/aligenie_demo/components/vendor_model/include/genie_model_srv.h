@@ -47,7 +47,7 @@ typedef struct genie_opcode_cb_t {
  *
  *  @return 0 for success; negative for failure
  */
-int16_t genie_model_msg_send(genie_model_msg_t *p_model_msg);
+esp_err_t genie_model_msg_send(genie_model_msg_t *p_model_msg);
 
 /**
  * @brief

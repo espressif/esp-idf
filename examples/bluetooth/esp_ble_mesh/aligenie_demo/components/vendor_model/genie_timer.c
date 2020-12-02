@@ -323,7 +323,7 @@ static inline void seconds_update(void)
 static void genie_timer_update(void *args)
 {
     if (!g_genie_timer.update) {
-        ESP_LOGE(TAG, "g_genie_timer.update %d", g_genie_timer.update);
+        ESP_LOGD(TAG, "g_genie_timer.update %d", g_genie_timer.update);
         return;
     }
 
@@ -839,7 +839,7 @@ int genie_timer_init(genie_timer_event_func_t cb)
     }
 
     /* sync timing */
-    g_genie_timer.cb(GENIE_TIME_EVT_TIMING_SYNC, 0, NULL);
+    // g_genie_timer.cb(GENIE_TIME_EVT_TIMING_SYNC, 0, NULL);
 
     return 0;
 }
