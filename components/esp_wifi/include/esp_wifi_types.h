@@ -214,19 +214,19 @@ typedef struct {
 /** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
     uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
-    uint8_t password[64];       /**< Password of ESP32 soft-AP. Null terminated string. */
+    uint8_t password[64];       /**< Password of ESP32 soft-AP. */
     uint8_t ssid_len;           /**< Optional length of SSID field. */
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
-    uint16_t beacon_interval;   /**< Beacon interval, 100 ~ 60000 ms, default 100 ms */
+    uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
 } wifi_ap_config_t;
 
 /** @brief STA configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];      /**< SSID of target AP. Null terminated string. */
-    uint8_t password[64];  /**< Password of target AP. Null terminated string.*/
+    uint8_t ssid[32];      /**< SSID of target AP. */
+    uint8_t password[64];  /**< Password of target AP. */
     wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
@@ -314,15 +314,15 @@ typedef struct {
 typedef struct {
     signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
     unsigned rate:5;              /**< PHY rate encoding of the packet. Only valid for non HT(11bg) packet */
-    unsigned :1;                  /**< reserve */
+    unsigned :1;                  /**< reserved */
     unsigned sig_mode:2;          /**< 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
-    unsigned :16;                 /**< reserve */
+    unsigned :16;                 /**< reserved */
     unsigned mcs:7;               /**< Modulation Coding Scheme. If is HT(11n) packet, shows the modulation, range from 0 to 76(MSC0 ~ MCS76) */
     unsigned cwb:1;               /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
-    unsigned :16;                 /**< reserve */
-    unsigned smoothing:1;         /**< reserve */
-    unsigned not_sounding:1;      /**< reserve */
-    unsigned :1;                  /**< reserve */
+    unsigned :16;                 /**< reserved */
+    unsigned smoothing:1;         /**< reserved */
+    unsigned not_sounding:1;      /**< reserved */
+    unsigned :1;                  /**< reserved */
     unsigned aggregation:1;       /**< Aggregation. 0: MPDU packet; 1: AMPDU packet */
     unsigned stbc:2;              /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
     unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
@@ -331,13 +331,13 @@ typedef struct {
     unsigned ampdu_cnt:8;         /**< ampdu cnt */
     unsigned channel:4;           /**< primary channel on which this packet is received */
     unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
-    unsigned :8;                  /**< reserve */
+    unsigned :8;                  /**< reserved */
     unsigned timestamp:32;        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
-    unsigned :32;                 /**< reserve */
-    unsigned :31;                 /**< reserve */
+    unsigned :32;                 /**< reserved */
+    unsigned :31;                 /**< reserved */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
     unsigned sig_len:12;          /**< length of packet including Frame Check Sequence(FCS) */
-    unsigned :12;                 /**< reserve */
+    unsigned :12;                 /**< reserved */
     unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
 } wifi_pkt_rx_ctrl_t;
 
@@ -568,6 +568,19 @@ typedef enum {
     WPS_FAIL_REASON_RECV_M2D,       /**< ESP32 WPS receive M2D frame */
     WPS_FAIL_REASON_MAX
 } wifi_event_sta_wps_fail_reason_t;
+
+#define MAX_SSID_LEN        32
+#define MAX_PASSPHRASE_LEN  64
+#define MAX_WPS_AP_CRED     3
+
+/** Argument structure for WIFI_EVENT_STA_WPS_ER_SUCCESS event */
+typedef struct {
+    uint8_t ap_cred_cnt;                        /**< Number of AP credentials received */
+    struct {
+        uint8_t ssid[MAX_SSID_LEN];             /**< SSID of AP */
+        uint8_t passphrase[MAX_PASSPHRASE_LEN]; /**< Passphrase for the AP */
+    } ap_cred[MAX_WPS_AP_CRED];                 /**< All AP credentials received from WPS handshake */
+} wifi_event_sta_wps_er_success_t;
 
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
 typedef struct {

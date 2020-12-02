@@ -21,6 +21,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/crypto_internal-cipher.c"
     "src/crypto/crypto_internal-modexp.c"
     "src/crypto/crypto_internal-rsa.c"
+    "src/crypto/crypto_mbedtls-rsa.c"
     "src/crypto/crypto_internal.c"
     "src/crypto/des-internal.c"
     "src/crypto/dh_group5.c"
@@ -122,7 +123,10 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_ECC
     CONFIG_SHA256
     CONFIG_IEEE80211W
-    CONFIG_WPA3_SAE
     )
+
+if(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPA3_SAE)
+endif()
 
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
