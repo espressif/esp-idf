@@ -37,7 +37,7 @@ ESP-IDF will use the version of Python installed by default on macOS.
 Installing and setting up Python 3 as default
 ---------------------------------------------
 
-Basing on macOS `Catalina 10.15 release notes`_, use of Python 2.7 is not recommended and Python will not be included by default in future versions of macOS. Check what Python you currently have::
+Basing on macOS `Catalina 10.15 release notes`_, use of Python 2.7 is not recommended and Python 2.7 will not be included by default in future versions of macOS. Check what Python you currently have::
 
   python --version
 
@@ -54,7 +54,7 @@ Below is an overview of steps to install Python 3 and making it default interpre
       brew install python3
       ln -s /usr/local/bin/python3.8 /usr/local/bin/python
 
-    Adjust above directory name ``/usr/local/bin/python3.8`` to point where Python 3 has been installed. To check this directory you can run  ``which -a python``.
+    Adjust above directory name ``/usr/local/bin/python3.8`` to point where Python 3 has been installed. To check this directory you can run  ``which -a python3``.
 
   - If you have MacPorts_, you can run::
 
@@ -71,6 +71,12 @@ If the output is similar to ``Python 3.8.5``, your installation has been done su
 .. note::
 
     This is system-wide change which may affect all of the applications.
+
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
+
 
 Next Steps
 ==========
