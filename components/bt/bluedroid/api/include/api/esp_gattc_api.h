@@ -603,6 +603,29 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
                                    uint16_t conn_id,
                                    uint16_t handle,
                                    esp_gatt_auth_req_t auth_req);
+/**
+ * @brief           This function is called to read a service's characteristics of
+ *                  the given characteristic UUID
+ *
+ * @param[in]       gattc_if: Gatt client access interface.
+ * @param[in]       conn_id : connection ID.
+ * @param[in]       start_handle : the attribute start handle.
+ * @param[in]       end_handle : the attribute end handle
+ * @param[in]       uuid : The UUID of attribute which will be read.
+ * @param[in]       auth_req : authenticate request type
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - other: failed
+ *
+ */
+esp_err_t esp_ble_gattc_read_by_type (esp_gatt_if_t gattc_if,
+                                      uint16_t conn_id,
+                                      uint16_t start_handle,
+                                      uint16_t end_handle,
+                                      esp_bt_uuid_t *uuid,
+                                      esp_gatt_auth_req_t auth_req);
+
 
 /**
  * @brief           This function is called to read multiple characteristic or
