@@ -36,12 +36,6 @@
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
-/* Set to TRUE if seperate authorization prompt desired for AVCTP besides A2DP authorization */
-/* Typically FALSE when AVRCP is used in conjunction with A2DP */
-#ifndef BTA_AV_WITH_AVCTP_AUTHORIZATION
-#define BTA_AV_WITH_AVCTP_AUTHORIZATION     FALSE
-#endif
-
 /* AV status values */
 #define BTA_AV_SUCCESS          0       /* successful operation */
 #define BTA_AV_FAIL             1       /* generic failure */
@@ -581,8 +575,7 @@ void BTA_AvDisable(void);
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
-                    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS *bta_av_cos, UINT8 tsep);
+void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS *bta_av_cos, UINT8 tsep);
 
 /*******************************************************************************
 **

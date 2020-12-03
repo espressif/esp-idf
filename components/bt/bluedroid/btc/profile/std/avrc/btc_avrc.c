@@ -424,6 +424,14 @@ static void btc_avrc_ct_init(void)
     BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
 
     memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
+
+    if (!g_av_with_rc) {
+        g_av_with_rc = true;
+    }
+    if (g_a2dp_on_init) {
+        BTC_TRACE_WARNING("AVRC Controller is expected to be initialized in advance of A2DP !!!");
+    }
+
     btc_rc_vb.rc_vol_label = MAX_LABEL;
     btc_rc_vb.rc_volume = MAX_VOLUME;
 }
@@ -441,6 +449,13 @@ static void btc_avrc_ct_init(void)
 static void btc_avrc_ct_deinit(void)
 {
     BTC_TRACE_API("## %s ##", __FUNCTION__);
+
+    if (g_a2dp_on_deinit) {
+        BTC_TRACE_WARNING("A2DP already deinit, AVRC CT shuold deinit in advance of A2DP !!!");
+    }
+    if (g_av_with_rc) {
+        g_av_with_rc = false;
+    }
 
     memset(&btc_rc_vb, 0, sizeof(btc_rc_cb_t));
     BTC_TRACE_API("## %s ## completed", __FUNCTION__);

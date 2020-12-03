@@ -1290,8 +1290,6 @@ BOOLEAN btc_media_aa_read_feeding(void)
     /* Read Data from data channel */
     nb_byte_read = btc_aa_src_data_read((uint8_t *)read_buffer, read_size);
 
-    //tput_mon(TRUE, nb_byte_read, FALSE);
-
     if (nb_byte_read < read_size) {
         APPL_TRACE_WARNING("### UNDERRUN :: ONLY READ %d BYTES OUT OF %d ###",
                            nb_byte_read, read_size);
