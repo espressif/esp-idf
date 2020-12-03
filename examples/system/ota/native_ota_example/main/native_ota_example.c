@@ -187,18 +187,21 @@ static void ota_example_task(void *pvParameter)
                     if (err != ESP_OK) {
                         ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
                         http_cleanup(client);
+                        esp_ota_abort(update_handle);
                         task_fatal_error();
                     }
                     ESP_LOGI(TAG, "esp_ota_begin succeeded");
                 } else {
                     ESP_LOGE(TAG, "received package is not fit len");
                     http_cleanup(client);
+                    esp_ota_abort(update_handle);
                     task_fatal_error();
                 }
             }
             err = esp_ota_write( update_handle, (const void *)ota_write_data, data_read);
             if (err != ESP_OK) {
                 http_cleanup(client);
+                esp_ota_abort(update_handle);
                 task_fatal_error();
             }
             binary_file_length += data_read;
@@ -222,6 +225,7 @@ static void ota_example_task(void *pvParameter)
     if (esp_http_client_is_complete_data_received(client) != true) {
         ESP_LOGE(TAG, "Error in receiving complete file");
         http_cleanup(client);
+        esp_ota_abort(update_handle);
         task_fatal_error();
     }
 

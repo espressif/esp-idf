@@ -135,6 +135,7 @@ bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_ha
  *
  * @note     If this API returns successfully, esp_restart() must be called to
  *           boot from the new firmware image
+ *           esp_https_ota_finish should not be called after calling esp_https_ota_abort
  *
  * @param[in]  https_ota_handle   pointer to esp_https_ota_handle_t structure
  *
@@ -145,6 +146,25 @@ bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_ha
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  */
 esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle);
+
+
+/**
+ * @brief Clean-up HTTPS OTA Firmware upgrade and close HTTPS connection
+ *
+ * This function closes the HTTP connection and frees the ESP HTTPS OTA context.
+ *
+ * @note     esp_https_ota_abort should not be called after calling esp_https_ota_finish
+ *
+ * @param[in]  https_ota_handle   pointer to esp_https_ota_handle_t structure
+ *
+ * @return
+ *    - ESP_OK: Clean-up successful
+ *    - ESP_ERR_INVALID_STATE: Invalid ESP HTTPS OTA state
+ *    - ESP_FAIL: OTA not started
+ *    - ESP_ERR_NOT_FOUND: OTA handle not found
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle);
 
 
 /**
