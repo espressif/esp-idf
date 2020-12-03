@@ -56,6 +56,8 @@ typedef struct {
  * burned to the eFuse of the current ESP32
  *
  * @param   value_type  Type of calibration value (ESP_ADC_CAL_VAL_EFUSE_VREF or ESP_ADC_CAL_VAL_EFUSE_TP)
+ * @note in ESP32S2, only ESP_ADC_CAL_VAL_EFUSE_TP is supported. Some old ESP32S2s do not support this, either.
+ * In which case you have to calibrate it manually, possibly by performing your own two-point calibration on the chip.
  *
  * @return
  *      - ESP_OK: The calibration mode is supported in eFuse

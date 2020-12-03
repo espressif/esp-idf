@@ -546,7 +546,9 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
-    if (adc_unit & ADC_UNIT_1) return ESP_ERR_INVALID_ARG;
+    if (adc_unit & ADC_UNIT_1) {
+        return ESP_ERR_INVALID_ARG;
+    }
 #endif
     adc2_channel_t ch = ADC2_CHANNEL_MAX;
     /* Check if the GPIO supported. */
@@ -556,7 +558,9 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
             break;
         }
     }
-    if (ch == ADC2_CHANNEL_MAX) return ESP_ERR_INVALID_ARG;
+    if (ch == ADC2_CHANNEL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ADC_ENTER_CRITICAL();
     adc_hal_set_power_manage(ADC_POWER_SW_ON);

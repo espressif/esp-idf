@@ -68,7 +68,7 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
             if ((bits_counter + num_bits) > req_size) { // Limits the length of the field.
                 num_bits = req_size - bits_counter;
             }
-            ESP_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
+            ESP_EARLY_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
                     (int)field[i]->efuse_block, num_reg, num_bits, start_bit);
             err = func_proc(num_reg, field[i]->efuse_block, start_bit, num_bits, ptr, &bits_counter);
             ++i_reg;
