@@ -1014,7 +1014,7 @@ static bt_status_t btc_av_init(int service_id)
 #endif
             g_a2dp_on_init = false;
             g_a2dp_on_deinit = true;
-            return BT_STATUS_FAIL;
+            goto av_init_fail;
         }
 
         /* Also initialize the AV state machine */
@@ -1030,9 +1030,15 @@ static bt_status_t btc_av_init(int service_id)
         btc_a2dp_on_init();
         g_a2dp_on_init = true;
         g_a2dp_on_deinit = false;
+
+        esp_a2d_cb_param_t param;
+        memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+        param.a2d_prof_stat.init_state = ESP_A2D_INIT_SUCCESS;
+        btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
         return BT_STATUS_SUCCESS;
     }
 
+av_init_fail:
     return BT_STATUS_FAIL;
 }
 
@@ -1099,6 +1105,11 @@ static void clean_up(int service_id)
 #endif
     g_a2dp_on_init = false;
     g_a2dp_on_deinit = true;
+
+    esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+    param.a2d_prof_stat.init_state = ESP_A2D_DEINIT_SUCCESS;
+    btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
 }
 
 /*******************************************************************************
