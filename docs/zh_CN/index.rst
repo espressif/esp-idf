@@ -50,7 +50,6 @@ ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/ov
 .. toctree::
    :hidden:
 
-   :esp32s2: ESP32-S2 预览 <esp32s2>
    快速入门 <get-started/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
