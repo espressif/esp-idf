@@ -250,10 +250,10 @@ bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg)
     return BT_STATUS_SUCCESS;
 }
 
-int btc_init(void)
+bt_status_t btc_init(void)
 {
     xBtcQueue = xQueueCreate(BTC_TASK_QUEUE_LEN, sizeof(btc_msg_t));
-    xTaskCreatePinnedToCore(btc_task, "Btc_task", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle, BTC_TASK_PINNED_TO_CORE);
+    xTaskCreatePinnedToCore(btc_task, "BTC_TASK", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle, BTC_TASK_PINNED_TO_CORE);
     if (xBtcTaskHandle == NULL || xBtcQueue == 0){
         return BT_STATUS_NOMEM;
     }
