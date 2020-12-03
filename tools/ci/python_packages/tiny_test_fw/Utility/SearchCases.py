@@ -49,7 +49,7 @@ class Search(object):
             test_functions_out += cls.replicate_case(case)
 
         for i, test_function in enumerate(test_functions_out):
-            print("\t{}. ".format(i + 1) + test_function.case_info["name"])
+            print("\t{}. {} <{}>".format(i + 1, test_function.case_info["name"], test_function.case_info["target"]))
             test_function.case_info['app_dir'] = os.path.dirname(file_name)
         return test_functions_out
 
