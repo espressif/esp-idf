@@ -1423,7 +1423,7 @@ void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec
 
     BTM_GetSecurityFlagsByTransport(rem_bda, &sec_flag, transport);
 
-    sec_flag &= (GATT_SEC_FLAG_LKEY_UNAUTHED | GATT_SEC_FLAG_LKEY_AUTHED | GATT_SEC_FLAG_ENCRYPTED);
+    sec_flag &= (GATT_SEC_FLAG_LKEY_UNAUTHED | GATT_SEC_FLAG_LKEY_AUTHED | GATT_SEC_FLAG_ENCRYPTED | GATT_SEC_FLAG_AUTHORIZATION);
 #if (SMP_INCLUDED == TRUE)
     *p_key_size = btm_ble_read_sec_key_size(rem_bda);
 #endif  ///SMP_INCLUDED == TRUE

@@ -705,6 +705,16 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)
+{
+    if (!bd_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (BTM_Ble_Authorization(bd_addr, authorize)) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
 
 
 

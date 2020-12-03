@@ -2099,6 +2099,17 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length);
 *******************************************************************************/
 
 tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type, BD_ADDR device_info, tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK update_exceptional_list_cmp_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_Ble_Authorization
+**
+** Description      This function is used to authorize a specified device
+**
+** Returns          TRUE or FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
 /*
 #ifdef __cplusplus
 }
