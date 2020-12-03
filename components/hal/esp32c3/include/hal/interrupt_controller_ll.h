@@ -115,6 +115,29 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
+/**
+ * @brief Set the interrupt type given an interrupt number.
+ *
+ * @param interrupt_number number of the interrupt
+ * @param type new type for this interrupt
+ */
+static inline void intr_cntrl_ll_set_type(int interrupt_number, int_type_t type)
+{
+    esprv_intc_int_set_type(BIT(interrupt_number), type);
+}
+
+/**
+ * @brief Set the interrupt level (priority) given an interrupt number.
+ *
+ * @param interrupt_number number of the interrupt
+ * @param level new level for this interrupt
+ */
+static inline void intr_cntrl_ll_set_level(int interrupt_number, int level)
+{
+    esprv_intc_int_set_priority(interrupt_number, level);
+}
+
+
 #ifdef __cplusplus
 }
 #endif

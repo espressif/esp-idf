@@ -45,8 +45,8 @@ const int_desc_t interrupt_descriptor_table[32] = {
     { 2, INTTP_LEVEL, {INTDESC_NORMAL } }, //21
     { 3, INTTP_EDGE,  {INTDESC_NORMAL } }, //22
     { 3, INTTP_LEVEL, {INTDESC_NORMAL } }, //23
-    { 4, INTTP_LEVEL, {INTDESC_NORMAL } }, //24
-    { 4, INTTP_LEVEL, {INTDESC_NORMAL } }, //25
+    { 4, INTTP_LEVEL, {INTDESC_RESVD } }, //24
+    { 4, INTTP_LEVEL, {INTDESC_RESVD } }, //25
     { 5, INTTP_LEVEL, {INTDESC_NORMAL } }, //26
     { 3, INTTP_LEVEL, {INTDESC_NORMAL } }, //27
     { 4, INTTP_EDGE,  {INTDESC_NORMAL } }, //28

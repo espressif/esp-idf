@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include "hal/interrupt_controller_types.h"
 #include "hal/interrupt_controller_ll.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,6 +54,24 @@ __attribute__((pure))  int interrupt_controller_hal_desc_level(int interrupt_num
  * @return flags for that interrupt number
  */
 __attribute__((pure))  int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number);
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+/**
+ * @brief Set the interrupt level given an interrupt number.
+ *
+ * @param interrupt_number number of the interrupt
+ * @param level new level for this interrupt
+ */
+void interrupt_controller_hal_set_level(int interrupt_number, int level);
+
+/**
+ * @brief Set the interrupt type given an interrupt number.
+ *
+ * @param interrupt_number number of the interrupt
+ * @param type new type for this interrupt
+ */
+void interrupt_controller_hal_set_type(int interrupt_number, int_type_t type);
+#endif
 
 /**
  * @brief Gets the interrupt type given an interrupt number.

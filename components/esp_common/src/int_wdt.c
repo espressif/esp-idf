@@ -31,6 +31,7 @@
 #include "esp_private/system_internal.h"
 #include "hal/timer_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/interrupt_controller_hal.h"
 
 #if CONFIG_ESP_INT_WDT
 
@@ -106,6 +107,7 @@ void esp_int_wdt_init(void) {
     wdt_hal_write_protect_disable(&iwdt_context);
     //The timer configs initially are set to 5 seconds, to make sure the CPU can start up. The tick hook sets
     //it to their actual value.
+
     //1st stage timeout: interrupt
     wdt_hal_config_stage(&iwdt_context, WDT_STAGE0, IWDT_INITIAL_TIMEOUT_S * 1000000 / IWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);
     //2nd stage timeout: reset system
@@ -121,6 +123,16 @@ void esp_int_wdt_cpu_init(void)
     esp_register_freertos_tick_hook_for_cpu(tick_hook, xPortGetCoreID());
     ESP_INTR_DISABLE(WDT_INT_NUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+
+    /* Set the type and priority to cache error interrupts, if supported. */
+#if SOC_INTERRUPT_TYPE_CAN_SET
+    interrupt_controller_hal_set_type(BIT(WDT_INT_NUM), INTR_TYPE_LEVEL);
+#endif
+
+#if SOC_INTERRUPT_LEVEL_CAN_SET
+    interrupt_controller_hal_set_level(WDT_INT_NUM, 4);
+#endif
+
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
      * This is a workaround for issue 3.15 in "ESP32 ECO and workarounds for
@@ -133,6 +145,7 @@ void esp_int_wdt_cpu_init(void)
         _l4_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS/IWDT_LIVELOCK_TIMEOUT_MS - 1;
     }
 #endif
+
     //We do not register a handler for the interrupt because it is interrupt level 4 which
     //is not servicable from C. Instead, xtensa_vectors.S has a call to the panic handler for
     //this interrupt.

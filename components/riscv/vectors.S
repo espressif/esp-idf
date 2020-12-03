@@ -18,6 +18,8 @@
 
 	.equ SAVE_REGS, 32
 	.equ CONTEXT_SIZE, (SAVE_REGS * 4)
+	.equ exception_from_panic, xt_unhandled_exception
+	.equ exception_from_isr, panicHandler
 
 .macro save_regs
 	addi sp, sp, -CONTEXT_SIZE
@@ -119,15 +121,20 @@
 _vector_table:
 	.option push
 	.option norvc
-	j _panic_handler		/* exception handler, entry 0 */
-	.rept 31
-	j _interrupt_handler		/* 31 identical entries, all pointing to the interrupt handler */
+	j _panic_handler			/* exception handler, entry 0 */
+	.rept 23
+	j _interrupt_handler		/* 24 identical entries, all pointing to the interrupt handler */
 	.endr
+	j _panic_handler			/* Call panic handler for ETS_T1_WDT_INUM interrupt (soc-level panic)*/
+	j _panic_handler			/* Call panic handler for ETS_CACHEERR_INUM interrupt (soc-level panic)*/
+	.rept 6
+	j _interrupt_handler		/* 6 identical entries, all pointing to the interrupt handler */
+	.endr
+
 	.option pop
 	.size _vector_table, .-_vector_table
 
 	/* Exception handler.*/
-	.global xt_unhandled_exception
 	.type _panic_handler, @function
 _panic_handler:
 	addi sp, sp, -RV_STK_FRMSZ /* allocate space on stack to store necessary registers */
@@ -170,19 +177,34 @@ _panic_handler:
 	sw t0,  RV_STK_MSTATUS(sp)
 	csrr t0, mtvec
 	sw t0,  RV_STK_MTVEC(sp)
-	csrr t0, mcause
-	sw t0,  RV_STK_MCAUSE(sp)
 	csrr t0, mtval
 	sw t0,  RV_STK_MTVAL(sp)
 	csrr t0, mhartid
 	sw t0,  RV_STK_MHARTID(sp)
 
-	/* call xt_unhandled_exception(sp,cause) */
+	/* Call exception_from_panic(sp) or exception_from_isr(sp)
+	 * depending on whether we have a pseudo excause or not.
+	 * If mcause's highest bit is 1, then an interrupt called this routine,
+	 * so we have a pseudo excause. Else, it is due to a panic, we don't have
+	 * an excause */
 	mv a0, sp
 	csrr a1, mcause
-	jal zero, xt_unhandled_exception
-	/*	panicHandler never returns */
-	.size  _panic_handler, .-_panic_handler
+	/* Branches instructions don't accept immediates values, so use t1 to store
+	 * our comparator */
+	li t0, 0x80000000
+	bgeu a1, t0, _call_panic_handler
+	sw a1,  RV_STK_MCAUSE(sp)
+	/* exception_from_panic never returns */
+	j exception_from_panic
+_call_panic_handler:
+	/* Remove highest bit from mcause (a1) register and save it in the
+	 * structure */
+	not t0, t0
+	and a1, a1, t0
+	sw a1, RV_STK_MCAUSE(sp)
+	/* exception_from_isr never returns */
+	j exception_from_isr
+	.size  exception_from_isr, .-exception_from_isr
 
 	/* This is the interrupt handler.
 	 * It saves the registers on the stack,

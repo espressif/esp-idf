@@ -115,6 +115,8 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
 
 static void panic_handler(void *frame, bool pseudo_excause)
 {
+    panic_info_t info = { 0 };
+
     /*
      * Setup environment and perform necessary architecture/chip specific
      * steps here prior to the system panic handler.
@@ -178,7 +180,6 @@ static void panic_handler(void *frame, bool pseudo_excause)
     }
 
     // Convert architecture exception frame into abstracted panic info
-    panic_info_t info;
     frame_to_panic_info(frame, &info, pseudo_excause);
 
     // Call the system panic handler
