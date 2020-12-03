@@ -724,6 +724,7 @@ PROVIDE ( r_ld_acl_sniff = 0x4003617c );
 PROVIDE ( r_ld_acl_sniff_trans = 0x400360a8 );
 PROVIDE ( r_ld_acl_ssr_set = 0x40036274 );
 PROVIDE ( r_ld_acl_start = 0x40034ddc );
+PROVIDE ( ld_acl_sco_rsvd_check = 0x4002fa94 );
 PROVIDE ( r_ld_acl_stop = 0x4003532c );
 PROVIDE ( r_ld_acl_test_mode_set = 0x40036f24 );
 PROVIDE ( r_ld_acl_timing_accuracy_set = 0x4003673c );
