@@ -22,15 +22,6 @@ extern "C" {
 
 
 /**
- * @brief Force power on for SAR ADC.
- * This function should be called for the scenario in which ADC are controlled by digital function like DMA.
- * When the ADC power is always on, RTC FSM can still be functional.
- * This is an internal API for I2S module to call to enable I2S-ADC function.
- * Note that adc_power_off() can still power down ADC.
- */
-void adc_power_always_on(void);
-
-/**
  * @brief For I2S dma to claim the usage of ADC1.
  *
  * Other tasks will be forbidden to use ADC1 between ``adc1_dma_mode_acquire`` and ``adc1_i2s_release``.
