@@ -234,9 +234,25 @@ class ESP32PanicTestDUT(ttfw_idf.ESP32DUT, PanicTestMixin):
         return self.port
 
 
+class ESP32S2PanicTestDUT(ttfw_idf.ESP32S2DUT, PanicTestMixin):
+    def get_gdb_remote(self):
+        return self.port
+
+
+PANIC_TEST_DUT_DICT = {
+    'ESP32': ESP32PanicTestDUT,
+    'ESP32S2': ESP32S2PanicTestDUT
+}
+
+
 def panic_test(**kwargs):
     """ Decorator for the panic tests, sets correct App and DUT classes """
-    return ttfw_idf.idf_custom_test(app=PanicTestApp, dut=ESP32PanicTestDUT, env_tag="test_jtag_arm", **kwargs)
+    if 'target' not in kwargs:
+        kwargs['target'] = ['ESP32', 'ESP32S2']
+
+    if 'additional_duts' not in kwargs:
+        kwargs['additional_duts'] = PANIC_TEST_DUT_DICT
+    return ttfw_idf.idf_custom_test(app=PanicTestApp, env_tag="test_jtag_arm", **kwargs)
 
 
 def get_dut(env, app_config_name, test_name, qemu_wdt_enable=False):
