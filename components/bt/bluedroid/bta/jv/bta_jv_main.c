@@ -35,6 +35,8 @@
 
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_JV_CB bta_jv_cb;
+#else
+tBTA_JV_CB *bta_jv_cb_ptr;
 #endif
 
 /* state machine action enumeration list */
