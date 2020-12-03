@@ -379,6 +379,11 @@ static DRAM_ATTR portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 static DRAM_ATTR uint32_t btdm_lpcycle_us = 0;
 static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit for btdm_lpcycle_us
 
+#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
+// used low power clock
+static DRAM_ATTR uint8_t btdm_lpclk_sel;
+#endif /* #ifdef CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG */
+
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
@@ -1194,25 +1199,41 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     periph_module_enable(PERIPH_BT_MODULE);
 
+    // set default sleep clock cycle and its fractional bits
     btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = 32 << btdm_lpcycle_us_frac;
+    btdm_lpcycle_us = 2 << btdm_lpcycle_us_frac;
+
 #if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
-    bool select_src_ret = false;
-    bool set_div_ret = false;
-#if CONFIG_BTDM_LPCLK_SEL_MAIN_XTAL
-    select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-    set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
-    assert(select_src_ret && set_div_ret);
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
-#elif CONFIG_BTDM_LPCLK_SEL_EXT_32K_XTAL
-    select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
-    set_div_ret = btdm_lpclk_set_div(0);
-    assert(select_src_ret && set_div_ret);
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = esp_clk_slowclk_cal_get();
-    assert(btdm_lpcycle_us != 0);
-#endif // CONFIG_BTDM_LPCLK_SEL_XX
+
+    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+#if CONFIG_BTDM_LPCLK_SEL_EXT_32K_XTAL
+    // check whether or not EXT_CRYS is working
+    if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
+        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // set default value
+    } else {
+        ESP_LOGW(BTDM_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n");
+        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+    }
+#else
+    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+#endif
+
+    bool select_src_ret, set_div_ret;
+    if (btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
+        set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
+    } else { // btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL32K
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
+        set_div_ret = btdm_lpclk_set_div(0);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
+            (1000000 >> (15 - RTC_CLK_CAL_FRACT));
+        assert(btdm_lpcycle_us != 0);
+    }
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
 #elif CONFIG_BTDM_MODEM_SLEEP_MODE_EVED
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_EVED);
