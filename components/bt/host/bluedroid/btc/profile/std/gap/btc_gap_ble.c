@@ -884,22 +884,38 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *
         • The two most significant bits of the address shall be equal to 1
         • All bits of the random part of the address shall not be equal to 1
         • All bits of the random part of the address shall not be equal to 0
+        A non-resolvable private address is a 48-bit randomly generated address and shall meet the following requirements:
+        • The two most significant bits of the address shall be equal to 0
+        • All bits of the random part of the address shall not be equal to 1
+        • All bits of the random part of the address shall not be equal to 0
         */
         BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
         memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
         memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
-        invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
-        if((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
-            && memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0
-            && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0){
-            BTA_DmSetRandAddress(rand_addr, btc_set_rand_addr_callback);
-        } else {
+
+        if((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK) {
+            invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
+            if (memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0 && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0) {
+                BTA_DmSetRandAddress(rand_addr, btc_set_rand_addr_callback);
+            } else {
+                btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
+                BTC_TRACE_ERROR("Invalid static random address, the high bit should be 0b11, bits of the random part shall not be all 1 or 0");
+            }
+        } else if ((rand_addr[0] | BT_NON_RPA_MASK) == BT_NON_RPA_MASK) {
+            invalid_rand_addr_a[0] = invalid_rand_addr_a[0] & BT_NON_RPA_MASK;
+            if (memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0 && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0) {
+                BTA_DmSetRandAddress(rand_addr, btc_set_rand_addr_callback);
+            } else {
+                btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
+                BTC_TRACE_ERROR("Invalid non-resolvable private address, the high bit should be 0b00, bits of the random part shall not be all 1 or 0");
+            }
+        }else {
             btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
-            BTC_TRACE_ERROR("Invalid random address, the high bit should be 0b11, bits of the random part shall not be all 1 or 0");
+            BTC_TRACE_ERROR("Invalid random address type");
         }
     } else {
         btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
-        BTC_TRACE_ERROR("Invalid random addressm, the address value is NULL");
+        BTC_TRACE_ERROR("Invalid address, the address value is NULL");
     }
 }
 
@@ -1255,6 +1271,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 uint8_t enable = 0;
                 STREAM_TO_UINT8(enable, value);
                 bta_dm_co_ble_oob_support(enable);
+                break;
+            }
+            case ESP_BLE_APP_ENC_KEY_SIZE: {
+                uint8_t key_size = 0;
+                STREAM_TO_UINT8(key_size, value);
+                bta_dm_co_ble_set_appl_enc_key_size(key_size);
                 break;
             }
             default:

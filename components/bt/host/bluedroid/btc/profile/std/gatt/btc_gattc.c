@@ -613,6 +613,13 @@ static void btc_gattc_read_char_descr(btc_ble_gattc_args_t *arg)
     BTA_GATTC_ReadCharDescr(arg->read_descr.conn_id, arg->read_descr.handle, arg->read_descr.auth_req);
 }
 
+static void btc_gattc_read_by_type(btc_ble_gattc_args_t *arg)
+{
+    tBT_UUID uuid;
+    btc_to_bta_uuid(&uuid, &(arg->read_by_type.uuid));
+    BTA_GATTC_Read_by_type(arg->read_by_type.conn_id, arg->read_by_type.s_handle, arg->read_by_type.e_handle, &uuid, arg->read_by_type.auth_req);
+}
+
 static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 {
     BTA_GATTC_WriteCharValue(arg->write_char.conn_id,
@@ -723,6 +730,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         break;
     case BTC_GATTC_ACT_READ_CHAR_DESCR:
         btc_gattc_read_char_descr(arg);
+        break;
+    case BTC_GATTC_ACT_READ_BY_TYPE:
+        btc_gattc_read_by_type(arg);
         break;
     case BTC_GATTC_ACT_WRITE_CHAR:
         btc_gattc_write_char(arg);
