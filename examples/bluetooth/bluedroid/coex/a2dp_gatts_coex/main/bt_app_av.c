@@ -57,7 +57,8 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
-    case ESP_A2D_AUDIO_CFG_EVT: {
+    case ESP_A2D_AUDIO_CFG_EVT:
+    case ESP_A2D_PROF_STATE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_a2d_evt, event, param, sizeof(esp_a2d_cb_param_t), NULL);
         break;
     }
@@ -171,6 +172,15 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
                      a2d->audio_cfg.mcc.cie.sbc[2],
                      a2d->audio_cfg.mcc.cie.sbc[3]);
             ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate=%d", sample_rate);
+        }
+        break;
+    }
+    case ESP_A2D_PROF_STATE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
+            ESP_LOGI(BT_AV_TAG,"A2DP PROF STATE: Init Compl\n");
+        } else {
+            ESP_LOGI(BT_AV_TAG,"A2DP PROF STATE: Deinit Compl\n");
         }
         break;
     }
