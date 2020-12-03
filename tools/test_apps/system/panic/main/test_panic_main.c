@@ -100,14 +100,30 @@ static void IRAM_ATTR test_int_wdt_cache_disabled(void)
     }
 }
 
+/**
+ * This function overwrites the stack beginning from the valid area continuously towards and beyond
+ * the end of the stack (stack base) of the current task.
+ * This is to test stack protection measures like a watchpoint at the end of the stack.
+ *
+ * @note: This test DOES NOT write beyond the stack limit. It only writes up to exactly the limit itself.
+ *        The FreeRTOS stack protection mechanisms all trigger shortly before the end of the stack.
+ */
 static void test_stack_overflow(void)
 {
     register uint32_t* sp asm("sp");
-    uint32_t *end = sp - CONFIG_ESP_MAIN_TASK_STACK_SIZE;
+    TaskStatus_t pxTaskStatus;
+    vTaskGetInfo(NULL, &pxTaskStatus, pdFALSE, pdFALSE);
+    uint32_t *end = (uint32_t*) pxTaskStatus.pxStackBase;
+
     // offset - 20 bytes from SP in order to not corrupt the current frame.
+    // Need to write from higher to lower addresses since the stack grows downwards and the watchpoint/canary is near
+    // the end of the stack (lowest address).
     for (uint32_t* ptr = sp - 5; ptr != end; --ptr) {
-        *ptr = rand();
+        *ptr = 0;
     }
+
+    // trigger a context switch to initiate checking the FreeRTOS stack canary
+    vTaskDelay(pdMS_TO_TICKS(0));
 }
 
 static void test_illegal_instruction(void)
