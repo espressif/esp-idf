@@ -248,7 +248,7 @@ PANIC_TEST_DUT_DICT = {
 def panic_test(**kwargs):
     """ Decorator for the panic tests, sets correct App and DUT classes """
     if 'target' not in kwargs:
-        kwargs['target'] = ['ESP32', 'ESP32S2']
+        kwargs['target'] = ['ESP32']
 
     if 'additional_duts' not in kwargs:
         kwargs['additional_duts'] = PANIC_TEST_DUT_DICT

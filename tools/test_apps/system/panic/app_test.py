@@ -6,7 +6,7 @@ from test_panic_util.test_panic_util import panic_test, run_all
 
 # test_task_wdt
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_task_wdt(env, _extra_data):
     test.task_wdt_inner(env, "panic")
 
@@ -134,7 +134,7 @@ def test_gdbstub_cache_error(env, _extra_data):
 
 # test_stack_overflow
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_stack_overflow(env, _extra_data):
     test.stack_overflow_inner(env, "panic")
 
@@ -166,7 +166,7 @@ def test_gdbstub_stack_overflow(env, _extra_data):
 
 # test_instr_fetch_prohibited
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_instr_fetch_prohibited(env, _extra_data):
     test.instr_fetch_prohibited_inner(env, "panic")
 
@@ -198,7 +198,7 @@ def test_gdbstub_instr_fetch_prohibited(env, _extra_data):
 
 # test_illegal_instruction
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_illegal_instruction(env, _extra_data):
     test.illegal_instruction_inner(env, "panic")
 
@@ -230,7 +230,7 @@ def test_gdbstub_illegal_instruction(env, _extra_data):
 
 # test_storeprohibited
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_storeprohibited(env, _extra_data):
     test.storeprohibited_inner(env, "panic")
 
@@ -262,7 +262,7 @@ def test_gdbstub_storeprohibited(env, _extra_data):
 
 # test_abort
 
-@panic_test()
+@panic_test(target=['ESP32', 'ESP32S2'])
 def test_panic_abort(env, _extra_data):
     test.abort_inner(env, "panic")
 
