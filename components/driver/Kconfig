@@ -71,6 +71,29 @@ menu "Driver configurations"
 
     endmenu # SPI Configuration
 
+    menu "TWAI configuration"
+
+        config TWAI_ISR_IN_IRAM
+            bool "Place TWAI ISR function into IRAM"
+            default n
+            select FREERTOS_SUPPORT_STATIC_ALLOCATION
+            # We need to enable FREERTOS_SUPPORT_STATIC_ALLOCATION because the
+            # TWAI driver requires the use of FreeRTOS Queues and Semaphores from
+            # the driver ISR. These Queues and Semaphores need to be placed in
+            # DRAM thus FreeRTOS static allocation API is required.
+            help
+                Place the TWAI ISR in to IRAM. This will allow the ISR to avoid
+                cache misses, and also be able to run whilst the cache is disabled
+                (such as when writing to SPI Flash).
+                Note that if this option is enabled:
+                - Users should also set the ESP_INTR_FLAG_IRAM in the driver
+                configuration structure when installing the driver (see docs for
+                specifics).
+                - Alert logging (i.e., setting of the TWAI_ALERT_AND_LOG flag)
+                will have no effect.
+
+    endmenu # TWAI Configuration
+
     menu "UART configuration"
 
         config UART_ISR_IN_IRAM
