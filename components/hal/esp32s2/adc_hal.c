@@ -18,6 +18,8 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal_conf.h"
+#include "esp_log.h"
+#include "esp32s2/esp_efuse_rtc_table.h"
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -189,13 +191,6 @@ uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atte
         }
     }
 
-    uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
-    uint32_t code_sum = 0;
-    uint32_t code_h = 0;
-    uint32_t code_l = 0;
-    uint32_t chk_code = 0;
-    uint32_t dout = 0;
-
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     if (adc_n == ADC_NUM_2) {
         adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
@@ -206,56 +201,71 @@ uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atte
     // adc_hal_arbiter_config(adc_arbiter_t *config)
     adc_ll_calibration_prepare(adc_n, channel, internal_gnd);
 
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        adc_ll_rtc_disable_channel(adc_n, channel);
-        adc_ll_set_atten(adc_n, 0, atten);  // Note: when disable all channel, HW auto select channel0 atten param.
+    uint32_t dout = 0;
+    // check if we can fetch the values from eFuse.
+    int version = esp_efuse_rtc_table_read_calib_version();
+    if (version == 2) {
+        int tag = esp_efuse_rtc_table_get_tag(version, adc_n + 1, atten, RTCCALIB_V2_PARAM_VINIT);
+        dout = esp_efuse_rtc_table_get_parsed_efuse_value(tag, false);
     } else {
-        adc_ll_rtc_enable_channel(adc_n, channel);
-        adc_ll_set_atten(adc_n, channel, atten);
-    }
+        uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
+        uint32_t code_sum = 0;
+        uint32_t code_h = 0;
+        uint32_t code_l = 0;
+        uint32_t chk_code = 0;
 
-    for (uint8_t rpt = 0 ; rpt < ADC_HAL_CAL_TIMES ; rpt ++) {
-        code_h = ADC_HAL_CAL_OFFSET_RANGE;
-        code_l = 0;
-        chk_code = (code_h + code_l) / 2;
-        adc_ll_set_calibration_param(adc_n, chk_code);
-        dout = adc_hal_read_self_cal(adc_n, channel);
-        while (code_h - code_l > 1) {
-            if (dout == 0) {
-                code_h = chk_code;
-            } else {
-                code_l = chk_code;
-            }
+        /* Enable/disable internal connect GND (for calibration). */
+        if (internal_gnd) {
+            adc_ll_rtc_disable_channel(adc_n, channel);
+            adc_ll_set_atten(adc_n, 0, atten);  // Note: when disable all channel, HW auto select channel0 atten param.
+        } else {
+            adc_ll_rtc_enable_channel(adc_n, channel);
+            adc_ll_set_atten(adc_n, channel, atten);
+        }
+
+        for (uint8_t rpt = 0 ; rpt < ADC_HAL_CAL_TIMES ; rpt ++) {
+            code_h = ADC_HAL_CAL_OFFSET_RANGE;
+            code_l = 0;
             chk_code = (code_h + code_l) / 2;
             adc_ll_set_calibration_param(adc_n, chk_code);
             dout = adc_hal_read_self_cal(adc_n, channel);
-            if ((code_h - code_l == 1)) {
-                chk_code += 1;
+            while (code_h - code_l > 1) {
+                if (dout == 0) {
+                    code_h = chk_code;
+                } else {
+                    code_l = chk_code;
+                }
+                chk_code = (code_h + code_l) / 2;
                 adc_ll_set_calibration_param(adc_n, chk_code);
                 dout = adc_hal_read_self_cal(adc_n, channel);
+                if ((code_h - code_l == 1)) {
+                    chk_code += 1;
+                    adc_ll_set_calibration_param(adc_n, chk_code);
+                    dout = adc_hal_read_self_cal(adc_n, channel);
+                }
+            }
+            code_list[rpt] = chk_code;
+            code_sum += chk_code;
+        }
+        code_l = code_list[0];
+        code_h = code_list[0];
+        for (uint8_t i = 0 ; i < ADC_HAL_CAL_TIMES ; i++) {
+            if (code_l > code_list[i]) {
+                code_l = code_list[i];
+            }
+            if (code_h < code_list[i]) {
+                code_h = code_list[i];
             }
         }
-        code_list[rpt] = chk_code;
-        code_sum += chk_code;
-    }
-    code_l = code_list[0];
-    code_h = code_list[0];
-    for (uint8_t i = 0 ; i < ADC_HAL_CAL_TIMES ; i++) {
-        if (code_l > code_list[i]) {
-            code_l = code_list[i];
-        }
-        if (code_h < code_list[i]) {
-            code_h = code_list[i];
-        }
-    }
-    chk_code = code_h + code_l;
-    dout = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
-           ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
-           : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
+        chk_code = code_h + code_l;
+        dout = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
+               ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
 
+               : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
+    }
     adc_ll_set_calibration_param(adc_n, dout);
     adc_ll_calibration_finish(adc_n);
     s_adc_cali_param[adc_n][atten] = (uint16_t)dout;
+
     return dout;
 }

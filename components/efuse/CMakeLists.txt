@@ -8,6 +8,9 @@ if(EXISTS "${COMPONENT_DIR}/${target}")
     list(APPEND srcs "src/${target}/esp_efuse_api.c"
                      "src/${target}/esp_efuse_fields.c"
                      "src/${target}/esp_efuse_utility.c")
+    if("esp32s2" STREQUAL "${target}")
+        list(APPEND srcs "src/${target}/esp_efuse_rtc_table.c")
+    endif()
 endif()
 
 list(APPEND srcs "src/esp_efuse_api.c"
