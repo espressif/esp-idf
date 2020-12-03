@@ -74,6 +74,14 @@ In ADC2, there're two locks used for different cases:
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
+// This gets incremented when adc_power_acquire() is called, and decremented when
+// adc_power_release() is called. ADC is powered down when the value reaches zero.
+// Should be modified within critical section (ADC_ENTER/EXIT_CRITICAL).
+static int s_adc_power_on_cnt;
+
+static void adc_power_on_internal(void);
+static void adc_power_off_internal(void);
+
 #ifdef CONFIG_IDF_TARGET_ESP32
 //prevent ADC2 being used by wifi and other tasks at the same time.
 static _lock_t adc2_wifi_lock;
@@ -122,35 +130,59 @@ static uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
 }
 #endif
 
-void adc_power_always_on(void)
+void adc_power_acquire(void)
 {
+    bool powered_on = false;
     ADC_ENTER_CRITICAL();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    s_adc_power_on_cnt++;
+    if (s_adc_power_on_cnt == 1) {
+        adc_power_on_internal();
+        powered_on = true;
+    }
     ADC_EXIT_CRITICAL();
+    if (powered_on) {
+        ESP_LOGV(ADC_TAG, "%s: ADC powered on", __func__);
+    }
 }
 
-void adc_power_on(void)
+void adc_power_release(void)
+{
+    bool powered_off = false;
+    ADC_ENTER_CRITICAL();
+    s_adc_power_on_cnt--;
+    /* Sanity check */
+    if (s_adc_power_on_cnt < 0) {
+        ADC_EXIT_CRITICAL();
+        ESP_LOGE(ADC_TAG, "%s called, but s_adc_power_on_cnt == 0", __func__);
+        abort();
+    } else if (s_adc_power_on_cnt == 0) {
+        adc_power_off_internal();
+        powered_off = true;
+    }
+    ADC_EXIT_CRITICAL();
+    if (powered_off) {
+        ESP_LOGV(ADC_TAG, "%s: ADC powered off", __func__);
+    }
+}
+
+static void adc_power_on_internal(void)
 {
     ADC_ENTER_CRITICAL();
-    /* The power FSM controlled mode saves more power, while the ADC noise may get increased. */
-#ifndef CONFIG_ADC_FORCE_XPD_FSM
     /* Set the power always on to increase precision. */
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
-#else
-    /* Use the FSM to turn off the power while not used to save power. */
-    if (adc_hal_get_power_manage() != ADC_POWER_BY_FSM) {
-        adc_hal_set_power_manage(ADC_POWER_SW_ON);
-    }
-#endif
     ADC_EXIT_CRITICAL();
 }
 
-void adc_power_off(void)
+void adc_power_on(void) __attribute__((alias("adc_power_on_internal")));
+
+static void adc_power_off_internal(void)
 {
     ADC_ENTER_CRITICAL();
     adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     ADC_EXIT_CRITICAL();
 }
+
+void adc_power_off(void) __attribute__((alias("adc_power_off_internal")));
 
 esp_err_t adc_set_clk_div(uint8_t clk_div)
 {
@@ -337,7 +369,7 @@ int adc1_get_raw(adc1_channel_t channel)
     int adc_value;
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
     adc1_rtc_mode_acquire();
-    adc_power_on();
+    adc_power_acquire();
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     // Get calibration value before going into critical section
@@ -359,6 +391,7 @@ int adc1_get_raw(adc1_channel_t channel)
 #endif
     ADC_EXIT_CRITICAL();
 
+    adc_power_release();
     adc1_lock_release();
     return adc_value;
 }
@@ -371,7 +404,7 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 #if SOC_ULP_SUPPORTED
 void adc1_ulp_enable(void)
 {
-    adc_power_on();
+    adc_power_acquire();
 
     ADC_ENTER_CRITICAL();
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_ULP);
@@ -492,7 +525,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     ADC_CHECK(width_bit == ADC_WIDTH_BIT_13, "WIDTH ERR: ESP32S2 support 13 bit width", ESP_ERR_INVALID_ARG);
 #endif
 
-    adc_power_on();         //in critical section with whole rtc module
+    adc_power_acquire();         //in critical section with whole rtc module
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     // Get calibration value before going into critical section
@@ -503,6 +536,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     if ( ADC2_WIFI_LOCK_TRY_ACQUIRE() == -1 ) { //try the lock, return if failed (wifi using).
         ADC2_EXIT_CRITICAL();
+        adc_power_release();
         return ESP_ERR_TIMEOUT;
     }
 #ifdef CONFIG_ADC_DISABLE_DAC
@@ -544,8 +578,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     if (adc_value < 0) {
         ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
+        adc_power_release();
         return ESP_ERR_INVALID_STATE;
     }
+
+    //in critical section with whole rtc module
+    adc_power_release();
     *raw_out = adc_value;
     return ESP_OK;
 }
@@ -558,7 +596,9 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
+    adc_power_acquire();
     if (adc_unit & ADC_UNIT_1) {
+        adc_power_release();
         return ESP_ERR_INVALID_ARG;
     }
 #endif
@@ -571,6 +611,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
         }
     }
     if (ch == ADC2_CHANNEL_MAX) {
+        adc_power_release();
         return ESP_ERR_INVALID_ARG;
     }
 

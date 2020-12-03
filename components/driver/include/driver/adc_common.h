@@ -151,14 +151,32 @@ typedef struct adc_digi_init_config_s {
 
 /**
  * @brief Enable ADC power
+ * @deprecated Use adc_power_acquire and adc_power_release instead.
  */
-void adc_power_on(void);
+void adc_power_on(void) __attribute__((deprecated));
 
 /**
  * @brief Power off SAR ADC
- * This function will force power down for ADC
+ * @deprecated Use adc_power_acquire and adc_power_release instead.
+ * This function will force power down for ADC.
+ * This function is deprecated because forcing power ADC power off may
+ * disrupt operation of other components which may be using the ADC.
  */
-void adc_power_off(void);
+void adc_power_off(void) __attribute__((deprecated));
+
+/**
+ * @brief Increment the usage counter for ADC module.
+ * ADC will stay powered on while the counter is greater than 0.
+ * Call adc_power_release when done using the ADC.
+ */
+void adc_power_acquire(void);
+
+/**
+ * @brief Decrement the usage counter for ADC module.
+ * ADC will stay powered on while the counter is greater than 0.
+ * Call this function when done using the ADC.
+ */
+void adc_power_release(void);
 
 /**
  * @brief Initialize ADC pad
@@ -250,6 +268,8 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
+ *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
+ *       but will remove the glitches on GPIO36 and GPIO39.
  *
  * @note Call ``adc1_config_width()`` before the first time this
  *       function is called.
@@ -375,6 +395,9 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
+ *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
+ *       but will remove the glitches on GPIO36 and GPIO39.
+ *
  *
  * @note ESP32:
  *       For a given channel, ``adc2_config_channel_atten()``
