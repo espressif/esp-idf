@@ -84,21 +84,6 @@ esp_err_t esp_coex_status_bit_set(esp_coex_status_type_t type, uint32_t status);
  */
 esp_err_t esp_coex_status_bit_clear(esp_coex_status_type_t type, uint32_t status);
 
-/**
- * @brief Enable BLE connection dynamic priority
- * @attention If the parameter is true, BLE connection performance will be better but WiFi performance
- *            will be poorer. And vice versa.
- * @param low_interval : true - Increase BLE connection priority to be higher than WiFi's when BLE
- *                              connection interval is less or equal than 50 ms. The default value
- *                              is false.
- *                       false - not increace
- * @param high_interval : true - Increase BLE connection priority to be higher than WiFi's when BLE
- *                               connection interval is more than 50 ms. The default value is true.
- *                        false - not increace
- * @return : ESP_OK - success, other - failed
- */
-esp_err_t esp_coex_ble_conn_dynamic_prio_enable(bool low_interval, bool high_interval);
-
 #ifdef __cplusplus
 }
 #endif
