@@ -71,6 +71,7 @@
 #define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
 #define SOC_RTC_SLOW_MEM_SUPPORTED  1
+#define SOC_CCOMP_TIMER_SUPPORTED   1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #define SOC_ADC_PERIPH_NUM              (2)

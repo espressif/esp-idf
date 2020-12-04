@@ -64,6 +64,6 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     printf("Encryption rate %.3fMB/sec\n", mb_sec);
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
     // Don't put a hard limit on software AES performance
-    TEST_PERFORMANCE_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+    TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }

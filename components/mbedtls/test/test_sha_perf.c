@@ -50,6 +50,6 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
     printf("SHA256 rate %.3fMB/sec\n", mb_sec);
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
     // Don't put a hard limit on software SHA performance
-    TEST_PERFORMANCE_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+    TEST_PERFORMANCE_CCOMP_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
