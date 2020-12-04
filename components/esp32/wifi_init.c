@@ -94,16 +94,24 @@ static void esp_wifi_set_debug_log()
 #endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
 
 }
+#ifdef CONFIG_PM_ENABLE
+esp_err_t esp_wifi_pm_init()
+{
+    if (s_wifi_modem_sleep_lock == NULL) {
+        esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "wifi",
+                &s_wifi_modem_sleep_lock);
+        return err;
+    }
+	return ESP_OK;
+}
+#endif
 
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
-    if (s_wifi_modem_sleep_lock == NULL) {
-        esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "wifi",
-                &s_wifi_modem_sleep_lock);
-        if (err != ESP_OK) {
-            return err;
-        }
+    esp_err_t err = esp_wifi_pm_init();
+    if (err != ESP_OK) {
+        return err;
     }
 #endif
     esp_event_set_default_wifi_handlers();

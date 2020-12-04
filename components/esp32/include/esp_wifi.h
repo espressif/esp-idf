@@ -212,6 +212,16 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 };
 
 /**
+  * @brief  Init power management for WiFi
+  *         Initialize a lock handle for certain power management parameter.
+  *
+  * @return 
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: if the lock structure can not be allocated
+  */
+esp_err_t esp_wifi_pm_init(void);
+
+/**
   * @brief  Init WiFi
   *         Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
   *         WiFi NVS structure etc, this WiFi also start WiFi task
