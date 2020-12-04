@@ -159,8 +159,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/peripherals/secure_element.rst',
               'hw-reference/esp32/**'] + LEGACY_DOCS
 
-ESP32S2_DOCS = ['esp32s2.rst',
-                'hw-reference/esp32s2/**',
+ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
                 'api-guides/dfu.rst',
                 'api-reference/peripherals/hmac.rst',
