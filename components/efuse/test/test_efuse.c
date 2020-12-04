@@ -885,5 +885,56 @@ TEST_CASE("Test writing order is BLK_MAX->BLK0", "[efuse]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
 }
 
+TEST_CASE("Test reading inside of batch mode in a nested way", "[efuse]")
+{
+    uint8_t new_key[32] = {44,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                           10, 11, 12, 12, 14, 15, 16, 17, 18, 19,
+                           20, 21, 22, 22, 24, 25, 26, 27, 28, 29,
+                           30, 31};
+    uint8_t key[32] = { 0xEE };
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY5, &key, 256));
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, key, sizeof(key));
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY5, &new_key, 256));
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY5));
+    ESP_LOGI(TAG, "Reading inside Batch mode, the key was not burn yet and it is empty");
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY5, &key, 256));
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, key, sizeof(key));
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    ESP_LOGI(TAG, "Reading inside Batch mode, the key is already set");
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY5, &key, 256));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+
+    esp_efuse_utility_debug_dump_blocks();
+
+    ESP_LOGI(TAG, "Reading inside Batch mode, the key is already set");
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_efuse_batch_write_commit());
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_efuse_batch_write_cancel());
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY2, &new_key, 256));
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY2, &key, 256));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+
+    esp_efuse_utility_debug_dump_blocks();
+}
 #endif  // CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
 #endif  // not CONFIG_IDF_TARGET_ESP32

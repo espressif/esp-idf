@@ -81,24 +81,3 @@ esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk)
     ESP_EARLY_LOGD(TAG, "coding scheme %d", scheme);
     return scheme;
 }
-
-
-const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block)
-{
-    switch(block) {
-    case EFUSE_BLK_KEY0:
-        return ESP_EFUSE_KEY_PURPOSE_0;
-    case EFUSE_BLK_KEY1:
-        return ESP_EFUSE_KEY_PURPOSE_1;
-    case EFUSE_BLK_KEY2:
-        return ESP_EFUSE_KEY_PURPOSE_2;
-    case EFUSE_BLK_KEY3:
-        return ESP_EFUSE_KEY_PURPOSE_3;
-    case EFUSE_BLK_KEY4:
-        return ESP_EFUSE_KEY_PURPOSE_4;
-    case EFUSE_BLK_KEY5:
-        return ESP_EFUSE_KEY_PURPOSE_5;
-    default:
-        return NULL;
-    }
-}
