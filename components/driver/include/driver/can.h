@@ -37,7 +37,8 @@ extern "C" {
 #define CAN_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,       \
                                                                    .clkout_io = CAN_IO_UNUSED, .bus_off_io = CAN_IO_UNUSED,       \
                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                          \
-                                                                   .alerts_enabled = CAN_ALERT_NONE,  .clkout_divider = 0,        }
+                                                                   .alerts_enabled = CAN_ALERT_NONE,  .clkout_divider = 0,        \
+                                                                   .intr_flags = ESP_INTR_FLAG_LEVEL1}
 
 /**
  * @brief Initializer macros for timing configuration structure
@@ -91,7 +92,7 @@ extern "C" {
 #define CAN_ALERT_BUS_OFF               0x1000      /**< Alert(4096): Bus-off condition occurred. CAN controller can no longer influence bus */
 #define CAN_ALERT_ALL                   0x1FFF      /**< Bit mask to enable all alerts during configuration */
 #define CAN_ALERT_NONE                  0x0000      /**< Bit mask to disable all alerts during configuration */
-#define CAN_ALERT_AND_LOG               0x2000      /**< Bit mask to enable alerts to also be logged when they occur */
+#define CAN_ALERT_AND_LOG               0x2000      /**< Bit mask to enable alerts to also be logged when they occur. Note that logging from the ISR is disabled if CONFIG_TWAI_ISR_IN_IRAM is enabled. */
 
 /**
  * @brief   Message flags
@@ -151,6 +152,7 @@ typedef struct {
     uint32_t rx_queue_len;          /**< Number of messages RX queue can hold */
     uint32_t alerts_enabled;        /**< Bit field of alerts to enable (see documentation) */
     uint32_t clkout_divider;        /**< CLKOUT divider. Can be 1 or any even number from 2 to 14 (optional, set to 0 if unused) */
+    int intr_flags;                 /**< Interrupt flags to set the priority of the driver's ISR. Note that to use the ESP_INTR_FLAG_IRAM, the CONFIG_CAN_ISR_IN_IRAM option should be enabled first. */
 } can_general_config_t;
 
 /**
