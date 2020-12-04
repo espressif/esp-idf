@@ -27,6 +27,11 @@ extern "C" {
 // ESP32-C3 have 2 UART
 #define SOC_UART_NUM           (2)
 
+// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
+#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+#define UART_FSM_IDLE                       (0x0)
+#define UART_FSM_TX_WAIT_SEND               (0xf)
+
 #ifdef __cplusplus
 }
 #endif

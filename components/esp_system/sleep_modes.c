@@ -232,20 +232,17 @@ static void IRAM_ATTR flush_uarts(void)
 static void IRAM_ATTR suspend_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
-#ifdef CONFIG_IDF_TARGET_ESP32
-        /* Note: Set `UART_FORCE_XOFF` can't stop new Tx request. */
-        REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
-        while (REG_GET_FIELD(UART_STATUS_REG(i), UART_ST_UTX_OUT) != 0) {
-            ;
-        }
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-        if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
-            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-            REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
-            while (REG_GET_FIELD(UART_FSM_STATUS_REG(i), UART_ST_UTX_OUT) != 0) {
-                ;
-            }
-        }
+#ifndef CONFIG_IDF_TARGET_ESP32
+        if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) continue;
+#endif
+        uart_ll_force_xoff(i);
+#if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+        uint32_t uart_fsm = 0;
+        do {
+            uart_fsm = uart_ll_get_fsm_status(i);
+        } while (!(uart_fsm == UART_FSM_IDLE || uart_fsm == UART_FSM_TX_WAIT_SEND));
+#else
+        while (uart_ll_get_fsm_status(i) != 0) {}
 #endif
     }
 }
@@ -253,17 +250,10 @@ static void IRAM_ATTR suspend_uarts(void)
 static void IRAM_ATTR resume_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
-#ifdef CONFIG_IDF_TARGET_ESP32
-        REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
-        REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-        REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-        if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
-            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
-            REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-            REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
-        }
+#ifndef CONFIG_IDF_TARGET_ESP32
+        if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) continue;
 #endif
+        uart_ll_force_xon(i);
     }
 }
 
