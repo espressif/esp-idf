@@ -14,6 +14,8 @@
 #include "soc/soc.h"
 #include "soc/interrupt_reg.h"
 #include "riscv/rvruntime-frames.h"
+#include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 
 	.equ SAVE_REGS, 32
@@ -242,6 +244,22 @@ _interrupt_handler:
 
 	li t0, 0x8
 	csrrs t0, mstatus, t0
+
+	#ifdef CONFIG_PM_TRACE
+	li      a0, 0       /* = ESP_PM_TRACE_IDLE */
+	#if SOC_CPU_CORES_NUM == 1
+	li      a1, 0       /* No need to check core ID on single core hardware */
+	#else
+	csrr    a1, mhartid
+	#endif
+	la      t0, esp_pm_trace_exit
+	jalr    t0          /* absolute jump, avoid the 1 MiB range constraint */
+	#endif
+
+	#ifdef CONFIG_PM_ENABLE
+	la      t0, esp_pm_impl_isr_hook
+	jalr    t0          /* absolute jump, avoid the 1 MiB range constraint */
+	#endif
 
 	/* call the C dispatcher */
 	mv      a0, sp		/* argument 1, stack pointer */

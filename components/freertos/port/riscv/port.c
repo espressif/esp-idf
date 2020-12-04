@@ -96,6 +96,7 @@
 #include "esp_attr.h"
 #include "esp_debug_helpers.h"
 #include "esp_log.h"
+#include "esp_private/pm_trace.h"
 
 /**
  * @brief A variable is used to keep track of the critical section nesting.
@@ -215,6 +216,10 @@ IRAM_ATTR void vPortSysTickHandler(void *arg)
 
     systimer_ll_clear_alarm_int(SYSTIMER_ALARM_0);
 
+#ifdef CONFIG_PM_TRACE
+    ESP_PM_TRACE_ENTER(TICK, xPortGetCoreID());
+#endif
+
     if (!uxSchedulerRunning) {
         return;
     }
@@ -222,6 +227,10 @@ IRAM_ATTR void vPortSysTickHandler(void *arg)
     if (xTaskIncrementTick() != pdFALSE) {
         vPortYieldFromISR();
     }
+
+#ifdef CONFIG_PM_TRACE
+    ESP_PM_TRACE_EXIT(TICK, xPortGetCoreID());
+#endif
 }
 
 BaseType_t xPortStartScheduler(void)

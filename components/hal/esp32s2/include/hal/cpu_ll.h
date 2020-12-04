@@ -197,6 +197,11 @@ static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
     asm volatile("wr_mask_gpio_out %0, %1" : : "r"(value), "r"(mask):);
 }
 
+static inline void cpu_ll_waiti(void)
+{
+    asm volatile ("waiti 0\n");
+}
+
 #ifdef __cplusplus
 }
 #endif

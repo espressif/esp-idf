@@ -178,6 +178,11 @@ static inline void cpu_ll_set_vecbase(const void* vecbase)
     asm volatile ("wsr %0, vecbase" :: "r" (vecbase));
 }
 
+static inline void cpu_ll_waiti(void)
+{
+    asm volatile ("waiti 0\n");
+}
+
 #ifdef __cplusplus
 }
 #endif

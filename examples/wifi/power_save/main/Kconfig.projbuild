@@ -43,6 +43,7 @@ menu "Example Configuration"
     choice EXAMPLE_MAX_CPU_FREQ
         prompt "Maximum CPU frequency"
         default EXAMPLE_MAX_CPU_FREQ_80
+        depends on PM_ENABLE
         help
             Maximum CPU frequency to use for dynamic frequency scaling.
 
@@ -52,6 +53,7 @@ menu "Example Configuration"
             bool "160 MHz"
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
@@ -64,19 +66,20 @@ menu "Example Configuration"
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"
         default EXAMPLE_MIN_CPU_FREQ_10M
+        depends on PM_ENABLE
         help
             Minimum CPU frequency to use for dynamic frequency scaling.
             Should be set to XTAL frequency or XTAL frequency divided by integer.
 
         config EXAMPLE_MIN_CPU_FREQ_40M
             bool "40 MHz (use with 40MHz XTAL)"
-            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_20M
             bool "20 MHz (use with 40MHz XTAL)"
-            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_10M
             bool "10 MHz (use with 40MHz XTAL)"
-            depends on IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
+            depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_26M
             bool "26 MHz (use with 26MHz XTAL)"
             depends on ESP32_XTAL_FREQ_26 || ESP32_XTAL_FREQ_AUTO
