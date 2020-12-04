@@ -38,20 +38,16 @@ extern "C" {
 #define ESP_ERR_EFUSE_CNT_IS_FULL                 (ESP_ERR_EFUSE + 0x02)      /*!< Error field is full. */
 #define ESP_ERR_EFUSE_REPEATED_PROG               (ESP_ERR_EFUSE + 0x03)      /*!< Error repeated programming of programmed bits is strictly forbidden. */
 #define ESP_ERR_CODING                            (ESP_ERR_EFUSE + 0x04)      /*!< Error while a encoding operation. */
-
-/**
- * @brief Structure eFuse field
- */
-struct esp_efuse_desc_s {
-    esp_efuse_block_t   efuse_block: 8; /**< Block of eFuse */
-    uint8_t             bit_start;      /**< Start bit [0..255] */
-    uint16_t            bit_count;      /**< Length of bit field [1..-]*/
-};
+#define ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS      (ESP_ERR_EFUSE + 0x05)      /*!< Error not enough unused key blocks available */
 
 /**
  * @brief Type definition for an eFuse field
  */
-typedef struct esp_efuse_desc_s esp_efuse_desc_t;
+typedef struct {
+    esp_efuse_block_t   efuse_block: 8; /**< Block of eFuse */
+    uint8_t             bit_start;      /**< Start bit [0..255] */
+    uint16_t            bit_count;      /**< Length of bit field [1..-]*/
+} esp_efuse_desc_t;
 
 /**
  * @brief   Reads bits from EFUSE field and writes it into an array.
@@ -59,6 +55,9 @@ typedef struct esp_efuse_desc_s esp_efuse_desc_t;
  * The number of read bits will be limited to the minimum value
  * from the description of the bits in "field" structure or "dst_size_bits" required size.
  * Use "esp_efuse_get_field_size()" function to determine the length of the field.
+ *
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
+ *
  * @param[in]  field          A pointer to the structure describing the fields of efuse.
  * @param[out] dst            A pointer to array that will contain the result of reading.
  * @param[in]  dst_size_bits  The number of bits required to read.
@@ -79,6 +78,7 @@ esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, 
  * in the provided arguments, call esp_efuse_read_field_blob() and check the returned value instead.
  *
  * @note If assertions are enabled and the parameter is invalid, execution will abort
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
  *
  * @param[in]  field          A pointer to the structure describing the fields of efuse.
  * @return
@@ -92,6 +92,8 @@ bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[]);
  * @brief   Reads bits from EFUSE field and returns number of bits programmed as "1".
  *
  * If the bits are set not sequentially, they will still be counted.
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
+ *
  * @param[in]  field          A pointer to the structure describing the fields of efuse.
  * @param[out] out_cnt        A pointer that will contain the number of programmed as "1" bits.
  *
@@ -197,6 +199,8 @@ int esp_efuse_get_field_size(const esp_efuse_desc_t* field[]);
  *
  * This is a thread-safe implementation.
  * Example: EFUSE_BLK2_RDATA3_REG where (blk=2, num_reg=3)
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
+ *
  * @param[in]  blk     Block number of eFuse.
  * @param[in]  num_reg The register number in the block.
  *
@@ -232,6 +236,8 @@ esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk);
 
 /**
  * @brief   Read key to efuse block starting at the offset and the required size.
+ *
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
  *
  * @param[in]  blk             Block number of eFuse.
  * @param[in]  dst_key         A pointer to array that will contain the result of reading.
@@ -409,13 +415,19 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
  */
 void esp_efuse_init(uint32_t offset, uint32_t size);
 
-/* @brief Set the batch mode of writing fields.
+/**
+ *  @brief Set the batch mode of writing fields.
  *
- * This mode allows you to write the fields in the batch mode.
- * If this mode is enabled, esp_efuse_batch_write_commit() must be called
- * to actually burn any written efuses.
- * In this mode, reading efuse is not possible.
- * This mode should be used when burning several efuses at one time.
+ * This mode allows you to write the fields in the batch mode when need to burn several efuses at one time.
+ * To enable batch mode call begin() then perform as usually the necessary operations
+ * read and write and at the end call commit() to actually burn all written efuses.
+ * The batch mode can be used nested. The commit will be done by the last commit() function.
+ * The number of begin() functions should be equal to the number of commit() functions.
+ *
+ * @note Please note that reading in the batch mode does not show uncommitted changes.
+ *
+ * Note: If batch mode is enabled by the first task, at this time the second task cannot write/read efuses.
+ * The second task will wait for the first task to complete the batch operation.
  *
  * \code{c}
  * // Example of using the batch writing mode.
@@ -429,10 +441,20 @@ void esp_efuse_init(uint32_t offset, uint32_t size);
  * esp_efuse_set_write_protect(EFUSE_BLKx);
  * esp_efuse_write_reg(EFUSE_BLKx, ...);
  * esp_efuse_write_block(EFUSE_BLKx, ...);
+ * esp_efuse_write(ESP_EFUSE_1, 3);  // ESP_EFUSE_1 == 1, here we write a new value = 3. The changes will be burn by the commit() function.
+ * esp_efuse_read_...(ESP_EFUSE_1);  // this function returns ESP_EFUSE_1 == 1 because uncommitted changes are not readable, it will be available only after commit.
+ * ...
+ *
+ * // esp_efuse_batch_write APIs can be called recursively.
+ * esp_efuse_batch_write_begin();
+ * esp_efuse_set_write_protect(EFUSE_BLKx);
+ * esp_efuse_batch_write_commit(); // the burn will be skipped here, it will be done in the last commit().
+ *
  * ...
  *
  * // Write all of these fields to the efuse registers
  * esp_efuse_batch_write_commit();
+ * esp_efuse_read_...(ESP_EFUSE_1);  // this function returns ESP_EFUSE_1 == 3.
  *
  * \endcode
  *
@@ -461,6 +483,271 @@ esp_err_t esp_efuse_batch_write_cancel(void);
  *          - ESP_ERR_INVALID_STATE: The deferred writing mode was not set.
  */
 esp_err_t esp_efuse_batch_write_commit(void);
+
+
+#ifndef CONFIG_IDF_TARGET_ESP32
+
+/**
+ * @brief Type of key purpose
+ */
+typedef enum {
+    ESP_EFUSE_KEY_PURPOSE_USER = 0,
+    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,
+    ESP_EFUSE_KEY_PURPOSE_MAX,
+} esp_efuse_purpose_t;
+
+
+/**
+ * @brief Returns a pointer to a key purpose for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * To get the value of this field use esp_efuse_read_field_blob() or esp_efuse_get_key_purpose().
+ *
+ * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
+ */
+const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block);
+
+/**
+ * @brief Returns a pointer to a key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
+ */
+const esp_efuse_desc_t** esp_efuse_get_key(esp_efuse_block_t block);
+
+/**
+ * @brief Returns a read protection for the key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return True: The key block is read protected
+ *         False: The key block is readable.
+ */
+bool esp_efuse_get_key_dis_read(esp_efuse_block_t block);
+
+/**
+ * @brief Sets a read protection for the key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_key_dis_read(esp_efuse_block_t block);
+
+/**
+ * @brief Returns a write protection for the key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return True: The key block is write protected
+ *         False: The key block is writeable.
+ */
+bool esp_efuse_get_key_dis_write(esp_efuse_block_t block);
+
+/**
+ * @brief Sets a write protection for the key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block);
+
+/**
+ * @brief Returns the current purpose set for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *         - Value: If Successful, it returns the value of the purpose related to the given key block.
+ *         - ESP_EFUSE_KEY_PURPOSE_MAX: Otherwise.
+ */
+esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block);
+
+/**
+ * @brief Sets a key purpose for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ * @param[in] purpose Key purpose.
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t purpose);
+
+/**
+ * @brief Returns a write protection of the key purpose field for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return True: The key purpose is write protected.
+ *         False: The key purpose is writeable.
+ */
+bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block);
+
+/**
+ * @brief Sets a write protection of the key purpose field for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_keypurpose_dis_write(esp_efuse_block_t block);
+
+/**
+ * @brief Find a key block with the particular purpose set.
+ *
+ * @param[in] purpose Purpose to search for.
+ * @param[out] block Pointer in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX which will be set to the key block if found.
+ *                   Can be NULL, if only need to test the key block exists.
+ *
+ * @return
+ *         - True: If found,
+ *         - False: If not found (value at block pointer is unchanged).
+ */
+bool esp_efuse_find_purpose(esp_efuse_purpose_t purpose, esp_efuse_block_t *block);
+
+/**
+ * @brief Search for an unused key block and return the first one found.
+ *
+ * See esp_efuse_key_block_unused for a description of an unused key block.
+ *
+ * @return First unused key block, or EFUSE_BLK_KEY_MAX if no unused key block is found.
+ */
+esp_efuse_block_t esp_efuse_find_unused_key_block(void);
+
+/**
+ * @brief Return the number of unused efuse key blocks in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ */
+unsigned esp_efuse_count_unused_key_blocks(void);
+
+/**
+ * @brief Returns true if the key block is unused, false otherwise.
+ *
+ * An unused key block is all zero content, not read or write protected,
+ * and has purpose 0 (ESP_EFUSE_KEY_PURPOSE_USER)
+ *
+ * @param block key block to check.
+ *
+ * @return
+ *         - True if key block is unused,
+ *         - False if key block is used or the specified block index is not a key block.
+ */
+bool esp_efuse_key_block_unused(esp_efuse_block_t block);
+
+/**
+ * @brief Returns the status of the Secure Boot public key digest revocation bit.
+ *
+ * @param[in] num_digest The number of digest in range 0..2
+ *
+ * @return
+ *         - True: If key digest is revoked,
+ *         - False; If key digest is not revoked.
+ */
+bool esp_efuse_get_digest_revoke(unsigned num_digest);
+
+/**
+ * @brief Sets the Secure Boot public key digest revocation bit.
+ *
+ * @param[in] num_digest The number of digest in range 0..2
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_digest_revoke(unsigned num_digest);
+
+/**
+ * @brief Returns a write protection of the Secure Boot public key digest revocation bit.
+ *
+ * @param[in] num_digest The number of digest in range 0..2
+ *
+ * @return True: The revocation bit is write protected.
+ *         False: The revocation bit is writeable.
+ */
+bool esp_efuse_get_write_protect_of_digest_revoke(unsigned num_digest);
+
+/**
+ * @brief Sets a write protection of the Secure Boot public key digest revocation bit.
+ *
+ * @param[in] num_digest The number of digest in range 0..2
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
+
+/**
+ * @brief Program a block of key data to an efuse block
+ *
+ * The burn of a key, protection bits, and a purpose happens in batch mode.
+ *
+ * @param[in] block Block to read purpose for. Must be in range EFUSE_BLK_KEY0 to EFUSE_BLK_KEY_MAX. Key block must be unused (esp_efuse_key_block_unused).
+ * @param[in] purpose Purpose to set for this key. Purpose must be already unset.
+ * @param[in] key Pointer to data to write.
+ * @param[in] key_size_bytes Bytes length of data to write.
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_INVALID_STATE: Error in efuses state, unused block not found.
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpose, const void *key, size_t key_size_bytes);
+
+/**
+ * @brief Program keys to unused efuse blocks
+ *
+ * The burn of keys, protection bits, and purposes happens in batch mode.
+ *
+ * @param[in] purposes Array of purposes (purpose[number_of_keys]).
+ * @param[in] keys Array of keys (uint8_t keys[number_of_keys][32]). Each key is 32 bytes long.
+ * @param[in] number_of_keys The number of keys to write (up to 6 keys).
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_INVALID_STATE: Error in efuses state, unused block not found.
+ *    - ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS: Error not enough unused key blocks available
+ *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
+ *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ */
+esp_err_t esp_efuse_write_keys(esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys);
+
+#endif // not CONFIG_IDF_TARGET_ESP32
 
 #ifdef __cplusplus
 }

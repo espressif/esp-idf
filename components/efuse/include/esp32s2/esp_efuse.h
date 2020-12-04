@@ -49,20 +49,13 @@ typedef enum {
 
     EFUSE_BLK9                 = 9,   /**< Number of eFuse BLOCK9. KEY5 */
     EFUSE_BLK_KEY5             = 9,   /**< Number of eFuse BLOCK9. KEY5 */
+    EFUSE_BLK_KEY_MAX          = 10,
 
     EFUSE_BLK10                = 10,  /**< Number of eFuse BLOCK10. SYS_DATA_PART2 */
     EFUSE_BLK_SYS_DATA_PART2   = 10,  /**< Number of eFuse BLOCK10. SYS_DATA_PART2 */
 
     EFUSE_BLK_MAX
 } esp_efuse_block_t;
-
-struct esp_efuse_desc_s;
-
-/**
- * @brief Given a key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY5, return
- * efuse field for setting the key purpose
- */
-const struct esp_efuse_desc_s **esp_efuse_get_purpose_field(esp_efuse_block_t block);
 
 /**
  * @brief Type of coding scheme
