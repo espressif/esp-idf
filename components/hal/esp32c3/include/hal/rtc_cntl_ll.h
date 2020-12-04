@@ -24,7 +24,11 @@ extern "C" {
 
 static inline void rtc_cntl_ll_set_wakeup_timer(uint64_t t)
 {
-    abort(); // ESP32-C3 TODO IDF-2106
+    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, t & UINT32_MAX);
+    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
+
+    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
+    SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
 }
 
 static inline uint32_t rtc_cntl_ll_ext1_get_wakeup_pins(void)

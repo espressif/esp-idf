@@ -82,42 +82,32 @@
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (212)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (60)
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (212)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (60)
 #elif CONFIG_IDF_TARGET_ESP32S2
-#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (147)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (28)
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (147)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (28)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define DEFAULT_CPU_FREQ_MHZ           CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US  (0)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US (0)
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (0)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (0)
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define DEFAULT_CPU_FREQ_MHZ        CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #endif
 
-#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2)
-#define LIGHT_SLEEP_TIME_OVERHEAD_US DEFAULT_HARDWARE_OUT_OVERHEAD_US
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined (CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
-#define DEEP_SLEEP_TIME_OVERHEAD_US    (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)   || \
+    defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || \
+    defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS) || \
+    defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_CRYS)
+#define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
 #else
-#define DEEP_SLEEP_TIME_OVERHEAD_US    (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
-#endif // defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined (CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
-
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-#ifdef CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (650 + 30 * 240 / CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#else
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (250 + 30 * 240 / CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#endif // CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS
-
-#else   //  other target
-#define LIGHT_SLEEP_TIME_OVERHEAD_US 0
-#define DEEP_SLEEP_TIME_OVERHEAD_US 0
-#endif  //  CONFIG_IDF_TARGET_*
+#define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY)
 #define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY
@@ -457,6 +447,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
     gpio_sleep_mode_config_unapply();
 #endif
+
     // re-enable UART output
     resume_uarts();
 
@@ -553,7 +544,7 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t pd_flags = get_power_down_flags();
 
     // Re-calibrate the RTC Timer clock
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS)
     uint64_t time_per_us = 1000000ULL;
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
 #elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
@@ -631,8 +622,17 @@ esp_err_t esp_light_sleep_start(void)
     s_light_sleep_wakeup = true;
 
     // FRC1 has been clock gated for the duration of the sleep, correct for that.
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    /**
+     * On esp32c3, rtc_time_get() is non-blocking, esp_system_get_time() is
+     * blocking, and the measurement data shows that this order is better.
+     */
+    uint64_t frc_time_at_end = esp_system_get_time();
+    uint64_t rtc_ticks_at_end = rtc_time_get();
+#else
     uint64_t rtc_ticks_at_end = rtc_time_get();
     uint64_t frc_time_at_end = esp_system_get_time();
+#endif
 
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
     uint64_t frc_time_diff = frc_time_at_end - frc_time_at_start;

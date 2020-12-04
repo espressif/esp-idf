@@ -612,6 +612,8 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
+#elif __riscv
+                portYIELD_WITHIN_API();
 #endif
             }
             other_core_should_skip_light_sleep(core_id);
