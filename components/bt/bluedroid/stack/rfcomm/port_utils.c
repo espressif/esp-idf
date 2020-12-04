@@ -210,26 +210,18 @@ void port_release_port (tPORT *p_port)
 
     osi_mutex_global_lock();
     RFCOMM_TRACE_DEBUG("port_release_port, p_port:%p", p_port);
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue)) != NULL) {
-        osi_free (p_buf);
-        if (p_port->rx.queue) {
-            while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue)) != NULL) {
-                osi_free (p_buf);
-            }
+    if (p_port->rx.queue != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue)) != NULL) {
+            osi_free(p_buf);
         }
     }
-
     p_port->rx.queue_size = 0;
 
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->tx.queue)) != NULL) {
-        osi_free (p_buf);
-        if (p_port->tx.queue) {
-            while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue)) != NULL) {
-                osi_free (p_buf);
-            }
+    if (p_port->tx.queue != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue)) != NULL) {
+            osi_free(p_buf);
         }
     }
-
     p_port->tx.queue_size = 0;
 
     osi_mutex_global_unlock();
@@ -522,10 +514,14 @@ void port_flow_control_peer(tPORT *p_port, BOOLEAN enable, UINT16 count)
                     && (p_port->credit_rx_max > p_port->credit_rx)) {
                 rfc_send_credit(p_port->rfc.p_mcb, p_port->dlci,
                                 (UINT8) (p_port->credit_rx_max - p_port->credit_rx));
-
+                RFCOMM_TRACE_DEBUG("send credit: max %d, rx %d, count %d", p_port->credit_rx_max, p_port->credit_rx,
+                                   count);
                 p_port->credit_rx = p_port->credit_rx_max;
 
                 p_port->rx.peer_fc = FALSE;
+            } else {
+                RFCOMM_TRACE_DEBUG("credit: max %d, rx %d, low %d", p_port->credit_rx_max, p_port->credit_rx,
+                                   p_port->credit_rx_low);
             }
         }
         /* else want to disable flow from peer */

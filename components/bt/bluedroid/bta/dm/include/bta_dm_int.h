@@ -1040,7 +1040,7 @@ typedef struct {
 
 
     tBTA_DM_ENCRYPT_CBACK      *p_encrypt_cback;
-    TIMER_LIST_ENT              switch_delay_timer;
+    TIMER_LIST_ENT              switch_delay_timer[BTA_DM_NUM_PEER_DEVICE];
 
 } tBTA_DM_CB;
 

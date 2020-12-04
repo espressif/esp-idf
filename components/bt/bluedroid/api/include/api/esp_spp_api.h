@@ -27,7 +27,10 @@ typedef enum {
     ESP_SPP_FAILURE,                /*!< Generic failure. */
     ESP_SPP_BUSY,                   /*!< Temporarily can not handle this request. */
     ESP_SPP_NO_DATA,                /*!< no data. */
-    ESP_SPP_NO_RESOURCE             /*!< No more set pm control block */
+    ESP_SPP_NO_RESOURCE,            /*!< No more resource */
+    ESP_SPP_NEED_INIT,              /*!< SPP module shall init first */
+    ESP_SPP_NEED_DEINIT,            /*!< SPP module shall deinit first */
+    ESP_SPP_NO_CONNECTION,          /*!< connection may have been closed */
 } esp_spp_status_t;
 
 /* Security Setting Mask, Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.*/
