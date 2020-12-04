@@ -1,4 +1,4 @@
-| Supported Targets | ESP32 |
+| Supported Targets | ESP32 & ESP32S2 |
 | ----------------- | ----- |
 
 # ADC1 Example
