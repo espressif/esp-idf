@@ -172,7 +172,7 @@ SYSTEM_EVENT_STA_DISCONNECTED
 ++++++++++++++++++++++++++++++++++++
 This event can be generated in the following scenarios:
 
-  - When esp_wifi_disconnect(), or esp_wifi_stop(), or esp_wifi_deinit(), or esp_wifi_restart() is called and the station is already connected to the AP.
+  - When :cpp:func:`esp_wifi_disconnect()`, or :cpp:func:`esp_wifi_stop()`, or :cpp:func:`esp_wifi_deinit()` is called and the station is already connected to the AP.
   - When esp_wifi_connect() is called, but the Wi-Fi driver fails to set up a connection with the AP due to certain reasons, e.g. the scan fails to find the target AP, authentication times out, etc. If there are more than one AP with the same SSID, the disconnected event is raised after the station fails to connect all of the found APs.
   - When the Wi-Fi connection is disrupted because of specific reasons, e.g., the station continuously loses N beacons, the AP kicks off the station, the AP's authentication mode is changed, etc. 
 
@@ -234,7 +234,7 @@ SYSTEM_EVENT_AP_STADISCONNECTED
 This event can happen in the following scenarios:
 
   - The application calls esp_wifi_disconnect(), or esp_wifi_deauth_sta(), to manually disconnect the station.
-  - The Wi-Fi driver kicks off the station, e.g. because the AP has not received any packets in the past five minutes, etc.
+  - The Wi-Fi driver kicks off the station, e.g. because the AP has not received any packets in the past five minutes, etc. The time can be modified by :cpp:func:`esp_wifi_set_inactive_time`.
   - The station kicks off the AP.
 
 When this event happens, the event task will do nothing, but the application event callback needs to do something, e.g., close the socket which is related to this station, etc.
@@ -1418,7 +1418,7 @@ In maximum power save mode, station wakes up every listen interval to receive be
 
 Call ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` to enable Modem-sleep minimum power save mode or ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` to enable Modem-sleep maximum power save mode after calling :cpp:func:`esp_wifi_init`. When station connects to AP, Modem-sleep will start. When station disconnects from AP, Modem-sleep will stop.
 
-Call `esp_wifi_set_ps(WIFI_PS_MIN_MODEM)` to disable modem sleep entirely. This has much higher power consumption, but provides minimum latency for receiving Wi-Fi data in real time. When modem sleep is enabled, received Wi-Fi data can be delayed for as long as the DTIM period (minimum power save mode) or the listen interval (maximum power save mode).
+Call ``esp_wifi_set_ps(WIFI_PS_NONE)`` to disable modem sleep entirely. This has much higher power consumption, but provides minimum latency for receiving Wi-Fi data in real time. When modem sleep is enabled, received Wi-Fi data can be delayed for as long as the DTIM period (minimum power save mode) or the listen interval (maximum power save mode). Disabling modem sleep entirely is not possible for Wi-Fi and Bluetooth coexist mode.
 
 The default Modem-sleep mode is WIFI_PS_MIN_MODEM.
 
@@ -1464,8 +1464,6 @@ When the throughput is tested by iperf example, the sdkconfig is :idf_file:`exam
 
 Wi-Fi 80211 Packet Send
 ---------------------------
-
-**Important notes: The API esp_wifi_80211_tx is not available in IDF 2.1, but will be so in the upcoming release.**
 
 The esp_wifi_80211_tx API can be used to:
 
