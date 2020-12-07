@@ -767,8 +767,6 @@ void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
 
-int bt_mesh_rand(void *buf, size_t len);
-
 void bt_mesh_set_private_key(const uint8_t pri_key[32]);
 
 const uint8_t *bt_mesh_pub_key_get(void);
