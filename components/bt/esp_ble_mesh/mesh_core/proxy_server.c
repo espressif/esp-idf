@@ -16,6 +16,7 @@
 #include "access.h"
 #include "transport.h"
 #include "foundation.h"
+#include "mesh_common.h"
 #include "proxy_server.h"
 
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \

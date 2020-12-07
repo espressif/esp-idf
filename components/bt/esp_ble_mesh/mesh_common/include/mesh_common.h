@@ -73,6 +73,8 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  */
 uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
+int bt_mesh_rand(void *buf, size_t len);
+
 #ifdef __cplusplus
 }
 #endif
