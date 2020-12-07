@@ -10,8 +10,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG)
-
 #include "adv.h"
 #include "prov.h"
 #include "beacon.h"
