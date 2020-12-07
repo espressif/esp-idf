@@ -61,10 +61,10 @@ static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
 #endif
 
 static struct {
-    u32_t src:15, /* MSB of source address is always 0 */
-          seq:17;
+    uint32_t src:15, /* MSB of source address is always 0 */
+             seq:17;
 } msg_cache[CONFIG_BLE_MESH_MSG_CACHE_SIZE];
-static u16_t msg_cache_next;
+static uint16_t msg_cache_next;
 
 /* Singleton network context (the implementation only supports one) */
 struct bt_mesh_net bt_mesh = {
@@ -81,8 +81,8 @@ struct bt_mesh_net bt_mesh = {
     },
 };
 
-static u32_t dup_cache[4];
-static int   dup_cache_next;
+static uint32_t dup_cache[4];
+static int dup_cache_next;
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
 #define BLE_MESH_MAX_STORED_RELAY_COUNT  (CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT / 2)
@@ -90,8 +90,8 @@ static int   dup_cache_next;
 
 static bool check_dup(struct net_buf_simple *data)
 {
-    const u8_t *tail = net_buf_simple_tail(data);
-    u32_t val = 0U;
+    const uint8_t *tail = net_buf_simple_tail(data);
+    uint32_t val = 0U;
     int i;
 
     val = sys_get_be32(tail - 4) ^ sys_get_be32(tail - 8);
@@ -132,7 +132,7 @@ static void msg_cache_add(struct bt_mesh_net_rx *rx)
 }
 
 #if CONFIG_BLE_MESH_PROVISIONER
-void bt_mesh_msg_cache_clear(u16_t unicast_addr, u8_t elem_num)
+void bt_mesh_msg_cache_clear(uint16_t unicast_addr, uint8_t elem_num)
 {
     int i;
 
@@ -145,7 +145,7 @@ void bt_mesh_msg_cache_clear(u16_t unicast_addr, u8_t elem_num)
 }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
-struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx)
+struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx)
 {
     int i;
 
@@ -163,10 +163,10 @@ struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx)
 }
 
 int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
-                            const u8_t key[16])
+                            const uint8_t key[16])
 {
-    u8_t p[] = { 0 };
-    u8_t nid = 0U;
+    uint8_t p[] = { 0 };
+    uint8_t nid = 0U;
     int err = 0;
 
     err = bt_mesh_k2(key, p, sizeof(p), &nid, keys->enc, keys->privacy);
@@ -213,11 +213,11 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
 #if (defined(CONFIG_BLE_MESH_LOW_POWER) || \
      defined(CONFIG_BLE_MESH_FRIEND))
-int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16])
+int friend_cred_set(struct friend_cred *cred, uint8_t idx, const uint8_t net_key[16])
 {
-    u16_t lpn_addr = 0U, frnd_addr = 0U;
+    uint16_t lpn_addr = 0U, frnd_addr = 0U;
+    uint8_t p[9] = {0};
     int err = 0;
-    u8_t p[9] = {0};
 
 #if defined(CONFIG_BLE_MESH_LOW_POWER)
     if (cred->addr == bt_mesh.lpn.frnd) {
@@ -256,7 +256,7 @@ int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16])
     return 0;
 }
 
-void friend_cred_refresh(u16_t net_idx)
+void friend_cred_refresh(uint16_t net_idx)
 {
     int i;
 
@@ -294,8 +294,8 @@ int friend_cred_update(struct bt_mesh_subnet *sub)
     return 0;
 }
 
-struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
-                                       u16_t lpn_counter, u16_t frnd_counter)
+struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, uint16_t addr,
+                                       uint16_t lpn_counter, uint16_t frnd_counter)
 {
     struct friend_cred *cred = NULL;
     int i, err = 0;
@@ -347,7 +347,7 @@ void friend_cred_clear(struct friend_cred *cred)
     (void)memset(cred->cred, 0, sizeof(cred->cred));
 }
 
-int friend_cred_del(u16_t net_idx, u16_t addr)
+int friend_cred_del(uint16_t net_idx, uint16_t addr)
 {
     int i;
 
@@ -363,8 +363,8 @@ int friend_cred_del(u16_t net_idx, u16_t addr)
     return -ENOENT;
 }
 
-int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
-                    const u8_t **enc, const u8_t **priv)
+int friend_cred_get(struct bt_mesh_subnet *sub, uint16_t addr, uint8_t *nid,
+                    const uint8_t **enc, const uint8_t **priv)
 {
     int i;
 
@@ -399,16 +399,16 @@ int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
     return -ENOENT;
 }
 #else
-int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
-                    const u8_t **enc, const u8_t **priv)
+int friend_cred_get(struct bt_mesh_subnet *sub, uint16_t addr, uint8_t *nid,
+                    const uint8_t **enc, const uint8_t **priv)
 {
     return -ENOENT;
 }
 #endif /* FRIEND || LOW_POWER */
 
-u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
+uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 {
-    u8_t flags = 0x00;
+    uint8_t flags = 0x00;
 
     if (sub && sub->kr_flag) {
         flags |= BLE_MESH_NET_FLAG_KR;
@@ -423,7 +423,7 @@ u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 
 int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub)
 {
-    u8_t flags = bt_mesh_net_flags(sub);
+    uint8_t flags = bt_mesh_net_flags(sub);
     struct bt_mesh_subnet_keys *keys = NULL;
 
     if (sub->kr_flag) {
@@ -440,8 +440,8 @@ int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub)
                                bt_mesh.iv_index, sub->auth);
 }
 
-int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
-                       u32_t iv_index)
+int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
+                       uint32_t iv_index)
 {
     struct bt_mesh_subnet *sub = NULL;
     int err = 0;
@@ -524,7 +524,7 @@ void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub)
     }
 }
 
-bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key)
+bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
 {
     if (new_kr != sub->kr_flag && sub->kr_phase == BLE_MESH_KR_NORMAL) {
         BT_WARN("KR change in normal operation. Are we blacklisted?");
@@ -641,7 +641,7 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
     }
 }
 
-bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
+bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 {
     int i;
 
@@ -757,9 +757,9 @@ bool bt_mesh_primary_subnet_exist(void)
     return false;
 }
 
-u32_t bt_mesh_next_seq(void)
+uint32_t bt_mesh_next_seq(void)
 {
-    u32_t seq = bt_mesh.seq++;
+    uint32_t seq = bt_mesh.seq++;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_seq();
@@ -780,9 +780,9 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
                        bool new_key, const struct bt_mesh_send_cb *cb,
                        void *cb_data)
 {
-    const u8_t *enc = NULL, *priv = NULL;
-    u32_t seq = 0U;
-    u16_t dst = 0U;
+    const uint8_t *enc = NULL, *priv = NULL;
+    uint32_t seq = 0U;
+    uint16_t dst = 0U;
     int err = 0;
 
     BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
@@ -848,8 +848,8 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
                        bool proxy)
 {
     const bool ctl = (tx->ctx->app_idx == BLE_MESH_KEY_UNUSED);
-    const u8_t *enc = NULL, *priv = NULL;
-    u8_t nid = 0U;
+    const uint8_t *enc = NULL, *priv = NULL;
+    uint8_t nid = 0U;
     int err = 0;
 
     if (ctl && net_buf_simple_tailroom(buf) < BLE_MESH_MIC_LONG) {
@@ -982,10 +982,10 @@ done:
 }
 
 static bool auth_match(struct bt_mesh_subnet_keys *keys,
-                       const u8_t net_id[8], u8_t flags,
-                       u32_t iv_index, const u8_t auth[8])
+                       const uint8_t net_id[8], uint8_t flags,
+                       uint32_t iv_index, const uint8_t auth[8])
 {
-    u8_t net_auth[8] = {0};
+    uint8_t net_auth[8] = {0};
 
     if (memcmp(net_id, keys->net_id, 8)) {
         return false;
@@ -1003,8 +1003,8 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
     return true;
 }
 
-struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
-                                           u32_t iv_index, const u8_t auth[8],
+struct bt_mesh_subnet *bt_mesh_subnet_find(const uint8_t net_id[8], uint8_t flags,
+                                           uint32_t iv_index, const uint8_t auth[8],
                                            bool *new_key)
 {
     size_t subnet_size = 0U;
@@ -1037,8 +1037,8 @@ struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
     return NULL;
 }
 
-static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
-                       const u8_t *priv, const u8_t *data,
+static int net_decrypt(struct bt_mesh_subnet *sub, const uint8_t *enc,
+                       const uint8_t *priv, const uint8_t *data,
                        size_t data_len, struct bt_mesh_net_rx *rx,
                        struct net_buf_simple *buf)
 {
@@ -1078,7 +1078,7 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 
 #if (defined(CONFIG_BLE_MESH_LOW_POWER) || \
      defined(CONFIG_BLE_MESH_FRIEND))
-static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
+static int friend_decrypt(struct bt_mesh_subnet *sub, const uint8_t *data,
                           size_t data_len, struct bt_mesh_net_rx *rx,
                           struct net_buf_simple *buf)
 {
@@ -1115,7 +1115,7 @@ static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 }
 #endif
 
-static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
+static bool net_find_and_decrypt(const uint8_t *data, size_t data_len,
                                  struct bt_mesh_net_rx *rx,
                                  struct net_buf_simple *buf)
 {
@@ -1194,9 +1194,9 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
                               struct bt_mesh_net_rx *rx)
 {
-    const u8_t *enc = NULL, *priv = NULL;
+    const uint8_t *enc = NULL, *priv = NULL;
     struct net_buf *buf = NULL;
-    u8_t nid = 0U, transmit = 0U;
+    uint8_t nid = 0U, transmit = 0U;
 
     if (rx->net_if == BLE_MESH_NET_IF_LOCAL) {
         /* Locally originated PDUs with TTL=1 will only be delivered
@@ -1405,7 +1405,7 @@ static bool ready_to_recv(void)
     return false;
 }
 
-static bool ignore_net_msg(u16_t src, u16_t dst)
+static bool ignore_net_msg(uint16_t src, uint16_t dst)
 {
     if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
         /* When fast provisioning is enabled, the node addr
@@ -1432,7 +1432,7 @@ static bool ignore_net_msg(u16_t src, u16_t dst)
     return false;
 }
 
-void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
+void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
                       enum bt_mesh_net_if net_if)
 {
     NET_BUF_SIMPLE_DEFINE(buf, 29);
@@ -1552,11 +1552,11 @@ void bt_mesh_net_start(void)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
-        u16_t net_idx = bt_mesh.sub[0].net_idx;
-        u16_t addr = bt_mesh_primary_addr();
-        u32_t iv_index = bt_mesh.iv_index;
-        u8_t flags = (u8_t)bt_mesh.sub[0].kr_flag;
-        const u8_t *net_key = bt_mesh.sub[0].keys[flags].net;
+        uint16_t net_idx = bt_mesh.sub[0].net_idx;
+        uint16_t addr = bt_mesh_primary_addr();
+        uint32_t iv_index = bt_mesh.iv_index;
+        uint8_t flags = (uint8_t)bt_mesh.sub[0].kr_flag;
+        const uint8_t *net_key = bt_mesh.sub[0].keys[flags].net;
         if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS)) {
             flags |= BLE_MESH_NET_FLAG_IVU;
         }

@@ -32,22 +32,22 @@ enum {
 
 /** @brief This is a 'tentative' type and should be used as a pointer only */
 struct bt_mesh_uuid {
-    u8_t type;
+    uint8_t type;
 };
 
 struct bt_mesh_uuid_16 {
     struct bt_mesh_uuid uuid;
-    u16_t val;
+    uint16_t val;
 };
 
 struct bt_mesh_uuid_32 {
     struct bt_mesh_uuid uuid;
-    u32_t val;
+    uint32_t val;
 };
 
 struct bt_mesh_uuid_128 {
     struct bt_mesh_uuid uuid;
-    u8_t val[16];
+    uint8_t val[16];
 };
 
 #define BLE_MESH_UUID_INIT_16(value)        \
