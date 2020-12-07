@@ -1797,24 +1797,6 @@ void bt_mesh_adapt_init(void)
     bt_mesh_rand(bt_mesh_private_key, sizeof(bt_mesh_private_key));
 }
 
-int bt_mesh_rand(void *buf, size_t len)
-{
-    int i;
-
-    if (buf == NULL || len == 0) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return -EAGAIN;
-    }
-
-    for (i = 0; i < (int)(len / sizeof(uint32_t)); i++) {
-        uint32_t rand = esp_random();
-        memcpy(buf + i * sizeof(uint32_t), &rand, sizeof(uint32_t));
-    }
-
-    BT_DBG("Rand %s", bt_hex(buf, len));
-    return 0;
-}
-
 void bt_mesh_set_private_key(const uint8_t pri_key[32])
 {
     memcpy(bt_mesh_private_key, pri_key, 32);
