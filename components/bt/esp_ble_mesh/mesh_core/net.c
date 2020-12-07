@@ -11,8 +11,6 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_NET)
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"

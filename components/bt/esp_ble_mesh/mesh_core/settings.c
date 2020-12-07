@@ -8,8 +8,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_SETTINGS)
-
 #include "mesh.h"
 #include "crypto.h"
 #include "transport.h"

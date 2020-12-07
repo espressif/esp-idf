@@ -9,8 +9,6 @@
 #include <stdint.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
