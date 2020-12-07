@@ -204,9 +204,9 @@ def is_stable_version(version):
     if "-" in version:
         return False  # prerelease tag
 
-    git_out = subprocess.run(["git", "tag", "-l"], capture_output=True, check=True)
+    git_out = subprocess.check_output(["git", "tag", "-l"]).decode("utf-8")
 
-    versions = [v.strip() for v in git_out.stdout.decode("utf-8").split("\n")]
+    versions = [v.strip() for v in git_out.split("\n")]
     versions = [v for v in versions if re.match(r"^v[\d\.]+$", v)]  # include vX.Y.Z only
 
     versions = [packaging.version.parse(v) for v in versions]
