@@ -1,0 +1,5 @@
+[mapping:bt]
+archive: libbt.a
+entries:
+    if SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        * (extram_bss)
