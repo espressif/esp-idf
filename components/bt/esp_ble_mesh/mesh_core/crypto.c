@@ -11,8 +11,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_CRYPTO)
-
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/cmac_mode.h>
