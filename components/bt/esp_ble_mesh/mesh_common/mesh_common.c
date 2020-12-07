@@ -15,6 +15,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "esp_system.h"
+
 #include "mesh_main.h"
 #include "client_common.h"
 #include "mesh_common.h"
@@ -95,4 +97,18 @@ uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
     client = (bt_mesh_client_user_data_t *)model->user_data;
 
     return client->msg_role;
+}
+
+int bt_mesh_rand(void *buf, size_t len)
+{
+    if (buf == NULL || len == 0) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    esp_fill_random(buf, len);
+
+    BT_DBG("Random %s", bt_hex(buf, len));
+
+    return 0;
 }
