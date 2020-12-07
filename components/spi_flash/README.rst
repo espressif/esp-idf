@@ -10,10 +10,14 @@ erasing, memory mapping for data in the external flash. The spi_flash
 component also has higher-level API functions which work with partitions
 defined in the :doc:`partition table </api-guides/partition-tables>`.
 
-Different from the API before IDF v4.0, the functionality is not limited to
+Different from the API before IDF v4.0, the functionality of esp_flash_* APIs is not limited to
 the "main" SPI flash chip (the same SPI flash chip from which program runs).
 With different chip pointers, you can access to external flashes chips on not
 only SPI0/1 but also HSPI/VSPI buses.
+
+.. note::
+
+    Due to limitations of the cache, access to external flash is limited to `esp_flash_*` APIs through SPI1 only. It is not allowed to use mmap or encrypted operations to access the external flash.
 
 .. note::
 
@@ -31,7 +35,8 @@ the same time.
 Encrypted reads and writes use the old implementation, even if
 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` is not enabled. As such, encrypted
 flash operations are only supported with the main flash chip (and not with
-other flash chips on SPI1 with different CS).
+other flash chips, that is on SPI1 with different CS, or on other SPI buses). Reading through cache is
+only supported on the main flash, which is determined by the HW.
 
 Support for features of flash chips
 -----------------------------------
@@ -161,7 +166,8 @@ This component provides API functions to enumerate partitions found in the parti
 - :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`spi_flash_read`, :cpp:func:`spi_flash_write`, :cpp:func:`spi_flash_erase_range`, but operate within partition boundaries.
 
 .. note::
-    Application code should mostly use these ``esp_partition_*`` API functions instead of lower level ``spi_flash_*`` API functions. Partition table API functions do bounds checking and calculate correct offsets in flash, based on data stored in a partition table.
+    Application code should mostly use these ``esp_partition_*`` API functions instead of lower level ``esp_flash_*`` API functions. Partition table API functions do bounds checking and calculate correct offsets in flash, based on data stored in a partition table.
+
 
 SPI Flash Encryption
 --------------------
@@ -194,6 +200,8 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 
 Note that since memory mapping happens in 64KB blocks, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``.
 
+.. note:: mmap is supported by cache, so it can only be used on main flash.
+
 SPI Flash Implementation
 ------------------------
 
@@ -208,7 +216,7 @@ Host driver
 ^^^^^^^^^^^
 
 The host driver relies on an interface (``spi_flash_host_driver_t``) defined
-in the ``spi_flash_host_drv.h`` (in the ``soc/include/hal`` folder). This
+in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This
 interface provides some common functions to communicate with the chip.
 
 In other files of the SPI HAL, some of these functions are implemented with

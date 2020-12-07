@@ -8,7 +8,11 @@ SPI Flash API
 
 SPI Flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数，同时也提供了更高层级的，面向分区的 API 函数（定义在 :doc:`分区表 </api-guides/partition-tables>` 中）。
 
-与 ESP-IDF V4.0 之前的 API 不同，这一版 API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以通过 SPI0/1 或 HSPI/VSPI 总线访问外部 flash。
+与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以通过 SPI0/1 或 HSPI/VSPI 总线访问外部 flash。
+
+.. note::
+
+    由于 cache 的限制，外部 flash 只能使用 `esp_flash_*` API 只能通过 SPI1 访问，而不允许使用 mmap 或加密操作访问。
 
 .. note::
 
@@ -16,7 +20,7 @@ SPI Flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
 Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` 函数切换至 ESP-IDF V4.0 之前的实现。但是，如果同时使用新旧 API，代码量可能会增多。
 
-即便未启用 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL`，加密读取和加密写入操作也均使用旧实现。因此，仅有主 flash 芯片支持加密操作，其他不同片选（经 SPI1 访问的 flash 芯片）则不支持加密操作。
+即便未启用 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL`，加密读取和加密写入操作也均使用旧实现。因此，仅有主 flash 芯片支持加密操作，外接（经 SPI1 使用其他不同片选访问，或经其它 SPI 总线访问）的 flash 芯片则不支持加密操作。也仅有主 flash 支持从 cache 当中读取，因为这是由硬件决定的。
 
 初始化 Flash 设备
 ---------------------------
@@ -114,7 +118,7 @@ ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序�
 - :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 在分区边界内执行，等同于 :cpp:func:`spi_flash_read`、:cpp:func:`spi_flash_write` 和 :cpp:func:`spi_flash_erase_range`。
 
 .. note::
-    请在应用程序代码中使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``spi_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。
+    请在应用程序代码中使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。
 
 SPI Flash 加密
 --------------------
@@ -147,6 +151,9 @@ Flash 以 64 KB 页为单位进行地址映射。内存映射硬件最多可将 
 
 内存映射在 64 KB 块中进行，如果分区已传递给 ``esp_partition_mmap``，则可读取分区外数据。
 
+.. note::
+    由于 mmap 是由 cache 支持的，因此，mmap 也仅能用在主 flash 上。
+
 实现
 --------------
 
@@ -159,7 +166,7 @@ Flash 以 64 KB 页为单位进行地址映射。内存映射硬件最多可将 
 主机驱动
 ^^^^^^^^^^^^^^^
 
-主机驱动依赖 ``soc/include/hal`` 文件夹下 ``spi_flash_host_drv.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些与芯片通信常用的函数。
+主机驱动依赖 ``hal/include/hal`` 文件夹下 ``spi_flash_types.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些与芯片通信常用的函数。
 
 在 SPI HAL 文件中，有些函数是基于现有的 ESP32 memory-spi 来实现的。但是，由于 ESP32 速度限制，HAL 层无法提供某些读命令的高速实现（所以这些命令根本没有在 HAL 的文件中被实现）。``memspi_host_driver.h`` 和 ``.c`` 文件使用 HAL 提供的 ``common_command`` 函数实现上述读命令的高速版本，并将所有它实现的及 HAL 函数封装为 ``spi_flash_host_driver_t`` 供更上层调用。
 
