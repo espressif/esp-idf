@@ -185,7 +185,7 @@ const char *util_hex2str(const void *buf, size_t len)
 {
     ENTER_FUNC();
     int    i                = 0;
-    const  u8_t *b          = buf;
+    const  uint8_t *b       = buf;
     static char str[129]    = {0};
     static const char hex[] = "0123456789abcdef";
 

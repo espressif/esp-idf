@@ -48,7 +48,7 @@ IRAM_ATTR void bt_mesh_free(void *ptr);
  *
  * @return NULL-fail, pointer of a net_buf_simple structure-success
  */
-struct net_buf_simple *bt_mesh_alloc_buf(u16_t size);
+struct net_buf_simple *bt_mesh_alloc_buf(uint16_t size);
 
 /**
  * @brief This function releases the memory allocated for the outgoing message.
@@ -71,7 +71,7 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  *
  * @return 0 - Node, 1 - Provisioner
  */
-u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
+uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
 #ifdef __cplusplus
 }

@@ -42,7 +42,7 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_clear_rpl(void);
 
 #if CONFIG_BLE_MESH_PROVISIONER
-void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr);
+void bt_mesh_store_prov_info(uint16_t primary_addr, uint16_t alloc_addr);
 void bt_mesh_clear_prov_info(void);
 void bt_mesh_store_p_net_idx(void);
 void bt_mesh_clear_p_net_idx(void);
@@ -50,11 +50,11 @@ void bt_mesh_store_p_app_idx(void);
 void bt_mesh_clear_p_app_idx(void);
 void bt_mesh_store_p_subnet(struct bt_mesh_subnet *sub);
 void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key);
-void bt_mesh_clear_p_subnet(u16_t net_idx);
-void bt_mesh_clear_p_app_key(u16_t app_idx);
-void bt_mesh_clear_rpl_single(u16_t src);
+void bt_mesh_clear_p_subnet(uint16_t net_idx);
+void bt_mesh_clear_p_app_key(uint16_t app_idx);
+void bt_mesh_clear_rpl_single(uint16_t src);
 void bt_mesh_store_node_info(struct bt_mesh_node *node);
-void bt_mesh_clear_node_info(u16_t unicast_addr);
+void bt_mesh_clear_node_info(uint16_t unicast_addr);
 void bt_mesh_store_node_name(struct bt_mesh_node *node);
 void bt_mesh_store_node_comp_data(struct bt_mesh_node *node);
 #endif
