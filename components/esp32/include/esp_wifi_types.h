@@ -520,6 +520,12 @@ typedef struct {
     } data;                             /**< Configuration of ioctl command */
 } wifi_ioctl_config_t;
 
+#define WIFI_STATIS_BUFFER    (1<<0)
+#define WIFI_STATIS_RXTX      (1<<1)
+#define WIFI_STATIS_HW        (1<<2)
+#define WIFI_STATIS_DIAG      (1<<3)
+#define WIFI_STATIS_ALL       (-1)
+
 #ifdef __cplusplus
 }
 #endif

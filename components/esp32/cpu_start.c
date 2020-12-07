@@ -176,6 +176,12 @@ void IRAM_ATTR call_start_cpu0()
     }
 #endif
 
+#ifdef CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+#else
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d", CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ);
+#endif
+
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
