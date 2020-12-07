@@ -313,7 +313,7 @@ struct bt_mesh_gatt_char {
     /** Characteristic UUID. */
     const struct bt_mesh_uuid *uuid;
     /** Characteristic properties. */
-    u8_t                        properties;
+    uint8_t                    properties;
 };
 
 /** @brief GATT Service structure */
@@ -321,19 +321,19 @@ struct bt_mesh_gatt_service {
     /** Service Attributes */
     struct bt_mesh_gatt_attr *attrs;
     /** Service Attribute count */
-    u16_t                      attr_count;
-    sys_snode_t                node;
+    uint16_t                  attr_count;
+    sys_snode_t               node;
 };
 
 struct bt_mesh_ecb_param {
-    u8_t key[16];
-    u8_t clear_text[16];
-    u8_t cipher_text[16];
+    uint8_t key[16];
+    uint8_t clear_text[16];
+    uint8_t cipher_text[16];
 } __packed;
 
 typedef struct {
-    u8_t type;
-    u8_t val[6];
+    uint8_t type;
+    uint8_t val[6];
 } bt_mesh_addr_t;
 
 /** Description of different data types that can be encoded into
@@ -341,9 +341,9 @@ typedef struct {
   * bt_le_adv_start() function.
   */
 struct bt_mesh_adv_data {
-    u8_t type;
-    u8_t data_len;
-    const u8_t *data;
+    uint8_t type;
+    uint8_t data_len;
+    const uint8_t *data;
 };
 
 /** @brief Helper to declare elements of bt_data arrays
@@ -360,7 +360,7 @@ struct bt_mesh_adv_data {
     {                                               \
         .type = (_type),                            \
         .data_len = (_data_len),                    \
-        .data = (const u8_t *)(_data),              \
+        .data = (const uint8_t *)(_data),           \
     }
 
 /** @brief Helper to declare elements of bt_data arrays
@@ -372,19 +372,19 @@ struct bt_mesh_adv_data {
  *  @param _bytes Variable number of single-byte parameters
  */
 #define BLE_MESH_ADV_DATA_BYTES(_type, _bytes...)       \
-    BLE_MESH_ADV_DATA(_type, ((u8_t []) { _bytes }),    \
-        sizeof((u8_t []) { _bytes }))
+    BLE_MESH_ADV_DATA(_type, ((uint8_t []) { _bytes }), \
+        sizeof((uint8_t []) { _bytes }))
 
 /* BLE Mesh Advertising Parameters */
 struct bt_mesh_adv_param {
     /** Bit-field of advertising options */
-    u8_t  options;
+    uint8_t  options;
 
     /** Minimum Advertising Interval (N * 0.625) */
-    u16_t interval_min;
+    uint16_t interval_min;
 
     /** Maximum Advertising Interval (N * 0.625) */
-    u16_t interval_max;
+    uint16_t interval_max;
 };
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
@@ -394,47 +394,47 @@ enum bt_mesh_ble_adv_priority {
 };
 
 struct bt_mesh_ble_adv_param {
-    u16_t interval;         /* Advertising interval */
-    u8_t  adv_type;         /* Advertising type */
-    u8_t  own_addr_type;    /* Own address type */
-    u8_t  peer_addr_type;   /* Peer address type */
-    u8_t  peer_addr[6];     /* Peer address */
-    u16_t duration;         /* Duration is milliseconds */
-    u16_t period;           /* Period in milliseconds */
-    u16_t count;            /* Number of advertising duration */
-    u8_t  priority:2;       /* Priority of BLE advertising packet */
+    uint16_t interval;         /* Advertising interval */
+    uint8_t  adv_type;         /* Advertising type */
+    uint8_t  own_addr_type;    /* Own address type */
+    uint8_t  peer_addr_type;   /* Peer address type */
+    uint8_t  peer_addr[6];     /* Peer address */
+    uint16_t duration;         /* Duration is milliseconds */
+    uint16_t period;           /* Period in milliseconds */
+    uint16_t count;            /* Number of advertising duration */
+    uint8_t  priority:2;       /* Priority of BLE advertising packet */
 };
 
 struct bt_mesh_ble_adv_data {
-    u8_t adv_data_len;      /* Advertising data length */
-    u8_t adv_data[31];      /* Advertising data */
-    u8_t scan_rsp_data_len; /* Scan response data length */
-    u8_t scan_rsp_data[31]; /* Scan response data */
+    uint8_t adv_data_len;      /* Advertising data length */
+    uint8_t adv_data[31];      /* Advertising data */
+    uint8_t scan_rsp_data_len; /* Scan response data length */
+    uint8_t scan_rsp_data[31]; /* Scan response data */
 };
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 /* BLE Mesh scan parameters */
 struct bt_mesh_scan_param {
     /** Scan type (BLE_MESH_SCAN_ACTIVE or BLE_MESH_SCAN_PASSIVE) */
-    u8_t  type;
+    uint8_t  type;
 
     /** Duplicate filtering (BLE_MESH_SCAN_FILTER_DUP_ENABLE or
      *  BLE_MESH_SCAN_FILTER_DUP_DISABLE)
      */
-    u8_t  filter_dup;
+    uint8_t  filter_dup;
 
     /** Scan interval (N * 0.625 ms) */
-    u16_t interval;
+    uint16_t interval;
 
     /** Scan window (N * 0.625 ms) */
-    u16_t window;
+    uint16_t window;
 
     /** BLE scan filter policy */
-    u8_t  scan_fil_policy;
+    uint8_t  scan_fil_policy;
 };
 
 struct bt_mesh_conn {
-    u16_t    handle;
+    uint16_t handle;
     bt_mesh_atomic_t ref;
 };
 
@@ -449,8 +449,8 @@ struct bt_mesh_conn {
  *  @param adv_type Type of advertising response from advertiser.
  *  @param data Buffer containing advertiser data.
  */
-typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, s8_t rssi,
-                               u8_t adv_type, struct net_buf_simple *buf);
+typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, int8_t rssi,
+                               uint8_t adv_type, struct net_buf_simple *buf);
 
 /*  @typedef bt_mesh_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
@@ -462,7 +462,7 @@ typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, s8_t rssi,
  *
  *  @return The DH Key, or NULL in case of failure.
  */
-typedef void (*bt_mesh_dh_key_cb_t)(const u8_t key[32], const u8_t idx);
+typedef void (*bt_mesh_dh_key_cb_t)(const uint8_t key[32], const uint8_t idx);
 
 /** @typedef bt_mesh_gatt_attr_func_t
  *  @brief Attribute iterator callback.
@@ -473,8 +473,8 @@ typedef void (*bt_mesh_dh_key_cb_t)(const u8_t key[32], const u8_t idx);
  *  @return BLE_MESH_GATT_ITER_CONTINUE if should continue to the next attribute
  *  or BLE_MESH_GATT_ITER_STOP to stop.
  */
-typedef u8_t (*bt_mesh_gatt_attr_func_t)(const struct bt_mesh_gatt_attr *attr,
-                                         void *user_data);
+typedef uint8_t (*bt_mesh_gatt_attr_func_t)(const struct bt_mesh_gatt_attr *attr,
+                                            void *user_data);
 
 /** @brief Connection callback structure.
  *
@@ -496,7 +496,7 @@ struct bt_mesh_conn_cb {
      *  @param conn New connection object.
      *  @param err HCI error. Zero for success, non-zero otherwise.
      */
-    void (*connected)(struct bt_mesh_conn *conn, u8_t err);
+    void (*connected)(struct bt_mesh_conn *conn, uint8_t err);
 
     /** @brief A connection has been disconnected.
      *
@@ -506,21 +506,21 @@ struct bt_mesh_conn_cb {
      *  @param conn Connection object.
      *  @param reason HCI reason for the disconnection.
      */
-    void (*disconnected)(struct bt_mesh_conn *conn, u8_t reason);
+    void (*disconnected)(struct bt_mesh_conn *conn, uint8_t reason);
 };
 
 struct bt_mesh_prov_conn_cb {
     void (*connected)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, int id);
 
-    void (*disconnected)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, u8_t reason);
+    void (*disconnected)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, uint8_t reason);
 
     ssize_t (*prov_write_descr)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn);
 
-    ssize_t (*prov_notify)(struct bt_mesh_conn *conn, u8_t *data, u16_t len);
+    ssize_t (*prov_notify)(struct bt_mesh_conn *conn, uint8_t *data, uint16_t len);
 
     ssize_t (*proxy_write_descr)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn);
 
-    ssize_t (*proxy_notify)(struct bt_mesh_conn *conn, u8_t *data, u16_t len);
+    ssize_t (*proxy_notify)(struct bt_mesh_conn *conn, uint8_t *data, uint16_t len);
 };
 
 /** @brief GATT Attribute structure. */
@@ -541,8 +541,8 @@ struct bt_mesh_gatt_attr {
      */
     ssize_t (*read)(struct bt_mesh_conn *conn,
                     const struct bt_mesh_gatt_attr *attr,
-                    void *buf, u16_t len,
-                    u16_t offset);
+                    void *buf, uint16_t len,
+                    uint16_t offset);
 
     /** Attribute write callback
      *
@@ -558,15 +558,15 @@ struct bt_mesh_gatt_attr {
      */
     ssize_t (*write)(struct bt_mesh_conn *conn,
                      const struct bt_mesh_gatt_attr *attr,
-                     const void *buf, u16_t len,
-                     u16_t offset, u8_t flags);
+                     const void *buf, uint16_t len,
+                     uint16_t offset, uint8_t flags);
 
     /** Attribute user data */
     void *user_data;
     /** Attribute handle */
-    u16_t handle;
+    uint16_t handle;
     /** Attribute permissions */
-    u8_t  perm;
+    uint8_t  perm;
 };
 
 /** @def BLE_MESH_GATT_PRIMARY_SERVICE
@@ -688,12 +688,12 @@ typedef enum {
 
 struct bt_mesh_white_list {
     bool add_remove;
-    u8_t remote_bda[BLE_MESH_ADDR_LEN];
-    u8_t addr_type;
+    uint8_t remote_bda[BLE_MESH_ADDR_LEN];
+    uint8_t addr_type;
     /* For Bluedroid host, this callback is used to notify the
      * result of updating white list.
      */
-    void (*update_wl_comp_cb)(u8_t status, bt_mesh_wl_operation wl_operation);
+    void (*update_wl_comp_cb)(uint8_t status, bt_mesh_wl_operation wl_operation);
 };
 
 int bt_le_update_white_list(struct bt_mesh_white_list *wl);
@@ -701,7 +701,7 @@ int bt_le_update_white_list(struct bt_mesh_white_list *wl);
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb);
 void bt_mesh_gatts_conn_cb_deregister(void);
 
-int bt_mesh_gatts_disconnect(struct bt_mesh_conn *conn, u8_t reason);
+int bt_mesh_gatts_disconnect(struct bt_mesh_conn *conn, uint8_t reason);
 
 int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc);
@@ -710,26 +710,26 @@ int bt_mesh_gatts_service_unregister(struct bt_mesh_gatt_service *svc);
 
 ssize_t bt_mesh_gatts_attr_read_included(struct bt_mesh_conn *conn,
                                          const struct bt_mesh_gatt_attr *attr,
-                                         void *buf, u16_t len, u16_t offset);
+                                         void *buf, uint16_t len, uint16_t offset);
 
 ssize_t bt_mesh_gatts_attr_read(struct bt_mesh_conn *conn,
                                 const struct bt_mesh_gatt_attr *attr,
-                                void *buf, u16_t buf_len, u16_t offset,
-                                const void *value, u16_t value_len);
+                                void *buf, uint16_t buf_len, uint16_t offset,
+                                const void *value, uint16_t value_len);
 
 ssize_t bt_mesh_gatts_attr_read_service(struct bt_mesh_conn *conn,
                                         const struct bt_mesh_gatt_attr *attr,
-                                        void *buf, u16_t len, u16_t offset);
+                                        void *buf, uint16_t len, uint16_t offset);
 
 ssize_t bt_mesh_gatts_attr_read_chrc(struct bt_mesh_conn *conn,
                                      const struct bt_mesh_gatt_attr *attr,
-                                     void *buf, u16_t len, u16_t offset);
+                                     void *buf, uint16_t len, uint16_t offset);
 
 int bt_mesh_gatts_notify(struct bt_mesh_conn *conn,
                          const struct bt_mesh_gatt_attr *attr,
-                         const void *data, u16_t len);
+                         const void *data, uint16_t len);
 
-u16_t bt_mesh_gatt_get_mtu(struct bt_mesh_conn *conn);
+uint16_t bt_mesh_gatt_get_mtu(struct bt_mesh_conn *conn);
 
 /** APIs added by Espressif */
 int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc);
@@ -740,21 +740,21 @@ int bt_mesh_gatts_set_local_device_name(const char *name);
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb);
 void bt_mesh_gattc_conn_cb_deregister(void);
 
-u8_t bt_mesh_gattc_get_free_conn_count(void);
+uint8_t bt_mesh_gattc_get_free_conn_count(void);
 
-u16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn);
+uint16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn);
 
-int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid);
+int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid);
 
 void bt_gattc_conn_close(struct bt_mesh_conn *conn);
 
-void bt_mesh_gattc_exchange_mtu(u8_t index);
+void bt_mesh_gattc_exchange_mtu(uint8_t index);
 
-u16_t bt_mesh_gattc_get_mtu_info(struct bt_mesh_conn *conn);
+uint16_t bt_mesh_gattc_get_mtu_info(struct bt_mesh_conn *conn);
 
 int bt_mesh_gattc_write_no_rsp(struct bt_mesh_conn *conn,
                                const struct bt_mesh_gatt_attr *attr,
-                               const void *data, u16_t len);
+                               const void *data, uint16_t len);
 
 void bt_mesh_gattc_disconnect(struct bt_mesh_conn *conn);
 
@@ -769,19 +769,19 @@ void bt_mesh_adapt_init(void);
 
 int bt_mesh_rand(void *buf, size_t len);
 
-void bt_mesh_set_private_key(const u8_t pri_key[32]);
+void bt_mesh_set_private_key(const uint8_t pri_key[32]);
 
-const u8_t *bt_mesh_pub_key_get(void);
+const uint8_t *bt_mesh_pub_key_get(void);
 
 bool bt_mesh_check_public_key(const uint8_t key[64]);
 
-int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u8_t idx);
+int bt_mesh_dh_key_gen(const uint8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const uint8_t idx);
 
-int bt_mesh_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
-                       u8_t enc_data[16]);
+int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
+                       uint8_t enc_data[16]);
 
-int bt_mesh_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
-                       u8_t enc_data[16]);
+int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
+                       uint8_t enc_data[16]);
 
 enum {
     BLE_MESH_EXCEP_LIST_ADD = 0,
@@ -806,7 +806,7 @@ enum {
     BLE_MESH_EXCEP_CLEAN_ALL_LIST            = 0xFFFF,
 };
 
-int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info);
+int bt_mesh_update_exceptional_list(uint8_t sub_code, uint8_t type, void *info);
 
 #ifdef __cplusplus
 }
