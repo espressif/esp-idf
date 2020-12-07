@@ -25,13 +25,13 @@ extern "C" {
  * Those are available for 32 bits architectures:
  */
 #ifndef POINTER_TO_UINT
-#define POINTER_TO_UINT(x) ((u32_t)  (x))
+#define POINTER_TO_UINT(x) ((uint32_t)  (x))
 #endif
 #ifndef UINT_TO_POINTER
 #define UINT_TO_POINTER(x) ((void *) (x))
 #endif
 #ifndef POINTER_TO_INT
-#define POINTER_TO_INT(x)  ((s32_t)  (x))
+#define POINTER_TO_INT(x)  ((int32_t)  (x))
 #endif
 #ifndef INT_TO_POINTER
 #define INT_TO_POINTER(x)  ((void *) (x))
@@ -181,7 +181,7 @@ extern "C" {
 
 const char *bt_hex(const void *buf, size_t len);
 
-void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len);
+void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
 
 #ifdef __cplusplus
 }

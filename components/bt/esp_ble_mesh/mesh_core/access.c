@@ -25,7 +25,7 @@
 #define BLE_MESH_SDU_MAX_LEN    384
 
 static const struct bt_mesh_comp *dev_comp;
-static u16_t dev_primary_addr;
+static uint16_t dev_primary_addr;
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
                                         struct bt_mesh_elem *elem,
@@ -57,7 +57,7 @@ void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
     }
 }
 
-s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
+int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 {
     int period = 0;
 
@@ -95,10 +95,10 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
     }
 }
 
-static s32_t next_period(struct bt_mesh_model *mod)
+static int32_t next_period(struct bt_mesh_model *mod)
 {
     struct bt_mesh_model_pub *pub = mod->pub;
-    u32_t elapsed = 0U, period = 0U;
+    uint32_t elapsed = 0U, period = 0U;
 
     if (!pub) {
         BT_ERR("Model has no publication support");
@@ -126,7 +126,7 @@ static s32_t next_period(struct bt_mesh_model *mod)
 static void publish_sent(int err, void *user_data)
 {
     struct bt_mesh_model *mod = user_data;
-    s32_t delay = 0;
+    int32_t delay = 0;
 
     BT_DBG("err %d", err);
 
@@ -147,7 +147,7 @@ static void publish_sent(int err, void *user_data)
     }
 }
 
-static void publish_start(u16_t duration, int err, void *user_data)
+static void publish_start(uint16_t duration, int err, void *user_data)
 {
     struct bt_mesh_model *mod = user_data;
     struct bt_mesh_model_pub *pub = mod->pub;
@@ -236,7 +236,7 @@ static void mod_publish(struct k_work *work)
     struct bt_mesh_model_pub *pub = CONTAINER_OF(work,
                                     struct bt_mesh_model_pub,
                                     timer.work);
-    s32_t period_ms = 0;
+    int32_t period_ms = 0;
     int err = 0;
 
     BT_DBG("%s", __func__);
@@ -287,7 +287,7 @@ struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod)
     return &dev_comp->elem[mod->elem_idx];
 }
 
-struct bt_mesh_model *bt_mesh_model_get(bool vnd, u8_t elem_idx, u8_t mod_idx)
+struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx)
 {
     struct bt_mesh_elem *elem = NULL;
 
@@ -437,7 +437,7 @@ int bt_mesh_comp_deregister(void)
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-void bt_mesh_comp_provision(u16_t addr)
+void bt_mesh_comp_provision(uint16_t addr)
 {
     int i;
 
@@ -462,12 +462,12 @@ void bt_mesh_comp_unprovision(void)
     dev_primary_addr = BLE_MESH_ADDR_UNASSIGNED;
 }
 
-u16_t bt_mesh_primary_addr(void)
+uint16_t bt_mesh_primary_addr(void)
 {
     return dev_primary_addr;
 }
 
-u16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, u16_t addr)
+uint16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, uint16_t addr)
 {
     int i;
 
@@ -481,10 +481,10 @@ u16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, u16_t addr)
 }
 
 static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
-                                                     u16_t group_addr)
+                                                     uint16_t group_addr)
 {
     struct bt_mesh_model *model = NULL;
-    u16_t *match = NULL;
+    uint16_t *match = NULL;
     int i;
 
     for (i = 0; i < elem->model_count; i++) {
@@ -508,9 +508,9 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
     return NULL;
 }
 
-struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
+struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
 {
-    u16_t index = 0U;
+    uint16_t index = 0U;
 
     if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
         index = (addr - dev_comp->elem[0].addr);
@@ -532,12 +532,12 @@ struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
     return NULL;
 }
 
-u8_t bt_mesh_elem_count(void)
+uint8_t bt_mesh_elem_count(void)
 {
     return dev_comp->elem_count;
 }
 
-static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
+static bool model_has_key(struct bt_mesh_model *mod, uint16_t key)
 {
     int i;
 
@@ -550,7 +550,7 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
     return false;
 }
 
-static bool model_has_dst(struct bt_mesh_model *model, u16_t dst)
+static bool model_has_dst(struct bt_mesh_model *model, uint16_t dst)
 {
     if (BLE_MESH_ADDR_IS_UNICAST(dst)) {
         return (dev_comp->elem[model->elem_idx].addr == dst);
@@ -562,7 +562,7 @@ static bool model_has_dst(struct bt_mesh_model *model, u16_t dst)
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
-                                              u8_t model_count, u32_t opcode,
+                                              uint8_t model_count, uint32_t opcode,
                                               struct bt_mesh_model **model)
 {
     int i;
@@ -583,7 +583,7 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
     return NULL;
 }
 
-static int get_opcode(struct net_buf_simple *buf, u32_t *opcode)
+static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 {
     switch (buf->data[0] >> 6) {
     case 0x00:
@@ -621,7 +621,7 @@ static int get_opcode(struct net_buf_simple *buf, u32_t *opcode)
     return -EINVAL;
 }
 
-bool bt_mesh_fixed_group_match(u16_t addr)
+bool bt_mesh_fixed_group_match(uint16_t addr)
 {
     /* Check for fixed group addresses */
     switch (addr) {
@@ -642,8 +642,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models = NULL, *model = NULL;
     const struct bt_mesh_model_op *op = NULL;
-    u32_t opcode = 0U;
-    u8_t count = 0U;
+    uint32_t opcode = 0U;
+    uint8_t count = 0U;
     int i;
 
     BT_INFO("recv, app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
@@ -714,7 +714,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     }
 }
 
-void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
+void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
 {
     net_buf_simple_init(msg, 0);
 
@@ -739,7 +739,7 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
     }
 }
 
-static bool ready_to_send(u8_t role, u16_t dst)
+static bool ready_to_send(uint8_t role, uint16_t dst)
 {
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
         return true;
@@ -761,7 +761,7 @@ static int model_send(struct bt_mesh_model *model,
                       struct net_buf_simple *msg,
                       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-    u8_t role = 0U;
+    uint8_t role = 0U;
 
     role = bt_mesh_get_device_role(model, tx->ctx->srv_send);
     if (role == ROLE_NVAL) {
@@ -802,7 +802,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
                        const struct bt_mesh_send_cb *cb, void *cb_data)
 {
     struct bt_mesh_subnet *sub = NULL;
-    u8_t role = 0U;
+    uint8_t role = 0U;
 
     role = bt_mesh_get_device_role(model, ctx->srv_send);
     if (role == ROLE_NVAL) {
@@ -911,7 +911,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 }
 
 struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
-                                             u16_t company, u16_t id)
+                                             uint16_t company, uint16_t id)
 {
     int i;
 
@@ -925,7 +925,7 @@ struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
     return NULL;
 }
 
-struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem, u16_t id)
+struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem, uint16_t id)
 {
     int i;
 
@@ -944,7 +944,7 @@ const struct bt_mesh_comp *bt_mesh_comp_get(void)
 }
 
 /* APIs used by messages encryption in upper transport layer & network layer */
-struct bt_mesh_subnet *bt_mesh_tx_netkey_get(u8_t role, u16_t net_idx)
+struct bt_mesh_subnet *bt_mesh_tx_netkey_get(uint8_t role, uint16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
@@ -959,9 +959,9 @@ struct bt_mesh_subnet *bt_mesh_tx_netkey_get(u8_t role, u16_t net_idx)
     return sub;
 }
 
-const u8_t *bt_mesh_tx_devkey_get(u8_t role, u16_t dst)
+const uint8_t *bt_mesh_tx_devkey_get(uint8_t role, uint16_t dst)
 {
-    const u8_t *key = NULL;
+    const uint8_t *key = NULL;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
         key = bt_mesh.dev_key;
@@ -974,7 +974,7 @@ const u8_t *bt_mesh_tx_devkey_get(u8_t role, u16_t dst)
     return key;
 }
 
-struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx)
+struct bt_mesh_app_key *bt_mesh_tx_appkey_get(uint8_t role, uint16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
@@ -1069,9 +1069,9 @@ size_t bt_mesh_rx_devkey_size(void)
     return size;
 }
 
-const u8_t *bt_mesh_rx_devkey_get(size_t index, u16_t src)
+const uint8_t *bt_mesh_rx_devkey_get(size_t index, uint16_t src)
 {
-    const u8_t *key = NULL;
+    const uint8_t *key = NULL;
 
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {

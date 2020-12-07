@@ -24,7 +24,7 @@
 
 #define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
-static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
+static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, uint16_t tx_dst)
 {
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
@@ -117,7 +117,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
     return node;
 }
 
-static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
+static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, uint16_t tx_dst)
 {
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
@@ -141,8 +141,8 @@ static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
     return false;
 }
 
-static u32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
-                                          int size, u32_t opcode)
+static uint32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
+                                             int size, uint32_t opcode)
 {
     if (!op_pair || size == 0) {
         return 0;
@@ -159,26 +159,26 @@ static u32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pai
     return 0;
 }
 
-static s32_t bt_mesh_get_adv_duration(void)
+static int32_t bt_mesh_get_adv_duration(void)
 {
-    u16_t duration, adv_int;
-    u8_t xmit;
+    uint16_t duration, adv_int;
+    uint8_t xmit;
 
     xmit = bt_mesh_net_transmit_get();  /* Network transmit */
     adv_int = BLE_MESH_TRANSMIT_INT(xmit);
     duration = (BLE_MESH_TRANSMIT_COUNT(xmit) + 1) * (adv_int + 10);
 
-    return (s32_t)duration;
+    return (int32_t)duration;
 }
 
-static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
-                                         struct net_buf_simple *msg,
-                                         u32_t opcode, s32_t timeout)
+static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
+                                           struct net_buf_simple *msg,
+                                           uint32_t opcode, int32_t timeout)
 {
-    s32_t seg_retrans_to = 0, duration = 0, time = 0;
-    u8_t seg_count = 0, seg_retrans_num = 0;
+    int32_t seg_retrans_to = 0, duration = 0, time = 0;
+    uint8_t seg_count = 0, seg_retrans_num = 0;
     bool need_seg = false;
-    u8_t mic_size = 0;
+    uint8_t mic_size = 0;
 
     if (msg->len > BLE_MESH_SDU_UNSEG_MAX || ctx->send_rel) {
         need_seg = true;    /* Needs segmentation */
@@ -207,7 +207,7 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
          * calculation here. And the retransmit timer will be started event if
          * the attempts reaches ZERO when the dst is a unicast address.
          */
-        s32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
+        int32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
         time = (seg_duration + seg_retrans_to) * seg_retrans_num;
 
         BT_INFO("Original timeout %dms, calculated timeout %dms", timeout, time);
@@ -230,7 +230,7 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
     return time;
 }
 
-static void msg_send_start(u16_t duration, int err, void *cb_data)
+static void msg_send_start(uint16_t duration, int err, void *cb_data)
 {
     bt_mesh_client_node_t *node = cb_data;
 
@@ -503,7 +503,7 @@ int bt_mesh_client_clear_list(void *data)
     return 0;
 }
 
-int bt_mesh_set_client_model_role(struct bt_mesh_model *model, u8_t role)
+int bt_mesh_set_client_model_role(struct bt_mesh_model *model, uint8_t role)
 {
     bt_mesh_client_user_data_t *client = NULL;
 

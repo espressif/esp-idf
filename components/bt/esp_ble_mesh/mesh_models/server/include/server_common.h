@@ -61,23 +61,23 @@ enum {
 struct bt_mesh_state_transition {
     bool just_started;
 
-    u8_t  trans_time;
-    u8_t  remain_time;
-    u8_t  delay;
-    u32_t quo_tt;
-    u32_t counter;
-    u32_t total_duration;
-    s64_t start_timestamp;
+    uint8_t  trans_time;
+    uint8_t  remain_time;
+    uint8_t  delay;
+    uint32_t quo_tt;
+    uint32_t counter;
+    uint32_t total_duration;
+    int64_t  start_timestamp;
 
     BLE_MESH_ATOMIC_DEFINE(flag, BLE_MESH_TRANS_FLAG_MAX);
     struct k_delayed_work timer;
 };
 
 struct bt_mesh_last_msg_info {
-    u8_t  tid;
-    u16_t src;
-    u16_t dst;
-    s64_t timestamp;
+    uint8_t  tid;
+    uint16_t src;
+    uint16_t dst;
+    int64_t  timestamp;
 };
 
 #define BLE_MESH_SERVER_RSP_BY_APP  0
@@ -99,31 +99,31 @@ struct bt_mesh_server_rsp_ctrl {
      *        6. If status_auto_rsp is set to BLE_MESH_SERVER_AUTO_RSP, then the response
      *           of Server status messages will be replied by the server models;
      */
-    u8_t get_auto_rsp : 1, /* Response for Client Get messages */
-         set_auto_rsp : 1, /* Response for Client Set messages */
-         status_auto_rsp : 1; /* Response for Server Status messages */
+    uint8_t get_auto_rsp : 1, /* Response for Client Get messages */
+            set_auto_rsp : 1, /* Response for Client Set messages */
+            status_auto_rsp : 1; /* Response for Server Status messages */
 };
 
-u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model);
+uint8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model);
 
-int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_time);
+int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, uint8_t *trans_time);
 
 int bt_mesh_server_get_optional(struct bt_mesh_model *model,
                                 struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf,
-                                u8_t *trans_time, u8_t *delay,
+                                uint8_t *trans_time, uint8_t *delay,
                                 bool *optional);
 
 void bt_mesh_server_alloc_ctx(struct k_work *work);
 void bt_mesh_server_free_ctx(struct k_work *work);
 
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
-                                     u8_t tid, u16_t src, u16_t dst, s64_t *now);
+                                     uint8_t tid, uint16_t src, uint16_t dst, int64_t *now);
 
 void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
-                                    u8_t tid, u16_t src, u16_t dst, s64_t *now);
+                                    uint8_t tid, uint16_t src, uint16_t dst, int64_t *now);
 
-struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u16_t msg_len);
+struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, uint16_t msg_len);
 
 #ifdef __cplusplus
 }
