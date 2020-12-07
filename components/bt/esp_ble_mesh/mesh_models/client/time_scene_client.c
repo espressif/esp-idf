@@ -97,7 +97,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode = 0U;
+    uint32_t opcode = 0U;
 
     BT_WARN("Receive time scene status message timeout");
 
@@ -126,8 +126,8 @@ static void time_scene_status(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     bt_mesh_client_node_t *node = NULL;
-    u8_t *val = NULL;
-    u8_t evt = 0xFF;
+    uint8_t *val = NULL;
+    uint8_t evt = 0xFF;
     size_t len = 0U;
 
     BT_DBG("len %d, bytes %s", buf->len, bt_hex(buf->data, buf->len));
@@ -148,11 +148,11 @@ static void time_scene_status(struct bt_mesh_model *model,
         net_buf_simple_pull(buf, 5);
         status->sub_second = net_buf_simple_pull_u8(buf);
         status->uncertainty = net_buf_simple_pull_u8(buf);
-        u16_t temp = net_buf_simple_pull_le16(buf);
+        uint16_t temp = net_buf_simple_pull_le16(buf);
         status->time_authority = temp & BIT(0);
         status->tai_utc_delta = temp >> 15;
         status->time_zone_offset = net_buf_simple_pull_u8(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_time_status);
         break;
     }
@@ -171,7 +171,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         status->time_zone_offset_new = net_buf_simple_pull_u8(buf);
         memcpy(status->tai_zone_change, buf->data, 5);
         net_buf_simple_pull(buf, 5);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_time_zone_status);
         break;
     }
@@ -186,7 +186,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Out of memory", __func__);
             return;
         }
-        u16_t temp = net_buf_simple_pull_le16(buf);
+        uint16_t temp = net_buf_simple_pull_le16(buf);
         status->tai_utc_delta_curr = temp & BIT_MASK(15);
         status->padding_1 = (temp >> 15) & BIT(0);
         temp = net_buf_simple_pull_le16(buf);
@@ -194,7 +194,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         status->padding_2 = (temp >> 15) & BIT(0);
         memcpy(status->tai_delta_change, buf->data, 5);
         net_buf_simple_pull(buf, 5);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_tai_utc_delta_status);
         break;
     }
@@ -210,7 +210,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             return;
         }
         status->time_role = net_buf_simple_pull_u8(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_time_role_status);
         break;
     }
@@ -232,7 +232,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             status->target_scene = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_scene_status);
         break;
     }
@@ -252,7 +252,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->scenes, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_scene_register_status);
         break;
     }
@@ -268,7 +268,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             return;
         }
         status->schedules = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_scheduler_status);
         break;
     }
@@ -286,7 +286,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         memcpy(status, buf->data, offsetof(struct bt_mesh_scheduler_act_status, scene_number));
         net_buf_simple_pull(buf, offsetof(struct bt_mesh_scheduler_act_status, scene_number));
         status->scene_number = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_scheduler_act_status);
         break;
     }
@@ -330,7 +330,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            u32_t opcode = node->opcode;
+            uint32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
             bt_mesh_time_scene_client_cb_evt_to_btc(opcode, evt, model, ctx, val, len);
         }
@@ -398,7 +398,7 @@ static int time_scene_get_state(bt_mesh_client_common_param_t *common, void *val
 }
 
 static int time_scene_set_state(bt_mesh_client_common_param_t *common,
-                                void *value, u16_t value_len, bool need_ack)
+                                void *value, uint16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
     int err = 0;
@@ -530,7 +530,7 @@ int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, v
 int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set)
 {
     bt_mesh_time_scene_client_t *client = NULL;
-    u16_t length = 0U;
+    uint16_t length = 0U;
     bool need_ack = false;
 
     if (!common || !common->model || !set) {

@@ -17,8 +17,8 @@
 #include "device_property.h"
 
 static struct bt_mesh_dev_prop {
-    u16_t prop_id;
-    u8_t  len;
+    uint16_t prop_id;
+    uint8_t  len;
 } device_properties[] = {
     { BLE_MESH_INVALID_DEVICE_PROPERTY_ID,                               0xFF }, /* Prohibited */
     { BLE_MESH_AVERAGE_AMBIENT_TEMPERATURE_IN_A_PERIOD_OF_DAY,           0x03 },
@@ -206,7 +206,7 @@ static struct bt_mesh_dev_prop {
     { BLE_MESH_OUTPUT_CURRENT_PERCENT,                                   0x01 },
 };
 
-u8_t bt_mesh_get_dev_prop_len(u16_t prop_id)
+uint8_t bt_mesh_get_dev_prop_len(uint16_t prop_id)
 {
     if (prop_id > BLE_MESH_OUTPUT_CURRENT_PERCENT) {
         BT_ERR("Unknown Device Property ID 0x%04x", prop_id);

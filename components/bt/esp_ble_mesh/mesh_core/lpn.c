@@ -31,8 +31,7 @@
 #endif
 
 #define LPN_RECV_DELAY            CONFIG_BLE_MESH_LPN_RECV_DELAY
-#define SCAN_LATENCY              MIN(CONFIG_BLE_MESH_LPN_SCAN_LATENCY, \
-                      LPN_RECV_DELAY)
+#define SCAN_LATENCY              MIN(CONFIG_BLE_MESH_LPN_SCAN_LATENCY, LPN_RECV_DELAY)
 
 #define FRIEND_REQ_RETRY_TIMEOUT  K_SECONDS(CONFIG_BLE_MESH_LPN_RETRY_TIMEOUT)
 
@@ -42,34 +41,34 @@
 
 #define POLL_RETRY_TIMEOUT        K_MSEC(100)
 
-#define REQ_RETRY_DURATION(lpn)  (4 * (LPN_RECV_DELAY + (lpn)->adv_duration + \
-                       (lpn)->recv_win + POLL_RETRY_TIMEOUT))
+#define REQ_RETRY_DURATION(lpn)   (4 * (LPN_RECV_DELAY + (lpn)->adv_duration + \
+                                   (lpn)->recv_win + POLL_RETRY_TIMEOUT))
 
-#define POLL_TIMEOUT_INIT     (CONFIG_BLE_MESH_LPN_INIT_POLL_TIMEOUT * 100)
-#define POLL_TIMEOUT_MAX(lpn) ((CONFIG_BLE_MESH_LPN_POLL_TIMEOUT * 100) - \
-                   REQ_RETRY_DURATION(lpn))
+#define POLL_TIMEOUT_INIT         (CONFIG_BLE_MESH_LPN_INIT_POLL_TIMEOUT * 100)
+#define POLL_TIMEOUT_MAX(lpn)     ((CONFIG_BLE_MESH_LPN_POLL_TIMEOUT * 100) - \
+                                   REQ_RETRY_DURATION(lpn))
 
 /**
  * 1. Should use 20 attempts for BQB test case MESH/NODE/FRND/LPM/BI-02-C.
  * 2. We should use more specific value for each PollTimeout range.
  */
-#define REQ_ATTEMPTS(lpn)     (POLL_TIMEOUT_MAX(lpn) < K_SECONDS(3) ? 2 : 6)
+#define REQ_ATTEMPTS(lpn)         (POLL_TIMEOUT_MAX(lpn) < K_SECONDS(3) ? 2 : 6)
 
-#define CLEAR_ATTEMPTS        2
+#define CLEAR_ATTEMPTS            2
 
-#define LPN_CRITERIA ((CONFIG_BLE_MESH_LPN_MIN_QUEUE_SIZE) | \
-              (CONFIG_BLE_MESH_LPN_RSSI_FACTOR << 3) | \
-              (CONFIG_BLE_MESH_LPN_RECV_WIN_FACTOR << 5))
+#define LPN_CRITERIA              ((CONFIG_BLE_MESH_LPN_MIN_QUEUE_SIZE) | \
+                                   (CONFIG_BLE_MESH_LPN_RSSI_FACTOR << 3) | \
+                                   (CONFIG_BLE_MESH_LPN_RECV_WIN_FACTOR << 5))
 
-#define POLL_TO(to) { (u8_t)((to) >> 16), (u8_t)((to) >> 8), (u8_t)(to) }
-#define LPN_POLL_TO POLL_TO(CONFIG_BLE_MESH_LPN_POLL_TIMEOUT)
+#define POLL_TO(to)               { (uint8_t)((to) >> 16), (uint8_t)((to) >> 8), (uint8_t)(to) }
+#define LPN_POLL_TO               POLL_TO(CONFIG_BLE_MESH_LPN_POLL_TIMEOUT)
 
 /* 2 transmissions, 20ms interval */
-#define POLL_XMIT BLE_MESH_TRANSMIT(1, 20)
+#define POLL_XMIT                 BLE_MESH_TRANSMIT(1, 20)
 
-#define FIRST_POLL_ATTEMPTS     6
+#define FIRST_POLL_ATTEMPTS       6
 
-static void (*lpn_cb)(u16_t friend_addr, bool established);
+static void (*lpn_cb)(uint16_t friend_addr, bool established);
 
 #if !CONFIG_BLE_MESH_NO_LOG
 static const char *state2str(int state)
@@ -272,7 +271,7 @@ static void clear_friendship(bool force, bool disable)
     }
 }
 
-static void friend_req_sent(u16_t duration, int err, void *user_data)
+static void friend_req_sent(uint16_t duration, int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -331,7 +330,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
                             sizeof(req), &friend_req_sent_cb, NULL);
 }
 
-static void req_sent(u16_t duration, int err, void *user_data)
+static void req_sent(uint16_t duration, int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -389,7 +388,7 @@ static int send_friend_poll(void)
         .friend_cred = true,
     };
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-    u8_t fsn = lpn->fsn;
+    uint8_t fsn = lpn->fsn;
     int err = 0;
 
     BT_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
@@ -510,7 +509,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     struct bt_mesh_subnet *sub = rx->sub;
     struct friend_cred *cred = NULL;
-    u16_t frnd_counter = 0U;
+    uint16_t frnd_counter = 0U;
     int err = 0;
 
     if (buf->len < sizeof(*msg)) {
@@ -572,7 +571,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 {
     struct bt_mesh_ctl_friend_clear_confirm *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-    u16_t addr = 0U, counter = 0U;
+    uint16_t addr = 0U, counter = 0U;
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Clear Confirm");
@@ -600,10 +599,10 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
     return 0;
 }
 
-static void lpn_group_add(u16_t group)
+static void lpn_group_add(uint16_t group)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-    u16_t *free_slot = NULL;
+    uint16_t *free_slot = NULL;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(lpn->groups); i++) {
@@ -626,7 +625,7 @@ static void lpn_group_add(u16_t group)
     lpn->groups_changed = 1U;
 }
 
-static void lpn_group_del(u16_t group)
+static void lpn_group_del(uint16_t group)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     int i;
@@ -657,7 +656,7 @@ static inline int group_popcount(bt_mesh_atomic_t *target)
 #endif
 }
 
-static bool sub_update(u8_t op)
+static bool sub_update(uint8_t op)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     int added_count = group_popcount(lpn->added);
@@ -805,7 +804,7 @@ static void lpn_timeout(struct k_work *work)
         break;
     case BLE_MESH_LPN_ESTABLISHED:
         if (lpn->req_attempts < REQ_ATTEMPTS(lpn)) {
-            u8_t req = lpn->sent_req;
+            uint8_t req = lpn->sent_req;
 
             lpn->sent_req = 0U;
 
@@ -839,7 +838,7 @@ static void lpn_timeout(struct k_work *work)
     }
 }
 
-void bt_mesh_lpn_group_add(u16_t group)
+void bt_mesh_lpn_group_add(uint16_t group)
 {
     BT_DBG("group 0x%04x", group);
 
@@ -852,7 +851,7 @@ void bt_mesh_lpn_group_add(u16_t group)
     sub_update(TRANS_CTL_OP_FRIEND_SUB_ADD);
 }
 
-void bt_mesh_lpn_group_del(u16_t *groups, size_t group_count)
+void bt_mesh_lpn_group_del(uint16_t *groups, size_t group_count)
 {
     int i;
 
@@ -870,7 +869,7 @@ void bt_mesh_lpn_group_del(u16_t *groups, size_t group_count)
     sub_update(TRANS_CTL_OP_FRIEND_SUB_REM);
 }
 
-static s32_t poll_timeout(struct bt_mesh_lpn *lpn)
+static int32_t poll_timeout(struct bt_mesh_lpn *lpn)
 {
     /* If we're waiting for segment acks keep polling at high freq */
     if (bt_mesh_tx_in_progress()) {
@@ -959,7 +958,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     struct bt_mesh_ctl_friend_update *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     struct bt_mesh_subnet *sub = rx->sub;
-    u32_t iv_index = 0U;
+    uint32_t iv_index = 0U;
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Update");
@@ -1058,7 +1057,7 @@ int bt_mesh_lpn_poll(void)
     return send_friend_poll();
 }
 
-void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established))
+void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established))
 {
     lpn_cb = cb;
 }

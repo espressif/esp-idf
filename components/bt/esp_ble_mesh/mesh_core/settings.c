@@ -59,10 +59,10 @@
  * gets deleted its struct becomes invalid and may be reused for other keys.
  */
 static struct key_update {
-    u16_t key_idx: 12,   /* AppKey or NetKey Index */
-          valid: 1,      /* 1 if this entry is valid, 0 if not */
-          app_key: 1,    /* 1 if this is an AppKey, 0 if a NetKey */
-          clear: 1;      /* 1 if key needs clearing, 0 if storing */
+    uint16_t key_idx:12, /* AppKey or NetKey Index */
+             valid:1,    /* 1 if this entry is valid, 0 if not */
+             app_key:1,  /* 1 if this is an AppKey, 0 if a NetKey */
+             clear:1;    /* 1 if key needs clearing, 0 if storing */
 } key_updates[CONFIG_BLE_MESH_APP_KEY_COUNT + CONFIG_BLE_MESH_SUBNET_COUNT];
 
 static struct k_delayed_work pending_store;
@@ -70,78 +70,78 @@ static void store_pending(struct k_work *work);
 
 /* Mesh network storage information */
 struct net_val {
-    u16_t primary_addr;
-    u8_t  dev_key[16];
+    uint16_t primary_addr;
+    uint8_t  dev_key[16];
 } __packed;
 
 /* Sequence number storage */
 struct seq_val {
-    u8_t val[3];
+    uint8_t val[3];
 } __packed;
 
 /* Heartbeat Publication storage */
 struct hb_pub_val {
-    u16_t dst;
-    u8_t  period;
-    u8_t  ttl;
-    u16_t feat;
-    u16_t net_idx: 12,
-          indefinite: 1;
+    uint16_t dst;
+    uint8_t  period;
+    uint8_t  ttl;
+    uint16_t feat;
+    uint16_t net_idx:12,
+             indefinite:1;
 };
 
 /* Miscellaneous configuration server model states */
 struct cfg_val {
-    u8_t net_transmit;
-    u8_t relay;
-    u8_t relay_retransmit;
-    u8_t beacon;
-    u8_t gatt_proxy;
-    u8_t frnd;
-    u8_t default_ttl;
+    uint8_t net_transmit;
+    uint8_t relay;
+    uint8_t relay_retransmit;
+    uint8_t beacon;
+    uint8_t gatt_proxy;
+    uint8_t frnd;
+    uint8_t default_ttl;
 };
 
 /* IV Index & IV Update storage */
 struct iv_val {
-    u32_t iv_index;
-    u8_t  iv_update: 1,
-          iv_duration: 7;
+    uint32_t iv_index;
+    uint8_t  iv_update:1,
+             iv_duration:7;
 } __packed;
 
 /* Replay Protection List storage */
 struct rpl_val {
-    u32_t seq: 24,
-          old_iv: 1;
+    uint32_t seq:24,
+             old_iv:1;
 };
 
 /* NetKey storage information */
 struct net_key_val {
-    u8_t  kr_flag: 1,
-          kr_phase: 7;
-    u8_t  val[2][16];
+    uint8_t kr_flag:1,
+            kr_phase:7;
+    uint8_t val[2][16];
 } __packed;
 
 /* AppKey storage information */
 struct app_key_val {
-    u16_t net_idx;
-    bool  updated;
-    u8_t  val[2][16];
+    uint16_t net_idx;
+    bool     updated;
+    uint8_t  val[2][16];
 } __packed;
 
 struct mod_pub_val {
-    u16_t addr;
-    u16_t key;
-    u8_t  ttl;
-    u8_t  retransmit;
-    u8_t  period;
-    u8_t  period_div: 4,
-          cred: 1;
+    uint16_t addr;
+    uint16_t key;
+    uint8_t  ttl;
+    uint8_t  retransmit;
+    uint8_t  period;
+    uint8_t  period_div:4,
+             cred:1;
 };
 
 /* Virtual Address information */
 struct va_val {
-    u16_t ref;
-    u16_t addr;
-    u8_t  uuid[16];
+    uint16_t ref;
+    uint16_t addr;
+    uint8_t  uuid[16];
 } __packed;
 
 /* We need this so we don't overwrite app-hardcoded values in case FCB
@@ -153,21 +153,21 @@ static struct {
 } stored_cfg;
 
 struct prov_info {
-    u16_t primary_addr;
-    u16_t alloc_addr;
+    uint16_t primary_addr;
+    uint16_t alloc_addr;
 };
 
 struct node_info {
-    u8_t  addr[6];
-    u8_t  addr_type;
-    u8_t  dev_uuid[16];
-    u16_t oob_info;
-    u16_t unicast_addr;
-    u8_t  element_num;
-    u16_t net_idx;
-    u8_t  flags;
-    u32_t iv_index;
-    u8_t  dev_key[16];
+    uint8_t  addr[6];
+    uint8_t  addr_type;
+    uint8_t  dev_uuid[16];
+    uint16_t oob_info;
+    uint16_t unicast_addr;
+    uint8_t  element_num;
+    uint16_t net_idx;
+    uint8_t  flags;
+    uint32_t iv_index;
+    uint8_t  dev_key[16];
 } __packed;
 
 static bt_mesh_mutex_t settings_lock;
@@ -203,7 +203,7 @@ static int role_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)bt_mesh.flags, sizeof(bt_mesh.flags), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)bt_mesh.flags, sizeof(bt_mesh.flags), &exist);
     if (err) {
         BT_ERR("Failed to load mesh device role");
         return err;
@@ -231,7 +231,7 @@ static int net_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&net, sizeof(net), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&net, sizeof(net), &exist);
     if (err) {
         BT_ERR("Failed to load node net info");
         memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
@@ -260,7 +260,7 @@ static int iv_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&iv, sizeof(iv), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&iv, sizeof(iv), &exist);
     if (err) {
         BT_ERR("Failed to load iv_index");
         bt_mesh.iv_index = 0U;
@@ -290,7 +290,7 @@ static int seq_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&seq, sizeof(seq), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&seq, sizeof(seq), &exist);
     if (err) {
         BT_ERR("Failed to load sequence number");
         bt_mesh.seq = 0U;
@@ -318,7 +318,7 @@ static int seq_set(const char *name)
     return 0;
 }
 
-static struct bt_mesh_rpl *rpl_find(u16_t src)
+static struct bt_mesh_rpl *rpl_find(uint16_t src)
 {
     int i;
 
@@ -331,7 +331,7 @@ static struct bt_mesh_rpl *rpl_find(u16_t src)
     return NULL;
 }
 
-static struct bt_mesh_rpl *rpl_alloc(u16_t src)
+static struct bt_mesh_rpl *rpl_alloc(uint16_t src)
 {
     int i;
 
@@ -366,7 +366,7 @@ static int rpl_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t src = net_buf_simple_pull_le16(buf);
+        uint16_t src = net_buf_simple_pull_le16(buf);
 
         if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
             BT_ERR("Invalid source address 0x%04x", src);
@@ -375,7 +375,7 @@ static int rpl_set(const char *name)
 
         sprintf(get, "mesh/rpl/%04x", src);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&rpl, sizeof(rpl), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&rpl, sizeof(rpl), &exist);
         if (err) {
             BT_ERR("Failed to load RPL entry 0x%04x", src);
             continue;
@@ -407,7 +407,7 @@ free:
     return err;
 }
 
-static struct bt_mesh_subnet *subnet_alloc(u16_t net_idx)
+static struct bt_mesh_subnet *subnet_alloc(uint16_t net_idx)
 {
     int i;
 
@@ -442,10 +442,10 @@ static int net_key_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t net_idx = net_buf_simple_pull_le16(buf);
+        uint16_t net_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/nk/%04x", net_idx);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load NetKey 0x%03x", net_idx);
             continue;
@@ -502,10 +502,10 @@ static int app_key_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t app_idx = net_buf_simple_pull_le16(buf);
+        uint16_t app_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/ak/%04x", app_idx);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load AppKey 0x%03x", app_idx);
             continue;
@@ -563,7 +563,7 @@ static int hb_pub_set(const char *name)
         return -EINVAL;
     }
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&hb_val, sizeof(hb_val), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&hb_val, sizeof(hb_val), &exist);
     if (err) {
         BT_ERR("Failed to load heartbeat publication");
         hb_pub->dst = BLE_MESH_ADDR_UNASSIGNED;
@@ -610,7 +610,7 @@ static int cfg_set(const char *name)
         return -EINVAL;
     }
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&val, sizeof(val), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&val, sizeof(val), &exist);
     if (err) {
         BT_ERR("Failed to load configuration state");
         stored_cfg.valid = false;
@@ -630,7 +630,7 @@ static int cfg_set(const char *name)
     return 0;
 }
 
-static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key)
+static int model_set_bind(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
 {
     char name[16] = {'\0'};
     bool exist = false;
@@ -643,7 +643,7 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key
     }
 
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
-    err = bt_mesh_load_core_settings(name, (u8_t *)model->keys, sizeof(model->keys), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)model->keys, sizeof(model->keys), &exist);
     if (err) {
         BT_ERR("Failed to load model bound keys");
         return -EIO;
@@ -656,7 +656,7 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key
     return 0;
 }
 
-static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
+static int model_set_sub(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
 {
     char name[16] = {'\0'};
     bool exist = false;
@@ -669,7 +669,7 @@ static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     }
 
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
-    err = bt_mesh_load_core_settings(name, (u8_t *)model->groups, sizeof(model->groups), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)model->groups, sizeof(model->groups), &exist);
     if (err) {
         BT_ERR("Failed to load model subscriptions");
         return -EIO;
@@ -682,7 +682,7 @@ static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     return 0;
 }
 
-static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
+static int model_set_pub(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
 {
     struct mod_pub_val pub = {0};
     char name[16] = {'\0'};
@@ -696,7 +696,7 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     }
 
     sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
-    err = bt_mesh_load_core_settings(name, (u8_t *)&pub, sizeof(pub), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&pub, sizeof(pub), &exist);
     if (err) {
         BT_ERR("Failed to load model publication");
         model->pub->addr = BLE_MESH_ADDR_UNASSIGNED;
@@ -730,7 +730,7 @@ static int model_set(bool vnd, const char *name)
 {
     struct bt_mesh_model *model = NULL;
     struct net_buf_simple *buf = NULL;
-    u8_t elem_idx = 0U, model_idx = 0U;
+    uint8_t elem_idx = 0U, model_idx = 0U;
     size_t length = 0U;
     int i;
 
@@ -744,7 +744,7 @@ static int model_set(bool vnd, const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t model_key = net_buf_simple_pull_le16(buf);
+        uint16_t model_key = net_buf_simple_pull_le16(buf);
 
         elem_idx = BLE_MESH_GET_ELEM_IDX(model_key);
         model_idx = BLE_MESH_GET_MODEL_IDX(model_key);
@@ -797,10 +797,10 @@ static int va_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t index = net_buf_simple_pull_le16(buf);
+        uint16_t index = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/va/%04x", index);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&va, sizeof(va), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&va, sizeof(va), &exist);
         if (err) {
             BT_ERR("Failed to load virtual address 0x%04x", index);
             continue;
@@ -844,7 +844,7 @@ static int p_prov_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&val, sizeof(val), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&val, sizeof(val), &exist);
     if (err) {
         BT_ERR("Failed to load next address allocation");
         return 0;
@@ -864,13 +864,13 @@ static int p_prov_set(const char *name)
 
 static int p_net_idx_set(const char *name)
 {
-    u16_t net_idx = 0U;
+    uint16_t net_idx = 0U;
     bool exist = false;
     int err = 0;
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&net_idx, sizeof(net_idx), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&net_idx, sizeof(net_idx), &exist);
     if (err) {
         BT_ERR("Failed to load next NetKeyIndex alloc");
         return 0;
@@ -889,13 +889,13 @@ static int p_net_idx_set(const char *name)
 
 static int p_app_idx_set(const char *name)
 {
-    u16_t app_idx = 0U;
+    uint16_t app_idx = 0U;
     bool exist = false;
     int err = 0;
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&app_idx, sizeof(app_idx), &exist);
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&app_idx, sizeof(app_idx), &exist);
     if (err) {
         BT_ERR("Failed to load next AppKeyIndex alloc");
         return 0;
@@ -971,10 +971,10 @@ static int p_net_key_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t net_idx = net_buf_simple_pull_le16(buf);
+        uint16_t net_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/pnk/%04x", net_idx);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load NetKey 0x%03x", net_idx);
             continue;
@@ -1031,10 +1031,10 @@ static int p_app_key_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t app_idx = net_buf_simple_pull_le16(buf);
+        uint16_t app_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/pak/%04x", app_idx);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&key, sizeof(key), &exist);
+        err = bt_mesh_load_core_settings(get, (uint8_t *)&key, sizeof(key), &exist);
         if (err) {
             BT_ERR("Failed to load AppKey 0x%03x", app_idx);
             continue;
@@ -1078,7 +1078,7 @@ free:
     return err;
 }
 
-static int node_info_set(u16_t addr, bool *exist)
+static int node_info_set(uint16_t addr, bool *exist)
 {
     struct bt_mesh_node node = {0};
     struct node_info info = {0};
@@ -1086,7 +1086,7 @@ static int node_info_set(u16_t addr, bool *exist)
     int err = 0;
 
     sprintf(get, "mesh/pn/%04x/i", addr);
-    err = bt_mesh_load_core_settings(get, (u8_t *)&info, sizeof(info), exist);
+    err = bt_mesh_load_core_settings(get, (uint8_t *)&info, sizeof(info), exist);
     if (err) {
         BT_ERR("Failed to load node 0x%04x info", addr);
         return -EIO;
@@ -1118,7 +1118,7 @@ static int node_info_set(u16_t addr, bool *exist)
     return 0;
 }
 
-static int node_name_set(u16_t addr)
+static int node_name_set(uint16_t addr)
 {
     char name[BLE_MESH_NODE_NAME_SIZE + 1] = {0};
     char get[16] = {'\0'};
@@ -1126,7 +1126,7 @@ static int node_name_set(u16_t addr)
     int err = 0;
 
     sprintf(get, "mesh/pn/%04x/n", addr);
-    err = bt_mesh_load_core_settings(get, (u8_t *)name, BLE_MESH_NODE_NAME_SIZE, &exist);
+    err = bt_mesh_load_core_settings(get, (uint8_t *)name, BLE_MESH_NODE_NAME_SIZE, &exist);
     if (err) {
         BT_ERR("Failed to load node 0x%04x name", addr);
         return -EIO;
@@ -1147,7 +1147,7 @@ static int node_name_set(u16_t addr)
     return 0;
 }
 
-static int node_comp_data_set(u16_t addr)
+static int node_comp_data_set(uint16_t addr)
 {
     struct net_buf_simple *buf = NULL;
     char get[16] = {'\0'};
@@ -1185,7 +1185,7 @@ static int p_node_set(const char *name)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t addr = net_buf_simple_pull_le16(buf);
+        uint16_t addr = net_buf_simple_pull_le16(buf);
         if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
             BT_ERR("Invalid unicast address 0x%04x", addr);
             continue;
@@ -1288,7 +1288,7 @@ int settings_core_load(void)
         settings[i].func(settings[i].name);
 
         if (!strcmp(settings[i].name, "mesh/role")) {
-            u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
+            uint8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
             switch (role) {
             case BLE_MESH_SETTINGS_ROLE_NONE:
                 BT_INFO("Mesh device just starts up, no restore");
@@ -1345,7 +1345,7 @@ static void commit_model(struct bt_mesh_model *model, struct bt_mesh_elem *elem,
 {
     if (model->pub && model->pub->update &&
             model->pub->addr != BLE_MESH_ADDR_UNASSIGNED) {
-        s32_t ms = bt_mesh_model_pub_period_get(model);
+        int32_t ms = bt_mesh_model_pub_period_get(model);
         if (ms) {
             BT_DBG("Starting publish timer (period %u ms)", ms);
             k_delayed_work_submit(&model->pub->timer, ms);
@@ -1463,7 +1463,7 @@ int settings_core_commit(void)
 
 static void schedule_store(int flag)
 {
-    s32_t timeout = 0, remaining = 0;
+    int32_t timeout = 0, remaining = 0;
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, flag);
 
@@ -1516,14 +1516,14 @@ static void store_pending_net(void)
     net.primary_addr = bt_mesh_primary_addr();
     memcpy(net.dev_key, bt_mesh.dev_key, 16);
 
-    bt_mesh_save_core_settings("mesh/net", (const u8_t *)&net, sizeof(net));
+    bt_mesh_save_core_settings("mesh/net", (const uint8_t *)&net, sizeof(net));
 }
 
 void bt_mesh_store_role(void)
 {
     BT_DBG("Store, device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK);
 
-    bt_mesh_save_core_settings("mesh/role", (const u8_t *)bt_mesh.flags, sizeof(bt_mesh.flags));
+    bt_mesh_save_core_settings("mesh/role", (const uint8_t *)bt_mesh.flags, sizeof(bt_mesh.flags));
 }
 
 void bt_mesh_store_net(void)
@@ -1539,7 +1539,7 @@ static void store_pending_iv(void)
     iv.iv_update = bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS);
     iv.iv_duration = bt_mesh.ivu_duration;
 
-    bt_mesh_save_core_settings("mesh/iv", (const u8_t *)&iv, sizeof(iv));
+    bt_mesh_save_core_settings("mesh/iv", (const uint8_t *)&iv, sizeof(iv));
 }
 
 void bt_mesh_store_iv(bool only_duration)
@@ -1564,7 +1564,7 @@ static void store_pending_seq(void)
 
     sys_put_le24(bt_mesh.seq, seq.val);
 
-    bt_mesh_save_core_settings("mesh/seq", (const u8_t *)&seq, sizeof(seq));
+    bt_mesh_save_core_settings("mesh/seq", (const uint8_t *)&seq, sizeof(seq));
 }
 
 void bt_mesh_store_seq(void)
@@ -1595,7 +1595,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
     rpl.old_iv = entry->old_iv;
 
     sprintf(name, "mesh/rpl/%04x", entry->src);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&rpl, sizeof(rpl));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&rpl, sizeof(rpl));
     if (err) {
         BT_ERR("Failed to store RPL entry 0x%04x", entry->src);
         return;
@@ -1614,7 +1614,7 @@ static void clear_rpl(void)
     struct net_buf_simple *buf = NULL;
     char name[16] = {'\0'};
     size_t length = 0U;
-    u16_t src = 0U;
+    uint16_t src = 0U;
     int i;
 
     BT_DBG("%s", __func__);
@@ -1678,7 +1678,7 @@ static void store_pending_hb_pub(void)
     val.feat = hb_pub->feat;
     val.net_idx = hb_pub->net_idx;
 
-    bt_mesh_save_core_settings("mesh/hb_pub", (const u8_t *)&val, sizeof(val));
+    bt_mesh_save_core_settings("mesh/hb_pub", (const uint8_t *)&val, sizeof(val));
 }
 
 static void clear_hb_pub(void)
@@ -1705,7 +1705,7 @@ static void store_pending_cfg(void)
     val.frnd = cfg->frnd;
     val.default_ttl = cfg->default_ttl;
 
-    bt_mesh_save_core_settings("mesh/cfg", (const u8_t *)&val, sizeof(val));
+    bt_mesh_save_core_settings("mesh/cfg", (const uint8_t *)&val, sizeof(val));
 }
 
 static void clear_cfg(void)
@@ -1714,7 +1714,7 @@ static void clear_cfg(void)
     bt_mesh_erase_core_settings("mesh/cfg");
 }
 
-static void clear_app_key(u16_t app_idx)
+static void clear_app_key(uint16_t app_idx)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -1732,7 +1732,7 @@ static void clear_app_key(u16_t app_idx)
     return;
 }
 
-static void clear_net_key(u16_t net_idx)
+static void clear_net_key(uint16_t net_idx)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -1765,7 +1765,7 @@ static void store_net_key(struct bt_mesh_subnet *sub)
     key.kr_phase = sub->kr_phase;
 
     sprintf(name, "mesh/nk/%04x", sub->net_idx);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&key, sizeof(key));
     if (err) {
         BT_ERR("Failed to store NetKey 0x%03x", sub->net_idx);
         return;
@@ -1791,7 +1791,7 @@ static void store_app_key(struct bt_mesh_app_key *app)
     memcpy(key.val[1], app->keys[1].val, 16);
 
     sprintf(name, "mesh/ak/%04x", app->app_idx);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&key, sizeof(key));
     if (err) {
         BT_ERR("Failed to store AppKey 0x%03x", app->app_idx);
         return;
@@ -1849,13 +1849,13 @@ static void store_pending_keys(void)
 static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
     int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
 
-    err = bt_mesh_save_core_settings(name, (const u8_t *)model->keys, sizeof(model->keys));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->keys, sizeof(model->keys));
     if (err) {
         BT_ERR("Failed to store %s", name);
         return;
@@ -1873,13 +1873,13 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
     int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
 
-    err = bt_mesh_save_core_settings(name, (const u8_t *)model->groups, sizeof(model->groups));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->groups, sizeof(model->groups));
     if (err) {
         BT_ERR("Failed to store %s", name);
         return;
@@ -1898,7 +1898,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
 {
     struct mod_pub_val pub = {0};
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
     int err = 0;
 
     if (!model->pub) {
@@ -1917,7 +1917,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
     pub.period_div = model->pub->period_div;
     pub.cred = model->pub->cred;
 
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&pub, sizeof(pub));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&pub, sizeof(pub));
     if (err) {
         BT_ERR("Failed to store %s", name);
         return;
@@ -1959,7 +1959,7 @@ static void store_pending_mod(struct bt_mesh_model *model,
 static void clear_mod_bind(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
@@ -1971,7 +1971,7 @@ static void clear_mod_bind(struct bt_mesh_model *model, bool vnd)
 static void clear_mod_sub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
@@ -1983,7 +1983,7 @@ static void clear_mod_sub(struct bt_mesh_model *model, bool vnd)
 static void clear_mod_pub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key = 0U;
+    uint16_t model_key = 0U;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
     sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
@@ -2022,7 +2022,7 @@ static void store_pending_va(void)
     struct va_val va = {0};
     char name[16] = {'\0'};
     struct label *lab = NULL;
-    u16_t i = 0U;
+    uint16_t i = 0U;
     int err = 0;
 
     for (i = 0U; (lab = get_label(i)) != NULL; i++) {
@@ -2039,7 +2039,7 @@ static void store_pending_va(void)
             va.ref = lab->ref;
             va.addr = lab->addr;
             memcpy(va.uuid, lab->uuid, 16);
-            err = bt_mesh_save_core_settings(name, (const u8_t *)&va, sizeof(va));
+            err = bt_mesh_save_core_settings(name, (const uint8_t *)&va, sizeof(va));
         }
         if (err) {
             BT_ERR("Failed to %s virtual address %s",
@@ -2144,8 +2144,8 @@ void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
     schedule_store(BLE_MESH_RPL_PENDING);
 }
 
-static struct key_update *key_update_find(bool app_key, u16_t key_idx,
-        struct key_update **free_slot)
+static struct key_update *key_update_find(bool app_key, uint16_t key_idx,
+                                          struct key_update **free_slot)
 {
     struct key_update *match = NULL;
     int i;
@@ -2345,7 +2345,7 @@ void bt_mesh_store_label(void)
  *      key: "mesh/pn/xxxx/n" -> write/read to set/get the "xxxx" provisioned node name
  *      key: "mesh/pn/xxxx/c" -> write/read to set/get the "xxxx" provisioned node composition data
  */
-void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
+void bt_mesh_store_prov_info(uint16_t primary_addr, uint16_t alloc_addr)
 {
     struct prov_info val = {0};
 
@@ -2354,7 +2354,7 @@ void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
     val.primary_addr = primary_addr;
     val.alloc_addr = alloc_addr;
 
-    bt_mesh_save_core_settings("mesh/p_prov", (const u8_t *)&val, sizeof(val));
+    bt_mesh_save_core_settings("mesh/p_prov", (const uint8_t *)&val, sizeof(val));
 }
 
 void bt_mesh_clear_prov_info(void)
@@ -2375,7 +2375,7 @@ static void store_p_net_key(struct bt_mesh_subnet *sub)
     key.kr_phase = sub->kr_phase;
 
     sprintf(name, "mesh/pnk/%04x", sub->net_idx);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&key, sizeof(key));
     if (err) {
         BT_ERR("Failed to store NetKey 0x%03x", sub->net_idx);
         return;
@@ -2399,7 +2399,7 @@ static void store_p_app_key(struct bt_mesh_app_key *app)
     memcpy(key.val[1], app->keys[1].val, 16);
 
     sprintf(name, "mesh/pak/%04x", app->app_idx);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&key, sizeof(key));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&key, sizeof(key));
     if (err) {
         BT_ERR("Failed to store AppKey 0x%03x", app->app_idx);
         return;
@@ -2416,7 +2416,7 @@ void bt_mesh_store_p_net_idx(void)
     BT_DBG("Store, p_net_idx_next 0x%03x", bt_mesh.p_net_idx_next);
 
     bt_mesh_save_core_settings("mesh/p_netidx",
-        (const u8_t *)&bt_mesh.p_net_idx_next, sizeof(bt_mesh.p_net_idx_next));
+        (const uint8_t *)&bt_mesh.p_net_idx_next, sizeof(bt_mesh.p_net_idx_next));
 }
 
 void bt_mesh_clear_p_net_idx(void)
@@ -2430,7 +2430,7 @@ void bt_mesh_store_p_app_idx(void)
     BT_DBG("Store, p_app_idx_next 0x%03x", bt_mesh.p_app_idx_next);
 
     bt_mesh_save_core_settings("mesh/p_appidx",
-        (const u8_t *)&bt_mesh.p_app_idx_next, sizeof(bt_mesh.p_app_idx_next));
+        (const uint8_t *)&bt_mesh.p_app_idx_next, sizeof(bt_mesh.p_app_idx_next));
 }
 
 void bt_mesh_clear_p_app_idx(void)
@@ -2465,7 +2465,7 @@ void bt_mesh_store_p_app_key(struct bt_mesh_app_key *key)
     store_p_app_key(key);
 }
 
-void bt_mesh_clear_p_subnet(u16_t net_idx)
+void bt_mesh_clear_p_subnet(uint16_t net_idx)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -2481,7 +2481,7 @@ void bt_mesh_clear_p_subnet(u16_t net_idx)
     }
 }
 
-void bt_mesh_clear_p_app_key(u16_t app_idx)
+void bt_mesh_clear_p_app_key(uint16_t app_idx)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -2497,7 +2497,7 @@ void bt_mesh_clear_p_app_key(u16_t app_idx)
     }
 }
 
-void bt_mesh_clear_rpl_single(u16_t src)
+void bt_mesh_clear_rpl_single(uint16_t src)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -2539,7 +2539,7 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node)
     memcpy(val.dev_key, node->dev_key, 16);
 
     sprintf(name, "mesh/pn/%04x/i", node->unicast_addr);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&val, sizeof(val));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&val, sizeof(val));
     if (err) {
         BT_ERR("Failed to store node 0x%04x info", node->unicast_addr);
         return;
@@ -2551,7 +2551,7 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node)
     }
 }
 
-static void clear_node(u16_t addr)
+static void clear_node(uint16_t addr)
 {
     char name[16] = {'\0'};
     int err = 0;
@@ -2574,7 +2574,7 @@ static void clear_node(u16_t addr)
     }
 }
 
-void bt_mesh_clear_node_info(u16_t unicast_addr)
+void bt_mesh_clear_node_info(uint16_t unicast_addr)
 {
     if (!BLE_MESH_ADDR_IS_UNICAST(unicast_addr)) {
         BT_ERR("Invalid unicast address 0x%04x", unicast_addr);
@@ -2600,7 +2600,7 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node)
     strncpy(node_name, node->name, BLE_MESH_NODE_NAME_SIZE + 1);
 
     sprintf(name, "mesh/pn/%04x/n", node->unicast_addr);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)node_name, BLE_MESH_NODE_NAME_SIZE);
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)node_name, BLE_MESH_NODE_NAME_SIZE);
     if (err) {
         BT_ERR("Failed to store node 0x%04x name", node->unicast_addr);
     }
@@ -2617,7 +2617,7 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node)
     }
 
     sprintf(name, "mesh/pn/%04x/c", node->unicast_addr);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)node->comp_data, node->comp_length);
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)node->comp_data, node->comp_length);
     if (err) {
         BT_ERR("Failed to store node 0x%04x comp data", node->unicast_addr);
     }

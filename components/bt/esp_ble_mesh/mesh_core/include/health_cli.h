@@ -35,35 +35,35 @@ extern const struct bt_mesh_model_cb bt_mesh_health_cli_cb;
         BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_HEALTH_CLI,    \
             bt_mesh_health_cli_op, NULL, cli_data, &bt_mesh_health_cli_cb)
 
-int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid);
+int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, uint16_t cid);
 
 int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
-                               u16_t cid, bool need_ack);
+                               uint16_t cid, bool need_ack);
 
 int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
-                              u16_t cid, u8_t test_id, bool need_ack);
+                              uint16_t cid, uint8_t test_id, bool need_ack);
 
 int bt_mesh_health_period_get(bt_mesh_client_common_param_t *param);
 
 int bt_mesh_health_period_set(bt_mesh_client_common_param_t *param,
-                              u8_t divisor, bool need_ack);
+                              uint8_t divisor, bool need_ack);
 
 int bt_mesh_health_attention_get(bt_mesh_client_common_param_t *param);
 
 int bt_mesh_health_attention_set(bt_mesh_client_common_param_t *param,
-                                 u8_t attention, bool need_ack);
+                                 uint8_t attention, bool need_ack);
 
 /* Health Client Status Message Context */
 
 struct bt_mesh_health_current_status {
-    u8_t  test_id;
-    u16_t cid;
+    uint8_t  test_id;
+    uint16_t cid;
     struct net_buf_simple *fault_array;
 };
 
 struct bt_mesh_health_fault_status {
-    u8_t  test_id;
-    u16_t cid;
+    uint8_t  test_id;
+    uint16_t cid;
     struct net_buf_simple *fault_array;
 };
 

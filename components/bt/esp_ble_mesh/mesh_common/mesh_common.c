@@ -50,10 +50,10 @@ IRAM_ATTR void bt_mesh_free(void *ptr)
     heap_caps_free(ptr);
 }
 
-struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
+struct net_buf_simple *bt_mesh_alloc_buf(uint16_t size)
 {
     struct net_buf_simple *buf = NULL;
-    u8_t *data = NULL;
+    uint8_t *data = NULL;
 
     buf = (struct net_buf_simple *)bt_mesh_calloc(sizeof(struct net_buf_simple) + size);
     if (!buf) {
@@ -61,7 +61,7 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
         return NULL;
     }
 
-    data = (u8_t *)buf + sizeof(struct net_buf_simple);
+    data = (uint8_t *)buf + sizeof(struct net_buf_simple);
 
     buf->data = data;
     buf->len = 0;
@@ -78,7 +78,7 @@ void bt_mesh_free_buf(struct net_buf_simple *buf)
     }
 }
 
-u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
+uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
 {
     bt_mesh_client_user_data_t *client = NULL;
 

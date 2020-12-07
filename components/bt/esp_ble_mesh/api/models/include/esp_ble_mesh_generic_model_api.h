@@ -367,10 +367,10 @@ typedef struct {
 
 /** Parameters of Generic Battery Status. */
 typedef struct {
-    u32_t battery_level     : 8;  /*!< Value of Generic Battery Level state */
-    u32_t time_to_discharge : 24; /*!< Value of Generic Battery Time to Discharge state */
-    u32_t time_to_charge    : 24; /*!< Value of Generic Battery Time to Charge state */
-    u32_t flags             : 8;  /*!< Value of Generic Battery Flags state */
+    uint32_t battery_level     : 8;  /*!< Value of Generic Battery Level state */
+    uint32_t time_to_discharge : 24; /*!< Value of Generic Battery Time to Discharge state */
+    uint32_t time_to_charge    : 24; /*!< Value of Generic Battery Time to Charge state */
+    uint32_t flags             : 8;  /*!< Value of Generic Battery Flags state */
 } esp_ble_mesh_gen_battery_status_cb_t;
 
 /** Parameters of Generic Location Global Status. */
