@@ -161,7 +161,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
     int hall_value;
 
-    adc_power_on();
+    adc_power_acquire();
 
     ADC_ENTER_CRITICAL();
     /* disable other peripherals. */
@@ -173,6 +173,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
     adc_hal_hall_disable();
     ADC_EXIT_CRITICAL();
 
+    adc_power_release();
     return hall_value;
 }
 

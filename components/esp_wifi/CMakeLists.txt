@@ -34,6 +34,7 @@ idf_component_register(SRCS "src/coexist.c"
                             "src/wifi_netif.c"
                             "${idf_target}/esp_adapter.c"
                     INCLUDE_DIRS "include" "${idf_target}/include"
+                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif driver ${extra_priv_requires}
                     REQUIRES esp_event
                     PRIV_REQUIRES esp_timer esp_pm wpa_supplicant nvs_flash esp_netif ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")

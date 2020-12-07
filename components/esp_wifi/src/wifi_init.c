@@ -23,6 +23,7 @@
 #include "esp_wpa.h"
 #include "esp_netif.h"
 #include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
+#include "driver/adc.h"
 #include "driver/adc2_wifi_private.h"
 #include "esp_coexist_internal.h"
 
@@ -55,6 +56,8 @@ uint64_t g_wifi_feature_caps =
     CONFIG_FEATURE_CACHE_TX_BUF_BIT |
 #endif
 0;
+
+static bool s_wifi_adc_xpd_flag;
 
 static const char* TAG = "wifi_init";
 
@@ -251,3 +254,19 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
+
+/* Coordinate ADC power with other modules. This overrides the function from PHY lib. */
+void set_xpd_sar(bool en)
+{
+    if (s_wifi_adc_xpd_flag == en) {
+        /* ignore repeated calls to set_xpd_sar when the state is already correct */
+        return;
+    }
+
+    s_wifi_adc_xpd_flag = en;
+    if (en) {
+        adc_power_acquire();
+    } else {
+        adc_power_release();
+    }
+}
