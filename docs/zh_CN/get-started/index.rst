@@ -4,7 +4,9 @@
 
 :link_to_translation:`en:[English]`
 
-本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，
+.. Please keep README.md in sync with these instructions.
+
+本文档旨在指导用户搭建 ESP32 硬件开发的软件环境。
 
 通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
 
@@ -32,7 +34,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 * 一款 **ESP32** 开发板
 * **USB 数据线**  (A 转 Micro-B)
-* PC（Windows、Linux 或 Mac OS）
+* **电脑** （Windows、Linux 或 macOS）
 
 软件：
 
@@ -107,7 +109,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
 +-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
+| `Windows`_        | `Linux`_          | `macOS`_          |
 +-------------------+-------------------+-------------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
@@ -121,7 +123,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 .. _Windows: ../get-started/windows-setup.html
 .. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
+.. _macOS: ../get-started/macos-setup.html
 
 .. _get-started-get-esp-idf:
 
@@ -134,12 +136,12 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 .. note::
 
-    在本文档中，Linux 和 MacOS 操作系统中 ESP-IDF 的默认安装路径为 ``~/esp``；Windows 操作系统的默认路径为 ``%userprofile%\esp``。您也可以将 ESP-IDF 安装在任何其他路径下，但请注意在使用命令行时进行相应替换。注意，ESP-IDF 不支持带有空格的路径。
+    在本文档中，Linux 和 macOS 操作系统中 ESP-IDF 的默认安装路径为 ``~/esp``；Windows 操作系统的默认路径为 ``%userprofile%\esp``。您也可以将 ESP-IDF 安装在任何其他路径下，但请注意在使用命令行时进行相应替换。注意，ESP-IDF 不支持带有空格的路径。
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-打开终端，后运行以下命令：
+打开终端后运行以下命令：
 
 .. include:: /_build/inc/git-clone-bash.inc
 
@@ -150,7 +152,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 Windows 操作系统
 ~~~~~~~~~~~~~~~~~
 
-除了安装必要工具外，第一步中介绍的 :ref:`get-started-windows-tools-installer` 也能同时下载 ESP-IDF 本地副本。
+除了能安装必要工具外，第一步中介绍的 :ref:`get-started-windows-tools-installer` 也能同时下载 ESP-IDF 本地副本。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
@@ -175,7 +177,7 @@ Windows 操作系统
     cd %userprofile%\esp\esp-idf
     install.bat
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -186,7 +188,7 @@ Linux 和 MacOS 操作系统
 自定义工具安装路径
 ~~~~~~~~~~~~~~~~~~~~
 
-本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户根文件夹中，Linux 和 MacOS 系统为 ``$HOME/.espressif``，Windows 系统为 ``%USERPROFILE%\.espressif``。此外，您可以可以将工具安装到其他目录中，但请在运行安装脚本前，重新设置环境变量 ``IDF_TOOLS_PATH``。注意，请确保您的用户已经具备了读写该路径的权限。
+本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户根文件夹中，Linux 和 macOS 系统为 ``$HOME/.espressif``，Windows 系统为 ``%USERPROFILE%\.espressif``。此外，您也可以将工具安装到其他目录中，但请在运行安装脚本前，重新设置环境变量 ``IDF_TOOLS_PATH``。注意，请确保您的用户已经具备了读写该路径的权限。
 
 如果修改了 ``IDF_TOOLS_PATH`` 变量，请确保该变量在每次执行 ``install.bat``/``install.sh`` 和 ``export.bat``/``export.sh`` 脚本时均保持一致。
 
@@ -195,7 +197,7 @@ Linux 和 MacOS 操作系统
 第四步：设置环境变量
 =====================
 
-此时，您刚刚安装的工具尚未添加至 PATH 环境变量，无法通过“命令窗口”使用这些工具。因此，必须设置一些环境变量，这可以通过 ESP-IDF 提供的另一个脚本完成。
+此时，由于您刚刚安装的工具尚未添加至 PATH 环境变量，所以无法通过“命令窗口”使用这些工具。因此，必须设置一些环境变量，而这可以通过 ESP-IDF 提供的另一个脚本完成。
 
 Windows 操作系统
 ~~~~~~~~~~~~~~~~~
@@ -208,10 +210,10 @@ Windows 安装器（:ref:`get-started-windows-tools-installer` ）可在“开�
 
     %userprofile%\esp\esp-idf\export.bat
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-请在您需要运行 ESP-IDF 的“命令提示符”窗口运行以下命令：
+请在您需要运行 ESP-IDF 的终端窗口运行以下命令：
 
 .. code-block:: bash
 
@@ -219,7 +221,19 @@ Linux 和 MacOS 操作系统
 
 注意，命令开始的 "." 与路径之间应有一个空格！
 
-此外，您也可以将这行代码增加至您的 ``.profile`` 或 ``.bash_profile`` 脚本中，这样您就可以在任何命令窗口使用 ESP-IDF 工具了。
+如果您需要经常运行 ESP-IDF，您可以为执行 ``export.sh`` 创建一个别名，具体步骤如下：
+
+1. 复制并粘贴以下命令到 shell 配置文件中（``.profile``， ``.bashrc``， ``.zprofile`` 等）
+    
+   .. code-block:: bash
+
+        alias get_idf='. $HOME/esp/esp-idf/export.sh'
+
+2. 通过重启终端窗口或运行 ``source [path to profile]``，如 ``source ~/.bashrc`` 来刷新配置文件。
+
+现在您可以在任何终端窗口中运行 ``get_idf`` 来设置或刷新 esp-idf 环境。
+
+这里不建议您直接将 ``export.sh`` 添加到 shell 的配置文件。因为这会导致在每个终端会话中都激活 IDF 虚拟环境（包括无需使用 IDF 的情况），从而破坏使用虚拟环境的目的，并可能影响其他软件的使用。
 
 .. _get-started-start-project:
 
@@ -230,7 +244,7 @@ Linux 和 MacOS 操作系统
 
 将 :example:`get-started/hello_world` 复制至您本地的 ``~/esp`` 目录下：
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -246,9 +260,7 @@ Windows 操作系统
     cd %userprofile%\esp
     xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
 
-ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照上面的方法进行创建。您可以按照上述方法复制并运行其中的任何示例，
-
-也可以直接编译示例，无需进行复制。
+ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照上面的方法进行创建。您可以按照上述方法复制并运行其中的任何示例，也可以直接编译示例，无需进行复制。
 
 .. important::
 
@@ -265,7 +277,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 - **Windows 操作系统：** ``COM1`` 等
 - **Linux 操作系统：** 以 ``/dev/tty`` 开始
-- **MacOS 操作系统：** 以 ``/dev/cu.`` 开始
+- **macOS 操作系统：** 以 ``/dev/cu.`` 开始
 
 有关如何查看串口名称的详细信息，请见 :doc:`establish-serial-connection`。
 
@@ -281,7 +293,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 请进入 :ref:`get-started-start-project` 中提到的 ``hello_world`` 目录，并运行工程配置工具 ``menuconfig``。
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -311,9 +323,8 @@ Windows 操作系统
 * 上下箭头：移动
 * ``回车``：进入子菜单
 * ``ESC 键``：返回上级菜单或退出
-* ``英文问号``：调出帮助菜单（退出帮助菜单，请按回车键）。
+* ``英文问号``：调出菜单或选项的帮助菜单，按回车键可退出帮助菜单。
 * ``空格`` 或 ``Y 键``：选择 ``[*]`` 配置选项；``N 键``：禁用 ``[*]`` 配置选项
-* ``英文问号`` （查询配置选项）：调出有关该选项的帮助菜单
 * ``/ 键``：寻找配置工程
 
 .. attention::
@@ -476,13 +487,13 @@ Windows 操作系统
 更新 ESP-IDF
 ================
 
-乐鑫会不时推出更新版本的 ESP-IDF，修复 bug 或提出新的特性。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。 
+乐鑫会不定期推出更新版本的 ESP-IDF，修复 bug 或提供新的特性。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。 
 
-此外，您可以仅更新变更部分。具体方式，请前往 :ref:`更新 <updating>` 章节查看。
+此外，您可以仅更新变更部分。具体方式取决于您使用的 ESP-IDF 版本，请前往 :ref:`更新 <updating>` 章节查看。
 
-注意，更新完成后，请执行 ``install.sh``（Windows 系统中为 ``install.bat``）脚本，避免新版 ESP-IDF 所需的工具也所更新。具体请参考 :ref:`get-started-set-up-tools`。
+注意，更新完成后，请执行 ``install.sh`` （Windows 系统中为 ``install.bat``）脚本，以防新版 ESP-IDF 所需的工具也有更新。具体请参考 :ref:`get-started-set-up-tools`。
 
-一旦重新安装好工具，请使用 ``export.sh``（Windows 系统中为 ``export.bat``）脚本更新环境，具体请参考 :ref:`get-started-set-up-env`。
+一旦重新安装好工具，请使用 ``export.sh`` （Windows 系统中为 ``export.bat``）脚本更新环境，具体请参考 :ref:`get-started-set-up-env`。
 
 相关文档
 ========
