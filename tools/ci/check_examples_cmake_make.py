@@ -51,12 +51,15 @@ def get_idf_path(path, *paths):
 
 def _get_apps(target, build_system):
     print("- Getting paths of apps")
-    output = subprocess.check_output(
-        sys.executable + " " + os.getenv('IDF_PATH') +
-        "/tools/find_apps.py -p examples --recursive --target %s --build-system %s"
-        % (target, build_system),
-        shell=True).decode('utf-8')
-    o_list = output.split("\n")
+    args = [sys.executable,
+            get_idf_path('tools/find_apps.py'),
+            '-p',
+            get_idf_path('examples'),
+            '--recursive',
+            '--target', target,
+            '--build-system', build_system]
+    output = subprocess.check_output(args).decode('utf-8')
+    o_list = output.split('\n')
     json_list = []
     for j in o_list:
         if j:
