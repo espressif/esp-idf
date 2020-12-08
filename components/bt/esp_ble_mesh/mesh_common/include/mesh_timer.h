@@ -142,7 +142,7 @@ struct k_work {
  *
  * @return Current uptime.
  */
-u32_t k_uptime_get_32(void);
+uint32_t k_uptime_get_32(void);
 
 struct k_delayed_work {
     struct k_work work;
@@ -180,9 +180,9 @@ struct k_delayed_work {
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
-int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay);
+int k_delayed_work_submit(struct k_delayed_work *work, int32_t delay);
 
-int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period);
+int k_delayed_work_submit_periodic(struct k_delayed_work *work, int32_t period);
 
 /**
  * @brief Get time remaining before a delayed work gets scheduled.
@@ -195,7 +195,7 @@ int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period);
  *
  * @return Remaining time (in milliseconds).
  */
-s32_t k_delayed_work_remaining_get(struct k_delayed_work *work);
+int32_t k_delayed_work_remaining_get(struct k_delayed_work *work);
 
 /**
  * @brief Submit a work item to the system workqueue.
@@ -254,7 +254,7 @@ int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler);
  *
  * @return Current uptime.
  */
-s64_t k_uptime_get(void);
+int64_t k_uptime_get(void);
 
 void bt_mesh_timer_init(void);
 void bt_mesh_timer_deinit(void);

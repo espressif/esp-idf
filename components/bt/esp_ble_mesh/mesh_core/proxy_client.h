@@ -37,11 +37,11 @@ extern "C" {
 
 typedef union {
     struct {
-        u8_t  net_id[8];
-        u16_t net_idx;
+        uint8_t  net_id[8];
+        uint16_t net_idx;
     } net_id;
     struct {
-        u16_t src;
+        uint16_t src;
     } node_id;
 } bt_mesh_proxy_adv_ctx_t;
 
@@ -50,31 +50,31 @@ struct bt_mesh_proxy_net_pdu {
 };
 
 struct bt_mesh_proxy_cfg_pdu {
-    u8_t opcode;
+    uint8_t opcode;
     union {
         struct cfg_filter_set {
-            u8_t filter_type;
+            uint8_t filter_type;
         } set;
         struct cfg_addr_add {
-            u16_t *addr;
-            u16_t  addr_num;
+            uint16_t *addr;
+            uint16_t  addr_num;
         } add;
         struct cfg_addr_remove {
-            u16_t *addr;
-            u16_t  addr_num;
+            uint16_t *addr;
+            uint16_t  addr_num;
         } remove;
     };
 };
 
 typedef struct {
-    u8_t type;
+    uint8_t type;
     union {
         struct bt_mesh_proxy_net_pdu net;
         struct bt_mesh_proxy_cfg_pdu cfg;
     };
 } bt_mesh_proxy_client_pdu_t;
 
-int bt_mesh_proxy_client_send(struct bt_mesh_conn *conn, u8_t type,
+int bt_mesh_proxy_client_send(struct bt_mesh_conn *conn, uint8_t type,
                               struct net_buf_simple *msg);
 
 int bt_mesh_proxy_client_prov_enable(void);
@@ -83,14 +83,14 @@ int bt_mesh_proxy_client_prov_disable(void);
 int bt_mesh_proxy_client_gatt_enable(void);
 int bt_mesh_proxy_client_gatt_disable(void);
 
-typedef void (*proxy_client_recv_adv_cb_t)(const bt_mesh_addr_t *addr, u8_t type,
-                                           bt_mesh_proxy_adv_ctx_t *ctx, s8_t rssi);
+typedef void (*proxy_client_recv_adv_cb_t)(const bt_mesh_addr_t *addr, uint8_t type,
+                                           bt_mesh_proxy_adv_ctx_t *ctx, int8_t rssi);
 typedef void (*proxy_client_connect_cb_t)(const bt_mesh_addr_t *addr,
-                                          u8_t conn_handle, u16_t net_idx);
-typedef void (*proxy_client_disconnect_cb_t)(const bt_mesh_addr_t *addr, u8_t conn_handle,
-                                             u16_t net_idx, u8_t reason);
-typedef void (*proxy_client_recv_filter_status_cb_t)(u8_t conn_handle, u16_t src, u16_t net_idx,
-                                                     u8_t filter_type, u16_t list_size);
+                                          uint8_t conn_handle, uint16_t net_idx);
+typedef void (*proxy_client_disconnect_cb_t)(const bt_mesh_addr_t *addr, uint8_t conn_handle,
+                                             uint16_t net_idx, uint8_t reason);
+typedef void (*proxy_client_recv_filter_status_cb_t)(uint8_t conn_handle, uint16_t src, uint16_t net_idx,
+                                                     uint8_t filter_type, uint16_t list_size);
 
 void bt_mesh_proxy_client_set_adv_recv_cb(proxy_client_recv_adv_cb_t cb);
 void bt_mesh_proxy_client_set_conn_cb(proxy_client_connect_cb_t cb);
@@ -98,16 +98,16 @@ void bt_mesh_proxy_client_set_disconn_cb(proxy_client_disconnect_cb_t cb);
 void bt_mesh_proxy_client_set_filter_status_cb(proxy_client_recv_filter_status_cb_t cb);
 
 void bt_mesh_proxy_client_gatt_adv_recv(struct net_buf_simple *buf,
-                                        const bt_mesh_addr_t *addr, s8_t rssi);
+                                        const bt_mesh_addr_t *addr, int8_t rssi);
 
-int bt_mesh_proxy_client_connect(const u8_t addr[6], u8_t addr_type, u16_t net_idx);
-int bt_mesh_proxy_client_disconnect(u8_t conn_handle);
+int bt_mesh_proxy_client_connect(const uint8_t addr[6], uint8_t addr_type, uint16_t net_idx);
+int bt_mesh_proxy_client_disconnect(uint8_t conn_handle);
 
 bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub);
 
-bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, u16_t dst);
+bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, uint16_t dst);
 
-int bt_mesh_proxy_client_cfg_send(u8_t conn_handle, u16_t net_idx,
+int bt_mesh_proxy_client_cfg_send(uint8_t conn_handle, uint16_t net_idx,
                                   struct bt_mesh_proxy_cfg_pdu *pdu);
 
 int bt_mesh_proxy_client_init(void);

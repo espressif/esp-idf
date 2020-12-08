@@ -27,20 +27,20 @@ typedef struct alarm_t {
     int64_t deadline_us;
 } osi_alarm_t;
 
-s64_t k_uptime_get(void)
+int64_t k_uptime_get(void)
 {
-    /** k_uptime_get_32 is in in milliseconds,
+    /* k_uptime_get_32 is in in milliseconds,
      * but esp_timer_get_time is in microseconds
      */
     return (esp_timer_get_time() / 1000);
 }
 
-u32_t k_uptime_get_32(void)
+uint32_t k_uptime_get_32(void)
 {
-    /** k_uptime_get_32 is in in milliseconds,
+    /* k_uptime_get_32 is in in milliseconds,
      * but esp_timer_get_time is in microseconds
      */
-    return (u32_t)(esp_timer_get_time() / 1000);
+    return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
 void bt_mesh_timer_init(void)
@@ -100,7 +100,7 @@ int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
     return 0;
 }
 
-int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
+int k_delayed_work_submit(struct k_delayed_work *work, int32_t delay)
 {
     if (!work || !bm_alarm_hash_map) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -122,7 +122,7 @@ int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
     return 0;
 }
 
-int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
+int k_delayed_work_submit_periodic(struct k_delayed_work *work, int32_t period)
 {
     if (!work || !bm_alarm_hash_map) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -186,9 +186,9 @@ int k_delayed_work_free(struct k_delayed_work *work)
     return 0;
 }
 
-s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
+int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-    s32_t time = 0;
+    int32_t time = 0;
 
     if (!work || !bm_alarm_hash_map) {
         BT_ERR("%s, Invalid parameter", __func__);

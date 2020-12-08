@@ -37,7 +37,7 @@ void btc_ble_mesh_generic_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, voi
 {
     btc_ble_mesh_generic_client_args_t *dst = (btc_ble_mesh_generic_client_args_t *)p_dest;
     btc_ble_mesh_generic_client_args_t *src = (btc_ble_mesh_generic_client_args_t *)p_src;
-    u16_t length = 0U;
+    uint16_t length = 0U;
 
     if (!msg || !dst || !src) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -164,7 +164,7 @@ static void btc_ble_mesh_generic_client_copy_req_data(btc_msg_t *msg, void *p_de
 {
     esp_ble_mesh_generic_client_cb_param_t *p_dest_data = (esp_ble_mesh_generic_client_cb_param_t *)p_dest;
     esp_ble_mesh_generic_client_cb_param_t *p_src_data = (esp_ble_mesh_generic_client_cb_param_t *)p_src;
-    u16_t length = 0U;
+    uint16_t length = 0U;
 
     if (!msg || !p_src_data || !p_dest_data) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -380,10 +380,10 @@ static void btc_ble_mesh_generic_client_callback(esp_ble_mesh_generic_client_cb_
                          btc_ble_mesh_generic_client_copy_req_data);
 }
 
-void bt_mesh_generic_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
+void bt_mesh_generic_client_cb_evt_to_btc(uint32_t opcode, uint8_t evt_type,
                                           struct bt_mesh_model *model,
                                           struct bt_mesh_msg_ctx *ctx,
-                                          const u8_t *val, size_t len)
+                                          const uint8_t *val, size_t len)
 {
     esp_ble_mesh_generic_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
@@ -434,7 +434,7 @@ void bt_mesh_generic_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
     return;
 }
 
-void btc_ble_mesh_generic_client_publish_callback(u32_t opcode, struct bt_mesh_model *model,
+void btc_ble_mesh_generic_client_publish_callback(uint32_t opcode, struct bt_mesh_model *model,
                                                   struct bt_mesh_msg_ctx *ctx,
                                                   struct net_buf_simple *buf)
 {
@@ -552,7 +552,7 @@ static void btc_ble_mesh_generic_server_copy_req_data(btc_msg_t *msg, void *p_de
 {
     esp_ble_mesh_generic_server_cb_param_t *p_dest_data = (esp_ble_mesh_generic_server_cb_param_t *)p_dest;
     esp_ble_mesh_generic_server_cb_param_t *p_src_data = (esp_ble_mesh_generic_server_cb_param_t *)p_src;
-    u16_t length = 0U;
+    uint16_t length = 0U;
 
     if (!msg || !p_src_data || !p_dest_data) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -697,9 +697,9 @@ static void btc_ble_mesh_generic_server_callback(esp_ble_mesh_generic_server_cb_
                          btc_ble_mesh_generic_server_copy_req_data);
 }
 
-void bt_mesh_generic_server_cb_evt_to_btc(u8_t evt_type, struct bt_mesh_model *model,
+void bt_mesh_generic_server_cb_evt_to_btc(uint8_t evt_type, struct bt_mesh_model *model,
                                           struct bt_mesh_msg_ctx *ctx,
-                                          const u8_t *val, size_t len)
+                                          const uint8_t *val, size_t len)
 {
     esp_ble_mesh_generic_server_cb_param_t cb_params = {0};
     uint8_t act = 0U;
