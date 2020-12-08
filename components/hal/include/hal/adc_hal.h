@@ -213,6 +213,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
 #include "hal/dma_types.h"
 #include "hal/adc_ll.h"
 #include "hal/dma_types.h"
+#include "esp_err.h"
 
 typedef struct adc_dma_hal_context_t {
     gdma_dev_t          *dev;           //address of the general DMA
@@ -259,9 +260,7 @@ void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel);
 
 void adc_hal_set_onetime_atten(adc_atten_t atten);
 
-uint32_t adc_hal_adc1_read(void);
-
-uint32_t adc_hal_adc2_read(void);
+esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw);
 
 void adc_hal_intr_enable(adc_event_t event);
 

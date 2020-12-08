@@ -88,8 +88,10 @@ typedef enum {
     ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
     ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
+#elif CONFIG_IDF_TARGET_ESP32C3
+    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
 #endif
     ADC_WIDTH_MAX,
 } adc_bits_width_t;
@@ -139,7 +141,7 @@ typedef struct {
             uint8_t reserved:  2;   /*!< reserved0 */
 #endif
         };
-        uint8_t val;                /*!<Raw data value */
+        uint8_t val;
     };
 } adc_digi_pattern_table_t;
 
@@ -189,12 +191,13 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            uint32_t data:     13;  /*!<ADC real output data info. Resolution: 13 bit. */
-            uint32_t channel:   3;  /*!<ADC channel index info.
-                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
-                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
-            uint32_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
-            uint32_t reserved: 15;
+            uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
+            uint32_t reserved12:    1;
+            uint32_t channel:       3;  /*!<ADC channel index info.
+                                            If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                            If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+            uint32_t unit:          1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
+            uint32_t reserved17_31: 15;
         } type2;
         uint32_t val;
     };

@@ -15,6 +15,7 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
 
+
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
@@ -123,7 +124,7 @@ void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t 
     adc_dma_ctx->dev = &GDMA;
     gdma_ll_enable_clock(adc_dma_ctx->dev, true);
     gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
-    gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, SOC_GDMA_TRIG_PERIPH_ADC0);
+    gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, GDMA_LL_TRIG_SRC_ADC_DAC);
 }
 
 /*---------------------------------------------------------------
@@ -183,14 +184,17 @@ void adc_hal_set_onetime_atten(adc_atten_t atten)
     adc_ll_onetime_set_atten(atten);
 }
 
-uint32_t adc_hal_adc1_read(void)
+esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw)
 {
-    return adc_ll_adc1_read();
-}
-
-uint32_t adc_hal_adc2_read(void)
-{
-    return adc_ll_adc2_read();
+    if (unit == ADC_NUM_1) {
+        *out_raw = adc_ll_adc1_read();
+    } else if (unit == ADC_NUM_2) {
+        *out_raw = adc_ll_adc2_read();
+        if (adc_ll_rtc_analysis_raw_data(unit, *out_raw)) {
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+    return ESP_OK;
 }
 
 //--------------------INTR-------------------------------

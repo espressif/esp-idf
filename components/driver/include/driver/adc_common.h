@@ -37,7 +37,8 @@ typedef enum {
     ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO35 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 // TODO ESP32-S3 channels are wrong IDF-1776
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+//S3 is not sure. Need to be checked when bringing up S3
 /**** `adc1_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO1  */
@@ -62,9 +63,10 @@ typedef enum {
     ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO34 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
-#endif // CONFIG_IDF_TARGET_*
+#endif
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 // TODO ESP32-S3 channels are wrong IDF-1776
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+//S3 is not sure. Need to be checked when bringing up S3
 /**** `adc2_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO4  (ESP32), GPIO11 (ESP32-S2) */
@@ -141,32 +143,14 @@ typedef struct adc_digi_init_config_s {
 
 /**
  * @brief Enable ADC power
- * @deprecated Use adc_power_acquire and adc_power_release instead.
  */
-void adc_power_on(void) __attribute__((deprecated));
+void adc_power_on(void);
 
 /**
  * @brief Power off SAR ADC
- * @deprecated Use adc_power_acquire and adc_power_release instead.
- * This function will force power down for ADC.
- * This function is deprecated because forcing power ADC power off may
- * disrupt operation of other components which may be using the ADC.
+ * This function will force power down for ADC
  */
-void adc_power_off(void) __attribute__((deprecated));
-
-/**
- * @brief Increment the usage counter for ADC module.
- * ADC will stay powered on while the counter is greater than 0.
- * Call adc_power_release when done using the ADC.
- */
-void adc_power_acquire(void);
-
-/**
- * @brief Decrement the usage counter for ADC module.
- * ADC will stay powered on while the counter is greater than 0.
- * Call this function when done using the ADC.
- */
-void adc_power_release(void);
+void adc_power_off(void);
 
 /**
  * @brief Initialize ADC pad
@@ -258,8 +242,6 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
- *       but will remove the glitches on GPIO36 and GPIO39.
  *
  * @note Call ``adc1_config_width()`` before the first time this
  *       function is called.
@@ -385,9 +367,6 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
- *       but will remove the glitches on GPIO36 and GPIO39.
- *
  *
  * @note ESP32:
  *       For a given channel, ``adc2_config_channel_atten()``

@@ -172,6 +172,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
+    case PERIPH_SARADC_MODULE:
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
     }
@@ -195,6 +196,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
+    case PERIPH_SARADC_MODULE:
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
     }

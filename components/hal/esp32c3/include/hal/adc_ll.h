@@ -20,14 +20,14 @@
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
-#include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
 #include "esp_attr.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ADC_LL_ADC2_CHANNEL_MAX 1
 
 typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
@@ -75,7 +75,7 @@ typedef struct {
         };
         uint16_t val;
     };
-} adc_ll_rtc_output_data_t;
+} adc_rtc_output_data_t;
 
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -95,7 +95,7 @@ typedef enum {
     ADC2_CTRL_FORCE_PWDET = 3,  /*!<For ADC2. Arbiter in shield mode. Force select Wi-Fi controller work. */
     ADC2_CTRL_FORCE_RTC = 4,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
-} adc_ll_controller_t;
+} adc_controller_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -127,7 +127,7 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // APB_SARADC.fsm.sample_cycle = sample_cycle;
 }
 
 /**
@@ -149,7 +149,7 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
  */
 static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    /*take off*/
 }
 
 /**
@@ -184,17 +184,20 @@ static inline void adc_ll_digi_convert_limit_disable(void)
 /**
  * Set adc conversion mode for digital controller.
  *
- * @note ADC digital controller on C3 only has one pattern table list, and do conversions one by one
+ * @note ESP32 only support ADC1 single mode.
  *
  * @param mode Conversion mode select.
  */
 static inline void adc_ll_digi_set_convert_mode(adc_digi_convert_mode_t mode)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+    /*take off*/
 }
 
 /**
  * Set pattern table length for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
  * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 8.
@@ -209,6 +212,9 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_
 
 /**
  * Set pattern table for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
  * @param adc_n ADC unit.
  * @param pattern_index Items index. Range: 0 ~ 15.
@@ -372,7 +378,7 @@ static inline void adc_ll_digi_filter_set_factor(adc_ll_num_t adc_n, adc_digi_fi
  */
 static inline void adc_ll_digi_filter_get_factor(adc_ll_num_t adc_n, adc_digi_filter_mode_t *factor)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+
 }
 
 /**
@@ -384,7 +390,11 @@ static inline void adc_ll_digi_filter_get_factor(adc_ll_num_t adc_n, adc_digi_fi
  */
 static inline void adc_ll_digi_filter_enable(adc_ll_num_t adc_n, bool enable)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     APB_SARADC.filter_ctrl.adc1_filter_en = enable;
+    // } else { // adc_n == ADC_NUM_2
+    //     APB_SARADC.filter_ctrl.adc2_filter_en = enable;
+    // }
 }
 
 /**
@@ -397,7 +407,12 @@ static inline void adc_ll_digi_filter_enable(adc_ll_num_t adc_n, bool enable)
  */
 static inline uint32_t adc_ll_digi_filter_read_data(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    abort(); // FIXME
+    // if (adc_n == ADC_NUM_1) {
+    //     return APB_SARADC.filter_status.adc1_filter_data;
+    // } else { // adc_n == ADC_NUM_2
+    //     return APB_SARADC.filter_status.adc2_filter_data;
+    // }
 }
 
 /**
@@ -410,7 +425,11 @@ static inline uint32_t adc_ll_digi_filter_read_data(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_digi_monitor_set_mode(adc_ll_num_t adc_n, bool is_larger)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     APB_SARADC.thres_ctrl.adc1_thres_mode = is_larger;
+    // } else { // adc_n == ADC_NUM_2
+    //     APB_SARADC.thres_ctrl.adc2_thres_mode = is_larger;
+    // }
 }
 
 /**
@@ -422,7 +441,11 @@ static inline void adc_ll_digi_monitor_set_mode(adc_ll_num_t adc_n, bool is_larg
  */
 static inline void adc_ll_digi_monitor_set_thres(adc_ll_num_t adc_n, uint32_t threshold)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     APB_SARADC.thres_ctrl.adc1_thres = threshold;
+    // } else { // adc_n == ADC_NUM_2
+    //     APB_SARADC.thres_ctrl.adc2_thres = threshold;
+    // }
 }
 
 /**
@@ -433,7 +456,11 @@ static inline void adc_ll_digi_monitor_set_thres(adc_ll_num_t adc_n, uint32_t th
  */
 static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     APB_SARADC.thres_ctrl.adc1_thres_en = enable;
+    // } else { // adc_n == ADC_NUM_2
+    //     APB_SARADC.thres_ctrl.adc2_thres_en = enable;
+    // }
 }
 
 /**
@@ -444,7 +471,21 @@ static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
  */
 static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_ena.adc1_thres = 1;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_ena.adc1_done = 1;
+    //     }
+    // } else { // adc_n == ADC_NUM_2
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_ena.adc2_thres = 1;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_ena.adc2_done = 1;
+    //     }
+    // }
 }
 
 /**
@@ -455,7 +496,21 @@ static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t i
  */
 static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_ena.adc1_thres = 0;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_ena.adc1_done = 0;
+    //     }
+    // } else { // adc_n == ADC_NUM_2
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_ena.adc2_thres = 0;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_ena.adc2_done = 0;
+    //     }
+    // }
 }
 
 /**
@@ -466,7 +521,21 @@ static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t 
  */
 static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_clr.adc1_thres = 1;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_clr.adc1_done = 1;
+    //     }
+    // } else { // adc_n == ADC_NUM_2
+    //     if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+    //         APB_SARADC.int_clr.adc2_thres = 1;
+    //     }
+    //     if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+    //         APB_SARADC.int_clr.adc2_done = 1;
+    //     }
+    // }
 }
 
 /**
@@ -478,7 +547,28 @@ static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t in
  */
 static inline uint32_t adc_ll_digi_get_intr_status(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    abort(); // FIXME
+
+    // uint32_t int_st = APB_SARADC.int_st.val;
+    // uint32_t ret_msk = 0;
+
+    // if (adc_n == ADC_NUM_1) {
+    //     if (int_st & APB_SARADC_ADC1_DONE_INT_ST_M) {
+    //         ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+    //     }
+    //     // if (int_st & APB_SARADC_ADC1_THRES_INT_ST) {
+    //     //     ret_msk |= ADC_DIGI_INTR_MASK_MONITOR;
+    //     // }
+    // } else { // adc_n == ADC_NUM_2
+    //     if (int_st & APB_SARADC_ADC2_DONE_INT_ST_M) {
+    //         ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+    //     }
+    //     // if (int_st & APB_SARADC_ADC2_THRES_INT_ST_M) {
+    //     //     ret_msk |= ADC_DIGI_INTR_MASK_MONITOR;
+    //     // }
+    // }
+
+    // return ret_msk;
 }
 
 /**
@@ -528,7 +618,8 @@ static inline void adc_ll_digi_reset(void)
  */
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
+    // SENS.sar_meas2_mux.sar2_pwdet_cct = cct;
 }
 
 /**
@@ -539,7 +630,9 @@ static inline void adc_ll_pwdet_set_cct(uint32_t cct)
  */
 static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
+    // return SENS.sar_meas2_mux.sar2_pwdet_cct;
+    return 0;
 }
 
 /*---------------------------------------------------------------
@@ -567,7 +660,11 @@ static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_wid
  */
 static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_meas1_ctrl2.sar1_en_pad = (1 << channel); //only one channel is selected.
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_meas2_ctrl2.sar2_en_pad = (1 << channel); //only one channel is selected.
+    // }
 }
 
 /**
@@ -580,7 +677,11 @@ static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
  */
 static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_meas1_ctrl2.sar1_en_pad = 0; //only one channel is selected.
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_meas2_ctrl2.sar2_en_pad = 0; //only one channel is selected.
+    // }
 }
 
 /**
@@ -593,7 +694,14 @@ static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
  */
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     while (SENS.sar_slave_addr1.meas_status != 0);
+    //     SENS.sar_meas1_ctrl2.meas1_start_sar = 0;
+    //     SENS.sar_meas1_ctrl2.meas1_start_sar = 1;
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_meas2_ctrl2.meas2_start_sar = 0; //start force 0
+    //     SENS.sar_meas2_ctrl2.meas2_start_sar = 1; //start force 1
+    // }
 }
 
 /**
@@ -606,7 +714,13 @@ static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
  */
 static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    bool ret = true;
+    // if (adc_n == ADC_NUM_1) {
+    //     ret = (bool)SENS.sar_meas1_ctrl2.meas1_done_sar;
+    // } else { // adc_n == ADC_NUM_2
+    //     ret = (bool)SENS.sar_meas2_ctrl2.meas2_done_sar;
+    // }
+    return ret;
 }
 
 /**
@@ -618,7 +732,13 @@ static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
  */
 static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    int ret_val = 0;
+    // if (adc_n == ADC_NUM_1) {
+    //     ret_val = SENS.sar_meas1_ctrl2.meas1_data_sar;
+    // } else { // adc_n == ADC_NUM_2
+    //     ret_val = SENS.sar_meas2_ctrl2.meas2_data_sar;
+    // }
+    return ret_val;
 }
 
 /**
@@ -629,7 +749,11 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
+    // }
 }
 
 /**
@@ -639,7 +763,13 @@ static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
  */
 static inline void adc_ll_rtc_intr_enable(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_reader1_ctrl.sar1_int_en = 1;
+    //     RTCCNTL.int_ena.rtc_saradc1 = 1;
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_reader2_ctrl.sar2_int_en = 1;
+    //     RTCCNTL.int_ena.rtc_saradc2 = 1;
+    // }
 }
 
 /**
@@ -649,7 +779,13 @@ static inline void adc_ll_rtc_intr_enable(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_rtc_intr_disable(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_reader1_ctrl.sar1_int_en = 0;
+    //     RTCCNTL.int_ena.rtc_saradc1 = 0;
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_reader2_ctrl.sar2_int_en = 0;
+    //     RTCCNTL.int_ena.rtc_saradc2 = 0;
+    // }
 }
 
 /**
@@ -657,7 +793,8 @@ static inline void adc_ll_rtc_intr_disable(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_rtc_reset(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // SENS.sar_meas1_ctrl1.rtc_saradc_reset = 1;
+    // SENS.sar_meas1_ctrl1.rtc_saradc_reset = 0;
 }
 
 /**
@@ -668,24 +805,30 @@ static inline void adc_ll_rtc_reset(void)
  */
 static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // SENS.sar_reader2_ctrl.sar2_wait_arb_cycle = cycle;
 }
 
 /**
  * Analyze whether the obtained raw data is correct.
- * ADC2 can use arbiter. The arbitration result can be judged by the flag bit in the original data.
+ * ADC2 can use arbiter.
  *
  * @param adc_n ADC unit.
  * @param raw_data ADC raw data input (convert value).
  * @return
- *      - 0: The data is correct to use.
- *      - 1: The data is invalid. The current controller is not enabled by the arbiter.
- *      - 2: The data is invalid. The current controller process was interrupted by a higher priority controller.
- *      - -1: The data is error.
+ *        -  0: The data is correct to use.
+ *        - -1: The data is invalid.
  */
-static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, uint16_t raw_data)
+static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, int raw_data)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (adc_n == ADC_NUM_1) {
+        return ADC_RTC_DATA_OK;
+    }
+
+    if (((APB_SARADC.apb_saradc2_data_status.adc2_data & 0xffff) >> 13) >= ADC_LL_ADC2_CHANNEL_MAX) {
+        return ADC_RTC_DATA_FAIL;
+    }
+
+    return ADC_RTC_DATA_OK;
 }
 
 /*---------------------------------------------------------------
@@ -720,7 +863,18 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  */
 static inline adc_ll_power_t adc_ll_get_power_manage(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Bit1  0:Fsm  1: SW mode
+       Bit0  0:SW mode power down  1: SW mode power on */
+    // adc_ll_power_t manage;
+    // if (SENS.sar_power_xpd_sar.force_xpd_sar == SENS_FORCE_XPD_SAR_PU) {
+    //     manage = ADC_POWER_SW_ON;
+    // } else if (SENS.sar_power_xpd_sar.force_xpd_sar == SENS_FORCE_XPD_SAR_PD) {
+    //     manage = ADC_POWER_SW_OFF;
+    // } else {
+    //     manage = ADC_POWER_BY_FSM;
+    // }
+    // return manage;
+    return 0;
 }
 
 /**
@@ -730,7 +884,11 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
  */
 static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_reader1_ctrl.sar1_clk_div = div;
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_reader2_ctrl.sar2_clk_div = div;
+    // }
 }
 
 /**
@@ -768,7 +926,11 @@ static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
  */
 static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // if (adc_n == ADC_NUM_1) {
+    //     SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
+    // } else { // adc_n == ADC_NUM_2
+    //     SENS.sar_atten2 = ( SENS.sar_atten2 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
+    // }
 }
 
 /**
@@ -780,7 +942,12 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
  */
 static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    abort(); // FIXME
+    // if (adc_n == ADC_NUM_1) {
+    //     return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
+    // } else {
+    //     return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
+    // }
 }
 
 /**
@@ -793,9 +960,43 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ctrl)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    //NOTE: ULP is removed on C3, please remove ULP related (if there still are any) code and this comment
+
+    // if (adc_n == ADC_NUM_1) {
+    //     switch ( ctrl ) {
+    //     case ADC_CTRL_RTC:
+    //         SENS.sar_meas1_mux.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
+    //         SENS.sar_meas1_ctrl2.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+    //         SENS.sar_meas1_ctrl2.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+    //         break;
+    //     case ADC_CTRL_DIG:
+    //         SENS.sar_meas1_mux.sar1_dig_force       = 1;    // 1: Select digital control;       0: Select RTC control.
+    //         SENS.sar_meas1_ctrl2.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+    //         SENS.sar_meas1_ctrl2.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+    //         break;
+    //     default:
+    //         break;
+    //     }
+    // } else { // adc_n == ADC_NUM_2
+    //     switch ( ctrl ) {
+    //     case ADC_CTRL_RTC:
+    //         SENS.sar_meas2_ctrl2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+    //         SENS.sar_meas2_ctrl2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+    //         break;
+    //     case ADC_CTRL_DIG:
+    //         SENS.sar_meas2_ctrl2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+    //         SENS.sar_meas2_ctrl2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+    //         break;
+    //     case ADC2_CTRL_PWDET:   // currently only used by Wi-Fi
+    //         SENS.sar_meas2_ctrl2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+    //         SENS.sar_meas2_ctrl2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+    //         break;
+    //     default:
+    //         break;
+    //     }
+    // }
 }
 
 /**
@@ -877,7 +1078,7 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
  */
 static inline void adc_ll_enable_sleep_controller(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // SENS.sar_meas2_mux.sar2_rtc_force = 1;
 }
 
 /**
@@ -891,10 +1092,51 @@ static inline void adc_ll_enable_sleep_controller(void)
  */
 static inline void adc_ll_disable_sleep_controller(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    // SENS.sar_meas2_mux.sar2_rtc_force = 0;
 }
 
 /* ADC calibration code. */
+#include "soc/rtc_cntl_reg.h"
+#include "regi2c_ctrl.h"
+
+#define I2C_ADC            0X69
+#define I2C_ADC_HOSTID     0
+
+#define ANA_CONFIG2_REG  0x6000E048
+#define ANA_CONFIG2_M   (BIT(18))
+
+#define SAR1_ENCAL_GND_ADDR 0x7
+#define SAR1_ENCAL_GND_ADDR_MSB 5
+#define SAR1_ENCAL_GND_ADDR_LSB 5
+
+#define SAR2_ENCAL_GND_ADDR 0x7
+#define SAR2_ENCAL_GND_ADDR_MSB 7
+#define SAR2_ENCAL_GND_ADDR_LSB 7
+
+#define SAR1_INITIAL_CODE_HIGH_ADDR 0x1
+#define SAR1_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define SAR1_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define SAR1_INITIAL_CODE_LOW_ADDR  0x0
+#define SAR1_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define SAR1_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define SAR2_INITIAL_CODE_HIGH_ADDR 0x4
+#define SAR2_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define SAR2_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define SAR2_INITIAL_CODE_LOW_ADDR  0x3
+#define SAR2_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define SAR2_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define SAR1_DREF_ADDR  0x2
+#define SAR1_DREF_ADDR_MSB  0x6
+#define SAR1_DREF_ADDR_LSB  0x4
+
+#define SAR2_DREF_ADDR  0x5
+#define SAR2_DREF_ADDR_MSB  0x6
+#define SAR2_DREF_ADDR_LSB  0x4
+
 #define ADC_HAL_CAL_OFFSET_RANGE (4096)
 #define ADC_HAL_CAL_TIMES        (10)
 
@@ -910,7 +1152,30 @@ static inline void adc_ll_disable_sleep_controller(void)
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    // /* Enable i2s_write_reg function. */
+    // void phy_get_romfunc_addr(void);
+    // phy_get_romfunc_addr();
+    // //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
+    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+
+    // /* Enable/disable internal connect GND (for calibration). */
+    // if (adc_n == ADC_NUM_1) {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_DREF_ADDR, 4);
+    //     if (internal_gnd) {
+    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 1);
+    //     } else {
+    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+    //     }
+    // } else {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_DREF_ADDR, 4);
+    //     if (internal_gnd) {
+    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 1);
+    //     } else {
+    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+    //     }
+    // }
 }
 
 /**
@@ -920,7 +1185,11 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  */
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    // if (adc_n == ADC_NUM_1) {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+    // } else {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+    // }
 }
 
 /**
@@ -932,8 +1201,24 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    // uint8_t msb = param >> 8;
+    // uint8_t lsb = param & 0xFF;
+    // /* Enable i2s_write_reg function. */
+    // void phy_get_romfunc_addr(void);
+    // phy_get_romfunc_addr();
+    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+
+    // if (adc_n == ADC_NUM_1) {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    // } else {
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    // }
 }
+/* Temp code end. */
 
 /*---------------------------------------------------------------
                     Single Read
@@ -998,7 +1283,8 @@ static inline void adc_ll_adc1_onetime_sample_dis(void)
 
 static inline uint32_t adc_ll_adc1_read(void)
 {
-    return APB_SARADC.apb_saradc1_data_status.adc1_data;
+    //On ESP32C3, valid data width is 12-bit
+    return (APB_SARADC.apb_saradc1_data_status.adc1_data & 0xfff);
 }
 
 //--------------------------------adc2------------------------------//
@@ -1014,8 +1300,10 @@ static inline void adc_ll_adc2_onetime_sample_dis(void)
 
 static inline uint32_t adc_ll_adc2_read(void)
 {
-    return APB_SARADC.apb_saradc2_data_status.adc2_data;
+    //On ESP32C3, valid data width is 12-bit
+    return (APB_SARADC.apb_saradc2_data_status.adc2_data & 0xfff);
 }
+
 #ifdef __cplusplus
 }
 #endif
