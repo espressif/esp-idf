@@ -665,7 +665,7 @@ static void update_rpl(struct bt_mesh_rpl *rpl, struct bt_mesh_net_rx *rx)
  * updated (needed for segmented messages), whereas if a NULL match is given
  * the RPL is immediately updated (used for unsegmented messages).
  */
-static bool is_replay(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
+bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
 {
     int i;
 
@@ -1058,7 +1058,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
         return -EINVAL;
     }
 
-    if (is_replay(rx, NULL)) {
+    if (bt_mesh_rpl_check(rx, NULL)) {
         BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
                 rx->ctx.addr, rx->ctx.recv_dst, rx->seq);
         return -EINVAL;
@@ -1486,7 +1486,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
         return -EINVAL;
     }
 
-    if (is_replay(net_rx, &rpl)) {
+    if (bt_mesh_rpl_check(net_rx, &rpl)) {
         BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
                 net_rx->ctx.addr, net_rx->ctx.recv_dst, net_rx->seq);
         return -EINVAL;
