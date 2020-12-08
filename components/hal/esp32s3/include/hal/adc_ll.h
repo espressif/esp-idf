@@ -1053,8 +1053,6 @@ static inline void adc_ll_disable_sleep_controller(void)
 #define SAR2_DREF_ADDR_MSB  0x6
 #define SAR2_DREF_ADDR_LSB  0x4
 
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-#define ADC_HAL_CAL_TIMES        (10)
 
 /**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
