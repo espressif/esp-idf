@@ -574,13 +574,13 @@ menu "LWIP"
 
     config LWIP_CHECKSUM_CHECK_IP
         bool "Enable LWIP IP checksums"
-        default y
+        default n
         help
             Enable checksum checking for received IP messages
 
     config LWIP_CHECKSUM_CHECK_UDP
         bool "Enable LWIP UDP checksums"
-        default y
+        default n
         help
             Enable checksum checking for received UDP messages
 
