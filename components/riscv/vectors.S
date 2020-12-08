@@ -122,12 +122,12 @@ _vector_table:
 	.option push
 	.option norvc
 	j _panic_handler			/* exception handler, entry 0 */
-	.rept 23
+	.rept (ETS_T1_WDT_INUM - 1)
 	j _interrupt_handler		/* 24 identical entries, all pointing to the interrupt handler */
 	.endr
 	j _panic_handler			/* Call panic handler for ETS_T1_WDT_INUM interrupt (soc-level panic)*/
 	j _panic_handler			/* Call panic handler for ETS_CACHEERR_INUM interrupt (soc-level panic)*/
-	.rept 6
+	.rept (ETS_MAX_INUM - ETS_CACHEERR_INUM)
 	j _interrupt_handler		/* 6 identical entries, all pointing to the interrupt handler */
 	.endr
 
