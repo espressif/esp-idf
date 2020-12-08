@@ -282,7 +282,7 @@ class BuildItem(object):
         size_info_fs.write(json.dumps(size_info_dict) + '\n')
 
 
-class BuildSystem(object):
+class BuildSystem:
     """
     Class representing a build system.
     Derived classes implement the methods below.
@@ -290,6 +290,12 @@ class BuildSystem(object):
     """
     NAME = "undefined"
     SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
+
+    FORMAL_TO_USUAL = {
+        'ESP32': 'esp32',
+        'ESP32-S2': 'esp32s2',
+        'ESP32-S3': 'esp32s3',
+    }
 
     @classmethod
     def build_prepare(cls, build_item):
@@ -404,9 +410,34 @@ class BuildSystem(object):
         with open(readme_path, "r", encoding='utf8') as readme_file:
             return readme_file.read()
 
-    @staticmethod
+    @classmethod
+    def _supported_targets(cls, app_path):
+        readme_file_content = BuildSystem._read_readme(app_path)
+        if not readme_file_content:
+            return cls.FORMAL_TO_USUAL.values()  # supports all targets if no readme found
+        match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
+        if not match:
+            return cls.FORMAL_TO_USUAL.values()  # supports all targets if no such header in readme
+        if len(match) > 1:
+            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
+        support_str = match[0].strip()
+
+        targets = []
+        for part in support_str.split('|'):
+            for inner in part.split(' '):
+                inner = inner.strip()
+                if not inner:
+                    continue
+                elif inner in cls.FORMAL_TO_USUAL:
+                    targets.append(cls.FORMAL_TO_USUAL[inner])
+                else:
+                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
+                                              .format(inner, app_path, ', '.join(cls.FORMAL_TO_USUAL.keys())))
+        return targets
+
+    @classmethod
     @abstractmethod
-    def supported_targets(app_path):
+    def supported_targets(cls, app_path):
         pass
 
 
