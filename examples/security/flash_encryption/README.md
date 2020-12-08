@@ -19,9 +19,7 @@ idf.py menuconfig
 
 * Enable the flash encryption mode (Development or Release) under Security Features. Default usage mode is Development (recommended during test and development phase).
 
-* Ensure Bootloader log verbosity is Info under Bootloader config.
-
-* Select Single factory app, no OTA under Partition Table options. Change the partition table offset to 0x9000 from 0x8000 since after enabling flash encryption the size of bootloader is increased.
+Note: After enabling flash encryption, the bootloader size increases, which means that the offset of the partition table must be changed to 0x9000 from 0x8000 to prevent the bootloader from overlapping with the partition table. In this example, the default offset of the partition table is 0x9000.
 
 ### Build and Flash
 
@@ -102,8 +100,8 @@ Reading with esp_partition_read:
 I (461) example: 0x3ffb4da0   00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|
 I (471) example: 0x3ffb4db0   10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|
 Reading with spi_flash_read:
-I (491) example: 0x3ffb4da0   29 68 2e 13 88 a0 5b 7f  cc 6b 39 f9 d7 7b 32 2f  |)h....[..k9..{2/|
-I (491) example: 0x3ffb4db0   9f e6 55 37 4b 91 b0 83  cd a6 e9 4e cd fa b4 c7  |..U7K......N....|
+I (491) example: 0x3ffb4b30   35 9b f2 07 b4 6d 40 89  28 b4 1e 22 98 7b 4a 36  |5....m@.(..".{J6|
+I (491) example: 0x3ffb4b40   ba 89 81 67 77 a3 60 5e  0a e7 51 01 b3 58 c2 f6  |...gw.`^..Q..X..|
 ```
 
 ## Troubleshooting
