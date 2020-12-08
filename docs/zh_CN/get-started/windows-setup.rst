@@ -60,7 +60,6 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
 .. toctree::
     :maxdepth: 1
 
-    windows-setup-scratch
     windows-setup-update
 
 .. _MSYS2: https://www.msys2.org/
