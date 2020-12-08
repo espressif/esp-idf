@@ -5,7 +5,7 @@ setuptools>=21
 # The setuptools package is required to install source distributions and on some systems is not installed by default.
 # Please keep it as the first item of this list. Version 21 is required to handle PEP 508 environment markers.
 #
-click>=5.0
+click>=7.0
 pyserial>=3.0
 future>=0.15.2
 cryptography>=2.1.4
