@@ -60,6 +60,7 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf);
  */
 void esp_crt_bundle_set(const uint8_t *x509_bundle);
 
+
 #ifdef __cplusplus
 }
 #endif
