@@ -954,6 +954,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 }
                 http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
 
+                client->response->buffer->raw_len = 0;
                 if (!http_should_keep_alive(client->parser)) {
                     ESP_LOGD(TAG, "Close connection");
                     esp_http_client_close(client);
