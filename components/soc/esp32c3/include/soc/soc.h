@@ -262,22 +262,6 @@
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x3fcebf10
 
-/* Defined for flash mmap */
-#define REGIONS_COUNT                   1
-#define PAGES_PER_REGION                128
-#define IROM0_PAGES_START               (CACHE_IROM_MMU_START / sizeof(uint32_t))
-#define IROM0_PAGES_END                 (CACHE_IROM_MMU_END / sizeof(uint32_t))
-#define DROM0_PAGES_START               (CACHE_DROM_MMU_START / sizeof(uint32_t))
-#define DROM0_PAGES_END                 (CACHE_DROM_MMU_END / sizeof(uint32_t))
-#define INVALID_ENTRY_VAL               MMU_TABLE_INVALID_VAL
-#define MMU_ADDR_MASK                   MMU_ADDRESS_MASK
-#define PAGE_IN_FLASH(page)             (page) //Always in Flash
-#define DPORT_PRO_FLASH_MMU_TABLE       FLASH_MMU_TABLE
-#define VADDR1_START_ADDR               IRAM0_CACHE_ADDRESS_LOW
-#define PRO_IRAM0_FIRST_USABLE_PAGE     IROM0_PAGES_START
-#define VADDR0_START_ADDR               (SOC_DROM_LOW + (DROM0_PAGES_START * SPI_FLASH_MMU_PAGE_SIZE))
-#define VADDR1_FIRST_USABLE_ADDR        SOC_IROM_LOW
-
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
