@@ -399,6 +399,14 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
             status = "400 Bad Request";
             msg    = "Server unable to understand request due to invalid syntax";
             break;
+        case HTTPD_401_UNAUTHORIZED:
+            status = "401 Unauthorized";
+            msg    = "Server known the client's identify and it must authenticate itself to get he requested response";
+            break;
+        case HTTPD_403_FORBIDDEN:
+            status = "403 Forbidden";
+            msg    = "Server is refusing to give the requested resource to the client";
+            break;
         case HTTPD_404_NOT_FOUND:
             status = "404 Not Found";
             msg    = "This URI does not exist";

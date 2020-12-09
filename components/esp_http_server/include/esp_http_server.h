@@ -540,6 +540,17 @@ typedef enum {
      */
     HTTPD_400_BAD_REQUEST,
 
+    /* This response means the client must authenticate itself
+     * to get the requested response.
+     */
+    HTTPD_401_UNAUTHORIZED,
+
+    /* The client does not have access rights to the content,
+     * so the server is refusing to give the requested resource.
+     * Unlike 401, the client's identity is known to the server.
+     */
+    HTTPD_403_FORBIDDEN,
+
     /* When requested URI is not found */
     HTTPD_404_NOT_FOUND,
 
