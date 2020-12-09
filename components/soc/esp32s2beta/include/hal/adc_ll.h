@@ -2,6 +2,7 @@
 
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
+#include "soc/apb_ctrl_struct.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -441,6 +442,20 @@ static inline void adc_ll_output_invert(adc_ll_num_t adc_n, bool inv_en)
         SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
     } else { // adc_n == ADC_NUM_2
         SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
+    }
+}
+
+/**
+ * ADC module Digital output data invert or not.
+ *
+ * @prarm adc_n ADC unit.
+ */
+static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_CTRL.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        APB_CTRL.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
     }
 }
 

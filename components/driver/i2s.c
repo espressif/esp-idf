@@ -828,7 +828,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         //initialize the specific ADC channel.
         //in the current stage, we only support ADC1 and single channel mode.
         //In default data mode, the ADC data is in 12-bit resolution mode.
-        adc_power_always_on();
+        adc_power_acquire();
     }
     // configure I2S data port interface.
     i2s_hal_config_param(&(p_i2s_obj[i2s_num]->hal), i2s_config);
@@ -1041,6 +1041,8 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
 
     adc1_i2s_mode_acquire();
     _i2s_adc_mode_recover();
+    i2s_hal_start_rx(&(p_i2s_obj[i2s_num]->hal));
+    i2s_hal_reset(&(p_i2s_obj[i2s_num]->hal));
     return i2s_set_clk(i2s_num, p_i2s_obj[i2s_num]->sample_rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
 

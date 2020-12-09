@@ -16,13 +16,14 @@
 
 void adc_hal_init(void)
 {
-    adc_ll_set_power_manage(ADC_POWER_BY_FSM);
     // Set internal FSM wait time, fixed value.
     adc_ll_dig_set_fsm_time(SOC_ADC_FSM_RSTB_WAIT_DEFAULT, SOC_ADC_FSM_START_WAIT_DEFAULT,
                             SOC_ADC_FSM_STANDBY_WAIT_DEFAULT);
     adc_ll_dig_set_sample_cycle(ADC_FSM_SAMPLE_CYCLE_DEFAULT);
     adc_ll_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
+    adc_ll_dig_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
     adc_ll_output_invert(ADC_NUM_2, SOC_ADC2_DATA_INVERT_DEFAULT);
+    adc_ll_dig_output_invert(ADC_NUM_2, SOC_ADC2_DATA_INVERT_DEFAULT);
 }
 
 void adc_hal_dig_controller_config(const adc_hal_dig_config_t *cfg)
