@@ -212,12 +212,22 @@ void port_release_port (tPORT *p_port)
     RFCOMM_TRACE_DEBUG("port_release_port, p_port:%p", p_port);
     while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue)) != NULL) {
         osi_free (p_buf);
+        if (p_port->rx.queue) {
+            while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue)) != NULL) {
+                osi_free (p_buf);
+            }
+        }
     }
 
     p_port->rx.queue_size = 0;
 
     while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->tx.queue)) != NULL) {
         osi_free (p_buf);
+        if (p_port->tx.queue) {
+            while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue)) != NULL) {
+                osi_free (p_buf);
+            }
+        }
     }
 
     p_port->tx.queue_size = 0;

@@ -112,7 +112,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
  */
 bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg);
 
-int btc_init(void);
+bt_status_t btc_init(void);
 void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
 
