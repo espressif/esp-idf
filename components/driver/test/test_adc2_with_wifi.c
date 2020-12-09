@@ -11,6 +11,8 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
+#include "driver/i2s.h"
+#include "driver/gpio.h"
 
 static const char* TAG = "test_adc2";
 
@@ -21,6 +23,9 @@ static const char* TAG = "test_adc2";
     #define ADC_TEST_CH1           ADC2_CHANNEL_8
     #define ADC_TEST_CH2           ADC2_CHANNEL_9
     #define ADC_TEST_ERROR         (600)
+    #define ADC1_CHANNEL_4_IO      (32)
+    #define SAMPLE_RATE            (36000)
+    #define SAMPLE_BITS            (16)
 #elif defined CONFIG_IDF_TARGET_ESP32S2
     #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_13   //ESP32S2 only support 13 bit width
     #define ADC_TEST_RESOLUTION    (8192)
@@ -165,3 +170,112 @@ TEST_CASE("adc2 work with wifi","[adc]")
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+static void i2s_adc_init(void)
+{
+    i2s_config_t i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
+        .sample_rate =  SAMPLE_RATE,
+        .bits_per_sample = SAMPLE_BITS,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .intr_alloc_flags = 0,
+        .dma_buf_count = 2,
+        .dma_buf_len = 1024,
+        .use_apll = 0,
+    };
+    // install and start I2S driver
+    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+    // init ADC pad
+    i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_4);
+    // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11 hard-coded in adc_i2s_mode_init
+    i2s_adc_enable(I2S_NUM_0);
+}
+
+static void i2s_adc_test(void)
+{
+    uint16_t *i2sReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
+    size_t bytesRead;
+    for (int loop = 0; loop < 10; loop++) {
+        for (int level = 0; level <= 1; level++) {
+            if (level == 0) {
+                gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLDOWN_ONLY);
+            } else {
+                gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLUP_ONLY);
+            }
+            vTaskDelay(200 / portTICK_RATE_MS);
+            // read data from adc, will block until buffer is full
+            i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
+
+            // calc average
+            int64_t adcSumValue = 0;
+            for (size_t i = 0; i < 1024; i++) {
+                adcSumValue += i2sReadBuffer[i] & 0xfff;
+            }
+            int adcAvgValue = adcSumValue / 1024;
+            printf("adc average val: %d\n", adcAvgValue);
+
+            if (level == 0) {
+                TEST_ASSERT_LESS_THAN(100, adcAvgValue);
+            } else {
+                TEST_ASSERT_GREATER_THAN(4000, adcAvgValue);
+            }
+        }
+    }
+    free(i2sReadBuffer);
+}
+
+static void i2s_adc_release(void)
+{
+    i2s_adc_disable(I2S_NUM_0);
+    i2s_driver_uninstall(I2S_NUM_0);
+}
+
+TEST_CASE("adc1 and i2s work with wifi","[adc][ignore]")
+{
+
+    i2s_adc_init();
+    //init wifi
+    printf("nvs init\n");
+    esp_err_t r = nvs_flash_init();
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        printf("no free pages or nvs version mismatch, erase..\n");
+        TEST_ESP_OK(nvs_flash_erase());
+        r = nvs_flash_init();
+    }
+    TEST_ESP_OK(r);
+    esp_netif_init();
+    event_init();
+    esp_netif_create_default_wifi_sta();
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_wifi_init(&cfg));
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = DEFAULT_SSID,
+            .password = DEFAULT_PWD
+        },
+    };
+    TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
+    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    i2s_adc_test();
+    //now start wifi
+    printf("wifi start...\n");
+    TEST_ESP_OK(esp_wifi_start());
+    //test reading during wifi on
+    i2s_adc_test();
+    //wifi stop again
+    printf("wifi stop...\n");
+
+    TEST_ESP_OK( esp_wifi_stop() );
+
+    TEST_ESP_OK(esp_wifi_deinit());
+
+    event_deinit();
+
+    nvs_flash_deinit();
+    i2s_adc_test();
+    i2s_adc_release();
+    printf("test passed...\n");
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
+}
+#endif
