@@ -562,6 +562,39 @@ void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
     return;
 }
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_Read_by_type
+**
+** Description      This function is called to read a attribute value by uuid
+**
+** Parameters       conn_id - connection ID.
+**                  s_handle - start handle.
+**                  e_handle - end hanle
+**                  uuid - The attribute UUID.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_GATTC_Read_by_type(UINT16 conn_id, UINT16 s_handle,UINT16 e_handle, tBT_UUID *uuid, tBTA_GATT_AUTH_REQ auth_req)
+{
+    tBTA_GATTC_API_READ  *p_buf;
+
+    if ((p_buf = (tBTA_GATTC_API_READ *) osi_malloc(sizeof(tBTA_GATTC_API_READ))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTC_API_READ));
+
+        p_buf->hdr.event = BTA_GATTC_API_READ_BY_TYPE_EVT;
+        p_buf->hdr.layer_specific = conn_id;
+        p_buf->auth_req = auth_req;
+        p_buf->s_handle = s_handle;
+        p_buf->e_handle = e_handle;
+        memcpy(&(p_buf->uuid), uuid, sizeof(tBT_UUID));
+        p_buf->cmpl_evt = BTA_GATTC_READ_CHAR_EVT;
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
 
 /*******************************************************************************
 **
