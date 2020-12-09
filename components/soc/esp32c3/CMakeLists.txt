@@ -1,5 +1,6 @@
 set(srcs
     "adc_periph.c"
+    "gdma_periph.c"
     "gpio_periph.c"
     "interrupts.c"
     "spi_periph.c"

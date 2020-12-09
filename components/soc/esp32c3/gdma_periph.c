@@ -12,7 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "soc/gdma_periph.h"
 
-#define SOC_GDMA_GROUPS          (1)
-#define SOC_GDMA_PAIRS_PER_GROUP (3)
+const gdma_signal_conn_t gdma_periph_signals = {
+    .groups = {
+        [0] = {
+            .module = PERIPH_GDMA_MODULE,
+            .pairs = {
+                [0]  = {
+                    .irq_id = ETS_DMA_CH0_INTR_SOURCE
+                },
+                [1]  = {
+                    .irq_id = ETS_DMA_CH1_INTR_SOURCE
+                },
+                [2]  = {
+                    .irq_id = ETS_DMA_CH2_INTR_SOURCE
+                }
+            }
+        }
+    }
+};

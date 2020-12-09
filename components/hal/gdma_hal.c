@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "hal/gdma_hal.h"
+#include "hal/gdma_ll.h"
 
-#define SOC_GDMA_GROUPS          (1)
-#define SOC_GDMA_PAIRS_PER_GROUP (3)
+void gdma_hal_init(gdma_hal_context_t *hal, int group_id)
+{
+    hal->dev = GDMA_LL_GET_HW(group_id);
+}

@@ -14,6 +14,7 @@
 
 #pragma once
 
-#define SOC_GDMA_CHANNELS_NUM (5)       /*!< GDMA has 5 TX and 5 RX  channels in ESP32-S3 */
-#define SOC_GDMA_L2_FIFO_BASE_SIZE (16) /*!< GDMA L2 FIFO basic size is 16 Bytes */
-#define SOC_GDMA_SUPPORT_EXTMEM (1)
+#define SOC_GDMA_GROUPS            (1)
+#define SOC_GDMA_PAIRS_PER_GROUP   (5)
+#define SOC_GDMA_L2_FIFO_BASE_SIZE (16)
+#define SOC_GDMA_SUPPORT_EXTMEM    (1)

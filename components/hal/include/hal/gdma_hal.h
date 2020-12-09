@@ -30,6 +30,8 @@ typedef struct {
     gdma_dev_t *dev;
 } gdma_hal_context_t;
 
+void gdma_hal_init(gdma_hal_context_t *hal, int group_id);
+
 #ifdef __cplusplus
 }
 #endif
