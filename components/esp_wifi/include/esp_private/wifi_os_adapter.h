@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000007
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000008
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -35,6 +35,7 @@ typedef struct {
     void (*_set_isr)(int32_t n, void *f, void *arg);
     void (*_ints_on)(uint32_t mask);
     void (*_ints_off)(uint32_t mask);
+    bool (* _is_from_isr)(void);
     void *(* _spin_lock_create)(void);
     void (* _spin_lock_delete)(void *lock);
     uint32_t (*_wifi_int_disable)(void *wifi_int_mux);
@@ -133,7 +134,15 @@ typedef struct {
     void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
     int32_t (* _coex_wifi_release)(uint32_t event);
-    bool (* _is_from_isr)(void);
+    int (* _coex_wifi_channel_set)(uint8_t primary, uint8_t secondary);
+    void (* _coex_schm_status_bit_clear)(uint32_t type, uint32_t status);
+    void (* _coex_schm_status_bit_set)(uint32_t type, uint32_t status);
+    int (* _coex_schm_interval_set)(uint32_t interval);
+    uint32_t (* _coex_schm_interval_get)(void);
+    uint8_t (* _coex_schm_curr_period_get)(void);
+    void * (* _coex_schm_curr_phase_get)(void);
+    int (* _coex_schm_curr_phase_idx_set)(int idx);
+    int (* _coex_schm_curr_phase_idx_get)(void);
     int32_t _magic;
 } wifi_osi_funcs_t;
 
