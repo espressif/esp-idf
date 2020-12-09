@@ -136,7 +136,7 @@ Some tools need to be installed on the computer before proceeding to the next st
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
 +-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
+| `Windows`_        | `Linux`_          | `mac OS`_         |
 +-------------------+-------------------+-------------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
@@ -150,7 +150,7 @@ Some tools need to be installed on the computer before proceeding to the next st
 
 .. _Windows: ../get-started/windows-setup.html
 .. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
+.. _mac OS: ../get-started/macos-setup.html
 
 .. _get-started-get-esp-idf:
 
