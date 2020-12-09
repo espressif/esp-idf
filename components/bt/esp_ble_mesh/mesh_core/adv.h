@@ -97,4 +97,12 @@ int bt_mesh_scan_enable(void);
 
 int bt_mesh_scan_disable(void);
 
+struct bt_mesh_ble_scan_param {
+    u8_t dummy;
+};
+
+int bt_mesh_start_ble_scan(struct bt_mesh_ble_scan_param *param);
+
+int bt_mesh_stop_ble_scan(void);
+
 #endif /* _ADV_H_ */

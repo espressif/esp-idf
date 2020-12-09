@@ -48,6 +48,7 @@
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 #if CONFIG_BLE_MESH
+#include "btc_ble_mesh_ble.h"
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_health_model.h"
 #include "btc_ble_mesh_config_model.h"
@@ -114,6 +115,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_LIGHTING_SERVER]   = {NULL,                                        btc_ble_mesh_lighting_server_cb_handler  },
     [BTC_PID_SENSOR_SERVER]     = {NULL,                                        btc_ble_mesh_sensor_server_cb_handler    },
     [BTC_PID_TIME_SCENE_SERVER] = {NULL,                                        btc_ble_mesh_time_scene_server_cb_handler},
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+    [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_SCAN */
 #endif /* #if CONFIG_BLE_MESH */
 };
 
