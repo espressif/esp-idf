@@ -167,29 +167,163 @@ endif()
 idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
 idf_component_set_property(esptool_py FLASH_SUB_ARGS "${ESPTOOLPY_FLASH_OPTIONS}")
 
+function(esptool_py_partition_needs_encryption retencrypted partition_name)
+    # Check if encryption is enabled
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        # Encryption is enabled, get partition type, subtype and encrypted flag
+        # to determine whether it needs encryption or not.
+        partition_table_get_partition_info(type "--partition-name ${partition_name}" "type")
+        partition_table_get_partition_info(subtype "--partition-name ${partition_name}" "subtype")
+        partition_table_get_partition_info(encrypted "--partition-name ${partition_name}" "encrypted")
+
+        # As defined in gen_esp32part.py file:
+        # Types:
+        #   - APP  0x00
+        #   - DATA 0x01
+        # Subtypes:
+        #   - ota      0x00
+        #   - nvs      0x02
+        # If the partition is an app, an OTA or an NVS partition, then it should
+        # be encrypted
+        if(
+                (${type} EQUAL 0) OR
+                (${type} EQUAL 1 AND ${subtype} EQUAL 0) OR
+                (${type} EQUAL 1 AND ${subtype} EQUAL 2)
+          )
+            set(encrypted TRUE)
+        endif()
+
+        # Return 'encrypted' value to the caller
+        set(${retencrypted} ${encrypted} PARENT_SCOPE)
+    else()
+        # Encryption not enabled, return false
+        set(${retencrypted} FALSE PARENT_SCOPE)
+    endif()
+
+endfunction()
+
+function(esptool_py_flash_to_partition target_name partition_name binary_path)
+    # Retrieve the offset for the partition to flash the image on
+    partition_table_get_partition_info(offset "--partition-name ${partition_name}" "offset")
+
+    if(NOT offset)
+        message(FATAL_ERROR "Could not find offset of partition ${partition_name}")
+    endif()
+
+    # Check whether the partition needs encryption or not
+    esptool_py_partition_needs_encryption(encrypted ${partition_name})
+
+    # If the image should not be encrypted, we pass the option
+    # ALWAYS_PLAINTEXT to the function esptool_py_flash_target_image
+    if(NOT ${encrypted})
+        set(option ALWAYS_PLAINTEXT)
+    endif()
+
+    # The image name is also the partition name
+    esptool_py_flash_target_image(${target_name} ${partition_name} ${offset}
+                                  ${binary_path} ${option})
+endfunction()
+
+# This function takes a fifth optional named parameter: "ALWAYS_PLAINTEXT". As
+# its name states, it marks whether the image should be flashed as plain text or
+# not. If build macro CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is set and
+# this parameter is provided, then the image will be flahsed as plain text
+# (not encrypted) on the target. This parameter will be ignored if build macro
+# CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is not set.
 function(esptool_py_flash_target_image target_name image_name offset image)
+    set(options ALWAYS_PLAINTEXT)
     idf_build_get_property(build_dir BUILD_DIR)
     file(RELATIVE_PATH image ${build_dir} ${image})
+    cmake_parse_arguments(arg "${options}" "" "" "${ARGN}")
 
+    # Check if the image has to be plain text or not, depending on the macro
+    # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT and the parameter
+    # ALWAYS_PLAINTEXT
+    set(encrypted false)
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT AND
+       NOT arg_ALWAYS_PLAINTEXT)
+        set(encrypted true)
+    endif()
+
+    # In the following snippet of code, some properties are defined for our
+    # current target. These properties will be used to generate the actual
+    # target_name_args files using the target_name_args.in files.
+    # Please see function esptool_py_flash_target above for more information
+    # about these properties and how they are used.
+
+    # Add the image file, with its offset, to the list of files to
+    # flash to the target. No matter whether flash encryption is
+    # enabled or not, plain binaries (non-encrypted) need to be
+    # generated
     set_property(TARGET ${target_name} APPEND PROPERTY FLASH_FILE
                 "\"${offset}\" : \"${image}\"")
     set_property(TARGET ${target_name} APPEND PROPERTY FLASH_ENTRY
-                "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
+                "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\",\
+ \"encrypted\" : \"${encrypted}\" }")
     set_property(TARGET ${target_name} APPEND PROPERTY IMAGES "${offset} ${image}")
 
     if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
-        set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_FILE
-                    "\"${offset}\" : \"${image}\"")
-        set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_ENTRY
-                    "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
-        set_property(TARGET encrypted-${target_name} APPEND PROPERTY IMAGES "${offset} ${image}")
+        # When flash encryption mode is enabled, if the current binary needs to
+        # be encrypted, do the same as previously but prefixing target names
+        # with "encrypted-".
+        if(encrypted)
+            set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_FILE
+                         "\"${offset}\" : \"${image}\"")
+            set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_ENTRY
+                         "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" , \
+\"encrypted\" : \"${encrypted}\"  }")
+            set_property(TARGET encrypted-${target_name} APPEND PROPERTY ENCRYPTED_IMAGES "${offset} ${image}")
+        else()
+            # The target doesn't need to be encrypted, thus, add the current
+            # file to the NON_ENCRYPTED_IMAGES property
+            set_property(TARGET encrypted-${target_name} APPEND PROPERTY NON_ENCRYPTED_IMAGES "${offset} ${image}")
+        endif()
     endif()
 endfunction()
 
+# Use this function to generate a ternary expression that will be evaluated.
+# - retexpr is the expression returned by the function
+# - condition is the expression evaluated to a boolean
+# - condtrue is the expression to evaluate if condition is true
+# - condfalse is the expression to evaluate if condition is false
+# This function can be summarized as:
+#   retexpr = condition ? condtrue : condfalse
+function(if_expr_generator retexpr condition condtrue condfalse)
+    # CMake version 3.8 and above provide a ternary operator for expression
+    # generator. For version under, we must simulate this behaviour
+    if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
+
+        # If condtrue is not empty, then we have to do something in case the
+        # condition is true. Generate the expression that will be used in that
+        # case
+        if(condtrue)
+            set(iftrue "$<${condition}:${condtrue}>")
+        endif()
+
+        # Same for condfalse. If it is empty, it is useless to create an
+        # expression that will be evaluated later
+        if(condfalse)
+            set(iffalse "$<$<NOT:${condition}>:${condfalse}>")
+        endif()
+
+        # Concatenate the previously generated expressions. If one of them was
+        # not initialized (because of empty condtrue/condfalse) it will be
+        # replaced by an empty string
+        set(${retexpr} "${iftrue}${iffalse}" PARENT_SCOPE)
+
+    else()
+        # CMake 3.8 and above implement what we want, making the expression
+        # simpler
+        set(${retexpr} "$<IF:${condition},${condtrue},${condfalse}>" PARENT_SCOPE)
+    endif()
+endfunction()
+
+
 function(esptool_py_flash_target target_name main_args sub_args)
     set(single_value OFFSET IMAGE) # template file to use to be able to
-                                        # flash the image individually using esptool
-    cmake_parse_arguments(_ "" "${single_value}" "" "${ARGN}")
+                                   # flash the image individually using esptool
+    set(options ALWAYS_PLAINTEXT)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "" "${ARGN}")
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(build_dir BUILD_DIR)
@@ -208,15 +342,34 @@ function(esptool_py_flash_target target_name main_args sub_args)
 
     set_target_properties(${target_name} PROPERTIES SUB_ARGS "${sub_args}")
 
+    # Create the expression that contains the list of file names to pass
+    # to esptool script
     set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:${target_name},SUB_ARGS>, >\n\
 $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
 
+    # Write the previous expression to the target_name_args.in file
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_args.in"
-                CONTENT "${flash_args_content}")
+         CONTENT "${flash_args_content}")
+
+    # Generate the actual expression value from the content of the file
+    # we just wrote
     file(GENERATE OUTPUT "${build_dir}/${target_name}_args"
                 INPUT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_args.in")
 
-    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    # Check if the target has to be plain text or not, depending on the macro
+    # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT and the parameter
+    # ALWAYS_PLAINTEXT
+    set(encrypted FALSE)
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT AND
+       NOT __ALWAYS_PLAINTEXT)
+        set(encrypted TRUE)
+    endif()
+
+    # If the file needs to be encrypted, create a target file that lets the user
+    # flash this partition independently from other files.
+    # For example, if 'target_name' is app-flash and 'encrypted' is TRUE,
+    # 'build' directory will contain a file name 'encrypted_app-flash_args'
+    if(${encrypted})
         add_custom_target(encrypted-${target_name}
             COMMAND ${CMAKE_COMMAND}
             -D IDF_PATH="${idf_path}"
@@ -228,21 +381,57 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
             USES_TERMINAL
             )
 
-        set_target_properties(encrypted-${target_name} PROPERTIES SUB_ARGS "${sub_args};--encrypt")
+        # Generate the parameters for esptool.py command
+        # In case we have both non encrypted and encrypted files to flash, we
+        # can use --encrypt-files parameter to specify which ones should be
+        # encrypted.
+        # If we only have encrypted images to flash, we must use legacy
+        # --encrypt parameter.
+        # As the properties ENCRYPTED_IMAGES and NON_ENCRYPTED_IMAGES have not
+        # been geenrated yet, we must use CMake expression generator to test
+        # which esptool.py options we can use.
 
-        set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},SUB_ARGS>, >\n\
-$<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},IMAGES>,\n>")
+        # The variable has_non_encrypted_image will be evaluated to "1" if some
+        # images must not be encrypted. This variable will be used in the next
+        # expression
+        set(has_non_encrypted_images "$<BOOL:$<TARGET_PROPERTY:\
+encrypted-${target_name},NON_ENCRYPTED_IMAGES>>")
 
-        file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
-                    CONTENT "${flash_args_content}")
-        file(GENERATE OUTPUT "${build_dir}/encrypted_${target_name}_args"
-                    INPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in")
+        # Prepare esptool arguments (--encrypt or --encrypt-files)
+        if_expr_generator(if_non_enc_expr ${has_non_encrypted_images}
+                          "" "--encrypt")
+        set_target_properties(encrypted-${target_name} PROPERTIES SUB_ARGS
+                             "${sub_args}; ${if_non_enc_expr}")
+
+        # Generate the list of files to pass to esptool
+        set(encrypted_files "$<JOIN:$<TARGET_PROPERTY\
+:encrypted-${target_name},ENCRYPTED_IMAGES>,\n>")
+        set(non_encrypted_files "$<JOIN:$<TARGET_PROPERTY:\
+encrypted-${target_name},NON_ENCRYPTED_IMAGES>,\n>")
+
+        # Put both lists together, use --encrypted-files if we do also have
+        # plain images to flash
+        if_expr_generator(if_enc_expr ${has_non_encrypted_images}
+                          "--encrypt-files\n" "")
+        set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:\
+encrypted-${target_name},SUB_ARGS>, >\
+${non_encrypted_files}\n\
+${if_enc_expr}\
+${encrypted_files}")
+
+        # The expression is ready to be geenrated, write it to the file which
+        # extension is .in
+        file_generate("${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
+                      CONTENT "${flash_args_content}")
+
+        # Generate the actual string from the content of the file we just wrote
+        file_generate("${build_dir}/encrypted_${target_name}_args"
+                      INPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in")
     else()
         fail_target(encrypted-${target_name} "Error: The target encrypted-${target_name} requires"
                     "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT to be enabled.")
 
     endif()
-
 endfunction()
 
 

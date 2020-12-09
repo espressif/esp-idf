@@ -215,6 +215,8 @@ def _get_partition_info(target, partition_id, info):
         for p in partitions:
             info_dict = {
                 "name": '{}'.format(p.name),
+                "type": '{}'.format(p.type),
+                "subtype": '{}'.format(p.subtype),
                 "offset": '0x{:x}'.format(p.offset),
                 "size": '0x{:x}'.format(p.size),
                 "encrypted": '{}'.format(p.encrypted)
@@ -276,7 +278,7 @@ def main():
 
     print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information", parents=[partition_selection_parser])
     print_partition_info_subparser.add_argument("--info", help="type of partition information to get",
-                                                choices=["name", "offset", "size", "encrypted"], default=["offset", "size"], nargs="+")
+                                                choices=["name", "type", "subtype", "offset", "size", "encrypted"], default=["offset", "size"], nargs="+")
     print_partition_info_subparser.add_argument('--part_list', help="Get a list of partitions suitable for a given type", action='store_true')
 
     args = parser.parse_args()
