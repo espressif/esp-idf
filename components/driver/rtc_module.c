@@ -100,6 +100,14 @@ In ADC2, there're two locks used for different cases:
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
+// This gets incremented when adc_power_acquire() is called, and decremented when
+// adc_power_release() is called. ADC is powered down when the value reaches zero.
+// Should be modified within critical section (ADC_ENTER/EXIT_CRITICAL).
+static int s_adc_power_on_cnt;
+
+static void adc_power_on_internal(void);
+static void adc_power_off_internal(void);
+
 //prevent ADC2 being used by wifi and other tasks at the same time.
 static _lock_t adc2_wifi_lock;
 //prevent ADC2 being used by tasks (regardless of WIFI)
@@ -1143,32 +1151,49 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
     return ESP_OK;
 }
 
-void adc_power_always_on()
+void adc_power_acquire()
 {
+    bool powered_on = false;
     portENTER_CRITICAL(&rtc_spinlock);
-    SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    s_adc_power_on_cnt++;
+    if (s_adc_power_on_cnt == 1) {
+        adc_power_on_internal();
+        powered_on = true;
+    }
     portEXIT_CRITICAL(&rtc_spinlock);
+    if (powered_on) {
+        ESP_LOGV(TAG, "%s: ADC powered on", __func__);
+    }
 }
 
-void adc_power_on()
+void adc_power_release(void)
+{
+    bool powered_off = false;
+    portENTER_CRITICAL(&rtc_spinlock);
+    s_adc_power_on_cnt--;
+    if (s_adc_power_on_cnt < 0) {
+        portEXIT_CRITICAL(&rtc_spinlock);
+    } else if (s_adc_power_on_cnt == 0) {
+        adc_power_off_internal();
+        powered_off = true;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    if (powered_off) {
+        ESP_LOGV(TAG, "%s: ADC powered off", __func__);
+    }
+}
+
+static void adc_power_on_internal(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
-    //The power FSM controlled mode saves more power, while the ADC noise may get increased.
-#ifndef CONFIG_ADC_FORCE_XPD_FSM
     //Set the power always on to increase precision.
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-#else    
-    //Use the FSM to turn off the power while not used to save power.
-    if (SENS.sar_meas_wait2.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-    } else {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
-    }
-#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-void adc_power_off()
+void adc_power_on(void) __attribute__((alias("adc_power_on_internal")));
+
+static void adc_power_off_internal(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     //Bit1  0:Fsm  1: SW mode
@@ -1176,6 +1201,8 @@ void adc_power_off()
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
+
+void adc_power_off(void) __attribute__((alias("adc_power_off_internal")));
 
 esp_err_t adc_set_clk_div(uint8_t clk_div)
 {
@@ -1395,7 +1422,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 
     uint8_t table_len = 1;
     //POWER ON SAR
-    adc_power_always_on();
+    adc_power_acquire();
     adc_gpio_init(adc_unit, channel);
     adc_set_i2s_data_len(adc_unit, table_len);
     adc_set_i2s_data_pattern(adc_unit, 0, channel, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11);
@@ -1540,7 +1567,7 @@ int adc1_get_raw(adc1_channel_t channel)
     uint16_t adc_value;
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
     adc1_adc_mode_acquire();
-    adc_power_on();
+    adc_power_acquire();
 
     portENTER_CRITICAL(&rtc_spinlock);    
     //disable other peripherals
@@ -1551,6 +1578,7 @@ int adc1_get_raw(adc1_channel_t channel)
     //start conversion
     adc_value = adc_convert( ADC_UNIT_1, channel );
     portEXIT_CRITICAL(&rtc_spinlock);
+    adc_power_release();
     adc1_lock_release();
     return adc_value;
 }
@@ -1562,7 +1590,7 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 
 void adc1_ulp_enable(void)
 {
-    adc_power_on();
+    adc_power_acquire();
 
     portENTER_CRITICAL(&rtc_spinlock);
     adc_set_controller( ADC_UNIT_1, ADC_CTRL_ULP );
@@ -1701,7 +1729,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
 
     //in critical section with whole rtc module
-    adc_power_on();
+    adc_power_acquire();
 
     //avoid collision with other tasks
     portENTER_CRITICAL(&adc2_spinlock); 
@@ -1709,6 +1737,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     //try the lock, return if failed (wifi using).
     if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
         portEXIT_CRITICAL( &adc2_spinlock );
+        adc_power_release();
         return ESP_ERR_TIMEOUT;
     }
 
@@ -1725,7 +1754,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     adc_value = adc_convert( ADC_UNIT_2, channel );
     _lock_release( &adc2_wifi_lock );
     portEXIT_CRITICAL(&adc2_spinlock);
-
+    adc_power_release();
     *raw_out = (int)adc_value;
     return ESP_OK;
 }
@@ -1750,7 +1779,7 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     rtc_gpio_pullup_dis(gpio);
     rtc_gpio_pulldown_dis(gpio);
     //force fsm
-    adc_power_always_on();               //Select power source of ADC
+    adc_power_acquire();               //Select power source of ADC
 
     RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
     //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
@@ -1931,7 +1960,7 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     int Sens_Vn1;
     int hall_value;
     
-    adc_power_on();
+    adc_power_acquire();
 
     portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
@@ -1948,6 +1977,7 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     Sens_Vn1 = adc_convert( ADC_UNIT_1, ADC1_CHANNEL_3 );
     portEXIT_CRITICAL(&rtc_spinlock);
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
+    adc_power_release();
 
     return hall_value;
 }

@@ -19,6 +19,7 @@
 #include "esp_pm.h"
 #include "soc/rtc.h"
 #include "esp_mesh.h"
+#include "driver/adc.h"
 
 #if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
@@ -37,6 +38,8 @@ static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
+
+static bool s_wifi_adc_xpd_flag;
 
 static void __attribute__((constructor)) s_set_default_wifi_log_level()
 {
@@ -132,3 +135,19 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
+
+/* Coordinate ADC power with other modules. This overrides the function from PHY lib. */
+void set_xpd_sar(bool en)
+{
+    if (s_wifi_adc_xpd_flag == en) {
+        /* ignore repeated calls to set_xpd_sar when the state is already correct */
+        return;
+    }
+
+    s_wifi_adc_xpd_flag = en;
+    if (en) {
+        adc_power_acquire();
+    } else {
+        adc_power_release();
+    }
+}
