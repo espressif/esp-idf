@@ -174,6 +174,14 @@ struct osi_funcs_t {
     int (* _coex_register_bt_cb)(coex_func_cb_t cb);
     uint32_t (* _coex_bb_reset_lock)(void);
     void (* _coex_bb_reset_unlock)(uint32_t restore);
+    int (* _coex_schm_register_btdm_callback)(void *callback);
+    void (* _coex_schm_status_bit_clear)(uint32_t type, uint32_t status);
+    void (* _coex_schm_status_bit_set)(uint32_t type, uint32_t status);
+    uint32_t (* _coex_schm_interval_get)(void);
+    uint8_t (* _coex_schm_curr_period_get)(void);
+    void *(* _coex_schm_curr_phase_get)(void);
+    int (* _coex_wifi_channel_get)(uint8_t *primary, uint8_t *secondary);
+    int (* _coex_register_wifi_channel_change_callback)(void *cb);
     uint32_t _magic;
 };
 
@@ -217,11 +225,19 @@ extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 extern void bredr_sco_datapath_set(uint8_t data_path);
 extern void btdm_controller_scan_duplicate_list_clear(void);
 /* Coexistence */
-extern int coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration);
-extern int coex_bt_release_wrapper(uint32_t event);
-extern int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
-extern uint32_t coex_bb_reset_lock_wrapper(void);
-extern void coex_bb_reset_unlock_wrapper(uint32_t restore);
+extern int coex_bt_request(uint32_t event, uint32_t latency, uint32_t duration);
+extern int coex_bt_release(uint32_t event);
+extern int coex_register_bt_cb(coex_func_cb_t cb);
+extern uint32_t coex_bb_reset_lock(void);
+extern void coex_bb_reset_unlock(uint32_t restore);
+extern int coex_schm_register_btdm_callback(void *callback);
+extern void coex_schm_status_bit_clear(uint32_t type, uint32_t status);
+extern void coex_schm_status_bit_set(uint32_t type, uint32_t status);
+extern uint32_t coex_schm_interval_get(void);
+extern uint8_t coex_schm_curr_period_get(void);
+extern void * coex_schm_curr_phase_get(void);
+extern int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
+extern int coex_register_wifi_channel_change_callback(void *cb);
 extern void coex_ble_adv_priority_high_set(bool high);
 
 extern char _bss_start_btdm;
@@ -287,6 +303,19 @@ static void btdm_sleep_enter_phase2_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
 static bool coex_bt_wakeup_request(void);
 static void coex_bt_wakeup_request_end(void);
+static int coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration);
+static int coex_bt_release_wrapper(uint32_t event);
+static int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
+static uint32_t coex_bb_reset_lock_wrapper(void);
+static void coex_bb_reset_unlock_wrapper(uint32_t restore);
+static int coex_schm_register_btdm_callback_wrapper(void *callback);
+static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
+static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
+static uint32_t coex_schm_interval_get_wrapper(void);
+static uint8_t coex_schm_curr_period_get_wrapper(void);
+static void * coex_schm_curr_phase_get_wrapper(void);
+static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
+static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
 
 /* Local variable definition
  ***************************************************************************
@@ -341,6 +370,14 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._coex_register_bt_cb = coex_register_bt_cb_wrapper,
     ._coex_bb_reset_lock = coex_bb_reset_lock_wrapper,
     ._coex_bb_reset_unlock = coex_bb_reset_unlock_wrapper,
+    ._coex_schm_register_btdm_callback = coex_schm_register_btdm_callback_wrapper,
+    ._coex_schm_status_bit_clear = coex_schm_status_bit_clear_wrapper,
+    ._coex_schm_status_bit_set = coex_schm_status_bit_set_wrapper,
+    ._coex_schm_interval_get = coex_schm_interval_get_wrapper,
+    ._coex_schm_curr_period_get = coex_schm_curr_period_get_wrapper,
+    ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
+    ._coex_wifi_channel_get = coex_wifi_channel_get_wrapper,
+    ._coex_register_wifi_channel_change_callback = coex_register_wifi_channel_change_callback_wrapper,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -994,6 +1031,117 @@ static void coex_bt_wakeup_request_end(void)
 {
     async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_COEX);
     return;
+}
+
+static int IRAM_ATTR coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bt_request(event, latency, duration);
+#else
+    return 0;
+#endif
+}
+
+static int IRAM_ATTR coex_bt_release_wrapper(uint32_t event)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bt_release(event);
+#else
+    return 0;
+#endif
+}
+
+static int coex_register_bt_cb_wrapper(coex_func_cb_t cb)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_register_bt_cb(cb);
+#else
+    return 0;
+#endif
+}
+
+static uint32_t IRAM_ATTR coex_bb_reset_lock_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_bb_reset_lock();
+#else
+    return 0;
+#endif
+}
+
+static void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_bb_reset_unlock(restore);
+#endif
+}
+
+static int coex_schm_register_btdm_callback_wrapper(void *callback)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_register_btdm_callback(callback);
+#else
+    return 0;
+#endif
+}
+
+static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_schm_status_bit_clear(type, status);
+#endif
+}
+
+static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_schm_status_bit_set(type, status);
+#endif
+}
+
+static uint32_t coex_schm_interval_get_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_interval_get();
+#else
+    return 0;
+#endif
+}
+
+static uint8_t coex_schm_curr_period_get_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_curr_period_get();
+#else
+    return 0;
+#endif
+}
+
+static void * coex_schm_curr_phase_get_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_curr_phase_get();
+#else
+    return NULL;
+#endif
+}
+
+static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_wifi_channel_get(primary, secondary);
+#else
+    return 0;
+#endif
+}
+
+static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_register_wifi_channel_change_callback(cb);
+#else
+    return 0;
+#endif
 }
 
 bool esp_vhci_host_check_send_available(void)
