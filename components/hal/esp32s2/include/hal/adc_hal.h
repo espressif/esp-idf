@@ -219,21 +219,20 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
 ---------------------------------------------------------------*/
 
 /**
- * Calibrate the ADC according to the parameters.
+ * Calibrate the ADC using internal connections.
  *
  * @note  Different ADC units and different attenuation options use different calibration data (initial data).
  *
  * @param adc_n ADC index number.
  * @param channel adc channel number.
+ * @param atten The attenuation for the channel
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
- * @param force_cal true:  Do not use the results that have already been verified, and perform the verification again. It will take a long time(~40us).
- *                  false: Use the result of the last calibration. Return immediately.
  *
  * @return
  *      - The calibration result (initial data) to ADC, use `adc_hal_set_calibration_param` to set.
  */
-uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd, bool force_cal);
+uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
 
 /**
  * Set the calibration result (initial data) to ADC.

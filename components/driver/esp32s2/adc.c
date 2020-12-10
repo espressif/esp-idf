@@ -29,6 +29,7 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
+#include "esp32s2/esp_efuse_rtc_table.h"
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
@@ -60,6 +61,8 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_adc_digi_arbiter_lock = NULL;
 #endif  //CONFIG_PM_ENABLE
+
+esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten);
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -105,6 +108,17 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
         }
     }
 #endif //CONFIG_PM_ENABLE
+
+    if (config->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
+        for (int i = 0; i < config->adc1_pattern_len; i++) {
+            adc_cal_offset(ADC_NUM_1, config->adc1_pattern[i].channel, config->adc1_pattern[i].atten);
+        }
+    }
+    if (config->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
+        for (int i = 0; i < config->adc2_pattern_len; i++) {
+            adc_cal_offset(ADC_NUM_2, config->adc2_pattern[i].channel, config->adc2_pattern[i].atten);
+        }
+    }
 
     ADC_ENTER_CRITICAL();
     adc_hal_digi_controller_config(config);
@@ -413,3 +427,54 @@ esp_err_t adc_digi_isr_deregister(void)
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------
+                    Calibration
+---------------------------------------------------------------*/
+
+static uint16_t s_adc_cali_param[ADC_NUM_MAX][ADC_ATTEN_MAX] = { {0}, {0} };
+
+//NOTE: according to calibration version, different types of lock may be taken during the process:
+//  1. Semaphore when reading efuse
+//  2. Spinlock when actually doing ADC calibration
+//This function shoudn't be called inside critical section or ISR
+uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool no_cal)
+{
+#ifdef CONFIG_IDF_ENV_FPGA
+    return 0;
+#endif
+
+    if (s_adc_cali_param[adc_n][atten]) {
+        ESP_LOGV(ADC_TAG, "Use calibrated val ADC%d atten=%d: %04X", adc_n, atten, s_adc_cali_param[adc_n][atten]);
+        return (uint32_t)s_adc_cali_param[adc_n][atten];
+    }
+
+    if (no_cal) {
+        return 0;   //indicating failure
+    }
+
+    uint32_t dout = 0;
+    // check if we can fetch the values from eFuse.
+    int version = esp_efuse_rtc_table_read_calib_version();
+    if (version == 2) {
+        int tag = esp_efuse_rtc_table_get_tag(version, adc_n + 1, atten, RTCCALIB_V2_PARAM_VINIT);
+        dout = esp_efuse_rtc_table_get_parsed_efuse_value(tag, false);
+    } else {
+        const bool internal_gnd = true;
+        ADC_ENTER_CRITICAL();
+        dout = adc_hal_self_calibration(adc_n, channel, atten, internal_gnd);
+        ADC_EXIT_CRITICAL();
+    }
+    ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, dout);
+    s_adc_cali_param[adc_n][atten] = (uint16_t)dout;
+    return dout;
+}
+
+esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+{
+    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten, false);
+    ADC_ENTER_CRITICAL();
+    adc_hal_set_calibration_param(adc_n, cal_val);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
+}

@@ -25,7 +25,11 @@ Don't put any other code into this file. */
  */
 static __attribute__((constructor)) void adc2_init_code_calibration(void)
 {
-    adc_hal_set_calibration_param(ADC_NUM_2, adc_hal_calibration(ADC_NUM_2, 0, ADC_ATTEN_DB_11, true, false));
+    const adc_ll_num_t adc_n = ADC_NUM_2;
+    const adc_atten_t atten = ADC_ATTEN_DB_11;
+    const adc_channel_t channel = 0;
+    extern esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten);
+    adc_cal_offset(adc_n, channel, atten);
 }
 
 /** Don't call `adc2_cal_include` in user code. */

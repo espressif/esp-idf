@@ -121,6 +121,16 @@ static esp_pm_lock_handle_t s_adc2_arbiter_lock;
                     ADC Common
 ---------------------------------------------------------------*/
 
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+static uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
+{
+    adc_atten_t atten = adc_hal_get_atten(adc_n, chan);
+
+    extern uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool no_cal);
+    return adc_get_calibration_offset(adc_n, chan, atten, false);
+}
+#endif
+
 void adc_power_acquire(void)
 {
     bool powered_on = false;
@@ -269,13 +279,6 @@ esp_err_t adc_rtc_reset(void)
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
-
-static inline void adc_set_init_code(adc_ll_num_t adc_n, adc_channel_t channel)
-{
-    adc_atten_t atten = adc_hal_get_atten(adc_n, channel);
-    uint32_t cal_val = adc_hal_calibration(adc_n, channel, atten, true, false);
-    adc_hal_set_calibration_param(adc_n, cal_val);
-}
 #endif
 
 /*-------------------------------------------------------------------------------------
@@ -369,20 +372,25 @@ int adc1_get_raw(adc1_channel_t channel)
     adc1_rtc_mode_acquire();
     adc_power_acquire();
 
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    // Get calibration value before going into critical section
+    uint32_t cal_val = get_calibration_offset(ADC_NUM_1, channel);
+#endif
+
     ADC_ENTER_CRITICAL();
 #ifdef CONFIG_IDF_TARGET_ESP32
     adc_hal_hall_disable(); //Disable other peripherals.
     adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
-#if !CONFIG_IDF_TARGET_ESP32
-    adc_set_init_code(ADC_NUM_1, channel);             // calibration for adc
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 #endif
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);    //Set controller
     adc_hal_convert(ADC_NUM_1, channel, &adc_value);   //Start conversion, For ADC1, the data always valid.
-    ADC_EXIT_CRITICAL();
 #if !CONFIG_IDF_TARGET_ESP32
     adc_hal_rtc_reset();    //Reset FSM of rtc controller
 #endif
+    ADC_EXIT_CRITICAL();
 
     adc_power_release();
     adc1_lock_release();
@@ -520,6 +528,11 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     adc_power_acquire();         //in critical section with whole rtc module
 
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    // Get calibration value before going into critical section
+    uint32_t cal_val = get_calibration_offset(ADC_NUM_2, channel);
+#endif
+
     ADC2_ENTER_CRITICAL();  //avoid collision with other tasks
 
     if ( ADC2_WIFI_LOCK_TRY_ACQUIRE() == -1 ) { //try the lock, return if failed (wifi using).
@@ -532,7 +545,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif
     adc2_config_width(width_bit);   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-    adc_set_init_code(ADC_NUM_2, channel);  // calibration for adc
+    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 #endif
     adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);// set controller
 
@@ -557,12 +570,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_PM_ENABLE
 #endif //CONFIG_IDF_TARGET_ESP32
 
-    ADC2_WIFI_LOCK_RELEASE();
-    ADC2_EXIT_CRITICAL();
 
 #if !CONFIG_IDF_TARGET_ESP32
     adc_rtc_reset();
 #endif
+    ADC2_WIFI_LOCK_RELEASE();
+    ADC2_EXIT_CRITICAL();
 
     if (adc_value < 0) {
         ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
