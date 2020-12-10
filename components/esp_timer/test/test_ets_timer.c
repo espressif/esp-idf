@@ -49,6 +49,7 @@ TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
     }
 
     ets_timer_disarm(&timer1);
+    ets_timer_done(&timer1);
 }
 
 TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
@@ -94,6 +95,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
+    ets_timer_done(&timer1);
 
 #undef NUM_INTERVALS
 }
@@ -197,7 +199,9 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
     TEST_ASSERT_TRUE(args1.pass);
     TEST_ASSERT_TRUE(args2.pass);
     TEST_ASSERT_TRUE(args3.pass);
-
+    ets_timer_done(&timer1);
+    ets_timer_done(&timer2);
+    ets_timer_done(&timer3);
 
 #undef N
 }
@@ -243,4 +247,5 @@ IRAM_ATTR TEST_CASE("ETSTimers arm & disarm run from IRAM", "[ets_timer]")
     spi_flash_guard_get()->start();
     ets_timer_disarm(&timer1);
     spi_flash_guard_get()->end();
+    ets_timer_done(&timer1);
 }

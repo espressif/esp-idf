@@ -47,6 +47,33 @@ The timer can be started in one-shot mode or in periodic mode.
 
 Note that the timer must not be running when :cpp:func:`esp_timer_start_once` or :cpp:func:`esp_timer_start_periodic` is called. To restart a running timer, call :cpp:func:`esp_timer_stop` first, then call one of the start functions.
 
+esp_timer during the light sleep
+--------------------------------
+
+During light sleep, the esp_timer counter stops and no callback functions are called.
+Instead, the time is counted by the RTC counter. Upon waking up, the system gets the difference
+between the counters and calls a function that advances the esp_timer counter.
+Since the counter has been advanced, the system starts calling callbacks that were not called during sleep.
+The number of callbacks depends on the duration of the sleep and the period of the timers. It can lead to overflow of some queues.
+This only applies to periodic timers, one-shot timers will be called once.
+
+This behavior can be changed by calling :cpp:func:`esp_timer_stop` before sleeping.
+In some cases, this can be inconvenient, and instead of the stop function,
+you can use the `skip_unhandled_events` option during :cpp:func:`esp_timer_create`.
+When the `skip_unhandled_events` is true, if a periodic timer expires one or more times during light sleep
+then only one callback is called on wake.
+
+Handling callbacks
+------------------
+
+esp_timer is designed to achieve a high-resolution low latency timer and the ability to handle delayed events.
+If the timer is late then the callback will be called as soon as possible, it will not be lost.
+In the worst case, when the timer has not been processed for more than one period (for periodic timers),
+in this case the callbacks will be called one after the other without waiting for the set period.
+This can be bad for some applications, and the `skip_unhandled_events` option was introduced to eliminate this behavior.
+If `skip_unhandled_events` is set then a periodic timer that has expired multiple times without being able to call
+the callback will still result in only one callback event once processing is possible.
+
 Obtaining Current Time
 ----------------------
 

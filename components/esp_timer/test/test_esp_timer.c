@@ -413,6 +413,8 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 
     teardown_overflow();
     vSemaphoreDelete(semaphore);
+    TEST_ESP_OK(esp_timer_delete(timer1));
+    TEST_ESP_OK(esp_timer_delete(timer2));
 }
 
 
@@ -665,6 +667,7 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
     TEST_ASSERT(state.cb_time > t_start);
 
     ref_clock_deinit();
+    TEST_ESP_OK(esp_timer_delete(timer));
 }
 
 static esp_timer_handle_t timer1;
@@ -824,6 +827,8 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
     esp_timer_stop(oneshot_timer);
     esp_timer_delete(oneshot_timer);
+    esp_timer_stop(periodic_timer);
+    esp_timer_delete(periodic_timer);
     printf("timers deleted\n");
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -869,3 +874,45 @@ TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow va
     }
 }
 #endif
+
+static void timer_callback5(void* arg)
+{
+    *(int64_t *)arg = esp_timer_get_time();
+}
+
+TEST_CASE("Test a latency between a call of callback and real event", "[esp_timer]")
+{
+
+    int64_t callback_time = 0;
+    const esp_timer_create_args_t periodic_timer_args = {
+        .arg = &callback_time,
+        .callback = &timer_callback5,
+    };
+
+    esp_timer_handle_t periodic_timer;
+
+    TEST_ESP_OK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    int interval_ms = 50;
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer, interval_ms * 1000));
+
+    for (int i = 0; i < 5; ++i) {
+        int64_t expected_time = esp_timer_get_next_alarm();
+        int64_t saved_callback_time = callback_time;
+        while (saved_callback_time == callback_time) {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
+        int diff = callback_time - expected_time;
+        printf("%d us\n", diff);
+#ifndef CONFIG_IDF_ENV_FPGA
+        if (i != 0) {
+            // skip the first measurement
+            // if CPU_FREQ = 240MHz. 14 - 16us
+            TEST_ASSERT_LESS_OR_EQUAL(50, diff);
+        }
+#endif // not CONFIG_IDF_ENV_FPGA
+    }
+
+    TEST_ESP_OK(esp_timer_dump(stdout));
+    TEST_ESP_OK(esp_timer_stop(periodic_timer));
+    TEST_ESP_OK(esp_timer_delete(periodic_timer));
+}
