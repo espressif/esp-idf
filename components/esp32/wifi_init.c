@@ -32,6 +32,16 @@
 /* mesh event callback handler */
 mesh_event_cb_t g_mesh_event_cb = NULL;
 
+/* Set additional WiFi features and capabilities */
+uint64_t g_wifi_feature_caps =
+#if CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE
+    CONFIG_FEATURE_WPA3_SAE_BIT |
+#endif
+#if (CONFIG_ESP32_SPIRAM_SUPPORT | CONFIG_ESP32S2_SPIRAM_SUPPORT)
+    CONFIG_FEATURE_CACHE_TX_BUF_BIT |
+#endif
+0;
+
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
@@ -40,6 +50,7 @@ static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
 
 static bool s_wifi_adc_xpd_flag;
+static const char* TAG = "wifi_init";
 
 static void __attribute__((constructor)) s_set_default_wifi_log_level()
 {
@@ -98,6 +109,35 @@ static void esp_wifi_set_debug_log()
 
 }
 
+static void esp_wifi_config_info(void)
+{
+#ifdef CONFIG_ESP32_WIFI_RX_BA_WIN
+    ESP_LOGI(TAG, "rx ba win: %d", CONFIG_ESP32_WIFI_RX_BA_WIN);
+#endif
+    ESP_LOGI(TAG, "tcpip mbox: %d", CONFIG_TCPIP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "udp mbox: %d", CONFIG_UDP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "tcp mbox: %d", CONFIG_TCP_RECVMBOX_SIZE);
+    ESP_LOGI(TAG, "tcp tx win: %d", CONFIG_TCP_SND_BUF_DEFAULT);
+    ESP_LOGI(TAG, "tcp rx win: %d", CONFIG_TCP_WND_DEFAULT);
+    ESP_LOGI(TAG, "tcp mss: %d", CONFIG_TCP_MSS);
+
+#ifdef CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    ESP_LOGI(TAG, "WiFi/LWIP prefer SPIRAM");
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_IRAM_OPT
+    ESP_LOGI(TAG, "WiFi IRAM OP enabled");
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_RX_IRAM_OPT
+    ESP_LOGI(TAG, "WiFi RX IRAM OP enabled");
+#endif
+
+#ifdef CONFIG_LWIP_IRAM_OPTIMIZATION
+    ESP_LOGI(TAG, "LWIP IRAM OP enabled");
+#endif
+}
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
@@ -116,6 +156,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
     }
 
+    esp_wifi_config_info();
     return result;
 }
 

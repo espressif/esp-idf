@@ -676,6 +676,22 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
  */
 bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief increase the reference counter of net stack buffer
+ *
+ * @param[in]  netstack_buf the net stack buffer
+ *
+ */
+void esp_netif_netstack_buf_ref(void *netstack_buf);
+
+/**
+ * @brief free the netstack buffer
+ *
+ * @param[in]  netstack_buf the net stack buffer
+ *
+ */
+void esp_netif_netstack_buf_free(void *netstack_buf);
+
 #ifdef __cplusplus
 }
 #endif

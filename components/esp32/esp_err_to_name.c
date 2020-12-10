@@ -329,10 +329,16 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_WIFI_POST),                          /* 12306 0x3012 Failed to post the event to WiFi task */
 #   endif
 #   ifdef      ESP_ERR_WIFI_INIT_STATE
-    ERR_TBL_IT(ESP_ERR_WIFI_INIT_STATE),                    /* 12307 0x3013 Invalod WiFi state when init/deinit is called */
+    ERR_TBL_IT(ESP_ERR_WIFI_INIT_STATE),                    /* 12307 0x3013 Invalid WiFi state when init/deinit is called */
 #   endif
 #   ifdef      ESP_ERR_WIFI_STOP_STATE
     ERR_TBL_IT(ESP_ERR_WIFI_STOP_STATE),                    /* 12308 0x3014 Returned when WiFi is stopping */
+#   endif
+#   ifdef      ESP_ERR_WIFI_NOT_ASSOC
+    ERR_TBL_IT(ESP_ERR_WIFI_NOT_ASSOC),                     /* 12309 0x3015 The WiFi connection is not associated */
+#   endif
+#   ifdef      ESP_ERR_WIFI_TX_DISALLOW
+    ERR_TBL_IT(ESP_ERR_WIFI_TX_DISALLOW),                   /* 12310 0x3016 The WiFi TX is disallowed */
 #   endif
     // components/esp32/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
