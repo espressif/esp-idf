@@ -465,7 +465,7 @@ def init_cli(verbose_output=None):
         def _print_closing_message(self, args, actions):
             # print a closing message of some kind
             #
-            if "flash" in str(actions) or "dfu" in str(actions):
+            if any(t in str(actions) for t in ("flash", "dfu", "uf2", "uf2-app")):
                 print("Done")
                 return
 

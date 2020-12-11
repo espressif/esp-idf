@@ -743,6 +743,21 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} "dfu.bin"
     rm -rf build sdkconfig
 
+    print_status "UF2 build works"
+    rm -f -r build sdkconfig
+    idf.py uf2 &> tmp.log
+    grep "build/uf2.bin\" has been written." tmp.log || (tail -n 100 tmp.log ; failure "UF2 build works for esp32")
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} "uf2.bin"
+    idf.py uf2-app &> tmp.log
+    grep "build/uf2-app.bin\" has been written." tmp.log || (tail -n 100 tmp.log ; failure "UF2 build works for application binary")
+    assert_built "uf2-app.bin"
+    idf.py set-target esp32s2
+    idf.py uf2 &> tmp.log
+    grep "build/uf2.bin\" has been written." tmp.log || (tail -n 100 tmp.log ; failure "UF2 build works for esp32s2")
+    rm tmp.log
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} "uf2.bin"
+    rm -rf build sdkconfig
+
     print_status "Loadable ELF build works"
     echo "CONFIG_APP_BUILD_TYPE_ELF_RAM=y" > sdkconfig
     idf.py reconfigure || failure "Couldn't configure for loadable ELF file"

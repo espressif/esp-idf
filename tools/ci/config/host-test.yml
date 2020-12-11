@@ -312,6 +312,12 @@ test_mkdfu:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
 
+test_mkuf2:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/tools/test_mkuf2
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkuf2.py
+
 test_docs:
   extends: .host_test_template
   image: $ESP_IDF_DOC_ENV_IMAGE
