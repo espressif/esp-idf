@@ -11,11 +11,13 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install git wget ncurses-devel flex bison gperf python cmake ninja-build ccache
+    sudo yum -y update && sudo yum install git wget flex bison gperf python3 cmake ninja-build ccache
+
+CentOS 7 is still supported but CentOS version 8 is recommended for a better user experience.
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools cmake ninja-build ccache libffi-dev libssl-dev
+    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 
 - Arch::
 
@@ -46,19 +48,46 @@ Before installing these packages you might need to add the author's public key t
 
 Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 
+Setting up Python 3 as default for CentOS
+-----------------------------------------
+
+CentOS 7 and older is providing Python 2.7 as the default interpreter.
+Python 3 is recommended instead and can be installed in old distributions as follows, or please consult the documentation of your operating system for other recommended ways to achieve this::
+
+    sudo yum -y update && sudo yum install python3 python3-pip python3-setuptools
+
+Making Python 3 the default interpreter is possible by running::
+
+    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
+
 Setting up Python 3 as default for Ubuntu and Debian
 ----------------------------------------------------
 
-Ubuntu and Debian are still providing Python 2.7 as the default interpreter. Python 3 can be installed as follows::
+Ubuntu (version 18.04 and older) and Debian (version 9 and older) are still providing Python 2.7 as the default interpreter.
+Python 3 is recommended instead and can be installed in old distributions as follows, or please consult the documentation of your operating system for other recommended ways to achieve this::
 
     sudo apt-get install python3 python3-pip python3-setuptools
 
 Making Python 3 the default interpreter is possible by running::
 
-    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
 
 .. note::
     This is system-wide change which may affect all of the applications.
+
+Fixing broken pip on Ubuntu 16.04
+=================================
+
+Package ``python3-pip`` could be broken without possibility to upgrade it. 
+Package has to be removed and installed manually using script `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_.::
+
+    apt remove python3-pip python3-virtualenv; rm -r ~/.local
+    rm -r ~/.espressif/python_env && python get-pip.py
+
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for popular Linux distributions are listed above.
 
 Next Steps
 ==========
