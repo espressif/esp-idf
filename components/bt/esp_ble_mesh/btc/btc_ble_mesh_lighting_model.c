@@ -16,8 +16,10 @@
 #include <errno.h>
 
 #include "btc_ble_mesh_lighting_model.h"
-#include "lighting_client.h"
 #include "esp_ble_mesh_lighting_model_api.h"
+
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
+#include "lighting_client.h"
 
 /* Lighting Client Models related functions */
 
@@ -374,6 +376,10 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */
+
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
+
 /* Lighting Server Models related functions */
 
 static inline void btc_ble_mesh_lighting_server_cb_to_app(esp_ble_mesh_lighting_server_cb_event_t event,
@@ -571,3 +577,5 @@ void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg)
     btc_ble_mesh_lighting_server_free_req_data(msg);
     return;
 }
+
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */

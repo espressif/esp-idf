@@ -171,17 +171,19 @@ struct node_info {
 
 static bt_mesh_mutex_t settings_lock;
 
-static void bt_mesh_settings_mutex_new(void)
+static inline void bt_mesh_settings_mutex_new(void)
 {
     if (settings_lock.mutex == NULL) {
         bt_mesh_mutex_create(&settings_lock);
     }
 }
 
-static void bt_mesh_settings_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_settings_mutex_free(void)
 {
     bt_mesh_mutex_free(&settings_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_settings_lock(void)
 {
@@ -2627,6 +2629,14 @@ int settings_core_init(void)
     return 0;
 }
 
+int bt_mesh_settings_init(void)
+{
+    bt_mesh_settings_mutex_new();
+    bt_mesh_settings_init_foreach();
+    return 0;
+}
+
+#if CONFIG_BLE_MESH_DEINIT
 int settings_core_deinit(void)
 {
     k_delayed_work_free(&pending_store);
@@ -2646,18 +2656,12 @@ int settings_core_erase(void)
     return 0;
 }
 
-int bt_mesh_settings_init(void)
-{
-    bt_mesh_settings_mutex_new();
-    bt_mesh_settings_init_foreach();
-    return 0;
-}
-
 int bt_mesh_settings_deinit(bool erase)
 {
     bt_mesh_settings_deinit_foreach(erase);
     bt_mesh_settings_mutex_free();
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 #endif /* CONFIG_BLE_MESH_SETTINGS */

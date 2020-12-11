@@ -17,7 +17,10 @@
 
 #include "btc_ble_mesh_sensor_model.h"
 
+#include "mesh_config.h"
 #include "model_opcode.h"
+
+#if CONFIG_BLE_MESH_SENSOR_CLI
 #include "sensor_client.h"
 
 /* The followings are the macro definitions of Sensor client
@@ -49,24 +52,26 @@ static const bt_mesh_client_op_pair_t sensor_op_pair[] = {
 
 static bt_mesh_mutex_t sensor_client_lock;
 
-static void bt_mesh_sensor_client_mutex_new(void)
+static inline void bt_mesh_sensor_client_mutex_new(void)
 {
     if (!sensor_client_lock.mutex) {
         bt_mesh_mutex_create(&sensor_client_lock);
     }
 }
 
-static void bt_mesh_sensor_client_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_sensor_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&sensor_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_sensor_client_lock(void)
+static inline void bt_mesh_sensor_client_lock(void)
 {
     bt_mesh_mutex_lock(&sensor_client_lock);
 }
 
-static void bt_mesh_sensor_client_unlock(void)
+static inline void bt_mesh_sensor_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&sensor_client_lock);
 }
@@ -612,6 +617,7 @@ static int sensor_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int sensor_client_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_sensor_client_t *client = NULL;
@@ -640,8 +646,13 @@ static int sensor_client_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_sensor_client_cb = {
     .init = sensor_client_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_client_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */

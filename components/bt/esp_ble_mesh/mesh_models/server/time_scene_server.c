@@ -16,24 +16,29 @@
 
 #include "btc_ble_mesh_time_scene_model.h"
 
+#include "mesh_config.h"
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
+
 static bt_mesh_mutex_t time_scene_server_lock;
 
-static void bt_mesh_time_scene_server_mutex_new(void)
+static inline void bt_mesh_time_scene_server_mutex_new(void)
 {
     if (!time_scene_server_lock.mutex) {
         bt_mesh_mutex_create(&time_scene_server_lock);
     }
 }
 
-static void bt_mesh_time_scene_server_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_time_scene_server_mutex_free(void)
 {
     bt_mesh_mutex_free(&time_scene_server_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 void bt_mesh_time_scene_server_lock(void)
 {
@@ -1417,6 +1422,7 @@ static int scheduler_setup_srv_init(struct bt_mesh_model *model)
     return time_scene_server_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int time_scene_server_deinit(struct bt_mesh_model *model)
 {
     if (model->user_data == NULL) {
@@ -1499,33 +1505,48 @@ static int scheduler_setup_srv_deinit(struct bt_mesh_model *model)
 {
     return time_scene_server_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_time_srv_cb = {
     .init = time_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = time_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_time_setup_srv_cb = {
     .init = time_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = time_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_scene_srv_cb = {
     .init = scene_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = scene_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_scene_setup_srv_cb = {
     .init = scene_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = scene_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_scheduler_srv_cb = {
     .init = scheduler_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = scheduler_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_scheduler_setup_srv_cb = {
     .init = scheduler_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = scheduler_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */

@@ -16,11 +16,14 @@
 
 #include "btc_ble_mesh_sensor_model.h"
 
+#include "mesh_config.h"
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
+
+#if CONFIG_BLE_MESH_SENSOR_SERVER
 
 static void update_sensor_periodic_pub(struct bt_mesh_model *model, u16_t prop_id);
 
@@ -1127,6 +1130,7 @@ static int sensor_setup_srv_init(struct bt_mesh_model *model)
     return sensor_server_init(model);
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int sensor_server_deinit(struct bt_mesh_model *model)
 {
     if (model->user_data == NULL) {
@@ -1156,13 +1160,20 @@ static int sensor_setup_srv_deinit(struct bt_mesh_model *model)
 
     return sensor_server_deinit(model);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_sensor_srv_cb = {
     .init = sensor_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
 const struct bt_mesh_model_cb bt_mesh_sensor_setup_srv_cb = {
     .init = sensor_setup_srv_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_setup_srv_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */

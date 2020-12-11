@@ -356,70 +356,76 @@ static u8_t adv_buf_data[ADV_BUF_SIZE * CONFIG_BLE_MESH_PBA_SAME_TIME];
 }
 
 #if defined(CONFIG_BLE_MESH_PB_ADV)
-static void bt_mesh_pb_adv_mutex_new(void)
+static inline void bt_mesh_pb_adv_mutex_new(void)
 {
     if (!prov_ctx.pb_adv_lock.mutex) {
         bt_mesh_mutex_create(&prov_ctx.pb_adv_lock);
     }
 }
 
-static void bt_mesh_pb_adv_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_pb_adv_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_adv_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_pb_adv_lock(void)
+static inline void bt_mesh_pb_adv_lock(void)
 {
     bt_mesh_mutex_lock(&prov_ctx.pb_adv_lock);
 }
 
-static void bt_mesh_pb_adv_unlock(void)
+static inline void bt_mesh_pb_adv_unlock(void)
 {
     bt_mesh_mutex_unlock(&prov_ctx.pb_adv_lock);
 }
 
-static void bt_mesh_pb_buf_mutex_new(void)
+static inline void bt_mesh_pb_buf_mutex_new(void)
 {
     if (!prov_ctx.pb_buf_lock.mutex) {
         bt_mesh_mutex_create(&prov_ctx.pb_buf_lock);
     }
 }
 
-static void bt_mesh_pb_buf_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_pb_buf_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_buf_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_pb_buf_lock(void)
+static inline void bt_mesh_pb_buf_lock(void)
 {
     bt_mesh_mutex_lock(&prov_ctx.pb_buf_lock);
 }
 
-static void bt_mesh_pb_buf_unlock(void)
+static inline void bt_mesh_pb_buf_unlock(void)
 {
     bt_mesh_mutex_unlock(&prov_ctx.pb_buf_lock);
 }
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
-static void bt_mesh_pb_gatt_mutex_new(void)
+static inline void bt_mesh_pb_gatt_mutex_new(void)
 {
     if (!prov_ctx.pb_gatt_lock.mutex) {
         bt_mesh_mutex_create(&prov_ctx.pb_gatt_lock);
     }
 }
 
-static void bt_mesh_pb_gatt_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_pb_gatt_mutex_free(void)
 {
     bt_mesh_mutex_free(&prov_ctx.pb_gatt_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_pb_gatt_lock(void)
+static inline void bt_mesh_pb_gatt_lock(void)
 {
     bt_mesh_mutex_lock(&prov_ctx.pb_gatt_lock);
 }
 
-static void bt_mesh_pb_gatt_unlock(void)
+static inline void bt_mesh_pb_gatt_unlock(void)
 {
     bt_mesh_mutex_unlock(&prov_ctx.pb_gatt_lock);
 }
@@ -3348,6 +3354,7 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 int bt_mesh_provisioner_prov_deinit(bool erase)
 {
     int i;
@@ -3398,6 +3405,7 @@ int bt_mesh_provisioner_prov_deinit(bool erase)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static bool is_unprov_dev_info_callback_to_app(bt_mesh_prov_bearer_t bearer,
         const u8_t uuid[16], const bt_mesh_addr_t *addr, u16_t oob_info, s8_t rssi)
