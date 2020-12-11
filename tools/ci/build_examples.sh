@@ -96,7 +96,7 @@ build_example () {
 
     local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
-    
+
     # Check if the example needs a different base directory.
     # Path of the Makefile relative to $IDF_PATH
     local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
@@ -187,6 +187,8 @@ library/error\.o\
 \|changes choice state\
 \|Compiler version is not supported\
 \|Toolchain version is not supported\
+\|Python 3 versions older than 3.6 are not supported\
+\|Python 2 is deprecated and will be removed in future versions\
 "
 
 sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \

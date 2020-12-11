@@ -65,6 +65,10 @@ Build the toolchain::
 
 Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-macos-toolchain-add-it-to-path>` to add the toolchain to your ``PATH``.
 
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
 
 Next Steps
 ==========

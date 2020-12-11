@@ -42,6 +42,11 @@ Alternatively, you may create an alias for the above command. This way you can g
 Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
 
 
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
+
 Next Steps
 ==========
 

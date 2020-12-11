@@ -44,6 +44,12 @@ Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 当需要使用工具链时，在命令行里输入 ``get_esp32``，就可以将工具链添加到 ``PATH`` 中。
 
 
+停用 Python 2 
+====================
+
+Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。
+
+
 下一步
 ==========
 
@@ -57,4 +63,3 @@ Mac OS 版本的 ESP32 工具链可以从以下地址下载：
     :maxdepth: 1
 
     macos-setup-scratch
-

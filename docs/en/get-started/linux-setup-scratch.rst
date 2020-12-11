@@ -11,14 +11,14 @@ Install Prerequisites
 =====================
 
 To compile with ESP-IDF you need to get the following packages:
-
+    
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing libffi-dev libssl-dev
+    sudo apt-get install git wget libncurses-dev flex bison gperf python3 python3-pip python3-setuptools python3-serial python3-cryptography python3-future python3-pyparsing python3-pyelftools cmake ninja-build ccache libffi-dev libssl-dev
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing
+    sudo pacman -Sy --needed gcc git make ncurses flex bison gperf python-pyserial python-cryptography python-future python-pyparsing python-pyelftools cmake ninja ccache dfu-util
 
 .. note::
 
@@ -33,7 +33,7 @@ Compile the Toolchain from Source
 
   - CentOS 7::
 
-        sudo yum install gawk gperf grep gettext ncurses-devel python python-devel automake bison flex texinfo help2man libtool
+        sudo yum install gawk gperf grep gettext ncurses-devel python3 python3-devel automake bison flex texinfo help2man libtool make
 
   - Ubuntu pre-16.04::
 
@@ -49,7 +49,7 @@ Compile the Toolchain from Source
 
   - Arch::
 
-        TODO
+        sudo pacman -Sy --needed python-pip
 
 Create the working directory and go into it::
 
@@ -67,6 +67,11 @@ Build the toolchain::
     chmod -R u+w builds/xtensa-esp32-elf
 
 Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-linux-toolchain-add-it-to-path>` to add the toolchain to your ``PATH``.
+
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for popular Linux distributions are listed above.
 
 
 Next Steps
