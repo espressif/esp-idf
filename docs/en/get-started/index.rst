@@ -109,7 +109,7 @@ Some tools need to be installed on the computer before proceeding to the next st
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
 +-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
+| `Windows`_        | `Linux`_          | `macOS`_          |
 +-------------------+-------------------+-------------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
@@ -123,7 +123,7 @@ Some tools need to be installed on the computer before proceeding to the next st
 
 .. _Windows: ../get-started/windows-setup.html
 .. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
+.. _macOS: ../get-started/macos-setup.html
 
 .. _get-started-get-esp-idf:
 
@@ -343,9 +343,8 @@ To navigate and use ``menuconfig``, press the following keys:
 * Arrow keys for navigation
 * ``Enter`` to go into a submenu
 * ``Esc`` to go up one level or exit
-* ``?`` to see a help screen. Enter key exits the help screen
+* ``?`` to see a help screen for menu or configuration item. Enter key exits the help screen
 * ``Space``, or ``Y`` and ``N`` keys to enable (Yes) and disable (No) configuration items with checkboxes "``[*]``"
-* ``?`` while highlighting a configuration item to display help about that item
 * ``/`` to find configuration items
 
 .. attention::
@@ -384,7 +383,6 @@ This command will compile the application and all ESP-IDF components, then it wi
    or run 'idf.py -p PORT flash'
 
 If there are no errors, the build will finish by generating the firmware binary .bin file.
-
 
 .. _get-started-flash:
 
@@ -439,7 +437,6 @@ For more information on idf.py arguments, see :ref:`idf.py`.
 If there are no issues by the end of the flash process, the module will be reset and the “hello_world” application will be running.
 
 .. (Not currently supported) If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
-
 
 .. _get-started-build-monitor:
 
