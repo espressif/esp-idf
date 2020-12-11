@@ -117,6 +117,9 @@ class ParttoolTarget():
 
         self.partition_table = partition_table
 
+    # set `out` to None to redirect the output to the STDOUT
+    # otherwise set `out` to file descriptor
+    # beware that the method does not close the file descriptor
     def _call_esptool(self, args, out=None):
         esptool_args = [sys.executable, ESPTOOL_PY] + self.esptool_args
 
@@ -128,8 +131,12 @@ class ParttoolTarget():
 
         esptool_args += args
 
-        with open(os.devnull, "w") as null_file:
-            subprocess.check_call(esptool_args, stdout=null_file, stderr=null_file)
+        print("Running %s..." % (" ".join(esptool_args)))
+        try:
+            subprocess.check_call(esptool_args, stdout=out, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print("An exception: **", str(e), "** occurred in _call_esptool.", file=out)
+            raise e
 
     def get_partition_info(self, partition_id):
         partition = None
