@@ -214,6 +214,67 @@ def format_rest_text(text, indent):
     return text
 
 
+def _minimize_expr(expr, visibility):
+    def expr_nodes_invisible(e):
+        return hasattr(e, 'nodes') and len(e.nodes) > 0 and all(not visibility.visible(i) for i in e.nodes)
+
+    if isinstance(expr, tuple):
+        if expr[0] == kconfiglib.NOT:
+            new_expr = _minimize_expr(expr[1], visibility)
+            return kconfiglib.Kconfig.y if new_expr == kconfiglib.Kconfig.n else new_expr
+        else:
+            new_expr1 = _minimize_expr(expr[1], visibility)
+            new_expr2 = _minimize_expr(expr[2], visibility)
+            if expr[0] == kconfiglib.AND:
+                if new_expr1 == kconfiglib.Kconfig.n or new_expr2 == kconfiglib.Kconfig.n:
+                    return kconfiglib.Kconfig.n
+                if new_expr1 == kconfiglib.Kconfig.y:
+                    return new_expr2
+                if new_expr2 == kconfiglib.Kconfig.y:
+                    return new_expr1
+            elif expr[0] == kconfiglib.OR:
+                if new_expr1 == kconfiglib.Kconfig.y or new_expr2 == kconfiglib.Kconfig.y:
+                    return kconfiglib.Kconfig.y
+                if new_expr1 == kconfiglib.Kconfig.n:
+                    return new_expr2
+                if new_expr2 == kconfiglib.Kconfig.n:
+                    return new_expr1
+            elif expr[0] == kconfiglib.EQUAL:
+                if not isinstance(new_expr1, type(new_expr2)):
+                    return kconfiglib.Kconfig.n
+                if new_expr1 == new_expr2:
+                    return kconfiglib.Kconfig.y
+            elif expr[0] == kconfiglib.UNEQUAL:
+                if not isinstance(new_expr1, type(new_expr2)):
+                    return kconfiglib.Kconfig.y
+                if new_expr1 != new_expr2:
+                    return kconfiglib.Kconfig.n
+            else:  # <, <=, >, >=
+                if not isinstance(new_expr1, type(new_expr2)):
+                    return kconfiglib.Kconfig.n  # e.g "True < 2"
+
+                if expr_nodes_invisible(new_expr1) or expr_nodes_invisible(new_expr2):
+                    return kconfiglib.Kconfig.y if kconfiglib.expr_value(expr) else kconfiglib.Kconfig.n
+
+            return (expr[0], new_expr1, new_expr2)
+
+    if (not kconfiglib.expr_value(expr) and len(expr.config_string) == 0 and expr_nodes_invisible(expr)):
+        # nodes which are invisible
+        # len(expr.nodes) > 0 avoids constant symbols without actual node definitions, e.g. integer constants
+        # len(expr.config_string) == 0 avoids hidden configs which reflects the values of choices
+        return kconfiglib.Kconfig.n
+
+    if (kconfiglib.expr_value(expr) and len(expr.config_string) > 0 and expr_nodes_invisible(expr)):
+        # hidden config dependencies which will be written to sdkconfig as enabled ones.
+        return kconfiglib.Kconfig.y
+
+    if any(node.item.name.startswith(visibility.target_env_var) for node in expr.nodes):
+        # We know the actual values for IDF_TARGETs
+        return kconfiglib.Kconfig.y if kconfiglib.expr_value(expr) else kconfiglib.Kconfig.n
+
+    return expr
+
+
 def write_menu_item(f, node, visibility):
     def is_choice(node):
         """ Skip choice nodes, they are handled as part of the parent (see below) """
@@ -268,6 +329,56 @@ def write_menu_item(f, node, visibility):
             choice_node = choice_node.next
 
         f.write('\n\n')
+
+    if isinstance(node.item, kconfiglib.Symbol):
+        def _expr_str(sc):
+            if sc.is_constant or not sc.nodes or sc.choice:
+                return '{}'.format(sc.name)
+            return ':ref:`%s%s`' % (sc.kconfig.config_prefix, sc.name)
+
+        range_strs = []
+        for low, high, cond in node.item.ranges:
+            cond = _minimize_expr(cond, visibility)
+            if cond == kconfiglib.Kconfig.n:
+                continue
+            if not isinstance(cond, tuple) and cond != kconfiglib.Kconfig.y:
+                if len(cond.nodes) > 0 and all(not visibility.visible(i) for i in cond.nodes):
+                    if not kconfiglib.expr_value(cond):
+                        continue
+            range_str = '%s- from %s to %s' % (INDENT * 2, low.str_value, high.str_value)
+            if cond != kconfiglib.Kconfig.y and not kconfiglib.expr_value(cond):
+                range_str += ' if %s' % kconfiglib.expr_str(cond, _expr_str)
+            range_strs.append(range_str)
+        if len(range_strs) > 0:
+            f.write('%sRange:\n' % INDENT)
+            f.write('\n'.join(range_strs))
+            f.write('\n\n')
+
+        default_strs = []
+        for default, cond in node.item.defaults:
+            cond = _minimize_expr(cond, visibility)
+            if cond == kconfiglib.Kconfig.n:
+                continue
+            if not isinstance(cond, tuple) and cond != kconfiglib.Kconfig.y:
+                if len(cond.nodes) > 0 and all(not visibility.visible(i) for i in cond.nodes):
+                    if not kconfiglib.expr_value(cond):
+                        continue
+            # default.type is mostly UNKNOWN so it cannot be used reliably for detecting the type
+            d = default.str_value
+            if d in ['y', 'Y']:
+                d = 'Yes (enabled)'
+            elif d in ['n', 'N']:
+                d = 'No (disabled)'
+            elif re.search(r'[^0-9a-fA-F]', d):  # simple string detection: if it not a valid number
+                d = '"%s"' % d
+            default_str = '%s- %s' % (INDENT * 2, d)
+            if cond != kconfiglib.Kconfig.y and not kconfiglib.expr_value(cond):
+                default_str += ' if %s' % kconfiglib.expr_str(cond, _expr_str)
+            default_strs.append(default_str)
+        if len(default_strs) > 0:
+            f.write('%sDefault value:\n' % INDENT)
+            f.write('\n'.join(default_strs))
+            f.write('\n\n')
 
     if is_menu:
         # enumerate links to child items

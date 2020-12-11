@@ -134,3 +134,35 @@ config CHIPA_FEATURE_FROM_V1
 config CHIPA_FEATURE_FROM_V3
     depends on CONFIG_FOR_CHIPA && (CHIPA_REV_MIN <= 3)
     bool "Feature available from version 3"
+
+config CHIPA_OPTION
+    int "option with default value depending on the chip version"
+    depends on IDF_TARGET_CHIPA
+    default 5 if CHIPA_REV_MIN < 2
+    default 4 if CHIPA_VERSION = 2
+    default 9 if CHIPA_REV_MIN = 3
+
+config COMPILER
+    string "compiler prefix"
+    default "ca" if IDF_TARGET_CHIPA
+    default "cb" if IDF_TARGET_CHIPB
+
+config BOOL_OPTION
+    bool "bool option"
+    default y
+
+config BOOL_OPTION2
+    bool "bool option 2"
+    default BOOL_OPTION
+
+config HEX_OPTION
+    hex "bool option"
+    default 0xce if IDF_TARGET_CHIPA
+    default 0xff if IDF_TARGET_CHIPB
+    range 0xf 0xce if IDF_TARGET_CHIPA
+    range 0xfe 0xff if IDF_TARGET_CHIPB
+
+config INT_OPTION
+    int "int option"
+    range 1 10 if IDF_TARGET_CHIPA
+    range 100 200 if IDF_TARGET_CHIPB
