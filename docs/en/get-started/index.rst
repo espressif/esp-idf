@@ -91,6 +91,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
+        ESP32-PICO-KIT-1 <../hw-reference/esp32/get-started-pico-kit-1>
 
 .. only:: esp32s2
 
