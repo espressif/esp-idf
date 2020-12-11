@@ -52,6 +52,19 @@ extern "C" {
 #define GDMA_LL_TRIG_SRC_SHA     (7)
 #define GDMA_LL_TRIG_SRC_ADC_DAC (8)
 
+typedef enum {
+    GDMA_LL_PERIPH_ID_SPI2 = 0,
+    GDMA_LL_PERIPH_ID_SPI3,
+    GDMA_LL_PERIPH_ID_UART,
+    GDMA_LL_PERIPH_ID_I2S0,
+    GDMA_LL_PERIPH_ID_I2S1,
+    GDMA_LL_PERIPH_ID_LCD_CAM,
+    GDMA_LL_PERIPH_ID_AES,
+    GDMA_LL_PERIPH_ID_SHA,
+    GDMA_LL_PERIPH_ID_ADC_DAC,
+} gdma_ll_periph_id_t;
+
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Enable DMA channel M2M mode (TX channel n forward data to RX channel n), disabled by default
@@ -287,7 +300,7 @@ static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA RX channel to a given peripheral
  */
-static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, uint32_t periph_id)
+static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, gdma_ll_periph_id_t periph_id)
 {
     dev->peri_sel[channel].peri_in_sel = periph_id;
 }
@@ -482,7 +495,7 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA TX channel to a given peripheral
  */
-static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, uint32_t periph_id)
+static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, gdma_ll_periph_id_t periph_id)
 {
     dev->peri_sel[channel].peri_out_sel = periph_id;
 }

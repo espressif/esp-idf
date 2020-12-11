@@ -309,35 +309,36 @@ exit:
     return ret;
 }
 
+
 TEST_CASE("custom certificate bundle", "[mbedtls]")
 {
-    esp_crt_validate_res_t validate_res;
+   esp_crt_validate_res_t validate_res;
 
-    test_case_uses_tcpip();
+   test_case_uses_tcpip();
 
-    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+   xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
 
-    exit_flag = false;
-    xTaskCreate(server_task, "server task", 8192, &exit_sema, 10, NULL);
+   exit_flag = false;
+   xTaskCreate(server_task, "server task", 8192, &exit_sema, 10, NULL);
 
-    // Wait for the server to start up
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+   // Wait for the server to start up
+   vTaskDelay(100 / portTICK_PERIOD_MS);
 
-    /* Test with default crt bundle that doesnt contain the ca crt */
-    client_task(NULL, &validate_res);
-    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_FAIL);
+   /* Test with default crt bundle that doesnt contain the ca crt */
+   client_task(NULL, &validate_res);
+   TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_FAIL);
 
-    /* Test with bundle that does contain the CA crt */
-    client_task(server_cert_bundle_start, &validate_res);
-    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_OK);
+   /* Test with bundle that does contain the CA crt */
+   client_task(server_cert_bundle_start, &validate_res);
+   TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_OK);
 
-    exit_flag = true;
+   exit_flag = true;
 
-    if (!xSemaphoreTake(exit_sema, 10000 / portTICK_PERIOD_MS)) {
-        TEST_FAIL_MESSAGE("exit_sem not released by server task");
-    }
+   if (!xSemaphoreTake(exit_sema, 10000 / portTICK_PERIOD_MS)) {
+       TEST_FAIL_MESSAGE("exit_sem not released by server task");
+   }
 
-    vSemaphoreDelete(exit_sema);
+   vSemaphoreDelete(exit_sema);
 }
 
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")

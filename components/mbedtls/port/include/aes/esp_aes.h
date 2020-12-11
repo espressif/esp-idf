@@ -1,9 +1,9 @@
 /**
- * \brief AES block cipher, ESP32 hardware accelerated version
+ * \brief AES block cipher, ESP hardware accelerated version
  * Based on mbedTLS FIPS-197 compliant version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016-2020, Espressif Systems (Shanghai) PTE Ltd
+ *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -21,31 +21,23 @@
  *
  */
 
-#ifndef ESP_AES_H
-#define ESP_AES_H
+#pragma once
 
 #include "esp_types.h"
-#include "esp32s3/rom/aes.h"
+#include "hal/aes_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* padlock.c and aesni.c rely on these values! */
-#define ESP_AES_ENCRYPT     1
-#define ESP_AES_DECRYPT     0
+
 
 #define ERR_ESP_AES_INVALID_KEY_LENGTH                -0x0020  /**< Invalid key length. */
 #define ERR_ESP_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
-
 /**
  * \brief          AES context structure
  *
- * \note           buf is able to hold 32 extra bytes, which can be used:
- *                 - for alignment purposes if VIA padlock is used, and/or
- *                 - to simplify key expansion in the 256-bit case by
- *                 generating an extra round key
  */
 typedef struct {
     uint8_t key_bytes;
@@ -53,16 +45,19 @@ typedef struct {
     uint8_t key[32];
 } esp_aes_context;
 
-
 /**
  * \brief The AES XTS context-type definition.
  */
-typedef struct {
+typedef struct
+{
     esp_aes_context crypt; /*!< The AES context to use for AES block
                                         encryption or decryption. */
     esp_aes_context tweak; /*!< The AES context used for tweak
                                         computation. */
 } esp_aes_xts_context;
+
+
+
 
 /**
  * \brief Lock access to AES hardware unit
@@ -99,7 +94,7 @@ void esp_aes_init( esp_aes_context *ctx );
  */
 void esp_aes_free( esp_aes_context *ctx );
 
-/*
+/**
  * \brief          This function initializes the specified AES XTS context.
  *
  *                 It must be the first API called before using
@@ -115,16 +110,6 @@ void esp_aes_xts_init( esp_aes_xts_context *ctx );
  * \param ctx      The AES XTS context to clear.
  */
 void esp_aes_xts_free( esp_aes_xts_context *ctx );
-
-/**
- * \brief          AES set key schedule (encryption or decryption)
- *
- * \param ctx      AES context to be initialized
- * \param key      encryption key
- * \param keybits  must be 128, 192 or 256
- *
- * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
- */
 
 /**
  * \brief          AES set key schedule (encryption or decryption)
@@ -313,21 +298,26 @@ int esp_aes_crypt_ofb( esp_aes_context *ctx,
  * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
  */
 int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
-                            const unsigned char *key,
-                            unsigned int keybits );
+                                const unsigned char *key,
+                                unsigned int keybits );
 
 /**
- * \brief           Internal AES block encryption function
- *                  (Only exposed to allow overriding it,
- *                  see AES_ENCRYPT_ALT)
+ * \brief          This function prepares an XTS context for decryption and
+ *                 sets the decryption key.
  *
- * \param ctx       AES context
- * \param input     Plaintext block
- * \param output    Output (ciphertext) block
+ * \param ctx      The AES XTS context to which the key should be bound.
+ * \param key      The decryption key. This is comprised of the XTS key1
+ *                 concatenated with the XTS key2.
+ * \param keybits  The size of \p key passed in bits. Valid options are:
+ *                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+ *                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+ *
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
  */
 int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
-                            const unsigned char *key,
-                            unsigned int keybits );
+                                const unsigned char *key,
+                                unsigned int keybits );
 
 
 /**
@@ -341,9 +331,6 @@ int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
  */
 int esp_internal_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
 
-/** Deprecated, see esp_aes_internal_encrypt */
-void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
-
 /**
  * \brief           Internal AES block decryption function
  *                  (Only exposed to allow overriding it,
@@ -355,15 +342,15 @@ void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsig
  */
 int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
 
-/** Deprecated, see esp_aes_internal_decrypt */
-void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
-
 /** AES-XTS buffer encryption/decryption */
 int esp_aes_crypt_xts( esp_aes_xts_context *ctx, int mode, size_t length, const unsigned char data_unit[16], const unsigned char *input, unsigned char *output );
 
+/** Deprecated, see esp_aes_internal_decrypt */
+void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
+
+/** Deprecated, see esp_aes_internal_encrypt */
+void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* aes.h */

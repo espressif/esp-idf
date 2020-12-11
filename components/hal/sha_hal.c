@@ -26,7 +26,6 @@
 #include "hal/crypto_dma_ll.h"
 #elif SOC_SHA_GENERAL_DMA
 #include "hal/gdma_ll.h"
-#define DMA_PERIPH_SHA 7
 #endif
 
 #define SHA1_STATE_LEN_WORDS    (160 / 32)
@@ -99,7 +98,7 @@ static inline void sha_hal_dma_init(lldesc_t *input)
     gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, false);
     gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, false);
 
-    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, DMA_PERIPH_SHA);
+    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, GDMA_LL_PERIPH_ID_SHA);
 
 #if SOC_GDMA_SUPPORT_EXTMEM
     /* Atleast 40 bytes when accessing external RAM */
@@ -124,7 +123,7 @@ static inline void sha_hal_dma_init(lldesc_t *input)
 static inline void sha_hal_dma_init(lldesc_t *input)
 {
     crypto_dma_ll_set_mode(CRYPTO_DMA_SHA);
-    crypto_dma_ll_outlink_reset();
+    crypto_dma_ll_reset();
 
     crypto_dma_ll_outlink_set((uint32_t)input);
     crypto_dma_ll_outlink_start();

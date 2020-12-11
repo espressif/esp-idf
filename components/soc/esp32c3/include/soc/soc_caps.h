@@ -44,3 +44,12 @@
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
+
+/*-------------------------- AES CAPS -----------------------------------------*/
+#define SOC_AES_SUPPORT_DMA     (1)
+
+/* Has a centralized DMA, which is shared with all peripherals */
+#define SOC_AES_GENERAL_DMA     (1)
+
+#define SOC_AES_SUPPORT_AES_128 (1)
+#define SOC_AES_SUPPORT_AES_256 (1)

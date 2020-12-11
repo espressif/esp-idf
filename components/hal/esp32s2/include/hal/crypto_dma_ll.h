@@ -19,28 +19,27 @@
  ******************************************************************************/
 #pragma once
 
-#include "soc/hwcrypto_reg.h"
-#include "soc/dport_reg.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "soc/hwcrypto_reg.h"
+#include "soc/dport_reg.h"
+
 typedef enum {
-    CRYPTO_DMA_AES = 0,
+    CRYPTO_DMA_AES= 0,
     CRYPTO_DMA_SHA,
 } crypto_dma_mode_t;
 
 /**
- * @brief Resets set the outlink
+ * @brief Resets the DMA
  *
  */
-static inline void crypto_dma_ll_outlink_reset(void)
+static inline void crypto_dma_ll_reset(void)
 {
     SET_PERI_REG_MASK(CRYPTO_DMA_CONF0_REG, CONF0_REG_AHBM_RST | CONF0_REG_OUT_RST | CONF0_REG_AHBM_FIFO_RST);
     CLEAR_PERI_REG_MASK(CRYPTO_DMA_CONF0_REG, CONF0_REG_AHBM_RST | CONF0_REG_OUT_RST | CONF0_REG_AHBM_FIFO_RST);
 }
-
 
 /**
  * @brief Selects the crypto DMA mode
@@ -64,12 +63,37 @@ static inline void crypto_dma_ll_outlink_set(uint32_t outlink_addr)
 }
 
 /**
+ * @brief Sets up the inlink for a transfer
+ *
+ * @param inlink_addr Address of the inlink buffer
+ */
+static inline void crypto_dma_ll_inlink_set(uint32_t inlink_addr)
+{
+    CLEAR_PERI_REG_MASK(CRYPTO_DMA_IN_LINK_REG, IN_LINK_REG_INLINK_ADDR);
+    SET_PERI_REG_MASK(CRYPTO_DMA_IN_LINK_REG, inlink_addr & IN_LINK_REG_INLINK_ADDR);
+}
+
+/**
  * @brief Starts the outlink
  *
  */
 static inline void crypto_dma_ll_outlink_start(void)
 {
     SET_PERI_REG_MASK(CRYPTO_DMA_OUT_LINK_REG, OUT_LINK_REG_OUTLINK_START);
+}
+
+/**
+ * @brief Starts the inlink
+ *
+ */
+static inline void crypto_dma_ll_inlink_start(void)
+{
+    SET_PERI_REG_MASK(CRYPTO_DMA_IN_LINK_REG, IN_LINK_REG_INLINK_START);
+}
+
+static inline bool crypto_dma_ll_inlink_is_eof(void)
+{
+    return ((REG_READ(CRYPTO_DMA_INT_RAW_REG) & INT_RAW_IN_SUC_EOF) == INT_RAW_IN_SUC_EOF);
 }
 
 

@@ -1,4 +1,7 @@
 /**
+ * \brief AES block cipher, ESP-IDF hardware accelerated version
+ * Based on mbedTLS FIPS-197 compliant version.
+ *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
@@ -15,26 +18,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *
+ *  Internal API
  */
 
-#ifndef ESP_CRYPTO_DMA_H
-#define ESP_CRYPTO_DMA_H
+#pragma once
 
-#include <freertos/FreeRTOS.h>
+
+#include "aes/esp_aes.h"
+#include "aes/esp_aes_gcm.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+bool valid_key_length(const esp_aes_context *ctx);
 
-/* Since crypto DMA is shared between DMA-AES and SHA blocks
- * Needs to be taken by respective blocks before using Crypto DMA
+
+/**
+ * @brief           Run a AES-GCM conversion using DMA
+ *
+ * @param ctx       Aes context
+ * @param input     Pointer to input data
+ * @param output    Pointer to output data
+ * @param len       Length of the input data
+ * @param aad_desc  GCM additional data DMA descriptor
+ * @param aad_len   GCM additional data length
+ * @return int      -1 on error
  */
-extern _lock_t crypto_dma_lock;
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, lldesc_t *aad_desc, size_t aad_len);
+
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* crypto_dma.h */

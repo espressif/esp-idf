@@ -84,16 +84,19 @@ target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 # Choose perihperal type
 if(CONFIG_IDF_TARGET_ESP32)
     set(SHA_PERIPHERAL_TYPE "parallel_engine")
+    set(AES_PERIPHERAL_TYPE "block")
 else()
     set(SHA_PERIPHERAL_TYPE "dma")
+    set(AES_PERIPHERAL_TYPE "dma")
 endif()
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
                                   "${COMPONENT_DIR}/port/sha/esp_sha.c"
-                                  "${COMPONENT_DIR}/port/esp_aes_xts.c"
-                                  "${COMPONENT_DIR}/port/${idf_target}/aes.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
+                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
                                   "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
 )
 
@@ -121,6 +124,9 @@ if(CONFIG_MBEDTLS_HARDWARE_SHA)
     )
 endif()
 
+if(CONFIG_MBEDTLS_HARDWARE_GCM)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
+endif()
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")

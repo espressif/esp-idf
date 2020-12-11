@@ -258,6 +258,11 @@
 #define SOC_RSA_MAX_BIT_LEN    (4096)
 
 
+/*-------------------------- AES CAPS -----------------------------------------*/
+#define SOC_AES_SUPPORT_AES_128 (1)
+#define SOC_AES_SUPPORT_AES_192 (1)
+#define SOC_AES_SUPPORT_AES_256 (1)
+
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
 #define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN

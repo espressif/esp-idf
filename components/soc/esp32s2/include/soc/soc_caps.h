@@ -276,6 +276,18 @@
 #define SOC_RSA_MAX_BIT_LEN    (4096)
 
 
+/*-------------------------- AES CAPS -----------------------------------------*/
+#define SOC_AES_SUPPORT_DMA     (1)
+#define SOC_AES_SUPPORT_GCM     (1)
+
+/* Has "crypto DMA", which is shared with SHA */
+#define SOC_AES_CRYPTO_DMA      (1)
+
+#define SOC_AES_SUPPORT_AES_128 (1)
+#define SOC_AES_SUPPORT_AES_192 (1)
+#define SOC_AES_SUPPORT_AES_256 (1)
+
+
 
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents

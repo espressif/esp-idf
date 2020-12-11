@@ -148,7 +148,7 @@ inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 
 inline static bool IRAM_ATTR esp_ptr_dma_ext_capable(const void *p)
 {
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2  || CONFIG_IDF_TARGET_ESP32S3
     return (intptr_t)p >= SOC_DMA_EXT_LOW && (intptr_t)p < SOC_DMA_EXT_HIGH;
 #else
     return false;
