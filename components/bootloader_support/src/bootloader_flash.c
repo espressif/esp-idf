@@ -404,12 +404,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
     }
 
     if (write_encrypted) {
-#if CONFIG_IDF_TARGET_ESP32
         return spi_to_esp_err(esp_rom_spiflash_write_encrypted(dest_addr, src, size));
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-        // TODO: use the same ROM API here
-        return spi_to_esp_err(SPI_Encrypt_Write(dest_addr, src, size));
-#endif
     } else {
         return spi_to_esp_err(esp_rom_spiflash_write(dest_addr, src, size));
     }
@@ -447,7 +442,9 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 #endif
 
+#ifndef g_rom_spiflash_dummy_len_plus // ESP32-C3 uses a macro to access ROM data here
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
+#endif
 uint32_t bootloader_execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len)
 {
     uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;

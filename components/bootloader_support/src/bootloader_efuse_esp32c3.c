@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include <stdint.h>
 
-#define ESP_ROM_HAS_CRC_LE            (1) // ROM CRC library supports Little Endian
-#define ESP_ROM_SUPPORT_MULTIPLE_UART (1) // ROM has multiple UARTs available for logging
+uint8_t bootloader_common_get_chip_revision(void)
+{
+    // should return the same value as esp_efuse_get_chip_ver()
+    /* No other revisions for ESP32-C3 */
+    return 0;
+}
+
+uint32_t bootloader_common_get_chip_ver_pkg(void)
+{
+    // should return the same value as esp_efuse_get_pkg_ver()
+    return 0;
+}

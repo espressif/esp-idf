@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,5 +14,27 @@
 
 #pragma once
 
-#define ESP_ROM_HAS_CRC_LE            (1) // ROM CRC library supports Little Endian
-#define ESP_ROM_SUPPORT_MULTIPLE_UART (1) // ROM has multiple UARTs available for logging
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @file esp32c3/rtc.h
+ *
+ * This file contains declarations of rtc related functions.
+ */
+
+/**
+ * @brief Get current value of RTC counter in microseconds
+ *
+ * Note: this function may take up to 1 RTC_SLOW_CLK cycle to execute
+ *
+ * @return current value of RTC counter in microseconds
+ */
+uint64_t esp_rtc_get_time_us(void);
+
+#ifdef __cplusplus
+}
+#endif

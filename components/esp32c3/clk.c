@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include <stdint.h>
+#include <sys/param.h>
 
-#define ESP_ROM_HAS_CRC_LE            (1) // ROM CRC library supports Little Endian
-#define ESP_ROM_SUPPORT_MULTIPLE_UART (1) // ROM has multiple UARTs available for logging
+#include "esp_attr.h"
+#include "soc/rtc.h"
+#include "esp32c3/clk.h"
+#include "esp32c3/rom/ets_sys.h"
+
+#define MHZ (1000000)
+
+int IRAM_ATTR esp_clk_cpu_freq(void)
+{
+    return ets_get_cpu_frequency() * MHZ;
+}
+
+int IRAM_ATTR esp_clk_apb_freq(void)
+{
+    return MIN(80, ets_get_cpu_frequency()) * MHZ;
+}
+
+int IRAM_ATTR esp_clk_xtal_freq(void)
+{
+    return rtc_clk_xtal_freq_get() * MHZ;
+}

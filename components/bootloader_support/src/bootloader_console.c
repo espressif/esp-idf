@@ -42,7 +42,7 @@ void bootloader_console_init(void)
 {
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
-    esp_rom_install_channel_putc(1, esp_rom_uart_putc);
+    esp_rom_install_uart_printf();
 
     // Wait for UART FIFO to be empty.
     esp_rom_uart_tx_wait_idle(0);
@@ -52,7 +52,9 @@ void bootloader_console_init(void)
     const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
     // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
+#if ESP_ROM_SUPPORT_MULTIPLE_UART
     esp_rom_uart_set_as_console(uart_num);
+#endif
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 ||
@@ -75,7 +77,7 @@ void bootloader_console_init(void)
 
     // Set configured UART console baud rate
     uint32_t clock_hz = rtc_clk_apb_freq_get();
-#if CONFIG_IDF_TARGET_ESP32S3
+#if ESP_ROM_UART_CLK_IS_XTAL
     clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
     esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);

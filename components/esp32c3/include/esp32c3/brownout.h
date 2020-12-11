@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 
-#define ESP_ROM_HAS_CRC_LE            (1) // ROM CRC library supports Little Endian
-#define ESP_ROM_SUPPORT_MULTIPLE_UART (1) // ROM has multiple UARTs available for logging
+#ifndef __ESP_BROWNOUT_H
+#define __ESP_BROWNOUT_H
+
+void esp_brownout_init(void);
+
+#endif
