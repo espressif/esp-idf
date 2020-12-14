@@ -40,6 +40,20 @@ Inside ``IDF_TOOLS_PATH``, the scripts performing tools installation create the 
 - ``dist`` — where the archives of the tools are downloaded.
 - ``tools`` — where the tools are extracted. The tools are extracted into subdirectories: ``tools/TOOL_NAME/VERSION/``. This arrangement allows different versions of tools to be installed side by side.
 
+GitHub Assets Mirror
+--------------------
+
+Most of the tools downloaded by the tools installer are GitHub Release Assets, which are files attached to a software release on GitHub.
+
+If GitHub downloads are inaccessible or slow to access, it's possible to configure a GitHub assets mirror.
+
+To use Espressif's download server, set the environment variable ``IDF_GITHUB_ASSETS`` to ``dl.espressif.com/github_assets``. When the install process is downloading a tool from ``github.com``, the URL will be rewritten to use this server instead.
+
+Any mirror server can be used provided the URL matches the ``github.com`` download URL format: the install process will replace ``https://github.com`` with ``https://${IDF_GITHUB_ASSETS}`` for any GitHub asset URL that it downloads.
+
+.. note:: The Espressif download server doesn't currently mirror everything from GitHub, it only mirrors files attached as Assets to some releases as well as source archives for some releases.
+
+
 ``idf_tools.py`` script
 -----------------------
 

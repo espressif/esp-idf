@@ -117,6 +117,11 @@ begin
     if not IDFUseExisting then
       IDFDownload();
 
+    if WizardIsTaskSelected('idf_tools_use_mirror') then
+    begin
+      SetEnvironmentVariable('IDF_GITHUB_ASSETS', 'dl.espressif.com/github_assets')
+    end;
+
     IDFToolsSetup();
 
 
