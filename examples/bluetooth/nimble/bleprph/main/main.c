@@ -361,10 +361,10 @@ app_main(void)
     ble_hs_cfg.sm_sc = 1;
 #else
     ble_hs_cfg.sm_sc = 0;
+#endif
 #ifdef CONFIG_EXAMPLE_BONDING
     ble_hs_cfg.sm_our_key_dist = 1;
     ble_hs_cfg.sm_their_key_dist = 1;
-#endif
 #endif
 
 
