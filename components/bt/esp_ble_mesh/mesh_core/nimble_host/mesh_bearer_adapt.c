@@ -1444,10 +1444,8 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     memcpy(peer_addr.val, addr->val, 6);
     peer_addr.type = addr->type;
 
-    rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &peer_addr, BLE_HS_FOREVER, &conn_params,
-                         disc_cb, NULL);
-
-    return i;
+    return ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &peer_addr, BLE_HS_FOREVER, &conn_params,
+                           disc_cb, NULL);
 }
 
 static int mtu_cb(uint16_t conn_handle,
