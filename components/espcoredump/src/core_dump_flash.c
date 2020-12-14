@@ -29,6 +29,8 @@ typedef struct _core_dump_partition_t
     uint32_t start;
     /* Core dump partition size. */
     uint32_t size;
+    /* Flag set to true if the partition is encrypted. */
+    bool encrypted;
 } core_dump_partition_t;
 
 typedef struct _core_dump_flash_config_t
@@ -56,7 +58,7 @@ static esp_err_t esp_core_dump_flash_custom_write(uint32_t address, const void *
 {
     esp_err_t err = ESP_OK;
 
-    if (esp_flash_encryption_enabled()) {
+    if (esp_flash_encryption_enabled() && s_core_flash_config.partition.encrypted) {
         err = ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(address, buffer, length);
     } else {
         err = ESP_COREDUMP_FLASH_WRITE(address, buffer, length);
@@ -86,6 +88,7 @@ void esp_core_dump_flash_init(void)
     ESP_COREDUMP_LOGI("Found partition '%s' @ %x %d bytes", core_part->label, core_part->address, core_part->size);
     s_core_flash_config.partition.start      = core_part->address;
     s_core_flash_config.partition.size       = core_part->size;
+    s_core_flash_config.partition.encrypted  = core_part->encrypted;
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 }
 
@@ -346,10 +349,20 @@ void esp_core_dump_init(void)
 
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 {
-    spi_flash_mmap_handle_t core_data_handle = { 0 };
     esp_err_t err = ESP_OK;
-    const void *core_data = NULL;
+    core_dump_write_data_t wr_data = { 0 };
+    uint32_t size = 0;
+    uint32_t offset = 0;
+    const uint32_t checksum_size = esp_core_dump_checksum_size();
+    void* checksum_calc = NULL;
+    /* Initialize the checksum we have to read from the flash to the biggest
+     * size we can have for a checksum. */
+    uint8_t checksum_read[COREDUMP_CHECKSUM_MAX_LEN] = { 0 };
 
+    /* Assert that we won't have any problems with our checksum size. */
+    assert(checksum_size <= COREDUMP_CHECKSUM_MAX_LEN);
+
+    /* Check the validity of the parameters. */
     if (out_addr == NULL || out_size == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -367,78 +380,77 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         return ESP_ERR_INVALID_SIZE;
     }
 
-    /* The partition has been found, map its first uint32_t value, which
+    /* The partition has been found, get its first uint32_t value, which
      * describes the core dump file size. */
-    err = esp_partition_mmap(core_part, 0,  sizeof(uint32_t),
-                             SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
+    err = esp_partition_read(core_part, 0, &size, sizeof(uint32_t));
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mmap core dump data (%d)!", err);
+        ESP_LOGE(TAG, "Failed to read core dump data size (%d)!", err);
         return err;
     }
 
-    /* Extract the size and unmap the partition. */
-    uint32_t *dw = (uint32_t *)core_data;
-    *out_size = *dw;
-    spi_flash_munmap(core_data_handle);
-    if (*out_size == 0xFFFFFFFF) {
+    /* Verify that the size read from the flash is not corrupted. */
+    if (size == 0xFFFFFFFF) {
         ESP_LOGD(TAG, "Blank core dump partition!");
-        return ESP_ERR_INVALID_SIZE;
-    } else if ((*out_size < sizeof(uint32_t)) || (*out_size > core_part->size)) {
-        ESP_LOGE(TAG, "Incorrect size of core dump image: %d", *out_size);
-        return ESP_ERR_INVALID_SIZE;
+        err = ESP_ERR_INVALID_SIZE;
+    } else if ((size < sizeof(uint32_t)) || (size > core_part->size)) {
+        ESP_LOGE(TAG, "Incorrect size of core dump image: %d", size);
+        err = ESP_ERR_INVALID_SIZE;
     }
 
-    /* Remap the full core dump parition, including the final checksum. */
-    err = esp_partition_mmap(core_part, 0, *out_size,
-                             SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mmap core dump data (%d)!", err);
         return err;
     }
 
-    // TODO: check CRC or SHA basing on the version of core dump image stored in flash
-#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
-    uint32_t *crc = (uint32_t *)(((uint8_t *)core_data) + *out_size);
-    /* Decrement crc to make it point onto our CRC checksum. */
-    crc--;
+    /* Save the size read. */
+    *out_size = size;
 
-    /* Calculate CRC checksum again over core dump data read from the flash,
-     * excluding CRC field. */
-    core_dump_crc_t cur_crc = esp_rom_crc32_le(0, (uint8_t const *)core_data, *out_size - sizeof(core_dump_crc_t));
-    if (*crc != cur_crc) {
-        ESP_LOGD(TAG, "Core dump CRC offset 0x%x, data size: %u",
-                (uint32_t)((uint32_t)crc - (uint32_t)core_data), *out_size);
-        ESP_LOGE(TAG, "Core dump data CRC check failed: 0x%x -> 0x%x!", *crc, cur_crc);
-        spi_flash_munmap(core_data_handle);
-        return ESP_ERR_INVALID_CRC;
+    /* The final checksum, from the image, doesn't take part into the checksum
+     * calculation, so subtract it from the bytes we are going to read. */
+    size -= checksum_size ;
+
+    /* Initiate the checksum calculation for the coredump in the flash. */
+    esp_core_dump_checksum_init(&wr_data);
+
+    while (size > 0) {
+        /* Use the cache in core_dump_write_data_t structure to read the
+         * partition. */
+        const uint32_t toread = (size < COREDUMP_CACHE_SIZE) ? size : COREDUMP_CACHE_SIZE;
+
+        /* Read the content of the flash. */
+        err = esp_partition_read(core_part, offset, wr_data.cached_data, toread);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read data from core dump (%d)!", err);
+            return err;
+        }
+
+        /* Update the checksum according to what was just read. */
+        esp_core_dump_checksum_update(&wr_data, wr_data.cached_data, toread);
+
+        /* Move the offset forward and decrease the remaining size. */
+        offset += toread;
+        size -= toread;
     }
-#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
-    /* sha256_ptr will point to our checksum. */
-    uint8_t* sha256_ptr = (uint8_t*)(((uint8_t *)core_data) + *out_size);
-    sha256_ptr -= COREDUMP_SHA256_LEN;
-    ESP_LOGD(TAG, "Core dump data offset, size: %d, %u!",
-                    (uint32_t)((uint32_t)sha256_ptr - (uint32_t)core_data), *out_size);
 
-    /* The following array will contain the SHA256 value of the core dump data
-     * read from the flash. */
-    unsigned char sha_output[COREDUMP_SHA256_LEN];
-    mbedtls_sha256_context ctx;
-    ESP_LOGI(TAG, "Calculate SHA256 for coredump:");
-    (void)esp_core_dump_sha(&ctx, core_data, *out_size - COREDUMP_SHA256_LEN, sha_output);
+    /* The coredump has been totally read, finish the checksum calculation. */
+    esp_core_dump_checksum_finish(&wr_data, &checksum_calc);
 
-    /* Compare the two checksums, if they are different, the file on the flash
-     * may be corrupted. */
-    if (memcmp((uint8_t*)sha256_ptr, (uint8_t*)sha_output, COREDUMP_SHA256_LEN) != 0) {
-        ESP_LOGE(TAG, "Core dump data SHA256 check failed:");
-        esp_core_dump_print_sha256("Calculated SHA256", (uint8_t*)sha_output);
-        esp_core_dump_print_sha256("Image SHA256",(uint8_t*)sha256_ptr);
-        spi_flash_munmap(core_data_handle);
+    /* Read the checksum from the flash and compare to the one just
+     * calculated. */
+    err = esp_partition_read(core_part, *out_size - checksum_size, checksum_read, checksum_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read checksum from core dump (%d)!", err);
+        return err;
+    }
+
+    /* Compare the checksum read from the flash and the one just calculated. */
+    if (memcmp(checksum_calc, checksum_read, checksum_size) != 0) {
+        ESP_LOGE(TAG, "Core dump data check failed:");
+        esp_core_dump_print_checksum("Calculated checksum", checksum_calc);
+        esp_core_dump_print_checksum("Image checksum", checksum_read);
         return ESP_ERR_INVALID_CRC;
     } else {
-        ESP_LOGI(TAG, "Core dump data SHA256 is correct");
+        ESP_LOGI(TAG, "Core dump data checksum is correct");
     }
-#endif
-    spi_flash_munmap(core_data_handle);
 
     *out_addr = core_part->address;
     return ESP_OK;

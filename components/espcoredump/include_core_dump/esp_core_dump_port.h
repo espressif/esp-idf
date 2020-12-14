@@ -73,12 +73,14 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
 void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data);
 void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, size_t data_len);
 size_t esp_core_dump_checksum_finish(core_dump_write_data_t* wr_data, void** chs_ptr);
+uint32_t esp_core_dump_checksum_size(void);
 
 #if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
 void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output);
 int esp_core_dump_sha(mbedtls_sha256_context *ctx,
         const unsigned char *input, size_t ilen, unsigned char output[32]);
 #endif
+void esp_core_dump_print_checksum(const char* msg, const void* checksum);
 
 #define esp_core_dump_in_isr_context() xPortInterruptedFromISRContext()
 uint32_t esp_core_dump_get_isr_stack_end(void);
