@@ -1,4 +1,4 @@
-; Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+; Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
 ; SPDX-License-Identifier: Apache-2.0
 
 #pragma include __INCLUDE__ + ";" + ReadReg(HKLM, "Software\Mitrich Software\Inno Download Plugin", "InstallDir")
@@ -51,7 +51,7 @@ ChangesEnvironment=yes
 WizardStyle=modern
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl,Languages/idf_tool_en-US.islu"
 
 [Dirs]
 Name: "{app}\dist"
@@ -65,6 +65,11 @@ Source: "..\..\idf_tools.py"; DestDir: "{app}"; DestName: "idf_tools_fallback.py
 Source: "tools_fallback.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
 Source: "idf_cmd_init.bat"; DestDir: "{app}"
 Source: "dist\*"; DestDir: "{app}\dist"
+; Helper Python files for sanity check of Python environment - used by system_check_page
+Source: "system_check\system_check_download.py"; Flags: dontcopy
+Source: "system_check\system_check_subprocess.py"; Flags: dontcopy
+Source: "system_check\system_check_virtualenv.py"; Flags: dontcopy
+; Helper PowerShell scripts for managing exceptions in Windows Defender
 Source: "tools_WD_excl.ps1"; DestDir: "{app}\dist"
 Source: "tools_WD_clean.ps1"; DestDir: "{app}\dist"
 
@@ -104,6 +109,7 @@ Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "IDF_TOOLS_PATH
 #include "idf_page.iss.inc"
 #include "git_page.iss.inc"
 #include "python_page.iss.inc"
+#include "system_check_page.iss.inc"
 #include "idf_download_page.iss.inc"
 #include "idf_setup.iss.inc"
 #include "summary.iss.inc"

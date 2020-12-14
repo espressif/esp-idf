@@ -1,4 +1,4 @@
-{ Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Find installed Python interpreters in Windows Registry (see PEP 514) ------------------------------ }
@@ -19,7 +19,8 @@ end;
 function GetPythonVersionInfoFromKey(RootKey: Integer; SubKeyName, CompanyName, TagName: String;
                                      var Version: String;
                                      var DisplayName: String;
-                                     var ExecutablePath: String): Boolean;
+                                     var ExecutablePath: String;
+                                     var BaseDir: String): Boolean;
 var
   TagKey, InstallPathKey, DefaultPath: String;
 begin
@@ -38,6 +39,8 @@ begin
     Log('No ExecutablePath, using the default');
     ExecutablePath := DefaultPath + '\python.exe';
   end;
+
+  BaseDir := DefaultPath;
 
   if not RegQueryStringValue(RootKey, TagKey, 'SysVersion', Version) then
   begin
@@ -58,56 +61,4 @@ begin
   end;
 
   Result := True;
-end;
-
-procedure FindPythonVersionsFromKey(RootKey: Integer; SubKeyName: String);
-var
-  CompanyNames: TArrayOfString;
-  CompanyName, CompanySubKey, TagName, TagSubKey: String;
-  ExecutablePath, DisplayName, Version: String;
-  TagNames: TArrayOfString;
-  CompanyId, TagId: Integer;
-begin
-  if not RegGetSubkeyNames(RootKey, SubKeyName, CompanyNames) then
-  begin
-    Log('Nothing found in ' + IntToStr(RootKey) + '\' + SubKeyName);
-    Exit;
-  end;
-
-  for CompanyId := 0 to GetArrayLength(CompanyNames) - 1 do
-  begin
-    CompanyName := CompanyNames[CompanyId];
-
-    if CompanyName = 'PyLauncher' then
-      continue;
-
-    CompanySubKey := SubKeyName + '\' + CompanyName;
-    Log('In ' + IntToStr(RootKey) + '\' + CompanySubKey);
-
-    if not RegGetSubkeyNames(RootKey, CompanySubKey, TagNames) then
-      continue;
-
-    for TagId := 0 to GetArrayLength(TagNames) - 1 do
-    begin
-      TagName := TagNames[TagId];
-      TagSubKey := CompanySubKey + '\' + TagName;
-      Log('In ' + IntToStr(RootKey) + '\' + TagSubKey);
-
-      if not GetPythonVersionInfoFromKey(RootKey, SubKeyName, CompanyName, TagName, Version, DisplayName, ExecutablePath) then
-        continue;
-
-      PythonVersionAdd(Version, DisplayName, ExecutablePath);
-    end;
-  end;
-end;
-
-procedure FindInstalledPythonVersions();
-begin
-  InstalledPythonVersions := TStringList.Create();
-  InstalledPythonDisplayNames := TStringList.Create();
-  InstalledPythonExecutables := TStringList.Create();
-
-  FindPythonVersionsFromKey(HKEY_CURRENT_USER, 'Software\Python');
-  FindPythonVersionsFromKey(HKEY_LOCAL_MACHINE, 'Software\Python');
-  FindPythonVersionsFromKey(HKEY_LOCAL_MACHINE, 'Software\Wow6432Node\Python');
 end;
