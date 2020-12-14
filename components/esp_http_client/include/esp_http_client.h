@@ -108,6 +108,7 @@ typedef struct {
     const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
     const char                  *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
+    const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
@@ -125,7 +126,11 @@ typedef struct {
  * Enum for the HTTP status codes.
  */
 typedef enum {
+    /* 2xx - Success */
+    HttpStatus_Ok                = 200,
+
     /* 3xx - Redirection */
+    HttpStatus_MultipleChoices   = 300,
     HttpStatus_MovedPermanently  = 301,
     HttpStatus_Found             = 302,
 

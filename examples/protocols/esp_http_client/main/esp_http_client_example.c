@@ -72,6 +72,7 @@ static void http_rest_with_url()
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/get",
         .event_handler = _http_event_handler,
+        .disable_auto_redirect = true,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
