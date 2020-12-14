@@ -63,8 +63,6 @@ class OtatoolTarget():
             self.target.read_partition(OtatoolTarget.OTADATA_PARTITION, temp_file.name)
             with open(temp_file.name, "rb") as f:
                 self.otadata = f.read()
-        except Exception:
-            self.otadata = None
         finally:
             os.unlink(temp_file.name)
 
