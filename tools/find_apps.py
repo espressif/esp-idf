@@ -146,9 +146,9 @@ def find_apps(build_system_class, path, recursive, exclude_list, target):
     logging.debug("Looking for {} apps in {}{}".format(build_system_name, path, " recursively" if recursive else ""))
     if not recursive:
         if exclude_list:
-            logging.warn("--exclude option is ignored when used without --recursive")
+            logging.warning("--exclude option is ignored when used without --recursive")
         if not build_system_class.is_app(path):
-            logging.warn("Path {} specified without --recursive flag, but no {} app found there".format(
+            logging.warning("Path {} specified without --recursive flag, but no {} app found there".format(
                 path, build_system_name))
             return []
         return [path]
@@ -168,11 +168,14 @@ def find_apps(build_system_class, path, recursive, exclude_list, target):
             del dirs[:]
 
             supported_targets = build_system_class.supported_targets(root)
-            if supported_targets and target not in supported_targets:
-                logging.debug("Skipping, app only supports targets: " + ", ".join(supported_targets))
+            if supported_targets and (target in supported_targets):
+                apps_found.append(root)
+            else:
+                if supported_targets:
+                    logging.debug("Skipping, app only supports targets: " + ", ".join(supported_targets))
+                else:
+                    logging.debug("Skipping, app has no supported targets")
                 continue
-
-            apps_found.append(root)
 
     return apps_found
 

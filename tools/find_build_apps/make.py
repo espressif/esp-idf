@@ -61,6 +61,10 @@ class MakeBuildSystem(BuildSystem):
             return False
         return True
 
-    @staticmethod
-    def supported_targets(app_path):
-        return ['esp32']
+    @classmethod
+    def supported_targets(cls, app_path):
+        readme_supported_targets = cls._supported_targets(app_path)
+        if readme_supported_targets and 'esp32' in readme_supported_targets:
+            return ['esp32']
+        else:
+            return []

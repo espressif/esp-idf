@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -13,14 +12,6 @@ IDF_PY = os.path.join(os.environ["IDF_PATH"], "tools", "idf.py")
 # While ESP-IDF component CMakeLists files can be identified by the presence of 'idf_component_register' string,
 # there is no equivalent for the project CMakeLists files. This seems to be the best option...
 CMAKE_PROJECT_LINE = r"include($ENV{IDF_PATH}/tools/cmake/project.cmake)"
-
-SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
-
-FORMAL_TO_USUAL = {
-    'ESP32': 'esp32',
-    'ESP32-S2': 'esp32s2',
-    'ESP32-S3': 'esp32s3',
-}
 
 
 class CMakeBuildSystem(BuildSystem):
@@ -95,33 +86,6 @@ class CMakeBuildSystem(BuildSystem):
             return False
         return True
 
-    @staticmethod
-    def supported_targets(app_path):
-        formal_to_usual = {
-            'ESP32': 'esp32',
-            'ESP32-S2': 'esp32s2',
-            'ESP32-S3': 'esp32s3',
-        }
-
-        readme_file_content = BuildSystem._read_readme(app_path)
-        if not readme_file_content:
-            return None
-        match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
-        if not match:
-            return None
-        if len(match) > 1:
-            raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
-        support_str = match[0].strip()
-
-        targets = []
-        for part in support_str.split('|'):
-            for inner in part.split(' '):
-                inner = inner.strip()
-                if not inner:
-                    continue
-                elif inner in formal_to_usual:
-                    targets.append(formal_to_usual[inner])
-                else:
-                    raise NotImplementedError("Can't recognize value of target {} in {}, now we only support '{}'"
-                                              .format(inner, app_path, ', '.join(formal_to_usual.keys())))
-        return targets
+    @classmethod
+    def supported_targets(cls, app_path):
+        return cls._supported_targets(app_path)
