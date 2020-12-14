@@ -14,7 +14,8 @@
 #include <string.h>
 #include "esp_partition.h"
 #include "esp_log.h"
-#include "esp_core_dump_priv.h"
+#include "esp_core_dump_types.h"
+#include "core_dump_checksum.h"
 #include "esp_flash_internal.h"
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
@@ -32,6 +33,8 @@ typedef struct _core_dump_partition_t
     /* Flag set to true if the partition is encrypted. */
     bool encrypted;
 } core_dump_partition_t;
+
+typedef uint32_t core_dump_crc_t;
 
 typedef struct _core_dump_flash_config_t
 {
@@ -92,7 +95,7 @@ void esp_core_dump_flash_init(void)
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 }
 
-static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint32_t data_size)
+static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, uint8_t* data, uint32_t data_size)
 {
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
@@ -100,7 +103,7 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
     uint32_t wr_sz = 0;
 
     /* Make sure that the partition is large enough to hold the data. */
-    assert((wr_data->off + data_size) < s_core_flash_config.partition.size);
+    ESP_COREDUMP_ASSERT((wr_data->off + data_size) < s_core_flash_config.partition.size);
 
     if (wr_data->cached_bytes) {
         /* Some bytes are in the cache, let's continue filling the cache
@@ -129,7 +132,7 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
             wr_data->off += COREDUMP_CACHE_SIZE;
 
             /* Update checksum with the newly written data on the flash. */
-            esp_core_dump_checksum_update(wr_data, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
+            esp_core_dump_checksum_update(wr_data->checksum_ctx, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
 
             /* Reset cache from the next use. */
             wr_data->cached_bytes = 0;
@@ -167,7 +170,7 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
         }
 
         /* Update the checksum with the newly written bytes */
-        esp_core_dump_checksum_update(wr_data, data + written, wr_sz);
+        esp_core_dump_checksum_update(wr_data->checksum_ctx, data + written, wr_sz);
         wr_data->off += wr_sz;
         written += wr_sz;
         data_size -= wr_sz;
@@ -184,7 +187,7 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, uint8_t *data, uint3
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_len)
+static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *priv, uint32_t *data_len)
 {
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
@@ -192,7 +195,7 @@ static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_le
     uint32_t cs_len = 0;
 
     /* Get the length, in bytes, of the checksum. */
-    cs_len = esp_core_dump_checksum_finish(wr_data, NULL);
+    cs_len = esp_core_dump_checksum_size();
 
     /* At the end of the core dump file, a padding may be added, according to the
      * cache size. We must take that padding into account. */
@@ -227,7 +230,7 @@ static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_le
 
     /* Erase the amount of sectors needed. */
     ESP_COREDUMP_LOGI("Erase flash %d bytes @ 0x%x", sec_num * SPI_FLASH_SEC_SIZE, s_core_flash_config.partition.start + 0);
-    assert(sec_num * SPI_FLASH_SEC_SIZE <= s_core_flash_config.partition.size);
+    ESP_COREDUMP_ASSERT(sec_num * SPI_FLASH_SEC_SIZE <= s_core_flash_config.partition.size);
     err = ESP_COREDUMP_FLASH_ERASE(s_core_flash_config.partition.start + 0, sec_num * SPI_FLASH_SEC_SIZE);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to erase flash (%d)!", err);
@@ -236,22 +239,22 @@ static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_le
     return err;
 }
 
-static esp_err_t esp_core_dump_flash_write_start(void *priv)
+static esp_err_t esp_core_dump_flash_write_start(core_dump_write_data_t* priv)
 {
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
-    esp_core_dump_checksum_init(wr_data);
+    esp_core_dump_checksum_init(&wr_data->checksum_ctx);
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_end(void *priv)
+static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
 {
     esp_err_t err = ESP_OK;
-    void* checksum = NULL;
+    core_dump_checksum_bytes checksum = NULL;
     uint32_t cs_len = 0;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
 
     /* Get the size, in bytes of the checksum. */
-    cs_len  = esp_core_dump_checksum_finish(wr_data, NULL);
+    cs_len  = esp_core_dump_checksum_size();
 
     /* Flush cached bytes, including the zero padding at the end (if any). */
     if (wr_data->cached_bytes) {
@@ -265,14 +268,14 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
         }
 
         /* Update the checksum with the data written, including the padding. */
-        esp_core_dump_checksum_update(wr_data, wr_data->cached_data, COREDUMP_CACHE_SIZE);
+        esp_core_dump_checksum_update(wr_data->checksum_ctx, wr_data->cached_data, COREDUMP_CACHE_SIZE);
         wr_data->off += COREDUMP_CACHE_SIZE;
         wr_data->cached_bytes = 0;
     }
 
     /* All data have been written to the flash, the cache is now empty, we can
      * terminate the checksum calculation. */
-    esp_core_dump_checksum_finish(wr_data, &checksum);
+    esp_core_dump_checksum_finish(wr_data->checksum_ctx, &checksum);
 
     /* Use the cache to write the checksum if its size doesn't match the requirements.
      * (e.g. its size is not a multiple of 32) */
@@ -289,7 +292,7 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
                                                COREDUMP_CACHE_SIZE);
     } else {
         /* In that case, the length of the checksum must be a multiple of 16. */
-        assert(cs_len % 16 == 0);
+        ESP_COREDUMP_ASSERT(cs_len % 16 == 0);
         err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off, checksum, cs_len);
     }
 
@@ -314,7 +317,7 @@ void esp_core_dump_to_flash(panic_info_t *info)
         return;
     }
 
-    /* Make sure that the partition can at least data length. */
+    /* Make sure that the partition can at least hold the data length. */
     if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
         ESP_COREDUMP_LOGE("Invalid flash partition config!");
         return;
@@ -345,7 +348,6 @@ void esp_core_dump_init(void)
         ESP_COREDUMP_LOGI("Found core dump %d bytes in flash @ 0x%x", core_data_sz, core_data_addr);
     }
 }
-#endif
 
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 {
@@ -354,13 +356,13 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
     uint32_t size = 0;
     uint32_t offset = 0;
     const uint32_t checksum_size = esp_core_dump_checksum_size();
-    void* checksum_calc = NULL;
+    core_dump_checksum_bytes checksum_calc = NULL;
     /* Initialize the checksum we have to read from the flash to the biggest
      * size we can have for a checksum. */
     uint8_t checksum_read[COREDUMP_CHECKSUM_MAX_LEN] = { 0 };
 
     /* Assert that we won't have any problems with our checksum size. */
-    assert(checksum_size <= COREDUMP_CHECKSUM_MAX_LEN);
+    ESP_COREDUMP_DEBUG_ASSERT(checksum_size <= COREDUMP_CHECKSUM_MAX_LEN);
 
     /* Check the validity of the parameters. */
     if (out_addr == NULL || out_size == NULL) {
@@ -409,7 +411,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
     size -= checksum_size ;
 
     /* Initiate the checksum calculation for the coredump in the flash. */
-    esp_core_dump_checksum_init(&wr_data);
+    esp_core_dump_checksum_init(&wr_data.checksum_ctx);
 
     while (size > 0) {
         /* Use the cache in core_dump_write_data_t structure to read the
@@ -424,7 +426,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
         }
 
         /* Update the checksum according to what was just read. */
-        esp_core_dump_checksum_update(&wr_data, wr_data.cached_data, toread);
+        esp_core_dump_checksum_update(wr_data.checksum_ctx, wr_data.cached_data, toread);
 
         /* Move the offset forward and decrease the remaining size. */
         offset += toread;
@@ -432,7 +434,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
     }
 
     /* The coredump has been totally read, finish the checksum calculation. */
-    esp_core_dump_checksum_finish(&wr_data, &checksum_calc);
+    esp_core_dump_checksum_finish(wr_data.checksum_ctx, &checksum_calc);
 
     /* Read the checksum from the flash and compare to the one just
      * calculated. */
@@ -455,3 +457,5 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
     *out_addr = core_part->address;
     return ESP_OK;
 }
+
+#endif
