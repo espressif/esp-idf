@@ -90,7 +90,7 @@
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
         ESP32-PICO-KIT-1 <../hw-reference/esp32/get-started-pico-kit-1>
-
+        ESP32-PICO-DevKitM-2 <../hw-reference/esp32/get-started-pico-devkitm-2>
 
 .. only:: esp32s2
 
