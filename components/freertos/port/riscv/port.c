@@ -152,11 +152,11 @@ void vPortSetupTimer(void)
 
     /* configure the timer */
     systimer_hal_init();
+    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
     systimer_hal_enable_counter(SYSTIMER_COUNTER_1);
     systimer_hal_set_alarm_period(SYSTIMER_ALARM_0, 1000000UL / CONFIG_FREERTOS_HZ);
     systimer_hal_select_alarm_mode(SYSTIMER_ALARM_0, SYSTIMER_ALARM_MODE_PERIOD);
     systimer_hal_enable_alarm_int(SYSTIMER_ALARM_0);
-    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
 }
 
 void prvTaskExitError(void)
