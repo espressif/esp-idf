@@ -11,12 +11,11 @@ ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类�
 安装 ULP-RISC-V 工具链
 -----------------------------------
 
-ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），使用 `riscv-embedded toolchain`_ 进行编译。
+ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），使用基于GCC的 RISC-V 工具链进行编译。
 
-如果你已依照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，还需要在 IDF 文件夹中执行以下指令，安装 ULP-RISC-V 工具链::
+如果你已依照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP-RISC-V 工具链已经被默认安装到了你的开发环境中。
 
-$ idf_tools.py install riscv-none-embed-gcc
-
+.. note: 在早期版本的ESP-IDF中，RISC-V工具链具有不同的名称：`riscv-none-embed-gcc`。
 
 编译 ULP-RISC-V 代码
 -----------------------------
@@ -25,7 +24,7 @@ $ idf_tools.py install riscv-none-embed-gcc
 
 1. ULP-RISC-V 代码以 C 语言或汇编语言编写（必须使用 `.S` 扩展名)，必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. 注意：当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前 ULP-FSM 需要进行此步骤。如何正确添加 ULP 源文件，请见以下步骤。
+.. note: 当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前 ULP-FSM 需要进行此步骤。如何正确添加 ULP 源文件，请见以下步骤。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
@@ -147,5 +146,3 @@ ULP-RISC-V 协处理器由定时器启动，调用 :cpp:func:`ulp_riscv_run` 即
 
 如需禁用定时器（有效防止 ULP 程序再次运行），请清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位，此项操作可在 ULP 代码或主程序中进行。
 
-
-.. _riscv-embedded toolchain: https://xpack.github.io/riscv-none-embed-gcc/

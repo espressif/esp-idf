@@ -27,11 +27,6 @@
 
 ---
 
-.. tool-riscv-none-embed-gcc-notes
-
-
----
-
 .. tool-openocd-esp32-notes
 
 
