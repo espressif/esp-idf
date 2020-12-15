@@ -307,10 +307,8 @@ esp_err_t adc_set_clk_div(uint8_t clk_div);
 /**
  * @brief Configure ADC capture width.
  *
- * @note  ESP32-S2 only supports ``ADC_WIDTH_BIT_13``.
- *
  * @param adc_unit ADC unit index
- * @param width_bit Bit capture width for ADC unit. ESP32-S2 only supports ``ADC_WIDTH_BIT_13``.
+ * @param width_bit Bit capture width for ADC unit.
  *
  * @return
  *     - ESP_OK success
@@ -397,7 +395,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  *       the low priority controller will read the invalid ADC2 data. Default priority: Wi-Fi > RTC > Digital;
  *
  * @param channel ADC2 channel to read
- * @param width_bit Bit capture width for ADC2. ESP32-S2 only supports ``ADC_WIDTH_BIT_13``.
+ * @param width_bit Bit capture width for ADC2
  * @param raw_out the variable to hold the output data.
  *
  * @return
@@ -466,7 +464,8 @@ esp_err_t adc_digi_deinit(void);
  * @param config Pointer to digital controller paramter. Refer to ``adc_digi_config_t``.
  *
  * @return
- *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_STATE Driver state is invalid.
+ *      - ESP_OK                On success
  */
 esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);
 
@@ -492,6 +491,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config);
  * @brief Start the Digital ADC and DMA peripherals. After this, the hardware starts working.
  *
  * @return
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  *         - ESP_OK                On success
  */
 esp_err_t adc_digi_start(void);
@@ -500,6 +500,7 @@ esp_err_t adc_digi_start(void);
  * @brief Stop the Digital ADC and DMA peripherals. After this, the hardware stops working.
  *
  * @return
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  *         - ESP_OK                On success
  */
 esp_err_t adc_digi_stop(void);

@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,6 @@ esp_err_t adc_digi_filter_reset(adc_digi_filter_idx_t idx);
 /**
  * @brief Set adc digital controller filter configuration.
  *
- * @note For ESP32S2, Filter IDX0/IDX1 can only be used to filter all enabled channels of ADC1/ADC2 unit at the same time.
- *
  * @param idx Filter index.
  * @param config See ``adc_digi_filter_t``.
  *
@@ -69,8 +67,6 @@ esp_err_t adc_digi_filter_set_config(adc_digi_filter_idx_t idx, adc_digi_filter_
 
 /**
  * @brief Get adc digital controller filter configuration.
- *
- * @note For ESP32S2, Filter IDX0/IDX1 can only be used to filter all enabled channels of ADC1/ADC2 unit at the same time.
  *
  * @param idx Filter index.
  * @param config See ``adc_digi_filter_t``.
@@ -83,8 +79,6 @@ esp_err_t adc_digi_filter_get_config(adc_digi_filter_idx_t idx, adc_digi_filter_
 /**
  * @brief Enable/disable adc digital controller filter.
  *        Filtering the ADC data to obtain smooth data at higher sampling rates.
- *
- * @note For ESP32S2, Filter IDX0/IDX1 can only be used to filter all enabled channels of ADC1/ADC2 unit at the same time.
  *
  * @param idx Filter index.
  * @param enable Enable/Disable filter.
@@ -101,8 +95,6 @@ esp_err_t adc_digi_filter_enable(adc_digi_filter_idx_t idx, bool enable);
 /**
  * @brief Config monitor of adc digital controller.
  *
- * @note For ESP32S2, The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- *
  * @param idx Monitor index.
  * @param config See ``adc_digi_monitor_t``.
  *
@@ -113,8 +105,6 @@ esp_err_t adc_digi_monitor_set_config(adc_digi_monitor_idx_t idx, adc_digi_monit
 
 /**
  * @brief Enable/disable monitor of adc digital controller.
- *
- * @note For ESP32S2, The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
  *
  * @param idx Monitor index.
  * @param enable True or false enable monitor.

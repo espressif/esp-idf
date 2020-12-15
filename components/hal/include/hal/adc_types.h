@@ -81,16 +81,15 @@ typedef enum {
 /**
  * @brief ADC resolution setting option.
  *
- * @note  For ESP32-S2. Only 13 bit resolution is supported.
- *        For ESP32.   13 bit resolution is not supported.
  */
 typedef enum {
-    ADC_WIDTH_BIT_9  = 0, /*!< ADC capture width is 9Bit. Only ESP32 is supported. */
-    ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. Only ESP32 is supported. */
-    ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. Only ESP32 is supported. */
-    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. Only ESP32 is supported. */
-#if !CONFIG_IDF_TARGET_ESP32
-    ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. Only ESP32-S2 is supported. */
+#if CONFIG_IDF_TARGET_ESP32
+    ADC_WIDTH_BIT_9  = 0, /*!< ADC capture width is 9Bit. */
+    ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
+    ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
+    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+    ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
 #endif
     ADC_WIDTH_MAX,
 } adc_bits_width_t;
@@ -196,7 +195,7 @@ typedef struct {
                                         If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint32_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
             uint32_t reserved: 15;
-        };
+        } type2;
         uint32_t val;
     };
 } adc_digi_output_data_t;
@@ -412,3 +411,10 @@ typedef struct {
 } adc_digi_monitor_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+
+#if CONFIG_IDF_TARGET_ESP32C3
+typedef enum {
+    ADC_EVENT_ADC1_DONE = BIT(0),
+    ADC_EVENT_ADC2_DONE = BIT(1),
+} adc_event_t;
+#endif

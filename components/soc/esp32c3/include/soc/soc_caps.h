@@ -24,7 +24,6 @@
 #define SOC_GDMA_ADC_INTR_SOURCE    ETS_DMA_CH0_INTR_SOURCE
 
 #include "rmt_caps.h"
-#include "adc_caps.h"
 #include "dac_caps.h"
 #include "i2c_caps.h"
 #include "mpu_caps.h"
@@ -57,3 +56,18 @@
 
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
+
+/*-------------------------- ADC CAPS -------------------------------*/
+#define SOC_ADC_PERIPH_NUM              (2)
+#define SOC_ADC_PATT_LEN_MAX            (16)
+
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
+#define SOC_ADC_MAX_CHANNEL_NUM         (10)
+
+/**
+ * Check if adc support digital controller (DMA) mode.
+ * @value
+ *      - 1 : support;
+ *      - 0 : not support;
+ */
+#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1

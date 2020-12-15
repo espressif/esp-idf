@@ -22,6 +22,8 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "regi2c_ctrl.h"
+#include "esp_attr.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +48,12 @@ typedef enum {
     ADC_RTC_CTRL_BREAK = 2,
     ADC_RTC_DATA_FAIL = -1,
 } adc_ll_rtc_raw_data_t;
+
+typedef enum {
+    ADC_LL_INTR_ADC2_DONE = BIT(30),
+    ADC_LL_INTR_ADC1_DONE = BIT(31),
+} adc_ll_intr_t;
+FLAG_ATTR(adc_ll_intr_t)
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
@@ -927,6 +935,87 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
     abort(); // TODO ESP32-C3 IDF-2526
 }
 
+/*---------------------------------------------------------------
+                    Single Read
+---------------------------------------------------------------*/
+/**
+ * Trigger single read
+ *
+ * @param val Usage: set to 1 to start the ADC conversion. The step signal should at least keep 3 ADC digital controller clock cycle,
+ *            otherwise the step signal may not be captured by the ADC digital controller when its frequency is slow.
+ *            This hardware limitation will be removed in future versions.
+ */
+static inline void adc_ll_onetime_start(bool val)
+{
+    APB_SARADC.onetime_sample.onetime_start = val;
+}
+
+static inline void adc_ll_onetime_set_channel(adc_ll_num_t unit, adc_channel_t channel)
+{
+    APB_SARADC.onetime_sample.onetime_channel = ((unit << 3) | channel);
+}
+
+static inline void adc_ll_onetime_set_atten(adc_atten_t atten)
+{
+    APB_SARADC.onetime_sample.onetime_atten = atten;
+}
+
+static inline void adc_ll_intr_enable(adc_ll_intr_t mask)
+{
+    APB_SARADC.int_ena.val |= mask;
+}
+
+static inline void adc_ll_intr_disable(adc_ll_intr_t mask)
+{
+    APB_SARADC.int_ena.val &= ~mask;
+}
+
+static inline void adc_ll_intr_clear(adc_ll_intr_t mask)
+{
+    APB_SARADC.int_clr.val |= mask;
+}
+
+static inline bool adc_ll_intr_get_raw(adc_ll_intr_t mask)
+{
+    return (APB_SARADC.int_raw.val & mask);
+}
+
+static inline bool adc_ll_intr_get_status(adc_ll_intr_t mask)
+{
+    return (APB_SARADC.int_st.val & mask);
+}
+
+//--------------------------------adc1------------------------------//
+static inline void adc_ll_adc1_onetime_sample_ena(void)
+{
+    APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
+}
+
+static inline void adc_ll_adc1_onetime_sample_dis(void)
+{
+    APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+}
+
+static inline uint32_t adc_ll_adc1_read(void)
+{
+    return APB_SARADC.apb_saradc1_data_status.adc1_data;
+}
+
+//--------------------------------adc2------------------------------//
+static inline void adc_ll_adc2_onetime_sample_ena(void)
+{
+    APB_SARADC.onetime_sample.adc2_onetime_sample = 1;
+}
+
+static inline void adc_ll_adc2_onetime_sample_dis(void)
+{
+    APB_SARADC.onetime_sample.adc2_onetime_sample = 0;
+}
+
+static inline uint32_t adc_ll_adc2_read(void)
+{
+    return APB_SARADC.apb_saradc2_data_status.adc2_data;
+}
 #ifdef __cplusplus
 }
 #endif

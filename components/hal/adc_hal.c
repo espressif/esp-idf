@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "hal/adc_hal.h"
-#if !CONFIG_IDF_TARGET_ESP32C3
 #include "hal/adc_hal_conf.h"
+
+#if CONFIG_IDF_TARGET_ESP32C3
+#include "soc/soc.h"
+#include "esp_rom_sys.h"
 #endif
 
 void adc_hal_init(void)
@@ -121,5 +124,110 @@ void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t 
     gdma_ll_enable_clock(adc_dma_ctx->dev, true);
     gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
     gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, GDMA_LL_TRIG_SRC_ADC_DAC);
+}
+
+/*---------------------------------------------------------------
+                    Single Read
+---------------------------------------------------------------*/
+void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
+{
+    /**
+     * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
+     * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
+     * clock cycle.
+     *
+     * This limitation will be removed in hardware future versions.
+     *
+     */
+    uint32_t digi_clk = APB_CLK_FREQ / (adc_digi_config->dig_clk.div_num + adc_digi_config->dig_clk.div_a / adc_digi_config->dig_clk.div_b + 1);
+    //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
+    uint32_t delay = (1000 * 1000) / digi_clk + 1;
+    //3 ADC digital controller clock cycle
+    delay = delay * 3;
+    //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
+    if (digi_clk >= APB_CLK_FREQ/8) {
+        delay = 0;
+    }
+
+    adc_ll_onetime_start(false);
+    esp_rom_delay_us(delay);
+    adc_ll_onetime_start(true);
+    //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
+}
+
+void adc_hal_adc1_onetime_sample_enable(bool enable)
+{
+    if (enable) {
+        adc_ll_adc1_onetime_sample_ena();
+    } else {
+        adc_ll_adc1_onetime_sample_dis();
+    }
+}
+
+void adc_hal_adc2_onetime_sample_enable(bool enable)
+{
+    if (enable) {
+        adc_ll_adc2_onetime_sample_ena();
+    } else {
+        adc_ll_adc2_onetime_sample_dis();
+    }
+}
+
+void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel)
+{
+    adc_ll_onetime_set_channel(unit, channel);
+}
+
+void adc_hal_set_onetime_atten(adc_atten_t atten)
+{
+    adc_ll_onetime_set_atten(atten);
+}
+
+uint32_t adc_hal_adc1_read(void)
+{
+    return adc_ll_adc1_read();
+}
+
+uint32_t adc_hal_adc2_read(void)
+{
+    return adc_ll_adc2_read();
+}
+
+//--------------------INTR-------------------------------
+static adc_ll_intr_t get_event_intr(adc_event_t event)
+{
+    adc_ll_intr_t intr_mask = 0;
+    if (event & ADC_EVENT_ADC1_DONE) {
+        intr_mask |= ADC_LL_INTR_ADC1_DONE;
+    }
+    if (event & ADC_EVENT_ADC2_DONE) {
+        intr_mask |= ADC_LL_INTR_ADC2_DONE;
+    }
+    return intr_mask;
+}
+
+void adc_hal_intr_enable(adc_event_t event)
+{
+    adc_ll_intr_enable(get_event_intr(event));
+}
+
+void adc_hal_intr_disable(adc_event_t event)
+{
+    adc_ll_intr_disable(get_event_intr(event));
+}
+
+void adc_hal_intr_clear(adc_event_t event)
+{
+    adc_ll_intr_clear(get_event_intr(event));
+}
+
+bool adc_hal_intr_get_raw(adc_event_t event)
+{
+    return adc_ll_intr_get_raw(get_event_intr(event));
+}
+
+bool adc_hal_intr_get_status(adc_event_t event)
+{
+    return adc_ll_intr_get_status(get_event_intr(event));
 }
 #endif
