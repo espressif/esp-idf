@@ -233,7 +233,11 @@ static int deep_sleep(int argc, char **argv)
         ESP_LOGE(TAG, "GPIO wakeup from deep sleep currently unsupported on ESP32-C3");
     }
 #endif // SOC_PM_SUPPORT_EXT_WAKEUP
+
+#if CONFIG_IDF_TARGET_ESP32
     rtc_gpio_isolate(GPIO_NUM_12);
+#endif //CONFIG_IDF_TARGET_ESP32
+
     esp_deep_sleep_start();
 }
 

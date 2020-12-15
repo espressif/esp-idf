@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use an SD card with ESP32 or ESP32-S2. Example does the following steps:
+This example demonstrates how to use an SD card with an ESP device. Example does the following steps:
 
 1. Use an "all-in-one" `esp_vfs_fat_sdmmc_mount` function to:
     - initialize SDMMC peripheral,
@@ -37,7 +37,7 @@ N/C           | WP          |         | optional, not used in the example
 
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
-With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. 
+With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place.
 See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
 
 In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
@@ -57,11 +57,26 @@ N/C           | WP          |         | optional, not used in the example
 
 In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
 
+### Connections for ESP32-C3
+
+Note that ESP32-C3 doesn't include SD Host peripheral and only supports SD over SPI. Therefore only SCK, MOSI, MISO, CS and ground pins need to be connected.
+
+ESP32-C3 pin  | SD card pin | SPI pin | Notes
+--------------|-------------|---------|------------
+GPIO8         | CLK         | SCK     | 10k pullup
+GPIO9         | CMD         | MOSI    | 10k pullup
+GPIO18        | D0          | MISO    | 10k pullup
+GPIO19        | D3          | CS      | 10k pullup
+N/C           | CD          |         | optional, not used in the example
+N/C           | WP          |         | optional, not used in the example
+
+In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
+
 ### Note about GPIO2 (ESP32 only)
 
 GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO0, when entering download mode.
 
-- Some boards have pulldown and/or LED on GPIO2. LED is usually ok, but pulldown will interfere with D0 signals and must be removed. Check the schematic of your development board for anything connected to GPIO2. 
+- Some boards have pulldown and/or LED on GPIO2. LED is usually ok, but pulldown will interfere with D0 signals and must be removed. Check the schematic of your development board for anything connected to GPIO2.
 
 ### Note about GPIO12 (ESP32 only)
 
@@ -125,7 +140,7 @@ Here is an example console output. In this case a 128MB SDSC card was connected,
 ```
 I (336) example: Initializing SD card
 I (336) example: Using SDMMC peripheral
-I (336) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (336) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
 W (596) vfs_fat_sdmmc: failed to mount card (13)
 W (596) vfs_fat_sdmmc: partitioning card
 W (596) vfs_fat_sdmmc: formatting card, allocation unit size=16384

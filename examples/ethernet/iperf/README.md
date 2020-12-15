@@ -23,7 +23,7 @@ See common pin assignments for Ethernet examples from [upper level](../README.md
 ### Software Tools Preparation
 
 1. Install iperf tool on PC
-   * Debian/Ubuntu: `sudo apt-get install iperf` 
+   * Debian/Ubuntu: `sudo apt-get install iperf`
    * macOS: `brew install iperf`(if using Homebrew) or `sudo port install iperf`(if using MacPorts)
    * Windows(MSYS2): Downloads binaries from [here]( https://iperf.fr/iperf-download.php#windows)
 

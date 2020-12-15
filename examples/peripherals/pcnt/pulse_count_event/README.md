@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
+
 # Pulse Count Event Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

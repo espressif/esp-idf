@@ -194,7 +194,7 @@ static void esp_register_action_frame(struct wpa_supplicant *wpa_s)
 }
 
 static void esp_supplicant_sta_conn_handler(void* arg, esp_event_base_t event_base,
-					    int event_id, void* event_data)
+					    int32_t event_id, void* event_data)
 {
 	u8 bssid[ETH_ALEN];
 	u8 *ie;
@@ -221,7 +221,7 @@ static void esp_supplicant_sta_conn_handler(void* arg, esp_event_base_t event_ba
 }
 
 static void esp_supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_base,
-						int event_id, void* event_data)
+						int32_t event_id, void* event_data)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	wpas_rrm_reset(wpa_s);

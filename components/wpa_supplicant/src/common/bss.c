@@ -14,7 +14,6 @@
 #include "drivers/driver.h"
 #include "eap_peer/eap.h"
 #include "wpa_supplicant_i.h"
-#include "config.h"
 #include "scan.h"
 #include "bss.h"
 #ifdef ESP_SUPPLICANT

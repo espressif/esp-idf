@@ -420,12 +420,12 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 #endif
 }
 
-static void IRAM_ATTR wifi_clock_enable_wrapper(void)
+static void wifi_clock_enable_wrapper(void)
 {
     wifi_module_enable();
 }
 
-static void IRAM_ATTR wifi_clock_disable_wrapper(void)
+static void wifi_clock_disable_wrapper(void)
 {
     wifi_module_disable();
 }
