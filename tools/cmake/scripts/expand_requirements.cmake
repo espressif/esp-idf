@@ -32,6 +32,7 @@
 cmake_minimum_required(VERSION 3.5)
 include("${IDF_PATH}/tools/cmake/utilities.cmake")
 include("${IDF_PATH}/tools/cmake/component_utils.cmake")
+include("${IDF_PATH}/tools/cmake/version.cmake")
 
 set(ESP_PLATFORM 1)
 
