@@ -54,7 +54,7 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 
 $(OBJ_FILES): %.o: %.cpp
 
-$(TEST_PROGRAM): $(OBJ_FILES) clean-coverage
+$(TEST_PROGRAM): clean-coverage $(OBJ_FILES)
 	$(MAKE) -C ../../mbedtls/mbedtls/ lib
 	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
