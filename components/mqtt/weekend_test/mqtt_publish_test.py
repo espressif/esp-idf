@@ -56,7 +56,7 @@ def on_message(client, userdata, msg):
     message_log += "Received data:" + msg.topic + " " + payload + "\n"
 
 
-def test_single_config(dut, transport, qos, repeat, published):
+def test_single_config(dut, transport, qos, repeat, published, queue = 0):
     global expected_count
     global expected_data
     global message_log
@@ -65,7 +65,7 @@ def test_single_config(dut, transport, qos, repeat, published):
     expected_count = 0
     message_log = ""
     expected_data = sample_string * repeat
-    print("PUBLISH TEST: transport:{}, qos:{}, sequence:{}, sample msg:'{}'".format(transport, qos, published, expected_data))
+    print("PUBLISH TEST: transport:{}, qos:{}, sequence:{}, enqueue:{}, sample msg:'{}'".format(transport, qos, published, queue, expected_data))
     client = None
     try:
         if transport in ["ws", "wss"]:
@@ -89,7 +89,7 @@ def test_single_config(dut, transport, qos, repeat, published):
     if not event_client_connected.wait(timeout=30):
         raise ValueError("ENV_TEST_FAILURE: Test script cannot connect to broker: {}".format(broker_host[transport]))
     client.subscribe(subscribe_topic, qos)
-    dut.write("{} {} {} {} {}".format(transport, sample_string, repeat, published, qos), eol="\n")
+    dut.write("{} {} {} {} {} {}".format(transport, sample_string, repeat, published, qos, queue), eol="\n")
     try:
         # waiting till subscribed to defined topic
         dut.expect(re.compile(r"MQTT_EVENT_SUBSCRIBED"), timeout=30)
@@ -105,7 +105,7 @@ def test_single_config(dut, transport, qos, repeat, published):
         if expected_count == published or (expected_count > published and qos == 1):
             print("All data received from ESP32...")
         else:
-            raise ValueError("Not all data received from ESP32: Expected:{}x{}, Received:{}x{}".format(expected_data, published, message_log, expected_count))
+            raise ValueError("Not all data received from ESP32: Expected:{}x{}, Received:{}x{}".format(expected_count, published, expected_data, message_log))
     finally:
         event_stop_client.set()
         thread1.join()
@@ -149,29 +149,30 @@ def test_weekend_mqtt_publish(env, extra_data):
         raise
     for qos in [0, 1, 2]:
         for transport in ["tcp", "ssl", "ws", "wss"]:
-            if broker_host[transport] is None:
-                print('Skipping transport: {}...'.format(transport))
-                continue
-            # simple test with empty message
-            test_single_config(dut1, transport, qos, 0, 5)
-            # decide on broker what level of test will pass (local broker works the best)
-            if broker_host[transport].startswith("192.168") and qos < 1:
-                # medium size, medium repeated
-                test_single_config(dut1, transport, qos, 5, 50)
-                # long data
-                test_single_config(dut1, transport, qos, 1000, 10)
-                # short data, many repeats
-                test_single_config(dut1, transport, qos, 2, 200)
-            elif transport in ["ws", "wss"]:
-                # more relaxed criteria for websockets!
-                test_single_config(dut1, transport, qos, 2, 5)
-                test_single_config(dut1, transport, qos, 50, 1)
-                test_single_config(dut1, transport, qos, 10, 20)
-            else:
-                # common configuration should be good for most public mosquittos
-                test_single_config(dut1, transport, qos, 5, 10)
-                test_single_config(dut1, transport, qos, 500, 3)
-                test_single_config(dut1, transport, qos, 1, 50)
+            for q in [0, 1]:
+                if broker_host[transport] is None:
+                    print('Skipping transport: {}...'.format(transport))
+                    continue
+                # simple test with empty message
+                test_single_config(dut1, transport, qos, 0, 5, q)
+                # decide on broker what level of test will pass (local broker works the best)
+                if broker_host[transport].startswith("192.168") and qos > 0 and q == 0:
+                    # medium size, medium repeated
+                    test_single_config(dut1, transport, qos, 5, 50, q)
+                    # long data
+                    test_single_config(dut1, transport, qos, 1000, 10, q)
+                    # short data, many repeats
+                    test_single_config(dut1, transport, qos, 2, 200, q)
+                elif transport in ["ws", "wss"]:
+                    # more relaxed criteria for websockets!
+                    test_single_config(dut1, transport, qos, 2, 5, q)
+                    test_single_config(dut1, transport, qos, 50, 1, q)
+                    test_single_config(dut1, transport, qos, 10, 20, q)
+                else:
+                    # common configuration should be good for most public mosquittos
+                    test_single_config(dut1, transport, qos, 5, 10, q)
+                    test_single_config(dut1, transport, qos, 500, 3, q)
+                    test_single_config(dut1, transport, qos, 1, 50, q)
 
 
 if __name__ == '__main__':

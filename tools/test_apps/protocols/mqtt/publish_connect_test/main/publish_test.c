@@ -126,13 +126,14 @@ void publish_test(const char* line)
     char pattern[32];
     char transport[32];
     int repeat = 0;
+    int enqueue = 0;
     static bool is_mqtt_init = false;
 
     if (!is_mqtt_init) {
         mqtt_app_start();
         is_mqtt_init = true;
     }
-    sscanf(line, "%s %s %d %d %d", transport, pattern, &repeat, &expected_published, &qos_test);
+    sscanf(line, "%s %s %d %d %d %d", transport, pattern, &repeat, &expected_published, &qos_test, &enqueue);
     ESP_LOGI(TAG, "PATTERN:%s REPEATED:%d PUBLISHED:%d\n", pattern, repeat, expected_published);
     int pattern_size = strlen(pattern);
     free(expected_data);
@@ -169,7 +170,12 @@ void publish_test(const char* line)
     xEventGroupWaitBits(mqtt_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
 
     for (int i = 0; i < expected_published; i++) {
-        int msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
+        int msg_id;
+        if (enqueue) {
+            msg_id = esp_mqtt_client_enqueue(mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0, true);
+        } else {
+            msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
+        }
         ESP_LOGI(TAG, "[%d] Publishing...", msg_id);
     }
 }
