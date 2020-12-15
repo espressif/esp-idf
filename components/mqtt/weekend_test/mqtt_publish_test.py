@@ -56,7 +56,7 @@ def on_message(client, userdata, msg):
     message_log += "Received data:" + msg.topic + " " + payload + "\n"
 
 
-def test_single_config(dut, transport, qos, repeat, published, queue = 0):
+def test_single_config(dut, transport, qos, repeat, published, queue=0):
     global expected_count
     global expected_data
     global message_log
@@ -89,7 +89,7 @@ def test_single_config(dut, transport, qos, repeat, published, queue = 0):
     if not event_client_connected.wait(timeout=30):
         raise ValueError("ENV_TEST_FAILURE: Test script cannot connect to broker: {}".format(broker_host[transport]))
     client.subscribe(subscribe_topic, qos)
-    dut.write("{} {} {} {} {} {}".format(transport, sample_string, repeat, published, qos, queue), eol="\n")
+    dut.write(' '.join(str(x) for x in (transport, sample_string, repeat, published, qos, queue)), eol="\n")
     try:
         # waiting till subscribed to defined topic
         dut.expect(re.compile(r"MQTT_EVENT_SUBSCRIBED"), timeout=30)
