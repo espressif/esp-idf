@@ -256,14 +256,18 @@ Each node in the hash list contains a 24-bit hash and 8-bit item index. Hash is 
 NVS Encryption
 --------------
 
-Data stored in NVS partitions can be encrypted using AES-XTS in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t. partition-start) is fed to the encryption algorithm as `sector-number`. The keys required for NVS encryption are stored in yet another partition, which is protected using :doc:`Flash Encryption <../../security/flash-encryption>`. Therefore, enabling :doc:`Flash Encryption <../../security/flash-encryption>` is a prerequisite for NVS encryption.
+Data stored in NVS partitions can be encrypted using AES-XTS in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t. partition-start) is fed to the encryption algorithm as `sector-number`. The NVS Encryption can be enabled by enabling :ref:`CONFIG_NVS_ENCRYPTION`. The keys required for NVS encryption are stored in yet another partition, which is protected using :doc:`Flash Encryption <../../security/flash-encryption>`. Therefore, enabling :doc:`Flash Encryption <../../security/flash-encryption>` is a prerequisite for NVS encryption.
+
+The NVS Encryption is enabled by default when :doc:`Flash Encryption <../../security/flash-encryption>` is enabled. This is done because WiFi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
+
+For using NVS encryption, the partition table must contain the :ref:`nvs_key_partition`. Two partition tables containing the :ref:`nvs_key_partition` are provided for NVS encryption under the partition table option (menuconfig->Partition Table). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use NVS encryption feature.
 
 .. _nvs_key_partition:
 
 NVS key partition
 ^^^^^^^^^^^^^^^^^
 
-An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted`. Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. The size of the partition should be 4096 bytes (minimum partition size). The structure of this partition is depicted below.
+    An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted`. Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. Two additional partition tables which contain the :ref:`nvs_key_partition` are provided under the partition table option (menuconfig->Partition Table). They can be directly used for :ref:`nvs_encryption`. The structure of these partitions is depicted below.
 
 ::
 
@@ -275,16 +279,45 @@ An application requiring NVS encryption support needs to be compiled with a key-
     |                  CRC32(4)                   |
     +---------------------------------------------+
 
-This partition can be generated using `nvs partition generator` utility and flashed onto the device. Since the partition is marked `encrypted` and :doc:`Flash Encryption <../../security/flash-encryption>` is enabled, bootloader will encrypt this partition using flash encryption key on the first boot. Alternatively, the keys can be generated after startup using the ``nvs_flash_generate_keys`` API function provided by ``nvs_flash.h``, which will then write those keys onto the key-partition in encrypted form.
+The XTS encryption keys in the :ref:`nvs_key_partition` can be generated with one of the following two ways.
+
+1. Generate the keys on the ESP chip:
+
+    When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`.
+    Then the API function automatically generates and stores the nvs keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. New keys are generated and stored only when the respective key partiton is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
+
+    The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
+
+2. Use pre-generated key partition:
+
+    This option will be required by the user when keys in the :ref:`nvs_key_partition` are not generated by the application. The :ref:`nvs_key_partition` containing the XTS encryption keys can be generated with the help of :doc:`NVS Partition Generator Utility</api-reference/storage/nvs_partition_gen>`. Then the user can store the pre generated key partition on the flash with help of the following two commands:
+
+    i) Build and flash the partition table
+    ::
+
+        idf.py partition_table partition_table-flash
+
+    ii) Store the keys in the :ref:`nvs_key_partition` (on the flash) with the help of :component_file:`parttool.py<partition_table/parttool.py>` (see Partition Tool section in :doc:`partition-tables </api-guides/partition-tables>` for more details)
+    ::
+
+        parttool.py --port /dev/ttyUSB0 --partition-table-offset "nvs_key partition offset" write_partition --partition-name="name of nvs_key partition" --input "nvs_key partition"
+
+Since the key partition is marked as `encrypted` and :doc:`Flash Encryption <../../security/flash-encryption>` is enabled, the bootloader will encrypt this partition using flash encryption key on the first boot.
 
 It is possible for an application to use different keys for different NVS partitions and thereby have multiple key-partitions. However, it is a responsibility of the application to provide correct key-partition/keys for the purpose of encryption/decryption.
 
 Encrypted Read/Write
 ^^^^^^^^^^^^^^^^^^^^
 
-The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for reading of, and writing to an encrypted nvs partition as well. However, the API functions for initialising NVS partitions are different: ``nvs_flash_secure_init`` and ``nvs_flash_secure_init_partition`` instead of ``nvs_flash_init`` and ``nvs_flash_init_partition`` respectively. The ``nvs_sec_cfg_t`` structure required for these API functions can be populated using ``nvs_flash_generate_keys`` or ``nvs_flash_read_security_cfg``.
+The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for reading of, and writing to an encrypted nvs partition as well.
 
-Applications are expected to follow the steps below in order to perform NVS read/write operations with encryption enabled.
+**Encrypt the default NVS partition:**
+To enable encryption for the default NVS partition no additional steps are necessary. When :ref:`CONFIG_NVS_ENCRYPTION` is enabled, the :cpp:func:`nvs_flash_init` API function internally performs some additional steps using the first :ref:`nvs_key_partition` found to enable encryption for the default NVS partition (refer to the API documentation for more details). Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used to enable encryption for the default NVS partition.
+
+**Encrypt a custom NVS partition:**
+To enable encryption for a custom NVS partition, :cpp:func:`nvs_flash_secure_init_partition` API function is used instead of :cpp:func:`nvs_flash_init_partition`.
+
+When :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` API functions are used, the applications are expected to follow the steps below in order to perform NVS read/write operations with encryption enabled.
 
     1. Find key partition and NVS data partition using ``esp_partition_find*`` API functions.
     2. Populate the ``nvs_sec_cfg_t`` struct using the ``nvs_flash_read_security_cfg`` or ``nvs_flash_generate_keys`` API functions.

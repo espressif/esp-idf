@@ -2,7 +2,7 @@ menu "NVS"
 
     config NVS_ENCRYPTION
         bool "Enable NVS encryption"
-        default n
+        default y
         depends on SECURE_FLASH_ENC_ENABLED
         help
             This option enables encryption for NVS. When enabled, AES-XTS is used to encrypt
