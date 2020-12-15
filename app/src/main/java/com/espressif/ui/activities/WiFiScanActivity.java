@@ -35,13 +35,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.R;
+import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.WiFiAccessPoint;
 import com.espressif.provisioning.listeners.WiFiScanListener;
 import com.espressif.ui.adapters.WiFiListAdapter;
+import com.espressif.wifi_provisioning.R;
 import com.google.android.material.textfield.TextInputLayout;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
@@ -110,13 +115,35 @@ public class WiFiScanActivity extends AppCompatActivity {
             }
         });
 
+        EventBus.getDefault().register(this);
         startWifiScan();
+    }
+
+    @Override
+    protected void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
         provisionManager.getEspDevice().disconnectDevice();
         super.onBackPressed();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(DeviceConnectionEvent event) {
+
+        Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());
+
+        switch (event.getEventType()) {
+
+            case ESPConstants.EVENT_DEVICE_DISCONNECTED:
+                if (!isFinishing()) {
+                    showAlertForDeviceDisconnected();
+                }
+                break;
+        }
     }
 
     private void startWifiScan() {
@@ -303,5 +330,25 @@ public class WiFiScanActivity extends AppCompatActivity {
             ivRefresh.setVisibility(View.VISIBLE);
             adapter.notifyDataSetChanged();
         }
+    }
+
+    private void showAlertForDeviceDisconnected() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        builder.setCancelable(false);
+        builder.setTitle(R.string.error_title);
+        builder.setMessage(R.string.dialog_msg_ble_device_disconnection);
+
+        // Set up the buttons
+        builder.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                finish();
+            }
+        });
+
+        builder.show();
     }
 }

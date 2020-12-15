@@ -109,6 +109,7 @@
     <string name="looking_for_qr_code">Looking for QR Code</string>
     <string name="position_camera_for_qr_code">Please position the camera to point at the QR Code.</string>
     <string name="dialog_title_network_info">Enter Network Information</string>
+    <string name="dialog_msg_ble_device_disconnection">Device disconnected</string>
 
     <!-- Preference Titles -->
     <string name="device_settings">Device Settings</string>
