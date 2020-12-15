@@ -31,7 +31,7 @@ IGNORE_WARNS = [
         r"crosstool_version_check\.cmake",
         r"CryptographyDeprecationWarning",
         r"Python 3 versions older than 3.6 are not supported.",
-        r"Python 2 is deprecated and will be removed in future versions."
+        r"Support for Python 2 is deprecated and will be removed in future versions.",
     ]
 ]
 
