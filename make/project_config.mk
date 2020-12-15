@@ -105,7 +105,7 @@ export MENUCONFIG_STYLE ?= aquatic
 ifeq ($(OS),Windows_NT)
 MENUCONFIG_CMD := $(KCONFIG_TOOL_DIR)/mconf-idf
 else
-MENUCONFIG_CMD := $(PYTHON) $(IDF_PATH)/tools/kconfig_new/menuconfig.py
+MENUCONFIG_CMD := $(PYTHON) -m menuconfig
 endif
 
 .PHONY: term_check
