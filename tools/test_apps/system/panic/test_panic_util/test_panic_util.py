@@ -76,6 +76,10 @@ class PanicTestMixin(object):
         elf_sha256_len = int(sdkconfig.get("CONFIG_APP_RETRIEVE_LEN_ELF_SHA", "16"))
         self.expect("ELF file SHA256: " + elf_sha256[0:elf_sha256_len])
 
+    def expect_backtrace(self):
+        self.expect("Backtrace:")
+        self.expect_none("CORRUPTED")
+
     def __enter__(self):
         self._raw_data = None
         return self

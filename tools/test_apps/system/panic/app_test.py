@@ -10,7 +10,7 @@ def test_panic_task_wdt(env, extra_data):
         dut.expect("CPU 0: main")
         dut.expect(re.compile(r"abort\(\) was called at PC [0-9xa-f]+ on core 0"))
         dut.expect_none("register dump:")
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("CORRUPTED", "Guru Meditation")
         dut.expect("Rebooting...")
@@ -21,12 +21,12 @@ def test_panic_int_wdt(env, extra_data):
     with get_dut(env, "panic", "test_int_wdt", qemu_wdt_enable=True) as dut:
         dut.expect_gme("Interrupt wdt timeout on CPU0")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_backtrace()
+        dut.expect_none("Guru Meditation")
         dut.expect_reg_dump(1)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -36,9 +36,9 @@ def test_cache_error(env, extra_data):
         dut.expect("Re-enable cpu cache.")
         dut.expect_gme("Cache disabled but cached memory region accessed")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -48,12 +48,12 @@ def test_panic_int_wdt_cache_disabled(env, extra_data):
         dut.expect("Re-enable cpu cache.")
         dut.expect_gme("Interrupt wdt timeout on CPU0")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_backtrace()
+        dut.expect_none("Guru Meditation")
         dut.expect_reg_dump(1)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -62,8 +62,8 @@ def test_panic_abort(env, extra_data):
     with get_dut(env, "panic", "test_abort") as dut:
         dut.expect(re.compile(r"abort\(\) was called at PC [0-9xa-f]+ on core 0"))
         dut.expect_none("register dump:")
-        dut.expect("Backtrace:")
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_backtrace()
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -72,9 +72,9 @@ def test_panic_storeprohibited(env, extra_data):
     with get_dut(env, "panic", "test_storeprohibited") as dut:
         dut.expect_gme("StoreProhibited")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -84,9 +84,9 @@ def test_panic_stack_overflow(env, extra_data):
         dut.expect_gme("Unhandled debug exception")
         dut.expect("Stack canary watchpoint triggered (main)")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -95,9 +95,9 @@ def test_panic_illegal_instruction(env, extra_data):
     with get_dut(env, "panic", "test_illegal_instruction") as dut:
         dut.expect_gme("IllegalInstruction")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation")
+        dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
 
 
@@ -106,10 +106,7 @@ def test_panic_instr_fetch_prohibited(env, extra_data):
     with get_dut(env, "panic", "test_instr_fetch_prohibited") as dut:
         dut.expect_gme("InstrFetchProhibited")
         dut.expect_reg_dump(0)
-        dut.expect("Backtrace:")
-        # At the moment the backtrace is corrupted, need to jump over the first PC in case of InstrFetchProhibited.
-        # Fix this and change expect to expect_none.
-        dut.expect("CORRUPTED")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none("Guru Meditation")
         dut.expect("Rebooting...")
@@ -119,9 +116,9 @@ def test_panic_instr_fetch_prohibited(env, extra_data):
 def test_coredump_uart_abort(env, extra_data):
     with get_dut(env, "coredump_uart", "test_abort") as dut:
         dut.expect(re.compile(r"abort\(\) was called at PC [0-9xa-f]+ on core 0"))
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation", "Re-entered core dump")
+        dut.expect_none("Guru Meditation", "Re-entered core dump")
         dut.expect(dut.COREDUMP_UART_END)
         dut.expect("Rebooting...")
         dut.process_coredump_uart()
@@ -148,9 +145,9 @@ def test_coredump_uart_int_wdt(env, extra_data):
 def test_coredump_flash_abort(env, extra_data):
     with get_dut(env, "coredump_flash", "test_abort") as dut:
         dut.expect(re.compile(r"abort\(\) was called at PC [0-9xa-f]+ on core 0"))
-        dut.expect("Backtrace:")
+        dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("CORRUPTED", "Guru Meditation", "Re-entered core dump")
+        dut.expect_none("Guru Meditation", "Re-entered core dump")
         dut.expect("Rebooting...")
         dut.process_coredump_flash()
         # TODO: check the contents of core dump output
