@@ -1,23 +1,30 @@
-================
-ESP-LyraP-TouchA
-================
+=====================
+ESP-LyraP-TouchA v1.1
+=====================
 
 :link_to_translation:`en:[English]`
 
-本指南介绍了 ESP-LyraP-TouchA 的信息。ESP-LyraT-8311A 需要配合其他乐鑫开发板使用（例如 ESP32-S2-Kaluga-1，下称 *主板* 以示区别），通常无法单独购买。
+本用户指南可提供 ESP-LyraP-TouchA 扩展板的相关信息。
+
+本扩展板通常仅与乐鑫其他开发板一起销售（即 *主板*，比如 ESP32-S2-Kaluga-1），不可单独购买。
+
+目前，ESP-LyraP-TouchA v1.1 扩展板正在搭配以下套件销售：
+
+* :doc:`user-guide-esp32-s2-kaluga-1-kit`
+* :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`
 
 ESP-LyraP-TouchA 可为您的主板增加触摸按键功能。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-toucha-v1.1-3d.png
-	:align: center
-	:alt: ESP-LyraP-TouchA
-	:figclass: align-center
+    :align: center
+    :alt: ESP-LyraP-TouchA
+    :figclass: align-center
 
-ESP-LyraP-TouchA
+    ESP-LyraP-TouchA
 
 本指南包括如下内容：
 
-- `概述`_：提供为了使用  ESP-LyraT-8311A 而必须了解的硬件和软件信息。
+- `概述`_：提供为了使用 ESP-LyraT-8311A 而必须了解的硬件和软件信息。
 - `硬件参考`_：提供 ESP-LyraP-TouchA 的详细硬件信息。
 - `硬件修订历史`_：提供该开发版的“修订历史”、“已知问题”以及此前版本开发板的用户指南链接。
 - `相关文档`_：提供相关文档的链接。
@@ -40,17 +47,28 @@ ESP-LyraP-TouchA 共有 6 个触摸按钮，主要用于音频应用，但也可
     ESP-LyraP-TouchA
 
 .. list-table::
-    :widths: 30 70
-    :header-rows: 1
+   :widths: 30 70
+   :header-rows: 1
 
-    * - 主要组件
-      - 描述
-    * - 主板触摸 FPC 连接器
-      - 用于将子板连接到主板的触摸 FPC 连接器。
-    * - 触摸板
-      - 电容式触摸电极。
-    * - 保护环
-      - 连接至触摸传感器，可在开发板遇水时触发中断保护（遇水电路保护）。此时，传感器阵列也将遇水，绝大多数（或全部）触摸板将由于大量误触而无法使用。在接收到此中断后，用户可自行裁决是否通过软件禁用所有触摸传感器。
+   * - 主要组件
+     - 描述
+   * - 主板触摸 FPC 连接器
+     - 用于将子板连接到主板的触摸 FPC 连接器。
+   * - 触摸板
+     - 电容式触摸电极。
+   * - 保护环
+     - 连接至触摸传感器，可在开发板遇水时触发中断保护（遇水电路保护）。此时，传感器阵列也将遇水，绝大多数（或全部）触摸板将由于大量误触而无法使用。在接收到此中断后，用户可自行裁决是否通过软件禁用所有触摸传感器。
+
+..   * - 主要组件
+     - 描述
+   * - 主板触摸 FPC 连接器
+     - 用于将子板连接到主板的触摸 FPC 连接器。
+   * - 触摸板
+     - 电容式触摸电极。
+   * - 保护环
+     - 连接至触摸传感器，可在开发板遇水时触发中断保护（遇水电路保护）。此时，传感器阵列也将遇水，绝大多数（或全部）触摸板将由于大量误触而无法使用。在接收到此中断后，用户可自行裁决是否通过软件禁用所有触摸传感器。
+
+   
 
 
 应用程序开发
@@ -107,7 +125,6 @@ ESP-LyraP-TouchA 的主要组件和连接方式如下图所示。
 ========
 
 - `ESP-LyraP-TouchA 原理图 <https://dl.espressif.com/dl/schematics/ESP-LyraP-TouchA_V1.1_SCH_20200325A.pdf>`_ (PDF)
-- `ESP-LyraP-TouchA PCB 布局 <https://dl.espressif.com/dl/schematics/ESP-LyraP-TouchA_V1.1_PCB_20200325AA.pdf>`_ (PDF)
+- `ESP-LyraP-TouchA PCB 布局图 <https://dl.espressif.com/dl/schematics/ESP-LyraP-TouchA_V1.1_PCB_20200325AA.pdf>`_ (PDF)
 
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
-
