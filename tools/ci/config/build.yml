@@ -212,7 +212,6 @@ build_test_apps_esp32s2:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-      - docs/_build/*/*/latex/*
     expire_in: 4 days
   only:
     variables:
@@ -224,31 +223,39 @@ build_test_apps_esp32s2:
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html latex -l $DOCLANG -t $DOCTGT build
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html -l $DOCLANG -t $DOCTGT build
 
-build_docs_en_esp32:
+build_docs_html:
   extends: .build_docs_template
-  variables:
-    DOCLANG: "en"
-    DOCTGT: "esp32"
+  parallel:
+    matrix:
+      - DOCLANG: ["en", "zh_CN"]
+        DOCTGT: ["esp32", "esp32s2"]
 
-build_docs_en_esp32s2:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "en"
-    DOCTGT: "esp32s2"
-
-build_docs_zh_CN_esp32:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "zh_CN"
-    DOCTGT: "esp32"
-
-build_docs_zh_CN_esp32s2:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "zh_CN"
-    DOCTGT: "esp32s2"
+build_docs_pdf:
+  stage: build
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  tags:
+    - build_docs
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/latex/*
+    expire_in: 4 days
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - if: '$CI_COMMIT_REF_NAME =~ "/^release\/v/"'
+    - if: '$CI_COMMIT_REF_NAME =~ "/^v\d+\.\d+(\.\d+)?($|-)/"'
+    - if: $BOT_LABEL_BUILD_DOCS
+  dependencies: []
+  parallel:
+    matrix:
+      - DOCLANG: ["en", "zh_CN"]
+        DOCTGT: ["esp32", "esp32s2"]
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs latex -l $DOCLANG -t $DOCTGT build
 
 test_build_system:
   extends: .build_template
