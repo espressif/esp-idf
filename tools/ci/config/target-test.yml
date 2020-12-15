@@ -315,7 +315,6 @@ example_test_016:
 
 test_app_test_001:
   extends: .test_app_template
-  parallel: 4
   tags:
     - ESP32
     - test_jtag_arm
@@ -324,7 +323,6 @@ test_app_test_001:
       - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
   variables:
     SETUP_TOOLS: "1"
-    PYTHON_VER: 3
 
 test_app_test_002:
   extends: .test_app_template
@@ -343,6 +341,15 @@ test_app_test_004:
   tags:
     - ESP32S2
     - Example_GENERIC
+
+test_app_test_esp32_generic:
+  extends: .test_app_template
+  parallel: 4
+  tags:
+    - ESP32
+    - Example_GENERIC
+  variables:
+    SETUP_TOOLS: "1"
 
 component_ut_test_001:
   extends: .component_ut_32_template

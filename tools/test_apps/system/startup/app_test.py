@@ -6,7 +6,7 @@ import ttfw_idf
 from tiny_test_fw import Utility
 
 
-@ttfw_idf.idf_custom_test(env_tag="test_jtag_arm", group="test-apps")
+@ttfw_idf.idf_custom_test(env_tag="Example_GENERIC", group="test-apps")
 def test_startup(env, extra_data):
     config_files = glob.glob(os.path.join(os.path.dirname(__file__), "sdkconfig.ci.*"))
     config_names = [os.path.basename(s).replace("sdkconfig.ci.", "") for s in config_files]

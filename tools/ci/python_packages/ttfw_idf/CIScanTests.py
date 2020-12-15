@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from collections import defaultdict
+from copy import deepcopy
 
 from find_apps import find_apps
 from find_build_apps import BUILD_SYSTEMS, BUILD_SYSTEM_CMAKE
@@ -124,7 +125,7 @@ def main():
     scan_info_dict = defaultdict(dict)
     # store the test cases dir, exclude these folders when scan for standalone apps
     default_exclude = args.exclude if args.exclude else []
-    exclude_apps = default_exclude
+    exclude_apps = deepcopy(default_exclude)
 
     build_system = args.build_system.lower()
     build_system_class = BUILD_SYSTEMS[build_system]
