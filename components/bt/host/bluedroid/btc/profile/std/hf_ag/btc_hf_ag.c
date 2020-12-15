@@ -38,6 +38,28 @@
 /************************************************************************************
 **  Constants & Macros
 ************************************************************************************/
+#ifndef BTC_HSAG_SERVICE_NAME
+#define BTC_HSAG_SERVICE_NAME ("Headset Gateway")
+#endif
+
+#ifndef BTC_HFAG_SERVICE_NAME
+#define BTC_HFAG_SERVICE_NAME ("Handsfree Gateway")
+#endif
+
+#ifndef BTC_HF_SERVICES
+#define BTC_HF_SERVICES    (BTA_HSP_SERVICE_MASK | BTA_HFP_SERVICE_MASK )
+#endif
+
+#ifndef BTC_HF_SERVICE_NAMES
+#define BTC_HF_SERVICE_NAMES {BTC_HSAG_SERVICE_NAME , BTC_HFAG_SERVICE_NAME}
+#endif
+
+#ifndef BTC_HF_SECURITY
+#define BTC_HF_SECURITY    (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
+#endif
+
+#define BTC_HF_INVALID_IDX       -1
+
 /* Max HF Clients Supported From App */
 static UINT16 btc_max_hf_clients = 1;
 /* HF Param Definition */
@@ -114,8 +136,7 @@ BTIF_TRACE_EVENT("CHECK_HF_INIT: %s", __FUNCTION__);\
 static int btc_hf_idx_by_bdaddr(bt_bdaddr_t *bd_addr)
 {
     for (int i = 0; i < btc_max_hf_clients; ++i) {
-        if ((bdcmp(bd_addr->address, hf_local_param[i].btc_hf_cb.connected_bda.address) == 0)
-            || bd_addr->address) {
+        if (bdcmp(bd_addr->address, hf_local_param[i].btc_hf_cb.connected_bda.address) == 0) {
             return i;
         }
     }
@@ -288,16 +309,9 @@ bt_status_t btc_hf_execute_service(BOOLEAN b_enable)
 /************************************************************************************
 **  Initialization and Connection Handle
 ************************************************************************************/
-bt_status_t btc_hf_init(bt_bdaddr_t *bd_addr)
+bt_status_t btc_hf_init(void)
 {
     int idx = 0;
-    UNUSED(bd_addr);
-
-#if HFP_DYNAMIC_MEMORY == TRUE
-    if ((hf_local_param = (hf_local_param_t *)osi_malloc(sizeof(hf_local_param_t) * BTC_HF_NUM_CB)) == NULL) {
-        return BT_STATUS_FAIL;
-    }
-#endif
 
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
     /* Invoke the enable service API to the core to set the appropriate service_id
@@ -322,10 +336,8 @@ bt_status_t btc_hf_init(bt_bdaddr_t *bd_addr)
     return BT_STATUS_SUCCESS;
 }
 
-void btc_hf_deinit(bt_bdaddr_t *bd_addr)
+void btc_hf_deinit(void)
 {
-    UNUSED(bd_addr);
-
     BTC_TRACE_EVENT("%s", __FUNCTION__);
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
 #if HFP_DYNAMIC_MEMORY == TRUE
@@ -1064,13 +1076,13 @@ void btc_hf_call_handler(btc_msg_t *msg)
     switch (msg->act) {
         case BTC_HF_INIT_EVT:
         {
-            btc_hf_init(&arg->init);
+            btc_hf_init();
             break;
         }
 
         case BTC_HF_DEINIT_EVT:
         {
-            btc_hf_deinit(&arg->deinit);
+            btc_hf_deinit();
             break;
         }
 
