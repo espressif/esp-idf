@@ -1,10 +1,12 @@
-=======================
-ESP32-S2-Kaluga-1 套件
-=======================
+=============================
+ESP32-S2-Kaluga-1 套件 v1.2 
+=============================
 
 :link_to_translation:`en:[English]`
 
-ESP32-S2-Kaluga-1 是一款来自乐鑫的开发套件，主要可用于以下目的：
+最新版本：:doc:`user-guide-esp32-s2-kaluga-1-kit`
+
+ESP32-S2-Kaluga-1 v1.2 是一款来自乐鑫的开发套件，主要可用于以下目的：
 
 - 展示 ESP32-S2 芯片的人机交互功能
 - 为用户提供基于 ESP32-S2 的人机交互应用开发工具
@@ -22,7 +24,7 @@ ESP32-S2 的功能强大，应用场景非常丰富。对于初学者来说，�
     :width: 3452px
     :height: 1590px
     :scale: 20%
-    :alt: ESP32-S2-Kaluga-1 套装装配图
+    :alt: ESP32-S2-Kaluga-1-Kit-Assembly
     :figclass: align-center
 
     ESP32-S2-Kaluga-1-Kit 概述（点击放大）
@@ -33,18 +35,20 @@ ESP32-S2-Kaluga-1 套件包括以下几个开发板：
 - 主板：*ESP32-S2-Kaluga-1*
 - 扩展板：
 
-    - :doc:`ESP-LyraT-8311A <user-guide-esp-lyrat-8311a_v1.2>` 音频播放器
-    - :doc:`ESP-LyraP-TouchA <user-guide-esp-lyrap-toucha-v1.1>` 触摸板
-    - :doc:`ESP-LyraP-LCD32 <user-guide-esp-lyrap-lcd32-v1.1>` 3.2" LCD 屏
-    - :doc:`ESP-LyraP-CAM <user-guide-esp-lyrap-cam-v1.0>` 摄像头
+  - :doc:`user-guide-esp-lyrat-8311a_v1.2` - 音频播放器
+  - :doc:`user-guide-esp-lyrap-toucha-v1.1` - 触摸板
+  - :doc:`user-guide-esp-lyrap-lcd32-v1.1` - 3.2" LCD 屏
+  - :doc:`user-guide-esp-lyrap-cam-v1.0` - 摄像头
 
-本文档主要介绍** ESP32-S2-Kaluga-1 主板** 及其与扩展板的交互。更多有关具体扩展板的信息，请点击相应的链接。
+由于 ESP32-S2 的管脚复用，部分扩展板的兼容性有所限制，具体请见 :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-ext-board-compatibility`。
+
+本文档主要介绍 **ESP32-S2-Kaluga-1 主板** 及其与扩展板的交互。更多有关具体扩展板的信息，请点击相应的链接。
 
 本指南包括：
 
 - `快速入门`_：提供 ESP32-S2-Kaluga-1 的简要概述及必须了解的硬件和软件信息。
 - `硬件参考`_：提供 ESP32-S2-Kaluga-1 的详细硬件信息。
-- `硬件修订历史`_：提供该开发版的“修订历史”、“已知问题”以及此前版本开发板的用户指南链接。
+- `硬件修订历史`_：提供该开发板的“修订历史”、“已知问题”以及此开发板之前版本的用户指南链接。
 - `相关文档`_：提供相关文档的链接。
 
 
@@ -60,13 +64,13 @@ ESP32-S2-Kaluga-1 套件包括以下几个开发板：
 
 ESP32-S2-Kaluga-1 主板是整个套件的核心。该主板集成了 ESP32-S2-WROVER 模组，并配备连接至各个扩展板的连接器。ESP32-S2-Kaluga-1 是人机交互接口原型设计的关键工具。
 
-ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板：
+ESP32-S2-Kaluga-1 主板配备了多个连接器，可用于连接相应扩展板：
 
-- 其他带有相应连接器的拓展板（比如 ESP-LyraT-8311A 和 ESP-LyraP-LCD32)
-- 摄像头拓展板 (ESP-LyraP-CAM)
-- 触摸板拓展板 (ESP-LyraP-TouchA)
-- LCD 显示屏（敬请期待)
-- I2C 设备（敬请期待)
+- 扩展板连接器，用于连接 ESP-LyraT-8311A、ESP-LyraP-LCD32
+- 摄像头连接器，用于连接 ESP-LyraP-CAM
+- 触摸 FPC 连接器，用于连接 ESP-LyraP-TouchA
+- LCD FPC 连接器（尚无可用官方配套扩展板）
+- I2C FPC 连接器（尚无可用官方配套扩展板）
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-3d.png
     :align: center
@@ -80,24 +84,24 @@ ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板�
 
 所有四个扩展板都经过特别设计，以支持以下功能：
 
-    * 触摸板控制
-        * 集成 14 个触摸传感器，其中 3 个支持距离感应（接近模式)
-        * 支持最大 5 mm 的亚克力板
-        * 湿手操作
-        * 防水功能，ESP32-S2 可以配置为在多个触摸板同时被水复盖时自动禁用所有触摸板功能，并在去除水滴后重新启用触摸板
+* 触摸板控制
+    * 带有 6 个触摸按钮
+    * 支持最大 5 mm 亚克力板
+    * 支持湿手操作
+    * 支持防水功能。ESP32-S2 可以配置为在多个触摸板同时被水复盖时自动禁用所有触摸板功能，并在去除水滴后重新启用触摸板
 
-    * 音频播放
-        * 连接扬声器，以播放音频
-        * 配合触控板使用，可控制音频播放和调节音量
+* 音频播放
+    * 连接扬声器，以播放音频
+    * 配合触控板使用，可控制音频播放和调节音量
 
-    * LCD 显示屏
-        * LCD 接口（8 位并行 RGB、8080 和 6800 接口)
+* LCD 显示屏
+    * LCD 接口（8 位并行 RGB、8080 和 6800 接口)
 
-    * 摄像头图像采集
-        * 支持 OV2640 和 OV3660 相机模块
-        * 8 位 DVP 图像传感器接口（ESP32-S2 还支持 16 位 DVP 图像传感器，但需要您自行进行二次开发)
-        * 高达 40 MHz 时钟频率
-        * 优化 DMA 传输带宽，便于传输高分辨率图像
+* 摄像头图像采集
+    * 支持 OV2640 和 OV3660 摄像头模块
+    * 8-bit DVP 图像传感器接口（ESP32-S2 还支持 16 位 DVP 图像传感器，但需要您自行进行二次开发）
+    * 支持高达 40 MHz 时钟频率
+    * 优化 DMA 传输带宽，便于传输高分辨率图像
 
 
 组件描述
@@ -120,55 +124,57 @@ ESP32-S2-Kaluga-1 主板配备了多个连接器，可连接至以下扩展板�
 
 
 .. list-table::
-    :widths: 30 70
-    :header-rows: 1
+   :widths: 30 70
+   :header-rows: 1
 
-    * - 主要组件
-      - 描述
-    * - ESP32-S2-WROVER 模组
-      - 模块集成 ESP32-S2 芯片，提供 Wi-Fi 连接、数据处理和灵活的数据存储
-    * - 4.3" LCD FPC 连接器
-      - （保留）使用 FPC 电缆连接至 4.3" LCD 拓展板
-    * - ESP Prog 连接器
-      - （保留）连接乐鑫固件下载设备 (ESP-Prog)，从而向板子上的 ESP32-S2 芯片下载固件
-    * - JTAG 开关
-      - 切换到 ON 方向，启用 ESP32-S2 和 FT2232 之间的连接
-    * - 引出管脚排针 2
-      - ESP32-S2-WROVER 模组的部分 GPIO 直接引出至该开发板排针（具体请见开发板上的标记）
-    * - USB 转 UART/JTAG 桥接器
-      - FT2232 适配器板，允许在 USB 端口使用 UART/JTAG 协议进行通信
-    * - 相机头排针
-      - 用于安装摄像头扩展板（例如 ESP-LyraP-CAM)
-    * - 扩展板排针
-      - 用于安装带有配套连接器的其他扩展板
-    * - Reset 复位按钮
-      - 重启系统
-    * - Boot 按钮
-      - 按下 **Boot** 键并保持，同时按一下 **Reset** 键，进入“固件下载”模式，通过串口下载固件。
-    * - USB-UART/JTAG 端口
-      - PC 和 ESP32-S2 模组之间的通信接口（UART 或 JTAG）
-    * - USB 电源端口
-      - 电路板的电源
-    * - 电池端口
-      - 2 针连接器，连接外部电源
-    * - 电源开关
-      - 切换到 ON 方向，为系统供电
-    * - RGB 跳线
-      - 如需使用 RGB LED，需在该位置增加一个跳线
-    * - RGB LED
-      - 可编程 RGB LED，由 GPIO45 控制。在使用前请先安装 RGB 跳线。
-    * - 电源调节器
-      - 5 V 转 3.3 V 调压器
-    * - I2C FPC 连接器
-      - （保留）使用 FPC 电缆连接到其他 I2C 扩展板
-    * - 引出管脚排针 1
-      - ESP32-S2-WROVER 模组的部分 GPIO 直接引出至该开发板排针（具体请见开发板上的标记）
-    * - 触摸 FPC 连接器
-      - 使用 FPC 电缆连接 ESP-LyraP-TouchA 扩展板
-    * - 触摸开关
-      - 切换到 OFF 方向，配置 GPIO1 到 GPIO14 连接触摸传感器；切换到 ON 方向，配置 GPIO1 到 GPIO14 用于其他目的。
-    * - 3.2" LCD FPC 连接器
-      - 通过 FPC 电缆连接主板和 3.2" LCD 扩展板（例如 ESP-LyraP-LCD32）
+   * - 主要组件
+     - 描述
+   * - ESP32-S2-WROVER 模组
+     - 集成 ESP32-S2 芯片，可提供 Wi-Fi 连接、数据处理和灵活的数据存储功能。
+   * - 4.3" LCD FPC 连接器
+     - （保留）可使用 FPC 线连接 4.3" LCD 扩展板。
+   * - ESP Prog 连接器
+     - （保留）用于连接乐鑫固件烧录设备 (ESP-Prog)。
+   * - JTAG 开关
+     - 切换到 ON 方向，启用 ESP32-S2 和 FT2232 之间的连接。此时，可通过 USB-UART/JTAG 端口进行 JTAG 调试，详见 :doc:`../../api-guides/jtag-debugging/index`。
+   * - 引出管脚排针 2
+     - ESP32-S2-WROVER 模组的部分 GPIO 直接引出至该开发板（详见开发板上的标记）。
+   * - USB-to-UART/JTAG 桥接器
+     - FT2232 适配器开发板，允许在 USB 端口使用 UART/JTAG 协议通信。
+   * - 摄像头连接器
+     - 用于连接摄像头扩展板，比如 ESP-LyraP-CAM。
+   * - 扩展板连接器
+     - 用于连接带有配套连接器的扩展板。
+   * - Reset 复位按钮
+     - 用于重启系统。
+   * - Boot 按钮
+     - 按下 **Boot** 键并保持，同时按一下 **Reset** 键，进入“固件下载”模式，通过串口下载固件。
+   * - USB-UART/JTAG 端口
+     - PC 和 ESP32-S2 模组之间的通信接口（UART 或 JTAG）。
+   * - USB 电源端口
+     - 为开发板供电。
+   * - 电池端口
+     - 2 针连接器，用于连接外部电池。
+   * - 电源 LED 指示灯
+     - 当 USB 电源或外部电源供电电压正常，则 LED 亮起。
+   * - 电源开关
+     - 打开可为系统供电。
+   * - RGB 跳线
+     - 如需使用 RGB LED，需在该位置增加一个跳线。
+   * - RGB LED 指示灯
+     - 可编程 RGB LED 指示灯，受控于 GPIO45。在使用前需要安装 RGB 跳线。
+   * - 调压器
+     - 5 V 转 3.3 V 调压器。
+   * - I2C FPC 连接器
+     - （保留）可通过 FPC 线连接其他 I2C 扩展板。
+   * - 引出管脚排针 1
+     - ESP32-S2-WROVER 模组的部分 GPIO 直接引出至该开发板（详见开发板上的标记）。
+   * - 触摸 FPC 连接器
+     - 可通过 FPC 线连接 ESP-LyraP-TouchA 扩展板。
+   * - 触摸开关
+     - 切换到 OFF 方向，配置 GPIO1 到 GPIO14 连接触摸传感器；切换到 ON 方向，配置 GPIO1 到 GPIO14 用于其他目的。
+   * - 3.2" LCD FPC 连接器
+     - 可通过 FPC 线连接 3.2" LCD 扩展板，比如 ESP-LyraP-LCD32。
 
 
 应用程序开发
@@ -195,7 +201,7 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
 
 1. 连接您选择的扩展板（更多信息，请见对应拓展板的用户指南)
 2. 插入两根 USB 电缆
-3. 打开 **电源开关** 时，**Power On LED** 应点亮。
+3. 打开 **电源开关** 时，**电源 LED 指示灯** 应点亮。
 
 
 .. _user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup:
@@ -224,13 +230,13 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
     - ESP-LyraP-TouchA
     - ESP-LyraP-LCD32
 - 连接器
-    - 20 针 FPC 电缆（用于连接 ESP32-S2-Kaluga-1 主板至 ESP-LyraP-TouchA 拓展板)
+    - 20 针 FPC 线（用于连接 ESP32-S2-Kaluga-1 主板至 ESP-LyraP-TouchA 扩展板）
 - 紧固件
     - 安装螺栓 (x 8)
     - 螺丝 (x 4)
     - 螺母 (x 4)
 
-零售购买，请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
+零售购买，请前往 https://www.espressif.com/zh-hans/contact-us/get-samples。
 
 
 批发订单
@@ -252,10 +258,10 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-v1.2-block-diagram.png
     :align: center
-    :alt: ESP32-S2-Kaluga-1 框图
+    :alt: ESP32-S2-Kaluga-1 功能框图
     :figclass: align-center
 
-    ESP32-S2-Kaluga-1 框图
+    ESP32-S2-Kaluga-1 功能框图
 
 
 电源选项
@@ -264,9 +270,83 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
 开发板可任一选用以下四种供电方式：
 
 - Micro USB 端口供电（默认）
-- 通过 2 针 *BAT* 连接器连接至外接电池
+- 通过 2 针电池连接器使用外部电池供电
 - 5V / GND 管脚供电
 - 3V3 / GND 管脚供电
+
+
+.. _user-guide-esp32-s2-kaluga-1-kit-v1.2-ext-board-compatibility:
+
+扩展板的兼容性
+--------------
+
+如需同时使用多块扩展板，请首先查看以下兼容性信息：
+
+.. list-table::
+   :widths: 20 10 30 40
+   :header-rows: 1
+
+   * - 扩展板组合
+     - 复用接口或管脚
+     - 无法运行原因
+     - 解决方案
+   * - 8311A v1.2 + CAM v1.0
+     - I2S 控制、IO46
+     - ESP32-S2 仅有 1 个 I2S 接口，但这两个开发板均需使用 ESP32-S2 的 I2S 接口进行通信（ESP-LyraT-8311A 使用标准模式；ESP-LyraP-CAM 使用 Camera 协议）。如两个扩展板同时复用 IO46，ESP-LyraP-CAM 的正常使用将受到干扰。
+     - 暂无解决方法。
+   * - TouchA v1.1 + LCD32 v1.1
+     - IO11、IO6
+     - ESP-LyraP-TouchA 因管脚 IO11 复用，导致无法触发触摸动作；ESP-LyraP-LCD32 因 BK (BLCT) 管脚连接至 IO6 管脚复用，因此也无法使用。 
+     - 不要初始化 ESP-LyraP-TouchA 扩展板的 IO11 (NETWORK) 和 IO6 (PHOTO) 管脚。
+   * - 8311A v1.2 + LCD32 v1.1
+     - IO6
+     - 这两款扩展板可以同时使用，但由于 ESP32-S2-Kaluga-1 的 BK (BLCT) 管脚已连接至 IO6，因此，ESP-LyraT-8311A 的 BT_ADC 管脚和 6 个按钮均无法使用。
+     - 用户也可通过以下配置使用 ESP-LyraT-8311A 的 BT_ADC 管脚：移除 ESP-LyraP-LCD32 扩展板上的 R39，将 R41 换为 100 欧，并将 BLCT_L 开关打开。注意，此配置将导致用户无法通过软件控制显示屏的背光亮度。
+   * - TouchA v1.1 + 8311A v1.2
+     - ESP-LyraT-8311A 的 BT_ADC 管脚 
+     - 这两款扩展板可以同时使用。然而，当 ESP-LyraT-8311A 的 BT_ADC 管脚用于初始化扩展板的 6 个按钮时，ESP-LyraP-TouchA 无法成功触发。
+     - 如果计划使用 ESP-LyraT-8311A 的 BT_ADC 管脚，请不要初始化 ESP-LyraP-TouchA 扩展板的 IO6 管脚 (PHOTO)。
+   * - TouchA v1.1 + CAM v1.0
+     - IO1、IO2、IO3
+     - 由于管脚复用无法同时使用。
+     - 不要初始化 ESP-LyraP-TouchA 的 IO1 (VOL_UP)、IO2 (PLAY) 和 IO3 (VOL_DOWN)。
+   * - TouchA v1.1 + LCD32 v1.1 + CAM v1.0
+     - IO1、IO2、IO3、IO6、IO11
+     - 由于管脚复用无法同时使用。
+     - **解决方案 1**：不要初始化 ESP-LyraP-TouchA 扩展板的 IO1 (VOL_UP)、IO2 (PLAY)、IO3 (VOL_DOWN)、IO6 (PHOTO) 和 IO11 (NETWORK)。 **解决方案 2**：用户也可通过以下配置正常初始化 IO6 (PHOTO)：移除 ESP-LyraP-LCD32 扩展板上的 R39，将 R41 换为 100 欧，并将 BLCT_L 开关打开。注意，此配置将导致用户无法通过软件控制显示屏的背光亮度。
+   * - TouchA v1.1 + LCD32 v1.1 + 8311A v1.2
+     - IO6、IO11
+     - IO11 管脚复用导致无法同时使用；IO6 管脚复用导致 ESP-LyraT-8311A 的 BT_ADC 管脚无法使用，因此无法初始化该扩展板的 6 个按钮。
+     - **解决方法 1**：不要初始化 ESP-LyraP-TouchA 扩展板的 IO6 (PHOTO) 和 IO11 (NETWORK)。注意，此时 ESP-LyraT-8311A 的 6 个按钮依然无法使用。**解决方法 2**：移除 ESP-LyraP-LCD32 扩展板上的 R39，将 R41 换为 100 欧，并将 BLCT_L 开关打开。不要初始化 ESP-LyraP-TouchA 的 IO11 (NETWORK)。如果希望使用 ESP-LyraT-8311A 的 6 个按钮，则也不要初始化 IO6 (PHOTO)。
+
+
+已知问题
+========
+
+.. list-table::
+   :widths: 22 24 32 22
+   :header-rows: 1
+
+   * - 问题硬件
+     - 描述
+     - 主要原因
+     - 解决方法
+   * - ESP-LyraP-CAM v1.0、管脚 IO45、管脚 IO46
+     - 当 ESP-LyraP-CAM v1.0 连接至主板时，可能导致主板无法烧录固件。
+     - 开发板上电时，strapping 管脚 IO45 和 IO46 的上电时序错误，导致开发板无法正常启动。
+     - 主板烧录固件时，不应连接该扩展板。
+   * - ESP-LyraP-CAM v1.0、管脚 IO45、管脚 IO46
+     - 使用 Reset 复位按键重启开发板可能无法达到期望结果。
+     - 开发板上电时，strapping 管脚 IO45 和 IO46 的上电时序错误，导致开发板无法正常启动。
+     - v1.2 暂无解决方法。该问题已经在 ESP32-S2-Kaluga-1 V1.3 中进行了修复。
+   * - ESP-LyraT-8311A v1.2、管脚 IO46
+     - 当 ESP-LyraT-8311A v1.2 连接至主板时，可能导致主板无法烧录固件。
+     - 开发板上电时，strapping 管脚 IO46 的上电时序错误，导致开发板无法正常启动。
+     - 主板烧录固件时，不应连接该扩展板。
+   * - ESP-LyraT-8311A v1.2、管脚 IO46
+     - 使用 Reset 复位按键重启开发板可能无法达到期望结果。
+     - 开发板上电时，strapping 管脚 IO46 的上电时序错误，导致开发板无法正常启动。
+     - v1.2 暂无解决方法。该问题已经在 ESP32-S2-Kaluga-1 V1.3 中进行了修复。
 
 
 硬件修订历史
@@ -288,10 +368,10 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
 
 - `ESP32-S2-WROVER 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_cn.pdf>`_ (PDF)
 - `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+- :doc:`../../api-guides/jtag-debugging/index`
 
 - `ESP32-S2-Kaluga-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_SCH_20200424A.pdf>`_ (PDF)
 - `ESP32-S2-Kaluga-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_PCB_20200325AF.pdf>`_ (PDF)
-- `ESP32-S2-Kaluga-1 管脚映射表 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1.2_Pin-Mapping.xlsx>`_ (Excel)
+- `ESP32-S2-Kaluga-1 管脚映射 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1.2_Pin-Mapping.xlsx>`_ (Excel)
 
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
-
