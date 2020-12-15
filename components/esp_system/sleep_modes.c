@@ -869,14 +869,17 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
-    // RTC_FAST_MEM is needed for deep sleep stub.
-    // If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub
-    // can run.
-    // In the new chip revision, deep sleep stub will be optional,
-    // and this can be changed.
+#if !CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP
+    /* RTC_FAST_MEM is needed for deep sleep stub.
+       If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub can run.
+       In the new chip revision, deep sleep stub will be optional, and this can be changed. */
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] == ESP_PD_OPTION_AUTO) {
         s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
     }
+#else
+    /* If RTC_FAST_MEM is used for heap, force RTC_FAST_MEM to be powered on. */
+    s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
+#endif
 
     // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
     // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
