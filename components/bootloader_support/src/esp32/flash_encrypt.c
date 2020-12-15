@@ -210,16 +210,20 @@ static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_cry
 
     ESP_LOGD(TAG, "All flash regions checked for encryption pass");
 
+    uint32_t new_flash_crypt_cnt;
+#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+    /* set flash_crypt_cnt to max to avoid needing to write protect it
+       (which also write protects the download mode disable efuse) */
+    new_flash_crypt_cnt = EFUSE_FLASH_CRYPT_CNT;
+#else
     /* Set least significant 0-bit in flash_crypt_cnt */
     int ffs_inv = __builtin_ffs((~flash_crypt_cnt) & EFUSE_RD_FLASH_CRYPT_CNT);
     /* ffs_inv shouldn't be zero, as zero implies flash_crypt_cnt == EFUSE_RD_FLASH_CRYPT_CNT (0x7F) */
-    uint32_t new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+    new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+#endif
+
     ESP_LOGD(TAG, "FLASH_CRYPT_CNT 0x%x -> 0x%x", flash_crypt_cnt, new_flash_crypt_cnt);
     uint32_t wdata0_reg = ((new_flash_crypt_cnt & EFUSE_FLASH_CRYPT_CNT) << EFUSE_FLASH_CRYPT_CNT_S);
-#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-    ESP_LOGI(TAG, "Write protecting FLASH_CRYPT_CNT eFuse");
-    wdata0_reg |= EFUSE_WR_DIS_FLASH_CRYPT_CNT;
-#endif
 
     REG_WRITE(EFUSE_BLK0_WDATA0_REG, wdata0_reg);
     esp_efuse_burn_new_values();
