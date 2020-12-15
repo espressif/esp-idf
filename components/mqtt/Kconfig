@@ -26,6 +26,30 @@ menu "ESP-MQTT Configurations"
         help
             Enable MQTT transport over Websocket Secure.
 
+    config MQTT_MSG_ID_INCREMENTAL
+        bool "Use Incremental Message Id"
+        default n
+        help
+            Set this to true for the message id (2.3.1 Packet Identifier) to be generated
+            as an incremental number rather then a random value (used by default)
+
+    config MQTT_SKIP_PUBLISH_IF_DISCONNECTED
+        bool "Skip publish if disconnected"
+        default n
+        help
+            Set this to true to avoid publishing (enqueueing messages) if the client is disconnected.
+            The MQTT client tries to publish all messages by default, even in the disconnected state
+            (where the qos1 and qos2 packets are stored in the internal outbox to be published later)
+            The MQTT_SKIP_PUBLISH_IF_DISCONNECTED option allows applications to override this behaviour
+            and not enqueue publish packets in the disconnected state.
+
+    config MQTT_REPORT_DELETED_MESSAGES
+        bool "Report deleted messages"
+        default n
+        help
+            Set this to true to post events for all messages which were deleted from the outbox
+            before being correctly sent and confirmed.
+
     config MQTT_USE_CUSTOM_CONFIG
         bool "MQTT Using custom configurations"
         default n
