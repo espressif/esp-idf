@@ -45,8 +45,6 @@ typedef struct {
 } cp_dma_hal_context_t;
 
 typedef struct {
-    dma_descriptor_t *outlink_base; /*!< Address of the first outlink descriptor */
-    dma_descriptor_t *inlink_base;  /*!< Address of the first inlink descriptor */
 } cp_dma_hal_config_t;
 
 /**
@@ -61,6 +59,11 @@ void cp_dma_hal_init(cp_dma_hal_context_t *hal, const cp_dma_hal_config_t *confi
  * @brief Deinitialize HAL layer context
  */
 void cp_dma_hal_deinit(cp_dma_hal_context_t *hal);
+
+/**
+ * @brief Set descriptor base address
+ */
+void cp_dma_hal_set_desc_base_addr(cp_dma_hal_context_t *hal, intptr_t outlink_base, intptr_t inlink_base);
 
 /**
  * @brief Start mem2mem DMA state machine

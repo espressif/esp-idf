@@ -24,85 +24,89 @@
 #include "esp_err.h"
 #include "esp_async_memcpy_impl.h"
 
-IRAM_ATTR static void async_memcpy_impl_default_isr_handler(void *args)
+IRAM_ATTR static bool async_memcpy_impl_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
-    async_memcpy_impl_t *mcp_impl = (async_memcpy_impl_t *)args;
+    async_memcpy_impl_t *mcp_impl = (async_memcpy_impl_t *)user_data;
+    mcp_impl->rx_eof_addr = event_data->rx_eof_desc_addr;
 
-    portENTER_CRITICAL_ISR(&mcp_impl->hal_lock);
-    uint32_t status = gdma_ll_get_interrupt_status(mcp_impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_clear_interrupt_status(mcp_impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, status);
-    portEXIT_CRITICAL_ISR(&mcp_impl->hal_lock);
-
-    // End-Of-Frame on RX side
-    if (status & GDMA_LL_EVENT_RX_SUC_EOF) {
-        async_memcpy_isr_on_rx_done_event(mcp_impl);
-    }
-
-    if (mcp_impl->isr_need_yield) {
-        mcp_impl->isr_need_yield = false;
-        portYIELD_FROM_ISR();
-    }
+    async_memcpy_isr_on_rx_done_event(mcp_impl);
+    return mcp_impl->isr_need_yield;
 }
 
-esp_err_t async_memcpy_impl_allocate_intr(async_memcpy_impl_t *impl, int int_flags, intr_handle_t *intr)
+esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
 {
-    return esp_intr_alloc(ETS_DMA_CH0_INTR_SOURCE, int_flags, async_memcpy_impl_default_isr_handler, impl, intr);
-}
+    esp_err_t ret = ESP_OK;
+    // create TX channel and reserve sibling channel for future use
+    gdma_channel_alloc_config_t tx_alloc_config = {
+        .flags.reserve_sibling = 1,
+        .direction = GDMA_CHANNEL_DIRECTION_TX,
+    };
+    ret = gdma_new_channel(&tx_alloc_config, &impl->tx_channel);
+    if (ret != ESP_OK) {
+        goto err;
+    }
 
-esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl, dma_descriptor_t *outlink_base, dma_descriptor_t *inlink_base)
-{
-    impl->hal_lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    impl->hal.dev = &GDMA;
-    periph_module_enable(PERIPH_GDMA_MODULE);
-    gdma_ll_enable_clock(impl->hal.dev, true);
-    gdma_ll_tx_reset_channel(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_rx_reset_channel(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_enable_interrupt(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, UINT32_MAX, true);
-    gdma_ll_clear_interrupt_status(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, UINT32_MAX);
-    gdma_ll_enable_m2m_mode(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
-    gdma_ll_tx_enable_auto_write_back(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
-    gdma_ll_tx_enable_owner_check(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
-    gdma_ll_rx_enable_owner_check(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, true);
-    gdma_ll_tx_set_desc_addr(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, (uint32_t)outlink_base);
-    gdma_ll_rx_set_desc_addr(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, (uint32_t)inlink_base);
-    return ESP_OK;
+    // create RX channel and specify it should be reside in the same pair as TX
+    gdma_channel_alloc_config_t rx_alloc_config = {
+        .direction = GDMA_CHANNEL_DIRECTION_RX,
+        .sibling_chan = impl->tx_channel,
+    };
+    ret = gdma_new_channel(&rx_alloc_config, &impl->rx_channel);
+    if (ret != ESP_OK) {
+        goto err;
+    }
+
+    gdma_connect(impl->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0));
+    gdma_connect(impl->tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0));
+
+    gdma_strategy_config_t strategy_config = {
+        .auto_update_desc = true,
+        .owner_check = true
+    };
+
+    gdma_apply_strategy(impl->tx_channel, &strategy_config);
+    gdma_apply_strategy(impl->rx_channel, &strategy_config);
+
+    gdma_rx_event_callbacks_t cbs = {
+        .on_recv_eof = async_memcpy_impl_rx_eof_callback
+    };
+    ret = gdma_register_rx_event_callbacks(impl->rx_channel, &cbs, impl);
+
+err:
+    return ret;
 }
 
 esp_err_t async_memcpy_impl_deinit(async_memcpy_impl_t *impl)
 {
-    periph_module_disable(PERIPH_GDMA_MODULE);
+    gdma_disconnect(impl->rx_channel);
+    gdma_disconnect(impl->tx_channel);
+    gdma_del_channel(impl->rx_channel);
+    gdma_del_channel(impl->tx_channel);
     return ESP_OK;
 }
 
-esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl)
+esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl, intptr_t outlink_base, intptr_t inlink_base)
 {
-    gdma_ll_rx_start(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_tx_start(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_enable_interrupt(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, GDMA_LL_EVENT_RX_SUC_EOF, true);
+    gdma_start(impl->rx_channel, inlink_base);
+    gdma_start(impl->tx_channel, outlink_base);
     return ESP_OK;
 }
 
 esp_err_t async_memcpy_impl_stop(async_memcpy_impl_t *impl)
 {
-    gdma_ll_enable_interrupt(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL, GDMA_LL_EVENT_RX_SUC_EOF, false);
-    gdma_ll_rx_stop(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_tx_stop(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
+    gdma_stop(impl->rx_channel);
+    gdma_stop(impl->tx_channel);
     return ESP_OK;
 }
 
 esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl)
 {
-    gdma_ll_rx_restart(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
-    gdma_ll_tx_restart(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
+    gdma_append(impl->rx_channel);
+    gdma_append(impl->tx_channel);
     return ESP_OK;
 }
 
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst)
 {
     return true;
-}
-
-dma_descriptor_t *async_memcpy_impl_get_rx_suc_eof_descriptor(async_memcpy_impl_t *impl)
-{
-    return (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(impl->hal.dev, SOC_GDMA_M2M_DMA_CHANNEL);
 }

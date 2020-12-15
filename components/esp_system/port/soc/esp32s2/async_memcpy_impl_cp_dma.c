@@ -33,6 +33,7 @@ IRAM_ATTR static void async_memcpy_impl_default_isr_handler(void *args)
 
     // End-Of-Frame on RX side
     if (status & CP_DMA_LL_EVENT_RX_EOF) {
+        mcp_impl->rx_eof_addr = cp_dma_ll_get_rx_eof_descriptor_address(mcp_impl->hal.dev);
         async_memcpy_isr_on_rx_done_event(mcp_impl);
     }
 
@@ -42,30 +43,30 @@ IRAM_ATTR static void async_memcpy_impl_default_isr_handler(void *args)
     }
 }
 
-esp_err_t async_memcpy_impl_allocate_intr(async_memcpy_impl_t *impl, int int_flags, intr_handle_t *intr)
+esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
 {
-    return esp_intr_alloc(ETS_DMA_COPY_INTR_SOURCE, int_flags, async_memcpy_impl_default_isr_handler, impl, intr);
-}
+    esp_err_t ret = ESP_OK;
 
-esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl, dma_descriptor_t *outlink_base, dma_descriptor_t *inlink_base)
-{
     impl->hal_lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    cp_dma_hal_config_t config = {
-        .inlink_base = inlink_base,
-        .outlink_base = outlink_base
-    };
+    cp_dma_hal_config_t config = {};
     cp_dma_hal_init(&impl->hal, &config);
-    return ESP_OK;
+
+    ret = esp_intr_alloc(ETS_DMA_COPY_INTR_SOURCE, ESP_INTR_FLAG_IRAM, async_memcpy_impl_default_isr_handler, impl, &impl->intr);
+    return ret;
 }
 
 esp_err_t async_memcpy_impl_deinit(async_memcpy_impl_t *impl)
 {
+    esp_err_t ret = ESP_OK;
+
     cp_dma_hal_deinit(&impl->hal);
-    return ESP_OK;
+    ret = esp_intr_free(impl->intr);
+    return ret;
 }
 
-esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl)
+esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl, intptr_t outlink_base, intptr_t inlink_base)
 {
+    cp_dma_hal_set_desc_base_addr(&impl->hal, outlink_base, inlink_base);
     cp_dma_hal_start(&impl->hal); // enable DMA and interrupt
     return ESP_OK;
 }
@@ -87,9 +88,4 @@ bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *
 {
     // CP_DMA can only access SRAM
     return esp_ptr_internal(src) && esp_ptr_internal(dst);
-}
-
-dma_descriptor_t *async_memcpy_impl_get_rx_suc_eof_descriptor(async_memcpy_impl_t *impl)
-{
-    return (dma_descriptor_t *)cp_dma_ll_get_rx_eof_descriptor_address(impl->hal.dev);
 }

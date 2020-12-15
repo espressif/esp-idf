@@ -24,8 +24,7 @@
 #include "hal/cp_dma_ll.h"
 #include "hal/cp_dma_hal.h"
 #elif SOC_GDMA_SUPPORTED
-#include "hal/gdma_ll.h"
-#include "hal/gdma_hal.h"
+#include "esp_private/gdma.h"
 #endif
 
 /**
@@ -33,12 +32,15 @@
  *
  */
 typedef struct {
-    portMUX_TYPE hal_lock;    // spin lock for HAL object
 #if SOC_CP_DMA_SUPPORTED
     cp_dma_hal_context_t hal; // CP DMA hal
+    intr_handle_t intr; // CP DMA interrupt handle
+    portMUX_TYPE hal_lock; // CP DMA HAL level spin lock
 #elif SOC_GDMA_SUPPORTED
-    gdma_hal_context_t hal;   // General DMA hal
+    gdma_channel_handle_t tx_channel;
+    gdma_channel_handle_t rx_channel;
 #endif
+    intptr_t rx_eof_addr;
     bool isr_need_yield;      // if current isr needs a yield for higher priority task
 } async_memcpy_impl_t;
 
@@ -50,27 +52,12 @@ typedef struct {
 void async_memcpy_isr_on_rx_done_event(async_memcpy_impl_t *impl);
 
 /**
- * @brief Allocate interrupt handle, register default isr handler
- *
- * @param impl async mcp implementation layer context pointer
- * @param int_flags interrupt flags
- * @param intr Returned interrupt handle
- * @return
- *      - ESP_OK: Allocate interrupt handle successfully
- *      - ESP_ERR_INVALID_ARG: Allocate interrupt handle failed because of invalid argument
- *      - ESP_FAIL: Allocate interrupt handle failed because of other error
- */
-esp_err_t async_memcpy_impl_allocate_intr(async_memcpy_impl_t *impl, int int_flags, intr_handle_t *intr);
-
-/**
  * @brief Initialize async mcp implementation layer
  *
  * @param impl async mcp implementation layer context pointer
- * @param outlink_base Pointer to the first TX descriptor
- * @param inlink_base Pointer to the first RX descriptor
  * @return Always return ESP_OK
  */
-esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl, dma_descriptor_t *outlink_base, dma_descriptor_t *inlink_base);
+esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl);
 
 /**
  * @brief Deinitialize async mcp implementation layer
@@ -84,9 +71,11 @@ esp_err_t async_memcpy_impl_deinit(async_memcpy_impl_t *impl);
  * @brief Start async mcp (on implementation layer)
  *
  * @param impl async mcp implementation layer context pointer
+ * @param outlink_base base descriptor address for TX DMA channel
+ * @param inlink_base base descriptor address for RX DMA channel
  * @return Always return ESP_OK
  */
-esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl);
+esp_err_t async_memcpy_impl_start(async_memcpy_impl_t *impl, intptr_t outlink_base, intptr_t inlink_base);
 
 /**
  * @brief Stop async mcp (on implementation layer)
@@ -114,11 +103,3 @@ esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl);
  * @return True if both address are valid
  */
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst);
-
-/**
- * @brief Get the EOF RX descriptor address
- *
- * @param impl async mcp implementation layer context pointer
- * @return Pointer to the EOF RX descriptor
- */
-dma_descriptor_t *async_memcpy_impl_get_rx_suc_eof_descriptor(async_memcpy_impl_t *impl);
