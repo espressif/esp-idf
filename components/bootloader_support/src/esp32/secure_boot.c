@@ -352,6 +352,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
             REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4 * i, boot_public_key_digest_ptr[i]);
             ESP_LOGD(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, boot_public_key_digest_ptr[i]);
         }
+        // delay burning until second half of this function
 
     } else {
         uint32_t efuse_blk2_digest[8];
@@ -367,14 +368,11 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         ESP_LOGW(TAG, "Using pre-loaded secure boot v2 public key digest in EFUSE block 2");
     }
 
+    // This case is needed either if a pre-burned digest is present but not write-protected,
+    // or if we are burning the digest now
     if (efuse_key_write_protected == false) {
         ESP_LOGI(TAG, "Write protecting public key digest...");
-        ret = esp_efuse_set_write_protect(EFUSE_BLK2);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Write protecting public key digest...failed.");
-            return ret;
-        }
-        efuse_key_write_protected = true;
+        new_wdata0 |= EFUSE_WR_DIS_BLK2; // delay burning until second half of this function
     }
 
     uint8_t app_pub_key_digest[DIGEST_LEN];
@@ -392,10 +390,6 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 
     if (efuse_key_read_protected) {
         ESP_LOGE(TAG, "Efuse BLK2 (public key digest) is read protected. Refusing to blow secure boot efuse.");
-        return ESP_ERR_INVALID_STATE;
-    }
-    if (!efuse_key_write_protected) {
-        ESP_LOGE(TAG, "Efuse BLK2 (public key digest) is not write protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
     }
 
