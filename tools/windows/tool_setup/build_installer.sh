@@ -10,6 +10,19 @@
 set -e
 set -u
 
+INSTALLER_TYPE="$1"
+if [[ -z "$INSTALLER_TYPE" ]]; then
+    INSTALLER_TYPE="full"
+fi
+
+echo "Selected installer type: $INSTALLER_TYPE"
+echo "Available installer types: full, netinst"
+
+PACKAGES="all"
+if [[ "$INSTALLER_TYPE" == "netinst" ]]; then
+    PACKAGES="idf-python"
+fi
+
 iscc_path=$(which iscc)
 if [[ -z "$iscc_path" ]]; then
     echo "Inno setup compiler (iscc) not found. Are you running wine-innosetup Docker image?"
@@ -24,7 +37,7 @@ fi
 echo "Downloading IDF Tools..."
 mkdir -p idf_tools_tmp
 export IDF_TOOLS_PATH=$PWD/idf_tools_tmp
-$IDF_PATH/tools/idf_tools.py --non-interactive download --platform Windows-x86_64 all
+$IDF_PATH/tools/idf_tools.py --non-interactive download --platform Windows-x86_64 $PACKAGES
 $IDF_PATH/tools/idf_tools.py --tools-json tools_fallback.json --non-interactive download --platform Windows-x86_64 all
 mkdir -p dist
 cp idf_tools_tmp/dist/* dist/
@@ -40,4 +53,5 @@ echo "Downloading idf_versions.txt..."
 wget --no-verbose -O idf_versions.txt https://dl.espressif.com/dl/esp-idf/idf_versions.txt
 
 echo "Running ISCC..."
-iscc idf_tool_setup.iss
+# https://jrsoftware.org/ishelp/index.php?topic=compilercmdline
+iscc /F "esp-idf-tools-setup-$INSTALLER_TYPE-unsigned" idf_tool_setup.iss

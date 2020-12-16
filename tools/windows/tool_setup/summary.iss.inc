@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Installation summary page ------------------------------ }
@@ -8,12 +8,12 @@ function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo,
 begin
   Result := ''
 
-  if PythonUseExisting then
+  if (FileExists(PythonExecutablePath)) then
   begin
     Result := Result + 'Using Python ' + PythonVersion + ':' + NewLine
               + Space + PythonExecutablePath + NewLine + NewLine;
   end else begin
-    Result := Result + 'Will download and install Python ' + PythonVersion + NewLine + NewLine;
+    Result := Result + 'Using embedded Python ' + PythonVersion + NewLine + NewLine;
   end;
 
   if GitUseExisting then

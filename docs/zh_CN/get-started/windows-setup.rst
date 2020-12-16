@@ -33,7 +33,7 @@ ESP-IDF 工具安装器
 
 安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，地址如下：
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe
 
 .. 重要：下次更新此链接时，请重新写文件 get-started/index.rst 中“其它文件下载方式”这一章节，然后将此条注意事项删除。
 

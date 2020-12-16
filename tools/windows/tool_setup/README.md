@@ -12,9 +12,9 @@ Some functionality of the installer depends on additional programs:
 
 * [7-zip](https://www.7-zip.org) — used to extract downloaded IDF archives.
 
-* [cmdlinerunner](cmdlinerunner/cmdlinerunner.c) — a helper DLL used to run external command line programs from the installer, capture live console output, and get the exit code.
+* [cmdlinerunner](cmdlinerunner/cmdlinerunner.c) — a helper DLL used to run external command-line programs from the installer, capture live console output, and get the exit code.
 
-## Instalation of dependencies via Chocolatey
+## Installation of dependencies via Chocolatey
 
 Run with Administrator privileges:
 
@@ -22,7 +22,7 @@ Run with Administrator privileges:
 choco install inno-download-plugin
 ```
 
-## Building the installer 
+## Building the installer
 
 ### In Docker
 
@@ -60,3 +60,47 @@ docker run --rm -v $IDF_PATH:/idf -w /idf/tools/windows/tool_setup -it $CI_DOCKE
   - `export CERTCHAIN=certchain.pem`
 
 * Run `sign_installer.sh` script. This will ask for the `key.pem` password, and produce the signed installer in the Output directory. If you plan to run the script multiple times, you may also set `KEYPASSWORD` environment variable to the `key.pem` password, to avoid the prompt.
+
+## Development and testing of the installer
+
+Development and testing of the installer can be simplified by using command line parameters which can be passed to the installer.
+
+Select Run - Parameters in Inno Setup and add parameters.
+
+Example of parameters:
+
+```
+/SKIPSYSTEMCHECK=yes /IDFVERSIONSURL=http://localhost:8000/idf_versions.txt /GITRESET=no /GITREPO=C:/projects/esp-idf /GITRECURSIVE=no
+```
+
+These combinations of parameters will result:
+* ``SKIPSYSTEMCHECK=yes`` - The screen with System Check will be skipped.
+* ``IDFVERSIONURL`` - idf_versions.txt will be downloaded from localhost:8000
+  - it's possible to add branch name into idf_versions.txt, e.g. feature/win_inst
+* ``GITRESET=no`` - Git repository won't be reset after clone, it can save time and add custom changes in case of the zip archive with repository
+* ``GITREPO`` - The version will be cloned from the specific location, e.g. from a local directory
+* ``GITRECURSIVE=no`` - The clone of the repo won't contain modules, it speeds up the cloning process. Use when modules are not necessary.
+
+Documentation of parameters is available in api-guides/tools/idf-windows-installer.rst
+
+### Testing installation in Docker with Windows containers
+
+The testing script is stored in docker-compose.yml. The test perform full silent installation and executes build of get-started example.
+
+Commands for testing multiple versions:
+
+```
+$env:IDF_VERSION="v4.1"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="v4.0.2"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="v3.3.4"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="release/v4.2"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="release/v4.1"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="release/v4.0"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="release/v3.3"; docker-compose.exe run idf-setup-test
+$env:IDF_VERSION="master"; docker-compose.exe run idf-setup-test
+```
+
+The installation log is not displayed immediately on the screen. It's stored in the file and it's displayed when the installation finishes. The glitch of Inno Setup is that in case of failed installation it won't terminate and it keeps hanging.
+
+Recommendation: Use Visual Studio Code with Docker plugin to work with container.
+The log file is then accessible under Docker - Containers - Container - Files - Temp - install.txt - right click - Open.

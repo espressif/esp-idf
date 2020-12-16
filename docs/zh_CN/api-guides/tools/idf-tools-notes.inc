@@ -65,3 +65,13 @@ On Linux and macOS, it is recommended to install ninja using the OS package mana
 
 
 ---
+
+.. tool-idf-python-notes
+
+
+---
+
+.. tool-idf-python-wheels-notes
+
+
+---

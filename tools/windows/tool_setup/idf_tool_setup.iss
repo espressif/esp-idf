@@ -1,23 +1,21 @@
-; Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+; Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
 ; SPDX-License-Identifier: Apache-2.0
 
 #pragma include __INCLUDE__ + ";" + ReadReg(HKLM, "Software\Mitrich Software\Inno Download Plugin", "InstallDir")
 #include <idp.iss>
 
 #define MyAppName "ESP-IDF Tools"
-#define MyAppVersion "2.3"
+#define MyAppVersion "2.4"
 #define MyAppPublisher "Espressif Systems (Shanghai) Co. Ltd."
 #define MyAppURL "https://github.com/espressif/esp-idf"
 
-#define PythonVersion "3.7"
-#define PythonInstallerName "python-3.7.3-amd64.exe"
-#define PythonInstallerDownloadURL "https://www.python.org/ftp/python/3.7.3/python-3.7.3-amd64.exe"
+#define PythonVersion "3.9.1"
+#define PythonInstallerName "idf-python-3.9.1-embed-win64.zip"
+#define PythonInstallerDownloadURL "https://dl.espressif.com/dl/idf-python/idf-python-3.9.1-embed-win64.zip"
 
 #define GitVersion "2.21.0"
 #define GitInstallerName "Git-2.21.0-64-bit.exe"
 #define GitInstallerDownloadURL "https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe"
-
-#define IDFVersionsURL "https://dl.espressif.com/dl/esp-idf/idf_versions.txt"
 
 #define IDFCmdExeShortcutDescription "Open ESP-IDF Command Prompt (cmd.exe)"
 #define IDFCmdExeShortcutFile "ESP-IDF Command Prompt (cmd.exe).lnk"
@@ -90,7 +88,6 @@ Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows De
 Name: idf_tools_use_mirror; Description: "Use Espressif download server instead of downloading tool packages from Github"; Flags: unchecked;
 
 [Run]
-Filename: "{app}\dist\{#PythonInstallerName}"; Parameters: "/passive PrependPath=1 InstallLauncherAllUsers=0 Include_dev=0 Include_tcltk=0 Include_launcher=0 Include_test=0 Include_doc=0"; Description: "Installing Python"; Check: PythonInstallRequired
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
 Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
 
