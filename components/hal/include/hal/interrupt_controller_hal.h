@@ -85,17 +85,6 @@ static inline int_type_t interrupt_controller_hal_get_type(int interrupt_number)
 }
 
 /**
- * @brief Set the type of an interrupt in the controller.
- * 
- * @param interrupt_number Interrupt number 0 to 31
- * @param type interrupt type as edge or level triggered
- */
-static inline void interrupt_controller_hal_set_int_type(int intr, int_type_t type)
-{
-    intr_cntrl_ll_set_int_type(intr, type);
-}
-
-/**
  * @brief Gets the interrupt level given an interrupt number.
  *
  * @param interrupt_number Interrupt number 0 to 31
@@ -104,6 +93,18 @@ static inline void interrupt_controller_hal_set_int_type(int intr, int_type_t ty
 static inline int interrupt_controller_hal_get_level(int interrupt_number)
 {
     return interrupt_controller_hal_desc_level(interrupt_number);
+}
+
+#ifdef SOC_CPU_HAS_FLEXIBLE_INTC
+/**
+ * @brief Set the type of an interrupt in the controller.
+ * 
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void interrupt_controller_hal_set_int_type(int intr, int_type_t type)
+{
+    intr_cntrl_ll_set_int_type(intr, type);
 }
 
 /**
@@ -116,6 +117,7 @@ static inline void interrupt_controller_hal_set_int_level(int intr, int level)
 {
     intr_cntrl_ll_set_int_level(intr, level);
 }
+#endif
 
 /**
  * @brief Gets the cpu flags given the interrupt number and target cpu.

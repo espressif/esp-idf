@@ -30,7 +30,7 @@ typedef enum {
 typedef enum {
     INTTP_LEVEL=0,
     INTTP_EDGE,
-    INTTP_ANY,
+    INTTP_NA,
 } int_type_t;
 
 typedef struct {

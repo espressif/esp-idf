@@ -237,18 +237,20 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: special-purpose int");
         return false;
     }
+
+#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
     //Check if the interrupt level is acceptable
-    if (!(flags&(1<<interrupt_controller_hal_get_level(x))) && 
-            (interrupt_controller_hal_get_type(x)!=INTTP_ANY)) {
+   if (!(flags&(1<<interrupt_controller_hal_get_level(x)))) {
         ALCHLOG("....Unusable: incompatible level");
-    return false;
-    }
-    //check if edge/level type matches what we want
-    if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL) && (interrupt_controller_hal_get_type(x)!= INTTP_ANY)) ||
-            (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)&& (interrupt_controller_hal_get_type(x)!= INTTP_ANY)))) {
-        ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
+    //check if edge/level type matches what we want
+    if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL)) ||
+        (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)))) {        ALCHLOG("....Unusable: incompatible trigger type");
+        return false;
+    }
+#endif
+
     //check if interrupt is reserved at runtime
     if (vd->flags&VECDESC_FL_RESERVED)  {
         ALCHLOG("....Unusable: reserved at runtime.");
@@ -583,6 +585,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         esp_intr_disable(ret);
     }
 
+#ifdef SOC_CPU_HAS_FLEXIBLE_INTC
     //Extract the level from the interrupt passed flags
     int level = (__builtin_ffs((flags >> 1) & ESP_INTR_FLAG_LEVELMASK)) + 1;
 
@@ -593,6 +596,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     } else {
         interrupt_controller_hal_set_int_type(intr,INTTP_LEVEL);
     }
+#endif
 
     portEXIT_CRITICAL(&spinlock);
 
