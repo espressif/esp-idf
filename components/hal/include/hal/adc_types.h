@@ -95,6 +95,7 @@ typedef enum {
     ADC_WIDTH_MAX,
 } adc_bits_width_t;
 
+
 /**
  * @brief ADC digital controller (DMA mode) work mode.
  *
@@ -123,16 +124,21 @@ typedef struct {
                                          1: measurement range 0 - 1100mV,
                                          2: measurement range 0 - 1350mV,
                                          3: measurement range 0 - 2600mV. */
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
             uint8_t bit_width: 2;   /*!< ADC resolution.
 -                                         0: 9 bit;
 -                                         1: 10 bit;
 -                                         2: 11 bit;
 -                                         3: 12 bit. */
-#else
+            int8_t channel:   4;   /*!< ADC channel index. */
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+            uint8_t reserved:  2;   /*!< reserved0 */
+            uint8_t channel:   4;   /*!< ADC channel index. */
+#elif CONFIG_IDF_TARGET_ESP32C3
+            uint8_t channel:   3;   /*!< ADC channel index. */
+            uint8_t unit:      1;   /*!< ADC unit index. */
             uint8_t reserved:  2;   /*!< reserved0 */
 #endif
-            uint8_t channel:   4;   /*!< ADC channel index. */
         };
         uint8_t val;                /*!<Raw data value */
     };
@@ -149,6 +155,7 @@ typedef enum {
     ADC_DIGI_FORMAT_MAX,
 } adc_digi_output_format_t;
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -174,6 +181,26 @@ typedef struct {
         uint16_t val;               /*!<Raw data value */
     };
 } adc_digi_output_data_t;
+#endif
+#if CONFIG_IDF_TARGET_ESP32C3
+/**
+ * @brief ADC digital controller (DMA mode) output data format.
+ *        Used to analyze the acquired ADC (DMA) data.
+ */
+typedef struct {
+    union {
+        struct {
+            uint32_t data:     13;  /*!<ADC real output data info. Resolution: 13 bit. */
+            uint32_t channel:   3;  /*!<ADC channel index info.
+                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+            uint32_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
+            uint32_t reserved: 15;
+        };
+        uint32_t val;
+    };
+} adc_digi_output_data_t;
+#endif
 
 #if !CONFIG_IDF_TARGET_ESP32
 
@@ -193,7 +220,6 @@ typedef struct {
 } adc_digi_clk_t;
 
 #endif //!CONFIG_IDF_TARGET_ESP32
-
 /**
   * @brief ADC digital controller (DMA mode) configuration parameters.
   *
@@ -226,28 +252,36 @@ typedef struct {
   *     +---------------------+--------+--------+--------+
   */
 typedef struct {
-    bool conv_limit_en;         /*!<Enable the function of limiting ADC conversion times.
-                                    If the number of ADC conversion trigger count is equal to the `limit_num`, the conversion is stopped. */
-    uint32_t conv_limit_num;    /*!<Set the upper limit of the number of ADC conversion triggers. Range: 1 ~ 255. */
-    uint32_t adc1_pattern_len;  /*!<Pattern table length for digital controller. Range: 0 ~ 16 (0: Don't change the pattern table setting).
-                                    The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
-                                    resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
-                                    pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
-    uint32_t adc2_pattern_len;  /*!<Refer to ``adc1_pattern_len`` */
+    bool conv_limit_en;                      /*!<Enable the function of limiting ADC conversion times.
+                                                 If the number of ADC conversion trigger count is equal to the `limit_num`, the conversion is stopped. */
+    uint32_t conv_limit_num;                 /*!<Set the upper limit of the number of ADC conversion triggers. Range: 1 ~ 255. */
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+    uint32_t adc1_pattern_len;               /*!<Pattern table length for digital controller. Range: 0 ~ 16 (0: Don't change the pattern table setting).
+                                                 The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
+                                                 resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+                                                 pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
+    uint32_t adc2_pattern_len;               /*!<Refer to ``adc1_pattern_len`` */
     adc_digi_pattern_table_t *adc1_pattern;  /*!<Pointer to pattern table for digital controller. The table size defined by `adc1_pattern_len`. */
     adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
     adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
     adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
+#elif CONFIG_IDF_TARGET_ESP32C3
+    uint32_t adc_pattern_len;                /*!<Pattern table length for digital controller. Range: 0 ~ 7 (0: Don't change the pattern table setting).
+                                                 The pattern table that defines the conversion rules for each SAR ADC. Each table has 7 items, in which channel selection,
+                                                 resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+                                                 pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
+    adc_digi_pattern_table_t *adc_pattern;   /*!<Pointer to pattern table for digital controller. The table size defined by `adc_pattern_len`. */
+#endif
 #if !CONFIG_IDF_TARGET_ESP32
-    uint32_t interval;          /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
-                                    The unit is the divided clock. Range: 40 ~ 4095.
-                                    Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
-                                    Note: The sampling rate of each channel is also related to the conversion mode (See ``adc_digi_convert_mode_t``) and pattern table settings. */
-    adc_digi_clk_t dig_clk;     /*!<ADC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
-                                    Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
-    uint32_t dma_eof_num;       /*!<DMA eof num of adc digital controller.
-                                    If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
-                                    Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
+    uint32_t interval;                       /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
+                                                 The unit is the divided clock. Range: 40 ~ 4095.
+                                                 Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
+                                                 Note: The sampling rate of each channel is also related to the conversion mode (See ``adc_digi_convert_mode_t``) and pattern table settings. */
+    adc_digi_clk_t dig_clk;                  /*!<ADC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
+                                                 Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
+    uint32_t dma_eof_num;                    /*!<DMA eof num of adc digital controller.
+                                                 If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
+                                                 Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
 #endif
 } adc_digi_config_t;
 

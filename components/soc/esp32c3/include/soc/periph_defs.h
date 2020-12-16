@@ -45,6 +45,7 @@ typedef enum {
     PERIPH_DS_MODULE,
     PERIPH_GDMA_MODULE,
     PERIPH_SYSTIMER_MODULE,
+    PERIPH_SARADC_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 

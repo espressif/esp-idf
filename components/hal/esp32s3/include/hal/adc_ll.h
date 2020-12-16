@@ -64,7 +64,7 @@ typedef struct {
         };
         uint16_t val;
     };
-} adc_rtc_output_data_t;
+} adc_ll_rtc_output_data_t;
 
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -86,7 +86,7 @@ typedef enum {
     ADC2_CTRL_FORCE_RTC = 4,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_ULP = 5,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
-} adc_controller_t;
+} adc_ll_controller_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -755,7 +755,7 @@ static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t ad
     if (adc_n == ADC_NUM_1) {
         return ADC_RTC_DATA_OK;
     }
-    adc_rtc_output_data_t *temp = (adc_rtc_output_data_t *)&raw_data;
+    adc_ll_rtc_output_data_t *temp = (adc_ll_rtc_output_data_t *)&raw_data;
     if (temp->flag == 0) {
         return ADC_RTC_DATA_OK;
     } else if (temp->flag == 1) {
@@ -872,7 +872,7 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
 {
     if (adc_n == ADC_NUM_1) {
         switch ( ctrl ) {

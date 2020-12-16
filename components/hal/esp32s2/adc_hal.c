@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The HAL layer for ADC (esp32s2 specific part)
+// The HAL layer for ADC (ESP32-S2 specific part)
 
 #include "sdkconfig.h"
 #include "hal/adc_hal.h"
@@ -23,13 +23,6 @@
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
-
-void adc_hal_digi_init(void)
-{
-    adc_hal_init();
-    adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
-}
-
 void adc_hal_digi_deinit(void)
 {
     adc_ll_digi_trigger_disable();   // boss
