@@ -476,8 +476,11 @@ int eap_peer_config_init(
 			  sm->config.new_password_len);
 	}
 
-    if (g_wpa_ttls_phase2_type) {
-        sm->config.phase2 = g_wpa_ttls_phase2_type;
+	if (g_wpa_ttls_phase2_type) {
+		sm->config.phase2 = g_wpa_ttls_phase2_type;
+	} else {
+		/* set default config phase2 mode as MSCHAPV2 */
+		sm->config.phase2 = "auth=MSCHAPV2";
 	}
 
 	return 0;
