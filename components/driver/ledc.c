@@ -19,10 +19,12 @@
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
+#include "soc/clk_ctrl_os.h"
 
 static const char* LEDC_TAG = "ledc";
 
@@ -93,23 +95,13 @@ static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channe
 //We know that CLK8M is about 8M, but don't know the actual value. So we need to do a calibration.
 static bool ledc_slow_clk_calibrate(void)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
-    //Enable CLK8M for LEDC
-    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-    //Waiting for CLK8M to turn on
-    esp_rom_delay_us(DELAY_CLK8M_CLK_SWITCH);
-    uint32_t cal_val = rtc_clk_cal(RTC_CAL_8MD256, SLOW_CLK_CYC_CALIBRATE);
-    if(cal_val == 0) {
-        ESP_LOGE(LEDC_TAG, "CLK8M_CLK calibration failed");
-        return false;
+    if (periph_rtc_dig_clk8m_enable()) {
+        s_ledc_slow_clk_8M = periph_rtc_dig_clk8m_get_freq();
+        ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %d Hz", s_ledc_slow_clk_8M);
+        return true;
     }
-    s_ledc_slow_clk_8M = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / cal_val;
-    ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %d Hz", s_ledc_slow_clk_8M);
-    return true;
-#else
-    ESP_LOGE(LEDC_TAG, "CLK8M source currently only supported on ESP32");
+    ESP_LOGE(LEDC_TAG, "Calibrate CLK8M_CLK failed");
     return false;
-#endif
 }
 
 static uint32_t ledc_get_src_clk_freq(ledc_clk_cfg_t clk_cfg)
@@ -121,7 +113,7 @@ static uint32_t ledc_get_src_clk_freq(ledc_clk_cfg_t clk_cfg)
         src_clk_freq = LEDC_REF_CLK_HZ;
     } else if (clk_cfg == LEDC_USE_RTC8M_CLK) {
         src_clk_freq = s_ledc_slow_clk_8M;
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
     } else if (clk_cfg == LEDC_USE_XTAL_CLK) {
         src_clk_freq = rtc_clk_xtal_freq_get() * 1000000;
 #endif
@@ -349,6 +341,9 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
 
     if(p_ledc_obj[speed_mode] == NULL) {
         p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (p_ledc_obj[speed_mode] == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
         ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
     }
 
@@ -380,11 +375,16 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
+    LEDC_ARG_CHECK(intr_type < LEDC_INTR_MAX, "intr_type");
+
     periph_module_enable(PERIPH_LEDC_MODULE);
     esp_err_t ret = ESP_OK;
 
     if(p_ledc_obj[speed_mode] == NULL) {
         p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (p_ledc_obj[speed_mode] == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
         ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
     }
 

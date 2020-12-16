@@ -6,6 +6,11 @@
 
 #include "hal/mpu_hal.h"
 
+// TODO ESP32-C3 IDF-2375
+// LL still not implemented
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+
 volatile static int RTC_NOINIT_ATTR access = 0;
 
 static void trigger_illegal_access(void)
@@ -41,3 +46,5 @@ void check_access(void)
 TEST_CASE_MULTIPLE_STAGES("Can set illegal access regions", "[soc][mpu]",
         trigger_illegal_access,
         check_access);
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)

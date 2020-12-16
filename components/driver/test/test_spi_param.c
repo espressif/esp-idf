@@ -1,10 +1,13 @@
+#include "esp_log.h"
+#include "esp_attr.h"
+#include "soc/spi_periph.h"
+#include "sdkconfig.h"
 #include "test/test_common_spi.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
-#include "esp_log.h"
-#include "soc/spi_periph.h"
-#include "test/test_common_spi.h"
-#include "sdkconfig.h"
+
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+//There is only one GPSPI controller on ESP32C3, so single-board test is disabled.
 
 #ifndef MIN
 #define MIN(a, b)((a) > (b)? (b): (a))
@@ -613,7 +616,7 @@ TEST_CASE("Slave receive correct data", "[spi]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
@@ -1163,4 +1166,6 @@ spitest_param_set_t mode_conf[] = {
 };
 TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 
-#endif
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)

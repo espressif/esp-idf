@@ -18,7 +18,7 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-S3 GPIO register operations
+// The LL layer for ESP32-C3 GPIO register operations
 
 #pragma once
 
@@ -34,6 +34,8 @@ extern "C" {
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
+#define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
+#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 /**
   * @brief Enable pull-up on GPIO.
   *
@@ -133,7 +135,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
   */
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
-    // hw->status1_w1tc.intr_st = mask;
+    // Not supported on C3
 }
 
 /**
@@ -146,7 +148,7 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, gpio_num_t gpio_num)
 {
     if (core_id == 0) {
-        GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
+        GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
         // GPIO.pin[gpio_num].int_ena = GPIO_APP_CPU_INTR_ENA;     //enable pro cpu intr
     }
@@ -193,12 +195,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
   */
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    if (gpio_num < 32) {
-        hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
-    } else {
-        // hw->enable1_w1tc.data = (0x1 << (gpio_num - 32));
-    }
-
+    hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
     // Ensure no other output signal is routed via GPIO matrix to this pin
     REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4),
               SIG_GPIO_OUT_IDX);
@@ -212,11 +209,7 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   */
 static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    if (gpio_num < 32) {
-        hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
-    } else {
-        // hw->enable1_w1ts.data = (0x1 << (gpio_num - 32));
-    }
+    hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
 }
 
 /**
@@ -251,17 +244,9 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 static inline void gpio_ll_set_level(gpio_dev_t *hw, gpio_num_t gpio_num, uint32_t level)
 {
     if (level) {
-        if (gpio_num < 32) {
-            hw->out_w1ts.out_w1ts = (1 << gpio_num);
-        } else {
-            // hw->out1_w1ts.data = (1 << (gpio_num - 32));
-        }
+        hw->out_w1ts.out_w1ts = (1 << gpio_num);
     } else {
-        if (gpio_num < 32) {
-            hw->out_w1tc.out_w1tc = (1 << gpio_num);
-        } else {
-            // hw->out1_w1tc.data = (1 << (gpio_num - 32));
-        }
+        hw->out_w1tc.out_w1tc = (1 << gpio_num);
     }
 }
 
@@ -279,11 +264,7 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, gpio_num_t gpio_num, uint32
  */
 static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    if (gpio_num < 32) {
-        return (hw->in.data >> gpio_num) & 0x1;
-    } else {
-        return 0; // Less than 32 GPIOs in ESP32-C3
-    }
+    return (hw->in.data >> gpio_num) & 0x1;
 }
 
 /**

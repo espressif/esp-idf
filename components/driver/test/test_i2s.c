@@ -15,7 +15,7 @@
 #include "math.h"
 #include "esp_rom_gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)

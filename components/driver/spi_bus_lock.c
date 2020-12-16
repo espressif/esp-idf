@@ -22,6 +22,7 @@
 #include "stdatomic.h"
 #include "esp_log.h"
 #include <strings.h>
+#include "esp_heap_caps.h"
 
 
 /*

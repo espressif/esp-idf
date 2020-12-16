@@ -6,10 +6,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "unity.h"
 
 #include "soc/spi_periph.h"
 #include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl_spi.h"
+
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+//There is only one GPSPI controller on ESP32C3, so single-board test is disabled.
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
@@ -490,7 +494,7 @@ TEST_SPI_HD(HD, hd_conf);
  *
  * This test checks that the previous trans will not influence the data slave prepared for the next transaction.
  */
-TEST_CASE("test spi slave hd continuous mode, master too long", "[spi][spi_slv_hd]")
+TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]")
 {
     spi_device_handle_t spi;
     spitest_param_set_t *cfg = &hd_conf[0];
@@ -583,4 +587,6 @@ TEST_CASE("test spi slave hd continuous mode, master too long", "[spi][spi_slv_h
     master_free_device_bus(spi);
 }
 
-#endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
+#endif  //SOC_SPI_SUPPORT_SLAVE_HD_VER2
+
+#endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)

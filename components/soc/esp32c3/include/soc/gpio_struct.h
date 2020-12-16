@@ -13,6 +13,7 @@
 // limitations under the License.
 #ifndef _SOC_GPIO_STRUCT_H_
 #define _SOC_GPIO_STRUCT_H_
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

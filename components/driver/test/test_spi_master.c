@@ -264,6 +264,7 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi]") {
     TEST_ASSERT(success);
 }
 
+#if !DISABLED_FOR_TARGETS(ESP32C3)  //There is no input-only pin on esp32c3, so this test could be ignored.
 static esp_err_t test_master_pins(int mosi, int miso, int sclk, int cs)
 {
     esp_err_t ret;
@@ -322,6 +323,9 @@ TEST_CASE("spi placed on input-only pins", "[spi]")
     TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, INPUT_ONLY_PIN));
 }
 
+//There is no input-only pin on esp32c3, so this test could be ignored.
+#endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)
+
 TEST_CASE("spi bus setting with different pin configs", "[spi]")
 {
     spi_bus_config_t cfg;
@@ -366,6 +370,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
 
+#if !DISABLED_FOR_TARGETS(ESP32C3)  //There is no input-only pin on esp32c3, so this test could be ignored.
     ESP_LOGI(TAG, "test master 5 output pins and MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_WPHD | SPICOMMON_BUSFLAG_GPIO_PINS;
     cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[TEST_SPI_HOST].spid_iomux_pin, .miso_io_num = INPUT_ONLY_PIN, .sclk_io_num = spi_periph_signal[TEST_SPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[TEST_SPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[TEST_SPI_HOST].spiwp_iomux_pin,
@@ -394,6 +399,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
+#endif
 
     ESP_LOGI(TAG, "check native flag for 6 output pins...");
     flags_expected = SPICOMMON_BUSFLAG_IOMUX_PINS;
@@ -411,6 +417,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
+#if !DISABLED_FOR_TARGETS(ESP32C3)  //There is no input-only pin on esp32c3, so this test could be ignored.
     ESP_LOGI(TAG, "check dual flag for master 5 output pins and MISO/MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_GPIO_PINS;
     cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[TEST_SPI_HOST].spid_iomux_pin, .miso_io_num = INPUT_ONLY_PIN, .sclk_io_num = spi_periph_signal[TEST_SPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[TEST_SPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[TEST_SPI_HOST].spiwp_iomux_pin,
@@ -432,6 +439,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
+#endif
 
     ESP_LOGI(TAG, "check sclk flag...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK;
@@ -552,20 +560,23 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     TEST_ASSERT(esp_ptr_in_dram(data_malloc));
 #endif
     TEST_ASSERT(data_malloc != NULL);
+    TEST_ASSERT(esp_ptr_in_dram(data_dram));
+    TEST_ASSERT(esp_ptr_in_drom(data_drom));
+    ESP_LOGI(TAG, "dram: %p", data_dram);
+    ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
 
-    //refer to soc_memory_layout.c
+#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
     uint32_t* data_iram = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_EXEC);
     TEST_ASSERT(data_iram != NULL);
-
-    ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
-    ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
-    TEST_ASSERT(esp_ptr_in_dram(data_dram));
     TEST_ASSERT(esp_ptr_executable(data_iram) || esp_ptr_in_iram(data_iram) || esp_ptr_in_diram_iram(data_iram));
-    TEST_ASSERT(esp_ptr_in_drom(data_drom));
+    ESP_LOGI(TAG, "iram: %p", data_iram);
+#endif
 
     srand(52);
     for (int i = 0; i < 320/4; i++) {
+#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
         data_iram[i] = rand();
+#endif
         data_dram[i] = rand();
         data_malloc[i] = rand();
     }
@@ -588,10 +599,9 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 #define TEST_REGION_SIZE 5
     static spi_transaction_t trans[TEST_REGION_SIZE];
     int x;
-
-
     memset(trans, 0, sizeof(trans));
 
+#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
     trans[0].length = 320*8,
     trans[0].tx_buffer = data_iram;
     trans[0].rx_buffer = data_malloc+1;
@@ -601,12 +611,13 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     trans[1].rx_buffer = data_iram;
 
     trans[2].length = 320*8,
-    trans[2].tx_buffer = data_malloc+2;
-    trans[2].rx_buffer = data_dram;
+    trans[2].tx_buffer = data_drom;
+    trans[2].rx_buffer = data_iram;
+#endif
 
     trans[3].length = 320*8,
-    trans[3].tx_buffer = data_drom;
-    trans[3].rx_buffer = data_iram;
+    trans[3].tx_buffer = data_malloc+2;
+    trans[3].rx_buffer = data_dram;
 
     trans[4].length = 4*8,
     trans[4].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
@@ -616,7 +627,11 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     *ptr = 0xbc124960;
 
     //Queue all transactions.
+#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
     for (x=0; x<TEST_REGION_SIZE; x++) {
+#else
+    for (x=3; x<TEST_REGION_SIZE; x++) {
+#endif
         ESP_LOGI(TAG, "transmitting %d...", x);
         ret=spi_device_transmit(spi,&trans[x]);
         TEST_ASSERT(ret==ESP_OK);
@@ -629,7 +644,9 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
     free(data_malloc);
+#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
     free(data_iram);
+#endif
 }
 
 //this part tests 3 DMA issues in master mode, full-duplex in IDF2.1
@@ -707,6 +724,8 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
     TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
 }
 
+
+#if !DISABLED_FOR_TARGETS(ESP32C3)  //There is only one GPSPI controller, so single-board test is disabled.
 static uint8_t bitswap(uint8_t in)
 {
     uint8_t out = 0;
@@ -940,6 +959,10 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     master_free_device_bus(spi);
 }
 
+//There is only one GPSPI controller, so single-board test is disabled.
+#endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
@@ -955,6 +978,8 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
 #endif
 
 static void speed_setup(spi_device_handle_t* spi, bool use_dma)
@@ -1092,4 +1117,6 @@ TEST_CASE("spi_speed","[spi]")
     spi_device_release_bus(spi);
     master_free_device_bus(spi);
 }
-#endif
+#endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)

@@ -1,10 +1,9 @@
-
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hal/brownout_hal.h"
-#include "soc/rtc_cntl_struct.h"
-#include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
-#include "regi2c_brownout.h"
+#ifndef _SOC_CLKOUT_CHANNEL_H
+#define _SOC_CLKOUT_CHANNEL_H
 
+//CLKOUT channels
+#define CLKOUT_GPIO20_DIRECT_CHANNEL         CLKOUT_CHANNEL_1
+#define CLKOUT_CHANNEL_1_DIRECT_GPIO_NUM     20
+#define CLKOUT_GPIO19_DIRECT_CHANNEL         CLKOUT_CHANNEL_2
+#define CLKOUT_CHANNEL_2_DIRECT_GPIO_NUM     19
+#define CLKOUT_GPIO18_DIRECT_CHANNEL         CLKOUT_CHANNEL_3
+#define CLKOUT_CHANNEL_3_DIRECT_GPIO_NUM     18
 
-void brownout_hal_config(const brownout_hal_config_t *cfg)
-{
-    // TODO ESP32-C3 IDF-2397
-}
-
-void brownout_hal_intr_enable(bool enable)
-{
-    // TODO ESP32-C3 IDF-2397
-}
-
-void brownout_hal_intr_clear(void)
-{
-    // TODO ESP32-C3 IDF-2397
-}
+#endif

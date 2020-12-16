@@ -28,6 +28,8 @@ extern "C" {
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_SARADC_MODULE:
+        return SYSTEM_APB_SARADC_CLK_EN;
     case PERIPH_RMT_MODULE:
         return SYSTEM_RMT_CLK_EN;
     case PERIPH_LEDC_MODULE:
@@ -89,6 +91,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     (void)enable; // unused
 
     switch (periph) {
+    case PERIPH_SARADC_MODULE:
+        return SYSTEM_APB_SARADC_RST;
     case PERIPH_RMT_MODULE:
         return SYSTEM_RMT_RST;
     case PERIPH_LEDC_MODULE:

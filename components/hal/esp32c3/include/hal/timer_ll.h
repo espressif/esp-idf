@@ -325,13 +325,7 @@ FORCE_INLINE_ATTR void timer_ll_get_intr_raw_status(timer_group_t group_num, uin
  */
 static inline void timer_ll_set_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num, bool level_int_en)
 {
-    switch (timer_num) {
-    case 0:
-        hw->int_ena.t0 = level_int_en;
-        break;
-    default:
-        break;
-    }
+    // Only "level" interrupts are supported on this target
 }
 
 /**
@@ -346,15 +340,8 @@ static inline void timer_ll_set_level_int_enable(timg_dev_t *hw, timer_idx_t tim
  */
 static inline bool timer_ll_get_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    bool enable = false;
-    switch (timer_num) {
-    case 0:
-        enable = hw->int_ena.t0;
-        break;
-    default:
-        break;
-    }
-    return enable;
+    // Only "level" interrupts are supported on this target
+    return true;
 }
 
 /**
