@@ -14,9 +14,15 @@
 #include "nvs_storage.hpp"
 
 #ifndef ESP_PLATFORM
+// We need NO_DEBUG_STORAGE here since the integration tests on the host add some debug code.
+// The unit tests, however, don't want debug code since they check the behavior via data in/output and disturb
+// the order of calling mocked functions.
+#ifndef NO_DEBUG_STORAGE
 #include <map>
 #include <sstream>
+#define DEBUG_STORAGE
 #endif
+#endif // !ESP_PLATFORM
 
 namespace nvs
 {
@@ -136,7 +142,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     // Purge the blob index list
     blobIdxList.clearAndFreeNodes();
 
-#ifndef ESP_PLATFORM
+#ifdef DEBUG_STORAGE
     debugCheck();
 #endif
     return ESP_OK;
@@ -165,7 +171,7 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
     uint8_t chunkCount = 0;
     TUsedPageList usedPages;
     size_t remainingSize = dataSize;
-    size_t offset=0;
+    size_t offset = 0;
     esp_err_t err = ESP_OK;
 
     /* Check how much maximum data can be accommodated**/
@@ -182,8 +188,8 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
     do {
         Page& page = getCurrentPage();
         size_t tailroom = page.getVarDataTailroom();
-        size_t chunkSize =0;
-        if (!chunkCount && tailroom < dataSize && tailroom < Page::CHUNK_MAX_SIZE/10) {
+        size_t chunkSize = 0;
+        if (chunkCount == 0U && ((tailroom < dataSize) || (tailroom == 0 && dataSize == 0)) && tailroom < Page::CHUNK_MAX_SIZE/10) {
             /** This is the first chunk and tailroom is too small ***/
             if (page.state() != Page::PageState::FULL) {
                 err = page.markFull();
@@ -206,7 +212,7 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
         }
 
         /* Split the blob into two and store the chunk of available size onto the current page */
-        assert(tailroom!=0);
+        assert(tailroom != 0);
         chunkSize = (remainingSize > tailroom)? tailroom : remainingSize;
         remainingSize -= chunkSize;
 
@@ -383,7 +389,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
             return err;
         }
     }
-#ifndef ESP_PLATFORM
+#ifdef DEBUG_STORAGE
     debugCheck();
 #endif
     return ESP_OK;
@@ -666,7 +672,7 @@ void Storage::debugDump()
     }
 }
 
-#ifndef ESP_PLATFORM
+#ifdef DEBUG_STORAGE
 void Storage::debugCheck()
 {
     std::map<std::string, Page*> keys;
@@ -691,7 +697,7 @@ void Storage::debugCheck()
         assert(usedCount == p->getUsedEntryCount());
     }
 }
-#endif //ESP_PLATFORM
+#endif //DEBUG_STORAGE
 
 esp_err_t Storage::fillStats(nvs_stats_t& nvsStats)
 {

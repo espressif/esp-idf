@@ -52,7 +52,7 @@ static const unsigned int crc32_le_table[256] = {
 
 
 
-extern "C" unsigned int crc32_le(unsigned int crc, unsigned char const * buf,unsigned int len)
+extern "C" uint32_t esp_rom_crc32_le(unsigned int crc, unsigned char const * buf,unsigned int len)
 {
     unsigned int i;
     crc = ~crc;

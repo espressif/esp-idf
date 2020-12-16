@@ -289,12 +289,13 @@ class BuildSystem:
     Objects of these classes aren't instantiated, instead the class (type object) is used.
     """
     NAME = "undefined"
-    SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[\s|]+(?:ESP[0-9A-Z\-]+))+)')
+    SUPPORTED_TARGETS_REGEX = re.compile(r'Supported [Tt]argets((?:[ |]+(?:[0-9a-zA-Z\-]+))+)')
 
     FORMAL_TO_USUAL = {
         'ESP32': 'esp32',
         'ESP32-S2': 'esp32s2',
         'ESP32-S3': 'esp32s3',
+        'Linux': 'linux',
     }
 
     @classmethod

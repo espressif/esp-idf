@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "string.h"
+#include <cstdlib>
 #include "nvs_partition.hpp"
 
 namespace nvs {
@@ -22,7 +22,7 @@ NVSPartition::NVSPartition(const esp_partition_t* partition)
 {
     // ensure the class is in a valid state
     if (partition == nullptr) {
-        abort();
+        std::abort();
     }
 }
 

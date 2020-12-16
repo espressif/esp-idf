@@ -46,7 +46,9 @@ ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_
                 ]
 
 # add directories here which should not be parsed, this is a tuple since it will be used with *.startswith()
-ignore_dirs = (os.path.join('examples'), os.path.join('components', 'cmock', 'CMock', 'test'))
+ignore_dirs = (os.path.join('examples'),
+               os.path.join('components', 'cmock', 'CMock', 'test'),
+               os.path.join('components', 'spi_flash', 'sim'))
 
 # macros from here have higher priorities in case of collisions
 priority_headers = [os.path.join('components', 'esp_common', 'include', 'esp_err.h')]

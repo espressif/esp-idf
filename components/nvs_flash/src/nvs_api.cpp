@@ -22,17 +22,17 @@
 #include <functional>
 #include "nvs_handle_simple.hpp"
 
-#ifdef ESP_PLATFORM
+#ifdef LINUX_TARGET
+#include "crc.h"
+#define ESP_LOGD(...)
+#else // LINUX_TARGET
 #include <esp32/rom/crc.h>
 
 // Uncomment this line to force output from this module
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 static const char* TAG = "nvs";
-#else
-#include "crc.h"
-#define ESP_LOGD(...)
-#endif
+#endif // ! LINUX_TARGET
 
 class NVSHandleEntry : public intrusive_list_node<NVSHandleEntry> {
 public:
@@ -56,9 +56,9 @@ uint32_t NVSHandleEntry::s_nvs_next_handle;
 
 extern "C" void nvs_dump(const char *partName);
 
-#ifdef ESP_PLATFORM
+#ifndef LINUX_TARGET
 SemaphoreHandle_t nvs::Lock::mSemaphore = nullptr;
-#endif
+#endif // ! LINUX_TARGET
 
 using namespace std;
 using namespace nvs;
@@ -125,7 +125,7 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
     return init_res;
 }
 
-#ifdef ESP_PLATFORM
+#ifndef LINUX_TARGET
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 {
     Lock::init();
@@ -204,7 +204,7 @@ extern "C" esp_err_t nvs_flash_erase(void)
 {
     return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
 }
-#endif // ESP_PLATFORM
+#endif // ! LINUX_TARGET
 
 extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
 {
@@ -528,7 +528,7 @@ extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle_t c_handle, size_t* use
     return err;
 }
 
-#if (defined CONFIG_NVS_ENCRYPTION) && (defined ESP_PLATFORM)
+#if (defined CONFIG_NVS_ENCRYPTION) && (!defined LINUX_TARGET)
 
 extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
 {

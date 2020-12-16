@@ -11,11 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef nvs_platform_h
-#define nvs_platform_h
+#pragma once
 
+#ifdef LINUX_TARGET
+namespace nvs
+{
+class Lock
+{
+public:
+    Lock() { }
+    ~Lock() { }
+    static void init() {}
+    static void uninit() {}
+};
+} // namespace nvs
 
-#ifdef ESP_PLATFORM
+#else // LINUX_TARGET
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
@@ -63,19 +75,4 @@ public:
 };
 } // namespace nvs
 
-#else // ESP_PLATFORM
-namespace nvs
-{
-class Lock
-{
-public:
-    Lock() { }
-    ~Lock() { }
-    static void init() {}
-    static void uninit() {}
-};
-} // namespace nvs
-#endif // ESP_PLATFORM
-
-
-#endif /* nvs_platform_h */
+#endif // LINUX_TARGET
