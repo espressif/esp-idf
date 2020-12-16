@@ -23,8 +23,6 @@
 #include "sdkconfig.h"
 #include "esp_flash_internal.h"
 
-#include "spi_flash_chip_generic.h" //for spi_flash_chip_generic_yield()
-
 static const char TAG[] = "spi_flash";
 
 #ifdef CONFIG_SPI_FLASH_WRITE_CHUNK_SIZE
@@ -70,10 +68,12 @@ _Static_assert(sizeof(io_mode_str)/IO_STR_LEN == SPI_FLASH_READ_MODE_MAX, "the i
 
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 static esp_err_t spiflash_start_default(esp_flash_t *chip);
 static esp_err_t spiflash_end_default(esp_flash_t *chip, esp_err_t err);
 static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip);
 static esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 typedef struct {
     esp_err_t (*start)(esp_flash_t *chip);
@@ -82,6 +82,7 @@ typedef struct {
     esp_err_t (*flash_end_flush_cache)(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
 } rom_spiflash_api_func_t;
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 // These functions can be placed in the ROM. For now we use the code in IDF.
 DRAM_ATTR static rom_spiflash_api_func_t default_spiflash_rom_api = {
     .start = spiflash_start_default,
@@ -91,12 +92,17 @@ DRAM_ATTR static rom_spiflash_api_func_t default_spiflash_rom_api = {
 };
 
 DRAM_ATTR rom_spiflash_api_func_t *rom_spiflash_api_funcs = &default_spiflash_rom_api;
+#else
+extern rom_spiflash_api_func_t *esp_flash_api_funcs;
+#define rom_spiflash_api_funcs esp_flash_api_funcs
+#endif // CONFIG_SPI_FLASH_ROM_IMPL
 
 /* Static function to notify OS of a new SPI flash operation.
 
    If returns an error result, caller must abort. If returns ESP_OK, caller must
    call rom_spiflash_api_funcs->end() before returning.
 */
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 static esp_err_t IRAM_ATTR spiflash_start_default(esp_flash_t *chip)
 {
     if (chip->os_func != NULL && chip->os_func->start != NULL) {
@@ -155,10 +161,7 @@ static IRAM_ATTR esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t er
     }
     return rom_spiflash_api_funcs->end(chip, err);
 }
-
-
-/* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
-inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 /* Top-level API functions, calling into chip_drv functions via chip->drv */
 
@@ -270,6 +273,7 @@ esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* out_id)
     return read_id_core(chip, out_id, true);
 }
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 esp_err_t esp_flash_read_id(esp_flash_t* chip, uint32_t* out_id)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -279,6 +283,7 @@ esp_err_t esp_flash_read_id(esp_flash_t* chip, uint32_t* out_id)
 
     return read_id_core(chip, out_id, false);
 }
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
 {
@@ -316,6 +321,8 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
     return ESP_OK;
 }
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+
 /* Convenience macro for beginning of all API functions.
  * Check the return value of `rom_spiflash_api_funcs->chip_check` is correct,
  * and the chip supports the operation in question.
@@ -326,6 +333,9 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
             return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
         }                                                   \
     } while (0)
+
+/* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
+inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
 
 esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
 {
@@ -358,9 +368,11 @@ esp_err_t IRAM_ATTR esp_flash_erase_chip(esp_flash_t *chip)
     CHECK_WRITE_ADDRESS(chip, 0, chip->size);
 
     //check before the operation, in case this is called too close to the last operation
-    err = spi_flash_chip_generic_yield(chip, false);
-    if (err != ESP_OK) {
-        return err;
+    if (chip->chip_drv->yield) {
+        err = chip->chip_drv->yield(chip, 0);
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     err = rom_spiflash_api_funcs->start(chip);
@@ -432,9 +444,11 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     bool bus_acquired = false;
     while (1) {
         //check before the operation, in case this is called too close to the last operation
-        err = spi_flash_chip_generic_yield(chip, false);
-        if (err != ESP_OK) {
-            break;
+        if (chip->chip_drv->yield) {
+            err = chip->chip_drv->yield(chip, 0);
+            if (err != ESP_OK) {
+                return err;
+            }
         }
 
         err = rom_spiflash_api_funcs->start(chip);
@@ -707,9 +721,11 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
         }
 
         //check before the operation, in case this is called too close to the last operation
-        err = spi_flash_chip_generic_yield(chip, false);
-        if (err != ESP_OK) {
-            break;
+        if (chip->chip_drv->yield) {
+            err = chip->chip_drv->yield(chip, 0);
+            if (err != ESP_OK) {
+                return err;
+            }
         }
 
         err = rom_spiflash_api_funcs->start(chip);
@@ -814,6 +830,7 @@ IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
     err = chip->chip_drv->set_io_mode(chip);
     return rom_spiflash_api_funcs->end(chip, err);
 }
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 esp_err_t esp_flash_app_disable_protect(bool disable)

@@ -182,6 +182,10 @@ struct spi_flash_chip_t {
      * Read the requested register (status, etc.).
      */
     esp_err_t (*read_reg)(esp_flash_t *chip, spi_flash_register_t reg_id, uint32_t* out_reg);
+
+    /** Yield to other tasks. Called during erase operations. */
+    esp_err_t (*yield)(esp_flash_t *chip, uint32_t wip);
+
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

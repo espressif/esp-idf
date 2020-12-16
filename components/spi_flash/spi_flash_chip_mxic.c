@@ -72,4 +72,5 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .get_io_mode = spi_flash_chip_mxic_get_io_mode,
 
     .read_reg = spi_flash_chip_mxic_read_reg,
+    .yield = spi_flash_chip_generic_yield,
 };

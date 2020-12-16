@@ -392,7 +392,7 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, bool add
  * @param wip  Write (erase) in progress, `true` if this function is called during waiting idle of a erase/write command; else `false`.
  * @return ESP_OK if success, otherwise failed.
  */
-esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, bool wip);
+esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, uint32_t wip);
 
 /// Default timeout configuration used by most chips
 const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;

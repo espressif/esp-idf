@@ -107,6 +107,8 @@
 #define PAGES_LIMIT (IROM0_PAGES_END > DROM0_PAGES_END ? IROM0_PAGES_END:DROM0_PAGES_END)
 #define VADDR1_FIRST_USABLE_ADDR SOC_IROM_LOW
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL
+
 typedef struct mmap_entry_{
     uint32_t handle;
     int page;
@@ -405,12 +407,16 @@ uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     return count;
 }
 
-uint32_t spi_flash_cache2phys(const void *cached)
+size_t spi_flash_cache2phys(const void *cached)
 {
     intptr_t c = (intptr_t)cached;
     size_t cache_page;
     int offset = 0;
+#if !CONFIG_IDF_TARGET_ESP32C3
     if (c >= VADDR1_START_ADDR && c < VADDR1_FIRST_USABLE_ADDR) {
+#else
+	if (c >= SOC_IRAM_LOW && c < VADDR1_FIRST_USABLE_ADDR) {
+#endif
         /* IRAM address, doesn't map to flash */
         return SPI_FLASH_CACHE2PHYS_FAIL;
     } else if (c < VADDR1_FIRST_USABLE_ADDR) {
@@ -564,3 +570,4 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     }
     return ret;
 }
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL

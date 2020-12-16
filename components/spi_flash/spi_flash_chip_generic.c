@@ -20,10 +20,6 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 
-
-static const char TAG[] = "chip_generic";
-
-
 typedef struct flash_chip_dummy {
     uint8_t dio_dummy_bitlen;
     uint8_t qio_dummy_bitlen;
@@ -61,6 +57,10 @@ const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
     .idle_timeout = SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000,
     .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
 };
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+
+static const char TAG[] = "chip_generic";
 
 esp_err_t spi_flash_chip_generic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -322,7 +322,7 @@ esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_
     return chip->host->driver->read_status(chip->host, (uint8_t*)out_reg);
 }
 
-esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, bool wip)
+esp_err_t spi_flash_chip_generic_yield(esp_flash_t* chip, uint32_t wip)
 {
     esp_err_t err = ESP_OK;
     uint32_t flags = wip? 1: 0; //check_yield() and yield() impls should not issue suspend/resume if this flag is zero
@@ -472,6 +472,7 @@ esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip)
                                         spi_flash_common_read_status_16b_rdsr_rdsr2,
                                         BIT_QE);
 }
+#endif // CONFIG_SPI_FLASH_ROM_IMPL
 
 static const char chip_name[] = "generic";
 
@@ -509,8 +510,10 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .get_io_mode = spi_flash_chip_generic_get_io_mode,
 
     .read_reg = spi_flash_chip_generic_read_reg,
+    .yield = spi_flash_chip_generic_yield,
 };
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 /*******************************************************************************
  * Utility functions
  ******************************************************************************/
@@ -647,3 +650,5 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
     }
     return ret;
 }
+
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL

@@ -153,6 +153,9 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+// TODO ESP32C3 IDF-2458
+
 TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
@@ -208,6 +211,9 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     spi_flash_munmap(handle3);
 
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+
 
 TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
 {
@@ -352,7 +358,8 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
     uint8_t buf[64];
 
-    static const uint8_t constant_data[] = { 1, 2, 3, 7, 11, 16, 3, 88 };
+    /* Avoid put constant data in the sdata/sdata2 section */
+    static const uint8_t constant_data[] = { 1, 2, 3, 7, 11, 16, 3, 88, 99};
 
     /* esp_partition_find is in IROM */
     uint32_t phys = spi_flash_cache2phys(esp_partition_find);

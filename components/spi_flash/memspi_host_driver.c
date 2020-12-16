@@ -22,7 +22,6 @@
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
 #define SPI_FLASH_HAL_MAX_READ_BYTES 64
 
-static const char TAG[] = "memspi";
 DRAM_ATTR static const spi_flash_host_driver_t esp_flash_default_host = ESP_FLASH_DEFAULT_HOST_DRIVER();
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -73,11 +72,19 @@ esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_
     else {
         host->inst.driver = &esp_flash_gpspi_host;
     }
+#elif CONFIG_IDF_TARGET_ESP32C3
+    if (cfg->host_id == SPI_HOST) {
+        host->inst.driver = &esp_flash_default_host;
+    }
 #endif
 
     esp_err_t err = spi_flash_hal_init(host, cfg);
     return err;
 }
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+
+static const char TAG[] = "memspi";
 
 esp_err_t memspi_host_read_id_hs(spi_flash_host_inst_t *host, uint32_t *id)
 {
@@ -214,3 +221,5 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
     *align_address = address;
     return MIN(max_len, len);
 }
+
+#endif // CONFIG_SPI_FLASH_ROM_IMPL

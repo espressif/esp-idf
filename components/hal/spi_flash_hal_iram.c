@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "sdkconfig.h"
 
-#ifndef CONFIG_SPI_FLASH_NEW_ROM_API
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
 // HAL for
 //  - MEMSPI
@@ -95,4 +95,4 @@ bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host)
     return idle;
 }
 
-#endif // !CONFIG_SPI_FLASH_NEW_ROM_API
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL

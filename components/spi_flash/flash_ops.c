@@ -116,8 +116,6 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
     .yield                  = NULL,
 };
 
-static const spi_flash_guard_funcs_t *s_flash_guard_ops;
-
 #ifdef CONFIG_SPI_FLASH_DANGEROUS_WRITE_ABORTS
 #define UNSAFE_WRITE_ADDRESS abort()
 #else
@@ -132,7 +130,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE)
 #else /* FAILS or ABORTS */
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE) do {                            \
-        if (s_flash_guard_ops && s_flash_guard_ops->is_safe_write_address && !s_flash_guard_ops->is_safe_write_address(ADDR, SIZE)) {                       \
+        if (guard && guard->is_safe_write_address && !guard->is_safe_write_address(ADDR, SIZE)) {                       \
             return ESP_ERR_INVALID_ARG;                                 \
         }                                                               \
     } while(0)
@@ -146,13 +144,38 @@ static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t si
     return true;
 }
 
+#if CONFIG_SPI_FLASH_ROM_IMPL
+#include "esp_heap_caps.h"
+typedef void *(*malloc_internal_cb_t)(size_t size);
+
+void IRAM_ATTR *spi_flash_malloc_internal(size_t size)
+{
+    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+}
+#endif
+
 void spi_flash_init(void)
 {
     spi_flash_init_lock();
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
     spi_flash_reset_counters();
 #endif
+
+#if CONFIG_SPI_FLASH_ROM_IMPL
+    spi_flash_guard_set(&g_flash_guard_default_ops);
+
+    /* These two functions are in ROM only */
+    extern void spi_flash_mmap_os_func_set(void *(*func1)(size_t size), void (*func2)(void *p));
+    spi_flash_mmap_os_func_set(spi_flash_malloc_internal, heap_caps_free);
+
+    extern esp_err_t spi_flash_mmap_page_num_init(uint32_t page_num);
+    spi_flash_mmap_page_num_init(128);
+#endif
 }
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL
+
+static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
 void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t *funcs)
 {
@@ -164,6 +187,8 @@ const spi_flash_guard_funcs_t *IRAM_ATTR spi_flash_guard_get(void)
     return s_flash_guard_ops;
 }
 
+#endif
+
 size_t IRAM_ATTR spi_flash_get_chip_size(void)
 {
     return g_rom_flashchip.chip_size;
@@ -171,29 +196,33 @@ size_t IRAM_ATTR spi_flash_get_chip_size(void)
 
 static inline void IRAM_ATTR spi_flash_guard_start(void)
 {
-    if (s_flash_guard_ops && s_flash_guard_ops->start) {
-        s_flash_guard_ops->start();
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
+    if (guard && guard->start) {
+        guard->start();
     }
 }
 
 static inline void IRAM_ATTR spi_flash_guard_end(void)
 {
-    if (s_flash_guard_ops && s_flash_guard_ops->end) {
-        s_flash_guard_ops->end();
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
+    if (guard && guard->end) {
+        guard->end();
     }
 }
 
 static inline void IRAM_ATTR spi_flash_guard_op_lock(void)
 {
-    if (s_flash_guard_ops && s_flash_guard_ops->op_lock) {
-        s_flash_guard_ops->op_lock();
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
+    if (guard && guard->op_lock) {
+        guard->op_lock();
     }
 }
 
 static inline void IRAM_ATTR spi_flash_guard_op_unlock(void)
 {
-    if (s_flash_guard_ops && s_flash_guard_ops->op_unlock) {
-        s_flash_guard_ops->op_unlock();
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
+    if (guard && guard->op_unlock) {
+        guard->op_unlock();
     }
 }
 
@@ -232,6 +261,7 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
+    const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
     CHECK_WRITE_ADDRESS(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
     return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
@@ -240,6 +270,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 //deprecated, only used in compatible mode
 esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
 {
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
     CHECK_WRITE_ADDRESS(start_addr, size);
     if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
@@ -379,6 +410,7 @@ static IRAM_ATTR esp_rom_spiflash_result_t spi_flash_write_inner(uint32_t target
 
 esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 {
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
     CHECK_WRITE_ADDRESS(dst, size);
     // Out of bound writes are checked in ROM code, but we can give better
     // error code here
@@ -479,6 +511,7 @@ out:
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
     esp_err_t err = ESP_OK;
+    const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
     CHECK_WRITE_ADDRESS(dest_addr, size);
     if ((dest_addr % 16) != 0) {
         return ESP_ERR_INVALID_ARG;

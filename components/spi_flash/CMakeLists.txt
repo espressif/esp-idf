@@ -62,18 +62,7 @@ if(${spi_flash_mock})
 
 else()
     if(BOOTLOADER_BUILD)
-        if(CONFIG_IDF_TARGET_ESP32)
-            # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
-            # need other parts of this component
-            set(srcs "esp32/spi_flash_rom_patch.c")
-        elseif(CONFIG_IDF_TARGET_ESP32S2)
-            set(srcs "esp32s2/spi_flash_rom_patch.c")
-        elseif(CONFIG_IDF_TARGET_ESP32S3)
-            set(srcs "esp32s3/spi_flash_rom_patch.c")
-        else()
-            # but on other platforms no source files are needed for bootloader
-            set(srcs)
-        endif()
+        set(srcs "${target}/spi_flash_rom_patch.c")
         set(cache_srcs "")
         set(priv_requires bootloader_support soc)
     else()
@@ -81,21 +70,12 @@ else()
             "cache_utils.c"
             "flash_mmap.c"
             "flash_ops.c"
-            "${IDF_TARGET}/flash_ops_${IDF_TARGET}.c"
+            "${target}/flash_ops_${target}.c"
         )
         set(srcs
-            "partition.c")
-
-        if(CONFIG_IDF_TARGET_ESP32)
-            list(APPEND srcs
-                "esp32/spi_flash_rom_patch.c")
-        elseif(CONFIG_IDF_TARGET_ESP32S2)
-            list(APPEND srcs
-                "esp32s2/spi_flash_rom_patch.c")
-        elseif(CONFIG_IDF_TARGET_ESP32S3)
-            list(APPEND srcs
-                "esp32s3/spi_flash_rom_patch.c")
-        endif()
+            "partition.c"
+            "${target}/spi_flash_rom_patch.c"
+        )
 
         # New implementation after IDF v4.0
         list(APPEND srcs

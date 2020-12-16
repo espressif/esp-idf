@@ -78,6 +78,26 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+#if CONFIG_SPI_FLASH_ROM_IMPL
+    /*
+     * In S3 ROM, extra bits than 24-bit are used to indicate requirements of M7-M0:
+     * - 24: normal transactions
+     * - 28: 24bit DIO + conf bits (M7-M0 excluded from dummy_bitlen)
+     * - 32: 24bit QIO + conf bits (M7-M0 excluded from dummy_bitlen)
+
+     * Detect requirements for the conf bits by the address len, and modify the length to normal
+     * case (addr_bitlen = 24, dummy_bitlen includes M7-M0) as other chip versions use.
+     */
+    int m70_bits = addr_bitlen - 24;
+    if (m70_bits) {
+        assert(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
+        conf_required = true;
+        addr_bitlen -= m70_bits;
+        int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
+        dummy_cyclelen_base += m70_bits / line_width;
+    }
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
+
 #if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
     spi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
@@ -110,11 +130,18 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
 {
     spi_dev_t *dev = get_spi_dev(host);
     esp_flash_io_mode_t io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
-    uint16_t command = trans->command;
-    uint8_t dummy_bitlen = trans->dummy_bitlen;
-
-    if ((trans->flags & SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO) != 0) {
-        io_mode = 0;
+    uint16_t command;
+    uint8_t dummy_bitlen;
+    if (trans->reserved != 0) {
+        // Back-compatible with caller functions of ESP32-S3 ROM
+        command = (uint8_t)trans->reserved;
+        dummy_bitlen = 0;
+    } else {
+        command = trans->command;
+        dummy_bitlen = trans->dummy_bitlen;
+        if ((trans->flags & SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO) != 0) {
+            io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
+        }
     }
 
     host->driver->configure_host_io_mode(host, command, trans->address_bitlen, dummy_bitlen, io_mode);

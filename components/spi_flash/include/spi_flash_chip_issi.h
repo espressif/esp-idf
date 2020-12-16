@@ -24,4 +24,8 @@
  * default autodetection, this is used as a catchall if a more specific chip_drv
  * is not found.
  */
+esp_err_t spi_flash_chip_issi_probe(esp_flash_t *chip, uint32_t flash_id);
+esp_err_t spi_flash_chip_issi_set_io_mode(esp_flash_t *chip);
+esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode);
+
 extern const spi_flash_chip_t esp_flash_chip_issi;
