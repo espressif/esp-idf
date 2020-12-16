@@ -168,16 +168,17 @@ public class BLETransport implements Transport {
             } else if (status == 133) {
                 EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                 return;
-            } else if (status != BluetoothGatt.GATT_SUCCESS) {
+            } else if (status != BluetoothGatt.GATT_SUCCESS && newState != BluetoothProfile.STATE_DISCONNECTED) {
                 // TODO need to check this status
                 return;
             }
+
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.e(TAG, "Connected to GATT server.");
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.e(TAG, "Disconnected from GATT server.");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_DISCONNECTED));
             }
         }
 
