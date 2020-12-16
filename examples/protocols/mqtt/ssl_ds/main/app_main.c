@@ -28,6 +28,7 @@
 
 #include "esp_log.h"
 #include "mqtt_client.h"
+#include "rsa_sign_alt.h"
 
 /* pre_prov - name of partition containing encrypted prv key parameters ( It is set as such to synchronize it with the pre provisioning service */
 #define NVS_PARTITION_NAME  "pre_prov"
