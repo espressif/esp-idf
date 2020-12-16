@@ -61,6 +61,23 @@ typedef struct {
  */
 esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, size_t dst_size_bits);
 
+
+/**
+ * @brief Read a single bit eFuse field as a boolean value.
+ *
+ * @note The value must exist and must be a single bit wide. If there is any possibility of an error
+ * in the provided arguments, call esp_efuse_read_field_blob() and check the returned value instead.
+ *
+ * @note If assertions are enabled and the parameter is invalid, execution will abort
+ *
+ * @param[in]  field          A pointer to the structure describing the fields of efuse.
+ * @return
+ *    - true: The field parameter is valid and the bit is set.
+ *    - false: The bit is not set, or the parameter is invalid and assertions are disabled.
+ *
+ */
+bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[]);
+
 /**
  * @brief   Reads bits from EFUSE field and returns number of bits programmed as "1".
  *
@@ -108,6 +125,23 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
  *    - ESP_ERR_EFUSE_CNT_IS_FULL: Not all requested cnt bits is set.
  */
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt);
+
+/**
+ * @brief Write a single bit eFuse field to 1
+ *
+ * For use with eFuse fields that are a single bit. This function will write the bit to value 1 if
+ * it is not already set, or does nothing if the bit is already set.
+ *
+ * This is equivalent to calling esp_efuse_write_field_cnt() with the cnt parameter equal to 1,
+ * except that it will return ESP_OK if the field is already set to 1.
+ *
+ * @param[in] field Pointer to the structure describing the efuse field.
+ *
+ * @return
+ * - ESP_OK: The operation was successfully completed, or the bit was already set to value 1.
+ * - ESP_ERR_INVALID_ARG: Error in the passed arugments, including if the efuse field is not 1 bit wide.
+ */
+esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[]);
 
 /**
  * @brief   Sets a write protection for the whole block.
@@ -272,6 +306,23 @@ void esp_efuse_reset(void);
  * disable the console on this chip.
  */
 void esp_efuse_disable_basic_rom_console(void);
+
+/* @brief Disable ROM Download Mode via eFuse
+ *
+ * Permanently disables the ROM Download Mode feature. Once disabled, if the SoC is booted with
+ * strapping pins set for ROM Download Mode then an error is printed instead.
+ *
+ * @note Not all SoCs support this option. An error will be returned if called on an ESP32
+ * with a silicon revision lower than 3, as these revisions do not support this option.
+ *
+ * @note If ROM Download Mode is already disabled, this function does nothing and returns success.
+ *
+ * @return
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ * - ESP_ERR_NOT_SUPPORTED (ESP32 only) This SoC is not capable of disabling UART download mode
+ * - ESP_ERR_INVALID_STATE (ESP32 only) This eFuse is write protected and cannot be written
+ */
+esp_err_t esp_efuse_disable_rom_download_mode(void);
 
 /* @brief Write random data to efuse key block write registers
  *
