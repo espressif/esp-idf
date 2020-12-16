@@ -117,7 +117,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     if (use_iomux) {
         PIN_FUNC_SELECT(iomux_reg, spics_func);
     } else {
-#if CONFIG_IDF_TARGET_ESP32C3
+#if SOC_GPIO_PIN_COUNT <= 32
         GPIO.enable_w1ts.val = (0x1 << cs_io_num);
 #else
         if (cs_io_num < 32) {
@@ -139,6 +139,9 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
 esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_device_config_t *config)
 {
     if (out_chip == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(config->cs_io_num)) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_flash_t *chip = NULL;
