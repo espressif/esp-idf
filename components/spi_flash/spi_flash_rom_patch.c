@@ -65,19 +65,20 @@ esp_rom_spiflash_result_t esp_rom_spiflash_unlock()
      (This is different from ROM esp_rom_spiflash_unlock, which keeps all bits as-is.)
     */
     status &= ESP_ROM_SPIFLASH_QE;
+    SET_PERI_REG_MASK(SPI_CTRL_REG(SPI_IDX), SPI_WRSR_2B);
 
     esp_rom_spiflash_wait_idle(&g_rom_spiflash_chip);
     REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WREN);
     while (REG_READ(SPI_CMD_REG(SPI_IDX)) != 0) {
     }
     esp_rom_spiflash_wait_idle(&g_rom_spiflash_chip);
-
-    SET_PERI_REG_MASK(SPI_CTRL_REG(SPI_IDX), SPI_WRSR_2B);
-    if (esp_rom_spiflash_write_status(&g_rom_spiflash_chip, status) != ESP_ROM_SPIFLASH_RESULT_OK) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
+    esp_rom_spiflash_result_t ret = esp_rom_spiflash_write_status(&g_rom_spiflash_chip, status);
+    // WEL bit should be cleared after operations regardless of writing succeed or not.
+    esp_rom_spiflash_wait_idle(&g_rom_spiflash_chip);
+    REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WRDI);
+    while (REG_READ(SPI_CMD_REG(SPI_IDX)) != 0) {
     }
-
-    return ESP_ROM_SPIFLASH_RESULT_OK;
+    return ret;
 }
 
 
@@ -657,6 +658,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint3
         total_sector_num--;
     }
 
+    return ESP_ROM_SPIFLASH_RESULT_OK;
+}
+
+esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
+{
+    REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WRDI);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 

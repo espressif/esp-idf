@@ -538,6 +538,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
  */
 void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
 
+/**
+ * @brief Clear WEL bit unconditionally.
+ *
+ * @return always ESP_ROM_SPIFLASH_RESULT_OK
+ */
+esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
+
 /** @brief Global esp_rom_spiflash_chip_t structure used by ROM functions
  *
  */

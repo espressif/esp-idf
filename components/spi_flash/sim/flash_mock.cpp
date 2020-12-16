@@ -109,3 +109,8 @@ void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     return NULL;
 }
+
+esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
+{
+    return ESP_ROM_SPIFLASH_RESULT_OK;
+}
