@@ -286,9 +286,14 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         return FALSE;
     }
 
+    BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
+    memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
+    memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
+
     // look for public address information
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
-    if(p_dev_rec) {
+    // p_dev_rec is created at bluetooth initialization, p_dev_rec->ble.static_addr maybe be all 0 before pairing
+    if(p_dev_rec && memcmp(invalid_rand_addr_b, p_dev_rec->ble.static_addr, BD_ADDR_LEN) != 0) {
         memcpy(bd_addr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
         addr_type = p_dev_rec->ble.static_addr_type;
     }
@@ -301,9 +306,6 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         • All bits of the random part of the address shall not be equal to 1
         • All bits of the random part of the address shall not be equal to 0
         */
-        BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
-        memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
-        memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
         invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
         if((bd_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
             && memcmp(invalid_rand_addr_a, bd_addr, BD_ADDR_LEN) != 0
@@ -318,7 +320,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         }
 
     }
-
+    
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     if (to_add && p_cb->white_list_avail_size == 0) {
