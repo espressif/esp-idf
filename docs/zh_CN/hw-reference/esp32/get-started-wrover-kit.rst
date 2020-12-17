@@ -109,7 +109,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     * - 电源选择开关
       - ESP-WROVER-KIT 开发板可通过 USB 端口或 5V 输入接口供电。用户可使用跳线帽在两种供电模式中进行选择。更多详细信息，请见章节 `设置选项`_ 中有关 JP7 连接器的描述。
     * - 5V Input
-      - 5V 电源接口。建议仅在开发板自动运行（未连接 PC）时使用。仅用于全负荷工作下的后备电源。
+      - 5V 电源接口。为标准同轴电源接口，5.5 x 2.1 mm，中心正极。建议仅在开发板自动运行（未连接 PC）时使用。
     * - 5V Power On LED
       - 当开发板通电后（USB 或外部 5V 供电），该红色指示灯将亮起。
     * - LDO
@@ -427,7 +427,8 @@ USB 供电                   使能 UART 通信
 -----------------
 
 * `ESP-WROVER-KIT V4.1 原理图`_ (PDF)
-* `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
+* `ESP-WROVER-KIT V4.1 布局 <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF)
+* `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
 * `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`

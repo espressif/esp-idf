@@ -30,9 +30,9 @@ Its another distinguishing feature is the embedded FTDI FT2232HL chip - an advan
 
 Most of the ESP32 I/O pins are broken out to the board's pin headers for easy access.
 
-    .. note::
+.. note::
 
-        ESP32's GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two GPIOs are not broken out to the board's pin headers in order to ensure reliable performance.
+    ESP32's GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two GPIOs are not broken out to the board's pin headers in order to ensure reliable performance.
 
 
 Functionality Overview
@@ -109,7 +109,7 @@ Power Switch        Power On/Off Switch. Toggling toward the **Boot** button pow
 
 Power Selector      Power supply selector interface. The board can be powered either via USB or via the 5V Input interface. Select the power source with a jumper. For more details, see Section `Setup Options`_, jumper header JP7.
 
-5V Input            The 5V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
+5V Input            5V power supply interface for a standard coaxial power connector, 5.5 x 2.1 mm, center positive. This interface can be more convenient when the board is operating autonomously (not connected to a computer).
 
 5V Power On LED     This red LED turns on when power is supplied to the board, either from **USB** or **5V Input**.
 
@@ -365,7 +365,8 @@ Related Documents
 -----------------
 
 * `ESP-WROVER-KIT V4.1 schematic`_ (PDF)
-* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
+* `ESP-WROVER-KIT V4.1 layout <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF) may be opened online with `Autodesk Viewer <https://viewer.autodesk.com/>`_
+* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
 * `ESP32-WROVER-B Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
