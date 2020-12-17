@@ -139,6 +139,13 @@ function run_tests()
     rm -f sdkconfig
     rm -f ${TESTDIR}/template/version.txt
 
+    print_status "Use IDF version variables in component CMakeLists.txt file"
+    clean_build_dir
+    (echo -e "if (NOT IDF_VERSION_MAJOR)\n message(FATAL_ERROR \"IDF version not set\")\n endif()" \
+        && cat main/CMakeLists.txt) > main/CMakeLists.new && mv main/CMakeLists.new main/CMakeLists.txt
+    idf.py reconfigure || failure "Failed to use IDF_VERSION_MAJOR in component CMakeLists.txt"
+    git checkout -- main/CMakeLists.txt
+
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build
