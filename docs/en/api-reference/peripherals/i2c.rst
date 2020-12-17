@@ -62,8 +62,91 @@ To establish I2C communication, start by configuring the driver. This is done by
 
 After that, initialize the configuration for a given I2C port. For this, call the function :cpp:func:`i2c_param_config` and pass to it the port number and the structure :cpp:type:`i2c_config_t`.
 
+Configuration example (master):
+
+.. code-block:: c
+
+    int i2c_master_port = 0;
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = I2C_MASTER_SDA_IO,         // select GPIO specific to your project
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_io_num = I2C_MASTER_SCL_IO,         // select GPIO specific to your project
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = I2C_MASTER_FREQ_HZ,  // select frequency specific to your project
+        // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
+    };
+
+Configuration example (slave):
+
+.. code-block:: c
+
+    int i2c_slave_port = I2C_SLAVE_NUM;
+    i2c_config_t conf_slave = {
+        .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .mode = I2C_MODE_SLAVE,
+        .slave.addr_10bit_en = 0,
+        .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+    };
+
 At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configuration parameters to default values that are defined by the I2C specification. For more details on the values and how to modify them, see :ref:`i2c-api-customized-configuration`.
 
+Source Clock Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Clock sources allocator** is added for supporting different clock sources (Master only). The clock allocator will choose one clock source that meets all the requirements of frequency and capability (as requested in :cpp:member:`i2c_config_t::clk_flags`).
+
+When :cpp:member:`i2c_config_t::clk_flags` is 0, the clock allocator will select only according to the desired frequency. If no special capabilities are needed, such as APB, you can configure the clock allocator to select the source clock only according to the desired frequency. For this, set :cpp:member:`i2c_config_t::clk_flags` to 0. For clock characteristics, see the table below.
+
+.. note::
+
+    A clock is not a valid option, if it doesn't meet the requested capabilities, i.e. any bit of requested capabilities (clk_flags) is 0 in the clock's capabilities.
+
+.. only:: esp32
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} clock sources
+       :widths: 5 5 50 20
+       :header-rows: 1
+
+       * - Clock name
+         - Clock frequency
+         - MAX freq for SCL
+         - Clock capabilities
+       * - APB clock
+         - 80 MHz
+         - 4 MHz
+         - /
+
+.. only:: esp32s2
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} clock sources
+       :widths: 5 5 50 100
+       :header-rows: 1
+
+       * - Clock name
+         - Clock frequency
+         - MAX freq for SCL
+         - Clock capabilities
+       * - APB clock
+         - 80 MHz
+         - 4 MHz
+         - /
+       * - REF_TICK
+         - 1 MHz
+         - 50 KHz
+         - :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`, :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`
+
+    Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
+
+    1. :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`: Clock's baud rate will not change while APB clock is changing.
+    2. :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`: It supports Light-sleep mode, which APB clock cannot do.
+
+.. note::
+
+    The clock frequency of SCL in master mode should not be lager than max frequency for SCL mentioned in the table above.
 
 .. _i2c-api-install-driver:
 
