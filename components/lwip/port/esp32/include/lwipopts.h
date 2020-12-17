@@ -767,6 +767,9 @@
    ---------- Hook options ---------------
    ---------------------------------------
 */
+#ifdef LWIP_HOOK_FILENAME
+#warning LWIP_HOOK_FILENAME is used for IDF default hooks. Please use ESP_IDF_LWIP_HOOK_FILENAME to insert additional hook
+#endif
 #define LWIP_HOOK_FILENAME              "lwip_default_hooks.h"
 #define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
 
