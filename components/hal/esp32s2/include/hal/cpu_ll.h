@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-static inline int IRAM_ATTR cpu_ll_get_core_id(void)
+static inline uint32_t IRAM_ATTR cpu_ll_get_core_id(void)
 {
     return 0;
 }

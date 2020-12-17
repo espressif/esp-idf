@@ -30,7 +30,7 @@ extern "C" {
 #if SOC_CPU_CORES_NUM > 1
 // Utility functions for multicore targets
 #define __SOC_HAL_PERFORM_ON_OTHER_CORES(action)    { \
-                                                        for (int i = 0, cur = cpu_hal_get_core_id(); i < SOC_CPU_CORES_NUM; i++) { \
+                                                        for (uint32_t i = 0, cur = cpu_hal_get_core_id(); i < SOC_CPU_CORES_NUM; i++) { \
                                                             if (i != cur) { \
                                                                 action(i); \
                                                             } \
