@@ -37,6 +37,7 @@ class Websocket:
         self.socket.settimeout(10.0)
         self.send_q = queue.Queue()
         self.shutdown = Event()
+        self.conn = None
 
     def __enter__(self):
         try:
@@ -55,7 +56,8 @@ class Websocket:
         self.shutdown.set()
         self.server_thread.join()
         self.socket.close()
-        self.conn.close()
+        if self.conn:
+            self.conn.close()
 
     def run_server(self):
         self.conn, address = self.socket.accept()  # accept new connection
