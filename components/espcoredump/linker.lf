@@ -19,13 +19,11 @@ entries:
     else:
         * (default)
 
-[mapping:mbedtls]
-archive: libmbedtls.a
+[mapping:sha256_coredump]
+archive: libmbedcrypto.a
 entries:
     if ESP32_COREDUMP_CHECKSUM_SHA256 = y :
         if MBEDTLS_HARDWARE_SHA = n:
             sha256 (noflash_text)
         else:
             esp_sha256 (noflash_text)
-    else:
-        * (default)

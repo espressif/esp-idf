@@ -1,1 +1,2 @@
 libc
+sha256_coredump
