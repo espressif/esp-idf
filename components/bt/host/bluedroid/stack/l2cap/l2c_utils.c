@@ -3465,13 +3465,12 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
                     L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send: No data to be sent");
                     return (NULL);
                 }
+                l2cu_check_channel_congestion (p_ccb);
+                l2cu_set_acl_hci_header (p_buf, p_ccb);
                 /* send tx complete */
                 if (l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb) {
                     (*l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb)(p_ccb->local_cid, 1);
                 }
-
-                l2cu_check_channel_congestion (p_ccb);
-                l2cu_set_acl_hci_header (p_buf, p_ccb);
                 return (p_buf);
             }
         }
