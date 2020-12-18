@@ -902,30 +902,7 @@ static inline void adc_ll_disable_sleep_controller(void)
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    // /* Enable i2s_write_reg function. */
-    // void phy_get_romfunc_addr(void);
-    // phy_get_romfunc_addr();
-    // //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-
-    // /* Enable/disable internal connect GND (for calibration). */
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_DREF_ADDR, 4);
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
-    //     }
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_DREF_ADDR, 4);
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
-    //     }
-    // }
+    abort(); // TODO ESP32-C3 IDF-2526
 }
 
 /**
@@ -935,11 +912,7 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  */
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
-    // }
+    abort(); // TODO ESP32-C3 IDF-2526
 }
 
 /**
@@ -951,24 +924,8 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    // uint8_t msb = param >> 8;
-    // uint8_t lsb = param & 0xFF;
-    // /* Enable i2s_write_reg function. */
-    // void phy_get_romfunc_addr(void);
-    // phy_get_romfunc_addr();
-    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_LOW_ADDR, lsb);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_LOW_ADDR, lsb);
-    // }
+    abort(); // TODO ESP32-C3 IDF-2526
 }
-/* Temp code end. */
 
 #ifdef __cplusplus
 }
