@@ -10,7 +10,7 @@ idf_component_register(SRCS "intr_alloc.c"
                                   # [refactor-todo] requirements due to init code,
                                   # should be removable once using component init functions
                                   # link-time registration is used.
-                                  esp_pm app_update nvs_flash pthread app_trace
+                                  esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
                     LDFRAGMENTS "linker.lf")
 
 add_subdirectory(port)

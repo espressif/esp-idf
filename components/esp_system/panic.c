@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_err.h"
 #include "esp_attr.h"
@@ -19,13 +20,6 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/usb_console.h"
 #include "esp_ota_ops.h"
-
-#if CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"
-#if CONFIG_SYSVIEW_ENABLE
-#include "SEGGER_RTT.h"
-#endif
-#endif // CONFIG_APPTRACE_ENABLE
 
 #include "esp_core_dump.h"
 
@@ -36,19 +30,10 @@
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
 
-#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-#include <string.h>
-#include "hal/uart_hal.h"
-#endif
-
 #include "esp_private/panic_internal.h"
 #include "port/panic_funcs.h"
 
 #include "sdkconfig.h"
-
-#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-#include "esp_private/gdbstub.h"
-#endif
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
 #include "esp_core_dump.h"
@@ -67,8 +52,12 @@
 #endif
 #endif // CONFIG_APPTRACE_ENABLE
 
+#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+#include "hal/uart_hal.h"
+#endif
+
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-#include "esp_private/gdbstub.h"
+#include "esp_gdbstub.h"
 #endif
 
 bool g_panic_abort = false;
