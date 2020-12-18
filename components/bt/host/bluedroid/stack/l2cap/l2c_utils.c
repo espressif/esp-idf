@@ -1450,14 +1450,17 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     tL2C_CCB    *p_ccb = NULL;
     L2CAP_TRACE_DEBUG ("l2cu_allocate_ccb: cid 0x%04x", cid);
 
+    p_ccb = l2cu_find_free_ccb ();
+    if(p_ccb == NULL) {
+        if (list_length(l2cb.p_ccb_pool) < MAX_L2CAP_CHANNELS) {
+            p_ccb = (tL2C_CCB *)osi_malloc(sizeof(tL2C_CCB));
 
-    if (list_length(l2cb.p_ccb_pool) < MAX_L2CAP_CHANNELS) {
-        p_ccb = (tL2C_CCB *)osi_malloc(sizeof(tL2C_CCB));
-        if (p_ccb) {
-            memset (p_ccb, 0, sizeof(tL2C_CCB));
-            list_append(l2cb.p_ccb_pool, p_ccb);
-	}
-    }
+            if (p_ccb) {
+                memset (p_ccb, 0, sizeof(tL2C_CCB));
+                list_append(l2cb.p_ccb_pool, p_ccb);
+            }
+        }
+     }
     if (p_ccb == NULL) {
         return (NULL);
     }
@@ -1686,14 +1689,7 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
 
     /* Flag as not in use */
     p_ccb->in_use = FALSE;
-    {
-	if (list_remove(l2cb.p_ccb_pool, p_ccb)) {
-    	    p_ccb = NULL;
-	}
-        else {
-	    L2CAP_TRACE_ERROR("Error in removing L2CAP Channel Control Block");
-	}
-    }
+
     /* If no channels on the connection, start idle timeout */
     if ((p_lcb) && p_lcb->in_use && (p_lcb->link_state == LST_CONNECTED)) {
         if (!p_lcb->ccb_queue.p_first_ccb) {
@@ -3266,6 +3262,23 @@ tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid)
     }
 
     return (p_ccb);
+}
+
+tL2C_CCB *l2cu_find_free_ccb (void)
+{
+    tL2C_CCB    *p_ccb = NULL;
+
+    list_node_t *p_node = NULL;
+
+    for (p_node = list_begin(l2cb.p_ccb_pool); p_node; p_node = list_next(p_node))
+    {
+        p_ccb = list_node(p_node);
+        if(p_ccb && !p_ccb->in_use ) {
+            return p_ccb;
+        }
+    }
+
+    return (NULL);
 }
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE && CLASSIC_BT_INCLUDED == TRUE)

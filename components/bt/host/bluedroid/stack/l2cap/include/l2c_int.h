@@ -609,6 +609,7 @@ extern void     l2cu_change_pri_ccb (tL2C_CCB *p_ccb, tL2CAP_CHNL_PRIORITY prior
 extern tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid);
 extern void     l2cu_release_ccb (tL2C_CCB *p_ccb);
 extern tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid);
+extern tL2C_CCB *l2cu_find_free_ccb(void);
 extern tL2C_CCB *l2cu_find_ccb_by_remote_cid (tL2C_LCB *p_lcb, UINT16 remote_cid);
 extern void     l2cu_adj_id (tL2C_LCB *p_lcb, UINT8 adj_mask);
 extern BOOLEAN  l2c_is_cmd_rejected (UINT8 cmd_code, UINT8 id, tL2C_LCB *p_lcb);

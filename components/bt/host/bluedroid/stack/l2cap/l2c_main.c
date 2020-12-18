@@ -904,12 +904,28 @@ void l2c_free_p_lcb_pool(void)
     list_free(l2cb.p_lcb_pool);
 }
 
+void l2c_free_p_ccb_pool(void)
+{
+    list_node_t *p_node = NULL;
+    tL2C_CCB    *p_ccb  = NULL;
+    for (p_node = list_begin(l2cb.p_ccb_pool); p_node; p_node = list_next(p_node)) {
+        p_ccb = list_node(p_node);
+        if (p_ccb) {
+            l2cu_release_ccb (p_ccb);
+            list_remove(l2cb.p_ccb_pool, p_ccb);
+            osi_free(p_ccb);
+        }
+    }
+
+    list_free(l2cb.p_ccb_pool);
+}
+
 void l2c_free(void)
 {
     list_free(l2cb.rcv_pending_q);
     l2cb.rcv_pending_q = NULL;
     l2c_free_p_lcb_pool();
-    list_free(l2cb.p_ccb_pool);
+    l2c_free_p_ccb_pool();
 #if L2C_DYNAMIC_MEMORY
     FREE_AND_RESET(l2c_cb_ptr);
 #endif
