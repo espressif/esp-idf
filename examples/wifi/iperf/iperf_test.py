@@ -70,6 +70,9 @@ class TestResult(object):
     # we need at least 1/2 valid points to qualify the test result
     THROUGHPUT_QUALIFY_COUNT = TEST_TIME // 2
 
+    RSSI_RANGE = [-x for x in range(10, 100)]
+    ATT_RANGE = [x for x in range(0, 64)]
+
     def __init__(self, proto, direction, config_name):
         self.proto = proto
         self.direction = direction
@@ -180,16 +183,6 @@ class TestResult(object):
         analysis_bad_point(self.throughput_by_rssi, "rssi")
         analysis_bad_point(self.throughput_by_att, "att")
 
-    @staticmethod
-    def _convert_to_draw_format(data, label):
-        keys = list(data.keys())
-        keys.sort()
-        return {
-            "x-axis": keys,
-            "y-axis": [data[x] for x in keys],
-            "label": label,
-        }
-
     def draw_throughput_figure(self, path, ap_ssid, draw_type):
         """
         :param path: folder to save figure. make sure the folder is already created.
@@ -200,25 +193,24 @@ class TestResult(object):
         if draw_type == "rssi":
             type_name = "RSSI"
             data = self.throughput_by_rssi
+            range_list = self.RSSI_RANGE
         elif draw_type == "att":
             type_name = "Att"
             data = self.throughput_by_att
+            range_list = self.ATT_RANGE
         else:
             raise AssertionError("draw type not supported")
         if isinstance(ap_ssid, list):
-            file_name = "ThroughputVs{}_{}_{}_{}.png".format(type_name, self.proto, self.direction,
-                                                             hash(ap_ssid)[:6])
-            data_list = [self._convert_to_draw_format(data[_ap_ssid], _ap_ssid)
-                         for _ap_ssid in ap_ssid]
+            file_name = "ThroughputVs{}_{}_{}_{}.html".format(type_name, self.proto, self.direction,
+                                                              hash(ap_ssid)[:6])
         else:
-            file_name = "ThroughputVs{}_{}_{}_{}.png".format(type_name, self.proto, self.direction, ap_ssid)
-            data_list = [self._convert_to_draw_format(data[ap_ssid], ap_ssid)]
+            file_name = "ThroughputVs{}_{}_{}_{}.html".format(type_name, self.proto, self.direction, ap_ssid)
 
         LineChart.draw_line_chart(os.path.join(path, file_name),
                                   "Throughput Vs {} ({} {})".format(type_name, self.proto, self.direction),
                                   "{} (dbm)".format(type_name),
                                   "Throughput (Mbps)",
-                                  data_list)
+                                  data, range_list)
         return file_name
 
     def draw_rssi_vs_att_figure(self, path, ap_ssid):
@@ -228,17 +220,15 @@ class TestResult(object):
         :return: file_name
         """
         if isinstance(ap_ssid, list):
-            file_name = "AttVsRSSI_{}.png".format(hash(ap_ssid)[:6])
-            data_list = [self._convert_to_draw_format(self.att_rssi_map[_ap_ssid], _ap_ssid)
-                         for _ap_ssid in ap_ssid]
+            file_name = "AttVsRSSI_{}.html".format(hash(ap_ssid)[:6])
         else:
-            file_name = "AttVsRSSI_{}.png".format(ap_ssid)
-            data_list = [self._convert_to_draw_format(self.att_rssi_map[ap_ssid], ap_ssid)]
+            file_name = "AttVsRSSI_{}.html".format(ap_ssid)
         LineChart.draw_line_chart(os.path.join(path, file_name),
                                   "Att Vs RSSI",
                                   "Att (dbm)",
                                   "RSSI (dbm)",
-                                  data_list)
+                                  self.att_rssi_map,
+                                  self.ATT_RANGE)
         return file_name
 
     def get_best_throughput(self):

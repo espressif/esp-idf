@@ -229,7 +229,7 @@ class ThroughputVsRssiReport(object):
             result.draw_throughput_figure(self.raw_data_path, ap_ssid, "att")
             result.draw_rssi_vs_att_figure(self.raw_data_path, ap_ssid)
 
-            ret += "\r\n![throughput Vs RSSI]({})\r\n".format(os.path.join("raw_data", file_name))
+            ret += "\r\n[throughput Vs RSSI]({})\r\n".format(os.path.join("raw_data", file_name))
 
         return ret
 
