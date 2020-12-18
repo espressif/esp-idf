@@ -902,6 +902,7 @@ static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *
     read_and_check(part, source, length);
 }
 
+#if !CONFIG_SPIRAM
 typedef struct {
     uint32_t us_start;
     size_t len;
@@ -1043,8 +1044,9 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     free(data_read);
 }
 
-FLASH_TEST_CASE("Test esp_flash read/write performance", test_flash_read_write_performance);
-FLASH_TEST_CASE_3("Test esp_flash read/write performance", test_flash_read_write_performance);
+TEST_CASE("Test esp_flash read/write performance", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(test_flash_read_write_performance, 1);}
+#endif // !CONFIG_SPIRAM
+FLASH_TEST_CASE_3("Test esp_flash read/write performance"", 3 chips", test_flash_read_write_performance);
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC
 
