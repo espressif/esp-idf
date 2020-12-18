@@ -2158,7 +2158,7 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        data_len += 2 + strlen(service->txt->key) + strlen(service->txt->value);
+        data_len += 2 + strlen(txt->key) + strlen(txt->value);
         txt = txt->next;
     }
 
