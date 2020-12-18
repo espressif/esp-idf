@@ -604,10 +604,10 @@ void rtc_dig_clk8m_enable(void);
 void rtc_dig_clk8m_disable(void);
 
 /**
- * @brief Caculate the real clock value after the clock calibration
+ * @brief Calculate the real clock value after the clock calibration
  *
- * @param cal_val average slow clock period in microseconds, can be return from `rtc_clk_cal`
- * @return The real value of the clock has been measured
+ * @param cal_val Average slow clock period in microseconds, fixed point value as returned from `rtc_clk_cal`
+ * @return Frequency of the clock in Hz
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
