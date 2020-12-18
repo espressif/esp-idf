@@ -120,7 +120,7 @@ typedef struct {
 #endif
             uint8_t channel:   4;   /*!< ADC channel index. */
         };
-        uint8_t val;
+        uint8_t val;                /*!<Raw data value */
     };
 } adc_digi_pattern_table_t;
 
@@ -157,7 +157,7 @@ typedef struct {
                                         If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint16_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
         } type2;                    /*!<When the configured output format is 11bit. `ADC_DIGI_FORMAT_11BIT` */
-        uint16_t val;
+        uint16_t val;               /*!<Raw data value */
     };
 } adc_digi_output_data_t;
 
