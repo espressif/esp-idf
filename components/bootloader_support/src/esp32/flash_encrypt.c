@@ -252,9 +252,7 @@ static esp_err_t encrypt_bootloader(void)
         ESP_LOGD(TAG, "bootloader is plaintext. Encrypting...");
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-        // Account for the signature sector after the bootloader
-        image_length = (image_length + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE - 1);
-        image_length += FLASH_SECTOR_SIZE;
+        /* The image length obtained from esp_image_verify_bootloader includes the sector boundary padding and the signature block lengths */
         if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
             ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
             return ESP_ERR_INVALID_STATE;
