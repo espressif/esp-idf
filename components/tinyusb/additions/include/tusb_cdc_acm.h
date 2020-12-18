@@ -74,9 +74,9 @@ typedef enum {
 typedef struct {
     cdcacm_event_type_t type; /*!< Event type */
     union {
-        cdcacm_event_rx_wanted_char_data_t rx_wanted_char_data;
-        cdcacm_event_line_state_changed_data_t line_state_changed_data;
-        cdcacm_event_line_coding_changed_data_t line_coding_changed_data;
+        cdcacm_event_rx_wanted_char_data_t rx_wanted_char_data; /*!< Data input of the `callback_rx_wanted_char` callback */
+        cdcacm_event_line_state_changed_data_t line_state_changed_data; /*!< Data input of the `callback_line_state_changed` callback */
+        cdcacm_event_line_coding_changed_data_t line_coding_changed_data; /*!< Data input of the `line_coding_changed` callback */
     };
 } cdcacm_event_t;
 

@@ -134,7 +134,7 @@ typedef struct {
 #endif
             uint8_t channel:   4;   /*!< ADC channel index. */
         };
-        uint8_t val;
+        uint8_t val;                /*!<Raw data value */
     };
 } adc_digi_pattern_table_t;
 
