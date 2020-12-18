@@ -90,6 +90,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 }
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/efuse.h"
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
@@ -97,6 +98,16 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = true, \
     .input_delay_ns = 0,\
 }
+#else
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+    .auto_sus_en = true,\
+}
+#endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif
 
 
@@ -240,6 +251,7 @@ static DRAM_ATTR esp_flash_t default_chip = {
     .os_func = &esp_flash_noos_functions,
 };
 
+extern esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip);
 esp_err_t esp_flash_init_default_chip(void)
 {
     const esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
@@ -255,10 +267,6 @@ esp_err_t esp_flash_init_default_chip(void)
     if (err != ESP_OK) {
         return err;
     }
-
-#ifdef CONFIG_SPI_FLASH_AUTO_SUSPEND
-    spi_flash_hal_setup_auto_suspend_mode(default_chip.host);
-#endif
 
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
@@ -277,6 +285,12 @@ esp_err_t esp_flash_init_default_chip(void)
     default_chip.size = legacy_chip->chip_size;
 
     esp_flash_default_chip = &default_chip;
+#ifdef CONFIG_SPI_FLASH_AUTO_SUSPEND
+    err = esp_flash_suspend_cmd_init(&default_chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
     return ESP_OK;
 }
 

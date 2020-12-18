@@ -124,7 +124,6 @@ menu "SPI Flash driver"
     config SPI_FLASH_YIELD_DURING_ERASE
         bool "Enables yield operation during flash erase"
         default y
-        depends on SPI_FLASH_USE_LEGACY_IMPL
         help
             This allows to yield the CPUs between erase commands.
             Prevents starvation of other tasks.
@@ -143,6 +142,17 @@ menu "SPI Flash driver"
         default 1
         help
             Defines how many ticks will be before returning to continue a erasing.
+
+    config SPI_FLASH_AUTO_SUSPEND
+        bool "Auto suspend long erase/write operations"
+        default n
+        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL
+        help
+            This is made default n, because this needs bootloader support.
+            This feature needs special bootloader support.
+            If you want to OTA to a image with this feature
+            (e.g. turn on this config option for OTA image), please make
+            sure the bootloader has the support for it. (above IDF v4.3)
 
     config SPI_FLASH_WRITE_CHUNK_SIZE
         int "Flash write chunk size"

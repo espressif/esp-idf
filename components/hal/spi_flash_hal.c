@@ -71,17 +71,6 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
     return apb_period_n / apbclk_n;
 }
 
-#ifdef CONFIG_SPI_FLASH_AUTO_SUSPEND
-
-void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
-{
-    mspi_auto_suspend_stub_install();
-    spi_flash_ll_auto_wait_idle_init(spi_flash_ll_get_hw(SPI_HOST), true);
-    spi_flash_ll_auto_suspend_init(spi_flash_ll_get_hw(SPI_HOST), true);
-}
-
-#endif // CONFIG_SPI_FLASH_AUTO_SUSPEND
-
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
     if (!esp_ptr_internal(data_out) && cfg->host_id == SPI1_HOST) {
@@ -102,6 +91,10 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .clock_conf = clock_cfg->clock_reg_val,
         .cs_hold = cfg->cs_hold,
     };
+    if (cfg->auto_sus_en) {
+        data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND;
+        data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
+    }
 
     ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;

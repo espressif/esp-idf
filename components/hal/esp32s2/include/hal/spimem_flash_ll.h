@@ -122,24 +122,100 @@ static inline void spimem_flash_ll_suspend(spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_resume(spi_mem_dev_t *dev)
 {
-    dev->misc.auto_per = 0; // Must disable Hardware Auto-Resume (should not be enabled, ESP32-S2 has bugs).
     dev->flash_sus_cmd.flash_per = 1;
-    while (dev->flash_sus_cmd.flash_per) { };
 }
 
 /**
- * Initialize auto wait idle mode
+ * Initialize auto suspend mode
  *
  * @param dev Beginning address of the peripheral registers.
  * @param auto_sus Enable/disable Flash Auto-Suspend.
  */
 static inline void spimem_flash_ll_auto_suspend_init(spi_mem_dev_t *dev, bool auto_sus)
 {
-    dev->flash_sus_ctrl.flash_pes_command = 0x75; // Set auto suspend command, usually 0x75
-    dev->flash_sus_ctrl.flash_per_command = 0x7A; // Set auto resume command, usually 0x7A
-    // SET_PERI_REG_MASK(SPI_MEM_FLASH_SUS_CMD_REG(1), SPI_MEM_PES_PER_EN_M); // Only on S3 chip
-    // SET_PERI_REG_MASK(SPI_MEM_FLASH_SUS_CMD_REG(1), SPI_MEM_PESR_IDLE_EN_M); // MUST SET 1, to avoid missing Resume (Only on S3 chip)
-    dev->flash_sus_ctrl.flash_pes_en = auto_sus; // enable Flash Auto-Suspend.
+    dev->flash_sus_ctrl.flash_pes_en = auto_sus;
+}
+
+/**
+ * Initialize auto resume mode
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param auto_res Enable/Disable Flash Auto-Resume.
+ *
+ */
+static inline void spimem_flash_ll_auto_resume_init(spi_mem_dev_t *dev, bool auto_res)
+{
+    dev->misc.auto_per = 0; // Must disable Hardware Auto-Resume (should not be enabled, ESP32-S2 has bugs).
+}
+
+/**
+ * Set 8 bit command to read suspend status
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint32_t sus_mask)
+{
+    abort();// Not supported on esp32s2
+}
+
+/**
+ * Setup the flash suspend command, may vary from chips to chips.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param sus_cmd Flash suspend command.
+ *
+ */
+static inline void spimem_flash_ll_suspend_cmd_setup(spi_mem_dev_t *dev, uint32_t sus_cmd)
+{
+    dev->flash_sus_ctrl.flash_pes_command = sus_cmd;
+}
+
+/**
+ * Setup the flash resume command, may vary from chips to chips.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param res_cmd Flash resume command.
+ *
+ */
+static inline void spimem_flash_ll_resume_cmd_setup(spi_mem_dev_t *dev, uint32_t res_cmd)
+{
+    dev->flash_sus_ctrl.flash_per_command = res_cmd;
+}
+
+/**
+ * Setup the flash read suspend status command, may vary from chips to chips.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param pesr_cmd Flash read suspend status command.
+ *
+ */
+static inline void spimem_flash_ll_rd_sus_cmd_setup(spi_mem_dev_t *dev, uint32_t pesr_cmd)
+{
+    abort();// Not supported on esp32s2
+}
+
+/**
+ * Setup to check SUS/SUS1/SUS2 to ensure the suspend status of flashs.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param sus_check_sus_en 1: enable, 0: disable.
+ *
+ */
+static inline void spimem_flash_ll_sus_check_sus_setup(spi_mem_dev_t *dev, bool sus_check_sus_en)
+{
+    abort();// Not supported on esp32s2
+}
+
+/**
+ * Setup to check SUS/SUS1/SUS2 to ensure the resume status of flashs.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param sus_check_sus_en 1: enable, 0: disable.
+ *
+ */
+static inline void spimem_flash_ll_res_check_sus_setup(spi_mem_dev_t *dev, bool res_check_sus_en)
+{
+    abort();// Not supported on esp32s2
 }
 
 /**
@@ -161,7 +237,7 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
  *
  * @return true if suspended, otherwise false.
  */
-static inline bool spimem_flash_ll_sus_status(const spi_mem_dev_t *dev)
+static inline bool spimem_flash_ll_sus_status(spi_mem_dev_t *dev)
 {
     return dev->sus_status.flash_sus;
 }

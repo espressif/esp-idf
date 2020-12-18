@@ -48,18 +48,22 @@ typedef struct {
     };
     spi_flash_ll_clock_reg_t clock_conf;    ///< Pre-calculated clock configuration value
     esp_flash_io_mode_t base_io_mode;       ///< Default IO mode mask for common commands
-    uint32_t reserved_config[1];            ///< The ROM has reserved some memory for configurations with one set of driver code. (e.g. QPI mode, 64-bit address mode, etc.)
+    uint32_t flags;             ///< Flags for configurations with one set of driver code. (e.g. QPI mode, auto-suspend mode, 64-bit address mode, etc.)
+#define SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND         BIT(0)  ///< When the auto-suspend is setup in configuration.
+#define SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME          BIT(1)  ///< Setup auto-resume feature.
+    spi_flash_sus_cmd_conf sus_cfg;        ///< To store suspend command/mask information.
 } spi_flash_hal_context_t;
-_Static_assert(sizeof(spi_flash_hal_context_t) == 28, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
+_Static_assert(sizeof(spi_flash_hal_context_t) == 36, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
 /// Configuration structure for the SPI driver.
 typedef struct {
     spi_host_device_t host_id;            ///< SPI peripheral ID.
     int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
-    int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock， used for timing compensation.
+    int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.
     uint32_t cs_hold;       ///< CS hold time config used by the host
+    bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
 } spi_flash_hal_config_t;
 
 /**
@@ -160,9 +164,9 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp);
  *
  * @param host The driver context.
  *
- * @return ture if idle, otherwise false.
+ * @return 0:busy, 1:idle, 2:suspended.
  */
-bool spi_flash_hal_host_idle(spi_flash_host_inst_t *host);
+uint32_t spi_flash_hal_host_idle(spi_flash_host_inst_t *host);
 
 /**
  * @brief Configure the SPI host hardware registers for the specified io mode.
@@ -206,13 +210,6 @@ esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_inst_t *host, uint
 void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host);
 
 /**
- * Setup a auto-suspend mode.
- *
- * @param host The driver context.
- */
-void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host);
-
-/**
  * Check whether the given buffer can be used as the write buffer directly. If 'chip' is connected to the main SPI bus, we can only write directly from
  * regions that are accessible ith cache disabled. *
  *
@@ -233,3 +230,37 @@ bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void
  * @return True if the buffer can be used to receive data, otherwise false.
  */
 bool spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p);
+
+/**
+ * @brief Check the suspend status and resume a suspended operation.
+ *
+ * @param host The driver context.
+ *
+ */
+bool spi_flash_hal_check_suspend(spi_flash_host_inst_t *host);
+
+/**
+ * @brief Resume flash chip status from suspend.
+ *
+ * @param host The driver context.
+ *
+ */
+void spi_flash_hal_resume(spi_flash_host_inst_t *host);
+
+/**
+ * @brief Set the flash into suspend status manually.
+ *
+ * @param host The driver context.
+ *
+ */
+void spi_flash_hal_suspend(spi_flash_host_inst_t *host);
+
+/**
+ * To setup for reading flash suspend status register
+ *
+ * @param host The driver context.
+ * @param sus_conf Flash chip suspend feature configuration, mainly for command config, may vary from chip to chip.
+ *
+ * @return Always ESP_OK
+ */
+esp_err_t spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf);

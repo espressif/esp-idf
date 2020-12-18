@@ -50,6 +50,20 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
     spi_flash_ll_set_clock(dev, &ctx->clock_conf);
     int cs_hold = ctx->cs_hold;
     spi_flash_ll_set_hold(dev, cs_hold);
+#ifndef GPSPI_BUILD
+#if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+    if ((ctx->flags & SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND) != 0) {
+        spi_flash_hal_setup_auto_suspend_mode(host);
+    } else {
+        spi_flash_hal_disable_auto_suspend_mode(host);
+    }
+    if ((ctx->flags & SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME) != 0) {
+        spi_flash_hal_setup_auto_resume_mode(host);
+    } else {
+        spi_flash_hal_disable_auto_resume_mode(host);
+    }
+#endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+#endif //GPSPI_BUILD
     return ESP_OK;
 }
 
@@ -78,7 +92,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-#if CONFIG_SPI_FLASH_ROM_IMPL
+#if CONFIG_SPI_FLASH_ROM_IMPL && CONFIG_IDF_TARGET_ESP32S3
     /*
      * In S3 ROM, extra bits than 24-bit are used to indicate requirements of M7-M0:
      * - 24: normal transactions

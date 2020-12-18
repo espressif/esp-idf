@@ -83,8 +83,6 @@ typedef union  {
 #define spi_flash_ll_erase_chip(dev)                         spimem_flash_ll_erase_chip((spi_mem_dev_t*)dev)
 #define spi_flash_ll_erase_sector(dev)                       spimem_flash_ll_erase_sector((spi_mem_dev_t*)dev)
 #define spi_flash_ll_erase_block(dev)                        spimem_flash_ll_erase_block((spi_mem_dev_t*)dev)
-#define spi_flash_ll_suspend(dev)                            spimem_flash_ll_suspend((spi_mem_dev_t*)dev)
-#define spi_flash_ll_resume(dev)                             spimem_flash_ll_resume((spi_mem_dev_t*)dev)
 #define spi_flash_ll_set_write_protect(dev, wp)              spimem_flash_ll_set_write_protect((spi_mem_dev_t*)dev, wp)
 #define spi_flash_ll_get_buffer_data(dev, buffer, read_len)  spimem_flash_ll_get_buffer_data((spi_mem_dev_t*)dev, buffer, read_len)
 #define spi_flash_ll_set_buffer_data(dev, buffer, len)       spimem_flash_ll_set_buffer_data((spi_mem_dev_t*)dev, buffer, len)
@@ -105,9 +103,6 @@ typedef union  {
 #define spi_flash_ll_set_dummy(dev, dummy)                   spimem_flash_ll_set_dummy((spi_mem_dev_t*)dev, dummy)
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             spimem_flash_ll_set_dummy_out((spi_mem_dev_t*)dev, en, lev)
 #define spi_flash_ll_set_hold(dev, hold_n)                   spimem_flash_ll_set_hold((spi_mem_dev_t*)dev, hold_n)
-#define spi_flash_ll_auto_wait_idle_init(dev, auto_waiti)    spimem_flash_ll_auto_wait_idle_init((spi_mem_dev_t*)dev, auto_waiti)
-#define spi_flash_ll_auto_suspend_init(dev, auto_sus)        spimem_flash_ll_auto_suspend_init((spi_mem_dev_t*)dev, auto_sus)
-#define spi_flash_ll_sus_status(dev)                         spimem_flash_ll_sus_status((spi_mem_dev_t*)dev)
 
 #endif
 

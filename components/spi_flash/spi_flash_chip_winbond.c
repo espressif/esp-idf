@@ -140,6 +140,18 @@ esp_err_t spi_flash_chip_winbond_erase_block(esp_flash_t *chip, uint32_t start_a
     return err;
 }
 
+esp_err_t spi_flash_chip_winbond_suspend_cmd_conf(esp_flash_t *chip)
+{
+    spi_flash_sus_cmd_conf sus_conf = {
+        .sus_mask = 0x80,
+        .cmd_rdsr = CMD_RDSR2,
+        .sus_cmd = CMD_SUSPEND,
+        .res_cmd = CMD_RESUME,
+    };
+
+    return chip->host->driver->sus_setup(chip->host, &sus_conf);
+}
+
 static const char chip_name[] = "winbond";
 
 // The issi chip can use the functions for generic chips except from set read mode and probe,
@@ -176,6 +188,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
+    .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
 };
 
 

@@ -167,5 +167,11 @@
 /*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)
 
+
+/*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
+#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
+#define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
+#define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

@@ -31,11 +31,13 @@
         .write_data_slicer = memspi_host_write_data_slicer, \
         .read = spi_flash_hal_read, \
         .read_data_slicer = memspi_host_read_data_slicer, \
-        .host_idle = spi_flash_hal_host_idle, \
+        .host_status = spi_flash_hal_host_idle, \
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
-        .check_suspend = memspi_host_cb_check_suspend, \
+        .resume = spi_flash_hal_resume, \
+        .suspend = spi_flash_hal_suspend,\
+        .sus_setup = spi_flash_hal_setup_read_suspend,\
 }
 
 /// configuration for the memspi host
@@ -178,10 +180,3 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
  */
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
 
-/**
- * @brief Check the suspend status and resume a suspended operation.
- *
- * @param host The driver context.
- *
- */
-void memspi_host_cb_check_suspend(spi_flash_host_inst_t *host);

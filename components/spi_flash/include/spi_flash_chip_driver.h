@@ -186,6 +186,8 @@ struct spi_flash_chip_t {
     /** Yield to other tasks. Called during erase operations. */
     esp_err_t (*yield)(esp_flash_t *chip, uint32_t wip);
 
+    /** Setup flash suspend configuration. */
+    esp_err_t (*sus_setup)(esp_flash_t *chip);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

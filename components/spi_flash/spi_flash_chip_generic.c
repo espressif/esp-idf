@@ -301,22 +301,6 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
     return err;
 }
 
-esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_us)
-{
-    while (!chip->host->driver->host_idle(chip->host) && *timeout_us > 0) {
-#if HOST_DELAY_INTERVAL_US > 0
-        if (*timeout_us > 1) {
-            int delay = MIN(HOST_DELAY_INTERVAL_US, *timeout_us);
-            chip->os_func->delay_us(chip->os_func_data, delay);
-            *timeout_us -= delay;
-        } else {
-            return ESP_ERR_TIMEOUT;
-        }
-#endif
-    }
-    return ESP_OK;
-}
-
 esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_t reg_id, uint32_t* out_reg)
 {
     return chip->host->driver->read_status(chip->host, (uint8_t*)out_reg);
@@ -357,14 +341,19 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
     uint8_t status = 0;
     const int interval = CHIP_WAIT_IDLE_INTERVAL_US;
     while (timeout_us > 0) {
+        while (!chip->host->driver->host_status(chip->host) && timeout_us > 0) {
 
-        esp_err_t err = spi_flash_generic_wait_host_idle(chip, & timeout_us);
-        if (err != ESP_OK) {
-            return err;
+#if HOST_DELAY_INTERVAL_US > 0
+            if (timeout_us > 1) {
+                int delay = MIN(HOST_DELAY_INTERVAL_US, timeout_us);
+                chip->os_func->delay_us(chip->os_func_data, delay);
+                timeout_us -= delay;
+            }
+#endif
         }
 
         uint32_t read;
-        err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &read);
+        esp_err_t err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &read);
         if (err != ESP_OK) {
             return err;
         }
@@ -511,6 +500,7 @@ const spi_flash_chip_t esp_flash_chip_generic = {
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
+    .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
 };
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL
@@ -652,3 +642,15 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 }
 
 #endif // !CONFIG_SPI_FLASH_ROM_IMPL
+
+esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip)
+{
+    spi_flash_sus_cmd_conf sus_conf = {
+        .sus_mask = 0x84,
+        .cmd_rdsr = CMD_RDSR2,
+        .sus_cmd = CMD_SUSPEND,
+        .res_cmd = CMD_RESUME,
+    };
+
+    return chip->host->driver->sus_setup(chip->host, &sus_conf);
+}
