@@ -191,6 +191,8 @@ library/error\.o\
 \|changes choice state\
 \|Compiler version is not supported\
 \|Toolchain version is not supported\
+\|Python 3 versions older than 3\.6 are not supported\.\
+\|Support for Python 2 is deprecated and will be removed in future versions\.\
 "
 
 sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \
