@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include "spi_flash_chip_generic.h"
+#include "spi_flash_chip_issi.h"
 #include "spi_flash_defs.h"
 
 /* Driver for ISSI flash chip, as used in ESP32 D2WD */
@@ -93,4 +94,5 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .get_io_mode = spi_flash_chip_issi_get_io_mode,
 
     .read_reg = spi_flash_chip_generic_read_reg,
+    .yield = spi_flash_chip_generic_yield,
 };

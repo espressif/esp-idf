@@ -14,7 +14,10 @@
 
 #include <stdlib.h>
 #include "spi_flash_chip_generic.h"
+#include "spi_flash_chip_gd.h"
 #include "spi_flash_defs.h"
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
 #define FLASH_ID_MASK       0xFF00
 #define FLASH_SIZE_MASK     0xFF
@@ -70,7 +73,7 @@ esp_err_t spi_flash_chip_gd_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* 
     }
     return ret;
 }
-
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 static const char chip_name[] = "gd";
 
@@ -107,4 +110,5 @@ const spi_flash_chip_t esp_flash_chip_gd = {
     .get_io_mode = spi_flash_chip_gd_get_io_mode,
 
     .read_reg = spi_flash_chip_generic_read_reg,
+    .yield = spi_flash_chip_generic_yield,
 };

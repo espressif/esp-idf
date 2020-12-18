@@ -13,6 +13,7 @@
 #include "ccomp_timer.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "esp_timer.h"
 
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -21,6 +22,8 @@
 #include "esp32s2/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
 #endif
 
 struct flash_test_ctx {
@@ -391,9 +394,9 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
 
 TEST_CASE("WEL is cleared after boot", "[spi_flash]")
 {
-    extern esp_rom_spiflash_chip_t g_rom_spiflash_chip;
+    esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
     uint32_t status;
-    esp_rom_spiflash_read_status(&g_rom_spiflash_chip, &status);
+    esp_rom_spiflash_read_status(legacy_chip, &status);
 
     TEST_ASSERT((status & 0x2) == 0);
 }
@@ -402,15 +405,15 @@ TEST_CASE("WEL is cleared after boot", "[spi_flash]")
 // ISSI chip has its QE bit on other chips' BP4, which may get cleared by accident
 TEST_CASE("rom unlock will not erase QE bit", "[spi_flash]")
 {
-    extern esp_rom_spiflash_chip_t g_rom_spiflash_chip;
+    esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
     uint32_t status;
-    printf("dev_id: %08X \n", g_rom_spiflash_chip.device_id);
+    printf("dev_id: %08X \n", legacy_chip->device_id);
 
-    if (((g_rom_spiflash_chip.device_id >> 16) & 0xff) != 0x9D) {
+    if (((legacy_chip->device_id >> 16) & 0xff) != 0x9D) {
         TEST_IGNORE_MESSAGE("This test is only for ISSI chips. Ignore.");
     }
     esp_rom_spiflash_unlock();
-    esp_rom_spiflash_read_status(&g_rom_spiflash_chip, &status);
+    esp_rom_spiflash_read_status(legacy_chip, &status);
     printf("status: %08x\n", status);
 
     TEST_ASSERT(status & 0x40);

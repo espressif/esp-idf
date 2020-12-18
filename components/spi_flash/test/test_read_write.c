@@ -238,7 +238,7 @@ TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)

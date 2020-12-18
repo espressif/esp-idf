@@ -87,10 +87,16 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = true, \
     .input_delay_ns = 0,\
 }
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/efuse.h"
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+}
 #endif
-
-
-esp_flash_t *esp_flash_default_chip = NULL;
 
 
 static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
@@ -111,11 +117,15 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     if (use_iomux) {
         PIN_FUNC_SELECT(iomux_reg, spics_func);
     } else {
+#if CONFIG_IDF_TARGET_ESP32C3
+        GPIO.enable_w1ts.val = (0x1 << cs_io_num);
+#else
         if (cs_io_num < 32) {
             GPIO.enable_w1ts = (0x1 << cs_io_num);
         } else {
             GPIO.enable1_w1ts.data = (0x1 << (cs_io_num - 32));
         }
+#endif
         GPIO.pin[cs_io_num].pad_driver = 0;
         esp_rom_gpio_connect_out_signal(cs_io_num, spics_out, false, false);
         if (cs_id == 0) {
@@ -208,9 +218,13 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
     return ESP_OK;
 }
 
-
 /* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
 extern const esp_flash_os_functions_t esp_flash_noos_functions;
+
+/* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
+#if !CONFIG_SPI_FLASH_ROM_IMPL
+esp_flash_t *esp_flash_default_chip = NULL;
+#endif
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
@@ -224,6 +238,7 @@ static DRAM_ATTR esp_flash_t default_chip = {
 
 esp_err_t esp_flash_init_default_chip(void)
 {
+    const esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
 
     #if !CONFIG_IDF_TARGET_ESP32
@@ -243,14 +258,15 @@ esp_err_t esp_flash_init_default_chip(void)
     if (err != ESP_OK) {
         return err;
     }
-    if (default_chip.size < g_rom_flashchip.chip_size) {
-        ESP_EARLY_LOGE(TAG, "Detected size(%dk) smaller than the size in the binary image header(%dk). Probe failed.", default_chip.size/1024, g_rom_flashchip.chip_size/1024);
+    if (default_chip.size < legacy_chip->chip_size) {
+        ESP_EARLY_LOGE(TAG, "Detected size(%dk) smaller than the size in the binary image header(%dk). Probe failed.", default_chip.size/1024, legacy_chip->chip_size/1024);
         return ESP_ERR_FLASH_SIZE_NOT_MATCH;
-    } else if (default_chip.size > g_rom_flashchip.chip_size) {
-        ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, g_rom_flashchip.chip_size/1024);
-        default_chip.size = g_rom_flashchip.chip_size;
     }
-    default_chip.size = g_rom_flashchip.chip_size;
+
+    if (default_chip.size > legacy_chip->chip_size) {
+        ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, legacy_chip->chip_size/1024);
+    }
+    default_chip.size = legacy_chip->chip_size;
 
     esp_flash_default_chip = &default_chip;
     return ESP_OK;
