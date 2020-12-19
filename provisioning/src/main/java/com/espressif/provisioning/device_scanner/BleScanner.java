@@ -49,7 +49,7 @@ public class BleScanner {
     private BluetoothLeScanner bluetoothLeScanner;
 
     private boolean isScanning = false;
-    private String prefix;
+    private String prefix = "";
 
     public BleScanner(Context context, BleScanListener bleScannerListener) {
 
@@ -137,18 +137,15 @@ public class BleScanner {
         @RequiresPermission(Manifest.permission.BLUETOOTH)
         public void onScanResult(int callbackType, ScanResult result) {
 
-            String deviceName = result.getDevice().getName();
+            String deviceName = result.getScanRecord().getDeviceName();
 
             if (result.getDevice() != null && !TextUtils.isEmpty(deviceName)) {
-
+                // Found BLE device
                 Log.d(TAG, "========== Device Found : " + deviceName);
 
                 if (TextUtils.isEmpty(prefix)) {
-
                     bleScanListener.onPeripheralFound(result.getDevice(), result);
-
                 } else if (deviceName.startsWith(prefix)) {
-
                     bleScanListener.onPeripheralFound(result.getDevice(), result);
                 }
             }

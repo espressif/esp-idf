@@ -454,9 +454,9 @@ public class ESPProvisionManager {
                     @RequiresPermission(Manifest.permission.BLUETOOTH)
                     public void onPeripheralFound(BluetoothDevice btDevice, ScanResult scanResult) {
 
-                        if (!isDeviceFound && btDevice != null && !TextUtils.isEmpty(btDevice.getName())) {
+                        if (!isDeviceFound && btDevice != null && !TextUtils.isEmpty(scanResult.getScanRecord().getDeviceName())) {
 
-                            if (btDevice.getName().equals(device.getDeviceName())) {
+                            if (scanResult.getScanRecord().getDeviceName().equals(device.getDeviceName())) {
                                 // Device found
                                 isDeviceFound = true;
                                 String serviceUuid = "";
