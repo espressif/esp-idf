@@ -28,7 +28,6 @@
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
-#if SOC_DEDICATED_GPIO_SUPPORTED
 #include "driver/dedic_gpio.h"
 #include "soc/dedic_gpio_periph.h"
 #if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
@@ -402,4 +401,3 @@ err:
     return ret_code;
 }
 #endif // SOC_DEDIC_GPIO_HAS_INTERRUPT
-#endif // SOC_DEDICATED_GPIO_SUPPORTED

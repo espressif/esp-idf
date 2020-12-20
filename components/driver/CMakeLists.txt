@@ -27,7 +27,6 @@ if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "adc_common.c"
                      "dac_common.c"
-                     "dedic_gpio.c"
                      "mcpwm.c"
                      "sdio_slave.c"
                      "sdmmc_host.c"
