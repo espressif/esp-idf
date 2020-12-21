@@ -89,6 +89,14 @@ do{\
 /* Types definition
  ************************************************************************
  */
+/* vendor dependent signals to be posted to controller task */
+typedef enum {
+    BTDM_VND_OL_SIG_WAKEUP_TMR = 0,
+    BTDM_VND_OL_SIG_NUM,
+} btdm_vnd_ol_sig_t;
+
+/* prototype of function to handle vendor dependent signals */
+typedef void (* btdm_vnd_ol_task_func_t)(void *param);
 
 /* VHCI function interface */
 typedef struct vhci_host_callback {
@@ -194,6 +202,13 @@ extern bool btdm_power_state_active(void);
 extern void btdm_wakeup_request(void);
 extern void btdm_wakeup_request_start(void);
 extern void btdm_wakeup_request_end(void);
+
+/* vendor dependent tasks to be posted and handled by controller task*/
+extern int btdm_vnd_offload_task_register(btdm_vnd_ol_sig_t sig, btdm_vnd_ol_task_func_t func);
+extern int btdm_vnd_offload_task_deregister(btdm_vnd_ol_sig_t sig);
+extern int btdm_vnd_offload_post_from_isr(btdm_vnd_ol_sig_t sig, void *param, bool need_yield);
+extern int btdm_vnd_offload_post(btdm_vnd_ol_sig_t sig, void *param);
+
 /* Low Power Clock */
 extern bool btdm_lpclk_select_src(uint32_t sel);
 extern bool btdm_lpclk_set_div(uint32_t div);
@@ -924,7 +939,7 @@ static void btdm_sleep_exit_phase3_wrapper(void)
 }
 
 #if  (defined CONFIG_PM_ENABLE) || (defined CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
-static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
+static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
 {
 #ifdef CONFIG_PM_ENABLE
     if (semphr_take_wrapper(s_pm_lock_sem, 0) == pdTRUE) {
@@ -938,7 +953,12 @@ static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
         sleep_backup_done = false;
     }
 #endif
+}
 
+static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
+{
+    btdm_vnd_offload_post_from_isr(BTDM_VND_OL_SIG_WAKEUP_TMR, NULL, false);
+    esp_timer_isr_dispatch_need_yield();
 }
 #endif
 
@@ -1139,11 +1159,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         esp_timer_create_args_t create_args = {
             .callback = btdm_slp_tmr_callback,
             .arg = NULL,
-            .name = "btSlp"
+            .dispatch_method = ESP_TIMER_ISR,
+            .name = "btSlp",
         };
         if ((err = esp_timer_create(&create_args, &s_btdm_slp_tmr)) != ESP_OK) {
             goto error;
         }
+        btdm_vnd_offload_task_register(BTDM_VND_OL_SIG_WAKEUP_TMR, btdm_sleep_exit_phase0);
 #endif
 
         do {// todo: rewrite this block of code for chip
@@ -1211,10 +1233,11 @@ error:
     }
 #endif
 #if (defined CONFIG_PM_ENABLE) || (defined CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
- if (s_btdm_slp_tmr != NULL) {
+    if (s_btdm_slp_tmr != NULL) {
         esp_timer_delete(s_btdm_slp_tmr);
         s_btdm_slp_tmr = NULL;
     }
+    btdm_vnd_offload_task_deregister(BTDM_VND_OL_SIG_WAKEUP_TMR);
 #endif
 
 #if (CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
@@ -1254,6 +1277,7 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_timer_stop(s_btdm_slp_tmr);
     esp_timer_delete(s_btdm_slp_tmr);
     s_btdm_slp_tmr = NULL;
+    btdm_vnd_offload_task_deregister(BTDM_VND_OL_SIG_WAKEUP_TMR);
 #endif
 #if CONFIG_SPIRAM_USE_MALLOC
     vSemaphoreDelete(btdm_queue_table_mux);
