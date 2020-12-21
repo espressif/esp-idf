@@ -273,7 +273,7 @@ Once you've identified the code which you think is leaking:
 
 - In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
 - In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> :ref:`CONFIG_APPTRACE_DESTINATION` and select ``Trace memory``.
-- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_SYSVIEW_ENABLE`.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_APPTRACE_SV_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
   In host-based mode argument to this function is ignored and heap tracing module behaves like ``HEAP_TRACE_ALL`` was passed: all allocations and deallocations are sent to the host.
