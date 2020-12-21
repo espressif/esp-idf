@@ -154,4 +154,13 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configISR_STACK_SIZE                            ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
 #endif
 
+#ifndef __ASSEMBLER__
+#if CONFIG_APPTRACE_SV_ENABLE
+extern uint32_t port_switch_flag[];
+#define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+#endif
+
 #endif // FREERTOS_CONFIG_XTENSA_H

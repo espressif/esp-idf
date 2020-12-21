@@ -326,10 +326,10 @@ IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，它�
 如何使用
 """"""""
 
-若需使用这个功能，需要在 menuconfig 中开启 :ref:`CONFIG_SYSVIEW_ENABLE` 选项，具体路径为： *Component config > Application Level Tracing > FreeRTOS SystemView Tracing* 。在同一个菜单栏下还开启了其他几个选项：
+若需使用这个功能，需要在 menuconfig 中开启 :ref:`CONFIG_APPTRACE_SV_ENABLE` 选项，具体路径为： *Component config > Application Level Tracing > FreeRTOS SystemView Tracing* 。在同一个菜单栏下还开启了其他几个选项：
 
-1. *{IDF_TARGET_NAME} timer to use as SystemView timestamp source* （:ref:`CONFIG_SYSVIEW_TS_SOURCE`）选择 SystemView 事件使用的时间戳来源。在单核模式下，使用 {IDF_TARGET_NAME} 内部的循环计数器生成时间戳，其最大的工作频率是 240 MHz（时间戳粒度大约为 4 ns）。在双核模式下，使用工作在 40 MHz 的外部定时器，因此时间戳粒度为 25 ns。
-2. 可以单独启用或禁用的 SystemView 事件集合（``CONFIG_SYSVIEW_EVT_XXX``）：
+1. *{IDF_TARGET_NAME} timer to use as SystemView timestamp source* （:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`）选择 SystemView 事件使用的时间戳来源。在单核模式下，使用 {IDF_TARGET_NAME} 内部的循环计数器生成时间戳，其最大的工作频率是 240 MHz（时间戳粒度大约为 4 ns）。在双核模式下，使用工作在 40 MHz 的外部定时器，因此时间戳粒度为 25 ns。
+2. 可以单独启用或禁用的 SystemView 事件集合（``CONFIG_APPTRACE_SV_EVT_XXX``）：
 
     - Trace Buffer Overflow Event
     - ISR Enter Event

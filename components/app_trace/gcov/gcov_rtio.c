@@ -129,7 +129,7 @@ void esp_gcov_dump(void)
     // disable IRQs on this CPU, other CPU is halted by OpenOCD
     unsigned irq_state = portENTER_CRITICAL_NESTED();
 #if !CONFIG_FREERTOS_UNICORE
-    int other_core = xPortGetCoreID() ? 0 : 1;
+    int other_core = cpu_hal_get_core_id() ? 0 : 1;
     esp_cpu_stall(other_core);
 #endif
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {

@@ -88,7 +88,7 @@ static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_
     timer_enable_intr(timer_group, timer_idx);
 }
 
-#if CONFIG_SYSVIEW_ENABLE == 0
+#if CONFIG_APPTRACE_SV_ENABLE == 0
 #define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, ESP_APPTRACE_TMO_INFINITE)
 #define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0UL)
 #define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0)
@@ -214,7 +214,7 @@ static void esp_apptrace_dummy_task(void *p)
 
     i = 0;
     while (!arg->stop) {
-        ESP_APPTRACE_TEST_LOGD("%x: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), xPortGetCoreID(), i++);
+        ESP_APPTRACE_TEST_LOGD("%x: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), cpu_hal_get_core_id(), i++);
         if (tmo_ticks) {
             vTaskDelay(tmo_ticks);
         }
@@ -259,7 +259,7 @@ static void esp_apptrace_test_task(void *p)
                 ESP_APPTRACE_TEST_LOGE("Failed to timer_isr_register (%d)!", res);
                 goto on_fail;
             }
-            *(uint32_t *)arg->timers[i].data.buf = ((uint32_t)inth[i]) | (1 << 31) | (xPortGetCoreID() ? 0x1 : 0);
+            *(uint32_t *)arg->timers[i].data.buf = ((uint32_t)inth[i]) | (1 << 31) | (cpu_hal_get_core_id() ? 0x1 : 0);
             ESP_APPTRACE_TEST_LOGI("%x: start timer %x period %u us", xTaskGetCurrentTaskHandle(), inth[i], arg->timers[i].data.period);
             res = timer_start(arg->timers[i].group, arg->timers[i].id);
             if (res != ESP_OK) {
@@ -269,7 +269,7 @@ static void esp_apptrace_test_task(void *p)
         }
     }
 
-    *(uint32_t *)arg->data.buf = (uint32_t)xTaskGetCurrentTaskHandle() | (xPortGetCoreID() ? 0x1 : 0);
+    *(uint32_t *)arg->data.buf = (uint32_t)xTaskGetCurrentTaskHandle() | (cpu_hal_get_core_id() ? 0x1 : 0);
     arg->data.wr_cnt = 0;
     arg->data.wr_err = 0;
     while (!arg->stop) {
@@ -749,7 +749,7 @@ static void esp_logtrace_task(void *p)
         ESP_LOGI(TAG, "%p: sample print 4 %c", xTaskGetCurrentTaskHandle(), ((i & 0xFF) % 95) + 32);
         ESP_LOGI(TAG, "%p: sample print 5 %f", xTaskGetCurrentTaskHandle(), 1.0);
         ESP_LOGI(TAG, "%p: sample print 6 %f", xTaskGetCurrentTaskHandle(), 3.45);
-        ESP_LOGI(TAG, "%p: logtrace task work %d.%d", xTaskGetCurrentTaskHandle(), xPortGetCoreID(), i);
+        ESP_LOGI(TAG, "%p: logtrace task work %d.%d", xTaskGetCurrentTaskHandle(), cpu_hal_get_core_id(), i);
         if (++i == 10000) {
             break;
         }

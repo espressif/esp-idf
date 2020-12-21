@@ -297,19 +297,6 @@ static void do_core_init(void)
 
     esp_err_t err __attribute__((unused));
 
-    // [refactor-todo] move this to secondary init
-#if CONFIG_APPTRACE_ENABLE
-    err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
-#endif
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_SYSVIEW_Conf();
-#endif
-
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
-    esp_dbg_stubs_init();
-#endif
-
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
@@ -448,6 +435,18 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_sleep_config_gpio_isolate();
     // Enable automatic switching of GPIO configuration
     esp_sleep_enable_gpio_switch(true);
+#endif
+
+#if CONFIG_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
+#endif
+#if CONFIG_APPTRACE_SV_ENABLE
+    SEGGER_SYSVIEW_Conf();
+#endif
+
+#if CONFIG_ESP_DEBUG_STUBS_ENABLE
+    esp_dbg_stubs_init();
 #endif
 
 #if defined(CONFIG_PM_ENABLE)

@@ -18,8 +18,11 @@ extern "C" {
  * Application trace data destinations bits.
  */
 typedef enum {
-    ESP_APPTRACE_DEST_TRAX = 0x1,	///< JTAG destination
-    ESP_APPTRACE_DEST_UART0 = 0x2,	///< UART destination
+    ESP_APPTRACE_DEST_JTAG = 1,                         ///< JTAG destination
+    ESP_APPTRACE_DEST_TRAX = ESP_APPTRACE_DEST_JTAG, 	///< xxx_TRAX name is obsolete, use more common xxx_JTAG
+    ESP_APPTRACE_DEST_UART0,	                        ///< UART0 destination
+    ESP_APPTRACE_DEST_MAX = ESP_APPTRACE_DEST_UART0,
+    ESP_APPTRACE_DEST_NUM
 } esp_apptrace_dest_t;
 
 /**
