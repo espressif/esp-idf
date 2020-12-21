@@ -238,7 +238,11 @@ Application has attempted to read or write memory location, and address alignmen
 LoadStoreError
 ^^^^^^^^^^^^^^
 
-Application has attempted to do a 8- or 16- bit load/store from a memory region which only supports 32-bit loads/stores. For example, dereferencing a ``char*`` pointer which points into intruction memory will result in such an error.
+This exception may happen in the following cases:
+
+- If the application has attempted to do an 8- or 16- bit load/store from a memory region which only supports 32-bit loads/stores. For example, dereferencing a ``char*`` pointer to intruction memory (IRAM, IROM) will result in such an error.
+
+- If the application has attempted a store to a read-only memory region, such as IROM or DROM.
 
 Unhandled debug exception
 ^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -249,7 +249,8 @@ is used in assert() statements. */
  * in SMP system.
  *
  * @param pvTaskCode Pointer to the task entry function.  Tasks
- * must be implemented to never return (i.e. continuous loop).
+ * must be implemented to never return (i.e. continuous loop), or should be
+ * terminated using vTaskDelete function.
  *
  * @param pcName A descriptive name for the task.  This is mainly used to
  * facilitate debugging.  Max length defined by configMAX_TASK_NAME_LEN - default
@@ -314,7 +315,8 @@ is used in assert() statements. */
  * xTaskCreateRestricted().
  *
  * @param pvTaskCode Pointer to the task entry function.  Tasks
- * must be implemented to never return (i.e. continuous loop).
+ * must be implemented to never return (i.e. continuous loop), or should be
+ * terminated using vTaskDelete function.
  *
  * @param pcName A descriptive name for the task.  This is mainly used to
  * facilitate debugging.  Max length defined by configMAX_TASK_NAME_LEN - default
@@ -400,7 +402,8 @@ is used in assert() statements. */
  * task affinity in an SMP system.
  *
  * @param pvTaskCode Pointer to the task entry function.  Tasks
- * must be implemented to never return (i.e. continuous loop).
+ * must be implemented to never return (i.e. continuous loop), or should be
+ * terminated using vTaskDelete function.
  *
  * @param pcName A descriptive name for the task.  This is mainly used to
  * facilitate debugging.  The maximum length of the string is defined by
@@ -460,7 +463,8 @@ is used in assert() statements. */
  * using any dynamic memory allocation.
  *
  * @param pvTaskCode Pointer to the task entry function.  Tasks
- * must be implemented to never return (i.e. continuous loop).
+ * must be implemented to never return (i.e. continuous loop), or should be
+ * terminated using vTaskDelete function.
  *
  * @param pcName A descriptive name for the task.  This is mainly used to
  * facilitate debugging.  The maximum length of the string is defined by
