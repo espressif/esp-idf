@@ -21,6 +21,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "driver/temp_sensor.h"
 #include "esp32c3/rom/ets_sys.h"
+#include "regi2c_ctrl.h"
 
 static const char *TAG = "tsens";
 
@@ -35,13 +36,6 @@ static const char *TAG = "tsens";
 #define TSENS_DAC_FACTOR  (27.88)
 #define TSENS_SYS_OFFSET  (20.52)
 
-#include "regi2c_ctrl.h"
-
-#define ANA_CONFIG2_REG  0x6000E048
-#define ANA_CONFIG2_M   (BIT(18))
-
-#define I2C_ADC            0X69
-#define I2C_ADC_HOSTID     1
 
 typedef struct {
     int index;
@@ -61,22 +55,18 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     {TSENS_DAC_L4,    2,    10,   -40,   20,   3},
 };
 
-static SemaphoreHandle_t rtc_tsens_mux = NULL;
+static SemaphoreHandle_t s_rtc_tsens_mux = NULL;
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
-    //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
     REGI2C_WRITE_MASK(I2C_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
     SENS.sar_tctrl.tsens_clk_div = tsens.clk_div;
     SENS.sar_tctrl.tsens_power_up_force = 1;
     SENS.sar_tctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
     SENS.sar_tctrl2.tsens_xpd_force = 1;
-    // SENS.sar_tctrl2.tsens_reset = 1;// Reset the temp sensor.
-    // SENS.sar_tctrl2.tsens_reset = 0;// Clear the reset status.
-    ESP_LOGI(TAG, "Config temperature range [%d°C ~ %d°C], error < %d°C",
+    ESP_LOGD(TAG, "Config temperature range [%d°C ~ %d°C], error < %d°C",
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
              dac_offset[tsens.dac_offset].error_max);
@@ -86,10 +76,8 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 {
     TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
-    //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
     tsens->dac_offset = REGI2C_READ_MASK(I2C_ADC, I2C_SARADC_TSENS_DAC);
     for (int i = TSENS_DAC_L0; i < TSENS_DAC_MAX; i++) {
         if (tsens->dac_offset == dac_offset[i].set_val) {
@@ -103,13 +91,10 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
-    if (rtc_tsens_mux == NULL) {
-        rtc_tsens_mux = xSemaphoreCreateMutex();
+    if (s_rtc_tsens_mux == NULL) {
+        s_rtc_tsens_mux = xSemaphoreCreateMutex();
     }
-    TSENS_CHECK(rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
-    // SENS.sar_tctrl.tsens_dump_out = 0;
-    // SENS.sar_tctrl2.tsens_clkgate_en = 1;
-    // SENS.sar_tctrl.tsens_power_up = 1;
+    TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
     return ESP_OK;
 }
 
@@ -117,9 +102,9 @@ esp_err_t temp_sensor_stop(void)
 {
     SENS.sar_tctrl.tsens_power_up = 0;
     // SENS.sar_tctrl2.tsens_clkgate_en = 0;
-    if (rtc_tsens_mux != NULL) {
-        vSemaphoreDelete(rtc_tsens_mux);
-        rtc_tsens_mux = NULL;
+    if (s_rtc_tsens_mux != NULL) {
+        vSemaphoreDelete(s_rtc_tsens_mux);
+        s_rtc_tsens_mux = NULL;
     }
     return ESP_OK;
 }
@@ -127,13 +112,13 @@ esp_err_t temp_sensor_stop(void)
 esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
 {
     TSENS_CHECK(tsens_out != NULL, ESP_ERR_INVALID_ARG);
-    TSENS_CHECK(rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE);
-    xSemaphoreTake(rtc_tsens_mux, portMAX_DELAY);
+    TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE);
+    xSemaphoreTake(s_rtc_tsens_mux, portMAX_DELAY);
     SENS.sar_tctrl.tsens_dump_out = 1;
     while (!SENS.sar_tctrl.tsens_ready);
     *tsens_out = SENS.sar_tctrl.tsens_out;
     SENS.sar_tctrl.tsens_dump_out = 0;
-    xSemaphoreGive(rtc_tsens_mux);
+    xSemaphoreGive(s_rtc_tsens_mux);
     return ESP_OK;
 }
 
