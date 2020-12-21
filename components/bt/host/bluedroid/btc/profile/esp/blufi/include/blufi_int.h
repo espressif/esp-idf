@@ -15,6 +15,7 @@
 #ifndef __BLUFI_INT_H__
 #define __BLUFI_INT_H__
 
+#if (BLUFI_INCLUDED == TRUE)
 #define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
 #define BTC_BLUFI_SUB_VER     0x02  //Version + Subversion
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
@@ -191,3 +192,4 @@ void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_blufi_cb_deep_free(btc_msg_t *msg);
 
 #endif /* __BLUFI_INT_H__ */
+#endif  ///BLUFI_INCLUDED == TRUE
