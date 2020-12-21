@@ -92,15 +92,6 @@ low_level_init(struct netif *netif)
 #endif
 }
 
-static esp_err_t wifi_transmit_wrap(wifi_interface_t wifi_if, void *buffer, size_t len, void *netstack_buf)
-{
-#if (CONFIG_ESP32_SPIRAM_SUPPORT)
-    return esp_wifi_internal_tx_by_ref(wifi_if, buffer, len, netstack_buf);
-#else
-    return esp_wifi_internal_tx(wifi_if, buffer, len);
-#endif
-}
-
 /**
  * This function should do the actual transmission of the packet. The packet is
  * contained in the pbuf that is passed to the function. This pbuf
@@ -121,14 +112,14 @@ low_level_output(struct netif *netif, struct pbuf *p)
 {
   wifi_interface_t wifi_if = tcpip_adapter_get_esp_if(netif);
   struct pbuf *q = p;
-  esp_err_t ret;
+  err_t ret;
 
   if (wifi_if >= ESP_IF_MAX) {
     return ERR_IF;
   }
 
   if(q->next == NULL) {
-    ret = wifi_transmit_wrap(wifi_if, q->payload, q->len, q);
+    ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
   } else {
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
     q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
@@ -138,19 +129,11 @@ low_level_output(struct netif *netif, struct pbuf *p)
     } else {
       return ERR_MEM;
     }
-    ret = wifi_transmit_wrap(wifi_if, q->payload, q->len, q);
+    ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
     pbuf_free(q);
   }
 
-  if (ret == ESP_OK) {
-    return ERR_OK;
-  } else if (ret == ESP_ERR_NO_MEM) {
-    return ERR_MEM;
-  } else if (ret == ESP_ERR_INVALID_ARG) {
-    return ERR_ARG;
-  } else {
-    return ERR_IF;
-  }
+  return ret;
 }
 
 /**

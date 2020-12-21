@@ -1285,14 +1285,4 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if)
     }
 }
 
-void esp_netif_netstack_buf_ref(void *pbuf)
-{
-    pbuf_ref(pbuf);
-}
-
-void esp_netif_netstack_buf_free(void *pbuf)
-{
-    pbuf_free(pbuf);
-}
-
 #endif /* CONFIG_TCPIP_LWIP */
