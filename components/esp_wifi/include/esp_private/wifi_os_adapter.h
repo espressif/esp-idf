@@ -66,7 +66,7 @@ typedef struct {
     void (* _event_group_delete)(void *event);
     uint32_t (* _event_group_set_bits)(void *event, uint32_t bits);
     uint32_t (* _event_group_clear_bits)(void *event, uint32_t bits);
-    uint32_t (* _event_group_wait_bits)(void *event, uint32_t bits_to_wait_for, int32_t clear_on_exit, int32_t wait_for_all_bits, uint32_t block_time_tick);
+    uint32_t (* _event_group_wait_bits)(void *event, uint32_t bits_to_wait_for, int clear_on_exit, int wait_for_all_bits, uint32_t block_time_tick);
     int32_t (* _task_create_pinned_to_core)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     int32_t (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle);
     void (* _task_delete)(void *task_handle);
@@ -74,7 +74,7 @@ typedef struct {
     int32_t (* _task_ms_to_tick)(uint32_t ms);
     void *(* _task_get_current_task)(void);
     int32_t (* _task_get_max_priority)(void);
-    void *(* _malloc)(uint32_t size);
+    void *(* _malloc)(unsigned int size);
     void (* _free)(void *p);
     int32_t (* _event_post)(const char* event_base, int32_t event_id, void* event_data, size_t event_data_size, uint32_t ticks_to_wait);
     uint32_t (* _get_free_heap_size)(void);
@@ -89,8 +89,8 @@ typedef struct {
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
 #endif
-    int32_t (* _phy_update_country_info)(const char* country);
-    int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
+    int (* _phy_update_country_info)(const char* country);
+    int (* _read_mac)(uint8_t* mac, uint32_t type);
     void (* _timer_arm)(void *timer, uint32_t tmout, bool repeat);
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
@@ -102,20 +102,20 @@ typedef struct {
     void (* _wifi_rtc_enable_iso)(void);
     void (* _wifi_rtc_disable_iso)(void);
     int64_t (* _esp_timer_get_time)(void);
-    int32_t (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
-    int32_t (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
-    int32_t (* _nvs_set_u8)(uint32_t handle, const char* key, uint8_t value);
-    int32_t (* _nvs_get_u8)(uint32_t handle, const char* key, uint8_t* out_value);
-    int32_t (* _nvs_set_u16)(uint32_t handle, const char* key, uint16_t value);
-    int32_t (* _nvs_get_u16)(uint32_t handle, const char* key, uint16_t* out_value);
-    int32_t (* _nvs_open)(const char* name, uint32_t open_mode, uint32_t *out_handle);
-    void (* _nvs_close)(uint32_t handle); 
-    int32_t (* _nvs_commit)(uint32_t handle);
-    int32_t (* _nvs_set_blob)(uint32_t handle, const char* key, const void* value, size_t length);
-    int32_t (* _nvs_get_blob)(uint32_t handle, const char* key, void* out_value, size_t* length);
-    int32_t (* _nvs_erase_key)(uint32_t handle, const char* key);
-    int32_t (* _get_random)(uint8_t *buf, size_t len);
-    int32_t (* _get_time)(void *t);
+    int (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
+    int (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
+    int (* _nvs_set_u8)(uint32_t handle, const char* key, uint8_t value);
+    int (* _nvs_get_u8)(uint32_t handle, const char* key, uint8_t* out_value);
+    int (* _nvs_set_u16)(uint32_t handle, const char* key, uint16_t value);
+    int (* _nvs_get_u16)(uint32_t handle, const char* key, uint16_t* out_value);
+    int (* _nvs_open)(const char* name, uint32_t open_mode, uint32_t *out_handle);
+    void (* _nvs_close)(uint32_t handle);
+    int (* _nvs_commit)(uint32_t handle);
+    int (* _nvs_set_blob)(uint32_t handle, const char* key, const void* value, size_t length);
+    int (* _nvs_get_blob)(uint32_t handle, const char* key, void* out_value, size_t* length);
+    int (* _nvs_erase_key)(uint32_t handle, const char* key);
+    int (* _get_random)(uint8_t *buf, size_t len);
+    int (* _get_time)(void *t);
     unsigned long (* _random)(void);
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     uint32_t (* _slowclk_cal_get)(void);
@@ -131,7 +131,7 @@ typedef struct {
     void * (* _wifi_realloc)(void *ptr, size_t size);
     void * (* _wifi_calloc)(size_t n, size_t size);
     void * (* _wifi_zalloc)(size_t size);
-    void * (* _wifi_create_queue)(int32_t queue_len, int32_t item_size);
+    void * (* _wifi_create_queue)(int queue_len, int item_size);
     void (* _wifi_delete_queue)(void * queue);
     int (* _coex_init)(void);
     void (* _coex_deinit)(void);
@@ -139,8 +139,8 @@ typedef struct {
     void (* _coex_disable)(void);
     uint32_t (* _coex_status_get)(void);
     void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
-    int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
-    int32_t (* _coex_wifi_release)(uint32_t event);
+    int (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
+    int (* _coex_wifi_release)(uint32_t event);
     int (* _coex_wifi_channel_set)(uint8_t primary, uint8_t secondary);
     int (* _coex_event_duration_get)(uint32_t event, uint32_t *duration);
     int (* _coex_pti_get)(uint32_t event, uint8_t *pti);

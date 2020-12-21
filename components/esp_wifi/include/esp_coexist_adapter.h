@@ -41,7 +41,7 @@ typedef struct {
     int32_t (*_semphr_give_from_isr)(void *semphr, void *hptw);
     int32_t (*_semphr_take)(void *semphr, uint32_t block_time_tick);
     int32_t (*_semphr_give)(void *semphr);
-    int32_t (* _is_in_isr)(void);
+    int (* _is_in_isr)(void);
     void * (* _malloc_internal)(size_t size);
     void (* _free)(void *p);
 #if CONFIG_IDF_TARGET_ESP32
