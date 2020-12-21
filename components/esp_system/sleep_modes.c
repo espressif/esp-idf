@@ -275,10 +275,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // For deep sleep, wait for the contents of UART FIFO to be sent.
     bool deep_sleep = pd_flags & RTC_SLEEP_PD_DIG;
 
-#if !CONFIG_FREERTOS_UNICORE && ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* Currently only safe to use deep sleep wake stub & RTC memory as heap in single core mode.
 
-       For ESP32-S3, either disable ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP in config or find a way to set the
+       For ESP32-S3, either disable ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP in config or find a way to set the
        deep sleep wake stub to NULL.
      */
     assert(!deep_sleep || esp_get_deep_sleep_wake_stub() == NULL);
@@ -360,7 +360,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
          */
         portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
 
-#if !CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
         set_rtc_memory_crc();
         result = call_rtc_sleep_start(reject_triggers);
@@ -869,7 +869,7 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
-#if !CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP && !CONFIG_ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* RTC_FAST_MEM is needed for deep sleep stub.
        If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub can run.
        In the new chip revision, deep sleep stub will be optional, and this can be changed. */
