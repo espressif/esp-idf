@@ -325,14 +325,14 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(230423, baudrate);
 
         tios.c_cflag |= BOTHER;
-        tios.c_ispeed = tios.c_ospeed = 213;
+        tios.c_ispeed = tios.c_ospeed = 42321;
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
-        TEST_ASSERT_EQUAL(213, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(213, tios_result.c_ospeed);
+        TEST_ASSERT_EQUAL(42321, tios_result.c_ispeed);
+        TEST_ASSERT_EQUAL(42321, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(213, baudrate);
+        TEST_ASSERT_EQUAL(42321, baudrate);
 
         memset(&tios_result, 0xFF, sizeof(struct termios));
     }
