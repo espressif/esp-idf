@@ -7,6 +7,7 @@ set(srcs
     "ledc_periph.c"
     "rmt_periph.c"
     "sigmadelta_periph.c"
+    "soc_memory_layout.c"
     "i2s_periph.c"
     "i2c_periph.c"
     "uart_periph.c"
