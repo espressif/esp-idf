@@ -1,7 +1,3 @@
-idf_build_get_property(target IDF_TARGET)
-if(${target} STREQUAL "esp32c3")
-    return() # TODO ESP32-C3 IDF-2180
-endif()
 idf_component_register(SRCS "Partition.cpp"
                             "SPI_Flash.cpp"
                             "WL_Ext_Perf.cpp"
