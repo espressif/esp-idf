@@ -3,8 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 idf_component_register(SRCS "patches/esp_rom_crc.c"
                             "patches/esp_rom_sys.c"
                             "patches/esp_rom_uart.c"
-                       INCLUDE_DIRS include
-                       PRIV_INCLUDE_DIRS "${target}"
+                       INCLUDE_DIRS include "${target}"
                        PRIV_REQUIRES soc hal)
 
 # Append a target linker script at the target-specific path,
@@ -33,8 +32,7 @@ if(BOOTLOADER_BUILD)
         rom_linker_script("spiflash")
 
     elseif(target STREQUAL "esp32c3")
-        # currently nothing additional here
-
+        rom_linker_script("newlib")
     endif()
 
 else() # Regular app build
