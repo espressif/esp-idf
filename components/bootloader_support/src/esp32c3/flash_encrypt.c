@@ -68,16 +68,7 @@ static esp_err_t initialise_flash_encryption(void)
     /* Before first flash encryption pass, need to initialise key & crypto config */
 
     /* Find out if a key is already set */
-    bool has_aes128 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY, NULL);
-    bool has_aes256_1 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1, NULL);
-    bool has_aes256_2 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2, NULL);
-
-    bool has_key = has_aes128 || (has_aes256_1 && has_aes256_2);
-
-    if (!has_key && (has_aes256_1 || has_aes256_2)) {
-        ESP_LOGE(TAG, "Invalid efuse key blocks: Both AES-256 key blocks must be set.");
-        return ESP_ERR_INVALID_STATE;
-    }
+    bool has_key = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY, NULL);
 
     if (has_key) {
         ESP_LOGI(TAG, "Using pre-existing key in efuse");
@@ -85,15 +76,9 @@ static esp_err_t initialise_flash_encryption(void)
         ESP_LOGE(TAG, "TODO: Check key is read & write protected"); // TODO
     } else {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
-#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_AES256
-        const unsigned BLOCKS_NEEDED = 2;
-        const ets_efuse_purpose_t PURPOSE_START = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1;
-        const ets_efuse_purpose_t PURPOSE_END = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
-#else
         const unsigned BLOCKS_NEEDED = 1;
         const ets_efuse_purpose_t PURPOSE_START = ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
         const ets_efuse_purpose_t PURPOSE_END = ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
-#endif
 
         if (ets_efuse_count_unused_key_blocks() < BLOCKS_NEEDED) {
             ESP_LOGE(TAG, "Not enough free efuse key blocks (need %d) to continue", BLOCKS_NEEDED);
