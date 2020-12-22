@@ -6,6 +6,7 @@ set(srcs
     "spi_periph.c"
     "ledc_periph.c"
     "rmt_periph.c"
+    "soc_memory_layout.c"
     "sigmadelta_periph.c"
     "soc_memory_layout.c"
     "i2s_periph.c"
