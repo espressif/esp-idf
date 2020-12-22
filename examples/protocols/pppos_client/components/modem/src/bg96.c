@@ -181,7 +181,7 @@ static esp_err_t bg96_handle_cimi(modem_dce_t *dce, const char *line)
  * @brief Handle response from AT+COPS?
  */
 static esp_err_t bg96_handle_cops(modem_dce_t *dce, const char *line)
-{   
+{
     esp_err_t err = ESP_FAIL;
     if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
         err = esp_modem_process_command_done(dce, MODEM_STATE_SUCCESS);
@@ -193,7 +193,7 @@ static esp_err_t bg96_handle_cops(modem_dce_t *dce, const char *line)
         size_t len = strlen(line);
         char *line_copy = malloc(len + 1);
         strcpy(line_copy, line);
-        /* +COPS: <mode>[, <format>[, <oper>][, <Act>]] */
+        /* +COPS: <mode>[, <format>[, <oper>[, <Act>]]] */
         char *str_ptr = NULL;
         char *p[5];
         uint8_t i = 0;
@@ -211,9 +211,7 @@ static esp_err_t bg96_handle_cops(modem_dce_t *dce, const char *line)
             }
         }
         if (i >= 4) {
-            char act_str[3] = {0};
-            int len = snprintf(act_str, 3, "%s", p[3]);
-            dce->act = (uint8_t)atoi(act_str);
+            dce->act = (uint8_t)strtol(p[3], NULL, 0);
         }
         free(line_copy);
     }
@@ -490,6 +488,8 @@ modem_dce_t *bg96_init(modem_dte_t *dte)
     DCE_CHECK(bg96_get_imei_number(bg96_dce) == ESP_OK, "get imei failed", err_io);
     /* Get IMSI number */
     DCE_CHECK(bg96_get_imsi_number(bg96_dce) == ESP_OK, "get imsi failed", err_io);
+    /* Get operator name */
+    DCE_CHECK(bg96_get_operator_name(&(bg96_dce->parent)) == ESP_OK, "get operator name failed", err_io);
     return &(bg96_dce->parent);
 err_io:
     free(bg96_dce);
