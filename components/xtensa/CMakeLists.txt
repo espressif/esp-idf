@@ -1,5 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
-
+if(${target} STREQUAL "esp32c3")
+    return()
+endif()
 if(BOOTLOADER_BUILD)
     # bootloader only needs headers from this component
     set(priv_requires soc)
