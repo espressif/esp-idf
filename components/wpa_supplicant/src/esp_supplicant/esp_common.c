@@ -116,9 +116,6 @@ static void esp_btm_rrm_task(void *pvParameters)
 			continue;
 		}
 
-		/* get lock */
-		SUPPLICANT_API_LOCK();
-
 		switch (evt->id) {
 		case SIG_SUPPLICANT_RX_ACTION:
 		{
@@ -139,7 +136,6 @@ static void esp_btm_rrm_task(void *pvParameters)
 		}
 
 		os_free(evt);
-		SUPPLICANT_API_UNLOCK();
 
 		if (task_del)
 			break;
