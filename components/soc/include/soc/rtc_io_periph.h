@@ -108,7 +108,7 @@ typedef struct {
  * This is an internal function of the driver, and is not usually useful
  * for external use.
  */
-extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
+extern const rtc_gpio_desc_t rtc_gpio_desc[SOC_GPIO_PIN_COUNT];
 
 #endif // CONFIG_RTCIO_SUPPORT_RTC_GPIO_DESC
 
