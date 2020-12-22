@@ -848,6 +848,12 @@
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 #endif
 
+#ifdef CONFIG_LWIP_DHCP_STATE_DEBUG
+#define ESP_DHCP_DEBUG                  LWIP_DBG_ON
+#else
+#define ESP_DHCP_DEBUG                  LWIP_DBG_OFF
+#endif
+
 /**
  * IP_DEBUG: Enable debugging for IP.
  */
