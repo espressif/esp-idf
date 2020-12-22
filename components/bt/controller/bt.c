@@ -929,19 +929,15 @@ static void btdm_wakeup_request_callback(void * arg)
 
 static bool async_wakeup_request(int event)
 {
-    bool request_lock = false;
     bool do_wakeup_request = false;
 
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
-            request_lock = true;
+            btdm_in_wakeup_requesting_set(true);
             // NO break
         case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             if (!btdm_power_state_active()) {
                 do_wakeup_request = true;
-                if (request_lock) {
-                    btdm_in_wakeup_requesting_set(true);
-                }
 
                 btdm_dispatch_work_to_controller(btdm_wakeup_request_callback, NULL, true);
                 semphr_take_wrapper(s_wakeup_req_sem, OSI_FUNCS_TIME_BLOCKING);
@@ -1007,13 +1003,11 @@ bool esp_vhci_host_check_send_available(void)
 
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
-    bool do_wakeup_request = async_wakeup_request(BTDM_ASYNC_WAKEUP_REQ_HCI);
+    async_wakeup_request(BTDM_ASYNC_WAKEUP_REQ_HCI);
 
     API_vhci_host_send_packet(data, len);
 
-    if (do_wakeup_request) {
-        async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_HCI);
-    }
+    async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_HCI);
 }
 
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
