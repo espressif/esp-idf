@@ -88,7 +88,7 @@ static const esp_phy_init_data_t phy_init_data= { {
         0x18,
         0x18,
         0x18,
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 78),
+        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 84),
         LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 72),
         LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 66),
         LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 60),
