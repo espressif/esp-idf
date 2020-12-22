@@ -98,7 +98,7 @@ extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 
-extern int _init_start;
+extern int _vector_table;
 
 static const char *TAG = "cpu_start";
 
@@ -131,7 +131,7 @@ void startup_resume_other_cores(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
-    cpu_hal_set_vecbase(&_init_start);
+    cpu_hal_set_vecbase(&_vector_table);
 
     ets_set_appcpu_boot_addr(0);
 
@@ -261,7 +261,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     // Move exception vectors to IRAM
-    cpu_hal_set_vecbase(&_init_start);
+    cpu_hal_set_vecbase(&_vector_table);
 
     rst_reas[0] = rtc_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
