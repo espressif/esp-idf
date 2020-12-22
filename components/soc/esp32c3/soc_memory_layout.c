@@ -65,7 +65,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCA0000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x403A0000}, //Block 5,  can be remapped to ROM, can be used as trace memory
     { 0x3FCC0000, 0x20000, 1, 0x403C0000}, //Block 9,  can be used as trace memory
 #ifdef CONFIG_ESP32C3_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000, 0x2000,  5, 0}, //Fast RTC memory
+    { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
 #endif
 };
 

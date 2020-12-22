@@ -14,12 +14,9 @@
 
 #pragma once
 
-#define APLL_MIN_FREQ                     (250000000)
-#define APLL_MAX_FREQ                     (500000000)
-#define APLL_I2S_MIN_RATE                 (10675) //in Hz, I2S Clock rate limited by hardware
+#define SOC_I2S_APLL_MIN_FREQ                     (250000000)
+#define SOC_I2S_APLL_MAX_FREQ                     (500000000)
+#define SOC_I2S_APLL_MIN_RATE                 (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_MAX_BUFFER_SIZE               (4 * 1024 * 1024) //the maximum RAM can be allocated
 
-// ESP32-S3 have 1 I2S
 #define SOC_I2S_NUM            (1)
-
-#define SOC_I2S_SUPPORT_PDM     (0) // ESP32-S3 do not support PDM

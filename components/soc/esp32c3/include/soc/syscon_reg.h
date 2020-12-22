@@ -168,24 +168,23 @@ extern "C" {
 #define SYSTEM_WIFI_CLK_EN_REG          SYSCON_WIFI_CLK_EN_REG
 /* SYSTEM_WIFI_CLK_EN : R/W ;bitpos:[31:0] ;default: 32'hfffce030 ; */
 /*description: */
-#define SYSTEM_WIFI_CLK_EN  0xFFFFFFFF
+#define SYSTEM_WIFI_CLK_EN  0x00FB9FCF
 #define SYSTEM_WIFI_CLK_EN_M  ((SYSTEM_WIFI_CLK_EN_V)<<(SYSTEM_WIFI_CLK_EN_S))
-#define SYSTEM_WIFI_CLK_EN_V  0xFFFFFFFF
+#define SYSTEM_WIFI_CLK_EN_V  0x00FB9FCF
 #define SYSTEM_WIFI_CLK_EN_S  0
 
-/* Mask for all Wifi clock bits - 0, 1, 2, 3, 6, 7, 8, 9, 10, 15, 19, 20, 21
-   Bit15 not included here because of the bit now can't be cleared */
-#define SYSTEM_WIFI_CLK_WIFI_EN  0x003807cf
+/* Mask for all Wifi clock bits, 6 */
+#define SYSTEM_WIFI_CLK_WIFI_EN  0x0
 #define SYSTEM_WIFI_CLK_WIFI_EN_M  ((SYSTEM_WIFI_CLK_WIFI_EN_V)<<(SYSTEM_WIFI_CLK_WIFI_EN_S))
-#define SYSTEM_WIFI_CLK_WIFI_EN_V  0x7cf
+#define SYSTEM_WIFI_CLK_WIFI_EN_V  0x0
 #define SYSTEM_WIFI_CLK_WIFI_EN_S  0
-/* Mask for all Bluetooth clock bits - 11, 16, 17 */
-#define SYSTEM_WIFI_CLK_BT_EN  0x61
+/* Mask for all Bluetooth clock bits, 11, 12, 16, 17 */
+#define SYSTEM_WIFI_CLK_BT_EN  0x0
 #define SYSTEM_WIFI_CLK_BT_EN_M  ((SYSTEM_WIFI_CLK_BT_EN_V)<<(SYSTEM_WIFI_CLK_BT_EN_S))
-#define SYSTEM_WIFI_CLK_BT_EN_V  0x61
-#define SYSTEM_WIFI_CLK_BT_EN_S  11
-/* Mask for clock bits used by both WIFI and Bluetooth, bit 0, 3, 6, 7, 8, 9 */
-#define SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M 0x000003c9
+#define SYSTEM_WIFI_CLK_BT_EN_V  0x0
+#define SYSTEM_WIFI_CLK_BT_EN_S  0
+/* Mask for clock bits used by both WIFI and Bluetooth, 0, 1, 2, 3, 7, 8, 9, 10, 19, 20, 21, 22, 23 */
+#define SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M 0x78078F
 
 /* Digital team to check */
 //bluetooth baseband bit11
@@ -204,15 +203,19 @@ extern "C" {
 #define SYSTEM_WIFI_RST_EN_REG        SYSCON_WIFI_RST_EN_REG
 /* SYSTEM_WIFI_RST_EN : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define SYSTEM_RW_BTLP_RST (BIT(10))
-#define SYSTEM_RW_BTMAC_RST (BIT(9))
-#define SYSTEM_MACPWR_RST (BIT(8))
-#define SYSTEM_SDIO_RST (BIT(5))
-#define SYSTEM_BTMAC_RST (BIT(4))
-#define SYSTEM_BT_RST (BIT(3))
-#define SYSTEM_MAC_RST (BIT(2))
-#define SYSTEM_FE_RST (BIT(1))
-#define SYSTEM_BB_RST (BIT(0))
+#define SYSTEM_BB_RST           BIT(0)
+#define SYSTEM_FE_RST           BIT(1)
+#define SYSTEM_MAC_RST          BIT(2)
+#define SYSTEM_BT_RST           BIT(3)
+#define SYSTEM_BTMAC_RST        BIT(4)
+#define SYSTEM_SDIO_RST         BIT(5)
+#define SYSTEM_EMAC_RST         BIT(7)
+#define SYSTEM_MACPWR_RST       BIT(8)
+#define SYSTEM_RW_BTMAC_RST     BIT(9)
+#define SYSTEM_RW_BTLP_RST      BIT(10)
+#define BLE_REG_REST_BIT        BIT(11)
+#define BLE_PWR_REG_REST_BIT    BIT(12)
+#define BLE_BB_REG_REST_BIT     BIT(13)
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x01C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */

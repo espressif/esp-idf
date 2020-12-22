@@ -44,9 +44,25 @@
 #include "sha_caps.h"
 #include "spi_caps.h"
 #include "uart_caps.h"
+#include "int_caps.h"
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
+
+/*-------------------------- ADC CAPS -------------------------------*/
+#define SOC_ADC_PERIPH_NUM              (2)
+#define SOC_ADC_PATT_LEN_MAX            (16)
+
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
+#define SOC_ADC_MAX_CHANNEL_NUM         (10)
+
+/**
+ * Check if adc support digital controller (DMA) mode.
+ * @value
+ *      - 1 : support;
+ *      - 0 : not support;
+ */
+#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
