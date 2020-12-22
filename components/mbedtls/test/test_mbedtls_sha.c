@@ -366,9 +366,6 @@ TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(test_vector_digest, sha256, 32, "SHA256 calculation");
 }
 
-/* ESP32 do not have SHA512/t functions */
-#if !DISABLED_FOR_TARGETS(ESP32)
-
 /* Function are not implemented in SW */
 #if CONFIG_MBEDTLS_HARDWARE_SHA && SOC_SHA_SUPPORT_SHA512_T
 
@@ -491,4 +488,3 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
 #endif //CONFIG_SPIRAM
 
 #endif //CONFIG_MBEDTLS_HARDWARE_SHA
-#endif //!DISABLED_FOR_TARGETS(ESP32S2)

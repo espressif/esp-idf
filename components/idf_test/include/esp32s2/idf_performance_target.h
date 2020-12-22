@@ -1,3 +1,17 @@
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            43.0
@@ -12,6 +26,8 @@
 
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               13500
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              130000
+#define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               36000
+#define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              400000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               62000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              800000
 

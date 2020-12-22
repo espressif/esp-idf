@@ -74,11 +74,13 @@ static inline void aes_hal_dma_init(const lldesc_t *input, const lldesc_t *outpu
     gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_LL_PERIPH_ID_AES);
     gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_LL_PERIPH_ID_AES);
 
+#if SOC_GDMA_SUPPORT_EXTMEM
     /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */
     gdma_ll_tx_extend_fifo_size_to(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, 40);
     gdma_ll_rx_extend_l2_fifo_size_to(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, 40);
     gdma_ll_tx_set_block_size_psram(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
     gdma_ll_rx_set_block_size_psram(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
+#endif //SOC_GDMA_SUPPORT_EXTMEM
 
     /* Set descriptors */
     gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, (uint32_t)input);
