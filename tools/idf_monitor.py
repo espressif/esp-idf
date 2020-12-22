@@ -137,6 +137,19 @@ COREDUMP_DONE = 2
 COREDUMP_DECODE_DISABLE = "disable"
 COREDUMP_DECODE_INFO = "info"
 
+# panic handler related messages
+PANIC_START = r"Core \s*\d+ register dump:"
+PANIC_END = b"ELF file SHA256:"
+PANIC_STACK_DUMP = b"Stack memory:"
+
+# panic handler decoding states
+PANIC_IDLE = 0
+PANIC_READING = 1
+
+# panic handler decoding options
+PANIC_DECODE_DISABLE = "disable"
+PANIC_DECODE_BACKTRACE = "backtrace"
+
 
 class StoppableThread(object):
     """
@@ -486,6 +499,8 @@ class Monitor(object):
     def __init__(self, serial_instance, elf_file, print_filter, make="make", encrypted=False,
                  toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF",
                  decode_coredumps=COREDUMP_DECODE_INFO,
+                 decode_panic=PANIC_DECODE_DISABLE,
+                 target=None,
                  websocket_client=None):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
@@ -519,6 +534,7 @@ class Monitor(object):
         self.encrypted = encrypted
         self.toolchain_prefix = toolchain_prefix
         self.websocket_client = websocket_client
+        self.target = target
 
         # internal state
         self._last_line_part = b""
@@ -533,6 +549,9 @@ class Monitor(object):
         self._decode_coredumps = decode_coredumps
         self._reading_coredump = COREDUMP_IDLE
         self._coredump_buffer = b""
+        self._decode_panic = decode_panic
+        self._reading_panic = PANIC_IDLE
+        self._panic_buffer = b""
 
     def invoke_processing_last_line(self):
         self.event_queue.put((TAG_SERIAL_FLUSH, b''), False)
@@ -602,6 +621,7 @@ class Monitor(object):
             if line != b"":
                 if self._serial_check_exit and line == self.console_parser.exit_key.encode('latin-1'):
                     raise SerialStopException()
+                self.check_panic_decode_trigger(line)
                 self.check_coredump_trigger_before_print(line)
                 if self._force_line_print or self._line_matcher.match(line.decode(errors="ignore")):
                     self._print(line + b'\n')
@@ -806,6 +826,59 @@ class Monitor(object):
                 except OSError as e:
                     yellow_print("Couldn't remote temporary core dump file ({})".format(e))
 
+    def check_panic_decode_trigger(self, line):
+        if self._decode_panic == PANIC_DECODE_DISABLE:
+            return
+
+        if self._reading_panic == PANIC_IDLE and re.search(PANIC_START, line.decode("ascii", errors='ignore')):
+            self._reading_panic = PANIC_READING
+            yellow_print("Stack dump detected")
+
+        if self._reading_panic == PANIC_READING and PANIC_STACK_DUMP in line:
+            self._output_enabled = False
+
+        if self._reading_panic == PANIC_READING:
+            self._panic_buffer += line.replace(b'\r', b'') + b'\n'
+
+        if self._reading_panic == PANIC_READING and PANIC_END in line:
+            self._reading_panic = PANIC_IDLE
+            self._output_enabled = True
+            self.process_panic_output(self._panic_buffer)
+            self._panic_buffer = b""
+
+    def process_panic_output(self, panic_output):
+        panic_output_decode_script = os.path.join(os.path.dirname(__file__), "..", "tools", "gdb_panic_server.py")
+        panic_output_file = None
+        try:
+            # On Windows, the temporary file can't be read unless it is closed.
+            # Set delete=False and delete the file manually later.
+            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as panic_output_file:
+                panic_output_file.write(panic_output)
+                panic_output_file.flush()
+
+            cmd = [self.toolchain_prefix + "gdb",
+                   "--batch", "-n",
+                   self.elf_file,
+                   "-ex", "target remote | \"{python}\" \"{script}\" --target {target} \"{output_file}\""
+                   .format(python=sys.executable,
+                           script=panic_output_decode_script,
+                           target=self.target,
+                           output_file=panic_output_file.name),
+                   "-ex", "bt"]
+
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            yellow_print("\nBacktrace:\n\n")
+            self._print(output)
+        except subprocess.CalledProcessError as e:
+            yellow_print("Failed to run gdb_panic_server.py script: {}\n{}\n\n".format(e, e.output))
+            self._print(panic_output)
+        finally:
+            if panic_output_file is not None:
+                try:
+                    os.unlink(panic_output_file.name)
+                except OSError as e:
+                    yellow_print("Couldn't remove temporary panic output file ({})".format(e))
+
     def run_gdb(self):
         with self:  # disable console control
             sys.stderr.write(ANSI_NORMAL)
@@ -982,6 +1055,19 @@ def main():
     )
 
     parser.add_argument(
+        '--decode-panic',
+        choices=[PANIC_DECODE_BACKTRACE, PANIC_DECODE_DISABLE],
+        default=PANIC_DECODE_DISABLE,
+        help="Handling of panic handler info found in serial output"
+    )
+
+    parser.add_argument(
+        '--target',
+        required=False,
+        help="Target name (used when stack dump decoding is enabled)"
+    )
+
+    parser.add_argument(
         '--ws',
         default=os.environ.get('ESP_IDF_MONITOR_WS', None),
         help="WebSocket URL for communicating with IDE tools for debugging purposes"
@@ -1029,7 +1115,7 @@ def main():
     try:
         monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
                           args.toolchain_prefix, args.eol,
-                          args.decode_coredumps,
+                          args.decode_coredumps, args.decode_panic, args.target,
                           ws)
 
         yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(

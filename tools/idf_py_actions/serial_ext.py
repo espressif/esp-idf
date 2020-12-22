@@ -94,6 +94,10 @@ def action_extensions(base_actions, project_path):
         if coredump_decode is not None:
             monitor_args += ["--decode-coredumps", coredump_decode]
 
+        target_arch_riscv = get_sdkconfig_value(project_desc["config_file"], "CONFIG_IDF_TARGET_ARCH_RISCV")
+        if target_arch_riscv:
+            monitor_args += ["--decode-panic", "backtrace", "--target", project_desc["target"]]
+
         if print_filter is not None:
             monitor_args += ["--print_filter", print_filter]
         monitor_args += [elf_file]
