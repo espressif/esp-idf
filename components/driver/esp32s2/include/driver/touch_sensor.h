@@ -187,6 +187,7 @@ uint32_t touch_pad_read_intr_status_mask(void);
 
 /**
  * @brief Enable touch sensor interrupt by bitmask.
+ * @note  This API can be called in ISR handler.
  * @param int_mask Pad mask to enable interrupts
  * @return
  *      - ESP_OK on success
@@ -195,6 +196,7 @@ esp_err_t touch_pad_intr_enable(touch_pad_intr_mask_t int_mask);
 
 /**
  * @brief Disable touch sensor interrupt by bitmask.
+ * @note  This API can be called in ISR handler.
  * @param int_mask Pad mask to disable interrupts
  * @return
  *      - ESP_OK on success

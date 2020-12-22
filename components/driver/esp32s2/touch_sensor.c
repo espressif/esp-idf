@@ -197,19 +197,23 @@ touch_pad_t IRAM_ATTR touch_pad_get_current_meas_channel(void)
 
 esp_err_t touch_pad_intr_enable(touch_pad_intr_mask_t int_mask)
 {
-    TOUCH_INTR_MASK_CHECK(int_mask);
-    TOUCH_ENTER_CRITICAL();
+    if (!(int_mask & TOUCH_PAD_INTR_MASK_ALL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    TOUCH_ENTER_CRITICAL_SAFE();
     touch_hal_intr_enable(int_mask);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL_SAFE();
     return ESP_OK;
 }
 
 esp_err_t touch_pad_intr_disable(touch_pad_intr_mask_t int_mask)
 {
-    TOUCH_INTR_MASK_CHECK(int_mask);
-    TOUCH_ENTER_CRITICAL();
+    if (!(int_mask & TOUCH_PAD_INTR_MASK_ALL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    TOUCH_ENTER_CRITICAL_SAFE();
     touch_hal_intr_disable(int_mask);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL_SAFE();
     return ESP_OK;
 }
 
