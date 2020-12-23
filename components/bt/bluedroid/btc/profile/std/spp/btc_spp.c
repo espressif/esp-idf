@@ -1207,6 +1207,7 @@ int bta_co_rfc_data_outgoing(void *user_data, uint8_t *buf, uint16_t size)
 static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
 {
     assert(data != NULL);
+    errno = 0;
     if (size == 0) {
         return 0;
     }
@@ -1294,11 +1295,18 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
         }
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     }
+
+    // errors occur, need to cleanup
+    if (p_buf) {
+        osi_free(p_buf);
+        p_buf = NULL;
+    }
     return sent;
 }
 
 static int spp_vfs_close(int fd)
 {
+    errno = 0;
     if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         errno = ESRCH;
@@ -1321,6 +1329,7 @@ static int spp_vfs_close(int fd)
 static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
 {
     assert(dst != NULL);
+    errno = 0;
     if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
         errno = ESRCH;
@@ -1398,6 +1407,11 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
 
 esp_err_t btc_spp_vfs_register(void)
 {
+    if (!is_spp_init()) {
+        BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+        return ESP_FAIL;
+    }
+
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = spp_vfs_write,
