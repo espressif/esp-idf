@@ -385,7 +385,10 @@ static void btu_general_alarm_process(void *param)
     }
     break;
 
-    default:;
+    case BTU_TTYPE_BTM_QOS:
+        btm_qos_setup_timeout(p_tle);
+        break;
+    default: {
         int i = 0;
         BOOLEAN handled = FALSE;
 
@@ -399,6 +402,7 @@ static void btu_general_alarm_process(void *param)
             }
         }
         break;
+    }
     }
 }
 

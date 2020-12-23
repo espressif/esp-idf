@@ -1399,6 +1399,11 @@ typedef UINT8 tBTA_DM_LINK_TYPE;
 #define ALLOW_ALL_FILTER     0x00
 #define LOWEST_RSSI_VALUE     129
 
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+#define BTA_DM_QOS_TPOLL_SPP        20
+#define BTA_DM_QOS_TPOLL_DEFAULT    40
+#endif /// (BTA_DM_QOS_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  External Function Declarations
 *****************************************************************************/
@@ -1509,6 +1514,20 @@ extern void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config);
 **
 *******************************************************************************/
 void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb);
+
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmSetQos
+**
+** Description      This function sets the QOS
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetQos(BD_ADDR bd_addr, UINT32 t_poll, tBTM_CMPL_CB *p_cb);
+#endif /// (BTA_DM_QOS_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
