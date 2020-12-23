@@ -59,5 +59,23 @@ menu "Power Management"
             of power management implementation, and should be kept disabled in
             applications.
 
+    config PM_SLP_IRAM_OPT
+        bool "Put lightsleep related codes in internal RAM"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            If enabled, about 1.8KB of lightsleep related codes would be in IRAM and chip would sleep
+            longer for 760us at most each time.
+            This feature is intended to be used when a lower power management mode is needed
+            regardless of the internal memory.
 
+    config PM_RTOS_IDLE_OPT
+        bool "Put RTOS IDLE related codes in internal RAM"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            If enabled, about 260B of RTOS_IDLE related codes would be in IRAM and chip would sleep
+            longer for 40us at most each time.
+            This feature is intended to be used when a lower power management mode is needed
+            regardless of the internal memory.
 endmenu # "Power Management"

@@ -20,3 +20,5 @@ ifdef CONFIG_IDF_TARGET_ESP32
 else
     $(error esp_timer is only supported by the Make build system for esp32 chip. For other chips, use the Cmake build system)
 endif
+
+COMPONENT_ADD_LDFRAGMENTS += linker.lf

@@ -1,0 +1,10 @@
+[mapping:esp_timer]
+archive: libesp_timer.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        esp_timer_impl_lac:esp_timer_impl_lock (noflash)
+        esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
+        esp_timer_impl_lac:esp_timer_impl_advance (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_lock (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_unlock (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_advance (noflash)

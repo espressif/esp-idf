@@ -2,3 +2,9 @@
 archive: libesp_common.a
 entries:
     esp_err (noflash)
+    if PM_RTOS_IDLE_OPT = y:
+        freertos_hooks:esp_vApplicationIdleHook (noflash)
+        task_wdt:idle_hook_cb (noflash)
+        task_wdt:esp_task_wdt_reset (noflash)
+        task_wdt:find_task_in_twdt_list (noflash)
+        task_wdt:reset_hw_timer (noflash)

@@ -23,6 +23,12 @@ entries:
         usb_console:esp_usb_console_cdc_acm_cb (noflash)
         usb_console:esp_usb_console_dfu_detach_cb (noflash)
         usb_console:esp_usb_console_before_restart (noflash)
+    if PM_SLP_IRAM_OPT = y:
+        sleep_modes:esp_light_sleep_start (noflash)
+        sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
+        sleep_modes:timer_wakeup_prepare (noflash)
+        sleep_modes:get_power_down_flags (noflash)
+
 
 [mapping:vfs_cdcacm]
 archive: libvfs.a
