@@ -1860,7 +1860,7 @@ tBTM_STATUS BTM_SetQoS (BD_ADDR bd, FLOW_SPEC *p_flow, tBTM_CMPL_CB *p_cb)
     }
 
     if ( (p = btm_bda_to_acl(bd, BT_TRANSPORT_BR_EDR)) != NULL) {
-        btu_start_timer (&btm_cb.devcb.qossu_timer, BTU_TTYPE_BTM_ACL, BTM_DEV_REPLY_TIMEOUT);
+        btu_start_timer (&btm_cb.devcb.qossu_timer, BTU_TTYPE_BTM_QOS, BTM_DEV_REPLY_TIMEOUT);
         btm_cb.devcb.p_qossu_cmpl_cb = p_cb;
 
         if (!btsnd_hcic_qos_setup (p->hci_handle, p_flow->qos_flags, p_flow->service_type,
@@ -1915,6 +1915,22 @@ void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow)
     }
 }
 
+/*******************************************************************************
+**
+** Function         btm_qos_setup_timeout
+**
+** Description      This function processes a timeout.
+**                  Currently, we just report an error log
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_qos_setup_timeout (void *p_tle)
+{
+    BTM_TRACE_DEBUG ("%s\n", __func__);
+
+    btm_qos_setup_complete (HCI_ERR_HOST_TIMEOUT, 0, NULL);
+}
 
 /*******************************************************************************
 **
