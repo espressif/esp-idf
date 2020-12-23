@@ -201,7 +201,12 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_INVALID_STATE;
 #endif
     } else {
+#ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
+#else
+        ESP_LOGE(TAG, "No server verification option set in esp_tls_cfg_t structure. Check esp_tls API reference");
+        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
+#endif
     }
 
     if (cfg->clientcert_buf != NULL && cfg->clientkey_buf != NULL) {

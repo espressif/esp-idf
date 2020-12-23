@@ -52,6 +52,25 @@ menu "ESP-TLS"
             Enable support for pre shared key ciphers, supported for both mbedTLS as well as
             wolfSSL TLS library.
 
+    config ESP_TLS_INSECURE
+        bool "Allow potentially insecure options"
+        help
+            You can enable some potentially insecure options. These options should only be used for testing pusposes.
+            Only enable these options if you are very sure.
+
+    config ESP_TLS_SKIP_SERVER_CERT_VERIFY
+        bool "Skip server certificate verification by default (WARNING: ONLY FOR TESTING PURPOSE, READ HELP)"
+        depends on ESP_TLS_INSECURE
+        help
+            After enabling this option the esp-tls client will skip the server certificate verification
+            by default. Note that this option will only modify the default behaviour of esp-tls client
+            regarding server cert verification. The default behaviour should only be applicable when
+            no other option regarding the server cert verification is opted in the esp-tls config
+            (e.g. crt_bundle_attach, use_global_ca_store etc.).
+            WARNING : Enabling this option comes with a potential risk of establishing a TLS connection
+            with a server which has a fake identity, provided that the server certificate
+            is not provided either through API or other mechanism like ca_store etc.
+
     config ESP_WOLFSSL_SMALL_CERT_VERIFY
         bool "Enable SMALL_CERT_VERIFY"
         depends on ESP_TLS_USING_WOLFSSL
