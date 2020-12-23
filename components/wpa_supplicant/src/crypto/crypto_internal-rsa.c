@@ -17,6 +17,7 @@
 #include "tls/pkcs1.h"
 #include "tls/pkcs8.h"
 
+#ifndef USE_MBEDTLS_CRYPTO
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;
 struct crypto_private_key;
@@ -27,7 +28,6 @@ struct crypto_public_key *  crypto_public_key_import(const u8 *key, size_t len)
 	return (struct crypto_public_key *)
 		crypto_rsa_import_public_key(key, len);
 }
-
 
 struct crypto_private_key *  crypto_private_key_import(const u8 *key,
 						      size_t len,
@@ -109,3 +109,4 @@ int  crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
 	return pkcs1_decrypt_public_key((struct crypto_rsa_key *) key,
 					crypt, crypt_len, plain, plain_len);
 }
+#endif
