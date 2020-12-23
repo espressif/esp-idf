@@ -1,0 +1,6 @@
+[mapping:esp_pm]
+archive: libesp_pm.a
+entries:
+    if PM_RTOS_IDLE_OPT = y:
+        pm_impl:esp_pm_impl_idle_hook (noflash)
+        pm_impl:esp_pm_impl_waiti (noflash)
