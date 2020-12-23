@@ -3,14 +3,17 @@
 */
 
 #include <string.h>
+#include "sdkconfig.h"
 #include "unity.h"
+#include "test/test_common_spi.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "sdkconfig.h"
-#include "test/test_common_spi.h"
 #include "esp_rom_gpio.h"
+
+//There is only one GPSPI controller, so single-board test is disabled.
+#if !DISABLED_FOR_TARGETS(ESP32C3)
 
 #ifndef CONFIG_SPIRAM
 //This test should be removed once the timing test is merged.
@@ -142,3 +145,5 @@ TEST_CASE("test slave send unaligned","[spi]")
 }
 
 #endif // !CONFIG_SPIRAM
+
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS

@@ -24,7 +24,7 @@
 
 #include "hal/spi_ll.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 /********************************************************************************
  *      Test SIO
@@ -102,7 +102,7 @@ TEST_CASE("local test sio", "[spi]")
     master_free_device_bus(spi);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave
@@ -220,6 +220,6 @@ void test_sio_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
-#endif
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
-#endif
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)

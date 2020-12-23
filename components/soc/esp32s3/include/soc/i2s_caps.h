@@ -21,5 +21,3 @@
 
 // ESP32-S3 have 1 I2S
 #define SOC_I2S_NUM            (1)
-
-#define SOC_I2S_SUPPORT_PDM     (0) // ESP32-S3 do not support PDM

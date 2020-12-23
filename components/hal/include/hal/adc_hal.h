@@ -186,11 +186,6 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
                     Digital controller setting
 ---------------------------------------------------------------*/
 /**
- * Digital controller initialization.
- */
-void adc_hal_digi_init(void);
-
-/**
  * Digital controller deinitialization.
  */
 void adc_hal_digi_deinit(void);
@@ -208,3 +203,74 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
  * @param adc_n ADC unit.
  */
 #define adc_hal_digi_clear_pattern_table(adc_n) adc_ll_digi_clear_pattern_table(adc_n)
+
+#if CONFIG_IDF_TARGET_ESP32C3
+/*---------------------------------------------------------------
+                    DMA setting
+---------------------------------------------------------------*/
+#include "soc/gdma_struct.h"
+#include "hal/gdma_ll.h"
+#include "hal/dma_types.h"
+#include "hal/adc_ll.h"
+#include "hal/dma_types.h"
+
+typedef struct adc_dma_hal_context_t {
+    gdma_dev_t          *dev;           //address of the general DMA
+} adc_dma_hal_context_t;
+
+typedef struct adc_dma_hal_config_t {
+    dma_descriptor_t    *rx_desc;       //dma descriptor
+    dma_descriptor_t    *cur_desc_ptr;  //pointer to the current descriptor
+    uint32_t            desc_max_num;   //number of the descriptors linked once
+    uint32_t            desc_cnt;
+    uint32_t            dma_chan;
+} adc_dma_hal_config_t;
+
+void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t *data_buf, uint32_t size, uint32_t num);
+
+void adc_hal_digi_rxdma_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+
+void adc_hal_digi_rxdma_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+
+void adc_hal_digi_ena_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+
+void adc_hal_digi_clr_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+
+void adc_hal_digi_dis_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+
+void adc_hal_digi_set_eof_num(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t num);
+
+void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+
+void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+
+void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+
+/*---------------------------------------------------------------
+                    Single Read
+---------------------------------------------------------------*/
+void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config);
+
+void adc_hal_adc1_onetime_sample_enable(bool enable);
+
+void adc_hal_adc2_onetime_sample_enable(bool enable);
+
+void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel);
+
+void adc_hal_set_onetime_atten(adc_atten_t atten);
+
+uint32_t adc_hal_adc1_read(void);
+
+uint32_t adc_hal_adc2_read(void);
+
+void adc_hal_intr_enable(adc_event_t event);
+
+void adc_hal_intr_disable(adc_event_t event);
+
+void adc_hal_intr_clear(adc_event_t event);
+
+bool adc_hal_intr_get_raw(adc_event_t event);
+
+bool adc_hal_intr_get_status(adc_event_t event);
+
+#endif  //#if CONFIG_IDF_TARGET_ESP32C3

@@ -60,12 +60,20 @@ inline static size_t state_length(esp_sha_type type)
     case SHA2_224:
     case SHA2_256:
         return SHA256_STATE_LEN_WORDS;
+#if SOC_SHA_SUPPORT_SHA384
     case SHA2_384:
+        return SHA512_STATE_LEN_WORDS;
+#endif
+#if SOC_SHA_SUPPORT_SHA512
     case SHA2_512:
+        return SHA512_STATE_LEN_WORDS;
+#endif
+#if SOC_SHA_SUPPORT_SHA512_T
     case SHA2_512224:
     case SHA2_512256:
     case SHA2_512T:
         return SHA512_STATE_LEN_WORDS;
+#endif
     default:
         return 0;
     }

@@ -13,8 +13,11 @@
 // limitations under the License.
 
 /*
- Tests for the touch sensor device driver
+ Tests for the touch sensor device driver for ESP32-S2 only
 */
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32S2
+
 #include <string.h>
 #include "esp_system.h"
 #include "driver/touch_pad.h"
@@ -37,8 +40,6 @@
 #include "soc/apb_ctrl_reg.h"
 #include "driver/rtc_io.h"
 #include "esp_rom_sys.h"
-
-#if !DISABLED_FOR_TARGETS(ESP8266, ESP32, ESP32S3) // This testcase for ESP32S2
 
 static const char *TAG = "test_touch";
 
@@ -2122,4 +2123,4 @@ void test_touch_slope_debug(int pad_num)
     TEST_ESP_OK( touch_pad_deinit() );
 }
 
-#endif // !DISABLED_FOR_TARGETS(ESP8266, ESP32)
+#endif // CONFIG_IDF_TARGET_ESP32S2

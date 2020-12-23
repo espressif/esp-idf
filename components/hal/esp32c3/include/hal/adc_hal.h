@@ -35,11 +35,6 @@ extern "C" {
                     Digital controller setting
 ---------------------------------------------------------------*/
 /**
- * Digital controller initialization.
- */
-void adc_hal_digi_init(void);
-
-/**
  * Digital controller deinitialization.
  */
 void adc_hal_digi_deinit(void);

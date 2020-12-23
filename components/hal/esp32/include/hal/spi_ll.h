@@ -154,7 +154,7 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 }
 
 /**
- * Reset SPI CPU FIFO
+ * Reset SPI CPU TX FIFO
  *
  * @param hw Beginning address of the peripheral registers.
  */

@@ -71,7 +71,7 @@ esp_err_t adc_digi_init(void)
 {
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     ADC_ENTER_CRITICAL();
-    adc_hal_digi_init();
+    adc_hal_init();
     adc_hal_arbiter_config(&config);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
@@ -148,12 +148,12 @@ esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config)
  * @note  For ADC1, Controller access is mutually exclusive.
  *
  * @param adc_unit ADC unit.
- * @param ctrl ADC controller, Refer to `adc_controller_t`.
+ * @param ctrl ADC controller, Refer to `adc_ll_controller_t`.
  *
  * @return
  *      - ESP_OK Success
  */
-esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_controller_t ctrl)
+esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_ll_controller_t ctrl)
 {
     adc_arbiter_t config = {0};
     adc_arbiter_t cfg = ADC_ARBITER_CONFIG_DEFAULT();

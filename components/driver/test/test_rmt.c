@@ -1,5 +1,4 @@
 // RMT driver unit test is based on extended NEC protocol
-// Please don't use channel number: SOC_RMT_CHANNELS_NUM - 1
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -16,7 +15,7 @@
 #define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CHANNELS_NUM-1)
 
 // CI ONLY: Don't connect any other signals to this GPIO
-#define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
+#define RMT_DATA_IO (4) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
 #define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
 #define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)
@@ -103,7 +102,7 @@ static void rmt_clean_testbench(int tx_channel, int rx_channel)
     }
 }
 
-TEST_CASE("RMT wrong configuration", "[rmt][error]")
+TEST_CASE("RMT wrong configuration", "[rmt]")
 {
     rmt_config_t correct_config = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 0);
     rmt_config_t wrong_config = correct_config;
@@ -179,25 +178,30 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
 
 TEST_CASE("RMT multiple channels", "[rmt]")
 {
-    rmt_config_t tx_cfg1 = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 0);
+    rmt_config_t tx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 0);
+    for (int i = 0; i < SOC_RMT_TX_CHANNELS_NUM; i++) {
+        tx_cfg.channel = i;
+        TEST_ESP_OK(rmt_config(&tx_cfg));
+        TEST_ESP_OK(rmt_driver_install(tx_cfg.channel, 0, 0));
+    }
 
-    TEST_ESP_OK(rmt_config(&tx_cfg1));
-    TEST_ESP_OK(rmt_driver_install(tx_cfg1.channel, 0, 0));
+    for (int i = 0; i < SOC_RMT_TX_CHANNELS_NUM; i++) {
+        TEST_ESP_OK(rmt_driver_uninstall(i));
+    }
 
-    rmt_config_t tx_cfg2 = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 1);
-    TEST_ESP_OK(rmt_config(&tx_cfg2));
-    TEST_ESP_OK(rmt_driver_install(tx_cfg2.channel, 0, 0));
+    rmt_config_t rx_cfg = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, RMT_RX_CHANNEL_ENCODING_START);
+    for (int i = RMT_RX_CHANNEL_ENCODING_START; i < SOC_RMT_CHANNELS_NUM; i++) {
+        rx_cfg.channel = i;
+        TEST_ESP_OK(rmt_config(&rx_cfg));
+        TEST_ESP_OK(rmt_driver_install(rx_cfg.channel, 0, 0));
+    }
 
-    rmt_config_t tx_cfg3 = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 2);
-    TEST_ESP_OK(rmt_config(&tx_cfg3));
-    TEST_ESP_OK(rmt_driver_install(tx_cfg3.channel, 0, 0));
-
-    TEST_ESP_OK(rmt_driver_uninstall(2));
-    TEST_ESP_OK(rmt_driver_uninstall(1));
-    TEST_ESP_OK(rmt_driver_uninstall(0));
+    for (int i = RMT_RX_CHANNEL_ENCODING_START; i < SOC_RMT_CHANNELS_NUM; i++) {
+        TEST_ESP_OK(rmt_driver_uninstall(i));
+    }
 }
 
-TEST_CASE("RMT install/uninstall test", "[rmt][pressure]")
+TEST_CASE("RMT install/uninstall test", "[rmt]")
 {
     rmt_config_t tx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, RMT_TX_CHANNEL_ENCODING_END);
     TEST_ESP_OK(rmt_config(&tx_cfg));
@@ -449,8 +453,8 @@ TEST_CASE("RMT TX simultaneously", "[rmt]")
     frames[i].level1 = 0;
     frames[i].duration1 = 0;
 
-    rmt_config_t tx_config0 = RMT_DEFAULT_CONFIG_TX(12, channel0);
-    rmt_config_t tx_config1 = RMT_DEFAULT_CONFIG_TX(13, channel1);
+    rmt_config_t tx_config0 = RMT_DEFAULT_CONFIG_TX(4, channel0);
+    rmt_config_t tx_config1 = RMT_DEFAULT_CONFIG_TX(5, channel1);
     TEST_ESP_OK(rmt_config(&tx_config0));
     TEST_ESP_OK(rmt_config(&tx_config1));
 

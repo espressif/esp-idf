@@ -15,7 +15,6 @@
 
 #include <stdbool.h>
 #include "soc/hwcrypto_reg.h"
-#include "soc/dport_access.h"
 #include "hal/sha_types.h"
 
 #ifdef __cplusplus
@@ -127,8 +126,12 @@ static inline void sha_ll_fill_text_block(const void *input_text, size_t block_w
 static inline void sha_ll_read_digest(esp_sha_type sha_type, void *digest_state, size_t digest_word_len)
 {
     uint32_t *digest_state_words = (uint32_t *)digest_state;
+    const size_t REG_WIDTH = sizeof(uint32_t);
 
-    esp_dport_access_read_buffer(digest_state_words, SHA_H_BASE, digest_word_len);
+    for (size_t i = 0; i < digest_word_len; i++) {
+        digest_state_words[i] = REG_READ(SHA_H_BASE + (i * REG_WIDTH));
+    }
+
 }
 
 /**

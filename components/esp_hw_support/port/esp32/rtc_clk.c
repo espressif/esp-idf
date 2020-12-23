@@ -101,6 +101,7 @@
 
 #define RTC_PLL_FREQ_320M   320
 #define RTC_PLL_FREQ_480M   480
+#define DELAY_RTC_CLK_SWITCH 5
 
 static void rtc_clk_cpu_freq_to_8m(void);
 static void rtc_clk_bbpll_disable(void);
@@ -771,6 +772,18 @@ uint32_t rtc_clk_apb_freq_get(void)
     freq_hz += MHZ / 2;
     uint32_t remainder = freq_hz % MHZ;
     return freq_hz - remainder;
+}
+
+void rtc_dig_clk8m_enable(void)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
+}
+
+void rtc_dig_clk8m_disable(void)
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
 }
 
 /* Name used in libphy.a:phy_chip_v7.o

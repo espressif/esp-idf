@@ -16,8 +16,8 @@
 #include "hal/brownout_hal.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "i2c_rtc_clk.h"
-#include "i2c_brownout.h"
+#include "regi2c_ctrl.h"
+#include "regi2c_brownout.h"
 
 
 void brownout_hal_config(const brownout_hal_config_t *cfg)

@@ -184,3 +184,11 @@ void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any mor
         esp_rom_delay_us(1);
     }
 }
+
+uint32_t rtc_clk_freq_cal(uint32_t cal_val)
+{
+    if (cal_val == 0) {
+        return 0;   // cal_val will be denominator, return 0 as the symbol of failure.
+    }
+    return 1000000ULL * (1 << RTC_CLK_CAL_FRACT) / cal_val;
+}

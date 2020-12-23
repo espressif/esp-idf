@@ -18,12 +18,6 @@
 #include "hal/adc_hal_conf.h"
 #include "hal/adc_types.h"
 
-void adc_hal_digi_init(void)
-{
-    adc_hal_init();
-    adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
-}
-
 void adc_hal_digi_deinit(void)
 {
     adc_ll_digi_clear_pattern_table(ADC_NUM_1);

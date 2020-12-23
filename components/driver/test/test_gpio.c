@@ -16,7 +16,6 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 
@@ -35,7 +34,22 @@
 #define TEST_GPIO_OUTPUT_PIN        12
 #define TEST_GPIO_INPUT_ONLY_PIN    46
 #define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_46
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TEST_GPIO_EXT_OUT_IO        19  // default output GPIO
+#define TEST_GPIO_EXT_IN_IO         20  // default input GPIO
+#define TEST_GPIO_OUTPUT_PIN        12
+#define TEST_GPIO_INPUT_ONLY_PIN    46
+#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_47
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define TEST_GPIO_EXT_OUT_IO        2  // default output GPIO
+#define TEST_GPIO_EXT_IN_IO         3  // default input GPIO
+#define TEST_GPIO_OUTPUT_PIN        1
+#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_21
 #endif
+
+// define public test io on all boards(esp32, esp32s2, esp32s3, esp32c3)
+#define TEST_IO_9 GPIO_NUM_9
+#define TEST_IO_10 GPIO_NUM_10
 
 static volatile int disable_intr_times = 0;  // use this to calculate how many times it go into interrupt
 static volatile int level_intr_times = 0;  // use this to get how many times the level interrupt happened
@@ -62,7 +76,7 @@ static gpio_config_t init_io(gpio_num_t num)
     return io_conf;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 //No runners
 // edge interrupt event
 static void gpio_isr_edge_handler(void* arg)
@@ -95,7 +109,7 @@ static void gpio_isr_level_handler2(void* arg)
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
-#endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
 #if !WAKE_UP_IGNORE
 // get result of waking up or not
@@ -120,7 +134,7 @@ static void trigger_wake_up(void *arg)
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
     vTaskDelay(100 / portTICK_RATE_MS);
 }
-#endif
+#endif //!WAKE_UP_IGNORE
 
 static void prompt_to_continue(const char* str)
 {
@@ -169,16 +183,18 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     io_config.pin_bit_mask = ((uint64_t)1<<TEST_GPIO_OUTPUT_PIN);
     TEST_ESP_OK(gpio_config(&io_config));
 
+    //This IO is just used for input, C3 doesn't have input only pin.
+#if !CONFIG_IDF_TARGET_ESP32C3
     io_config.pin_bit_mask = ((uint64_t)1 << TEST_GPIO_INPUT_ONLY_PIN);
     io_config.mode = GPIO_MODE_INPUT;
     TEST_ESP_OK(gpio_config(&io_config));
     io_config.mode = GPIO_MODE_OUTPUT;
     // The pin is input only, once set as output should log something
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
-
+#endif //!CONFIG_IDF_TARGET_ESP32C3
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 //No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -370,9 +386,10 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler, (void*) TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
     TEST_ASSERT(gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
-// ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO18 with GPIO21
+// ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO17 with GPIO21,
+// ESP32-S3 Connect GPIO19 with GPIO20, ESP32C3 Connect GPIO2 with GPIO3
 // use multimeter to test the voltage, so it is ignored in CI
 TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
 {
@@ -396,11 +413,13 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
     // tested voltage is around 3.3v
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 1, "get level error! the level should be high!");
 
-    //This IO is just used for input
+    //This IO is just used for input, C3 doesn't have input only pin.
+#if !CONFIG_IDF_TARGET_ESP32C3
     io_conf.pin_bit_mask = ((uint64_t)1<<TEST_GPIO_INPUT_ONLY_PIN);
     io_conf.mode = GPIO_MODE_OUTPUT;
     gpio_config(&io_conf);
     TEST_ASSERT(gpio_config(&io_conf) == ESP_ERR_INVALID_ARG);
+#endif //!CONFIG_IDF_TARGET_ESP32C3
 }
 
 // gpio17 connects to 3.3v pin, gpio19 connects to the GND pin
@@ -449,11 +468,11 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 //No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
-    //ESP32 connect io18 and io19, ESP32-S2 connect io18 and io21
+    //ESP32 connect io18 and io19, ESP32-S2 connect io17 and io21, ESP32-S3 connect io19 and io20, ESP32C3 Connect GPIO2 with GPIO3
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
     gpio_config_t input_io = init_io(TEST_GPIO_EXT_IN_IO);
     gpio_config(&output_io);
@@ -523,7 +542,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][te
     }
     TEST_ASSERT_INT32_WITHIN(size, esp_get_free_heap_size(), 100);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
@@ -540,7 +559,7 @@ TEST_CASE("GPIO wake up enable and disenable test", "[gpio][ignore]")
     vTaskDelay(100 / portTICK_RATE_MS);
     TEST_ASSERT_FALSE(wake_up_result);
 }
-#endif
+#endif // !WAKE_UP_IGNORE
 
 // this case need the resistance to pull up the voltage or pull down the voltage
 // ignored because the voltage needs to be tested with multimeter
@@ -649,6 +668,7 @@ TEST_CASE("GPIO drive capability test", "[gpio][ignore]")
 }
 
 #if !CONFIG_FREERTOS_UNICORE
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 void gpio_enable_task(void *param)
 {
     int gpio_num = (int)param;
@@ -659,46 +679,46 @@ void gpio_enable_task(void *param)
 /** Test the GPIO Interrupt Enable API with dual core enabled. The GPIO ISR service routine is registered on one core.
  * When the GPIO interrupt on another core is enabled, the GPIO interrupt will be lost.
  * First on the core 0, Do the following steps:
- *     1. Configure the GPIO18 input_output mode, and enable the rising edge interrupt mode.
- *     2. Trigger the GPIO18 interrupt and check if the interrupt responds correctly.
- *     3. Disable the GPIO18 interrupt
+ *     1. Configure the GPIO9 input_output mode, and enable the rising edge interrupt mode.
+ *     2. Trigger the GPIO9 interrupt and check if the interrupt responds correctly.
+ *     3. Disable the GPIO9 interrupt
  * Then on the core 1, Do the following steps:
- *     1. Enable the GPIO18 interrupt again.
- *     2. Trigger the GPIO18 interrupt and check if the interrupt responds correctly.
+ *     1. Enable the GPIO9 interrupt again.
+ *     2. Trigger the GPIO9 interrupt and check if the interrupt responds correctly.
  *
  */
 TEST_CASE("GPIO Enable/Disable interrupt on multiple cores", "[gpio][ignore]")
 {
-    const int test_io18 = GPIO_NUM_18;
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
     io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << test_io18);
+    io_conf.pin_bit_mask = (1ULL << TEST_IO_9);
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 1;
     TEST_ESP_OK(gpio_config(&io_conf));
-    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
     TEST_ESP_OK(gpio_install_isr_service(0));
-    TEST_ESP_OK(gpio_isr_handler_add(test_io18, gpio_isr_edge_handler, (void*) test_io18));
+    TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_9, gpio_isr_edge_handler, (void*) TEST_IO_9));
     vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_set_level(test_io18, 1));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_intr_disable(test_io18));
+    TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
     TEST_ASSERT(edge_intr_times == 1);
-    xTaskCreatePinnedToCore(gpio_enable_task, "gpio_enable_task", 1024*4, (void*)test_io18, 8, NULL, (xPortGetCoreID() == 0));
+    xTaskCreatePinnedToCore(gpio_enable_task, "gpio_enable_task", 1024*4, (void*)TEST_IO_9, 8, NULL, (xPortGetCoreID() == 0));
     vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_set_level(test_io18, 1));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_intr_disable(test_io18));
-    TEST_ESP_OK(gpio_isr_handler_remove(test_io18));
+    TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
+    TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_9));
     gpio_uninstall_isr_service();
     TEST_ASSERT(edge_intr_times == 2);
 }
-#endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#endif //!CONFIG_FREERTOS_UNICORE
 
 typedef struct {
     int gpio_num;
@@ -716,61 +736,57 @@ static void gpio_isr_handler(void* arg)
  * But this will incorrectly handle the interrupt disabled GPIOs, because the raw interrupt status register can still be set when
  * the trigger signal arrives, even if the interrupt is disabled.
  * First on the core 0:
- *     1. Configure the GPIO18 and GPIO19(ESP32)/GPIO21(ESP32-S2) input_output mode.
- *     2. Enable GPIO18 dual edge triggered interrupt, enable GPIO19(ESP32)/GPIO21(ESP32-S2) falling edge triggered interrupt.
- *     3. Trigger GPIO18 interrupt, than disable the GPIO8 interrupt, and than trigger GPIO18 again(This time will not respond to the interrupt).
- *     4. Trigger GPIO19(ESP32)/GPIO21(ESP32-S2) interrupt.
- * If the bug is not fixed, you will see, in the step 4, the interrupt of GPIO18 will also respond.
+ *     1. Configure the GPIO9 and GPIO10(ESP32, ESP32C3)/GPIO21(ESP32-S2) input_output mode.
+ *     2. Enable GPIO9 dual edge triggered interrupt, enable GPIO10(ESP32, ESP32C3)/GPIO21(ESP32-S2) falling edge triggered interrupt.
+ *     3. Trigger GPIO9 interrupt, than disable the GPIO18 interrupt, and than trigger GPIO18 again(This time will not respond to the interrupt).
+ *     4. Trigger GPIO10(ESP32, ESP32C3)/GPIO21(ESP32-S2) interrupt.
+ * If the bug is not fixed, you will see, in the step 4, the interrupt of GPIO9 will also respond.
  */
 TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
 {
-    const int test_io18 = GPIO_NUM_18;
-    const int test_io19 = GPIO_NUM_19;
-    static gpio_isr_param_t io18_param = {
-        .gpio_num =  GPIO_NUM_18,
+    static gpio_isr_param_t io9_param = {
+        .gpio_num =  TEST_IO_9,
         .isr_cnt = 0,
     };
-    static gpio_isr_param_t io19_param = {
-        .gpio_num =  GPIO_NUM_19,
+    static gpio_isr_param_t io10_param = {
+        .gpio_num =  TEST_IO_10,
         .isr_cnt = 0,
     };
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << test_io18) | (1ULL << test_io19);
+    io_conf.pin_bit_mask = (1ULL << TEST_IO_9) | (1ULL << TEST_IO_10);
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 1;
     TEST_ESP_OK(gpio_config(&io_conf));
-    TEST_ESP_OK(gpio_set_level(test_io18, 0));
-    TEST_ESP_OK(gpio_set_level(test_io19, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_10, 0));
     TEST_ESP_OK(gpio_install_isr_service(0));
-    TEST_ESP_OK(gpio_set_intr_type(test_io18, GPIO_INTR_ANYEDGE));
-    TEST_ESP_OK(gpio_set_intr_type(test_io19, GPIO_INTR_NEGEDGE));
-    TEST_ESP_OK(gpio_isr_handler_add(test_io18, gpio_isr_handler, (void*)&io18_param));
-    TEST_ESP_OK(gpio_isr_handler_add(test_io19, gpio_isr_handler, (void*)&io19_param));
-    printf("Triggering the interrupt of GPIO18\n");
+    TEST_ESP_OK(gpio_set_intr_type(TEST_IO_9, GPIO_INTR_ANYEDGE));
+    TEST_ESP_OK(gpio_set_intr_type(TEST_IO_10, GPIO_INTR_NEGEDGE));
+    TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_9, gpio_isr_handler, (void*)&io9_param));
+    TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_10, gpio_isr_handler, (void*)&io10_param));
+    printf("Triggering the interrupt of GPIO9\n");
     vTaskDelay(1000 / portTICK_RATE_MS);
     //Rising edge
-    TEST_ESP_OK(gpio_set_level(test_io18, 1));
-    printf("Disable the interrupt of GPIO18");
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
+    printf("Disable the interrupt of GPIO9\n");
     vTaskDelay(100 / portTICK_RATE_MS);
-    //Disable GPIO18 interrupt, GPIO18 will not respond to the next falling edge interrupt.
-    TEST_ESP_OK(gpio_intr_disable(test_io18));
+    //Disable GPIO9 interrupt, GPIO18 will not respond to the next falling edge interrupt.
+    TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
     vTaskDelay(100 / portTICK_RATE_MS);
     //Falling edge
-    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
 
-    printf("Triggering the interrupt of GPIO19\n");
+    printf("Triggering the interrupt of GPIO10\n");
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_set_level(test_io19, 1));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_10, 1));
     vTaskDelay(100 / portTICK_RATE_MS);
     //Falling edge
-    TEST_ESP_OK(gpio_set_level(test_io19, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_IO_10, 0));
     vTaskDelay(100 / portTICK_RATE_MS);
-    TEST_ESP_OK(gpio_isr_handler_remove(test_io18));
-    TEST_ESP_OK(gpio_isr_handler_remove(test_io19));
+    TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_9));
+    TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_10));
     gpio_uninstall_isr_service();
-    TEST_ASSERT((io18_param.isr_cnt == 1) && (io19_param.isr_cnt == 1));
+    TEST_ASSERT((io9_param.isr_cnt == 1) && (io10_param.isr_cnt == 1));
 }
-
-#endif

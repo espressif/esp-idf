@@ -239,39 +239,6 @@ esp_err_t adc_digi_isr_register(void (*fn)(void *), void *arg, int intr_alloc_fl
  */
 esp_err_t adc_digi_isr_deregister(void);
 
-/*---------------------------------------------------------------
-                    RTC controller setting
----------------------------------------------------------------*/
-
-/*---------------------------------------------------------------
-                    Deprecated API
----------------------------------------------------------------*/
-/**
- * @brief Set I2S data source
- *
- * @param src I2S DMA data source, I2S DMA can get data from digital signals or from ADC.
- *
- * @deprecated The ESP32S2 don't use I2S DMA. Call ``adc_digi_controller_config`` instead.
- *
- * @return
- *     - ESP_OK success
- */
-esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src) __attribute__((deprecated));
-
-/**
- * @brief Initialize I2S ADC mode
- *
- * @param adc_unit ADC unit index
- * @param channel ADC channel index
- *
- * @deprecated The ESP32S2 don't use I2S DMA. Call ``adc_digi_controller_config`` instead.
- *
- * @return
- *     - ESP_OK success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel) __attribute__((deprecated));
-
 #ifdef __cplusplus
 }
 #endif

@@ -7,7 +7,7 @@
 #include "test/test_common_spi.h"
 #include "unity.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 #if CONFIG_IDF_TARGET_ESP32
 // The VSPI pins on UT_T1_ESP_FLASH are connected to a external flash
@@ -345,6 +345,6 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
 
 //TODO: add a case when a non-polling transaction happened in the bus-acquiring time and then release the bus then queue a new trans
 
-#endif
+#endif //!CONFIG_ESP32_SPIRAM_SUPPORT
 
-#endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)

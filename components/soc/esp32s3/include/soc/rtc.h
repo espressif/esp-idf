@@ -563,6 +563,29 @@ uint64_t rtc_deep_slp_time_get(void);
 void rtc_clk_wait_for_slow_cycle(void);
 
 /**
+ * @brief Enable the rtc digital 8M clock
+ *
+ * This function is used to enable the digital rtc 8M clock to support peripherals.
+ * For enabling the analog 8M clock, using `rtc_clk_8M_enable` function above.
+ */
+void rtc_dig_clk8m_enable(void);
+
+/**
+ * @brief Disable the rtc digital 8M clock
+ *
+ * This function is used to disable the digital rtc 8M clock, which is only used to support peripherals.
+ */
+void rtc_dig_clk8m_disable(void);
+
+/**
+ * @brief Calculate the real clock value after the clock calibration
+ *
+ * @param cal_val Average slow clock period in microseconds, fixed point value as returned from `rtc_clk_cal`
+ * @return Frequency of the clock in Hz
+ */
+uint32_t rtc_clk_freq_cal(uint32_t cal_val);
+
+/**
  * @brief Power up flags for rtc_sleep_pd function
  */
 typedef struct {

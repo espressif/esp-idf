@@ -118,7 +118,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     }
     adc_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
-    adc_hal_digi_init();
+    adc_hal_init();
     adc_hal_digi_controller_config(&dig_cfg);
     ADC_EXIT_CRITICAL();
 
@@ -128,7 +128,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 esp_err_t adc_digi_init(void)
 {
     ADC_ENTER_CRITICAL();
-    adc_hal_digi_init();
+    adc_hal_init();
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }

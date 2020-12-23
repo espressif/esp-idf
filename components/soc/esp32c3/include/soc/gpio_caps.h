@@ -18,23 +18,21 @@
 extern "C" {
 #endif
 
+// ESP32-C3 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1)
 #define SOC_GPIO_PIN_COUNT          (22)
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
+// On ESP32-C3, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define GPIO_SUPPORTS_RTC_INDEPENDENT (1)
-
+// Force hold is a new function of ESP32-C3
 #define GPIO_SUPPORTS_FORCE_HOLD      (1)
-
-#define GPIO_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
 #define GPIO_MODE_DEF_DISABLE         (0)
 #define GPIO_MODE_DEF_INPUT           (BIT0)
 #define GPIO_MODE_DEF_OUTPUT          (BIT1)
 #define GPIO_MODE_DEF_OD              (BIT2)
 
-// TODO ESP32-C3 IDF-2119 - check if any IOs are not full featured GPIO
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 

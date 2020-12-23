@@ -5,7 +5,7 @@
 #include "soc/soc_caps.h"
 #include "driver/sigmadelta.h"
 
-TEST_CASE("Sigma-Delta config test", "[sigma_delta]")
+TEST_CASE("SigmaDelta config test", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
         .sigmadelta_prescale = 80,
