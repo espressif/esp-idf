@@ -58,6 +58,7 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
+#define BTA_DM_QOS_INCLUDED         TRUE
 
 #if (UC_BT_A2DP_ENABLED == TRUE)
 #define BTA_AR_INCLUDED             TRUE
@@ -298,6 +299,10 @@
 
 #ifndef BTA_DM_PM_INCLUDED
 #define BTA_DM_PM_INCLUDED FALSE
+#endif
+
+#ifndef BTA_DM_QOS_INCLUDED
+#define BTA_DM_QOS_INCLUDED FALSE
 #endif
 
 #ifndef BTA_PAN_INCLUDED
