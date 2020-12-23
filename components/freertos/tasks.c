@@ -1340,6 +1340,21 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 				hence xYieldPending is used to latch that a context switch is
 				required. */
 				portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[core] );
+
+				if (portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core ])
+				{
+					/* SMP case of deleting a task running on a different core. Same issue
+					as a task deleting itself, but we need to send a yield to this task now
+					before we release xTaskQueueMutex.
+
+					Specifically there is a case where the other core may already be spinning on
+					xTaskQueueMutex waiting to go into a blocked state. A check is added in
+					prvAddCurrentTaskToDelayedList() to prevent it from removing itself from
+					xTasksWaitingTermination list in this case (instead it will immediately
+					release xTaskQueueMutex again and be yielded before the FreeRTOS function
+					returns.) */
+					vPortYieldOtherCore( !core );
+				}
 			}
 			else
 			{
@@ -1371,25 +1386,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			{
 				configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 				portYIELD_WITHIN_API();
-			}
-			else if ( portNUM_PROCESSORS > 1 )
-			{
-				/* Check if the deleted task is currently running on any other core
-				   and force a yield to take it off.
-
-				   (this includes re-checking the core that curTCB was previously
-				   running on, in case curTCB has migrated to a different core.)
-				*/
-				taskENTER_CRITICAL( &xTaskQueueMutex );
-				for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++)
-				{
-					if(pxTCB == pxCurrentTCB[ i ] )
-					{
-						vPortYieldOtherCore( i );
-						break;
-					}
-				}
-				taskEXIT_CRITICAL( &xTaskQueueMutex );
 			}
 			else
 			{
@@ -5676,6 +5672,13 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
 {
 TickType_t xTimeToWake;
 const TickType_t xConstTickCount = xTickCount;
+
+	if (portNUM_PROCESSORS > 1 && listIS_CONTAINED_WITHIN(&xTasksWaitingTermination,  &( pxCurrentTCB[xCoreID]->xStateListItem))) {
+		/* vTaskDelete() has been called on this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
+		   so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
+		   be suspended permanently */
+		return;
+	}
 
 	#if( INCLUDE_xTaskAbortDelay == 1 )
 	{
