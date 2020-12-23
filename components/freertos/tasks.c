@@ -1319,7 +1319,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			uxTaskNumber++;
 
 			if( pxTCB == curTCB ||
+				/* in SMP, we also can't immediately delete the task active on the other core */
 				(portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core ]) ||
+				/* ... and we can't delete a non-running task pinned to the other core, as
+				   FPU cleanup has to happen on the same core */
 				(portNUM_PROCESSORS > 1 && pxTCB->xCoreID == (!core)) )
 			{
 				/* A task is deleting itself.  This cannot complete within the
@@ -5674,7 +5677,7 @@ TickType_t xTimeToWake;
 const TickType_t xConstTickCount = xTickCount;
 
 	if (portNUM_PROCESSORS > 1 && listIS_CONTAINED_WITHIN(&xTasksWaitingTermination,  &( pxCurrentTCB[xCoreID]->xStateListItem))) {
-		/* vTaskDelete() has been called on this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
+		/* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
 		   so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
 		   be suspended permanently */
 		return;

@@ -3,12 +3,11 @@
  * check if the task memory is freed immediately under the correct conditions.
  *
  * The behavior of vTaskDelete() results in the immediate freeing of task memory
- * and the immediate execution of deletion callbacks under the following conditions...
- * - When deleting a task that is not currently running on either core
- * - When deleting a task that is pinned to the same core (with respect to
- *   the core that calls vTaskDelete()
+ * and the immediate execution of deletion callbacks for tasks which are not
+ * running, provided they are not pinned to the other core (due to FPU cleanup
+ * requirements).
  *
- * If the two conditions are not met, freeing of task memory and execution of
+ * If the condition is not met, freeing of task memory and execution of
  * deletion callbacks will still be carried out by the Idle Task.
  */
 #include <stdio.h>
