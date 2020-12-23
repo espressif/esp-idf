@@ -36,7 +36,7 @@ class UdpServer:
         self.family_addr = family_addr
         self.socket = socket.socket(family_addr, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.settimeout(30.0)
+        self.socket.settimeout(60.0)
         self.shutdown = Event()
         self.persist = persist
 
@@ -47,6 +47,7 @@ class UdpServer:
             print("Bind failed:{}".format(e))
             raise
 
+        print("Starting server on port={} family_addr={}".format(self.port, self.family_addr))
         self.server_thread = Thread(target=self.run_server)
         self.server_thread.start()
         return self
@@ -78,7 +79,7 @@ class UdpServer:
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
-def test_examples_protocol_socket(env, extra_data):
+def test_examples_protocol_socket_udpclient(env, extra_data):
     """
     steps:
       1. join AP
@@ -95,16 +96,22 @@ def test_examples_protocol_socket(env, extra_data):
     # start test
     dut1.start_app()
 
-    data = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
-    print("Connected with IPv4: {}".format(data[0]))
+    ipv4 = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)[0]
+    ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
+    ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
+    print("Connected with IPv4={} and IPv6={}".format(ipv4, ipv6))
 
     # test IPv4
     with UdpServer(PORT, socket.AF_INET):
-        dut1.write(get_my_ip(netifaces.AF_INET))
+        server_ip = get_my_ip(netifaces.AF_INET)
+        print("Connect udp client to server IP={}".format(server_ip))
+        dut1.write(server_ip)
         dut1.expect(re.compile(r"OK: Message from ESP32"))
     # test IPv6
     with UdpServer(PORT, socket.AF_INET6):
-        dut1.write(get_my_ip(netifaces.AF_INET6))
+        server_ip = get_my_ip(netifaces.AF_INET6)
+        print("Connect udp client to server IP={}".format(server_ip))
+        dut1.write(server_ip)
         dut1.expect(re.compile(r"OK: Message from ESP32"))
 
 
@@ -115,4 +122,4 @@ if __name__ == '__main__':
         with UdpServer(PORT, family_addr, persist=True) as s:
             print(input("Press Enter stop the server..."))
     else:
-        test_examples_protocol_socket()
+        test_examples_protocol_socket_udpclient()

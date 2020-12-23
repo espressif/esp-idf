@@ -27,6 +27,7 @@ def tcp_client(address, payload):
         family_addr, socktype, proto, canonname, addr = res
     try:
         sock = socket.socket(family_addr, socket.SOCK_STREAM)
+        sock.settimeout(60.0)
     except socket.error as msg:
         print('Could not create socket: ' + str(msg[0]) + ': ' + msg[1])
         raise
@@ -46,7 +47,7 @@ def tcp_client(address, payload):
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
-def test_examples_protocol_socket(env, extra_data):
+def test_examples_protocol_socket_tcpserver(env, extra_data):
     MESSAGE = "Data to ESP"
     """
     steps:
@@ -86,4 +87,4 @@ if __name__ == '__main__':
         # Usage: example_test.py <server_address> <message_to_send_to_server>
         tcp_client(sys.argv[1], sys.argv[2])
     else:               # otherwise run standard example test as in the CI
-        test_examples_protocol_socket()
+        test_examples_protocol_socket_tcpserver()
