@@ -60,6 +60,8 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level()
     */
     esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
     esp_log_level_set("mesh", CONFIG_LOG_DEFAULT_LEVEL);
+    esp_log_level_set("smartconfig", CONFIG_LOG_DEFAULT_LEVEL);
+    esp_log_level_set("ESPNOW", CONFIG_LOG_DEFAULT_LEVEL);
 }
 
 static void esp_wifi_set_debug_log()
