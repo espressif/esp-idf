@@ -19,16 +19,17 @@
 #include "soc/soc_caps.h"
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-
 #include "soc/rtc_io_channel.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
-
 #endif
 
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
+
+#if SOC_ADC_SUPPORT_RTC_CTRL
 #include "soc/sens_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C"

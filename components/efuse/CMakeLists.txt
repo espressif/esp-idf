@@ -11,6 +11,9 @@ if(EXISTS "${COMPONENT_DIR}/${target}")
     if("esp32s2" STREQUAL "${target}")
         list(APPEND srcs "src/${target}/esp_efuse_rtc_table.c")
     endif()
+    if("esp32c3" STREQUAL "${target}")
+        list(APPEND srcs "src/${target}/esp_efuse_rtc_calib.c")
+    endif()
 endif()
 
 list(APPEND srcs "src/esp_efuse_api.c"

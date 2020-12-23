@@ -21,7 +21,6 @@
 #include "esp32c3/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
 #include "hal/cpu_hal.h"

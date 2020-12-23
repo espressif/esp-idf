@@ -15,9 +15,10 @@
 
 #define SOC_ADC_PERIPH_NUM              (2)
 #define SOC_ADC_PATT_LEN_MAX            (16)
-
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) (10)
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
+#define SOC_ADC_MAX_BITWIDTH            (13)
+
 
 /**
  * Check if adc support digital controller (DMA) mode.
@@ -26,3 +27,4 @@
  *      - 0 : not support;
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 1)
+#define SOC_ADC_SUPPORT_RTC_CTRL        1

@@ -31,6 +31,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
+#include "esp32c3/esp_efuse_rtc_calib.h"
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \
@@ -89,13 +90,17 @@ typedef struct adc_digi_context_t {
     RingbufHandle_t         ringbuf_hdl;                //RX ringbuffer handler
     bool                    ringbuf_overflow_flag;      //1: ringbuffer overflow
     bool                    driver_start_flag;          //1: driver is started; 0: driver is stoped
+    bool                    use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
     bool                    use_adc2;                   //1: ADC unit2 will be used; 0: ADC unit2 won't be used. This determines whether to acquire sar_adc2_mutex lock or not.
+    adc_atten_t             adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
+    adc_atten_t             adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
     adc_digi_config_t       digi_controller_config;     //Digital Controller Configuration
 } adc_digi_context_t;
 
 static const char* ADC_DMA_TAG = "ADC_DMA:";
 static adc_digi_context_t *s_adc_digi_ctx = NULL;
 
+static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan, adc_atten_t atten);
 
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
@@ -265,6 +270,16 @@ esp_err_t adc_digi_start(void)
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_init();
+
+    if (s_adc_digi_ctx->use_adc1) {
+        uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
+        adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+    }
+    if (s_adc_digi_ctx->use_adc2) {
+        uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
+        adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
+    }
+
     adc_hal_arbiter_config(&config);
     adc_hal_digi_init(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
     adc_hal_digi_controller_config(&s_adc_digi_ctx->digi_controller_config);
@@ -365,6 +380,7 @@ esp_err_t adc_digi_deinitialize(void)
         s_adc_digi_ctx->ringbuf_hdl = NULL;
     }
 
+    free(s_adc_digi_ctx->rx_dma_buf);
     free(s_adc_digi_ctx->hal_dma_config.rx_desc);
     free(s_adc_digi_ctx->digi_controller_config.adc_pattern);
     free(s_adc_digi_ctx);
@@ -420,11 +436,16 @@ int adc1_get_raw(adc1_channel_t channel)
     ADC_DIGI_LOCK_ACQUIRE();
 
     periph_module_enable(PERIPH_SARADC_MODULE);
+
+    adc_atten_t atten = s_atten1_single[channel];
+    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
     adc_hal_onetime_channel(ADC_NUM_1, channel);
-    adc_hal_set_onetime_atten(s_atten1_single[channel]);
+    adc_hal_set_onetime_atten(atten);
 
     //Trigger single read.
     adc_hal_adc1_onetime_sample_enable(true);
@@ -475,13 +496,17 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     SAC_ADC2_LOCK_ACQUIRE();
     ADC_DIGI_LOCK_ACQUIRE();
-
     periph_module_enable(PERIPH_SARADC_MODULE);
+
+    adc_atten_t atten = s_atten2_single[channel];
+    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
+
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
     adc_hal_onetime_channel(ADC_NUM_2, channel);
-    adc_hal_set_onetime_atten(s_atten2_single[channel]);
+    adc_hal_set_onetime_atten(atten);
 
     //Trigger single read.
     adc_hal_adc2_onetime_sample_enable(true);
@@ -523,10 +548,26 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     memcpy(s_adc_digi_ctx->digi_controller_config.adc_pattern, config->adc_pattern, config->adc_pattern_len * sizeof(adc_digi_pattern_table_t));
 
     //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
+    s_adc_digi_ctx->adc1_atten = ADC_ATTEN_MAX;
+    s_adc_digi_ctx->adc2_atten = ADC_ATTEN_MAX;
+    s_adc_digi_ctx->use_adc1 = 0;
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
-        if (config->adc_pattern->unit == ADC_NUM_2) {
+        const adc_digi_pattern_table_t* pat = &config->adc_pattern[i];
+        if (pat->unit == ADC_NUM_1) {
+            s_adc_digi_ctx->use_adc1 = 1;
+            if (s_adc_digi_ctx->adc1_atten == ADC_ATTEN_MAX) {
+                s_adc_digi_ctx->adc1_atten = pat->atten;
+            } else if (s_adc_digi_ctx->adc1_atten != pat->atten) {
+                return ESP_ERR_INVALID_ARG;
+            }
+        } else if (pat->unit == ADC_NUM_2) {
             s_adc_digi_ctx->use_adc2 = 1;
+            if (s_adc_digi_ctx->adc2_atten == ADC_ATTEN_MAX) {
+                s_adc_digi_ctx->adc2_atten = pat->atten;
+            } else if (s_adc_digi_ctx->adc2_atten != pat->atten) {
+                return ESP_ERR_INVALID_ARG;
+            }
         }
     }
 
@@ -802,3 +843,40 @@ esp_err_t adc_digi_isr_deregister(void)
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
+
+static uint16_t s_adc_cali_param[ADC_ATTEN_MAX] = {};
+
+//NOTE: according to calibration version, different types of lock may be taken during the process:
+//  1. Semaphore when reading efuse
+//  2. Lock (Spinlock, or Mutex) if we actually do ADC calibration in the future
+//This function shoudn't be called inside critical section or ISR
+static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+{
+    const bool no_cal = false;
+    if (s_adc_cali_param[atten]) {
+        return (uint32_t)s_adc_cali_param[atten];
+    }
+
+    if (no_cal) {
+        return 0;   //indicating failure
+    }
+
+    // check if we can fetch the values from eFuse.
+    int version = esp_efuse_rtc_calib_get_ver();
+    assert(version == 1);
+    uint32_t init_code = esp_efuse_rtc_calib_get_init_code(version, atten);
+
+    ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, init_code);
+    s_adc_cali_param[atten] = init_code;
+    return init_code;
+}
+
+// Internal function to calibrate PWDET for WiFi
+esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+{
+    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
+    ADC_ENTER_CRITICAL();
+    adc_hal_set_calibration_param(adc_n, cal_val);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
+}

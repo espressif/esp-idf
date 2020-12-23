@@ -3,6 +3,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_log.h"
 #include "driver/adc.h"
 
 #define TIMES 256
@@ -47,6 +48,15 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     assert(ret == ESP_OK);
 }
 
+static bool check_valid_data(const adc_digi_output_data_t *data)
+{
+    const unsigned int unit = data->type2.unit;
+    if (unit > 2) return false;
+    if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(unit)) return false;
+
+    return true;
+}
+
 static void continuous_read_demo(void *arg)
 {
     esp_err_t ret;
@@ -54,8 +64,8 @@ static void continuous_read_demo(void *arg)
     uint8_t result[TIMES] = {0};
     memset(result, 0xcc, TIMES);
 
-    uint16_t adc1_chan_mask = BIT(ADC1_CHANNEL_0) | BIT(ADC1_CHANNEL_1);
-    uint16_t adc2_chan_mask = BIT(ADC2_CHANNEL_0);
+    uint16_t adc1_chan_mask = BIT(0) | BIT(1);
+    uint16_t adc2_chan_mask = BIT(0);
     adc_channel_t channel[3] = {ADC1_CHANNEL_0, ADC1_CHANNEL_1, (ADC2_CHANNEL_0 | 1 << 3)};
 
     continuous_adc_init(adc1_chan_mask, adc2_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t));
@@ -65,13 +75,12 @@ static void continuous_read_demo(void *arg)
     while(n--) {
         ret = adc_digi_read_bytes(result, TIMES, &ret_num, ADC_MAX_DELAY);
         for (int i = 0; i < ret_num; i+=4) {
-            uint32_t temp = (result[i+3] << 24) | (result[i+2] << 16) | (result[i+1] << 8) | (result[i+0]);
-            adc_digi_output_data_t *p = (void*)&temp;
-            printf("[%d_%d_%x](%02x %02x %02x %02x) \n", p->type2.unit, p->type2.channel, p->type2.data,
-                    result[i],
-                    result[i + 1],
-                    result[i + 2],
-                    result[i + 3]);
+            adc_digi_output_data_t *p = (void*)&result[i];
+            if (check_valid_data(p)) {
+                printf("ADC%d_CH%d: %x\n", p->type2.unit+1, p->type2.channel, p->type2.data);
+            } else {
+                printf("Invalid data [%d_%d_%x]\n", p->type2.unit+1, p->type2.channel, p->type2.data);
+            }
         }
         // If you see task WDT in this task, it means the conversion is too fast for the task to handle
     }
@@ -87,7 +96,9 @@ static void single_read_demo(void *arg)
     int adc1_reading[3] = {0xcc};
     int adc2_reading[1] = {0xcc};
 
-    adc1_config_width(ADC_WIDTH_BIT_12);
+    const char TAG_CH[][10] = {"ADC1_CH2", "ADC1_CH3","ADC1_CH4", "ADC2_CH0"};
+
+    adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
     adc1_config_channel_atten(ADC1_CHANNEL_2, ADC_ATTEN_DB_0);
     adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_6);
     adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_0);
@@ -101,12 +112,12 @@ static void single_read_demo(void *arg)
         adc1_reading[2] = adc1_get_raw(ADC1_CHANNEL_4);
 
         for (int i = 0; i < 3; i++) {
-            printf("[%x]\n", adc1_reading[i]);
+            ESP_LOGI(TAG_CH[i], "%x", adc1_reading[i]);
         }
 
         ret = adc2_get_raw(ADC2_CHANNEL_0, ADC_WIDTH_BIT_12, &adc2_reading[0]);
         assert(ret == ESP_OK);
-        printf("[%x]\n", adc2_reading[0]);
+        ESP_LOGI(TAG_CH[3], "%x", adc2_reading[0]);
     }
 }
 

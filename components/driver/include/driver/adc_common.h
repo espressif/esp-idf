@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "hal/adc_types.h"
 
@@ -99,6 +100,13 @@ typedef enum {
 #define ADC_ATTEN_2_5db ADC_ATTEN_DB_2_5
 #define ADC_ATTEN_6db   ADC_ATTEN_DB_6
 #define ADC_ATTEN_11db  ADC_ATTEN_DB_11
+
+/**
+ * The default (max) bit width of the ADC of current version. You can also get the maximum bitwidth
+ * by `SOC_ADC_MAX_BITWIDTH` defined in soc_caps.h.
+ */
+#define ADC_WIDTH_BIT_DEFAULT   (ADC_WIDTH_MAX-1)
+
 //this definitions are only for being back-compatible
 #define ADC_WIDTH_9Bit  ADC_WIDTH_BIT_9
 #define ADC_WIDTH_10Bit ADC_WIDTH_BIT_10

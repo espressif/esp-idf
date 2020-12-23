@@ -22,7 +22,7 @@ set(srcs
     "twai.c"
     "uart.c")
 
-set(includes "include" "${target}/include")
+set(includes "include" "${target}/include" "esp_private")
 
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
@@ -66,7 +66,8 @@ endif()
 if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "gdma.c"
                      "spi_slave_hd.c"
-                     "esp32c3/adc.c")
+                     "esp32c3/adc.c"
+                     "esp32c3/adc2_init_cal.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

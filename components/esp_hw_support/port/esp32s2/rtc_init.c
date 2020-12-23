@@ -28,6 +28,9 @@
 #include "esp_efuse_table.h"
 static const char *TAG = "rtc_init";
 
+static void set_ocode_by_efuse(int calib_version);
+static void calibrate_ocode(void);
+
 void rtc_init(rtc_config_t cfg)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
@@ -152,68 +155,9 @@ void rtc_init(rtc_config_t cfg)
         uint32_t rtc_calib_version = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 32);
         if (rtc_calib_version == 2) {
-            // use efuse ocode.
-            uint32_t ocode1 = 0;
-            uint32_t ocode2 = 0;
-            uint32_t ocode;
-            esp_efuse_read_block(2, &ocode1, 16*8, 4);
-            esp_efuse_read_block(2, &ocode2, 18*8, 3);
-            ocode = (ocode2 << 4) + ocode1;
-            if (ocode >> 6) {
-                ocode = 93 - (ocode ^ (1 << 6));
-            } else {
-                ocode = 93 + ocode;
-            }
-            REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_OCODE_ADDR, ocode);
-            REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE_ADDR, 1);
+            set_ocode_by_efuse(rtc_calib_version);
         } else {
-            /*
-            Bangap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration(must close PLL).
-            Method:
-            1. read current cpu config, save in old_config;
-            2. switch cpu to xtal because PLL will be closed when o-code calibration;
-            3. begin o-code calibration;
-            4. wait o-code calibration done flag(odone_flag & bg_odone_flag) or timeout;
-            5. set cpu to old-config.
-            */
-            rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
-            rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
-            rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
-            rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-            if (slow_clk_freq == (rtc_slow_freq_x32k)) {
-                cal_clk = RTC_CAL_32K_XTAL;
-            } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
-                cal_clk  = RTC_CAL_8MD256;
-            }
-
-            uint64_t max_delay_time_us = 10000;
-            uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
-            uint64_t max_delay_cycle = rtc_time_us_to_slowclk(max_delay_time_us, slow_clk_period);
-            uint64_t cycle0 = rtc_time_get();
-            uint64_t timeout_cycle = cycle0 + max_delay_cycle;
-            uint64_t cycle1 = 0;
-
-            rtc_cpu_freq_config_t old_config;
-            rtc_clk_cpu_freq_get_config(&old_config);
-            rtc_clk_cpu_freq_set_xtal();
-
-
-            REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
-            REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
-            bool odone_flag = 0;
-            bool bg_odone_flag = 0;
-            while(1) {
-                odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_O_DONE_FLAG);
-                bg_odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
-                cycle1 = rtc_time_get();
-                if (odone_flag && bg_odone_flag)
-                    break;
-                if (cycle1 >= timeout_cycle) {
-                    SOC_LOGW(TAG, "o_code calibration fail");
-                    break;
-                }
-            }
-            rtc_clk_cpu_freq_set_config(&old_config);
+            calibrate_ocode();
         }
     }
 }
@@ -268,4 +212,73 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
     val |= (config.tieh << RTC_CNTL_SDIO_TIEH_S);
     val |= RTC_CNTL_SDIO_PD_EN;
     REG_WRITE(RTC_CNTL_SDIO_CONF_REG, val);
+}
+
+static void set_ocode_by_efuse(int calib_version)
+{
+    assert(calib_version == 2);
+    // use efuse ocode.
+    uint32_t ocode1 = 0;
+    uint32_t ocode2 = 0;
+    uint32_t ocode;
+    esp_efuse_read_block(2, &ocode1, 16*8, 4);
+    esp_efuse_read_block(2, &ocode2, 18*8, 3);
+    ocode = (ocode2 << 4) + ocode1;
+    if (ocode >> 6) {
+        ocode = 93 - (ocode ^ (1 << 6));
+    } else {
+        ocode = 93 + ocode;
+    }
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
+}
+
+static void calibrate_ocode(void)
+{
+    /*
+    Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration (must turn off PLL).
+    Method:
+    1. read current cpu config, save in old_config;
+    2. switch cpu to xtal because PLL will be closed when o-code calibration;
+    3. begin o-code calibration;
+    4. wait o-code calibration done flag(odone_flag & bg_odone_flag) or timeout;
+    5. set cpu to old-config.
+    */
+    rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
+    rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
+    rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
+    rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
+    if (slow_clk_freq == (rtc_slow_freq_x32k)) {
+        cal_clk = RTC_CAL_32K_XTAL;
+    } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
+        cal_clk  = RTC_CAL_8MD256;
+    }
+
+    uint64_t max_delay_time_us = 10000;
+    uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
+    uint64_t max_delay_cycle = rtc_time_us_to_slowclk(max_delay_time_us, slow_clk_period);
+    uint64_t cycle0 = rtc_time_get();
+    uint64_t timeout_cycle = cycle0 + max_delay_cycle;
+    uint64_t cycle1 = 0;
+
+    rtc_cpu_freq_config_t old_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+    rtc_clk_cpu_freq_set_xtal();
+
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
+    bool odone_flag = 0;
+    bool bg_odone_flag = 0;
+    while(1) {
+        odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_O_DONE_FLAG);
+        bg_odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
+        cycle1 = rtc_time_get();
+        if (odone_flag && bg_odone_flag)
+            break;
+        if (cycle1 >= timeout_cycle) {
+            SOC_LOGW(TAG, "o_code calibration fail");
+            break;
+        }
+    }
+    rtc_clk_cpu_freq_set_config(&old_config);
 }

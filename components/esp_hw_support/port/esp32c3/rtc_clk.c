@@ -24,7 +24,6 @@
 #include "esp32c3/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"

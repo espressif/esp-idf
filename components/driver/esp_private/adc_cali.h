@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,36 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+// Internal header for calibration, don't use in app
 
-#include "soc/soc.h"
-#include "soc/soc_caps.h"
-#include "soc/syscon_struct.h"
-
-#if SOC_ADC_SUPPORT_RTC_CTRL
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#endif
-
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-#include "soc/rtc_io_struct.h"
-#endif
-#include "soc/rtc_cntl_struct.h"
-#include "soc/adc_channel.h"
-#include "soc/soc_caps.h"
+#include "sdkconfig.h"
+#include "esp_err.h"
+#include "hal/adc_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32
+
 /**
- * Store IO number corresponding to the ADC channel number.
+ * @brief Calibrate the offset of ADC. (Based on the pre-stored efuse or actual calibration)
  *
- * @value
- *      - >=0 : GPIO number index.
- *      - -1  : Not support.
+ * @param adc_n ADC unit to calibrate
+ * @param channel Target channel if really do calibration
+ * @param atten Attenuation to use
+ * @return Always ESP_OK
  */
-extern const int adc_channel_io_map[SOC_ADC_PERIPH_NUM][SOC_ADC_MAX_CHANNEL_NUM];
+extern esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten);
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -46,7 +46,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         if (cfg->adc1_pattern_len) {
             adc_ll_digi_clear_pattern_table(ADC_NUM_1);
             adc_ll_digi_set_pattern_table_len(ADC_NUM_1, cfg->adc1_pattern_len);
-            for (uint32_t i = 0; i < cfg->adc1_pattern_len; i++) {
+            for (int i = 0; i < cfg->adc1_pattern_len; i++) {
                 adc_ll_digi_set_pattern_table(ADC_NUM_1, i, cfg->adc1_pattern[i]);
             }
         }
@@ -55,7 +55,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         if (cfg->adc2_pattern_len) {
             adc_ll_digi_clear_pattern_table(ADC_NUM_2);
             adc_ll_digi_set_pattern_table_len(ADC_NUM_2, cfg->adc2_pattern_len);
-            for (uint32_t i = 0; i < cfg->adc2_pattern_len; i++) {
+            for (int i = 0; i < cfg->adc2_pattern_len; i++) {
                 adc_ll_digi_set_pattern_table(ADC_NUM_2, i, cfg->adc2_pattern[i]);
             }
         }
@@ -181,11 +181,11 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
         adc_ll_set_atten(adc_n, channel, atten);
     }
 
-    uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
-    uint32_t code_sum = 0;
-    uint32_t code_h = 0;
-    uint32_t code_l = 0;
-    uint32_t chk_code = 0;
+        uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
+        uint32_t code_sum = 0;
+        uint32_t code_h = 0;
+        uint32_t code_l = 0;
+        uint32_t chk_code = 0;
 
     for (uint8_t rpt = 0 ; rpt < ADC_HAL_CAL_TIMES ; rpt ++) {
         code_h = ADC_HAL_CAL_OFFSET_RANGE;

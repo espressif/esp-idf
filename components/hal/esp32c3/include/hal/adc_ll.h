@@ -15,12 +15,13 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "regi2c_ctrl.h"
+#include "esp_attr.h"
+
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
-#include "soc/rtc_cntl_struct.h"
-#include "esp_attr.h"
 
 
 #ifdef __cplusplus
@@ -845,13 +846,13 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
     //    Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_POWER_SW_ON) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_PU;
+        APB_SARADC.ctrl.xpd_sar_force = 3;
     } else if (manage == ADC_POWER_BY_FSM) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_FSM;
+        APB_SARADC.ctrl.xpd_sar_force = 0;
     } else if (manage == ADC_POWER_SW_OFF) {
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_PD;
         APB_SARADC.ctrl.sar_clk_gated = 1;
+        APB_SARADC.ctrl.xpd_sar_force = 2;
     }
 }
 
@@ -891,64 +892,6 @@ static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
     // }
 }
 
-/**
- * Set the attenuation of a particular channel on ADCn.
- *
- * @note For any given channel, this function must be called before the first time conversion.
- *
- * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
- * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
- *
- * When VDD_A is 3.3V:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
- * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
- *
- * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
- * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
- *
- * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
- *
- * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
- * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
- *
- * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
- *
- * @param adc_n ADC unit.
- * @param channel ADCn channel number.
- * @param atten The attenuation option.
- */
-static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
-{
-    // if (adc_n == ADC_NUM_1) {
-    //     SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
-    // } else { // adc_n == ADC_NUM_2
-    //     SENS.sar_atten2 = ( SENS.sar_atten2 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
-    // }
-}
-
-/**
- * Get the attenuation of a particular channel on ADCn.
- *
- * @param adc_n ADC unit.
- * @param channel ADCn channel number.
- * @return atten The attenuation option.
- */
-static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
-{
-    abort(); // FIXME
-    // if (adc_n == ADC_NUM_1) {
-    //     return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
-    // } else {
-    //     return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
-    // }
-}
 
 /**
  * Set ADC module controller.
@@ -1011,7 +954,6 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ct
  */
 static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
-    SENS.sar_meas2_mux.sar2_rtc_force = 0;  // Enable arbiter in wakeup mode
     if (mode == ADC_ARB_MODE_FIX) {
         APB_SARADC.apb_adc_arb_ctrl.adc_arb_grant_force = 0;
         APB_SARADC.apb_adc_arb_ctrl.adc_arb_fix_priority = 1;
@@ -1096,102 +1038,6 @@ static inline void adc_ll_disable_sleep_controller(void)
 }
 
 /* ADC calibration code. */
-#include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
-
-#define I2C_ADC            0X69
-#define I2C_ADC_HOSTID     0
-
-#define ANA_CONFIG2_REG  0x6000E048
-#define ANA_CONFIG2_M   (BIT(18))
-
-#define SAR1_ENCAL_GND_ADDR 0x7
-#define SAR1_ENCAL_GND_ADDR_MSB 5
-#define SAR1_ENCAL_GND_ADDR_LSB 5
-
-#define SAR2_ENCAL_GND_ADDR 0x7
-#define SAR2_ENCAL_GND_ADDR_MSB 7
-#define SAR2_ENCAL_GND_ADDR_LSB 7
-
-#define SAR1_INITIAL_CODE_HIGH_ADDR 0x1
-#define SAR1_INITIAL_CODE_HIGH_ADDR_MSB 0x3
-#define SAR1_INITIAL_CODE_HIGH_ADDR_LSB 0x0
-
-#define SAR1_INITIAL_CODE_LOW_ADDR  0x0
-#define SAR1_INITIAL_CODE_LOW_ADDR_MSB  0x7
-#define SAR1_INITIAL_CODE_LOW_ADDR_LSB  0x0
-
-#define SAR2_INITIAL_CODE_HIGH_ADDR 0x4
-#define SAR2_INITIAL_CODE_HIGH_ADDR_MSB 0x3
-#define SAR2_INITIAL_CODE_HIGH_ADDR_LSB 0x0
-
-#define SAR2_INITIAL_CODE_LOW_ADDR  0x3
-#define SAR2_INITIAL_CODE_LOW_ADDR_MSB  0x7
-#define SAR2_INITIAL_CODE_LOW_ADDR_LSB  0x0
-
-#define SAR1_DREF_ADDR  0x2
-#define SAR1_DREF_ADDR_MSB  0x6
-#define SAR1_DREF_ADDR_LSB  0x4
-
-#define SAR2_DREF_ADDR  0x5
-#define SAR2_DREF_ADDR_MSB  0x6
-#define SAR2_DREF_ADDR_LSB  0x4
-
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-#define ADC_HAL_CAL_TIMES        (10)
-
-/**
- * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param channel adc channel number.
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- */
-static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
-{
-    // /* Enable i2s_write_reg function. */
-    // void phy_get_romfunc_addr(void);
-    // phy_get_romfunc_addr();
-    // //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-
-    // /* Enable/disable internal connect GND (for calibration). */
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_DREF_ADDR, 4);
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
-    //     }
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_DREF_ADDR, 4);
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
-    //     }
-    // }
-}
-
-/**
- * Resume register status after calibration.
- *
- * @param adc_n ADC index number.
- */
-static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
-{
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
-    // }
-}
-
 /**
  * Set the calibration result to ADC.
  *
@@ -1201,22 +1047,15 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    // uint8_t msb = param >> 8;
-    // uint8_t lsb = param & 0xFF;
-    // /* Enable i2s_write_reg function. */
-    // void phy_get_romfunc_addr(void);
-    // phy_get_romfunc_addr();
-    // //SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    // CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    // SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
-
-    // if (adc_n == ADC_NUM_1) {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR1_INITIAL_CODE_LOW_ADDR, lsb);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_ADC, SAR2_INITIAL_CODE_LOW_ADDR, lsb);
-    // }
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
 }
 /* Temp code end. */
 
