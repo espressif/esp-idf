@@ -9,39 +9,81 @@ This example shows how ESP32 connects to AP with wpa2 enterprise encryption. Exa
 5. Enable wpa2 enterprise.
 6. Connect to AP.
 
-*Note:* 1. certificate currently is generated when compiling the example and then stored in flash.
+*Note:* 1. The certificates currently are generated and are present in examples.wifi/wpa2_enterprise/main folder.
         2. The expiration date of the certificates is 2027/06/05.
 
-## The file wpa2_ca.pem, wpa2_ca.key, wpa2_server.pem, wpa2_server.crt and wpa2_server.key can be used to configure AP with
-   wpa2 enterprise encryption. The steps how to generate new certificates and keys using openssl is as follows:
+The steps to create new certificates are given below.
+
+## The file wpa2_ca.pem, wpa2_ca.key, wpa2_server.pem, wpa2_server.crt and wpa2_server.key can be used to configure AP with wpa2 enterprise encryption. 
+
+## How to use Example
+
+### Configuration
+
+```
+idf.py menuconfig
+```
+* Set SSID of Access Point to connect in Example Configuration.
+* Select EAP method (TLS, TTLS or PEAP).
+* Select Phase2 method (only for TTLS).
+* Enter EAP-ID.
+* Enter Username and Password (only for TTLS and PEAP).
+* Enable or disable Validate Server option.
+
+### Build and Flash the project.
+
+```
+idf.py -p PORT flash monitor
+```
+
+## Steps to create wpa2_ent openssl certs
+
+1. make directry tree
+
+  mkdir demoCA
+  mkdir demoCA/newcerts
+  mkdir demoCA/private
+  sh -c "echo '01' > ./demoCA/serial"
+  touch ./demoCA/index.txt
+  touch xpextensions 
+
+     add following lines in xpextensions file 
+
+      [ xpclient_ext ]
+      extendedKeyUsage = 1.3.6.1.5.5.7.3.2
+
+      [ xpserver_ext ]
+      extendedKeyUsage = 1.3.6.1.5.5.7.3.1
+
+2. ca.pem: root certificate, foundation of certificate verigy
+  openssl req -new -x509 -keyout wpa2_ca.key -out wpa2_ca.pem
+
+3. generate rsa keys for client and server
+  openssl genrsa -out wpa2_client.key 2048
+  openssl genrsa -out wpa2_server.key 2048
+
+4. generate certificate signing req for both client and server
+  openssl req -new -key wpa2_client.key -out wpa2_client.csr
+  openssl req -new -key wpa2_server.key -out wpa2_server.csr
+
+5. create certs (.crt) for client nd server
+  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_client.csr -key (password) -out wpa2_client.crt -extensions xpserver_ext -extfile xpextensions
+  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_server.csr -key (password) -out wpa2_server.crt -extensions xpserver_ext -extfile xpextensions
+
+6. export .p12 files
+  openssl pkcs12 -export -out wpa2_client.p12 -inkey wpa2_client.key -in wpa2_client.crt
+  openssl pkcs12 -export -out wpa2_server.p12 -inkey wpa2_server.key -in wpa2_server.crt
+
+7. create .pem files
+  openssl pkcs12 -in wpa2_client.p12 -out wpa2_client.pem
+  openssl pkcs12 -in wpa2_server.p12 -out wpa2_server.pem
+
    
-1. wpa2_ca.pem wpa2_ca.key:
-    openssl req -new -x509 -keyout wpa2_ca.key -out wpa2_ca.pem
-2. wpa2_server.key:
-    openssl req -new -key wpa2_server.key -out wpa2_server.csr
-3. wpa2_csr:
-    openssl req -new -key server.key -out server.csr
-4. wpa2_server.crt:
-    openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_server.csr -key ca1234 -out wpa2_server.crt -extensions xpserver_ext -extfile xpextensions
-5. wpa2_server.p12:
-    openssl pkcs12 -export -in wpa2_server.crt -inkey wpa2_server.key -out wpa2_server.p12 -passin pass:sv1234 -passout pass:sv1234
-6. wpa2_server.pem:
-    openssl pkcs12 -in wpa2_server.p12 -out wpa2_server.pem -passin pass:sv1234 -passout pass:sv1234
-7. wpa2_client.key:
-    openssl genrsa -out wpa2_client.key 1024
-8. wpa2_client.csr:
-    openssl req -new -key wpa2_client.key -out wpa2_client.csr
-9. wpa2_client.crt:
-    openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_client.csr -key ca1234 -out wpa2_client.crt -extensions xpclient_ext -extfile xpextensions
-10. wpa2_client.p12:
-    openssl pkcs12 -export -in wpa2_client.crt -inkey wpa2_client.key -out wpa2_client.p12
-11. wpa2_client.pem:
-    openssl pkcs12 -in wpa2_client.p12 -out wpa2_client.pem
 
 ### Example output
 
 Here is an example of wpa2 enterprise(PEAP method) console output.
-
+```
 I (1352) example: Setting WiFi configuration SSID wpa2_test...
 I (1362) wpa: WPA2 ENTERPRISE VERSION: [v2.0] enable
 
@@ -75,3 +117,4 @@ I (9372) example: IP:192.168.1.112
 I (9372) example: MASK:255.255.255.0
 I (9372) example: GW:192.168.1.1
 I (9372) example: ~~~~~~~~~~~
+```

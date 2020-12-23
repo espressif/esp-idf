@@ -1438,6 +1438,27 @@ Wi-Fi Protected Access-3 (WPA3) is a set of enhancements to Wi-Fi access securit
 
 In order to enable WPA3-Personal, "Enable WPA3-Personal" should be selected in menuconfig. If enabled, {IDF_TARGET_NAME} uses SAE for authentication if supported by the AP. Since PMF is a mandatory requirement for WPA3, PMF capability should be at least set to "PMF capable, but not required" for {IDF_TARGET_NAME} to use WPA3 mode. Application developers need not worry about the underlying security mode as highest available is chosen from security standpoint. Note that Wi-Fi stack size requirement will increase approximately by 3k when WPA3 is used. Currently, WPA3 is supported only in Station mode.
 
+
+WPA2-Enterprise
++++++++++++++++++++++++++++++++++
+
+WPA2-Enterprise is the secure authentication mechanism for enterprise wireless networks. It uses RADIUS server for authentication of network users before connecting to the Access Point. The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods like TLS, TTLS, PEAP etc. RADIUS server authenticates the users based on their credentials (username and password), digital certificates or both. When {IDF_TARGET_NAME} in Station mode tries to connect to an AP in enterprise mode, it sends authentication request to AP which is sent to RADIUS server by AP for authenticating the Station. Based on different EAP methods, the parameters can be set in configuration which can be opened using ``idf.py menuconfig``. WPA2_Enterprise is supported by {IDF_TARGET_NAME} only in Station mode.
+
+
+For establishing a secure connection, AP and Station negotiate and agree on the best possible cipher suite to be used. {IDF_TARGET_NAME} supports 802.1X/EAP (WPA) method of AKM and Advanced encryption standard with Counter Mode Cipher Block Chaining Message Authentication protocol (AES-CCM) cipher suite. It also supports the cipher suites supported by mbedtls if `USE_MBEDTLS_CRYPTO` flag is set. 
+
+
+{IDF_TARGET_NAME} currently supports the following EAP methods:
+  - EAP-TLS: This is certificate based method and only requires SSID and EAP-IDF.
+  - PEAP: This is Protected EAP method. Username and Password are mandatory.
+  - EAP-TTLS: This is credentials based method. Only server authentication is mandatory while user authentication is optional. Username and Password are mandatory. It supports different Phase2 methods like, 
+     - PAP: Password Authentication Protocol.
+     - CHAP: Challenge Handshake Authentication Protocol.
+     - MSCHAP and MSCHAP-V2.
+
+
+Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wpa2_enterprise`.
+
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
 
