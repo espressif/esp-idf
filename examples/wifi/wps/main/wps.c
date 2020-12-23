@@ -88,7 +88,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                     (wifi_event_sta_wps_er_success_t *)event_data;
                 int i;
 
-                if (evt) {
+                if (evt && evt->ap_cred_cnt > 1) {
                     s_ap_creds_num = evt->ap_cred_cnt;
                     for (i = 0; i < s_ap_creds_num; i++) {
                         memcpy(wps_ap_creds[i].sta.ssid, evt->ap_cred[i].ssid,
