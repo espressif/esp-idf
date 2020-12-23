@@ -976,6 +976,7 @@ int wps_finish(void)
         if (config == NULL) {
             system_event_t evt;
             evt.event_id = SYSTEM_EVENT_STA_WPS_ER_FAILED;
+            evt.event_info.sta_er_fail_reason = WPS_FAIL_REASON_NORMAL; 
             esp_wifi_send_event_internal(&evt);
             return ESP_FAIL;
         }
@@ -1253,6 +1254,7 @@ out:
 
         system_event_t evt;
         evt.event_id = SYSTEM_EVENT_STA_WPS_ER_FAILED;
+        evt.event_info.sta_er_fail_reason = WPS_FAIL_REASON_NORMAL; 
         esp_wifi_send_event_internal(&evt);
 
         return ret;
