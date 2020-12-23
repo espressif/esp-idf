@@ -51,7 +51,8 @@ typedef struct {
   *
   */
 typedef enum {
-    WIFI_LOG_ERROR = 0,   /*enabled by default*/
+    WIFI_LOG_NONE = 0,
+    WIFI_LOG_ERROR,       /*enabled by default*/
     WIFI_LOG_WARNING,     /*enabled by default*/
     WIFI_LOG_INFO,        /*enabled by default*/
     WIFI_LOG_DEBUG,       /*can be set in menuconfig*/
