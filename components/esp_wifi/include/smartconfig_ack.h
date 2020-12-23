@@ -28,7 +28,7 @@ extern "C" {
   *         token: token from the cellphone;
   *         cellphone_ip: IP address of the cellphone;
   *
-  * @retuen ESP_OK: succeed
+  * @return ESP_OK: succeed
   *         others: fail
   */
 esp_err_t sc_send_ack_start(smartconfig_type_t type, uint8_t token, uint8_t *cellphone_ip);
