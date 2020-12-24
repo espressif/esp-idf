@@ -86,7 +86,7 @@ extern "C" void nvs_dump(const char *partName)
 static esp_err_t close_handles_and_deinit(const char* part_name)
 {
     auto belongs_to_part = [=](NVSHandleEntry& e) -> bool {
-        return e.nvs_handle->get_partition_name() == part_name;
+        return strncmp(e.nvs_handle->get_partition_name(), part_name, NVS_PART_NAME_MAX_SIZE) == 0;
     };
 
     auto it = find_if(begin(s_nvs_handles), end(s_nvs_handles), belongs_to_part);
