@@ -63,10 +63,21 @@ _xt_debugexception:
     .align  4
 _xt_debug_di_exc:
 
-/*  After testing,
-    In 80 MHz, it will task 5us to loop 45 times;
-    In 160 MHz, it will task 5us to loop 90 times;
-    In 240 MHz, it will task 5us to loop 135 times;*/
+    /*
+    The delay time can be calculated by the following formula:
+      T = ceil(0.25 + max(t1, t2)) us
+
+      t1 = 80 / f1, t2 = (1 + 14/N) * 20 / f2
+
+      f1: PSRAM access frequency, unit: MHz.
+      f2: Flash access frequency, unit: MHz.
+
+      When flash is slow/fast read, N = 1.
+      When flash is DOUT/DIO read, N = 2.
+      When flash is QOUT/QIO read, N = 4.
+
+      And after testing, when CPU frequency is 240 MHz, it will take 1us to loop 27 times.
+    */
 #if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
 
 # if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
@@ -99,7 +110,7 @@ _xt_debug_di_exc:
     movi    a0, 243
 #endif
 
-1:  addi    a0, a0, -1
+1:  addi    a0, a0, -1         /* delay_us(N) */
     .rept   4
     nop
     .endr

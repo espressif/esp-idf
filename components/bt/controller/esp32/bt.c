@@ -569,6 +569,7 @@ static xt_handler set_isr_hlevel_wrapper(int mask, xt_handler f, void *arg)
 static void IRAM_ATTR interrupt_hlevel_disable(void)
 {
     assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
+    assert(hli_cb.nested != ~0);
     uint32_t status = hli_intr_disable();
     if (hli_cb.nested++ == 0) {
         hli_cb.status = status;
@@ -947,7 +948,7 @@ static int32_t queue_recv_hlevel_wrapper(void *queue, void *item, uint32_t block
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
         ret = xQueueReceive(((hli_queue_handle_t)queue)->downstream, item, portMAX_DELAY);
     } else {
-        ret =xQueueReceive(((hli_queue_handle_t)queue)->downstream, item, block_time_ms / portTICK_PERIOD_MS);
+        ret = xQueueReceive(((hli_queue_handle_t)queue)->downstream, item, block_time_ms / portTICK_PERIOD_MS);
     }
 
     return (int32_t)ret;

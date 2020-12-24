@@ -1,5 +1,17 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-// All rights reserved.
+// Copyright 2015-2021 Espressif Systems (Shanghai) CO LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 
 #include <string.h>
 #include "esp_log.h"
@@ -47,7 +59,6 @@ static void IRAM_ATTR customer_swisr_handle(customer_swisr_t *cus_swisr)
 }
 
 static DRAM_ATTR hli_handler_info_t s_hli_handlers[HLI_MAX_HANDLERS];
-// static const char* TAG = "hli_queue";
 
 esp_err_t hli_intr_register(intr_handler_t handler, void* arg, uint32_t intr_reg, uint32_t intr_mask)
 {
@@ -91,14 +102,13 @@ void IRAM_ATTR hli_c_handler(void)
         }
     }
     if (!handled) {
-        // esp_rom_printf(DRAM_STR("hli_c_handler: no handler found!\n"));
-        // abort();
+        /* no handler found, it is OK in this case. */
     }
 }
 
 uint32_t IRAM_ATTR hli_intr_disable(void)
 {
-    // disable level 4 and below
+    /* disable level 4 and below */
     return XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
 }
 
@@ -115,7 +125,7 @@ void IRAM_ATTR hli_intr_restore(uint32_t state)
 #define HLI_QUEUE_FLAG_CUSTOMER     BIT(1)
 
 static DRAM_ATTR struct hli_queue_t *s_meta_queue_ptr = NULL;
-intr_handle_t ret_handle;
+static intr_handle_t ret_handle;
 
 static inline char* IRAM_ATTR wrap_ptr(hli_queue_handle_t queue, char *ptr)
 {
@@ -150,7 +160,7 @@ static void IRAM_ATTR queue_isr_handler(void* arg)
                 res = xQueueSendFromISR(queue->downstream, scratch, &do_yield);
             }
             if (res == pdFAIL) {
-                // ESP_EARLY_LOGE(TAG, "Failed to send to %s %p", (queue->flags & HLI_QUEUE_FLAG_SEMAPHORE) == 0 ? "queue" : "semaphore", queue->downstream);
+                /* Failed to send to downstream queue, it is OK in this case. */
             }
         }
     }
@@ -222,7 +232,7 @@ hli_queue_handle_t hli_queue_create(size_t nelem, size_t elem_size, QueueHandle_
         return NULL;
     }
     size_t buf_size = buf_elem * elem_size;
-    hli_queue_handle_t res = (hli_queue_handle_t) heap_caps_malloc(sizeof(*res) + buf_size,
+    hli_queue_handle_t res = (hli_queue_handle_t) heap_caps_malloc(sizeof(struct hli_queue_t) + buf_size,
         MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     if (res == NULL) {
         return NULL;

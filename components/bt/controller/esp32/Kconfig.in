@@ -417,7 +417,7 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         may cause adv packets lost more.
 
 config BTDM_CTRL_HLI
-    bool "High level interrut"
+    bool "High level interrupt"
     depends on BT_ENABLED
     default y
     help

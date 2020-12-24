@@ -76,6 +76,7 @@ Interrupt , a high-priority interrupt, is used for several things:
 #define TIMG1_WDT_STG0_HOLD_OFFSET          TIMG1_REG_OFFSET(TIMG_WDTCONFIG2_REG(1))
 #define TIMG1_WDT_STG1_HOLD_OFFSET          TIMG1_REG_OFFSET(TIMG_WDTCONFIG3_REG(1))
 #define TIMG1_WDT_FEED_OFFSET               TIMG1_REG_OFFSET(TIMG_WDTFEED_REG(1))
+#define UART0_DATA_REG                      (0x3FF40078)
 
     .macro wdt_clr_intr_status  dev
     movi    a2, \dev
@@ -120,24 +121,24 @@ Interrupt , a high-priority interrupt, is used for several things:
     .macro get_int_status_tg1wdt reg
     rsr     \reg, INTERRUPT
     extui   \reg, \reg, ETS_T1_WDT_CACHEERR_INUM, 1
-    beqz    \reg, 99f        // not ETS_T1_WDT_INUM or ETS_CACHEERR_INUM
+    beqz    \reg, 99f        /* not ETS_T1_WDT_INUM or ETS_CACHEERR_INUM */
 
     getcoreid   \reg
     bnez    \reg, 98f
-    // core 0
-    movi    \reg,  0x3FF40078
-    l32i    \reg, \reg, 0     // Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2).
+    /* core 0 */
+    movi    \reg, UART0_DATA_REG
+    l32i    \reg, \reg, 0     /* Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2). */
     movi    \reg, DPORT_PRO_INTR_STATUS_0_REG
     l32i    \reg, \reg, 0
-    extui   \reg, \reg, 20, 1 // ETS_TG1_WDT_LEVEL_INTR_SOURCE
+    extui   \reg, \reg, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 1
     j       99f
 
-98: // core 1
-    movi    \reg,  0x3FF40078
-    l32i    \reg, \reg, 0     // Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2).
+98: /* core 1 */
+    movi    \reg, UART0_DATA_REG
+    l32i    \reg, \reg, 0     /* Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2). */
     movi    \reg, DPORT_APP_INTR_STATUS_0_REG
     l32i    \reg, \reg, 0
-    extui   \reg, \reg, 20, 1 // ETS_TG1_WDT_LEVEL_INTR_SOURCE
+    extui   \reg, \reg, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 1
 99:
     .endm
 
@@ -171,12 +172,14 @@ xt_highintx:
     /* See if we're here for the IPC_ISR interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
-    bnez    a0, esp_ipc_isr_handler
-#endif // not CONFIG_FREERTOS_UNICORE
+    beqz    a0, 1f
+    j       esp_ipc_isr_handler
+1:
+#endif /* not CONFIG_FREERTOS_UNICORE */
 
-
- // ETS_T1_WDT_INUM
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+
+#if CONFIG_BTDM_CTRL_HLI
     /* Timer 2 interrupt */
     rsr     a0, INTENABLE
     extui   a0, a0, 16, 1
@@ -185,6 +188,9 @@ xt_highintx:
     extui   a0, a0, 16, 1
     bnez    a0, .handle_multicore_debug_int
 1:
+#endif /* CONFIG_BTDM_CTRL_HLI */
+
+    /* ETS_T1_WDT_INUM */
 #if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
     get_int_status_tg1wdt a0
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
@@ -204,7 +210,7 @@ xt_highintx:
     rsr     a5, depc                        /* restore a5 */
 #endif
 
-1: //ETS_CACHEERR_INUM or ETS_T1_WDT_INUM
+1:  /* ETS_CACHEERR_INUM or ETS_T1_WDT_INUM */
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp
     addi    sp, sp, -XT_STK_FRMSZ
@@ -276,7 +282,7 @@ xt_highintx:
     movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
     wsr     a0, PS
 
-    //Call panic handler
+    /* Call panic handler */
     mov     a6,sp
     call4   panicHandler
 
@@ -294,6 +300,7 @@ xt_highintx:
 
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+#if CONFIG_BTDM_CTRL_HLI
 #define APB_ITCTRL              (0x3f00)
 #define APB_DCRSET              (0x200c)
 
@@ -326,7 +333,7 @@ xt_highintx:
     nop
     .endr
 
-    /* Enable Normally Mode */
+    /* Enable Normal Mode */
     movi    a2, ERI_ADDR(APB_ITCTRL)
     rer     a0, a2
     movi    a2, ~0x1
@@ -336,8 +343,9 @@ xt_highintx:
 
     rsr     a2, depc
 
-    rsr     a0, EXCSAVE_X                   /* restore a0 */
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
     rfi     5
+#endif /* CONFIG_BTDM_CTRL_HLI */
 
 /*
 --------------------------------------------------------------------------------

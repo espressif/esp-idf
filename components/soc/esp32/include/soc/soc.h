@@ -371,7 +371,7 @@
  *      13                      1               extern level
  *      14                      7               nmi                     Reserved                Reserved
  *      15                      3               timer                   FreeRTOS Tick(L3)       FreeRTOS Tick(L3)
- *      16                      5               timer
+ *      16                      5               timer                   Reserved                Reserved
  *      17                      1               extern level
  *      18                      1               extern level
  *      19                      2               extern level
@@ -402,15 +402,6 @@
 /* backwards compatibility only, use ETS_MEMACCESS_ERR_INUM instead*/
 #define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
 #define ETS_IPC_ISR_INUM                        31
-
-//CPU0 Interrupt number used in ROM, should be cancelled in SDK
-#define ETS_SLC_INUM                            1
-#define ETS_UART0_INUM                          5
-#define ETS_UART1_INUM                          5
-//Other interrupt number should be managed by the user
-
-//Invalid interrupt for number interrupt matrix
-#define ETS_INVALID_INUM                        6
 
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
 
@@ -464,6 +455,8 @@
 #define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
 #define ETS_IPC_ISR_INUM                        28
 
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
+
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1
 #define ETS_UART0_INUM                          5
@@ -472,4 +465,3 @@
 
 //Invalid interrupt for number interrupt matrix
 #define ETS_INVALID_INUM                        6
-#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */

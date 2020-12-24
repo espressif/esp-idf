@@ -464,12 +464,13 @@ menu "ESP System Settings"
 
     choice ESP_SYSTEM_CHECK_INT_LEVEL
         prompt "Interrupt level to use for Interrupt Watchdog and other system checks"
-        default ESP_SYSTEM_CHECK_INT_LEVEL_5
+        default ESP_SYSTEM_CHECK_INT_LEVEL_4
         help
             Interrupt level to use for Interrupt Watchdog and other system checks.
 
         config ESP_SYSTEM_CHECK_INT_LEVEL_5
             bool "Level 5 interrupt"
+            depends on IDF_TARGET_ESP32
             help
                 Using level 5 interrupt for Interrupt Watchdog and other system checks.
 

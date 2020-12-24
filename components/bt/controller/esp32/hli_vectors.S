@@ -1,5 +1,17 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-// All rights reserved.
+// Copyright 2015-2021 Espressif Systems (Shanghai) CO LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
@@ -21,13 +33,13 @@
  *   - WINDOWBASE, WINDOWSTART — only WINDOWSTART is truly needed
  *   - SAR, LBEG, LEND, LCOUNT — since the C code might use these
  *   - EPC1 — since the C code might cause window overflow exceptions
- * This is not laid out a standard exception frame structure
+ * This is not laid out as standard exception frame structure
  * for simplicity of the save/restore code.
  */
 #define REG_FILE_SIZE         (64 * 4)
 #define SPECREG_OFFSET        REG_FILE_SIZE
 #define SPECREG_SIZE          (7 * 4)
-#define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET * SPECREG_SIZE)
+#define REG_SAVE_AREA_SIZE    (SPECREG_OFFSET + SPECREG_SIZE)
 
     .data
 _l4_intr_stack:
@@ -46,7 +58,7 @@ xt_highint4:
     /*
     Here, Timer2 is used to count a little time(50us).
     The subsequent dram0 write operation is blocked due to live lock, which will
-    cause timer2 to timeout and trigger a l5 interrupt.
+    cause timer2 to timeout and trigger a level 5 interrupt.
     */
     rsr.ccount  a0
     addmi   a0, a0, (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ*50)
@@ -57,12 +69,13 @@ xt_highint4:
     extui   a0, a0, 16, 1
     bnez    a0, 1f
     movi    a0, 0
-    xsr     a0, INTENABLE     // disable all interrupts
+    xsr     a0, INTENABLE     /* disable all interrupts */
+    /* And a0 with (1 << 16) for Timer 2 interrupt mask */
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
-    wsr     a0, INTENABLE
+    wsr     a0, INTENABLE    /* Enable Timer 2 */
 1:
 #endif
 
@@ -93,14 +106,14 @@ xt_highint4:
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     movi    a0, 0
-    xsr     a0, INTENABLE     // disable all interrupts
+    xsr     a0, INTENABLE     /* disable all interrupts */
     movi    a2, ~(1<<16)
     and     a0, a2, a0
     wsr     a0, INTENABLE
 #endif
 
     /* disable exception mode, window overflow */
-    movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
+    movi    a0, PS_INTLEVEL(5) | PS_EXCM
     wsr     a0, PS
     rsync
 
