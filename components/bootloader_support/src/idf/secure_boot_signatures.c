@@ -313,7 +313,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         }
 
         ret = mbedtls_rsa_rsassa_pss_verify( &pk, mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PUBLIC, MBEDTLS_MD_SHA256, DIGEST_LEN,
-                                            sig_block->block[i].image_digest, sig_be);
+                                            image_digest, sig_be);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_rsassa_pss_verify, err: %d", ret);
         } else {
