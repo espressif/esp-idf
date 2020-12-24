@@ -54,7 +54,8 @@ list(APPEND srcs
     "tasks.c"
     "timers.c"
     "stream_buffer.c"
-    "FreeRTOS-openocd.c")
+    "FreeRTOS-openocd.c"
+    "freertos_v8_compat.c")
 
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
