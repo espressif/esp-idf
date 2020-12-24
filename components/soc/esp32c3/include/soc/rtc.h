@@ -68,11 +68,16 @@ extern "C" {
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
-#define RTC_CNTL_DBIAS_1V00 0
-#define RTC_CNTL_DBIAS_1V05 4
-#define RTC_CNTL_DBIAS_1V10 5
-#define RTC_CNTL_DBIAS_1V15 6
-#define RTC_CNTL_DBIAS_1V20 7
+#define RTC_CNTL_DBIAS_SLP  0 //sleep dig_dbias & rtc_dbias
+#define RTC_CNTL_DBIAS_0V90 13 //digital voltage
+#define RTC_CNTL_DBIAS_0V95 16
+#define RTC_CNTL_DBIAS_1V00 18
+#define RTC_CNTL_DBIAS_1V05 20
+#define RTC_CNTL_DBIAS_1V10 23
+#define RTC_CNTL_DBIAS_1V15 25
+#define RTC_CNTL_DBIAS_1V20 28
+#define RTC_CNTL_DBIAS_1V25 30
+#define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
 
 #define DELAY_FAST_CLK_SWITCH           3
 #define DELAY_SLOW_CLK_SWITCH           300
@@ -83,30 +88,29 @@ extern "C" {
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
-/* Core voltage needs to be increased in two cases:
- * 1. running at 240 MHz
- * 2. running with 80MHz Flash frequency
- */
-#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
-#else
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
-#endif
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
 #define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
 #define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
-#define RTC_CK8M_ENABLE_WAIT_DEFAULT 1
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT 172
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
+
+/* Various delays to be programmed into power control state machines */
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (1000)
+#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (2)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
+#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES         (1)
+#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES            (1)
 
 /*
 set sleep_init default param
 */
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  6
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
@@ -114,19 +118,13 @@ set sleep_init default param
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 
-#define APLL_SDM_STOP_VAL_1         0x09
-#define APLL_SDM_STOP_VAL_2_REV0    0x69
-#define APLL_SDM_STOP_VAL_2_REV1    0x49
-#define APLL_CAL_DELAY_1            0x0f
-#define APLL_CAL_DELAY_2            0x3f
-#define APLL_CAL_DELAY_3            0x1f
-
 /**
  * @brief Possible main XTAL frequency values.
  *
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
+    RTC_XTAL_FREQ_32M = 32,
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
@@ -243,23 +241,27 @@ typedef struct {
 typedef struct {
     uint16_t wifi_powerup_cycles : 7;
     uint16_t wifi_wait_cycles : 9;
-    uint16_t rtc_powerup_cycles : 7;
-    uint16_t rtc_wait_cycles : 9;
+    uint16_t bt_powerup_cycles : 7;
+    uint16_t bt_wait_cycles : 9;
+    uint16_t cpu_top_powerup_cycles : 7;
+    uint16_t cpu_top_wait_cycles : 9;
     uint16_t dg_wrap_powerup_cycles : 7;
     uint16_t dg_wrap_wait_cycles : 9;
-    uint16_t rtc_mem_powerup_cycles : 7;
-    uint16_t rtc_mem_wait_cycles : 9;
+    uint16_t dg_peri_powerup_cycles : 7;
+    uint16_t dg_peri_wait_cycles : 9;
 } rtc_init_config_t;
 
 #define RTC_INIT_CONFIG_DEFAULT() { \
     .wifi_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .wifi_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .rtc_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .rtc_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .bt_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .bt_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .cpu_top_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .cpu_top_wait_cycles = OTHER_BLOCKS_WAIT, \
     .dg_wrap_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .dg_wrap_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .rtc_mem_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .rtc_mem_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .dg_peri_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .dg_peri_wait_cycles = OTHER_BLOCKS_WAIT, \
 }
 
 void rtc_clk_divider_set(uint32_t div);
@@ -589,19 +591,21 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val);
  * @brief Power down flags for rtc_sleep_pd function
  */
 typedef struct {
-    uint32_t dig_fpu : 1;    //!< Set to 1 to power down digital part in sleep
-    uint32_t rtc_fpu : 1;    //!< Set to 1 to power down RTC memories in sleep
-    uint32_t cpu_fpu : 1;    //!< Set to 1 to power down digital memories and CPU in sleep
-    uint32_t i2s_fpu : 1;    //!< Set to 1 to power down I2S in sleep
-    uint32_t bb_fpu : 1;     //!< Set to 1 to power down WiFi in sleep
-    uint32_t nrx_fpu : 1;    //!< Set to 1 to power down WiFi in sleep
-    uint32_t fe_fpu : 1;     //!< Set to 1 to power down WiFi in sleep
-} rtc_sleep_pd_config_t;
+    uint32_t dig_fpu : 1;    //!< Set to 1 to power UP digital part in sleep
+    uint32_t rtc_fpu : 1;    //!< Set to 1 to power UP RTC memories in sleep
+    uint32_t cpu_fpu : 1;    //!< Set to 1 to power UP digital memories and CPU in sleep
+    uint32_t i2s_fpu : 1;    //!< Set to 1 to power UP I2S in sleep
+    uint32_t bb_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
+    uint32_t nrx_fpu : 1;    //!< Set to 1 to power UP WiFi in sleep
+    uint32_t fe_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
+    uint32_t sram_fpu : 1;    //!< Set to 1 to power UP SRAM in sleep
+    uint32_t rom_ram_fpu : 1; //!< Set to 1 to power UP ROM/IRAM0_DRAM0 in sleep
+} rtc_sleep_pu_config_t;
 
 /**
- * Initializer for rtc_sleep_pd_config_t which sets all flags to the same value
+ * Initializer for rtc_sleep_pu_config_t which sets all flags to the same value
  */
-#define RTC_SLEEP_PD_CONFIG_ALL(val) {\
+#define RTC_SLEEP_PU_CONFIG_ALL(val) {\
     .dig_fpu = (val), \
     .rtc_fpu = (val), \
     .cpu_fpu = (val), \
@@ -609,26 +613,31 @@ typedef struct {
     .bb_fpu = (val), \
     .nrx_fpu = (val), \
     .fe_fpu = (val), \
+    .sram_fpu = (val), \
+    .rom_ram_fpu = (val), \
 }
 
-void rtc_sleep_pd(rtc_sleep_pd_config_t cfg);
+void rtc_sleep_pu(rtc_sleep_pu_config_t cfg);
 
 /**
  * @brief sleep configuration for rtc_sleep_init function
  */
 typedef struct {
     uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
-    uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if touch is used)
+    uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
     uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t bt_pd_en : 1;              //!< power down BT
+    uint32_t cpu_pd_en : 1;              //!< power down CPU, but not restart when lightsleep.
+    uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 3;         //!< set bias for digital domain, in active mode
-    uint32_t dig_dbias_slp : 3;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
-    uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
+    uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
+    uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
+    uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
+    uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t deep_slp_reject : 1;
     uint32_t light_slp_reject : 1;
@@ -649,12 +658,15 @@ typedef struct {
     .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
     .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
     .wifi_pd_en = ((sleep_flags) & RTC_SLEEP_PD_WIFI) ? 1 : 0, \
+    .bt_pd_en = ((sleep_flags) & RTC_SLEEP_PD_BT) ? 1 : 0, \
+    .cpu_pd_en = ((sleep_flags) & RTC_SLEEP_PD_CPU) ? 1 : 0, \
+    .dig_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
-    .dig_dbias_wak = RTC_CNTL_DIG_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DIG_DBIAS_0V90, \
+    .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
+    .dig_dbias_slp = RTC_CNTL_DBIAS_SLP, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_1V00, \
+    .rtc_dbias_slp = RTC_CNTL_DBIAS_SLP, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
@@ -666,7 +678,10 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_WIFI               BIT(6)
+#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
+#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
+#define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
+#define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
 
 /**
  * @brief Prepare the chip to enter sleep mode
@@ -683,6 +698,17 @@ typedef struct {
  */
 void rtc_sleep_init(rtc_sleep_config_t cfg);
 
+/**
+ * @brief Low level initialize for rtc state machine waiting cycles after waking up
+ *
+ * This function configures the cycles chip need to wait for internal 8MHz
+ * oscillator and external 40MHz crystal. As we configure fixed time for waiting
+ * crystal, we need to pass period to calculate cycles. Now this function only
+ * used in lightsleep mode.
+ *
+ * @param slowclk_period re-calibrated slow clock period
+ */
+void rtc_sleep_low_init(uint32_t slowclk_period);
 
 /**
  * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source
@@ -700,7 +726,6 @@ void rtc_sleep_set_wakeup_time(uint64_t t);
 #define RTC_MAC_TRIG_EN     BIT(5)  //!< MAC wakeup (light sleep only)
 #define RTC_UART0_TRIG_EN   BIT(6)  //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN   BIT(7)  //!< UART1 wakeup (light sleep only)
-#define RTC_TOUCH_TRIG_EN   BIT(8)  //!< Touch wakeup
 #define RTC_BT_TRIG_EN      BIT(10) //!< BT wakeup (light sleep only)
 #define RTC_COCPU_TRIG_EN   BIT(11)
 #define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
@@ -747,6 +772,7 @@ typedef struct {
     uint32_t xtal_fpu : 1;
     uint32_t bbpll_fpu : 1;
     uint32_t cpu_waiti_clk_gate : 1;
+    uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
 } rtc_config_t;
 
 /**
@@ -764,7 +790,8 @@ typedef struct {
     .rtc_dboost_fpd = 1, \
     .xtal_fpu = 0, \
     .bbpll_fpu = 0, \
-    .cpu_waiti_clk_gate = 1\
+    .cpu_waiti_clk_gate = 1, \
+    .cali_ocode = 0\
 }
 
 /**

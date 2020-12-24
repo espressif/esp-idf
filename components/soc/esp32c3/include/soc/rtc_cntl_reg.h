@@ -389,6 +389,7 @@ extern "C" {
 #define RTC_CNTL_MIN_SLP_VAL_M  ((RTC_CNTL_MIN_SLP_VAL_V)<<(RTC_CNTL_MIN_SLP_VAL_S))
 #define RTC_CNTL_MIN_SLP_VAL_V  0xFF
 #define RTC_CNTL_MIN_SLP_VAL_S  8
+#define RTC_CNTL_MIN_SLP_VAL_MIN 2
 
 #define RTC_CNTL_TIMER6_REG          (DR_REG_RTCCNTL_BASE + 0x0030)
 /* RTC_CNTL_DG_PERI_POWERUP_TIMER : R/W ;bitpos:[31:25] ;default: 7'h5 ; */
@@ -1035,7 +1036,6 @@ extern "C" {
 #define RTC_CNTL_CK8M_DFREQ_M  ((RTC_CNTL_CK8M_DFREQ_V)<<(RTC_CNTL_CK8M_DFREQ_S))
 #define RTC_CNTL_CK8M_DFREQ_V  0xFF
 #define RTC_CNTL_CK8M_DFREQ_S  17
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT 172 //TODO, may change in chip7.2.4
 /* RTC_CNTL_CK8M_FORCE_NOGATING : R/W ;bitpos:[16] ;default: 1'd0 ; */
 /*description: CK8M force no gating during sleep*/
 #define RTC_CNTL_CK8M_FORCE_NOGATING  (BIT(16))
@@ -1327,25 +1327,6 @@ extern "C" {
 #define RTC_CNTL_DBOOST_FORCE_PD_M  (BIT(28))
 #define RTC_CNTL_DBOOST_FORCE_PD_V  0x1
 #define RTC_CNTL_DBOOST_FORCE_PD_S  28
-/* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
- * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
- * Valid if RTC_CNTL_DBG_ATTEN is 0.
- */
-#define RTC_CNTL_DIG_DBIAS_0V85  0
-#define RTC_CNTL_DIG_DBIAS_0V90  1
-#define RTC_CNTL_DIG_DBIAS_0V95  2
-#define RTC_CNTL_DIG_DBIAS_1V00  3
-#define RTC_CNTL_DIG_DBIAS_1V05  4
-#define RTC_CNTL_DIG_DBIAS_1V10  5
-#define RTC_CNTL_DIG_DBIAS_1V15  6
-#define RTC_CNTL_DIG_DBIAS_1V20  7
-
-/* The value of 1V00 can be adjusted between 0~3*/
-#define RTC_CNTL_DBIAS_1V00  0
-#define RTC_CNTL_DBIAS_1V05  4
-#define RTC_CNTL_DBIAS_1V10  5
-#define RTC_CNTL_DBIAS_1V15  6
-#define RTC_CNTL_DBIAS_1V20  7
 
 /* RTC_CNTL_SCK_DCAP : R/W ;bitpos:[21:14] ;default: 8'd0 ; */
 /*description: SCK_DCAP*/

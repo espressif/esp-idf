@@ -42,6 +42,8 @@
 #define DR_REG_SPI1_BASE                        0x60002000
 #define DR_REG_SPI0_BASE                        0x60003000
 #define DR_REG_GPIO_BASE                        0x60004000
+#define DR_REG_FE2_BASE                         0x60005000
+#define DR_REG_FE_BASE                          0x60006000
 #define DR_REG_RTCCNTL_BASE                     0x60008000
 #define DR_REG_IO_MUX_BASE                      0x60009000
 #define DR_REG_RTC_I2C_BASE                     0x6000e000
@@ -51,6 +53,8 @@
 #define DR_REG_RMT_BASE                         0x60016000
 #define DR_REG_LEDC_BASE                        0x60019000
 #define DR_REG_EFUSE_BASE                       0x60008800
+#define DR_REG_NRX_BASE                         0x6001CC00
+#define DR_REG_BB_BASE                          0x6001D000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
 #define DR_REG_SYS_TIMER_BASE                   0x60023000
@@ -312,6 +316,9 @@
 #define ETS_CACHEERR_INUM                       25
 #define ETS_DPORT_INUM                          28
 
+//CPU0 Max valid interrupt number
+#define ETS_MAX_INUM                            31
+
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1
 #define ETS_UART0_INUM                          5
@@ -324,3 +331,6 @@
 
 //Invalid interrupt for number interrupt matrix
 #define ETS_INVALID_INUM                        0
+
+//Interrupt medium level, used for INT WDT for example
+#define SOC_INTERRUPT_LEVEL_MEDIUM              4

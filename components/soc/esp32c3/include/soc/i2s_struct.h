@@ -328,7 +328,7 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } i2s_dev_t;
-extern i2s_dev_t I2S1;
+extern i2s_dev_t I2S0;
 #ifdef __cplusplus
 }
 #endif
