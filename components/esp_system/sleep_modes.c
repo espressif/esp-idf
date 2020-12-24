@@ -70,6 +70,9 @@
 #include "esp32s3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "esp_heap_caps.h"
+#include "hal/rtc_hal.h"
+#include "soc/rtc_caps.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -141,10 +144,13 @@ typedef struct {
     uint32_t sleep_time_overhead_out;
     uint32_t rtc_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
+#if SOC_PM_SUPPORT_CPU_PD
+    void     *cpu_pd_mem;
+#endif
 } sleep_config_t;
 
 static sleep_config_t s_config = {
-    .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
+    .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0
@@ -258,6 +264,32 @@ static void IRAM_ATTR resume_uarts(void)
 }
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers);
+
+#if SOC_PM_SUPPORT_CPU_PD
+esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
+{
+    if (enable) {
+        if (s_config.cpu_pd_mem == NULL) {
+            void *buf = heap_caps_aligned_alloc(RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN,
+                    RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE,
+                        MALLOC_CAP_RETENTION|MALLOC_CAP_DEFAULT);
+            if (buf) {
+                memset(buf, 0, RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE);
+                s_config.cpu_pd_mem = rtc_cntl_hal_dma_link_init(buf,
+                        buf+RTC_HAL_DMA_LINK_NODE_SIZE, RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE, NULL);
+            } else {
+                return ESP_ERR_NO_MEM;
+            }
+        }
+    } else {
+        if (s_config.cpu_pd_mem) {
+            heap_caps_free(s_config.cpu_pd_mem);
+            s_config.cpu_pd_mem = NULL;
+        }
+    }
+    return ESP_OK;
+}
+#endif // SOC_PM_SUPPORT_CPU_PD
 
 #if SOC_GPIO_SUPPORT_SLP_SWITCH
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
@@ -434,6 +466,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     }
 
+#if SOC_PM_SUPPORT_CPU_PD
+    rtc_cntl_hal_disable_cpu_retention();
+#endif
+
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
     gpio_sleep_mode_config_unapply();
 #endif
@@ -590,6 +626,10 @@ esp_err_t esp_light_sleep_start(void)
 #endif //CONFIG_ESP_SYSTEM_PD_FLASH
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
+
+#if SOC_PM_SUPPORT_CPU_PD
+    rtc_cntl_hal_enable_cpu_retention(s_config.cpu_pd_mem);
+#endif
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -1046,6 +1086,12 @@ static uint32_t get_power_down_flags(void)
 #endif // SOC_TOUCH_PAD_WAKE_SUPPORTED
     }
 
+#if !SOC_PM_SUPPORT_CPU_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_CPU] == ESP_PD_OPTION_AUTO) {
+        s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
+    }
+#endif
+
     if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] == ESP_PD_OPTION_AUTO) {
         s_config.pd_options[ESP_PD_DOMAIN_XTAL] = ESP_PD_OPTION_OFF;
     }
@@ -1070,6 +1116,12 @@ static uint32_t get_power_down_flags(void)
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_PERIPH;
     }
+
+#if SOC_PM_SUPPORT_CPU_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_CPU] != ESP_PD_OPTION_ON) {
+        pd_flags |= RTC_SLEEP_PD_CPU;
+    }
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     pd_flags |= RTC_SLEEP_PD_XTAL;

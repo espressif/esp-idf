@@ -60,6 +60,7 @@
 #include "esp32c3/clk.h"
 #include "esp32c3/pm.h"
 #include "driver/gpio.h"
+#include "esp_private/sleep_modes.h"
 #endif
 
 #define MHZ (1000000)
@@ -301,6 +302,13 @@ esp_err_t esp_pm_configure(const void* vconfig)
 
 #if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
     esp_sleep_gpio_status_switch_configure(config->light_sleep_enable);
+#endif
+
+#if CONFIG_ESP_SYSTEM_PM_POWER_DOWN_CPU && SOC_PM_SUPPORT_CPU_PD
+    esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
+    if (config->light_sleep_enable && ret != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+    }
 #endif
 
     return ESP_OK;

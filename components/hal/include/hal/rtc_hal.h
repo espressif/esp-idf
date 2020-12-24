@@ -18,6 +18,8 @@
 #include "hal/rtc_io_ll.h"
 #include "hal/rtc_cntl_ll.h"
 
+#define RTC_HAL_DMA_LINK_NODE_SIZE      (16)
+
 #define rtc_hal_ext1_get_wakeup_pins()                    rtc_cntl_ll_ext1_get_wakeup_pins()
 
 #define rtc_hal_ext1_set_wakeup_pins(mask, mode)          rtc_cntl_ll_ext1_set_wakeup_pins(mask, mode)
@@ -25,6 +27,12 @@
 #define rtc_hal_ext1_clear_wakeup_pins()                  rtc_cntl_ll_ext1_clear_wakeup_pins()
 
 #define rtc_hal_set_wakeup_timer(ticks)                   rtc_cntl_ll_set_wakeup_timer(ticks)
+
+void * rtc_cntl_hal_dma_link_init(void *elem, void *buff, int size, void *next);
+
+void rtc_cntl_hal_enable_cpu_retention(void *addr);
+
+#define rtc_cntl_hal_disable_cpu_retention()              rtc_cntl_ll_disable_cpu_retention()
 
 /*
  * Enable wakeup from ULP coprocessor.
