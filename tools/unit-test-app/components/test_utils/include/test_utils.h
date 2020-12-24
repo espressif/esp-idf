@@ -21,6 +21,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "soc/soc_caps.h"
 /* include performance pass standards header file */
 #include "idf_performance.h"
 #include "idf_performance_target.h"
@@ -49,6 +50,21 @@ extern "C" {
     printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
     TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
+
+/* Macros to be used when performance is calculated using the cache compensated timer
+   will not assert if ccomp not supported */
+#if SOC_CCOMP_TIMER_SUPPORTED
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
+    TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
+    TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)
+#else
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
+    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
+    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
+#endif //SOC_CCOMP_TIMER_SUPPORTED
+
 
 /* @brief macro to print IDF performance
  * @param mode :        performance item name. a string pointer.

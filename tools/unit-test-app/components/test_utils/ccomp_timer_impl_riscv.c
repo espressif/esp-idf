@@ -87,9 +87,6 @@ int64_t IRAM_ATTR ccomp_timer_impl_get_time(void)
 {
     update_ccount();
     int64_t cycles = s_status[cpu_hal_get_core_id()].ccount;
-    esp_rom_printf("cycles=%lld\n", cycles);
-    esp_rom_printf("cpu freq=%d\r\n", esp_clk_cpu_freq());
-    esp_rom_printf("duration=%lld\n", cycles * 1000000 / esp_clk_cpu_freq());
     return (cycles * 1000000) / esp_clk_cpu_freq();
 }
 

@@ -63,8 +63,8 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
 
     free(buffer);
 
-    TEST_PERFORMANCE_LESS_THAN(TIME_SHA1_32KB, "%dus", us_sha1);
-    TEST_PERFORMANCE_LESS_THAN(TIME_SHA512_32KB, "%dus", us_sha512);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA1_32KB, "%dus", us_sha1);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA512_32KB, "%dus", us_sha512);
 }
 
 TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")

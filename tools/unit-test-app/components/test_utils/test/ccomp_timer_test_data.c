@@ -23,6 +23,11 @@
 
 #include "sdkconfig.h"
 
+
+/* No performance monitor in RISCV for now
+ */
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+
 static const char* TAG = "test_ccomp_timer";
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -180,3 +185,5 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
     free(flash_mem);
 #endif
 }
+
+#endif // !DISABLED_FOR_TARGETS(ESP32C3)

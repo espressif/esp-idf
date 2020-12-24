@@ -260,9 +260,9 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
     const int ns_per_iter = (int) (time_diff_us * 1000 / iter_count);
     TEST_ESP_OK( esp_vfs_unregister(VFS_PREF1) );
 #ifdef CONFIG_SPIRAM
-    TEST_PERFORMANCE_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME_PSRAM, "%dns", ns_per_iter);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME_PSRAM, "%dns", ns_per_iter);
 #else
-    TEST_PERFORMANCE_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME, "%dns", ns_per_iter);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME, "%dns", ns_per_iter);
 #endif
 
 }

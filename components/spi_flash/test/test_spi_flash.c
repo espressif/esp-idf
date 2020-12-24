@@ -312,8 +312,8 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
 
 // Data checks are disabled when PSRAM is used or in Freertos compliance check test
 #if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#  define CHECK_DATA(suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
-#  define CHECK_ERASE(var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
+#  define CHECK_DATA(suffix) TEST_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
+#  define CHECK_ERASE(var) TEST_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
 #else
 #  define CHECK_DATA(suffix) ((void)speed_##suffix)
 #  define CHECK_ERASE(var) ((void)var)
