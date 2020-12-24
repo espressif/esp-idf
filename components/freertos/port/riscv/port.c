@@ -192,19 +192,30 @@ int vPortSetInterruptMask(void)
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
 {
     extern uint32_t __global_pointer$;
+    uint8_t* task_thread_local_start;
+    uint8_t* threadptr;
+    extern char _thread_local_start, _thread_local_end, _rodata_start;
 
-    /* Simulate the stack frame as it would be created by a context switch
-    interrupt. */
-    pxTopOfStack -= RV_STK_FRMSZ;
+    /* Byte pointer, so that subsequent calculations don't depend on sizeof(StackType_t). */
+    uint8_t* sp = (uint8_t*) pxTopOfStack;
 
-    RvExcFrame *frame = (RvExcFrame *)pxTopOfStack;
+    /* Set up TLS area */
+    uint32_t thread_local_sz = (uint32_t) (&_thread_local_end - &_thread_local_start);
+    thread_local_sz = ALIGNUP(0x10, thread_local_sz);
+    sp -= thread_local_sz;
+    task_thread_local_start = sp;
+    memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
+    threadptr = task_thread_local_start - (&_thread_local_start - &_rodata_start);
+
+    /* Simulate the stack frame as it would be created by a context switch interrupt. */
+    sp -= RV_STK_FRMSZ;
+    RvExcFrame *frame = (RvExcFrame *)sp;
+    memset(frame, 0, sizeof(*frame));
     frame->ra = (UBaseType_t)prvTaskExitError;
     frame->mepc = (UBaseType_t)pxCode;
     frame->a0 = (UBaseType_t)pvParameters;
     frame->gp = (UBaseType_t)&__global_pointer$;
-    frame->a1 = 0x11111111;
-    frame->a2 = 0x22222222;
-    frame->a3 = 0x33333333;
+    frame->tp = (UBaseType_t)threadptr;
 
     //TODO: IDF-2393
     return (StackType_t *)frame;
