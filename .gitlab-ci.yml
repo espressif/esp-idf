@@ -19,10 +19,12 @@ variables:
   GET_SOURCES_ATTEMPTS: "10"
   ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
 
-  # We use get-full-sources.sh script to fetch the submodules and/or re-fetch the repo
-  # if it was corrupted (if submodule update fails this can happen)
-  GIT_STRATEGY: fetch
-  GIT_SUBMODULE_STRATEGY: none
+  # GIT_STRATEGY is not defined here.
+  # Use an option from  "CI / CD Settings" - "General pipelines".
+
+  # "normal" strategy for fetching only top-level submodules since nothing requires the sub-submodules code for building IDF.
+  # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
+  GIT_SUBMODULE_STRATEGY: normal
 
   UNIT_TEST_BUILD_SYSTEM: make
 # IDF environment
@@ -43,19 +45,6 @@ variables:
   # Versioned esp-idf-doc env image to use for all document building jobs
   ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v5"
 
-# When 'fetch' strategy is used, Gitlab removes untracked files before checking out
-# new revision. However if the new revision doesn't include some of the submodules
-# which were present in the old revision, such submodule directories would not be
-# removed by the checkout. This extra step ensures that these stale submodules
-# are removed.
-.git_clean_stale_submodules:  &git_clean_stale_submodules >
-  find . -name '.git' -not -path './.git' -printf '%P\n'
-  | sed 's|/.git||'
-  | xargs -I {} sh -c '
-  grep -q {} .gitmodules
-  ||  (echo "Removing {}, has .git directory but not in .gitmodules file"
-  && rm -rf {});'
-
 # before each job, we need to check if this job is filtered by bot stage/job filter
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
@@ -65,9 +54,13 @@ variables:
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
+.show_submodule_urls: &show_submodule_urls |
+  git config --get-regexp '^submodule\..*\.url$' || true
+
 before_script:
+  - echo "Running common script"
+  - *show_submodule_urls
   - source tools/ci/setup_python.sh
-  - *git_clean_stale_submodules
   # apply bot filter in before script
   - *apply_bot_filter
   # add gitlab ssh key
@@ -80,47 +73,28 @@ before_script:
   - if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then SRV=${LOCAL_GITLAB_SSH_SERVER##*@};SRV=${SRV%%:*};printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >> ~/.ssh/config; fi
   # Download and install tools, if needed
   - *setup_tools_unless_target_test
-
-  # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
-  #
-  # (the same regular expressions are used to set these are used in 'only:' sections below
+  # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
 
-  # fetch the submodules (& if necessary re-fetch repo) from gitlab
-  - time ./tools/ci/get-full-sources.sh
-
 # used for check scripts which we want to run unconditionally
-.do_nothing_before_no_filter:
-  before_script: &do_nothing_before_no_filter
+.before_script_lesser_nofilter: &before_script_lesser_nofilter
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  before_script:
+    - echo "Not setting up GitLab key, not fetching submodules, not applying bot filter"
     - source tools/ci/setup_python.sh
-    - *git_clean_stale_submodules
+    - source tools/ci/configure_ci_environment.sh
 
 # used for everything else where we want to do no prep, except for bot filter
-.do_nothing_before:
-  before_script: &do_nothing_before
-    - source tools/ci/setup_python.sh
-    - *git_clean_stale_submodules
-    # apply bot filter in before script
-    - *apply_bot_filter
+.before_script_lesser: &before_script_lesser
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
-    - source tools/ci/configure_ci_environment.sh
-
-.add_gitlab_key_before:
-  before_script: &add_gitlab_key_before
     - source tools/ci/setup_python.sh
-    - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
-    - echo "Not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    - if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then SRV=${LOCAL_GITLAB_SSH_SERVER##*@};SRV=${SRV%%:*};printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >> ~/.ssh/config; fi
 
 build_template_app:
   stage: build
@@ -344,7 +318,7 @@ build_docs:
   tags:
     - host_test
   dependencies: []
-  before_script: *do_nothing_before_no_filter
+  <<: *before_script_lesser_nofilter
 
 verify_cmake_style:
   <<: *check_job_template
@@ -618,7 +592,7 @@ push_to_github:
       - $BOT_TRIGGER_WITH_LABEL == null
   when: on_success
   dependencies: []
-  before_script: *do_nothing_before
+  <<: *before_script_lesser
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -647,7 +621,7 @@ deploy_docs:
       - $BOT_LABEL_BUILD_DOCS
   dependencies:
     - build_docs
-  before_script: *do_nothing_before
+  <<: *before_script_lesser
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -730,7 +704,7 @@ check_examples_cmake_make:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  before_script: *do_nothing_before
+  <<: *before_script_lesser
   script:
     - tools/ci/check_examples_cmake_make.sh
 
@@ -741,14 +715,13 @@ check_python_style:
     paths:
       - flake8_output.txt
     expire_in: 1 week
-  before_script: *do_nothing_before
+  <<: *before_script_lesser
   script:
     # run it only under Python 3 (it is very slow under Python 2)
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
 check_kconfigs:
   <<: *check_job_template
-  before_script: *do_nothing_before
   artifacts:
     when: on_failure
     paths:
@@ -759,6 +732,7 @@ check_kconfigs:
       - tools/*/*/Kconfig*.new
       - tools/*/*/*/Kconfig*.new
     expire_in: 1 week
+  <<: *before_script_lesser
   script:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/test_check_kconfigs.py
     - ${IDF_PATH}/tools/check_kconfigs.py
@@ -773,7 +747,7 @@ check_ut_cmake_make:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script: *do_nothing_before
+  <<: *before_script_lesser
   script:
     - tools/ci/check_ut_cmake_make.sh
 
@@ -781,12 +755,22 @@ check_submodule_sync:
   <<: *check_job_template
   tags:
     - github_sync
+  retry: 2
   variables:
     GIT_STRATEGY: clone
-  retry: 2
+    GIT_SUBMODULE_STRATEGY: none
+    PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
+  before_script: []
+  after_script: []
   script:
+    - git submodule deinit --force .
+    # setting the default remote URL to the public one, to resolve relative location URLs
+    - git config remote.origin.url ${PUBLIC_IDF_URL}
     # check if all submodules are correctly synced to public repostory
-    - git submodule update --init --recursive
+    - git submodule init
+    - *show_submodule_urls
+    - git submodule update --recursive
+    - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
 
 check_artifacts_expire_time:
   <<: *check_job_template
@@ -952,6 +936,7 @@ assign_test:
       - $LOG_PATH
     expire_in: 1 week
   variables:
+    GIT_SUBMODULE_STRATEGY: none
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
@@ -961,7 +946,6 @@ assign_test:
     PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
     PYTHON_VER: 3.7.7
-  before_script: *add_gitlab_key_before
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
