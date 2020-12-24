@@ -652,12 +652,21 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     return pad_num;
 }
 
+bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
+{
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    return RTC_GPIO_IS_VALID_GPIO(gpio_num);
+#else
+    return GPIO_IS_VALID_GPIO(gpio_num);
+#endif
+}
+
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
+    if (!esp_sleep_is_valid_wakeup_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
@@ -689,7 +698,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
         if ((mask & 1) == 0) {
             continue;
         }
-        if (!RTC_GPIO_IS_VALID_GPIO(gpio)) {
+        if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
             ESP_LOGE(TAG, "Not an RTC IO: GPIO%d", gpio);
             return ESP_ERR_INVALID_ARG;
         }
@@ -747,7 +756,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
     uint64_t gpio_mask = 0;
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
-        if (!RTC_GPIO_IS_VALID_GPIO(gpio)) {
+        if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
             continue;
         }
         int rtc_pin = rtc_io_number_get(gpio);

@@ -98,7 +98,7 @@ extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 
-extern int _init_start;
+extern int _vector_table;
 
 static const char *TAG = "cpu_start";
 
@@ -131,7 +131,7 @@ void startup_resume_other_cores(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
-    cpu_hal_set_vecbase(&_init_start);
+    cpu_hal_set_vecbase(&_vector_table);
 
     ets_set_appcpu_boot_addr(0);
 
@@ -261,7 +261,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     // Move exception vectors to IRAM
-    cpu_hal_set_vecbase(&_init_start);
+    cpu_hal_set_vecbase(&_vector_table);
 
     rst_reas[0] = rtc_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -321,14 +321,16 @@ void IRAM_ATTR call_start_cpu0(void)
     extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
     rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE, CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS, CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
     Cache_Resume_DCache(0);
+#endif // CONFIG_IDF_TARGET_ESP32S3
 
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
     uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
     uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
 
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT

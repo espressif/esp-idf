@@ -18,6 +18,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
+#include "esp_attr.h"
 
 extern void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
@@ -36,7 +37,8 @@ void bootloader_clock_configure(void)
     REG_WRITE(RTC_CNTL_STORE4_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 
-void bootloader_fill_random(void *buffer, size_t length)
+/* Placed in IRAM since test_apps expects it to be */
+void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
 {
     uint8_t *buffer_bytes = (uint8_t *)buffer;
     for (int i = 0; i < length; i++) {

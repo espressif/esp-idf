@@ -114,6 +114,7 @@ static vfs_semihost_ctx_t s_semhost_ctx[CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS];
 
 static inline int generic_syscall(int sys_nr, int arg1, int arg2, int arg3, int arg4, int* ret_errno)
 {
+#if !CONFIG_IDF_TARGET_ESP32C3 // TODO ESP32-C3 reenable semihost in C3 IDF-2287
     int host_ret, host_errno;
 
     if (!esp_cpu_in_ocd_debug_mode()) {
@@ -134,6 +135,10 @@ static inline int generic_syscall(int sys_nr, int arg1, int arg2, int arg3, int 
         :"a2","a3","a4","a5","a6");
     *ret_errno = host_errno;
     return host_ret;
+#else
+    return 0;
+#endif
+
 }
 
 inline bool ctx_is_unused(const vfs_semihost_ctx_t* ctx)

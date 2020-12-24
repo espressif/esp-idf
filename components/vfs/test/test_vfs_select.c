@@ -122,7 +122,7 @@ static void send_task(void *param)
 
 static inline void start_task(const test_task_param_t *test_task_param)
 {
-    xTaskCreate(send_task, "send_task", 4*1024, (void *) test_task_param, 5, NULL);
+    xTaskCreate(send_task, "send_task", 8*1024, (void *) test_task_param, 5, NULL);
 }
 
 static void init(int *uart_fd, int *socket_fd)
@@ -206,6 +206,9 @@ TEST_CASE("UART can do select()", "[vfs]")
     deinit(uart_fd, socket_fd);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+// TODO ESP32C3 IDF-2457
+
 TEST_CASE("UART can do poll()", "[vfs]")
 {
     int uart_fd;
@@ -266,6 +269,9 @@ TEST_CASE("UART can do poll()", "[vfs]")
 
     deinit(uart_fd, socket_fd);
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+
 
 TEST_CASE("socket can do select()", "[vfs]")
 {

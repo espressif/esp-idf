@@ -134,7 +134,7 @@ SECTIONS
   {
     _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
-    _init_start = ABSOLUTE(.);
+    _vector_table = ABSOLUTE(.);
     . = 0x0;
     KEEP(*(.WindowVectors.text));
     . = 0x180;

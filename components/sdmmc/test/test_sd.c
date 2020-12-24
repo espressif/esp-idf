@@ -162,7 +162,7 @@ TEST_CASE("probe SD, slot 0, 1-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
 
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 //No runners
 static void test_sdspi_init_bus(spi_host_device_t host, int mosi_pin, int miso_pin, int clk_pin, int dma_chan)
 {
@@ -375,7 +375,7 @@ TEST_CASE("SDMMC read/write test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
 #endif // WITH_EMMC_TEST
 #endif // SDMMC_HOST_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 //No runners
 TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
@@ -401,7 +401,7 @@ TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT
     test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
 #if SOC_SDMMC_HOST_SUPPORTED
 TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMODE]")
@@ -484,7 +484,7 @@ TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 }
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 //No runners
 TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
@@ -558,7 +558,7 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 }
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 //No runners
 TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {

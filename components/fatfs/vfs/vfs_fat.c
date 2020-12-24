@@ -330,7 +330,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
             ESP_LOGE(TAG, "open: Failed to pre-allocate CLMT buffer for fast-seek");
             errno = ENOMEM;
             return -1;
-        } 
+        }
 
         file->cltbl = clmt_mem;
         file->cltbl[0] = CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE;
@@ -347,7 +347,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         }
     } else {
         file->cltbl = NULL;
-    } 
+    }
 #endif
 
     // O_APPEND need to be stored because it is not compatible with FA_OPEN_APPEND:

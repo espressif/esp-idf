@@ -1,6 +1,5 @@
-COMPONENT_ADD_INCLUDEDIRS := include
+COMPONENT_ADD_INCLUDEDIRS := include esp32
 COMPONENT_SRCDIRS := patches .
-COMPONENT_PRIV_INCLUDEDIRS := esp32
 
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
