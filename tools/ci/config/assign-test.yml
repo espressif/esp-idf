@@ -40,7 +40,7 @@ assign_test:
     # assign unit test cases
     - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
-    - git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
     - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - export PYTHONPATH="${CI_PROJECT_DIR}/auto_test_script/packages:$PYTHONPATH"
@@ -73,7 +73,7 @@ update_test_cases:
     PYTHON_VER: 3.7.7
   script:
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - git clone $TEST_MANAGEMENT_REPO
+    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
     - python $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}

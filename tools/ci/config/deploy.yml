@@ -172,7 +172,7 @@ deploy_test_result:
     # artifacts of job update_test_cases creates test-management folder
     # we need to remove it so we can clone test-management folder again
     - rm -r test-management
-    - git clone $TEST_MANAGEMENT_REPO
+    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
     - python3 $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
