@@ -85,6 +85,7 @@ if(NOT BOOTLOADER_BUILD)
               "esp32c3/brownout_hal.c"
               "esp32c3/systimer_hal.c"
               "esp32c3/hmac_hal.c"
+              "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c")
     endif()
 endif()

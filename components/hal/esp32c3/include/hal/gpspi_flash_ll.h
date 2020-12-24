@@ -60,6 +60,15 @@ static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
 {
     dev->user.val = 0;
     dev->ctrl.val = 0;
+
+    dev->clk_gate.clk_en = 1;
+    dev->clk_gate.mst_clk_active = 1;
+    dev->clk_gate.mst_clk_sel = 1;
+
+    dev->dma_conf.val = 0;
+    dev->dma_conf.tx_seg_trans_clr_en = 1;
+    dev->dma_conf.rx_seg_trans_clr_en = 1;
+    dev->dma_conf.dma_seg_trans_en = 0;
 }
 
 /**
@@ -71,7 +80,7 @@ static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
  */
 static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
 {
-    return (dev->cmd.val == 0);
+    return (dev->cmd.usr == 0);
 }
 
 /**
@@ -139,6 +148,8 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  */
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 {
+    dev->cmd.update = 1;
+    while (dev->cmd.update);
     dev->cmd.usr = 1;
 }
 
@@ -151,7 +162,7 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
  */
 static inline bool gpspi_flash_ll_host_idle(const spi_dev_t *dev)
 {
-    abort();    //TODO ESP32-C3 IDF-2204
+    return dev->cmd.usr == 0;
 }
 
 /**
@@ -198,10 +209,10 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
     ctrl.val &= ~(SPI_FCMD_QUAD_M | SPI_FADDR_QUAD_M | SPI_FREAD_QUAD_M | SPI_FCMD_DUAL_M | SPI_FADDR_DUAL_M | SPI_FREAD_DUAL_M);
     user.val &= ~(SPI_FWRITE_QUAD_M | SPI_FWRITE_DUAL_M);
 
-    // ctrl.val |= SPI_FAST_RD_MODE_M;
     switch (read_mode) {
     case SPI_FLASH_FASTRD:
         //the default option
+    case SPI_FLASH_SLOWRD:
         break;
     case SPI_FLASH_QIO:
         ctrl.fread_quad = 1;
@@ -221,9 +232,6 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
         ctrl.fread_dual = 1;
         user.fwrite_dual = 1;
         break;
-    // case SPI_FLASH_SLOWRD:
-    //     ctrl.fast_rd_mode = 0;
-    //     break;
     default:
         abort();
     }
@@ -251,7 +259,10 @@ static inline void gpspi_flash_ll_set_clock(spi_dev_t *dev, gpspi_flash_ll_clock
  */
 static inline void gpspi_flash_ll_set_miso_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
-    abort();    //TODO ESP32-C3 IDF-2204
+    dev->user.usr_miso = bitlen > 0;
+    if (bitlen) {
+        dev->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -263,7 +274,10 @@ static inline void gpspi_flash_ll_set_miso_bitlen(spi_dev_t *dev, uint32_t bitle
  */
 static inline void gpspi_flash_ll_set_mosi_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
-    abort();    //TODO ESP32-C3 IDF-2204
+    dev->user.usr_mosi = bitlen > 0;
+    if (bitlen) {
+        dev->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -356,9 +370,16 @@ static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en,
     dev->ctrl.d_pol = out_lev;
 }
 
+/**
+ * Set extra hold time of CS after the clocks.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param hold_n Cycles of clocks before CS is inactive
+ */
 static inline void gpspi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)
 {
-    abort();    //TODO ESP32-C3 IDF-2204
+    dev->user1.cs_hold_time = hold_n - 1;
+    dev->user.cs_hold = (hold_n > 0? 1: 0);
 }
 
 #ifdef __cplusplus
