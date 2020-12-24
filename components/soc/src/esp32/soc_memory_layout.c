@@ -74,12 +74,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
 
-#if CONFIG_SPIRAM_SIZE == -1
-// Assume we need to reserve 4MB in the auto-detection case
 #define RESERVE_SPIRAM_SIZE (4*1024*1024)
-#else
-#define RESERVE_SPIRAM_SIZE CONFIG_SPIRAM_SIZE
-#endif
 
 /*
 Region descriptors. These describe all regions of memory available, and map them to a type in the above type.
