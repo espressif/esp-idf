@@ -30,10 +30,10 @@ typedef enum {
     WIFI_MODE_MAX
 } wifi_mode_t;
 
-typedef esp_interface_t wifi_interface_t;
-
-#define WIFI_IF_STA ESP_IF_WIFI_STA
-#define WIFI_IF_AP  ESP_IF_WIFI_AP
+typedef enum {
+    WIFI_IF_STA = ESP_IF_WIFI_STA,
+    WIFI_IF_AP  = ESP_IF_WIFI_AP,
+} wifi_interface_t;
 
 typedef enum {
     WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
