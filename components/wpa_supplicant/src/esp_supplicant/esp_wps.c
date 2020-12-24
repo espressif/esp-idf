@@ -976,6 +976,7 @@ int wps_finish(void)
         if (config == NULL) {
             system_event_t evt;
             evt.event_id = SYSTEM_EVENT_STA_WPS_ER_FAILED;
+            evt.event_info.sta_er_fail_reason = WPS_FAIL_REASON_NORMAL; 
             esp_wifi_send_event_internal(&evt);
             return ESP_FAIL;
         }
@@ -1253,6 +1254,7 @@ out:
 
         system_event_t evt;
         evt.event_id = SYSTEM_EVENT_STA_WPS_ER_FAILED;
+        evt.event_info.sta_er_fail_reason = WPS_FAIL_REASON_NORMAL; 
         esp_wifi_send_event_internal(&evt);
 
         return ret;
@@ -1505,6 +1507,7 @@ void wifi_station_wps_success_internal(void)
 {
     system_event_t evt;
     evt.event_id = SYSTEM_EVENT_STA_WPS_ER_SUCCESS;
+    evt.event_info.sta_er_success.ap_cred_cnt = 1;
     struct wps_sm *sm = gWpsSm;
     int i;
 
@@ -1520,10 +1523,8 @@ void wifi_station_wps_success_internal(void)
             os_memcpy(evt.event_info.sta_er_success.ap_cred[i].passphrase,
                       sm->key[i], sm->key_len[i]);
         }
-        esp_wifi_send_event_internal(&evt);
-    } else {
-        esp_wifi_send_event_internal(&evt);
     }
+    esp_wifi_send_event_internal(&evt);
 }
 
 void wifi_station_wps_success(void)
