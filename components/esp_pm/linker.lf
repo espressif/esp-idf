@@ -4,3 +4,50 @@ entries:
     if PM_RTOS_IDLE_OPT = y:
         pm_impl:esp_pm_impl_idle_hook (noflash)
         pm_impl:esp_pm_impl_waiti (noflash)
+
+[mapping:esp_common_pm]
+archive: libesp_common.a
+entries:
+    if PM_RTOS_IDLE_OPT = y:
+        freertos_hooks:esp_vApplicationIdleHook (noflash)
+        task_wdt:idle_hook_cb (noflash)
+        task_wdt:esp_task_wdt_reset (noflash)
+        task_wdt:find_task_in_twdt_list (noflash)
+        task_wdt:reset_hw_timer (noflash)
+
+[mapping:esp_hw_support_pm]
+archive: libesp_hw_support.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        rtc_init:rtc_vddsdio_get_config (noflash)
+
+[mapping:esp_system_pm]
+archive: libesp_system.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        sleep_modes:esp_light_sleep_start (noflash)
+        sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
+        sleep_modes:timer_wakeup_prepare (noflash)
+        sleep_modes:get_power_down_flags (noflash)
+
+[mapping:esp_timer_pm]
+archive: libesp_timer.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        esp_timer_impl_lac:esp_timer_impl_lock (noflash)
+        esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
+        esp_timer_impl_lac:esp_timer_impl_advance (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_lock (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_unlock (noflash)
+        esp_timer_impl_systimer:esp_timer_impl_advance (noflash)
+
+[mapping:newlib_pm]
+archive: libnewlib.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        esp_time_impl:esp_time_impl_set_boot_time (noflash)
+        esp_time_impl:esp_time_impl_get_boot_time (noflash)
+        esp_time_impl:esp_clk_slowclk_cal_get (noflash)
+        esp_time_impl:esp_rtc_get_time_us (noflash)
+        esp_time_impl:esp_clk_slowclk_cal_set (noflash)
+        esp_time_impl:esp_set_time_from_rtc (noflash)

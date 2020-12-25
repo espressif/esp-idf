@@ -3,10 +3,3 @@ archive: libnewlib.a
 entries:
   heap (noflash)
   abort (noflash)
-  if PM_SLP_IRAM_OPT = y:
-    esp_time_impl:esp_time_impl_set_boot_time (noflash)
-    esp_time_impl:esp_time_impl_get_boot_time (noflash)
-    esp_time_impl:esp_clk_slowclk_cal_get (noflash)
-    esp_time_impl:esp_rtc_get_time_us (noflash)
-    esp_time_impl:esp_clk_slowclk_cal_set (noflash)
-    esp_time_impl:esp_set_time_from_rtc (noflash)
