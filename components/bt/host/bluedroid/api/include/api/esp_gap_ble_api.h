@@ -1139,6 +1139,20 @@ esp_err_t esp_ble_gap_clean_duplicate_scan_exceptional_list(esp_duplicate_scan_e
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
 *
+*                    Secure connection is highly recommended to avoid some major
+*                    vulnerabilities like 'Impersonation in the Pin Pairing Protocol'
+*                    (CVE-2020-26555) and 'Authentication of the LE Legacy Pairing
+*                    Protocol'.
+*
+*                    To accept only `secure connection mode`, it is necessary do as following:
+*
+*                    1. Set bit `ESP_LE_AUTH_REQ_SC_ONLY` (`param_type` is
+*                    `ESP_BLE_SM_AUTHEN_REQ_MODE`), bit `ESP_LE_AUTH_BOND` and bit
+*                    `ESP_LE_AUTH_REQ_MITM` is optional as required.
+*
+*                    2. Set to `ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE` (`param_type` is
+*                    `ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH`).
+*
 * @param[in]       param_type : the type of the param which to be set
 * @param[in]       value  : the param value
 * @param[in]       len : the length of the param value
