@@ -70,7 +70,7 @@ Example method to create a new ping session and register callbacks:
         struct addrinfo *res = NULL;
         memset(&hint, 0, sizeof(hint));
         memset(&target_addr, 0, sizeof(target_addr));
-        getaddrinfo("www.espressif.com", NULL, &hint, &res) == 0);
+        getaddrinfo("www.espressif.com", NULL, &hint, &res);
         struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
         inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
         freeaddrinfo(res);
