@@ -117,17 +117,17 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
 
 /**
  * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
- * 
+ *
  * @param intr interrupt number ranged from 0 to 31
  */
 static inline void intr_cntrl_ll_edge_int_acknowledge (int intr)
 {
-    esprv_intc_set_interrupt_clear(intr);
+     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr);
 }
 
 /**
  * @brief Sets the interrupt level int the interrupt controller.
- * 
+ *
  * @param interrupt_number Interrupt number 0 to 31
  * @param level priority between 1 (lowest) to 7 (highest)
  */
@@ -138,7 +138,7 @@ static inline void intr_cntrl_ll_set_int_level(int intr, int level)
 
 /**
  * @brief Set the type of an interrupt in the controller.
- * 
+ *
  * @param interrupt_number Interrupt number 0 to 31
  * @param type interrupt type as edge or level triggered
  */

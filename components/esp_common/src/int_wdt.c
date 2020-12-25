@@ -126,11 +126,11 @@ void esp_int_wdt_cpu_init(void)
 
     /* Set the type and priority to cache error interrupts, if supported. */
 #if SOC_INTERRUPT_TYPE_CAN_SET
-    interrupt_controller_hal_set_type(WDT_INT_NUM, INTR_TYPE_LEVEL);
+    interrupt_controller_hal_set_int_type(WDT_INT_NUM, INTR_TYPE_LEVEL);
 #endif
 
 #if SOC_INTERRUPT_LEVEL_CAN_SET
-    interrupt_controller_hal_set_level(WDT_INT_NUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    interrupt_controller_hal_set_int_level(WDT_INT_NUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 #endif
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
