@@ -760,6 +760,19 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
     STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+
+    /* Check if the peer device's and own public key are not same. If they are same then
+     * return pairing fail. This check is needed to avoid 'Impersonation in Passkey entry
+     * protocol' vulnerability (CVE-2020-26558).*/
+    if ((memcmp(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, sizeof(BT_OCTET32)) == 0) &&
+        (memcmp(p_cb->loc_publ_key.y, p_cb->peer_publ_key.y, sizeof(BT_OCTET32)) == 0)) {
+        p_cb->status = SMP_PAIR_AUTH_FAIL;
+        p_cb->failure = SMP_PAIR_AUTH_FAIL;
+        reason = SMP_PAIR_AUTH_FAIL;
+        SMP_TRACE_ERROR("%s, Peer and own device cannot have same public key.", __func__);
+        smp_sm_event(p_cb, SMP_PAIRING_FAILED_EVT, &reason);
+        return ;
+    }
     /* In order to prevent the x and y coordinates of the public key from being modified,
        we need to check whether the x and y coordinates are on the given elliptic curve. */
     if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {
