@@ -15,6 +15,7 @@
 #define _BLE_MESH_UTIL_H_
 
 #include <stddef.h>
+#include "esp_bit_defs.h"
 #include "mesh_types.h"
 
 #ifdef __cplusplus
