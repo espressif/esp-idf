@@ -27,6 +27,10 @@
 #define LED_R GPIO_NUM_0
 #define LED_G GPIO_NUM_2
 #define LED_B GPIO_NUM_4
+#elif defined(CONFIG_BLE_MESH_ESP32C3_DEV)
+#define LED_R GPIO_NUM_8
+#define LED_G GPIO_NUM_8
+#define LED_B GPIO_NUM_8
 #endif
 
 struct _led_state {
