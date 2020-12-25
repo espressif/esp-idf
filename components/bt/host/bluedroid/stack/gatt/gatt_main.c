@@ -401,9 +401,22 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
         if ((p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport)) != NULL) {
             if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport, is_aux)) {
                 GATT_TRACE_ERROR("gatt_connect failed");
-                fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
-                fixed_queue_free(p_tcb->pending_ind_q, NULL);
-		gatt_tcb_free(p_tcb);
+
+                // code enter here if create connection failed. if disconnect after connection, code will not enter here
+
+                // p_tcb, p_tcb->pending_enc_clcb, and p_tcb->pending_ind_q have been freed in gatt_cleanup_upon_disc(),
+                // but here p_tcb is get from gatt_allocate_tcb_by_bdaddr(), is too old, so we get p_tcb again
+                p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+                if(p_tcb != NULL) {
+                    if(p_tcb->pending_enc_clcb != NULL) {
+                        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
+                    }
+                    if(p_tcb->pending_ind_q != NULL) {
+                        fixed_queue_free(p_tcb->pending_ind_q, NULL);
+                    }
+                    gatt_tcb_free(p_tcb);
+                }
+
             } else {
                 ret = TRUE;
             }
