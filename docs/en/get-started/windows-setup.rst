@@ -30,7 +30,7 @@ https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
 The installer includes the cross-compilers, OpenOCD, CMake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
-The installer also offers to download one of the ESP-IDF release versions. Please choose a directory for downloading ESP-IDF. The recommended directory is ``%userprofile%\esp`` where ``%userprofile%`` is your home directory. If you do not have it yet, please run the following command to create a new one:
+The installer also downloads one of the ESP-IDF release versions, or offers to use an existing one, if already present on your PC. If you don't have one, please choose a directory for downloading ESP-IDF. The recommended directory is ``%userprofile%\esp`` where ``%userprofile%`` is your home directory. If you do not have it yet, please run the following command to create a new one:
 
 .. code-block:: batch
 
