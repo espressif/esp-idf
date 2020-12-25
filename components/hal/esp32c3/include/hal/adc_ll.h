@@ -29,7 +29,10 @@
 extern "C" {
 #endif
 
-#define ADC_LL_ADC2_CHANNEL_MAX 1
+#define ADC_LL_ADC2_CHANNEL_MAX     1
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
+#define ADC_LL_CLKM_DIV_B_DEFAULT   1
+#define ADC_LL_CLKM_DIV_A_DEFAULT   0
 
 typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
@@ -180,8 +183,8 @@ static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pa
     uint8_t offset = (pattern_index % 4) * 6;
 
     tab = APB_SARADC.sar_patt_tab[index].sar_patt_tab1;  // Read old register value
-    tab &= (~(0xFC0000 >> offset));       // clear old data
-    tab |= ((uint32_t)pattern.val << 18) >> offset; // Fill in the new data
+    tab &= (~(0xFC0000 >> offset));                      // Clear old data
+    tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;       // Fill in the new data
     APB_SARADC.sar_patt_tab[index].sar_patt_tab1 = tab;  // Write back
 }
 
@@ -223,10 +226,11 @@ static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
 }
 
 /**
- * Sets the number of interval clock cycles for the digital controller to trigger the measurement.
+ * Set the interval clock cycle for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval.
  *
- * @note The trigger interval should not be less than the sampling time of the SAR ADC.
- * @param cycle The number of clock cycles for the trigger interval. The unit is the divided clock. Range: 40 ~ 4095.
+ * @note The trigger interval should not be smaller than the sampling time of the SAR ADC.
+ * @param cycle The clock cycle (trigger interval) of the measurement. Range: 30 ~ 4095.
  */
 static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
 {

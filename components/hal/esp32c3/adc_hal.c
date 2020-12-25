@@ -18,6 +18,7 @@
 #include "soc/soc_caps.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
+#include "soc/soc.h"
 
 //Currently we don't have context for the ADC HAL. So HAL variables are temporarily put here. But
 //please don't follow this code. Create a context for your own HAL!
@@ -67,24 +68,17 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         adc_ll_digi_convert_limit_disable();
     }
 
-    adc_ll_digi_set_trigger_interval(cfg->interval);
-    adc_hal_digi_clk_config(&cfg->dig_clk);
+    //clock
+    uint32_t interval = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / cfg->sample_freq_hz;
+    adc_ll_digi_set_trigger_interval(interval);
+    adc_hal_digi_clk_config();
 }
 
-/**
- * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
- * Enable clock and select clock source for ADC digital controller.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
- *
- * @note ADC and DAC digital controller share the same frequency divider.
- *       Please set a reasonable frequency division factor to meet the sampling frequency of the ADC and the output frequency of the DAC.
- *
- * @param clk Refer to ``adc_digi_clk_t``.
- */
-void adc_hal_digi_clk_config(const adc_digi_clk_t *clk)
+void adc_hal_digi_clk_config(void)
 {
-    adc_ll_digi_controller_clk_div(clk->div_num, clk->div_b, clk->div_a);
-    adc_ll_digi_controller_clk_enable(clk->use_apll);
+    //Here we set the clock divider factor to make the digital clock to 5M Hz
+    adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
+    adc_ll_digi_controller_clk_enable(0);
 }
 
 /**

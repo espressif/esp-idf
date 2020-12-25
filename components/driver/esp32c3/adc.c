@@ -97,7 +97,6 @@ typedef struct adc_digi_context_t {
     adc_digi_config_t       digi_controller_config;     //Digital Controller Configuration
 } adc_digi_context_t;
 
-static const char* ADC_DMA_TAG = "ADC_DMA:";
 static adc_digi_context_t *s_adc_digi_ctx = NULL;
 
 static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan, adc_atten_t atten);
@@ -344,7 +343,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
 
     data = xRingbufferReceiveUpTo(s_adc_digi_ctx->ringbuf_hdl, &size, ticks_to_wait, length_max);
     if (!data) {
-        ESP_LOGV(ADC_DMA_TAG, "No data, increase timeout or reduce conv_num_each_intr");
+        ESP_LOGV(ADC_TAG, "No data, increase timeout or reduce conv_num_each_intr");
         ret = ESP_ERR_TIMEOUT;
         *out_length = 0;
         return ret;
@@ -428,11 +427,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .interval = 40,
-        .dig_clk.use_apll = 0,
-        .dig_clk.div_num = 15,
-        .dig_clk.div_a = 0,
-        .dig_clk.div_b = 1,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
     };
 
     ADC_DIGI_LOCK_ACQUIRE();
@@ -489,11 +484,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .interval = 40,
-        .dig_clk.use_apll = 0,
-        .dig_clk.div_num = 15,
-        .dig_clk.div_a = 0,
-        .dig_clk.div_b = 1,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
     };
 
     SAC_ADC2_LOCK_ACQUIRE();
@@ -540,32 +531,34 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     if (!s_adc_digi_ctx) {
         return ESP_ERR_INVALID_STATE;
     }
+    ADC_CHECK(config->sample_freq_hz <= 83333 && config->sample_freq_hz >= 610, "ADC sampling frequency out of range", ESP_ERR_INVALID_ARG);
 
     s_adc_digi_ctx->digi_controller_config.conv_limit_en = config->conv_limit_en;
     s_adc_digi_ctx->digi_controller_config.conv_limit_num = config->conv_limit_num;
     s_adc_digi_ctx->digi_controller_config.adc_pattern_len = config->adc_pattern_len;
-    s_adc_digi_ctx->digi_controller_config.interval =  config->interval;
-    s_adc_digi_ctx->digi_controller_config.dig_clk = config-> dig_clk;
-    s_adc_digi_ctx->digi_controller_config.dma_eof_num = config->dma_eof_num;
+    s_adc_digi_ctx->digi_controller_config.sample_freq_hz = config->sample_freq_hz;
     memcpy(s_adc_digi_ctx->digi_controller_config.adc_pattern, config->adc_pattern, config->adc_pattern_len * sizeof(adc_digi_pattern_table_t));
 
-    //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
-    s_adc_digi_ctx->adc1_atten = ADC_ATTEN_MAX;
-    s_adc_digi_ctx->adc2_atten = ADC_ATTEN_MAX;
+    const int atten_uninitialised = 999;
+    s_adc_digi_ctx->adc1_atten = atten_uninitialised;
+    s_adc_digi_ctx->adc2_atten = atten_uninitialised;
     s_adc_digi_ctx->use_adc1 = 0;
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
         const adc_digi_pattern_table_t* pat = &config->adc_pattern[i];
         if (pat->unit == ADC_NUM_1) {
             s_adc_digi_ctx->use_adc1 = 1;
-            if (s_adc_digi_ctx->adc1_atten == ADC_ATTEN_MAX) {
+
+            if (s_adc_digi_ctx->adc1_atten == atten_uninitialised) {
                 s_adc_digi_ctx->adc1_atten = pat->atten;
             } else if (s_adc_digi_ctx->adc1_atten != pat->atten) {
                 return ESP_ERR_INVALID_ARG;
             }
         } else if (pat->unit == ADC_NUM_2) {
+            //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
             s_adc_digi_ctx->use_adc2 = 1;
-            if (s_adc_digi_ctx->adc2_atten == ADC_ATTEN_MAX) {
+
+            if (s_adc_digi_ctx->adc2_atten == atten_uninitialised) {
                 s_adc_digi_ctx->adc2_atten = pat->atten;
             } else if (s_adc_digi_ctx->adc2_atten != pat->atten) {
                 return ESP_ERR_INVALID_ARG;

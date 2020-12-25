@@ -28,11 +28,7 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .interval = 40,
-        .dig_clk.use_apll = 0,
-        .dig_clk.div_num = 15,
-        .dig_clk.div_a = 0,
-        .dig_clk.div_b = 1,
+        .sample_freq_hz = 83333,
     };
 
     dig_cfg.adc_pattern_len = channel_num;

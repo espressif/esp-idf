@@ -477,6 +477,7 @@ esp_err_t adc_digi_deinit(void);
  *
  * @return
  *      - ESP_ERR_INVALID_STATE Driver state is invalid.
+ *      - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *      - ESP_OK                On success
  */
 esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);

@@ -275,7 +275,7 @@ typedef struct {
                                                  pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
     adc_digi_pattern_table_t *adc_pattern;   /*!<Pointer to pattern table for digital controller. The table size defined by `adc_pattern_len`. */
 #endif
-#if !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32S2
     uint32_t interval;                       /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
                                                  The unit is the divided clock. Range: 40 ~ 4095.
                                                  Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
@@ -285,6 +285,13 @@ typedef struct {
     uint32_t dma_eof_num;                    /*!<DMA eof num of adc digital controller.
                                                  If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                                  Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
+#elif CONFIG_IDF_TARGET_ESP32C3
+    uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 610Hz ~ 83333Hz
+                                   Fs: sampling frequency;
+                                   Fd: digital controller frequency
+                                   interval: interval between 2 measurement trigger signal
+                                   Fs = Fd / interval / 2
+                                   Range: the smallest interval should not be smaller than the ADC measurement period. The largest interval should not be larger than 4095. */
 #endif
 } adc_digi_config_t;
 

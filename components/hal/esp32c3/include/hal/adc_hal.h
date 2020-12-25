@@ -75,11 +75,11 @@ void adc_hal_digi_disable(void);
 /**
  * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
  * Enable clock and select clock source for ADC digital controller.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
+ * Expression: controller_clk = APLL/APB * (div_num  + div_a / div_b + 1).
  *
  * @param clk Refer to `adc_digi_clk_t`.
  */
-void adc_hal_digi_clk_config(const adc_digi_clk_t *clk);
+void adc_hal_digi_clk_config(void);
 
 /**
  * Reset adc digital controller filter.

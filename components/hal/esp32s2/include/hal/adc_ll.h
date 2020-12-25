@@ -268,11 +268,11 @@ static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
 }
 
 /**
- * Sets the number of interval clock cycles for the digital controller to trigger the measurement.
- * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
+ * Set the interval clock cycle for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval.
  *
- * @note The trigger interval should not be less than the sampling time of the SAR ADC.
- * @param cycle The number of clock cycles for the trigger interval. The unit is the divided clock. Range: 40 ~ 4095.
+ * @note The trigger interval should be larger than the sampling time of the SAR ADC.
+ * @param cycle The clock cycle (trigger interval) of the measurement. Range: 40 ~ 4095.
  */
 static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
 {

@@ -145,7 +145,7 @@ void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
      * This limitation will be removed in hardware future versions.
      *
      */
-    uint32_t digi_clk = APB_CLK_FREQ / (adc_digi_config->dig_clk.div_num + adc_digi_config->dig_clk.div_a / adc_digi_config->dig_clk.div_b + 1);
+    uint32_t digi_clk = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
     uint32_t delay = (1000 * 1000) / digi_clk + 1;
     //3 ADC digital controller clock cycle
