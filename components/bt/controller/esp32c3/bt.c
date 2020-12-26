@@ -65,6 +65,7 @@
 enum {
     BTDM_ASYNC_WAKEUP_SRC_VHCI = 0,
     BTDM_ASYNC_WAKEUP_SRC_DISA,
+    BTDM_ASYNC_WAKEUP_SRC_TMR,
     BTDM_ASYNC_WAKEUP_SRC_MAX,
 };
 
@@ -86,7 +87,9 @@ typedef union {
     struct {
         uint32_t pm_lock_released        :  1; // whether power management lock is released
         uint32_t mac_bb_pd               :  1; // whether hardware(MAC, BB) is powered down
-        uint32_t reserved                : 30; // reserved
+        uint32_t phy_enabled             :  1; // whether phy is switched on
+        uint32_t wakeup_timer_started    :  1; // whether wakeup timer is started
+        uint32_t reserved                : 28; // reserved
     };
     uint32_t val;
 } btdm_lpstat_t;
@@ -94,8 +97,6 @@ typedef union {
 /* Sleep and wakeup interval control */
 #define BTDM_MIN_SLEEP_DURATION          (24) // threshold of interval in half slots to allow to fall into modem sleep
 #define BTDM_MODEM_WAKE_UP_DELAY         (8)  // delay in half slots of modem wake up procedure, including re-enable PHY/RF
-
-#define BTDM_MODEM_SLEEP_IN_EFFECT       (1)
 
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
@@ -316,6 +317,8 @@ static void interrupt_off_wrapper(int intr_num);
 static void btdm_hw_mac_power_up_wrapper(void);
 static void btdm_hw_mac_power_down_wrapper(void);
 static void btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uint32_t num,  bool to_mem);
+
+static void btdm_slp_tmr_callback(void *arg);
 /* Local variable definition
  ***************************************************************************
  */
@@ -364,15 +367,10 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._btdm_sleep_exit_phase1 = NULL,
     ._btdm_sleep_exit_phase2 = NULL,
     ._btdm_sleep_exit_phase3 = btdm_sleep_exit_phase3_wrapper,
-    //._coex_bt_request = coex_bt_request_wrapper,
     ._coex_wifi_sleep_set = coex_wifi_sleep_set_hook,
     ._coex_core_ble_conn_dyn_prio_get = coex_core_ble_conn_dyn_prio_get,
     ._coex_schm_status_bit_set = coex_schm_status_bit_set_wrapper,
     ._coex_schm_status_bit_clear = coex_schm_status_bit_clear_wrapper,
-    //._coex_bt_release = coex_bt_release_wrapper,
-    // ._coex_register_bt_cb = coex_register_bt_cb_wrapper,
-    // ._coex_bb_reset_lock = coex_bb_reset_lock_wrapper,
-    //._coex_bb_reset_unlock = coex_bb_reset_unlock_wrapper,
     ._interrupt_on = interrupt_on_wrapper,
     ._interrupt_off = interrupt_off_wrapper,
     ._esp_hw_power_down = btdm_hw_mac_power_down_wrapper,
@@ -383,37 +381,28 @@ static const struct osi_funcs_t osi_funcs_ro = {
 static DRAM_ATTR struct osi_funcs_t *osi_funcs_p;
 
 /* Static variable declare */
-// timestamp when PHY/RF was switched on
-// static DRAM_ATTR int64_t s_time_phy_rf_just_enabled = 0;
 static DRAM_ATTR esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
 static DRAM_ATTR portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
-// measured average low power clock period in micro seconds
-static DRAM_ATTR uint32_t btdm_lpcycle_us = 0;
-static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit for btdm_lpcycle_us
-
 // low power control struct
 static DRAM_ATTR btdm_lpcntl_t s_lp_cntl;
+// low power status struct
 static DRAM_ATTR btdm_lpstat_t s_lp_stat;
-
-#ifdef CONFIG_PM_ENABLE
-static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
-static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock; // pm_lock to prevent light sleep due to incompatibility currently
-#endif
-
-// used low power clock
+// measured average low power clock period in micro seconds
+static DRAM_ATTR uint32_t btdm_lpcycle_us = 0;
+// number of fractional bit for btdm_lpcycle_us
+static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0;
+// semaphore used for blocking VHCI API to wait for controller to wake up
 static DRAM_ATTR QueueHandle_t s_wakeup_req_sem = NULL;
 // wakeup timer
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
 
-static void btdm_slp_tmr_callback(void *arg);
-
-static inline void btdm_check_and_init_bb(void)
-{
-    // todo:
-    // btdm_rf_bb_init_phase2();
-}
+#ifdef CONFIG_PM_ENABLE
+static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
+// pm_lock to prevent light sleep due to incompatibility currently
+static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
+#endif
 
 void btdm_hw_mac_power_down_wrapper(void)
 {
@@ -609,7 +598,7 @@ static void *malloc_internal_wrapper(size_t size)
 static int IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
 {
     int ret = esp_read_mac(mac, ESP_MAC_BT);
-    ESP_LOGI(BTDM_LOG_TAG, "Bluetooth MAC: 0x%02x:%02x:%02x:%02x:%02x:%02x\n",
+    ESP_LOGI(BTDM_LOG_TAG, "Bluetooth MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     return ret;
@@ -680,17 +669,24 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
         uncertainty = BTDM_MIN_TIMER_UNCERTAINTY_US;
     }
 
-    if (esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - uncertainty) != ESP_OK) {
-        ESP_LOGW(BTDM_LOG_TAG, "timer start failed");
+    assert (s_lp_stat.wakeup_timer_started == 0);
+    if (esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - uncertainty) == ESP_OK) {
+        s_lp_stat.wakeup_timer_started = 1;
+    } else {
+        ESP_LOGE(BTDM_LOG_TAG, "timer start failed");
+        assert(0);
     }
 }
 
 static void btdm_sleep_enter_phase2_wrapper(void)
 {
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
-#if BTDM_MODEM_SLEEP_IN_EFFECT
-        esp_phy_disable();
-#endif /* BTDM_MODEM_SLEEP_IN_EFFECT */
+        if (s_lp_stat.phy_enabled) {
+            esp_phy_disable();
+            s_lp_stat.phy_enabled = 0;
+        } else {
+            assert(0);
+        }
 
         if (s_lp_cntl.mac_bb_pd && s_lp_stat.mac_bb_pd == 0) {
 #if (CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
@@ -715,13 +711,9 @@ static void btdm_sleep_exit_phase3_wrapper(void)
         assert(0);
     }
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
-#if BTDM_MODEM_SLEEP_IN_EFFECT
-        esp_phy_enable();
-#endif /* BTDM_MODEM_SLEEP_IN_EFFECT */
-        btdm_check_and_init_bb();
-
-        if (s_lp_cntl.wakeup_timer_required) {
-            esp_timer_stop(s_btdm_slp_tmr);
+        if (s_lp_stat.phy_enabled == 0) {
+            esp_phy_enable();
+            s_lp_stat.phy_enabled = 1;
         }
     }
 }
@@ -745,6 +737,10 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
 #endif
     btdm_wakeup_request();
 
+    if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
+        esp_timer_stop(s_btdm_slp_tmr);
+        s_lp_stat.wakeup_timer_started = 0;
+    }
     int event = (int) param;
     if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
         semphr_give_wrapper(s_wakeup_req_sem);
@@ -754,8 +750,12 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
 static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
 {
 #if  (defined CONFIG_PM_ENABLE) || (defined CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
-    btdm_vnd_offload_post_from_isr(BTDM_VND_OL_SIG_WAKEUP_TMR, NULL, false);
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+    btdm_vnd_offload_post_from_isr(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)BTDM_ASYNC_WAKEUP_SRC_TMR, false);
     esp_timer_isr_dispatch_need_yield();
+#else
+    btdm_vnd_offload_post(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)BTDM_ASYNC_WAKEUP_SRC_TMR);
+#endif
 #endif
 }
 
@@ -901,7 +901,7 @@ esp_err_t esp_bluetooth_stop(void)
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_FAIL;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         return ESP_ERR_INVALID_STATE;
@@ -936,7 +936,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         }
     }
 
-    //overwrite some parameters
+    // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
     btdm_controller_mem_init();
@@ -974,6 +974,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         if (s_lp_cntl.enable) {
 #if (CONFIG_PM_POWER_DOWN_WIFI_BT_MAC_BB)
             if (!btdm_deep_sleep_mem_init()) {
+                err = ESP_ERR_NO_MEM;
                 goto error;
             }
             s_lp_cntl.mac_bb_pd = 1;
@@ -991,10 +992,17 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         }
 
         if (s_lp_cntl.wakeup_timer_required) {
+#ifndef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+            ESP_LOGE(BTDM_LOG_TAG, "ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD is required");
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto error;
+#endif
             esp_timer_create_args_t create_args = {
                 .callback = btdm_slp_tmr_callback,
                 .arg = NULL,
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
                 .dispatch_method = ESP_TIMER_ISR,
+#endif
                 .name = "btSlp",
             };
             if ((err = esp_timer_create(&create_args, &s_btdm_slp_tmr)) != ESP_OK) {
@@ -1018,16 +1026,19 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
             btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
         } else {
             ESP_LOGW(BTDM_LOG_TAG, "%s sleep clock not supported", __func__);
-            assert(0);
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto error;
         }
 
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
             if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
+                err = ESP_ERR_NO_MEM;
                 goto error;
             }
         }
         if ((err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock)) != ESP_OK) {
+            err = ESP_ERR_NO_MEM;
             goto error;
         } else {
             s_lp_stat.pm_lock_released = 1;
@@ -1046,6 +1057,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
 
     esp_phy_enable();
+    s_lp_stat.phy_enabled = 1;
 
     if (btdm_controller_init(cfg) != 0) {
         err = ESP_ERR_NO_MEM;
@@ -1057,6 +1069,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     return ESP_OK;
 
 error:
+    if (s_lp_stat.phy_enabled) {
+        esp_phy_disable();
+        s_lp_stat.phy_enabled = 0;
+    }
+
     do {
         // deinit low power control resources
 #ifdef CONFIG_PM_ENABLE
@@ -1094,6 +1111,11 @@ error:
     } while (0);
 
     esp_unregister_shutdown_handler((shutdown_handler_t)esp_bluetooth_stop);
+
+    if (osi_funcs_p != NULL) {
+        free(osi_funcs_p);
+        osi_funcs_p = NULL;
+    }
     return err;
 }
 
@@ -1106,7 +1128,12 @@ esp_err_t esp_bt_controller_deinit(void)
     btdm_controller_deinit();
     periph_module_disable(PERIPH_BT_MODULE);
 
-    esp_phy_disable();
+    if (s_lp_stat.phy_enabled) {
+        esp_phy_disable();
+        s_lp_stat.phy_enabled = 0;
+    } else {
+        assert(0);
+    }
 
     // deinit low power control resources
     do {
@@ -1127,7 +1154,10 @@ esp_err_t esp_bt_controller_deinit(void)
         s_lp_stat.pm_lock_released = 0;
 #endif
         if (s_lp_cntl.wakeup_timer_required) {
-            esp_timer_stop(s_btdm_slp_tmr);
+            if (s_lp_stat.wakeup_timer_started) {
+                esp_timer_stop(s_btdm_slp_tmr);
+            }
+            s_lp_stat.wakeup_timer_started = 0;
             esp_timer_delete(s_btdm_slp_tmr);
             s_btdm_slp_tmr = NULL;
         }
@@ -1152,7 +1182,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
-    int ret;
+    int ret = ESP_OK;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
         return ESP_ERR_INVALID_STATE;
@@ -1174,39 +1204,40 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         if (s_lp_cntl.no_light_sleep) {
             esp_pm_lock_acquire(s_light_sleep_pm_lock);
         }
-
         esp_pm_lock_acquire(s_pm_lock);
         s_lp_stat.pm_lock_released = 0;
 #endif
 
-        if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
+        if (s_lp_cntl.enable) {
             btdm_controller_enable_sleep(true);
         }
     } while (0);
 
-    // inititalize bluetooth baseband
-    btdm_check_and_init_bb();
-    ret = btdm_controller_enable(mode);
-    if (ret) {
-        // disable low power mode
-        do {
-            btdm_controller_enable_sleep(false);
-#ifdef CONFIG_PM_ENABLE
-            if (s_lp_cntl.no_light_sleep) {
-                esp_pm_lock_release(s_light_sleep_pm_lock);
-            }
-            if (s_lp_stat.pm_lock_released == 0) {
-                esp_pm_lock_release(s_pm_lock);
-                s_lp_stat.pm_lock_released = 1;
-            }
-#endif
-        } while (0);
-        return ESP_ERR_INVALID_STATE;
+    if (btdm_controller_enable(mode) != 0) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto error;
     }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
 
-    return ESP_OK;
+    return ret;
+
+error:
+    // disable low power mode
+    do {
+        btdm_controller_enable_sleep(false);
+#ifdef CONFIG_PM_ENABLE
+        if (s_lp_cntl.no_light_sleep) {
+            esp_pm_lock_release(s_light_sleep_pm_lock);
+        }
+        if (s_lp_stat.pm_lock_released == 0) {
+            esp_pm_lock_release(s_pm_lock);
+            s_lp_stat.pm_lock_released = 1;
+        }
+#endif
+    } while (0);
+
+    return ret;
 }
 
 esp_err_t esp_bt_controller_disable(void)
@@ -1225,7 +1256,6 @@ esp_err_t esp_bt_controller_disable(void)
     coex_disable();
 #endif
 
-    // esp_phy_disable();
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     // disable low power mode
