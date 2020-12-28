@@ -55,7 +55,7 @@ __attribute__((pure))  int interrupt_controller_hal_desc_level(int interrupt_num
  */
 __attribute__((pure))  int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number);
 
-#if CONFIG_IDF_TARGET_ARCH_RISCV
+#if SOC_INTERRUPT_LEVEL_CAN_SET
 /**
  * @brief Set the interrupt level given an interrupt number.
  *

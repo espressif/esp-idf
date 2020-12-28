@@ -18,8 +18,8 @@
 
 	.equ SAVE_REGS, 32
 	.equ CONTEXT_SIZE, (SAVE_REGS * 4)
-	.equ exception_from_panic, xt_unhandled_exception
-	.equ exception_from_isr, panicHandler
+	.equ panic_from_exception, xt_unhandled_exception
+	.equ panic_from_isr, panicHandler
 
 .macro save_regs
 	addi sp, sp, -CONTEXT_SIZE
@@ -182,20 +182,20 @@ _panic_handler:
 	csrr t0, mhartid
 	sw t0,  RV_STK_MHARTID(sp)
 
-	/* Call exception_from_panic(sp) or exception_from_isr(sp)
+	/* Call panic_from_exception(sp) or panic_from_isr(sp)
 	 * depending on whether we have a pseudo excause or not.
 	 * If mcause's highest bit is 1, then an interrupt called this routine,
-	 * so we have a pseudo excause. Else, it is due to a panic, we don't have
-	 * an excause */
+	 * so we have a pseudo excause. Else, it is due to a exception, we don't
+         * have an pseudo excause */
 	mv a0, sp
 	csrr a1, mcause
-	/* Branches instructions don't accept immediates values, so use t1 to store
-	 * our comparator */
+	/* Branches instructions don't accept immediates values, so use t1 to
+         * store our comparator */
 	li t0, 0x80000000
 	bgeu a1, t0, _call_panic_handler
 	sw a1,  RV_STK_MCAUSE(sp)
 	/* exception_from_panic never returns */
-	j exception_from_panic
+	j panic_from_exception
 _call_panic_handler:
 	/* Remove highest bit from mcause (a1) register and save it in the
 	 * structure */
@@ -203,8 +203,8 @@ _call_panic_handler:
 	and a1, a1, t0
 	sw a1, RV_STK_MCAUSE(sp)
 	/* exception_from_isr never returns */
-	j exception_from_isr
-	.size  exception_from_isr, .-exception_from_isr
+	j panic_from_isr
+	.size  panic_from_isr, .-panic_from_isr
 
 	/* This is the interrupt handler.
 	 * It saves the registers on the stack,

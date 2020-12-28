@@ -18,8 +18,8 @@
  to panic the CPU, which from a debugging perspective is better than grabbing bad
  data from the bus.
 */
-
-#include "freertos/FreeRTOS.h"
+#include "esp32c3/rom/ets_sys.h"
+#include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/extmem_reg.h"
 #include "soc/periph_defs.h"

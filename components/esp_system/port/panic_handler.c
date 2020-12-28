@@ -179,8 +179,12 @@ static void panic_handler(void *frame, bool pseudo_excause)
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);
         }
 #endif
-        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 ||
-            panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1) {
+        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+            || panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1
+#endif
+           )
+        {
             wdt_hal_write_protect_disable(&wdt0_context);
             wdt_hal_handle_intr(&wdt0_context);
             wdt_hal_write_protect_enable(&wdt0_context);

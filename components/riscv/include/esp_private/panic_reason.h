@@ -13,8 +13,12 @@
 // limitations under the License.
 #pragma once
 
-#define PANIC_RSN_NONE 0
-#define PANIC_RSN_INTWDT_CPU0 1
-#define PANIC_RSN_INTWDT_CPU1 2
-#define PANIC_RSN_CACHEERR 3
-#define PANIC_RSN_MAX 3
+enum _panic_reasons {
+    PANIC_RSN_NONE = 0,
+    PANIC_RSN_INTWDT_CPU0,
+#if SOC_CPU_NUM > 1
+    PANIC_RSN_INTWDT_CPU1,
+#endif
+    PANIC_RSN_CACHEERR,
+    PANIC_RSN_COUNT
+} panic_reasons;

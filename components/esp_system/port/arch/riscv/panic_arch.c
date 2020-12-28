@@ -184,11 +184,13 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
     RvExcFrame *frame = (RvExcFrame *) f;
 
     /* Please keep in sync with PANIC_RSN_* defines */
-    static const char *pseudo_reason[PANIC_RSN_MAX + 1] = {
+    static const char *pseudo_reason[PANIC_RSN_COUNT] = {
         "Unknown reason",
         "Interrupt wdt timeout on CPU0",
+#if SOC_CPU_NUM > 1
         "Interrupt wdt timeout on CPU1",
-        "Cache exception",
+#endif
+        "Cache error"
     };
 
     info->reason = pseudo_reason[0];
@@ -213,8 +215,10 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->core = core;
         info->exception = PANIC_EXCEPTION_TWDT;
 
+#if SOC_CPU_NUM > 1
         _Static_assert(PANIC_RSN_INTWDT_CPU0 + 1 == PANIC_RSN_INTWDT_CPU1,
                        "PANIC_RSN_INTWDT_CPU1 must be equal to PANIC_RSN_INTWDT_CPU0 + 1");
+#endif
         info->reason = pseudo_reason[PANIC_RSN_INTWDT_CPU0 + core];
     }
 }
