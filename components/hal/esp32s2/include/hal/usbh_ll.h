@@ -156,7 +156,7 @@ typedef struct {
         } out_iso;
         uint32_t buffer_status_val;
     };
-    void *buffer;
+    uint8_t *buffer;
 } usbh_ll_dma_qtd_t;
 
 /*
@@ -266,6 +266,16 @@ static inline void usb_ll_flush_rx_fifo(usbh_dev_t *hw)
 static inline void usb_ll_reset_frame_counter(usbh_dev_t *hw)
 {
     hw->grstctl_reg.frmcntrrst = 1;
+}
+
+static inline void usb_ll_core_soft_reset(usbh_dev_t *hw)
+{
+    hw->grstctl_reg.csftrst = 1;
+}
+
+static inline bool usb_ll_check_core_soft_reset(usbh_dev_t *hw)
+{
+    return hw->grstctl_reg.csftrst;
 }
 
 // --------------------------- GINTSTS Register --------------------------------
@@ -412,7 +422,7 @@ static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw)
     usb_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
     hfir.hfirrldctrl = 0;       //Disable dynamic loading
-    hfir.frint = 48000;         //Set frame interval to 48000 cycles of 48KHz clock (1ms)
+    hfir.frint = 48000;         //Set frame interval to 48000 cycles of 48MHz clock (i.e. equals to 1ms)
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -713,6 +723,14 @@ static inline void usbh_ll_chan_set_pid(volatile usb_host_chan_regs_t *chan, uin
     }
 }
 
+static inline uint32_t usbh_ll_chan_get_pid(volatile usb_host_chan_regs_t *chan) {
+    if (chan->hctsiz_reg.pid == 0) {
+        return 0;   //DATA0
+    } else {
+        return 1;   //DATA1
+    }
+}
+
 static inline void usbh_ll_chan_set_dma_addr_non_iso(volatile usb_host_chan_regs_t *chan,
                                                     void *dmaaddr,
                                                     uint32_t qtd_idx)
@@ -755,13 +773,15 @@ static inline int usbh_ll_chan_get_ctd(usb_host_chan_regs_t *chan)
     return chan->hcdma_reg.non_iso.ctd;
 }
 
-static inline void usbh_ll_chan_hctsiz_init(volatile usb_host_chan_regs_t *chan, int qtd_list_len)
+static inline void usbh_ll_chan_hctsiz_init(volatile usb_host_chan_regs_t *chan)
 {
-    //HCTSIZi
-    chan->hctsiz_reg.dopng = 0;     //Don't do ping
-    chan->hctsiz_reg.pid = 0;       //Reset PID to Data0
-    chan->hctsiz_reg.ntd = qtd_list_len - 1;    //Set the length of the descriptor list
+    chan->hctsiz_reg.dopng = 0;         //Don't do ping
     chan->hctsiz_reg.sched_info = 0xFF; //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
+}
+
+static inline void usbh_ll_chan_set_qtd_list_len(volatile usb_host_chan_regs_t *chan, int qtd_list_len)
+{
+    chan->hctsiz_reg.ntd = qtd_list_len - 1;    //Set the length of the descriptor list
 }
 
 // ---------------------------- HCDMABi Register -------------------------------
@@ -806,7 +826,7 @@ static inline usb_host_chan_regs_t *usbh_ll_get_chan_regs(usbh_dev_t *dev, int c
  *                 Non zero length must be mulitple of the endpoint's MPS.
  * @param halt_on_cplt Generate a channel halted interrupt on completion of QTD
  */
-static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, void *data_buff, int xfer_len, bool halt_on_cplt)
+static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool halt_on_cplt)
 {
     qtd->buffer = data_buff;        //Set pointer to data buffer
     qtd->buffer_status_val = 0;     //Reset all flags to zero
@@ -829,7 +849,7 @@ static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, void *data_buff, i
  * @param is_setup Indicates whether this is a control transfer setup packet or a normal OUT Data transfer.
  *                 (As per the USB protocol, setup packets cannot be STALLd or NAKd by the device)
  */
-static inline void usbh_ll_set_qtd_out(usbh_ll_dma_qtd_t *qtd, void *data_buff, int xfer_len, bool halt_on_cplt, bool is_setup)
+static inline void usbh_ll_set_qtd_out(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool halt_on_cplt, bool is_setup)
 {
     qtd->buffer = data_buff;        //Set pointer to data buffer
     qtd->buffer_status_val = 0;     //Reset all flags to zero
