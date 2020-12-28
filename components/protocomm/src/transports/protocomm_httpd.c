@@ -34,7 +34,7 @@ static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
 static void protocomm_httpd_session_close(void *ctx)
 {
     if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
-        ESP_LOGW(TAG, "Closing session as socket %d was closed", session_id);
+        ESP_LOGW(TAG, "Closing session %d as socket was closed", session_id);
         if (pc_httpd->sec->close_transport_session((protocomm_security_handle_t)ctx, session_id) != ESP_OK) {
             ESP_LOGW(TAG, "Error closing session with ID: %d", session_id);
         }
@@ -50,7 +50,11 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     const char *ep_name = NULL;
     ssize_t outlen;
 
-    int cur_session_id = httpd_req_to_sockfd(req);
+    // TODO session should be cleared after final call to provision (ie last prov-config)
+    //       Or when one of the requests to provision fails (because you will need to start again, I think)
+    //       Clear session using httpd_req_clear_session(req) BEFORE the response is sent.
+    int cur_session_id = httpd_req_to_session_id(req);
+    ESP_LOGD(TAG, "common_post_handler uri=%s session_id=%d req_session_id=%d", req->uri, session_id, cur_session_id);
 
     if (cur_session_id != session_id) {
         ESP_LOGD(TAG, "Creating new session: %d", cur_session_id);
@@ -69,6 +73,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
         }
         if (pc_httpd->sec && pc_httpd->sec->new_transport_session) {
             ret = pc_httpd->sec->new_transport_session(pc_httpd->sec_inst, cur_session_id);
+            ESP_LOGD(TAG, "Created new security transport session - session_id=%d", cur_session_id);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to launch new session with ID: %d", cur_session_id);
                 ret = ESP_FAIL;
@@ -94,7 +99,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
 
     req_body = (char *) malloc(req->content_len);
     if (!req_body) {
-        ESP_LOGE(TAG, "Unable to allocate for request length %d", req->content_len);
+        ESP_LOGE(TAG, "Unable to allocate for request length %u", req->content_len);
         ret = ESP_ERR_NO_MEM;
         goto out;
     }
@@ -112,11 +117,12 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     /* Extract the endpoint name from URI string of type "/ep_name" */
     ep_name = req->uri + 1;
 
+    ESP_LOGD(TAG, "Handling request ep_name=%s session_id=%d req_size=%llu req_uri=%s http_method=%d", ep_name, session_id, (uint64_t) recv_size, req->uri, req->method);
     ret = protocomm_req_handle(pc_httpd, ep_name, session_id,
                                (uint8_t *)req_body, recv_size, &outbuf, &outlen);
 
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Data handler failed");
+        ESP_LOGE(TAG, "Data handler failed. Error=%d", ret);
         ret = ESP_FAIL;
         goto out;
     }

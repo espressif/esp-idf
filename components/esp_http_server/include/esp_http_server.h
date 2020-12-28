@@ -801,6 +801,30 @@ esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_p
 int httpd_req_to_sockfd(httpd_req_t *r);
 
 /**
+ * @brief   Clears the session cookie from the HTTP response.
+ *
+ * @param[in] r The request whose response should have its session cookie cleared.
+ *
+ * @return
+ *  - session_id for this request
+ */
+void httpd_req_clear_session(httpd_req_t *r);
+
+/**
+ * @brief   Get a HTTP Session Id from the HTTP request.
+ *
+ * Looks for a session cookie and reads the session_id from it.
+ * If there is no session_id then it generates one and creates a session cookie
+ * to send with the response.
+ *
+ * @param[in] r The request whose session id should be found
+ *
+ * @return
+ *  - session_id for this request
+ */
+uint32_t httpd_req_to_session_id(httpd_req_t *r);
+
+/**
  * @brief   API to read content data from the HTTP request
  *
  * This API will read HTTP content data from the HTTP request into

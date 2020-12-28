@@ -22,6 +22,10 @@
 
 static const char *TAG = "httpd_txrx";
 
+#define SESSION_ID          "espidf-session-id"
+#define HTTP_HDR_COOKIE     "Cookie"
+#define HTTP_HDR_SET_COOKIE "Set-Cookie2"
+
 esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func)
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
@@ -556,6 +560,79 @@ int httpd_req_to_sockfd(httpd_req_t *r)
 
     struct httpd_req_aux *ra = r->aux;
     return ra->sd->fd;
+}
+
+void httpd_req_clear_session(httpd_req_t *r) {
+
+    if (r == NULL) {
+        return;
+    }
+
+    if (!httpd_valid_req(r)) {
+        ESP_LOGW(TAG, LOG_FMT("invalid request"));
+        return;
+    }
+
+    struct httpd_req_aux *ra = r->aux;
+    sprintf(ra->sd->session_cookie, "%s=0 (; Max-Age=0)", SESSION_ID);
+    ESP_LOGI(TAG, LOG_FMT("Wrote new session cookie='%s'"), ra->sd->session_cookie);
+}
+
+uint32_t httpd_req_to_session_id(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return -1;
+    }
+
+    if (!httpd_valid_req(r)) {
+        ESP_LOGW(TAG, LOG_FMT("invalid request"));
+        return -1;
+    }
+
+    struct httpd_req_aux *ra = r->aux;
+
+    // Read session cookie.
+    const int cookie_length = httpd_req_get_hdr_value_len(r, HTTP_HDR_COOKIE);
+    if (cookie_length > 0) {
+        // Found a cookie - get the session_id from it. See https://www.ietf.org/rfc/rfc2965.txt
+        char* cookie_str = malloc(cookie_length + 1);
+        httpd_req_get_hdr_value_str(r, HTTP_HDR_COOKIE, cookie_str, cookie_length + 1);
+        ESP_LOGD(TAG, LOG_FMT("Cookie string '%s' cookie_len=%d"), cookie_str, cookie_length);
+
+        // Parse cookie_str
+        char format_str_1[30], format_str_2[60];
+        sprintf(format_str_1, "%s=%%u", SESSION_ID);                   // When there are no attribute value pairs for the cookie.
+        sprintf(format_str_2, "$Version=\"1\"; %s=\"%%u", SESSION_ID); // When the cookie contains at least one attribute value pair.
+        uint32_t session_id = 0;
+
+        if (sscanf(cookie_str, format_str_1, &session_id) == 1) {
+            ESP_LOGI(TAG, LOG_FMT("Found %s=%d format-1"), SESSION_ID, session_id);
+            free(cookie_str);
+            return session_id;
+        } else if (sscanf(cookie_str, format_str_2, &session_id) == 1) {
+            ESP_LOGI(TAG, LOG_FMT("Found %s=%d format-2"), SESSION_ID, session_id);
+            free(cookie_str);
+            return session_id;
+        }
+        free(cookie_str);
+
+        ESP_LOGE(TAG, LOG_FMT("Did NOT find %s in session cookie"), SESSION_ID);
+        // NB fall through so we can create a new session cookie.
+    }
+
+    // There was either no cookie, or no session within the cookie, so create session and write cookie.
+    ESP_LOGD(TAG, LOG_FMT("Request contains no session cookie"));
+
+    // Use an incrementing unsigned int so that it wraps if we ever reach 2^32 sessions
+    static uint32_t next_session_id = 0;
+
+    next_session_id++;
+    sprintf(ra->sd->session_cookie, "%s=%u", SESSION_ID, next_session_id);
+
+    ESP_LOGI(TAG, LOG_FMT("Wrote new session cookie='%s'"), ra->sd->session_cookie);
+    httpd_resp_set_hdr(r, HTTP_HDR_SET_COOKIE, ra->sd->session_cookie);
+
+    return next_session_id;
 }
 
 static int httpd_sock_err(const char *ctx, int sockfd)
