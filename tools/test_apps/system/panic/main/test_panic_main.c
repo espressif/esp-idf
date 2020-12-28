@@ -102,9 +102,11 @@ static void IRAM_ATTR test_int_wdt_cache_disabled(void)
 
 static void test_stack_overflow(void)
 {
-    volatile uint8_t stuff[CONFIG_ESP_MAIN_TASK_STACK_SIZE + 1000];
-    for (int i = 0; i < sizeof(stuff); ++i) {
-        stuff[i] = rand();
+    register uint32_t* sp asm("sp");
+    uint32_t *end = sp - CONFIG_ESP_MAIN_TASK_STACK_SIZE;
+    // offset - 20 bytes from SP in order to not corrupt the current frame.
+    for (uint32_t* ptr = sp - 5; ptr != end; --ptr) {
+        *ptr = rand();
     }
 }
 
