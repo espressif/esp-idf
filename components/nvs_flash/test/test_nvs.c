@@ -18,16 +18,35 @@
 
 static const char* TAG = "test_nvs";
 
+TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
+{
+    nvs_handle handle;
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_flash_init());
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_erase());
+
+    // exptected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_INITIALIZED, nvs_open("uninit_ns", NVS_READWRITE, &handle));
+
+    // just to be sure it's deinitialized in case of error and not affecting other tests
+    nvs_flash_deinit();
+}
+
 TEST_CASE("various nvs tests", "[nvs]")
 {
     nvs_handle handle_1;
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
-        const esp_partition_t* nvs_partition = esp_partition_find_first(
-                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
-        assert(nvs_partition && "partition table must have an NVS partition");
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK( err );
@@ -94,7 +113,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
         const esp_partition_t* nvs_partition = esp_partition_find_first(
                 ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
         assert(nvs_partition && "partition table must have an NVS partition");
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK( err );
@@ -102,8 +121,8 @@ TEST_CASE("calculate used and free space", "[nvs]")
     // erase if have any namespace
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
     if(stat1.namespace_count != 0) {
-        TEST_ESP_OK(nvs_flash_erase());
         TEST_ESP_OK(nvs_flash_deinit());
+        TEST_ESP_OK(nvs_flash_erase());
         TEST_ESP_OK(nvs_flash_init());
     }
 
@@ -216,8 +235,8 @@ TEST_CASE("calculate used and free space", "[nvs]")
 
     nvs_close(handle_3);
 
-    TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_erase());
 }
 
 TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
@@ -248,12 +267,12 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
 #ifdef CONFIG_NVS_ENCRYPTION
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
 {
-    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11, 
+    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         /* Tweak key below*/
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22, 
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22 };
@@ -261,7 +280,7 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
     uint8_t ba_hex[16] = { 0x33,0x33,0x33,0x33,0x33,0x00,0x00,0x00,
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 
-    uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44, 
+    uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44 };
@@ -289,7 +308,7 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
 TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 {
     nvs_sec_cfg_t cfg, cfg2;
-    
+
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
 
@@ -299,7 +318,7 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 
     TEST_ESP_OK(esp_partition_erase_range(key_part, 0, key_part->size));
     TEST_ESP_ERR(nvs_flash_read_security_cfg(key_part, &cfg), ESP_ERR_NVS_KEYS_NOT_INITIALIZED);
-    
+
     TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
 
     TEST_ESP_OK(nvs_flash_read_security_cfg(key_part, &cfg2));
@@ -315,7 +334,7 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
     }
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
-    
+
     assert(key_part && "partition table must have an NVS Key partition");
 
     const esp_partition_t* nvs_partition = esp_partition_find_first(
