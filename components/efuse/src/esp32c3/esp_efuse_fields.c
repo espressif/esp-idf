@@ -45,17 +45,6 @@ uint32_t esp_efuse_get_pkg_ver(void)
     return pkg_ver;
 }
 
-// Disable BASIC ROM Console via efuse
-void esp_efuse_disable_basic_rom_console(void)
-{
-    uint8_t dis_legacy_spi_boot = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, &dis_legacy_spi_boot, 1);
-    if (dis_legacy_spi_boot == 0) {
-        esp_efuse_write_field_cnt(ESP_EFUSE_DIS_LEGACY_SPI_BOOT, 1);
-        ESP_EARLY_LOGI(TAG, "Disable Disable_Legcy_SPI_boot mode...");
-    }
-}
-
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
 {
     uint32_t buf[8];
@@ -70,4 +59,17 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
+}
+
+esp_err_t esp_efuse_disable_rom_download_mode(void)
+{
+    return esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
+}
+
+esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
+{
+    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
 }

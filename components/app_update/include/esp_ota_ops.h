@@ -312,7 +312,7 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void);
  */
 bool esp_ota_check_rollback_is_possible(void);
 
-#if CONFIG_IDF_TARGET_ESP32S2 && (CONFIG_SECURE_BOOT_V2_ENABLED || __DOXYGEN__)
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 && (CONFIG_SECURE_BOOT_V2_ENABLED || __DOXYGEN__)
 
 /**
  * Secure Boot V2 public key indexes.
@@ -338,7 +338,7 @@ typedef enum {
  *        - ESP_FAIL: If secure boot v2 has not been enabled.
  */
 esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index);
-#endif /* CONFIG_IDF_TARGET_ESP32S2 */
+#endif /* SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 */
 
 #ifdef __cplusplus
 }

@@ -180,7 +180,7 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
             "* Not recommended to re-use the same secure boot keyfile on multiple production devices."
         DEPENDS gen_secure_bootloader_key gen_bootloader_digest_bin
         VERBATIM)
-elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_IDF_TARGET_ESP32S2)
+elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND (CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32C3))
     add_custom_command(TARGET bootloader.elf POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="

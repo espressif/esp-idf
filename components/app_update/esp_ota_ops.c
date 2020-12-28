@@ -45,6 +45,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/crc.h"
 #include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/crc.h"
+#include "esp32c3/rom/secure_boot.h"
 #endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
@@ -891,7 +894,7 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SECURE_BOOT_V2_ENABLED
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 && CONFIG_SECURE_BOOT_V2_ENABLED
 esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index) {
 
     if (!esp_secure_boot_enabled()) {
