@@ -170,20 +170,20 @@ Or::
 
 Placing DMA buffers in the stack is still allowed, though you have to keep in mind:
 
-1. Never try to do this if the stack is in the pSRAM. If the stack of a task is placed in the pSRAM, several steps have
-   to be taken as described in :doc:`external-ram` (at least ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` option enabled in
-   the menuconfig). Make sure your task is not in the pSRAM.
-2. Use macro ``WORD_ALIGNED_ATTR`` in functions before variables to place them in proper positions like::
+.. list::
 
-    void app_main()
-    {
-        uint8_t stuff;
-        WORD_ALIGNED_ATTR uint8_t buffer[]="I want to send something";   //or the buffer will be placed right after stuff.
-        // initialization code...
-        spi_transaction_t temp = {
-            .tx_buffer = buffer,
-            .length = 8*sizeof(buffer),
-        };
-        spi_device_transmit( spi, &temp );
-        // other stuff
-    }
+    :SOC_SPIRAM_SUPPORTED: - Never try to do this if the stack is in the pSRAM. If the stack of a task is placed in the pSRAM, several steps have to be taken as described in :doc:`external-ram` (at least ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` option enabled in the menuconfig). Make sure your task is not in the pSRAM.
+    - Use macro ``WORD_ALIGNED_ATTR`` in functions before variables to place them in proper positions like::
+
+        void app_main()
+        {
+            uint8_t stuff;
+            WORD_ALIGNED_ATTR uint8_t buffer[]="I want to send something";   //or the buffer will be placed right after stuff.
+            // initialization code...
+            spi_transaction_t temp = {
+                .tx_buffer = buffer,
+                .length = 8*sizeof(buffer),
+            };
+            spi_device_transmit( spi, &temp );
+            // other stuff
+        }

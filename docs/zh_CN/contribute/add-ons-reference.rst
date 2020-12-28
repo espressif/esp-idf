@@ -144,7 +144,7 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
 :idf_file:`docs/idf_extensions/format_idf_target.py`
     通过将 idf_target 发送至 Sphinx 命令行替换 target 相关名称的扩展功能。例如：
 
-     This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` 
+     This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
 
     删掉退格键后，将被渲染为
 
@@ -179,7 +179,7 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
     订阅 ``idf-defines-generated`` 事件，因为该扩展功能需要根据 Sphinx 标签来决定需排除哪些文档。
 
 :idf_file:`docs/idf_extensions/run_doxygen.py`
-    订阅 ``idf-defines-generated`` 事件，运行 Doxygen (:idf_file:`docs/Doxyfile`) 生成描述密钥头文件的 XML 文件，然后运行 Breathe 将这些文件转换为可直接被添加至 API 参考页面的 ``.inc`` 文件。
+    订阅 ``idf-defines-generated`` 事件，运行 Doxygen (:idf_file:`docs/doxygen/Doxyfile_common`) 生成描述密钥头文件的 XML 文件，然后运行 Breathe 将这些文件转换为可直接被添加至 API 参考页面的 ``.inc`` 文件。
 
     将一些特定目标的自定义环境变量推入 Doxygen 中，包括项目的默认 ``sdkconfig.h`` 文件内定义的所有宏包以及 ``soc`` 部件 ``xxx_caps.h`` 的头文件中定义的所有宏包。这意味着，公共 API 头文件可以依赖于特定目标的配置选项或者 ``soc`` 功能头文件选项，如头文件中 ``#ifdef`` & ``#if`` 预处理器选项。
 

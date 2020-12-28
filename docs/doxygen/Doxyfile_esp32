@@ -1,0 +1,4 @@
+INPUT += \
+         $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
+         $(IDF_PATH)/components/esp32/include/esp32/himem.h \
+         $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h

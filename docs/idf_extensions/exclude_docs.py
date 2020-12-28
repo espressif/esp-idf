@@ -9,9 +9,17 @@ def update_exclude_patterns(app, config):
     if config.docs_to_build:
         build_subset(app, config)
 
+    include_set = set()
+    exclude_set = set()
+
     for tag, docs in config.conditional_include_dict.items():
         if not app.tags.has(tag):
-            app.config.exclude_patterns.extend(docs)
+            exclude_set.update(docs)
+        else:
+            include_set.update(docs)
+    # Do not exclude docs that have been explicitly included, e.g. if a doc is listed in both
+    # ESP32_DOCS and ESP32S2_DOCS it will be included for those targets.
+    app.config.exclude_patterns.extend(exclude_set - include_set)
 
 
 def build_subset(app, config):

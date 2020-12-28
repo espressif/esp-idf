@@ -7,7 +7,7 @@
     :maxdepth: 1
 
     ADC <adc>
-    DAC <dac>
+    :SOC_DAC_PERIPH_NUM: DAC <dac>
     GPIO (包括 RTC 低功耗 I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: 专用 GPIO <dedic_gpio>
     :esp32s2: HMAC <hmac>
@@ -16,7 +16,7 @@
     I2S <i2s>
     LED Control <ledc>
     :SOC_MCPWM_SUPPORTED: MCPWM <mcpwm>
-    Pulse Counter <pcnt>
+    :SOC_PCNT_SUPPORTED: Pulse Counter <pcnt>
     Remote Control <rmt>
     :SOC_SDMMC_HOST_SUPPORTED: SDMMC Host <sdmmc_host>
     SD SPI Host <sdspi_host>
@@ -28,7 +28,7 @@
     :esp32s2: SPI Slave 半双工 (half duplex) <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
-    Touch Sensor <touch_pad>
+    :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
     TWAI <twai>
     UART <uart>
     :SOC_USB_SUPPORTED: USB <usb>

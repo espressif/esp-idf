@@ -8,7 +8,7 @@ Peripherals API
 
 
     ADC <adc>
-    DAC <dac>
+    :SOC_DAC_PERIPH_NUM: DAC <dac>
     GPIO (including RTC low power I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: Dedicated GPIO <dedic_gpio>
     :esp32s2: HMAC <hmac>
@@ -17,7 +17,7 @@ Peripherals API
     I2S <i2s>
     LED Control <ledc>
     :SOC_MCPWM_SUPPORTED: MCPWM <mcpwm>
-    Pulse Counter <pcnt>
+    :SOC_PCNT_SUPPORTED: Pulse Counter <pcnt>
     Remote Control <rmt>
     :esp32: SD Pull-up Requirements <sd_pullup_requirements>
     :SOC_SDMMC_HOST_SUPPORTED: SDMMC Host <sdmmc_host>
@@ -30,7 +30,7 @@ Peripherals API
     :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
-    Touch Sensor <touch_pad>
+    :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
     TWAI <twai>
     UART <uart>
     :SOC_USB_SUPPORTED: USB <usb>

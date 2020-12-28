@@ -133,7 +133,6 @@ print('Version: {0}  Release: {1}'.format(version, release))
 # directories to ignore when looking for source files.
 exclude_patterns = ['**/inc/**', '_static/', '_build/**']
 
-
 BT_DOCS = ['api-guides/blufi.rst',
            'api-guides/esp-ble-mesh/**',
            'api-reference/bluetooth/**']
@@ -147,6 +146,14 @@ MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
 DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
 
+PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
+
+DAC_DOCS = ['api-reference/peripherals/dac.rst']
+
+TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
+
+SPIRAM_DOCS = ['api-guides/external-ram.rst']
+
 LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'gnu-make-legacy.rst',
                'api-guides/ulp-legacy.rst',
@@ -155,12 +162,19 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
 
 USB_DOCS = ['api-reference/peripherals/usb.rst']
 
+ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
+
+XTENSA_DOCS = ['api-guides/hlinterrupts.rst']
+
+RISCV_DOCS = ['api-guides/hlinterrupts.rst']
+
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
               'api-guides/RF_calibration.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
+              'api-reference/peripherals/dac.rst',
               'hw-reference/esp32/**'] + LEGACY_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
@@ -173,7 +187,10 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/usb.rst']
+                'api-reference/peripherals/usb.rst',
+                'api-reference/peripherals/dac.rst']
+
+ESP32C3_DOCS = []
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
@@ -182,8 +199,16 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
                             'SOC_USB_SUPPORTED':USB_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
+                            'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,
+                            'SOC_PCNT_SUPPORTED':PCNT_DOCS,
+                            'SOC_DAC_PERIPH_NUM':DAC_DOCS,
+                            'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
+                            'SOC_ULP_SUPPORTED':ULP_DOCS,
+                            'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
+                            'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'esp32':ESP32_DOCS,
-                            'esp32s2':ESP32S2_DOCS}
+                            'esp32s2':ESP32S2_DOCS,
+                            'esp32c3':ESP32C3_DOCS}
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

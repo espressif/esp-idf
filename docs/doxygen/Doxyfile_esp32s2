@@ -1,0 +1,7 @@
+INPUT += \
+         $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
+         $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
+         $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
+         $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
+         $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
+         $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h

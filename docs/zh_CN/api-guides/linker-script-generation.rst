@@ -5,7 +5,7 @@
 概述
 ----
 
-用于存放代码和数据的 :ref:` 内存区域 <memory-layout>`有多个。代码和只读数据默认存放在 flash 中，可写数据存放在 RAM 中。不过有时，我们必须更改默认存放区域，例如为了提高性能，将关键代码存放到 RAM 中，或者将代码存放到 RTC 存储器中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 :doc:`ULP 协处理器 <ulp>` 中使用。
+用于存放代码和数据的 :ref:` 内存区域 <memory-layout>`有多个。代码和只读数据默认存放在 flash 中，可写数据存放在 RAM 中。不过有时，我们必须更改默认存放区域，例如为了提高性能，将关键代码存放到 RAM 中，或者将代码存放到 RTC 存储器中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 ULP 协处理器中使用。
 
 链接脚本生成机制可以让用户指定代码和数据在 ESP-IDF 组件中的存放区域。组件包含如何存放符号、目标或完整库的信息。在构建应用程序时，组件中的这些信息会被收集、解析并处理；生成的存放规则用于链接应用程序。
 
@@ -30,7 +30,7 @@
 - 名为 ``my_component`` 的组件，在构建过程中存储为 ``libmy_component.a`` 库文件
 - 库文件包含的三个源文件：``my_src1.c``、``my_src2.c`` 和 ``my_src3.c``，编译后分别为 ``my_src1.o``、``my_src2.o`` 和 ``my_src3.o``,
 - 在 ``my_src1.o`` 定义的 ``my_function1`` 功能；在 ``my_src2.o`` 定义的 ``my_function2`` 功能
-- 存储在 ``my_component`` 下 Kconfig 中的布尔类型配置 ``PERFORMANCE_MODE`` (y/n) 和整数类型配置 ``PERFORMANCE_LEVEL`` （范围是 0-3）                                    
+- 存储在 ``my_component`` 下 Kconfig 中的布尔类型配置 ``PERFORMANCE_MODE`` (y/n) 和整数类型配置 ``PERFORMANCE_LEVEL`` （范围是 0-3）
 
 创建和指定链接片段文件
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -229,7 +229,7 @@ CMake
         ...
 
 - 类型：片段类型，可以为 ``段``、``协议`` 或 ``映射``。
-- 名称：片段名称，指定片段类型的片段名称应唯一。 
+- 名称：片段名称，指定片段类型的片段名称应唯一。
 - 键值：片段内容。每个片段类型可支持不同的键值和不同的键值语法。
 
 .. note::
@@ -538,4 +538,4 @@ ESP-IDF v4.0 变更了链接脚本片段文件使用的一些语法：
     这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
     目前使用的链接脚本模板是 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，由 ``{IDF_TARGET_PATH_NAME}`` 组件指定，生成的脚本存放在构建目录下。
-    
+
