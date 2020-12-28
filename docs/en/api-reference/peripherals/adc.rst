@@ -76,7 +76,7 @@ Reading voltage on ADC1 channel 0 ({IDF_TARGET_ADC1_CH0})::
         int val = adc1_get_raw(ADC1_CHANNEL_0);
 
 The input voltage in the above example is from 0 to 1.1 V (0 dB attenuation). The input range can be extended by setting a higher attenuation, see :cpp:type:`adc_atten_t`.
-An example of using the ADC driver including calibration (discussed below) is available at esp-idf: :example:`peripherals/adc`
+An example of using the ADC driver including calibration (discussed below) is available at esp-idf: :example:`peripherals/adc/adc`
 
 Reading voltage on ADC2 channel 7 ({IDF_TARGET_ADC2_CH7})::
 
@@ -95,7 +95,7 @@ Reading voltage on ADC2 channel 7 ({IDF_TARGET_ADC2_CH7})::
         }
 
 The reading may fail due to collision with Wi-Fi, should check it.
-An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc2`
+An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc/adc2`
 
 .. only:: esp32
 
