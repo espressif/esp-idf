@@ -401,7 +401,7 @@ class SerialReader(StoppableThread):
                 except (serial.serialutil.SerialException, IOError) as e:
                     data = b''
                     # self.serial.open() was successful before, therefore, this is an issue related to
-                    # the disapperence of the device
+                    # the disappearance of the device
                     red_print(e)
                     yellow_print('Waiting for the device to reconnect', newline='')
                     self.serial.close()
@@ -502,11 +502,13 @@ class Monitor(object):
                  decode_coredumps=COREDUMP_DECODE_INFO,
                  decode_panic=PANIC_DECODE_DISABLE,
                  target=None,
-                 websocket_client=None):
+                 websocket_client=None,
+                 enable_address_decoding=True):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
         self.console = miniterm.Console()
+        self.enable_address_decoding = enable_address_decoding
         if os.name == 'nt':
             sys.stderr = ANSIColorConverter(sys.stderr, decode_output=True)
             self.console.output = ANSIColorConverter(self.console.output)
@@ -586,7 +588,7 @@ class Monitor(object):
                         self._invoke_processing_last_line_timer.cancel()
                     self._invoke_processing_last_line_timer = threading.Timer(0.1, self.invoke_processing_last_line)
                     self._invoke_processing_last_line_timer.start()
-                    # If no futher data is received in the next short period
+                    # If no further data is received in the next short period
                     # of time then the _invoke_processing_last_line_timer
                     # generates an event which will result in the finishing of
                     # the last line. This is fix for handling lines sent
@@ -656,8 +658,9 @@ class Monitor(object):
     def handle_possible_pc_address_in_line(self, line):
         line = self._pc_address_buffer + line
         self._pc_address_buffer = b""
-        for m in re.finditer(MATCH_PCADDR, line.decode(errors="ignore")):
-            self.lookup_pc_address(m.group())
+        if self.enable_address_decoding:
+            for m in re.finditer(MATCH_PCADDR, line.decode(errors="ignore")):
+                self.lookup_pc_address(m.group())
 
     def __enter__(self):
         """ Use 'with self' to temporarily disable monitoring behaviour """
@@ -1000,6 +1003,13 @@ def main():
     )
 
     parser.add_argument(
+        '--disable-address-decoding', '-d',
+        help="Don't print lines about decoded addresses from the application ELF file.",
+        action="store_true",
+        default=True if os.environ.get("ESP_MONITOR_DECODE") == 0 else False
+    )
+
+    parser.add_argument(
         '--baud', '-b',
         help='Serial port baud rate',
         type=int,
@@ -1105,7 +1115,7 @@ def main():
         monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
                           args.toolchain_prefix, args.eol,
                           args.decode_coredumps, args.decode_panic, args.target,
-                          ws)
+                          ws, enable_address_decoding=not args.disable_address_decoding)
 
         yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
             p=serial_instance))

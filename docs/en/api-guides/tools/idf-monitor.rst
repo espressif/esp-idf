@@ -95,6 +95,11 @@ To decode each address, IDF Monitor runs the following command in the background
 
   xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
+.. note::
+
+    Set environment variable ``ESP_MONITOR_DECODE`` to ``0``
+    or call idf_monitor.py with specific command line option: ``idf_monitor.py --disable-address-decoding``
+    to disable address decoding.
 
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
