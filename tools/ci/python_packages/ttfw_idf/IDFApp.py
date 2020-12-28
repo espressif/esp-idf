@@ -30,7 +30,7 @@ except ImportError:
 
 def parse_encrypted_flag(args, offs, binary):
     # Find partition entries (e.g. the entries with an offset and a file)
-    for _, entry in args:
+    for _, entry in args.items():
         # If the current entry is a partition, we have to check whether it is
         # the one we are looking for or not
         try:
@@ -279,7 +279,7 @@ class IDFApp(App.BaseApp):
 
         (Called from constructor)
 
-        Returns (flash_files, flash_settings)
+        Returns (flash_files, encrypt_files, flash_settings)
         """
 
         if self.IDF_FLASH_ARGS_FILE in os.listdir(self.binary_path):
@@ -302,7 +302,7 @@ class IDFApp(App.BaseApp):
         # All files must be encrypted is both file lists are the same
         flash_settings["encrypt"] = sorted(flash_files) == sorted(encrypt_files)
 
-        return self._int_offs_abs_paths(flash_files), self._int_offs_abs_paths(encrypt_files), self.flash_settings
+        return self._int_offs_abs_paths(flash_files), self._int_offs_abs_paths(encrypt_files), flash_settings
 
     def _parse_partition_table(self):
         """
