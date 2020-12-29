@@ -81,7 +81,7 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { SOC_RTC_DRAM_LOW, 0x2000, 16, 0}, //RTC Fast Memory
 #endif
 #ifdef CONFIG_SPIRAM
@@ -190,7 +190,7 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
 
 // RTC Fast RAM region
-#ifdef CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #ifdef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_data);
 #else

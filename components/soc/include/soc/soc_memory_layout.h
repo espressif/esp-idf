@@ -177,7 +177,7 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
     intptr_t ip = (intptr_t) p;
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
-#if CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
      * for single core configuration (where it gets added to system heap) following
      * additional check is required */
@@ -197,7 +197,7 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
     bool r;
     r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
     r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
-#if CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
      * for single core configuration (where it gets added to system heap) following
      * additional check is required */
