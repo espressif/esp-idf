@@ -561,16 +561,6 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t 
         return NULL;
     }
 
-    //aligned alloc for now only supports default allocator or external
-    //allocator.
-    if((caps & (MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM)) == 0) {
-        heap_caps_alloc_failed(size, caps, __func__);
-        return NULL;
-    }
-
-    //if caps requested are supported, clear undesired others:
-    caps &= (MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM);
-
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
         heap_t *heap;
