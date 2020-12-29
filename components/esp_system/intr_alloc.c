@@ -551,7 +551,14 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             interrupt_controller_hal_set_int_handler(intr, handler, arg);
 #endif
         }
+#ifdef __XTENSA__ // TODO ESP32-C3 IDF-2126
         if (flags&ESP_INTR_FLAG_EDGE) xthal_set_intclear(1 << intr);
+#else
+        if (flags & ESP_INTR_FLAG_EDGE) {
+            ESP_INTR_DISABLE(intr);
+            esprv_intc_int_set_priority(intr, 0);
+        }
+#endif
         vd->source=source;
     }
     if (flags&ESP_INTR_FLAG_IRAM) {

@@ -181,15 +181,18 @@ static void task_wdt_isr(void *arg)
         esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
     } else {
+
+#if !CONFIG_IDF_TARGET_ESP32C3 // TODO ESP32-C3 add backtrace printing support IDF-2285
         int current_core = xPortGetCoreID();
         //Print backtrace of current core
         ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
         esp_backtrace_print(100);
-    #if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_FREERTOS_UNICORE
         //Print backtrace of other core
         ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", !current_core);
         esp_crosscore_int_send_print_backtrace(!current_core);
-    #endif
+#endif
+#endif
     }
 
     portEXIT_CRITICAL_ISR(&twdt_spinlock);

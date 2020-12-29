@@ -44,6 +44,7 @@
 #include "bootloader_mem.h"
 #include "regi2c_ctrl.h"
 #include "bootloader_console.h"
+#include "bootloader_flash_priv.h"
 
 static const char *TAG = "boot.esp32c3";
 
@@ -226,7 +227,7 @@ static void wdt_reset_cpu0_info_enable(void)
 static void wdt_reset_info_dump(int cpu)
 {
     // TODO ESP32-C3 IDF-2118
-    ESP_LOGE(TAG, "WDT reset info dump is not supported yet", cpu_name);
+    ESP_LOGE(TAG, "WDT reset info dump is not supported yet");
 }
 
 static void bootloader_check_wdt_reset(void)
