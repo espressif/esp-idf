@@ -84,11 +84,17 @@ inline static size_t block_length(esp_sha_type type)
     case SHA2_224:
     case SHA2_256:
         return 64;
+#if SOC_SHA_SUPPORT_SHA384
     case SHA2_384:
+#endif
+#if SOC_SHA_SUPPORT_SHA512
     case SHA2_512:
+#endif
+#if SOC_SHA_SUPPORT_SHA512_T
     case SHA2_512224:
     case SHA2_512256:
     case SHA2_512T:
+#endif
         return 128;
     default:
         return 0;
