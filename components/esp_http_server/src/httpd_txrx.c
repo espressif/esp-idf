@@ -574,8 +574,7 @@ void httpd_req_clear_session(httpd_req_t *r) {
     }
 
     struct httpd_req_aux *ra = r->aux;
-    sprintf(ra->sd->session_cookie, "%s=0 (; Max-Age=0)", SESSION_ID);
-    ESP_LOGI(TAG, LOG_FMT("Wrote new session cookie='%s'"), ra->sd->session_cookie);
+    sprintf(ra->sd->session_cookie, "%s=0; Max-Age=0", SESSION_ID);
 }
 
 uint32_t httpd_req_to_session_id(httpd_req_t *r)
@@ -590,6 +589,7 @@ uint32_t httpd_req_to_session_id(httpd_req_t *r)
     }
 
     struct httpd_req_aux *ra = r->aux;
+    ESP_LOGI(TAG, LOG_FMT("Received request on socket=%d"), ra->sd->fd);
 
     // Read session cookie.
     const int cookie_length = httpd_req_get_hdr_value_len(r, HTTP_HDR_COOKIE);
@@ -626,13 +626,13 @@ uint32_t httpd_req_to_session_id(httpd_req_t *r)
     // Use an incrementing unsigned int so that it wraps if we ever reach 2^32 sessions
     static uint32_t next_session_id = 0;
 
-    next_session_id++;
-    sprintf(ra->sd->session_cookie, "%s=%u", SESSION_ID, next_session_id);
+    ra->sd->session_id = next_session_id++;
+    sprintf(ra->sd->session_cookie, "%s=%u", SESSION_ID, ra->sd->session_id);
 
     ESP_LOGI(TAG, LOG_FMT("Wrote new session cookie='%s'"), ra->sd->session_cookie);
     httpd_resp_set_hdr(r, HTTP_HDR_SET_COOKIE, ra->sd->session_cookie);
 
-    return next_session_id;
+    return ra->sd->session_id;
 }
 
 static int httpd_sock_err(const char *ctx, int sockfd)

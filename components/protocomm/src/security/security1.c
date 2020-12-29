@@ -435,6 +435,7 @@ static esp_err_t sec1_close_session(protocomm_security_handle_t handle, uint32_t
         mbedtls_aes_free(&cur_session->ctx_aes);
     }
 
+    ESP_LOGD(TAG, "sec1 closed handle=%llu session_id=%u cur_session_id=%u", (uint64_t) handle, session_id, cur_session->id);
     memset(cur_session, 0, sizeof(session_t));
     cur_session->id = -1;
     return ESP_OK;

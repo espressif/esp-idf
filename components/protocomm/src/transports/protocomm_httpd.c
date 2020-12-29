@@ -33,6 +33,7 @@ static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
 
 static void protocomm_httpd_session_close(void *ctx)
 {
+    ESP_LOGI(TAG, "httpd session_close sec=%d", (int) pc_httpd->sec);
     if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
         ESP_LOGW(TAG, "Closing session %d as socket was closed", session_id);
         if (pc_httpd->sec->close_transport_session((protocomm_security_handle_t)ctx, session_id) != ESP_OK) {
@@ -54,7 +55,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     //       Or when one of the requests to provision fails (because you will need to start again, I think)
     //       Clear session using httpd_req_clear_session(req) BEFORE the response is sent.
     int cur_session_id = httpd_req_to_session_id(req);
-    ESP_LOGD(TAG, "common_post_handler uri=%s session_id=%d req_session_id=%d", req->uri, session_id, cur_session_id);
+    ESP_LOGI(TAG, "common_post_handler uri=%s session_id=%d req_session_id=%d", req->uri, session_id, cur_session_id);
 
     if (cur_session_id != session_id) {
         ESP_LOGD(TAG, "Creating new session: %d", cur_session_id);
@@ -248,7 +249,13 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
         server_config.stack_size       = config->data.config.stack_size;
         server_config.task_priority    = config->data.config.task_priority;
         server_config.lru_purge_enable = true;
-        server_config.max_open_sockets = 1;
+
+        // 7 because that is the largest value we can have without increasing LWIP_MAX_SOCKETS.
+        // NB It needs to be 10 because there are 10 calls in the wifi provisioning,
+        // so configuring as 7 doesn't 100% solve the problem, it just makes it extremely unlikely.
+        // While sockets are being treated as sessions we need at least 10 sockets to remain open to hold the session security ctx,
+        // Or we need to update the LRU time each time the socket holding the security ctx is accessed.
+        server_config.max_open_sockets = 7;
 
         esp_err_t err;
         if ((err = httpd_start((httpd_handle_t *)pc->priv, &server_config)) != ESP_OK) {

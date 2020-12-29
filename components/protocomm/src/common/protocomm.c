@@ -216,7 +216,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
             ssize_t dec_inbuf_len = inlen;
             ret = pc->sec->decrypt(pc->sec_inst, session_id, inbuf, inlen, dec_inbuf, &dec_inbuf_len);
             if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Decryption of response failed for endpoint %s", ep_name);
+                ESP_LOGE(TAG, "Decryption of response failed for endpoint %s error=%d", ep_name, ret);
                 free(dec_inbuf);
                 return ret;
             }

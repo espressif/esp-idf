@@ -214,6 +214,7 @@ static esp_err_t httpd_server(struct httpd_data *hd)
      * sessions? */
     int fd = -1;
     while ((fd = httpd_sess_iterate(hd, fd)) != -1) {
+        ESP_LOGD(TAG, LOG_FMT("iterating over socket %d"), fd);
         if (FD_ISSET(fd, &read_set) || (httpd_sess_pending(hd, fd))) {
             ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
             if (httpd_sess_process(hd, fd) != ESP_OK) {
