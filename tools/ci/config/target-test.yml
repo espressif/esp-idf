@@ -161,9 +161,6 @@ test_weekend_network:
 example_test_001A:
   extends: .example_test_template
   parallel: 4
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
   tags:
     - ESP32
     - Example_WIFI
