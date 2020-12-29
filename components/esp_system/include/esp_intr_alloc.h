@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_INTR_ALLOC_H__
-#define __ESP_INTR_ALLOC_H__
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -37,24 +36,24 @@ extern "C" {
  */
 
 //Keep the LEVELx values as they are here; they match up with (1<<level)
-#define ESP_INTR_FLAG_LEVEL1		(1<<1)	///< Accept a Level 1 interrupt vector (lowest priority)
-#define ESP_INTR_FLAG_LEVEL2		(1<<2)	///< Accept a Level 2 interrupt vector
-#define ESP_INTR_FLAG_LEVEL3		(1<<3)	///< Accept a Level 3 interrupt vector
-#define ESP_INTR_FLAG_LEVEL4		(1<<4)	///< Accept a Level 4 interrupt vector
-#define ESP_INTR_FLAG_LEVEL5		(1<<5)	///< Accept a Level 5 interrupt vector
-#define ESP_INTR_FLAG_LEVEL6		(1<<6)	///< Accept a Level 6 interrupt vector
-#define ESP_INTR_FLAG_NMI			(1<<7)	///< Accept a Level 7 interrupt vector (highest priority)
-#define ESP_INTR_FLAG_SHARED		(1<<8)	///< Interrupt can be shared between ISRs
-#define ESP_INTR_FLAG_EDGE			(1<<9)	///< Edge-triggered interrupt
-#define ESP_INTR_FLAG_IRAM			(1<<10)	///< ISR can be called if cache is disabled
-#define ESP_INTR_FLAG_INTRDISABLED	(1<<11)	///< Return with this interrupt disabled
+#define ESP_INTR_FLAG_LEVEL1        (1<<1)  ///< Accept a Level 1 interrupt vector (lowest priority)
+#define ESP_INTR_FLAG_LEVEL2        (1<<2)  ///< Accept a Level 2 interrupt vector
+#define ESP_INTR_FLAG_LEVEL3        (1<<3)  ///< Accept a Level 3 interrupt vector
+#define ESP_INTR_FLAG_LEVEL4        (1<<4)  ///< Accept a Level 4 interrupt vector
+#define ESP_INTR_FLAG_LEVEL5        (1<<5)  ///< Accept a Level 5 interrupt vector
+#define ESP_INTR_FLAG_LEVEL6        (1<<6)  ///< Accept a Level 6 interrupt vector
+#define ESP_INTR_FLAG_NMI           (1<<7)  ///< Accept a Level 7 interrupt vector (highest priority)
+#define ESP_INTR_FLAG_SHARED        (1<<8)  ///< Interrupt can be shared between ISRs
+#define ESP_INTR_FLAG_EDGE          (1<<9)  ///< Edge-triggered interrupt
+#define ESP_INTR_FLAG_IRAM          (1<<10) ///< ISR can be called if cache is disabled
+#define ESP_INTR_FLAG_INTRDISABLED  (1<<11) ///< Return with this interrupt disabled
 
-#define ESP_INTR_FLAG_LOWMED	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
-#define ESP_INTR_FLAG_HIGH		(ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.
+#define ESP_INTR_FLAG_LOWMED    (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
+#define ESP_INTR_FLAG_HIGH      (ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.
 
-#define ESP_INTR_FLAG_LEVELMASK	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
-								 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
-								 ESP_INTR_FLAG_NMI) ///< Mask for all level flags
+#define ESP_INTR_FLAG_LEVELMASK (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
+                                 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
+                                 ESP_INTR_FLAG_NMI) ///< Mask for all level flags
 
 
 /** @addtogroup Intr_Alloc_Pseudo_Src
@@ -67,18 +66,18 @@ extern "C" {
  * sources that do not pass through the interrupt mux. To allocate an interrupt for these sources,
  * pass these pseudo-sources to the functions.
  */
-#define ETS_INTERNAL_TIMER0_INTR_SOURCE		-1 ///< Platform timer 0 interrupt source
-#define ETS_INTERNAL_TIMER1_INTR_SOURCE		-2 ///< Platform timer 1 interrupt source
-#define ETS_INTERNAL_TIMER2_INTR_SOURCE		-3 ///< Platform timer 2 interrupt source
-#define ETS_INTERNAL_SW0_INTR_SOURCE		-4 ///< Software int source 1
-#define ETS_INTERNAL_SW1_INTR_SOURCE		-5 ///< Software int source 2
-#define ETS_INTERNAL_PROFILING_INTR_SOURCE	-6 ///< Int source for profiling
+#define ETS_INTERNAL_TIMER0_INTR_SOURCE     -1 ///< Platform timer 0 interrupt source
+#define ETS_INTERNAL_TIMER1_INTR_SOURCE     -2 ///< Platform timer 1 interrupt source
+#define ETS_INTERNAL_TIMER2_INTR_SOURCE     -3 ///< Platform timer 2 interrupt source
+#define ETS_INTERNAL_SW0_INTR_SOURCE        -4 ///< Software int source 1
+#define ETS_INTERNAL_SW1_INTR_SOURCE        -5 ///< Software int source 2
+#define ETS_INTERNAL_PROFILING_INTR_SOURCE  -6 ///< Int source for profiling
 
 /**@}*/
 
 /** Provides SystemView with positive IRQ IDs, otherwise scheduler events are not shown properly
  */
-#define ETS_INTERNAL_INTR_SOURCE_OFF		(-ETS_INTERNAL_PROFILING_INTR_SOURCE)
+#define ETS_INTERNAL_INTR_SOURCE_OFF        (-ETS_INTERNAL_PROFILING_INTR_SOURCE)
 
 /** Enable interrupt by interrupt number */
 #define ESP_INTR_ENABLE(inum)  esp_intr_enable_source(inum)
@@ -93,7 +92,7 @@ typedef void (*intr_handler_t)(void *arg);
 typedef struct intr_handle_data_t intr_handle_data_t;
 
 /** Handle to an interrupt handler */
-typedef intr_handle_data_t* intr_handle_t ;
+typedef intr_handle_data_t *intr_handle_t ;
 
 /**
  * @brief Mark an interrupt as a shared interrupt
@@ -306,11 +305,18 @@ void esp_intr_enable_source(int inum);
  */
 void esp_intr_disable_source(int inum);
 
+/**
+ * @brief Get the lowest interrupt level from the flags
+ * @param flags The same flags that pass to `esp_intr_alloc_intrstatus` API
+ */
+static inline int esp_intr_flags_to_level(int flags)
+{
+    return __builtin_ffs((flags & ESP_INTR_FLAG_LEVELMASK) >> 1) + 1;
+}
+
 /**@}*/
 
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

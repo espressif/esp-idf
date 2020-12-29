@@ -215,7 +215,7 @@ _interrupt_handler:
 	/* entry */
 	save_regs
 	save_mepc
-	
+
 	/* Before doing anythig preserve the stack pointer */
 	/* It will be saved in current TCB, if needed */
 	mv a0, sp

@@ -68,7 +68,7 @@ static inline bool intr_cntrl_ll_has_handler(uint8_t intr, uint8_t cpu)
  * @param handler handler invoked when an interrupt occurs
  * @param arg optional argument to pass to the handler
  */
-static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler_t handler, void * arg)
+static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler_t handler, void *arg)
 {
     intr_handler_set(intr, (void *)handler, arg);
 }
@@ -80,7 +80,7 @@ static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler
  *
  * @return argument used by handler of passed interrupt number
  */
-static inline void * intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
+static inline void *intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
 {
     return intr_handler_get_arg(intr);
 }
@@ -120,9 +120,9 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
  *
  * @param intr interrupt number ranged from 0 to 31
  */
-static inline void intr_cntrl_ll_edge_int_acknowledge (int intr)
+static inline void intr_cntrl_ll_edge_int_acknowledge(int intr)
 {
-     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr);
+    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr);
 }
 
 /**

@@ -36,7 +36,7 @@ rtos_int_enter:
     mv t2, a0
 
     /* scheduler not enabled, jump directly to ISR handler */
-    lw t0, uxSchedulerRunning 
+    lw t0, uxSchedulerRunning
     beq t0,zero, rtos_enter_end
 
     /* increments the ISR nesting count */
@@ -44,7 +44,7 @@ rtos_int_enter:
 	lw t4, 0x0(t3)
 	addi t5,t4,1
 	sw  t5, 0x0(t3)
-    
+
     /* If reached here from another low-prio ISR, skip stack pushing to TCB */
 	bne t4,zero, rtos_enter_end
 
@@ -66,8 +66,8 @@ rtos_enter_end:
     .type rtos_int_exit, @function
 rtos_int_exit:
     /* may skip RTOS aware interrupt since scheduler was not started */
-    lw t0, uxSchedulerRunning 
-    beq t0,zero, rtos_exit_end 
+    lw t0, uxSchedulerRunning
+    beq t0,zero, rtos_exit_end
 
     /* update nesting interrupts counter */
     la t2, uxInterruptNesting
@@ -81,7 +81,7 @@ rtos_int_exit:
 isr_skip_decrement:
 
     /* may still have interrupts pending, skip section below and exit */
-    bne t3,zero,rtos_exit_end 
+    bne t3,zero,rtos_exit_end
 
     /* Schedule the next task if a yield is pending */
     la t0, xPortSwitchFlag

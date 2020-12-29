@@ -23,7 +23,7 @@ esp_shared_stack_invoke_function:
 
     /* Set shared stack as new stack pointer */
     mv sp, a1
-    
+
     /* store the ra and previous stack pointer in a safe place */
     addi sp,sp,-4
     sw  t0, 0(sp)
@@ -33,11 +33,11 @@ esp_shared_stack_invoke_function:
     jalr a0, 0
 
     /* gets the ra and stack pointer saved previously */
-    lw  t0, 0(sp)    
+    lw  t0, 0(sp)
     lw  t1, 4(sp)
     addi sp, sp, 4
-    
+
     /* restore both ra and real stack pointer of current task */
-    mv ra, t1    
+    mv ra, t1
     mv sp, t0
     ret

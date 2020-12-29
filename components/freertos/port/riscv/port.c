@@ -102,7 +102,7 @@
  *       to ensure interrupts don't inadvertently become unmasked before the scheduler starts.
  *       As it is stored as part of the task context it will automatically be set to 0 when the first task is started.
  */
-static UBaseType_t uxCriticalNesting = 0;          
+static UBaseType_t uxCriticalNesting = 0;
 static UBaseType_t uxSavedInterruptState = 0;
 BaseType_t uxSchedulerRunning = 0;
 UBaseType_t uxInterruptNesting = 0;
@@ -124,7 +124,6 @@ void vPortEnterCritical(void)
     uxCriticalNesting++;
 
     if (uxCriticalNesting == 1) {
-        //portDISABLE_INTERRUPTS();
         uxSavedInterruptState = state;
     }
 }
@@ -135,7 +134,6 @@ void vPortExitCritical(void)
         uxCriticalNesting--;
         if (uxCriticalNesting == 0) {
             portEXIT_CRITICAL_NESTED(uxSavedInterruptState);
-            //portENABLE_INTERRUPTS();
         }
     }
 }
@@ -169,8 +167,7 @@ void prvTaskExitError(void)
     defined, then stop here so application writers can catch the error. */
     configASSERT(uxCriticalNesting == ~0UL);
     portDISABLE_INTERRUPTS();
-    for (;;)
-        ;
+    abort();
 }
 
 /* Clear current interrupt mask and set given mask */
@@ -227,16 +224,16 @@ IRAM_ATTR void vPortSysTickHandler(void *arg)
 }
 
 BaseType_t xPortStartScheduler(void)
-{    
+{
     uxInterruptNesting = 0;
     uxCriticalNesting = 0;
-    uxSchedulerRunning = 0; 
+    uxSchedulerRunning = 0;
 
     vPortSetupTimer();
 
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
     riscv_global_interrupts_enable();
-    
+
     vPortYield();
 
     /*Should not get here*/
@@ -251,7 +248,7 @@ void vPortEndScheduler(void)
 
 void vPortYieldOtherCore(BaseType_t coreid)
 {
-    esp_crosscore_int_send_yield(coreid);        
+    esp_crosscore_int_send_yield(coreid);
 }
 
 void vPortYieldFromISR( void )
@@ -266,7 +263,7 @@ void vPortYield(void)
         vPortYieldFromISR();
     } else {
 
-        esp_crosscore_int_send_yield(0);        
+        esp_crosscore_int_send_yield(0);
         /* There are 3-4 instructions of latency between triggering the software
            interrupt and the CPU interrupt happening. Make sure it happened before
            we return, otherwise vTaskDelay() may return and execute 1-2
@@ -277,7 +274,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while(uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) { }
+        while (uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
     }
 
 }
@@ -295,7 +292,7 @@ BaseType_t xPortInIsrContext(void)
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
     /* For single core, this can be the same as xPortInIsrContext() because reading it is atomic */
-	return uxInterruptNesting;
+    return uxInterruptNesting;
 }
 
 
