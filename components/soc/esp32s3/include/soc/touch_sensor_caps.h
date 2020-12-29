@@ -26,6 +26,7 @@ extern "C" {
 #define SOC_TOUCH_SHIELD_CHANNEL            (14)
 #define SOC_TOUCH_DENOISE_CHANNEL           (0)
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)
+#define SOC_TOUCH_PAD_WAKE_SUPPORTED        (1)     /*!<Supports waking up from touch pad trigger */
 
 #ifdef __cplusplus
 }

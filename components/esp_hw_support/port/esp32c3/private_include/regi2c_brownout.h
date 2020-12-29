@@ -23,7 +23,7 @@
  */
 
 #define I2C_BOD            0x61
-#define I2C_BOD_HOSTID     1
+#define I2C_BOD_HOSTID     0
 
 #define I2C_BOD_THRESHOLD           0x5
 #define I2C_BOD_THRESHOLD_MSB       2

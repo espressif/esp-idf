@@ -893,6 +893,7 @@ static uint32_t get_power_down_flags(void)
     // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
     // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
+#if SOC_TOUCH_PAD_WAKE_SUPPORTED
         uint32_t wakeup_source = RTC_TOUCH_TRIG_EN;
 #if SOC_ULP_SUPPORTED
         wakeup_source |= RTC_ULP_TRIG_EN;
@@ -904,6 +905,13 @@ static uint32_t get_power_down_flags(void)
             // prevents ULP timer and touch FSMs from working correctly.
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
+#else
+        if (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN) {
+            s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
+        } else {
+            s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
+        }
+#endif // SOC_TOUCH_PAD_WAKE_SUPPORTED
     }
 
     if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] == ESP_PD_OPTION_AUTO) {

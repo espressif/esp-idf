@@ -24,7 +24,7 @@
  */
 
 #define I2C_SAR_ADC            0X69
-#define I2C_SAR_ADC_HOSTID     1
+#define I2C_SAR_ADC_HOSTID     0
 
 #define ADC_SAR1_ENCAL_GND_ADDR 0x7
 #define ADC_SAR1_ENCAL_GND_ADDR_MSB 5

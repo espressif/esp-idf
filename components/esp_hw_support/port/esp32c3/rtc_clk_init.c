@@ -24,13 +24,13 @@
 #include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
 #include "rtc_clk_common.h"
 #include "esp_rom_uart.h"
 
-static const char* TAG = "rtc_clk_init";
+static const char *TAG = "rtc_clk_init";
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
