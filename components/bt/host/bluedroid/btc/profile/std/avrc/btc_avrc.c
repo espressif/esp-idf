@@ -455,7 +455,6 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         btc_rc_cb.rc_handle = p_rc_open->rc_handle;
 
         bdcpy(rc_addr.address, btc_rc_cb.rc_addr);
-
         // callback to application
         if (p_rc_open->peer_features & BTA_AV_FEAT_RCTG) {
             esp_avrc_ct_cb_param_t param;
@@ -695,7 +694,6 @@ static void handle_rc_metamsg_cmd (tBTA_AV_META_MSG *p_meta_msg)
     } else {
         btc_rc_upstreams_evt(avrc_command.cmd.pdu, &avrc_command, p_meta_msg->code, p_meta_msg->label);
     }
-
     osi_free(buf);
 }
 
@@ -732,6 +730,14 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
         btc_avrc_tg_cb_to_app(ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT, &param);
     }
     break;
+    case AVRC_PDU_SET_PLAYER_APP_VALUE: {
+        // set up callback
+        esp_avrc_tg_cb_param_t param;
+        param.set_app_value.num_val = pavrc_cmd->set_app_val.num_val;
+        param.set_app_value.p_vals = (esp_avrc_set_app_value_param_t *)pavrc_cmd->set_app_val.p_vals;
+        btc_avrc_tg_cb_to_app(ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT, &param);
+    }
+    break;
     case AVRC_PDU_GET_PLAY_STATUS:
     case AVRC_PDU_GET_ELEMENT_ATTR:
     case AVRC_PDU_INFORM_DISPLAY_CHARSET:
@@ -739,7 +745,6 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
     case AVRC_PDU_LIST_PLAYER_APP_ATTR:
     case AVRC_PDU_LIST_PLAYER_APP_VALUES:
     case AVRC_PDU_GET_CUR_PLAYER_APP_VALUE:
-    case AVRC_PDU_SET_PLAYER_APP_VALUE:
     case AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT:
     case AVRC_PDU_GET_PLAYER_APP_VALUE_TEXT: {
         send_reject_response (btc_rc_cb.rc_handle, label, pavrc_cmd->pdu, AVRC_STS_BAD_CMD);
