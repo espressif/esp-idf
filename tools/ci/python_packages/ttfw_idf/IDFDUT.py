@@ -279,6 +279,7 @@ class IDFDUT(DUT.SerialDUT):
                 'compress': True,
                 'verify': False,
                 'encrypt': encrypt,
+                'ignore_flash_encryption_efuse_setting': False,
                 'erase_all': False,
             })
 
