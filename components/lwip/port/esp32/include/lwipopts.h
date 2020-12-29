@@ -595,7 +595,7 @@
  * LWIP_TCPIP_CORE_LOCKING: (EXPERIMENTAL!)
  * Don't use it if you're not an active lwIP project member
  */
-#define LWIP_TCPIP_CORE_LOCKING         0
+#define LWIP_TCPIP_CORE_LOCKING         CONFIG_LWIP_TCPIP_CORE_LOCKING
 
 /*
    ------------------------------------
@@ -1044,7 +1044,11 @@
 #define CHECKSUM_CHECK_ICMP             CONFIG_LWIP_CHECKSUM_CHECK_ICMP
 
 #define LWIP_NETCONN_FULLDUPLEX         1
+#if LWIP_TCPIP_CORE_LOCKING
+#define LWIP_NETCONN_SEM_PER_THREAD     0
+#else
 #define LWIP_NETCONN_SEM_PER_THREAD     1
+#endif /* LWIP_TCPIP_CORE_LOCKING */
 
 #define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
 #define LWIP_TIMEVAL_PRIVATE            0
