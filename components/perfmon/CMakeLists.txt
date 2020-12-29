@@ -1,3 +1,8 @@
+idf_build_get_property(target IDF_TARGET)
+if(${target} STREQUAL "esp32c3")
+        return()
+endif()
+
 set(xtensa_perfmon_srcs "xtensa_perfmon_access.c"
                         "xtensa_perfmon_apis.c"
                         "xtensa_perfmon_masks.c")
