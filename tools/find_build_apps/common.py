@@ -295,6 +295,7 @@ class BuildSystem:
         'ESP32': 'esp32',
         'ESP32-S2': 'esp32s2',
         'ESP32-S3': 'esp32s3',
+        'ESP32-C3': 'esp32c3',
         'Linux': 'linux',
     }
 

@@ -1,0 +1,79 @@
+ESP-ROM:esp32c3-20200918
+Build:Sep 18 2020
+rst:0xc (RTC_SW_CPU_RST),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40381f24
+SPIWP:0xee
+mode:DOUT, clock div:2
+load:0x3fcd6100,len:0x14
+load:0x3fcd6114,len:0x11d8
+load:0x403d0000,len:0xd0c
+load:0x403d2000,len:0x1b84
+entry 0x403d0062
+␛[0;33mW (37) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (184) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (196) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.␛[0m
+Enter test name: Got test name: test_abort
+abort() was called at PC 0x42003863 on core 0
+Core  0 register dump:
+MEPC    : 0x403825fa  RA      : 0x40382a3e  SP      : 0x3fc8cd5c  GP      : 0x3fc887e0  
+TP      : 0xa5a5a5a5  T0      : 0x37363534  T1      : 0x7271706f  T2      : 0x33323130  
+S0/FP   : 0x00000004  S1      : 0x3fc8cdc0  A0      : 0x3fc8cd88  A1      : 0x3fc8cdbe  
+A2      : 0x00000000  A3      : 0x3fc8cdb5  A4      : 0x00000001  A5      : 0x3fc8a000  
+A6      : 0x7a797877  A7      : 0x76757473  S2      : 0xa5a5a5a5  S3      : 0xa5a5a5a5  
+S4      : 0xa5a5a5a5  S5      : 0xa5a5a5a5  S6      : 0xa5a5a5a5  S7      : 0xa5a5a5a5  
+S8      : 0xa5a5a5a5  S9      : 0xa5a5a5a5  S10     : 0xa5a5a5a5  S11     : 0xa5a5a5a5  
+T3      : 0x6e6d6c6b  T4      : 0x6a696867  T5      : 0x66656463  T6      : 0x62613938  
+MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000  
+MHARTID : 0x00000000  
+0x403825fa in ?? ()
+#0  0x403825fa in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+ELF file SHA256: 72e88c31482c8900
+Rebooting...
+x�jESP-ROM:esp32c3-20200918
+Build:Sep 18 2020
+rst:0xc (RTC_SW_CPU_RST),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40381f24
+SPIWP:0xee
+mode:DOUT, clock div:2
+load:0x3fcd6100,len:0x14
+load:0x3fcd6114,len:0x11d8
+load:0x403d0000,len:0xd0c
+load:0x403d2000,len:0x1b84
+entry 0x403d0062
+␛[0;33mW (37) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (184) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (196) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.␛[0m
+Enter test name: Got test name: test_illegal_instruction
+Guru Meditation Error: Core  0 panic'ed (Illegal instruction). Exception was unhandled.
+Core  0 register dump:
+MEPC    : 0x420037ce  RA      : 0x42003a18  SP      : 0x3fc8cdec  GP      : 0x3fc887e0  
+TP      : 0xa5a5a5a5  T0      : 0x7f7f7f7f  T1      : 0x7f7f7f7f  T2      : 0xffffffff  
+S0/FP   : 0x3fc89cc0  S1      : 0xa5a5a5a5  A0      : 0x00000000  A1      : 0x3c022b0c  
+A2      : 0x00000000  A3      : 0x00000000  A4      : 0x00000000  A5      : 0x7f7f7f7f  
+A6      : 0x420019ee  A7      : 0xa5a5a5a5  S2      : 0xa5a5a5a5  S3      : 0xa5a5a5a5  
+S4      : 0xa5a5a5a5  S5      : 0xa5a5a5a5  S6      : 0xa5a5a5a5  S7      : 0xa5a5a5a5  
+S8      : 0xa5a5a5a5  S9      : 0xa5a5a5a5  S10     : 0xa5a5a5a5  S11     : 0xa5a5a5a5  
+T3      : 0xa5a5a5a5  T4      : 0xa5a5a5a5  T5      : 0xa5a5a5a5  T6      : 0xa5a5a5a5  
+MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000002  MTVAL   : 0x00000000  
+MHARTID : 0x00000000  
+0x420037ce in ?? ()
+#0  0x420037ce in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+ELF file SHA256: 72e88c31482c8900
+Rebooting...
+x�jESP-ROM:esp32c3-20200918
+Build:Sep 18 2020
+rst:0xc (RTC_SW_CPU_RST),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40381f24
+SPIWP:0xee
+mode:DOUT, clock div:2
+load:0x3fcd6100,len:0x14
+load:0x3fcd6114,len:0x11d8
+load:0x403d0000,len:0xd0c
+load:0x403d2000,len:0x1b84
+entry 0x403d0062
+␛[0;33mW (37) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (184) bootloader_random: RNG for ESP32-C3 not currently supported␛[0m
+␛[0;33mW (196) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.␛[0m
+Enter test name: 

@@ -27,9 +27,6 @@ except ImportError:
     import idf_monitor
 
 
-ELF_FILE = 'dummy.elf'  # ELF file used for starting the monitor
-
-
 def monitor_serial_reader_state(serial_reader, file_to_create):
     """
     The purpose of this wrapper is to monitor the serial reader state of idf_monitor.py. file_to_create is created
@@ -47,10 +44,16 @@ def main():
     parser.add_argument('--port')
     parser.add_argument('--print_filter')
     parser.add_argument('--serial_alive_file')
+    parser.add_argument('--toolchain-prefix')
+    parser.add_argument('--decode-panic', default="disable")
+    parser.add_argument('--target', default=None)
+    parser.add_argument('--elf-file')
     args = parser.parse_args()
 
     serial_instance = serial.serial_for_url(args.port, 115200, do_not_open=True)
-    monitor = idf_monitor.Monitor(serial_instance, ELF_FILE, args.print_filter, 'make', toolchain_prefix='xtensa-esp32-elf-', eol='CR')
+    monitor = idf_monitor.Monitor(serial_instance, args.elf_file, args.print_filter, 'make',
+                                  toolchain_prefix=args.toolchain_prefix, eol='CR',
+                                  decode_panic=args.decode_panic, target=args.target)
     sys.stderr.write('Monitor instance has been created.\n')
     monitor_thread = threading.Thread(target=monitor_serial_reader_state,
                                       args=(monitor.serial_reader, args.serial_alive_file))

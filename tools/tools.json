@@ -51,7 +51,7 @@
           "win64": {
             "sha256": "58419852fefb7111fdec056ac2fd7c4bd09c1f4c17610a761a97b788413527cf",
             "size": 106855139,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win64.zip"
           }
         }
       ]
@@ -218,7 +218,7 @@
           }
         }
       ]
-    }
+    },
     {
       "description": "Toolchain for ESP32 ULP coprocessor",
       "export_paths": [

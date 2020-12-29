@@ -391,6 +391,7 @@ class SerialReader(StoppableThread):
             self.serial.baudrate = self.baud
             self.serial.rts = True  # Force an RTS reset on open
             self.serial.open()
+            time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
             self.serial.rts = False
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:

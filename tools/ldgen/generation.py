@@ -597,7 +597,8 @@ class SectionsInfo(dict):
 
     def _get_infos_from_file(self, info):
         # Object file line: '{object}:  file format elf32-xtensa-le'
-        object = Fragment.ENTITY.setResultsName("object") + Literal(":").suppress() + Literal("file format elf32-xtensa-le").suppress()
+        obj = Fragment.ENTITY.setResultsName("object") + Literal(":").suppress() + \
+            (Literal("file format elf32-") + (Literal("xtensa-le") | Literal("littleriscv"))).suppress()
 
         # Sections table
         header = Suppress(Literal("Sections:") + Literal("Idx") + Literal("Name") + Literal("Size") + Literal("VMA") +
@@ -607,7 +608,7 @@ class SectionsInfo(dict):
                                                                    Optional(Literal(","))))
 
         # Content is object file line + sections table
-        content = Group(object + header + Group(ZeroOrMore(entry)).setResultsName("sections"))
+        content = Group(obj + header + Group(ZeroOrMore(entry)).setResultsName("sections"))
 
         parser = Group(ZeroOrMore(content)).setResultsName("contents")
 

@@ -80,17 +80,20 @@ class ExampleGroup(IDFCaseGroup):
     SORT_KEYS = CI_JOB_MATCH_KEYS = ['env_tag', 'target']
 
     LOCAL_BUILD_DIR = 'build_examples'
-    BUILD_JOB_NAMES = ['build_examples_cmake_{}'.format(target) for target in SUPPORTED_TARGETS]
+    EXAMPLE_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
+    BUILD_JOB_NAMES = ['build_examples_cmake_{}'.format(target) for target in EXAMPLE_TARGETS]
 
 
 class TestAppsGroup(ExampleGroup):
     LOCAL_BUILD_DIR = 'build_test_apps'
-    BUILD_JOB_NAMES = ['build_test_apps_{}'.format(target) for target in SUPPORTED_TARGETS]
+    TEST_APP_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
+    BUILD_JOB_NAMES = ['build_test_apps_{}'.format(target) for target in TEST_APP_TARGETS]
 
 
 class ComponentUTGroup(TestAppsGroup):
     LOCAL_BUILD_DIR = 'build_component_ut'
-    BUILD_JOB_NAMES = ['build_component_ut_{}'.format(target) for target in SUPPORTED_TARGETS]
+    UNIT_TEST_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
+    BUILD_JOB_NAMES = ['build_component_ut_{}'.format(target) for target in UNIT_TEST_TARGETS]
 
 
 class UnitTestGroup(IDFCaseGroup):
@@ -98,7 +101,8 @@ class UnitTestGroup(IDFCaseGroup):
     CI_JOB_MATCH_KEYS = ['test environment']
 
     LOCAL_BUILD_DIR = 'tools/unit-test-app/builds'
-    BUILD_JOB_NAMES = ['build_esp_idf_tests_cmake_{}'.format(target) for target in SUPPORTED_TARGETS]
+    UNIT_TEST_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
+    BUILD_JOB_NAMES = ['build_esp_idf_tests_cmake_{}'.format(target) for target in UNIT_TEST_TARGETS]
 
     MAX_CASE = 50
     ATTR_CONVERT_TABLE = {
@@ -107,6 +111,7 @@ class UnitTestGroup(IDFCaseGroup):
     DUT_CLS_NAME = {
         'esp32': 'ESP32DUT',
         'esp32s2': 'ESP32S2DUT',
+        'esp32c3': 'ESP32C3DUT',
         'esp8266': 'ESP8266DUT',
     }
 
