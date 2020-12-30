@@ -29,16 +29,20 @@ import threading
 import errno
 import tempfile
 
+XTENSA_ARGS = '--toolchain-prefix xtensa-esp32-elf-'
+RISCV_ARGS = '--decode-panic backtrace --target esp32c3 --toolchain-prefix riscv32-esp-elf-'
+
 test_list = (
-    # Add new tests here. All files should be placed in IN_DIR. Columns are:
-    # Input file            Filter string                                               File with expected output   Timeout
-    ('in1.txt',             '',                                                         'in1f1.txt',                60),
-    ('in1.txt',             '*:V',                                                      'in1f1.txt',                60),
-    ('in1.txt',             'hello_world',                                              'in1f2.txt',                60),
-    ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
-    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               420),
-    ('in2.txt',             'vfs',                                                      'in2f2.txt',               420),
-    ('core1.txt',           '',                                                         'core1_out.txt',            60),
+    # Add new tests here. All files should be placed in IN_DIR. Columns are
+    # Input file            Filter string                                File with expected output   Timeout    ELF file        Extra args
+    ('in1.txt',             '',                                          'in1f1.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('in1.txt',             '*:V',                                       'in1f1.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('in1.txt',             'hello_world',                               'in1f2.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('in1.txt',             '*:N',                                       'in1f3.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',     'in2f1.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('in2.txt',             'vfs',                                       'in2f2.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('core1.txt',           '',                                          'core1_out.txt',            60,    'dummy_xtensa.elf',       XTENSA_ARGS),
+    ('riscv_panic1.txt',    '',                                          'riscv_panic1_out.txt',     60,    'dummy_riscv.elf',        RISCV_ARGS),
 )
 
 IN_DIR = 'tests/'       # tests are in this directory
@@ -78,9 +82,12 @@ class TestRunner(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.serversocket.shutdown(socket.SHUT_RDWR)
-        self.serversocket.close()
-        print('Socket was closed successfully')
+        try:
+            self.serversocket.shutdown(socket.SHUT_RDWR)
+            self.serversocket.close()
+            print('Socket was closed successfully')
+        except (OSError, socket.error):
+            pass
 
     def accept_connection(self):
         """ returns a socket for sending the input for idf_monitor which must be closed before calling this again. """
@@ -102,7 +109,9 @@ def test_iteration(runner, test):
             monitor_cmd = [sys.executable, IDF_MONITOR_WAPPER,
                            '--port', 'socket://{}:{}?logging=debug'.format(HOST, runner.port),
                            '--print_filter', test[1],
-                           '--serial_alive_file', SERIAL_ALIVE_FILE]
+                           '--serial_alive_file', SERIAL_ALIVE_FILE,
+                           '--elf-file', test[4]]
+            monitor_cmd += test[5].split()
             (master_fd, slave_fd) = pty.openpty()
             print('\t', ' '.join(monitor_cmd), sep='')
             print('\tstdout="{}" stderr="{}" stdin="{}"'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))

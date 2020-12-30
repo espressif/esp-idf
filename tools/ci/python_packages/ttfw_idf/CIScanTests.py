@@ -16,7 +16,8 @@ TEST_LABELS = {
     'test_apps': 'BOT_LABEL_CUSTOM_TEST',
     'component_ut': ['BOT_LABEL_UNIT_TEST',
                      'BOT_LABEL_UNIT_TEST_32',
-                     'BOT_LABEL_UNIT_TEST_S2'],
+                     'BOT_LABEL_UNIT_TEST_S2',
+                     'BOT_LABEL_UNIT_TEST_C3'],
 }
 
 BUILD_ALL_LABELS = [

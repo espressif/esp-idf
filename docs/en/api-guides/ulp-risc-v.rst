@@ -11,11 +11,11 @@ The ULP-RISC-V coprocessor is a variant of the ULP, present in ESP32-S2. Similar
 Installing the ULP-RISC-V Toolchain
 -----------------------------------
 
-The ULP-RISC-V coprocessor code is written in C (assembly is also possible) and compiled using the `riscv-embedded toolchain`_.
+The ULP-RISC-V coprocessor code is written in C (assembly is also possible) and compiled using RISC-V toolchain based on GCC.
 
-If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then you need to perform an extra step to get the ULP-RISC-V toolchain installed, execute the command below inside the IDF folder::
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the toolchain should already be installed.
 
-$ idf_tools.py install riscv-none-embed-gcc
+.. note: In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: `riscv-none-embed-gcc`.
 
 
 Compiling the ULP-RISC-V Code
@@ -56,7 +56,7 @@ To compile the ULP-RISC-V code as part of the component, the following steps mus
 
    5. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
 
-   6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv-none-embed-nm``.
+   6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
 
    7. **Create an LD export script and header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
@@ -147,5 +147,3 @@ The program runs until the field ``RTC_CNTL_COCPU_DONE`` in register ``RTC_CNTL_
 
 To disable the timer (effectively preventing the ULP program from running again), please clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register. This can be done both from the ULP code and from the main program.
 
-
-.. _riscv-embedded toolchain: https://xpack.github.io/riscv-none-embed-gcc/

@@ -40,7 +40,7 @@ espcoredump.py v0.4-dev
 ===============================================================
 ==================== ESP32 CORE DUMP START ====================
 
-Crashed task handle: 0x3ffb5e80, name: '', GDB name: 'process 1073438336'
+Crashed task handle: 0x3ffb5e80, name: 'main', GDB name: 'process 1073438336'
 
 ================== CURRENT THREAD REGISTERS ===================
 exccause       0x1d (StoreProhibitedCause)
@@ -112,41 +112,41 @@ a15            0x0	0
   7    process 1073432444 0x40087e10 in ?? ()
   8    process 1073413520 0x400812c4 in ?? ()
 
-==================== THREAD 1 (TCB: 0x3ffb5e80, name: '') =====================
+==================== THREAD 1 (TCB: 0x3ffb5e80, name: 'main') =====================
 #0  0x400e37f7 in ?? ()
 #1  0x400d0c31 in ?? ()
 #2  0x40087018 in ?? ()
 
-==================== THREAD 2 (TCB: 0x3ffb6d48, name: '') =====================
+==================== THREAD 2 (TCB: 0x3ffb6d48, name: 'IDLE1') =====================
 #0  0x40087010 in ?? ()
 
-==================== THREAD 3 (TCB: 0x3ffb65e4, name: '') =====================
+==================== THREAD 3 (TCB: 0x3ffb65e4, name: 'IDLE0') =====================
 #0  0x40087010 in ?? ()
 
-==================== THREAD 4 (TCB: 0x3ffb77a0, name: '') =====================
+==================== THREAD 4 (TCB: 0x3ffb77a0, name: 'Tmr Svc') =====================
 #0  0x400812c4 in ?? ()
 #1  0x40089806 in ?? ()
 #2  0x400898f3 in ?? ()
 #3  0x40087018 in ?? ()
 
-==================== THREAD 5 (TCB: 0x3ffb4bf0, name: '') =====================
+==================== THREAD 5 (TCB: 0x3ffb4bf0, name: 'dport') =====================
 #0  0x400812c4 in ?? ()
 #1  0x4008913b in ?? ()
 #2  0x400d0d5c in ?? ()
 #3  0x40087018 in ?? ()
 
-==================== THREAD 6 (TCB: 0x3ffafab4, name: '') =====================
+==================== THREAD 6 (TCB: 0x3ffafab4, name: 'esp_timer') =====================
 #0  0x400812c4 in ?? ()
 #1  0x40087e10 in ?? ()
 #2  0x400d1f4b in ?? ()
 #3  0x40087018 in ?? ()
 
-==================== THREAD 7 (TCB: 0x3ffb477c, name: '') =====================
+==================== THREAD 7 (TCB: 0x3ffb477c, name: 'ipc1') =====================
 #0  0x40087e10 in ?? ()
 #1  0x40081a2b in ?? ()
 #2  0x40087018 in ?? ()
 
-==================== THREAD 8 (TCB: 0x3ffafd90, name: '') =====================
+==================== THREAD 8 (TCB: 0x3ffafd90, name: 'ipc0') =====================
 #0  0x400812c4 in ?? ()
 #1  0x40087e10 in ?? ()
 #2  0x40081a2b in ?? ()
@@ -155,7 +155,11 @@ a15            0x0	0
 
 ======================= ALL MEMORY REGIONS ========================
 Name   Address   Size   Attrs
-.data 0x400054 0x4 RW A
+.text 0x400074 0x134 R XA
+.eh_frame 0x4001a8 0x4 R  A
+.ctors 0x4011ac 0x8 RW A
+.dtors 0x4011b4 0x8 RW A
+.data 0x4011bc 0x4 RW A
 .coredump.tasks.data 0x3ffb5e80 0x15c RW 
 .coredump.tasks.data 0x3ffb5cf0 0x188 RW 
 .coredump.tasks.data 0x3ffb6d48 0x15c RW 

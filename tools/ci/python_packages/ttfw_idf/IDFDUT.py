@@ -463,6 +463,9 @@ class ESP32DUT(IDFDUT):
     def _get_rom(cls):
         return esptool.ESP32ROM
 
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
+
 
 class ESP32S2DUT(IDFDUT):
     TARGET = "esp32s2"
@@ -471,6 +474,21 @@ class ESP32S2DUT(IDFDUT):
     @classmethod
     def _get_rom(cls):
         return esptool.ESP32S2ROM
+
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
+
+
+class ESP32C3DUT(IDFDUT):
+    TARGET = "esp32c3"
+    TOOLCHAIN_PREFIX = "riscv32-esp-elf-"
+
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32C3ROM
+
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
 
 
 class ESP8266DUT(IDFDUT):
@@ -481,9 +499,12 @@ class ESP8266DUT(IDFDUT):
     def _get_rom(cls):
         return esptool.ESP8266ROM
 
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
+
 
 def get_target_by_rom_class(cls):
-    for c in [ESP32DUT, ESP32S2DUT, ESP8266DUT, IDFQEMUDUT]:
+    for c in [ESP32DUT, ESP32S2DUT, ESP32C3DUT, ESP8266DUT, IDFQEMUDUT]:
         if c._get_rom() == cls:
             return c.TARGET
     return None
