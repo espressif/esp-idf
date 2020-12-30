@@ -150,6 +150,12 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 uint64_t rtc_time_get(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
+#if 0 // TODO ESP32-C3 IDF-2569:  Re-enable it in the future
+    while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
+        esp_rom_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
+    }
+    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_TIME_VALID_INT_CLR);
+#endif
     uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
     t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
     return t;

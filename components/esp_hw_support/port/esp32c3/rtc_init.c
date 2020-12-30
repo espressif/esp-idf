@@ -22,52 +22,42 @@
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/system_reg.h"
-#include "i2c_rtc_clk.h"
+#include "regi2c_ctrl.h"
+#include "soc_log.h"
+
+static const char *TAG = "rtc_init";
 
 void rtc_init(rtc_config_t cfg)
 {
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
+
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
     rtc_clk_set_xtal_wait();
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, cfg.pll_wait);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, cfg.ck8m_wait);
+    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
 
-    /* Moved from rtc sleep to rtc init to save sleep function running time */
-    // set shortest possible sleep time limit
-    //REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
-
-    /* This power domian removed
-    * set rom&ram timer
-    * REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_ROM_RAM_POWERUP_TIMER, ROM_RAM_POWERUP_CYCLES);
-    * REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_ROM_RAM_WAIT_TIMER, ROM_RAM_WAIT_CYCLES);
-    */
-    // set wifi timer
+    // set default powerup & wait time
     rtc_init_config_t rtc_init_cfg = RTC_INIT_CONFIG_DEFAULT();
     REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_WIFI_POWERUP_TIMER, rtc_init_cfg.wifi_powerup_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_WIFI_WAIT_TIMER, rtc_init_cfg.wifi_wait_cycles);
-    // set rtc peri timer
-    //REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_POWERUP_TIMER, rtc_init_cfg.rtc_powerup_cycles);
-    //REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_WAIT_TIMER, rtc_init_cfg.rtc_wait_cycles);
-    // set digital wrap timer
+    REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_BT_POWERUP_TIMER, rtc_init_cfg.bt_powerup_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER3_REG, RTC_CNTL_BT_WAIT_TIMER, rtc_init_cfg.bt_wait_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_CPU_TOP_POWERUP_TIMER, rtc_init_cfg.cpu_top_powerup_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_CPU_TOP_WAIT_TIMER, rtc_init_cfg.cpu_top_wait_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_DG_WRAP_POWERUP_TIMER, rtc_init_cfg.dg_wrap_powerup_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_DG_WRAP_WAIT_TIMER, rtc_init_cfg.dg_wrap_wait_cycles);
-    // set rtc memory timer
-    //REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_POWERUP_TIMER, rtc_init_cfg.rtc_mem_powerup_cycles);
-    //REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_WAIT_TIMER, rtc_init_cfg.rtc_mem_wait_cycles);
-
-    //SET_PERI_REG_MASK(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_INC_HEARTBEAT_PERIOD);
+    REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_POWERUP_TIMER, rtc_init_cfg.dg_peri_powerup_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_WAIT_TIMER, rtc_init_cfg.dg_peri_wait_cycles);
 
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
-    //REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
-    //REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, RTC_CNTL_DBIAS_1V10);
-
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, RTC_CNTL_DBIAS_1V10);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, RTC_CNTL_DBIAS_1V10);
 
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_CACHE_MMU_POWER_CTRL_REG, EXTMEM_CACHE_MMU_MEM_FORCE_ON);
-        //clear rom clock force on
-        //REG_SET_FIELD(SYSTEM_ROM_CTRL_0_REG, SYSTEM_ROM_IRAM0_CLKGATE_FORCE_ON, 0);
-        //clear sram clock force on
-        //REG_SET_FIELD(SYSTEM_SRAM_CTRL_0_REG, SYSTEM_SRAM_CLKGATE_FORCE_ON, 0);
         //clear tag clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_ICACHE_TAG_POWER_CTRL_REG, EXTMEM_ICACHE_TAG_MEM_FORCE_ON);
         //clear register clock force on
@@ -84,9 +74,12 @@ void rtc_init(rtc_config_t cfg)
         } else {
             SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PU);
         }
-        // CLEAR APLL close
+        // force pd APLL
         CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
+
+        //open sar_i2c protect function to avoid sar_i2c reset when rtc_ldo is low.
+        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_I2C_RESET_POR_FORCE_PD);
 
         //cancel bbpll force pu if setting no force power up
         if (!cfg.bbpll_fpu) {
@@ -98,14 +91,9 @@ void rtc_init(rtc_config_t cfg)
             SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_I2C_FORCE_PU);
             SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PU);
         }
-        //cancel RTC REG force PU
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_PU);
+
         CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PU);
-
-        //combine two rtc memory options
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_PU);
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_NOISO);
 
         if (cfg.rtc_dboost_fpd) {
             SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PD);
@@ -113,29 +101,29 @@ void rtc_init(rtc_config_t cfg)
             CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PD);
         }
 
-        //cancel sar i2c pd force
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD);
-        //cancel digital pu force
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_PU);
-        //cannel i2c_reset_protect pd force
+        //clear i2c_reset_protect pd force, need tested in low temperature.
         //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,RTC_CNTL_I2C_RESET_POR_FORCE_PD);
 
         /* If this mask is enabled, all soc memories cannot enter power down mode */
         /* We should control soc memory power down mode from RTC, so we will not touch this register any more */
-        //CLEAR_PERI_REG_MASK(SYSTEM_MEM_PD_MASK_REG, SYSTEM_LSLP_MEM_PD_MASK);
+        CLEAR_PERI_REG_MASK(SYSTEM_MEM_PD_MASK_REG, SYSTEM_LSLP_MEM_PD_MASK);
+
         /* If this pd_cfg is set to 1, all memory won't enter low power mode during light sleep */
         /* If this pd_cfg is set to 0, all memory will enter low power mode during light sleep */
-        rtc_sleep_pd_config_t pd_cfg = RTC_SLEEP_PD_CONFIG_ALL(0);
-        rtc_sleep_pd(pd_cfg);
+        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(0);
+        rtc_sleep_pu(pu_cfg);
 
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
-        // ROM_RAM power domain is removed
-        // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_TOP_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_PERI_FORCE_PU);
+
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_WRAP_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO);
-        // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_NOISO);
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_NOISO);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_TOP_FORCE_NOISO);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PERI_FORCE_NOISO);
         //cancel digital PADS force no iso
         if (cfg.cpu_waiti_clk_gate) {
             CLEAR_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPU_WAIT_MODE_FORCE_ON);
@@ -146,9 +134,59 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
+    if (cfg.cali_ocode) {
+        /*
+        Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration(must close PLL).
+        Method:
+        1. read current cpu config, save in old_config;
+        2. switch cpu to xtal because PLL will be closed when o-code calibration;
+        3. begin o-code calibration;
+        4. wait o-code calibration done flag(odone_flag & bg_odone_flag) or timeout;
+        5. set cpu to old-config.
+        */
+        rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
+        rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
+        rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
+        rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
+        if (slow_clk_freq == (rtc_slow_freq_x32k)) {
+            cal_clk = RTC_CAL_32K_XTAL;
+        } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
+            cal_clk  = RTC_CAL_8MD256;
+        }
+
+        uint64_t max_delay_time_us = 10000;
+        uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
+        uint64_t max_delay_cycle = rtc_time_us_to_slowclk(max_delay_time_us, slow_clk_period);
+        uint64_t cycle0 = rtc_time_get();
+        uint64_t timeout_cycle = cycle0 + max_delay_cycle;
+        uint64_t cycle1 = 0;
+
+        rtc_cpu_freq_config_t old_config;
+        rtc_clk_cpu_freq_get_config(&old_config);
+        rtc_clk_cpu_freq_set_xtal();
+
+
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
+        bool odone_flag = 0;
+        bool bg_odone_flag = 0;
+        while (1) {
+            odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_O_DONE_FLAG);
+            bg_odone_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_BG_O_DONE_FLAG);
+            cycle1 = rtc_time_get();
+            if (odone_flag && bg_odone_flag) {
+                break;
+            }
+            if (cycle1 >= timeout_cycle) {
+                SOC_LOGW(TAG, "o_code calibration fail\n");
+                break;
+            }
+        }
+        rtc_clk_cpu_freq_set_config(&old_config);
+    }
 }
 
-rtc_vddsdio_config_t rtc_vddsdio_get_config()
+rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 {
     rtc_vddsdio_config_t result;
     uint32_t sdio_conf_reg = REG_READ(RTC_CNTL_SDIO_CONF_REG);

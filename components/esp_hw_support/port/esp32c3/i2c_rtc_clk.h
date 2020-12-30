@@ -15,8 +15,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "i2c_apll.h"
-#include "i2c_bbpll.h"
+#include "regi2c_ctrl.h"
 
 /* Analog function control register */
 #define ANA_CONFIG_REG  0x6000E044

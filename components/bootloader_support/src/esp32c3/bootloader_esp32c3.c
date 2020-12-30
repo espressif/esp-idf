@@ -261,10 +261,14 @@ static inline void bootloader_hardware_init(void)
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
 }
 
+/* There happend clock glitch reset for some chip when testing wifi[BIT0] and brownout reset when chip startup[BIT1].
+ * But super_watch_dog_reset function is ok, so open it[BIT2].
+ * Whether this api will deleted or not depends on analog design & test result when ECO chip come back.
+ */
 static inline void bootloader_glitch_reset_disable(void)
 {
     // TODO ESP32-C3 IDF-2453
-    REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, 0);
+    REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, BIT2);
 }
 
 esp_err_t bootloader_init(void)

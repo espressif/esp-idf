@@ -88,7 +88,9 @@ extern "C" {
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
+#define DIG_DBIAS_80M   RTC_CNTL_DBIAS_1V10
+#define DIG_DBIAS_160M  RTC_CNTL_DBIAS_1V20
+
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -101,22 +103,23 @@ extern "C" {
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
 /* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (1000)
-#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (2)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
-#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES         (1)
-#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES            (1)
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (1000)
+#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (2)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
+#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
+#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
 
 /*
 set sleep_init default param
 */
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  3
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -232,9 +235,9 @@ typedef struct {
 } x32k_config_t;
 
 #define X32K_CONFIG_DEFAULT() { \
-    .dac = 1, \
+    .dac = 3, \
     .dres = 3, \
-    .dgm = 0, \
+    .dgm = 3, \
     .dbuf = 1, \
 }
 
@@ -717,20 +720,15 @@ void rtc_sleep_low_init(uint32_t slowclk_period);
  */
 void rtc_sleep_set_wakeup_time(uint64_t t);
 
-
-#define RTC_EXT0_TRIG_EN    BIT(0)  //!< EXT0 GPIO wakeup
-#define RTC_EXT1_TRIG_EN    BIT(1)  //!< EXT1 GPIO wakeup
-#define RTC_GPIO_TRIG_EN    BIT(2)  //!< GPIO wakeup (light sleep only)
-#define RTC_TIMER_TRIG_EN   BIT(3)  //!< Timer wakeup
-#define RTC_SDIO_TRIG_EN    BIT(4)  //!< SDIO wakeup (light sleep only)
-#define RTC_MAC_TRIG_EN     BIT(5)  //!< MAC wakeup (light sleep only)
-#define RTC_UART0_TRIG_EN   BIT(6)  //!< UART0 wakeup (light sleep only)
-#define RTC_UART1_TRIG_EN   BIT(7)  //!< UART1 wakeup (light sleep only)
-#define RTC_BT_TRIG_EN      BIT(10) //!< BT wakeup (light sleep only)
-#define RTC_COCPU_TRIG_EN   BIT(11)
+#define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
+#define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
+#define RTC_MAC_TRIG_EN             BIT(5)  //!< MAC wakeup (light sleep only)
+#define RTC_UART0_TRIG_EN           BIT(6)  //!< UART0 wakeup (light sleep only)
+#define RTC_UART1_TRIG_EN           BIT(7)  //!< UART1 wakeup (light sleep only)
+#define RTC_BT_TRIG_EN              BIT(10) //!< BT wakeup (light sleep only)
 #define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
-#define RTC_COCPU_TRAP_TRIG_EN      BIT(13)
 #define RTC_USB_TRIG_EN             BIT(14)
+#define RTC_BROWNOUT_DET_TRIG_EN    BIT(16)
 
 /**
  * @brief Enter deep or light sleep mode

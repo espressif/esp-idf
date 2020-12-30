@@ -48,12 +48,6 @@ extern "C" {
 /* Clear to enable BBPLL */
 #define I2C_BBPLL_M     (BIT(17))
 
-#define SAR_I2C_FORCE_PD BIT(18)
-#define SAR_I2C_FORCE_PU BIT(16)
-
-#define ANA_CONFIG2_REG  0x6000E048
-#define ANA_CONFIG2_M   (BIT(18))
-
 /* ROM functions which read/write internal control bus */
 uint8_t rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
 uint8_t rom_i2c_readReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb);
