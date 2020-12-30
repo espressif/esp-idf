@@ -585,6 +585,13 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         esp_intr_disable(ret);
     }
 
+#if CONFIG_IDF_TARGET_ESP32C3
+    // TODO ESP32-C3 IDF-2126, these need to be set or the new interrupt won't fire, but are currently hard-coded
+    // for priority and level...
+    esprv_intc_int_set_priority(intr, 1);
+    esprv_intc_int_set_type(BIT(intr), INTR_TYPE_LEVEL);
+#endif
+
     portEXIT_CRITICAL(&spinlock);
 
     //Fill return handle if needed, otherwise free handle.
