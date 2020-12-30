@@ -124,7 +124,10 @@ TEST_CASE("Username and password will not reset if new absolute URL doesnot spec
     TEST_ASSERT_EQUAL_STRING(USERNAME, value);
     esp_http_client_set_url(client, "http://" HOST "/get");
     esp_http_client_set_username(client, value);
-    esp_http_client_set_password(client, value);
+    // esp_http_client_set_username sets new username and thus invalidates the original one
+    // which we still reference in the local variable `value` (better forget it)
+    value = NULL;
+    esp_http_client_set_password(client, (char *)USERNAME);  // Need to cast the string literal (argument is not a const char*)
     //checks if username is set or not
     r = esp_http_client_get_username(client, &value);
     TEST_ASSERT_EQUAL(ESP_OK, r);
