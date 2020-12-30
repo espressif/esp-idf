@@ -2,6 +2,8 @@
 archive: libphy.a
 entries:
     * (noflash_data)
+    if ESP_WIFI_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = y:
+        * (phy_iram)
 
 [mapping:rtc]
 archive: librtc.a
@@ -17,6 +19,15 @@ entries:
     if ESP32_WIFI_RX_IRAM_OPT = y:
         * (wifi_rx_iram)
 
+    if ESP_WIFI_SLP_IRAM_OPT = y:
+        * (wifi_slp_iram)
+
+    if ESP32_WIFI_IRAM_OPT || ESP_WIFI_SLP_IRAM_OPT:
+        * (wifi_or_slp_iram)
+
+    if ESP32_WIFI_RX_IRAM_OPT || ESP_WIFI_SLP_IRAM_OPT:
+        * (wifi_slp_rx_iram)
+
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (extram_bss)
 
@@ -31,3 +42,40 @@ entries:
 
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (extram_bss)
+
+    if ESP_WIFI_SLP_IRAM_OPT = y:
+        * (wifi_slp_iram)
+
+    if ESP32_WIFI_RX_IRAM_OPT || ESP_WIFI_SLP_IRAM_OPT:
+        * (wifi_slp_rx_iram)
+
+[mapping:coexist]
+archive: libcoexist.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT = y:
+        * (wifi_slp_iram)
+
+[mapping:esp_wifi]
+archive: libesp_wifi.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT =y:
+        esp_adapter:wifi_clock_enable_wrapper (noflash)
+        esp_adapter:wifi_clock_disable_wrapper (noflash)
+        phy_init:esp_phy_enable (noflash)
+        phy_init:esp_phy_disable (noflash)
+        wifi_init:wifi_apb80m_request (noflash)
+        wifi_init:wifi_apb80m_release (noflash)
+
+[mapping:driver_wifi_pm]
+archive: libdriver.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT =y:
+        periph_ctrl:wifi_module_enable (noflash)
+        periph_ctrl:wifi_module_disable (noflash)
+
+[mapping:esp_timer_wifi_pm]
+archive: libesp_timer.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = y:
+        esp_timer:timer_task (noflash)
+        esp_timer:timer_process_alarm (noflash)

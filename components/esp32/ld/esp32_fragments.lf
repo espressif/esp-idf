@@ -96,6 +96,18 @@ entries:
 entries:
     .phyiram+
 
+[sections:wifi_slp_iram]
+entries:
+    .wifislpiram+
+
+[sections:wifi_or_slp_iram]
+entries:
+    .wifiorslpiram+
+
+[sections:wifi_slp_rx_iram]
+entries:
+    .wifislprxiram+
+
 [scheme:default]
 entries:
     if APP_BUILD_USE_FLASH_SECTIONS = y:
@@ -127,6 +139,9 @@ entries:
     iram_coredump -> iram_coredump
     rtc_coredump -> rtc_coredump
     rtc_fast_coredump -> rtc_fast_coredump
+    wifi_slp_iram -> flash_text
+    wifi_or_slp_iram -> flash_text
+    wifi_slp_rx_iram -> flash_text
 
 [scheme:rtc]
 entries:
@@ -165,3 +180,15 @@ entries:
 entries:
     bss -> extern_ram
     common -> extern_ram
+
+[scheme:wifi_slp_iram]
+entries:
+    wifi_slp_iram -> iram0_text
+
+[scheme:wifi_or_slp_iram]
+entries:
+    wifi_or_slp_iram -> iram0_text
+
+[scheme:wifi_slp_rx_iram]
+entries:
+    wifi_slp_rx_iram -> iram0_text

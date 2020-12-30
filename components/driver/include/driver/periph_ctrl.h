@@ -91,6 +91,25 @@ void wifi_bt_common_module_enable(void);
  */
 void wifi_bt_common_module_disable(void);
 
+/**
+ * @brief      enable wifi module
+ *
+ * @note Enable wifi module only.
+ *
+ * @return     NULL
+ *
+ */
+void wifi_module_enable(void);
+
+/**
+ * @brief      disable wifi module
+ *
+ * @note Disable wifi module only.
+ *
+ * @return     NULL
+ *
+ */
+void wifi_module_disable(void);
 #ifdef __cplusplus
 }
 #endif

@@ -321,6 +321,16 @@ menu "Wi-Fi"
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
             explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
+    config ESP_WIFI_SLP_IRAM_OPT
+        bool "WiFi SLP IRAM speed optimization"
+        help
+            Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
+            Some functions can be put in IRAM either by ESP32_WIFI_IRAM_OPT and ESP32_WIFI_RX_IRAM_OPT, or this one.
+            If already enabled ESP32_WIFI_IRAM_OPT, the other 7.3KB IRAM memory would be taken by this option.
+            If already enabled ESP32_WIFI_RX_IRAM_OPT, the other 1.3KB IRAM memory would be taken by this option.
+            If neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.
+            Wi-Fi power-save mode average current would be reduced if this option is enabled.
+
 endmenu  # Wi-Fi
 
 menu "PHY"
