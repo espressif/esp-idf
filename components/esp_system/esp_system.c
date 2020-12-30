@@ -32,7 +32,8 @@
 #include "esp32h2/memprot.h"
 #endif
 
-#define SHUTDOWN_HANDLERS_NO 4
+#define SHUTDOWN_HANDLERS_NO 5
+
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 void IRAM_ATTR esp_restart_noos_dig(void)
