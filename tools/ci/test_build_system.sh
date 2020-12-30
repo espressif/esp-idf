@@ -181,7 +181,7 @@ function run_tests()
     assert_rebuilt esp32/component_project_vars.mk
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
-    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt newlib/newlib_init.o
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/port/xtensa/xtensa_vectors.o
 
@@ -191,7 +191,7 @@ function run_tests()
     touch Makefile
     make
     # similar to previous test
-    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt newlib/newlib_init.o
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/port/xtensa/xtensa_vectors.o
 
