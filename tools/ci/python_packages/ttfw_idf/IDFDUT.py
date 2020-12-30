@@ -299,14 +299,15 @@ class IDFDUT(DUT.SerialDUT):
         :param: erase_nvs: whether erase NVS partition during flash
         :return: None
         """
+        last_error = None
         for baud_rate in [921600, 115200]:
             try:
                 self._try_flash(erase_nvs, baud_rate)
                 break
-            except RuntimeError:
-                continue
+            except RuntimeError as e:
+                last_error = e
         else:
-            raise IDFToolError()
+            raise last_error
 
     @_uses_esptool
     def reset(self, esp):
