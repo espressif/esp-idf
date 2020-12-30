@@ -15,7 +15,6 @@
 """ Interface for test cases. """
 import os
 import time
-import traceback
 import functools
 import socket
 from datetime import datetime
@@ -195,10 +194,7 @@ def test_method(**kwargs):
                 # if finish without exception, test result is True
                 result = True
             except Exception as e:
-                # handle all the exceptions here
-                traceback.print_exc()
-                # log failure
-                junit_test_case.add_failure_info(str(e) + ":\r\n" + traceback.format_exc())
+                Utility.handle_unexpected_exception(junit_test_case, e)
             finally:
                 # do close all DUTs, if result is False then print DUT debug info
                 close_errors = env_inst.close(dut_debug=(not result))

@@ -439,7 +439,7 @@ class BaseDUT(object):
         if isinstance(data, type(u'')):
             try:
                 data = data.encode('utf-8')
-            except Exception as e:
+            except UnicodeEncodeError as e:
                 print(u'Cannot encode {} of type {}'.format(data, type(data)))
                 raise e
         return data

@@ -2,6 +2,7 @@ from __future__ import print_function
 import os.path
 import sys
 import time
+import traceback
 
 from .. import Env
 
@@ -95,3 +96,16 @@ def load_source(path):
             sys.path.remove(dir)
         __LOADED_MODULES[path] = ret
         return ret
+
+
+def handle_unexpected_exception(junit_test_case, exception):
+    """
+    Helper to log & add junit result details for an unexpected exception encountered
+    when running a test case.
+
+    Should always be called from inside an except: block
+    """
+    traceback.print_exc()
+    # AssertionError caused by an 'assert' statement has an empty string as its 'str' form
+    e_str = str(exception) if str(exception) else repr(exception)
+    junit_test_case.add_failure_info("Unexpected exception: {}\n{}".format(e_str, traceback.format_exc()))

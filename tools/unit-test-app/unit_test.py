@@ -24,6 +24,7 @@ import argparse
 import threading
 
 from tiny_test_fw import TinyFW, Utility, Env, DUT
+from tiny_test_fw.Utility import handle_unexpected_exception
 import ttfw_idf
 
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
@@ -317,7 +318,7 @@ def run_unit_test_cases(env, extra_data):
             except TestCaseFailed:
                 failed_cases.append(format_case_name(one_case))
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
                 failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
@@ -517,7 +518,7 @@ def run_multiple_devices_cases(env, extra_data):
                 result = run_one_multiple_devices_case(duts, ut_config, env, one_case,
                                                        one_case.get('app_bin'), junit_test_case)
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
             finally:
                 if result:
                     Utility.console_log("Success: " + format_case_name(one_case), color="green")
@@ -677,7 +678,7 @@ def run_multiple_stage_cases(env, extra_data):
             except TestCaseFailed:
                 failed_cases.append(format_case_name(one_case))
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
                 failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
