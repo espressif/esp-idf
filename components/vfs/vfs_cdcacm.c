@@ -96,6 +96,7 @@ static int cdcacm_open(const char *path, int flags, int mode)
 static int cdcacm_fstat(int fd, struct stat *st)
 {
     assert(fd == 0);
+    memset(st, 0, sizeof(*st));
     st->st_mode = S_IFCHR;
     return 0;
 }

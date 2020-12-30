@@ -536,6 +536,7 @@ static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
         SPIFFS_clearerr(efs->fs);
         return -1;
     }
+    memset(st, 0, sizeof(*st));
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
     st->st_mtime = vfs_spiffs_get_mtime(&s);
@@ -558,7 +559,7 @@ static int vfs_spiffs_stat(void* ctx, const char * path, struct stat * st)
         SPIFFS_clearerr(efs->fs);
         return -1;
     }
-
+    memset(st, 0, sizeof(*st));
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
     st->st_mode |= (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;

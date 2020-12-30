@@ -21,7 +21,6 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/portable.h"
-#include "esp_heap_caps.h"
 
 /* Notes on our newlib lock implementation:
  *
@@ -119,7 +118,6 @@ void _lock_close_recursive(_lock_t *lock) __attribute__((alias("_lock_close")));
 */
 static int IRAM_ATTR lock_acquire_generic(_lock_t *lock, uint32_t delay, uint8_t mutex_type) {
     xSemaphoreHandle h = (xSemaphoreHandle)(*lock);
-
     if (!h) {
         if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
             return 0; /* locking is a no-op before scheduler is up, so this "succeeds" */
@@ -212,9 +210,208 @@ void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
     lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
-/* No-op function, used to force linking this file,
-   instead of the dummy locks implementation from newlib.
+#ifdef _RETARGETABLE_LOCKING
+/* To ease the transition to newlib 3.3.0, this part is kept under an ifdef.
+ * After the toolchain with newlib 3.3.0 is released and merged, the ifdefs
+ * can be removed.
+ *
+ * Also the retargetable locking functions still rely on the previous
+ * implementation. Once support for !_RETARGETABLE_LOCKING is removed,
+ * the code can be simplified, removing support for lazy initialization of
+ * locks. At the same time, IDF code which relies on _lock_acquire/_lock_release
+ * will have to be updated to not depend on lazy initialization.
+ *
+ * Explanation of the different lock types:
+ *
+ *  Newlib 2.2.0 and 3.0.0:
+ *    _lock_t is defined as int, stores SemaphoreHandle_t.
+ *
+ *  Newlib 3.3.0:
+ *    struct __lock is (or contains) StaticSemaphore_t
+ *    _LOCK_T is a pointer to struct __lock, equivalent to SemaphoreHandle_t.
+ *    It has the same meaning as _lock_t in the previous implementation.
+ *
  */
-void newlib_include_locks_impl(void)
+
+/* This ensures the platform-specific definition in lock.h is correct.
+ * We use "greater or equal" since the size of StaticSemaphore_t may
+ * vary by 2 words, depending on whether configUSE_TRACE_FACILITY is enabled.
+ */
+_Static_assert(sizeof(struct __lock) >= sizeof(StaticSemaphore_t),
+               "Incorrect size of struct __lock");
+
+/* FreeRTOS configuration check */
+_Static_assert(configSUPPORT_STATIC_ALLOCATION,
+               "FreeRTOS should be configured with static allocation support");
+
+/* These 2 locks are used instead of 9 distinct newlib static locks,
+ * as most of the locks are required for lesser-used features, so
+ * the chance of performance degradation due to lock contention is low.
+ */
+static StaticSemaphore_t s_common_mutex;
+static StaticSemaphore_t s_common_recursive_mutex;
+
+
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+/* C3 ROM is built without Newlib static lock symbols exported, and
+ * with an extra level of _LOCK_T indirection in mind.
+ * The following is a workaround for this:
+ * - on startup, we call esp_rom_newlib_init_common_mutexes to set
+ *   the two mutex pointers to magic values.
+ * - if in __retarget_lock_acquire*, we check if the argument dereferences
+ *   to the magic value. If yes, we lock the correct mutex defined in the app,
+ *   instead.
+ * Casts from &StaticSemaphore_t to _LOCK_T are okay because _LOCK_T
+ * (which is SemaphoreHandle_t) is a pointer to the corresponding
+ * StaticSemaphore_t structure. This is ensured by asserts below.
+ */
+
+#define ROM_NEEDS_MUTEX_OVERRIDE
+#endif // CONFIG_IDF_TARGET_ESP32C3
+
+#ifdef ROM_NEEDS_MUTEX_OVERRIDE
+#define ROM_MUTEX_MAGIC  0xbb10c433
+/* This is a macro, since we are overwriting the argument  */
+#define MAYBE_OVERRIDE_LOCK(_lock, _lock_to_use_instead) \
+    if (*(int*)_lock == ROM_MUTEX_MAGIC) { \
+        (_lock) = (_LOCK_T) (_lock_to_use_instead); \
+    }
+#else  // ROM_NEEDS_MUTEX_OVERRIDE
+#define MAYBE_OVERRIDE_LOCK(_lock, _lock_to_use_instead)
+#endif // ROM_NEEDS_MUTEX_OVERRIDE
+
+
+void IRAM_ATTR __retarget_lock_init(_LOCK_T *lock)
+{
+    *lock = NULL;  /* In case lock's memory is uninitialized */
+    lock_init_generic(lock, queueQUEUE_TYPE_MUTEX);
+}
+
+void IRAM_ATTR __retarget_lock_init_recursive(_LOCK_T *lock)
+{
+    *lock = NULL;  /* In case lock's memory is uninitialized */
+    lock_init_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
+}
+
+void IRAM_ATTR __retarget_lock_close(_LOCK_T lock)
+{
+    _lock_close(&lock);
+}
+
+void IRAM_ATTR __retarget_lock_close_recursive(_LOCK_T lock)
+{
+    _lock_close_recursive(&lock);
+}
+
+/* Separate function, to prevent generating multiple assert strings */
+static void IRAM_ATTR check_lock_nonzero(_LOCK_T lock)
+{
+    assert(lock != NULL && "Uninitialized lock used");
+}
+
+void IRAM_ATTR __retarget_lock_acquire(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    MAYBE_OVERRIDE_LOCK(lock, &s_common_mutex);
+    _lock_acquire(&lock);
+}
+
+void IRAM_ATTR __retarget_lock_acquire_recursive(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    MAYBE_OVERRIDE_LOCK(lock, &s_common_recursive_mutex);
+    _lock_acquire_recursive(&lock);
+}
+
+int IRAM_ATTR __retarget_lock_try_acquire(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    MAYBE_OVERRIDE_LOCK(lock, &s_common_mutex);
+    return _lock_try_acquire(&lock);
+}
+
+int IRAM_ATTR __retarget_lock_try_acquire_recursive(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    MAYBE_OVERRIDE_LOCK(lock, &s_common_recursive_mutex);
+    return _lock_try_acquire_recursive(&lock);
+}
+
+void IRAM_ATTR __retarget_lock_release(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    _lock_release(&lock);
+}
+
+void IRAM_ATTR __retarget_lock_release_recursive(_LOCK_T lock)
+{
+    check_lock_nonzero(lock);
+    _lock_release_recursive(&lock);
+}
+
+/* When _RETARGETABLE_LOCKING is enabled, newlib expects the following locks to be provided: */
+
+extern StaticSemaphore_t __attribute__((alias("s_common_recursive_mutex"))) __lock___sinit_recursive_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_recursive_mutex"))) __lock___malloc_recursive_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_recursive_mutex"))) __lock___env_recursive_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_recursive_mutex"))) __lock___sfp_recursive_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_recursive_mutex"))) __lock___atexit_recursive_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___at_quick_exit_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___tz_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___dd_hash_mutex;
+extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___arc4random_mutex;
+
+void esp_newlib_locks_init(void)
+{
+    /* Initialize the two mutexes used for the locks above.
+     * Asserts below check our assumption that SemaphoreHandle_t will always
+     * point to the corresponding StaticSemaphore_t structure.
+     */
+    SemaphoreHandle_t handle;
+    handle = xSemaphoreCreateMutexStatic(&s_common_mutex);
+    assert(handle == (SemaphoreHandle_t) &s_common_mutex);
+    handle = xSemaphoreCreateRecursiveMutexStatic(&s_common_recursive_mutex);
+    assert(handle == (SemaphoreHandle_t) &s_common_recursive_mutex);
+    (void) handle;
+
+    /* Chip ROMs are built with older versions of newlib, and rely on different lock variables.
+     * Initialize these locks to the same values.
+     */
+#ifdef CONFIG_IDF_TARGET_ESP32
+    /* Newlib 2.2.0 is used in ROM, the following lock symbols are defined: */
+    extern _lock_t __sfp_lock;
+    __sfp_lock = (_lock_t) &s_common_recursive_mutex;
+    extern _lock_t __sinit_lock;
+    __sinit_lock = (_lock_t) &s_common_recursive_mutex;
+    extern _lock_t __env_lock_object;
+    __env_lock_object = (_lock_t) &s_common_mutex;
+    extern _lock_t __tz_lock_object;
+    __tz_lock_object = (_lock_t) &s_common_recursive_mutex;
+#elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
+    /* Newlib 3.0.0 is used in ROM, the following lock symbols are defined: */
+    extern _lock_t __sinit_recursive_mutex;
+    __sinit_recursive_mutex = (_lock_t) &s_common_recursive_mutex;
+    extern _lock_t __sfp_recursive_mutex;
+    __sfp_recursive_mutex = (_lock_t) &s_common_recursive_mutex;
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+    /* Newlib 3.3.0 is used in ROM, built with _RETARGETABLE_LOCKING.
+     * No access to lock variables for the purpose of ECO forward compatibility,
+     * however we have an API to initialize lock variables used in the ROM.
+     */
+    extern void esp_rom_newlib_init_common_mutexes(_LOCK_T, _LOCK_T);
+    /* See notes about ROM_NEEDS_MUTEX_OVERRIDE above */
+    int magic_val = ROM_MUTEX_MAGIC;
+    _LOCK_T magic_mutex = (_LOCK_T) &magic_val;
+    esp_rom_newlib_init_common_mutexes(magic_mutex, magic_mutex);
+#else // other target
+#error Unsupported target
+#endif
+}
+
+#else  // _RETARGETABLE_LOCKING
+
+void esp_newlib_locks_init(void)
 {
 }
+
+#endif // _RETARGETABLE_LOCKING

@@ -29,7 +29,6 @@
 #include "unity.h"
 #include "test_utils.h"
 
-#ifdef CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 /* ---------------------Test 1: Backported Timer functions-----------------------
  * Test xTimerCreateStatic(), vTimerSetTimerId(), xTimerGetPeriod(), xTimerGetExpiryTime()
  *
@@ -201,7 +200,6 @@ TEST_CASE("Test FreeRTOS backported eventgroup functions", "[freertos]")
     //Cleanup static event
     vEventGroupDelete(eg_handle);
 }
-#endif
 
 /* --------Test backported thread local storage pointer and deletion cb feature----------
  * vTaskSetThreadLocalStoragePointerAndDelCallback()

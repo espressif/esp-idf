@@ -205,36 +205,14 @@ menu "FreeRTOS"
             For most uses, the default of 16 is OK.
 
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
-        bool "Enable FreeRTOS static allocation API"
-        default n
-        help
-            FreeRTOS gives the application writer the ability to instead provide the memory
-            themselves, allowing the following objects to optionally be created without any
-            memory being allocated dynamically:
-
-            - Tasks
-            - Software Timers (Daemon task is still dynamic. See documentation)
-            - Queues
-            - Event Groups
-            - Binary Semaphores
-            - Counting Semaphores
-            - Recursive Semaphores
-            - Mutexes
-
-            Whether it is preferable to use static or dynamic memory allocation is dependent on
-            the application, and the preference of the application writer. Both methods have pros
-            and cons, and both methods can be used within the same RTOS application.
-
-            Creating RTOS objects using statically allocated RAM has the benefit of providing the application writer
-            with more control: RTOS objects can be placed at specific memory locations. The maximum RAM footprint can
-            be determined at link time, rather than run time. The application writer does not need to concern
-            themselves with graceful handling of memory allocation failures. It allows the RTOS to be used in
-            applications that simply don't allow any dynamic memory allocation (although FreeRTOS includes allocation
-            schemes that can overcome most objections).
+        # Always enabled.
+        # Kconfig option preserved for compatibility with code
+        # which checked for CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION.
+        bool
+        default y
 
     config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
         bool "Enable static task clean up hook"
-        depends on FREERTOS_SUPPORT_STATIC_ALLOCATION
         default n
         help
             Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.

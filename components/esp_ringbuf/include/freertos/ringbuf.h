@@ -64,8 +64,6 @@ typedef enum {
  * buffer where this struct is of the exact size required to store a ring
  * buffer's control data structure.
  *
- * @note The CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION option must be enabled for
- *       this structure to be available.
  */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1)
 typedef struct xSTATIC_RINGBUFFER {
@@ -116,9 +114,6 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
  *              Storage area must of the same size as specified by xBufferSize
  * @param[in]   pxStaticRingbuffer Pointed to a struct of type StaticRingbuffer_t
  *              which will be used to hold the ring buffer's data structure
- *
- * @note    The CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION option must be enabled
- *          for this to be available
  *
  * @note    xBufferSize of no-split/allow-split buffers MUST be 32-bit aligned.
  *

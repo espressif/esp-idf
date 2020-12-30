@@ -69,7 +69,6 @@ TEST_CASE("Recurring FreeRTOS timers", "[freertos]")
     TEST_ASSERT( xTimerDelete(recurring, 1) );
 }
 
-#ifdef CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 TEST_CASE("Static timer creation", "[freertos]")
 {
     StaticTimer_t static_timer;
@@ -84,4 +83,3 @@ TEST_CASE("Static timer creation", "[freertos]")
 
     TEST_ASSERT_NOT_NULL(created_timer);
 }
-#endif

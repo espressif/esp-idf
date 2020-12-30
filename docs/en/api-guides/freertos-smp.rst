@@ -438,9 +438,6 @@ ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
     will be modified. For more details regarding the effects of running ESP-IDF FreeRTOS
     on a single core, search for occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
-:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the 
-functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
-
 :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in
 particular functions in ESP-IDF FreeRTOS which have not been fully tested
 in an SMP context.

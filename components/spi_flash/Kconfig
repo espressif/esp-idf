@@ -104,7 +104,6 @@ menu "SPI Flash driver"
         # The bus lock on SPI1 is meaningless when the legacy implementation is used, or the SPI
         # driver does not support SPI1.
         depends on !SPI_FLASH_USE_LEGACY_IMPL && !IDF_TARGET_ESP32S2
-        select FREERTOS_SUPPORT_STATIC_ALLOCATION
         help
             Each SPI bus needs a lock for arbitration among devices. This allows multiple
             devices on a same bus, but may reduce the speed of esp_flash driver access to the

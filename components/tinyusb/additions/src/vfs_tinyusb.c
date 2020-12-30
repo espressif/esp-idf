@@ -207,6 +207,7 @@ static ssize_t tusb_read(int fd, void *data, size_t size)
 static int tusb_fstat(int fd, struct stat *st)
 {
     FD_CHECK(fd, -1);
+    memset(st, 0, sizeof(*st));
     st->st_mode = S_IFCHR;
     return 0;
 }
