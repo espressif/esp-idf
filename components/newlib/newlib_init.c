@@ -112,7 +112,7 @@ static struct syscall_stub_table s_stub_table = {
     ._scanf_float = NULL,
 #endif
 #ifdef CONFIG_IDF_TARGET_ESP32C3
-    /* TODO: mark that this assert failed in ROM, to avoid confusion between IDF & ROM
+    /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
     .__assert_func = __assert_func,
