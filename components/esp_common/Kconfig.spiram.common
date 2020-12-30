@@ -93,6 +93,7 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     bool "Allow .bss segment placed in external memory"
     default n
     depends on SPIRAM
+    select ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     help
         If enabled, variables with EXT_RAM_ATTR attribute will be placed in SPIRAM instead of internal DRAM.
         BSS section of `lwip`, `net80211`, `pp`, `bt` libraries will be automatically placed
