@@ -14,11 +14,27 @@
 
 #include "hal/interrupt_controller_hal.h"
 
+#if __riscv
+#include "riscv/instruction_decode.h"
+
+static bool is_interrupt_number_reserved(int interrupt_number)
+{
+    extern int _vector_table;
+    extern int _interrupt_handler;
+    const intptr_t pc = (intptr_t)(&_vector_table + interrupt_number);
+
+    /* JAL instructions are relative to the PC there are executed from. */
+    const intptr_t destination = pc + riscv_decode_offset_from_jal_instruction(pc);
+
+    return destination != (intptr_t)&_interrupt_handler;
+}
+#endif
+
 int_type_t interrupt_controller_hal_desc_type(int interrupt_number)
 {
 #ifndef SOC_CPU_HAS_FLEXIBLE_INTC
     const int_desc_t *int_desc = interrupt_controller_hal_desc_table();
-    return(int_desc[interrupt_number].type);
+    return (int_desc[interrupt_number].type);
 #else
     return (INTTP_NA);
 #endif
@@ -28,7 +44,7 @@ int interrupt_controller_hal_desc_level(int interrupt_number)
 {
 #ifndef SOC_CPU_HAS_FLEXIBLE_INTC
     const int_desc_t *int_desc = interrupt_controller_hal_desc_table();
-    return(int_desc[interrupt_number].level);
+    return (int_desc[interrupt_number].level);
 #else
     return 1;
 #endif
@@ -38,8 +54,12 @@ int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cp
 {
 #ifndef SOC_CPU_HAS_FLEXIBLE_INTC
     const int_desc_t *int_desc = interrupt_controller_hal_desc_table();
-    return(int_desc[interrupt_number].cpuflags[cpu_number]);
+    return (int_desc[interrupt_number].cpuflags[cpu_number]);
+#else
+#if __riscv
+    return is_interrupt_number_reserved(interrupt_number) ? INTDESC_RESVD : INTDESC_NORMAL;
 #else
     return INTDESC_NORMAL;
+#endif
 #endif
 }

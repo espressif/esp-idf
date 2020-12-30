@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,12 +14,20 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SOC_INTERRUPT_LEVEL_CAN_SET (1)
-#define SOC_INTERRUPT_TYPE_CAN_SET  (1)
+/**
+ * @brief Decode the offset value from a RISC-V JAL instruction
+ * @note This API will abort if the instruction is not JAL formatted.
+ *
+ * @param inst_addr Address of JAL instruction
+ * @return int offset value
+ */
+int riscv_decode_offset_from_jal_instruction(const intptr_t inst_addr);
 
 #ifdef __cplusplus
 }
