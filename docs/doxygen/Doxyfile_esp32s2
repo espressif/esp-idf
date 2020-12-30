@@ -10,4 +10,8 @@ INPUT += \
          $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
          $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
          $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
-         $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h
+         $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
+         $(IDF_PATH)/components/touch_element/include/touch_element/touch_element.h \
+         $(IDF_PATH)/components/touch_element/include/touch_element/touch_button.h \
+         $(IDF_PATH)/components/touch_element/include/touch_element/touch_slider.h \
+         $(IDF_PATH)/components/touch_element/include/touch_element/touch_matrix.h
