@@ -154,6 +154,7 @@ void tskRunSHASelftests(void *param)
             while (1) {}
         }
 
+#if SOC_SHA_SUPPORT_SHA512
         if (mbedtls_sha512_self_test(1)) {
             printf("SHA512 self-tests failed.\n");
             while (1) {}
@@ -163,6 +164,7 @@ void tskRunSHASelftests(void *param)
             printf("SHA512 self-tests failed.\n");
             while (1) {}
         }
+#endif //SOC_SHA_SUPPORT_SHA512
     }
     xSemaphoreGive(done_sem);
     vTaskDelete(NULL);

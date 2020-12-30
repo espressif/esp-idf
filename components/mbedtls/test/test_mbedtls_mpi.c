@@ -66,7 +66,7 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
     /* if mod_bits arg is set, also do a esp_mpi_mul_mod() call */
-    if (mod_bits > 0) {
+    if (mod_bits > 0 && mod_bits <= SOC_RSA_MAX_BIT_LEN) {
         mbedtls_mpi_init(&M);
         for(int i = 0; i < mod_bits; i++) {
             mbedtls_mpi_set_bit(&M, i, 1);

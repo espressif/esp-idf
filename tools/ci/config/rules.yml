@@ -41,8 +41,11 @@
 .if-label-unit_test-s2: &if-label-unit_test-s2
   if: '$BOT_LABEL_UNIT_TEST_S2'
 
+.if-label-unit_test-c3: &if-label-unit_test-c3
+  if: '$BOT_LABEL_UNIT_TEST_C3'
+
 .if-label-unit_test-all_labels: &if-label-unit_test-all_labels
-  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_32 || $BOT_LABEL_UNIT_TEST_S2'
+  if: '$BOT_LABEL_UNIT_TEST || $BOT_LABEL_UNIT_TEST_32 || $BOT_LABEL_UNIT_TEST_S2 || $BOT_LABEL_UNIT_TEST_C3'
 
 .if-label-weekend_test: &if-label-weekend_test
   if: '$BOT_LABEL_WEEKEND_TEST'
@@ -192,6 +195,11 @@
     - <<: *if-protected-no_label
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test-s2
+
+.rules:tests:unit_test_c3:
+  rules:
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test-c3
 
 .rules:tests:integration_test:
   rules:

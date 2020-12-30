@@ -59,7 +59,7 @@ TEST_CASE("I2CMaster SDA and SCL equal", "[cxx i2c][leaks=300]")
 }
 
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
 static void i2c_slave_read_raw_byte(void)
 {
@@ -465,6 +465,5 @@ static void i2c_master_reuse_composed_trans(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2CMaster reuse composed transfer", "[cxx i2c][test_env=UT_T2_I2C][timeout=150]",
         i2c_master_reuse_composed_trans, i2c_slave_composed_trans_twice);
-#endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-
+#endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 #endif // __cpp_exceptions

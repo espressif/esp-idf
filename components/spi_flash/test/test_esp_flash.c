@@ -902,7 +902,9 @@ static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *
     read_and_check(part, source, length);
 }
 
-#if !CONFIG_SPIRAM
+#if !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+/* No runners on C3, TODO ESP32-C3 IDF-2399 */
+
 typedef struct {
     uint32_t us_start;
     size_t len;

@@ -69,25 +69,6 @@ static int cmp_or_dump(const void *a, const void *b, size_t len)
     return r;
 }
 
-static void IRAM_ATTR fix_rom_func(void)
-{
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-    esp_rom_spiflash_read_mode_t read_mode;
-#  if defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
-    read_mode = ESP_ROM_SPIFLASH_QIO_MODE;
-#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-    read_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
-#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_DIO
-    read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
-#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_DOUT
-    read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
-#  endif
-    //Currently only call this can fix the rom_read issue, maybe we need to call more functions (freq, dummy, etc) in the future
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    esp_rom_spiflash_config_readmode(read_mode);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-#endif
-}
 
 static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
 {
@@ -157,6 +138,29 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
             }
         }
     }
+#endif
+}
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+// TODO ESP32C3 IDF-2579
+
+static void IRAM_ATTR fix_rom_func(void)
+{
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    esp_rom_spiflash_read_mode_t read_mode;
+#  if defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
+    read_mode = ESP_ROM_SPIFLASH_QIO_MODE;
+#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+    read_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_DIO
+    read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
+#  elif defined CONFIG_ESPTOOLPY_FLASHMODE_DOUT
+    read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#  endif
+    //Currently only call this can fix the rom_read issue, maybe we need to call more functions (freq, dummy, etc) in the future
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    esp_rom_spiflash_config_readmode(read_mode);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
 #endif
 }
 
@@ -262,6 +266,8 @@ TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 #endif
 }
+
+#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 
 #ifdef CONFIG_SPIRAM
 
