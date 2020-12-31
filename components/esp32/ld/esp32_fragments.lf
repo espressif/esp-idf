@@ -107,7 +107,7 @@ entries:
     data -> dram0_data
     bss -> dram0_bss
     common -> dram0_bss
-    if SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+    if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         extram_bss -> extern_ram
     else:
         extram_bss -> dram0_bss

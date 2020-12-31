@@ -198,8 +198,7 @@ static void do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
-    esp_setup_syscall_table();
-    esp_newlib_locks_init();
+    esp_newlib_init();
     esp_newlib_time_init();
 
     if (g_spiram_ok) {

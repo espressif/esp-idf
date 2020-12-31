@@ -1,9 +1,13 @@
-set(srcs "ulp.c"
-        "ulp_macro.c")
+idf_build_get_property(target IDF_TARGET)
 
-if(CONFIG_ESP32S2_ULP_COPROC_RISCV)
-        list(APPEND srcs "ulp_riscv.c")
+if(NOT (IDF_TARGET STREQUAL "esp32c3"))
+    set(srcs "ulp.c"
+             "ulp_macro.c")
+
+    if(CONFIG_ESP32S2_ULP_COPROC_RISCV)
+            list(APPEND srcs "ulp_riscv.c")
+    endif()
+
+    idf_component_register(SRCS ${srcs}
+                           INCLUDE_DIRS include)
 endif()
-
-idf_component_register(SRCS ${srcs}
-                    INCLUDE_DIRS include)

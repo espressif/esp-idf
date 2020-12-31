@@ -33,6 +33,8 @@ void adc_hal_digi_deinit(void)
     adc_hal_deinit();
 }
 
+uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd, bool force_cal);
+
 static inline void adc_set_init_code(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     uint32_t cal_val = adc_hal_calibration(adc_n, channel, atten, true, false);

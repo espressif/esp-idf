@@ -26,8 +26,6 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/touch_sensor.h"
-#include "driver/touch_sensor_common.h"
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
@@ -43,6 +41,8 @@
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_NUM > 0
 #include "hal/touch_sensor_hal.h"
+#include "driver/touch_sensor.h"
+#include "driver/touch_sensor_common.h"
 #endif
 #include "hal/clk_gate_ll.h"
 

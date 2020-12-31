@@ -1,3 +1,8 @@
+idf_build_get_property(target IDF_TARGET)
+if(${target} STREQUAL "esp32c3")
+        return()
+endif()
+
 set(srcs "src/wifi_config.c"
         "src/wifi_scan.c"
         "src/manager.c"

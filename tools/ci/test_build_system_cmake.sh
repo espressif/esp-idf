@@ -225,7 +225,7 @@ function run_tests()
     assert_rebuilt config/sdkconfig.h
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
-    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
+    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
     assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/port/xtensa/xtensa_vectors.S.obj
     mv sdkconfig.bak sdkconfig
@@ -240,7 +240,7 @@ function run_tests()
     idf.py build || failure "Build failed"
     mv CMakeLists.bak CMakeLists.txt
     # similar to previous test
-    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
+    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
     assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/port/xtensa/xtensa_vectors.S.obj
     mv sdkconfig.bak sdkconfig

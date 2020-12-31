@@ -68,6 +68,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
+    ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
 } esp_sleep_source_t;
 
 /* Leave this type define for compatibility */

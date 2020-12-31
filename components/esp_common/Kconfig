@@ -304,4 +304,9 @@ menu "Common ESP-related"
     config ESP_MAC_ADDR_UNIVERSE_ETH
         bool
 
+    config ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+        # Invisible option that is set by SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY, but
+        # exists even if SPIRAM is not supported
+        bool
+
 endmenu # Common ESP-related

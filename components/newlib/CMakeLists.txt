@@ -6,7 +6,7 @@ set(srcs
     "pthread.c"
     "random.c"
     "reent_init.c"
-    "syscall_table.c"
+    "newlib_init.c"
     "syscalls.c"
     "termios.c"
     "time.c")
@@ -30,7 +30,7 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE c m gcc "$<TARGET_FILE:${newlib
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
-# Forces the linker to include heap, syscalls, and pthread from this component,
+# Forces the linker to include heap, syscall, pthread and retargetable locks from this component,
 # instead of the implementations provided by newlib.
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
