@@ -134,6 +134,7 @@ void adc_hal_deinit(void);
  */
 #define adc_hal_pwdet_get_cct() adc_ll_pwdet_get_cct()
 
+#ifndef CONFIG_IDF_TARGET_ESP32C3
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
@@ -167,6 +168,7 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+#endif
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.

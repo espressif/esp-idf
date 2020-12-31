@@ -675,11 +675,7 @@ esp_err_t adc_digi_filter_reset(adc_digi_filter_idx_t idx)
 esp_err_t adc_digi_filter_set_config(adc_digi_filter_idx_t idx, adc_digi_filter_t *config)
 {
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_FILTER_IDX0) {
-        adc_hal_digi_filter_set_factor(ADC_NUM_1, config->mode);
-    } else if (idx == ADC_DIGI_FILTER_IDX1) {
-        adc_hal_digi_filter_set_factor(ADC_NUM_2, config->mode);
-    }
+    adc_hal_digi_filter_set_factor(idx, config);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -687,28 +683,13 @@ esp_err_t adc_digi_filter_set_config(adc_digi_filter_idx_t idx, adc_digi_filter_
 esp_err_t adc_digi_filter_get_config(adc_digi_filter_idx_t idx, adc_digi_filter_t *config)
 {
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_FILTER_IDX0) {
-        config->adc_unit = ADC_UNIT_1;
-        config->channel = ADC_CHANNEL_MAX;
-        adc_hal_digi_filter_get_factor(ADC_NUM_1, &config->mode);
-    } else if (idx == ADC_DIGI_FILTER_IDX1) {
-        config->adc_unit = ADC_UNIT_2;
-        config->channel = ADC_CHANNEL_MAX;
-        adc_hal_digi_filter_get_factor(ADC_NUM_2, &config->mode);
-    }
+    adc_hal_digi_filter_get_factor(idx, config);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
 esp_err_t adc_digi_filter_enable(adc_digi_filter_idx_t idx, bool enable)
 {
-    ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_FILTER_IDX0) {
-        adc_hal_digi_filter_enable(ADC_NUM_1, enable);
-    } else if (idx == ADC_DIGI_FILTER_IDX1) {
-        adc_hal_digi_filter_enable(ADC_NUM_2, enable);
-    }
-    ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
@@ -721,13 +702,7 @@ esp_err_t adc_digi_filter_enable(adc_digi_filter_idx_t idx, bool enable)
  */
 int adc_digi_filter_read_data(adc_digi_filter_idx_t idx)
 {
-    if (idx == ADC_DIGI_FILTER_IDX0) {
-        return adc_hal_digi_filter_read_data(ADC_NUM_1);
-    } else if (idx == ADC_DIGI_FILTER_IDX1) {
-        return adc_hal_digi_filter_read_data(ADC_NUM_2);
-    } else {
-        return -1;
-    }
+    return -1;
 }
 
 /**************************************/
@@ -737,24 +712,13 @@ int adc_digi_filter_read_data(adc_digi_filter_idx_t idx)
 esp_err_t adc_digi_monitor_set_config(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *config)
 {
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        adc_hal_digi_monitor_config(ADC_NUM_1, config);
-    } else if (idx == ADC_DIGI_MONITOR_IDX1) {
-        adc_hal_digi_monitor_config(ADC_NUM_2, config);
-    }
+    adc_hal_digi_monitor_config(idx, config);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
 esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable)
 {
-    ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        adc_hal_digi_monitor_enable(ADC_NUM_1, enable);
-    } else if (idx == ADC_DIGI_MONITOR_IDX1) {
-        adc_hal_digi_monitor_enable(ADC_NUM_2, enable);
-    }
-    ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 

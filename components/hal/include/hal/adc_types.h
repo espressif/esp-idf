@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_attr.h"
 
 /**
  * @brief ADC unit enumeration.
@@ -329,10 +330,19 @@ typedef struct {
  * @brief ADC digital controller (DMA mode) interrupt type options.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_INTR_MASK_MONITOR0_HIGH = BIT(0),
+    ADC_DIGI_INTR_MASK_MONITOR0_LOW  = BIT(1),
+    ADC_DIGI_INTR_MASK_MONITOR1_HIGH = BIT(2),
+    ADC_DIGI_INTR_MASK_MONITOR1_LOW  = BIT(3),
+    ADC_DIGI_INTR_MASK_MEAS_DONE     = BIT(4),
+#else
     ADC_DIGI_INTR_MASK_MONITOR = 0x1,
     ADC_DIGI_INTR_MASK_MEAS_DONE = 0x2,
     ADC_DIGI_INTR_MASK_ALL = 0x3,
+#endif
 } adc_digi_intr_t;
+FLAG_ATTR(adc_digi_intr_t)
 
 /**
  * @brief ADC digital controller (DMA mode) filter index options.
@@ -352,6 +362,9 @@ typedef enum {
  *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
+#endif
     ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
     ADC_DIGI_FILTER_IIR_4,     /*!<The filter mode is first-order IIR filter. The coefficient is 4. */
     ADC_DIGI_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8. */
@@ -393,8 +406,14 @@ typedef enum {
  *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
+    ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
+                               /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
+#else
     ADC_DIGI_MONITOR_HIGH = 0,  /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
     ADC_DIGI_MONITOR_LOW,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
+#endif
     ADC_DIGI_MONITOR_MAX
 } adc_digi_monitor_mode_t;
 
@@ -410,7 +429,12 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
+#if CONFIG_IDF_TARGET_ESP32C3
+    uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
+    uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
+#else
     uint32_t threshold;             /*!<Set monitor threshold of adc digital controller. */
+#endif
 } adc_digi_monitor_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

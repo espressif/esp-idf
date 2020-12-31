@@ -95,16 +95,48 @@ void adc_hal_digi_disable(void)
 }
 
 /**
+ * Set adc digital controller filter factor.
+ *
+ * @param idx ADC filter unit.
+ * @param filter Filter config. Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+void adc_hal_digi_filter_set_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
+{
+    if (filter->mode == ADC_DIGI_FILTER_DIS) {
+        adc_ll_digi_filter_disable(idx);
+    } else {
+        adc_ll_digi_filter_set_factor(idx, filter);
+    }
+}
+
+/**
+ * Get adc digital controller filter factor.
+ *
+ * @param adc_n ADC unit.
+ * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+void adc_hal_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
+{
+    adc_ll_digi_filter_get_factor(idx, filter);
+    if (((filter->adc_unit << 3) | filter->channel) > 9) {
+        filter->mode = ADC_DIGI_FILTER_DIS;
+    }
+}
+
+/**
  * Config monitor of adc digital controller.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @note If the channel info is not supported, the monitor function will not be enabled.
+ * @param idx ADC monitor index.
  * @param config Refer to `adc_digi_monitor_t`.
  */
-void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
+void adc_hal_digi_monitor_config(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *config)
 {
-    adc_ll_digi_monitor_set_mode(adc_n, config->mode);
-    adc_ll_digi_monitor_set_thres(adc_n, config->threshold);
+    if (config->mode == ADC_DIGI_MONITOR_DIS) {
+        adc_ll_digi_monitor_disable(idx);
+    } else {
+        adc_ll_digi_monitor_set_mode(idx, config);
+    }
 }
 
 /*---------------------------------------------------------------

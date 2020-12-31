@@ -39,6 +39,7 @@ void adc_hal_deinit(void)
     adc_ll_set_power_manage(ADC_POWER_SW_OFF);
 }
 
+#ifndef CONFIG_IDF_TARGET_ESP32C3
 int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
 {
     adc_ll_rtc_enable_channel(adc_n, channel);
@@ -47,6 +48,7 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
     *value = adc_ll_rtc_get_convert_value(adc_n);
     return (int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*value));
 }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C3
 //This feature is currently supported on ESP32C3, will be supported on other chips soon
@@ -193,7 +195,7 @@ esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw)
         *out_raw = adc_ll_adc1_read();
     } else if (unit == ADC_NUM_2) {
         *out_raw = adc_ll_adc2_read();
-        if (adc_ll_rtc_analysis_raw_data(unit, *out_raw)) {
+        if (adc_ll_analysis_raw_data(unit, *out_raw)) {
             return ESP_ERR_INVALID_STATE;
         }
     }
