@@ -141,3 +141,14 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
+
+void dump_wdev_diag_reg1(uint32_t d0, uint32_t d1, uint32_t d2, uint32_t d3, uint32_t d4, uint32_t d5)
+{
+    __asm__ __volatile__("ill");
+}
+
+void dump_wdev_diag_reg2(uint32_t d0, uint32_t d1, uint32_t d2, uint32_t d3, uint32_t d4, uint32_t d5)
+{
+    //DIAG2, DIAG3, DIAG5, DIAG8, DIAG9, DIAG10
+    dump_wdev_diag_reg1(REG_READ(0x3FF73DB4),REG_READ(0x3FF73DB8),REG_READ(0x3FF732F4),REG_READ(0x3FF73424),REG_READ(0x3FF73428),REG_READ(0x3FF7342C));
+}
