@@ -235,6 +235,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             if (true) {
 #endif // end checking for JTAG
                 err = verify_secure_boot_signature(sha_handle, data, image_digest, verified_digest);
+                sha_handle = NULL; // verify_secure_boot_signature finishes sha_handle
             }
 #else // SECURE_BOOT_CHECK_SIGNATURE
             // No secure boot, but SHA-256 can be appended for basic corruption detection
