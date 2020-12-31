@@ -1128,12 +1128,12 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
     portTickType ticks_start = xTaskGetTickCount();
     portBASE_TYPE res = xSemaphoreTake(p_i2c->cmd_mux, ticks_to_wait);
-#ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_acquire(p_i2c->pm_lock);
-#endif
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(p_i2c->pm_lock);
+#endif
     xQueueReset(p_i2c->cmd_evt_queue);
     if (p_i2c->status == I2C_STATUS_TIMEOUT
             || i2c_hal_is_bus_busy(&(i2c_context[i2c_num].hal))) {
