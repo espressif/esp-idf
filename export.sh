@@ -146,8 +146,13 @@ enable_autocomplete() {
     fi
 }
 
+update_prompt() {
+	export PS1="(esp-idf) ${PS1}"
+}
+
 idf_export_main
 enable_autocomplete
+update_prompt
 
 unset realpath_int
 unset idf_export_main
