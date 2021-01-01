@@ -147,7 +147,7 @@ enable_autocomplete() {
 }
 
 update_prompt() {
-	export PS1="(esp-idf) ${PS1}"
+    export PS1="(esp-idf) ${PS1}"
 }
 
 idf_export_main
