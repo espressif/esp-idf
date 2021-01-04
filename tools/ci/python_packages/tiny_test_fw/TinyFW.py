@@ -27,6 +27,20 @@ from . import App
 from . import Utility
 
 
+class TestCaseFailed(AssertionError):
+    def __init__(self, *cases):
+        """
+        Raise this exception if one or more test cases fail in a 'normal' way (ie the test runs but fails, no unexpected exceptions)
+
+        This will avoid dumping the Python stack trace, because the assumption is the junit error info and full job log already has
+        enough information for a developer to debug.
+
+        'cases' argument is the names of one or more test cases
+        """
+        message = "Test case{} failed: {}".format("s" if len(cases) > 1 else "", ", ".join(str(c) for c in cases))
+        super(TestCaseFailed, self).__init__(self, message)
+
+
 class DefaultEnvConfig(object):
     """
     default test configs. There're 3 places to set configs, priority is (high -> low):
@@ -193,6 +207,8 @@ def test_method(**kwargs):
                 test_func(env_inst, extra_data)
                 # if finish without exception, test result is True
                 result = True
+            except TestCaseFailed as e:
+                junit_test_case.add_failure_info(str(e))
             except Exception as e:
                 Utility.handle_unexpected_exception(junit_test_case, e)
             finally:

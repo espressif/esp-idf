@@ -24,6 +24,7 @@ import argparse
 import threading
 
 from tiny_test_fw import TinyFW, Utility, Env, DUT
+from tiny_test_fw.TinyFW import TestCaseFailed
 from tiny_test_fw.Utility import handle_unexpected_exception
 import ttfw_idf
 
@@ -70,10 +71,6 @@ def reset_reason_matches(reported_str, expected_str):
                 return True
 
     return False
-
-
-class TestCaseFailed(AssertionError):
-    pass
 
 
 def format_test_case_config(test_case_data):
@@ -222,7 +219,7 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         else:
             Utility.console_log("Failed: " + format_case_name(one_case), color="red")
             junit_test_case.add_failure_info(output)
-            raise TestCaseFailed()
+            raise TestCaseFailed(format_case_name(one_case))
 
     def handle_exception_reset(data):
         """
@@ -331,7 +328,7 @@ def run_unit_test_cases(env, extra_data):
         Utility.console_log("Failed Cases:", color="red")
         for _case_name in failed_cases:
             Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
+        raise TestCaseFailed(*failed_cases)
 
 
 class Handler(threading.Thread):
@@ -517,6 +514,8 @@ def run_multiple_devices_cases(env, extra_data):
             try:
                 result = run_one_multiple_devices_case(duts, ut_config, env, one_case,
                                                        one_case.get('app_bin'), junit_test_case)
+            except TestCaseFailed:
+                pass  # result is False, this is handled by the finally block
             except Exception as e:
                 handle_unexpected_exception(junit_test_case, e)
             finally:
@@ -535,7 +534,7 @@ def run_multiple_devices_cases(env, extra_data):
         Utility.console_log("Failed Cases:", color="red")
         for _case_name in failed_cases:
             Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
+        raise TestCaseFailed(*failed_cases)
 
 
 def run_one_multiple_stage_case(dut, one_case, junit_test_case):
@@ -590,7 +589,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             else:
                 Utility.console_log("Failed: " + format_case_name(one_case), color="red")
                 junit_test_case.add_failure_info(output)
-                raise TestCaseFailed()
+                raise TestCaseFailed(format_case_name(one_case))
             stage_finish.append("break")
 
         def handle_exception_reset(data):
@@ -691,7 +690,7 @@ def run_multiple_stage_cases(env, extra_data):
         Utility.console_log("Failed Cases:", color="red")
         for _case_name in failed_cases:
             Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
+        raise TestCaseFailed(*failed_cases)
 
 
 def detect_update_unit_test_info(env, extra_data, app_bin):
