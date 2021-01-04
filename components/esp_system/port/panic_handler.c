@@ -64,7 +64,15 @@ void *g_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 */
 static void print_state_for_core(const void *f, int core)
 {
+    /* On Xtensa (with Window ABI), register dump is not required for backtracing.
+     * Don't print it on abort to reduce clutter.
+     * On other architectures, register values need to be known for backtracing.
+     */
+#if defined(__XTENSA__) && defined(XCHAL_HAVE_WINDOWED)
     if (!g_panic_abort) {
+#else
+    if (true) {
+#endif
         panic_print_registers(f, core);
         panic_print_str("\r\n");
     }
@@ -115,6 +123,8 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
 
 static void panic_handler(void *frame, bool pseudo_excause)
 {
+    panic_info_t info = { 0 };
+
     /*
      * Setup environment and perform necessary architecture/chip specific
      * steps here prior to the system panic handler.
@@ -169,8 +179,12 @@ static void panic_handler(void *frame, bool pseudo_excause)
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);
         }
 #endif
-        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 ||
-            panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1) {
+        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+            || panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1
+#endif
+           )
+        {
             wdt_hal_write_protect_disable(&wdt0_context);
             wdt_hal_handle_intr(&wdt0_context);
             wdt_hal_write_protect_enable(&wdt0_context);
@@ -178,7 +192,6 @@ static void panic_handler(void *frame, bool pseudo_excause)
     }
 
     // Convert architecture exception frame into abstracted panic info
-    panic_info_t info;
     frame_to_panic_info(frame, &info, pseudo_excause);
 
     // Call the system panic handler

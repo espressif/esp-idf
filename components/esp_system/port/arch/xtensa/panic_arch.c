@@ -411,7 +411,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #if CONFIG_IDF_TARGET_ESP32
         "Cache disabled but cached memory region accessed",
 #elif CONFIG_IDF_TARGET_ESP32S2
-        "Cache exception",
+        "Cache error",
 #endif
     };
 
