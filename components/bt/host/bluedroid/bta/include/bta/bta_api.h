@@ -1388,11 +1388,6 @@ typedef UINT8 tBTA_DM_LINK_TYPE;
 #define ALLOW_ALL_FILTER     0x00
 #define LOWEST_RSSI_VALUE     129
 
-#if (BTA_DM_QOS_INCLUDED == TRUE)
-#define BTA_DM_QOS_TPOLL_SPP        20
-#define BTA_DM_QOS_TPOLL_DEFAULT    40
-#endif /// (BTA_DM_QOS_INCLUDED == TRUE)
-
 /*****************************************************************************
 **  External Function Declarations
 *****************************************************************************/

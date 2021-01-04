@@ -205,6 +205,7 @@ typedef enum {
     ESP_BT_GAP_READ_RSSI_DELTA_EVT,                 /*!< read rssi event */
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< config EIR data event */
     ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,        /*!< remove bond device complete event */
+    ESP_BT_GAP_QOS_CMPL_EVT,                        /*!< QOS complete event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -324,6 +325,16 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
     }remove_bond_dev_cmpl;                           /*!< Event parameter of ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT */
 
+    /**
+     * @brief ESP_BT_GAP_QOS_CMPL_EVT
+     */
+    struct qos_cmpl_param {
+        esp_bt_status_t stat;                  /*!< QoS status */
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        uint32_t t_poll;                       /*!< poll interval, the maximum time between transmissions
+                                                    which from the master to a particular slave on the ACL
+                                                    logical transport. unit is 0.625ms. */
+    } qos_cmpl;                                /*!< QoS complete parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -651,6 +662,21 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
 esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 
 #endif /*(BT_SSP_INCLUDED == TRUE)*/
+
+/**
+* @brief            Config Quality of service
+*
+* @param[in]        remote_bda: The remote device's address
+* @param[in]        t_poll:     Poll interval, the maximum time between transmissions
+                                which from the master to a particular slave on the ACL
+                                logical transport. unit is 0.625ms
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll);
 
 #ifdef __cplusplus
 }

@@ -1901,6 +1901,10 @@ void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow)
         memset(&qossu, 0, sizeof(tBTM_QOS_SETUP_CMPL));
         qossu.status = status;
         qossu.handle = handle;
+        tACL_CONN   *p = btm_handle_to_acl(handle);
+        if (p != NULL) {
+            memcpy (qossu.rem_bda, p->remote_addr, BD_ADDR_LEN);
+        }
         if (p_flow != NULL) {
             qossu.flow.qos_flags = p_flow->qos_flags;
             qossu.flow.service_type = p_flow->service_type;
