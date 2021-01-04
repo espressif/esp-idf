@@ -66,6 +66,7 @@ ESPTOOLPY_WRITE_FLASH_ENCRYPT=$(ESPTOOLPY_SERIAL) write_flash --encrypt $(if $(C
 endif
 
 ESPTOOL_ALL_FLASH_ARGS += $(APP_OFFSET) $(APP_BIN)
+UF2_ADD_BINARIES += $(APP_OFFSET) $(APP_BIN)
 
 ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 ifndef IS_BOOTLOADER_BUILD
@@ -163,5 +164,20 @@ monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	[ -f $(APP_ELF) ] || echo "*** Or alternatively 'make simple_monitor' to view the serial port as-is."
 	[ -f $(APP_ELF) ] || exit 1
 	$(MONITOR_PYTHON) $(IDF_PATH)/tools/idf_monitor.py $(MONITOR_OPTS) $(APP_ELF)
+
+# Make supports ESP32 only
+UF2_CHIP_ID = "0x1c5f21b0"
+
+uf2-app: $(APP_BIN) partition_table_get_info
+	$(PYTHON) $(IDF_PATH)/tools/mkuf2.py write \
+		-o "$(BUILD_DIR_BASE)/uf2-app.bin" \
+		--chip-id "$(UF2_CHIP_ID)" \
+		$(APP_OFFSET) $(APP_BIN)
+
+uf2: all_binaries
+	$(PYTHON) $(IDF_PATH)/tools/mkuf2.py write \
+		-o "$(BUILD_DIR_BASE)/uf2.bin" \
+		--chip-id "$(UF2_CHIP_ID)" \
+		$(UF2_ADD_BINARIES)
 
 .PHONY: erase_flash

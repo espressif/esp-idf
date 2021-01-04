@@ -55,6 +55,7 @@ bootloader: $(BOOTLOADER_BIN) | check_python_dependencies
 	@echo "$(ESPTOOLPY_WRITE_FLASH) $(BOOTLOADER_OFFSET) $^"
 
 ESPTOOL_ALL_FLASH_ARGS += $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)
+UF2_ADD_BINARIES += $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)
 
 bootloader-flash: $(BOOTLOADER_BIN) $(call prereq_if_explicit,erase_flash) | check_python_dependencies
 	$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^

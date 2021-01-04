@@ -96,6 +96,7 @@ check_table_contents: partition_table_get_info
 
 PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
+UF2_ADD_BINARIES += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 
 partition_table: $(PARTITION_TABLE_BIN) partition_table_get_info | check_python_dependencies
 	@echo "Partition table binary generated. Contents:"

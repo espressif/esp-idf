@@ -92,12 +92,14 @@ tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 tools/mass_mfg/mfg_gen.py
 tools/mkdfu.py
+tools/mkuf2.py
 tools/set-submodules-to-github.sh
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_size/test.sh
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
+tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/tools/get_available_configs.sh
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.sh

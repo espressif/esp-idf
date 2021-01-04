@@ -333,6 +333,15 @@ function run_tests()
     rm sdkconfig.defaults
     make defconfig
 
+    print_status "UF2 build works"
+    rm -f -r build sdkconfig
+    make defconfig
+    make uf2
+    assert_built ${APP_BINS} "uf2.bin"
+    make uf2-app
+    assert_built "uf2-app.bin"
+    rm -f -r build sdkconfig
+
     print_status "Empty directory not treated as a component"
     mkdir -p components/esp32
     make || failure "Failed to build with empty esp32 directory in components"
