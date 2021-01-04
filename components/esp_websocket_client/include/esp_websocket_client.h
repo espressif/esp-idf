@@ -81,14 +81,20 @@ typedef struct {
     int                         task_prio;                  /*!< Websocket task priority */
     int                         task_stack;                 /*!< Websocket task stack */
     int                         buffer_size;                /*!< Websocket buffer size */
-    const char                  *cert_pem;                  /*!< SSL Certification, PEM format as string, if the client requires to verify server */
+    const char                  *cert_pem;                  /*!< Pointer to certificate data in PEM or DER format for server verify (with SSL), default is NULL, not required to verify the server. PEM-format must have a terminating NULL-character. DER-format requires the length to be passed in cert_len. */
+    size_t                      cert_len;                   /*!< Length of the buffer pointed to by cert_pem. May be 0 for null-terminated pem */
+    const char                  *client_cert;               /*!< Pointer to certificate data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed. If it is not NULL, also `client_key` has to be provided. PEM-format must have a terminating NULL-character. DER-format requires the length to be passed in client_cert_len. */
+    size_t                      client_cert_len;            /*!< Length of the buffer pointed to by client_cert. May be 0 for null-terminated pem */
+    const char                  *client_key;                /*!< Pointer to private key data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed. If it is not NULL, also `client_cert` has to be provided. PEM-format must have a terminating NULL-character. DER-format requires the length to be passed in client_key_len */
+    size_t                      client_key_len;             /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     esp_websocket_transport_t   transport;                  /*!< Websocket transport type, see `esp_websocket_transport_t */
     char                        *subprotocol;               /*!< Websocket subprotocol */
     char                        *user_agent;                /*!< Websocket user-agent */
     char                        *headers;                   /*!< Websocket additional headers */
     int                         pingpong_timeout_sec;       /*!< Period before connection is aborted due to no PONGs received */
     bool                        disable_pingpong_discon;    /*!< Disable auto-disconnect due to no PONG received within pingpong_timeout_sec */
-
+    bool                        use_global_ca_store;        /*!< Use a global ca_store for all the connections in which this bool is set. */
+    bool                        skip_cert_common_name_check;/*!< Skip any validation of server certificate CN field */
 } esp_websocket_client_config_t;
 
 /**
