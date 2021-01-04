@@ -57,6 +57,8 @@ if(${target} STREQUAL "esp32s3")
     list(APPEND srcs "adc_common.c"
                      "dedic_gpio.c"
                      "gdma.c"
+                     "sdmmc_host.c"
+                     "sdmmc_transaction.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                     )
