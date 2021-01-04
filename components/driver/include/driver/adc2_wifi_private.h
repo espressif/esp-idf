@@ -43,14 +43,21 @@ esp_err_t adc2_wifi_acquire(void);
  */
 esp_err_t adc2_wifi_release(void);
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief This API help ADC2 calibration constructor be linked.
  *
  * @note  This is a private function, Don't call `adc2_cal_include` in user code.
  */
 void adc2_cal_include(void);
-#endif //CONFIG_IDF_TARGET_ESP32S2
+#else
+/**
+ * @brief There's no calibration involved on this chip.
+ *
+ * @note  This is a private function, Don't call `adc2_cal_include` in user code.
+ */
+#define adc2_cal_include()
+#endif //CONFIG_IDF_TARGET_*
 
 #ifdef __cplusplus
 }
