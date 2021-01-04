@@ -352,14 +352,19 @@ void start_cpu0_default(void)
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
 #ifdef CONFIG_FLASH_ENCRYPTION_DISABLE_PLAINTEXT
     if (esp_flash_encryption_enabled()) {
         esp_flash_write_protect_crypt_cnt();
     }
 #endif
+
+#if CONFIG_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
+#endif
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    esp_efuse_disable_rom_download_mode();
+#endif
+
     rtc_gpio_force_hold_dis_all();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
