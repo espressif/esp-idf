@@ -23,7 +23,7 @@ TEST_CASE("realloc shrink buffer in place", "[heap]")
 
 #endif
 
-#ifndef CONFIG_ESP32S2_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap]")
 {
     const size_t buffer_size = 64;

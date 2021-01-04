@@ -22,6 +22,9 @@
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/cache_err_int.h"
 #endif
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#include "esp32c3/memprot.h"
+#endif
 
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
@@ -33,7 +36,7 @@
  */
 typedef struct {
     const uint32_t bit;
-    const char* msg;
+    const char *msg;
 } register_bit_t;
 
 /**
@@ -45,8 +48,8 @@ typedef struct {
  * be set in the register will have its associated message printed.
  */
 static inline bool test_and_print_register_bits(const uint32_t status,
-                                                const register_bit_t* reg_bits,
-                                                const uint32_t size)
+        const register_bit_t *reg_bits,
+        const uint32_t size)
 {
     /* Browse the flag/bit array and test each one with the given status
      * register. */
@@ -69,7 +72,7 @@ static inline bool test_and_print_register_bits(const uint32_t status,
  * Function called when a cache error occurs. It prints details such as the
  * explanation of why the panic occured.
  */
-static inline void print_cache_err_details(const void* frame)
+static inline void print_cache_err_details(const void *frame)
 {
     /* Define the array that contains the status (bits) to test on the register
      * EXTMEM_CORE0_ACS_CACHE_INT_ST_REG. each bit is accompanied by a small
@@ -145,6 +148,47 @@ static inline void print_cache_err_details(const void* frame)
     }
 }
 
+
+/**
+ * Function called when a memory protection error occurs (PMS). It prints details such as the
+ * explanation of why the panic occured.
+ */
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+static inline void print_memprot_err_details(const void *frame)
+{
+    //common memprot fault info
+    mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
+    panic_print_str( "  memory type: ");
+    panic_print_str( mem_type_to_str(mem_type) );
+    panic_print_str( "\r\n  faulting address: ");
+    panic_print_hex( esp_memprot_get_violate_addr(mem_type) );
+    panic_print_str( "\r\n  world: ");
+    panic_print_hex( esp_memprot_get_violate_world(mem_type) );
+
+    char operation = 0;
+    // IRAM fault: check instruction-fetch flag
+    if ( mem_type == MEMPROT_IRAM0_SRAM ) {
+        if ( esp_memprot_get_violate_loadstore(mem_type) == 1 ) {
+            operation = 'X';
+        }
+    }
+    // W/R - common
+    if ( operation == 0 ) {
+        operation = esp_memprot_get_violate_wr(mem_type) == 1 ? 'W' : 'R';
+    }
+    panic_print_str( "\r\n  operation type: ");
+    panic_print_char( operation );
+
+    // DRAM/DMA fault: check byte-enables
+    if ( mem_type == MEMPROT_DRAM0_SRAM ) {
+        panic_print_str("\r\n  byte-enables: " );
+        panic_print_hex(esp_memprot_get_violate_byte_en(mem_type));
+    }
+
+    panic_print_str("\r\n");
+}
+#endif
+
 void panic_print_registers(const void *f, int core)
 {
     uint32_t *regs = (uint32_t *)f;
@@ -190,7 +234,10 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #if SOC_CPU_NUM > 1
         "Interrupt wdt timeout on CPU1",
 #endif
-        "Cache error"
+        "Cache error",
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+        "Memory protection fault",
+#endif
     };
 
     info->reason = pseudo_reason[0];
@@ -204,14 +251,16 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
          * assign function print_cache_err_details to our structure's
          * details field. As its name states, it will give more details
          * about why the error happened. */
+
         info->core = esp_cache_err_get_cpuid();
         info->reason = pseudo_reason[PANIC_RSN_CACHEERR];
         info->details = print_cache_err_details;
+
     } else if (frame->mcause == ETS_T1_WDT_INUM) {
         /* Watchdog interrupt occured, get the core on which it happened
          * and update the reason/message accordingly. */
-        const int core = esp_cache_err_get_cpuid();
 
+        const int core = esp_cache_err_get_cpuid();
         info->core = core;
         info->exception = PANIC_EXCEPTION_IWDT;
 
@@ -221,6 +270,14 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #endif
         info->reason = pseudo_reason[PANIC_RSN_INTWDT_CPU0 + core];
     }
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+    else if ( frame->mcause == ETS_MEMPROT_ERR_INUM ) {
+
+        info->core = esp_memprot_intr_get_cpuid();
+        info->reason = pseudo_reason[PANIC_RSN_MEMPROT];
+        info->details = print_memprot_err_details;
+    }
+#endif
 }
 
 void panic_arch_fill_info(void *frame, panic_info_t *info)

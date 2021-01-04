@@ -20,5 +20,8 @@ enum _panic_reasons {
     PANIC_RSN_INTWDT_CPU1,
 #endif
     PANIC_RSN_CACHEERR,
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+    PANIC_RSN_MEMPROT,
+#endif
     PANIC_RSN_COUNT
 } panic_reasons;

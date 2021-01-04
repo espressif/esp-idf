@@ -63,6 +63,7 @@
 #include "esp32s3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/cache_memory.h"
+#include "esp32c3/memprot.h"
 #endif
 
 #include "bootloader_flash_config.h"
@@ -253,11 +254,11 @@ void IRAM_ATTR call_start_cpu0(void)
     // (This should be the first thing IDF app does, as any other piece of code could be
     // relaxed by the linker to access something relative to __global_pointer$)
     __asm__ __volatile__ (
-    	".option push\n"
+        ".option push\n"
         ".option norelax\n"
         "la gp, __global_pointer$\n"
         ".option pop"
-                          );
+    );
 #endif
 
     // Move exception vectors to IRAM
@@ -453,13 +454,11 @@ void IRAM_ATTR call_start_cpu0(void)
 
     esp_cache_err_int_init();
 
-#if CONFIG_IDF_TARGET_ESP32S2
-#if CONFIG_ESP32S2_MEMPROT_FEATURE
-#if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
     esp_memprot_set_prot(true, true, NULL);
 #else
     esp_memprot_set_prot(true, false, NULL);
-#endif
 #endif
 #endif
 

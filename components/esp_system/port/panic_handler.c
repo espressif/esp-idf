@@ -37,6 +37,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/memprot.h"
 #include "esp32s3/cache_err_int.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/memprot.h"
+#include "esp32c3/cache_err_int.h"
 #endif
 
 #include "esp_private/panic_internal.h"
@@ -47,7 +50,7 @@
 
 extern int _invalid_pc_placeholder;
 
-extern void esp_panic_handler(panic_info_t*);
+extern void esp_panic_handler(panic_info_t *);
 
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 
@@ -181,10 +184,9 @@ static void panic_handler(void *frame, bool pseudo_excause)
 #endif
         if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-            || panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1
+                || panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1
 #endif
-           )
-        {
+           ) {
             wdt_hal_write_protect_disable(&wdt0_context);
             wdt_hal_handle_intr(&wdt0_context);
             wdt_hal_write_protect_enable(&wdt0_context);
@@ -221,7 +223,7 @@ void __attribute__((noreturn)) panic_restart(void)
         digital_reset_needed = true;
     }
 #endif
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_ESP_SYSTEM_CONFIG_MEMPROT_FEATURE
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }

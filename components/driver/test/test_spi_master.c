@@ -565,7 +565,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     ESP_LOGI(TAG, "dram: %p", data_dram);
     ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
 
-#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     uint32_t* data_iram = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_EXEC);
     TEST_ASSERT(data_iram != NULL);
     TEST_ASSERT(esp_ptr_executable(data_iram) || esp_ptr_in_iram(data_iram) || esp_ptr_in_diram_iram(data_iram));
@@ -574,7 +574,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 
     srand(52);
     for (int i = 0; i < 320/4; i++) {
-#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
         data_iram[i] = rand();
 #endif
         data_dram[i] = rand();
@@ -601,7 +601,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     int x;
     memset(trans, 0, sizeof(trans));
 
-#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     trans[0].length = 320*8,
     trans[0].tx_buffer = data_iram;
     trans[0].rx_buffer = data_malloc+1;
@@ -627,7 +627,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     *ptr = 0xbc124960;
 
     //Queue all transactions.
-#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     for (x=0; x<TEST_REGION_SIZE; x++) {
 #else
     for (x=3; x<TEST_REGION_SIZE; x++) {
@@ -644,7 +644,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
     free(data_malloc);
-#ifndef CONFIG_ESP32C3_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     free(data_iram);
 #endif
 }

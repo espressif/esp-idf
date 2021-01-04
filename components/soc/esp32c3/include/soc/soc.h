@@ -20,6 +20,8 @@
 #include "esp_bit_defs.h"
 #endif
 
+#include "sdkconfig.h"
+
 #define PRO_CPU_NUM (0)
 
 #define DR_REG_SYSTEM_BASE                      0x600c0000
@@ -314,6 +316,9 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#define ETS_MEMPROT_ERR_INUM                    26
+#endif
 #define ETS_DPORT_INUM                          28
 
 //CPU0 Max valid interrupt number
