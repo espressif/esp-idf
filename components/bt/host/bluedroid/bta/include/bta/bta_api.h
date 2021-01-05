@@ -1527,6 +1527,20 @@ extern void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config);
 *******************************************************************************/
 void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb);
 
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmSetQos
+**
+** Description      This function sets the QOS
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetQos(BD_ADDR bd_addr, UINT32 t_poll, tBTM_CMPL_CB *p_cb);
+#endif /// (BTA_DM_QOS_INCLUDED == TRUE)
+
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **

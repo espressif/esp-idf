@@ -96,6 +96,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/bta/dm/bta_dm_main.c"
                    "host/bluedroid/bta/dm/bta_dm_pm.c"
                    "host/bluedroid/bta/dm/bta_dm_sco.c"
+                   "host/bluedroid/bta/dm/bta_dm_qos.c"
                    "host/bluedroid/bta/gatt/bta_gatt_common.c"
                    "host/bluedroid/bta/gatt/bta_gattc_act.c"
                    "host/bluedroid/bta/gatt/bta_gattc_api.c"

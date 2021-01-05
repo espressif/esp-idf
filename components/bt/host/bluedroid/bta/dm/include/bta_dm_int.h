@@ -74,6 +74,10 @@ enum {
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+    /* Quality of Service set events */
+    BTA_DM_API_QOS_SET_EVT,
+#endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 #if (SMP_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
@@ -459,6 +463,16 @@ typedef struct {
     tBTA_DM_PM_ACTION  pm_request;
 } tBTA_DM_PM_TIMER;
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+/* data type for BTA_DM_API_QOS_SET_EVT */
+typedef struct {
+    BT_HDR          hdr;
+    BD_ADDR         bd_addr;
+    UINT32          t_poll;
+    tBTM_CMPL_CB    *p_cb;
+} tBTA_DM_API_QOS_SET;
+#endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 
 /* data type for BTA_DM_API_ADD_DEVICE_EVT */
 typedef struct {
@@ -887,6 +901,11 @@ typedef union {
 
     tBTA_DM_PM_TIMER pm_timer;
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+    /* Quality of Service set events */
+    tBTA_DM_API_QOS_SET qos_set;
+#endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 
     tBTA_DM_API_DI_DISC     di_disc;
 
@@ -1391,6 +1410,10 @@ extern void bta_dm_pm_active(BD_ADDR peer_addr);
 extern void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data);
 extern void bta_dm_pm_timer(tBTA_DM_MSG *p_data);
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+extern void bta_dm_set_qos(tBTA_DM_MSG *p_data);
+#endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 
 extern UINT8 bta_dm_get_av_count(void);
 extern void bta_dm_search_start (tBTA_DM_MSG *p_data);
