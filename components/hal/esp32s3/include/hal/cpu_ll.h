@@ -21,13 +21,14 @@
 #include "xtensa/config/specreg.h"
 #include "xtensa/config/extreg.h"
 #include "esp_bit_defs.h"
+#include "esp_attr.h"
 #include "xtensa/config/core.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static inline int cpu_ll_get_core_id(void)
+static inline int IRAM_ATTR cpu_ll_get_core_id(void)
 {
     uint32_t id;
     asm volatile (

@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-static inline int cpu_ll_get_core_id(void)
+static inline int IRAM_ATTR cpu_ll_get_core_id(void)
 {
 #if SOC_CPU_CORES_NUM == 1
     return 0; // No need to check core ID on single core hardware
