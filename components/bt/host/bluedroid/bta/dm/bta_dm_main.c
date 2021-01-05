@@ -78,6 +78,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_pm_btm_status,                   /* BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* BTA_DM_PM_TIMER_EVT */
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+    /* Quality of Service set events */
+    bta_dm_set_qos,                         /* BTA_DM_API_QOS_SET_EVT */
+#endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
     bta_dm_confirm,                         /* BTA_DM_API_CONFIRM_EVT */

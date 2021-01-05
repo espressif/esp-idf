@@ -222,6 +222,7 @@ typedef enum {
     ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
     ESP_BT_GAP_MODE_CHG_EVT,
     ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,         /*!< remove bond device complete event */
+    ESP_BT_GAP_QOS_CMPL_EVT,                        /*!< QOS complete event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -364,6 +365,16 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
     }remove_bond_dev_cmpl;                           /*!< Event parameter of ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT */
 
+    /**
+     * @brief ESP_BT_GAP_QOS_CMPL_EVT
+     */
+    struct qos_cmpl_param {
+        esp_bt_status_t stat;                  /*!< QoS status */
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        uint32_t t_poll;                       /*!< poll interval, the maximum time between transmissions
+                                                    which from the master to a particular slave on the ACL
+                                                    logical transport. unit is 0.625ms. */
+    } qos_cmpl;                                /*!< QoS complete parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -719,6 +730,21 @@ esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels);
 *
 */
 esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda);
+
+/**
+* @brief            Config Quality of service
+*
+* @param[in]        remote_bda: The remote device's address
+* @param[in]        t_poll:     Poll interval, the maximum time between transmissions
+                                which from the master to a particular slave on the ACL
+                                logical transport. unit is 0.625ms
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll);
 
 #ifdef __cplusplus
 }

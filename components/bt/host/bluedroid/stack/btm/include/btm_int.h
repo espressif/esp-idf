@@ -1068,6 +1068,7 @@ void btm_sco_process_num_completed_pkts (UINT8 *p);
 #define btm_sco_chk_pend_unpark(hci_status, hci_handle)
 #endif /* BTM_SCO_INCLUDED */
 void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow);
+void btm_qos_setup_timeout (void *p_tle);
 
 
 /* Internal functions provided by btm_sco.c

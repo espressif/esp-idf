@@ -38,6 +38,7 @@ typedef enum {
     BTC_GAP_BT_READ_REMOTE_NAME_EVT,
     BTC_GAP_BT_MODE_CHG_EVT,
     BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT,
+    BTC_GAP_BT_QOS_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -57,6 +58,7 @@ typedef enum {
     BTC_GAP_BT_ACT_CONFIG_EIR,
     BTC_GAP_BT_ACT_SET_AFH_CHANNELS,
     BTC_GAP_BT_ACT_READ_REMOTE_NAME,
+    BTC_GAP_BT_ACT_SET_QOS,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -146,6 +148,12 @@ typedef union {
 
     // BTC_GAP_BT_ACT_READ_REMOTE_NAME
     bt_bdaddr_t rmt_name_bda;
+
+    // BTC_GAP_BT_ACT_SET_QOS
+    struct set_qos_args {
+        bt_bdaddr_t bda;
+        uint32_t t_poll;
+    } set_qos;
 
 } btc_gap_bt_args_t;
 
