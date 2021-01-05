@@ -531,7 +531,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     if (!s_adc_digi_ctx) {
         return ESP_ERR_INVALID_STATE;
     }
-    ADC_CHECK(config->sample_freq_hz <= 83333 && config->sample_freq_hz >= 610, "ADC sampling frequency out of range", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, "ADC sampling frequency out of range", ESP_ERR_INVALID_ARG);
 
     s_adc_digi_ctx->digi_controller_config.conv_limit_en = config->conv_limit_en;
     s_adc_digi_ctx->digi_controller_config.conv_limit_num = config->conv_limit_num;

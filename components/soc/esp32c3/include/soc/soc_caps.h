@@ -102,21 +102,17 @@
 #define SOC_AES_SUPPORT_AES_256 (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_PATT_LEN_MAX            (16)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (12)
-#define SOC_ADC_DIGI_FILTER_NUM         (2)
-#define SOC_ADC_DIGI_MONITOR_NUM        (2)
-
-/**
- * Check if adc support digital controller (DMA) mode.
- * @value
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_PATT_LEN_MAX                    (16)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_MAX_BITWIDTH                    (12)
+#define SOC_ADC_DIGI_FILTER_NUM                 (2)
+#define SOC_ADC_DIGI_MONITOR_NUM                (2)
+#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM)    1
+//F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)

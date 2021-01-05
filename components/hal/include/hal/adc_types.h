@@ -286,12 +286,11 @@ typedef struct {
                                                  If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                                  Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
 #elif CONFIG_IDF_TARGET_ESP32C3
-    uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 610Hz ~ 83333Hz
-                                   Fs: sampling frequency;
-                                   Fd: digital controller frequency
-                                   interval: interval between 2 measurement trigger signal
+    uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 611Hz ~ 83333Hz
                                    Fs = Fd / interval / 2
-                                   Range: the smallest interval should not be smaller than the ADC measurement period. The largest interval should not be larger than 4095. */
+                                   Fs: sampling frequency;
+                                   Fd: digital controller frequency, no larger than 5M for better performance
+                                   interval: interval between 2 measurement trigger signal, the smallest interval should not be smaller than the ADC measurement period, the largest interval should not be larger than 4095 */
 #endif
 } adc_digi_config_t;
 

@@ -25,10 +25,12 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     assert(ret == ESP_OK);
 
     adc_digi_pattern_table_t adc_pattern[10] = {0};
+
+    //Do not set the sampling frequency out of the range between `SOC_ADC_SAMPLE_FREQ_THRES_LOW` and `SOC_ADC_SAMPLE_FREQ_THRES_HIGH`
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .sample_freq_hz = 83333,
+        .sample_freq_hz = 620,
     };
 
     dig_cfg.adc_pattern_len = channel_num;
