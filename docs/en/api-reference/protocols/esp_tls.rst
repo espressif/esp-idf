@@ -38,6 +38,21 @@ The ESP-TLS  component has a file :component_file:`esp-tls/esp_tls.h` which cont
 of the two SSL/TLS Libraries between mbedtls and wolfssl for its operation. API specific to mbedtls are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and API
 specific to wolfssl are present in :component_file:`esp-tls/private_include/esp_tls_wolfssl.h`.
 
+TLS Server verification
+-----------------------
+
+The ESP-TLS provides multiple options for TLS server verification on the client side. The ESP-TLS client can verify the server by validating the peer's server certificate or with the help of pre-shared keys. The user should select only one of the following options in the :cpp:type:`esp_tls_cfg_t` structure for TLS server verification. If no option is selected then client will return a fatal error by default at the time of the TLS connection setup.
+
+    *  **cacert_buf** and **cacert_bytes**: The CA certificate can be provided in a buffer to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the CA certificate present in the buffer to verify the server. The following variables in :cpp:type:`esp_tls_cfg_t` structure must be set.
+
+        * ``cacert_buf`` - pointer to the buffer which contains the CA cert.
+        * ``cacert_bytes`` - size of the CA certificate in bytes.
+    * **use_global_ca_store**: The ``global_ca_store`` can be initialized and set at once. Then it can be used to verify the server for all the ESP-TLS connections which have set ``use_global_ca_store = true`` in their respective :cpp:type:`esp_tls_cfg_t` structure. See API Reference section below on information regarding different API used for initializing and setting up the ``global_ca_store``.
+    * **crt_bundle_attach**: The ESP x509 Certificate Bundle API provides an easy way to include a bundle of custom x509 root certificates for TLS server verification. More details can be found at :doc:`ESP x509 Certificate Bundle</api-reference/protocols/esp_crt_bundle>`
+    * **psk_hint_key**: To use pre-shared keys for server verification, :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding the server verification is selected.
+    * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purpose. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
+      *WARNING:Enabling this option comes with a potential risk of establishing a TLS connection with a server which has a fake identity, provided that the server certificate is not provided either through API or other mechanism like ca_store etc.*
+
 Underlying SSL/TLS Library Options
 ----------------------------------
 The ESP-TLS  component has an option to use mbedtls or wolfssl as their underlying SSL/TLS library. By default only mbedtls is available and is
