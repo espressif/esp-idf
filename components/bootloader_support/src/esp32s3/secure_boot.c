@@ -260,7 +260,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
 
 esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *image_data)
 {
-    ESP_LOGI(TAG, "enabling secure boot v2 - ESP32-S2...");
+    ESP_LOGI(TAG, "enabling secure boot v2...");
 
     if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "secure boot v2 is already enabled, continuing..");
