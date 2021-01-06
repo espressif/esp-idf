@@ -39,6 +39,7 @@ struct esp_transport_item_t {
     get_socket_func        _get_socket;             /*!< Function returning the transport's socket */
     struct esp_transport_error_s*    error_handle;  /*!< Error handle (based on esp-tls error handle)
                                                      * extended with transport's specific errors */
+    esp_transport_keep_alive_t *keep_alive_cfg;     /*!< TCP keep-alive config */
 
     STAILQ_ENTRY(esp_transport_item_t) next;
 };

@@ -165,6 +165,14 @@ void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data);
  */
 void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key);
 
+/**
+ * @brief      Set keep-alive status in current ssl context
+ *
+ * @param[in]  t               ssl transport
+ * @param[in]  keep_alive_cfg  The handle for keep-alive configuration
+ */
+void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg);
+
 #ifdef __cplusplus
 }
 #endif
