@@ -318,22 +318,25 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
 {
     size_t spiram_size = esp_spiram_get_size();
     uint32_t size_for_flash = (pages_for_flash << 16);
+    intptr_t vaddr;
     ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (spiram_size - (pages_for_flash << 16))/1024);
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
 
     if (spiram_size <= DRAM0_DRAM1_DPORT_CACHE_SIZE) {
         /* cache size <= 10MB + 512KB, map DRAM0, DRAM1, DPORT bus */
-        return heap_caps_add_region((intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + size_for_flash, (intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + SPIRAM_SMALL_SIZE_MAP_SIZE -1);
-    } else {
-        Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, DPORT_CACHE_ADDRESS_LOW, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, DRAM0_DRAM1_DPORT_CACHE_SIZE >> 16, 0);
-        if (size_for_flash <= SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT) {
-            return heap_caps_add_region((intptr_t)DPORT_CACHE_ADDRESS_LOW, (intptr_t)DPORT_CACHE_ADDRESS_LOW + DRAM0_DRAM1_DPORT_CACHE_SIZE -1);
-        } else {
-            return heap_caps_add_region((intptr_t)DPORT_CACHE_ADDRESS_LOW + size_for_flash, (intptr_t)DPORT_CACHE_ADDRESS_LOW + DRAM0_DRAM1_DPORT_CACHE_SIZE -1);
-        }
-        return ESP_OK;
+        vaddr = SPIRAM_SMALL_SIZE_MAP_VADDR;
+        return heap_caps_add_region(vaddr + size_for_flash, vaddr + spiram_size - 1);
     }
+
+    vaddr = DPORT_CACHE_ADDRESS_LOW;
+    Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, vaddr, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, DRAM0_DRAM1_DPORT_CACHE_SIZE >> 16, 0);
+    if (size_for_flash <= SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT) {
+        return heap_caps_add_region(vaddr, vaddr + DRAM0_DRAM1_DPORT_CACHE_SIZE - 1);
+    }
+
+    // Largest size
+    return heap_caps_add_region(vaddr + size_for_flash, vaddr + DRAM0_DRAM1_DPORT_CACHE_SIZE -1);
 }
 
 
