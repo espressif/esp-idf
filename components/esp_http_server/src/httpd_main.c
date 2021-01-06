@@ -33,7 +33,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
             return httpd_sess_close_lru(hd);
-            /* Returning from this allowes the main server thread to process
+            /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
              * therefore httpd_accept_conn() will be called again, but this time
@@ -214,6 +214,7 @@ static esp_err_t httpd_server(struct httpd_data *hd)
      * sessions? */
     int fd = -1;
     while ((fd = httpd_sess_iterate(hd, fd)) != -1) {
+        ESP_LOGD(TAG, LOG_FMT("iterating over socket %d"), fd);
         if (FD_ISSET(fd, &read_set) || (httpd_sess_pending(hd, fd))) {
             ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
             if (httpd_sess_process(hd, fd) != ESP_OK) {

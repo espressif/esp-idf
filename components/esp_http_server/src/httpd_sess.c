@@ -92,6 +92,7 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
 
 void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn)
 {
+    ESP_LOGW(TAG, "http_sess_free_ctx ctx=%d", (int) ctx);
     if (ctx) {
         if (free_fn) {
             free_fn(ctx);
@@ -136,6 +137,7 @@ void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free
              * as it will be freed inside httpd_req_cleanup() */
             if (sd->ctx != hd->hd_req.sess_ctx) {
                 /* Free previous context */
+                ESP_LOGW(TAG, "http_d_sess free ctx");
                 httpd_sess_free_ctx(hd->hd_req.sess_ctx, hd->hd_req.free_ctx);
             }
             hd->hd_req.sess_ctx = ctx;
@@ -296,6 +298,7 @@ bool httpd_sess_pending(struct httpd_data *hd, int fd)
 esp_err_t httpd_sess_process(struct httpd_data *hd, int newfd)
 {
     struct sock_db *sd = httpd_sess_get(hd, newfd);
+    ESP_LOGD(TAG, LOG_FMT("sd = %llu"), (uint64_t) sd);
     if (! sd) {
         return ESP_FAIL;
     }
@@ -348,6 +351,7 @@ esp_err_t httpd_sess_close_lru(struct httpd_data *hd)
             lru_counter = hd->hd_sd[i].lru_counter;
             lru_fd = hd->hd_sd[i].fd;
         }
+        ESP_LOGD(TAG, LOG_FMT("fd=%d lru_counter=%lld"), hd->hd_sd[i].fd, hd->hd_sd[i].lru_counter);
     }
     ESP_LOGD(TAG, LOG_FMT("fd = %d"), lru_fd);
     return httpd_sess_trigger_close(hd, lru_fd);
@@ -394,6 +398,7 @@ static void httpd_sess_close(void *arg)
 esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd)
 {
     struct sock_db *sock_db = httpd_sess_get(handle, sockfd);
+    ESP_LOGI(TAG, LOG_FMT("socket = %d"), sockfd);
     if (sock_db) {
         return httpd_queue_work(handle, httpd_sess_close, sock_db);
     }
