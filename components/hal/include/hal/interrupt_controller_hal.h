@@ -23,12 +23,14 @@
 extern "C" {
 #endif
 
+#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
 /**
  * @brief Gets target platform interrupt descriptor table
  *
  * @return Address of interrupt descriptor table
  */
 __attribute__((pure))  const int_desc_t *interrupt_controller_hal_desc_table(void);
+#endif
 
 /**
  * @brief Gets the interrupt type given an interrupt number.
@@ -55,24 +57,6 @@ __attribute__((pure))  int interrupt_controller_hal_desc_level(int interrupt_num
  */
 __attribute__((pure))  int_desc_flag_t interrupt_controller_hal_desc_flags(int interrupt_number, int cpu_number);
 
-#if SOC_INTERRUPT_LEVEL_CAN_SET
-/**
- * @brief Set the interrupt level given an interrupt number.
- *
- * @param interrupt_number number of the interrupt
- * @param level new level for this interrupt
- */
-void interrupt_controller_hal_set_level(int interrupt_number, int level);
-
-/**
- * @brief Set the interrupt type given an interrupt number.
- *
- * @param interrupt_number number of the interrupt
- * @param type new type for this interrupt
- */
-void interrupt_controller_hal_set_type(int interrupt_number, int_type_t type);
-#endif
-
 /**
  * @brief Gets the interrupt type given an interrupt number.
  *
@@ -94,6 +78,30 @@ static inline int interrupt_controller_hal_get_level(int interrupt_number)
 {
     return interrupt_controller_hal_desc_level(interrupt_number);
 }
+
+#ifdef SOC_CPU_HAS_FLEXIBLE_INTC
+/**
+ * @brief Set the type of an interrupt in the controller.
+ *
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void interrupt_controller_hal_set_int_type(int intr, int_type_t type)
+{
+    intr_cntrl_ll_set_int_type(intr, type);
+}
+
+/**
+ * @brief Sets the interrupt level int the interrupt controller.
+ *
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param level priority between 1 (lowest) to 7 (highest)
+ */
+static inline void interrupt_controller_hal_set_int_level(int intr, int level)
+{
+    intr_cntrl_ll_set_int_level(intr, level);
+}
+#endif
 
 /**
  * @brief Gets the cpu flags given the interrupt number and target cpu.
@@ -182,6 +190,16 @@ static inline uint32_t interrupt_controller_hal_disable_int_mask(uint32_t newmas
 static inline void interrupt_controller_hal_enable_int_mask(uint32_t newmask)
 {
     intr_cntrl_ll_enable_int_mask(newmask);
+}
+
+/**
+ * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
+ *
+ * @param intr interrupt number ranged from 0 to 31
+ */
+static inline void interrupt_controller_hal_edge_int_acknowledge(int intr)
+{
+    intr_cntrl_ll_edge_int_acknowledge(intr);
 }
 
 #ifdef __cplusplus

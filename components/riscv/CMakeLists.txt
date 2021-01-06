@@ -7,6 +7,9 @@ if(BOOTLOADER_BUILD)
 else()
     set(priv_requires soc freertos)
     set(srcs
+        "expression_with_stack_riscv.c"
+        "expression_with_stack_riscv_asm.S"
+        "instruction_decode.c"
         "interrupt.c"
         "stdatomic.c"
         "vectors.S")

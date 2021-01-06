@@ -68,7 +68,7 @@ static inline bool intr_cntrl_ll_has_handler(uint8_t intr, uint8_t cpu)
  * @param handler handler invoked when an interrupt occurs
  * @param arg optional argument to pass to the handler
  */
-static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler_t handler, void * arg)
+static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler_t handler, void *arg)
 {
     intr_handler_set(intr, (void *)handler, arg);
 }
@@ -80,7 +80,7 @@ static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler
  *
  * @return argument used by handler of passed interrupt number
  */
-static inline void * intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
+static inline void *intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
 {
     return intr_handler_get_arg(intr);
 }
@@ -116,27 +116,36 @@ static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
 }
 
 /**
- * @brief Set the interrupt type given an interrupt number.
+ * @brief Acknowledge an edge-trigger interrupt by clearing its pending flag
  *
- * @param interrupt_number number of the interrupt
- * @param type new type for this interrupt
+ * @param intr interrupt number ranged from 0 to 31
  */
-static inline void intr_cntrl_ll_set_type(int interrupt_number, int_type_t type)
+static inline void intr_cntrl_ll_edge_int_acknowledge(int intr)
 {
-    esprv_intc_int_set_type(BIT(interrupt_number), type);
+    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr);
 }
 
 /**
- * @brief Set the interrupt level (priority) given an interrupt number.
+ * @brief Sets the interrupt level int the interrupt controller.
  *
- * @param interrupt_number number of the interrupt
- * @param level new level for this interrupt
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param level priority between 1 (lowest) to 7 (highest)
  */
-static inline void intr_cntrl_ll_set_level(int interrupt_number, int level)
+static inline void intr_cntrl_ll_set_int_level(int intr, int level)
 {
-    esprv_intc_int_set_priority(interrupt_number, level);
+    esprv_intc_int_set_priority(intr, level);
 }
 
+/**
+ * @brief Set the type of an interrupt in the controller.
+ *
+ * @param interrupt_number Interrupt number 0 to 31
+ * @param type interrupt type as edge or level triggered
+ */
+static inline void intr_cntrl_ll_set_int_type(int intr, int_type_t type)
+{
+    esprv_intc_int_set_type(BIT(intr), type);
+}
 
 #ifdef __cplusplus
 }

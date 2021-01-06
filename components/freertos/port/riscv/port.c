@@ -77,19 +77,23 @@
 #include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
-#include "sdkconfig.h"
 #include "portmacro.h"
-#include "riscv/interrupt.h"
-#include "riscv/rvruntime-frames.h"
+
+#include "sdkconfig.h"
+
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
-#include "soc/interrupt_reg.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
+
+#include "riscv/rvruntime-frames.h"
 #include "riscv/riscv_interrupts.h"
 #include "riscv/interrupt.h"
+
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
+#include "esp_private/crosscore_int.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 
 /**
@@ -102,15 +106,14 @@ static UBaseType_t uxCriticalNesting = 0;
 static UBaseType_t uxSavedInterruptState = 0;
 BaseType_t uxSchedulerRunning = 0;
 UBaseType_t uxInterruptNesting = 0;
+BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
 
 static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 
-static void vPortSysTickHandler(void);
+static void vPortSysTickHandler(void *arg);
 static void vPortSetupTimer(void);
-static void vPortSetupSoftwareInterrupt(void);
-static void vPortSoftwareInterrupt(void);
 static void prvTaskExitError(void);
 
 extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM only
@@ -121,7 +124,6 @@ void vPortEnterCritical(void)
     uxCriticalNesting++;
 
     if (uxCriticalNesting == 1) {
-        //portDISABLE_INTERRUPTS();
         uxSavedInterruptState = state;
     }
 }
@@ -132,7 +134,6 @@ void vPortExitCritical(void)
         uxCriticalNesting--;
         if (uxCriticalNesting == 0) {
             portEXIT_CRITICAL_NESTED(uxSavedInterruptState);
-            //portENABLE_INTERRUPTS();
         }
     }
 }
@@ -143,16 +144,9 @@ void vPortExitCritical(void)
  */
 void vPortSetupTimer(void)
 {
-    /* register the interrupt handler */
-    intr_handler_set(ETS_SYSTICK_INUM, (intr_handler_t)&vPortSysTickHandler, NULL);
-
-    /* pass the timer interrupt through the interrupt matrix */
-    intr_matrix_route(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ETS_SYSTICK_INUM);
-
-    /* enable the interrupt in the INTC */
-    esprv_intc_int_enable(BIT(ETS_SYSTICK_INUM));
-    esprv_intc_int_set_type(BIT(ETS_SYSTICK_INUM), INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_SYSTICK_INUM, 1);
+    /* set system timer interrupt vector */
+    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, NULL, NULL);
+    assert(err == ESP_OK);
 
     /* configure the timer */
     systimer_hal_init();
@@ -161,24 +155,6 @@ void vPortSetupTimer(void)
     systimer_hal_select_alarm_mode(SYSTIMER_ALARM_0, SYSTIMER_ALARM_MODE_PERIOD);
     systimer_hal_enable_alarm_int(SYSTIMER_ALARM_0);
     systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
-}
-
-/* setup software interrupt */
-void vPortSetupSoftwareInterrupt(void)
-{
-    /* register the interrupt handler, see interrupt.h */
-    intr_handler_set(ETS_CPU_INTR0_INUM, (intr_handler_t)&vPortSoftwareInterrupt, NULL);
-
-    /* pass the "FROM_CPU_0", a.k.a. cross-core interrupt, through the interrupt matrix */
-    intr_matrix_route(ETS_FROM_CPU_INTR0_SOURCE, ETS_CPU_INTR0_INUM);
-
-    /* enable the interrupt in the INTC */
-    esprv_intc_int_enable(BIT(ETS_CPU_INTR0_INUM));
-    esprv_intc_int_set_type(BIT(ETS_CPU_INTR0_INUM), INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_CPU_INTR0_INUM, 1);
-
-    // TODO ESP32-C3 IDF-2126, maybe can use interrupt allocation API for all of the above? unsure...
-    esp_intr_reserve(ETS_CPU_INTR0_INUM, xPortGetCoreID());
 }
 
 void prvTaskExitError(void)
@@ -191,8 +167,7 @@ void prvTaskExitError(void)
     defined, then stop here so application writers can catch the error. */
     configASSERT(uxCriticalNesting == ~0UL);
     portDISABLE_INTERRUPTS();
-    for (;;)
-        ;
+    abort();
 }
 
 /* Clear current interrupt mask and set given mask */
@@ -212,9 +187,6 @@ int vPortSetInterruptMask(void)
     return ret;
 }
 
-/*
- * See header file for description.
- */
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
 {
     extern uint32_t __global_pointer$;
@@ -231,11 +203,15 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     frame->a1 = 0x11111111;
     frame->a2 = 0x22222222;
     frame->a3 = 0x33333333;
+
+    //TODO: IDF-2393
     return (StackType_t *)frame;
 }
 
-void vPortSysTickHandler(void)
+IRAM_ATTR void vPortSysTickHandler(void *arg)
 {
+    (void)arg;
+
     systimer_ll_clear_alarm_int(SYSTIMER_ALARM_0);
 
     if (!uxSchedulerRunning) {
@@ -243,19 +219,23 @@ void vPortSysTickHandler(void)
     }
 
     if (xTaskIncrementTick() != pdFALSE) {
-        vTaskSwitchContext();
+        vPortYieldFromISR();
     }
 }
 
 BaseType_t xPortStartScheduler(void)
 {
-    vPortSetupTimer();
-    vPortSetupSoftwareInterrupt();
+    uxInterruptNesting = 0;
     uxCriticalNesting = 0;
-    uxSchedulerRunning = 0;          /* this means first yield */
+    uxSchedulerRunning = 0;
+
+    vPortSetupTimer();
+
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
     riscv_global_interrupts_enable();
+
     vPortYield();
+
     /*Should not get here*/
     return pdFALSE;
 }
@@ -263,21 +243,18 @@ BaseType_t xPortStartScheduler(void)
 void vPortEndScheduler(void)
 {
     /* very unlikely this function will be called, so just trap here */
-    while (1)
-        ;
-}
-
-void vPortSoftwareInterrupt(void)
-{
-    uxSchedulerRunning = 1;
-    vTaskSwitchContext();
-    REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
+    abort();
 }
 
 void vPortYieldOtherCore(BaseType_t coreid)
 {
-    (void)coreid;
-    vPortYield();
+    esp_crosscore_int_send_yield(coreid);
+}
+
+void vPortYieldFromISR( void )
+{
+    uxSchedulerRunning = 1;
+    xPortSwitchFlag = 1;
 }
 
 void vPortYield(void)
@@ -285,8 +262,8 @@ void vPortYield(void)
     if (uxInterruptNesting) {
         vPortYieldFromISR();
     } else {
-        REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 1);
 
+        esp_crosscore_int_send_yield(0);
         /* There are 3-4 instructions of latency between triggering the software
            interrupt and the CPU interrupt happening. Make sure it happened before
            we return, otherwise vTaskDelay() may return and execute 1-2
@@ -297,13 +274,9 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while(uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) { }
+        while (uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
     }
-}
 
-void vPortYieldFromISR(void)
-{
-    vTaskSwitchContext();
 }
 
 void vPortSetStackWatchpoint(void *pxStackStart)
@@ -319,30 +292,30 @@ BaseType_t xPortInIsrContext(void)
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
     /* For single core, this can be the same as xPortInIsrContext() because reading it is atomic */
-	return uxInterruptNesting;
+    return uxInterruptNesting;
 }
 
 
 void vPortCPUInitializeMutex(portMUX_TYPE *mux)
 {
-    (void)mux;
+    (void)mux;     //TODO: IDF-2393
 }
 
 void vPortCPUAcquireMutex(portMUX_TYPE *mux)
 {
-    (void)mux;
+    (void)mux;    //TODO: IDF-2393
 }
 
 bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles)
 {
-    (void)mux;
+    (void)mux;      //TODO: IDF-2393
     (void)timeout_cycles;
     return true;
 }
 
 void vPortCPUReleaseMutex(portMUX_TYPE *mux)
 {
-    (void)mux;
+    (void)mux;     //TODO: IDF-2393
 }
 
 void __attribute__((weak)) vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)

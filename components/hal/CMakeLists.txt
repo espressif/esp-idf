@@ -28,8 +28,7 @@ if(NOT BOOTLOADER_BUILD)
                 "soc_hal.c"
                 "interrupt_controller_hal.c"
                 "sha_hal.c"
-                "aes_hal.c"
-                "${target}/interrupt_descriptor_table.c")
+                "aes_hal.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
@@ -43,6 +42,7 @@ if(NOT BOOTLOADER_BUILD)
                     "twai_hal_iram.c"
                     "esp32/adc_hal.c"
                     "esp32/brownout_hal.c"
+                    "esp32/interrupt_descriptor_table.c"
                     "esp32/touch_sensor_hal.c")
         if(NOT BOOTLOADER_BUILD AND CONFIG_ETH_USE_ESP32_EMAC)
             list(APPEND srcs "esp32/emac_hal.c")
@@ -65,6 +65,7 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32s2/systimer_hal.c"
                     "esp32s2/touch_sensor_hal.c"
                     "esp32s2/dac_hal.c"
+                    "esp32s2/interrupt_descriptor_table.c"
                     "esp32s2/usb_hal.c")
     endif()
 
@@ -79,6 +80,7 @@ if(NOT BOOTLOADER_BUILD)
             "twai_hal.c"
             "twai_hal_iram.c"
             "esp32s3/brownout_hal.c"
+            "esp32s3/interrupt_descriptor_table.c"
             "esp32s3/systimer_hal.c"
             "esp32s3/touch_sensor_hal.c")
     endif()

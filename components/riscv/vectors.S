@@ -97,11 +97,8 @@
 	csrw	mepc, t0
 .endm
 
-	.global vPortYieldFromISR
-	.global uxInterruptNesting
-	.global uxSchedulerRunning
-	.global xIsrStackTop
-	.global pxCurrentTCB
+	.global rtos_int_enter
+	.global rtos_int_exit
 	.global _global_interrupt_handler
 
 	.section .exception_vectors.text
@@ -219,25 +216,11 @@ _interrupt_handler:
 	save_regs
 	save_mepc
 
-	/* scheduler not enabled, jump directly to ISR handler */
-	lw t0, uxSchedulerRunning
-	beq t0, zero, already_on_handler
+	/* Before doing anythig preserve the stack pointer */
+	/* It will be saved in current TCB, if needed */
+	mv a0, sp
+	call rtos_int_enter
 
-	/* increments the ISR nesting count */
-	la t0, uxInterruptNesting
-	lw t1, 0x0(t0)
-	addi t2,t1,1
-	sw  t2, 0x0(t0)
-
-	/* If reached here from another low priority ISR, skip stack pushing to TCB */
-	bne t1,zero, already_on_handler
-
-	/* Otherwise, save current sp, and use the isr stack from here */
-	lw  t0, pxCurrentTCB
-	sw 	sp, 0x0(t0)
-	lw  sp, xIsrStackTop
-
-already_on_handler:
 	/* Before dispatch c handler, restore interrupt to enable nested intr */
 	csrr s1, mcause
 	csrr s2, mstatus
@@ -278,29 +261,13 @@ already_on_handler:
 	sw s3, 0(t0)
 	fence
 
-	/* may skip RTOS aware interrupt since scheduler was not started */
-	lw t1, uxSchedulerRunning
-	beq t1,zero, isr_exit
+	/* Yield to the next task is needed: */
+	mv a0, sp
+	call rtos_int_exit
 
-	/* update nesting interrupts counter */
-	la t0, uxInterruptNesting
-	lw t1, 0x0(t0)
+	/* The next (or current) stack pointer is returned in a0 */
+	mv sp, a0
 
-	/* Already zero, protect against underflow */
-	beq t1, zero, isr_skip_decrement
-	addi t1,t1, -1
-	sw  t1, 0x0(t0)
-
-isr_skip_decrement:
-	/* may still have interrupts pending, skip section below and exit */
-	bne t1,zero,isr_exit
-
-	/* handled all the ISRs and scheduled the next task, take its stack */
-	/* load on sp, then exit. */
-	lw sp, pxCurrentTCB
-	lw sp, 0x0(sp)
-
-isr_exit:
 	/* restore the rest of the registers */
 	csrw mcause, s1
 	csrw mstatus, s2

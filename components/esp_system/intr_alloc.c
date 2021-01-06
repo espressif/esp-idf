@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sdkconfig.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +20,7 @@
 #include <esp_types.h>
 #include <limits.h>
 #include <assert.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -48,7 +48,8 @@ Define this to debug the choices made when allocating the interrupt. This leads 
 output within a critical region, which can lead to weird effects like e.g. the interrupt watchdog
 being triggered, that is why it is separate from the normal LOG* scheme.
 */
-//define DEBUG_INT_ALLOC_DECISIONS
+// #define DEBUG_INT_ALLOC_DECISIONS
+
 #ifdef DEBUG_INT_ALLOC_DECISIONS
 # define ALCHLOG(...) ESP_EARLY_LOGD(TAG, __VA_ARGS__)
 #else
@@ -237,6 +238,8 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: special-purpose int");
         return false;
     }
+
+#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
     //Check if the interrupt level is acceptable
     if (!(flags&(1<<interrupt_controller_hal_get_level(x)))) {
         ALCHLOG("....Unusable: incompatible level");
@@ -244,10 +247,12 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
     }
     //check if edge/level type matches what we want
     if (((flags&ESP_INTR_FLAG_EDGE) && (interrupt_controller_hal_get_type(x)==INTTP_LEVEL)) ||
-            (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)))) {
+        (((!(flags&ESP_INTR_FLAG_EDGE)) && (interrupt_controller_hal_get_type(x)==INTTP_EDGE)))) {
         ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
+#endif
+
     //check if interrupt is reserved at runtime
     if (vd->flags&VECDESC_FL_RESERVED)  {
         ALCHLOG("....Unusable: reserved at runtime.");
@@ -551,14 +556,11 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             interrupt_controller_hal_set_int_handler(intr, handler, arg);
 #endif
         }
-#ifdef __XTENSA__ // TODO ESP32-C3 IDF-2126
-        if (flags&ESP_INTR_FLAG_EDGE) xthal_set_intclear(1 << intr);
-#else
+
         if (flags & ESP_INTR_FLAG_EDGE) {
-            ESP_INTR_DISABLE(intr);
-            esprv_intc_int_set_priority(intr, 0);
+            interrupt_controller_hal_edge_int_acknowledge(intr);
         }
-#endif
+
         vd->source=source;
     }
     if (flags&ESP_INTR_FLAG_IRAM) {
@@ -585,11 +587,16 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         esp_intr_disable(ret);
     }
 
-#if CONFIG_IDF_TARGET_ESP32C3
-    // TODO ESP32-C3 IDF-2126, these need to be set or the new interrupt won't fire, but are currently hard-coded
-    // for priority and level...
-    esprv_intc_int_set_priority(intr, 1);
-    esprv_intc_int_set_type(BIT(intr), INTR_TYPE_LEVEL);
+#ifdef SOC_CPU_HAS_FLEXIBLE_INTC
+    //Extract the level from the interrupt passed flags
+    int level = esp_intr_flags_to_level(flags);
+    interrupt_controller_hal_set_int_level(intr, level);
+
+    if (flags & ESP_INTR_FLAG_EDGE) {
+        interrupt_controller_hal_set_int_type(intr, INTTP_EDGE);
+    } else {
+        interrupt_controller_hal_set_int_type(intr, INTTP_LEVEL);
+    }
 #endif
 
     portEXIT_CRITICAL(&spinlock);
