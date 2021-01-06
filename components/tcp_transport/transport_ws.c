@@ -98,6 +98,21 @@ static char *get_http_header(const char *buffer, const char *key)
     return NULL;
 }
 
+static int ws_transport_read_all_bytes(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
+{
+    int readed = 0;
+    do {
+        int rlen = esp_transport_read(t, buffer, len - readed, timeout_ms);
+        if (rlen <= 0) {
+            return rlen;
+        }
+        buffer += rlen;
+        readed += rlen;
+    } while (readed < len);
+    return readed;
+}
+
+
 static int ws_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
@@ -199,7 +214,7 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     char *buffer = (char *)b;
-    char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
+    char ws_header[MAX_WEBSOCKET_HEADER_SIZE] = { 0 };
     char *mask;
     int header_len = 0, i;
 
@@ -325,7 +340,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     // Receive and process header first (based on header size)
     int header = 2;
     int mask_len = 4;
-    if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+    if ((rlen = ws_transport_read_all_bytes(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
@@ -337,7 +352,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", ws->frame_state.opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
-        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+        if ((rlen = ws_transport_read_all_bytes(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
@@ -345,7 +360,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     } else if (payload_len == 127) {
         // headerLen += 8;
         header = 8;
-        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+        if ((rlen = ws_transport_read_all_bytes(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
@@ -360,7 +375,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
 
     if (mask) {
         // Read and store mask
-        if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, mask_len, timeout_ms)) <= 0) {
+        if (payload_len != 0 && (rlen = ws_transport_read_all_bytes(ws->parent, buffer, mask_len, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
@@ -372,7 +387,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ws->frame_state.payload_len = payload_len;
     ws->frame_state.bytes_remaining = payload_len;
 
-    return payload_len;
+    return rlen;
 }
 
 static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
