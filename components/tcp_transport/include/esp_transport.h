@@ -16,11 +16,21 @@
 #define _ESP_TRANSPORT_H_
 
 #include <esp_err.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+*  @brief Keep alive parameters structure
+*/
+typedef struct esp_transport_keepalive {
+    bool            keep_alive_enable;      /*!< Enable keep-alive timeout */
+    int             keep_alive_idle;        /*!< Keep-alive idle time (second) */
+    int             keep_alive_interval;    /*!< Keep-alive interval time (second) */
+    int             keep_alive_count;       /*!< Keep-alive packet retry send count */
+} esp_transport_keep_alive_t;
 
 typedef struct esp_transport_internal* esp_transport_list_handle_t;
 typedef struct esp_transport_item_t* esp_transport_handle_t;
@@ -313,8 +323,22 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
   */
 esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t);
 
+/**
+ * @brief      Set keep-alive configuration
+ *
+ * @param[in]  t               The transport handle
+ * @param[in]  keep_alive_cfg  The keep-alive config
+ */
+void esp_transport_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg);
 
-
+/**
+ * @brief      Get keep-alive config of this transport
+ *
+ * @param[in]  t        The transport handle
+ *
+ * @return     The keep-alive configuration
+ */
+void *esp_transport_get_keep_alive(esp_transport_handle_t t);
 #ifdef __cplusplus
 }
 #endif
