@@ -135,21 +135,9 @@ void IRAM_ATTR esp_spiram_init_cache(void)
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_SMALL_SIZE_MAP_VADDR, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, SPIRAM_SMALL_SIZE_MAP_SIZE >> 16, 0);
         REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM1 | EXTMEM_PRO_DCACHE_MASK_DRAM0 | EXTMEM_PRO_DCACHE_MASK_DPORT);
     } else {
-#if CONFIG_SPIRAM_USE_AHB_DBUS3// TODO Ready to remove this macro esp32s2 no AHB bus access cache
-        if (spiram_size <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
-            /* cache size <= 14MB + 512KB, map DRAM0, DRAM1, DPORT bus, as well as data bus3 */
-            Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_MID_SIZE_MAP_VADDR, SPIRAM_MID_SIZE_MAP_PADDR, 64, SPIRAM_MID_SIZE_MAP_SIZE >> 16, 0);
-        } else {
-            /* cache size > 14MB + 512KB, map DRAM0, DRAM1, DPORT bus, as well as data bus3 */
-            Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_BIG_SIZE_MAP_VADDR, SPIRAM_BIG_SIZE_MAP_PADDR, 64, SPIRAM_BIG_SIZE_MAP_SIZE >> 16, 0);
-        }
-        Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, SPIRAM_MID_BIG_SIZE_MAP_VADDR, SPIRAM_MID_BIG_SIZE_MAP_PADDR, 64, SPIRAM_MID_BIG_SIZE_MAP_SIZE >> 16, 0);
-        REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM1 | EXTMEM_PRO_DCACHE_MASK_DRAM0 | EXTMEM_PRO_DCACHE_MASK_DPORT | EXTMEM_PRO_DCACHE_MASK_BUS3);
-#else
         /* cache size > 10MB + 512KB, map DRAM0, DRAM1, DPORT bus , only remap 0x3f500000 ~ 0x3ff90000*/
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, DPORT_CACHE_ADDRESS_LOW, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, DRAM0_DRAM1_DPORT_CACHE_SIZE >> 16, 0);
         REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM1 | EXTMEM_PRO_DCACHE_MASK_DRAM0 | EXTMEM_PRO_DCACHE_MASK_DPORT);
-#endif
     }
     Cache_Resume_DCache(0);
 }
@@ -338,36 +326,6 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
         /* cache size <= 10MB + 512KB, map DRAM0, DRAM1, DPORT bus */
         return heap_caps_add_region((intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + size_for_flash, (intptr_t)SPIRAM_SMALL_SIZE_MAP_VADDR + SPIRAM_SMALL_SIZE_MAP_SIZE -1);
     } else {
-#if CONFIG_SPIRAM_USE_AHB_DBUS3 //TODO
-        if (spiram_size <= DRAM0_DRAM1_DPORT_DBUS3_CACHE_SIZE) {
-            /* cache size <= 14MB + 512KB, map DRAM0, DRAM1, DPORT bus, as well as data bus3 */
-            if (size_for_flash <= SPIRAM_MID_SIZE_MAP_SIZE) {
-                esp_err_t err = heap_caps_add_region((intptr_t)SPIRAM_MID_SIZE_MAP_VADDR + size_for_flash, (intptr_t)SPIRAM_MID_SIZE_MAP_VADDR + SPIRAM_MID_SIZE_MAP_SIZE -1);
-                if (err) {
-                    return err;
-                }
-                return heap_caps_add_region((intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR, (intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + SPIRAM_MID_BIG_SIZE_MAP_SIZE -1);
-            } else {
-                return heap_caps_add_region((intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + size_for_flash - SPIRAM_MID_SIZE_MAP_SIZE, (intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + SPIRAM_MID_BIG_SIZE_MAP_SIZE -1);
-            }
-        } else {
-            if (size_for_flash <= SPIRAM_SIZE_EXC_DATA_CACHE) {
-                esp_err_t err = heap_caps_add_region((intptr_t)SPIRAM_BIG_SIZE_MAP_VADDR, (intptr_t)SPIRAM_BIG_SIZE_MAP_VADDR + SPIRAM_BIG_SIZE_MAP_SIZE -1);
-                if (err) {
-                    return err;
-                }
-                return heap_caps_add_region((intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR, (intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + SPIRAM_MID_BIG_SIZE_MAP_SIZE -1);
-            } else if (size_for_flash <= SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT) {
-                esp_err_t err = heap_caps_add_region((intptr_t)SPIRAM_BIG_SIZE_MAP_VADDR + size_for_flash - SPIRAM_SIZE_EXC_DATA_CACHE, (intptr_t)SPIRAM_MID_SIZE_MAP_VADDR + SPIRAM_MID_SIZE_MAP_SIZE -1);
-                if (err) {
-                    return err;
-                }
-                return heap_caps_add_region((intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR, (intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + SPIRAM_MID_BIG_SIZE_MAP_SIZE -1);
-            } else {
-                return heap_caps_add_region((intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + size_for_flash - SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT, (intptr_t)SPIRAM_MID_BIG_SIZE_MAP_VADDR + SPIRAM_MID_BIG_SIZE_MAP_SIZE -1);
-            }
-        }
-#else
         Cache_Dbus_MMU_Set(MMU_ACCESS_SPIRAM, DPORT_CACHE_ADDRESS_LOW, SPIRAM_SMALL_SIZE_MAP_PADDR, 64, DRAM0_DRAM1_DPORT_CACHE_SIZE >> 16, 0);
         if (size_for_flash <= SPIRAM_SIZE_EXC_DRAM0_DRAM1_DPORT) {
             return heap_caps_add_region((intptr_t)DPORT_CACHE_ADDRESS_LOW, (intptr_t)DPORT_CACHE_ADDRESS_LOW + DRAM0_DRAM1_DPORT_CACHE_SIZE -1);
@@ -375,7 +333,6 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
             return heap_caps_add_region((intptr_t)DPORT_CACHE_ADDRESS_LOW + size_for_flash, (intptr_t)DPORT_CACHE_ADDRESS_LOW + DRAM0_DRAM1_DPORT_CACHE_SIZE -1);
         }
         return ESP_OK;
-#endif
     }
 }
 
