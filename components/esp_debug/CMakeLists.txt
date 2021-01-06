@@ -1,13 +1,6 @@
-idf_build_get_property(target IDF_TARGET)
+set(COMPONENT_SRCS "src/esp_debug.c")
+set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-set(srcs    "src/esp_debug.c")
+set(COMPONENT_PRIV_REQUIRES  "lwip" "app_update" "esp32")
 
-set(include_dirs
-    lwip/port/esp32/include
-    )
-
-idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS include
-                    PRIV_INCLUDE_DIRS
-                    REQUIRES esp_event lwip
-                    PRIV_REQUIRES "${target}")
+register_component()
