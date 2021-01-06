@@ -502,19 +502,6 @@ typedef enum {
     WIFI_IOCTL_MAX,
 } wifi_ioctl_cmd_t;
 
-#define MAX_SSID_LEN        32
-#define MAX_PASSPHRASE_LEN  64
-#define MAX_WPS_AP_CRED     3
-
-/** Argument structure for WIFI_EVENT_STA_WPS_ER_SUCCESS event */
-typedef struct {
-    uint8_t ap_cred_cnt;                        /**< Number of AP credentials received */
-    struct {
-        uint8_t ssid[MAX_SSID_LEN];             /**< SSID of AP */
-        uint8_t passphrase[MAX_PASSPHRASE_LEN]; /**< Passphrase for the AP */
-    } ap_cred[MAX_WPS_AP_CRED];                 /**< All AP credentials received from WPS handshake */
-} wifi_event_sta_wps_er_success_t;
-
 /** 
  * @brief Configuration for STA's HT2040 coexist management
  *
