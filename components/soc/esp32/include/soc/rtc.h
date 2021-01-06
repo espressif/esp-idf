@@ -541,6 +541,14 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
 
+/* Various delays to be programmed into power control state machines */
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (500)
+#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (1)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES        (7)
+#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
+#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
+
 /**
  * @brief Prepare the chip to enter sleep mode
  *
@@ -556,6 +564,17 @@ typedef struct rtc_sleep_config_s {
  */
 void rtc_sleep_init(rtc_sleep_config_t cfg);
 
+/**
+ * @brief Low level initialize for rtc state machine waiting cycles after waking up
+ *
+ * This function configures the cycles chip need to wait for internal 8MHz
+ * oscillator and external 40MHz crystal. As we configure fixed time for waiting
+ * crystal, we need to pass period to calculate cycles. Now this function only
+ * used in lightsleep mode.
+ *
+ * @param slowclk_period re-calibrated slow clock period
+ */
+void rtc_sleep_low_init(uint32_t slowclk_period);
 
 /**
  * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source

@@ -106,6 +106,12 @@ extern "C" {
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 #define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
+/* Various delays to be programmed into power control state machines */
+#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    RTC_CNTL_PLL_BUF_WAIT_DEFAULT
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US    RTC_CNTL_XTL_BUF_WAIT_DEFAULT
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES   RTC_CNTL_CK8M_WAIT_DEFAULT
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES    (0)
+
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
@@ -687,6 +693,17 @@ typedef struct {
  */
 void rtc_sleep_init(rtc_sleep_config_t cfg);
 
+/**
+ * @brief Low level initialize for rtc state machine waiting cycles after waking up
+ *
+ * This function configures the cycles chip need to wait for internal 8MHz
+ * oscillator and external 40MHz crystal. As we configure fixed time for waiting
+ * crystal, we need to pass period to calculate cycles. Now this function only
+ * used in lightsleep mode.
+ *
+ * @param slowclk_period re-calibrated slow clock period
+ */
+void rtc_sleep_low_init(uint32_t slowclk_period);
 
 /**
  * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source

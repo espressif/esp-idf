@@ -31,35 +31,13 @@
  */
 
 /**
- * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
+ * @brief One-off clock calibration function used by rtc_clk_cal_internal
  * @param cal_clk which clock to calibrate
  * @param slowclk_cycles number of slow clock cycles to count
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+static uint32_t rtc_clk_cal_internal_oneoff(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    /* On ESP32S2, choosing RTC_CAL_RTC_MUX results in calibration of
-     * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
-     * On the ESP32, it used the currently selected SLOW_CLK.
-     * The following code emulates ESP32 behavior:
-     */
-    if (cal_clk == RTC_CAL_RTC_MUX) {
-        rtc_slow_freq_t slow_freq = rtc_clk_slow_freq_get();
-        if (slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-            cal_clk = RTC_CAL_32K_XTAL;
-        } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
-            cal_clk = RTC_CAL_8MD256;
-        }
-    }
-    /* Enable requested clock (150k clock is always on) */
-    int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
-        REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
-    }
-
-    if (cal_clk == RTC_CAL_8MD256) {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
-    }
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
     /* There may be another calibration process already running during we call this function,
@@ -104,6 +82,91 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
             break;
         }
     }
+
+    return cal_val;
+}
+
+/**
+ * @brief Cycling clock calibration function used by rtc_clk_cal_internal
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
+static uint32_t rtc_clk_cal_internal_cycling(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+{
+    /* Get which slowclk is in calibration and max cali cycles */
+    rtc_cal_sel_t in_calibration_clk;
+    in_calibration_clk = REG_GET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL);
+    uint32_t cali_slowclk_cycles = REG_GET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX);
+    /* If no calibration in process or calibration period equal to 0, use slowclk_cycles cycles to calibrate slowclk */
+    if (cali_slowclk_cycles == 0 || !GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING) || in_calibration_clk != cal_clk) {
+        CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
+        REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
+        REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
+        SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
+        cali_slowclk_cycles = slowclk_cycles;
+    }
+
+    /* Wait for calibration finished */
+    while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_CYCLING_DATA_VLD));
+    uint32_t cal_val = REG_GET_FIELD(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_VALUE);
+
+    return cal_val;
+}
+
+/**
+ * @brief Slowclk period calculating funtion used by rtc_clk_cal and rtc_clk_cal_cycling
+ * @param xtal_cycles number of xtal cycles count
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return slow clock period
+ */
+static uint32_t rtc_clk_xtal_to_slowclk(uint64_t xtal_cycles, uint32_t slowclk_cycles)
+{
+    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    uint64_t divider = ((uint64_t)xtal_freq) * slowclk_cycles;
+    uint64_t period_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT) + divider / 2 - 1) / divider;
+    uint32_t period = (uint32_t)(period_64 & UINT32_MAX);
+    return period;
+}
+
+/**
+ * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
+uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, uint32_t cal_mode)
+{
+    /* On ESP32S2, choosing RTC_CAL_RTC_MUX results in calibration of
+     * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
+     * On the ESP32, it used the currently selected SLOW_CLK.
+     * The following code emulates ESP32 behavior:
+     */
+    if (cal_clk == RTC_CAL_RTC_MUX) {
+        rtc_slow_freq_t slow_freq = rtc_clk_slow_freq_get();
+        if (slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+            cal_clk = RTC_CAL_32K_XTAL;
+        } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
+            cal_clk = RTC_CAL_8MD256;
+        }
+    }
+    /* Enable requested clock (150k clock is always on) */
+    int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
+    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
+        REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
+    }
+
+    if (cal_clk == RTC_CAL_8MD256) {
+        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+    }
+
+    uint32_t cal_val;
+    if (cal_mode == RTC_TIME_CAL_ONEOFF_MODE) {
+        cal_val = rtc_clk_cal_internal_oneoff(cal_clk, slowclk_cycles);
+    } else {
+        cal_val = rtc_clk_cal_internal_cycling(cal_clk, slowclk_cycles);
+    }
+
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, dig_32k_xtal_state);
@@ -117,7 +180,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
     uint64_t ratio_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT)) / slowclk_cycles;
     uint32_t ratio = (uint32_t)(ratio_64 & UINT32_MAX);
     return ratio;
@@ -125,11 +188,15 @@ uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
-    uint64_t divider = ((uint64_t)xtal_freq) * slowclk_cycles;
-    uint64_t period_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT) + divider / 2 - 1) / divider;
-    uint32_t period = (uint32_t)(period_64 & UINT32_MAX);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
+    uint32_t period = rtc_clk_xtal_to_slowclk(xtal_cycles, slowclk_cycles);
+    return period;
+}
+
+uint32_t rtc_clk_cal_cycling(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+{
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_CYCLING_MODE);
+    uint32_t period = rtc_clk_xtal_to_slowclk(xtal_cycles, slowclk_cycles);
     return period;
 }
 

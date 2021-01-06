@@ -79,4 +79,12 @@ menu "ESP System Settings"
             heap initialization order by early startup services and scheduler related code. Speed
             wise RTC fast memory operates on APB clock and hence does not have much performance impact.
 
+    config ESP_SYSTEM_PD_FLASH
+        bool "PD flash at light sleep when there is no SPIRAM"
+        depends on !SPIRAM
+        default y
+        help
+            If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.
+            Only can be enabled if there is no SPIRAM configured.
+
 endmenu  # ESP System Settings
