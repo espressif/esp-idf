@@ -231,6 +231,11 @@ static inline int adv_send(struct net_buf *buf)
     return 0;
 }
 
+static inline TickType_t K_WAIT(int32_t val)
+{
+    return (val == K_FOREVER) ? portMAX_DELAY : (val / portTICK_PERIOD_MS);
+}
+
 static void adv_thread(void *p)
 {
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
@@ -254,7 +259,7 @@ static void adv_thread(void *p)
             BT_DBG("Mesh Proxy Advertising start");
             timeout = bt_mesh_proxy_server_adv_start();
             BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
-            xQueueReceive(adv_queue.handle, &msg, timeout);
+            xQueueReceive(adv_queue.handle, &msg, K_WAIT(timeout));
             BT_DBG("Mesh Proxy Advertising stop");
             bt_mesh_proxy_server_adv_stop();
         }
@@ -277,7 +282,7 @@ static void adv_thread(void *p)
                 BT_DBG("Mesh Proxy Advertising start");
                 timeout = bt_mesh_proxy_server_adv_start();
                 BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
-                handle = xQueueSelectFromSet(mesh_queue_set, timeout);
+                handle = xQueueSelectFromSet(mesh_queue_set, K_WAIT(timeout));
                 BT_DBG("Mesh Proxy Advertising stop");
                 bt_mesh_proxy_server_adv_stop();
                 if (handle) {
