@@ -245,11 +245,13 @@ esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module);
 */
 int64_t esp_phy_rf_get_on_ts(void);
 
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Get PHY lib version
  * @return PHY lib version.
  */
 char * get_phy_version_str(void);
+#endif
 
 #ifdef __cplusplus
 }
