@@ -78,9 +78,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_GAP_BLE]     = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },
     [BTC_PID_BLE_HID]     = {NULL, NULL},
     [BTC_PID_SPPLIKE]     = {NULL, NULL},
-#if (GATTS_INCLUDED == TRUE)
+#if (BLUFI_INCLUDED == TRUE)
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
-#endif  ///GATTS_INCLUDED == TRUE
+#endif  //BLUFI_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
 #endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
