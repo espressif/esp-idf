@@ -604,6 +604,7 @@ void esp_mbedtls_server_session_delete(esp_tls_t *tls)
 {
     if (tls != NULL) {
         esp_mbedtls_cleanup(tls);
+        esp_tls_internal_event_tracker_destroy(tls->error_handle);
         free(tls);
     }
 };
