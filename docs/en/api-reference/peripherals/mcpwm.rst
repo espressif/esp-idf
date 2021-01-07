@@ -1,9 +1,7 @@
 MCPWM
 =====
 
-.. This peripheral is ESP32 only
-
-ESP32 has two MCPWM units which can be used to control different types of motors. Each unit has three pairs of PWM outputs.
+{IDF_TARGET_NAME} has two MCPWM units which can be used to control different types of motors. Each unit has three pairs of PWM outputs.
 
 .. figure:: ../../../_static/mcpwm-overview.png
     :align: center

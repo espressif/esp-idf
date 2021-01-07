@@ -59,6 +59,7 @@ if(${target} STREQUAL "esp32s3")
                      "gdma.c"
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
+                     "mcpwm.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                     )

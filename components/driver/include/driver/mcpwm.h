@@ -8,7 +8,6 @@
 
 #include "soc/soc_caps.h"
 #if SOC_MCPWM_SUPPORTED
-
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "driver/gpio.h"
@@ -19,7 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /**
  * @brief IO signals for the MCPWM
@@ -131,6 +129,15 @@ typedef enum {
 } mcpwm_fault_signal_t;
 
 /**
+ * @brief MCPWM select sync signal input
+ */
+typedef enum {
+    MCPWM_SELECT_SYNC0 = 4,  /*!<Select SYNC0 as input*/
+    MCPWM_SELECT_SYNC1,      /*!<Select SYNC1 as input*/
+    MCPWM_SELECT_SYNC2,      /*!<Select SYNC2 as input*/
+} mcpwm_sync_signal_t;
+
+/**
  * @brief MCPWM select triggering level of fault signal
  */
 typedef enum {
@@ -138,6 +145,62 @@ typedef enum {
     MCPWM_HIGH_LEVEL_TGR,     /*!<Fault condition occurs when fault input signal goes low to high*/
 } mcpwm_fault_input_level_t;
 
+/**
+ * @brief MCPWM select capture starts from which edge
+ */
+typedef enum {
+    MCPWM_NEG_EDGE = BIT(0),           /*!<Capture the negative edge*/
+    MCPWM_POS_EDGE = BIT(1),           /*!<Capture the positive edge*/
+    MCPWM_BOTH_EDGE = BIT(1) | BIT(0), /*!<Capture both edges*/
+} mcpwm_capture_on_edge_t;
+
+/**
+ * @brief Select type of MCPWM counter
+ */
+typedef enum {
+    MCPWM_FREEZE_COUNTER,   /*!<Counter freeze */
+    MCPWM_UP_COUNTER,       /*!<For asymmetric MCPWM*/
+    MCPWM_DOWN_COUNTER,     /*!<For asymmetric MCPWM*/
+    MCPWM_UP_DOWN_COUNTER,  /*!<For symmetric MCPWM, frequency is half of MCPWM frequency set*/
+    MCPWM_COUNTER_MAX,      /*!<Maximum counter mode*/
+} mcpwm_counter_type_t;
+
+/**
+ * @brief Select type of MCPWM duty cycle mode
+ */
+typedef enum {
+    MCPWM_DUTY_MODE_0 = 0, /*!<Active high duty, i.e. duty cycle proportional to high time for asymmetric MCPWM*/
+    MCPWM_DUTY_MODE_1,     /*!<Active low duty,  i.e. duty cycle proportional to low  time for asymmetric MCPWM, out of phase(inverted) MCPWM*/
+    MCPWM_HAL_GENERATOR_MODE_FORCE_LOW,
+    MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH,
+    MCPWM_DUTY_MODE_MAX,   /*!<Num of duty cycle modes*/
+} mcpwm_duty_type_t;
+
+/**
+ * @brief MCPWM deadtime types, used to generate deadtime, RED refers to rising edge delay and FED refers to falling edge delay
+ */
+typedef enum {
+    MCPWM_DEADTIME_BYPASS = 0,          /*!<Bypass the deadtime*/
+    MCPWM_BYPASS_RED,                   /*!<MCPWMXA = no change, MCPWMXB = falling edge delay*/
+    MCPWM_BYPASS_FED,                   /*!<MCPWMXA = rising edge delay, MCPWMXB = no change*/
+    MCPWM_ACTIVE_HIGH_MODE,             /*!<MCPWMXA = rising edge delay,  MCPWMXB = falling edge delay*/
+    MCPWM_ACTIVE_LOW_MODE,              /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = compliment of falling edge delay*/
+    MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE,  /*!<MCPWMXA = rising edge delay,  MCPWMXB = compliment of falling edge delay*/
+    MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,   /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = falling edge delay*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXA,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXA*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXB,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXB*/
+    MCPWM_DEADTIME_TYPE_MAX,
+} mcpwm_deadtime_type_t;
+
+/**
+ * @brief MCPWM select action to be taken on the output when event happens
+ */
+typedef enum {
+    MCPWM_ACTION_NO_CHANGE = 0,  /*!<No change in the output*/
+    MCPWM_ACTION_FORCE_LOW,      /*!<Make output low*/
+    MCPWM_ACTION_FORCE_HIGH,     /*!<Make output high*/
+    MCPWM_ACTION_TOGGLE,         /*!<Make output toggle*/
+} mcpwm_output_action_t;
 
 /// @deprecated MCPWM select action to be taken on MCPWMXA when fault occurs
 typedef mcpwm_output_action_t mcpwm_action_on_pwmxa_t;
@@ -555,6 +618,9 @@ esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_
 
 /**
  * @brief Initialize capture submodule
+ *
+ * @note Enabling capture feature could also enable the capture interrupt,
+ *       users have to register an interrupt handler by `mcpwm_isr_register`, and in there, query the capture data.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param cap_edge set capture edge, BIT(0) - negative edge, BIT(1) - positive edge
