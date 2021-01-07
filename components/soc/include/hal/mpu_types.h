@@ -14,6 +14,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "soc/mpu_caps.h"
 
 #if SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
 typedef void** mpu_region_table_t;
