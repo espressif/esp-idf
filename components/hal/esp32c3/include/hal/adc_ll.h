@@ -652,15 +652,6 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 }
 
 /**
- * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
- *
- * @param div Division factor.
- */
-static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
-{
-}
-
-/**
  * Set ADC module controller.
  * There are five SAR ADC controllers:
  * Two digital controller: Continuous conversion mode (DMA). High performance with multiple channel scan modes;
