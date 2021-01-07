@@ -295,24 +295,48 @@ menu "mbedTLS"
             when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
 
     config MBEDTLS_HAVE_TIME
-        bool "Enable mbedtls time"
+        bool "Enable mbedtls time support"
         depends on !ESP_TIME_FUNCS_USE_NONE
         default y
         help
-            System has time.h and time().
-            The time does not need to be correct, only time differences are used.
+            Enable use of time.h functions (time() and gmtime()) by mbedTLS.
+
+            This option doesn't require the system time to be correct, but enables
+            functionality that requires relative timekeeping - for example periodic
+            expiry of TLS session tickets or session cache entries.
+
+            Disabling this option will save some firmware size, particularly if
+            the rest of the firmware doesn't call any standard timekeeeping
+            functions.
 
     config MBEDTLS_HAVE_TIME_DATE
         bool "Enable mbedtls certificate expiry check"
         depends on MBEDTLS_HAVE_TIME
         default n
         help
-            System has time.h and time(), gmtime() and the clock is correct.
-            The time needs to be correct (not necesarily very accurate, but at least
-            the date should be correct). This is used to verify the validity period of
-            X.509 certificates.
+            Enables X.509 certificate expiry checks in mbedTLS.
 
-            It is suggested that you should get the real time by "SNTP".
+            If this option is disabled (default) then X.509 certificate
+            "valid from" and "valid to" timestamp fields are ignored.
+
+            If this option is enabled, these fields are compared with the
+            current system date and time. The time is retrieved using the
+            standard time() and gmtime() functions. If the certificate is not
+            valid for the current system time then verification will fail with
+            code MBEDTLS_X509_BADCERT_FUTURE or MBEDTLS_X509_BADCERT_EXPIRED.
+
+            Enabling this option requires adding functionality in the firmware
+            to set the system clock to a valid timestamp before using TLS. The
+            recommended way to do this is via ESP-IDF's SNTP functionality, but
+            any method can be used.
+
+            In the case where only a small number of certificates are trusted by
+            the device, please carefully consider the tradeoffs of enabling this
+            option. There may be undesired consequences, for example if all
+            trusted certificates expire while the device is offline and a TLS
+            connection is required to update. Or if an issue with the SNTP
+            server means that the system time is invalid for an extended period
+            after a reset.
 
     config MBEDTLS_ECDSA_DETERMINISTIC
         bool "Enable deterministic ECDSA"
