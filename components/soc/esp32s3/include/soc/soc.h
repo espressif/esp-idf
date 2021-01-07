@@ -74,7 +74,7 @@
 #define DR_REG_EFUSE_BASE                       0x6001A000
 #define DR_REG_NRX_BASE                         0x6001CC00
 #define DR_REG_BB_BASE                          0x6001D000
-#define DR_REG_PWM_BASE                         0x6001E000
+#define DR_REG_PWM0_BASE                        0x6001E000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
 #define DR_REG_RTC_SLOWMEM_BASE                 0x60021000
@@ -89,8 +89,6 @@
 #define DR_REG_PWM1_BASE                        0x6002C000
 #define DR_REG_I2S1_BASE                        0x6002D000
 #define DR_REG_UART2_BASE                       0x6002E000
-#define DR_REG_PWM2_BASE                        0x6002F000
-#define DR_REG_PWM3_BASE                        0x60030000
 #define DR_REG_SPI4_BASE                        0x60037000
 #define DR_REG_USB_WRAP_BASE                    0x60039000
 #define DR_REG_APB_SARADC_BASE                  0x60040000

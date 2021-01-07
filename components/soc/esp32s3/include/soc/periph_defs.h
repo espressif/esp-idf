@@ -32,8 +32,6 @@ typedef enum {
     PERIPH_TIMG1_MODULE,
     PERIPH_PWM0_MODULE,
     PERIPH_PWM1_MODULE,
-    PERIPH_PWM2_MODULE,
-    PERIPH_PWM3_MODULE,
     PERIPH_UHCI0_MODULE,
     PERIPH_UHCI1_MODULE,
     PERIPH_RMT_MODULE,
@@ -93,11 +91,8 @@ typedef enum {
     ETS_UART2_INTR_SOURCE,                      /**< interrupt of UART2, level*/
     ETS_SDIO_HOST_INTR_SOURCE,                  /**< interrupt of SD/SDIO/MMC HOST, level*/
     ETS_PWM0_INTR_SOURCE,                       /**< interrupt of PWM0, level, Reserved*/
-
-    ETS_PWM1_INTR_SOURCE = 32,                  /**< interrupt of PWM1, level, Reserved*/
-    ETS_PWM2_INTR_SOURCE,                       /**< interrupt of PWM2, level*/
-    ETS_PWM3_INTR_SOURCE,                       /**< interruot of PWM3, level*/
-    ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
+    ETS_PWM1_INTR_SOURCE,                       /**< interrupt of PWM1, level, Reserved*/
+    ETS_LEDC_INTR_SOURCE = 35,                  /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
     ETS_TWAI_INTR_SOURCE,                       /**< interrupt of can, level*/
     ETS_USB_INTR_SOURCE,                        /**< interrupt of USB, level*/
