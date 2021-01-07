@@ -338,7 +338,7 @@ static inline void adc_ll_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_
 /**
  * Disable adc digital controller filter.
  * Filtering the ADC data to obtain smooth data at higher sampling rates.
- * 
+ *
  * @note If the channel info is not supported, the filter function will not be enabled.
  * @param adc_n ADC unit.
  */

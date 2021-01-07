@@ -663,11 +663,7 @@ esp_err_t adc_digi_reset(void)
 esp_err_t adc_digi_filter_reset(adc_digi_filter_idx_t idx)
 {
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_FILTER_IDX0) {
-        adc_hal_digi_filter_reset(ADC_NUM_1);
-    } else if (idx == ADC_DIGI_FILTER_IDX1) {
-        adc_hal_digi_filter_reset(ADC_NUM_2);
-    }
+    adc_hal_digi_filter_reset(idx);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -690,19 +686,10 @@ esp_err_t adc_digi_filter_get_config(adc_digi_filter_idx_t idx, adc_digi_filter_
 
 esp_err_t adc_digi_filter_enable(adc_digi_filter_idx_t idx, bool enable)
 {
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_filter_enable(idx, enable);
+    ADC_EXIT_CRITICAL();
     return ESP_OK;
-}
-
-/**
- * @brief Get the filtered data of adc digital controller filter. For debug.
- *        The data after each measurement and filtering is updated to the DMA by the digital controller. But it can also be obtained manually through this API.
- *
- * @param idx Filter index.
- * @return Filtered data. if <0, the read data invalid.
- */
-int adc_digi_filter_read_data(adc_digi_filter_idx_t idx)
-{
-    return -1;
 }
 
 /**************************************/
@@ -719,6 +706,10 @@ esp_err_t adc_digi_monitor_set_config(adc_digi_monitor_idx_t idx, adc_digi_monit
 
 esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable)
 {
+
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_monitor_enable(idx, enable);
+    ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 

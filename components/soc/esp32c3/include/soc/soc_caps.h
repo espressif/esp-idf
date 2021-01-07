@@ -107,6 +107,8 @@
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
 #define SOC_ADC_MAX_BITWIDTH            (12)
+#define SOC_ADC_DIGI_FILTER_NUM         (2)
+#define SOC_ADC_DIGI_MONITOR_NUM        (2)
 
 /**
  * Check if adc support digital controller (DMA) mode.
