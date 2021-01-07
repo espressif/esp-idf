@@ -14,6 +14,7 @@
 
 #include <stddef.h>
 #include "hal/twai_hal.h"
+#include "soc/soc_caps.h"
 
 //Default values written to various registers on initialization
 #define TWAI_HAL_INIT_TEC    0

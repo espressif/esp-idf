@@ -15,6 +15,7 @@
 // The HAL layer for MCPWM (common part)
 
 #include "hal/mcpwm_hal.h"
+#include "soc/soc_caps.h"
 
 void mcpwm_hal_init(mcpwm_hal_context_t *hal, const mcpwm_hal_init_config_t *init_config)
 {

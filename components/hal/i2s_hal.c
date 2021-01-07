@@ -15,6 +15,7 @@
 // The HAL layer for I2S (common part)
 
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
 
 #define I2S_TX_PDM_FP_DEF  960   // Set to the recommended value(960) in TRM

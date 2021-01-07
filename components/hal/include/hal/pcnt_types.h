@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include "soc/soc_caps.h"
+
 #define PCNT_PIN_NOT_USED     (-1)  /*!< When selected for a pin, this pin will not be used */
 
 /**

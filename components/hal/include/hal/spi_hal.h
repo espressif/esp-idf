@@ -37,6 +37,7 @@
 #include "hal/spi_ll.h"
 #include <esp_err.h>
 #include "soc/lldesc.h"
+#include "soc/soc_caps.h"
 
 /**
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration

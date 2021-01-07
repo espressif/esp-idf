@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "hal/interrupt_controller_hal.h"
+#include "soc/soc_caps.h"
 
 int_type_t interrupt_controller_hal_desc_type(int interrupt_number)
 {

@@ -15,6 +15,7 @@
 // The HAL layer for RTC IO (common part)
 
 #include "hal/rtc_io_hal.h"
+#include "soc/soc_caps.h"
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 

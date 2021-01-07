@@ -30,6 +30,7 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
+#include "soc/soc_caps.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_types.h"
 

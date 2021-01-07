@@ -16,6 +16,7 @@
 
 #pragma once
 #include "soc/i2c_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_rom_sys.h"

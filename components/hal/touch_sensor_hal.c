@@ -16,6 +16,7 @@
 
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sensor_types.h"
+#include "soc/soc_caps.h"
 
 void touch_hal_config(touch_pad_t touch_num)
 {
