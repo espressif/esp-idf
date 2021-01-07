@@ -87,6 +87,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c3")
         list(APPEND srcs
+              "ds_hal.c"
               "esp32c3/adc_hal.c"
               "esp32c3/brownout_hal.c"
               "esp32c3/systimer_hal.c"

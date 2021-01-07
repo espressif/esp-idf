@@ -27,7 +27,7 @@
 /**
  * @brief Apply the HMAC padding without the embedded length.
  *
- * @note This function does not check the data length, it is the responsability of the other functions in this
+ * @note This function does not check the data length, it is the responsibility of the other functions in this
  * module to make sure that \c data_len is at most SHA256_BLOCK_SZ - 1 so the padding fits in.
  * Otherwise, this function has undefined behavior.
  * Note however, that for the actual HMAC implementation on ESP32C3, the length also needs to be applied at the end
