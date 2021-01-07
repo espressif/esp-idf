@@ -15,8 +15,8 @@
 #include "model_opcode.h"
 #include "state_transition.h"
 
-#if (CONFIG_BLE_MESH_GENERIC_SERVER | \
-     CONFIG_BLE_MESH_TIME_SCENE_SERVER | \
+#if (CONFIG_BLE_MESH_GENERIC_SERVER || \
+     CONFIG_BLE_MESH_TIME_SCENE_SERVER || \
      CONFIG_BLE_MESH_LIGHTING_SERVER)
 
 /* Function to calculate Remaining Time (Start) */
@@ -1037,6 +1037,6 @@ void bt_mesh_server_start_transition(struct bt_mesh_state_transition *transition
 
 /* Messages handlers (End) */
 
-#endif /* (CONFIG_BLE_MESH_GENERIC_SERVER | \
-           CONFIG_BLE_MESH_TIME_SCENE_SERVER | \
+#endif /* (CONFIG_BLE_MESH_GENERIC_SERVER || \
+           CONFIG_BLE_MESH_TIME_SCENE_SERVER || \
            CONFIG_BLE_MESH_LIGHTING_SERVER) */
