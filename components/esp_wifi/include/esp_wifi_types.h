@@ -695,13 +695,26 @@ typedef enum {
     FTM_STATUS_FAIL,            /**< Unknown error during FTM exchange */
 } wifi_ftm_status_t;
 
+/** Argument structure for */
+typedef struct {
+    uint8_t dlog_token;     /**< Dialog Token of the FTM frame */
+    int8_t rssi;            /**< RSSI of the FTM frame received */
+    uint32_t rtt;           /**< Round Trip Time in pSec with a peer */
+    uint64_t t1;            /**< Time of departure of FTM frame from FTM Responder in pSec */
+    uint64_t t2;            /**< Time of arrival of FTM frame at FTM Initiator in pSec */
+    uint64_t t3;            /**< Time of departure of ACK from FTM Initiator in pSec */
+    uint64_t t4;            /**< Time of arrival of ACK at FTM Responder in pSec */
+} wifi_ftm_report_entry_t;
+
 /** Argument structure for WIFI_EVENT_FTM_REPORT event */
 typedef struct {
-    uint8_t peer_mac[6];      /**< MAC address of the FTM Peer */
-    wifi_ftm_status_t status; /**< Status of the FTM operation */
-    uint32_t rtt_raw;         /**< Raw average Round-Trip-Time with peer in Nano-Seconds */
-    uint32_t rtt_est;         /**< Estimated Round-Trip-Time with peer in Nano-Seconds */
-    uint32_t dist_est;        /**< Estimated one-way distance in Centi-Meters */
+    uint8_t peer_mac[6];                        /**< MAC address of the FTM Peer */
+    wifi_ftm_status_t status;                   /**< Status of the FTM operation */
+    uint32_t rtt_raw;                           /**< Raw average Round-Trip-Time with peer in Nano-Seconds */
+    uint32_t rtt_est;                           /**< Estimated Round-Trip-Time with peer in Nano-Seconds */
+    uint32_t dist_est;                          /**< Estimated one-way distance in Centi-Meters */
+    wifi_ftm_report_entry_t *ftm_report_data;   /**< Pointer to FTM Report with multiple entries, should be freed after use */
+    uint8_t ftm_report_num_entries;             /**< Number of entries in the FTM Report data */
 } wifi_event_ftm_report_t;
 
 #define WIFI_STATIS_BUFFER    (1<<0)

@@ -53,6 +53,12 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
+static EventGroupHandle_t ftm_event_group;
+const int FTM_REPORT_BIT = BIT0;
+const int FTM_FAILURE_BIT = BIT1;
+wifi_ftm_report_entry_t *g_ftm_report;
+uint8_t g_ftm_report_num_entries;
+
 static void scan_done_handler(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data)
 {
@@ -107,8 +113,17 @@ static void ftm_report_handler(void *arg, esp_event_base_t event_base,
 {
     wifi_event_ftm_report_t *event = (wifi_event_ftm_report_t *) event_data;
 
-    ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters", event->rtt_est,
-             event->dist_est / 100, event->dist_est % 100);
+    if (event->status == FTM_STATUS_SUCCESS) {
+        ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters", event->rtt_est,
+                 event->dist_est / 100, event->dist_est % 100);
+        xEventGroupSetBits(ftm_event_group, FTM_REPORT_BIT);
+        g_ftm_report = event->ftm_report_data;
+        g_ftm_report_num_entries = event->ftm_report_num_entries;
+    } else {
+        ESP_LOGI(TAG_STA, "FTM procedure with Peer("MACSTR") failed! (Status - %d)",
+                 MAC2STR(event->peer_mac), event->status);
+        xEventGroupSetBits(ftm_event_group, FTM_FAILURE_BIT);
+    }
 }
 
 void initialise_wifi(void)
@@ -122,6 +137,7 @@ void initialise_wifi(void)
 
     ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
+    ftm_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -321,7 +337,7 @@ static int wifi_cmd_ftm(int argc, char **argv)
     }
 
     if (ftm_args.burst_period->count != 0) {
-        if (ftm_args.burst_period->ival[0] > 0 &&
+        if (ftm_args.burst_period->ival[0] >= 2 &&
                 ftm_args.burst_period->ival[0] < 256) {
             ftmi_cfg.burst_period = ftm_args.burst_period->ival[0];
         } else {
@@ -330,9 +346,34 @@ static int wifi_cmd_ftm(int argc, char **argv)
     }
 
 ftm_start:
-    ESP_LOGI(TAG_STA, "Starting FTM Initiator with Frm Count %d, Burst Period - %dmSec",
-             ftmi_cfg.frm_count, ftmi_cfg.burst_period * 100);
-    esp_wifi_ftm_start_initiator(&ftmi_cfg);
+    if (ftmi_cfg.burst_period == 0) {
+        ESP_LOGI(TAG_STA, "Starting FTM Initiator with Frm Count %d, Burst Period - No Preference",
+                 ftmi_cfg.frm_count);
+    } else {
+        ESP_LOGI(TAG_STA, "Starting FTM Initiator with Frm Count %d, Burst Period - %dmSec",
+                 ftmi_cfg.frm_count, ftmi_cfg.burst_period * 100);
+    }
+
+    if (ESP_OK != esp_wifi_ftm_start_initiator(&ftmi_cfg)) {
+        ESP_LOGE(TAG_STA, "Failed to start FTM session");
+        return 0;
+    }
+
+    EventBits_t bits = xEventGroupWaitBits(ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
+                                           pdFALSE, pdFALSE, portMAX_DELAY);
+    /* Processing data from FTM session */
+    if (bits & FTM_REPORT_BIT) {
+        int i;
+        for (i = 0; i < g_ftm_report_num_entries; i++) {
+            /* NOTE: Process FTM report elements here, e.g. g_ftm_report[i].rtt etc */
+        }
+        free(g_ftm_report);
+        g_ftm_report = NULL;
+        g_ftm_report_num_entries = 0;
+        xEventGroupClearBits(ftm_event_group, FTM_REPORT_BIT);
+    } else {
+        /* Failure case */
+    }
 
     return 0;
 }
@@ -390,7 +431,7 @@ void register_wifi(void)
 
     ftm_args.mode = arg_lit1("I", "ftm_initiator", "FTM Initiator mode");
     ftm_args.frm_count = arg_int0("c", "frm_count", "<0/16/24/32/64>", "FTM frames to be exchanged (0: No preference)");
-    ftm_args.burst_period = arg_int0("p", "burst_period", "<0-255 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
+    ftm_args.burst_period = arg_int0("p", "burst_period", "<2-255 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
     ftm_args.end = arg_end(1);
 
     const esp_console_cmd_t ftm_cmd = {
@@ -431,7 +472,7 @@ void app_main(void)
     printf(" |  1. Print 'help' to gain overview of commands          |\n");
     printf(" |  2. Use 'scan' command for AP that support FTM         |\n");
     printf(" |                          OR                            |\n");
-    printf(" |  2. Start SoftAP on another ESP32S2 with 'ap' command  |\n");
+    printf(" |  2. Start SoftAP on another device with 'ap' command   |\n");
     printf(" |  3. Setup connection with the AP using 'sta' command   |\n");
     printf(" |  4. Initiate FTM from Station using 'ftm -I' command   |\n");
     printf(" |                                                        |\n");
