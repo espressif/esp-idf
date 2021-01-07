@@ -10,6 +10,7 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_I80_LCD_SUPPORTED           1
+#define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -51,6 +52,18 @@
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #include "ledc_caps.h"
+
+/*-------------------------- MCPWM CAPS --------------------------------------*/
+#define SOC_MCPWM_GROUPS                     (2)    ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
+#define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
+#define SOC_MCPWM_OPERATORS_PER_GROUP        (3)    ///< The number of operators that each group has
+#define SOC_MCPWM_COMPARATORS_PER_OPERATOR   (2)    ///< The number of comparators that each operator has
+#define SOC_MCPWM_GENERATORS_PER_OPERATOR    (2)    ///< The number of generators that each operator has
+#define SOC_MCPWM_FAULT_DETECTORS_PER_GROUP  (3)    ///< The number of fault signal detectors that each group has
+#define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
+#define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
+#define SOC_MCPWM_EXT_SYNCERS_PER_GROUP      (3)    ///< The number of external syncers that each group has
+#define SOC_MCPWM_BASE_CLK_HZ       (160000000ULL)  ///< Base Clock frequency of 160MHz
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #include "mpu_caps.h"

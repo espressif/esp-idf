@@ -47,13 +47,14 @@ static const char *MCPWM_TAG = "MCPWM";
     }
 
 #define MCPWM_DRIVER_INIT_ERROR "MCPWM DRIVER NOT INITIALIZED"
-#define MCPWM_UNIT_NUM_ERROR    "MCPWM UNIT NUM ERROR"
+#define MCPWM_GROUP_NUM_ERROR   "MCPWM GROUP NUM ERROR"
 #define MCPWM_TIMER_ERROR       "MCPWM TIMER NUM ERROR"
+#define MCPWM_CAPTURE_ERROR     "MCPWM CAPTURE NUM ERROR"
 #define MCPWM_PARAM_ADDR_ERROR  "MCPWM PARAM ADDR ERROR"
 #define MCPWM_DUTY_TYPE_ERROR   "MCPWM DUTY TYPE ERROR"
 #define MCPWM_GPIO_ERROR        "MCPWM GPIO NUM ERROR"
 #define MCPWM_GEN_ERROR         "MCPWM GENERATOR ERROR"
-#define MCPWM_DB_ERROR          "MCPWM DEADTIME TYPE ERROR"
+#define MCPWM_DT_ERROR          "MCPWM DEADTIME TYPE ERROR"
 
 #define MCPWM_CLK_PRESCL 15       //MCPWM clock prescale
 #define TIMER_CLK_PRESCALE 9      //MCPWM timer prescales
@@ -62,13 +63,13 @@ static const char *MCPWM_TAG = "MCPWM";
 #define OFFSET_FOR_GPIO_IDX_1  6
 #define OFFSET_FOR_GPIO_IDX_2 75
 
-_Static_assert(SOC_MCPWM_OP_NUM >= SOC_MCPWM_TIMER_NUM, "This driver assumes the timer num equals to the operator num.");
-_Static_assert(SOC_MCPWM_COMPARATOR_NUM >= SOC_MCPWM_GENERATOR_NUM, "This driver assumes the generator num equals to the generator num.");
-_Static_assert(SOC_MCPWM_GENERATOR_NUM == 2, "This driver assumes the generator num equals to 2.");
+_Static_assert(SOC_MCPWM_OPERATORS_PER_GROUP >= SOC_MCPWM_TIMERS_PER_GROUP, "This driver assumes the timer num equals to the operator num.");
+_Static_assert(SOC_MCPWM_COMPARATORS_PER_OPERATOR >= SOC_MCPWM_GENERATORS_PER_OPERATOR, "This driver assumes the generator num equals to the generator num.");
+_Static_assert(SOC_MCPWM_GENERATORS_PER_OPERATOR == 2, "This driver assumes the generator num equals to 2.");
 
 #define MCPWM_TIMER_ID_CHECK(mcpwm_num, timer_num) do {\
-    MCPWM_CHECK((mcpwm_num) < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG); \
-    MCPWM_CHECK((timer_num) < SOC_MCPWM_TIMER_NUM, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG); \
+    MCPWM_CHECK((mcpwm_num) < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG); \
+    MCPWM_CHECK((timer_num) < SOC_MCPWM_TIMERS_PER_GROUP, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG); \
 } while(0)
 
 #define MCPWM_TIMER_CHECK(mcpwm_num, timer_num) do{\
@@ -82,7 +83,7 @@ _Static_assert(SOC_MCPWM_GENERATOR_NUM == 2, "This driver assumes the generator 
 } while(0)
 
 
-static mcpwm_context_t context[SOC_MCPWM_PERIPH_NUM] = {
+static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
     CONTEXT_INITIALIZER(),
     CONTEXT_INITIALIZER(),
 };
@@ -105,7 +106,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
         return ESP_OK;
     }
 
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK((GPIO_IS_VALID_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
 
     periph_module_enable(PERIPH_PWM0_MODULE + mcpwm_num);
@@ -138,7 +139,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
 
 esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_pin)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     mcpwm_gpio_init(mcpwm_num, MCPWM0A, mcpwm_pin->mcpwm0a_out_num);    //MCPWM0A
     mcpwm_gpio_init(mcpwm_num, MCPWM0B, mcpwm_pin->mcpwm0b_out_num);    //MCPWM0B
     mcpwm_gpio_init(mcpwm_num, MCPWM1A, mcpwm_pin->mcpwm1a_out_num);    //MCPWM1A
@@ -274,7 +275,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     //update the comparer to keep the same duty rate
     mcpwm_hal_operator_update_basic(hal, op);
 
-    for (int gen = 0; gen < SOC_MCPWM_GENERATOR_NUM; gen++) {
+    for (int gen = 0; gen < SOC_MCPWM_GENERATORS_PER_OPERATOR; gen++) {
         hal->op[op].gen[gen] = (mcpwm_hal_generator_config_t) {
             .comparator = gen, //the driver currently always use the comparator A for PWMxA output, and comparator B for PWMxB output
             .duty_type = mcpwm_conf->duty_mode,
@@ -447,7 +448,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
     //the driver currently always use the timer x for operator x
     const int op = timer_num;
     MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
-    MCPWM_CHECK(dt_mode < MCPWM_DEADTIME_TYPE_MAX, MCPWM_DB_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(dt_mode < MCPWM_DEADTIME_TYPE_MAX, MCPWM_DT_ERROR, ESP_ERR_INVALID_ARG);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     mcpwm_hal_deadzone_conf_t deadzone = {
         .red = red,
@@ -477,7 +478,7 @@ esp_err_t mcpwm_deadtime_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num
 
 esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t intput_level, mcpwm_fault_signal_t fault_sig)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
 
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_hal_fault_init(&context[mcpwm_num].hal, fault_sig, intput_level);
@@ -487,7 +488,7 @@ esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t int
 
 esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_sig)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
 
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_hal_fault_disable(&context[mcpwm_num].hal, fault_sig);
@@ -533,7 +534,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
 esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig, mcpwm_capture_on_edge_t cap_edge,
                                uint32_t num_of_pulse)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     mcpwm_hal_init_config_t init_config = {
         .host_id = mcpwm_num,
     };
@@ -555,7 +556,7 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
 
 esp_err_t mcpwm_capture_disable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
 
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_hal_capture_disable(&context[mcpwm_num].hal, cap_sig);
@@ -565,7 +566,7 @@ esp_err_t mcpwm_capture_disable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t c
 
 uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
 
     uint32_t captured_value;
     mcpwm_hal_capture_get_result(&context[mcpwm_num].hal, cap_sig, &captured_value, NULL);
@@ -574,7 +575,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
 
 uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     mcpwm_capture_on_edge_t edge;
     mcpwm_hal_capture_get_result(&context[mcpwm_num].hal, cap_sig, NULL, &edge);
     return (edge == MCPWM_NEG_EDGE ? 2 : 1);
@@ -609,7 +610,7 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags, intr_handle_t *handle)
 {
     esp_err_t ret;
-    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(fn != NULL, MCPWM_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
     ret = esp_intr_alloc((ETS_PWM0_INTR_SOURCE + mcpwm_num), intr_alloc_flags, fn, arg, handle);
     return ret;
