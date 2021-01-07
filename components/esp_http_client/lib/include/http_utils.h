@@ -31,6 +31,19 @@
 char *http_utils_assign_string(char **str, const char *new_str, int len);
 
 /**
+ * @brief      Realloc *str and append new_str to it, if not NULL; assign new_str to *str pointer if NULL
+ *
+ * @param      str      pointer to string pointer
+ * @param      new_str  assign this string to str
+ * @param      len      length of string, 0 if new_str is zero terminated
+ *
+ * @return
+ *  - new_str pointer
+ *  - NULL
+ */
+char *http_utils_append_string(char **str, const char *new_str, int len);
+
+/**
  * @brief      Remove white space at begin and end of string
  *
  * @param[in]  str   The string
