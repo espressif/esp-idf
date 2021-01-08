@@ -21,4 +21,10 @@ menu "Http_File_Serving Example menu"
             If this config item is set, SDMMC is used to mount the SDcard.
             Otherwise, will use SPI host to access and mount the SDcard.
 
+    config EXAMPLE_HTTPD_CONN_CLOSE_HEADER
+        bool "Send connection close header from request handlers"
+        default y
+        help
+            If this config item is set, Connection: close header will be set in handlers.
+            This closes HTTP connection and frees the server socket instantly.
 endmenu
