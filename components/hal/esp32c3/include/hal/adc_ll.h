@@ -912,14 +912,9 @@ static inline bool adc_ll_intr_get_status(adc_ll_intr_t mask)
 }
 
 //--------------------------------adc1------------------------------//
-static inline void adc_ll_adc1_onetime_sample_ena(void)
+static inline void adc_ll_adc1_onetime_sample_enable(bool enable)
 {
-    APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
-}
-
-static inline void adc_ll_adc1_onetime_sample_dis(void)
-{
-    APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+    APB_SARADC.onetime_sample.adc1_onetime_sample = enable;
 }
 
 static inline uint32_t adc_ll_adc1_read(void)
@@ -929,14 +924,9 @@ static inline uint32_t adc_ll_adc1_read(void)
 }
 
 //--------------------------------adc2------------------------------//
-static inline void adc_ll_adc2_onetime_sample_ena(void)
+static inline void adc_ll_adc2_onetime_sample_enable(bool enable)
 {
-    APB_SARADC.onetime_sample.adc2_onetime_sample = 1;
-}
-
-static inline void adc_ll_adc2_onetime_sample_dis(void)
-{
-    APB_SARADC.onetime_sample.adc2_onetime_sample = 0;
+    APB_SARADC.onetime_sample.adc2_onetime_sample = enable;
 }
 
 static inline uint32_t adc_ll_adc2_read(void)

@@ -163,20 +163,12 @@ void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
 
 void adc_hal_adc1_onetime_sample_enable(bool enable)
 {
-    if (enable) {
-        adc_ll_adc1_onetime_sample_ena();
-    } else {
-        adc_ll_adc1_onetime_sample_dis();
-    }
+    adc_ll_adc1_onetime_sample_enable(enable);
 }
 
 void adc_hal_adc2_onetime_sample_enable(bool enable)
 {
-    if (enable) {
-        adc_ll_adc2_onetime_sample_ena();
-    } else {
-        adc_ll_adc2_onetime_sample_dis();
-    }
+    adc_ll_adc2_onetime_sample_enable(enable);
 }
 
 void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel)
