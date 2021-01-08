@@ -6,24 +6,23 @@ ULP 协处理器编程
 .. toctree::
    :maxdepth: 1
 
-    :esp32: 指令集参考 <ulp_instruction_set>
-    :esp32s2: 指令集参考 <ulps2_instruction_set>
+    :esp32: ESP32 ULP 指令集参考 <ulp_instruction_set>
+    :esp32s2: ESP32-S2 ULP 指令集参考 <ulps2_instruction_set>
     使用宏进行编程（遗留） <ulp_macros>
 
 
-ULP（Ultra Low Power 超低功耗）协处理器是一种简单的有限状态机 (FSM)，可以在主处理器处于深度睡眠模式时，使用 ADC、温度传感器和外部 I2C 传感器执行测量操作。ULP 协处理器可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设寄存器。ULP 协处理器使用 32 位固定宽度的指令，32 位内存寻址，配备 4 个 16 位通用寄存器。
+ULP（Ultra Low Power 超低功耗）协处理器是一种简单的有限状态机 (FSM)，可以在主处理器处于深度睡眠模式时，使用 ADC、温度传感器和外部 I2C 传感器执行测量操作。ULP 协处理器可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 外设中的寄存器。ULP 协处理器使用 32 位固定宽度的指令，32 位内存寻址，配备 4 个 16 位通用寄存器。
 
 安装工具链
 ----------
 
-ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp 工具链` 进行编译。
+ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp 工具链`_ 进行编译。
 
 如果你已经按照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
 
 .. only:: esp32
 
     如果你的 ESP-IDF 仍在使用传统的基于 GNU Make 的构建系统，请参考 :doc:`ulp-legacy` 一文中的说明，完成工具链的安装。
-
 
 编译 ULP 代码
 -------------
@@ -32,8 +31,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 1. 用汇编语言编写的 ULP 代码必须导入到一个或多个 `.S` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. note: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
-
+.. note: 在（通过 ``idf_component_register``）注册组件时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
@@ -46,7 +44,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
     ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
- 上述第一个参数到 ``ulp_embed_binary`` 为 ULP 二进制文件命名。此名称也用于生成的其他文件，如：ELF 文件、.map 文件、头文件和链接器导出文件。第二个参数设置 ULP 程序集源文件。最后，第三个参数设置组件源文件列表，其中包括被生成的头文件。此列表用以建立正确的依赖项，并确保在构建过程会先生成再编译包含头文件的源文件。请参考下文，查看为 ULP 应用程序生成的头文件等相关概念。
+``ulp_embed_binary`` 的第一个参数为 ULP 二进制文件命名。指定的此名称也用于生成的其他文件，如：ELF 文件、.map 文件、头文件和链接器导出文件。第二个参数指定 ULP 程序集源文件。最后，第三个参数指定组件源文件列表，其中包括被生成的头文件。此列表用以建立正确的依赖项，并确保在编译这些文件之前先创建生成的头文件。有关 ULP 应用程序生成的头文件等相关概念，请参考下文。
 
 3. 使用常规方法（例如 `idf.py app`）编译应用程序
 
@@ -82,7 +80,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
                             move r3, measurement_count
                             ld r3, r3, 0
 
-主程序需要在启动 ULP 程序之前初始化 ``measurement_count`` 变量，构建系统生成定义 ULP 编程中全局符号的 ``${ULP_APP_NAME}.h`` 和 ``${ULP_APP_NAME}.ld`` 文件,可以实现上述操作，这些文件包含在 ULP 程序中定义的所有全局符号，文件以 ``ulp_`` 开头。
+主程序需要在启动 ULP 程序之前初始化 ``measurement_count`` 变量，构建系统通过生成定义 ULP 编程中全局符号的 ``${ULP_APP_NAME}.h`` 和 ``${ULP_APP_NAME}.ld`` 文件实现上述操作。这些文件包含了在 ULP 程序中定义的所有全局符号，文件以 ``ulp_`` 开头。
 
 头文件包含对此类符号的声明::
 
@@ -116,7 +114,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 注意，在 menuconfig 中必须启用 "Enable Ultra Low Power (ULP) Coprocessor" 选项，以便为 ULP 预留内存。"RTC slow memory reserved for coprocessor" 选项设置的值必须足够储存 ULP 代码和数据。如果应用程序组件包含多个 ULP 程序，则 RTC 内存必须足以容纳最大的程序。
 
-每个 ULP 程序均以二进制 BLOB 的形式嵌入到 ESP-IDF 应用程序中。应用程序可以引用此 BLOB，并以下面的方式加载此 BLOB （假设 ULP_APP_NAME 已被定义为 ``ulp_app_name``）::
+每个 ULP 程序均以二进制 BLOB 的形式嵌入到 ESP-IDF 应用程序中。应用程序可以引用此 BLOB，并以下面的方式加载此 BLOB（假设 ULP_APP_NAME 已被定义为 ``ulp_app_name``）::
 
     extern const uint8_t bin_start[] asm("_binary_ulp_app_name_bin_start");
     extern const uint8_t bin_end[]   asm("_binary_ulp_app_name_bin_end");
@@ -143,21 +141,40 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     entry:
             /* code starts here */
 
+.. only:: esp32
 
-ULP 程序流
-----------
+    ESP32 ULP 程序流
+    ------------------
 
-ULP 协处理器由定时器启动，而调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 150 KHz 晶振器生成）。使用 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器 (x = 0..4) 设置 Tick 数值。第一次启动 ULP 时，使用 ``SENS_ULP_CP_SLEEP_CYC0_REG`` 设置定时器 Tick 数值，之后，ULP 程序可以使用 ``sleep`` 指令来另外选择 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器。
+    ESP32 ULP 协处理器由定时器启动，而调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 150 KHz RC 振荡器生成）。使用 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器 (x = 0..4) 设置 Tick 数值。第一次启动 ULP 时，使用 ``SENS_ULP_CP_SLEEP_CYC0_REG`` 设置定时器 Tick 数值，之后，ULP 程序可以使用 ``sleep`` 指令来选择另一个 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器。
 
-此应用程序可以调用 ``ulp_set_wakeup_period`` 函数来设置 ULP 定时器周期值 (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4)。
+    此应用程序可以调用 ``ulp_set_wakeup_period`` 函数来设置 ULP 定时器周期值 (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4)。
 
-.. doxygenfunction:: ulp_set_wakeup_period
+    .. doxygenfunction:: ulp_set_wakeup_period
 
-一旦定时器为所选的 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器的 Tick 事件计数，ULP 协处理器就会启动，并调用 ``ulp_run`` 的入口点开始运行程序。
+    一旦定时器计数到 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器设定的 Tick 数值，ULP 协处理器就会启动，并调用 ``ulp_run`` 的入口点开始运行程序。
 
-程序保持运行，直到遇到 ``halt`` 指令或非法指令。一旦程序停止，ULP 协处理器电源关闭，定时器再次启动。
+    程序保持运行，直到遇到 ``halt`` 指令或非法指令。一旦程序停止，ULP 协处理器电源关闭，定时器再次启动。
 
-如果想禁用定时器（有效防止 ULP 程序再次运行），请清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位，可在 ULP 代码或主程序中进行以上操作。
+    如果想禁用定时器（有效防止 ULP 程序再次运行），可在 ULP 代码或主程序中清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位。
 
 
+.. only:: esp32s2
+
+    ESP32-S2 ULP 程序流
+    --------------------
+
+    ESP32-S2 ULP 协处理器由定时器启动，调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 90 KHz RC 振荡器生成）。使用 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器设置 Tick 数值。
+
+    此应用程序可以调用 ``ulp_set_wakeup_period`` 函数来设置 ULP 定时器周期值。
+
+    .. doxygenfunction:: ulp_set_wakeup_period
+
+    一旦定时器计数到 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器设定的 Tick 数值，ULP 协处理器就会启动，并调用 ``ulp_run`` 的入口点开始运行程序。
+
+    程序保持运行，直到遇到 ``halt`` 指令或非法指令。一旦程序停止，ULP 协处理器电源关闭，定时器再次启动。
+
+    如果想禁用定时器（有效防止 ULP 程序再次运行），可在 ULP 代码或主程序中清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位。
+
+    
 .. _binutils-esp32ulp 工具链: https://github.com/espressif/binutils-esp32ulp
