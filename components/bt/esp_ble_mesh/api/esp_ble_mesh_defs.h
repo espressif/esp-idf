@@ -801,6 +801,20 @@ typedef struct {
     uint8_t scan_rsp_data[31];  /*!< Scan response data */
 } esp_ble_mesh_ble_adv_data_t;
 
+/*!< Provisioner heartbeat filter type */
+#define ESP_BLE_MESH_HEARTBEAT_FILTER_ACCEPTLIST    0x00
+#define ESP_BLE_MESH_HEARTBEAT_FILTER_REJECTLIST    0x01
+
+/*!< Provisioner heartbeat filter operation */
+#define ESP_BLE_MESH_HEARTBEAT_FILTER_ADD           0x00
+#define ESP_BLE_MESH_HEARTBEAT_FILTER_REMOVE        0x01
+
+/** Context of Provisioner heartbeat filter information to be set */
+typedef struct {
+    uint16_t hb_src;    /*!< Heartbeat source address (unicast address) */
+    uint16_t hb_dst;    /*!< Heartbeat destination address (unicast address or group address) */
+} esp_ble_mesh_heartbeat_filter_info_t;
+
 /*!< This enum value is the event of node/provisioner/fast provisioning */
 typedef enum {
     ESP_BLE_MESH_PROV_REGISTER_COMP_EVT,                        /*!< Initialize BLE Mesh provisioning capabilities and internal data information completion event */
@@ -852,6 +866,10 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT,     /*!< Provisioner store node composition data completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT,    /*!< Provisioner delete node with uuid completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT,    /*!< Provisioner delete node with unicast address completion event */
+    ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT,     /*!< Provisioner start to receive heartbeat message completion event */
+    ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT, /*!< Provisioner set the heartbeat filter type completion event */
+    ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT, /*!< Provisioner set the heartbeat filter information completion event */
+    ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT,        /*!< Provisioner receive heartbeat message event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
@@ -1219,6 +1237,41 @@ typedef union {
         int err_code;                           /*!< Indicate the result of deleting node with unicast address by the Provisioner */
         uint16_t unicast_addr;                  /*!< Node unicast address */
     } provisioner_delete_node_with_addr_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT
+     */
+    struct {
+        int err_code;                           /*!< Indicate the result of enabling/disabling to receive heartbeat messages by the Provisioner */
+        bool enable;                            /*!< Indicate enabling or disabling receiving heartbeat messages */
+    } provisioner_enable_heartbeat_recv_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT
+     */
+    struct {
+        int err_code;                               /*!< Indicate the result of setting the heartbeat filter type by the Provisioner */
+        uint8_t type;                               /*!< Type of the filter used for receiving heartbeat messages */
+    } provisioner_set_heartbeat_filter_type_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT
+     */
+    struct {
+        int err_code;                               /*!< Indicate the result of setting the heartbeat filter address by the Provisioner */
+        uint8_t  op;                                /*!< Operation (add, remove, clean) */
+        uint16_t hb_src;                            /*!< Heartbeat source address */
+        uint16_t hb_dst;                            /*!< Heartbeat destination address */
+    } provisioner_set_heartbeat_filter_info_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT
+     */
+    struct {
+        uint16_t hb_src;            /*!< Heartbeat source address */
+        uint16_t hb_dst;            /*!< Heartbeat destination address */
+        uint8_t  init_ttl;          /*!< Heartbeat InitTTL */
+        uint8_t  rx_ttl;            /*!< Heartbeat RxTTL */
+        uint8_t  hops;              /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
+        uint16_t feature;           /*!< Bit field of currently active features of the node */
+        int8_t   rssi;              /*!< RSSI of the heartbeat message */
+    } provisioner_recv_heartbeat;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT */
     /**
      * @brief ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT
      */

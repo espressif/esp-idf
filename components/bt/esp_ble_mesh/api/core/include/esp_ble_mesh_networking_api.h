@@ -414,6 +414,66 @@ esp_err_t esp_ble_mesh_provisioner_update_local_net_key(const uint8_t net_key[16
 const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx);
 
 /**
+ * @brief         This function is called by Provisioner to enable or disable receiving
+ *                heartbeat messages.
+ *
+ * @note          If enabling receiving heartbeat message successfully, the filter will
+ *                be an empty rejectlist by default, which means all heartbeat messages
+ *                received by the Provisioner will be reported to the application layer.
+ *
+ * @param[in]     enable: Enable or disable receiving heartbeat messages.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_recv_heartbeat(bool enable);
+
+/**
+ * @brief         This function is called by Provisioner to set the heartbeat filter type.
+ *
+ * @note          1. If the filter type is not the same with the current value, then all the
+ *                   filter entries will be cleaned.
+ *                2. If the previous type is rejectlist, and changed to acceptlist, then the
+ *                   filter will be an empty acceptlist, which means no heartbeat messages
+ *                   will be reported. Users need to add SRC or DST into the filter entry,
+ *                   then heartbeat messages from the SRC or to the DST will be reported.
+ *
+ * @param[in]     type: Heartbeat filter type (acceptlist or rejectlist).
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_type(uint8_t type);
+
+/**
+ * @brief         This function is called by Provisioner to add or remove a heartbeat filter entry.
+ *
+ * @note          1. If the operation is "ADD", the "hb_src" can be set to the SRC (can only be a
+ *                   unicast address) of heartbeat messages, and the "hb_dst" can be set to the
+ *                   DST (unicast address or group address), at least one of them needs to be set.
+ *                   - If only one of them is set, the filter entry will only use the configured
+ *                     SRC or DST to filter heartbeat messages.
+ *                   - If both of them are set, the SRC and DST will both be used to decide if a
+ *                     heartbeat message will be handled.
+ *                   - If SRC or DST already exists in some filter entry, then the corresponding
+ *                     entry will be cleaned firstly, then a new entry will be allocated to store
+ *                     the information.
+ *                2. If the operation is "REMOVE", the "hb_src" can be set to the SRC (can only be
+ *                   a unicast address) of heartbeat messages, and the "hb_dst" can be set to the
+ *                   DST (unicast address or group address), at least one of them needs to be set.
+ *                   - The filter entry with the same SRC or DST will be removed.
+ *
+ * @param[in]     op:   Add or REMOVE
+ * @param[in]     info: Heartbeat filter entry information, including:
+ *                      hb_src - Heartbeat source address;
+ *                      hb_dst - Heartbeat destination address;
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble_mesh_heartbeat_filter_info_t *info);
+
+/**
  * @brief         This function is called to get fast provisioning application key.
  *
  * @param[in]     net_idx: Network key index.
