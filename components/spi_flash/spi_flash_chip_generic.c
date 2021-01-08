@@ -51,10 +51,10 @@ DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&defa
 #define CHIP_WAIT_IDLE_INTERVAL_US                  20
 
 const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
+    .idle_timeout = SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000,
     .chip_erase_timeout = SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS * 1000,
     .block_erase_timeout = SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT_MS * 1000,
     .sector_erase_timeout = SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS * 1000,
-    .idle_timeout = SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS * 1000,
     .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
 };
 
