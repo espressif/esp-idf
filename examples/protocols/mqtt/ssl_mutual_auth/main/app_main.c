@@ -38,7 +38,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
 extern const uint8_t server_cert_pem_start[] asm("_binary_mosquitto_org_crt_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_mosquitto_org_crt_end");
 
-static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
@@ -85,11 +85,15 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     return ESP_OK;
 }
 
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    mqtt_event_handler_cb(event_data);
+}
+
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtts://test.mosquitto.org:8884",
-        .event_handle = mqtt_event_handler,
         .client_cert_pem = (const char *)client_cert_pem_start,
         .client_key_pem = (const char *)client_key_pem_start,
         .cert_pem = (const char *)server_cert_pem_start,
@@ -97,6 +101,7 @@ static void mqtt_app_start(void)
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 }
 
