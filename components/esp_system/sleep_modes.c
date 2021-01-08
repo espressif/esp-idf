@@ -467,6 +467,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 
 esp_err_t esp_light_sleep_start(void)
 {
+    s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
     /* We will be calling esp_timer_private_advance inside DPORT access critical
@@ -491,7 +492,6 @@ esp_err_t esp_light_sleep_start(void)
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
 #elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
     s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
 #endif
@@ -653,7 +653,6 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
-    s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
     return ESP_OK;
