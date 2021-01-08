@@ -991,24 +991,12 @@ class Monitor(object):
 
 
 def main():
-
-    def _get_default_serial_port():
-        """
-        Same logic for detecting serial port as esptool.py and idf.py: reverse sort by name and choose the first port.
-        """
-
-        try:
-            ports = list(reversed(sorted(p.device for p in serial.tools.list_ports.comports())))
-            return ports[0]
-        except Exception:
-            return '/dev/ttyUSB0'
-
     parser = argparse.ArgumentParser("idf_monitor - a serial output monitor for esp-idf")
 
     parser.add_argument(
         '--port', '-p',
         help='Serial port device',
-        default=os.environ.get('ESPTOOL_PORT', _get_default_serial_port())
+        default=os.environ.get('ESPTOOL_PORT', '/dev/ttyUSB0')
     )
 
     parser.add_argument(
