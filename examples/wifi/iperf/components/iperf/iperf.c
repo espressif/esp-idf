@@ -149,6 +149,7 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
         return ESP_FAIL;
     }
 
+    printf("iperf tcp server create successfully\n");
     buffer = s_iperf_ctrl.buffer;
     want_recv = s_iperf_ctrl.buffer_len;
     while (!s_iperf_ctrl.finish) {

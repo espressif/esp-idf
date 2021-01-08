@@ -36,7 +36,7 @@ class ThroughputForConfigsReport(object):
             self.sdkconfigs[config_name] = self._parse_config_file(sdkconfig_files[config_name])
         if not os.path.exists(output_path):
             os.makedirs(output_path)
-        self.sort_order = self.sdkconfigs.keys()
+        self.sort_order = list(self.sdkconfigs.keys())
         self.sort_order.sort()
 
     @staticmethod
@@ -162,7 +162,7 @@ class ThroughputVsRssiReport(object):
         self.output_path = output_path
         self.raw_data_path = os.path.join(output_path, "raw_data")
         self.results = throughput_results
-        self.throughput_types = self.results.keys()
+        self.throughput_types = list(self.results.keys())
         self.throughput_types.sort()
         if not os.path.exists(self.raw_data_path):
             os.makedirs(self.raw_data_path)
@@ -229,7 +229,7 @@ class ThroughputVsRssiReport(object):
             result.draw_throughput_figure(self.raw_data_path, ap_ssid, "att")
             result.draw_rssi_vs_att_figure(self.raw_data_path, ap_ssid)
 
-            ret += "\r\n![throughput Vs RSSI]({})\r\n".format(os.path.join("raw_data", file_name))
+            ret += "\r\n[throughput Vs RSSI]({})\r\n".format(os.path.join("raw_data", file_name))
 
         return ret
 
