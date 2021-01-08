@@ -155,15 +155,8 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
     return ret;
 }
 
-esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *image_data)
+static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t *image_data)
 {
-    ESP_LOGI(TAG, "enabling secure boot v2 - ESP32-S2...");
-
-    if (esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "secure boot v2 is already enabled, continuing..");
-        return ESP_OK;
-    }
-
     esp_err_t ret;
     /* Verify the bootloader */
     esp_image_metadata_t bootloader_data = { 0 };
@@ -174,12 +167,11 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     }
 
     /* Check if secure boot digests are present */
-    bool has_secure_boot_digest = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0, NULL);
-    has_secure_boot_digest |= ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1, NULL);
-    has_secure_boot_digest |= ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2, NULL);
+    bool has_secure_boot_digest = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0, NULL);
+    has_secure_boot_digest |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1, NULL);
+    has_secure_boot_digest |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2, NULL);
     ESP_LOGI(TAG, "Secure boot digests %s", has_secure_boot_digest ? "already present":"absent, generating..");
 
-    ets_efuse_clear_program_registers();
     if (!has_secure_boot_digest) {
         image_sig_public_key_digests_t boot_key_digests = {0};
         image_sig_public_key_digests_t app_key_digests = {0};
@@ -197,30 +189,20 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         }
         ESP_LOGI(TAG, "%d signature block(s) found appended to the bootloader.", boot_key_digests.num_digests);
 
-        int unused_key_slots = ets_efuse_count_unused_key_blocks();
-        if (boot_key_digests.num_digests > unused_key_slots) {
-            ESP_LOGE(TAG, "Bootloader signatures(%d) more than available key slots(%d).", boot_key_digests.num_digests, unused_key_slots);
-            return ESP_FAIL;
-        }
+        esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
+            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
+            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1,
+            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2,
+        };
 
-        for (int i = 0; i < boot_key_digests.num_digests; i++) {
-            ets_efuse_block_t block;
-            const uint32_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = { ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
-                                ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1, ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 };
-
-            block = ets_efuse_find_unused_key_block();
-            if (block == ETS_EFUSE_BLOCK_MAX) {
-                ESP_LOGE(TAG, "No more unused key blocks available.");
-                return ESP_FAIL;
+        ret = esp_efuse_write_keys(secure_boot_key_purpose, boot_key_digests.key_digests, boot_key_digests.num_digests);
+        if (ret) {
+            if (ret == ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS) {
+                ESP_LOGE(TAG, "Bootloader signatures(%d) more than available key slots.", boot_key_digests.num_digests);
+            } else {
+                ESP_LOGE(TAG, "Failed to write efuse block with purpose (err=0x%x). Can't continue.", ret);
             }
-
-            int r = ets_efuse_write_key(block, secure_boot_key_purpose[i], boot_key_digests.key_digests[i], DIGEST_LEN);
-            if (r != 0) {
-                ESP_LOGE(TAG, "Failed to write efuse block %d with purpose %d. Can't continue.", block, secure_boot_key_purpose[i]);
-                return ESP_FAIL;
-            }
-
-            // Note: write key will write protect both the block and the purpose eFuse, always
+            return ret;
         }
 
         /* Generate the application public key digests */
@@ -243,12 +225,10 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         /* Confirm if at least one public key from the application matches a public key in the bootloader
            (Also, ensure if that public revoke bit is not set for the matched key) */
         bool match = false;
-        const uint32_t revoke_bits[SECURE_BOOT_NUM_BLOCKS] = { EFUSE_SECURE_BOOT_KEY_REVOKE0,
-                                EFUSE_SECURE_BOOT_KEY_REVOKE1, EFUSE_SECURE_BOOT_KEY_REVOKE2 };
 
         for (int i = 0; i < boot_key_digests.num_digests; i++) {
 
-            if (REG_GET_BIT(EFUSE_RD_REPEAT_DATA1_REG, revoke_bits[i])) {
+            if (esp_efuse_get_digest_revoke(i)) {
                 ESP_LOGI(TAG, "Key block(%d) has been revoked.", i);
                 continue; // skip if the key block is revoked
             }
@@ -271,15 +251,28 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
             /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
             for (uint8_t i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
                 ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
-                ets_secure_boot_revoke_public_key_digest(i);
+                esp_efuse_set_digest_revoke(i);
             }
         }
     }
+    return ESP_OK;
+}
 
-    esp_err_t err = esp_efuse_batch_write_begin();
-    if (err != ESP_OK) {
-        ESP_LOGI(TAG, "Error batch programming security eFuses.");
-        return err;
+esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *image_data)
+{
+    ESP_LOGI(TAG, "enabling secure boot v2 - ESP32-S2...");
+
+    if (esp_secure_boot_enabled()) {
+        ESP_LOGI(TAG, "secure boot v2 is already enabled, continuing..");
+        return ESP_OK;
+    }
+
+    esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
+
+    esp_err_t key_state = check_and_generate_secure_boot_keys(image_data);
+    if (key_state != ESP_OK) {
+        esp_efuse_batch_write_cancel();
+        return key_state;
     }
 
     __attribute__((unused)) static const uint8_t enable = 1;
@@ -308,9 +301,9 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
 
-    err = esp_efuse_batch_write_commit();
+    esp_err_t err = esp_efuse_batch_write_commit();
     if (err != ESP_OK) {
-        ESP_LOGI(TAG, "Error programming security eFuses.");
+        ESP_LOGE(TAG, "Error programming security eFuses (err=0x%x).", err);
         return err;
     }
 

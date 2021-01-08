@@ -71,43 +71,26 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
     }
 }
 
-static bool s_key_dis_read(ets_efuse_block_t block)
-{
-    // TODO: eFuse support on ESP32-S3
-    // unsigned key_num = block - ETS_EFUSE_BLOCK_KEY0;
-    // return REG_GET_FIELD(EFUSE_RD_REPEAT_DATA0_REG, EFUSE_RD_DIS) & (EFUSE_RD_DIS_KEY0 << key_num);
-    return true;
-}
-
-static bool s_key_dis_write(ets_efuse_block_t block)
-{
-    // TODO: eFuse support on ESP32-S3
-    // unsigned key_num = block - ETS_EFUSE_BLOCK_KEY0;
-    // return REG_GET_FIELD(EFUSE_RD_WR_DIS_REG, EFUSE_WR_DIS) & (EFUSE_WR_DIS_KEY0 << key_num);
-    return true;
-}
-
 static esp_err_t check_and_generate_encryption_keys(void)
 {
-    esp_err_t err = ESP_ERR_INVALID_STATE;
-    ets_efuse_block_t aes_128_key_block;
-    ets_efuse_block_t aes_256_key_block_1;
-    ets_efuse_block_t aes_256_key_block_2;
+    esp_efuse_block_t aes_128_key_block;
+    esp_efuse_block_t aes_256_key_block_1;
+    esp_efuse_block_t aes_256_key_block_2;
 
-    bool has_aes128 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY, &aes_128_key_block);
-    bool has_aes256_1 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1, &aes_256_key_block_1);
-    bool has_aes256_2 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2, &aes_256_key_block_2);
+    bool has_aes128   = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,   &aes_128_key_block);
+    bool has_aes256_1 = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1, &aes_256_key_block_1);
+    bool has_aes256_2 = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2, &aes_256_key_block_2);
     bool has_key = has_aes128 || (has_aes256_1 && has_aes256_2);
     bool dis_write = false;
     bool dis_read = false;
 
     // If there are keys set, they must be write and read protected!
     if(has_key && has_aes128) {
-        dis_write = s_key_dis_write(aes_128_key_block);
-        dis_read = s_key_dis_read(aes_128_key_block);
+        dis_write = esp_efuse_get_key_dis_write(aes_128_key_block);
+        dis_read  = esp_efuse_get_key_dis_read(aes_128_key_block);
     } else if (has_key && has_aes256_1 && has_aes256_2) {
-        dis_write = s_key_dis_write(aes_256_key_block_1) && s_key_dis_write(aes_256_key_block_2);
-        dis_read = s_key_dis_read(aes_256_key_block_1) && s_key_dis_read(aes_256_key_block_2);
+        dis_write = esp_efuse_get_key_dis_write(aes_256_key_block_1) && esp_efuse_get_key_dis_write(aes_256_key_block_2);
+        dis_read  = esp_efuse_get_key_dis_read(aes_256_key_block_1) && esp_efuse_get_key_dis_read(aes_256_key_block_2);
     }
 
     if (!has_key && (has_aes256_1 || has_aes256_2)) {
@@ -123,51 +106,30 @@ static esp_err_t check_and_generate_encryption_keys(void)
     if(!has_key && !dis_write && !dis_read) {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_AES256
-        const unsigned BLOCKS_NEEDED = 2;
-        const ets_efuse_purpose_t PURPOSE_START = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1;
-        const ets_efuse_purpose_t PURPOSE_END = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
+        enum { BLOCKS_NEEDED = 2 };
+        esp_efuse_purpose_t purposes[BLOCKS_NEEDED] = {
+            ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
+            ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
+        };
 #else
-        const unsigned BLOCKS_NEEDED = 1;
-        const ets_efuse_purpose_t PURPOSE_START = ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
-        const ets_efuse_purpose_t PURPOSE_END = ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
+        enum { BLOCKS_NEEDED = 1 };
+        esp_efuse_purpose_t purposes[BLOCKS_NEEDED] = {
+            ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+        };
 #endif
-
-        if (ets_efuse_count_unused_key_blocks() < BLOCKS_NEEDED) {
-            ESP_LOGE(TAG, "Not enough free efuse key blocks (need %d) to continue", BLOCKS_NEEDED);
-            return ESP_ERR_INVALID_STATE;
+        uint8_t keys[BLOCKS_NEEDED][32] = { 0 };
+        for (int i = 0; i < BLOCKS_NEEDED; ++i) {
+            bootloader_fill_random(keys[i], 32);
         }
 
-        for(ets_efuse_purpose_t purpose = PURPOSE_START; purpose <= PURPOSE_END; purpose++) {
-            uint32_t buf[8] = {0};
-            bootloader_fill_random(buf, sizeof(buf));
-            ets_efuse_block_t block = ets_efuse_find_unused_key_block();
-            ESP_LOGD(TAG, "Writing ETS_EFUSE_BLOCK_KEY%d with purpose %d",
-                     block - ETS_EFUSE_BLOCK_KEY0, purpose);
-
-            /* Note: everything else in this function is deferred as a batch write, but we write the
-               key (and write protect it) immediately as it's too fiddly to manage unused key blocks, etc.
-               in bootloader size footprint otherwise. */
-            int r = ets_efuse_write_key(block, purpose, buf, sizeof(buf));
-            if (r != 0) {
-                ESP_LOGE(TAG, "Failed to write efuse block %d with purpose %d. Can't continue.",
-                        block, purpose);
-                return ESP_FAIL;
+        esp_err_t err = esp_efuse_write_keys(purposes, keys, BLOCKS_NEEDED);
+        if (err != ESP_OK) {
+            if (err == ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS) {
+                ESP_LOGE(TAG, "Not enough free efuse key blocks (need %d) to continue", BLOCKS_NEEDED);
+            } else {
+                ESP_LOGE(TAG, "Failed to write efuse block with purpose (err=0x%x). Can't continue.", err);
             }
-
-            /* assuming numbering of esp_efuse_block_t matches ets_efuse_block_t */
-            _Static_assert((int)EFUSE_BLK_KEY0 == (int)ETS_EFUSE_BLOCK_KEY0, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-            _Static_assert((int)EFUSE_BLK_KEY1 == (int)ETS_EFUSE_BLOCK_KEY1, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-            _Static_assert((int)EFUSE_BLK_KEY2 == (int)ETS_EFUSE_BLOCK_KEY2, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-            _Static_assert((int)EFUSE_BLK_KEY3 == (int)ETS_EFUSE_BLOCK_KEY3, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-            _Static_assert((int)EFUSE_BLK_KEY4 == (int)ETS_EFUSE_BLOCK_KEY4, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-            _Static_assert((int)EFUSE_BLK_KEY5 == (int)ETS_EFUSE_BLOCK_KEY5, "esp_efuse_block_t doesn't match ets_efuse_block_t");
-
-            // protect this block against reading after key is set (writing is done by ets_efuse_write_key)
-            err = esp_efuse_set_read_protect(block);
-            if(err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to set read protect to efuse block %d. Can't continue.", block);
-                return err;
-            }
+            return err;
         }
         ESP_LOGD(TAG, "Key generation complete");
         return ESP_OK;
@@ -183,7 +145,7 @@ static esp_err_t initialise_flash_encryption(void)
     esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
 
     esp_err_t key_state = check_and_generate_encryption_keys();
-    if(key_state != ESP_OK) {
+    if (key_state != ESP_OK) {
         esp_efuse_batch_write_cancel();
         return key_state;
     }
@@ -213,6 +175,9 @@ static esp_err_t initialise_flash_encryption(void)
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
 
     esp_err_t err = esp_efuse_batch_write_commit();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error programming security eFuses (err=0x%x).", err);
+    }
 
     return err;
 }
