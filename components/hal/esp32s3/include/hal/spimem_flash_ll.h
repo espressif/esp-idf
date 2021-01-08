@@ -133,7 +133,6 @@ static inline void spimem_flash_ll_resume(spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_auto_suspend_init(spi_mem_dev_t *dev, bool auto_sus)
 {
-    dev->user.usr_dummy_idle = 1;// MUST SET 1, to avoid missing Resume
     dev->flash_sus_ctrl.flash_pes_en = auto_sus; // enable Flash Auto-Suspend.
 }
 

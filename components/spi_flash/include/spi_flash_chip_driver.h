@@ -22,10 +22,10 @@ typedef struct spi_flash_chip_t spi_flash_chip_t;
 
 /** Timeout configurations for flash operations, all in us */
 typedef struct {
+    uint32_t idle_timeout;          ///< Default timeout for other commands to be sent by host and get done by flash
     uint32_t chip_erase_timeout;    ///< Timeout for chip erase operation
     uint32_t block_erase_timeout;   ///< Timeout for block erase operation
     uint32_t sector_erase_timeout;  ///< Timeout for sector erase operation
-    uint32_t idle_timeout;          ///< Default timeout for other commands to be sent by host and get done by flash
     uint32_t page_program_timeout;  ///< Timeout for page program operation
 } flash_chip_op_timeout_t;
 
