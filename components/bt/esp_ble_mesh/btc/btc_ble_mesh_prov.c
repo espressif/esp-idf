@@ -820,9 +820,29 @@ const esp_ble_mesh_node_t **btc_ble_mesh_provisioner_get_node_table_entry(void)
 {
     return (const esp_ble_mesh_node_t **)bt_mesh_provisioner_get_node_table_entry();
 }
+
+#if CONFIG_BLE_MESH_PROVISIONER_RECV_HB
+static void btc_ble_mesh_provisioner_recv_heartbeat_cb(u16_t hb_src, u16_t hb_dst,
+                                                       u8_t init_ttl, u8_t rx_ttl,
+                                                       u8_t hops, u16_t feat, s8_t rssi)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+
+    mesh_param.provisioner_recv_heartbeat.hb_src = hb_src;
+    mesh_param.provisioner_recv_heartbeat.hb_dst = hb_dst;
+    mesh_param.provisioner_recv_heartbeat.init_ttl = init_ttl;
+    mesh_param.provisioner_recv_heartbeat.rx_ttl = rx_ttl;
+    mesh_param.provisioner_recv_heartbeat.hops = hops;
+    mesh_param.provisioner_recv_heartbeat.feature = feat;
+    mesh_param.provisioner_recv_heartbeat.rssi = rssi;
+
+    btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT);
+}
+#endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
+
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
-static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
+static void btc_ble_mesh_node_recv_heartbeat_cb(u8_t hops, u16_t feature)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
@@ -1197,7 +1217,7 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
         model->cb = (esp_ble_mesh_model_cbs_t *)&bt_mesh_cfg_srv_cb;
         struct bt_mesh_cfg_srv *srv = (struct bt_mesh_cfg_srv *)model->user_data;
         if (srv) {
-            srv->hb_sub.func = btc_ble_mesh_heartbeat_msg_recv_cb;
+            srv->hb_sub.func = btc_ble_mesh_node_recv_heartbeat_cb;
         }
         break;
     }
@@ -1997,6 +2017,31 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_delete_node_with_addr_comp.err_code =
             bt_mesh_provisioner_delete_node_with_node_addr(arg->delete_node_with_addr.unicast_addr);
         break;
+#if CONFIG_BLE_MESH_PROVISIONER_RECV_HB
+    case BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV:
+        act = ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT;
+        param.provisioner_enable_heartbeat_recv_comp.enable = arg->enable_heartbeat_recv.enable;
+        param.provisioner_enable_heartbeat_recv_comp.err_code =
+            bt_mesh_provisioner_recv_heartbeat(arg->enable_heartbeat_recv.enable ?
+                                               btc_ble_mesh_provisioner_recv_heartbeat_cb : NULL);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE:
+        act = ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT;
+        param.provisioner_set_heartbeat_filter_type_comp.type = arg->set_heartbeat_filter_type.type;
+        param.provisioner_set_heartbeat_filter_type_comp.err_code =
+            bt_mesh_provisioner_set_heartbeat_filter_type(arg->set_heartbeat_filter_type.type);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO:
+        act = ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT;
+        param.provisioner_set_heartbeat_filter_info_comp.op = arg->set_heartbeat_filter_info.op;
+        param.provisioner_set_heartbeat_filter_info_comp.hb_src = arg->set_heartbeat_filter_info.hb_src;
+        param.provisioner_set_heartbeat_filter_info_comp.hb_dst = arg->set_heartbeat_filter_info.hb_dst;
+        param.provisioner_set_heartbeat_filter_info_comp.err_code =
+            bt_mesh_provisioner_set_heartbeat_filter_info(arg->set_heartbeat_filter_info.op,
+                                                          arg->set_heartbeat_filter_info.hb_src,
+                                                          arg->set_heartbeat_filter_info.hb_dst);
+        break;
+#endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV
     case BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO:
