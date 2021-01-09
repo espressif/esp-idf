@@ -43,6 +43,8 @@ typedef enum {
      */
     WIFI_PROV_START,
 
+    WIFI_PROV_SCAN_STARTED,
+
     /**
      * Emitted when Wi-Fi AP credentials are received via `protocomm`
      * endpoint `wifi_config`. The event data in this case is a pointer

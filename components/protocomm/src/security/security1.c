@@ -171,7 +171,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     resp->sec1 = out;
 
     cur_session->state = SESSION_STATE_DONE;
-    ESP_LOGD(TAG, "Secure session established successfully");
+    ESP_LOGI(TAG, "Secure session established successfully");
     return ESP_OK;
 }
 
@@ -572,6 +572,15 @@ static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
     return ESP_OK;
 }
 
+static bool sec1_secure_session_established(protocomm_security_handle_t handle) {
+    session_t *cur_session = (session_t *) handle;
+    if (NULL == cur_session) {
+        return false;
+    }
+
+    return cur_session->state == SESSION_STATE_DONE;
+}
+
 const protocomm_security_t protocomm_security1 = {
     .ver = 1,
     .init = sec1_init,
@@ -581,4 +590,5 @@ const protocomm_security_t protocomm_security1 = {
     .security_req_handler = sec1_req_handler,
     .encrypt = sec1_decrypt, /* Encrypt == decrypt for AES-CTR */
     .decrypt = sec1_decrypt,
+    .secure_session_established = sec1_secure_session_established,
 };
