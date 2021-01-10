@@ -38,7 +38,7 @@ void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
 
     /* write back */
     tinyusb_cdcacm_write_queue(itf, buf, rx_size);
-    tinyusb_cdcacm_write_flush(itf, portMAX_DELAY);
+    tinyusb_cdcacm_write_flush(itf, 0);
 }
 
 void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)

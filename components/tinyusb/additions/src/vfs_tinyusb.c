@@ -153,7 +153,7 @@ static ssize_t tusb_write(int fd, const void *data, size_t size)
         }
 
     }
-    tinyusb_cdcacm_write_flush(s_vfstusb.cdc_intf, 0);
+    tud_cdc_n_write_flush(s_vfstusb.cdc_intf);
     _lock_release(&(s_vfstusb.write_lock));
     return written_sz;
 }
