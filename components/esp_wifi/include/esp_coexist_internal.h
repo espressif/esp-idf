@@ -131,6 +131,17 @@ int coex_wifi_channel_set(uint8_t primary, uint8_t secondary);
  */
 int coex_event_duration_get(uint32_t event, uint32_t *duration);
 
+#if SOC_COEX_HW_PTI
+/**
+ * @brief Get coexistence event priority.
+ *
+ *  @param event : Coexistence event
+ *  @param pti: Coexistence event priority
+ *  @return : 0 - success, other - failed
+ */
+int coex_pti_get(uint32_t event, uint8_t *pti);
+#endif
+
 /**
  * @brief Clear coexistence status.
  *

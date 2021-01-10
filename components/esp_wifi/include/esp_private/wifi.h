@@ -478,6 +478,18 @@ esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8
 bool esp_wifi_internal_is_tsf_active(void);
 #endif
 
+#if CONFIG_MAC_BB_PD
+/**
+  * @brief     Enable or disable powering down MAC and baseband when Wi-Fi is sleeping.
+  *
+  * @param     enable : enable or disable
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_set_mac_sleep(bool enable);
+#endif
+
 /**
   * @breif    TxDone callback function type. Should be registered using esp_wifi_set_tx_done_cb()
   *

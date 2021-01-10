@@ -13,32 +13,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "soc/soc_caps.h"
+
+#if SOC_APB_BACKUP_DMA
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
-#include "esp32c3/rom/apb_dma.h"
+#include "esp32c3/rom/apb_backup_dma.h"
 
-static portMUX_TYPE apb_backup_mutex = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE s_apb_backup_dma_mutex = portMUX_INITIALIZER_UNLOCKED;
 
-static void IRAM_ATTR apb_backup_lock(void)
+static void IRAM_ATTR apb_backup_dma_lock(void)
 {
     if (xPortInIsrContext()) {
-        portENTER_CRITICAL_ISR(&apb_backup_mutex);
+        portENTER_CRITICAL_ISR(&s_apb_backup_dma_mutex);
     } else {
-        portENTER_CRITICAL(&apb_backup_mutex);
+        portENTER_CRITICAL(&s_apb_backup_dma_mutex);
     }
 }
 
-static void IRAM_ATTR apb_backup_unlock(void)
+static void IRAM_ATTR apb_backup_dma_unlock(void)
 {
     if (xPortInIsrContext()) {
-        portEXIT_CRITICAL_ISR(&apb_backup_mutex);
+        portEXIT_CRITICAL_ISR(&s_apb_backup_dma_mutex);
     } else {
-        portEXIT_CRITICAL(&apb_backup_mutex);
+        portEXIT_CRITICAL(&s_apb_backup_dma_mutex);
     }
 }
 
-void esp_apb_backup_lock_init(void)
+void esp_apb_backup_dma_lock_init(void)
 {
-    ets_apb_backup_init_lock_func(apb_backup_lock, apb_backup_unlock);
+    ets_apb_backup_init_lock_func(apb_backup_dma_lock, apb_backup_dma_unlock);
 }
+#endif

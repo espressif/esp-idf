@@ -108,3 +108,12 @@
  *      - 0 : not support;
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1
+
+/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
+#define SOC_APB_BACKUP_DMA              (1)
+
+/*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
+#define SOC_WIFI_HW_TSF                 (1)
+
+/*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
+#define SOC_COEX_HW_PTI                 (1)

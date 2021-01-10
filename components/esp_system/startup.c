@@ -89,6 +89,11 @@
 
 uint64_t g_startup_time = 0;
 
+#if SOC_APB_BACKUP_DMA
+// APB DMA lock initialising API
+extern void esp_apb_backup_dma_lock_init(void);
+#endif
+
 // App entry point for core 0
 extern void esp_startup_start_app(void);
 
@@ -378,6 +383,10 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 
 #if CONFIG_ESP_COREDUMP_ENABLE
     esp_core_dump_init();
+#endif
+
+#if SOC_APB_BACKUP_DMA
+    esp_apb_backup_dma_lock_init();
 #endif
 
 #if CONFIG_SW_COEXIST_ENABLE
