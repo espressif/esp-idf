@@ -19,6 +19,11 @@
 
 static bool is_interrupt_number_reserved(int interrupt_number)
 {
+    //TODO. Workaround to reserve interrupt number 0 for Wi-Fi.
+    if (interrupt_number == 1) {
+        return true;
+    }
+
     extern int _vector_table;
     extern int _interrupt_handler;
     const intptr_t pc = (intptr_t)(&_vector_table + interrupt_number);

@@ -8,14 +8,6 @@ if(${idf_target} STREQUAL "esp32s3")
     return()
 endif()
 
-# remove these when wifi support is ready on esp32-c3
-if(${idf_target} STREQUAL "esp32c3")
-    idf_component_register(INCLUDE_DIRS "include"
-                           REQUIRES esp_event
-                           PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif)
-    return()
-endif()
-
 if(CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
     set(link_binary_libs 0)
     set(ldfragments)
@@ -54,8 +46,10 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/li
 
 if(link_binary_libs)
     set(phy phy)
-    set(blobs coexist core espnow mesh net80211 pp rtc smartconfig ${phy})
-
+    set(blobs coexist core espnow mesh net80211 pp smartconfig ${phy})
+    if(${idf_target} STREQUAL "esp32")
+        list(APPEND blobs rtc)
+    endif()
     foreach(blob ${blobs})
         add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                             REQUIRES ${COMPONENT_NAME})

@@ -289,6 +289,8 @@
 #define SOC_AES_SUPPORT_AES_192 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
 
+/*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
+#define SOC_WIFI_HW_TSF                 (1)
 
 
 /* ---------------------------- Compatibility ------------------------------- */

@@ -390,4 +390,14 @@ menu "PHY"
         int
         default ESP32_PHY_MAX_WIFI_TX_POWER
 
+    config ESP32_PHY_MAC_BB_PD
+        bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+        depends on IDF_TARGET_ESP32C3
+        default n
+        help
+            If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+            down when PHY is disabled. Enabling this setting reduces power consumption
+            by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
+            2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
+
 endmenu  # PHY

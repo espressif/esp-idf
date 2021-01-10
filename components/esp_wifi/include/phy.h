@@ -21,6 +21,10 @@ extern "C" {
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
 
+#if CONFIG_MAC_BB_PD
+#define MAC_BB_PD_MEM_SIZE      (192*4)
+#endif
+
 /**
  * @file phy.h
  * @brief Declarations for functions provided by libphy.a
@@ -59,17 +63,22 @@ void phy_set_wifi_mode_only(bool wifi_only);
  */
 void coex_bt_high_prio(void);
 
-#if CONFIG_IDF_TARGET_ESP32S2
 /**
  * @brief Open PHY and RF.
  */
 void phy_wakeup_init(void);
-#endif
 
 /**
  * @brief Shutdown PHY and RF.
  */
 void phy_close_rf(void);
+
+#if CONFIG_MAC_BB_PD
+/**
+ * @brief Store and load baseband registers.
+ */
+void phy_freq_mem_backup(bool backup_en, uint32_t *mem);
+#endif
 
 #ifdef __cplusplus
 }

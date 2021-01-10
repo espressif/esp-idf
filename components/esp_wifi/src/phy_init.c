@@ -19,7 +19,6 @@
 #include <sys/lock.h>
 
 #include "soc/rtc.h"
-#include "soc/dport_reg.h"
 #include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_system.h"
@@ -40,6 +39,9 @@
 #include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "soc/rtc_cntl_reg.h"
+#include "soc/syscon_reg.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -56,6 +58,11 @@ static bool s_is_phy_calibrated = false;
 /* Reference count of enabling PHY */
 static uint8_t s_phy_access_ref = 0;
 
+#if CONFIG_MAC_BB_PD
+/* Reference of powering down MAC and BB */
+static uint8_t s_mac_bb_pd_ref = 0;
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
 /* time stamp updated when the PHY/RF is turned on */
 static int64_t s_phy_rf_en_ts = 0;
@@ -63,6 +70,10 @@ static int64_t s_phy_rf_en_ts = 0;
 
 /* PHY spinlock for libphy.a */
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
+
+#if CONFIG_MAC_BB_PD
+uint32_t* s_mac_bb_pd_mem = NULL;
+#endif
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
 /* The following static variables are only used by Wi-Fi tasks, so they can be handled without lock */
@@ -184,7 +195,7 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
-void esp_phy_enable(void)
+IRAM_ATTR void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
@@ -203,11 +214,7 @@ void esp_phy_enable(void)
             s_is_phy_calibrated = true;
         }
         else {
-#if CONFIG_IDF_TARGET_ESP32S2
             phy_wakeup_init();
-#elif CONFIG_IDF_TARGET_ESP32
-            register_chipv7_phy(NULL, NULL, PHY_RF_CAL_NONE);
-#endif
         }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -219,7 +226,7 @@ void esp_phy_enable(void)
     _lock_release(&s_phy_access_lock);
 }
 
-void esp_phy_disable(void)
+IRAM_ATTR void esp_phy_disable(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
@@ -237,6 +244,53 @@ void esp_phy_disable(void)
 
     _lock_release(&s_phy_access_lock);
 }
+
+#if CONFIG_MAC_BB_PD
+void esp_mac_bb_pd_mem_init(void)
+{
+    _lock_acquire(&s_phy_access_lock);
+
+    if (s_mac_bb_pd_mem == NULL) {
+        s_mac_bb_pd_mem = (uint32_t *)heap_caps_malloc(MAC_BB_PD_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    }
+
+    _lock_release(&s_phy_access_lock);
+}
+
+IRAM_ATTR void esp_mac_bb_power_up(void)
+{
+    uint32_t level = phy_enter_critical();
+
+    if (s_mac_bb_pd_mem != NULL && s_mac_bb_pd_ref == 0) {
+        esp_phy_common_clock_enable();
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
+        CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        phy_freq_mem_backup(false, s_mac_bb_pd_mem);
+        esp_phy_common_clock_disable();
+    }
+    s_mac_bb_pd_ref++;
+
+    phy_exit_critical(level);
+}
+
+IRAM_ATTR void esp_mac_bb_power_down(void)
+{
+    uint32_t level = phy_enter_critical();
+
+    s_mac_bb_pd_ref--;
+    if (s_mac_bb_pd_mem != NULL && s_mac_bb_pd_ref == 0) {
+        esp_phy_common_clock_enable();
+        phy_freq_mem_backup(true, s_mac_bb_pd_mem);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        esp_phy_common_clock_disable();
+    }
+
+    phy_exit_critical(level);
+}
+#endif
 
 // PHY init data handling functions
 #if CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
