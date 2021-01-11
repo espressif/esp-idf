@@ -11,17 +11,17 @@ Linux 平台工具链的标准设置
 
 - CentOS 7::
 
-    sudo yum -y update && sudo yum install git wget flex bison gperf python3 cmake ninja-build ccache dfu-util
+    sudo yum -y update && sudo yum install git wget flex bison gperf python3 cmake ninja-build ccache dfu-util libusbx
 
 目前仍然支持 CentOS 7，但为了更好的用户体验，建议使用 CentOS 8。
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache dfu-util
+    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache dfu-util libusb
 
 .. 注解::
     使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。

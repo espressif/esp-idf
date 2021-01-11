@@ -11,7 +11,7 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum -y update && sudo yum install git wget flex bison gperf python3 cmake ninja-build ccache dfu-util
+    sudo yum -y update && sudo yum install git wget flex bison gperf python3 cmake ninja-build ccache dfu-util libusbx
 
 CentOS 7 is still supported but CentOS version 8 is recommended for a better user experience.
 
@@ -21,7 +21,7 @@ CentOS 7 is still supported but CentOS version 8 is recommended for a better use
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache dfu-util
+    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache dfu-util libusb
 
 .. note::
     CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, enabling of a "backports" repository, or installing of a "cmake3" package rather than "cmake".
