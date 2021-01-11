@@ -64,7 +64,7 @@ typedef int sys_prot_t;
 #define X16_F "x"
 
 #define S32_F "d"
-#define U32_F "d"
+#define U32_F "u"
 #define X32_F "x"
 
 #define PACK_STRUCT_FIELD(x) x
