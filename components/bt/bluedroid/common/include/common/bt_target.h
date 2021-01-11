@@ -131,6 +131,12 @@
 #define GATTC_INCLUDED              FALSE
 #endif  /* CONFIG_GATTC_ENABLE */
 
+#if (CONFIG_GATTS_BLUFI_ENABLE)
+#define BLUFI_INCLUDED              TRUE
+#else
+#define BLUFI_INCLUDED              FALSE
+#endif  /* UC_BT_BLUFI_ENABLE */
+
 #if (CONFIG_GATTC_ENABLE && CONFIG_GATTC_CACHE_NVS_FLASH)
 #define GATTC_CACHE_NVS              TRUE
 #else

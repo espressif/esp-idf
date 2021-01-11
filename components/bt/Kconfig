@@ -480,6 +480,13 @@ menu Bluetooth
         help
             This option can be disabled when the app work only on gatt client mode
 
+    config GATTS_BLUFI_ENABLE
+        bool "Include blufi function"
+        depends on GATTS_ENABLE
+        default y
+        help
+            This option can be close when the app does not require blufi function.
+
     choice GATTS_SEND_SERVICE_CHANGE_MODE
         prompt "GATTS Service Change Mode"
         default GATTS_SEND_SERVICE_CHANGE_AUTO
