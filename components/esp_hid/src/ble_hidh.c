@@ -617,7 +617,7 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
         .queue_size = 5,
         .task_name = "esp_ble_hidh_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 2048,
         .task_core_id = tskNO_AFFINITY
     };
     ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
