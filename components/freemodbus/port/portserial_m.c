@@ -180,7 +180,6 @@ static void vUartTask(void* pvParameters)
 BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, eMBParity eParity )
 {
     esp_err_t xErr = ESP_OK;
-    MB_PORT_CHECK((eParity <= MB_PAR_EVEN), FALSE, "mb serial set parity failure.");
     // Set communication port number
     ucUartNumber = ucPORT;
     // Configure serial communication parameters
@@ -196,6 +195,9 @@ BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, 
         case MB_PAR_EVEN:
             ucParity = UART_PARITY_EVEN;
             break;
+        default:
+            ESP_LOGE(TAG, "Incorrect parity option: %d", eParity);
+            return FALSE;
     }
     switch(ucDataBits){
         case 5:
