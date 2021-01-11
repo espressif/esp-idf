@@ -137,6 +137,7 @@ void app_main(void)
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("WEBSOCKET_CLIENT", ESP_LOG_DEBUG);
+    esp_log_level_set("TRANSPORT_WS", ESP_LOG_DEBUG);
     esp_log_level_set("TRANS_TCP", ESP_LOG_DEBUG);
 
     ESP_ERROR_CHECK(nvs_flash_init());

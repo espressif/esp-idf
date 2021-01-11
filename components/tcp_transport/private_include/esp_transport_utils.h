@@ -30,6 +30,18 @@ extern "C" {
         }
 
 /**
+ * @brief      Utility macro for checking the error code of esp_err_t
+ */
+#define ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, action) \
+        {                                                     \
+            esp_err_t _esp_transport_err_to_check = err;      \
+            if (_esp_transport_err_to_check != ESP_OK) {      \
+                ESP_LOGE(TAG,"%s(%d): Expected ESP_OK; reported: %d", __FUNCTION__, __LINE__, _esp_transport_err_to_check); \
+                action;                                       \
+            }                                                 \
+        }
+
+/**
  * @brief      Convert milliseconds to timeval struct for valid timeouts, otherwise
  *             (if "wait forever" requested by timeout_ms=-1) timeval structure is not updated and NULL returned
  *
