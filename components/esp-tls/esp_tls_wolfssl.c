@@ -157,6 +157,11 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
+    if (cfg->crt_bundle_attach != NULL) {
+        ESP_LOGE(TAG,"use_crt_bundle not supported in wolfssl");
+        return ESP_FAIL;
+    }
+
     if (cfg->use_global_ca_store == true) {
         if ((esp_load_wolfssl_verify_buffer(tls, global_cacert, global_cacert_pem_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
             ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
@@ -215,11 +220,6 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         }
     } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication\n\n");
-        return ESP_FAIL;
-    }
-
-    if (cfg->crt_bundle_attach != NULL) {
-        ESP_LOGE(TAG,"use_crt_bundle not supported in wolfssl");
         return ESP_FAIL;
     }
 
