@@ -6,6 +6,7 @@
 #include "esp_wifi_netif.h"
 #include <string.h>
 
+
 TEST_CASE("esp_netif: init and destroy", "[esp_netif]")
 {
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();

@@ -99,6 +99,11 @@
     - .unit_test_template
     - .rules:tests:unit_test_s2
 
+.unit_test_c3_template:
+  extends:
+    - .unit_test_template
+    - .rules:tests:unit_test_c3 # due to the lack of runners, c3 tests will only be triggered by label
+
 .integration_test_template:
   extends:
     - .target_test_job_template
@@ -561,6 +566,13 @@ UT_046:
   tags:
     - ESP32_IDF
     - UT_T1_GPIO
+
+UT_C3:
+  extends: .unit_test_c3_template
+  parallel: 26
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_1
 
 nvs_compatible_test:
   extends: .integration_test_template

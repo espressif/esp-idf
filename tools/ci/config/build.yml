@@ -134,6 +134,11 @@ build_esp_idf_tests_cmake_esp32s3:
   variables:
     IDF_TARGET: esp32s3
 
+build_esp_idf_tests_cmake_esp32c3:
+  extends: .build_esp_idf_tests_cmake
+  variables:
+    IDF_TARGET: esp32c3
+
 .build_examples_template:
   extends:
     - .build_template
@@ -237,6 +242,12 @@ build_test_apps_esp32s3:
   variables:
     IDF_TARGET: esp32s3
 
+build_test_apps_esp32c3:
+  extends: .build_test_apps
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32c3
+
 .build_component_ut:
   extends:
     - .build_test_apps
@@ -254,6 +265,11 @@ build_component_ut_esp32s2:
   extends: .build_component_ut
   variables:
     IDF_TARGET: esp32s2
+
+build_component_ut_esp32c3:
+  extends: .build_component_ut
+  variables:
+    IDF_TARGET: esp32c3
 
 .build_docs_template:
   stage: build
