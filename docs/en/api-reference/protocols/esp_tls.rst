@@ -146,7 +146,7 @@ SSL/TLS libraries and with all respective configurations set to default.
     ESP-TLS provides support for using the Digital Signature (DS) with ESP32-S2.
     Use of the DS for TLS is supported only when ESP-TLS is used with mbedTLS (default stack) as its underlying SSL/TLS stack.
     For more details on Digital Signature, please refer to the :doc:`Digital Signature Documentation </api-reference/peripherals/ds>`. The technical details of Digital Signature such as
-    how to calculate private key parameters can be found at `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+    how to calculate private key parameters can be found in *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
     The DS peripheral must be configured before it can be used to perform Digital Signature, see `Configure the DS Peripheral` in :doc:`Digital Signature </api-reference/peripherals/ds>`.
 
     .. note:: As the DS peripheral support is only available for ESP32-S2, the idf-target should be set to ESP32-S2. See `Selecting the Target` in :doc:`build-system.</api-guides/build-system>`.

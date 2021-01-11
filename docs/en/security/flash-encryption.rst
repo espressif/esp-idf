@@ -106,7 +106,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - Yes
          - x
        * - ``KEY_PURPOSE_N``
-         - Controls the purpose of eFuse block ``KEYN``, where N is between 0 and 5. Possible values: ``2`` for ``XTS_AES_256_KEY_1`` , ``3`` for ``XTS_AES_256_KEY_2``, and ``4`` for ``XTS_AES_128_KEY``. Final AES key is derived based on the value of one or two of these purpose eFuses. For a detailed description of the possible combinations see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_, chapter Flash Encryption.
+         - Controls the purpose of eFuse block ``KEYN``, where N is between 0 and 5. Possible values: ``2`` for ``XTS_AES_256_KEY_1`` , ``3`` for ``XTS_AES_256_KEY_2``, and ``4`` for ``XTS_AES_128_KEY``. Final AES key is derived based on the value of one or two of these purpose eFuses. For a detailed description of the possible combinations, see *{IDF_TARGET_NAME} Technical Reference Manual* > *External Memory Encryption and Decryption (XTS_AES)* [`PDF <{IDF_TARGET_TRM_EN_URL}#extmemencr>`__].
          - 4
          - Yes
          - 0
@@ -168,7 +168,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
 
-  2. Firmware bootloader reads the ``FLASH_CRYPT_CNT`` eFuse value (``0b00000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+  2. Firmware bootloader reads the ``FLASH_CRYPT_CNT`` eFuse value (``0b00000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Flash Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
   3. Flash encryption block generates an AES-256 bit key and writes it into the BLOCK1 eFuse. This operation is done entirely by hardware, and the key cannot be accessed via software.
 
@@ -186,7 +186,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
 
-  2. Firmware bootloader reads the ``SPI_BOOT_CRYPT_CNT`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+  2. Firmware bootloader reads the ``SPI_BOOT_CRYPT_CNT`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Auto Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
   3. Flash encryption block generates an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and writes it into respectively one or two `KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys where stored. This operation is done entirely by hardware, and the key cannot be accessed via software.
 
@@ -221,8 +221,6 @@ Assuming that the eFuse values are in their default states and the firmware boot
 During the development stage, there is a frequent need to program different plaintext flash images and test the flash encryption process. This requires that Firmware Download mode is able to load new plaintext images as many times as it might be needed. However, during manufacturing or production stages, Firmware Download mode should not be allowed to access flash contents for security reasons.
 
 Hence, two different flash encryption configurations were created: for development and for production. For details on these configurations, see Section `Flash Encryption Configuration`_.
-
-.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 
 Flash Encryption Configuration

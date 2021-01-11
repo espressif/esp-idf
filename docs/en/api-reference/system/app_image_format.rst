@@ -58,7 +58,13 @@ You can also see the information on segments in the IDF logs while your applicat
 	I (971) esp_image: segment 11: paddr=0x000a9b74 vaddr=0x50000004 size=0x00000 ( 0) load
 	I (1012) esp_image: segment 12: paddr=0x000a9b7c vaddr=0x50000004 size=0x00000 ( 0) load
 
-For more details on the type of memory segments and their address ranges, see the {IDF_TARGET_NAME} Technical Reference Manual, Section 1.3.2 *Embedded Memory*.
+.. only:: esp32
+
+    For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
+
+.. only:: esp32s2
+
+    For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
 4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from first byte and up to this field. The length of this field is 32 bytes.

@@ -4,7 +4,7 @@ HMAC
 The HMAC (Hash-based Message Authentication Code) module provides hardware acceleration for SHA256-HMAC generation using a key burned into an eFuse block.
 HMACs work with pre-shared secret keys and provide authenticity and integrity to a message.
 
-Look into the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF) for more detailed information about the application workflow and the HMAC calculation process.
+For more detailed information on the application workflow and the HMAC calculation process, see *{IDF_TARGET_NAME} Technical Reference Manual* > *HMAC Accelerator (HMAC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#hmac>`__].
 
 Generalized Application Scheme
 ------------------------------
@@ -57,7 +57,7 @@ Each key has a corresponding eFuse parameter *key purpose* determining for which
 
 This is to prevent the usage of a key for a different function than originally intended.
 
-To calculate an HMAC, the software has to provide the ID of the key block containing the secret key as well as the *key purpose* (see chapter *eFuse Controller* in the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_).
+To calculate an HMAC, the software has to provide the ID of the key block containing the secret key as well as the *key purpose* (see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__]).
 Before the HMAC key calculation, the HMAC module looks up the purpose of the provided key block. 
 The calculation only proceeds if the provided key purpose matches the purpose stored in the eFuses of the key block provided by the ID.
 
@@ -81,7 +81,7 @@ The user only needs to provide the eFuse key block and purpose on the HMAC side 
 Neither the key nor the actual HMAC are ever exposed to outside the HMAC module and DS component.
 The calculation of the HMAC and its hand-over to the DS component happen internally.
 
-For more details, check the chapter *Digital Signature* in the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
 HMAC for Enabling JTAG
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -103,7 +103,7 @@ JTAG enable
 2. Pass this key value when calling the :cpp:func:`esp_hmac_jtag_enable` function from the firmware.
 3. To re-disable JTAG in the firmware, reset the system or call :cpp:func:`esp_hmac_jtag_disable`.
 
-For more details, check the chapter *HMAC Module* in the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *HMAC Accelerator (HMAC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#hmac>`__].
 
 
 Application Outline

@@ -29,7 +29,7 @@ Wakeup sources
 Timer
 ^^^^^
 
-RTC controller has a built in timer which can be used to wake up the chip after a predefined amount of time. Time is specified at microsecond precision, but the actual resolution depends on the clock source selected for RTC SLOW_CLK. See chapter "Reset and Clock" of the {IDF_TARGET_NAME} Technical Reference Manual for details about RTC clock options.
+RTC controller has a built in timer which can be used to wake up the chip after a predefined amount of time. Time is specified at microsecond precision, but the actual resolution depends on the clock source selected for RTC SLOW_CLK. For details on RTC clock options, see *{IDF_TARGET_NAME} Technical Reference Manual* > *ULP Coprocessor* [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__].
 
 This wakeup mode doesn't require RTC peripherals or RTC memories to be powered on during sleep.
 

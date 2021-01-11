@@ -14,17 +14,17 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-from __future__ import print_function
-from __future__ import unicode_literals
-import sys
+from __future__ import print_function, unicode_literals
+
 import os
 import os.path
 import re
 import subprocess
-from sanitize_version import sanitize_version
-from idf_extensions.util import download_file_if_missing
-from get_github_rev import get_github_rev
+import sys
 
+from get_github_rev import get_github_rev
+from idf_extensions.util import download_file_if_missing
+from sanitize_version import sanitize_version
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -140,7 +140,8 @@ BT_DOCS = ['api-guides/blufi.rst',
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
 
-SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst']
+SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
+                   'api-reference/protocols/esp_sdio_slave_protocol.rst']
 
 MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
@@ -242,7 +243,7 @@ versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
 idf_targets = ['esp32', 'esp32s2']
 languages = ['en', 'zh_CN']
 
-project_homepage = "https://github.com/espressif/esp-idf"
+project_homepage = 'https://github.com/espressif/esp-idf'
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -250,11 +251,11 @@ project_homepage = "https://github.com/espressif/esp-idf"
 #
 # Redirects should be listed in page_redirects.xt
 #
-with open("../page_redirects.txt") as f:
-    lines = [re.sub(" +", " ", line.strip()) for line in f.readlines() if line.strip() != "" and not line.startswith("#")]
+with open('../page_redirects.txt') as f:
+    lines = [re.sub(' +', ' ', line.strip()) for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
-            raise RuntimeError("Invalid line in page_redirects.txt: %s" % line)
+            raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -264,10 +265,10 @@ html_theme = 'sphinx_idf_theme'
 
 # context used by sphinx_idf_theme
 html_context = {
-    "display_github": True,  # Add 'Edit on Github' link instead of 'View page source'
-    "github_user": "espressif",
-    "github_repo": "esp-idf",
-    "github_version": get_github_rev(),
+    'display_github': True,  # Add 'Edit on Github' link instead of 'View page source'
+    'github_user': 'espressif',
+    'github_repo': 'esp-idf',
+    'github_version': get_github_rev(),
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -287,7 +288,7 @@ html_context = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "../_static/espressif-logo.svg"
+html_logo = '../_static/espressif-logo.svg'
 
 
 # The name of an image file (within the static path) to use as favicon of the
@@ -380,7 +381,7 @@ latex_elements = {
 
 # The name of an image file (relative to this directory) to place at the bottom of
 # the title page.
-latex_logo = "../_static/espressif2.pdf"
+latex_logo = '../_static/espressif2.pdf'
 latex_engine = 'xelatex'
 latex_use_xindy = False
 
@@ -427,7 +428,7 @@ def setup(app):
     app.add_stylesheet('theme_overrides.css')
 
     # these two must be pushed in by build_docs.py
-    if "idf_target" not in app.config:
+    if 'idf_target' not in app.config:
         app.add_config_value('idf_target', None, 'env')
         app.add_config_value('idf_targets', None, 'env')
 
@@ -436,8 +437,8 @@ def setup(app):
 
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
-    app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
-    app.config.breathe_default_project = "esp32-idf"
+    app.config.breathe_projects = {'esp32-idf': os.path.join(app.config.build_dir, 'xml_in/')}
+    app.config.breathe_default_project = 'esp32-idf'
 
     setup_diag_font(app)
 
@@ -455,13 +456,13 @@ def setup_config_values(app, config):
 
     app.add_config_value('idf_target_title_dict', idf_target_title_dict, 'env')
 
-    pdf_name = "esp-idf-{}-{}-{}".format(app.config.language, app.config.version, app.config.idf_target)
+    pdf_name = 'esp-idf-{}-{}-{}'.format(app.config.language, app.config.version, app.config.idf_target)
     app.add_config_value('pdf_file', pdf_name, 'env')
 
 
 def setup_html_context(app, config):
     # Setup path for 'edit on github'-link
-    config.html_context['conf_py_path'] = "/docs/{}/".format(app.config.language)
+    config.html_context['conf_py_path'] = '/docs/{}/'.format(app.config.language)
 
 
 def setup_diag_font(app):
@@ -476,7 +477,7 @@ def setup_diag_font(app):
     font_dir = os.path.join(config_dir, '_static')
     assert os.path.exists(font_dir)
 
-    print("Downloading font file %s for %s" % (font_name, app.config.language))
+    print('Downloading font file %s for %s' % (font_name, app.config.language))
     download_file_if_missing('https://dl.espressif.com/dl/esp-idf/docs/_static/{}'.format(font_name), font_dir)
 
     font_path = os.path.abspath(os.path.join(font_dir, font_name))

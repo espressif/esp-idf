@@ -10,25 +10,29 @@ The ESP SDIO Slave protocol was created to implement the communication between S
 SDIO Slave Capabilities of Espressif chips
 ------------------------------------------
 
-The services provided by SDIO Slave peripherals of Espressif chips are different. See the table below:
+The services provided by the SDIO Slave peripheral of the {IDF_TARGET_NAME} chip are listed in the table below:
 
-+-----------------------------------------------------------+-------+----------+
-|                                                           | ESP32 | ESP32-S2 |
-+===========================================================+=======+==========+
-| SDIO slave                                                | Y     | N        |
-+-----------------------------------------------------------+-------+----------+
-| :ref:`Tohost intr <esp_sdio_slave_interrupts>`            | 8     |          |
-+-----------------------------------------------------------+-------+----------+
-| :ref:`Frhost intr <esp_sdio_slave_interrupts>`            | 8     |          |
-+-----------------------------------------------------------+-------+----------+
-| :ref:`TX DMA <esp_sdio_slave_send_fifo>`                  | Y     |          |
-+-----------------------------------------------------------+-------+----------+
-| :ref:`RX DMA <esp_sdio_slave_rcv_fifo>`                   | Y     |          |
-+-----------------------------------------------------------+-------+----------+
-| :ref:`Shared registers <esp_sdio_slave_shared_registers>` | 56\*  |          |
-+-----------------------------------------------------------+-------+----------+
+.. list-table::
+   :widths: 70 30
+   :header-rows: 1
+
+   * - Services
+     - {IDF_TARGET_NAME}
+   * - SDIO slave
+     - Y
+   * - :ref:`Tohost intr <esp_sdio_slave_interrupts>`
+     - 8
+   * - :ref:`Frhost intr <esp_sdio_slave_interrupts>`
+     - 8
+   * - :ref:`TX DMA <esp_sdio_slave_send_fifo>`
+     - Y
+   * - :ref:`RX DMA <esp_sdio_slave_rcv_fifo>`
+     - Y
+   * - :ref:`Shared registers <esp_sdio_slave_shared_registers>`
+     - 56\*
 
 - \* Not including the interrupt registers
+
 
 .. _esp_slave_init:
 
@@ -103,7 +107,7 @@ ESP SDIO Slave Protocol
 The ESP SDIO Slave protocol is based on the SDIO Specification's I/O Read/Write commands, i.e., CMD52 and CMD53. The protocol offers the following services:
 
 - Sending FIFO and receiving FIFO
-- 52 8-bit R/W registers shared by host and slave (For details, see Section 8.4 Register summary (table SDIO SLC Host registers) in `{IDF_TARGET_NAME} Technical reference manual`_
+- 52 8-bit R/W registers shared by host and slave (For details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *SDIO Slave Controller* > *Register Summary* > SDIO SLC Host registers [`PDF <{IDF_TARGET_TRM_EN_URL}#sdioslave-reg-summ>`__]
 - 16 general purpose interrupt sources, 8 from host to slave and 8 from slave to host
 
 To begin communication, the host needs to enable the I/O Function 1 in the slave and access its registers as described below.
@@ -111,8 +115,6 @@ To begin communication, the host needs to enable the I/O Function 1 in the slave
 Check the code example :example:`peripherals/sdio`.
 
 The :doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>` component implements the logic of this protocol for ESP32 SDIO Host when communicating with an ESP32 SDIO slave.
-
-.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 .. _esp_sdio_slave_shared_registers:
 

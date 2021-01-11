@@ -7,7 +7,8 @@ The parameters are encrypted using HMAC as a key-derivation function.
 In turn, the HMAC uses eFuses as input key.
 The whole process happens in hardware so that neither the decryption key for the RSA parameters nor the input key for the HMAC key derivation function can be seen by the software while calculating the signature.
 
-Look into the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF) for more detailed information about the involved hardware during the signature calculation process and the used registers.
+For more detailed information on the hardware involved in signature calculation and the registers used, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
+
 
 Private Key Parameters
 ----------------------
@@ -24,11 +25,12 @@ Both the HMAC key and the RSA private key have to be created and stored before t
 This needs to be done in software on the {IDF_TARGET_NAME} or alternatively on a host.
 For this context, the IDF provides :cpp:func:`esp_efuse_write_block` to set the HMAC key and :cpp:func:`esp_hmac_calculate` to encrypt the private RSA key parameters.
 
-Instructions on how to calculate and assemble the private key parameters are described in the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+You can find instructions on how to calculate and assemble the private key parameters in *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
 Signature Calculation with IDF
 ------------------------------
-*For thorough information about involved registers and the workflow, please have a look at the* `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+
+For more detailed information on the workflow and the registers used, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
 Three parameters need to be prepared to calculate the digital signature:
 
@@ -57,7 +59,7 @@ The configuration involves the following steps -
 3) Calculate the encrypted private key paramters from the client private key (RSA) and the parameters generated in the above steps.
 4) Then burn the 256 bit `HMAC_KEY` on the efuse, which can only be read by the DS peripheral.
 
-For more technical details visit the `Digital Signature` chapter in `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
 To configure the DS peripheral for development purposes, you can use the python script :example_file:`configure_ds.py<protocols/mqtt/ssl_ds/configure_ds.py>`.
 More details about the `configure_ds.py` script can be found at :example_file:`mqtt example README <protocols/mqtt/ssl_ds/README.md>`.

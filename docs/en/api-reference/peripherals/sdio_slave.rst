@@ -94,7 +94,8 @@ The SDIO slave driver uses the following terms:
 - Sending: slave to host transfers.
 - Receiving: host to slave transfers.
 
-.. note:: Register names in ESP Rechnical Reference Manual are oriented from the point of view of the host, i.e. 'rx'
+.. note:: Register names in *{IDF_TARGET_NAME} Technical Reference Manual* > *SDIO Slave Controller* 
+  [`PDF <{IDF_TARGET_TRM_EN_URL}#sdioslave>`__] are oriented from the point of view of the host, i.e. 'rx'
   registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to
   avoid ambiguities.
 

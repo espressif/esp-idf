@@ -38,7 +38,7 @@ The I2S peripherals also support LCD mode for communicating data over a parallel
 
 .. only:: esp32
 
-    For more information, see the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=306>`_.
+    For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *I2S Controller (I2S)* > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
 .. note::
 
