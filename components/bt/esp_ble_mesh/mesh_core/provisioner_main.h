@@ -125,6 +125,20 @@ int bt_mesh_provisioner_local_net_key_del(u16_t net_idx, bool store);
 int bt_mesh_provisioner_bind_local_model_app_idx(u16_t elem_addr, u16_t mod_id,
                                                  u16_t cid, u16_t app_idx);
 
+typedef void (* bt_mesh_heartbeat_recv_cb_t)(u16_t hb_src, u16_t hb_dst,
+                                             u8_t init_ttl, u8_t rx_ttl,
+                                             u8_t hops, u16_t feat, s8_t rssi);
+
+int bt_mesh_provisioner_recv_heartbeat(bt_mesh_heartbeat_recv_cb_t cb);
+
+int bt_mesh_provisioner_set_heartbeat_filter_type(u8_t filter_type);
+
+int bt_mesh_provisioner_set_heartbeat_filter_info(u8_t op, u16_t src, u16_t dst);
+
+void bt_mesh_provisioner_heartbeat(u16_t hb_src, u16_t hb_dst,
+                                   u8_t init_ttl, u8_t rx_ttl,
+                                   u8_t hops, u16_t feat, s8_t rssi);
+
 /* Provisioner print own element information */
 int bt_mesh_print_local_composition_data(void);
 
