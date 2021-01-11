@@ -18,9 +18,9 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_attr.h"
+#include "hal/cpu_hal.h"
 #include "esp32s3/clk.h"
 #include "soc/wdev_reg.h"
-#include "xtensa/core-macros.h"
 
 uint32_t IRAM_ATTR esp_random(void)
 {
@@ -48,7 +48,7 @@ uint32_t IRAM_ATTR esp_random(void)
     uint32_t ccount;
     uint32_t result = 0;
     do {
-        ccount = XTHAL_GET_CCOUNT();
+        ccount = cpu_hal_get_cycle_count();
         result ^= REG_READ(WDEV_RND_REG);
     } while (ccount - last_ccount < cpu_to_apb_freq_ratio * 16);
     last_ccount = ccount;

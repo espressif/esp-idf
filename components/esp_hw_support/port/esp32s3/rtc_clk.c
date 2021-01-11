@@ -32,7 +32,6 @@
 #include "soc_log.h"
 #include "rtc_clk_common.h"
 #include "sdkconfig.h"
-#include "xtensa/core-macros.h"
 
 static const char *TAG = "rtc_clk";
 

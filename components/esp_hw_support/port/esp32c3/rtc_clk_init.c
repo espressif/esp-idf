@@ -24,6 +24,7 @@
 #include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
+#include "hal/cpu_hal.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
@@ -64,6 +65,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);
+    uint32_t freq_before = old_config.freq_mhz;
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     if (!res) {
         SOC_LOGE(TAG, "invalid CPU frequency value");
@@ -72,7 +74,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Re-calculate the ccount to make time calculation correct. */
-    //XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * cfg.cpu_freq_mhz / freq_before );
+    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {

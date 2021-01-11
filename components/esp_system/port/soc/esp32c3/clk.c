@@ -30,9 +30,9 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
+#include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
 #include "driver/periph_ctrl.h"
-//#include "xtensa/core-macros.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"
@@ -118,7 +118,7 @@ static const char *TAG = "clk";
 
     rtc_cpu_freq_config_t old_config, new_config;
     rtc_clk_cpu_freq_get_config(&old_config);
-    //const uint32_t old_freq_mhz = old_config.freq_mhz;
+    const uint32_t old_freq_mhz = old_config.freq_mhz;
     const uint32_t new_freq_mhz = CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ;
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(new_freq_mhz, &new_config);
@@ -131,8 +131,7 @@ static const char *TAG = "clk";
     rtc_clk_cpu_freq_set_config(&new_config);
 
     // Re calculate the ccount to make time calculation correct.
-    // TODO ESP32-C3 IDF-2554 apply same adjustment
-    //XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
+    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)

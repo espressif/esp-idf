@@ -99,6 +99,11 @@ static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
     return cpu_hal_get_cycle_count();
 }
 
+static inline void esp_cpu_set_ccount(esp_cpu_ccount_t val)
+{
+    cpu_hal_set_cycle_count(val);
+}
+
 /**
  * @brief Configure CPU to disable access to invalid memory regions
  *
