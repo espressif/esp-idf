@@ -320,8 +320,31 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, ssl, goto _websocket_init_fail);
 
     esp_transport_set_default_port(ssl, WEBSOCKET_SSL_DEFAULT_PORT);
-    if (config->cert_pem) {
-        esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+    if (config->use_global_ca_store == true) {
+        esp_transport_ssl_enable_global_ca_store(ssl);
+    } else if (config->cert_pem) {
+        if (!config->cert_len) {
+            esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        } else {
+            esp_transport_ssl_set_cert_data_der(ssl, config->cert_pem, config->cert_len);
+        }
+    }
+    if (config->client_cert) {
+        if (!config->client_cert_len) {
+            esp_transport_ssl_set_client_cert_data(ssl, config->client_cert, strlen(config->client_cert));
+        } else {
+            esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert, config->client_cert_len);
+        }
+    }
+    if (config->client_key) {
+        if (!config->client_key_len) {
+            esp_transport_ssl_set_client_key_data(ssl, config->client_key, strlen(config->client_key));
+        } else {
+            esp_transport_ssl_set_client_key_data_der(ssl, config->client_key, config->client_key_len);
+        }
+    }
+    if (config->skip_cert_common_name_check) {
+        esp_transport_ssl_skip_common_name_check(ssl);
     }
     esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
 
