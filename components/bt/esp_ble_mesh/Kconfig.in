@@ -320,28 +320,6 @@ if BLE_MESH
 
     if BLE_MESH_SETTINGS
 
-        config BLE_MESH_SPECIFIC_PARTITION
-            bool "Use a specific NVS partition for BLE Mesh"
-            default n
-            help
-                When selected, the mesh stack will use a specified NVS partition instead of
-                default NVS partition. Note that the specified partition must be registered
-                with NVS using nvs_flash_init_partition() API, and the partition must exists
-                in the csv file.
-                When Provisioner needs to store a large amount of nodes' information in the
-                flash (e.g. more than 20), this option is recommended to be enabled.
-
-        if BLE_MESH_SPECIFIC_PARTITION
-
-            config BLE_MESH_PARTITION_NAME
-                string "Name of the NVS partition for BLE Mesh"
-                default "ble_mesh"
-                help
-                    This value defines the name of the specified NVS partition used by the
-                    mesh stack.
-
-        endif # BLE_MESH_SPECIFIC_PARTITION
-
         config BLE_MESH_STORE_TIMEOUT
             int "Delay (in seconds) before storing anything persistently"
             range 0 1000000
@@ -406,6 +384,50 @@ if BLE_MESH
                 we recommend enabling this option, so that system could set the flag
                 in advance before recovering node information and make sure the node
                 information recovering could work as expected.
+
+        config BLE_MESH_SPECIFIC_PARTITION
+            bool "Use a specific NVS partition for BLE Mesh"
+            default n
+            help
+                When selected, the mesh stack will use a specified NVS partition instead of
+                default NVS partition. Note that the specified partition must be registered
+                with NVS using nvs_flash_init_partition() API, and the partition must exists
+                in the csv file.
+                When Provisioner needs to store a large amount of nodes' information in the
+                flash (e.g. more than 20), this option is recommended to be enabled.
+
+        config BLE_MESH_PARTITION_NAME
+            string "Name of the NVS partition for BLE Mesh"
+            depends on BLE_MESH_SPECIFIC_PARTITION
+            default "ble_mesh"
+            help
+                This value defines the name of the specified NVS partition used by the
+                mesh stack.
+
+        config BLE_MESH_USE_MULTIPLE_NAMESPACE
+            bool "Support using multiple NVS namespaces by Provisioner"
+            depends on BLE_MESH_PROVISIONER
+            default n
+            help
+                When selected, Provisioner can use different NVS namespaces to store
+                different instances of mesh information.
+                For example, if in the first room, Provisioner uses NetKey A, AppKey
+                A and provisions three devices, these information will be treated as
+                mesh information instance A. When the Provisioner moves to the second
+                room, it uses NetKey B, AppKey B and provisions two devices, then the
+                information will be treated as mesh information instance B.
+                Here instance A and instance B will be stored in different namespaces.
+                With this option enabled, Provisioner needs to use specific functions
+                to open the corresponding NVS namespace, restore the mesh information,
+                release the mesh information or erase the mesh information.
+
+        config BLE_MESH_MAX_NVS_NAMESPACE
+            int "Maximum number of NVS namespaces"
+            depends on BLE_MESH_USE_MULTIPLE_NAMESPACE
+            default 2
+            range 1 255
+            help
+                This option specifies the maximum NVS namespaces supported by Provisioner.
 
     endif  # if BLE_MESH_SETTINGS
 
