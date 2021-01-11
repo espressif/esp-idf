@@ -268,7 +268,7 @@ static cJSON* wifi_prov_get_info_json(void)
 
 /* Declare the internal event handler */
 static void wifi_prov_mgr_event_handler_internal(void* arg, esp_event_base_t event_base,
-                                                 int event_id, void* event_data);
+                                                 int32_t event_id, void* event_data);
 
 static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const char *service_key)
 {
@@ -801,7 +801,7 @@ esp_err_t wifi_prov_mgr_event_handler(void *ctx, system_event_t *event)
 }
 
 static void wifi_prov_mgr_event_handler_internal(
-    void* arg, esp_event_base_t event_base, int event_id, void* event_data)
+    void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (!prov_ctx_lock) {
         ESP_LOGE(TAG, "Provisioning manager not initialized");

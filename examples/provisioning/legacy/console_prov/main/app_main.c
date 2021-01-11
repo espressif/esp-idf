@@ -26,7 +26,7 @@
 static const char *TAG = "app";
 
 static void event_handler(void* arg, esp_event_base_t event_base,
-                          int event_id, void* event_data)
+                          int32_t event_id, void* event_data)
 {
     static int s_retry_num = 0;
 

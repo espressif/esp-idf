@@ -14,6 +14,7 @@
 #include <nvs_flash.h>
 #include <nvs.h>
 #include <esp_event.h>
+#include <esp_timer.h>
 
 #include <protocomm.h>
 #include <protocomm_httpd.h>
@@ -26,7 +27,7 @@
 static const char *TAG = "app_prov";
 
 /* Handler for catching WiFi events */
-static void app_prov_event_handler(void* handler_arg, esp_event_base_t base, int id, void* data);
+static void app_prov_event_handler(void* handler_arg, esp_event_base_t base, int32_t id, void* data);
 
 /* Handlers for wifi_config provisioning endpoint */
 extern wifi_prov_config_handlers_t wifi_prov_handlers;
@@ -138,7 +139,7 @@ static void _stop_prov_cb(void * arg)
 
 /* Event handler for starting/stopping provisioning */
 static void app_prov_event_handler(void* handler_arg, esp_event_base_t event_base,
-                                   int event_id, void* event_data)
+                                   int32_t event_id, void* event_data)
 {
     /* If pointer to provisioning application data is NULL
      * then provisioning is not running */
