@@ -17,7 +17,6 @@
 #define PORT_COMMON_H_
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "esp_log.h"                // for ESP_LOGE macro
 #include "sdkconfig.h"
 
@@ -77,15 +76,17 @@ typedef long    LONG;
 void vMBPortEnterCritical(void);
 void vMBPortExitCritical(void);
 
-#define ENTER_CRITICAL_SECTION( ) { ESP_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
+#define ENTER_CRITICAL_SECTION( ) { ESP_EARLY_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
                                     vMBPortEnterCritical(); }
 
 #define EXIT_CRITICAL_SECTION( )  { vMBPortExitCritical(); \
-                                    ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
+                                    ESP_EARLY_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
 
 #define MB_PORT_CHECK_EVENT( event, mask ) ( event & mask )
 #define MB_PORT_CLEAR_EVENT( event, mask ) do { event &= ~mask; } while(0)
 
+#define MB_PORT_PARITY_GET(parity) ((parity != UART_PARITY_DISABLE) ? \
+                                        ((parity == UART_PARITY_ODD) ? MB_PAR_ODD : MB_PAR_EVEN) : MB_PAR_NONE)
 #ifdef __cplusplus
 PR_END_EXTERN_C
 #endif /* __cplusplus */
