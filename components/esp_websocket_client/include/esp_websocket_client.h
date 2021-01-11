@@ -86,6 +86,10 @@ typedef struct {
     char                        *user_agent;                /*!< Websocket user-agent */
     char                        *headers;                   /*!< Websocket additional headers */
     int                         pingpong_timeout_sec;       /*!< Period before connection is aborted due to no PONGs received, disabled if value is 0 */
+    bool                        keep_alive_enable;          /*!< Enable keep-alive timeout */
+    int                         keep_alive_idle;            /*!< Keep-alive idle time. Default is 5 (second) */
+    int                         keep_alive_interval;        /*!< Keep-alive interval time. Default is 5 (second) */
+    int                         keep_alive_count;           /*!< Keep-alive packet retry send count. Default is 3 counts */
 } esp_websocket_client_config_t;
 
 /**
