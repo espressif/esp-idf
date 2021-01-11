@@ -47,7 +47,7 @@ Please note, that the supplied file `client.crt` in the `main` directory is only
 *  The DS peripheral can be configured with the python script [configure_ds.py](README.md#configure_ds-py) by executing the following command
 
 ```
-    python configure_ds.py --port /* USB COM port */ --private_key /* RSA priv key */
+    python configure_ds.py --port /* USB COM port */ --private-key /* RSA priv key */
 ```
 
 In the command USB COM port is nothing but the serial port to which the ESP32-S2 chip is connected. see

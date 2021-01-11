@@ -79,13 +79,24 @@ def number_as_bytes(number, pad_bits=None):
     return result
 
 
+# @return
+#       c               : ciphertext_c
+#       iv              : initialization vector
+#       key_size        : key size of the RSA private key in bytes.
+# @input
+#       privkey         : path to the RSA private key
+#       priv_key_pass   : path to the RSA privaete key password
+#       hmac_key        : HMAC key value ( to calculate DS params)
+# @info
+#       The function calculates the encrypted private key parameters.
+#       Consult the DS documentation (available for the ESP32-S2) in the esp-idf programming guide for more details about the variables and calculations.
 def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
     private_key = load_privatekey(privkey, priv_key_pass)
     if not isinstance(private_key, rsa.RSAPrivateKey):
-        print("Only RSA private keys are supported")
+        print("ERROR: Only RSA private keys are supported")
         sys.exit(-1)
     if hmac_key is None:
-        print("hmac_key cannot be None")
+        print("ERROR: hmac_key cannot be None")
         sys.exit(-2)
 
     priv_numbers = private_key.private_numbers()
@@ -132,10 +143,14 @@ def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
     return c, iv, key_size
 
 
+# @info
+#       The function makes use of the "espefuse.py" script to read the efuse summary
 def efuse_summary(args, idf_target):
     os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip {0} -p {1} summary".format(idf_target, (args.port)))
 
 
+# @info
+#       The function makes use of the "espefuse.py" script to burn the HMAC key on the efuse.
 def efuse_burn_key(args, idf_target):
     # In case of a development (default) usecase we disable the read protection.
     key_block_status = '--no-read-protect'
@@ -150,6 +165,9 @@ def efuse_burn_key(args, idf_target):
               .format((idf_target), (args.port), ("BLOCK_KEY" + str(args.efuse_key_id)), (hmac_key_file), (key_block_status)))
 
 
+# @info
+#       Generate a custom csv file of encrypted private key parameters.
+#       The csv file is required by the nvs_partition_generator utility to create the nvs partition.
 def generate_csv_file(c, iv, hmac_key_id, key_size, csv_file):
 
     with open(csv_file, 'wt', encoding='utf8') as f:
@@ -167,6 +185,9 @@ class DefineArgs(object):
             self.__setattr__(key, value)
 
 
+# @info
+#       This function uses the nvs_partition_generater utility
+#       to generate the nvs partition of the encrypted private key parameters.
 def generate_nvs_partition(input_filename, output_filename):
 
     nvs_args = DefineArgs({
@@ -181,6 +202,8 @@ def generate_nvs_partition(input_filename, output_filename):
     nvs_gen.generate(nvs_args, is_encr_enabled=False, encr_key=None)
 
 
+# @return
+#         The json formatted summary of the efuse.
 def get_efuse_summary_json(args, idf_target):
     _efuse_summary = None
     try:
@@ -201,6 +224,13 @@ def get_efuse_summary_json(args, idf_target):
     return _efuse_summary_json
 
 
+# @return
+#       on success: 256 bit HMAC key present in the given key_block (args.efuse_key_id)
+#       on failure: None
+# @info
+#       This function configures the provided efuse key_block.
+#       If the provided efuse key_block is empty the function generates a new HMAC key and burns it in the efuse key_block.
+#       If the key_block already contains a key the function reads the key from the efuse key_block
 def configure_efuse_key_block(args, idf_target):
     efuse_summary_json = get_efuse_summary_json(args, idf_target)
     key_blk = 'BLOCK_KEY' + str(args.efuse_key_id)
@@ -214,7 +244,7 @@ def configure_efuse_key_block(args, idf_target):
     # the new hmac key and check again
     # If the efuse key block is not writable (already contains a key) then check if it is redable
     if kb_writeable is True:
-        print('Provided key block is writable\n Generating new key and burning it in the efuse..\n')
+        print('Provided key block (KEY BLOCK %1d) is writable\n Generating a new key and burning it in the efuse..\n' % (args.efuse_key_id))
 
         new_hmac_key = os.urandom(32)
         with open(hmac_key_file, 'wb') as key_file:
@@ -228,32 +258,35 @@ def configure_efuse_key_block(args, idf_target):
         hmac_key_read = new_efuse_summary_json[key_blk]['value']
         hmac_key_read = bytes.fromhex(hmac_key_read)
         if new_hmac_key == hmac_key_read:
-            print('Key was successfully written in the efuse')
+            print('Key was successfully written to the efuse (KEY BLOCK %1d)' % (args.efuse_key_id))
         else:
-            print('Error in burning hmac key to efuse ,\nPlease execute the script again using a different key id')
+            print("ERROR: Failed to burn the hmac key to efuse (KEY BLOCK %1d),"
+                  "\nPlease execute the script again using a different key id" % (args.efuse_key_id))
+            return None
     else:
         # If the efuse key block is redable, then read the key from efuse block and use it for encrypting the RSA private key parameters.
         # If the efuse key block is not redable or it has key purpose set to a different
         # value than "HMAC_DOWN_DIGITAL_SIGNATURE" then we cannot use it for DS operation
         if kb_readable is True:
             if efuse_summary_json[key_purpose]['value'] == 'HMAC_DOWN_DIGITAL_SIGNATURE':
-                print("Provided efuse key block already contains a key with key_purpose=HMAC_DOWN_DIGITAL_SIGNATURE,"
-                      "\nusing the same key for encrypting private key data...\n")
+                print("Provided efuse key block (KEY BLOCK %1d) already contains a key with key_purpose=HMAC_DOWN_DIGITAL_SIGNATURE,"
+                      "\nusing the same key for encrypting the private key data...\n" % (args.efuse_key_id))
                 hmac_key_read = efuse_summary_json[key_blk]['value']
                 hmac_key_read = bytes.fromhex(hmac_key_read)
                 if args.keep_ds_data is True:
                     with open(hmac_key_file, 'wb') as key_file:
-                        key_file.write(new_hmac_key)
+                        key_file.write(hmac_key_read)
             else:
-                print("Provided efuse key block contains a key with key purpose different"
-                      "than HMAC_DOWN_DIGITAL_SIGNATURE,\nplease execute the script again with a different value of the efuse key id.")
-                sys.exit(0)
+                print("ERROR: Provided efuse key block ((KEY BLOCK %1d)) contains a key with key purpose different"
+                      "than HMAC_DOWN_DIGITAL_SIGNATURE,\nplease execute the script again with a different value of the efuse key id." % (args.efuse_key_id))
+                return None
         else:
-            print('Provided efuse key block is not readable and writeable,\nplease execute the script again with a different value of the efuse key id.')
-            sys.exit(0)
+            print("ERROR: Provided efuse key block (KEY BLOCK %1d) is not readable and writeable,"
+                  "\nplease execute the script again with a different value of the efuse key id." % (args.efuse_key_id))
+            return None
 
-        # Return the hmac key read from the efuse
-        return hmac_key_read
+    # Return the hmac key read from the efuse
+    return hmac_key_read
 
 
 def cleanup(args):
