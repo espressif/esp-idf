@@ -44,8 +44,9 @@ esp_err_t ulp_riscv_run(void)
     esp_rom_delay_us(20);
     /* Select RISC-V as the ULP_TIMER trigger target. */
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);
-    /* Select ULP_TIMER sleep trigger source. 1: REG_COCPU_DONE; 0: ULP END.*/
-    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
+
+    /* Select ULP-RISC-V to send the DONE signal. */
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
 
     /* start ULP_TIMER */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
