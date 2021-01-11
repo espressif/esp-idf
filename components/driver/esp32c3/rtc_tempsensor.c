@@ -21,7 +21,9 @@
 #include "soc/rtc_cntl_reg.h"
 #include "driver/temp_sensor.h"
 #include "esp32c3/rom/ets_sys.h"
-#include "regi2c_ctrl.h"
+#include "soc/apb_saradc_struct.h"
+#include "soc/apb_saradc_reg.h"
+#include "soc/system_reg.h"
 
 static const char *TAG = "tsens";
 
@@ -35,7 +37,6 @@ static const char *TAG = "tsens";
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)
 #define TSENS_SYS_OFFSET  (20.52)
-
 
 typedef struct {
     int index;
@@ -59,13 +60,13 @@ static SemaphoreHandle_t s_rtc_tsens_mux = NULL;
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
+    REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
     REGI2C_WRITE_MASK(I2C_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
-    SENS.sar_tctrl.tsens_clk_div = tsens.clk_div;
-    SENS.sar_tctrl.tsens_power_up_force = 1;
-    SENS.sar_tctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
-    SENS.sar_tctrl2.tsens_xpd_force = 1;
+    APB_SARADC.apb_tsens_ctrl.tsens_clk_div = tsens.clk_div;
+    APB_SARADC.apb_tsens_ctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
+    APB_SARADC.apb_tsens_ctrl2.tsens_xpd_force = 1;
     ESP_LOGD(TAG, "Config temperature range [%d°C ~ %d°C], error < %d°C",
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
@@ -85,7 +86,7 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
             break;
         }
     }
-    tsens->clk_div = SENS.sar_tctrl.tsens_clk_div;
+    tsens->clk_div = APB_SARADC.apb_tsens_ctrl.tsens_clk_div;
     return ESP_OK;
 }
 
@@ -95,13 +96,16 @@ esp_err_t temp_sensor_start(void)
         s_rtc_tsens_mux = xSemaphoreCreateMutex();
     }
     TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
+    REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
+    APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
+    APB_SARADC.apb_tsens_ctrl.tsens_pu = 1;
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_stop(void)
 {
-    SENS.sar_tctrl.tsens_power_up = 0;
-    // SENS.sar_tctrl2.tsens_clkgate_en = 0;
+    APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
+    APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
     if (s_rtc_tsens_mux != NULL) {
         vSemaphoreDelete(s_rtc_tsens_mux);
         s_rtc_tsens_mux = NULL;
@@ -114,10 +118,7 @@ esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
     TSENS_CHECK(tsens_out != NULL, ESP_ERR_INVALID_ARG);
     TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE);
     xSemaphoreTake(s_rtc_tsens_mux, portMAX_DELAY);
-    SENS.sar_tctrl.tsens_dump_out = 1;
-    while (!SENS.sar_tctrl.tsens_ready);
-    *tsens_out = SENS.sar_tctrl.tsens_out;
-    SENS.sar_tctrl.tsens_dump_out = 0;
+    *tsens_out = APB_SARADC.apb_tsens_ctrl.tsens_out;
     xSemaphoreGive(s_rtc_tsens_mux);
     return ESP_OK;
 }
@@ -130,6 +131,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
     esp_err_t ret = temp_sensor_get_config(&tsens);
     if (ret == ESP_OK) {
         ret = temp_sensor_read_raw(&tsens_out);
+        printf("tsens_out %d\r\n", tsens_out);
         TSENS_CHECK(ret == ESP_OK, ret);
         const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
         *celsius = (TSENS_ADC_FACTOR * (float)tsens_out - TSENS_DAC_FACTOR * dac->offset - TSENS_SYS_OFFSET);
