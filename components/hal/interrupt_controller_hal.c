@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "hal/interrupt_controller_hal.h"
+#include "soc/soc_caps.h"
 
 #if __riscv
 #include "riscv/instruction_decode.h"

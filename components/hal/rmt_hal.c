@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
+#include "soc/soc_caps.h"
 
 void rmt_hal_init(rmt_hal_context_t *hal)
 {

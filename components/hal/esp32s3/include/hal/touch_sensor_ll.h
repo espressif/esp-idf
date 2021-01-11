@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/touch_sensor_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/touch_sensor_types.h"
 
 #ifdef __cplusplus
