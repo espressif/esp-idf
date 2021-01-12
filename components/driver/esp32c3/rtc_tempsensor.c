@@ -18,12 +18,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "hal/adc_ll.h"
 #include "soc/rtc_cntl_reg.h"
-#include "driver/temp_sensor.h"
-#include "esp32c3/rom/ets_sys.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/system_reg.h"
+#include "driver/temp_sensor.h"
+#include "regi2c_ctrl.h"
+#include "esp32c3/rom/ets_sys.h"
 
 static const char *TAG = "tsens";
 
@@ -63,7 +65,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
-    REGI2C_WRITE_MASK(I2C_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
     APB_SARADC.apb_tsens_ctrl.tsens_clk_div = tsens.clk_div;
     APB_SARADC.apb_tsens_ctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
     APB_SARADC.apb_tsens_ctrl2.tsens_xpd_force = 1;
@@ -79,7 +81,7 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
     TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
-    tsens->dac_offset = REGI2C_READ_MASK(I2C_ADC, I2C_SARADC_TSENS_DAC);
+    tsens->dac_offset = REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);
     for (int i = TSENS_DAC_L0; i < TSENS_DAC_MAX; i++) {
         if (tsens->dac_offset == dac_offset[i].set_val) {
             tsens->dac_offset = dac_offset[i].index;

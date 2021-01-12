@@ -67,7 +67,8 @@ if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "gdma.c"
                      "spi_slave_hd.c"
                      "esp32c3/adc.c"
-                     "esp32c3/adc2_init_cal.c")
+                     "esp32c3/adc2_init_cal.c"
+                     "esp32c3/rtc_tempsensor.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
