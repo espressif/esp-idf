@@ -143,6 +143,13 @@
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
 
+/*-------------------------- Power Management CAPS ---------------------------*/
+#define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+
+#define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+
 /* Has a centralized DMA, which is shared with all peripherals */
 #define SOC_AES_GENERAL_DMA     (1)
 

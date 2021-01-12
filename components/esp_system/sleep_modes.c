@@ -171,8 +171,10 @@ static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 static const char* TAG = "sleep";
 
 static uint32_t get_power_down_flags(void);
+#if SOC_PM_SUPPORT_EXT_WAKEUP
 static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
+#endif
 static void timer_wakeup_prepare(void);
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static void touch_wakeup_prepare(void);
@@ -326,8 +328,7 @@ void esp_sleep_gpio_status_switch_configure(bool enable)
         }
     }
 }
-
-#endif
+#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
@@ -356,6 +357,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
 
+#if SOC_PM_SUPPORT_EXT_WAKEUP
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ext0_wakeup_prepare();
@@ -363,6 +365,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (s_config.wakeup_triggers & RTC_EXT1_TRIG_EN) {
         ext1_wakeup_prepare();
     }
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     // Enable ULP wakeup
@@ -407,6 +410,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Enter sleep
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
+    rtc_sleep_low_init(s_config.rtc_clk_cal_period);
 
     // Set state machine time for light sleep
     if(!deep_sleep) {
@@ -665,6 +669,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
         s_config.sleep_duration = 0;
+#if SOC_PM_SUPPORT_EXT_WAKEUP
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
         s_config.ext0_rtc_gpio_num = 0;
         s_config.ext0_trigger_level = 0;
@@ -673,8 +678,11 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.ext1_rtc_gpio_mask = 0;
         s_config.ext1_trigger_mode = 0;
         s_config.wakeup_triggers &= ~RTC_EXT1_TRIG_EN;
+#endif
+#if SOC_TOUCH_PAD_WAKE_SUPPORTED
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
+#endif
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
@@ -712,6 +720,8 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
 #endif
 }
 
@@ -733,7 +743,6 @@ static void timer_wakeup_prepare(void)
     rtc_hal_set_wakeup_timer(s_config.rtc_ticks_at_sleep_start + ticks);
 }
 
-
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 /* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
 static void touch_wakeup_prepare(void)
@@ -749,6 +758,7 @@ static void touch_wakeup_prepare(void)
 }
 #endif
 
+#if SOC_TOUCH_SENSOR_NUM > 0
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
 #if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
@@ -773,6 +783,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     assert(ret == ESP_OK && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
     return pad_num;
 }
+#endif // SOC_TOUCH_SENSOR_NUM > 0
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
@@ -783,6 +794,7 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 #endif
 }
 
+#if SOC_PM_SUPPORT_EXT_WAKEUP
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
@@ -889,6 +901,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     }
     return gpio_mask;
 }
+#endif // SOC_PM_SUPPORT_EXT_WAKEUP
 
 esp_err_t esp_sleep_enable_gpio_wakeup(void)
 {
@@ -917,14 +930,11 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
 
 esp_err_t esp_sleep_enable_wifi_wakeup(void)
 {
-#if CONFIG_IDF_TARGET_ESP32
-    return ESP_ERR_NOT_SUPPORTED;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#if SOC_PM_SUPPORT_WIFI_WAKEUP
     s_config.wakeup_triggers |= RTC_WIFI_TRIG_EN;
     return ESP_OK;
-#elif CONFIG_IDF_TARGET_ESP32S3
-    s_config.wakeup_triggers |= RTC_MAC_TRIG_EN;
-    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
 #endif
 }
 
@@ -937,29 +947,39 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
 #endif
 
-    if (wakeup_cause & RTC_EXT0_TRIG_EN) {
-        return ESP_SLEEP_WAKEUP_EXT0;
-    } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {
-        return ESP_SLEEP_WAKEUP_EXT1;
-    } else if (wakeup_cause & RTC_TIMER_TRIG_EN) {
+    if (wakeup_cause & RTC_TIMER_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_TIMER;
-    } else if (wakeup_cause & RTC_TOUCH_TRIG_EN) {
-        return ESP_SLEEP_WAKEUP_TOUCHPAD;
-#if SOC_ULP_SUPPORTED
-    } else if (wakeup_cause & RTC_ULP_TRIG_EN) {
-        return ESP_SLEEP_WAKEUP_ULP;
-#endif
     } else if (wakeup_cause & RTC_GPIO_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_GPIO;
     } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN)) {
         return ESP_SLEEP_WAKEUP_UART;
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_PM_SUPPORT_EXT_WAKEUP
+    } else if (wakeup_cause & RTC_EXT0_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_EXT0;
+    } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_EXT1;
+#endif
+#if SOC_TOUCH_PAD_WAKE_SUPPORTED
+    } else if (wakeup_cause & RTC_TOUCH_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_TOUCHPAD;
+#endif
+#if SOC_ULP_SUPPORTED
+    } else if (wakeup_cause & RTC_ULP_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_ULP;
+#endif
+#if SOC_PM_SUPPORT_WIFI_WAKEUP
     } else if (wakeup_cause & RTC_WIFI_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_WIFI;
+#endif
+#if SOC_PM_SUPPORT_BT_WAKEUP
+    } else if (wakeup_cause & RTC_BT_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_BT;
+#endif
+#if CONFIG_IDF_TARGET_ESP32S2
     } else if (wakeup_cause & RTC_COCPU_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
     } else if (wakeup_cause & RTC_COCPU_TRAP_TRIG_EN) {

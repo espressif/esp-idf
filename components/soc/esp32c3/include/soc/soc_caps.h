@@ -121,3 +121,8 @@
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
+
+/*-------------------------- Power Management CAPS ----------------------------*/
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+
+#define SOC_PM_SUPPORT_BT_WAKEUP        (1)
