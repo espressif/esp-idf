@@ -10,8 +10,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_BEACON)
-
 #include "adv.h"
 #include "mesh.h"
 #include "prov.h"
@@ -40,12 +38,12 @@
 /* 1 transmission, 20ms interval */
 #define PROV_XMIT                  BLE_MESH_TRANSMIT(0, 20)
 
-#define SNB_NET_IDX_SET(_val)      ((void *)((u32_t)(_val)))
-#define SNB_NET_IDX_GET(_ptr)      ((u32_t)(_ptr))
+#define SNB_NET_IDX_SET(_val)      ((void *)((uint32_t)(_val)))
+#define SNB_NET_IDX_GET(_ptr)      ((uint32_t)(_ptr))
 
 static struct k_delayed_work beacon_timer;
 
-static struct bt_mesh_subnet *cache_check(u8_t data[21])
+static struct bt_mesh_subnet *cache_check(uint8_t data[21])
 {
     size_t subnet_size = 0U;
     int i = 0;
@@ -67,7 +65,7 @@ static struct bt_mesh_subnet *cache_check(u8_t data[21])
     return NULL;
 }
 
-static void cache_add(u8_t data[21], struct bt_mesh_subnet *sub)
+static void cache_add(uint8_t data[21], struct bt_mesh_subnet *sub)
 {
     memcpy(sub->beacon_cache, data, 21);
 }
@@ -75,11 +73,11 @@ static void cache_add(u8_t data[21], struct bt_mesh_subnet *sub)
 static void beacon_complete(int err, void *user_data)
 {
     struct bt_mesh_subnet *sub = NULL;
-    u16_t net_idx = BLE_MESH_KEY_UNUSED;
+    uint16_t net_idx = BLE_MESH_KEY_UNUSED;
 
     BT_DBG("err %d", err);
 
-    net_idx = (u16_t)SNB_NET_IDX_GET(user_data);
+    net_idx = (uint16_t)SNB_NET_IDX_GET(user_data);
 
     /* For node, directly updating the "beacon_sent" timestamp is fine,
      * since the subnet is pre-allocated.
@@ -103,7 +101,7 @@ static void beacon_complete(int err, void *user_data)
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
                            struct net_buf_simple *buf)
 {
-    u8_t flags = bt_mesh_net_flags(sub);
+    uint8_t flags = bt_mesh_net_flags(sub);
     struct bt_mesh_subnet_keys *keys = NULL;
 
     net_buf_simple_add_u8(buf, BEACON_TYPE_SECURE);
@@ -131,15 +129,14 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 }
 
 /* If the interval has passed or is within 5 seconds from now send a beacon */
-#define BEACON_THRESHOLD(sub) (K_SECONDS(10 * ((sub)->beacons_last + 1)) - \
-                   K_SECONDS(5))
+#define BEACON_THRESHOLD(sub) (K_SECONDS(10 * ((sub)->beacons_last + 1)) - K_SECONDS(5))
 
 static int secure_beacon_send(void)
 {
     static const struct bt_mesh_send_cb send_cb = {
         .end = beacon_complete,
     };
-    u32_t now = k_uptime_get_32();
+    uint32_t now = k_uptime_get_32();
     size_t subnet_size = 0U;
     int i = 0;
 
@@ -150,7 +147,7 @@ static int secure_beacon_send(void)
     for (i = 0; i < subnet_size; i++) {
         struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
         struct net_buf *buf;
-        u32_t time_diff;
+        uint32_t time_diff;
 
         if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
@@ -205,9 +202,9 @@ static int unprovisioned_beacon_send(void)
 {
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     const struct bt_mesh_prov *prov = NULL;
-    u8_t uri_hash[16] = { 0 };
+    uint8_t uri_hash[16] = { 0 };
     struct net_buf *buf = NULL;
-    u16_t oob_info = 0U;
+    uint16_t oob_info = 0U;
 
     BT_DBG("%s", __func__);
 
@@ -334,11 +331,13 @@ static void beacon_send(struct k_work *work)
 
 static void secure_beacon_recv(struct net_buf_simple *buf)
 {
-    u8_t *data = NULL, *net_id = NULL, *auth = NULL;
+    uint8_t *data = NULL, *net_id = NULL, *auth = NULL;
     struct bt_mesh_subnet *sub = NULL;
-    u32_t iv_index = 0U;
-    bool new_key = false, kr_change = false, iv_change = false;
-    u8_t flags = 0U;
+    uint32_t iv_index = 0U;
+    bool kr_change = false;
+    bool iv_change = false;
+    bool new_key = false;
+    uint8_t flags = 0U;
 
     if (buf->len < 21) {
         BT_ERR("Too short secure beacon (len %u)", buf->len);
@@ -413,9 +412,9 @@ update_stats:
     }
 }
 
-void bt_mesh_beacon_recv(struct net_buf_simple *buf, s8_t rssi)
+void bt_mesh_beacon_recv(struct net_buf_simple *buf, int8_t rssi)
 {
-    u8_t type = 0U;
+    uint8_t type = 0U;
 
     BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 

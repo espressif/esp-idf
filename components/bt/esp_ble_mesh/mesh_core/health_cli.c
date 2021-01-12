@@ -10,8 +10,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
-
 #include "btc_ble_mesh_health_model.h"
 
 #include "mesh_config.h"
@@ -62,7 +60,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode = 0U;
+    uint32_t opcode = 0U;
 
     BT_WARN("Receive health status message timeout");
 
@@ -92,7 +90,7 @@ static void health_client_recv_status(struct bt_mesh_model *model,
 {
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
-    u8_t evt_type = 0xFF;
+    uint8_t evt_type = 0xFF;
 
     if (!model || !ctx || !status || !len) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -100,8 +98,8 @@ static void health_client_recv_status(struct bt_mesh_model *model,
     }
 
     /* If it is a publish message, sent to the user directly. */
-    buf.data = (u8_t *)status;
-    buf.len  = (u16_t)len;
+    buf.data = (uint8_t *)status;
+    buf.len  = (uint16_t)len;
 
     bt_mesh_health_client_lock();
 
@@ -126,10 +124,10 @@ static void health_client_recv_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            u32_t opcode = node->opcode;
+            uint32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
             bt_mesh_health_client_cb_evt_to_btc(
-                opcode, evt_type, model, ctx, (const u8_t *)status, len);
+                opcode, evt_type, model, ctx, (const uint8_t *)status, len);
         }
     }
 
@@ -201,7 +199,7 @@ static void health_period_status(struct bt_mesh_model *model,
                                  struct bt_mesh_msg_ctx *ctx,
                                  struct net_buf_simple *buf)
 {
-    u8_t status = 0U;
+    uint8_t status = 0U;
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -209,14 +207,14 @@ static void health_period_status(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    health_client_recv_status(model, ctx, &status, sizeof(u8_t));
+    health_client_recv_status(model, ctx, &status, sizeof(uint8_t));
 }
 
 static void health_attention_status(struct bt_mesh_model *model,
                                     struct bt_mesh_msg_ctx *ctx,
                                     struct net_buf_simple *buf)
 {
-    u8_t status = 0U;
+    uint8_t status = 0U;
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -224,7 +222,7 @@ static void health_attention_status(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    health_client_recv_status(model, ctx, &status, sizeof(u8_t));
+    health_client_recv_status(model, ctx, &status, sizeof(uint8_t));
 }
 
 const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
@@ -245,7 +243,7 @@ int bt_mesh_health_attention_get(bt_mesh_client_common_param_t *param)
 }
 
 int bt_mesh_health_attention_set(bt_mesh_client_common_param_t *param,
-                                 u8_t attention, bool need_ack)
+                                 uint8_t attention, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_SET, 1);
 
@@ -265,7 +263,7 @@ int bt_mesh_health_period_get(bt_mesh_client_common_param_t *param)
 }
 
 int bt_mesh_health_period_set(bt_mesh_client_common_param_t *param,
-                              u8_t divisor, bool need_ack)
+                              uint8_t divisor, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_SET, 1);
 
@@ -276,7 +274,7 @@ int bt_mesh_health_period_set(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
-                              u16_t cid, u8_t test_id, bool need_ack)
+                              uint16_t cid, uint8_t test_id, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST, 3);
 
@@ -288,7 +286,7 @@ int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
-                               u16_t cid, bool need_ack)
+                               uint16_t cid, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_CLEAR, 2);
 
@@ -298,7 +296,7 @@ int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, need_ack, timeout_handler);
 }
 
-int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, u16_t cid)
+int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_GET, 2);
 
