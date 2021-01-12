@@ -15,7 +15,6 @@
 """ Interface for test cases. """
 import os
 import time
-import traceback
 import functools
 import socket
 from datetime import datetime
@@ -26,6 +25,20 @@ from . import Env
 from . import DUT
 from . import App
 from . import Utility
+
+
+class TestCaseFailed(AssertionError):
+    def __init__(self, *cases):
+        """
+        Raise this exception if one or more test cases fail in a 'normal' way (ie the test runs but fails, no unexpected exceptions)
+
+        This will avoid dumping the Python stack trace, because the assumption is the junit error info and full job log already has
+        enough information for a developer to debug.
+
+        'cases' argument is the names of one or more test cases
+        """
+        message = "Test case{} failed: {}".format("s" if len(cases) > 1 else "", ", ".join(str(c) for c in cases))
+        super(TestCaseFailed, self).__init__(self, message)
 
 
 class DefaultEnvConfig(object):
@@ -194,11 +207,10 @@ def test_method(**kwargs):
                 test_func(env_inst, extra_data)
                 # if finish without exception, test result is True
                 result = True
+            except TestCaseFailed as e:
+                junit_test_case.add_failure_info(str(e))
             except Exception as e:
-                # handle all the exceptions here
-                traceback.print_exc()
-                # log failure
-                junit_test_case.add_failure_info(str(e) + ":\r\n" + traceback.format_exc())
+                Utility.handle_unexpected_exception(junit_test_case, e)
             finally:
                 # do close all DUTs, if result is False then print DUT debug info
                 close_errors = env_inst.close(dut_debug=(not result))
