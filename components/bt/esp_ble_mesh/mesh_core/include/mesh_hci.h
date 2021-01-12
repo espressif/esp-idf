@@ -43,10 +43,10 @@ enum {
 
 struct bt_mesh_dev_le {
     /* LE features */
-    u8_t  features[8];
+    uint8_t  features[8];
 
     /* LE states */
-    u64_t states;
+    uint64_t states;
 };
 
 /* State tracking for the local Bluetooth controller */
@@ -55,14 +55,14 @@ struct bt_mesh_dev {
     BLE_MESH_ATOMIC_DEFINE(flags, BLE_MESH_DEV_NUM_FLAGS);
 
     /* Controller version & manufacturer information */
-    u8_t  hci_version;
-    u8_t  lmp_version;
-    u16_t hci_revision;
-    u16_t lmp_subversion;
-    u16_t manufacturer;
+    uint8_t  hci_version;
+    uint8_t  lmp_version;
+    uint16_t hci_revision;
+    uint16_t lmp_subversion;
+    uint16_t manufacturer;
 
     /* LMP features (pages 0, 1, 2) */
-    u8_t  features[BLE_MESH_LMP_FEAT_PAGES_COUNT][8];
+    uint8_t  features[BLE_MESH_LMP_FEAT_PAGES_COUNT][8];
 
     /* LE controller specific features */
     struct bt_mesh_dev_le le;
@@ -100,25 +100,25 @@ struct bt_mesh_dev {
 
 #define BLE_MESH_HCI_OP_SET_ADV_PARAM       BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0006)
 struct bt_mesh_hci_cp_set_adv_param {
-    u16_t        min_interval;
-    u16_t        max_interval;
-    u8_t         type;
-    u8_t         own_addr_type;
+    uint16_t       min_interval;
+    uint16_t       max_interval;
+    uint8_t        type;
+    uint8_t        own_addr_type;
     bt_mesh_addr_t direct_addr;
-    u8_t         channel_map;
-    u8_t         filter_policy;
+    uint8_t        channel_map;
+    uint8_t        filter_policy;
 } __packed;
 
 #define BLE_MESH_HCI_OP_SET_ADV_DATA        BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0008)
 struct bt_mesh_hci_cp_set_adv_data {
-    u8_t  len;
-    u8_t  data[31];
+    uint8_t len;
+    uint8_t data[31];
 } __packed;
 
 #define BLE_MESH_HCI_OP_SET_SCAN_RSP_DATA   BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0009)
 struct bt_mesh_hci_cp_set_scan_rsp_data {
-    u8_t  len;
-    u8_t  data[31];
+    uint8_t len;
+    uint8_t data[31];
 } __packed;
 
 /* Added by Espressif */

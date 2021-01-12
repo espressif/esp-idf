@@ -18,7 +18,7 @@
 #include "mesh_main.h"
 #include "settings.h"
 
-static struct bt_mesh_model *find_model(u16_t elem_addr, u16_t cid, u16_t mod_id)
+static struct bt_mesh_model *find_model(uint16_t elem_addr, uint16_t cid, uint16_t mod_id)
 {
     struct bt_mesh_elem *elem = NULL;
 
@@ -40,8 +40,8 @@ static struct bt_mesh_model *find_model(u16_t elem_addr, u16_t cid, u16_t mod_id
     }
 }
 
-int bt_mesh_model_subscribe_group_addr(u16_t elem_addr, u16_t cid,
-                                       u16_t mod_id, u16_t group_addr)
+int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
+                                       uint16_t mod_id, uint16_t group_addr)
 {
     struct bt_mesh_model *model = NULL;
     int i;
@@ -83,11 +83,11 @@ int bt_mesh_model_subscribe_group_addr(u16_t elem_addr, u16_t cid,
     return -ENOMEM;
 }
 
-int bt_mesh_model_unsubscribe_group_addr(u16_t elem_addr, u16_t cid,
-                                         u16_t mod_id, u16_t group_addr)
+int bt_mesh_model_unsubscribe_group_addr(uint16_t elem_addr, uint16_t cid,
+                                         uint16_t mod_id, uint16_t group_addr)
 {
     struct bt_mesh_model *model = NULL;
-    u16_t *match = NULL;
+    uint16_t *match = NULL;
 
     model = find_model(elem_addr, cid, mod_id);
     if (model == NULL) {
@@ -122,7 +122,7 @@ int bt_mesh_model_unsubscribe_group_addr(u16_t elem_addr, u16_t cid,
 
 #if CONFIG_BLE_MESH_NODE
 
-const u8_t *bt_mesh_node_get_local_net_key(u16_t net_idx)
+const uint8_t *bt_mesh_node_get_local_net_key(uint16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
@@ -140,7 +140,7 @@ const u8_t *bt_mesh_node_get_local_net_key(u16_t net_idx)
     return sub->kr_flag ? sub->keys[1].net : sub->keys[0].net;
 }
 
-const u8_t *bt_mesh_node_get_local_app_key(u16_t app_idx)
+const uint8_t *bt_mesh_node_get_local_app_key(uint16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
@@ -158,7 +158,7 @@ const u8_t *bt_mesh_node_get_local_app_key(u16_t app_idx)
     return key->updated ? key->keys[1].val : key->keys[0].val;
 }
 
-int bt_mesh_node_local_net_key_add(u16_t net_idx, const u8_t net_key[16])
+int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
 {
     struct bt_mesh_subnet *sub = NULL;
     int err = 0;
@@ -230,8 +230,8 @@ int bt_mesh_node_local_net_key_add(u16_t net_idx, const u8_t net_key[16])
     return 0;
 }
 
-int bt_mesh_node_local_app_key_add(u16_t net_idx, u16_t app_idx,
-                                   const u8_t app_key[16])
+int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
+                                   const uint8_t app_key[16])
 {
     struct bt_mesh_app_key *key = NULL;
 
@@ -295,8 +295,8 @@ int bt_mesh_node_local_app_key_add(u16_t net_idx, u16_t app_idx,
     return -ENOMEM;
 }
 
-int bt_mesh_node_bind_app_key_to_model(u16_t elem_addr, u16_t mod_id,
-                                       u16_t cid, u16_t app_idx)
+int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
+                                       uint16_t cid, uint16_t app_idx)
 {
     struct bt_mesh_model *model = NULL;
     int i;

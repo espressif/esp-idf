@@ -365,7 +365,7 @@ esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicas
 
 esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_name(const char *name);
 
-u16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
+uint16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
 
 const esp_ble_mesh_node_t **btc_ble_mesh_provisioner_get_node_table_entry(void);
 
@@ -379,7 +379,7 @@ uint16_t btc_ble_mesh_get_primary_addr(void);
 
 uint16_t *btc_ble_mesh_model_find_group(esp_ble_mesh_model_t *mod, uint16_t addr);
 
-esp_ble_mesh_elem_t *btc_ble_mesh_elem_find(u16_t addr);
+esp_ble_mesh_elem_t *btc_ble_mesh_elem_find(uint16_t addr);
 
 uint8_t btc_ble_mesh_elem_count(void);
 
