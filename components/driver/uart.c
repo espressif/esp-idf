@@ -1042,14 +1042,17 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         return ESP_ERR_TIMEOUT;
     }
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
-    if(uart_hal_is_tx_idle(&(uart_context[uart_num].hal))) {
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-        return ESP_OK;
-    }
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    if(uart_hal_is_tx_idle(&(uart_context[uart_num].hal))) {
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+        xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
+        return ESP_OK;
+    }
 
     TickType_t ticks_end = xTaskGetTickCount();
     if (ticks_end - ticks_start > ticks_to_wait) {
