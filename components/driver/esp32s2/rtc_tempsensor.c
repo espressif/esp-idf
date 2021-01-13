@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -61,7 +62,7 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
 
 static SemaphoreHandle_t rtc_tsens_mux = NULL;
 
-static float deltaT = 1000; // greater than range
+static float s_deltaT = NAN; // Unused number
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
@@ -142,20 +143,20 @@ static void read_delta_t_from_efuse(void)
     uint32_t version = esp_efuse_rtc_table_read_calib_version();
     if (version == 1 || version == 2) {
         // fetch calibration value for temp sensor from eFuse
-        deltaT = esp_efuse_rtc_table_get_parsed_efuse_value(RTCCALIB_IDX_TMPSENSOR, false) / 10.0;
+        s_deltaT = esp_efuse_rtc_table_get_parsed_efuse_value(RTCCALIB_IDX_TMPSENSOR, false) / 10.0;
     } else {
         // no value to fetch, use 0.
-        deltaT = 0;
+        s_deltaT = 0;
     }
-    ESP_LOGD(TAG, "deltaT = %f\n", deltaT);
+    ESP_LOGD(TAG, "s_deltaT = %f\n", s_deltaT);
 }
 
-static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const tsens_dac_offset_t *dac)
+static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offset)
 {
-    if (deltaT > 512) { //suggests that the value is not initialized
+    if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
     }
-    float result = (TSENS_ADC_FACTOR * (float)tsens_raw - TSENS_DAC_FACTOR * dac->offset - TSENS_SYS_OFFSET) - deltaT;
+    float result = (TSENS_ADC_FACTOR * (float)tsens_raw - TSENS_DAC_FACTOR * dac_offset - TSENS_SYS_OFFSET) - s_deltaT;
     return result;
 }
 
@@ -169,7 +170,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
         ret = temp_sensor_read_raw(&tsens_out);
         TSENS_CHECK(ret == ESP_OK, ret);
         const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
-        *celsius = parse_temp_sensor_raw_value(tsens_out, dac);
+        *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
         if (*celsius < dac->range_min || *celsius > dac->range_max) {
             ESP_LOGW(TAG, "Exceeding the temperature range!");
             ret = ESP_ERR_INVALID_STATE;
