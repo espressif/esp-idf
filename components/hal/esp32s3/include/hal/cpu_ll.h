@@ -45,6 +45,11 @@ static inline uint32_t cpu_ll_get_cycle_count(void)
     return result;
 }
 
+static inline void IRAM_ATTR cpu_ll_set_cycle_count(uint32_t val)
+{
+    WSR(CCOUNT, val);
+}
+
 static inline void *cpu_ll_get_sp(void)
 {
     void *sp;

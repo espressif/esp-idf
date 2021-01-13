@@ -50,6 +50,12 @@ extern "C" {
 #define cpu_hal_get_cycle_count()       cpu_ll_get_cycle_count()
 
 /**
+ * Set the given value into the internal counter that increments
+ * every processor-clock cycle.
+ */
+#define cpu_hal_set_cycle_count(val)       cpu_ll_set_cycle_count(val)
+
+/**
  * Check if some form of debugger is attached to CPU.
  *
  * @return true debugger is attached

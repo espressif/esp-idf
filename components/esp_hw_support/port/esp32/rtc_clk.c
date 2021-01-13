@@ -27,11 +27,11 @@
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
 #include "soc/gpio_struct.h"
+#include "hal/cpu_hal.h"
 #include "hal/gpio_ll.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
-#include "xtensa/core-macros.h"
 #include "rtc_clk_common.h"
 
 /* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */

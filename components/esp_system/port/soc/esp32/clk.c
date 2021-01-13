@@ -16,8 +16,8 @@
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/dport_access.h"
-#include "xtensa/core-macros.h"
 #include "soc/i2s_reg.h"
+#include "hal/cpu_hal.h"
 #include "driver/periph_ctrl.h"
 #include "bootloader_clock.h"
 #include "hal/wdt_hal.h"
@@ -195,7 +195,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     rtc_clk_cpu_freq_set_config(&new_config);
 
     // Re calculate the ccount to make time calculation correct.
-    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
+    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );
 }
 
 /* This function is not exposed as an API at this point.

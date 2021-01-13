@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "hal/cpu_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -429,9 +430,9 @@ static uint32_t tx_end_time0, tx_end_time1;
 static void rmt_tx_end_cb(rmt_channel_t channel, void *arg)
 {
     if (channel == 0) {
-        tx_end_time0 = esp_cpu_get_ccount();
+        tx_end_time0 = cpu_hal_get_cycle_count();
     } else {
-        tx_end_time1 = esp_cpu_get_ccount();
+        tx_end_time1 = cpu_hal_get_cycle_count();
     }
 }
 TEST_CASE("RMT TX simultaneously", "[rmt]")

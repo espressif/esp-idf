@@ -25,7 +25,7 @@
 #include "esp_private/crosscore_int.h"
 
 #include "soc/rtc.h"
-
+#include "hal/cpu_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
 
@@ -460,7 +460,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
  */
 static void IRAM_ATTR update_ccompare(void)
 {
-    uint32_t ccount = XTHAL_GET_CCOUNT();
+    uint32_t ccount = cpu_hal_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
         uint32_t diff = ccompare - ccount;
@@ -636,7 +636,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                  * work for timer interrupt, and changing CCOMPARE would clear
                  * the interrupt flag.
                  */
-                XTHAL_SET_CCOUNT(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
+                cpu_hal_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
