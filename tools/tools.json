@@ -21,7 +21,7 @@
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
-          "name": "1.22.0-97-gc752ad58-5.2.0",
+          "name": "1.22.0-97-gc752ad5d-5.2.0",
           "status": "recommended",
           "win32": {
             "sha256": "80571e5d5a63494f4fa758bb9d8fb882ba4059853a8c412a84d232dc1c1400e6",
