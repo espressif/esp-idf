@@ -43,7 +43,6 @@
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
-#include "sntp.h"
 #include "netif/dhcp_state.h"
 
 /* Enable all Espressif-only options */
@@ -1005,6 +1004,23 @@
 /*
  * SNTP update delay - in milliseconds
  */
+
+/*
+ * Forward declarations of weak definitions from lwip's sntp.c which could
+ * be redefined by user application. This is needed to provide custom definition
+ * of the below macros in lwip's sntp.c.
+ * Full declaration is provided in IDF's port layer in esp_sntp.h
+ */
+#ifdef __cplusplus
+#define LWIP_FORWARD_DECLARE_C_CXX extern "C"
+#else
+#define LWIP_FORWARD_DECLARE_C_CXX
+#endif
+
+LWIP_FORWARD_DECLARE_C_CXX void sntp_sync_time(struct timeval *tv);
+
+LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
+
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
  * \#define SNTP_SERVER_ADDRESS "pool.ntp.org"

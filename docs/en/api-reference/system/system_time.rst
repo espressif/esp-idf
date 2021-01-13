@@ -133,4 +133,4 @@ Once these steps are completed, call the standard C library function ``localtime
 API Reference
 -------------
 
-.. include-build-file:: inc/sntp.inc
+.. include-build-file:: inc/esp_sntp.inc
