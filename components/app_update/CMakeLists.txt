@@ -48,19 +48,32 @@ if(NOT BOOTLOADER_BUILD)
 
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 
-        set(esptool_args --esptool-args before=${CONFIG_ESPTOOLPY_BEFORE} after=${CONFIG_ESPTOOLPY_AFTER})
+        set(esptool_args "--esptool-args;before=${CONFIG_ESPTOOLPY_BEFORE};after=${CONFIG_ESPTOOLPY_AFTER}")
+        set(otatool_args "--partition-table-file;${PARTITION_CSV_PATH}"
+                         "--partition-table-offset;${PARTITION_TABLE_OFFSET}")
+        idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
         add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} ${esptool_args}
-                        --partition-table-file ${PARTITION_CSV_PATH}
-                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
-                        read_otadata)
+            COMMAND ${CMAKE_COMMAND}
+            -D IDF_PATH="${idf_path}"
+            -D SERIAL_TOOL="${otatool_py}"
+            -D SERIAL_TOOL_ARGS="${esptool_args};${otatool_args};read_otadata"
+            -D WORKING_DIRECTORY="${build_dir}"
+            -P ${esptool_py_dir}/run_serial_tool.cmake
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            USES_TERMINAL
+            )
 
         add_custom_target(erase_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} ${esptool_args}
-                        --partition-table-file ${PARTITION_CSV_PATH}
-                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
-                        erase_otadata)
+            COMMAND ${CMAKE_COMMAND}
+            -D IDF_PATH="${idf_path}"
+            -D SERIAL_TOOL="${otatool_py}"
+            -D SERIAL_TOOL_ARGS="${esptool_args};${otatool_args};erase_otadata"
+            -D WORKING_DIRECTORY="${build_dir}"
+            -P ${esptool_py_dir}/run_serial_tool.cmake
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            USES_TERMINAL
+            )
 
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
