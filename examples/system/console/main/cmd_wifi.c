@@ -72,7 +72,7 @@ static bool wifi_join(const char *ssid, const char *pass, int timeout_ms)
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_connect() );
+    esp_wifi_connect();
 
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                                    pdFALSE, pdTRUE, timeout_ms / portTICK_PERIOD_MS);
