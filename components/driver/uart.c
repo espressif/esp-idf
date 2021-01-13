@@ -1251,7 +1251,9 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     *size = p_uart_obj[uart_num]->rx_buffered_len;
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
 
@@ -1281,12 +1283,15 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
         }
         data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (portTickType) 0);
         if(data == NULL) {
+            UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
             if( p_uart_obj[uart_num]->rx_buffered_len != 0 ) {
-                ESP_LOGE(UART_TAG, "rx_buffered_len error");
                 p_uart_obj[uart_num]->rx_buffered_len = 0;
+                UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+                // this must be called outside the critical section
+                ESP_LOGE(UART_TAG, "rx_buffered_len error");
+                UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
             }
             //We also need to clear the `rx_buffer_full_flg` here.
-            UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
             p_uart_obj[uart_num]->rx_buffer_full_flg = false;
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
             break;
