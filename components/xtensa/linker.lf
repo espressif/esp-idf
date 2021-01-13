@@ -2,7 +2,8 @@
 archive: libxtensa.a
 entries:
     eri (noflash_text)
-    stdatomic (noflash)
+    if IDF_TARGET_ESP32S2 = y:
+        stdatomic (noflash)
 
 [mapping:hal]
 archive: libhal.a

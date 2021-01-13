@@ -2,4 +2,6 @@
 archive: libheap.a
 entries:
     multi_heap (noflash)
-    multi_heap_poisoning (noflash)
+    if HEAP_POISONING_DISABLED = n:
+        multi_heap_poisoning (noflash)
+
