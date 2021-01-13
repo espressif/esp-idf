@@ -165,7 +165,6 @@ static const char *HTTP_METHOD_MAPPING[] = {
 
 static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
-static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
 
 static esp_err_t http_dispatch_event(esp_http_client_t *client, esp_http_client_event_id_t event_id, void *data, int len)
 {
@@ -1222,7 +1221,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
     return ESP_OK;
 }
 
-static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client)
+esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client)
 {
     if (client->state != HTTP_STATE_REQ_COMPLETE_HEADER) {
         ESP_LOGE(TAG, "Invalid state");

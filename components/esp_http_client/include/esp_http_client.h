@@ -373,6 +373,8 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
  */
 esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len);
 
+esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
+
 /**
  * @brief     This function will write data to the HTTP connection previously opened by esp_http_client_open()
  *

@@ -98,11 +98,20 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
 static esp_err_t _http_connect(esp_http_client_handle_t http_client)
 {
     esp_err_t err = ESP_FAIL;
+
+    char *post_data = NULL;
+    int post_len = esp_http_client_get_post_field(http_client, &post_data);
+
     int status_code, header_ret;
     do {
-        err = esp_http_client_open(http_client, 0);
+        err = esp_http_client_open(http_client, post_len);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+            return err;
+        }
+        err = esp_http_client_send_post_data(http_client);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to send POST data: %s", esp_err_to_name(err));
             return err;
         }
         header_ret = esp_http_client_fetch_headers(http_client);
