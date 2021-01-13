@@ -3,10 +3,11 @@ archive: libapp_trace.a
 entries: 
     app_trace (noflash)
     app_trace_util (noflash)
-    SEGGER_SYSVIEW (noflash)
-    SEGGER_RTT_esp32 (noflash)
-    SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
-    SEGGER_SYSVIEW_FreeRTOS (noflash)
+    if SYSVIEW_ENABLE = y:
+      SEGGER_SYSVIEW (noflash)
+      SEGGER_RTT_esp32 (noflash)
+      SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
+      SEGGER_SYSVIEW_FreeRTOS (noflash)
 
 [mapping:driver]
 archive: libdriver.a

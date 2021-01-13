@@ -5,7 +5,6 @@ entries:
     rtc_clk (noflash)
     rtc_clk_init (noflash_text)
     rtc_init (noflash_text)
-    rtc_periph (noflash_text)
     rtc_pm (noflash_text)
     rtc_sleep (noflash_text)
     rtc_time (noflash_text)
@@ -19,7 +18,6 @@ entries:
     spi_flash_hal_iram (noflash)
     ledc_hal_iram (noflash_text)
     i2c_hal_iram (noflash)
-    spi_flash_hal_gpspi (noflash)
     lldesc (noflash_text)
     if CAN_ISR_IN_IRAM = y:
         can_hal_iram (noflash)
