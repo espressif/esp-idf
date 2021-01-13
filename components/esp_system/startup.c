@@ -134,8 +134,22 @@ static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char 
 
 static const char* TAG = "cpu_start";
 
+/**
+ * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
+ * so it emits an .init_array section instead.
+ * But the init_priority sections will be sorted for iteration in ascending order during startup.
+ * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
+ * Hence a different section is generated for the init_priority functions which is looped
+ * over in ascending direction instead of descending direction.
+ * The RISC-V-specific behavior is dependent on the linker script esp32c3.project.ld.in.
+ */
 static void do_global_ctors(void)
 {
+#if __riscv
+    extern void (*__init_priority_array_start)(void);
+    extern void (*__init_priority_array_end)(void);
+#endif
+
     extern void (*__init_array_start)(void);
     extern void (*__init_array_end)(void);
 
@@ -149,7 +163,16 @@ static void do_global_ctors(void)
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
     void (**p)(void);
+
+#if __riscv
+    for (p = &__init_priority_array_start; p < &__init_priority_array_end; ++p) {
+        ESP_EARLY_LOGD(TAG, "calling init function: %p", *p);
+        (*p)();
+    }
+#endif
+
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
+        ESP_EARLY_LOGD(TAG, "calling init function: %p", *p);
         (*p)();
     }
 }
