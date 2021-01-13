@@ -81,7 +81,7 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 {
     semphr_done = xSemaphoreCreateCounting(1, 0);
 
-    xTaskCreatePinnedToCore(test_phy_rtc_cache_task, "phy_rtc_test_task", 2048,
+    xTaskCreatePinnedToCore(test_phy_rtc_cache_task, "phy_rtc_test_task", 2176,
                             NULL, configMAX_PRIORITIES-1, NULL, 0);
 
     TEST_ASSERT( xSemaphoreTake(semphr_done, portMAX_DELAY) );
