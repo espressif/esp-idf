@@ -110,7 +110,7 @@ static inline void cpu_ll_set_watchpoint(int id,
 
     //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
     for (int x = 0; x < 7; x++) {
-        if (size == (size_t)(1 << x)) {
+        if (size == (size_t)(1U << x)) {
             break;
         }
         dbreakc <<= 1;

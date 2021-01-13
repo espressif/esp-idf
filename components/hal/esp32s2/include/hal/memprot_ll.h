@@ -310,7 +310,7 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
     uint32_t write_bit, read_bit, exec_bit;
     uint32_t uni_block_perm = 0;
 
-    for (size_t x = 0; x < IRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
+    for (int x = 0; x < IRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
         esp_memprot_iram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit, &exec_bit);
         if (x <= uni_blocks_low) {
             if (lw) {
@@ -734,7 +734,7 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
 
     //set unified mgmt region
     uint32_t write_bit, read_bit, uni_block_perm = 0;
-    for (size_t x = 0; x < DRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
+    for (int x = 0; x < DRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
         esp_memprot_dram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit);
         if (x <= uni_blocks_low) {
             if (lw) {

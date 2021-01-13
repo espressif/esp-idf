@@ -314,7 +314,7 @@ static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_send, size_t bitlen)
 {
-    for (int x = 0; x < bitlen; x += 32) {
+    for (size_t x = 0; x < bitlen; x += 32) {
         //Use memcpy to get around alignment issues for txdata
         uint32_t word;
         memcpy(&word, &buffer_to_send[x / 8], 4);
@@ -331,7 +331,7 @@ static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_s
  */
 static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, size_t bitlen)
 {
-    for (int x = 0; x < bitlen; x += 32) {
+    for (size_t x = 0; x < bitlen; x += 32) {
         //Do a memcpy to get around possible alignment issues in rx_buffer
         uint32_t word = hw->data_buf[x / 32];
         int len = bitlen - x;

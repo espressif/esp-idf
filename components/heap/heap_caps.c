@@ -177,7 +177,7 @@ IRAM_ATTR void *heap_caps_malloc_default( size_t size )
         return heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     } else {
         void *r;
-        if (size <= malloc_alwaysinternal_limit) {
+        if (size <= (size_t)malloc_alwaysinternal_limit) {
             r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
         } else {
             r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
@@ -200,7 +200,7 @@ IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
         return heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
     } else {
         void *r;
-        if (size <= malloc_alwaysinternal_limit) {
+        if (size <= (size_t)malloc_alwaysinternal_limit) {
             r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
         } else {
             r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
@@ -305,7 +305,7 @@ IRAM_ATTR void heap_caps_free( void *ptr)
     multi_heap_free(heap->heap, ptr);
 }
 
-IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
+IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, uint32_t caps)
 {
     bool ptr_in_diram_case = false;
     heap_t *heap = NULL;
@@ -540,7 +540,7 @@ size_t heap_caps_get_allocated_size( void *ptr )
     return size;
 }
 
-IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
+IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
 {
     void *ret = NULL;
 

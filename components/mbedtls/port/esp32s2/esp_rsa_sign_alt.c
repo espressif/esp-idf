@@ -36,7 +36,7 @@ static const char *TAG = "ESP_RSA_SIGN_ALT";
 static hmac_key_id_t s_esp_ds_hmac_key_id;
 static esp_ds_data_t *s_ds_data;
 static SemaphoreHandle_t s_ds_lock;
-static uint32_t s_timeout_ms = 0;
+static int s_timeout_ms = 0;
 
 /* key length in bytes = (esp_digital_signature_length_t key + 1 ) * FACTOR_KEYLEN_IN_BYTES */
 #define FACTOR_KEYLEN_IN_BYTES 4
@@ -221,7 +221,7 @@ int esp_ds_rsa_sign( void *ctx,
         return -1;
     }
 
-    for ( int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
+    for (unsigned int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
         signature[i] = SWAP_INT32(((uint32_t *)sig)[(s_ds_data->rsa_length + 1) - (i + 1)]);
     }
 
@@ -242,7 +242,7 @@ int esp_ds_rsa_sign( void *ctx,
         return -1;
     }
 
-    for ( int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
+    for (unsigned int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
         ((uint32_t *)sig)[i] = SWAP_INT32(((uint32_t *)signature)[(s_ds_data->rsa_length + 1) - (i + 1)]);
     }
     heap_caps_free(signature);

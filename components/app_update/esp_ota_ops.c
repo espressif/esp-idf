@@ -404,7 +404,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
         return ESP_ERR_NOT_FOUND;
     }
 
-    int ota_app_count = get_ota_partition_count();
+    uint8_t ota_app_count = get_ota_partition_count();
     if (SUB_TYPE_ID(subtype) >= ota_app_count) {
         return ESP_ERR_INVALID_ARG;
     }

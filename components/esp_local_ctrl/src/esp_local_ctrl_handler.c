@@ -189,9 +189,7 @@ static esp_err_t cmd_set_prop_vals_handler(LocalCtrlMessage *req,
 
 static int lookup_cmd_handler(int cmd_id)
 {
-    int i;
-
-    for (i = 0; i < sizeof(cmd_table)/sizeof(esp_local_ctrl_cmd_t); i++) {
+    for (size_t i = 0; i < sizeof(cmd_table)/sizeof(esp_local_ctrl_cmd_t); i++) {
         if (cmd_table[i].cmd_num == cmd_id) {
             return i;
         }

@@ -121,7 +121,7 @@ typedef struct {
     int rx_buf_size;                    /*!< RX ring buffer size */
     RingbufHandle_t rx_ring_buf;        /*!< RX ring buffer handler*/
     bool rx_buffer_full_flg;            /*!< RX ring buffer full flag. */
-    int rx_cur_remain;                  /*!< Data number that waiting to be read out in ring buffer item*/
+    uint32_t rx_cur_remain;                  /*!< Data number that waiting to be read out in ring buffer item*/
     uint8_t* rx_ptr;                    /*!< pointer to the current data in ring buffer*/
     uint8_t* rx_head_ptr;               /*!< pointer to the head of RX item*/
     uint8_t rx_data_buf[SOC_UART_FIFO_LEN]; /*!< Data buffer to stash FIFO data*/
@@ -756,7 +756,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     continue;
                 }
                 bool en_tx_flg = false;
-                int tx_fifo_rem = uart_hal_get_txfifo_len(&(uart_context[uart_num].hal));
+                uint32_t tx_fifo_rem = uart_hal_get_txfifo_len(&(uart_context[uart_num].hal));
                 //We need to put a loop here, in case all the buffer items are very short.
                 //That would cause a watch_dog reset because empty interrupt happens so often.
                 //Although this is a loop in ISR, this loop will execute at most 128 turns.
@@ -1102,7 +1102,7 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
     xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
     p_uart_obj[uart_num]->coll_det_flg = false;
     if(p_uart_obj[uart_num]->tx_buf_size > 0) {
-        int max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
+        size_t max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
         int offset = 0;
         uart_tx_data_t evt;
         evt.tx_data.size = size;
@@ -1114,7 +1114,7 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
         }
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while(size > 0) {
-            int send_size = size > max_size / 2 ? max_size / 2 : size;
+            size_t send_size = size > max_size / 2 ? max_size / 2 : size;
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) (src + offset), send_size, portMAX_DELAY);
             size -= send_size;
             offset += send_size;

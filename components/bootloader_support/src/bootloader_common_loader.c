@@ -93,7 +93,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
     }
     int active_otadata = -1;
     if (valid_two_otadata[0] && valid_two_otadata[1]) {
-        int condition = (max == true) ? MAX(two_otadata[0].ota_seq, two_otadata[1].ota_seq) : MIN(two_otadata[0].ota_seq, two_otadata[1].ota_seq);
+        uint32_t condition = (max == true) ? MAX(two_otadata[0].ota_seq, two_otadata[1].ota_seq) : MIN(two_otadata[0].ota_seq, two_otadata[1].ota_seq);
         if (condition == two_otadata[0].ota_seq) {
             active_otadata = 0;
         } else {

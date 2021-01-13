@@ -39,7 +39,7 @@ void __attribute__((noreturn)) abort(void)
 
     char *dest = buf;
 
-    for (int i = 0; i < sizeof(str) / sizeof(str[0]); i++) {
+    for (size_t i = 0; i < sizeof(str) / sizeof(str[0]); i++) {
         strcat(dest, str[i]);
     }
 

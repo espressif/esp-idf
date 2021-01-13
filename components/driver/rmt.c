@@ -96,7 +96,7 @@ typedef struct {
     rmt_item32_t *rx_item_buf;
     uint32_t rx_item_buf_size;
     uint32_t rx_item_len;
-    uint32_t rx_item_start_idx;
+    int rx_item_start_idx;
 #endif
     sample_to_rmt_t sample_to_rmt;
     size_t sample_size_remain;
@@ -798,7 +798,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 }
             }
             const rmt_item32_t *pdata = p_rmt->tx_data;
-            int len_rem = p_rmt->tx_len_rem;
+            size_t len_rem = p_rmt->tx_len_rem;
             if (len_rem >= p_rmt->tx_sub_len) {
                 rmt_fill_memory(channel, pdata, p_rmt->tx_sub_len, p_rmt->tx_offset);
                 p_rmt->tx_data += p_rmt->tx_sub_len;

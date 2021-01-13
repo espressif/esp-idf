@@ -880,7 +880,7 @@ static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val)
 
 static esp_err_t esp_apptrace_trax_dest_init(void)
 {
-    for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
+    for (size_t i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
         s_trace_buf.trax.blocks[i].start = (uint8_t *)s_trax_blocks[i];
         s_trace_buf.trax.blocks[i].sz = ESP_APPTRACE_TRAX_BLOCK_SIZE;
         s_trace_buf.trax.state.markers[i] = 0;

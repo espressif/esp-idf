@@ -112,7 +112,7 @@ static inline void sha_ll_fill_text_block(const void *input_text, size_t block_w
     uint32_t *data_words = (uint32_t *)input_text;
     uint32_t *reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
 
-    for (int i = 0; i < block_word_len; i++) {
+    for (size_t i = 0; i < block_word_len; i++) {
         REG_WRITE(&reg_addr_buf[i], data_words[i]);
     }
 }
@@ -143,7 +143,7 @@ static inline void sha_ll_write_digest(esp_sha_type sha_type, void *digest_state
     uint32_t *digest_state_words = (uint32_t *)digest_state;
     uint32_t *reg_addr_buf = (uint32_t *)(SHA_H_BASE);
 
-    for (int i = 0; i < digest_word_len; i++) {
+    for (size_t i = 0; i < digest_word_len; i++) {
         REG_WRITE(&reg_addr_buf[i], digest_state_words[i]);
     }
 }

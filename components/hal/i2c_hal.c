@@ -116,7 +116,7 @@ bool i2c_hal_is_bus_busy(i2c_hal_context_t *hal)
 
 void i2c_hal_get_sda_timing(i2c_hal_context_t *hal, int *sample_time, int *hold_time)
 {
-    i2c_ll_get_sda_timing(hal->dev, sample_time ,hold_time);
+    i2c_ll_get_sda_timing(hal->dev, sample_time, hold_time);
 }
 
 void i2c_hal_get_tout(i2c_hal_context_t *hal, int *tout_val)
@@ -174,12 +174,12 @@ void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal)
     i2c_ll_slave_disable_rx_it(hal->dev);
 }
 
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, uint32_t scl_freq, i2c_sclk_t src_clk)
+void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_sclk_t src_clk)
 {
     i2c_ll_set_source_clk(hal->dev, src_clk);
     uint32_t sclk = I2C_LL_CLK_SRC_FREQ(src_clk);
     i2c_clk_cal_t clk_cal = {0};
-    uint32_t scl_hw_freq = (scl_freq == I2C_CLK_FREQ_MAX) ? (src_clk / 20) : scl_freq; // FREQ_MAX use the highest freq of the chosen clk.
+    uint32_t scl_hw_freq = (scl_freq == I2C_CLK_FREQ_MAX) ? (sclk / 20) : (uint32_t)scl_freq; // FREQ_MAX use the highest freq of the chosen clk.
     i2c_ll_cal_bus_clk(sclk, scl_hw_freq, &clk_cal);
     i2c_ll_set_bus_timing(hal->dev, &clk_cal);
 }

@@ -76,7 +76,7 @@ static bool secure_boot_generate(uint32_t image_len){
         ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%x) failed", image_len);
         return false;
     }
-    for (int i = 0; i < image_len; i+= sizeof(digest.iv)) {
+    for (size_t i = 0; i < image_len; i+= sizeof(digest.iv)) {
         ets_secure_boot_hash(&image[i/sizeof(uint32_t)]);
     }
     bootloader_munmap(image);

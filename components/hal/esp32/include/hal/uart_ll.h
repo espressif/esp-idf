@@ -207,7 +207,7 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
 {
     //Get the UART APB fifo addr. Read fifo, we use APB address
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_REG(0) : (hw == &UART1) ? UART_FIFO_REG(1) : UART_FIFO_REG(2);
-    for(int i = 0; i < rd_len; i++) {
+    for(uint32_t i = 0; i < rd_len; i++) {
         buf[i] = READ_PERI_REG(fifo_addr);
 #ifdef CONFIG_COMPILER_OPTIMIZATION_PERF
         __asm__ __volatile__("nop");
@@ -228,7 +228,7 @@ static inline void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint
 {
     //Get the UART AHB fifo addr, Write fifo, we use AHB address
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_AHB_REG(0) : (hw == &UART1) ? UART_FIFO_AHB_REG(1) : UART_FIFO_AHB_REG(2);
-    for(int i = 0; i < wr_len; i++) {
+    for(uint32_t i = 0; i < wr_len; i++) {
         WRITE_PERI_REG(fifo_addr, buf[i]);
     }
 }

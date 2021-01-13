@@ -184,9 +184,7 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
 
 static int lookup_cmd_handler(int cmd_id)
 {
-    int i;
-
-    for (i = 0; i < sizeof(cmd_table)/sizeof(wifi_prov_scan_cmd_t); i++) {
+    for (size_t i = 0; i < sizeof(cmd_table)/sizeof(wifi_prov_scan_cmd_t); i++) {
         if (cmd_table[i].cmd_num == cmd_id) {
             return i;
         }

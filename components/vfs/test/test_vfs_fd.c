@@ -111,7 +111,7 @@ static concurrent_test_path_to_fd_t concurrent_test_path_to_fd[] = {
 
 static int concurrent_test_vfs_open(const char * path, int flags, int mode)
 {
-    for (int i = 0; i < sizeof(concurrent_test_path_to_fd)/sizeof(concurrent_test_path_to_fd[0]); ++i) {
+    for (size_t i = 0; i < sizeof(concurrent_test_path_to_fd)/sizeof(concurrent_test_path_to_fd[0]); ++i) {
         if (strcmp(concurrent_test_path_to_fd[i].path, path) == 0) {
             // This behaves like UART: opening the same file gives always the
             // same local FD (even when opening at the same time multiple FDs)
@@ -125,7 +125,7 @@ static int concurrent_test_vfs_open(const char * path, int flags, int mode)
 
 static int concurrent_test_vfs_close(int fd)
 {
-    for (int i = 0; i < sizeof(concurrent_test_path_to_fd)/sizeof(concurrent_test_path_to_fd[0]); ++i) {
+    for (size_t i = 0; i < sizeof(concurrent_test_path_to_fd)/sizeof(concurrent_test_path_to_fd[0]); ++i) {
         if (concurrent_test_path_to_fd[i].local_fd == fd) {
             return 0;
         }

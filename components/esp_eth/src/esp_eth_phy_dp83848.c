@@ -88,7 +88,7 @@ typedef union {
 typedef struct {
     esp_eth_phy_t parent;
     esp_eth_mediator_t *eth;
-    uint32_t addr;
+    int addr;
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;

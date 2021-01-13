@@ -445,7 +445,7 @@ BaseType_t xPortInterruptedFromISRContext(void);
 #endif
 
 /* Multi-core: get current core ID */
-static inline uint32_t IRAM_ATTR xPortGetCoreID(void) {
+static inline BaseType_t IRAM_ATTR xPortGetCoreID(void) {
     return cpu_hal_get_core_id();
 }
 

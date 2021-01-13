@@ -1212,7 +1212,7 @@ esp_err_t wifi_prov_mgr_init(wifi_prov_mgr_config_t config)
     };
 
     /* All function pointers in the scheme structure must be non-null */
-    for (int i = 0; i < sizeof(fn_ptrs)/sizeof(fn_ptrs[0]); i++) {
+    for (size_t i = 0; i < sizeof(fn_ptrs)/sizeof(fn_ptrs[0]); i++) {
         if (!fn_ptrs[i]) {
             return ESP_ERR_INVALID_ARG;
         }

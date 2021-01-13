@@ -50,7 +50,7 @@ void esp_reent_cleanup(void)
     /* Clean up storage used by mprec functions */
     if (r->_mp) {
         if (_REENT_MP_FREELIST(r)) {
-            for (int i = 0; i < _Kmax; ++i) {
+            for (unsigned int i = 0; i < _Kmax; ++i) {
                 struct _Bigint *cur, *next;
                 next = _REENT_MP_FREELIST(r)[i];
                 while (next) {

@@ -66,10 +66,10 @@ void heap_caps_init(void)
 
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
     //it's useful to coalesce adjacent regions that have the same type.
-    for (int i = 1; i < num_regions; i++) {
+    for (size_t i = 1; i < num_regions; i++) {
         soc_memory_region_t *a = &regions[i - 1];
         soc_memory_region_t *b = &regions[i];
-        if (b->start == a->start + a->size && b->type == a->type ) {
+        if (b->start == (intptr_t)(a->start + a->size) && b->type == a->type ) {
             a->type = -1;
             b->start = a->start;
             b->size += a->size;
@@ -78,7 +78,7 @@ void heap_caps_init(void)
 
     /* Count the heaps left after merging */
     size_t num_heaps = 0;
-    for (int i = 0; i < num_regions; i++) {
+    for (size_t i = 0; i < num_regions; i++) {
         if (regions[i].type != -1) {
             num_heaps++;
         }
@@ -92,7 +92,7 @@ void heap_caps_init(void)
     size_t heap_idx = 0;
 
     ESP_EARLY_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
-    for (int i = 0; i < num_regions; i++) {
+    for (size_t i = 0; i < num_regions; i++) {
         soc_memory_region_t *region = &regions[i];
         const soc_memory_type_desc_t *type = &soc_memory_types[region->type];
         heap_t *heap = &temp_heaps[heap_idx];
@@ -126,7 +126,7 @@ void heap_caps_init(void)
     assert(SLIST_EMPTY(&registered_heaps));
 
     heap_t *heaps_array = NULL;
-    for (int i = 0; i < num_heaps; i++) {
+    for (size_t i = 0; i < num_heaps; i++) {
         if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
             /* use the first DRAM heap which can fit the data */
             heaps_array = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_heaps);
@@ -140,7 +140,7 @@ void heap_caps_init(void)
     memcpy(heaps_array, temp_heaps, sizeof(heap_t)*num_heaps);
 
     /* Iterate the heaps and set their locks, also add them to the linked list. */
-    for (int i = 0; i < num_heaps; i++) {
+    for (size_t i = 0; i < num_heaps; i++) {
         if (heaps_array[i].heap != NULL) {
             multi_heap_set_lock(heaps_array[i].heap, &heaps_array[i].heap_mux);
         }
@@ -158,10 +158,10 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
         return ESP_ERR_INVALID_ARG;
     }
 
-    for (int i = 0; i < soc_memory_region_count; i++) {
+    for (size_t i = 0; i < soc_memory_region_count; i++) {
         const soc_memory_region_t *region = &soc_memory_regions[i];
         // Test requested start only as 'end' may be in a different region entry, assume 'end' has same caps
-        if (region->start <= start && (region->start + region->size) > start) {
+        if (region->start <= start && (intptr_t)(region->start + region->size) > start) {
             const uint32_t *caps = soc_memory_types[region->type].caps;
             return heap_caps_add_region_with_caps(caps, start, end);
         }

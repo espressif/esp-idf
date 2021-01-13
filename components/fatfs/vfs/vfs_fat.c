@@ -911,9 +911,8 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
         goto out;
     }
 
-    res = f_size(file);
-
-    if (res < length) {
+    long sz = f_size(file);
+    if (sz < length) {
         _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "truncate does not support extending size");
         errno = EPERM;

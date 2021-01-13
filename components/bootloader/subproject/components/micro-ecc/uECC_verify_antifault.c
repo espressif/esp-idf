@@ -127,7 +127,7 @@ int uECC_verify_antifault(const uint8_t *public_key,
     const uECC_word_t *mhash_words = (const uECC_word_t *)message_hash;
     uECC_word_t *vhash_words = (uECC_word_t *)verified_hash;
     unsigned hash_words = hash_size / sizeof(uECC_word_t);
-    for (int w = 0; w < hash_words; w++) {
+    for (unsigned int w = 0; w < hash_words; w++) {
         /* note: using curve->num_words here to encourage compiler to re-read this variable */
         vhash_words[w] = mhash_words[w] ^ rx[w % curve->num_words] ^ r[w % curve->num_words];
     }

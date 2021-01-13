@@ -230,7 +230,7 @@ static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int 
         return bs->test;
     }
 
-    if (index >= 0 && index < MAX_OTA_SLOTS && index < bs->app_count) {
+    if (index >= 0 && index < MAX_OTA_SLOTS && index < (int)bs->app_count) {
         return bs->ota[index];
     }
 
@@ -500,7 +500,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
     }
 
     /* failing that work forwards from start_index, try valid OTA slots */
-    for (index = start_index + 1; index < bs->app_count; index++) {
+    for (index = start_index + 1; index < (int)bs->app_count; index++) {
         part = index_to_partition(bs, index);
         if (part.size == 0) {
             continue;
@@ -718,7 +718,7 @@ static void set_cache_and_start_app(
         DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
     }
 #else
-    for (int i = 0; i < FLASH_MMU_TABLE_SIZE; i++) {
+    for (size_t i = 0; i < FLASH_MMU_TABLE_SIZE; i++) {
         FLASH_MMU_TABLE[i] = MMU_TABLE_INVALID_VAL;
     }
 #endif
@@ -828,7 +828,7 @@ esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_he
     if (out_str == NULL || in_array_hex == NULL || len == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         for (int shift = 0; shift < 2; shift++) {
             uint8_t nibble = (in_array_hex[i] >> (shift ? 0 : 4)) & 0x0F;
             if (nibble < 10) {
@@ -848,7 +848,7 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
     const uint8_t *bytes = (const uint8_t *)buffer;
     char hexbuf[length * 2 + 1];
     hexbuf[length * 2] = 0;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         for (int shift = 0; shift < 2; shift++) {
             uint8_t nibble = (bytes[i] >> (shift ? 0 : 4)) & 0x0F;
             if (nibble < 10) {

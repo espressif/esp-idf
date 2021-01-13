@@ -41,7 +41,7 @@ static const char *TAG = "rtc_clk";
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 // On the ESP32-S2, 480MHz PLL is enabled at reset.
-static int s_cur_pll_freq = RTC_PLL_FREQ_480M;
+static uint32_t s_cur_pll_freq = RTC_PLL_FREQ_480M;
 
 static void rtc_clk_cpu_freq_to_8m(void);
 

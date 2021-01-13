@@ -84,7 +84,7 @@ esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_me
     mcp_hdl->max_stream_num = config->backlog;
 
     // circle TX/RX descriptors
-    for (int i = 0; i < mcp_hdl->max_stream_num; i++) {
+    for (size_t i = 0; i < mcp_hdl->max_stream_num; i++) {
         mcp_hdl->out_streams[i].desc.dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
         mcp_hdl->out_streams[i].desc.next = &mcp_hdl->out_streams[i + 1].desc;
         mcp_hdl->in_streams[i].desc.dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
@@ -236,8 +236,8 @@ esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n,
     dma_descriptor_t *rx_end_desc = NULL;
     dma_descriptor_t *tx_start_desc = NULL;
     dma_descriptor_t *tx_end_desc = NULL;
-    int rx_prepared_size = 0;
-    int tx_prepared_size = 0;
+    size_t rx_prepared_size = 0;
+    size_t tx_prepared_size = 0;
     ASMCP_CHECK(asmcp, "mcp handle can't be null", err, ESP_ERR_INVALID_ARG);
     ASMCP_CHECK(async_memcpy_impl_is_buffer_address_valid(&asmcp->mcp_impl, src, dst), "buffer address not valid", err, ESP_ERR_INVALID_ARG);
     ASMCP_CHECK(n <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE * asmcp->max_stream_num, "buffer size too large", err, ESP_ERR_INVALID_ARG);

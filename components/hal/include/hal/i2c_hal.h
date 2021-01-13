@@ -416,7 +416,7 @@ void i2c_hal_get_rxfifo_cnt(i2c_hal_context_t *hal, uint32_t *len);
  *
  * @return None
  */
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, uint32_t scl_freq, i2c_sclk_t src_clk);
+void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_sclk_t src_clk);
 
 /**
  * @brief  Get I2C txFIFO writeable length

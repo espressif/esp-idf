@@ -166,7 +166,7 @@ static void _ledc_op_lock_release(ledc_mode_t mode, ledc_channel_t channel)
     }
 }
 
-static int ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
+static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     // The arguments are checked before internally calling this function.
     uint32_t max_duty;
@@ -731,7 +731,7 @@ static esp_err_t _ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t
     if (duty_delta == 0) {
         return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
     }
-    int total_cycles = max_fade_time_ms * freq / 1000;
+    uint32_t total_cycles = max_fade_time_ms * freq / 1000;
     if (total_cycles == 0) {
         ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_FAST_STR);
         return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
