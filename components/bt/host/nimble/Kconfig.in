@@ -433,7 +433,6 @@ config BT_NIMBLE_HOST_BASED_PRIVACY
 
 config BT_NIMBLE_EXT_ADV
     bool "Enable extended advertising."
-    default y if BT_SOC_SUPPORT_5_0
     default n
     depends on BT_NIMBLE_ENABLED && BT_SOC_SUPPORT_5_0
     help
