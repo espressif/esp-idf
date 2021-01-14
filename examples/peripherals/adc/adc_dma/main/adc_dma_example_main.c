@@ -57,7 +57,7 @@ static bool check_valid_data(const adc_digi_output_data_t *data)
     return true;
 }
 
-static void continuous_read_demo(void *arg)
+static void continuous_read(void *arg)
 {
     esp_err_t ret;
     uint32_t ret_num = 0;
@@ -90,7 +90,7 @@ static void continuous_read_demo(void *arg)
     assert(ret == ESP_OK);
 }
 
-static void single_read_demo(void *arg)
+static void single_read(void *arg)
 {
     esp_err_t ret;
     int adc1_reading[3] = {0xcc};
@@ -123,6 +123,6 @@ static void single_read_demo(void *arg)
 
 void app_main()
 {
-    single_read_demo(NULL);
-    continuous_read_demo(NULL);
+    single_read(NULL);
+    continuous_read(NULL);
 }
