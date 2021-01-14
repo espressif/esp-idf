@@ -17,6 +17,7 @@
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
+#include "soc/spi_periph.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.

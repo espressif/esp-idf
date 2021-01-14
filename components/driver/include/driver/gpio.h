@@ -5,14 +5,18 @@
  */
 
 #pragma once
+
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include <stdbool.h>
+#include "esp_intr_alloc.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include <esp_types.h>
 #include <esp_bit_defs.h>
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
+#endif // !CONFIG_IDF_TARGET_LINUX
 #include "hal/gpio_types.h"
 
 // |================================= WARNING ====================================================== |
