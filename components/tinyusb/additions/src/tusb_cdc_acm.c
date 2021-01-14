@@ -248,11 +248,9 @@ static esp_err_t ringbuf_mux_take(esp_tusb_cdcacm_t *acm){
     return ESP_OK;
 }
 
-static esp_err_t ringbuf_mux_give(esp_tusb_cdcacm_t *acm){
-    if(xSemaphoreGive(acm->ringbuf_read_mux) != pdTRUE){
-        ESP_LOGW(TAG, "Can't return the ringbuff mutex: mutex hasn't been taken");
-        return ESP_ERR_INVALID_STATE;
-    }
+static esp_err_t ringbuf_mux_give(esp_tusb_cdcacm_t *acm) {
+    BaseType_t ret = xSemaphoreGive(acm->ringbuf_read_mux);
+    assert(ret == pdTRUE);
     return ESP_OK;
 }
 
@@ -277,7 +275,6 @@ esp_err_t tinyusb_cdcacm_read(tinyusb_cdcacm_itf_t itf, uint8_t *out_buf, size_t
     *rx_data_size = read_sz;
     /* Buffer's data can be wrapped, at that situations we should make another retrievement */
     if (read_from_rx_unread_to_buffer(acm, out_buf+read_sz, out_buf_sz-read_sz, &read_sz) == ESP_OK) {
-        ESP_LOGV(TAG, "Buffer was wrapped, data obtained using two read operations.");
         *rx_data_size += read_sz;
     }
 
