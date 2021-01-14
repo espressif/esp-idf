@@ -218,6 +218,52 @@ TEST_CASE("RMT install/uninstall test", "[rmt]")
     }
 }
 
+static void test_rmt_translator(const void *src, rmt_item32_t *dest, size_t src_size,
+                                size_t wanted_num, size_t *translated_size, size_t *item_num)
+{
+    const rmt_item32_t bit0 = {{{ 10, 1, 20, 0 }}}; //Logical 0
+    const rmt_item32_t bit1 = {{{ 20, 1, 10, 0 }}}; //Logical 1
+    size_t size = 0;
+    size_t num = 0;
+    uint8_t *psrc = (uint8_t *)src;
+    rmt_item32_t *pdest = dest;
+    while (size < src_size && num < wanted_num) {
+        for (int i = 0; i < 8; i++) {
+            // MSB first
+            if (*psrc & (1 << (7 - i))) {
+                pdest->val =  bit1.val;
+            } else {
+                pdest->val =  bit0.val;
+            }
+            num++;
+            pdest++;
+        }
+        size++;
+        psrc++;
+    }
+    *translated_size = size;
+    *item_num = num;
+    int *user_data = NULL;
+    rmt_translator_get_context(item_num, (void **)&user_data);
+    esp_rom_printf("user data=%d\r\n", *user_data);
+    *user_data = 100;
+}
+
+TEST_CASE("RMT translator with user context", "[rmt]")
+{
+    rmt_config_t tx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, 0);
+    TEST_ESP_OK(rmt_config(&tx_cfg));
+    TEST_ESP_OK(rmt_driver_install(tx_cfg.channel, 0, 0));
+    rmt_translator_init(tx_cfg.channel, test_rmt_translator);
+    int user_data = 999;
+    rmt_translator_set_context(tx_cfg.channel, &user_data);
+    uint8_t test_buf[] = {1, 2, 3, 4, 5, 6};
+    rmt_write_sample(tx_cfg.channel, test_buf, sizeof(test_buf), true);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ASSERT_EQUAL(100, user_data);
+    TEST_ESP_OK(rmt_driver_uninstall(tx_cfg.channel));
+}
+
 static void do_nec_tx_rx(uint32_t flags)
 {
     RingbufHandle_t rb = NULL;

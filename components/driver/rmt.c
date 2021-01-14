@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/lock.h>
+#include <sys/cdefs.h>
 #include "esp_compiler.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
@@ -99,6 +100,7 @@ typedef struct {
     int rx_item_start_idx;
 #endif
     sample_to_rmt_t sample_to_rmt;
+    void *tx_context;
     size_t sample_size_remain;
     const uint8_t *sample_cur;
 } rmt_obj_t;
@@ -1216,9 +1218,31 @@ esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn)
         }
     }
     p_rmt_obj[channel]->sample_to_rmt = fn;
+    p_rmt_obj[channel]->tx_context = NULL;
     p_rmt_obj[channel]->sample_size_remain = 0;
     p_rmt_obj[channel]->sample_cur = NULL;
     ESP_LOGD(RMT_TAG, "RMT translator init done");
+    return ESP_OK;
+}
+
+esp_err_t rmt_translator_set_context(rmt_channel_t channel, void *context)
+{
+    RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);
+
+    p_rmt_obj[channel]->tx_context = context;
+    return ESP_OK;
+}
+
+esp_err_t rmt_translator_get_context(const size_t *item_num, void **context)
+{
+    RMT_CHECK(item_num && context, "invalid arguments", ESP_ERR_INVALID_ARG);
+
+    // the address of tx_len_rem is directlly passed to the callback,
+    // so it's possible to get the object address from that
+    rmt_obj_t *obj = __containerof(item_num, rmt_obj_t, tx_len_rem);
+    *context = obj->tx_context;
+
     return ESP_OK;
 }
 
@@ -1235,17 +1259,16 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
         }
     }
 #endif
-    size_t item_num = 0;
     size_t translated_size = 0;
     rmt_obj_t *p_rmt = p_rmt_obj[channel];
     const uint32_t item_block_len = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel) * RMT_MEM_ITEM_NUM;
     const uint32_t item_sub_len = item_block_len / 2;
     xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
-    p_rmt->sample_to_rmt((void *)src, p_rmt->tx_buf, src_size, item_block_len, &translated_size, &item_num);
+    p_rmt->sample_to_rmt((void *)src, p_rmt->tx_buf, src_size, item_block_len, &translated_size, &p_rmt->tx_len_rem);
     p_rmt->sample_size_remain = src_size - translated_size;
     p_rmt->sample_cur = src + translated_size;
-    rmt_fill_memory(channel, p_rmt->tx_buf, item_num, 0);
-    if (item_num == item_block_len) {
+    rmt_fill_memory(channel, p_rmt->tx_buf, p_rmt->tx_len_rem, 0);
+    if (p_rmt->tx_len_rem == item_block_len) {
         rmt_set_tx_thr_intr_en(channel, 1, item_sub_len);
         p_rmt->tx_data = p_rmt->tx_buf;
         p_rmt->tx_offset = 0;
@@ -1253,7 +1276,7 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
         p_rmt->translator = true;
     } else {
         rmt_item32_t stop_data = {0};
-        rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, item_num);
+        rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_len_rem);
         p_rmt->tx_len_rem = 0;
         p_rmt->sample_cur = NULL;
         p_rmt->translator = false;

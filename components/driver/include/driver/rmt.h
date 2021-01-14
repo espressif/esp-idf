@@ -763,6 +763,33 @@ esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t *buf_han
 esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn);
 
 /**
+* @brief Set user context for the translator of specific channel
+*
+* @param channel RMT channel number
+* @param context User context
+*
+* @return
+*     - ESP_FAIL Set context fail
+*     - ESP_OK Set context success
+*/
+esp_err_t rmt_translator_set_context(rmt_channel_t channel, void *context);
+
+/**
+* @brief Get the user context set by 'rmt_translator_set_context'
+*
+* @note This API must be invoked in the RMT translator callback function,
+*       and the first argument must be the actual parameter 'item_num' you got in that callback function.
+*
+* @param item_num Address of the memory which contains the number of translated items (It's from driver's internal memroy)
+* @param context Returned User context
+*
+* @return
+*     - ESP_FAIL Get context fail
+*     - ESP_OK Get context success
+*/
+esp_err_t rmt_translator_get_context(const size_t *item_num, void **context);
+
+/**
 * @brief Translate uint8_t type of data into rmt format and send it out.
 *        Requires rmt_translator_init to init the translator first.
 *
