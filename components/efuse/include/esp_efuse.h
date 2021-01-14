@@ -281,7 +281,8 @@ uint8_t esp_efuse_get_chip_ver(void);
  */
 uint32_t esp_efuse_get_pkg_ver(void);
 
-/* @brief Permanently update values written to the efuse write registers
+/**
+ * @brief Permanently update values written to the efuse write registers
  *
  * After updating EFUSE_BLKx_WDATAx_REG registers with new values to
  * write, call this function to permanently write them to efuse.
@@ -302,7 +303,8 @@ uint32_t esp_efuse_get_pkg_ver(void);
  */
 void esp_efuse_burn_new_values(void);
 
-/* @brief Reset efuse write registers
+/**
+ *  @brief Reset efuse write registers
  *
  * Efuse write registers are written to zero, to negate
  * any changes that have been staged here.
@@ -314,7 +316,8 @@ void esp_efuse_burn_new_values(void);
 void esp_efuse_reset(void);
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-/* @brief Disable BASIC ROM Console via efuse
+/**
+ *  @brief Disable BASIC ROM Console via efuse
  *
  * By default, if booting from flash fails the ESP32 will boot a
  * BASIC console in ROM.
@@ -326,7 +329,8 @@ void esp_efuse_disable_basic_rom_console(void);
 #endif
 
 
-/* @brief Disable ROM Download Mode via eFuse
+/**
+ *  @brief Disable ROM Download Mode via eFuse
  *
  * Permanently disables the ROM Download Mode feature. Once disabled, if the SoC is booted with
  * strapping pins set for ROM Download Mode then an error is printed instead.
@@ -344,7 +348,8 @@ void esp_efuse_disable_basic_rom_console(void);
 esp_err_t esp_efuse_disable_rom_download_mode(void);
 
 #if SOC_SUPPORTS_SECURE_DL_MODE
-/* @brief Switch ROM Download Mode to Secure Download mode via eFuse
+/**
+ *  @brief Switch ROM Download Mode to Secure Download mode via eFuse
  *
  * Permanently enables Secure Download mode. This mode limits the use of ROM Download Mode functions
  * to simple flash read, write and erase operations, plus a command to return a summary of currently
@@ -361,7 +366,8 @@ esp_err_t esp_efuse_disable_rom_download_mode(void);
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
 #endif
 
-/* @brief Write random data to efuse key block write registers
+/**
+ *  @brief Write random data to efuse key block write registers
  *
  * @note Caller is responsible for ensuring efuse
  * block is empty and not write protected, before calling.
@@ -379,12 +385,14 @@ esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
  */
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
 
-/* @brief Return secure_version from efuse field.
+/**
+ *  @brief Return secure_version from efuse field.
  * @return Secure version from efuse field
  */
 uint32_t esp_efuse_read_secure_version(void);
 
-/* @brief Check secure_version from app and secure_version and from efuse field.
+/**
+ *  @brief Check secure_version from app and secure_version and from efuse field.
  *
  * @param secure_version Secure version from app.
  * @return
@@ -392,7 +400,8 @@ uint32_t esp_efuse_read_secure_version(void);
  */
 bool esp_efuse_check_secure_version(uint32_t secure_version);
 
-/* @brief Write efuse field by secure_version value.
+/**
+ *  @brief Write efuse field by secure_version value.
  *
  * Update the secure_version value is available if the coding scheme is None.
  * Note: Do not use this function in your applications. This function is called as part of the other API.
@@ -405,7 +414,8 @@ bool esp_efuse_check_secure_version(uint32_t secure_version);
  */
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
 
-/* @brief Initializes variables: offset and size to simulate the work of an eFuse.
+/**
+ *  @brief Initializes variables: offset and size to simulate the work of an eFuse.
  *
  * Note: To simulate the work of an eFuse need to set CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE option
  * and to add in the partition.csv file a line `efuse_em, data, efuse,   ,   0x2000,`.
@@ -463,7 +473,8 @@ void esp_efuse_init(uint32_t offset, uint32_t size);
  */
 esp_err_t esp_efuse_batch_write_begin(void);
 
-/* @brief Reset the batch mode of writing fields.
+/**
+ *  @brief Reset the batch mode of writing fields.
  *
  * It will reset the batch writing mode and any written changes.
  *
@@ -473,7 +484,8 @@ esp_err_t esp_efuse_batch_write_begin(void);
  */
 esp_err_t esp_efuse_batch_write_cancel(void);
 
-/* @brief Writes all prepared data for the batch mode.
+/**
+ *  @brief Writes all prepared data for the batch mode.
  *
  * Must be called to ensure changes are written to the efuse registers.
  * After this the batch writing mode will be reset.
