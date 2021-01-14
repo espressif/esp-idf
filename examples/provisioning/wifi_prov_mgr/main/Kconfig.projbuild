@@ -10,6 +10,7 @@ menu "Example Configuration"
         config EXAMPLE_PROV_TRANSPORT_BLE
             bool "BLE"
             select BT_ENABLED
+            depends on !IDF_TARGET_ESP32S2
         config EXAMPLE_PROV_TRANSPORT_SOFTAP
             bool "Soft AP"
     endchoice
