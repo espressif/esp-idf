@@ -85,9 +85,14 @@ class Env(object):
                 dut_class = self.default_dut_cls
             if app_class is None:
                 app_class = self.app_cls
+
+            app_target = dut_class.TARGET
             detected_target = None
+
             try:
                 port = self.config.get_variable(dut_name)
+                if not app_target:
+                    result, detected_target = dut_class.confirm_dut(port)
             except ValueError:
                 # try to auto detect ports
                 allocated_ports = [self.allocated_duts[x]["port"] for x in self.allocated_duts]
@@ -100,7 +105,6 @@ class Env(object):
                 else:
                     port = None
 
-            app_target = dut_class.TARGET
             if not app_target:
                 app_target = detected_target
             if not app_target:
