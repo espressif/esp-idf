@@ -10,11 +10,14 @@ TEST_CASE("GDMA channel allocation", "[gdma]")
     gdma_channel_handle_t tx_channels[SOC_GDMA_PAIRS_PER_GROUP] = {};
     gdma_channel_handle_t rx_channels[SOC_GDMA_PAIRS_PER_GROUP] = {};
     channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
+    gdma_tx_event_callbacks_t tx_cbs = {};
+    gdma_rx_event_callbacks_t rx_cbs = {};
 
     // install TX channels for different peripherals
     for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_new_channel(&channel_config, &tx_channels[i]));
         TEST_ESP_OK(gdma_connect(tx_channels[i], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+        TEST_ESP_OK(gdma_register_tx_event_callbacks(tx_channels[i], &tx_cbs, NULL));
     };
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_channel(&channel_config, &tx_channels[0]));
 
@@ -23,6 +26,7 @@ TEST_CASE("GDMA channel allocation", "[gdma]")
     for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_new_channel(&channel_config, &rx_channels[i]));
         TEST_ESP_OK(gdma_connect(rx_channels[i], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+        TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_channels[i], &rx_cbs, NULL));
     }
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_channel(&channel_config, &rx_channels[0]));
 
