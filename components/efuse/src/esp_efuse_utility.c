@@ -55,7 +55,7 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
     int i = 0;
     while (err == ESP_OK && req_size > bits_counter && field[i] != NULL) {
         if (check_range_of_bits(field[i]->efuse_block, field[i]->bit_start, field[i]->bit_count) == false) {
-            ESP_LOGE(TAG, "Range of data does not match the coding scheme");
+            ESP_EARLY_LOGE(TAG, "Range of data does not match the coding scheme");
             err = ESP_ERR_CODING;
         }
         int i_reg = 0;
@@ -68,7 +68,7 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
             if ((bits_counter + num_bits) > req_size) { // Limits the length of the field.
                 num_bits = req_size - bits_counter;
             }
-            ESP_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
+            ESP_EARLY_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
                     (int)field[i]->efuse_block, num_reg, num_bits, start_bit);
             err = func_proc(num_reg, field[i]->efuse_block, start_bit, num_bits, ptr, &bits_counter);
             ++i_reg;
