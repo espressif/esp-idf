@@ -74,6 +74,7 @@ typedef struct {
     char                        *user_agent;
     char                        *headers;
     int                         pingpong_timeout_sec;
+    int                         ping_interval_ms;
 } websocket_config_storage_t;
 
 typedef enum {
@@ -229,6 +230,12 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
         cfg->pingpong_timeout_sec = config->pingpong_timeout_sec;
     } else {
         cfg->pingpong_timeout_sec = WEBSOCKET_PINGPONG_TIMEOUT_SEC;
+    }
+
+    if (config->ping_interval_sec == 0) {
+        cfg->ping_interval_ms = WEBSOCKET_PING_TIMEOUT_MS;
+    } else {
+        cfg->ping_interval_ms = config->ping_interval_sec * 1000;
     }
 
     return ESP_OK;
@@ -562,7 +569,7 @@ static void esp_websocket_client_task(void *pv)
             case WEBSOCKET_STATE_CONNECTED:
                 if ((CLOSE_FRAME_SENT_BIT & xEventGroupGetBits(client->status_bits)) == 0) { // only send and check for PING
                                                                                                           // if closing hasn't been initiated
-                    if (_tick_get_ms() - client->ping_tick_ms > WEBSOCKET_PING_TIMEOUT_MS) {
+                    if (_tick_get_ms() - client->ping_tick_ms > client->config->ping_interval_ms) {
                         client->ping_tick_ms = _tick_get_ms();
                         ESP_LOGD(TAG, "Sending PING...");
                         esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING | WS_TRANSPORT_OPCODES_FIN, NULL, 0, client->config->network_timeout_ms);

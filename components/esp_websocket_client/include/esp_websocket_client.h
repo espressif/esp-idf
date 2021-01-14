@@ -88,7 +88,7 @@ typedef struct {
     char                        *headers;                   /*!< Websocket additional headers */
     int                         pingpong_timeout_sec;       /*!< Period before connection is aborted due to no PONGs received */
     bool                        disable_pingpong_discon;    /*!< Disable auto-disconnect due to no PONG received within pingpong_timeout_sec */
-
+    int                         ping_interval_sec;          /*!< Websocket ping interval */
 } esp_websocket_client_config_t;
 
 /**
