@@ -58,6 +58,7 @@ if(${target} STREQUAL "esp32s3")
     list(APPEND srcs "adc_common.c"
                      "dac_common.c"
                      "dedic_gpio.c"
+                     "gdma.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                      "twai.c"
@@ -65,7 +66,8 @@ if(${target} STREQUAL "esp32s3")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
-    list(APPEND srcs "spi_slave_hd.c"
+    list(APPEND srcs "gdma.c"
+                     "spi_slave_hd.c"
                      "esp32c3/adc.c")
 endif()
 

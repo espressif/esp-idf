@@ -27,10 +27,13 @@ void cp_dma_hal_init(cp_dma_hal_context_t *hal, const cp_dma_hal_config_t *confi
     cp_dma_ll_enable_intr(hal->dev, UINT32_MAX, false);
     cp_dma_ll_clear_intr_status(hal->dev, UINT32_MAX);
     cp_dma_ll_enable_owner_check(hal->dev, true);
+}
 
+void cp_dma_hal_set_desc_base_addr(cp_dma_hal_context_t *hal, intptr_t outlink_base, intptr_t inlink_base)
+{
     /* set base address of the first descriptor */
-    cp_dma_ll_tx_set_descriptor_base_addr(hal->dev, (uint32_t)config->outlink_base);
-    cp_dma_ll_rx_set_descriptor_base_addr(hal->dev, (uint32_t)config->inlink_base);
+    cp_dma_ll_tx_set_descriptor_base_addr(hal->dev, outlink_base);
+    cp_dma_ll_rx_set_descriptor_base_addr(hal->dev, inlink_base);
 }
 
 void cp_dma_hal_deinit(cp_dma_hal_context_t *hal)

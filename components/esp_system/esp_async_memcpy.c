@@ -48,6 +48,7 @@ typedef struct {
  */
 typedef struct async_memcpy_context_t {
     async_memcpy_impl_t mcp_impl; // implementation layer
+    portMUX_TYPE spinlock;     // spinlock, prevent operating descriptors concurrently
     intr_handle_t intr_hdl;    // interrupt handle
     uint32_t flags;            // extra driver flags
     dma_descriptor_t *tx_desc; // pointer to the next free TX descriptor
@@ -73,11 +74,6 @@ esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_me
     mcp_hdl = heap_caps_calloc(1, total_malloc_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ASMCP_CHECK(mcp_hdl, "allocate context memory failed", err, ESP_ERR_NO_MEM);
 
-    int int_flags = ESP_INTR_FLAG_IRAM; // interrupt can still work when cache is disabled
-    // allocate interrupt handle, it's target dependent
-    ret_code = async_memcpy_impl_allocate_intr(&mcp_hdl->mcp_impl, int_flags, &mcp_hdl->intr_hdl);
-    ASMCP_CHECK(ret_code == ESP_OK, "allocate interrupt handle failed", err, ret_code);
-
     mcp_hdl->flags = config->flags;
     mcp_hdl->out_streams = mcp_hdl->streams_pool;
     mcp_hdl->in_streams = mcp_hdl->streams_pool + config->backlog;
@@ -96,20 +92,18 @@ esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_me
     mcp_hdl->tx_desc = &mcp_hdl->out_streams[0].desc;
     mcp_hdl->rx_desc = &mcp_hdl->in_streams[0].desc;
     mcp_hdl->next_rx_desc_to_check = &mcp_hdl->in_streams[0].desc;
+    mcp_hdl->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
     // initialize implementation layer
-    async_memcpy_impl_init(&mcp_hdl->mcp_impl, &mcp_hdl->out_streams[0].desc, &mcp_hdl->in_streams[0].desc);
+    async_memcpy_impl_init(&mcp_hdl->mcp_impl);
 
     *asmcp = mcp_hdl;
 
-    async_memcpy_impl_start(&mcp_hdl->mcp_impl);
+    async_memcpy_impl_start(&mcp_hdl->mcp_impl, (intptr_t)&mcp_hdl->out_streams[0].desc, (intptr_t)&mcp_hdl->in_streams[0].desc);
 
     return ESP_OK;
 err:
     if (mcp_hdl) {
-        if (mcp_hdl->intr_hdl) {
-            esp_intr_free(mcp_hdl->intr_hdl);
-        }
         free(mcp_hdl);
     }
     if (asmcp) {
@@ -123,7 +117,6 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp)
     esp_err_t ret_code = ESP_OK;
     ASMCP_CHECK(asmcp, "mcp handle can't be null", err, ESP_ERR_INVALID_ARG);
 
-    esp_intr_free(asmcp->intr_hdl);
     async_memcpy_impl_stop(&asmcp->mcp_impl);
     async_memcpy_impl_deinit(&asmcp->mcp_impl);
     free(asmcp);
@@ -243,7 +236,7 @@ esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n,
     ASMCP_CHECK(n <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE * asmcp->max_stream_num, "buffer size too large", err, ESP_ERR_INVALID_ARG);
 
     // Prepare TX and RX descriptor
-    portENTER_CRITICAL_SAFE(&asmcp->mcp_impl.hal_lock);
+    portENTER_CRITICAL_SAFE(&asmcp->spinlock);
     rx_prepared_size = async_memcpy_prepare_receive(asmcp, dst, n, &rx_start_desc, &rx_end_desc);
     tx_prepared_size = async_memcpy_prepare_transmit(asmcp, src, n, &tx_start_desc, &tx_end_desc);
     if ((rx_prepared_size == n) && (tx_prepared_size == n)) {
@@ -269,7 +262,7 @@ esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n,
         asmcp->tx_desc = desc->next;
         async_memcpy_impl_restart(&asmcp->mcp_impl);
     }
-    portEXIT_CRITICAL_SAFE(&asmcp->mcp_impl.hal_lock);
+    portEXIT_CRITICAL_SAFE(&asmcp->spinlock);
 
     // It's unlikely that we have space for rx descriptor but no space for tx descriptor
     // Both tx and rx descriptor should move in the same pace
@@ -289,14 +282,14 @@ IRAM_ATTR void async_memcpy_isr_on_rx_done_event(async_memcpy_impl_t *impl)
     async_memcpy_context_t *asmcp = __containerof(impl, async_memcpy_context_t, mcp_impl);
 
     // get the RX eof descriptor address
-    dma_descriptor_t *eof = async_memcpy_impl_get_rx_suc_eof_descriptor(impl);
+    dma_descriptor_t *eof = (dma_descriptor_t *)impl->rx_eof_addr;
     // traversal all unchecked descriptors
     do {
-        portENTER_CRITICAL_ISR(&impl->hal_lock);
+        portENTER_CRITICAL_ISR(&asmcp->spinlock);
         // There is an assumption that the usage of rx descriptors are in the same pace as tx descriptors (this is determined by M2M DMA working mechanism)
         // And once the rx descriptor is recycled, the corresponding tx desc is guaranteed to be returned by DMA
         to_continue = async_memcpy_get_next_rx_descriptor(asmcp, eof, &next_desc);
-        portEXIT_CRITICAL_ISR(&impl->hal_lock);
+        portEXIT_CRITICAL_ISR(&asmcp->spinlock);
         if (next_desc) {
             in_stream = __containerof(next_desc, async_memcpy_stream_t, desc);
             // invoke user registered callback if available

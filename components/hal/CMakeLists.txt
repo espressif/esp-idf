@@ -73,6 +73,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "adc_hal.c"
             "dac_hal.c"
+            "gdma_hal.c"
             "pcnt_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
@@ -88,6 +89,7 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c3")
         list(APPEND srcs
               "ds_hal.c"
+              "gdma_hal.c"
               "esp32c3/adc_hal.c"
               "esp32c3/brownout_hal.c"
               "esp32c3/systimer_hal.c"

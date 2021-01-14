@@ -39,6 +39,7 @@
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
+#include "soc/gdma_channel.h"
 #include "soc/spi_caps.h"
 
 #define spi_dma_set_rx_channel_priority(gdma_chan, priority)       gdma_ll_rx_set_priority(&GDMA, gdma_chan, priority);
@@ -205,11 +206,11 @@ void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
     int gdma_chan, periph_id;
     if (dma_chan == 1) {
         gdma_chan = SOC_GDMA_SPI2_DMA_CHANNEL;
-        periph_id = GDMA_LL_TRIG_SRC_SPI2;
-#ifdef GDMA_LL_TRIG_SRC_SPI3
+        periph_id = SOC_GDMA_TRIG_PERIPH_SPI2;
+#ifdef SOC_GDMA_TRIG_PERIPH_SPI3
     } else if (dma_chan == 2) {
         gdma_chan = SOC_GDMA_SPI3_DMA_CHANNEL;
-        periph_id = GDMA_LL_TRIG_SRC_SPI3;
+        periph_id = SOC_GDMA_TRIG_PERIPH_SPI3;
 #endif
     } else {
         abort();

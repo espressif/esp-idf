@@ -25,6 +25,7 @@
 #include "hal/crypto_dma_ll.h"
 #elif SOC_AES_GENERAL_DMA
 #include "hal/gdma_ll.h"
+#include "soc/gdma_channel.h"
 #endif
 
 uint8_t aes_hal_setkey(const uint8_t *key, size_t key_bytes, int mode)
@@ -71,8 +72,8 @@ static inline void aes_hal_dma_init(const lldesc_t *input, const lldesc_t *outpu
     gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
     gdma_ll_rx_enable_data_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
 
-    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_LL_PERIPH_ID_AES);
-    gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_LL_PERIPH_ID_AES);
+    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, SOC_GDMA_TRIG_PERIPH_AES0);
+    gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, SOC_GDMA_TRIG_PERIPH_AES0);
 
 #if SOC_GDMA_SUPPORT_EXTMEM
     /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */

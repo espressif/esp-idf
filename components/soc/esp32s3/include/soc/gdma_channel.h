@@ -14,5 +14,16 @@
 
 #pragma once
 
-#define SOC_GDMA_GROUPS          (1)
-#define SOC_GDMA_PAIRS_PER_GROUP (3)
+// The following macros have a format SOC_[periph][instance_id] to make it work with `GDMA_MAKE_TRIGGER`
+#define SOC_GDMA_TRIG_PERIPH_M2M0    (-1)
+#define SOC_GDMA_TRIG_PERIPH_SPI2    (0)
+#define SOC_GDMA_TRIG_PERIPH_SPI3    (1)
+#define SOC_GDMA_TRIG_PERIPH_UART0   (2)
+#define SOC_GDMA_TRIG_PERIPH_I2S0    (3)
+#define SOC_GDMA_TRIG_PERIPH_I2S1    (4)
+#define SOC_GDMA_TRIG_PERIPH_LCD0    (5)
+#define SOC_GDMA_TRIG_PERIPH_CAM0    (5)
+#define SOC_GDMA_TRIG_PERIPH_AES0    (6)
+#define SOC_GDMA_TRIG_PERIPH_SHA0    (7)
+#define SOC_GDMA_TRIG_PERIPH_ADC0    (8)
+#define SOC_GDMA_TRIG_PERIPH_DAC0    (8)
