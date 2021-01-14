@@ -289,9 +289,6 @@ SECTIONS
     *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
-    . = (. + 3) & ~ 3;
-    __eh_frame = ABSOLUTE(.);
-    KEEP(*(.eh_frame))
     . = (. + 7) & ~ 3;
     /*
      * C++ constructor and destructor tables
@@ -344,6 +341,20 @@ SECTIONS
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } > default_rodata_seg
+
+  .eh_frame :
+  {
+    _eh_frame = ABSOLUTE(.);
+    KEEP (*(.eh_frame))
+    _eh_frame_end = ABSOLUTE(.);
+  } > drom0_0_seg
+
+  .eh_frame_hdr :
+  {
+    _eh_frame_hdr = ABSOLUTE(.);
+    KEEP (*(.eh_frame_hdr))
+    _eh_frame_hdr_end = ABSOLUTE(.);
+  } > drom0_0_seg
 
   .flash.rodata_noload (NOLOAD) :
   {

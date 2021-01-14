@@ -15,7 +15,6 @@ unset(link_options)
 
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
-
 if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
@@ -106,6 +105,11 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"
                                 "-Wno-error=unused-but-set-variable"
                                 )
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+  list(APPEND compile_options "-fasynchronous-unwind-tables")
+  list(APPEND link_options "-Wl,--eh-frame-hdr")
 endif()
 
 list(APPEND link_options "-fno-lto")

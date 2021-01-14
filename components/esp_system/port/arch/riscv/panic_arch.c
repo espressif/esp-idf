@@ -28,6 +28,11 @@
 #endif
 #endif
 
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#include "port/eh_frame_parser.h"
+#endif
+
+
 #define DIM(array) (sizeof(array)/sizeof(*array))
 
 /**
@@ -321,6 +326,9 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
 
 void panic_print_backtrace(const void *frame, int core)
 {
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    esp_eh_frame_print_backtrace(frame);
+#else
     // Basic backtrace
     panic_print_str("\r\nStack memory:\r\n");
     uint32_t sp = (uint32_t)((RvExcFrame *)frame)->sp;
@@ -335,6 +343,7 @@ void panic_print_backtrace(const void *frame, int core)
             panic_print_str(y == per_line - 1 ? "\r\n" : " ");
         }
     }
+#endif
 }
 
 uint32_t panic_get_address(const void *f)

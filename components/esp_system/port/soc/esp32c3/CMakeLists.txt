@@ -6,6 +6,8 @@ set(srcs "clk.c"
          "../../arch/riscv/expression_with_stack.c"
          "../../arch/riscv/expression_with_stack_asm.S"
          "../../arch/riscv/panic_arch.c")
+
+set(srcs ${srcs} "../../arch/riscv/eh_frame_parser.c")
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})

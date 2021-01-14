@@ -116,3 +116,8 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
   ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
          ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
 #endif
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    ASSERT ((_eh_frame_end > _eh_frame), "Error: eh_frame size is null!");
+    ASSERT ((_eh_frame_hdr_end > _eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#endif
