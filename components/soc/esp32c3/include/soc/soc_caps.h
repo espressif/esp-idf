@@ -13,8 +13,6 @@
 // There are 3 DMA channels on ESP32-C3
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready
-#define SOC_GDMA_AES_DMA_CHANNEL    (0)
-#define SOC_GDMA_SHA_DMA_CHANNEL    (1)
 #define SOC_GDMA_SPI2_DMA_CHANNEL   (2)
 #define SOC_GDMA_ADC_DMA_CHANNEL    (0)
 
@@ -76,7 +74,7 @@
 #define SOC_SHA_SUPPORT_RESUME          (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_SHA_GENERAL_DMA             (1)
+#define SOC_SHA_GDMA             (1)
 
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)
@@ -93,7 +91,7 @@
 #define SOC_AES_SUPPORT_DMA     (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GENERAL_DMA     (1)
+#define SOC_AES_GDMA            (1)
 
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)

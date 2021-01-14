@@ -147,7 +147,6 @@ typedef struct {
  *      - ESP_OK: Create DMA channel successfully
  *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
  *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
- *      - ESP_ERR_TIMEOUT: Create DMA channel failed because of time out
  *      - ESP_FAIL: Create DMA channel failed because of other error
  */
 esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);

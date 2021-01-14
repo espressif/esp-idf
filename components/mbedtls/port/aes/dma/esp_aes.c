@@ -38,6 +38,7 @@
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
 #include "aes/esp_aes_internal.h"
+#include "esp_aes_dma_priv.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
@@ -52,7 +53,7 @@
 #include "aes/esp_aes_gcm.h"
 #endif
 
-#if SOC_AES_GENERAL_DMA
+#if SOC_AES_GDMA
 #define AES_LOCK() esp_crypto_aes_lock_acquire()
 #define AES_RELEASE() esp_crypto_aes_lock_release()
 #elif SOC_AES_CRYPTO_DMA
@@ -80,6 +81,17 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 
 static const char *TAG = "esp-aes";
 
+
+static inline void esp_aes_wait_dma_done(lldesc_t *output)
+{
+    /* Wait for DMA write operation to complete */
+    while (1) {
+        if ( esp_aes_dma_done(output) ) {
+            break;
+        }
+    }
+}
+
 /* Append a descriptor to the chain, set head if chain empty */
 static inline void lldesc_append(lldesc_t **head, lldesc_t *item)
 {
@@ -106,9 +118,8 @@ void esp_aes_acquire_hardware( void )
     /* Enable AES and DMA hardware */
 #if SOC_AES_CRYPTO_DMA
     periph_module_enable(PERIPH_AES_DMA_MODULE);
-#elif SOC_AES_GENERAL_DMA
+#elif SOC_AES_GDMA
     periph_module_enable(PERIPH_AES_MODULE);
-    periph_module_enable(PERIPH_GDMA_MODULE);
 #endif
 }
 
@@ -118,9 +129,8 @@ void esp_aes_release_hardware( void )
     /* Disable AES and DMA hardware */
 #if SOC_AES_CRYPTO_DMA
     periph_module_disable(PERIPH_AES_DMA_MODULE);
-#elif SOC_AES_GENERAL_DMA
+#elif SOC_AES_GDMA
     periph_module_disable(PERIPH_AES_MODULE);
-    periph_module_disable(PERIPH_GDMA_MODULE);
 #endif
 
     AES_RELEASE();
@@ -189,8 +199,12 @@ static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
 #endif  // CONFIG_PM_ENABLE
     }
 #endif
+    /* Checking this if interrupt is used also, to avoid
+       issues with AES fault injection
+    */
+    aes_hal_wait_done();
 
-    aes_hal_wait_dma_done(output_desc);
+    esp_aes_wait_dma_done(output_desc);
 }
 
 
@@ -380,7 +394,13 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         aes_hal_interrupt_enable(false);
     }
 
-    aes_hal_transform_dma_start(in_desc_head, out_desc_head, blocks);
+    if (esp_aes_dma_start(in_desc_head, out_desc_head) != ESP_OK) {
+        ESP_LOGE(TAG, "esp_aes_dma_start failed, no DMA channel available");
+        ret = -1;
+        goto cleanup;
+    }
+
+    aes_hal_transform_dma_start(blocks);
     esp_aes_dma_wait_complete(use_intr, out_desc_head);
 
 #if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -390,7 +410,6 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         }
     }
 #endif
-
     aes_hal_transform_dma_finish();
 
     if (stream_bytes > 0) {
@@ -499,7 +518,13 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
     /* Start AES operation */
-    aes_hal_transform_dma_gcm_start(in_desc_head, out_desc_head, blocks);
+    if (esp_aes_dma_start(in_desc_head, out_desc_head) != ESP_OK) {
+        ESP_LOGE(TAG, "esp_aes_dma_start failed, no DMA channel available");
+        ret = -1;
+        goto cleanup;
+    }
+
+    aes_hal_transform_dma_gcm_start(blocks);
 
     esp_aes_dma_wait_complete(use_intr, out_desc_head);
 

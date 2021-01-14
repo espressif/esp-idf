@@ -44,6 +44,7 @@
 #include "sha/sha_dma.h"
 #include "hal/sha_hal.h"
 #include "soc/soc_caps.h"
+#include "esp_sha_dma_priv.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
@@ -53,7 +54,7 @@
 #include "esp32s3/rom/cache.h"
 #endif
 
-#if SOC_SHA_GENERAL_DMA
+#if SOC_SHA_GDMA
 #define SHA_LOCK() esp_crypto_sha_lock_acquire()
 #define SHA_RELEASE() esp_crypto_sha_lock_release()
 #elif SOC_SHA_CRYPTO_DMA
@@ -110,9 +111,8 @@ void esp_sha_acquire_hardware()
     /* Enable SHA and DMA hardware */
 #if SOC_SHA_CRYPTO_DMA
     periph_module_enable(PERIPH_SHA_DMA_MODULE);
-#elif SOC_SHA_GENERAL_DMA
+#elif SOC_SHA_GDMA
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_GDMA_MODULE);
 #endif
 }
 
@@ -122,9 +122,8 @@ void esp_sha_release_hardware()
     /* Disable SHA and DMA hardware */
 #if SOC_SHA_CRYPTO_DMA
     periph_module_disable(PERIPH_SHA_DMA_MODULE);
-#elif SOC_SHA_GENERAL_DMA
+#elif SOC_SHA_GDMA
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_GDMA_MODULE);
 #endif
 
     SHA_RELEASE();
@@ -306,7 +305,12 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
         dma_descr_buf.empty = (uint32_t)(&dma_descr_input);
     }
 
-    sha_hal_hash_dma(sha_type, dma_descr_head, num_blks, is_first_block);
+    if (esp_sha_dma_start(dma_descr_head) != ESP_OK) {
+        ESP_LOGE(TAG, "esp_sha_dma_start failed, no DMA channel available");
+        return -1;
+    }
+
+    sha_hal_hash_dma(sha_type, num_blks, is_first_block);
 
     sha_hal_wait_idle();
 

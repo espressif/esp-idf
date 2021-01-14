@@ -14,7 +14,7 @@
 
 #pragma once
 
-#define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            14.4
+#define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            43
 
 // SHA256 hardware throughput at 240MHz, threshold set lower than worst case
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             19.8
