@@ -483,6 +483,7 @@ code_quality_check:
       -Dsonar.gitlab.project_id=$CI_PROJECT_ID
       -Dsonar.gitlab.commit_sha=$CI_MR_COMMITS
       -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.gitlab.failure_notification_mode=exit-code
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
       -Dsonar.cxx.includeDirectories=components,/usr/include
       -Dsonar.python.pylint_config=.pylintrc
