@@ -14,7 +14,7 @@ Note: If you don't have an external transceiver, this example can still be run b
 
 ### Configure the project
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `eszp32` or `esp32s2`).
+* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32`, `esp32s2`, `esp32s2` or `esp32c3`).
 * Then run `menuconfig` to configure the example.
 
 ```
@@ -25,6 +25,8 @@ idf.py menuconfig
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
     * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
     * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
 
 ### Build and Flash
 

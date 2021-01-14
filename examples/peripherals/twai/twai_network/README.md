@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use the TWAI driver to program a target (ESP32 or ESP32-S2) as a TWAI node, and have the two nodes (Network Master and Network Slave) communicate on a TWAI network. The Listen Only node is optional and acts as a network monitor meaning that it only receives messages and does not influence the bus in any way (i.e. doesn't not acknowledge or send error frames).
+This example demonstrates how to use the TWAI driver to program a target (ESP32, ESP32-S2, ESP32-S3 or ESP32-C3) as a TWAI node, and have the two nodes (Network Master and Network Slave) communicate on a TWAI network. The Listen Only node is optional and acts as a network monitor meaning that it only receives messages and does not influence the bus in any way (i.e. doesn't not acknowledge or send error frames).
 
 Note that concept of master/slave in this example refers to which node initiates
 and stops the transfer of a stream of data messages.
@@ -16,22 +16,22 @@ This example requires at least two targets (e.g., an ESP32 or ESP32-S2) to act a
 The following diagram illustrates an example network:
 
 ```
-    ----------   ----------   --------------  
-   |  Master  | |  Slave   | | Listen Only  | 
-   |          | |          | |              | 
-   | TX    RX | | TX    RX | | TX    RX     | 
-    ----------   ----------   --------------  
-     |      |     |      |     |      |   
-     |      |     |      |     |      |   
-    ----------   ----------   ----------  
-   | D      R | | D      R | | D      R | 
-   |          | |          | |          | 
-   |  VP230   | |  VP230   | |  VP230   | 
-   |          | |          | |          | 
-   | H      L | | H      L | | H      L | 
-    ----------   ----------   ----------  
-     |      |     |      |     |      |   
-     |      |     |      |     |      |   
+    ----------   ----------   --------------
+   |  Master  | |  Slave   | | Listen Only  |
+   |          | |          | |              |
+   | TX    RX | | TX    RX | | TX    RX     |
+    ----------   ----------   --------------
+     |      |     |      |     |      |
+     |      |     |      |     |      |
+    ----------   ----------   ----------
+   | D      R | | D      R | | D      R |
+   |          | |          | |          |
+   |  VP230   | |  VP230   | |  VP230   |
+   |          | |          | |          |
+   | H      L | | H      L | | H      L |
+    ----------   ----------   ----------
+     |      |     |      |     |      |
+     |      |     |      |     |      |
   |--x------|-----x------|-----x------|--| H
             |            |            |
   |---------x------------x------------x--| L
@@ -55,6 +55,8 @@ idf.py menuconfig
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
     * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
     * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
 
 
 ### Build and Flash
@@ -181,4 +183,4 @@ The communication between the Network Master and Network Slave execute the follo
 2. The master repeatedly sends **PING** messages until it receives a **PING_RESP** (ping response message) from the slave. The slave will only send a **PING_RESP** message when it receives a **PING** message from the master.
 3. Once the master has received the **PING_RESP** from the slave, it will send a **START_CMD** message to the slave.
 4. Upon receiving the **START_CMD** message, the slave will start transmitting **DATA** messages until the master sends a **STOP_CMD**. The master will send the **STOP_CMD** after receiving N **DATA** messages from the slave (N = 50 by default).
-5. When the slave receives the **STOP_CMD**, it will confirm that it has stopped by sending a **STOP_RESP** message to the master. 
+5. When the slave receives the **STOP_CMD**, it will confirm that it has stopped by sending a **STOP_RESP** message to the master.

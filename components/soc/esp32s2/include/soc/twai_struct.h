@@ -22,7 +22,7 @@ extern "C" {
 
 /* ---------------------------- Register Layout ------------------------------ */
 
-/* The TWAI peripheral's registers are 8bits, however the ESP32 can only access
+/* The TWAI peripheral's registers are 8bits, however the ESP32-S2 can only access
  * peripheral registers every 32bits. Therefore each TWAI register is mapped to
  * the least significant byte of every 32bits.
  */

@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-The TWAI Self Test Example demonstrates how a node can transmit TWAI messages to itself using the TWAI driver's "No Acknowledgement" mode and Self Reception Requests. The Self Test Example can be run as a simple test to determine whether a target (ESP32 or ESP32-S2) is properly connected to a working external transceiver.
+The TWAI Self Test Example demonstrates how a node can transmit TWAI messages to itself using the TWAI driver's "No Acknowledgement" mode and Self Reception Requests. The Self Test Example can be run as a simple test to determine whether a target (ESP32, ESP32-S2, ESP32-S3 or ESP32-C3) is properly connected to a working external transceiver.
 
 ## How to use example
 
@@ -25,6 +25,8 @@ idf.py menuconfig
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
     * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
     * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
 
 ### Build and Flash
 
@@ -77,7 +79,7 @@ The TWAI Self Test Example will do multiple iterations of the following steps:
 
 1. Install the TWAI driver
 2. Start the TWAI driver
-3. Simultaneously transmit and receive multiple messages using the self reception request. 
+3. Simultaneously transmit and receive multiple messages using the self reception request.
 4. Stop the TWAI driver
 5. Repeat steps 2 to 4 for multiple iterations
 6. Uninstall the TWAI driver
