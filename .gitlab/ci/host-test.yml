@@ -364,6 +364,20 @@ test_cxx_gpio:
     - idf.py build
     - build/test_gpio_cxx_host.elf
 
+test_spi_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/spi
+    - idf.py build
+    - build/test_spi_cxx_host.elf
+
+test_system_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/system
+    - idf.py build
+    - build/test_system_cxx_host.elf
+
 test_linux_example:
   extends: .host_test_template
   script:

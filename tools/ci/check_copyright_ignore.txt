@@ -1583,7 +1583,6 @@ components/hal/include/hal/spi_flash_types.h
 components/hal/include/hal/spi_hal.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
-components/hal/include/hal/spi_types.h
 components/hal/include/hal/systimer_hal.h
 components/hal/include/hal/systimer_types.h
 components/hal/include/hal/touch_sensor_hal.h
@@ -3358,18 +3357,15 @@ examples/cxx/experimental/experimental_cpp_component/esp_event_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/esp_exception.cpp
 examples/cxx/experimental/experimental_cpp_component/esp_timer_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer/main/esp_timer_test.cpp
-examples/cxx/experimental/experimental_cpp_component/host_test/fixtures/test_fixtures.hpp
 examples/cxx/experimental/experimental_cpp_component/host_test/gpio/main/gpio_cxx_test.cpp
 examples/cxx/experimental/experimental_cpp_component/i2c_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_event_api.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_event_cxx.hpp
-examples/cxx/experimental/experimental_cpp_component/include/esp_exception.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_timer_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/test/test_cxx_exceptions.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_event_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_timer.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_i2c.cpp
-examples/cxx/experimental/experimental_cpp_component/test/unity_cxx.hpp
 examples/cxx/experimental/sensor_mcp9808/main/sensor_mcp9808.cpp
 examples/cxx/pthread/example_test.py
 examples/cxx/pthread/main/cpp_pthread.cpp
