@@ -73,6 +73,7 @@ def test_monitor_ide_integration(env, extra_data):
 
         with WebSocketServer(), ttfw_idf.CustomProcess(' '.join([monitor_path,
                                                                  elf_path,
+                                                                 '--port', str(dut.port),
                                                                  '--ws', 'ws://{}:{}'.format(WebSocketServer.HOST,
                                                                                              WebSocketServer.PORT)]),
                                                        logfile='monitor_{}.log'.format(name)) as p:
