@@ -882,11 +882,17 @@ static int vfs_fat_access(void* ctx, const char *path, int amode)
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
 {
     FRESULT res;
-    FIL* file;
+    FIL* file = NULL;
 
     int ret = 0;
 
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+
+    if (length < 0) {
+        errno = EINVAL;
+        ret = -1;
+        goto out;
+    }
 
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &path, NULL);

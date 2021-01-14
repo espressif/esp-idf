@@ -261,7 +261,7 @@ void test_fatfs_truncate_file(const char* filename)
     TEST_ASSERT_EQUAL(errno, EPERM);
 
     TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
-    TEST_ASSERT_EQUAL(errno, EPERM);
+    TEST_ASSERT_EQUAL(errno, EINVAL);
 
 
     // Truncating should succeed
@@ -294,7 +294,7 @@ void test_fatfs_truncate_file(const char* filename)
     TEST_ASSERT_EQUAL(EPERM, errno);
 
     TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
-    TEST_ASSERT_EQUAL(EPERM, errno);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
 
 
     // Truncating a truncated file should succeed
