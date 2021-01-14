@@ -28,7 +28,7 @@ static const char *TAG = "app";
 static void start_ble_provisioning(void);
 
 static void event_handler(void* arg, esp_event_base_t event_base,
-                          int event_id, void* event_data)
+                          int32_t event_id, void* event_data)
 {
     static int s_retry_num_ap_not_found = 0;
     static int s_retry_num_ap_auth_fail = 0;
