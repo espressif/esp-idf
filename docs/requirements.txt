@@ -4,7 +4,7 @@
 # matplotlib is currently required only by the script generate_chart.py
 matplotlib==3.3.1 ; python_version>="3"
 matplotlib==2.0.1 ; python_version=="2.7"
-cairosvg==2.4.2 # required by sphinxcontrib-svg2pdfconverter[CairoSVG]
+cairosvg==2.5.1 # required by sphinxcontrib-svg2pdfconverter[CairoSVG]
 sphinx==2.3.1
 breathe==4.14.1
 sphinx-copybutton==0.3.0
