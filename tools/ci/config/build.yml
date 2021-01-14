@@ -81,7 +81,7 @@ build_esp_idf_tests_cmake_esp32s2:
   extends: .build_template
   variables:
       PYTHON_VER: 3
-  parallel: 9
+  parallel: 10
   artifacts:
     when: always
     expire_in: 4 days
