@@ -188,9 +188,11 @@ ping_recv(int s)
   struct icmp_echo_hdr *iecho;
   int fromlen = sizeof(from);
   struct timeval now;
+  uint16_t data_head = (uint16_t)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr));
+  int data_len = 0;
 
   while((len = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&from, (socklen_t*)&fromlen)) > 0) {
-    if (len >= (int)(sizeof(struct ip_hdr)+sizeof(struct icmp_echo_hdr))) {
+    if (len >= data_head) {
       if (from.sin_family != AF_INET) {
         /* Ping is not IPv4 */ 
         LWIP_DEBUGF( PING_DEBUG, ("ping: invalid sin_family\n"));
@@ -199,6 +201,7 @@ ping_recv(int s)
         inet_addr_to_ip4addr(&fromaddr, &from.sin_addr);
         iphdr = (struct ip_hdr *)buf;
         iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
+        data_len = lwip_ntohs(IPH_LEN(iphdr)) - data_head;
  
         LWIP_DEBUGF( PING_DEBUG, ("ping: recv seq=%d ", ntohs(iecho->seqno)));
         ip4_addr_debug_print(PING_DEBUG, &fromaddr);
@@ -208,7 +211,7 @@ ping_recv(int s)
         if ((iecho->id == PING_ID) && (iecho->seqno == htons(ping_seq_num))) {
           /* do some ping result processing */
 #ifdef ESP_PING
-          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, PING_TIME_DIFF_MS(now, ping_time));
+          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), data_len, PING_TIME_DIFF_MS(now, ping_time));
 #else
           PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
 #endif
@@ -228,7 +231,7 @@ ping_recv(int s)
 
   /* do some ping result processing */
 #ifdef ESP_PING
-  esp_ping_result(0, len, PING_TIME_DIFF_MS(now, ping_time));
+  esp_ping_result(0, data_len, PING_TIME_DIFF_MS(now, ping_time));
 #else
   PING_RESULT(0);
 #endif
