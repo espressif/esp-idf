@@ -761,7 +761,7 @@ enum {
     BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP,          /* Waiting for local response to peer OOB data  */
     BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS,           /* Waiting for local IO capabilities and OOB data */
     BTM_PAIR_STATE_INCOMING_SSP,                /* Incoming SSP (got peer IO caps when idle)    */
-    BTM_PAIR_STATE_WAIT_AUTH_COMPLETE,          /* All done, waiting authentication cpmplete    */
+    BTM_PAIR_STATE_WAIT_AUTH_COMPLETE,          /* All done, waiting authentication complete    */
     BTM_PAIR_STATE_WAIT_DISCONNECT              /* Waiting to disconnect the ACL                */
 };
 typedef UINT8 tBTM_PAIRING_STATE;
