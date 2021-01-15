@@ -95,7 +95,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     switch(event->event_id) {
     case SYSTEM_EVENT_STA_START:
         ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
-        ESP_ERROR_CHECK(esp_wifi_connect());
+        esp_wifi_connect();
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
@@ -109,7 +109,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-        ESP_ERROR_CHECK(esp_wifi_connect());
+        esp_wifi_connect();
 
         /* Stop the web server */
         if (*server) {
