@@ -896,8 +896,6 @@ void l2c_free_p_lcb_pool(void)
         p_lcb = list_node(p_node);
         if (p_lcb) {
             l2cu_release_lcb (p_lcb);
-            list_remove(l2cb.p_lcb_pool, p_lcb);
-            osi_free(p_lcb);
         }
     }
 
@@ -912,8 +910,6 @@ void l2c_free_p_ccb_pool(void)
         p_ccb = list_node(p_node);
         if (p_ccb) {
             l2cu_release_ccb (p_ccb);
-            list_remove(l2cb.p_ccb_pool, p_ccb);
-            osi_free(p_ccb);
         }
     }
 
