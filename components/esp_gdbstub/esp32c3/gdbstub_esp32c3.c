@@ -22,6 +22,8 @@
 
 #define GDBSTUB_MEM_REGION_COUNT 9
 
+#define UART_REG_FIELD_LEN 0x84
+
 typedef struct {
     intptr_t lower;
     intptr_t upper;
@@ -36,8 +38,10 @@ static const mem_bound_t mem_region_table [GDBSTUB_MEM_REGION_COUNT] =
     {SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH},
     {SOC_DROM_MASK_LOW, SOC_DROM_MASK_HIGH},
     {SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH},
-    // RTC DRAM and RTC DATA are identical with RTC IRAM
-    {SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH},
+    // RTC DRAM and RTC DATA are identical with RTC IRAM, hence we skip them
+    // We shouldn't read the uart registers since it will disturb the debugging via UART,
+    // so skip UART part of the peripheral registers.
+    {DR_REG_UART_BASE + UART_REG_FIELD_LEN, SOC_PERIPHERAL_HIGH},
     {SOC_DEBUG_LOW, SOC_DEBUG_HIGH},
 };
 
@@ -48,6 +52,7 @@ static inline bool check_inside_valid_region(intptr_t addr)
             return true;
         }
     }
+
     return false;
 }
 
