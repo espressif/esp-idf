@@ -107,14 +107,15 @@ static inline void cpu_ll_set_watchpoint(int id,
 {
     uint32_t addr_napot;
     RV_WRITE_CSR(tselect,id);
-    RV_SET_CSR(CSR_TCONTROL,TCONTROL_MTE);
+    RV_SET_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
     RV_SET_CSR(CSR_TDATA1, TDATA1_USER|TDATA1_MACHINE);
     RV_SET_CSR_FIELD(CSR_TDATA1, TDATA1_MATCH, 1);
-    addr_napot = ((uint32_t)addr)|((size>>1)-1);
-    if(on_read) {
+    // add 0 in napot encoding
+    addr_napot = ((uint32_t) addr) | ((size >> 1) - 1);
+    if (on_read) {
         RV_SET_CSR(CSR_TDATA1, TDATA1_LOAD);
     }
-    if(on_write) {
+    if (on_write) {
         RV_SET_CSR(CSR_TDATA1, TDATA1_STORE);
     }
     RV_WRITE_CSR(tdata2,addr_napot);

@@ -99,14 +99,19 @@ menu "FreeRTOS"
             FreeRTOS can check if a stack has overflown its bounds by checking either the value of
             the stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW
             for more information.) These checks only happen on a context switch, and the situation that caused
-            the stack overflow may already be long gone by then. This option will use the debug memory
-            watchpoint 1 (the second one) to allow breaking into the debugger (or panic'ing) as soon as any
+            the stack overflow may already be long gone by then. This option will use the last debug memory
+            watchpoint to allow breaking into the debugger (or panic'ing) as soon as any
             of the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you
-            effectively only have one watchpoint; the 2nd one is overwritten as soon as a task switch happens.
+            effectively have one hardware watchpoint less because the last one is overwritten as soon as a task
+            switch happens.
 
-            This check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than
-            overshooting further, so it is worth combining this approach with one of the other stack overflow check
-            methods.
+            Another consequence is that due to alignment requirements of the watchpoint, the usable stack size
+            decreases by up to 60 bytes. This is because the watchpoint region has to be aligned to its size and the
+            size for the stack watchpoint in IDF is 32 bytes.
+
+            This check only triggers if the stack overflow writes within 32 bytes near the end of the stack, rather
+            than overshooting further, so it is worth combining this approach with one of the other stack overflow
+            check methods.
 
             When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf
             will panic on an unhandled debug exception.

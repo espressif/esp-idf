@@ -94,6 +94,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_attr.h"
+#include "esp_debug_helpers.h"
 #include "esp_log.h"
 
 /**
@@ -279,9 +280,12 @@ void vPortYield(void)
 
 }
 
+#define STACK_WATCH_AREA_SIZE 32
 void vPortSetStackWatchpoint(void *pxStackStart)
 {
-    (void)pxStackStart; // TODO ESP32-C3 IDF-2207
+    uint32_t addr = (uint32_t)pxStackStart;
+    addr = (addr + (STACK_WATCH_AREA_SIZE - 1)) & (~(STACK_WATCH_AREA_SIZE - 1));
+    esp_set_watchpoint(7, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
 }
 
 BaseType_t xPortInIsrContext(void)
