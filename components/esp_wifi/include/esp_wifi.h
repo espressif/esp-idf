@@ -107,6 +107,7 @@ typedef struct {
     int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
     int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
+    int                    amsdu_tx_enable;        /**< WiFi AMSDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
@@ -151,6 +152,12 @@ typedef struct {
 #define WIFI_AMPDU_TX_ENABLED        1
 #else
 #define WIFI_AMPDU_TX_ENABLED        0
+#endif
+
+#if CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED
+#define WIFI_AMSDU_TX_ENABLED        1
+#else
+#define WIFI_AMSDU_TX_ENABLED        0
 #endif
 
 #if CONFIG_ESP32_WIFI_NVS_ENABLED
@@ -210,6 +217,7 @@ extern uint64_t g_wifi_feature_caps;
     .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
     .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
+    .amsdu_tx_enable = WIFI_AMSDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
     .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\

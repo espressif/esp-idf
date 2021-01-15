@@ -118,6 +118,7 @@ struct wpa_state_machine {
 	int pending_1_of_4_timeout;
 	u32 index;
 	ETSTimer resend_eapol;
+	struct rsn_sppamsdu_sup spp_sup;
 };
 
 

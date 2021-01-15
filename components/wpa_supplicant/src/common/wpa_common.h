@@ -110,6 +110,8 @@
 #define WPA_CAPABILITY_MFPR BIT(6)
 #define WPA_CAPABILITY_MFPC BIT(7)
 #define WPA_CAPABILITY_PEERKEY_ENABLED BIT(9)
+#define WPA_CAPABILITY_SPP_CAPABLE BIT(10)
+#define WPA_CAPABILITY_SPP_REQUIRED BIT(11)
 
 
 /* IEEE 802.11r */
@@ -301,6 +303,11 @@ struct wpa_ie_data {
 	size_t num_pmkid;
 	const u8 *pmkid;
 	int mgmt_group_cipher;
+};
+
+struct rsn_sppamsdu_sup {
+    bool capable;
+    bool require;
 };
 
 const char * wpa_cipher_txt(int cipher);

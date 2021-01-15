@@ -32,6 +32,7 @@ void *hostap_init(void)
     struct hostapd_data *hapd = NULL;
     struct wpa_auth_config *auth_conf;
     u8 mac[6];
+    u16 spp_attrubute = 0;
 
     hapd = (struct hostapd_data *)os_zalloc(sizeof(struct hostapd_data));
 
@@ -69,6 +70,10 @@ void *hostap_init(void)
     auth_conf->rsn_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
     auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
     auth_conf->eapol_version = EAPOL_VERSION;
+
+    spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
+    auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
+    auth_conf->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_REQ_DISABLE);
 
     memcpy(hapd->conf->ssid.ssid, ssid->ssid, ssid->len);
     hapd->conf->ssid.ssid_len = ssid->len;

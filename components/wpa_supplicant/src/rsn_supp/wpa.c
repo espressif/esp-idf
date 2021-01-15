@@ -2063,6 +2063,7 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
                    WPA_NEG_COMPLETE wpa_neg_complete)
 {
     struct wpa_sm *sm = &gWpaSm;
+    u16 spp_attrubute = 0;
 
     sm->eapol_version = 0x1;   /* DEFAULT_EAPOL_VERSION */
     sm->sendto = snd_func;
@@ -2073,6 +2074,11 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
     sm->wpa_neg_complete = wpa_neg_complete;
     sm->key_entry_valid = 0;
     sm->key_install = false;
+
+    spp_attrubute = esp_wifi_get_spp_attrubute_internal(ESP_IF_WIFI_STA);
+    sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
+    sm->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_REQ_DISABLE);
+
     wpa_sm_set_state(WPA_INACTIVE);
 
     sm->pmksa = pmksa_cache_init(wpa_sm_pmksa_free_cb, sm, sm);

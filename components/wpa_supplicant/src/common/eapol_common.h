@@ -26,6 +26,10 @@ struct ieee802_1x_hdr {
 
 
 #define EAPOL_VERSION 2
+#define SPP_AMSDU_CAP_ENABLE   1
+#define SPP_AMSDU_REQ_ENABLE   1
+#define SPP_AMSDU_CAP_DISABLE  0
+#define SPP_AMSDU_REQ_DISABLE  0
 
 enum { IEEE802_1X_TYPE_EAP_PACKET = 0,
        IEEE802_1X_TYPE_EAPOL_START = 1,

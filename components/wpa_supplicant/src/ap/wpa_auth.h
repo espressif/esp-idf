@@ -162,6 +162,7 @@ struct wpa_auth_config {
 #endif /* CONFIG_IEEE80211R */
 	int disable_gtk;
 	int ap_mlme;
+	struct rsn_sppamsdu_sup spp_sup;
 };
 
 typedef enum {

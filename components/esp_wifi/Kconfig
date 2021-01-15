@@ -163,6 +163,13 @@ menu "Wi-Fi"
             the default and minimum value should be 16 to achieve better throughput and compatibility with both
             stations and APs.
 
+    config ESP32_WIFI_AMSDU_TX_ENABLED
+        bool "WiFi AMSDU TX"
+        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
+        default n
+        help
+            Select this option to enable AMSDU TX feature
+
     config ESP32_WIFI_NVS_ENABLED
         bool "WiFi NVS flash"
         default y

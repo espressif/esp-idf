@@ -91,6 +91,7 @@ struct wpa_sm {
     bool   ap_notify_completed_rsne;
     wifi_pmf_config_t pmf_cfg;
     u8 eapol1_count;
+    struct rsn_sppamsdu_sup spp_sup;
 };
 
 /**

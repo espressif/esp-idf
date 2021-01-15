@@ -512,6 +512,20 @@ typedef void (* wifi_tx_done_cb_t)(uint8_t ifidx, uint8_t *data, uint16_t *data_
   */
 esp_err_t esp_wifi_set_tx_done_cb(wifi_tx_done_cb_t cb);
 
+/**
+ * @brief     Set device spp amsdu attributes
+ *
+ * @param     ifx: WiFi interface
+ * @param     spp_cap: spp amsdu capable
+ * @param     spp_req: spp amsdu require
+ *
+ * @return
+ *     - ESP_OK: succeed
+ *     - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+ *     - ESP_ERR_WIFI_IF : invalid WiFi interface
+ */
+esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, bool spp_req);
+
 #ifdef __cplusplus
 }
 #endif
