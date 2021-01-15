@@ -151,7 +151,7 @@ static void init_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
+    esp_wifi_scan_start(NULL, true);
 
     while (1) {
         if (scan_done == true) {

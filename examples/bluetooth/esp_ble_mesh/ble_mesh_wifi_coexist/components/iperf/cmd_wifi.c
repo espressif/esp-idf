@@ -188,7 +188,7 @@ static bool wifi_cmd_sta_scan(const char *ssid)
     scan_config.ssid = (uint8_t *) ssid;
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, false) );
+    esp_wifi_scan_start(&scan_config, false);
 
     return true;
 }
