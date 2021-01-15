@@ -28,7 +28,9 @@ if(NOT BOOTLOADER_BUILD)
                 "soc_hal.c"
                 "interrupt_controller_hal.c"
                 "sha_hal.c"
-                "aes_hal.c")
+                "aes_hal.c"
+                "twai_hal.c"
+                "twai_hal_iram.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
@@ -38,8 +40,6 @@ if(NOT BOOTLOADER_BUILD)
                     "pcnt_hal.c"
                     "sdio_slave_hal.c"
                     "touch_sensor_hal.c"
-                    "twai_hal.c"
-                    "twai_hal_iram.c"
                     "esp32/adc_hal.c"
                     "esp32/brownout_hal.c"
                     "esp32/interrupt_descriptor_table.c"
@@ -57,8 +57,6 @@ if(NOT BOOTLOADER_BUILD)
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
                     "touch_sensor_hal.c"
-                    "twai_hal.c"
-                    "twai_hal_iram.c"
                     "esp32s2/adc_hal.c"
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
@@ -78,8 +76,6 @@ if(NOT BOOTLOADER_BUILD)
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
             "touch_sensor_hal.c"
-            "twai_hal.c"
-            "twai_hal_iram.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/interrupt_descriptor_table.c"
             "esp32s3/systimer_hal.c"

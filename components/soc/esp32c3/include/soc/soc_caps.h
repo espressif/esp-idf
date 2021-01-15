@@ -5,8 +5,10 @@
 
 #pragma once
 
-#define SOC_CPU_CORES_NUM 1
-#define SOC_GDMA_SUPPORTED 1
+#define SOC_CPU_CORES_NUM   1
+#define SOC_GDMA_SUPPORTED  1
+#define SOC_TWAI_SUPPORTED  1
+
 
 // There are 3 DMA channels on ESP32-C3
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
@@ -46,6 +48,9 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
 
+/*-------------------------- TWAI CAPS ---------------------------------------*/
+#define SOC_TWAI_BRP_MIN                2
+#define SOC_TWAI_BRP_MAX                32768
 
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)

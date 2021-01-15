@@ -19,6 +19,7 @@ set(srcs
     "spi_slave.c"
     "spi_bus_lock.c"
     "timer.c"
+    "twai.c"
     "uart.c")
 
 set(includes "include" "${target}/include")
@@ -32,7 +33,6 @@ if(${target} STREQUAL "esp32")
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "touch_sensor_common.c"
-                     "twai.c"
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
                      "esp32/dac.c")
@@ -45,7 +45,6 @@ if(IDF_TARGET STREQUAL "esp32s2")
                      "dedic_gpio.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
-                     "twai.c"
                      "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"
@@ -61,7 +60,6 @@ if(${target} STREQUAL "esp32s3")
                      "gdma.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
-                     "twai.c"
                     )
 endif()
 
