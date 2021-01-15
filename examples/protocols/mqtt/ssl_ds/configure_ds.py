@@ -17,6 +17,8 @@ import sys
 import hashlib
 import hmac
 import struct
+import subprocess
+import json
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -32,6 +34,8 @@ except ImportError:
     sys.path.insert(0, os.path.join(idf_path, "components", "nvs_flash", "nvs_partition_generator"))
     import nvs_partition_gen as nvs_gen
 
+# Check python version is proper or not to avoid script failure
+assert sys.version_info >= (3, 6, 0), "Python version too low."
 
 esp_ds_data_dir = 'esp_ds_data'
 # hmac_key_file is generated when HMAC_KEY is calculated, it is used when burning HMAC_KEY to efuse
@@ -39,6 +43,23 @@ hmac_key_file = esp_ds_data_dir + '/hmac_key.bin'
 # csv and bin filenames are default filenames for nvs partition files created with this script
 csv_filename = esp_ds_data_dir + '/pre_prov.csv'
 bin_filename = esp_ds_data_dir + '/pre_prov.bin'
+expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
+# Targets supported by the script
+supported_targets = {'esp32s2'}
+
+
+# @return
+#       on success  idf_target - value of the IDF_TARGET read from build/config/sdkconfig.json
+#       on failure  None
+def get_idf_target():
+    if os.path.exists(expected_json_path):
+        sdkconfig = json.load(open(expected_json_path))
+        idf_target_read = sdkconfig['IDF_TARGET']
+        return idf_target_read
+    else:
+        print("ERROR: IDF_TARGET has not been set for the supported targets,"
+              "\nplase execute command \"idf.py set-target {TARGET}\" in the example directory")
+        return None
 
 
 def load_privatekey(key_file_path, password=None):
@@ -58,11 +79,25 @@ def number_as_bytes(number, pad_bits=None):
     return result
 
 
-def calculate_ds_parameters(privkey, priv_key_pass):
+# @return
+#       c               : ciphertext_c
+#       iv              : initialization vector
+#       key_size        : key size of the RSA private key in bytes.
+# @input
+#       privkey         : path to the RSA private key
+#       priv_key_pass   : path to the RSA privaete key password
+#       hmac_key        : HMAC key value ( to calculate DS params)
+# @info
+#       The function calculates the encrypted private key parameters.
+#       Consult the DS documentation (available for the ESP32-S2) in the esp-idf programming guide for more details about the variables and calculations.
+def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
     private_key = load_privatekey(privkey, priv_key_pass)
     if not isinstance(private_key, rsa.RSAPrivateKey):
-        print("Only RSA private keys are supported")
+        print("ERROR: Only RSA private keys are supported")
         sys.exit(-1)
+    if hmac_key is None:
+        print("ERROR: hmac_key cannot be None")
+        sys.exit(-2)
 
     priv_numbers = private_key.private_numbers()
     pub_numbers = private_key.public_key().public_numbers()
@@ -73,10 +108,6 @@ def calculate_ds_parameters(privkey, priv_key_pass):
     if key_size not in supported_key_size:
         print("Key size not supported, supported sizes are" + str(supported_key_size))
         sys.exit(-1)
-
-    hmac_key = os.urandom(32)
-    with open(hmac_key_file, 'wb') as key_file:
-        key_file.write(hmac_key)
 
     iv = os.urandom(16)
 
@@ -112,16 +143,31 @@ def calculate_ds_parameters(privkey, priv_key_pass):
     return c, iv, key_size
 
 
-def efuse_summary(args):
-    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s summary" % (args.port))
+# @info
+#       The function makes use of the "espefuse.py" script to read the efuse summary
+def efuse_summary(args, idf_target):
+    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip {0} -p {1} summary".format(idf_target, (args.port)))
 
 
-def efuse_burn_key(args):
-    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip esp32s2 -p %s burn_key "
-              "%s %s HMAC_DOWN_DIGITAL_SIGNATURE  --no-read-protect"
-              % ((args.port), ("BLOCK_KEY" + str(args.efuse_key_id)), (hmac_key_file)))
+# @info
+#       The function makes use of the "espefuse.py" script to burn the HMAC key on the efuse.
+def efuse_burn_key(args, idf_target):
+    # In case of a development (default) usecase we disable the read protection.
+    key_block_status = '--no-read-protect'
+
+    if args.production is True:
+        # Whitespace character will have no additional effect on the command and
+        # read protection will be enabled as the default behaviour of the command
+        key_block_status = ' '
+
+    os.system("python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip {0} -p {1} burn_key "
+              "{2} {3} HMAC_DOWN_DIGITAL_SIGNATURE {4}"
+              .format((idf_target), (args.port), ("BLOCK_KEY" + str(args.efuse_key_id)), (hmac_key_file), (key_block_status)))
 
 
+# @info
+#       Generate a custom csv file of encrypted private key parameters.
+#       The csv file is required by the nvs_partition_generator utility to create the nvs partition.
 def generate_csv_file(c, iv, hmac_key_id, key_size, csv_file):
 
     with open(csv_file, 'wt', encoding='utf8') as f:
@@ -139,6 +185,9 @@ class DefineArgs(object):
             self.__setattr__(key, value)
 
 
+# @info
+#       This function uses the nvs_partition_generater utility
+#       to generate the nvs partition of the encrypted private key parameters.
 def generate_nvs_partition(input_filename, output_filename):
 
     nvs_args = DefineArgs({
@@ -153,14 +202,110 @@ def generate_nvs_partition(input_filename, output_filename):
     nvs_gen.generate(nvs_args, is_encr_enabled=False, encr_key=None)
 
 
+# @return
+#         The json formatted summary of the efuse.
+def get_efuse_summary_json(args, idf_target):
+    _efuse_summary = None
+    try:
+        _efuse_summary = subprocess.check_output(("python $IDF_PATH/components/esptool_py/esptool/espefuse.py "
+                                                  "--chip {0} -p {1} summary --format json".format(idf_target, (args.port))), shell=True)
+    except subprocess.CalledProcessError as e:
+        print((e.output).decode('UTF-8'))
+        sys.exit(-1)
+
+    _efuse_summary = _efuse_summary.decode('UTF-8')
+    # Remove everything before actual json data from efuse_summary command output.
+    _efuse_summary = _efuse_summary[_efuse_summary.find('{'):]
+    try:
+        _efuse_summary_json = json.loads(_efuse_summary)
+    except json.JSONDecodeError:
+        print('ERROR: failed to parse the json output')
+        sys.exit(-1)
+    return _efuse_summary_json
+
+
+# @return
+#       on success: 256 bit HMAC key present in the given key_block (args.efuse_key_id)
+#       on failure: None
+# @info
+#       This function configures the provided efuse key_block.
+#       If the provided efuse key_block is empty the function generates a new HMAC key and burns it in the efuse key_block.
+#       If the key_block already contains a key the function reads the key from the efuse key_block
+def configure_efuse_key_block(args, idf_target):
+    efuse_summary_json = get_efuse_summary_json(args, idf_target)
+    key_blk = 'BLOCK_KEY' + str(args.efuse_key_id)
+    key_purpose = 'KEY_PURPOSE_' + str(args.efuse_key_id)
+
+    kb_writeable = efuse_summary_json[key_blk]['writeable']
+    kb_readable = efuse_summary_json[key_blk]['readable']
+    hmac_key_read = None
+
+    # If the efuse key block is writable (empty) then generate and write
+    # the new hmac key and check again
+    # If the efuse key block is not writable (already contains a key) then check if it is redable
+    if kb_writeable is True:
+        print('Provided key block (KEY BLOCK %1d) is writable\n Generating a new key and burning it in the efuse..\n' % (args.efuse_key_id))
+
+        new_hmac_key = os.urandom(32)
+        with open(hmac_key_file, 'wb') as key_file:
+            key_file.write(new_hmac_key)
+        # Burn efuse key
+        efuse_burn_key(args, idf_target)
+        # Read fresh summary of the efuse to read the key value from efuse.
+        # If the key read from efuse matches with the key generated
+        # on host then burn_key operation was successfull
+        new_efuse_summary_json = get_efuse_summary_json(args, idf_target)
+        hmac_key_read = new_efuse_summary_json[key_blk]['value']
+        hmac_key_read = bytes.fromhex(hmac_key_read)
+        if new_hmac_key == hmac_key_read:
+            print('Key was successfully written to the efuse (KEY BLOCK %1d)' % (args.efuse_key_id))
+        else:
+            print("ERROR: Failed to burn the hmac key to efuse (KEY BLOCK %1d),"
+                  "\nPlease execute the script again using a different key id" % (args.efuse_key_id))
+            return None
+    else:
+        # If the efuse key block is redable, then read the key from efuse block and use it for encrypting the RSA private key parameters.
+        # If the efuse key block is not redable or it has key purpose set to a different
+        # value than "HMAC_DOWN_DIGITAL_SIGNATURE" then we cannot use it for DS operation
+        if kb_readable is True:
+            if efuse_summary_json[key_purpose]['value'] == 'HMAC_DOWN_DIGITAL_SIGNATURE':
+                print("Provided efuse key block (KEY BLOCK %1d) already contains a key with key_purpose=HMAC_DOWN_DIGITAL_SIGNATURE,"
+                      "\nusing the same key for encrypting the private key data...\n" % (args.efuse_key_id))
+                hmac_key_read = efuse_summary_json[key_blk]['value']
+                hmac_key_read = bytes.fromhex(hmac_key_read)
+                if args.keep_ds_data is True:
+                    with open(hmac_key_file, 'wb') as key_file:
+                        key_file.write(hmac_key_read)
+            else:
+                print("ERROR: Provided efuse key block ((KEY BLOCK %1d)) contains a key with key purpose different"
+                      "than HMAC_DOWN_DIGITAL_SIGNATURE,\nplease execute the script again with a different value of the efuse key id." % (args.efuse_key_id))
+                return None
+        else:
+            print("ERROR: Provided efuse key block (KEY BLOCK %1d) is not readable and writeable,"
+                  "\nplease execute the script again with a different value of the efuse key id." % (args.efuse_key_id))
+            return None
+
+    # Return the hmac key read from the efuse
+    return hmac_key_read
+
+
+def cleanup(args):
+    if args.keep_ds_data is False:
+        if os.path.exists(hmac_key_file):
+            os.remove(hmac_key_file)
+        if os.path.exists(csv_filename):
+            os.remove(csv_filename)
+
+
 def main():
-    parser = argparse.ArgumentParser(description='''Genereate an nvs partition containing the DS private key parameters from the client private key,
-            Generate an HMAC key and burn it in the desired efuse key block (required for Digital Signature)''')
+    parser = argparse.ArgumentParser(description='''Generate an HMAC key and burn it in the desired efuse key block (required for Digital Signature),
+    Generates an NVS partition containing the encrypted private key parameters from the client private key.
+            ''')
 
     parser.add_argument(
         '--private-key',
         dest='privkey',
-        default='main/client.key',
+        default='client.key',
         metavar='relative/path/to/client-priv-key',
         help='relative path to client private key')
 
@@ -173,7 +318,7 @@ def main():
     parser.add_argument(
         '--summary',
         dest='summary',action='store_true',
-        help='Provide this option to print efuse summary the chip')
+        help='Provide this option to print efuse summary of the chip')
 
     parser.add_argument(
         '--efuse_key_id',
@@ -187,34 +332,51 @@ def main():
         dest='port',
         metavar='[port]',
         required=True,
-        help='UART com port to which ESP device is connected')
+        help='UART com port to which the ESP device is connected')
 
     parser.add_argument(
-        '--overwrite',
-        dest='overwrite', action='store_true',
-        help='Overwrite previously generated keys')
+        '--keep_ds_data_on_host','-keep_ds_data',
+        dest='keep_ds_data', action='store_true',
+        help='Keep encrypted private key data and key on host machine for testing purpose')
+
+    parser.add_argument(
+        '--production', '-prod',
+        dest='production', action='store_true',
+        help='Enable production configurations. e.g.keep efuse key block read protection enabled')
 
     args = parser.parse_args()
 
+    idf_target = get_idf_target()
+    if idf_target not in supported_targets:
+        if idf_target is not None:
+            print('ERROR: The script does not support the target %s' % idf_target)
+        sys.exit(-1)
+    idf_target = str(idf_target)
+
     if args.summary is not False:
-        efuse_summary(args)
+        efuse_summary(args, idf_target)
         sys.exit(0)
+
+    if (os.path.exists(args.privkey) is False):
+        print('ERROR: The provided private key file does not exist')
+        sys.exit(-1)
 
     if (os.path.exists(esp_ds_data_dir) is False):
         os.makedirs(esp_ds_data_dir)
-    else:
-        if (args.overwrite is False):
-            print("WARNING: previous ecrypted private key data exists.\nIf you want to overwrite,"
-                  " please execute your command with providing \"--overwrite\" option")
-            sys.exit(0)
-        else:
-            print("overwriting previous encrypted private key data, as you have provided \"--overwrite\" option")
 
-    c, iv, key_size = calculate_ds_parameters(args.privkey, args.priv_key_pass)
-    efuse_burn_key(args)
+    # Burn hmac_key on the efuse block (if it is empty) or read it
+    # from the efuse block (if the efuse block already contains a key).
+    hmac_key_read = configure_efuse_key_block(args, idf_target)
+    if hmac_key_read is None:
+        sys.exit(-1)
 
+    # Calculate the encrypted private key data along with all other parameters
+    c, iv, key_size = calculate_ds_parameters(args.privkey, args.priv_key_pass, hmac_key_read)
+
+    # Generate csv file for the DS data and generate an NVS partition.
     generate_csv_file(c, iv, args.efuse_key_id, key_size, csv_filename)
     generate_nvs_partition(csv_filename, bin_filename)
+    cleanup(args)
 
 
 if __name__ == "__main__":
