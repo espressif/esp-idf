@@ -15,6 +15,7 @@
 
 package com.espressif.provisioning.transport;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.espressif.provisioning.ESPConstants;
@@ -24,9 +25,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.CookieManager;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,9 +43,12 @@ import java.util.concurrent.Executors;
 public class SoftAPTransport implements Transport {
 
     private static final String TAG = "Espressif::" + SoftAPTransport.class.getSimpleName();
+    private static final String SET_COOKIE_HEADER = "Set-Cookie";
+    private static final String COOKIE_HEADER = "Cookie";
 
     private String baseUrl = ESPConstants.DEFAULT_WIFI_BASE_URL;
     private ExecutorService workerThreadPool;
+    private static CookieManager cookieManager;
 
     /**
      * Initialise HTTP transport with baseUrl which
@@ -48,6 +56,9 @@ public class SoftAPTransport implements Transport {
      */
     public SoftAPTransport() {
         this.workerThreadPool = Executors.newSingleThreadExecutor();
+        if (cookieManager == null) {
+            cookieManager = new CookieManager();
+        }
     }
 
     private byte[] sendPostRequest(String path, byte[] data, final ResponseListener listener) {
@@ -62,11 +73,32 @@ public class SoftAPTransport implements Transport {
             urlConnection.setRequestProperty("Content-type", "application/x-www-form-urlencoded");
             urlConnection.setConnectTimeout(5000);
 
+            if (cookieManager.getCookieStore().getCookies().size() > 0) {
+
+                Log.d(TAG, "Cookie - Name : " + cookieManager.getCookieStore().getCookies().get(0).getName());
+                Log.d(TAG, "Cookie - Value : " + cookieManager.getCookieStore().getCookies().get(0).getValue());
+                // While joining the Cookies, use ',' or ';' as needed. Most of the servers are using ';'
+                urlConnection.setRequestProperty(COOKIE_HEADER,
+                        TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
+            }
+
             OutputStream os = urlConnection.getOutputStream();
             os.write(data);
             os.close();
 
             int responseCode = urlConnection.getResponseCode();
+            Map<String, List<String>> headerFields = urlConnection.getHeaderFields();
+            List<String> cookiesHeader = headerFields.get(SET_COOKIE_HEADER);
+
+            if (cookiesHeader != null) {
+                for (String cookie : cookiesHeader) {
+                    HttpCookie httpCookie = HttpCookie.parse(cookie).get(0);
+                    // Default version of HttpCookie is 1. In version 1, quotes will be added.
+                    // So set version 0 so that quotes will not be added.
+                    httpCookie.setVersion(0);
+                    cookieManager.getCookieStore().add(null, httpCookie);
+                }
+            }
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 int n;
