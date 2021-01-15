@@ -935,13 +935,17 @@ int linenoiseProbe(void) {
 
     /* Try to read response */
     int timeout_ms = 200;
+    const int retry_ms = 10;
     size_t read_bytes = 0;
     while (timeout_ms > 0 && read_bytes < 4) { // response is ESC[0n or ESC[3n
-        usleep(10000);
+        usleep(retry_ms * 1000);
+        timeout_ms -= retry_ms;
         char c;
         int cb = read(stdin_fileno, &c, 1);
+        if (cb < 0) {
+            continue;
+        }
         read_bytes += cb;
-        timeout_ms--;
     }
     /* Restore old mode */
     flags &= ~O_NONBLOCK;
