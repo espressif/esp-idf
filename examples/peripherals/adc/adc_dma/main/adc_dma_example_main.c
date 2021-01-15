@@ -121,7 +121,7 @@ static void single_read(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     single_read(NULL);
     continuous_read(NULL);

@@ -293,10 +293,12 @@ esp_err_t adc_digi_start(void)
 
     //enable in suc eof intr
     adc_hal_digi_ena_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-    //start DMA
-    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+
     //start ADC
     adc_hal_digi_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+
+    //start DMA
+    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
 
     return ESP_OK;
 }

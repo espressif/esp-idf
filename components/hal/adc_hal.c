@@ -109,6 +109,8 @@ void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t
     adc_ll_digi_dma_enable();
     //enable sar adc timer
     adc_ll_digi_trigger_enable();
+    //reset the adc state
+    adc_ll_digi_reset();
 }
 
 void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
