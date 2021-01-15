@@ -28,6 +28,7 @@ typedef enum {
     SC_TYPE_ESPTOUCH = 0,       /**< protocol: ESPTouch */
     SC_TYPE_AIRKISS,            /**< protocol: AirKiss */
     SC_TYPE_ESPTOUCH_AIRKISS,   /**< protocol: ESPTouch and AirKiss */
+    SC_TYPE_ESPTOUCH_V2,        /**< protocol: ESPTouch v2*/
 } smartconfig_type_t;
 
 /** Smartconfig event declarations */
@@ -54,11 +55,15 @@ typedef struct {
 
 /** Configure structure for esp_smartconfig_start */
 typedef struct {
-    bool enable_log;            /**< Enable smartconfig logs. */
+    bool enable_log;                /**< Enable smartconfig logs. */
+    bool esp_touch_v2_enable_crypt; /**< Enable ESPTouch v2 crypt. */
+    char *esp_touch_v2_key;         /**< ESPTouch v2 crypt key, len should be 16. */
 } smartconfig_start_config_t;
 
 #define SMARTCONFIG_START_CONFIG_DEFAULT() { \
-    .enable_log = false \
+    .enable_log = false, \
+    .esp_touch_v2_enable_crypt = false,\
+    .esp_touch_v2_key = NULL \
 };
 
 /**
@@ -138,6 +143,18 @@ esp_err_t esp_smartconfig_set_type(smartconfig_type_t type);
   *     - others: fail
   */
 esp_err_t esp_smartconfig_fast_mode(bool enable);
+
+/**
+  * @brief     Get reserved data of ESPTouch v2.
+  *
+  * @param     rvd_data  reserved  data
+  * @param     len length  of  reserved data
+  *
+  * @return
+  *     - ESP_OK: succeed
+  *     - others: fail
+  */
+esp_err_t esp_smartconfig_get_rvd_data(uint8_t *rvd_data, uint8_t len);
 
 #ifdef __cplusplus
 }
