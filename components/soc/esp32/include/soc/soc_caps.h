@@ -116,6 +116,9 @@
 // GPIO >= 34 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT34 | BIT35 | BIT36 | BIT37 | BIT38 | BIT39))
 
+// Support to configure slept status
+#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
+
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32 have 2 I2C.
 #define SOC_I2C_NUM             (2)

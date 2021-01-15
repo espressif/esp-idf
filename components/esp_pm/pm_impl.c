@@ -46,9 +46,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/pm.h"
+#include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/pm.h"
+#include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/pm.h"
@@ -282,6 +284,10 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_light_sleep_en = config->light_sleep_enable;
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
+
+#if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
+    esp_sleep_gpio_status_switch_configure(config->light_sleep_enable);
+#endif
 
     return ESP_OK;
 }
@@ -697,6 +703,9 @@ void esp_pm_impl_init(void)
     esp_pm_trace_init();
 #endif
 
+#if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
+    esp_sleep_gpio_status_init();
+#endif
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos0",
             &s_rtos_lock_handle[0]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[0]));

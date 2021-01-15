@@ -53,11 +53,13 @@
 #include "esp32/rom/cache.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
+#include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/rom/cache.h"
@@ -273,6 +275,58 @@ static void IRAM_ATTR resume_uarts(void)
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers);
 
+#if SOC_GPIO_SUPPORT_SLP_SWITCH
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+static inline void gpio_sleep_mode_config_apply(void)
+{
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (GPIO_IS_VALID_GPIO(gpio_num)) {
+            gpio_sleep_pupd_config_apply(gpio_num);
+        }
+    }
+}
+
+static inline void gpio_sleep_mode_config_unapply(void)
+{
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (GPIO_IS_VALID_GPIO(gpio_num)) {
+            gpio_sleep_pupd_config_unapply(gpio_num);
+        }
+    }
+}
+#endif
+
+void esp_sleep_gpio_status_init(void)
+{
+    ESP_LOGI(TAG, "Init to disable all pins at light sleep");
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (GPIO_IS_VALID_GPIO(gpio_num)) {
+            gpio_sleep_set_direction(gpio_num, GPIO_MODE_DISABLE);
+            gpio_sleep_set_pull_mode(gpio_num, GPIO_FLOATING);
+        }
+    }
+}
+
+void esp_sleep_gpio_status_switch_configure(bool enable)
+{
+    if (enable) {
+        ESP_LOGI(TAG, "Light sleep enabled, start GPIO status switching");
+    } else {
+        ESP_LOGI(TAG, "Light sleep disabled, stop GPIO status switching");
+    }
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (GPIO_IS_VALID_GPIO(gpio_num)) {
+            if (enable) {
+                gpio_sleep_sel_en(gpio_num);
+            } else {
+                gpio_sleep_sel_dis(gpio_num);
+            }
+        }
+    }
+}
+
+#endif
+
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
@@ -313,6 +367,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
         rtc_hal_ulp_wakeup_enable();
     }
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_apply();
+#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -391,6 +448,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     }
 
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_unapply();
+#endif
     // re-enable UART output
     resume_uarts();
 

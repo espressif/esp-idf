@@ -20,6 +20,8 @@
 #include "hal/touch_sensor_types.h"
 #include "hal/gpio_types.h"
 
+#include "soc/soc_caps.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -382,6 +384,19 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
+#if SOC_GPIO_SUPPORT_SLP_SWITCH
+/**
+ *  @brief Disable all GPIO pins at slept status.
+ *
+ */
+void esp_sleep_gpio_status_init(void);
+
+/**
+ *  @brief Configure GPIO pins status switching between slept status and waked status.
+ *  @param enable decide whether to switch status or not
+ */
+void esp_sleep_gpio_status_switch_configure(bool enable);
+#endif
 #ifdef __cplusplus
 }
 #endif

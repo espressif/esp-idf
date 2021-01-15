@@ -51,3 +51,22 @@ entries:
         esp_time_impl:esp_rtc_get_time_us (noflash)
         esp_time_impl:esp_clk_slowclk_cal_set (noflash)
         esp_time_impl:esp_set_time_from_rtc (noflash)
+
+[mapping:driver_pm]
+archive: libdriver.a
+entries:
+    if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
+        gpio:gpio_sleep_pupd_config_unapply (noflash)
+        if PM_SLP_IRAM_OPT = y:
+            gpio:gpio_sleep_pupd_config_apply (noflash)
+
+[mapping:hal_pm]
+archive: libhal.a
+entries:
+    if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
+        if PM_SLP_IRAM_OPT = y:
+            gpio_hal_workaround                                     (noflash)
+        else:
+            gpio_hal_workaround:gpio_hal_sleep_pupd_config_unapply  (noflash)
+            gpio_hal_workaround:gpio_hal_sleep_mode_setup_wrapper   (noflash)
+            gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
