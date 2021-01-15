@@ -28,14 +28,14 @@
 extern "C" {
 #endif
 
-static inline int IRAM_ATTR cpu_ll_get_core_id(void)
+static inline uint32_t IRAM_ATTR cpu_ll_get_core_id(void)
 {
     uint32_t id;
     asm volatile (
         "rsr.prid %0\n"
         "extui %0,%0,13,1"
         :"=r"(id));
-    return (int) id;
+    return id;
 }
 
 static inline uint32_t cpu_ll_get_cycle_count(void)
