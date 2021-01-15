@@ -371,7 +371,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
             .channel = 0,
             .show_hidden = false
         };
-        ESP_ERROR_CHECK(esp_wifi_scan_start(&scanConf, true));
+        esp_wifi_scan_start(&scanConf, true);
         break;
     }
     case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
