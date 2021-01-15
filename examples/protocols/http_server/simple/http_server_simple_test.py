@@ -23,9 +23,40 @@ import os
 import string
 import random
 
+import threading
+import time
+import socket
+
 from tiny_test_fw import Utility
 import ttfw_idf
 from idf_http_server_test import client
+
+
+class http_client_thread(threading.Thread):
+    def __init__(self, ip, port, delay):
+        threading.Thread.__init__(self)
+        self.ip = ip
+        self.port = port
+        self.delay = delay
+        self.exc = None
+
+    # Thread function used to open a socket and wait for specific amount of time before returning
+    def open_connection(self, ip, port, delay):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(delay)
+        s.connect((ip, port))
+        time.sleep(delay)
+
+    def run(self):
+        try:
+            self.open_connection(self.ip, self.port, self.delay)
+        except socket.timeout as e:
+            self.exc = e
+
+    def join(self, timeout=None):
+        threading.Thread.join(self)
+        if self.exc:
+            raise self.exc
 
 
 # When running on local machine execute the following before running this script
@@ -100,5 +131,44 @@ def test_examples_protocol_http_server_simple(env, extra_data):
     dut1.expect("Found URL query => " + query, timeout=30)
 
 
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+def test_examples_protocol_http_server_lru_purge_enable(env, extra_data):
+    # Acquire DUT
+    dut1 = env.get_dut("http_server", "examples/protocols/http_server/simple", dut_class=ttfw_idf.ESP32DUT)
+
+    # Get binary file
+    binary_file = os.path.join(dut1.app.binary_path, "simple.bin")
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance("http_server_bin_size", "{}KB".format(bin_size // 1024))
+
+    # Upload binary and start testing
+    Utility.console_log("Starting http_server simple test app")
+    dut1.start_app()
+
+    # Parse IP address of STA
+    Utility.console_log("Waiting to connect with AP")
+    got_ip = dut1.expect(re.compile(r"(?:[\s\S]*)IPv4 address: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
+    got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: '(\d+)'"), timeout=30)[0]
+
+    Utility.console_log("Got IP   : " + got_ip)
+    Utility.console_log("Got Port : " + got_port)
+
+    # Expected Logs
+    dut1.expect("Registering URI handlers", timeout=30)
+    threads = []
+    # Open 20 sockets, one from each thread
+    for _ in range(20):
+        try:
+            thread = http_client_thread(got_ip, (int(got_port)), 20)
+            thread.start()
+            threads.append(thread)
+        except OSError as err:
+            Utility.console_log("Error: unable to start thread, " + err)
+
+    for t in threads:
+        t.join()
+
+
 if __name__ == '__main__':
     test_examples_protocol_http_server_simple()
+    test_examples_protocol_http_server_lru_purge_enable()
