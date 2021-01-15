@@ -2156,6 +2156,11 @@ typedef union {
     } light_ctl_temp_delta_uv;  /*!< The Light CTL Temperature & Delta UV states */
     struct {
         uint16_t lightness;     /*!< The value of the Light HSL Lightness state */
+        uint16_t hue;           /*!< The value of the Light HSL Hue state */
+        uint16_t saturation;    /*!< The value of the Light HSL Saturation state */
+    } light_hsl;                /*!< The Light HSL composite state */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light HSL Lightness state */
     } light_hsl_lightness;      /*!< The Light HSL Lightness state */
     struct {
         uint16_t hue;           /*!< The value of the Light HSL Hue state */
@@ -2181,6 +2186,7 @@ typedef enum {
     ESP_BLE_MESH_LIGHT_LIGHTNESS_LINEAR_STATE,
     ESP_BLE_MESH_LIGHT_CTL_LIGHTNESS_STATE,
     ESP_BLE_MESH_LIGHT_CTL_TEMP_DELTA_UV_STATE,
+    ESP_BLE_MESH_LIGHT_HSL_STATE,
     ESP_BLE_MESH_LIGHT_HSL_LIGHTNESS_STATE,
     ESP_BLE_MESH_LIGHT_HSL_HUE_STATE,
     ESP_BLE_MESH_LIGHT_HSL_SATURATION_STATE,

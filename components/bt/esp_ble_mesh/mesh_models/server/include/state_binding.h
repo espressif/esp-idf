@@ -24,6 +24,7 @@ typedef enum {
     LIGHT_LIGHTNESS_LINEAR_STATE,
     LIGHT_CTL_LIGHTNESS_STATE,
     LIGHT_CTL_TEMP_DELTA_UV_STATE,
+    LIGHT_HSL_STATE,
     LIGHT_HSL_LIGHTNESS_STATE,
     LIGHT_HSL_HUE_STATE,
     LIGHT_HSL_SATURATION_STATE,
@@ -58,6 +59,11 @@ typedef union {
         uint16_t temperature;
         int16_t  delta_uv;
     } light_ctl_temp_delta_uv;
+    struct {
+        uint16_t lightness;
+        uint16_t hue;
+        uint16_t saturation;
+    } light_hsl;
     struct {
         uint16_t lightness;
     } light_hsl_lightness;
