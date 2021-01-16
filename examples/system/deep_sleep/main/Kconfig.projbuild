@@ -3,6 +3,7 @@ menu "Example Configuration"
     config EXAMPLE_TOUCH_WAKEUP
         bool "Enable touch wake up"
         default y
+        depends on !IDF_TARGET_ESP32C3
         help
             This option enables wake up from deep sleep using touch pads
             TOUCH8 and TOUCH9, which correspond to GPIO33 and GPIO32.
@@ -10,6 +11,7 @@ menu "Example Configuration"
     config EXAMPLE_ULP_TEMPERATURE_WAKEUP
         bool "Enable temperature monitoring by ULP"
         default y
+        depends on IDF_TARGET_ESP32
         help
             This option enables wake up from deep sleep using ULP.
             ULP program monitors the on-chip temperature sensor and
@@ -20,6 +22,7 @@ menu "Example Configuration"
     config EXAMPLE_EXT1_WAKEUP
         bool "Enable wakeup from GPIO"
         default y
+        depends on !IDF_TARGET_ESP32C3
         help
             This option enables wake up from deep sleep from GPIO2 and GPIO4. They should be connected to LOW to avoid
             floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating

@@ -12,16 +12,24 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
-#include "esp32/ulp.h"
-#include "driver/touch_pad.h"
 #include "driver/adc.h"
 #include "driver/rtc_io.h"
-#include "soc/sens_periph.h"
 #include "soc/rtc.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/ulp.h"
+#endif
+
+#if SOC_TOUCH_SENSOR_NUM > 0
+#include "soc/sens_periph.h"
+#include "driver/touch_pad.h"
+#endif
 
 static RTC_DATA_ATTR struct timeval sleep_enter_time;
 
