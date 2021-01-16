@@ -227,7 +227,7 @@ static void IRAM_ATTR flush_uarts(void)
     for (int i = 0; i < SOC_UART_NUM; ++i) {
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             esp_rom_uart_tx_wait_idle(i);
         }
