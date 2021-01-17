@@ -222,6 +222,15 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 		/* 4 PTKSA replay counters when using WMM */
 		capab |= (RSN_NUM_REPLAY_COUNTERS_16 << 2);
 	}
+
+	if (conf->spp_sup.capable) {
+		capab |= WPA_CAPABILITY_SPP_CAPABLE;
+	}
+
+	if (conf->spp_sup.require) {
+		capab |= WPA_CAPABILITY_SPP_REQUIRED;
+	}
+
 #ifdef CONFIG_IEEE80211W
 	if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
 		capab |= WPA_CAPABILITY_MFPC;
@@ -485,6 +494,18 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			   version == WPA_PROTO_RSN ? "RSN" : "WPA",
 			   data.pairwise_cipher, MAC2STR(sm->addr));
 		return WPA_INVALID_PAIRWISE;
+	}
+
+	if (data.capabilities & WPA_CAPABILITY_SPP_CAPABLE) {
+		sm->spp_sup.capable = SPP_AMSDU_CAP_ENABLE;
+	} else {
+		sm->spp_sup.capable = SPP_AMSDU_CAP_DISABLE;
+	}
+
+	if (data.capabilities & WPA_CAPABILITY_SPP_REQUIRED) {
+		sm->spp_sup.require = SPP_AMSDU_REQ_ENABLE;
+	} else {
+		sm->spp_sup.require = SPP_AMSDU_REQ_DISABLE;
 	}
 
 #ifdef CONFIG_IEEE80211W

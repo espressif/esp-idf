@@ -126,6 +126,7 @@ struct wpa_funcs {
     bool (*wpa_ap_remove)(void *sm);
     uint8_t *(*wpa_ap_get_wpa_ie)(uint8_t *len);
     bool (*wpa_ap_rx_eapol)(void *hapd_data, void *sm, u8 *data, size_t data_len);
+    void (*wpa_ap_get_peer_spp_msg)(void *sm, bool *spp_cap, bool *spp_req);
     char *(*wpa_config_parse_string)(const char *value, size_t *len);
     int (*wpa_parse_wpa_ie)(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
     int (*wpa_config_bss)(u8 *bssid);
@@ -207,6 +208,7 @@ struct wifi_appie *esp_wifi_get_appie_internal(uint8_t type);
 void *esp_wifi_get_hostap_private_internal(void); //1
 uint8_t *esp_wifi_sta_get_prof_password_internal(void);
 void esp_wifi_deauthenticate_internal(u8 reason_code);
+uint16_t esp_wifi_get_spp_attrubute_internal(uint8_t ifx);
 bool esp_wifi_sta_is_running_internal(void);
 bool esp_wifi_auth_done_internal(void);
 int esp_wifi_set_ap_key_internal(int alg, const u8 *addr, int idx, u8 *key, size_t key_len);

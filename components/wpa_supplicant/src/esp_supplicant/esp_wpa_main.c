@@ -149,6 +149,18 @@ bool  wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
     return true;
 }
 
+void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
+{
+    struct wpa_state_machine *sm = (struct wpa_state_machine *)sm_data;
+
+    if (!sm) {
+        return;
+    }
+
+    *spp_cap = sm->spp_sup.capable;
+    *spp_req = sm->spp_sup.require;
+}
+
 bool  wpa_deattach(void)
 {
     esp_wifi_sta_wpa2_ent_disable();
@@ -230,6 +242,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_ap_remove     = wpa_ap_remove;
     wpa_cb->wpa_ap_get_wpa_ie = wpa_ap_get_wpa_ie;
     wpa_cb->wpa_ap_rx_eapol   = wpa_ap_rx_eapol;
+    wpa_cb->wpa_ap_get_peer_spp_msg  = wpa_ap_get_peer_spp_msg;
     wpa_cb->wpa_ap_init       = hostap_init;
     wpa_cb->wpa_ap_deinit     = hostap_deinit;
 
