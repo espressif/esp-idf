@@ -14,7 +14,15 @@
 
 #include "esp_ds.h"
 #include "rsa_sign_alt.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/digital_signature.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/digital_signature.h"
+#else
+#error   "Selected target does not support esp_rsa_sign_alt (for DS)"
+#endif
+
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"

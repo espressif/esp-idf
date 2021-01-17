@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
-import os
-import sys
 import hashlib
 import hmac
+import json
+import os
 import struct
 import subprocess
-import json
+import sys
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -45,7 +46,8 @@ csv_filename = esp_ds_data_dir + '/pre_prov.csv'
 bin_filename = esp_ds_data_dir + '/pre_prov.bin'
 expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
 # Targets supported by the script
-supported_targets = {'esp32s2'}
+supported_targets = {'esp32s2', 'esp32c3'}
+supported_key_size = {'esp32s2':[1024, 2048, 3072, 4096], 'esp32c3':[1024, 2048, 3072]}
 
 
 # @return
@@ -87,10 +89,11 @@ def number_as_bytes(number, pad_bits=None):
 #       privkey         : path to the RSA private key
 #       priv_key_pass   : path to the RSA privaete key password
 #       hmac_key        : HMAC key value ( to calculate DS params)
+#       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3)
 # @info
 #       The function calculates the encrypted private key parameters.
 #       Consult the DS documentation (available for the ESP32-S2) in the esp-idf programming guide for more details about the variables and calculations.
-def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
+def calculate_ds_parameters(privkey, priv_key_pass, hmac_key, idf_target):
     private_key = load_privatekey(privkey, priv_key_pass)
     if not isinstance(private_key, rsa.RSAPrivateKey):
         print("ERROR: Only RSA private keys are supported")
@@ -104,9 +107,9 @@ def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
     Y = priv_numbers.d
     M = pub_numbers.n
     key_size = private_key.key_size
-    supported_key_size = [1024, 2048, 3072, 4096]
-    if key_size not in supported_key_size:
-        print("Key size not supported, supported sizes are" + str(supported_key_size))
+    if key_size not in supported_key_size[idf_target]:
+        print("ERROR: Private key size {0} not supported for the target {1},\nthe supported key sizes are {2}"
+              .format(key_size, idf_target, str(supported_key_size[idf_target])))
         sys.exit(-1)
 
     iv = os.urandom(16)
@@ -117,25 +120,34 @@ def calculate_ds_parameters(privkey, priv_key_pass, hmac_key):
     mprime &= 0xFFFFFFFF
     length = key_size // 32 - 1
 
+    # get max supported key size for the respective target
+    max_len = max(supported_key_size[idf_target])
     aes_key = hmac.HMAC(hmac_key, b"\xFF" * 32, hashlib.sha256).digest()
 
-    md_in = number_as_bytes(Y, 4096) + \
-        number_as_bytes(M, 4096) + \
-        number_as_bytes(rinv, 4096) + \
+    md_in = number_as_bytes(Y, max_len) + \
+        number_as_bytes(M, max_len) + \
+        number_as_bytes(rinv, max_len) + \
         struct.pack("<II", mprime, length) + \
         iv
-    assert len(md_in) == 12480 / 8
-    md = hashlib.sha256(md_in).digest()
 
+    # expected_len = max_len_Y + max_len_M + max_len_rinv + (mprime + length packed (8 bytes))+ iv (16 bytes)
+    expected_len = (max_len / 8) * 3 + 8 + 16
+    assert len(md_in) == expected_len
+    md = hashlib.sha256(md_in).digest()
+    # In case of ESP32-S2
     # Y4096 || M4096 || Rb4096 || M_prime32 || LENGTH32 || MD256 || 0x08*8
-    p = number_as_bytes(Y, 4096) + \
-        number_as_bytes(M, 4096) + \
-        number_as_bytes(rinv, 4096) + \
+    # In case of ESP32-C3
+    # Y3072 || M3072 || Rb3072 || M_prime32 || LENGTH32 || MD256 || 0x08*8
+    p = number_as_bytes(Y, max_len) + \
+        number_as_bytes(M, max_len) + \
+        number_as_bytes(rinv, max_len) + \
         md + \
         struct.pack("<II", mprime, length) + \
         b'\x08' * 8
 
-    assert len(p) == 12672 / 8
+    # expected_len = max_len_Y + max_len_M + max_len_rinv + md (32 bytes) + (mprime + length packed (8bytes)) + padding (8 bytes)
+    expected_len = (max_len / 8) * 3 + 32 + 8 + 8
+    assert len(p) == expected_len
 
     cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=default_backend())
     encryptor = cipher.encryptor()
@@ -171,7 +183,7 @@ def efuse_burn_key(args, idf_target):
 def generate_csv_file(c, iv, hmac_key_id, key_size, csv_file):
 
     with open(csv_file, 'wt', encoding='utf8') as f:
-        f.write("# This is a generated csv file containing required parameters for the Digital Signature operaiton\n")
+        f.write("# This is a generated csv file containing required parameters for the Digital Signature operation\n")
         f.write("key,type,encoding,value\nesp_ds_ns,namespace,,\n")
         f.write("esp_ds_c,data,hex2bin,%s\n" % (c.hex()))
         f.write("esp_ds_iv,data,hex2bin,%s\n" % (iv.hex()))
@@ -371,7 +383,7 @@ def main():
         sys.exit(-1)
 
     # Calculate the encrypted private key data along with all other parameters
-    c, iv, key_size = calculate_ds_parameters(args.privkey, args.priv_key_pass, hmac_key_read)
+    c, iv, key_size = calculate_ds_parameters(args.privkey, args.priv_key_pass, hmac_key_read, idf_target)
 
     # Generate csv file for the DS data and generate an NVS partition.
     generate_csv_file(c, iv, args.efuse_key_id, key_size, csv_filename)

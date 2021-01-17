@@ -122,8 +122,9 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${AES_DMA_SRCS}"
 )
 
+# CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp32s2/esp_rsa_sign_alt.c")
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
