@@ -501,7 +501,7 @@ UT_033:
 
 UT_034:
   extends: .unit_test_32_template
-  parallel: 2
+  parallel: 3
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
@@ -529,7 +529,7 @@ UT_036:
 
 UT_038:
   extends: .unit_test_s2_template
-  parallel: 2
+  parallel: 3
   tags:
     - ESP32S2_IDF
     - UT_T1_ESP_FLASH
@@ -569,7 +569,7 @@ UT_046:
 
 UT_C3:
   extends: .unit_test_c3_template
-  parallel: 26
+  parallel: 27
   tags:
     - ESP32C3_IDF
     - UT_T1_1

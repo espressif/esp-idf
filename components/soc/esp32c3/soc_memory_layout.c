@@ -72,7 +72,7 @@ const soc_memory_region_t soc_memory_regions[] = {
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
 
-extern int _data_start, _heap_start, _iram_start, _iram_end;
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
 
 /**
  * Reserved memory regions.
@@ -87,5 +87,12 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 // The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
 #define I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
+
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+/* We use _rtc_force_slow_end not _rtc_noinit_end here, as rtc "fast" memory ends up in RTC SLOW
+   region on C3, no differentiation. And _rtc_force_slow_end is the end of all the static RTC sections.
+*/
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
+#endif
 
 #endif // BOOTLOADER_BUILD

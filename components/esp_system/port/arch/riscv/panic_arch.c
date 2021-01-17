@@ -213,7 +213,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         const int core = esp_cache_err_get_cpuid();
 
         info->core = core;
-        info->exception = PANIC_EXCEPTION_TWDT;
+        info->exception = PANIC_EXCEPTION_IWDT;
 
 #if SOC_CPU_NUM > 1
         _Static_assert(PANIC_RSN_INTWDT_CPU0 + 1 == PANIC_RSN_INTWDT_CPU1,
@@ -264,7 +264,7 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
 void panic_print_backtrace(const void *frame, int core)
 {
     // Basic backtrace
-    panic_print_str("\r\nStack memory:\n");
+    panic_print_str("\r\nStack memory:\r\n");
     uint32_t sp = (uint32_t)((RvExcFrame *)frame)->sp;
     const int per_line = 8;
     for (int x = 0; x < 1024; x += per_line * sizeof(uint32_t)) {
@@ -274,7 +274,7 @@ void panic_print_backtrace(const void *frame, int core)
         for (int y = 0; y < per_line; y++) {
             panic_print_str("0x");
             panic_print_hex(spp[y]);
-            panic_print_char(y == per_line - 1 ? '\n' : ' ');
+            panic_print_str(y == per_line - 1 ? "\r\n" : " ");
         }
     }
 }

@@ -37,14 +37,17 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
     TEST_ASSERT(data_in_segment(&s_rtc_force_fast, &_rtc_force_fast_start, &_rtc_force_fast_end));
     TEST_ASSERT(data_in_segment(&s_rtc_force_slow, &_rtc_force_slow_start, &_rtc_force_slow_end));
 
-#ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
-    TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
-    TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
-    TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
-#else
+#if CONFIG_ESP32_RTCDATA_IN_FAST_MEM   || \
+    CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM || \
+    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM || \
+    CONFIG_ESP32C3_RTCDATA_IN_FAST_MEM
     TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
+#else
+    TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
+    TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
+    TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
 #endif
 
     TEST_ASSERT(data_in_segment(&s_rtc_force_fast, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
