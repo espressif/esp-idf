@@ -523,7 +523,7 @@ static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* i
 }
 #endif
 
-void esp_phy_load_cal_and_init(void)
+__attribute__((weak)) void esp_phy_load_cal_and_init(void)
 {
     char * phy_version = get_phy_version_str();
     ESP_LOGI(TAG, "phy_version %s", phy_version);
