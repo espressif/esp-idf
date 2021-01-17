@@ -4,6 +4,10 @@
  *
  * Note: These are all weak symbols that could be overwritten from the ESP-IDF side.
  */
+PROVIDE ( _bss_end_btdm = 0x3fcefba8 );
+PROVIDE ( _bss_start_btdm = 0x3fcef454 );
+PROVIDE ( r_ke_mem_is_in_heap = 0x40009688 );
+
 PROVIDE ( BasePoint_x_256 = 0x3ff08238 );
 PROVIDE ( BasePoint_y_256 = 0x3ff08218 );
 PROVIDE ( Cache_Address_Through_DCache = 0x40051ebc );

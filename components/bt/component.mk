@@ -9,16 +9,20 @@ COMPONENT_ADD_INCLUDEDIRS := include
 
 LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib \
+COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib/esp32 \
                            $(addprefix -l,$(LIBS))
 
 # re-link program if BT binary libs change
-COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/controller/lib/lib%.a,$(LIBS))
+COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/controller/lib/esp32/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += controller/lib
 
+
 # TODO: annotate fallthroughs in Bluedroid code with comments
 CFLAGS += -Wno-implicit-fallthrough
+
+COMPONENT_ADD_INCLUDEDIRS +=    include/esp32/include
+COMPONENT_SRCDIRS +=  controller/esp32
 
 ifdef CONFIG_BT_BLUEDROID_ENABLED
 
@@ -64,7 +68,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/stack/rfcomm/include          \
                                 host/bluedroid/stack/include                 \
                                 host/bluedroid/utils/include                 \
-                                host/bluedroid/common/include
+                                host/bluedroid/common/include                \
 
 COMPONENT_ADD_INCLUDEDIRS +=    host/bluedroid/api/include/api       \
 								common/osi/include
@@ -128,7 +132,7 @@ COMPONENT_PRIV_INCLUDEDIRS += common/btc/include              	   \
 							  common/include
 
 COMPONENT_SRCDIRS += common/osi                         		   \
-					 common/btc/core
+					 common/btc/core                               \
 
 ifdef CONFIG_BLE_MESH
 

@@ -1,0 +1,239 @@
+config BT_CTRL_MODE_EFF
+    int
+    default 1
+
+config BT_CTRL_BLE_MAX_ACT
+    int "BLE Max Instances"
+    default 10
+    range 1 10
+    help
+        BLE maximum instances of bluetooth controller.
+
+config BT_CTRL_BLE_MAX_ACT_EFF
+    int
+    default BT_CTRL_BLE_MAX_ACT
+    default 0
+
+config BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB
+    int "BLE static ACL TX buffer numbers"
+    range 0 12
+    default 0
+    help
+        BLE ACL buffer have two methods to be allocated. One is persistent allocating
+        (alloate when controller initialise, never free until controller de-initialise)
+        another is dynamically allocating (allocate before TX and free after TX).
+
+choice BT_CTRL_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which bluetooth controller run"
+    depends on !FREERTOS_UNICORE
+    help
+        Specify the cpu core to run bluetooth controller.
+        Can not specify no-affinity.
+
+    config BT_CTRL_PINNED_TO_CORE_0
+        bool "Core 0 (PRO CPU)"
+    config BT_CTRL_PINNED_TO_CORE_1
+        bool "Core 1 (APP CPU)"
+        depends on !FREERTOS_UNICORE
+endchoice
+
+config BT_CTRL_PINNED_TO_CORE
+    int
+    default 0 if BT_CTRL_PINNED_TO_CORE_0
+    default 1 if BT_CTRL_PINNED_TO_CORE_1
+    default 0
+
+choice BT_CTRL_HCI_MODE_CHOICE
+    prompt "HCI mode"
+    help
+        Specify HCI mode as VHCI or UART(H4)
+
+    config BT_CTRL_HCI_MODE_VHCI
+        bool "VHCI"
+        help
+            Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32S3, too.
+
+    config BT_CTRL_HCI_MODE_UART_H4
+        bool "UART(H4)"
+        help
+            If use external bluetooth host which run on other hardware and use UART as the HCI interface,
+            choose this option.
+endchoice
+
+config BT_CTRL_HCI_TL
+    int
+    default 0 if BT_CTRL_HCI_MODE_UART_H4
+    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1
+
+config BT_CTRL_ADV_DUP_FILT_MAX
+    int "The maxinum number of 5.0 extend duplicate scan filter"
+    range 1 500
+    default 30
+    help
+        The maxinum number of suplicate scan filter
+
+config BT_CTRL_HW_CCA
+    bool "HW CCA check enable"
+    default y
+    help
+        It enables HW CCA feature in controller
+
+config BT_CTRL_HW_CCA_EFF
+    int
+    default 1 if BT_CTRL_HW_CCA
+    default 0
+
+config BT_CTRL_COEX_PARAMETERS_ENABLE
+    bool "Allow Bluetooth preemption in the use of RF to support coexistence with Wi-Fi"
+    default n
+    help
+        Use pre-determined parameter set to control the use of RF by Bluetooth,s
+        so that Bluetooth can compete for RF with Wi-fi to support coexistence.
+
+choice BT_CTRL_CE_LENGTH_TYPE
+    prompt "Connection event length determination method"
+    help
+        Specify connection event length determination
+
+    config BT_CTRL_CE_LENGTH_TYPE_ORIG
+        bool "ORIGINAL"
+    config BT_CTRL_CE_LENGTH_TYPE_CE
+        bool "Use CE parameter for HCI command"
+    config BT_CTRL_CE_LENGTH_TYPE_SD
+        bool "Use Espressif self-defined method"
+endchoice
+
+config BT_CTRL_CE_LENGTH_TYPE_EFF
+    int
+    default 0 if BT_CTRL_CE_LENGTH_TYPE_ORIG
+    default 1 if BT_CTRL_CE_LENGTH_TYPE_CE
+    default 2 if BT_CTRL_CE_LENGTH_TYPE_SD
+
+choice BT_CTRL_TX_ANTENNA_INDEX
+    prompt "default Tx anntena used"
+    help
+        Specify default Tx antenna used for bluetooth
+
+    config BT_CTRL_TX_ANTENNA_INDEX_0
+        bool "Antenna 0"
+    config BT_CTRL_TX_ANTENNA_INDEX_1
+        bool "Antenna 1"
+endchoice
+
+config BT_CTRL_TX_ANTENNA_INDEX_EFF
+    int
+    default 0 if BT_CTRL_TX_ANTENNA_INDEX_0
+    default 1 if BT_CTRL_TX_ANTENNA_INDEX_1
+
+choice BT_CTRL_RX_ANTENNA_INDEX
+    prompt "default Rx anntena used"
+    help
+        Specify default Rx antenna used for bluetooth
+
+    config BT_CTRL_RX_ANTENNA_INDEX_0
+        bool "Antenna 0"
+    config BT_CTRL_RX_ANTENNA_INDEX_1
+        bool "Antenna 1"
+endchoice
+
+config BT_CTRL_RX_ANTENNA_INDEX_EFF
+    int
+    default 0 if BT_CTRL_RX_ANTENNA_INDEX_0
+    default 1 if BT_CTRL_RX_ANTENNA_INDEX_1
+
+choice BT_CTRL_DFT_TX_POWER_LEVEL
+    prompt "BLE default Tx power level"
+    default BT_CTRL_DFT_TX_POWER_LEVEL_P9
+    help
+        Specify default Tx power level
+
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N12
+        bool "-12dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N9
+        bool "-9dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N6
+        bool "-6dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N3
+        bool "-3dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N0
+        bool "0dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P3
+        bool "+3dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P6
+        bool "+6dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P9
+        bool "+9dBm"
+endchoice
+
+config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
+    int
+    default 0 if BT_CTRL_DFT_TX_POWER_LEVEL_N12
+    default 1 if BT_CTRL_DFT_TX_POWER_LEVEL_N9
+    default 2 if BT_CTRL_DFT_TX_POWER_LEVEL_N6
+    default 3 if BT_CTRL_DFT_TX_POWER_LEVEL_N3
+    default 4 if BT_CTRL_DFT_TX_POWER_LEVEL_N0
+    default 5 if BT_CTRL_DFT_TX_POWER_LEVEL_P3
+    default 6 if BT_CTRL_DFT_TX_POWER_LEVEL_P6
+    default 7 if BT_CTRL_DFT_TX_POWER_LEVEL_P9
+    default 0
+
+config BT_CTRL_COEX_USE_HOOKS
+    bool "Communicate Bluetooth working status with Wi-Fi to support coexistence"
+    default n
+    help
+        Send notifications of Bluetooth working status to support coexistence with Wi-Fi.
+
+menu "MODEM SLEEP Options"
+    visible if BT_ENABLED
+
+    config BT_CTRL_MODEM_SLEEP
+        bool "Bluetooth modem sleep"
+        depends on !BT_CTRL_HCI_MODE_UART_H4
+        default n
+        help
+            Enable/disable bluetooth controller low power mode.
+            Modem sleep is not supported to be used with UART HCI.
+
+    config BT_CTRL_MODEM_SLEEP_MODE_1
+        bool "Bluetooth Modem sleep Mode 1"
+        depends on BT_CTRL_MODEM_SLEEP
+        default y
+        help
+            Mode 1 is the currently supported sleep mode. In this mode,
+            bluetooth controller sleeps between and BLE events. A low
+            power clock is used to maintain bluetooth reference clock.
+
+    choice BT_CTRL_LOW_POWER_CLOCK
+        prompt "Bluetooth low power clock"
+        depends on BT_CTRL_MODEM_SLEEP_MODE_1
+        help
+            Select the low power clock source for bluetooth controller
+
+        config BT_CTRL_LPCLK_SEL_MAIN_XTAL
+            bool "Main crystal"
+            help
+                Main crystal can be used as low power clock for bluetooth modem sleep. If this option is
+                selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but
+                cannot work when light sleep is enabled. Main crystal has a relatively better performance than
+                other bluetooth low power clock sources.
+    endchoice
+
+endmenu
+
+config BT_CTRL_SLEEP_MODE_EFF
+    int
+    default 1 if BT_CTRL_MODEM_SLEEP_MODE_1
+    default 0
+
+config BT_CTRL_SLEEP_CLOCK_EFF
+    int
+    default 1 if BT_CTRL_LPCLK_SEL_MAIN_XTAL
+
+    default 0
+
+config BT_CTRL_HCI_TL_EFF
+    int
+    default 0 if BT_CTRL_HCI_MODE_UART_H4
+    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1

@@ -4573,7 +4573,9 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     /* If page was delayed for disc complete, can do it now */
     btm_cb.discing = FALSE;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
+#endif
 
     if (!p_dev_rec) {
         return;

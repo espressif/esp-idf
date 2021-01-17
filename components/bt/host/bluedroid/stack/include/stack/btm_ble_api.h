@@ -105,7 +105,7 @@ typedef UINT8   tBTM_BLE_SFP;
 #endif
 
 /* adv parameter boundary values */
-#define BTM_BLE_ADV_INT_MIN            0x0010
+#define BTM_BLE_ADV_INT_MIN            0x0020
 #define BTM_BLE_ADV_INT_MAX            0x4000
 
 /* Full scan boundary values */
@@ -373,7 +373,11 @@ typedef UINT8   tBTM_BLE_AD_TYPE;
 /*  Preferred maximum number of microseconds that the local Controller
     should use to transmit a single Link Layer Data Channel PDU. */
 #define BTM_BLE_DATA_TX_TIME_MIN     0x0148
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define BTM_BLE_DATA_TX_TIME_MAX     0x04290 // define by spec v5.0
+#else
 #define BTM_BLE_DATA_TX_TIME_MAX     0x0848
+#endif
 
 /* adv tx power level */
 #define BTM_BLE_ADV_TX_POWER_MIN        0           /* minimum tx power */
@@ -692,7 +696,127 @@ typedef void (tBTM_BLE_PF_STATUS_CBACK) (UINT8 action, tBTM_STATUS status,
 typedef void (tBTM_BLE_PF_PARAM_CBACK) (tBTM_BLE_PF_ACTION action_type,
                                         tBTM_BLE_PF_AVBL_SPACE avbl_space,
                                         tBTM_BLE_REF_VALUE ref_value, tBTM_STATUS status);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define MAX_BLE_ADV_INSTANCE 10
+typedef struct {
+    UINT8                       inst_id;
+    BOOLEAN                     in_use;
+    UINT8                       adv_evt;
+    BOOLEAN                     configured;
+    BOOLEAN                     legacy_pdu;
 
+
+    BOOLEAN                     directed;
+    BOOLEAN                     scannable;
+    BOOLEAN                     connetable;
+} tBTM_BLE_EXTENDED_INST;
+
+typedef struct {
+    tBTM_BLE_EXTENDED_INST inst[MAX_BLE_ADV_INSTANCE]; /* dynamic array to store adv instance */
+    UINT8  scan_duplicate;
+    tBTM_BLE_MULTI_ADV_OPQ  op_q;
+} tBTM_BLE_EXTENDED_CB;
+
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE       (1 << 0)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE         (1 << 1)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED          (1 << 2)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED       (1 << 3)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY            (1 << 4)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_ANON_ADV          (1 << 5)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR    (1 << 6)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_MASK              (0x7F)
+
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND        (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_LD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_HD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_SCAN       (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                     ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_NONCONN    (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY)
+typedef UINT16 tBTM_BLE_EXT_ADV_TYPE_MASK;
+
+#define BTM_BLE_GAP_PHY_1M                             1
+#define BTM_BLE_GAP_PHY_2M                             2
+#define BTM_BLE_GAP_PHY_CODED                          3
+typedef UINT8 tBTM_BLE_GAP_PHY;
+
+#define BTM_BLE_GAP_PHY_NO_TX_PREF_MASK                (0x01)
+#define BTM_BLE_GAP_PHY_NO_RX_PREF_MASK                (0x02)
+#define BTM_BLE_GAP_PHY_1M_PREF_MASK                   (0x03)
+#define BTM_BLE_GAP_PHY_2M_PREF_MASK                   (0x04)
+#define BTM_BLE_GAP_PHY_CODED_PREF_MASK                (0x05)
+typedef UINT8 tBTM_BLE_GAP_PHY_MASK;
+
+#define BTM_BLE_GAP_EXT_SCAN_UNCODE_MASK               0x01
+#define BTM_BLE_GAP_EXT_SCAN_CODE_MASK                 0x02
+typedef UINT8 tBTM_BLE_EXT_SCAN_CFG_MASK;
+
+typedef struct {
+    tBTM_BLE_EXT_ADV_TYPE_MASK type;
+    UINT32 interval_min;
+    UINT32 interval_max;
+    tBTM_BLE_ADV_CHNL_MAP channel_map;
+    tBLE_ADDR_TYPE own_addr_type;
+    tBLE_ADDR_TYPE peer_addr_type;
+    BD_ADDR peer_addr;
+    tBTM_BLE_AFP filter_policy;
+    UINT8 tx_power;
+    tBTM_BLE_GAP_PHY primary_phy;
+    UINT8 max_skip;
+    tBTM_BLE_GAP_PHY secondary_phy;
+    UINT8 sid;
+    BOOLEAN scan_req_notif;
+} tBTM_BLE_GAP_EXT_ADV_PARAMS;
+
+typedef struct {
+    UINT8 instance;
+    int duration;
+    int max_events;
+} tBTM_BLE_EXT_ADV;
+
+
+typedef struct {
+    tBLE_SCAN_MODE scan_type;
+    UINT16 scan_interval;
+    UINT16 scan_window;
+} tBTM_BLE_EXT_SCAN_CFG;
+
+typedef struct {
+    tBLE_ADDR_TYPE own_addr_type;
+    UINT8 filter_policy;
+    UINT8  scan_duplicate;
+    tBTM_BLE_EXT_SCAN_CFG_MASK cfg_mask;
+    tBTM_BLE_EXT_SCAN_CFG uncoded_cfg;
+    tBTM_BLE_EXT_SCAN_CFG coded_cfg;
+} tBTM_BLE_EXT_SCAN_PARAMS;
+
+typedef struct {
+    UINT16 interval_min;
+    UINT16 interval_max;
+    UINT8  properties;
+} tBTM_BLE_Periodic_Adv_Params;
+
+typedef struct {
+    UINT8 filter_policy;
+    UINT8 sid;
+    tBLE_ADDR_TYPE addr_type;
+    BD_ADDR addr;
+    UINT16 skip;
+    UINT16 sync_timeout;
+} tBTM_BLE_Periodic_Sync_Params;
+
+typedef struct {
+    uint8_t status;
+    uint16_t conn_idx;
+    uint8_t tx_phy;
+    uint8_t rx_phy;
+} tBTM_BLE_UPDATE_PHY;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 typedef union {
     UINT16              uuid16_mask;
     UINT32              uuid32_mask;
@@ -870,7 +994,297 @@ typedef void (tBTM_START_ADV_CMPL_CBACK) (UINT8 status);
 typedef void (tBTM_START_STOP_ADV_CMPL_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define    BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     1
+#define    BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT     2
+#define    BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT             3
+#define    BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT        4
+#define    BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT           5
+#define    BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT             6
+#define    BTM_BLE_5_GAP_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT        7
+#define    BTM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT                8
+#define    BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT                 9
+#define    BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT           10
+#define    BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT            11
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT      12
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT        13
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT           14
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT            15
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT     16
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT     17
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT  18
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT         19
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT      20
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT       21
+#define    BTM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT          22
+#define    BTM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT               23
+#define    BTM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT                24
+#define    BTM_BLE_5_GAP_PREFER_EXT_CONN_PARAMS_SET_COMPLETE_EVT   25
+#define    BTM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT                   26
+#define    BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT                        27
+#define    BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT                          28
+#define    BTM_BLE_5_GAP_ADV_TERMINATED_EVT                        29
+#define    BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT                     30
+#define    BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT              31
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   32
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                33
+#define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               34
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               35
+typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
+#define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
+#define BTM_BLE_EXT_ADV_DATA_INCOMPLETE        0x01
+#define BTM_BLE_EXT_ADV_DATA_TRUNCATED         0x02
+typedef UINT8 tBTM_BLE_EXT_ADV_DATA_STATUS;
+
+#define BTM_BLE_ADV_DATA_COMPLETE_MASK         (0x0000)
+#define BTM_BLE_ADV_DATA_INCOMPLETE_MASK       (0x0020)
+#define BTM_BLE_ADV_DATA_TRUNCATED_MASK        (0x0040)
+#define BTM_BLE_ADV_DATA_STATUS_MASK           (0x0060)
+
+
+//#define BTM_BLE_ADV_CONN_MASK                  (0x0001)
+//#define BTM_BLE_ADV_SCAN_MASK                  (0x0002)
+//#define BTM_BLE_ADV_DIRECT_MASK                (0x0004)
+//#define BTM_BLE_SCAN_RSP_MASK                  (0x0008)
+#define BTM_BLE_ADV_LEGACY_MASK                (0x0010)
+typedef UINT8 tBTM_BLE_ADV_MASK;
+
+// /* Advertising report */
+// #define BTM_BLE_ADV_REPORT_ADV_IND                (0)
+// #define BTM_BLE_ADV_REPORT_DIR_IND                (1)
+// #define BTM_BLE_ADV_REPORT_SCAN_IND               (2)
+// #define BTM_BLE_ADV_REPORT_NONCONN_IND            (3)
+// #define BTM_BLE_ADV_REPORT_SCAN_RSP               (4)
+
+// /* Bluetooth 5.0, Vol 2, Part E, 7.7.65.13 */
+// #define BTM_BLE_LEGACY_ADV_TYPE_IND                   (0x13)
+// #define BTM_BLE_LEGACY_ADV_TYPE_DIRECT_IND            (0x15)
+// #define BTM_BLE_LEGACY_ADV_TYPE_SCAN_IND              (0x12)
+// #define BTM_BLE_LEGACY_ADV_TYPE_NONCON_IND            (0x10)
+// #define BTM_BLE_LEGACY_ADV_TYPE_SCAN_RSP_ADV_IND      (0x1b)
+// #define BTM_BLE_LEGACY_ADV_TYPE_SCAN_RSP_ADV_SCAN_IND (0x1a)
+
+typedef struct {
+    UINT8 status;
+    BD_ADDR addr;
+    UINT8 tx_phy;
+    UINT8 rx_phy;
+} tBTM_BLE_READ_PHY_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_SET_PREF_DEF_PHY_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_SET_PERF_PHY_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_SET_RAND_ADDR_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_SET_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_DATA_SET_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_SCAN_RSP_DATA_SET_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_START_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_ADV_STOP_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_SET_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_DATA_SET_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_START_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_STOP_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_SYNC_CREATE_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_SYNC_CANCEL_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_SYNC_TEMINAT_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_ADD_DEV_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_REMOVE_DEV_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PEROID_ADV_CLEAR_DEV_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_SET_EXT_SCAN_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_SCAN_START_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_EXT_SCAN_STOP_CMPL;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PREF_EXT_CONN_SET_PARAMS_CMPL;
+
+typedef struct {
+    uint8_t status;
+    BD_ADDR addr;
+    uint8_t tx_phy;
+    uint8_t rx_phy;
+} tBTM_BLE_PHY_UPDATE_CMPL;
+
+typedef struct {
+    // UINT8 props;
+    // UINT8 legacy_event_type;
+    UINT8 event_type;
+    tBLE_ADDR_TYPE addr_type;
+    BD_ADDR addr;
+    UINT8 primary_phy;
+    UINT8 secondry_phy;
+    UINT8 sid;
+    UINT8 tx_power;
+    UINT8 rssi;
+    UINT16 per_adv_interval;
+    tBLE_ADDR_TYPE dir_addr_type;
+    BD_ADDR dir_addr;
+    tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
+    UINT8 adv_data_len;
+    UINT8 *adv_data;
+} tBTM_BLE_EXT_ADV_REPORT;
+
+typedef struct {
+    UINT8 status;
+    UINT8 adv_handle;
+    UINT16 conn_handle;
+    UINT8 completed_event;
+} tBTM_BLE_ADV_TERMINAT;
+
+typedef struct {
+    UINT8 adv_handle;
+    tBLE_ADDR_TYPE scan_addr_type;
+    BD_ADDR scan_addr;
+} tBTM_BLE_SCAN_REQ_RECEIVED;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 channel_sel_alg;
+} tBTM_BLE_CHANNEL_SEL_ALG;
+
+typedef struct {
+    UINT16 sync_handle;
+    UINT8 tx_power;
+    INT8 rssi;
+    tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
+    UINT8 data_length;
+    UINT8 *data;
+} tBTM_PERIOD_ADV_REPORT;
+
+typedef struct {
+    UINT16 sync_handle;
+} tBTM_BLE_PERIOD_ADV_SYNC_LOST;
+
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+    UINT8 sid;
+    tBLE_ADDR_TYPE adv_addr_type;
+    BD_ADDR adv_addr;
+    UINT8 adv_phy;
+    UINT16 period_adv_interval;
+    UINT8 adv_clk_accuracy;
+} tBTM_BLE_PERIOD_ADV_SYNC_ESTAB;
+
+typedef struct {
+    UINT16 scan_interval;
+    UINT16 scan_window;
+    UINT16 interval_min;
+    UINT16 interval_max;
+    UINT16 latency;
+    UINT16 supervision_timeout;
+    UINT16 min_ce_len;
+    UINT16 max_ce_len;
+} tBTM_BLE_CONN_PARAMS;
+
+
+typedef union {
+    UINT8 status;
+    tBTM_BLE_READ_PHY_CMPL read_phy;
+    tBTM_BLE_SET_PREF_DEF_PHY_CMPL set_perf_def_phy;
+    tBTM_BLE_SET_PERF_PHY_CMPL set_perf_phy;
+    tBTM_BLE_EXT_ADV_SET_RAND_ADDR_CMPL set_ext_rand_addr;
+    tBTM_BLE_EXT_ADV_SET_PARAMS_CMPL set_params;
+    tBTM_BLE_EXT_ADV_DATA_SET_CMPL adv_data_set;
+    tBTM_BLE_EXT_ADV_SCAN_RSP_DATA_SET_CMPL scan_rsp_data_set;
+    tBTM_BLE_EXT_ADV_START_CMPL adv_start;
+    tBTM_BLE_EXT_ADV_STOP_CMPL adv_stop;
+    tBTM_BLE_PERIOD_ADV_SET_PARAMS_CMPL per_adv_set_params;
+    tBTM_BLE_PERIOD_ADV_DATA_SET_CMPL per_adv_data_set;
+    tBTM_BLE_PERIOD_ADV_START_CMPL per_adv_start;
+    tBTM_BLE_PERIOD_ADV_STOP_CMPL per_adv_stop;
+    tBTM_BLE_PERIOD_ADV_SYNC_CREATE_CMPL per_adv_sync_create;
+    tBTM_BLE_PERIOD_ADV_SYNC_CANCEL_CMPL per_adv_sync_cancel;
+    tBTM_BLE_PERIOD_ADV_SYNC_TEMINAT_CMPL per_adv_sync_term;
+    tBTM_BLE_PERIOD_ADV_ADD_DEV_CMPL per_adv_add_dev;
+    tBTM_BLE_PERIOD_ADV_REMOVE_DEV_CMPL per_adv_remove_dev;
+    tBTM_BLE_PEROID_ADV_CLEAR_DEV_CMPL per_adv_clear_dev;
+    tBTM_BLE_SET_EXT_SCAN_PARAMS_CMPL ext_scan;
+    tBTM_BLE_EXT_SCAN_START_CMPL scan_start;
+    tBTM_BLE_EXT_SCAN_STOP_CMPL scan_stop;
+    tBTM_BLE_PREF_EXT_CONN_SET_PARAMS_CMPL ext_conn_set_params;
+    tBTM_BLE_PHY_UPDATE_CMPL phy_update;
+    tBTM_BLE_EXT_ADV_REPORT ext_adv_report;
+    tBTM_BLE_ADV_TERMINAT adv_term;
+    tBTM_BLE_SCAN_REQ_RECEIVED scan_req;
+    tBTM_BLE_CHANNEL_SEL_ALG channel_sel;
+    tBTM_PERIOD_ADV_REPORT period_adv_report;
+    tBTM_BLE_PERIOD_ADV_SYNC_LOST sync_lost;
+    tBTM_BLE_PERIOD_ADV_SYNC_ESTAB sync_estab;
+} tBTM_BLE_5_GAP_CB_PARAMS;
+
+typedef struct {
+    UINT8                           phy_mask;
+    tBTM_BLE_CONN_PARAMS            phy_1m_conn_params;
+    tBTM_BLE_CONN_PARAMS            phy_2m_conn_params;
+    tBTM_BLE_CONN_PARAMS            phy_coded_conn_params;
+} tBTM_EXT_CONN_PARAMS;
+
+typedef void (*tBTM_BLE_5_HCI_CBACK)(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_5_GAP_CB_PARAMS *params);
+
+#endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 /*****************************************************************************
 **  EXTERNAL FUNCTION DECLARATIONS
@@ -2153,5 +2567,52 @@ BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
 }
 #endif
 */
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void BTM_BleGapRegisterCallback(tBTM_BLE_5_HCI_CBACK cb);
+
+tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy);
+
+tBTM_STATUS BTM_BleSetPreferDefaultPhy(UINT8 tx_phy_mask, UINT8 rx_phy_mask);
+
+tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_mask,
+                                           UINT8 rx_phy_mask, UINT16 phy_options);
+
+tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr);
+
+tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
+
+tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance, UINT16 len, UINT8 *data);
+
+tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_adv);
+
+tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance);
+
+tBTM_STATUS BTM_BleExtAdvSetClear(void);
+
+tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params);
+
+tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data);
+
+tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, BOOLEAN enable);
+
+tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params);
+
+tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void);
+
+tBTM_STATUS BTM_BlePeriodicAdvSyncTerm(UINT16 sync_handle);
+
+tBTM_STATUS BTM_BlePeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type, BD_ADDR addr, UINT16 sid);
+
+tBTM_STATUS BTM_BlePeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type, BD_ADDR addr, UINT16 sid);
+
+tBTM_STATUS BTM_BlePeriodicAdvClearDev(void);
+
+tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params);
+
+tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period);
+
+void BTM_BleSetPreferExtenedConnParams(BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params);
+
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #endif

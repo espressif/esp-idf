@@ -794,7 +794,7 @@ extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 **
 *******************************************************************************/
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport);
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux);
 
 /*******************************************************************************
 **

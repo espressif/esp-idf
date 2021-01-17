@@ -1,0 +1,331 @@
+config BT_CTRL_MODE_EFF
+    int
+    default 1
+
+config BT_CTRL_BLE_MAX_ACT
+    int "BLE Max Instances"
+    default 10
+    range 1 10
+    help
+        BLE maximum instances of bluetooth controller.
+
+config BT_CTRL_BLE_MAX_ACT_EFF
+    int
+    default BT_CTRL_BLE_MAX_ACT
+    default 0
+
+config BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB
+    int "BLE static ACL TX buffer numbers"
+    range 0 12
+    default 0
+    help
+        BLE ACL buffer have two methods to be allocated. One is persistent allocating
+        (alloate when controller initialise, never free until controller de-initialise)
+        another is dynamically allocating (allocate before TX and free after TX).
+
+config BT_CTRL_PINNED_TO_CORE
+    int
+    default 0
+
+choice BT_CTRL_HCI_MODE_CHOICE
+    prompt "HCI mode"
+    help
+        Specify HCI mode as VHCI or UART(H4)
+
+    config BT_CTRL_HCI_MODE_VHCI
+        bool "VHCI"
+        help
+            Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32C3, too.
+
+    config BT_CTRL_HCI_MODE_UART_H4
+        bool "UART(H4)"
+        help
+            If use external bluetooth host which run on other hardware and use UART as the HCI interface,
+            choose this option.
+endchoice
+
+config BT_CTRL_HCI_TL
+    int
+    default 0 if BT_CTRL_HCI_MODE_UART_H4
+    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1
+    help
+        HCI mode as VHCI or UART(H4)
+
+config BT_CTRL_ADV_DUP_FILT_MAX
+    int "The maxinum number of 5.0 extend duplicate scan filter"
+    range 1 500
+    default 30
+    help
+        The maxinum number of suplicate scan filter
+
+config BT_CTRL_HW_CCA
+    bool "HW CCA check enable"
+    default n
+    help
+        It enables HW CCA feature in controller
+
+config BT_CTRL_HW_CCA_EFF
+    int
+    default 1 if BT_CTRL_HW_CCA
+    default 0
+    help
+        If other devices are sending packets in the air and the signal is strong,
+        the packet hw to be sent this time is cancelled.
+
+config BT_CTRL_COEX_PARAMETERS_ENABLE
+    bool "Allow Bluetooth preemption in the use of RF to support coexistence with Wi-Fi"
+    default n
+    help
+        Use pre-determined parameter set to control the use of RF by Bluetooth,
+        so that Bluetooth can compete for RF with Wi-fi to support coexistence.
+
+choice BT_CTRL_CE_LENGTH_TYPE
+    prompt "Connection event length determination method"
+    help
+        Specify connection event length determination
+
+    config BT_CTRL_CE_LENGTH_TYPE_ORIG
+        bool "ORIGINAL"
+    config BT_CTRL_CE_LENGTH_TYPE_CE
+        bool "Use CE parameter for HCI command"
+    config BT_CTRL_CE_LENGTH_TYPE_SD
+        bool "Use Espressif self-defined method"
+endchoice
+
+config BT_CTRL_CE_LENGTH_TYPE_EFF
+    int
+    default 0 if BT_CTRL_CE_LENGTH_TYPE_ORIG
+    default 1 if BT_CTRL_CE_LENGTH_TYPE_CE
+    default 2 if BT_CTRL_CE_LENGTH_TYPE_SD
+
+choice BT_CTRL_TX_ANTENNA_INDEX
+    prompt "default Tx anntena used"
+    help
+        Specify default Tx antenna used for bluetooth
+
+    config BT_CTRL_TX_ANTENNA_INDEX_0
+        bool "Antenna 0"
+    config BT_CTRL_TX_ANTENNA_INDEX_1
+        bool "Antenna 1"
+endchoice
+
+config BT_CTRL_TX_ANTENNA_INDEX_EFF
+    int
+    default 0 if BT_CTRL_TX_ANTENNA_INDEX_0
+    default 1 if BT_CTRL_TX_ANTENNA_INDEX_1
+
+choice BT_CTRL_RX_ANTENNA_INDEX
+    prompt "default Rx anntena used"
+    help
+        Specify default Rx antenna used for bluetooth
+
+    config BT_CTRL_RX_ANTENNA_INDEX_0
+        bool "Antenna 0"
+    config BT_CTRL_RX_ANTENNA_INDEX_1
+        bool "Antenna 1"
+endchoice
+
+config BT_CTRL_RX_ANTENNA_INDEX_EFF
+    int
+    default 0 if BT_CTRL_RX_ANTENNA_INDEX_0
+    default 1 if BT_CTRL_RX_ANTENNA_INDEX_1
+
+choice BT_CTRL_DFT_TX_POWER_LEVEL
+    prompt "BLE default Tx power level"
+    default BT_CTRL_DFT_TX_POWER_LEVEL_P9
+    help
+        Specify default Tx power level
+
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N12
+        bool "-12dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N9
+        bool "-9dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N6
+        bool "-6dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N3
+        bool "-3dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_N0
+        bool "0dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P3
+        bool "+3dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P6
+        bool "+6dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P9
+        bool "+9dBm"
+endchoice
+
+config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
+    int
+    default 0 if BT_CTRL_DFT_TX_POWER_LEVEL_N12
+    default 1 if BT_CTRL_DFT_TX_POWER_LEVEL_N9
+    default 2 if BT_CTRL_DFT_TX_POWER_LEVEL_N6
+    default 3 if BT_CTRL_DFT_TX_POWER_LEVEL_N3
+    default 4 if BT_CTRL_DFT_TX_POWER_LEVEL_N0
+    default 5 if BT_CTRL_DFT_TX_POWER_LEVEL_P3
+    default 6 if BT_CTRL_DFT_TX_POWER_LEVEL_P6
+    default 7 if BT_CTRL_DFT_TX_POWER_LEVEL_P9
+    default 0
+
+config BT_CTRL_COEX_USE_HOOKS
+    bool "Communicate Bluetooth working status with Wi-Fi to support coexistence"
+    default n
+    help
+        Send notifications of Bluetooth working status to support coexistence with Wi-Fi.
+
+config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    bool "BLE adv report flow control supported"
+    default y
+    help
+        The function is mainly used to enable flow control for advertising reports. When it is enabled,
+        advertising reports will be discarded by the controller if the number of unprocessed advertising
+        reports exceeds the size of BLE adv report flow control.
+
+config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM
+    int "BLE adv report flow control number"
+    depends on BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 50 1000
+    default 100
+    help
+        The number of unprocessed advertising report that bluetooth host can save.If you set
+        `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a small value, this may cause adv packets lost.
+        If you set `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a large value, bluetooth host may cache a
+        lot of adv packets and this may cause system memory run out. For example, if you set
+        it to 50, the maximum memory consumed by host is 35 * 50 bytes. Please set
+        `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` according to your system free memory and handle adv
+        packets as fast as possible, otherwise it will cause adv packets lost.
+
+config BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD
+    int "BLE adv lost event threshold value"
+    depends on BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 1 1000
+    default 20
+    help
+        When adv report flow control is enabled, The ADV lost event will be generated when the number
+        of ADV packets lost in the controller reaches this threshold. It is better to set a larger value.
+        If you set `BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
+        may cause adv packets lost more.
+
+config BT_CTRL_BLE_SCAN_DUPL
+    bool "BLE Scan Duplicate Options"
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+choice BT_CTRL_SCAN_DUPL_TYPE
+    prompt "Scan Duplicate Type"
+    default BT_CTRL_SCAN_DUPL_TYPE_DEVICE
+    depends on BT_CTRL_BLE_SCAN_DUPL
+    help
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use
+        advertiser address filtering. The adv packet of the same address is only allowed to be reported once.
+        Another way is "Scan Duplicate By Device Address And Advertising Data". This way is to use advertising
+        data and device address filtering. All different adv packets with the same address are allowed to be
+        reported. The last way is "Scan Duplicate By Advertising Data". This way is to use advertising data
+        filtering. All same advertising data only allow to be reported once even though they are from
+        different devices.
+
+    config BT_CTRL_SCAN_DUPL_TYPE_DEVICE
+        bool "Scan Duplicate By Device Address"
+        help
+            This way is to use advertiser address filtering. The adv packet of the same address is only
+            allowed to be reported once
+
+    config BT_CTRL_SCAN_DUPL_TYPE_DATA
+        bool "Scan Duplicate By Advertising Data"
+        help
+            This way is to use advertising data filtering. All same advertising data only allow to be reported
+            once even though they are from different devices.
+
+    config BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE
+        bool "Scan Duplicate By Device Address And Advertising Data"
+        help
+            This way is to use advertising data and device address filtering. All different adv packets with
+            the same address are allowed to be reported.
+endchoice
+
+config BT_CTRL_SCAN_DUPL_TYPE
+    int
+    depends on BT_CTRL_BLE_SCAN_DUPL
+    default 0 if BT_CTRL_SCAN_DUPL_TYPE_DEVICE
+    default 1 if BT_CTRL_SCAN_DUPL_TYPE_DATA
+    default 2 if BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE
+    default 0
+
+config BT_CTRL_SCAN_DUPL_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BT_CTRL_BLE_SCAN_DUPL
+    range 10 1000
+    default 100
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BT_CTRL_BLE_MESH_SCAN_DUPL_EN
+    bool "Special duplicate scan mechanism for BLE Mesh scan"
+    depends on BT_CTRL_BLE_SCAN_DUPL
+    default n
+    help
+        This enables the BLE scan duplicate for special BLE Mesh scan.
+
+config BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
+    int "Maximum number of Mesh adv packets in scan duplicate filter"
+    depends on BT_CTRL_BLE_MESH_SCAN_DUPL_EN
+    range 10 1000
+    default 100
+    help
+        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+menu "MODEM SLEEP Options"
+    visible if BT_ENABLED
+
+    config BT_CTRL_MODEM_SLEEP
+        bool "Bluetooth modem sleep"
+        depends on !BT_CTRL_HCI_MODE_UART_H4
+        default n
+        help
+            Enable/disable bluetooth controller low power mode.
+            Modem sleep is not supported to be used with UART HCI.
+
+    config BT_CTRL_MODEM_SLEEP_MODE_1
+        bool "Bluetooth Modem sleep Mode 1"
+        depends on BT_CTRL_MODEM_SLEEP
+        default y
+        help
+            Mode 1 is the currently supported sleep mode. In this mode,
+            bluetooth controller sleeps between and BLE events. A low
+            power clock is used to maintain bluetooth reference clock.
+
+    choice BT_CTRL_LOW_POWER_CLOCK
+        prompt "Bluetooth low power clock"
+        depends on BT_CTRL_MODEM_SLEEP_MODE_1
+        help
+            Select the low power clock source for bluetooth controller
+
+        config BT_CTRL_LPCLK_SEL_MAIN_XTAL
+            bool "Main crystal"
+            help
+                Main crystal can be used as low power clock for bluetooth modem sleep. If this option is
+                selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but
+                cannot work when light sleep is enabled. Main crystal has a relatively better performance than
+                other bluetooth low power clock sources.
+    endchoice
+endmenu
+
+config BT_CTRL_SLEEP_MODE_EFF
+    int
+    default 1 if BT_CTRL_MODEM_SLEEP_MODE_1
+    default 0
+
+config BT_CTRL_SLEEP_CLOCK_EFF
+    int
+    default 1 if BT_CTRL_LPCLK_SEL_MAIN_XTAL
+
+    default 0
+
+config BT_CTRL_HCI_TL_EFF
+    int
+    default 0 if BT_CTRL_HCI_MODE_UART_H4
+    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1

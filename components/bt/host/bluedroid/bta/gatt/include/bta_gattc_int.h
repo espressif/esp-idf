@@ -130,6 +130,7 @@ typedef struct {
     tBTA_ADDR_TYPE          remote_addr_type;
     tBTA_GATTC_IF           client_if;
     BOOLEAN                 is_direct;
+    BOOLEAN                 is_aux;
     tBTA_TRANSPORT          transport;
 } tBTA_GATTC_API_OPEN;
 

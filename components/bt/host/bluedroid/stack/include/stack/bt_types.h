@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "bt_common.h"
+#include "osi/semaphore.h"
 
 typedef uint8_t UINT8;
 typedef uint16_t UINT16;
@@ -194,6 +195,7 @@ typedef struct {
     uint16_t          len;
     uint16_t          offset;
     uint16_t          layer_specific;
+    osi_sem_t         sem;
     uint8_t           data[];
 } BT_HDR;
 

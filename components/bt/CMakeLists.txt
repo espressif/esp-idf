@@ -1,8 +1,21 @@
 if(CONFIG_BT_ENABLED)
+    if(CONFIG_IDF_TARGET_ESP32)
+        set(srcs "controller/esp32/bt.c")
+    elseif(CONFIG_IDF_TARGET_ESP32C3)
+        set(srcs "controller/esp32c3/bt.c")
+    elseif(CONFIG_IDF_TARGET_ESP32S3)
+        set(srcs "controller/esp32s3/bt.c")
+    endif()
 
-    set(srcs "controller/bt.c")
-    set(include_dirs include
-                    common/osi/include)
+    set(include_dirs common/osi/include)
+
+    if(CONFIG_IDF_TARGET_ESP32)
+        list(APPEND include_dirs include/esp32/include)
+    elseif(CONFIG_IDF_TARGET_ESP32C3)
+        list(APPEND include_dirs include/esp32c3/include)
+    elseif(CONFIG_IDF_TARGET_ESP32S3)
+        list(APPEND include_dirs include/esp32s3/include)
+    endif()
 
     list(APPEND priv_include_dirs
             common/btc/include
@@ -243,6 +256,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/btm/btm_ble_bgconn.c"
                    "host/bluedroid/stack/btm/btm_ble_cont_energy.c"
                    "host/bluedroid/stack/btm/btm_ble_gap.c"
+                   "host/bluedroid/stack/btm/btm_ble_5_gap.c"
                    "host/bluedroid/stack/btm/btm_ble_multi_adv.c"
                    "host/bluedroid/stack/btm/btm_ble_privacy.c"
                    "host/bluedroid/stack/btm/btm_dev.c"
@@ -573,7 +587,14 @@ idf_component_register(SRCS "${srcs}"
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
-
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
+    if(CONFIG_IDF_TARGET_ESP32)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32")
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
+    elseif(CONFIG_IDF_TARGET_ESP32C3)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32c3")
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+    elseif(CONFIG_IDF_TARGET_ESP32S3)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32s3")
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+    endif()
 endif()

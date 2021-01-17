@@ -214,7 +214,9 @@ static void btc_gattc_app_unregister(btc_ble_gattc_args_t *arg)
 static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
-    BTA_GATTC_Open(arg->open.gattc_if, arg->open.remote_bda, arg->open.remote_addr_type, arg->open.is_direct, transport);
+    BTA_GATTC_Open(arg->open.gattc_if, arg->open.remote_bda,
+                   arg->open.remote_addr_type, arg->open.is_direct,
+                   transport, arg->open.is_aux);
 }
 
 static void btc_gattc_close(btc_ble_gattc_args_t *arg)
@@ -711,6 +713,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         btc_gattc_app_unregister(arg);
         break;
     case BTC_GATTC_ACT_OPEN:
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    case BTC_GATTC_ACT_AUX_OPEN:
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         btc_gattc_open(arg);
         break;
     case BTC_GATTC_ACT_CLOSE:
@@ -1010,6 +1015,18 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
 
     // free the deep-copied data
     btc_gattc_free_req_data(msg);
+}
+
+void btc_gattc_congest_callback(tBTA_GATTC *param)
+{
+    esp_ble_gattc_cb_param_t esp_param = {0};
+    memset(&esp_param, 0, sizeof(esp_ble_gattc_cb_param_t));
+
+    uint8_t gattc_if = BTC_GATT_GET_GATT_IF(param->congest.conn_id);
+    esp_param.congest.conn_id = BTC_GATT_GET_CONN_ID(param->congest.conn_id);
+    esp_param.congest.congested = (param->congest.congested == TRUE) ? true : false;
+    btc_gattc_cb_to_app(ESP_GATTC_CONGEST_EVT, gattc_if, &esp_param);
+
 }
 
 #endif  ///GATTC_INCLUDED == TRUE

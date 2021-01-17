@@ -31,6 +31,7 @@ typedef struct {
     BT_HDR *(*make_read_local_version_info)(void);
     BT_HDR *(*make_read_bd_addr)(void);
     BT_HDR *(*make_read_local_supported_commands)(void);
+    BT_HDR *(*make_read_local_supported_features)(void);
     BT_HDR *(*make_read_local_extended_features)(uint8_t page_number);
     BT_HDR *(*make_write_simple_pairing_mode)(uint8_t mode);
     BT_HDR *(*make_write_secure_connections_host_support)(uint8_t mode);
@@ -41,6 +42,9 @@ typedef struct {
     BT_HDR *(*make_ble_read_supported_states)(void);
     BT_HDR *(*make_ble_read_local_supported_features)(void);
     BT_HDR *(*make_ble_read_resolving_list_size)(void);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BT_HDR *(*make_read_max_adv_data_len)(void);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BT_HDR *(*make_ble_read_suggested_default_data_length)(void);
     BT_HDR *(*make_ble_write_suggested_default_data_length)(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime);
     BT_HDR *(*make_ble_set_event_mask)(const bt_event_mask_t *event_mask);

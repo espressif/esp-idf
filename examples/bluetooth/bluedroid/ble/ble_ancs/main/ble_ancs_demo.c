@@ -22,6 +22,7 @@
 #include "esp_gatt_defs.h"
 #include "esp_gatt_common_api.h"
 #include "ble_ancs.h"
+#include "esp_timer.h"
 
 #define BLE_ANCS_TAG                              "BLE_ANCS"
 #define EXAMPLE_DEVICE_NAME                       "ESP_BLE_ANCS"

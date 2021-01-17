@@ -59,14 +59,14 @@ the adv packet will be discarded until the memory is restored. */
 /* enable controller log debug when adv lost */
 #define CONTROLLER_ADV_LOST_DEBUG_BIT      (0<<0)
 
-#ifdef CONFIG_BT_HCI_UART_NO
-#define BT_HCI_UART_NO_DEFAULT                      CONFIG_BT_HCI_UART_NO
+#ifdef CONFIG_BTDM_CTRL_HCI_UART_NO
+#define BT_HCI_UART_NO_DEFAULT                      CONFIG_BTDM_CTRL_HCI_UART_NO
 #else
 #define BT_HCI_UART_NO_DEFAULT                      1
 #endif /* BT_HCI_UART_NO_DEFAULT */
 
-#ifdef CONFIG_BT_HCI_UART_BAUDRATE
-#define BT_HCI_UART_BAUDRATE_DEFAULT                CONFIG_BT_HCI_UART_BAUDRATE
+#ifdef CONFIG_BTDM_CTRL_HCI_UART_BAUDRATE
+#define BT_HCI_UART_BAUDRATE_DEFAULT                CONFIG_BTDM_CTRL_HCI_UART_BAUDRATE
 #else
 #define BT_HCI_UART_BAUDRATE_DEFAULT                921600
 #endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
@@ -457,7 +457,7 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
  * There are currently two options for bluetooth modem sleep, one is ORIG mode, and another is EVED Mode. EVED Mode is intended for BLE only.
  *
  * For ORIG mode:
- * Bluetooth modem sleep is enabled in controller start up by default if CONFIG_BTDM_MODEM_SLEEP is set and "ORIG mode" is selected. In ORIG modem sleep mode, bluetooth controller will switch off some components and pause to work every now and then, if there is no event to process; and wakeup according to the scheduled interval and resume the work. It can also wakeup earlier upon external request using function "esp_bt_controller_wakeup_request".
+ * Bluetooth modem sleep is enabled in controller start up by default if CONFIG_CTRL_BTDM_MODEM_SLEEP is set and "ORIG mode" is selected. In ORIG modem sleep mode, bluetooth controller will switch off some components and pause to work every now and then, if there is no event to process; and wakeup according to the scheduled interval and resume the work. It can also wakeup earlier upon external request using function "esp_bt_controller_wakeup_request".
  *
  * @return
  *                  - ESP_OK : success

@@ -181,6 +181,8 @@ void BTA_DmSetDeviceName(const char *p_name)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
 {
     tBTA_DM_API_CONFIG_EIR    *p_msg;
@@ -223,7 +225,7 @@ void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
     }
 }
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSetAfhChannels
@@ -2674,9 +2676,415 @@ void BTA_VendorCleanup (void)
     }
 #endif
 
-    if (cmn_ble_vsc_cb.adv_inst_max > 0) {
-        btm_ble_multi_adv_cleanup();
+    btm_ble_multi_adv_cleanup();
+}
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void BTA_DmBleGapReadPHY(BD_ADDR addr)
+{
+    tBTA_DM_API_READ_PHY *p_msg;
+    APPL_TRACE_API("%s, read phy.", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_PHY *) osi_malloc(sizeof(tBTA_DM_API_READ_PHY))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_PHY));
+        p_msg->hdr.event = BTA_DM_API_READ_PHY_EVT;
+        memcpy(p_msg->bd_addr, addr, BD_ADDR_LEN);
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapSetPreferedDefaultPHY(tBTA_DM_BLE_GAP_PHY_MASK tx_phy_mask,
+                                                          tBTA_DM_BLE_GAP_PHY_MASK rx_phy_mask)
+{
+    tBTA_DM_API_SET_PER_DEF_PHY *p_msg;
+    APPL_TRACE_API("%s, Set prefered default phy.", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_PER_DEF_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_DEF_PHY))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_DEF_PHY));
+        p_msg->hdr.event = BTA_DM_API_SET_PER_DEF_PHY_EVT;
+        p_msg->tx_phy_mask = tx_phy_mask;
+        p_msg->rx_phy_mask = rx_phy_mask;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
+                                               UINT8 all_phys,
+                                               tBTA_DM_BLE_GAP_PHY_MASK tx_phy_mask,
+                                               tBTA_DM_BLE_GAP_PHY_MASK rx_phy_mask,
+                                               UINT16 phy_options)
+{
+    tBTA_DM_API_SET_PER_PHY *p_msg;
+    APPL_TRACE_API("%s, Set prefered phy.", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_PER_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_PHY))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_PHY));
+        p_msg->hdr.event = BTA_DM_API_SET_PER_PHY_EVT;
+        memcpy(p_msg->bd_addr, addr, BD_ADDR_LEN);
+        p_msg->all_phys = all_phys;
+        p_msg->tx_phy_mask = tx_phy_mask;
+        p_msg->rx_phy_mask = rx_phy_mask;
+        p_msg->phy_options = phy_options;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
+
+void BTA_DmBleGapExtAdvSetRandaddr(UINT16 instance, BD_ADDR addr)
+{
+    tBTA_DM_API_EXT_ADV_SET_RAND_ADDR *p_msg;
+    APPL_TRACE_API("%s, Set extended ADV parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_EXT_ADV_SET_RAND_ADDR *) osi_malloc(sizeof(tBTA_DM_API_EXT_ADV_SET_RAND_ADDR))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_EXT_ADV_SET_RAND_ADDR));
+        p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_RAND_ADDR_EVT;
+        p_msg->instance = instance;
+        memcpy(&p_msg->rand_addr, addr, BD_ADDR_LEN);
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapExtAdvSetParams(UINT16 instance,
+                                                 const tBTA_DM_BLE_GAP_EXT_ADV_PARAMS *params)
+{
+    tBTA_DM_API_EXT_ADV_SET_PARAMS *p_msg;
+    APPL_TRACE_API("%s, Set extended ADV parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_EXT_ADV_SET_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_EXT_ADV_SET_PARAMS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_EXT_ADV_SET_PARAMS));
+        p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_PARAMS_EVT;
+        p_msg->instance = instance;
+        memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapConfigExtAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance, UINT16 length,
+                                                        const UINT8 *data)
+{
+    tBTA_DM_API_CFG_EXT_ADV_DATA *p_msg;
+    APPL_TRACE_API("%s, Config extended %s data.", __func__, is_scan_rsp ? "Scan rsp" : "Adv");
+    if ((p_msg = (tBTA_DM_API_CFG_EXT_ADV_DATA *) osi_malloc(sizeof(tBTA_DM_API_CFG_EXT_ADV_DATA) + length)) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_CFG_EXT_ADV_DATA) + length);
+        p_msg->hdr.event = BTA_DM_API_CFG_ADV_DATA_RAW_EVT;
+        p_msg->is_scan_rsp = is_scan_rsp;
+        p_msg->instance = instance;
+        p_msg->length = length;
+        p_msg->data = (UINT8 *)(p_msg + 1);
+        if (data) {
+            memcpy(p_msg->data, data, length);
+        }
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapExtAdvEnable(BOOLEAN enable, UINT8 num, tBTA_DM_BLE_EXT_ADV *ext_adv)
+{
+    tBTA_DM_API_BLE_EXT_ADV *p_msg;
+    APPL_TRACE_API("%s, Start extended ADV", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV) + sizeof(tBTA_DM_BLE_EXT_ADV)*num)) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV) + sizeof(tBTA_DM_BLE_EXT_ADV)*num);
+        p_msg->hdr.event = BTA_DM_API_EXT_ADV_ENABLE_EVT;
+        p_msg->enable = enable;
+        p_msg->num = num;
+        p_msg->ext_adv = (tBTA_DM_BLE_EXT_ADV *)(p_msg + 1);
+        if (ext_adv) {
+            memcpy(p_msg->ext_adv, ext_adv, sizeof(tBTA_DM_BLE_EXT_ADV)*num);
+        }
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapExtAdvSetRemove(UINT8 instance)
+{
+    tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE *p_msg;
+    APPL_TRACE_API("%s, Remove extended ADV", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE));
+        p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_REMOVE_EVT;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapExtAdvSetClear(void)
+{
+    tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR *p_msg;
+    APPL_TRACE_API("%s, Clear extended ADV", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR));
+        p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_CLEAR_EVT;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
+                                                         tBTA_DM_BLE_Periodic_Adv_Params *params)
+{
+    tBTA_DM_API_BLE_PERIODIC_ADV_SET_PARAMS *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV set parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_PERIODIC_ADV_SET_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_BLE_PERIODIC_ADV_SET_PARAMS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_PERIODIC_ADV_SET_PARAMS));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SET_PARAMS_EVT;
+        p_msg->instance = instance;
+        memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Adv_Params));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
+                                                           const UINT8 *data)
+{
+    tBTA_DM_API_CFG_PERIODIC_ADV_DATA *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV config data raw.", __func__);
+    if ((p_msg = (tBTA_DM_API_CFG_PERIODIC_ADV_DATA *) osi_malloc(sizeof(tBTA_DM_API_CFG_PERIODIC_ADV_DATA) + length)) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_CFG_PERIODIC_ADV_DATA) + length);
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CFG_DATA_EVT;
+        p_msg->instance = instance;
+        p_msg->length = length;
+        p_msg->data = (UINT8 *)(p_msg + 1);
+        memcpy(p_msg->data, data, length);
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvEnable(BOOLEAN enable, UINT8 instance)
+{
+    tBTA_DM_API_ENABLE_PERIODIC_ADV *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV %s.", __func__, enable ? "start" : "stop");
+    if ((p_msg = (tBTA_DM_API_ENABLE_PERIODIC_ADV *) osi_malloc(sizeof(tBTA_DM_API_ENABLE_PERIODIC_ADV))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ENABLE_PERIODIC_ADV));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_ENABLE_EVT;
+        p_msg->instance = instance;
+        p_msg->enable = enable;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params)
+{
+    tBTA_DM_API_PERIODIC_ADV_SYNC *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV create sync.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_SYNC *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_EVT;
+        memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Sync_Params));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvSyncCancel(void)
+{
+    tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV sync cancel.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_CANCEL_EVT;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvSyncTerm(UINT16 sync_handle)
+{
+    tBTA_DM_API_PERIODIC_ADV_SYNC_TERM *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV sync terminat.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_SYNC_TERM *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_TERM))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_TERM));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_TERMINATE_EVT;
+        p_msg->sync_handle = sync_handle;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type,
+                                                              BD_ADDR addr,
+                                                              UINT16 sid)
+{
+    tBTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LIST *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV add device to list.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LIST *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LIST));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LSIT_EVT;
+        p_msg->addr_type = addr_type;
+        p_msg->sid = sid;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type,
+                                                              BD_ADDR addr,
+                                                              UINT16 sid)
+{
+    tBTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LIST *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV remove device from list.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LIST *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LIST));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LSIT_EVT;
+        p_msg->addr_type = addr_type;
+        p_msg->sid = sid;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPeriodicAdvClearDev(void)
+{
+    tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR *p_msg;
+    APPL_TRACE_API("%s, Periodic ADV clear device from list.", __func__);
+    if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR));
+        p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CLEAR_DEV_EVT;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapSetExtScanParams(tBTA_DM_BLE_EXT_SCAN_PARAMS *params)
+{
+    tBTA_DM_API_SET_EXT_SCAN_PARAMS *p_msg;
+    APPL_TRACE_API("%s, Set extended scan parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_EXT_SCAN_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_SET_EXT_SCAN_PARAMS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_EXT_SCAN_PARAMS));
+        p_msg->hdr.event = BTA_DM_API_SET_EXT_SCAN_PARAMS_EVT;
+        memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_EXT_SCAN_PARAMS));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapExtScan(BOOLEAN start, UINT32 duration, UINT16 period)
+{
+    tBTA_DM_API_EXT_SCAN *p_msg;
+    APPL_TRACE_API("%s, %s extended scan.", __func__, start ? "Start" : "Stop");
+    if ((p_msg = (tBTA_DM_API_EXT_SCAN *) osi_malloc(sizeof(tBTA_DM_API_EXT_SCAN))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_EXT_SCAN));
+        p_msg->hdr.event = BTA_DM_API_START_EXT_SCAN_EVT;
+        p_msg->start = start;
+        p_msg->duration = duration;
+        p_msg->period = period;
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
+                                                                 UINT8 phy_mask,
+                                                                 const tBTA_DM_BLE_CONN_PARAMS *phy_1m_conn_params,
+                                                                 const tBTA_DM_BLE_CONN_PARAMS *phy_2m_conn_params,
+                                                                 const tBTA_DM_BLE_CONN_PARAMS *phy_coded_conn_params)
+{
+    tBTA_DM_API_SET_PER_EXT_CONN_PARAMS *p_msg;
+    APPL_TRACE_API("%s, Set prefer extended connection parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_PER_EXT_CONN_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_EXT_CONN_PARAMS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_EXT_CONN_PARAMS));
+        p_msg->hdr.event = BTA_DM_API_SET_PERF_EXT_CONN_PARAMS_EVT;
+        p_msg->phy_mask = phy_mask;
+
+        memcpy(p_msg->bd_addr, bd_addr, sizeof(BD_ADDR));
+
+        if (phy_1m_conn_params) {
+            memcpy(&p_msg->phy_1m_conn_params, phy_1m_conn_params, sizeof(tBTA_DM_BLE_CONN_PARAMS));
+        }
+
+        if (phy_2m_conn_params) {
+            memcpy(&p_msg->phy_2m_conn_params, phy_2m_conn_params, sizeof(tBTA_DM_BLE_CONN_PARAMS));
+        }
+
+        if (phy_coded_conn_params) {
+            memcpy(&p_msg->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_DM_BLE_CONN_PARAMS));
+        }
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+
+}
+
+void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_addr)
+{
+    tBTA_DM_API_EXT_CONN *p_msg;
+    APPL_TRACE_API("%s, Start Extended connect.", __func__);
+    APPL_TRACE_API("%s, Set prefer extended connection parameters.", __func__);
+    if ((p_msg = (tBTA_DM_API_EXT_CONN *) osi_malloc(sizeof(tBTA_DM_API_EXT_CONN))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_EXT_CONN));
+        p_msg->hdr.event = BTA_DM_API_EXT_CONN_EVT;
+        p_msg->own_addr_type = own_addr_type;
+        memcpy(p_msg->peer_addr, peer_addr, sizeof(BD_ADDR));
+        //start sent the msg to the bta system control moudle
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #endif

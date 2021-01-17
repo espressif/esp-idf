@@ -285,6 +285,20 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         }
         return FALSE;
     }
+
+    BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
+    memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
+    memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
+
+    // look for public address information
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    // p_dev_rec is created at bluetooth initialization, p_dev_rec->ble.static_addr maybe be all 0 before pairing
+    if(p_dev_rec && memcmp(invalid_rand_addr_b, p_dev_rec->ble.static_addr, BD_ADDR_LEN) != 0) {
+        memcpy(bd_addr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+        addr_type = p_dev_rec->ble.static_addr_type;
+    }
+
+    // white list must be public address or static random address
     if(addr_type == BLE_ADDR_RANDOM) {
         /*
         A static address is a 48-bit randomly generated address and shall meet the following requirements:
@@ -292,9 +306,6 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         • All bits of the random part of the address shall not be equal to 1
         • All bits of the random part of the address shall not be equal to 0
         */
-        BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
-        memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
-        memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
         invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
         if((bd_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
             && memcmp(invalid_rand_addr_a, bd_addr, BD_ADDR_LEN) != 0
@@ -624,7 +635,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
     BTM_TRACE_EVENT ("btm_ble_initiate_select_conn");
 
     /* use direct connection procedure to initiate connection */
-    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda, BLE_ADDR_UNKNOWN_TYPE)) {
+    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-C3 |
+| ----------------- | ----- | -------- |
 
 ESP-IDF Gattc and Gatts Coexistence example
 ==============================================

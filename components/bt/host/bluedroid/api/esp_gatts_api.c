@@ -22,6 +22,7 @@
 #include "common/bt_target.h"
 #include "stack/l2cdefs.h"
 #include "stack/l2c_api.h"
+#include "gatt_int.h"
 
 #if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
@@ -260,7 +261,13 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!p_tcb) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, p_tcb->peer_bda)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
     }

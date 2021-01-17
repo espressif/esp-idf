@@ -295,7 +295,7 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
         }
     } else if (status == HCI_ERR_MEMORY_FULL) { /* BT_ERROR_CODE_MEMORY_CAPACITY_EXCEEDED  */
         btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
-        BTM_TRACE_WARNING("%s Resolving list Full ", __func__);
+        BTM_TRACE_ERROR("%s Resolving list Full ", __func__);
     } else {
         BTM_TRACE_ERROR("%s Add resolving list error %d ", __func__, status);
     }
@@ -334,6 +334,8 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
         } else {
             btm_cb.ble_ctr_cb.resolving_list_avail_size++;
         }
+    } else {
+        BTM_TRACE_ERROR("%s remove resolving list error 0x%x", __func__, status);
     }
 }
 
@@ -663,7 +665,7 @@ BOOLEAN btm_ble_exe_disable_resolving_list(void)
     if (!controller_get_interface()->supports_ble_privacy()) {
         btm_ble_vendor_enable_irk_feature(FALSE);
     } else {
-        btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
+        //btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
     }
 
     return TRUE;
@@ -687,7 +689,7 @@ void btm_ble_exe_enable_resolving_list(void)
     if (!controller_get_interface()->supports_ble_privacy()) {
         btm_ble_vendor_enable_irk_feature(TRUE);
     } else {
-        btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
+        //btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
     }
 }
 
@@ -776,18 +778,23 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                         memcpy(p_dev_rec->ble.static_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
                         p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
                     }
-                    /* It will cause that scanner doesn't send scan request to advertiser
-                     * which has sent IRK to us and we have stored the IRK in controller.
-                     * It is a hardware limitation. The preliminary solution is not to
-                     * send key to the controller, but to resolve the random address in host. */
-                    /*
+
+#if CONTROLLER_RPA_LIST_ENABLE
                     BTM_TRACE_DEBUG("%s:adding device to controller resolving list\n", __func__);
                     UINT8 *peer_irk = p_dev_rec->ble.keys.irk;
                     UINT8 *local_irk = btm_cb.devcb.id_keys.irk;
                     //use identical IRK for now
                     rt = btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.static_addr_type,
                            p_dev_rec->ble.static_addr, peer_irk, local_irk);
-                    */
+#else
+                    // do nothing
+                    /* It will cause that scanner doesn't send scan request to advertiser
+                     * which has sent IRK to us and we have stored the IRK in controller.
+                     * It is a hardware limitation. The preliminary solution is not to
+                     * send key to the controller, but to resolve the random address in host. */
+
+#endif
+
                 } else {
                     UINT8 param[40] = {0};
                     UINT8 *p = param;
@@ -812,11 +819,11 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                 }
 
                 /* if resolving list has been turned on, re-enable it */
-                if (rl_mask) {
-                    btm_ble_enable_resolving_list(rl_mask);
-                } else {
-                    btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
-                }
+                // if (rl_mask) {
+                //     btm_ble_enable_resolving_list(rl_mask);
+                // } else {
+                //     btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
+                // }
             } else {
                 BTM_TRACE_WARNING("%s Resolving list full ", __func__);
             }
@@ -863,9 +870,9 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec)
     }
 
     /* if resolving list has been turned on, re-enable it */
-    if (rl_mask) {
-        btm_ble_enable_resolving_list(rl_mask);
-    }
+    // if (rl_mask) {
+    //     btm_ble_enable_resolving_list(rl_mask);
+    // }
 }
 
 /*******************************************************************************
