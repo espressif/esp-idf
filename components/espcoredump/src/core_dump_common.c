@@ -20,21 +20,6 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_commo
 
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
 
-static inline uint32_t esp_core_dump_get_tcb_len(void)
-{
-    if (COREDUMP_TCB_SIZE % sizeof(uint32_t)) {
-        return ((COREDUMP_TCB_SIZE / sizeof(uint32_t) + 1) * sizeof(uint32_t));
-    }
-    return COREDUMP_TCB_SIZE;
-}
-
-static inline uint32_t esp_core_dump_get_memory_len(uint32_t stack_start, uint32_t stack_end)
-{
-    uint32_t len = stack_end - stack_start;
-    // Take stack padding into account
-    return (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
-}
-
 static esp_err_t esp_core_dump_save_task(core_dump_write_config_t *write_cfg,
                                                 core_dump_task_header_t *task)
 {
@@ -99,74 +84,67 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_config_t* write_
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_config_t *write_cfg)
+static esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
 {
     esp_err_t err;
-    static core_dump_task_header_t *tasks[CONFIG_ESP_COREDUMP_MAX_TASKS_NUM];
-    uint32_t task_num, tcb_sz = esp_core_dump_get_tcb_len();
-    uint32_t data_len = 0, task_id;
-    int curr_task_index = COREDUMP_CURR_TASK_NOT_FOUND;
-    core_dump_header_t hdr;
-    core_dump_mem_seg_header_t interrupted_task_stack;
-
-    task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
-    ESP_COREDUMP_LOGI("Found tasks: %d!", task_num);
+    uint32_t tcb_sz = esp_core_dump_get_tcb_len();
+    uint32_t data_len = 0, bad_tasks_num = 0;
+    core_dump_header_t hdr = {0};
+    core_dump_task_header_t task_hdr;
+    core_dump_mem_seg_header_t mem_seg;
+    void *task = NULL, *cur_task = NULL;
 
     // Verifies all tasks in the snapshot
-
-    for (task_id = 0; task_id < task_num; task_id++) {
-        bool is_current_task = false, stack_is_valid = false;
-        bool tcb_is_valid = esp_core_dump_check_task(info, tasks[task_id], &is_current_task, &stack_is_valid);
-        // Check if task tcb or stack is corrupted
-        if (!tcb_is_valid || !stack_is_valid) {
-            // If tcb or stack for task is corrupted count task as broken
-            write_cfg->bad_tasks_num++;
+    esp_core_dump_reset_tasks_snapshots_iter();
+    while ((task = esp_core_dump_get_next_task(task))) {
+        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &mem_seg)) {
+            bad_tasks_num++;
+            continue;
         }
-        if (is_current_task) {
-            curr_task_index = task_id; // save current crashed task index in the snapshot
-            ESP_COREDUMP_LOG_PROCESS("Task #%d (TCB:%x) is first crashed task.",
-                                        task_id,
-                                        tasks[task_id]->tcb_addr);
+        hdr.tasks_num++;
+        if (task == esp_core_dump_get_current_task_handle()) {
+            cur_task = task;
+            ESP_COREDUMP_LOG_PROCESS("Task %x %x is first crashed task.", cur_task, task_hdr.tcb_addr);
         }
+        ESP_COREDUMP_LOG_PROCESS("Stack len = %lu (%x %x)", task_hdr.stack_end-task_hdr.stack_start,
+                                    task_hdr.stack_start, task_hdr.stack_end);
         // Increase core dump size by task stack size
         uint32_t stk_vaddr, stk_len;
-        esp_core_dump_get_stack(tasks[task_id], &stk_vaddr, &stk_len);
+        esp_core_dump_get_stack(&task_hdr, &stk_vaddr, &stk_len);
         data_len += esp_core_dump_get_memory_len(stk_vaddr, stk_vaddr+stk_len);
         // Add tcb size
         data_len += (tcb_sz + sizeof(core_dump_task_header_t));
+        if (mem_seg.size > 0) {
+            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
+                    mem_seg.size, mem_seg.start);
+            data_len += esp_core_dump_get_memory_len(mem_seg.start, mem_seg.start+mem_seg.size);
+            data_len += sizeof(core_dump_mem_seg_header_t);
+            hdr.mem_segs_num++;
+        }
     }
-
-    if (esp_core_dump_in_isr_context()) {
-        interrupted_task_stack.start = tasks[curr_task_index]->stack_start;
-        interrupted_task_stack.size = esp_core_dump_get_memory_len(tasks[curr_task_index]->stack_start, tasks[curr_task_index]->stack_end);
-        // size of the task's stack has been already taken into account, also addresses have also been checked
-        data_len += sizeof(core_dump_mem_seg_header_t);
-        tasks[curr_task_index]->stack_start = (uint32_t)info->frame;
-        tasks[curr_task_index]->stack_end = esp_core_dump_get_isr_stack_end();
-        ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu to %lu", tasks[curr_task_index]->stack_end - tasks[curr_task_index]->stack_start, data_len);
-        // take into account size of the ISR stack
-        data_len += esp_core_dump_get_memory_len(tasks[curr_task_index]->stack_start, tasks[curr_task_index]->stack_end);
-    }
+    ESP_COREDUMP_LOGI("Found tasks: good %d, bad %d, mem segs %d", hdr.tasks_num, bad_tasks_num, hdr.mem_segs_num);
 
     // Check if current task TCB is broken
-    if (curr_task_index == COREDUMP_CURR_TASK_NOT_FOUND) {
-         ESP_COREDUMP_LOG_PROCESS("The current crashed task is broken.");
-         curr_task_index = 0;
+    if (cur_task == NULL) {
+        ESP_COREDUMP_LOG_PROCESS("The current crashed task is broken.");
+        cur_task = esp_core_dump_get_next_task(NULL);
+        if (cur_task == NULL) {
+            ESP_COREDUMP_LOGE("No valid tasks in the system!");
+            return ESP_FAIL;
+        }
     }
 
-    // Add user memory region header size
-    data_len += esp_core_dump_get_user_ram_segments() * sizeof(core_dump_mem_seg_header_t);
+    // Add user memory regions data size
     for (coredump_region_t i = COREDUMP_MEMORY_START; i < COREDUMP_MEMORY_MAX; i++) {
         uint32_t start = 0;
         int data_sz = esp_core_dump_get_user_ram_info(i, &start);
-
         if (data_sz < 0) {
-            ESP_COREDUMP_LOGE("Invalid memory segment size");
+            ESP_COREDUMP_LOGE("Invalid memory segment size!");
             return ESP_FAIL;
         }
-
         if (data_sz > 0) {
-            data_len += esp_core_dump_get_memory_len(start, start + data_sz);
+            hdr.mem_segs_num++;
+            data_len += sizeof(core_dump_mem_seg_header_t) + esp_core_dump_get_memory_len(start, start + data_sz);
         }
     }
 
@@ -174,7 +152,7 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
     data_len += sizeof(core_dump_header_t);
 
     ESP_COREDUMP_LOG_PROCESS("Core dump length=%lu, tasks processed: %d, broken tasks: %d",
-                                data_len, task_num, write_cfg->bad_tasks_num);
+                                data_len, hdr.tasks_num, bad_tasks_num);
     // Prepare write
     if (write_cfg->prepare) {
         err = write_cfg->prepare(write_cfg->priv, &data_len);
@@ -196,12 +174,6 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
     // Write header
     hdr.data_len  = data_len;
     hdr.version   = COREDUMP_VERSION;
-    hdr.tasks_num = task_num; // save all the tasks in snapshot even broken
-    hdr.mem_segs_num = 0;
-    if (esp_core_dump_in_isr_context()) {
-        hdr.mem_segs_num++; // stack of interrupted task
-    }
-    hdr.mem_segs_num += esp_core_dump_get_user_ram_segments(); // stack of user mapped memory
     hdr.tcb_sz    = tcb_sz;
     err = write_cfg->write(write_cfg->priv, &hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
@@ -209,38 +181,56 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
         return err;
     }
 
+    // Save tasks
+    esp_core_dump_reset_tasks_snapshots_iter();
     // Write first crashed task data first (not always first task in the snapshot)
-    err = esp_core_dump_save_task(write_cfg, tasks[curr_task_index]);
-    if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to save first crashed task #%d (TCB:%x), error=%d!",
-                            curr_task_index, tasks[curr_task_index]->tcb_addr, err);
-        return err;
+    ESP_COREDUMP_LOGD("Save first crashed task %x", cur_task);
+    if (esp_core_dump_get_task_snapshot(cur_task, &task_hdr, NULL)) {
+        err = esp_core_dump_save_task(write_cfg, &task_hdr);
+        if (err != ESP_OK) {
+            ESP_COREDUMP_LOGE("Failed to save first crashed task %x, error=%d!",
+                                task_hdr.tcb_addr, err);
+            return err;
+        }
     }
-
     // Write all other tasks in the snapshot
-    for (task_id = 0; task_id < task_num; task_id++) {
+    task = NULL;
+    while ((task = esp_core_dump_get_next_task(task))) {
+        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, NULL))
+            continue;
         // Skip first crashed task
-        if (task_id == curr_task_index) {
+        if (task == cur_task) {
             continue;
         }
-        err = esp_core_dump_save_task(write_cfg, tasks[task_id]);
+        ESP_COREDUMP_LOGD("Save task %x (TCB:%x, stack:%x..%x)", task, task_hdr.tcb_addr, task_hdr.stack_start, task_hdr.stack_end);
+        err = esp_core_dump_save_task(write_cfg, &task_hdr);
         if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to save core dump task #%d (TCB:%x), error=%d!",
-                                    task_id, tasks[curr_task_index]->tcb_addr, err);
+            ESP_COREDUMP_LOGE("Failed to save core dump task %x, error=%d!",
+                                    task_hdr.tcb_addr, err);
             return err;
         }
     }
-    if (esp_core_dump_in_isr_context()) {
-        err = esp_core_dump_save_mem_segment(write_cfg, &interrupted_task_stack);
-        if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to save interrupted task stack, error=%d!", err);
-            return err;
+
+    // Save interrupted stacks of the tasks
+    // Actually there can be tasks interrupted at the same time, one on every core including the crashed one.
+    task = NULL;
+    esp_core_dump_reset_tasks_snapshots_iter();
+    while ((task = esp_core_dump_get_next_task(task))) {
+        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &mem_seg))
+            continue;
+        if (mem_seg.size > 0) {
+            ESP_COREDUMP_LOG_PROCESS("Save interrupted task stack %lu bytes @ %x",
+                    mem_seg.size, mem_seg.start);
+            err = esp_core_dump_save_mem_segment(write_cfg, &mem_seg);
+            if (err != ESP_OK) {
+                ESP_COREDUMP_LOGE("Failed to save interrupted task stack, error=%d!", err);
+                return err;
+            }
         }
     }
 
     // save user memory regions
     if (esp_core_dump_get_user_ram_segments() > 0) {
-        core_dump_mem_seg_header_t user_ram_stack_size;
         for (coredump_region_t i = COREDUMP_MEMORY_START; i < COREDUMP_MEMORY_MAX; i++) {
             uint32_t start = 0;
             int data_sz = esp_core_dump_get_user_ram_info(i, &start);
@@ -251,11 +241,13 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
             }
 
             if (data_sz > 0) {
-                user_ram_stack_size.start = start;
-                user_ram_stack_size.size = esp_core_dump_get_memory_len(start, start + data_sz);;
-                err = esp_core_dump_save_mem_segment(write_cfg, &user_ram_stack_size);
+                mem_seg.start = start;
+                mem_seg.size = esp_core_dump_get_memory_len(start, start + data_sz);;
+                ESP_COREDUMP_LOG_PROCESS("Save user memory region %lu bytes @ %x",
+                        mem_seg.size, mem_seg.start);
+                err = esp_core_dump_save_mem_segment(write_cfg, &mem_seg);
                 if (err != ESP_OK) {
-                    ESP_COREDUMP_LOGE("Failed to save user memory data, error=%d!", err);
+                    ESP_COREDUMP_LOGE("Failed to save user memory region, error=%d!", err);
                     return err;
                 }
             }
@@ -270,8 +262,8 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
             return err;
         }
     }
-    if (write_cfg->bad_tasks_num) {
-        ESP_COREDUMP_LOGE("Found %d broken tasks!", write_cfg->bad_tasks_num);
+    if (bad_tasks_num) {
+        ESP_COREDUMP_LOGE("Found %d broken tasks!", bad_tasks_num);
     }
     return err;
 }
@@ -280,21 +272,21 @@ static esp_err_t esp_core_dump_write_binary(panic_info_t *info, core_dump_write_
 
 inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
-    esp_core_dump_setup_stack();
-
-#ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
+#ifndef CONFIG_ESP_ENABLE_COREDUMP_TO_NONE
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
+
+    esp_core_dump_setup_stack();
+    esp_core_dump_port_init(info);
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
-    err = esp_core_dump_write_binary(info, write_cfg);
+    err = esp_core_dump_write_binary(write_cfg);
 #elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-    err = esp_core_dump_write_elf(info, write_cfg);
+    err = esp_core_dump_write_elf(write_cfg);
 #endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write binary failed with error=%d", err);
     }
-#endif
-
     esp_core_dump_report_stack_usage();
+#endif
 }
 
 void __attribute__((weak)) esp_core_dump_init(void)
