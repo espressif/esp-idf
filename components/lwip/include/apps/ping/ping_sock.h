@@ -85,7 +85,7 @@ typedef struct {
         .timeout_ms = 1000,              \
         .data_size = 64,                 \
         .tos = 0,                        \
-        .target_addr = ip_addr_any_type, \
+        .target_addr = *(IP_ANY_TYPE),   \
         .task_stack_size = 2048,         \
         .task_prio = 2,                  \
         .interface = 0,\
