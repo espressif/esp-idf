@@ -136,7 +136,7 @@ void mesh_scan_done_handler(int num)
         esp_wifi_scan_stop();
         scan_config.show_hidden = 1;
         scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
-        ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
+        esp_wifi_scan_start(&scan_config, 0);
     }
 }
 
@@ -157,7 +157,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         /* mesh softAP is hidden */
         scan_config.show_hidden = 1;
         scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
-        ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
+        esp_wifi_scan_start(&scan_config, 0);
     }
     break;
     case MESH_EVENT_STOPPED: {
@@ -228,7 +228,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
             esp_wifi_scan_stop();
             scan_config.show_hidden = 1;
             scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
-            ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
+            esp_wifi_scan_start(&scan_config, 0);
         }
     }
     break;
