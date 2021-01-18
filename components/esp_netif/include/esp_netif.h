@@ -615,7 +615,7 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
 /** @addtogroup ESP_NETIF_NET_IP
  * @{
  */
-
+#if CONFIG_LWIP_IPV6
 /**
  * @brief  Create interface link-local IPv6 address
  *
@@ -674,6 +674,7 @@ esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip
  *      number of returned IPv6 addresses
  */
 int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
+#endif
 
 /**
  * @brief Sets IPv4 address to the specified octets

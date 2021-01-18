@@ -261,19 +261,31 @@ static void httpd_thread(void *arg)
 
 static esp_err_t httpd_server_init(struct httpd_data *hd)
 {
+#if CONFIG_LWIP_IPV6
     int fd = socket(PF_INET6, SOCK_STREAM, 0);
+#else
+    int fd = socket(PF_INET, SOCK_STREAM, 0);
+#endif
     if (fd < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in socket (%d)"), errno);
         return ESP_FAIL;
     }
-
+#if CONFIG_LWIP_IPV6
     struct in6_addr inaddr_any = IN6ADDR_ANY_INIT;
     struct sockaddr_in6 serv_addr = {
         .sin6_family  = PF_INET6,
         .sin6_addr    = inaddr_any,
         .sin6_port    = htons(hd->config.server_port)
     };
-
+#else
+    struct sockaddr_in serv_addr = {
+        .sin_family   = PF_INET,
+        .sin_addr     = {
+            .s_addr = htonl(INADDR_ANY)
+        },
+        .sin_port     = htons(hd->config.server_port)
+    };
+#endif
     /* Enable SO_REUSEADDR to allow binding to the same
      * address and port when restarting the server */
     int enable = 1;

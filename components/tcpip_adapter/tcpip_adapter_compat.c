@@ -200,6 +200,7 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
     return esp_netif_get_ip_info(netif_from_if(tcpip_if), (esp_netif_ip_info_t *)ip_info);
 }
 
+#if CONFIG_LWIP_IPV6
 esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6)
 {
     return esp_netif_get_ip6_linklocal(netif_from_if(tcpip_if), (esp_ip6_addr_t*)if_ip6);
@@ -209,6 +210,7 @@ esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *
 {
     return esp_netif_get_ip6_global(netif_from_if(tcpip_if), (esp_ip6_addr_t*)if_ip6);
 }
+#endif
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
 {
@@ -230,12 +232,12 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif)
     }
     return ESP_ERR_INVALID_ARG;
 }
-
+#if CONFIG_LWIP_IPV6
 esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if)
 {
     return esp_netif_create_ip6_linklocal(netif_from_if(tcpip_if));
 }
-
+#endif
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if)
 {
     return esp_netif_dhcps_stop(netif_from_if(tcpip_if));

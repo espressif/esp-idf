@@ -210,12 +210,16 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         struct sockaddr_in *p = (struct sockaddr_in *)addrinfo->ai_addr;
         p->sin_port = htons(port);
         addr_ptr = p;
-    } else if (addrinfo->ai_family == AF_INET6) {
+    }
+#if CONFIG_LWIP_IPV6
+    else if (addrinfo->ai_family == AF_INET6) {
         struct sockaddr_in6 *p = (struct sockaddr_in6 *)addrinfo->ai_addr;
         p->sin6_port = htons(port);
         p->sin6_family = AF_INET6;
         addr_ptr = p;
-    } else {
+    }
+#endif
+    else {
         ESP_LOGE(TAG, "Unsupported protocol family %d", addrinfo->ai_family);
         ret = ESP_ERR_ESP_TLS_UNSUPPORTED_PROTOCOL_FAMILY;
         goto err_freesocket;
