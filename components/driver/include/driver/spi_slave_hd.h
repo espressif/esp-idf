@@ -33,16 +33,16 @@ extern "C"
 
 /// Descriptor of data to send/receive
 typedef struct {
-    uint8_t*    data;       ///< Buffer to send, must be DMA capable
-    size_t      len;        ///< Len of data to send/receive. For receiving the buffer length should be multiples of 4 bytes, otherwise the extra part will be truncated.
-    size_t      trans_len;  ///< Data actually received
-    void*       arg;        ///< Extra argument indiciating this data
+    uint8_t* data;                              ///< Buffer to send, must be DMA capable
+    size_t   len;                               ///< Len of data to send/receive. For receiving the buffer length should be multiples of 4 bytes, otherwise the extra part will be truncated.
+    size_t   trans_len;                         ///< For RX direction, it indicates the data actually received. For TX direction, it is meaningless.
+    void*    arg;                               ///< Extra argument indiciating this data
 } spi_slave_hd_data_t;
 
 /// Information of SPI Slave HD event
 typedef struct {
-    spi_event_t event;          ///< Event type
-    spi_slave_hd_data_t* trans; ///< Corresponding transaction for SPI_EV_SEND and SPI_EV_RECV events
+    spi_event_t          event;                 ///< Event type
+    spi_slave_hd_data_t* trans;                 ///< Corresponding transaction for SPI_EV_SEND and SPI_EV_RECV events
 } spi_slave_hd_event_t;
 
 /// Callback for SPI Slave HD
@@ -50,38 +50,39 @@ typedef bool (*slave_cb_t)(void* arg, spi_slave_hd_event_t* event, BaseType_t* a
 
 /// Channel of SPI Slave HD to do data transaction
 typedef enum {
-    SPI_SLAVE_CHAN_TX = 0,  ///< The output channel (RDDMA)
-    SPI_SLAVE_CHAN_RX = 1,  ///< The input channel (WRDMA)
+    SPI_SLAVE_CHAN_TX = 0,                      ///< The output channel (RDDMA)
+    SPI_SLAVE_CHAN_RX = 1,                      ///< The input channel (WRDMA)
 } spi_slave_chan_t;
 
 /// Callback configuration structure for SPI Slave HD
 typedef struct {
-    slave_cb_t cb_recv;         ///< Callback when receive data
-    slave_cb_t cb_sent;         ///< Callback when data sent
-    slave_cb_t cb_buffer_tx;    ///< Callback when master reads from shared buffer
-    slave_cb_t cb_buffer_rx;    ///< Callback when master writes to shared buffer
-    slave_cb_t cb_cmd9;         ///< Callback when CMD9 received
-    slave_cb_t cb_cmdA;         ///< Callback when CMDA received
-    void* arg;                  ///< Argument indicating this SPI Slave HD peripheral instance
+    slave_cb_t cb_buffer_tx;                    ///< Callback when master reads from shared buffer
+    slave_cb_t cb_buffer_rx;                    ///< Callback when master writes to shared buffer
+    slave_cb_t cb_sent;                         ///< Callback when data are sent
+    slave_cb_t cb_recv;                         ///< Callback when data are received
+    slave_cb_t cb_cmd9;                         ///< Callback when CMD9 received
+    slave_cb_t cb_cmdA;                         ///< Callback when CMDA received
+    void* arg;                                  ///< Argument indicating this SPI Slave HD peripheral instance
 } spi_slave_hd_callback_config_t;
+
+
+//flags for ``spi_slave_hd_slot_config_t`` to use
+#define SPI_SLAVE_HD_TXBIT_LSBFIRST     (1<<0)  ///< Transmit command/address/data LSB first instead of the default MSB first
+#define SPI_SLAVE_HD_RXBIT_LSBFIRST     (1<<1)  ///< Receive data LSB first instead of the default MSB first
+#define SPI_SLAVE_HD_BIT_LSBFIRST       (SPI_SLAVE_HD_TXBIT_LSBFIRST|SPI_SLAVE_HD_RXBIT_LSBFIRST) ///< Transmit and receive LSB first
+#define SPI_SLAVE_HD_APPEND_MODE        (1<<2)  ///< Adopt DMA append mode for transactions. In this mode, users can load(append) DMA descriptors without stopping the DMA
 
 /// Configuration structure for the SPI Slave HD driver
 typedef struct {
-    int spics_io_num;               ///< CS GPIO pin for this device
-    uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_HD_* flags
-#define SPI_SLAVE_HD_TXBIT_LSBFIRST          (1<<0)  ///< Transmit command/address/data LSB first instead of the default MSB first
-#define SPI_SLAVE_HD_RXBIT_LSBFIRST          (1<<1)  ///< Receive data LSB first instead of the default MSB first
-#define SPI_SLAVE_HD_BIT_LSBFIRST            (SPI_SLAVE_HD_TXBIT_LSBFIRST|SPI_SLAVE_HD_RXBIT_LSBFIRST) ///< Transmit and receive LSB first
-
-    uint8_t mode;                   ///< SPI mode (0-3)
-    int     command_bits;           ///< command field bits, multiples of 8 and at least 8.
-    int     address_bits;           ///< address field bits, multiples of 8 and at least 8.
-    int     dummy_bits;             ///< dummy field bits, multiples of 8 and at least 8.
-
-    int     queue_size;             ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_slave_hd_queue_trans but not yet finished using spi_slave_hd_get_trans_result) at the same time
-
-    int dma_chan;                   ///< DMA channel used
-    spi_slave_hd_callback_config_t cb_config; ///< Callback configuration
+    uint8_t  mode;                              ///< SPI mode (0-3)
+    uint32_t spics_io_num;                      ///< CS GPIO pin for this device
+    uint32_t flags;                             ///< Bitwise OR of SPI_SLAVE_HD_* flags
+    uint32_t command_bits;                      ///< command field bits, multiples of 8 and at least 8.
+    uint32_t address_bits;                      ///< address field bits, multiples of 8 and at least 8.
+    uint32_t dummy_bits;                        ///< dummy field bits, multiples of 8 and at least 8.
+    uint32_t queue_size;                        ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_slave_hd_queue_trans but not yet finished using spi_slave_hd_get_trans_result) at the same time
+    uint32_t dma_chan;                          ///< DMA channel used
+    spi_slave_hd_callback_config_t cb_config;   ///< Callback configuration
 } spi_slave_hd_slot_config_t;
 
 /**
@@ -111,36 +112,39 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id);
 
 /**
- * @brief Queue data transaction
+ * @brief Queue transactions (segment mode)
  *
  * @param host_id   Host to queue the transaction
- * @param chan      Channel to queue the data, SPI_SLAVE_CHAN_TX or SPI_SLAVE_CHAN_RX
- * @param trans     Descriptor of data to queue
+ * @param chan      SPI_SLAVE_CHAN_TX or SPI_SLAVE_CHAN_RX
+ * @param trans     Transaction descriptors
  * @param timeout   Timeout before the data is queued
  * @return
  *  - ESP_OK: on success
  *  - ESP_ERR_INVALID_ARG: The input argument is invalid. Can be the following reason:
  *      - The buffer given is not DMA capable
  *      - The length of data is invalid (not larger than 0, or exceed the max transfer length)
- *      - The function is invalid
- *  - ESP_ERR_TIMEOUT: Cannot queue the data before timeout. This is quite possible if the master
- *    doesn't read/write the slave on time.
+ *      - The transaction direction is invalid
+ *  - ESP_ERR_TIMEOUT: Cannot queue the data before timeout. Master is still processing previous transaction.
+ *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under segment mode.
  */
 esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t* trans, TickType_t timeout);
 
 /**
- * @brief Get the result of a data transaction
+ * @brief Get the result of a data transaction (segment mode)
+ *
+ * @note This API should be called successfully the same times as the ``spi_slave_hd_queue_trans``.
  *
  * @param host_id   Host to queue the transaction
  * @param chan      Channel to get the result, SPI_SLAVE_CHAN_TX or SPI_SLAVE_CHAN_RX
- * @param[out] out_trans Output descriptor of the returned transaction
+ * @param[out] out_trans Pointer to the transaction descriptor (``spi_slave_hd_data_t``) passed to the driver before. Hardware has finished this transaction. Member ``trans_len`` indicates the actual number of bytes of received data, it's meaningless for TX.
  * @param timeout   Timeout before the result is got
  * @return
  *  - ESP_OK: on success
  *  - ESP_ERR_INVALID_ARG: Function is not valid
  *  - ESP_ERR_TIMEOUT: There's no transaction done before timeout
+ *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under segment mode.
  */
-esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t** out_trans, TickType_t timeout);
+esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout);
 
 /**
  * @brief Read the shared registers
@@ -162,6 +166,42 @@ void spi_slave_hd_read_buffer(spi_host_device_t host_id, int addr, uint8_t *out_
  */
 void spi_slave_hd_write_buffer(spi_host_device_t host_id, int addr, uint8_t *data, size_t len);
 
+/**
+ * @brief Load transactions (append mode)
+ *
+ * @note In this mode, user transaction descriptors will be appended to the DMA and the DMA will keep processing the data without stopping
+ *
+ * @param host_id   Host to load transactions
+ * @param chan      SPI_SLAVE_CHAN_TX or SPI_SLAVE_CHAN_RX
+ * @param trans     Transaction descriptor
+ * @param timeout   Timeout before the transaction is loaded
+ * @return
+ *  - ESP_OK: on success
+ *  - ESP_ERR_INVALID_ARG: The input argument is invalid. Can be the following reason:
+ *      - The buffer given is not DMA capable
+ *      - The length of data is invalid (not larger than 0, or exceed the max transfer length)
+ *      - The transaction direction is invalid
+ *  - ESP_ERR_TIMEOUT: Master is still processing previous transaction. There is no available transaction for slave to load
+ *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under append mode.
+ */
+esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, TickType_t timeout);
+
+/**
+ * @brief Get the result of a data transaction (append mode)
+ *
+ * @note This API should be called the same times as the ``spi_slave_hd_append_trans``
+ *
+ * @param host_id   Host to load the transaction
+ * @param chan      SPI_SLAVE_CHAN_TX or SPI_SLAVE_CHAN_RX
+ * @param[out] out_trans Pointer to the transaction descriptor (``spi_slave_hd_data_t``) passed to the driver before. Hardware has finished this transaction. Member ``trans_len`` indicates the actual number of bytes of received data, it's meaningless for TX.
+ * @param timeout   Timeout before the result is got
+ * @return
+ *  - ESP_OK: on success
+ *  - ESP_ERR_INVALID_ARG: Function is not valid
+ *  - ESP_ERR_TIMEOUT: There's no transaction done before timeout
+ *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under append mode.
+ */
+esp_err_t spi_slave_hd_get_append_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout);
 
 #ifdef __cplusplus
 }
