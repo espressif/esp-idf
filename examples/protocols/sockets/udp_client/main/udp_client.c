@@ -64,7 +64,7 @@ static void udp_client_task(void *pvParameters)
         addr_family = AF_INET6;
         ip_protocol = IPPROTO_IPV6;
 #elif defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
-        struct sockaddr_in6 dest_addr = { 0 };
+        struct sockaddr_storage dest_addr = { 0 };
         ESP_ERROR_CHECK(get_addr_from_stdin(PORT, SOCK_DGRAM, &ip_protocol, &addr_family, &dest_addr));
 #endif
 
