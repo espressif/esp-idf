@@ -442,6 +442,8 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
 /**
   * @brief     Get information of AP which the ESP32 station is associated with
   *
+  * @attention When the obtained country information is empty, it means that the AP does not carry country information
+  *
   * @param     ap_info  the wifi_ap_record_t to hold AP information
   *            sta can get the connected ap's phy mode info through the struct member
   *            phy_11b，phy_11g，phy_11n，phy_lr in the wifi_ap_record_t struct.
@@ -905,9 +907,9 @@ esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
   * @attention 1. Maximum power before wifi startup is limited by PHY init data bin.
   * @attention 2. The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable.
   * @attention 3. Mapping Table {Power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
-  *                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {78, 20}}.
-  * @attention 4. Param power unit is 0.25dBm, range is [8, 78] corresponding to 2dBm - 20dBm.
-  * @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 77],72}, {78,78}}
+  *                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
+  * @attention 4. Param power unit is 0.25dBm, range is [8, 84] corresponding to 2dBm - 20dBm.
+  * @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}.
   *
   * @param     power  Maximum WiFi transmitting power.
   *
