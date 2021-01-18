@@ -167,13 +167,17 @@ static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int po
         p->sin_port = htons(port);
         ESP_LOGD(TAG, "[sock=%d] Resolved IPv4 address: %s", *fd, ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
         memcpy(address, p, sizeof(struct sockaddr ));
-    } else if (address_info->ai_family == AF_INET6) {
+    }
+#if CONFIG_LWIP_IPV6
+    else if (address_info->ai_family == AF_INET6) {
         struct sockaddr_in6 *p = (struct sockaddr_in6 *)address_info->ai_addr;
         p->sin6_port = htons(port);
         p->sin6_family = AF_INET6;
         ESP_LOGD(TAG, "[sock=%d] Resolved IPv6 address: %s", *fd, ip6addr_ntoa((const ip6_addr_t*)&p->sin6_addr));
         memcpy(address, p, sizeof(struct sockaddr_in6 ));
-    } else {
+    }
+#endif
+    else {
         ESP_LOGE(TAG, "Unsupported protocol family %d", address_info->ai_family);
         close(*fd);
         freeaddrinfo(address_info);
