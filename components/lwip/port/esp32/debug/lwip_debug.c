@@ -30,7 +30,7 @@
 #endif
 #define DBG_LWIP_IP_PCB_SHOW(pcb) \
         DBG_LWIP_IP_SHOW("local ip", (pcb)->local_ip);\
-        DBG_LWIP_IP_SHOW("remote ip", (pcb)->local_ip);\
+        DBG_LWIP_IP_SHOW("remote ip", (pcb)->remote_ip);\
         ESP_LWIP_LOGI("so_options=%x, tos=%d ttl=%d", (pcb)->so_options, (pcb)->tos, (pcb)->ttl)
 
 #define DBG_LWIP_SEG_SHOW(seg) while(seg) { ESP_LWIP_LOGI("\tseg=%p next=%p pbuf=%p flags=%x", (seg), (seg)->next, (seg)->p, (seg)->flags); (seg)=(seg)->next;}
