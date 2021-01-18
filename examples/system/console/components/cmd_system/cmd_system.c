@@ -190,8 +190,10 @@ static void register_tasks(void)
 
 static struct {
     struct arg_int *wakeup_time;
+#if SOC_PM_SUPPORT_EXT_WAKEUP
     struct arg_int *wakeup_gpio_num;
     struct arg_int *wakeup_gpio_level;
+#endif
     struct arg_end *end;
 } deep_sleep_args;
 
@@ -208,6 +210,8 @@ static int deep_sleep(int argc, char **argv)
         ESP_LOGI(TAG, "Enabling timer wakeup, timeout=%lluus", timeout);
         ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
     }
+
+#if SOC_PM_SUPPORT_EXT_WAKEUP
     if (deep_sleep_args.wakeup_gpio_num->count) {
         int io_num = deep_sleep_args.wakeup_gpio_num->ival[0];
         if (!esp_sleep_is_valid_wakeup_gpio(io_num)) {
@@ -226,26 +230,36 @@ static int deep_sleep(int argc, char **argv)
                  io_num, level ? "HIGH" : "LOW");
 
         ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(1ULL << io_num, level) );
+        ESP_LOGE(TAG, "GPIO wakeup from deep sleep currently unsupported on ESP32-C3");
     }
+#endif // SOC_PM_SUPPORT_EXT_WAKEUP
     rtc_gpio_isolate(GPIO_NUM_12);
     esp_deep_sleep_start();
 }
 
 static void register_deep_sleep(void)
 {
+    int num_args = 1;
     deep_sleep_args.wakeup_time =
         arg_int0("t", "time", "<t>", "Wake up time, ms");
+#if SOC_PM_SUPPORT_EXT_WAKEUP
     deep_sleep_args.wakeup_gpio_num =
         arg_int0(NULL, "io", "<n>",
                  "If specified, wakeup using GPIO with given number");
     deep_sleep_args.wakeup_gpio_level =
         arg_int0(NULL, "io_level", "<0|1>", "GPIO level to trigger wakeup");
-    deep_sleep_args.end = arg_end(3);
+    num_args += 2;
+#endif
+    deep_sleep_args.end = arg_end(num_args);
 
     const esp_console_cmd_t cmd = {
         .command = "deep_sleep",
         .help = "Enter deep sleep mode. "
+#if SOC_PM_SUPPORT_EXT_WAKEUP
         "Two wakeup modes are supported: timer and GPIO. "
+#else
+        "Timer wakeup mode is supported. "
+#endif
         "If no wakeup option is specified, will sleep indefinitely.",
         .hint = NULL,
         .func = &deep_sleep,
