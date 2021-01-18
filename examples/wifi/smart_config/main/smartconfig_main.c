@@ -84,7 +84,7 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
             ESP_LOGI(TAG, "PASSWORD:%s", wifi_config->sta.password);
             ESP_ERROR_CHECK( esp_wifi_disconnect() );
             ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config) );
-            ESP_ERROR_CHECK( esp_wifi_connect() );
+            esp_wifi_connect();
             break;
         case SC_STATUS_LINK_OVER:
             ESP_LOGI(TAG, "SC_STATUS_LINK_OVER");
