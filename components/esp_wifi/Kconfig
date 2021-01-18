@@ -300,4 +300,16 @@ menu "Wi-Fi"
             Select this option to enable power_management for station when disconnected.
             Chip will do modem-sleep when rf module is not in use any more.
 
+    config ESP_WIFI_EXTERNAL_COEXIST_ENABLE
+        bool "WiFi External Coexistence"
+        default n
+        depends on (!BT_ENABLED && (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3))
+        help
+            If enabled, HW External coexistence arbitration is managed by GPIO pins.
+            It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
+            User can select GPIO pins in application code with configure interfaces.
+
+            This function depends on BT-off
+            because currently we don't support external coex and internal coex simultaneously.
+
 endmenu  # Wi-Fi

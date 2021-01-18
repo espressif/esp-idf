@@ -474,7 +474,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_apb_backup_dma_lock_init();
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
 #endif

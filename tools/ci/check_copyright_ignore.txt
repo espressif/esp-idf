@@ -1210,9 +1210,7 @@ components/esp_wifi/esp32/esp_adapter.c
 components/esp_wifi/esp32c3/esp_adapter.c
 components/esp_wifi/esp32s2/esp_adapter.c
 components/esp_wifi/esp32s3/esp_adapter.c
-components/esp_wifi/include/esp_coexist.h
 components/esp_wifi/include/esp_coexist_adapter.h
-components/esp_wifi/include/esp_coexist_internal.h
 components/esp_wifi/include/esp_mesh.h
 components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_now.h

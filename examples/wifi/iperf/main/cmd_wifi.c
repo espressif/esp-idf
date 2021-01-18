@@ -19,6 +19,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "iperf.h"
+#include "esp_coexist.h"
 
 typedef struct {
     struct arg_str *ip;
@@ -142,6 +143,16 @@ void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL) );
     ESP_ERROR_CHECK(esp_wifi_start() );
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    esp_external_coex_gpio_set_t gpio_pin;
+    gpio_pin.in_pin0  = 1;
+    gpio_pin.in_pin1  = 2;
+    gpio_pin.out_pin0 = 3;
+
+    ESP_ERROR_CHECK( esp_enable_extern_coex_gpio_pin(EXTERN_COEX_WIRE_3, gpio_pin) );
+#endif
+
     initialized = true;
 }
 

@@ -237,7 +237,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
     }
 #endif
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_init();
 #endif
     esp_wifi_set_log_level();
