@@ -143,6 +143,7 @@ esp_err_t esp_wifi_deinit(void)
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #if SOC_WIFI_HW_TSF
     esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
+    esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
 #endif
 #endif
 
@@ -175,6 +176,11 @@ static void esp_wifi_config_info(void)
     ESP_LOGI(TAG, "WiFi RX IRAM OP enabled");
 #endif
 
+#ifdef CONFIG_ESP_WIFI_SLP_IRAM_OPT
+    esp_wifi_internal_optimize_wake_ahead_time();
+    ESP_LOGI(TAG, "WiFi SLP IRAM OP enabled");
+#endif
+
 #ifdef CONFIG_LWIP_IRAM_OPTIMIZATION
     ESP_LOGI(TAG, "LWIP IRAM OP enabled");
 #endif
@@ -200,6 +206,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     esp_err_t ret = esp_pm_register_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register skip light sleep callback (0x%x)", ret);
+        return ret;
+    }
+    ret = esp_pm_register_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register inform light sleep overhead callback (0x%x)", ret);
         return ret;
     }
     esp_sleep_enable_wifi_wakeup();

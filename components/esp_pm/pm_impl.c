@@ -112,12 +112,10 @@ static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define PERIPH_SKIP_LIGHT_SLEEP_NO 1
 
 /* Indicates if light sleep shoule be skipped by peripherals. */
 static skip_light_sleep_cb_t s_periph_skip_light_sleep_cb[PERIPH_SKIP_LIGHT_SLEEP_NO];
-#endif
 
 /* Indicates if light sleep entry was skipped in vApplicationSleep for given CPU.
  * This in turn gets used in IDLE hook to decide if `waiti` needs
@@ -488,61 +486,8 @@ static void IRAM_ATTR leave_idle(void)
     }
 }
 
-void esp_pm_impl_idle_hook(void)
-{
-    int core_id = xPortGetCoreID();
-    uint32_t state = portENTER_CRITICAL_NESTED();
-    if (!s_core_idle[core_id]) {
-        esp_pm_lock_release(s_rtos_lock_handle[core_id]);
-        s_core_idle[core_id] = true;
-    }
-    portEXIT_CRITICAL_NESTED(state);
-    ESP_PM_TRACE_ENTER(IDLE, core_id);
-}
-
-void IRAM_ATTR esp_pm_impl_isr_hook(void)
-{
-    int core_id = xPortGetCoreID();
-    ESP_PM_TRACE_ENTER(ISR_HOOK, core_id);
-    /* Prevent higher level interrupts (than the one this function was called from)
-     * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
-     */
-    uint32_t state = portENTER_CRITICAL_NESTED();
-#if portNUM_PROCESSORS == 2
-    if (s_need_update_ccompare[core_id]) {
-        update_ccompare();
-        s_need_update_ccompare[core_id] = false;
-    } else {
-        leave_idle();
-    }
-#else
-    leave_idle();
-#endif // portNUM_PROCESSORS == 2
-    portEXIT_CRITICAL_NESTED(state);
-    ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
-}
-
-void esp_pm_impl_waiti(void)
-{
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-    int core_id = xPortGetCoreID();
-    if (s_skipped_light_sleep[core_id]) {
-        asm("waiti 0");
-        /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
-         * is now taken. However since we are back to idle task, we can release
-         * the lock so that vApplicationSleep can attempt to enter light sleep.
-         */
-        esp_pm_impl_idle_hook();
-        s_skipped_light_sleep[core_id] = false;
-    }
-#else
-    asm("waiti 0");
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
-}
-
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 esp_err_t esp_pm_register_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 {
     for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
@@ -578,7 +523,6 @@ static inline bool IRAM_ATTR periph_should_skip_light_sleep(void)
     }
     return false;
 }
-#endif
 
 static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 {
@@ -589,11 +533,8 @@ static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
         return true;
     }
 #endif // portNUM_PROCESSORS == 2
-#if CONFIG_IDF_TARGET_ESP32
-    if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching) {
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+
     if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching || periph_should_skip_light_sleep()) {
-#endif
         s_skipped_light_sleep[core_id] = true;
     } else {
         s_skipped_light_sleep[core_id] = false;
@@ -742,4 +683,98 @@ void esp_pm_impl_init(void)
 
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
+}
+
+void esp_pm_impl_idle_hook(void)
+{
+    int core_id = xPortGetCoreID();
+    uint32_t state = portENTER_CRITICAL_NESTED();
+    if (!s_core_idle[core_id]
+#ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    && !periph_should_skip_light_sleep()
+#endif
+    ) {
+        esp_pm_lock_release(s_rtos_lock_handle[core_id]);
+        s_core_idle[core_id] = true;
+    }
+    portEXIT_CRITICAL_NESTED(state);
+    ESP_PM_TRACE_ENTER(IDLE, core_id);
+}
+
+void IRAM_ATTR esp_pm_impl_isr_hook(void)
+{
+    int core_id = xPortGetCoreID();
+    ESP_PM_TRACE_ENTER(ISR_HOOK, core_id);
+    /* Prevent higher level interrupts (than the one this function was called from)
+     * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
+     */
+    uint32_t state = portENTER_CRITICAL_NESTED();
+#if portNUM_PROCESSORS == 2
+    if (s_need_update_ccompare[core_id]) {
+        update_ccompare();
+        s_need_update_ccompare[core_id] = false;
+    } else {
+        leave_idle();
+    }
+#else
+    leave_idle();
+#endif // portNUM_PROCESSORS == 2
+    portEXIT_CRITICAL_NESTED(state);
+    ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
+}
+
+void esp_pm_impl_waiti(void)
+{
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    int core_id = xPortGetCoreID();
+    if (s_skipped_light_sleep[core_id]) {
+        asm("waiti 0");
+        /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
+         * is now taken. However since we are back to idle task, we can release
+         * the lock so that vApplicationSleep can attempt to enter light sleep.
+         */
+        esp_pm_impl_idle_hook();
+        s_skipped_light_sleep[core_id] = false;
+    }
+#else
+    asm("waiti 0");
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+}
+
+#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 1
+
+/* Inform peripherals of light sleep wakeup overhead time */
+static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
+
+esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            return ESP_OK;
+        } else if (s_periph_inform_out_light_sleep_overhead_cb[i] == NULL) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = cb;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i]) {
+            s_periph_inform_out_light_sleep_overhead_cb[i](out_light_sleep_time);
+        }
+    }
 }

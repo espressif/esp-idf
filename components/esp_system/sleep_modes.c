@@ -125,6 +125,8 @@
 #define DEEP_SLEEP_WAKEUP_DELAY     0
 #endif
 
+extern void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time);
+
 // Minimal amount of time we can sleep for
 #define LIGHT_SLEEP_MIN_TIME_US     200
 
@@ -601,6 +603,8 @@ esp_err_t esp_light_sleep_start(void)
         }
     }
 #endif //CONFIG_ESP_SYSTEM_PD_FLASH
+
+    periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 

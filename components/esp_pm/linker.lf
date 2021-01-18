@@ -4,6 +4,8 @@ entries:
     if PM_RTOS_IDLE_OPT = y:
         pm_impl:esp_pm_impl_idle_hook (noflash)
         pm_impl:esp_pm_impl_waiti (noflash)
+    if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = n:
+        pm_impl:periph_inform_out_light_sleep_overhead (noflash)
 
 [mapping:esp_common_pm]
 archive: libesp_common.a

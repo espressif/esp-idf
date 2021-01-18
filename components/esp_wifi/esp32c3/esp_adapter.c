@@ -422,12 +422,12 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 
 static void IRAM_ATTR wifi_clock_enable_wrapper(void)
 {
-    periph_module_enable(PERIPH_WIFI_MODULE);
+    wifi_module_enable();
 }
 
 static void IRAM_ATTR wifi_clock_disable_wrapper(void)
 {
-    periph_module_disable(PERIPH_WIFI_MODULE);
+    wifi_module_disable();
 }
 
 static int get_time_wrapper(void *t)

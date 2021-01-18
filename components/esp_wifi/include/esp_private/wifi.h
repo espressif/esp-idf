@@ -467,7 +467,7 @@ esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t
   */
 esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_WIFI_HW_TSF
 /**
   * @brief     Check if WiFi TSF is active
   *
@@ -476,6 +476,12 @@ esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8
   *    - false: Not active
   */
 bool esp_wifi_internal_is_tsf_active(void);
+
+/**
+  * @brief     Update WIFI light sleep wake ahead time
+  *
+  */
+void esp_wifi_internal_update_light_sleep_wake_ahead_time(uint32_t);
 #endif
 
 #if CONFIG_MAC_BB_PD
@@ -526,6 +532,11 @@ esp_err_t esp_wifi_set_tx_done_cb(wifi_tx_done_cb_t cb);
  */
 esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, bool spp_req);
 
+/**
+  * @brief    Apply WiFi sleep optimization parameters
+  *
+  */
+void esp_wifi_internal_optimize_wake_ahead_time(void);
 #ifdef __cplusplus
 }
 #endif
