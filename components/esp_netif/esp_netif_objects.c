@@ -76,6 +76,7 @@ esp_err_t esp_netif_add_to_list(esp_netif_t *netif)
     item->netif = netif;
 
     if ((ret = esp_netif_list_lock()) != ESP_OK) {
+        free(item);
         return ret;
     }
 
