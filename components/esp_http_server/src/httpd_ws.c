@@ -377,9 +377,11 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
     } else {
         header_buf[1] = 127;                /* Length for 64 bits */
         uint8_t shift_idx = sizeof(uint64_t) - 1; /* Shift index starts at 7 */
-        for (int8_t idx = 2; idx > 9; idx--) {
-            /* Now do shifting (be careful of endianess, i.e. when buffer index is 2, frame length shift index is 7) */
-            header_buf[idx] = (frame->len >> (uint8_t)(shift_idx * 8)) & 0xffU;
+        uint64_t len64 = frame->len; /* Raise variable size to make sure we won't shift by more bits
+                                      * than the length has (to avoid undefined behaviour) */
+        for (int8_t idx = 2; idx <= 9; idx++) {
+            /* Now do shifting (be careful of endianness, i.e. when buffer index is 2, frame length shift index is 7) */
+            header_buf[idx] = (len64 >> (shift_idx * 8)) & 0xffU;
             shift_idx--;
         }
         tx_len = 10;
