@@ -38,6 +38,38 @@ choice BT_NIMBLE_MEM_ALLOC_MODE
 
 endchoice #BT_NIMBLE_MEM_ALLOC_MODE
 
+choice BT_NIMBLE_LOG_LEVEL
+    prompt "NimBLE Host log verbosity"
+    depends on BT_NIMBLE_ENABLED
+    default BT_NIMBLE_LOG_LEVEL_INFO
+    help
+        Select NimBLE log level. Please make a note that the selected NimBLE log
+        verbosity can not exceed the level set in "Component config --> Log output
+        --> Default log verbosity".
+
+    config BT_NIMBLE_LOG_LEVEL_NONE
+        bool "No logs"
+    config BT_NIMBLE_LOG_LEVEL_CRIT
+        bool "Critical logs"
+    config BT_NIMBLE_LOG_LEVEL_ERROR
+        bool "Error logs"
+    config BT_NIMBLE_LOG_LEVEL_WARNING
+        bool "Warning logs"
+    config BT_NIMBLE_LOG_LEVEL_INFO
+        bool "Info logs"
+    config BT_NIMBLE_LOG_LEVEL_DEBUG
+        bool "Debug logs"
+endchoice #BT_NIMBLE_LOG_LEVEL
+
+config BT_NIMBLE_LOG_LEVEL
+    int
+    default 0 if BT_NIMBLE_LOG_LEVEL_DEBUG
+    default 1 if BT_NIMBLE_LOG_LEVEL_INFO
+    default 2 if BT_NIMBLE_LOG_LEVEL_WARNING
+    default 3 if BT_NIMBLE_LOG_LEVEL_ERROR
+    default 4 if BT_NIMBLE_LOG_LEVEL_CRIT
+    default 5 if BT_NIMBLE_LOG_LEVEL_NONE
+
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 9
@@ -356,6 +388,20 @@ config BT_NIMBLE_MESH_DEVICE_NAME
     help
         This value defines Bluetooth Mesh device/node name
 
+config BT_NIMBLE_MESH_NODE_COUNT
+    int "Set mesh node count"
+    default 1
+    depends on BT_NIMBLE_MESH
+    help
+        Defines mesh node count.
+
+config BT_NIMBLE_MESH_PROVISIONER
+    bool "Enable BLE mesh provisioner"
+    default 0
+    depends on BT_NIMBLE_MESH
+    help
+        Enable mesh provisioner.
+
 config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
     bool "Override TinyCrypt with mbedTLS for crypto computations"
     default y
@@ -365,3 +411,10 @@ config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
     help
         Enable this option to choose mbedTLS instead of TinyCrypt for crypto
         computations.
+
+config BT_NIMBLE_HS_STOP_TIMEOUT_MS
+    int "BLE host stop timeout in msec"
+    default 2000
+    depends on BT_NIMBLE_ENABLED
+    help
+        BLE Host stop procedure timeout in milliseconds.

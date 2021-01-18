@@ -391,7 +391,7 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
         struct net_buf_simple buf = {0};
 
         desc = &event->disc;
-        net_buf_simple_init_with_data(&buf, desc->data, desc->length_data);
+        net_buf_simple_init_with_data(&buf, (void *)desc->data, desc->length_data);
 
         if (bt_mesh_scan_dev_found_cb) {
             bt_mesh_scan_dev_found_cb((bt_mesh_addr_t *)&desc->addr, desc->rssi, desc->event_type, &buf);

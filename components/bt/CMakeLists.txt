@@ -434,6 +434,7 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/include
                     host/nimble/nimble/nimble/host/services/ans/include
                     host/nimble/nimble/nimble/host/services/bas/include
+                    host/nimble/nimble/nimble/host/services/dis/include
                     host/nimble/nimble/nimble/host/services/gap/include
                     host/nimble/nimble/nimble/host/services/gatt/include
                     host/nimble/nimble/nimble/host/services/ias/include
@@ -476,6 +477,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/services/ans/src/ble_svc_ans.c"
                     "host/nimble/nimble/nimble/host/services/gap/src/ble_svc_gap.c"
                     "host/nimble/nimble/nimble/host/services/bas/src/ble_svc_bas.c"
+                    "host/nimble/nimble/nimble/host/services/dis/src/ble_svc_dis.c"
                     "host/nimble/nimble/nimble/host/services/lls/src/ble_svc_lls.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_conn.c"
                     "host/nimble/nimble/nimble/host/src/ble_store_util.c"
@@ -492,7 +494,6 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_hs_stop.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_hci_evt.c"
-                    "host/nimble/nimble/nimble/host/src/ble_hs_dbg.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_mqueue.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_periodic_sync.c"
                     "host/nimble/nimble/nimble/host/src/ble_att.c"
@@ -525,7 +526,6 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
-                    "host/nimble/nimble/nimble/src/ble_util.c"
                     "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
                     "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
                     "host/nimble/nimble/porting/nimble/src/endian.c"
@@ -561,6 +561,7 @@ if(CONFIG_BT_ENABLED)
                         "host/nimble/nimble/nimble/host/mesh/src/transport.c"
                         "host/nimble/nimble/nimble/host/mesh/src/prov.c"
                         "host/nimble/nimble/nimble/host/mesh/src/mesh.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/nodes.c"
                         "host/nimble/nimble/nimble/host/mesh/src/access.c"
                         "host/nimble/nimble/nimble/host/mesh/src/cfg_srv.c"
                         "host/nimble/nimble/nimble/host/mesh/src/cfg_cli.c"
