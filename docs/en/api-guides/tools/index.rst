@@ -7,3 +7,4 @@ Tools
    IDF Tools <idf-tools>
    IDF Monitor <idf-monitor>
    IDF Docker image <idf-docker-image>
+   IDF Windows Installer <idf-windows-installer>

@@ -34,7 +34,7 @@ ESP-IDF Tools Installer
 
 The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe
 
 .. IMPORTANT: Next time this link is updated, please go to get-started/index.rst and rewrite the section under "Alternative File Downloads ... Windows". Then delete this comment.
 

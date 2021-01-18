@@ -1312,6 +1312,19 @@ def action_install(args):
         tool_obj.install(tool_version)
 
 
+def get_wheels_dir():
+    tools_info = load_tools_info()
+    wheels_package_name = 'idf-python-wheels'
+    if wheels_package_name not in tools_info:
+        return None
+    wheels_package = tools_info[wheels_package_name]
+    recommended_version = wheels_package.get_recommended_version()
+    wheels_dir = wheels_package.get_path_for_version(recommended_version)
+    if not os.path.exists(wheels_dir):
+        return None
+    return wheels_dir
+
+
 def action_install_python_env(args):
     idf_python_env_path, _, virtualenv_python = get_python_env_path()
 
@@ -1341,6 +1354,15 @@ def action_install_python_env(args):
     run_args += ['-r', requirements_txt]
     if args.extra_wheels_dir:
         run_args += ['--find-links', args.extra_wheels_dir]
+    if args.no_index:
+        run_args += ['--no-index']
+    if args.extra_wheels_url:
+        run_args += ['--extra-index-url', args.extra_wheels_url]
+
+    wheels_dir = get_wheels_dir()
+    if wheels_dir is not None:
+        run_args += ['--find-links', wheels_dir]
+
     info('Installing Python packages from {}'.format(requirements_txt))
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr)
 
@@ -1544,6 +1566,8 @@ def main(argv):
                                     action='store_true')
     install_python_env.add_argument('--extra-wheels-dir', help='Additional directories with wheels ' +
                                     'to use during installation')
+    install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default='https://dl.espressif.com/pypi')
+    install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
 
     if IDF_MAINTAINER:
         add_version = subparsers.add_parser('add-version', help='Add or update download info for a version')

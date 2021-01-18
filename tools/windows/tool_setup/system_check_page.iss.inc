@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { SystemCheck states }
@@ -474,6 +474,8 @@ end;
 
 { Execute system check }
 procedure ExecuteSystemCheck();
+var
+  UseEmbeddedPythonParam: String;
 begin
   { Execute system check only once. Avoid execution in case of back button. }
   if (SystemCheckState <> SYSTEM_CHECK_STATE_INIT) then begin
@@ -486,7 +488,11 @@ begin
 
   VerifyRootCertificates();
 
-  FindInstalledPythonVersions();
+  { Search for the installed Python version only on explicit user request. }
+  UseEmbeddedPythonParam := ExpandConstant('{param:USEEMBEDDEDPYTHON|yes}');
+  if (UseEmbeddedPythonParam <> 'yes') then begin
+    FindInstalledPythonVersions();
+  end;
 
   if (SystemCheckState <> SYSTEM_CHECK_STATE_STOPPED) then begin
     SystemLogTitle(CustomMessage('SystemCheckForDefender') + ' ');
@@ -519,12 +525,19 @@ end;
 
 { Invoke scan of system environment. }
 procedure OnSystemCheckActivate(Sender: TWizardPage);
+var SystemCheckParam:String;
 begin
   { Display special controls. For some reason the first call of the page does not invoke SystemCheckOnCurPageChanged. }
   FullLogButton.Visible := True;
   ApplyFixesButton.Visible := True;
   StopSystemCheckButton.Visible := True;
   SystemCheckViewer.Visible := True;
+
+  SystemCheckParam := ExpandConstant('{param:SKIPSYSTEMCHECK|no}');
+  if (SystemCheckParam = 'yes') then begin
+    SystemCheckState := SYSTEM_CHECK_STATE_STOPPED;
+    SystemLog('System Check disabled by command line option /SKIPSYSTEMCHECK.');
+  end;
 
   ExecuteSystemCheck();
 end;
@@ -585,6 +598,7 @@ begin
   InstalledPythonVersions := TStringList.Create();
   InstalledPythonDisplayNames := TStringList.Create();
   InstalledPythonExecutables := TStringList.Create();
+  PythonVersionAdd('{#PythonVersion}', 'Use Python {#PythonVersion} Embedded (Recommended)', 'tools\python\{#PythonVersion}\python.exe');
 
   { Create Spinner animation. }
   Spinner := TStringList.Create();

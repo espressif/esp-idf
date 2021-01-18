@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Page to select whether to download ESP-IDF, or use an existing copy ------------------------------ }

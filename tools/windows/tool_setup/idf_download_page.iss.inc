@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Page to select the version of ESP-IDF to download ------------------------------ }
@@ -46,7 +46,7 @@ var
   Url: String;
   VersionFile: String;
 begin
-  Url := '{#IDFVersionsURL}';
+  Url := ExpandConstant('{param:IDFVERSIONSURL|https://dl.espressif.com/dl/esp-idf/idf_versions.txt}')
   VersionFile := ExpandConstant('{tmp}\idf_versions.txt');
   if idpDownloadFile(Url, VersionFile) then
   begin
@@ -62,6 +62,7 @@ var
   Page: TInputOptionWizardPage;
   VersionFile: String;
   i: Integer;
+  SuggestedIDFDirectory: String;
 begin
   Page := TInputOptionWizardPage(Sender);
   Log('OnIDFDownloadPagePrepare');
@@ -86,7 +87,26 @@ begin
   end;
   Page.SelectedValueIndex := 0;
 
-  ChoicePageSetInputText(Page, GetSuggestedIDFDirectory());
+  SuggestedIDFDirectory := ExpandConstant('{param:IDFDIR|' + GetSuggestedIDFDirectory() + '}');
+  ChoicePageSetInputText(Page, SuggestedIDFDirectory);
+end;
+
+{ Validation of PATH for IDF releases which does not support special characters. }
+{ Source: https://stackoverflow.com/questions/21623515/is-it-possible-to-filter-require-installation-path-to-be-ascii-in-innosetup }
+function IsCharValid(Value: Char): Boolean;
+begin
+  Result := Ord(Value) <= $007F;
+end;
+
+function IsDirNameValid(const Value: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to Length(Value) do
+    if not IsCharValid(Value[I]) then
+      Exit;
+  Result := True;
 end;
 
 procedure OnIDFDownloadSelectionChange(Sender: TObject);
@@ -122,7 +142,24 @@ begin
   end;
 
   IDFDownloadPath := IDFPath;
-  IDFDownloadVersion := IDFDownloadAvailableVersions[Page.SelectedValueIndex];
+
+  { Use parameter /IDFVE=x to override selection in the box. }
+  IDFDownloadVersion := ExpandConstant('{param:IDFVERSION|}');
+  if (IDFDownloadVersion = '') then begin
+    IDFDownloadVersion := IDFDownloadAvailableVersions[Page.SelectedValueIndex];
+  end;
+
+  { Following ZIP versions of IDF does not support installation on path with special characters. }
+  { Issue: https://github.com/espressif/esp-idf/issues/5996 }
+  if ((IDFDownloadVersion = 'v4.1') or (IDFDownloadVersion = 'v4.0.2') or
+    (IDFDownloadVersion = 'v3.3.4')) then begin
+    if (not IsDirNameValid(IDFPath)) then begin
+      MsgBox('The installation of selected version of IDF is not supported on path with special characters.' + #13#10
+            'Please choose a different directory.', mbError, MB_OK);
+      exit;
+    end;
+  end;
+
   Result := True;
 end;
 

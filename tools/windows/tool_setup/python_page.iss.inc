@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Page to select Python interpreter ------------------------------ }
@@ -8,17 +8,11 @@
 var
   PythonPage: TInputOptionWizardPage;
   PythonVersion, PythonPath, PythonExecutablePath: String;
-  PythonUseExisting: Boolean;
 
 
 function GetPythonPath(Unused: String): String;
 begin
   Result := PythonPath;
-end;
-
-function PythonInstallRequired(): Boolean;
-begin
-  Result := not PythonUseExisting;
 end;
 
 function PythonVersionSupported(Version: String): Boolean;
@@ -93,40 +87,26 @@ begin
   Log('OnPythonSelectionChange index=' + IntToStr(Page.SelectedValueIndex));
 end;
 
+procedure ApplyPythonConfigurationByIndex(Index:Integer);
+begin
+  Log('ApplyPythonConfigurationByIndex index=' + IntToStr(Index));
+  PythonExecutablePath := InstalledPythonExecutables[Index];
+  PythonPath := ExtractFilePath(PythonExecutablePath);
+  PythonVersion := InstalledPythonVersions[Index];
+  Log('ApplyPythonConfigurationByIndex: PythonPath='+PythonPath+' PythonExecutablePath='+PythonExecutablePath);
+end;
+
 function OnPythonPageValidate(Sender: TWizardPage): Boolean;
 var
   Page: TInputOptionWizardPage;
 begin
   Page := TInputOptionWizardPage(Sender);
-  Log('OnPythonPageValidate index=' + IntToStr(Page.SelectedValueIndex));
-  if Page.SelectedValueIndex < InstalledPythonExecutables.Count then
-  begin
-    PythonUseExisting := True;
-    PythonExecutablePath := InstalledPythonExecutables[Page.SelectedValueIndex];
-    PythonPath := ExtractFilePath(PythonExecutablePath);
-    PythonVersion := InstalledPythonVersions[Page.SelectedValueIndex];
-  end else begin
-    PythonUseExisting := False;
-    PythonExecutablePath := '';
-    PythonPath := '';
-    PythonVersion := '{#PythonVersion}';
-  end;
-  Log('OnPythonPageValidate: PythonPath='+PythonPath+' PythonExecutablePath='+PythonExecutablePath);
+  ApplyPythonConfigurationByIndex(Page.SelectedValueIndex);
   Result := True;
 end;
 
-procedure PythonExecutablePathUpdateAfterInstall();
-var
-  Version, DisplayName, ExecutablePath, BaseDir: String;
+procedure UpdatePythonVariables(ExecutablePath: String);
 begin
-  if not GetPythonVersionInfoFromKey(
-      HKEY_CURRENT_USER, 'Software\Python', 'PythonCore', '{#PythonVersion}',
-      Version, DisplayName, ExecutablePath, BaseDir) then
-  begin
-    Log('Failed to find ExecutablePath for the installed copy of Python');
-    exit;
-  end;
-  Log('Found ExecutablePath for ' + DisplayName + ': ' + ExecutablePath);
   PythonExecutablePath := ExecutablePath;
   PythonPath := ExtractFilePath(PythonExecutablePath);
   Log('PythonExecutablePathUpdateAfterInstall: PythonPath='+PythonPath+' PythonExecutablePath='+PythonExecutablePath);
@@ -144,4 +124,19 @@ begin
     @OnPythonPagePrepare,
     @OnPythonSelectionChange,
     @OnPythonPageValidate);
+end;
+
+<event('ShouldSkipPage')>
+function ShouldSkipPythonPage(PageID: Integer): Boolean;
+var
+  UseEmbeddedPythonParam: String;
+begin
+  if (PageID = PythonPage.ID) then begin
+    { Skip in case of embedded Python. }
+    UseEmbeddedPythonParam := ExpandConstant('{param:USEEMBEDDEDPYTHON|yes}');
+    if (UseEmbeddedPythonParam = 'yes') then begin
+      ApplyPythonConfigurationByIndex(0);
+      Result := True;
+    end;
+  end;
 end;

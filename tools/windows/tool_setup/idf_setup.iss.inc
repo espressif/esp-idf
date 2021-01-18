@@ -1,4 +1,4 @@
-{ Copyright 2019-2020 Espressif Systems (Shanghai) CO LTD
+{ Copyright 2019-2021 Espressif Systems (Shanghai) CO LTD
   SPDX-License-Identifier: Apache-2.0 }
 
 { ------------------------------ Downloading ESP-IDF ------------------------------ }
@@ -140,7 +140,9 @@ var
   IDFTempPath: String;
   IDFPath: String;
   NeedToClone: Boolean;
-
+  GitRepoParam: String;
+  GitResetParam: String;
+  GitRecursiveParam: String;
 begin
   IDFPath := IDFDownloadPath;
   { If there is a release archive to download, IDFZIPFileName and IDFZIPFileVersion will be set.
@@ -158,7 +160,6 @@ begin
       NeedToClone := True;
     end;
 
-    ExtractTemporaryFile('7za.exe')
     CmdLine := ExpandConstant('{tmp}\7za.exe x -o' + ExpandConstant('{tmp}') + ' -r -aoa "' + IDFZIPFileName + '"');
     IDFTempPath := ExpandConstant('{tmp}\esp-idf-') + IDFZIPFileVersion;
     Log('Extracting ESP-IDF reference repository: ' + CmdLine);
@@ -172,12 +173,19 @@ begin
 
   if NeedToClone then
   begin
-    CmdLine := GitExecutablePath + ' clone --recursive --progress -b ' + IDFDownloadVersion;
+    CmdLine := GitExecutablePath + ' clone --progress -b ' + IDFDownloadVersion;
+
+    GitRecursiveParam := ExpandConstant('{param:GITRECURSIVE|yes}');
+    if (GitRecursiveParam = 'yes') then begin
+      CmdLine := CmdLine + ' --recursive ';
+    end;
 
     if IDFTempPath <> '' then
       CmdLine := CmdLine + ' --reference ' + IDFTempPath;
 
-    CmdLine := CmdLine + ' https://github.com/espressif/esp-idf.git ' + IDFPath;
+    GitRepoParam := ExpandConstant('{param:GITREPO|https://github.com/espressif/esp-idf.git}');
+
+    CmdLine := CmdLine + ' ' + GitRepoParam +' ' + IDFPath;
     Log('Cloning IDF: ' + CmdLine);
     DoCmdlineInstall('Downloading ESP-IDF', 'Using git to clone ESP-IDF repository', CmdLine);
 
@@ -202,7 +210,14 @@ begin
     CmdLine := ExpandConstant('cmd.exe /c ""xcopy" /s /e /i /h /q "' + IDFTempPath + '" "' + IDFPath + '""');
     DoCmdlineInstall('Extracting ESP-IDF', 'Copying ESP-IDF into the destination directory', CmdLine);
     GitRepoFixFileMode(IDFPath);
-    GitRepoFixNewlines(IDFPath);
+
+    GitResetParam := ExpandConstant('{param:GITRESET|yes}');
+    if (GitResetParam = 'yes') then begin
+      GitRepoFixNewlines(IDFPath);
+    end else begin
+      Log('Git reset disabled by command line option /GITRESET=yes.');
+    end;
+
     DelTree(IDFTempPath, True, True, True);
   end;
 end;
@@ -220,51 +235,6 @@ begin
     Log('UseBundledIDFToolsPy: version=' + Version + ', using bundled idf_tools.py');
     Result := True;
   end;
-end;
-
-procedure IDFToolsSetup();
-var
-  CmdLine: String;
-  IDFPath: String;
-  IDFToolsPyPath: String;
-  IDFToolsPyCmd: String;
-  BundledIDFToolsPyPath: String;
-  JSONArg: String;
-begin
-  IDFPath := GetIDFPath('');
-  IDFToolsPyPath := IDFPath + '\tools\idf_tools.py';
-  BundledIDFToolsPyPath := ExpandConstant('{app}\idf_tools_fallback.py');
-  JSONArg := '';
-
-  if FileExists(IDFToolsPyPath) then
-  begin
-    Log('idf_tools.py exists in IDF directory');
-    if UseBundledIDFToolsPy(IDFDownloadVersion) then
-    begin
-      Log('Using the bundled idf_tools.py copy');
-      IDFToolsPyCmd := BundledIDFToolsPyPath;
-    end else begin
-      IDFToolsPyCmd := IDFToolsPyPath;
-    end;
-  end else begin
-    Log('idf_tools.py does not exist in IDF directory, using a fallback version');
-    IDFToolsPyCmd := BundledIDFToolsPyPath;
-    JSONArg := ExpandConstant('--tools "{app}\tools_fallback.json"');
-  end;
-
-  { IDFPath not quoted, as it can not contain spaces }
-  IDFToolsPyCmd := PythonExecutablePath + ' "' + IDFToolsPyCmd + '" --idf-path ' + IDFPath + JSONArg;
-
-  SetEnvironmentVariable('PYTHONUNBUFFERED', '1')
-
-  Log('idf_tools.py command: ' + IDFToolsPyCmd);
-  CmdLine := IDFToolsPyCmd + ' install';
-  Log('Installing tools:' + CmdLine);
-  DoCmdlineInstall('Installing ESP-IDF tools', '', CmdLine);
-
-  CmdLine := IDFToolsPyCmd + ' install-python-env';
-  Log('Installing Python environment:' + CmdLine);
-  DoCmdlineInstall('Installing Python environment', '', CmdLine);
 end;
 
 { Find Major and Minor version in esp_idf_version.h file. }
@@ -300,17 +270,119 @@ begin
   end;
 end;
 
+{ Get short version from long version e.g. 3.7.9 -> 3.7 }
+function GetShortVersion(VersionString:String):String;
+var
+  VersionIndex: Integer;
+  MajorString: String;
+  MinorString: String;
+  DotIndex: Integer;
+begin
+  { Transform version vx.y or release/vx.y to x.y }
+  VersionIndex := pos('v', VersionString);
+  if (VersionIndex > 0) then begin
+    Delete(VersionString, 1, VersionIndex);
+  end;
+
+  { Transform version x.y.z to x.y }
+  DotIndex := pos('.', VersionString);
+  if (DotIndex > 0) then begin
+    MajorString := Copy(VersionString, 1, DotIndex - 1);
+    Delete(VersionString, 1, DotIndex);
+    { Trim trailing version numbers. }
+    DotIndex := pos('.', VersionString);
+    if (DotIndex > 0) then begin
+      MinorString := Copy(VersionString, 1, DotIndex - 1);
+      VersionString := MajorString + '.' + MinorString;
+    end else begin
+     VersionString :=  MajorString + '.' + VersionString;
+    end;
+  end;
+
+  Result := VersionString;
+end;
+
+{ Get IDF version string in combination with Python version. }
+{ Result e.g.: idf4.1_py38 }
+function GetIDFPythonEnvironmentVersion():String;
+var
+  IDFVersionString: String;
+begin
+  { Transform main or master to x.y }
+  if (Pos('main', IDFDownloadVersion) > 0) or (Pos('master', IDFDownloadVersion) > 0) then begin
+    IDFVersionString := GetIDFVersionFromHeaderFile();
+  end else begin
+    IDFVersionString := GetShortVersion(IDFDownloadVersion);
+  end;
+
+  Result := 'idf' + IDFVersionString + '_py' + GetShortVersion(PythonVersion);
+end;
+
+procedure IDFToolsSetup();
+var
+  CmdLine: String;
+  IDFPath: String;
+  IDFToolsPyPath: String;
+  IDFToolsPyCmd: String;
+  BundledIDFToolsPyPath: String;
+  JSONArg: String;
+  OfflineParameter: String;
+  PythonWheelsUrlParameter: String;
+begin
+  IDFPath := GetIDFPath('');
+  IDFToolsPyPath := IDFPath + '\tools\idf_tools.py';
+  BundledIDFToolsPyPath := ExpandConstant('{app}\idf_tools_fallback.py');
+  JSONArg := '';
+
+  if FileExists(IDFToolsPyPath) then
+  begin
+    Log('idf_tools.py exists in IDF directory');
+    if UseBundledIDFToolsPy(IDFDownloadVersion) then
+    begin
+      Log('Using the bundled idf_tools.py copy');
+      IDFToolsPyCmd := BundledIDFToolsPyPath;
+    end else begin
+      IDFToolsPyCmd := IDFToolsPyPath;
+    end;
+  end else begin
+    Log('idf_tools.py does not exist in IDF directory, using a fallback version');
+    IDFToolsPyCmd := BundledIDFToolsPyPath;
+    JSONArg := ExpandConstant('--tools "{app}\tools_fallback.json"');
+  end;
+
+  { IDFPath not quoted, as it can not contain spaces }
+  IDFToolsPyCmd := PythonExecutablePath + ' "' + IDFToolsPyCmd + '" --idf-path ' + IDFPath + JSONArg;
+
+  SetEnvironmentVariable('PYTHONUNBUFFERED', '1');
+
+  OfflineParameter := ExpandConstant('{param:OFFLINE|no}');
+  if (OfflineParameter = 'yes') then begin
+    SetEnvironmentVariable('PIP_NO_INDEX', 'true');
+    Log('Offline installation selected. Setting environment variable PIP_NO_INDEX=1');
+  end else begin
+    PythonWheelsUrlParameter := ExpandConstant('{param:PYTHONWHEELSURL|https://dl.espressif.com/pypi}');
+    SetEnvironmentVariable('PIP_EXTRA_INDEX_URL', PythonWheelsUrlParameter);
+    Log('Adding extra Python wheels location. Setting environment variable PIP_EXTRA_INDEX_URL=' + PythonWheelsUrlParameter);
+  end;
+
+  Log('idf_tools.py command: ' + IDFToolsPyCmd);
+  CmdLine := IDFToolsPyCmd + ' install';
+  Log('Installing tools:' + CmdLine);
+  DoCmdlineInstall('Installing ESP-IDF tools', '', CmdLine);
+
+  CmdLine := IDFToolsPyCmd + ' install-python-env';
+
+  Log('Installing Python environment:' + CmdLine);
+  DoCmdlineInstall('Installing Python environment', '', CmdLine);
+end;
+
+
 { ------------------------------ Start menu shortcut ------------------------------ }
 
 procedure CreateIDFCommandPromptShortcut(LnkString: String);
 var
   Destination: String;
   Description: String;
-  VersionIndex: Integer;
-  MajorString: String;
-  MinorString: String;
-  DotIndex: Integer;
-  IDFVersionString: String;
   PythonVirtualEnvPath: String;
   Command: String;
 begin
@@ -318,39 +390,14 @@ begin
   Destination := ExpandConstant(LnkString + '\{#IDFCmdExeShortcutFile}');
   Description := '{#IDFCmdExeShortcutDescription}';
 
-  IDFVersionString := IDFDownloadVersion;
-  { Transform version vx.y or release/vx.y to x.y }
-  VersionIndex := pos('v', IDFVersionString);
-  if (VersionIndex > 0) then begin
-    Delete(IDFVersionString, 1, VersionIndex);
-  end;
-
-  { Transform version x.y.z to x.y }
-  DotIndex := pos('.', IDFVersionString);
-  if (DotIndex > 0) then begin
-    MajorString := Copy(IDFVersionString, 1, DotIndex - 1);
-    Delete(IDFVersionString, 1, DotIndex);
-    { Trim trailing version numbers. }
-    DotIndex := pos('.', IDFVersionString);
-    if (DotIndex > 0) then begin
-      MinorString := Copy(IDFVersionString, 1, DotIndex - 1);
-      IDFVersionString := MajorString + '.' + MinorString;
-    end else begin
-     IDFVersionString :=  MajorString + '.' + IDFVersionString;
-    end;
-  end;
-
-  { Transform master to x.y }
-  if (IDFVersionString = 'master') then begin
-    IDFVersionString := GetIDFVersionFromHeaderFile();
-  end;
-
   { The links should contain reference to Python vitual env }
-  PythonVirtualEnvPath := ExpandConstant('{app}\python_env\idf') + IDFVersionString + '_py' + PythonVersion + '_env\Scripts';
+  PythonVirtualEnvPath := ExpandConstant('{app}\python_env\') + GetIDFPythonEnvironmentVersion() + '_env\Scripts';
+  Log('Path to Python in virtual env: ' + PythonVirtualEnvPath);
 
   { Fallback in case of not existing environment. }
   if (not FileExists(PythonVirtualEnvPath + '\python.exe')) then begin
     PythonVirtualEnvPath := PythonPath;
+    Log('python.exe not found, reverting to:' + PythonPath);
   end;
 
   { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
