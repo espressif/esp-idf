@@ -139,7 +139,7 @@ class PanicTestMixin(object):
         log_folder = self.app.get_log_folder(TEST_SUITE)
         coredump_file_name = os.path.join(log_folder, "coredump_data_" + self.test_name + ".bin")
         Utility.console_log("Writing flash binary core dump to " + coredump_file_name)
-        self.dump_flush(coredump_file_name, partition="coredump")
+        self.dump_flash(coredump_file_name, partition="coredump")
 
         output_file_name = os.path.join(log_folder, "coredump_flash_result_" + self.test_name + ".txt")
         self._call_espcoredump(["--core-format", "raw"], coredump_file_name, output_file_name)
