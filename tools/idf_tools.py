@@ -1319,6 +1319,8 @@ def get_wheels_dir():
         return None
     wheels_package = tools_info[wheels_package_name]
     recommended_version = wheels_package.get_recommended_version()
+    if recommended_version is None:
+        return None
     wheels_dir = wheels_package.get_path_for_version(recommended_version)
     if not os.path.exists(wheels_dir):
         return None
