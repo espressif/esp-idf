@@ -22,7 +22,7 @@ set(srcs
     "twai.c"
     "uart.c")
 
-set(includes "include" "${target}/include" "esp_private")
+set(includes "include" "${target}/include")
 
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.

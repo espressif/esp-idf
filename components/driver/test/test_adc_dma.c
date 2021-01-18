@@ -36,7 +36,7 @@ static int insert_point(uint32_t value)
 
     if (s_adc_offset < 0) {
         if (fixed_size) {
-            assert(MAX_ARRAY_SIZE >= 4096);
+            TEST_ASSERT_GREATER_OR_EQUAL(4096, MAX_ARRAY_SIZE);
             s_adc_offset = 0;   //Fixed to 0 because the array can hold all the data in 12 bits
         } else {
             s_adc_offset = MAX((int)value - MAX_ARRAY_SIZE/2, 0);
@@ -44,8 +44,8 @@ static int insert_point(uint32_t value)
     }
 
     if (!fixed_size && (value < s_adc_offset || value >= s_adc_offset + MAX_ARRAY_SIZE)) {
-        assert(value >= s_adc_offset);
-        assert(value < s_adc_offset + MAX_ARRAY_SIZE);
+        TEST_ASSERT_GREATER_OR_EQUAL(s_adc_offset, value);
+        TEST_ASSERT_LESS_THAN(s_adc_offset + MAX_ARRAY_SIZE, value);
     }
 
     s_adc_count[value - s_adc_offset] ++;
@@ -119,9 +119,6 @@ static void print_summary(bool figure)
 
 static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask, adc_channel_t *channel, uint8_t channel_num, adc_atten_t atten)
 {
-    esp_err_t ret = ESP_OK;
-    assert(ret == ESP_OK);
-
     adc_digi_init_config_t adc_dma_config = {
         .max_store_buf_size = TEST_COUNT*2,
         .conv_num_each_intr = 128,
@@ -129,10 +126,9 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
         .adc1_chan_mask = adc1_chan_mask,
         .adc2_chan_mask = adc2_chan_mask,
     };
-    ret = adc_digi_initialize(&adc_dma_config);
-    assert(ret == ESP_OK);
+    TEST_ESP_OK(adc_digi_initialize(&adc_dma_config));
 
-    adc_digi_pattern_table_t adc_pattern[10];
+    adc_digi_pattern_table_t adc_pattern[10] = {0};
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
@@ -152,13 +148,11 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
         adc_pattern[i].unit = unit;
     }
     dig_cfg.adc_pattern = adc_pattern;
-    ret = adc_digi_controller_config(&dig_cfg);
-    assert(ret == ESP_OK);
+    TEST_ESP_OK(adc_digi_controller_config(&dig_cfg));
 }
 
 TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
 {
-    esp_err_t ret;
     uint16_t adc1_chan_mask = BIT(2);
     uint16_t adc2_chan_mask = 0;
     adc_channel_t channel[1] = {ADC1_CHANNEL_2};
@@ -168,7 +162,7 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
 
     int buffer_size = TEST_COUNT*output_data_size;
     uint8_t* read_buf = malloc(buffer_size);
-    assert(read_buf);
+    TEST_ASSERT_NOT_NULL(read_buf);
 
     adc_atten_t atten;
     bool print_figure;
@@ -187,7 +181,7 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
 
         esp_adc_cal_characteristics_t chan1_char = {};
         esp_adc_cal_value_t cal_ret = esp_adc_cal_characterize(ADC_UNIT_1, atten, ADC_WIDTH_12Bit, 0, &chan1_char);
-        assert(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
+        TEST_ASSERT(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
 
         continuous_adc_init(adc1_chan_mask, adc2_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t), atten);
         adc_digi_start();
@@ -196,11 +190,10 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
         while (remain_count) {
             int already_got = TEST_COUNT - remain_count;
             uint32_t ret_num;
-            ret = adc_digi_read_bytes(read_buf + already_got*output_data_size,
-                                    remain_count*output_data_size, &ret_num, ADC_MAX_DELAY);
+            TEST_ESP_OK(adc_digi_read_bytes(read_buf + already_got*output_data_size,
+                                    remain_count*output_data_size, &ret_num, ADC_MAX_DELAY));
 
-            ESP_ERROR_CHECK(ret);
-            assert((ret_num % output_data_size) == 0);
+            TEST_ASSERT((ret_num % output_data_size) == 0);
             remain_count -= ret_num / output_data_size;
         }
 
@@ -217,8 +210,7 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
         printf("Voltage = %d mV\n", voltage_mv);
 
         adc_digi_stop();
-        ret = adc_digi_deinitialize();
-        assert(ret == ESP_OK);
+        TEST_ESP_OK(adc_digi_deinitialize());
 
         if (atten == target_atten) {
             break;
@@ -254,7 +246,7 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
 
         esp_adc_cal_characteristics_t chan1_char = {};
         esp_adc_cal_value_t cal_ret = esp_adc_cal_characterize(ADC_UNIT_1, atten, ADC_WIDTH_12Bit, 0, &chan1_char);
-        assert(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
+        TEST_ASSERT(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
 
 
         const int test_count = TEST_COUNT;

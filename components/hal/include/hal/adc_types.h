@@ -88,10 +88,10 @@ typedef enum {
     ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
     ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif SOC_ADC_MAX_BITWIDTH == 12
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
+#elif SOC_ADC_MAX_BITWIDTH == 13
+    ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
 #endif
     ADC_WIDTH_MAX,
 } adc_bits_width_t;

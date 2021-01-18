@@ -18,7 +18,7 @@ Don't put any other code into this file. */
 
 #include "adc2_wifi_private.h"
 #include "hal/adc_hal.h"
-#include "adc_cali.h"
+#include "esp_private/adc_cali.h"
 
 /**
  * @brief Set initial code to ADC2 after calibration. ADC2 RTC and ADC2 PWDET controller share the initial code.

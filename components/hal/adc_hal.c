@@ -17,6 +17,7 @@
 
 
 #if CONFIG_IDF_TARGET_ESP32C3
+#include "soc/gdma_channel.h"
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
 #endif
@@ -126,7 +127,7 @@ void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t 
     adc_dma_ctx->dev = &GDMA;
     gdma_ll_enable_clock(adc_dma_ctx->dev, true);
     gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
-    gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, GDMA_LL_TRIG_SRC_ADC_DAC);
+    gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, SOC_GDMA_TRIG_PERIPH_ADC0);
 }
 
 /*---------------------------------------------------------------

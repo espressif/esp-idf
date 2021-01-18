@@ -38,8 +38,7 @@ typedef enum {
     ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO35 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-//S3 is not sure. Need to be checked when bringing up S3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 // TODO ESP32-S3 channels are wrong IDF-1776
 /**** `adc1_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO1  */
@@ -64,10 +63,9 @@ typedef enum {
     ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO34 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
-#endif
+#endif // CONFIG_IDF_TARGET_*
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-//S3 is not sure. Need to be checked when bringing up S3
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 // TODO ESP32-S3 channels are wrong IDF-1776
 /**** `adc2_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO4  (ESP32), GPIO11 (ESP32-S2) */

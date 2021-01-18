@@ -43,7 +43,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
     if (cfg->adc_pattern_len) {
         adc_ll_digi_clear_pattern_table(pattern_both);
         adc_ll_digi_set_pattern_table_len(pattern_both, cfg->adc_pattern_len);
-        for (int i = 0; i < cfg->adc_pattern_len; i++) {
+        for (uint32_t i = 0; i < cfg->adc_pattern_len; i++) {
             adc_ll_digi_set_pattern_table(pattern_both, i, cfg->adc_pattern[i]);
         }
     }

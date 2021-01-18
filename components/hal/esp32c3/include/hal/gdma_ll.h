@@ -39,13 +39,6 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF    (1<<1)
 #define GDMA_LL_EVENT_RX_DONE       (1<<0)
 
-#define GDMA_LL_TRIG_SRC_SPI2    (0)
-#define GDMA_LL_TRIG_SRC_UART    (2)
-#define GDMA_LL_TRIG_SRC_I2S0    (3)
-#define GDMA_LL_TRIG_SRC_AES     (6)
-#define GDMA_LL_TRIG_SRC_SHA     (7)
-#define GDMA_LL_TRIG_SRC_ADC_DAC (8)
-
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Enable DMA channel M2M mode (TX channel n forward data to RX channel n), disabled by default

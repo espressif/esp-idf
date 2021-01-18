@@ -24,7 +24,7 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     ret = adc_digi_initialize(&adc_dma_config);
     assert(ret == ESP_OK);
 
-    adc_digi_pattern_table_t adc_pattern[10];
+    adc_digi_pattern_table_t adc_pattern[10] = {0};
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
