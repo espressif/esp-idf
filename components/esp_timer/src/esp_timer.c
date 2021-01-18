@@ -433,17 +433,17 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
     size_t cb;
     // name is optional, might be missed.
     if (t->name) {
-        cb = snprintf(*dst, *dst_size, "%-12s  ", t->name);
+        cb = snprintf(*dst, *dst_size, "%-20.20s  ", t->name);
     } else {
-        cb = snprintf(*dst, *dst_size, "timer@%p  ", t);
+        cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
     }
-    cb += snprintf(*dst + cb, *dst_size + cb, "%12lld  %12lld  %9d  %9d  %6d  %12lld\n",
+    cb += snprintf(*dst + cb, *dst_size + cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
                     (uint64_t)t->period, t->alarm, t->times_armed,
                     t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
 #define TIMER_INFO_LINE_LEN 90
 #else
-    size_t cb = snprintf(*dst, *dst_size, "timer@%p  %12lld  %12lld\n", t, (uint64_t)t->period, t->alarm);
+    size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10lld  %-12lld\n", t, (uint64_t)t->period, t->alarm);
 #define TIMER_INFO_LINE_LEN 46
 #endif
     *dst += cb;
@@ -497,6 +497,14 @@ esp_err_t esp_timer_dump(FILE* stream)
     }
 #endif
     timer_list_unlock();
+
+    fprintf(stream, "Timer stats:\n");
+#if WITH_PROFILING
+    fprintf(stream, "%-20s  %-10s  %-12s  %-12s  %-12s  %-12s  %-12s\n",
+            "Name", "Period", "Alarm", "Times_armed", "Times_trigg", "Times_skip", "Cb_exec_time");
+#else
+    fprintf(stream, "%-20s  %-10s  %-12s\n", "Name", "Period", "Alarm");
+#endif
 
     /* Print the buffer */
     fputs(print_buf, stream);
