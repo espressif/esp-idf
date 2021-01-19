@@ -2147,7 +2147,7 @@ static int _mdns_check_srv_collision(mdns_service_t * service, uint16_t priority
  */
 static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * data, size_t len)
 {
-    size_t data_len = 1;
+    size_t data_len = 0;
     if (len == 1 && service->txt) {
         return -1;//we win
     } else if (len > 1 && !service->txt) {
@@ -2158,7 +2158,7 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        data_len += 2 + strlen(service->txt->key) + strlen(service->txt->value);
+        data_len += 2 + strlen(txt->key) + strlen(txt->value);
         txt = txt->next;
     }
 
