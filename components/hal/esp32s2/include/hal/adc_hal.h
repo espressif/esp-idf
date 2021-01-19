@@ -214,35 +214,6 @@ void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
  */
 void adc_hal_arbiter_config(adc_arbiter_t *config);
 
-/*---------------------------------------------------------------
-                    ADC calibration setting
----------------------------------------------------------------*/
-
-/**
- * Calibrate the ADC using internal connections.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param channel adc channel number.
- * @param atten The attenuation for the channel
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- *
- * @return
- *      - The calibration result (initial data) to ADC, use `adc_hal_set_calibration_param` to set.
- */
-uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
-
-/**
- * Set the calibration result (initial data) to ADC.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- */
-#define adc_hal_set_calibration_param(adc_n, param) adc_ll_set_calibration_param(adc_n, param);
-
 #ifdef __cplusplus
 }
 #endif

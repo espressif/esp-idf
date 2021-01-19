@@ -308,6 +308,10 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     adc_hal_set_atten(ADC_NUM_1, channel, atten);
     ADC_EXIT_CRITICAL();
 
+#if SOC_ADC_HW_CALIBRATION_V1
+    adc_hal_calibration_init(ADC_NUM_1);
+#endif
+
     return ESP_OK;
 }
 
@@ -471,6 +475,10 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     ADC2_WIFI_LOCK_RELEASE();
     ADC2_EXIT_CRITICAL();
+
+#if SOC_ADC_HW_CALIBRATION_V1
+    adc_hal_calibration_init(ADC_NUM_2);
+#endif
 
     return ESP_OK;
 }
