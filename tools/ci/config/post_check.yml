@@ -39,7 +39,6 @@ check_submodule_sync:
     - *show_submodule_urls
     - git submodule update --recursive
     - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
-  allow_failure: true # remove this line when esp32s3 support in esptool got merged into master
 
 check_ut_cmake_make:
   extends:
