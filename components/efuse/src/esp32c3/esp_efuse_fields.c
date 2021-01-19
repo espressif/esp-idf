@@ -33,7 +33,7 @@ const static char *TAG = "efuse";
 uint8_t esp_efuse_get_chip_ver(void)
 {
     uint32_t chip_ver = 0;
-    // ESP32C3 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_WAFER_VERSION, &chip_ver, ESP_EFUSE_WAFER_VERSION[0]->bit_count);
     return chip_ver;
 }
 
@@ -41,7 +41,7 @@ uint8_t esp_efuse_get_chip_ver(void)
 uint32_t esp_efuse_get_pkg_ver(void)
 {
     uint32_t pkg_ver = 0;
-    // ESP32C3 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_PKG_VERSION, &pkg_ver, ESP_EFUSE_PKG_VERSION[0]->bit_count);
     return pkg_ver;
 }
 
