@@ -10,10 +10,7 @@
 set -e
 set -u
 
-INSTALLER_TYPE="$1"
-if [[ -z "$INSTALLER_TYPE" ]]; then
-    INSTALLER_TYPE="full"
-fi
+INSTALLER_TYPE="${1-full}"
 
 echo "Selected installer type: $INSTALLER_TYPE"
 echo "Available installer types: full, netinst"
