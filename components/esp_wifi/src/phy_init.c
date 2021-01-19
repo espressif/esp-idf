@@ -230,6 +230,7 @@ void esp_phy_enable(void)
         }
         else {
             phy_wakeup_init();
+            phy_digital_regs_load();
         }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -247,6 +248,7 @@ void esp_phy_disable(void)
 
     s_phy_access_ref--;
     if (s_phy_access_ref == 0) {
+        phy_digital_regs_store();
         // Disable PHY and RF.
         phy_close_rf();
 #if CONFIG_IDF_TARGET_ESP32
