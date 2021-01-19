@@ -1158,16 +1158,12 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         memset(&read_param, 0, sizeof(tGATT_READ_PARAM));
 
         if (status == BTA_GATT_OK) {
-            if(p_data->api_read_multi.num_attr < GATT_MAX_READ_MULTI_HANDLES) {
-                read_param.read_multiple.num_handles = p_data->api_read_multi.num_attr;
-                read_param.read_multiple.auth_req = p_data->api_read_multi.auth_req;
-                memcpy(&read_param.read_multiple.handles, p_data->api_read_multi.handles,
-                                            sizeof(UINT16) * p_data->api_read_multi.num_attr);
+            read_param.read_multiple.num_handles = p_data->api_read_multi.num_attr;
+            read_param.read_multiple.auth_req = p_data->api_read_multi.auth_req;
+            memcpy(&read_param.read_multiple.handles, p_data->api_read_multi.handles,
+                    sizeof(UINT16) * p_data->api_read_multi.num_attr);
 
-                status = GATTC_Read(p_clcb->bta_conn_id, GATT_READ_MULTIPLE, &read_param);
-            } else {
-                status = GATT_ILLEGAL_PARAMETER;
-            }
+            status = GATTC_Read(p_clcb->bta_conn_id, GATT_READ_MULTIPLE, &read_param);
         }
 
         /* read fail */
