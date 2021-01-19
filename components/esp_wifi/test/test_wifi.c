@@ -102,7 +102,7 @@ static void test_wifi_init_deinit(wifi_init_config_t *cfg, wifi_config_t* wifi_c
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, wifi_config));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
     TEST_ESP_OK(esp_wifi_deinit());
 }
@@ -116,7 +116,7 @@ static void test_wifi_start_stop(wifi_init_config_t *cfg, wifi_config_t* wifi_co
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, wifi_config));
     //now start wifi
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_start..."));
     TEST_ESP_OK(esp_wifi_start());

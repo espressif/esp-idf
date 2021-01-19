@@ -288,7 +288,7 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 
     /* Get WiFi Station configuration */
     wifi_config_t wifi_cfg;
-    if (esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg) != ESP_OK) {
+    if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -309,7 +309,7 @@ esp_err_t app_prov_configure_sta(wifi_config_t *wifi_cfg)
     }
     /* Configure WiFi station with host credentials
      * provided during provisioning */
-    if (esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg) != ESP_OK) {
+    if (esp_wifi_set_config(WIFI_IF_STA, wifi_cfg) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set WiFi configuration");
         return ESP_FAIL;
     }

@@ -158,7 +158,7 @@ static void esp_clear_bssid_flag(struct wpa_supplicant *wpa_s)
 	wifi_config_t *config;
 
 	/* Reset only if btm is enabled */
-	if (esp_wifi_is_btm_enabled_internal(ESP_IF_WIFI_STA) == false)
+	if (esp_wifi_is_btm_enabled_internal(WIFI_IF_STA) == false)
 		return;
 
 	config = os_zalloc(sizeof(wifi_config_t));
@@ -168,9 +168,9 @@ static void esp_clear_bssid_flag(struct wpa_supplicant *wpa_s)
 		return;
 	}
 
-	esp_wifi_get_config(ESP_IF_WIFI_STA, config);
+	esp_wifi_get_config(WIFI_IF_STA, config);
 	config->sta.bssid_set = 0;
-	esp_wifi_set_config(ESP_IF_WIFI_STA, config);
+	esp_wifi_set_config(WIFI_IF_STA, config);
 	os_free(config);
 	wpa_printf(MSG_DEBUG, "cleared bssid flag");
 }
@@ -182,9 +182,9 @@ static void esp_register_action_frame(struct wpa_supplicant *wpa_s)
 	wpa_s->subtype = 0;
 
 	/* current supported features in supplicant: rrm and btm */
-	if (esp_wifi_is_rm_enabled_internal(ESP_IF_WIFI_STA))
+	if (esp_wifi_is_rm_enabled_internal(WIFI_IF_STA))
 		wpa_s->subtype = 1 << WLAN_ACTION_RADIO_MEASUREMENT;
-	if (esp_wifi_is_btm_enabled_internal(ESP_IF_WIFI_STA))
+	if (esp_wifi_is_btm_enabled_internal(WIFI_IF_STA))
 		wpa_s->subtype |= 1 << WLAN_ACTION_WNM;
 
 	if (wpa_s->subtype)
@@ -288,12 +288,12 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	esp_wifi_get_config(ESP_IF_WIFI_STA, config);
+	esp_wifi_get_config(WIFI_IF_STA, config);
 	/* We only support roaming in same ESS, therefore only bssid setting is needed */
 	os_memcpy(config->sta.bssid, bss->bssid, ETH_ALEN);
 	config->sta.bssid_set = 1;
 	esp_wifi_internal_issue_disconnect(WIFI_REASON_ROAMING);
-	esp_wifi_set_config(ESP_IF_WIFI_STA, config);
+	esp_wifi_set_config(WIFI_IF_STA, config);
 	os_free(config);
 	esp_wifi_connect();
 }
@@ -313,7 +313,7 @@ void esp_set_rm_enabled_ie(void)
 		WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE;
 
 	/* set rm enabled IE if enabled in driver */
-	if (esp_wifi_is_rm_enabled_internal(ESP_IF_WIFI_STA)) {
+	if (esp_wifi_is_rm_enabled_internal(WIFI_IF_STA)) {
 		esp_wifi_set_appie_internal(WIFI_APPIE_RM_ENABLED_CAPS, rmm_ie, rrm_ie_len, 0);
 	}
 }
@@ -350,7 +350,7 @@ int wpa_drv_send_action(struct wpa_supplicant *wpa_s,
 		goto cleanup;
 	}
 
-	req->ifx = ESP_IF_WIFI_STA;
+	req->ifx = WIFI_IF_STA;
 	req->subtype = WLAN_FC_STYPE_ACTION;
 	req->data_len = data_len;
 	os_memcpy(req->data, data, req->data_len);
