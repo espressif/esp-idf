@@ -81,7 +81,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
         },
     };
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     
     //test read value
     TEST_ESP_OK( adc2_get_raw( ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &read_raw ));
@@ -204,7 +204,7 @@ TEST_CASE("adc1 and i2s work with wifi","[adc]")
         },
     };
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     i2s_adc_test();
     //now start wifi
     printf("wifi start...\n");

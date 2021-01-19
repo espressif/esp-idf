@@ -115,7 +115,7 @@ static void initialise_wifi(void)
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_ca_cert(ca_pem_start, ca_pem_bytes) );
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_cert_key(client_crt_start, client_crt_bytes,\
     		client_key_start, client_key_bytes, NULL, 0) );
@@ -138,7 +138,7 @@ static void wpa2_enterprise_example_task(void *pvParameters)
     while (1) {
         vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-        if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
+        if (tcpip_adapter_get_ip_info(WIFI_IF_STA, &ip) == 0) {
             ESP_LOGI(TAG, "~~~~~~~~~~~");
             ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip.ip));
             ESP_LOGI(TAG, "MASK:"IPSTR, IP2STR(&ip.netmask));
