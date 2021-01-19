@@ -8,3 +8,7 @@
 #define SOC_TWAI_SUPPORTED 1
 #define SOC_CPU_CORES_NUM 1
 #define SOC_SUPPORTS_SECURE_DL_MODE 1
+
+/*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
+#define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
+

@@ -71,6 +71,16 @@ void phy_wakeup_init(void);
  */
 void phy_close_rf(void);
 
+/**
+ * @brief Store and load PHY digital registers.
+ *
+ * @param     backup_en  if backup_en is true, store PHY digital registers to memory. Otherwise load PHY digital registers from memory
+ * @param     mem_addr   Memory address to store and load PHY digital registers
+ *
+ * @return    memory size
+ */
+uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
+
 #ifdef __cplusplus
 }
 #endif
