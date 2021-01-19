@@ -289,7 +289,7 @@ esp_err_t mesh_netifs_init(mesh_raw_recv_cb_t *cb)
 static esp_err_t start_mesh_link_ap(void)
 {
     uint8_t mac[MAC_ADDR_LEN];
-    esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
+    esp_wifi_get_mac(WIFI_IF_AP, mac);
     esp_netif_set_mac(netif_ap, mac);
     esp_netif_action_start(netif_ap, NULL, 0, NULL);
     return ESP_OK;
