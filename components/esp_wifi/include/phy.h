@@ -21,10 +21,6 @@ extern "C" {
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
 
-#if CONFIG_MAC_BB_PD
-#define MAC_BB_PD_MEM_SIZE      (192*4)
-#endif
-
 /**
  * @file phy.h
  * @brief Declarations for functions provided by libphy.a
@@ -79,6 +75,16 @@ void phy_close_rf(void);
  */
 void phy_xpd_tsens(void);
 #endif
+
+/**
+ * @brief Store and load PHY digital registers.
+ *
+ * @param     backup_en  if backup_en is true, store PHY digital registers to memory. Otherwise load PHY digital registers from memory
+ * @param     mem_addr   Memory address to store and load PHY digital registers
+ *
+ * @return    memory size
+ */
+uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
 
 #if CONFIG_MAC_BB_PD
 /**
