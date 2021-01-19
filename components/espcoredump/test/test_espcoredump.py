@@ -14,28 +14,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
+import sys
 import unittest
 
 try:
-    import espcoredump
+    from corefile.elf import ESPCoreDumpElfFile
+    from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpLoaderError
 except ImportError:
     idf_path = os.getenv('IDF_PATH')
     if idf_path:
         sys.path.insert(0, os.path.join(idf_path, 'components', 'espcoredump'))
-    import espcoredump
+    else:
+        sys.path.insert(0, '..')
+    from corefile.elf import ESPCoreDumpElfFile
+    from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpLoaderError
+
+
+class TestESPCoreDumpElfFile(unittest.TestCase):
+    def test_read_elf(self):
+        elf = ESPCoreDumpElfFile('core.elf')
+        assert elf.load_segments
+        assert elf.note_segments
 
 
 class TestESPCoreDumpFileLoader(unittest.TestCase):
-    def testESPCoreDumpFileLoaderWithoutB64(self):
-        loader = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=False)
-        loader.cleanup()
+    def test_load_wrong_encode_core_bin(self):
+        with self.assertRaises(ESPCoreDumpLoaderError):
+            ESPCoreDumpFileLoader(path='coredump.b64', is_b64=False)
 
     def test_create_corefile(self):
-        loader = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=True)
+        loader = ESPCoreDumpFileLoader(path='coredump.b64', is_b64=True)
         loader.create_corefile()
-        loader.cleanup()
 
 
 if __name__ == '__main__':

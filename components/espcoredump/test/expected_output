@@ -151,12 +151,12 @@ Name   Address   Size   Attrs
 .rtc.force_fast 0x3ff80000 0x0 RW  
 .rtc_noinit 0x50000200 0x0 RW  
 .rtc.force_slow 0x50000200 0x0 RW  
-.iram0.vectors 0x40080000 0x404 R XA
+.iram0.vectors 0x40080000 0x403 R XA
 .iram0.text 0x40080404 0xa970 RWXA
 .dram0.data 0x3ffb0000 0x3474 RW A
 .noinit 0x3ffb3474 0x0 RW  
 .flash.rodata 0x3f400020 0x6e4c RW A
-.flash.text 0x400d0020 0x188f0 R XA
+.flash.text 0x400d0020 0x188ef R XA
 .iram0.text_end 0x4008ad74 0x0 RW  
 .dram0.heap_start 0x3ffb4cf0 0x0 RW  
 .coredump.tasks.data 0x3ffb6260 0x17c RW 
