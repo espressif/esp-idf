@@ -150,6 +150,12 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config SHA1_IN_CERTIFICATES
+        bool "Enable SHA1 in certificates"
+        default n
+        help
+            This option enables sha1 to encryption certificates
+
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time"
         depends on !ESP32_TIME_SYSCALL_USE_NONE
