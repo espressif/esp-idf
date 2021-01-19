@@ -172,6 +172,7 @@ typedef struct esp_tls_cfg {
     void *ds_data;                          /*!< Pointer for digital signature peripheral context */
     bool is_plain_tcp;                      /*!< Use non-TLS connection: When set to true, the esp-tls uses
                                                  plain TCP transport rather then TLS/SSL connection */
+    struct ifreq *if_name;                  /*!< The name of interface for data to go through. Use the default interface without setting */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

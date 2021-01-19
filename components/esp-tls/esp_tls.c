@@ -231,6 +231,15 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
         }
+        if (cfg->if_name) {
+            if (cfg->if_name->ifr_name[0] != 0) {
+                ESP_LOGD(TAG, "Bind [sock=%d] to interface %s", fd, cfg->if_name->ifr_name);
+                if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,  cfg->if_name, sizeof(struct ifreq)) != 0) {
+                    ESP_LOGE(TAG, "Bind [sock=%d] to interface %s fail", fd, cfg->if_name->ifr_name);
+                    return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+                }
+            }
+        }
     }
     return ESP_OK;
 }
@@ -266,7 +275,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         return ret;
     }
 
-    // Set timeout options and keep-alive options if configured
+    // Set timeout options, keep-alive options and bind device options if configured
     ret = esp_tls_set_socket_options(fd, cfg);
     if (ret != ESP_OK) {
         goto err;
