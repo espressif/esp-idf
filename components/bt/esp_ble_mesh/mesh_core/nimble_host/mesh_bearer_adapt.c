@@ -1186,6 +1186,8 @@ static int gatts_register(struct bt_mesh_gatt_service *svc)
     handle = last->attrs[last->attr_count - 1].handle;
     BT_DBG("gatts register, handle %d", handle);
 
+    ARG_UNUSED(handle);
+
 populate:
     sys_slist_append(&bt_mesh_gatts_db, &svc->node);
     return 0;
