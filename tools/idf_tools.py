@@ -64,11 +64,10 @@ except ImportError:
     pass
 
 try:
-    from urllib.parse import splittype
     from urllib.request import urlopen
     from urllib.error import ContentTooShortError
 except ImportError:
-    from urllib import urlopen, splittype, ContentTooShortError
+    from urllib import urlopen, ContentTooShortError
 
 try:
     from exceptions import WindowsError
@@ -303,6 +302,14 @@ def unpack(filename, destination):
         # https://bugs.python.org/issue17153
         destination = str(destination)
     archive_obj.extractall(destination)
+
+
+def splittype(url):
+    match = re.match('([^/:]+):(.*)', url, re.DOTALL)
+    if match:
+        scheme, data = match.groups()
+        return scheme.lower(), data
+    return None, url
 
 
 # An alternative version of urlretrieve which takes SSL context as an argument
