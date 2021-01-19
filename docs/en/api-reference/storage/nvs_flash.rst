@@ -27,6 +27,10 @@ You can find two code examples in the :example:`storage` directory of ESP-IDF ex
 
   The example also shows how to implement the diagnostic procedure to check if the read / write operation was successful.
 
+:example:`storage/nvs_rw_value_cxx`
+
+  This example does exactly the same as :example:`storage/nvs_rw_value`, except that it uses the C++ nvs handle class.
+
 
 API Reference
 -------------
