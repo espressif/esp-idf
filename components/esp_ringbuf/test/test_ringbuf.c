@@ -678,8 +678,8 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
     result = result && (handle != NULL);
     spi_flash_guard_get()->start(); // Disables flash cache
     xRingbufferGetMaxItemSize(handle);
-    vRingbufferDelete(handle);
     spi_flash_guard_get()->end(); // Re-enables flash cache
+    vRingbufferDelete(handle);
 
     return result;
 }
