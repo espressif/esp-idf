@@ -45,6 +45,10 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
         return ESP_ERR_NOT_FOUND;
     }
 
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     return init_custom(partition_label, partition->address / SPI_FLASH_SEC_SIZE,
             partition->size / SPI_FLASH_SEC_SIZE);
 }
@@ -90,6 +94,10 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
         return ESP_ERR_NOT_FOUND;
+    }
+
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     return secure_init_custom(part_name, partition->address / SPI_FLASH_SEC_SIZE,

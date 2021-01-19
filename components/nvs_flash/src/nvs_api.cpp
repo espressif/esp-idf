@@ -136,6 +136,10 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     return nvs_flash_init_custom(partition->label,
                                  partition->address / SPI_FLASH_SEC_SIZE,
                                  partition->size / SPI_FLASH_SEC_SIZE);
@@ -173,6 +177,10 @@ extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_
         return ESP_ERR_NOT_FOUND;
     }
 
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     return nvs_flash_secure_init_custom(part_name, partition->address / SPI_FLASH_SEC_SIZE,
             partition->size / SPI_FLASH_SEC_SIZE, cfg);
 }
@@ -204,6 +212,10 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
         return ESP_ERR_NOT_FOUND;
     }
 
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     return esp_partition_erase_range(partition, 0, partition->size);
 }
 
@@ -214,6 +226,10 @@ extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partit
 
     if (!partition) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     // if the partition is initialized, uninitialize it first
@@ -561,6 +577,10 @@ extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle_t c_handle, size_t* use
 
 extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
 {
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     auto err = esp_partition_erase_range(partition, 0, partition->size);
     if(err != ESP_OK) {
         return err;
@@ -609,6 +629,10 @@ extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, n
 
 extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
 {
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     uint8_t eky_raw[NVS_KEY_SIZE], tky_raw[NVS_KEY_SIZE];
     uint32_t crc_raw, crc_read, crc_calc;
 

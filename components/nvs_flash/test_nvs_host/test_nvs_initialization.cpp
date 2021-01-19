@@ -29,6 +29,21 @@ TEST_CASE("nvs_flash_init_partition_ptr fails due to nullptr arg", "[nvs_custom_
     CHECK(nvs_flash_init_partition_ptr(nullptr) == ESP_ERR_INVALID_ARG);
 }
 
+TEST_CASE("nvs_flash_init_partition_ptr fails due to external partition", "[nvs_custom_part]")
+{
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    SpiFlashEmulator emu(10);
+
+    struct esp_flash_t spi_flash = {};
+    esp_partition_t partition = {};
+    strcpy(partition.label, "test");
+    partition.address = NVS_FLASH_SECTOR * SPI_FLASH_SEC_SIZE;
+    partition.size = NVS_FLASH_SECTOR_COUNT_MIN * SPI_FLASH_SEC_SIZE;
+    partition.flash_chip = &spi_flash;
+    CHECK(nvs_flash_init_partition_ptr(&partition) == ESP_ERR_NOT_SUPPORTED);
+}
+
 TEST_CASE("nvs_flash_init_partition_ptr inits one partition", "[nvs_custom_part]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
@@ -39,6 +54,7 @@ TEST_CASE("nvs_flash_init_partition_ptr inits one partition", "[nvs_custom_part]
     strcpy(partition.label, "test");
     partition.address = NVS_FLASH_SECTOR * SPI_FLASH_SEC_SIZE;
     partition.size = NVS_FLASH_SECTOR_COUNT_MIN * SPI_FLASH_SEC_SIZE;
+    partition.flash_chip = esp_flash_default_chip;
 
     CHECK(nvs_flash_init_partition_ptr(&partition) == ESP_OK);
     CHECK(NVSPartitionManager::get_instance()->lookup_storage_from_name("test") != nullptr);
