@@ -209,8 +209,8 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
-    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
     tcpip_adapter_ap_start(ap_mac, &ap_ip);
@@ -220,7 +220,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 
 esp_err_t system_event_ap_stop_handle_default(system_event_t *event)
 {
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 
