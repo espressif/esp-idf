@@ -152,6 +152,7 @@ typedef enum {
     ESP_AVRC_TG_PASSTHROUGH_CMD_EVT = 2,           /*!< passthrough command event */
     ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT = 3,   /*!< set absolute volume command from remote device */
     ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT = 4,     /*!< register notification event */
+    ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT = 5,      /*!< set applicaton attribute value, attribute refer to esp_avrc_ps_attr_ids_t */
 } esp_avrc_tg_cb_event_t;
 
 /// AVRC metadata attribute mask
@@ -278,6 +279,12 @@ typedef union
     esp_avrc_batt_stat_t batt;               /*!< response data for ESP_AVRC_RN_BATTERY_STATUS_CHANGE */
 } esp_avrc_rn_param_t;
 
+/// AVRCP set app value parameters
+typedef struct {
+    uint8_t   attr_id;                       /*!< player application attribute id */
+    uint8_t   attr_val;                      /*!< player application attribute value */
+} esp_avrc_set_app_value_param_t;
+
 /// AVRC controller callback parameters
 typedef union {
     /**
@@ -380,6 +387,15 @@ typedef union {
         uint8_t event_id;                        /*!< event id of AVRC RegisterNotification */
         uint32_t event_parameter;                /*!< event notification parameter */
     } reg_ntf;                                   /*!< register notification */
+
+    /**
+     * @brief ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT
+     */
+    struct avrc_tg_set_app_value_param {
+        uint8_t num_val;                        /*!< attribute num */
+        esp_avrc_set_app_value_param_t *p_vals; /*!< point to the id and value of player application attribute */
+    } set_app_value;                            /*!< set player application value */
+
 } esp_avrc_tg_cb_param_t;
 
 /**
