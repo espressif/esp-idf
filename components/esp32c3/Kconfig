@@ -78,10 +78,10 @@ menu "ESP32C3-Specific"
             e.g. GCOV data dump.
 
     config ESP32C3_BROWNOUT_DET
-        bool
+        bool "Hardware brownout detect & reset"
         default y
         help
-            The ESP32-S3 has a built-in brownout detector which can detect if the voltage is lower than
+            The ESP32-C3 has a built-in brownout detector which can detect if the voltage is lower than
             a specific value. If this happens, it will reset the chip in order to prevent unintended
             behaviour.
 
