@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "esp_timer.h"
 
 /* Most development boards have "boot" button attached to GPIO0.
  * You can also change this to another pin.
