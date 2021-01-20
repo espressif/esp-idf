@@ -93,6 +93,7 @@ typedef enum {
     ETH_CMD_G_SPEED,       /*!< Get Speed */
     ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
     ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
+    ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
 } esp_eth_io_cmd_t;
 
 /**
