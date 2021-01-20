@@ -30,6 +30,7 @@ void brownout_hal_config(const brownout_hal_config_t *cfg)
         .rst_wait = 0x3ff,
         .rst_ena = cfg->reset_enabled,
         .ena = cfg->enabled,
+        .rst_sel = 1,
     };
     RTCCNTL.brown_out = brown_out_reg;
 }

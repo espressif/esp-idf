@@ -264,7 +264,6 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after RTC watchdog",
         check_reset_reason_any_wdt);
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3) // TODO ESP32-C3 IDF-2397
 static void do_brownout(void)
 {
     setup_values();
@@ -289,7 +288,6 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         "[reset_reason][ignore][reset="BROWNOUT"]",
         do_brownout,
         check_reset_reason_brownout);
-#endif // TODO ESP32-C3 IDF-2397
 
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
