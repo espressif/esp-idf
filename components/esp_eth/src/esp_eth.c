@@ -379,6 +379,10 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ETH_CHECK(mac->enable_flow_ctrl(mac, (bool)data) == ESP_OK, "enable mac flow control failed", err, ESP_FAIL);
         ETH_CHECK(phy->advertise_pause_ability(phy, (uint32_t)data) == ESP_OK, "phy advertise pause ability failed", err, ESP_FAIL);
         break;
+    case ETH_CMD_G_DUPLEX_MODE:
+        ETH_CHECK(data, "no mem to store duplex value", err, ESP_ERR_INVALID_ARG);
+        *(eth_duplex_t *)data = eth_driver->duplex;
+        break;
     default:
         ETH_CHECK(false, "unknown io command: %d", err, ESP_ERR_INVALID_ARG, cmd);
         break;
