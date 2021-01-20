@@ -31,8 +31,10 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#if __XTENSA__
 #include "freertos/xtensa_timer.h"
 #include "xtensa/core-macros.h"
+#endif
 
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
@@ -54,10 +56,16 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
+#include "esp32c3/pm.h"
+#include "driver/gpio.h"
+#include "esp_private/sleep_modes.h"
 #endif
 
 #define MHZ (1000000)
 
+#if __XTENSA__
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
  * for the purpose of detecting a deadlock.
  */
@@ -67,6 +75,7 @@
  * than this. This is to prevent setting CCOMPARE below CCOUNT.
  */
 #define CCOMPARE_MIN_CYCLES_IN_FUTURE 1000
+#endif
 
 /* When light sleep is used, wake this number of microseconds earlier than
  * the next tick.
@@ -85,6 +94,9 @@
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
 #define DEFAULT_CPU_FREQ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define REF_CLK_DIV_MIN 2
+#define DEFAULT_CPU_FREQ CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -103,12 +115,6 @@ static pm_mode_t s_new_mode = PM_MODE_CPU_MAX;
 static size_t s_mode_lock_counts[PM_MODE_COUNT];
 /* Bit mask of locked modes. BIT(i) is set iff s_mode_lock_counts[i] > 0. */
 static uint32_t s_mode_mask;
-
-/* Divider and multiplier used to adjust (ccompare - ccount) duration.
- * Only set to non-zero values when switch is in progress.
- */
-static uint32_t s_ccount_div;
-static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
@@ -132,11 +138,6 @@ static bool s_skipped_light_sleep[portNUM_PROCESSORS];
 static bool s_skip_light_sleep[portNUM_PROCESSORS];
 #endif // portNUM_PROCESSORS == 2
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
-
-/* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
- * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
- */
-static volatile bool s_need_update_ccompare[portNUM_PROCESSORS];
 
 /* A flag indicating that Idle hook has run on a given CPU;
  * Next interrupt on the same CPU will take s_rtos_lock_handle.
@@ -177,9 +178,23 @@ static const char* s_mode_names[] = {
 };
 #endif // WITH_PROFILING
 
-static const char* TAG = "pm_" CONFIG_IDF_TARGET;
+#if __XTENSA__
+/* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
+ * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
+ */
+static volatile bool s_need_update_ccompare[portNUM_PROCESSORS];
+
+/* Divider and multiplier used to adjust (ccompare - ccount) duration.
+ * Only set to non-zero values when switch is in progress.
+ */
+static uint32_t s_ccount_div;
+static uint32_t s_ccount_mul;
 
 static void update_ccompare(void);
+#endif // __XTENSA__
+
+static const char* TAG = "pm";
+
 static void do_switch(pm_mode_t new_mode);
 static void leave_idle(void);
 static void on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_per_us);
@@ -211,6 +226,8 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32s2_t* config = (const esp_pm_config_esp32s2_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32S3
     const esp_pm_config_esp32s3_t* config = (const esp_pm_config_esp32s3_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C3
+    const esp_pm_config_esp32c3_t* config = (const esp_pm_config_esp32c3_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -256,7 +273,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
          */
         apb_max_freq = 80;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else
     int apb_max_freq = MIN(max_freq_mhz, 80); /* CPU frequency in APB_MAX mode */
 #endif
 
@@ -285,6 +302,13 @@ esp_err_t esp_pm_configure(const void* vconfig)
 
 #if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
     esp_sleep_gpio_status_switch_configure(config->light_sleep_enable);
+#endif
+
+#if CONFIG_ESP_SYSTEM_PM_POWER_DOWN_CPU && SOC_PM_SUPPORT_CPU_PD
+    esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
+    if (config->light_sleep_enable && ret != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+    }
 #endif
 
     return ESP_OK;
@@ -357,8 +381,11 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         esp_timer_private_update_apb_freq(apb_ticks_per_us);
     }
 
+#if __XTENSA__
+#if XT_RTOS_TIMER_INT
     /* Calculate new tick divisor */
     _xt_tick_divisor = ticks_per_us * MHZ / XT_TICK_PER_SEC;
+#endif
 
     int core_id = xPortGetCoreID();
     if (s_rtos_lock_handle[core_id] != NULL) {
@@ -391,6 +418,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         s_ccount_div = 0;
         ESP_PM_TRACE_EXIT(CCOMPARE_UPDATE, core_id);
     }
+#endif // __XTENSA__
 }
 
 /**
@@ -412,9 +440,11 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
             portEXIT_CRITICAL_ISR(&s_switch_lock);
             return;
         }
+#if __XTENSA__
         if (s_need_update_ccompare[core_id]) {
             s_need_update_ccompare[core_id] = false;
         }
+#endif
         portEXIT_CRITICAL_ISR(&s_switch_lock);
     } while (true);
     s_new_mode = new_mode;
@@ -455,6 +485,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 }
 
+#if __XTENSA__
 /**
  * @brief Calculate new CCOMPARE value based on s_ccount_{mul,div}
  *
@@ -475,6 +506,7 @@ static void IRAM_ATTR update_ccompare(void)
         }
     }
 }
+#endif // __XTENSA__
 
 static void IRAM_ATTR leave_idle(void)
 {
@@ -578,6 +610,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 /* Adjust RTOS tick count based on the amount of time spent in sleep */
                 vTaskStepTick(slept_ticks);
 
+#if __XTENSA__
                 /* Trigger tick interrupt, since sleep time was longer
                  * than portTICK_PERIOD_MS. Note that setting INTSET does not
                  * work for timer interrupt, and changing CCOMPARE would clear
@@ -587,6 +620,9 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
+#elif __riscv
+                portYIELD_WITHIN_API();
+#endif
             }
             other_core_should_skip_light_sleep(core_id);
         }
@@ -676,6 +712,8 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32s2_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_pm_config_esp32c3_t cfg = {
 #endif
         .max_freq_mhz = DEFAULT_CPU_FREQ,
         .min_freq_mhz = xtal_freq,
@@ -709,7 +747,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
      * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
     uint32_t state = portENTER_CRITICAL_NESTED();
-#if portNUM_PROCESSORS == 2
+#if __XTENSA__ && (portNUM_PROCESSORS == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
         s_need_update_ccompare[core_id] = false;
@@ -728,7 +766,7 @@ void esp_pm_impl_waiti(void)
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     int core_id = xPortGetCoreID();
     if (s_skipped_light_sleep[core_id]) {
-        asm("waiti 0");
+        cpu_hal_waiti();
         /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
          * is now taken. However since we are back to idle task, we can release
          * the lock so that vApplicationSleep can attempt to enter light sleep.
@@ -737,7 +775,7 @@ void esp_pm_impl_waiti(void)
         s_skipped_light_sleep[core_id] = false;
     }
 #else
-    asm("waiti 0");
+    cpu_hal_waiti();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 

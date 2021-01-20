@@ -239,6 +239,10 @@ IRAM_ATTR void esp_phy_disable(void)
     if (s_phy_access_ref == 0) {
         // Disable PHY and RF.
         phy_close_rf();
+#if CONFIG_IDF_TARGET_ESP32C3
+        // Disable PHY temperature sensor
+        phy_xpd_tsens();
+#endif
 #if CONFIG_IDF_TARGET_ESP32
         // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());

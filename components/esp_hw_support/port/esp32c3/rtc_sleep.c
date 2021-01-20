@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -162,4 +163,9 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
         rtc_sleep_pu(pu_cfg);
     }
     return reject;
+}
+
+uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
+{
+    abort(); // ESP32-C3 TODO IDF-2560
 }

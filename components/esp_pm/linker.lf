@@ -72,3 +72,5 @@ entries:
             gpio_hal_workaround:gpio_hal_sleep_pupd_config_unapply  (noflash)
             gpio_hal_workaround:gpio_hal_sleep_mode_setup_wrapper   (noflash)
             gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
+    if PM_SLP_IRAM_OPT = y && ESP_SYSTEM_PM_POWER_DOWN_CPU = y:
+        rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)

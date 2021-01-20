@@ -177,6 +177,11 @@ static inline void cpu_ll_set_vecbase(const void *vecbase)
     asm volatile ("wsr %0, vecbase" :: "r" (vecbase));
 }
 
+static inline void cpu_ll_waiti(void)
+{
+    asm volatile ("waiti 0\n");
+}
+
 static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
 {
     uint32_t value = 0;

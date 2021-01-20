@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,24 +14,9 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
+#define RTC_CNTL_CPU_PD_REG_FILE_NUM        (108)
+#define RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN      (RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
+#define RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
 
-#define SOC_UART_FIFO_LEN          (128)      /*!< The UART hardware FIFO length */
-#define SOC_UART_BITRATE_MAX       (5000000)  /*!< Max bit rate supported by UART */
-
-#define SOC_UART_SUPPORT_RTC_CLK    (1)
-#define SOC_UART_SUPPORT_XTAL_CLK   (1)
-
-// ESP32-C3 have 2 UART
-#define SOC_UART_NUM           (2)
-
-// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
-#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
-#define UART_FSM_IDLE                       (0x0)
-#define UART_FSM_TX_WAIT_SEND               (0xf)
-
-#ifdef __cplusplus
-}
-#endif
+#define RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (RTC_CNTL_CPU_PD_REG_FILE_NUM * (RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))

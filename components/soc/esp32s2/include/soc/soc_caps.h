@@ -295,6 +295,10 @@
 /*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)
 
+/*-------------------------- Power Management CAPS ---------------------------*/
+#define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents

@@ -268,6 +268,9 @@
 #define SOC_AES_SUPPORT_AES_192 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
 
+/*-------------------------- Power Management CAPS ---------------------------*/
+#define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
 #define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN

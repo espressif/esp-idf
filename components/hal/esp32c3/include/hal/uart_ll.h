@@ -884,6 +884,47 @@ static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
     return UART_RX_TOUT_THRHD_V;
 }
 
+/**
+ * @brief  Force UART xoff.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+static inline void uart_ll_force_xoff(uart_port_t uart_num)
+{
+    REG_CLR_BIT(UART_FLOW_CONF_REG(uart_num), UART_FORCE_XON);
+    REG_SET_BIT(UART_FLOW_CONF_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
+    REG_SET_BIT(UART_ID_REG(uart_num), UART_UPDATE);
+}
+
+/**
+ * @brief  Force UART xon.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+static inline void uart_ll_force_xon(uart_port_t uart_num)
+{
+    REG_CLR_BIT(UART_FLOW_CONF_REG(uart_num), UART_FORCE_XOFF);
+    REG_SET_BIT(UART_FLOW_CONF_REG(uart_num), UART_FORCE_XON);
+    REG_CLR_BIT(UART_FLOW_CONF_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
+    REG_SET_BIT(UART_ID_REG(uart_num), UART_UPDATE);
+}
+
+/**
+ * @brief  Get UART final state machine status.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return UART module FSM status.
+ */
+static inline uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
+{
+    return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
+}
+
 #ifdef __cplusplus
 }
 #endif

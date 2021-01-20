@@ -462,7 +462,6 @@ esp_err_t gpio_sleep_sel_en(gpio_num_t gpio_num);
   *
   * @return
   *     - ESP_OK Success
-  *
   */
 esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num);
 
@@ -477,7 +476,6 @@ esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num);
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG GPIO error
- *
  */
 esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
@@ -492,7 +490,6 @@ esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG : Parameter error
- *
  */
 esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
@@ -504,8 +501,7 @@ esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
   *
   * @return
   *      - ESP_OK Success
-  *
-  * */
+  */
 esp_err_t gpio_sleep_pupd_config_apply(gpio_num_t gpio_num);
 
 /**
@@ -515,8 +511,7 @@ esp_err_t gpio_sleep_pupd_config_apply(gpio_num_t gpio_num);
   *
   * @return
   *      - ESP_OK Success
-  *
-  * */
+  */
 esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num);
 #endif
 #endif

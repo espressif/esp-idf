@@ -151,6 +151,11 @@ static inline void cpu_ll_set_vecbase(const void* vecbase)
     RV_WRITE_CSR(mtvec, vecbase_int);
 }
 
+static inline void cpu_ll_waiti(void)
+{
+    asm volatile ("wfi\n");
+}
+
 #ifdef __cplusplus
 }
 #endif

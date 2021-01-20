@@ -21,12 +21,21 @@
  * Feel free to change when debugging.
  */
 static const int DRAM_ATTR s_trace_io[] = {
+#ifndef CONFIG_IDF_TARGET_ESP32C3
         BIT(4),  BIT(5),  // ESP_PM_TRACE_IDLE
         BIT(16), BIT(17), // ESP_PM_TRACE_TICK
         BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH
         BIT(19), BIT(19), // ESP_PM_TRACE_CCOMPARE_UPDATE
         BIT(25), BIT(26), // ESP_PM_TRACE_ISR_HOOK
         BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
+#else
+        BIT(2),  BIT(3),  // ESP_PM_TRACE_IDLE
+        BIT(4),  BIT(5),  // ESP_PM_TRACE_TICK
+        BIT(6),  BIT(6),  // ESP_PM_TRACE_FREQ_SWITCH
+        BIT(7),  BIT(7),  // ESP_PM_TRACE_CCOMPARE_UPDATE
+        BIT(8),  BIT(9),  // ESP_PM_TRACE_ISR_HOOK
+        BIT(18), BIT(18), // ESP_PM_TRACE_SLEEP
+#endif
 };
 
 void esp_pm_trace_init(void)

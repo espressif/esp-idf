@@ -73,6 +73,11 @@ extern "C" {
  */
 #define cpu_hal_break()                 cpu_ll_break()
 
+/**
+ * Wait for interrupt.
+ */
+#define cpu_hal_waiti()                 cpu_ll_waiti()
+
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 
 /**
