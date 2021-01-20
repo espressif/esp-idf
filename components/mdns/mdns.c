@@ -1313,17 +1313,6 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
                     _mdns_free_tx_packet(packet);
                     return;
                 }
-#ifdef MDNS_REPEAT_QUERY_IN_RESPONSE
-                mdns_out_question_t * out_question = malloc(sizeof(mdns_out_question_t));
-                if (out_question == NULL) {
-                    HOOK_MALLOC_FAILED;
-                    _mdns_free_tx_packet(packet);
-                    return;
-                }
-                memcpy(out_question, q, sizeof(mdns_out_question_t));
-                out_question->next = NULL;
-                queueToEnd(mdns_out_question_t, packet->questions, out_question);
-#endif // MDNS_REPEAT_QUERY_IN_RESPONSE
             } else if (!_mdns_alloc_answer(&packet->answers, q->type, NULL, send_flush, false)) {
                 _mdns_free_tx_packet(packet);
                 return;
@@ -2753,7 +2742,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
         }
     }
 
-    if (header.questions && !parsed_packet->questions && !parsed_packet->discovery && !header.answers) {
+    if (header.questions && !parsed_packet->questions && !parsed_packet->discovery) {
         goto clear_rx_packet;
     } else if (header.answers || header.servers || header.additional) {
         uint16_t recordIndex = 0;
@@ -2796,14 +2785,13 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             if (parsed_packet->discovery && _mdns_name_is_discovery(name, type)) {
                 discovery = true;
-            } else {
-                if (!name->sub && _mdns_name_is_ours(name)) {
-                    ours = true;
-                    if (name->service && name->service[0] && name->proto && name->proto[0]) {
-                        service = _mdns_get_service_item(name->service, name->proto);
-                    }
+            } else if (!name->sub && _mdns_name_is_ours(name)) {
+                ours = true;
+                if (name->service && name->service[0] && name->proto && name->proto[0]) {
+                    service = _mdns_get_service_item(name->service, name->proto);
                 }
-                if (!parsed_packet->authoritative || record_type == MDNS_NS) {
+            } else {
+                if (header.questions || !parsed_packet->authoritative || record_type == MDNS_NS) {
                     //skip this record
                     continue;
                 }
