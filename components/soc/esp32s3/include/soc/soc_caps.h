@@ -116,7 +116,7 @@
 #define SOC_SHA_SUPPORT_RESUME          (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_SHA_GENERAL_DMA             (1)
+#define SOC_SHA_GDMA             (1)
 
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)
@@ -151,7 +151,7 @@
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GENERAL_DMA     (1)
+#define SOC_AES_GDMA            (1)
 
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
@@ -160,5 +160,3 @@
 // Remove them when GDMA driver API is ready
 #define SOC_GDMA_SPI2_DMA_CHANNEL (1)
 #define SOC_GDMA_SPI3_DMA_CHANNEL (2)
-#define SOC_GDMA_SHA_DMA_CHANNEL  (3)
-#define SOC_GDMA_AES_DMA_CHANNEL  (4)

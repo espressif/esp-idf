@@ -90,6 +90,26 @@ else()
     set(AES_PERIPHERAL_TYPE "dma")
 endif()
 
+if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/dma/include")
+
+    if(CONFIG_IDF_TARGET_ESP32S2)
+        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
+    else()
+        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
+    endif()
+endif()
+
+if(AES_PERIPHERAL_TYPE STREQUAL "dma")
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
+
+    if(CONFIG_IDF_TARGET_ESP32S2)
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
+    else()
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
+    endif()
+endif()
+
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
@@ -98,6 +118,8 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
                                   "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+                                  "${SHA_DMA_SRCS}"
+                                  "${AES_DMA_SRCS}"
 )
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)

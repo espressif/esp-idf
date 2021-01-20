@@ -57,6 +57,7 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     };
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_last_block, buf + CALL_SZ - 16, 16);
 
+    mbedtls_aes_free(&ctx);
     free(buf);
 
     // bytes/usec = MB/sec

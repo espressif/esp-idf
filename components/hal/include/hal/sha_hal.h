@@ -69,11 +69,10 @@ void sha_hal_write_digest(esp_sha_type sha_type, void *digest_state);
  * @brief Hashes a number of message blocks using DMA
  *
  * @param sha_type      SHA algorithm to hash with
- * @param input         Input message to be hashed
  * @param num_blocks    Number of blocks to hash
  * @param first_block   Is this the first block in a message or a continuation?
  */
-void sha_hal_hash_dma(esp_sha_type sha_type, lldesc_t *input, size_t num_blocks, bool first_block);
+void sha_hal_hash_dma(esp_sha_type sha_type, size_t num_blocks, bool first_block);
 #endif
 
 #if SOC_SHA_SUPPORT_SHA512_T

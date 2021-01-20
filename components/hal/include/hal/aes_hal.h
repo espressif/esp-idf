@@ -22,7 +22,6 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "hal/aes_types.h"
 #include "hal/aes_ll.h"
@@ -76,20 +75,18 @@ void aes_hal_set_iv(const uint8_t *iv);
 void aes_hal_read_iv(uint8_t *iv);
 
 /**
- * @brief Busy waits until the DMA operation is done (descriptor owner is CPU)
+ * @brief Busy waits until the AES operation is done
  *
  * @param output pointer to inlink descriptor
  */
-void aes_hal_wait_dma_done(lldesc_t *output);
+void aes_hal_wait_done(void);
 
 /**
  * @brief Starts an already configured AES DMA transform
  *
- * @param input outlink descriptor for data to be written to the peripheral
- * @param output inlink descriptor for data to be read from the peripheral
  * @param num_blocks Number of blocks to transform
  */
-void aes_hal_transform_dma_start(const lldesc_t *input, const lldesc_t *output, size_t num_blocks);
+void aes_hal_transform_dma_start(size_t num_blocks);
 
 /**
  * @brief Finish up a AES DMA conversion, release DMA
@@ -129,11 +126,9 @@ void aes_hal_gcm_init(size_t aad_num_blocks, size_t num_valid_bit);
 /**
  * @brief Starts a AES-GCM transform
  *
- * @param input outlink descriptor for data to be written to the peripheral
- * @param output inlink descriptor for data to be read from the perihperal
  * @param num_blocks Number of blocks to transform
  */
-void aes_hal_transform_dma_gcm_start(const lldesc_t *input, const lldesc_t *output, size_t num_blocks);
+void aes_hal_transform_dma_gcm_start(size_t num_blocks);
 
 /**
  * @brief Sets the J0 value, for more information see the GCM subchapter in the TRM

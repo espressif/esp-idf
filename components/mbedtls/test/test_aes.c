@@ -98,6 +98,7 @@ TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -146,6 +147,7 @@ TEST_CASE("mbedtls CTR AES-256 test", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -193,6 +195,7 @@ TEST_CASE("mbedtls OFB AES-256 test", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -238,6 +241,7 @@ TEST_CASE("mbedtls CFB-8 AES-256 test", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -285,6 +289,7 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -378,6 +383,8 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
         }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
+
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -465,6 +472,8 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
         }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
+
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -548,6 +557,8 @@ TEST_CASE("mbedtls CFB8 stream test", "[aes]")
         }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
+
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -634,6 +645,7 @@ TEST_CASE("mbedtls CFB128 stream test", "[aes]")
     }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -697,6 +709,7 @@ TEST_CASE("mbedtls CTR, input buf = output buf", "[aes]")
         TEST_ASSERT_EQUAL_HEX8(0x3A, buf[i]);
     }
 
+    mbedtls_aes_free(&ctx);
     free(buf);
 }
 
@@ -744,6 +757,7 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -805,6 +819,7 @@ void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
 
     }
 
+    mbedtls_aes_free(&ctx);
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
@@ -850,6 +865,7 @@ void aes_psram_one_buf_ctr_test(void)
         TEST_ASSERT_EACH_EQUAL_HEX8(0x26, buf + i, SZ - i);
 
     }
+    mbedtls_aes_free(&ctx);
     free(buf);
 }
 
@@ -1412,6 +1428,7 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(long_input, decryptedtext, SZ);
 
+    mbedtls_aes_free(&ctx);
     free(chipertext);
     free(decryptedtext);
 }

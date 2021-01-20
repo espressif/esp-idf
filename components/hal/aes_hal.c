@@ -20,14 +20,6 @@
 #include <string.h>
 #include "soc/soc_caps.h"
 
-#if SOC_AES_CRYPTO_DMA
-#include "soc/crypto_dma_reg.h"
-#include "hal/crypto_dma_ll.h"
-#elif SOC_AES_GENERAL_DMA
-#include "hal/gdma_ll.h"
-#include "soc/gdma_channel.h"
-#endif
-
 uint8_t aes_hal_setkey(const uint8_t *key, size_t key_bytes, int mode)
 {
     aes_ll_set_mode(mode, key_bytes);
@@ -57,83 +49,10 @@ void aes_hal_transform_block(const void *input_block, void *output_block)
 
 #if SOC_AES_SUPPORT_DMA
 
-#if SOC_AES_GENERAL_DMA
-/**
- * @brief Initialize the DMA
- *
- * @param input AES input descriptor (outlink)
- * @param output AES output descriptor (inlink)
- */
-static inline void aes_hal_dma_init(const lldesc_t *input, const lldesc_t *output)
-{
-    /* Update driver when centralized DMA interface implemented, IDF-2192 */
-    gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
-    gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
-    gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
-    gdma_ll_rx_enable_data_burst(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, false);
 
-    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, SOC_GDMA_TRIG_PERIPH_AES0);
-    gdma_ll_rx_connect_to_periph(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, SOC_GDMA_TRIG_PERIPH_AES0);
-
-#if SOC_GDMA_SUPPORT_EXTMEM
-    /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */
-    gdma_ll_tx_extend_fifo_size_to(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, 40);
-    gdma_ll_rx_extend_l2_fifo_size_to(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, 40);
-    gdma_ll_tx_set_block_size_psram(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-    gdma_ll_rx_set_block_size_psram(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-#endif //SOC_GDMA_SUPPORT_EXTMEM
-
-    /* Set descriptors */
-    gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, (uint32_t)input);
-    gdma_ll_rx_set_desc_addr(&GDMA, SOC_GDMA_AES_DMA_CHANNEL, (uint32_t)output);
-
-    gdma_ll_rx_reset_channel(&GDMA, SOC_GDMA_AES_DMA_CHANNEL);
-    gdma_ll_tx_reset_channel(&GDMA, SOC_GDMA_AES_DMA_CHANNEL);
-
-    /* Start transfer */
-    gdma_ll_tx_start(&GDMA, SOC_GDMA_AES_DMA_CHANNEL);
-    gdma_ll_rx_start(&GDMA, SOC_GDMA_AES_DMA_CHANNEL);
-}
-
-static inline bool aes_hal_dma_done(const lldesc_t *output)
-{
-    return (gdma_ll_rx_is_fsm_idle(&GDMA, SOC_GDMA_AES_DMA_CHANNEL) && (output->owner == 0));
-}
-#endif //SOC_AES_GENERAL_DMA
-
-
-
-#if SOC_AES_CRYPTO_DMA
-/**
- * @brief Initialize the DMA
- *
- * @param input AES input descriptor (outlink)
- * @param output AES output descriptor (inlink)
- */
-static inline void aes_hal_dma_init(const lldesc_t *input, const lldesc_t *output)
-{
-    crypto_dma_ll_reset();
-    crypto_dma_ll_set_mode(CRYPTO_DMA_AES);
-
-    /* Set descriptors, input to AES comes from outlink DMA and viceversa */
-    crypto_dma_ll_outlink_set((uint32_t)input);
-    crypto_dma_ll_inlink_set((uint32_t)output);
-
-    /* Start transfer */
-    crypto_dma_ll_outlink_start();
-    crypto_dma_ll_inlink_start();
-}
-
-static inline bool aes_hal_dma_done(lldesc_t *output)
-{
-    return (crypto_dma_ll_inlink_is_eof() && (output->owner == 0));
-}
-#endif //SOC_AES_CRYPTO_DMA
-
-void aes_hal_transform_dma_start(const lldesc_t *input, const lldesc_t *output, size_t num_blocks)
+void aes_hal_transform_dma_start(size_t num_blocks)
 {
     aes_ll_dma_enable(true);
-    aes_hal_dma_init(input, output);
 
     /* Write the number of blocks */
     aes_ll_set_num_blocks(num_blocks);
@@ -168,25 +87,11 @@ void aes_hal_read_iv(uint8_t *iv)
     aes_ll_read_iv(iv);
 }
 
-static inline void aes_hal_wait_done(void)
+void aes_hal_wait_done()
 {
     while (aes_ll_get_state() != ESP_AES_STATE_DONE) {}
 }
 
-void aes_hal_wait_dma_done(lldesc_t *output)
-{
-    /* Checking this if interrupt is used also, to avoid
-       issues with AES fault injection
-    */
-    aes_hal_wait_done();
-
-    /* Wait for DMA write operation to complete */
-    while (1) {
-        if ( aes_hal_dma_done(output) ) {
-            break;
-        }
-    }
-}
 
 #endif //SOC_AES_SUPPORT_DMA
 
@@ -202,9 +107,8 @@ void aes_hal_gcm_calc_hash(uint8_t *gcm_hash)
     aes_ll_gcm_read_hash(gcm_hash);
 }
 
-void aes_hal_transform_dma_gcm_start(const lldesc_t *input, const lldesc_t *output, size_t num_blocks)
+void aes_hal_transform_dma_gcm_start(size_t num_blocks)
 {
-    aes_hal_dma_init(input, output);
 
     /* Write the number of blocks */
     aes_ll_set_num_blocks(num_blocks);

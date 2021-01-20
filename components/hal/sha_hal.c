@@ -21,13 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if SOC_SHA_CRYPTO_DMA
-#include "soc/crypto_dma_reg.h"
-#include "hal/crypto_dma_ll.h"
-#elif SOC_SHA_GENERAL_DMA
-#include "hal/gdma_ll.h"
-#include "soc/gdma_channel.h"
-#endif
 
 #define SHA1_STATE_LEN_WORDS    (160 / 32)
 #define SHA256_STATE_LEN_WORDS  (256 / 32)
@@ -99,52 +92,10 @@ void sha_hal_hash_block(esp_sha_type sha_type, const void *data_block, size_t bl
 
 #if SOC_SHA_SUPPORT_DMA
 
-#if SOC_SHA_GENERAL_DMA
-static inline void sha_hal_dma_init(lldesc_t *input)
-{
-    /* Update driver when centralized DMA interface implemented, IDF-2192 */
-    gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, false);
-    gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, false);
-    gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, false);
-
-    gdma_ll_tx_connect_to_periph(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, SOC_GDMA_TRIG_PERIPH_SHA0);
-
-#if SOC_GDMA_SUPPORT_EXTMEM
-    /* Atleast 40 bytes when accessing external RAM */
-    gdma_ll_tx_extend_fifo_size_to(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, 40);
-    gdma_ll_tx_set_block_size_psram(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-#endif //SOC_GDMA_SUPPORT_EXTMEM
-
-    /* Set descriptors */
-    gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL, (uint32_t)input);
-
-    gdma_ll_rx_reset_channel(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL);
-    gdma_ll_tx_reset_channel(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL);
-
-    /* Start transfer */
-    gdma_ll_tx_start(&GDMA, SOC_GDMA_SHA_DMA_CHANNEL);
-}
-#endif //SOC_SHA_GENERAL_DMA
-
-
-
-#if SOC_SHA_CRYPTO_DMA
-static inline void sha_hal_dma_init(lldesc_t *input)
-{
-    crypto_dma_ll_set_mode(CRYPTO_DMA_SHA);
-    crypto_dma_ll_reset();
-
-    crypto_dma_ll_outlink_set((uint32_t)input);
-    crypto_dma_ll_outlink_start();
-}
-#endif
-
 /* Hashes a number of message blocks using DMA */
-void sha_hal_hash_dma(esp_sha_type sha_type, lldesc_t *input, size_t num_blocks, bool first_block)
+void sha_hal_hash_dma(esp_sha_type sha_type, size_t num_blocks, bool first_block)
 {
     sha_hal_wait_idle();
-
-    sha_hal_dma_init(input);
 
     sha_ll_set_block_num(num_blocks);
 
