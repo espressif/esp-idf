@@ -21,6 +21,12 @@ menu "Bluetooth"
         depends on BT_ENABLED && IDF_TARGET_ESP32S3
         default y
 
+    config BT_SOC_SUPPORT_5_0
+        bool
+        depends on BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        default y if BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        default n
+
     menu "Bluetooth controller(ESP32 Dual Mode Bluetooth)"
         visible if BT_CTRL_ESP32
 

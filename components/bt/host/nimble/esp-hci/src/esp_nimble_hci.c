@@ -213,7 +213,9 @@ void ble_hci_trans_buf_free(uint8_t *buf)
  */
 int ble_hci_trans_set_acl_free_cb(os_mempool_put_fn *cb, void *arg)
 {
-    return BLE_ERR_UNSUPPORTED;
+    ble_hci_acl_pool.mpe_put_cb = cb;
+    ble_hci_acl_pool.mpe_put_arg = arg;
+    return 0;
 }
 
 int ble_hci_trans_reset(void)
