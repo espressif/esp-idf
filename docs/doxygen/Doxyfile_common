@@ -226,15 +226,15 @@ INPUT = \
     $(IDF_PATH)/components/esp_system/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \
-    $(IDF_PATH)/components/esp_common/include/esp_task_wdt.h \
-    $(IDF_PATH)/components/esp_common/include/esp_crc.h \
+    $(IDF_PATH)/components/esp_system/include/esp_int_wdt.h \
+    $(IDF_PATH)/components/esp_system/include/esp_task_wdt.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_crc.h \
     ## Hooks
-    $(IDF_PATH)/components/esp_common/include/esp_freertos_hooks.h \
+    $(IDF_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
     $(IDF_PATH)/components/esp_ipc/include/esp_ipc.h \
     ## Call Function with External stack
-    $(IDF_PATH)/components/esp_common/include/esp_expression_with_stack.h \
+    $(IDF_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)
     $(IDF_PATH)/components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA
