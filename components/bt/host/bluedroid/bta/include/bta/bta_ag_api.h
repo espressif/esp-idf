@@ -145,6 +145,7 @@ typedef UINT8 tBTA_AG_RES;
 #if (BTM_WBS_INCLUDED == TRUE )
 #define BTA_AG_WBS_EVT          31 /* SCO codec nego */
 #endif
+#define BTA_AG_AUDIO_MSBC_OPEN_EVT 32 /* Audio connection with mSBC codec open */
 
 /* Values below are for HFP only */
 #define BTA_AG_AT_A_EVT         10 /* Answer a incoming call */

@@ -168,11 +168,11 @@ const char *c_inband_ring_state_str[] = {
     "Provided",
 };
 
-// esp_bd_addr_t peer_addr;
+extern esp_bd_addr_t peer_addr;
 // If you want to connect a specific device, add it's address here
-esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};
+// esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
-#if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
 
 #define ESP_HFP_RINGBUF_SIZE 3600
 static RingbufHandle_t m_rb = NULL;
@@ -224,7 +224,7 @@ static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
 
     esp_hf_client_outgoing_data_ready();
 }
-#endif /* #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI */
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 
 /* callback for HF_CLIENT */
 void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
@@ -250,7 +250,7 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
         {
             ESP_LOGI(BT_HF_TAG, "--audio state %s",
                     c_audio_state_str[param->audio_stat.state]);
-    #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
                 esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
@@ -259,7 +259,7 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
                 bt_app_hf_client_audio_close();
             }
-    #endif /* #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI */
+    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             break;
         }
 

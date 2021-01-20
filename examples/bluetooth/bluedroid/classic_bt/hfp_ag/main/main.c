@@ -24,7 +24,8 @@
 #include "esp_hf_ag_api.h"
 #include "bt_app_hf.h"
 #include "gpio_pcm_config.h"
-#include "console_uart.h"
+#include "esp_console.h"
+#include "app_hf_msg_set.h"
 
 #define BT_HF_AG_TAG            "HF_AG_DEMO_MAIN"
 
@@ -108,14 +109,35 @@ void app_main(void)
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_hf_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
 
-    /* initialize console via UART */
-    console_uart_init();
-
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */
     app_gpio_pcm_io_cfg();
+#endif
 
     /* configure externel chip for acoustic echo cancellation */
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
     app_gpio_aec_io_cfg();
 #endif /* ACOUSTIC_ECHO_CANCELLATION_ENABLE */
+
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    repl_config.prompt = "hfp_ag>";
+
+    // init console REPL environment
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+
+    /* Register commands */
+    register_hfp_ag();
+    printf("\n ==================================================\n");
+    printf(" |       Steps to test hfp_ag                     |\n");
+    printf(" |                                                |\n");
+    printf(" |  1. Print 'help' to gain overview of commands  |\n");
+    printf(" |  2. Setup a service level connection           |\n");
+    printf(" |  3. Run hfp_ag to test                         |\n");
+    printf(" |                                                |\n");
+    printf(" =================================================\n\n");
+
+    // start console REPL
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

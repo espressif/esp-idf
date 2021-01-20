@@ -1482,12 +1482,19 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_ON);
 #endif
     /* open SCO codec if SCO is routed through transport */
-    bta_ag_sco_co_open(bta_ag_scb_to_idx(p_scb), p_scb->air_mode, BTA_HFP_SCO_OUT_PKT_SIZE, BTA_AG_CI_SCO_DATA_EVT);
+    bta_ag_sco_co_open(bta_ag_scb_to_idx(p_scb), p_scb->air_mode, p_scb->out_pkt_len, BTA_AG_CI_SCO_DATA_EVT);
 #endif
 
+#if (BTM_WBS_INCLUDED == TRUE)
     /* call app callback */
+    if (p_scb->sco_codec == BTA_AG_CODEC_MSBC) {
+        bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_MSBC_OPEN_EVT);
+    } else {
+        bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
+    }
+#else
     bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
-
+#endif
     p_scb->retry_with_sco_only = FALSE;
 #if (BTM_WBS_INCLUDED == TRUE)
     /* reset to mSBC T2 settings as the preferred */

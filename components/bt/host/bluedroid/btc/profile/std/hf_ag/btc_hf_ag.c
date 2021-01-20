@@ -1312,6 +1312,16 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
         }
 
+        case BTA_AG_AUDIO_MSBC_OPEN_EVT:
+        {
+            do {
+                memset(&param, 0, sizeof(esp_hf_cb_param_t));
+                param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
+                memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
+            } while (0);
+            break;
+        }
         case BTA_AG_AUDIO_CLOSE_EVT:
         {
             do {

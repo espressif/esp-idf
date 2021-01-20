@@ -15,15 +15,18 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_ag_api.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "freertos/ringbuf.h"
 #include "time.h"
 #include "sys/time.h"
 #include "sdkconfig.h"
 #include "bt_app_core.h"
 #include "bt_app_hf.h"
+#include "osi/allocator.h"
 
 const char *c_hf_evt_str[] = {
     "CONNECTION_STATE_EVT",              /*!< SERVICE LEVEL CONNECTION STATE CONTROL */
@@ -101,9 +104,10 @@ const char *c_codec_mode_str[] = {
     "Use MSBC",
 };
 
-#if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+#define TABLE_SIZE   100
 // Produce a sine audio
-static const int16_t sine_int16[] = {
+static const int16_t sine_int16[TABLE_SIZE] = {
      0,    2057,    4107,    6140,    8149,   10126,   12062,   13952,   15786,   17557,
  19260,   20886,   22431,   23886,   25247,   26509,   27666,   28714,   29648,   30466,
  31163,   31738,   32187,   32509,   32702,   32767,   32702,   32509,   32187,   31738,
@@ -116,8 +120,64 @@ static const int16_t sine_int16[] = {
 -19260,  -17557,  -15786,  -13952,  -12062,  -10126,   -8149,   -6140,   -4107,   -2057,
 };
 
-#define TABLE_SIZE_CVSD   100
+#define ESP_HFP_RINGBUF_SIZE 3600
+
+// 7500 microseconds(=12 slots) is aligned to 1 msbc frame duration, and is multiple of common Tesco for eSCO link with EV3 or 2-EV3 packet type
+#define PCM_BLOCK_DURATION_US        (7500)
+
+#define WBS_PCM_SAMPLING_RATE_KHZ    (16)
+#define PCM_SAMPLING_RATE_KHZ        (8)
+
+#define BYTES_PER_SAMPLE             (2)
+
+// input can refer to Enhanced Setup Synchronous Connection Command in core spec4.2 Vol2, Part E
+#define WBS_PCM_INPUT_DATA_SIZE  (WBS_PCM_SAMPLING_RATE_KHZ * PCM_BLOCK_DURATION_US / 1000 * BYTES_PER_SAMPLE) //240
+#define PCM_INPUT_DATA_SIZE      (PCM_SAMPLING_RATE_KHZ * PCM_BLOCK_DURATION_US / 1000 * BYTES_PER_SAMPLE)     //120
+
+#define PCM_GENERATOR_TICK_US        (4000)
+
+static long s_data_num = 0;
+static RingbufHandle_t s_m_rb = NULL;
+static uint64_t s_time_new, s_time_old;
+static esp_timer_handle_t s_periodic_timer;
+static uint64_t s_last_enter_time, s_now_enter_time;
+static uint64_t s_us_duration;
+static xSemaphoreHandle s_send_data_Semaphore = NULL;
+static xTaskHandle s_bt_app_send_data_task_handler = NULL;
+static esp_hf_audio_state_t s_audio_code;
+
+static void print_speed(void);
+
 static uint32_t bt_app_hf_outgoing_cb(uint8_t *p_buf, uint32_t sz)
+{
+    size_t item_size = 0;
+    uint8_t *data;
+    if (!s_m_rb) {
+        return 0;
+    }
+    vRingbufferGetInfo(s_m_rb, NULL, NULL, NULL, NULL, &item_size);
+    if (item_size >= sz) {
+        data = xRingbufferReceiveUpTo(s_m_rb, &item_size, 0, sz);
+        memcpy(p_buf, data, item_size);
+        vRingbufferReturnItem(s_m_rb, data);
+        return sz;
+    } else {
+        // data not enough, do not read\n
+        return 0;
+    }
+    return 0;
+}
+
+static void bt_app_hf_incoming_cb(const uint8_t *buf, uint32_t sz)
+{
+    s_time_new = esp_timer_get_time();
+    s_data_num += sz;
+    if ((s_time_new - s_time_old) >= 3000000) {
+        print_speed();
+    }
+}
+
+static uint32_t bt_app_hf_create_audio_data(uint8_t *p_buf, uint32_t sz)
 {
     static int sine_phase = 0;
 
@@ -125,19 +185,108 @@ static uint32_t bt_app_hf_outgoing_cb(uint8_t *p_buf, uint32_t sz)
         p_buf[i * 2]     = sine_int16[sine_phase];
         p_buf[i * 2 + 1] = sine_int16[sine_phase];
         ++sine_phase;
-        if (sine_phase >= TABLE_SIZE_CVSD) {
-            sine_phase -= TABLE_SIZE_CVSD;
+        if (sine_phase >= TABLE_SIZE) {
+            sine_phase -= TABLE_SIZE;
         }
     }
     return sz;
 }
 
-static void bt_app_hf_incoming_cb(const uint8_t *buf, uint32_t sz)
+static void print_speed(void)
 {
-    // direct to i2s
-    esp_hf_outgoing_data_ready();
+    float tick_s = (s_time_new - s_time_old) / 1000000.0;
+    float speed = s_data_num * 8 / tick_s / 1000.0;
+    ESP_LOGI(BT_HF_TAG, "speed(%fs ~ %fs): %f kbit/s" , s_time_old / 1000000.0, s_time_new / 1000000.0, speed);
+    s_data_num = 0;
+    s_time_old = s_time_new;
 }
-#endif /* #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI */
+
+static void bt_app_send_data_timer_cb(void *arg)
+{
+    if (!xSemaphoreGive(s_send_data_Semaphore)) {
+        ESP_LOGE(BT_HF_TAG, "%s xSemaphoreGive failed", __func__);
+        return;
+    }
+    return;
+}
+
+static void bt_app_send_data_task(void *arg)
+{
+    uint64_t frame_data_num;
+    uint32_t item_size = 0;
+    uint8_t *buf = NULL;
+    for (;;) {
+        if (xSemaphoreTake(s_send_data_Semaphore, (portTickType)portMAX_DELAY)) {
+            s_now_enter_time = esp_timer_get_time();
+            s_us_duration = s_now_enter_time - s_last_enter_time;
+            if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
+            // time of a frame is 7.5ms, sample is 120, data is 2 (byte/sample), so a frame is 240 byte (HF_SBC_ENC_RAW_DATA_SIZE)
+                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
+                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
+            } else {
+                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
+                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
+            }
+            buf = osi_malloc(frame_data_num);
+            if (!buf) {
+                ESP_LOGE(BT_HF_TAG, "%s, no mem", __FUNCTION__);
+                continue;
+            }
+            bt_app_hf_create_audio_data(buf, frame_data_num);
+            BaseType_t done = xRingbufferSend(s_m_rb, buf, frame_data_num, 0);
+            if (!done) {
+                ESP_LOGE(BT_HF_TAG, "rb send fail\n");
+            }
+            osi_free(buf);
+            vRingbufferGetInfo(s_m_rb, NULL, NULL, NULL, NULL, &item_size);
+
+            if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
+                if(item_size >= WBS_PCM_INPUT_DATA_SIZE) {
+                    esp_hf_outgoing_data_ready();
+                }
+            } else {
+                if(item_size >= PCM_INPUT_DATA_SIZE) {
+                    esp_hf_outgoing_data_ready();
+                }
+            }
+        }
+    }
+}
+void bt_app_send_data(void)
+{
+    s_send_data_Semaphore = xSemaphoreCreateBinary();
+    xTaskCreate(bt_app_send_data_task, "BtAppSendDataTask", 2048, NULL, configMAX_PRIORITIES - 3, &s_bt_app_send_data_task_handler);
+    s_m_rb = xRingbufferCreate(ESP_HFP_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
+    const esp_timer_create_args_t c_periodic_timer_args = {
+            .callback = &bt_app_send_data_timer_cb,
+            .name = "periodic"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&c_periodic_timer_args, &s_periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(s_periodic_timer, PCM_GENERATOR_TICK_US));
+    s_last_enter_time = esp_timer_get_time();
+    return;
+}
+
+void bt_app_send_data_shut_down(void)
+{
+    if (s_bt_app_send_data_task_handler) {
+        vTaskDelete(s_bt_app_send_data_task_handler);
+        s_bt_app_send_data_task_handler = NULL;
+    }
+    if (s_send_data_Semaphore) {
+        vSemaphoreDelete(s_send_data_Semaphore);
+        s_send_data_Semaphore = NULL;
+    }
+    if(s_periodic_timer) {
+        ESP_ERROR_CHECK(esp_timer_stop(s_periodic_timer));
+        ESP_ERROR_CHECK(esp_timer_delete(s_periodic_timer));
+    }
+    if (s_m_rb) {
+        vRingbufferDelete(s_m_rb);
+    }
+    return;
+}
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 
 void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 {
@@ -161,15 +310,24 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_AUDIO_STATE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Audio State %s", c_audio_state_str[param->audio_stat.state]);
-#if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
             if (param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED_MSBC)
             {
+                if(param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED) {
+                    s_audio_code = ESP_HF_AUDIO_STATE_CONNECTED;
+                } else {
+                    s_audio_code = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
+                }
+                s_time_old = esp_timer_get_time();
                 esp_bt_hf_register_data_callback(bt_app_hf_incoming_cb, bt_app_hf_outgoing_cb);
+                /* Begin send esco data task */
+                bt_app_send_data();
             } else if (param->audio_stat.state == ESP_HF_AUDIO_STATE_DISCONNECTED) {
                 ESP_LOGI(BT_HF_TAG, "--ESP AG Audio Connection Disconnected.");
+                bt_app_send_data_shut_down();
             }
-#endif /* #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI */
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             break;
         }
 
@@ -290,7 +448,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             }
             break;
         }
-#if (BTM_WBS_INCLUDED == TRUE)
+#if (CONFIG_BT_HFP_WBS_ENABLE)
         case ESP_HF_WBS_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Current codec: %s",c_codec_mode_str[param->wbs_rep.codec]);
@@ -306,5 +464,6 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         default:
             ESP_LOGI(BT_HF_TAG, "Unsupported HF_AG EVT: %d.", event);
             break;
+
     }
 }
