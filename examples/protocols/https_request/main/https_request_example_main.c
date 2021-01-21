@@ -50,88 +50,135 @@
 
 static const char *TAG = "example";
 
-static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\r\n"
-    "Host: "WEB_SERVER"\r\n"
-    "User-Agent: esp-idf/1.0 esp32\r\n"
-    "\r\n";
+static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
+                             "Host: "WEB_SERVER"\r\n"
+                             "User-Agent: esp-idf/1.0 esp32\r\n"
+                             "\r\n";
 
-static void https_get_task(void *pvParameters)
+/* Root cert for howsmyssl.com, taken from server_root_cert.pem
+
+   The PEM file was extracted from the output of this command:
+   openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null
+
+   The CA root cert is the last cert given in the chain of certs.
+
+   To embed it in the app binary, the PEM file is named
+   in the component.mk COMPONENT_EMBED_TXTFILES variable.
+*/
+extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
+extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
+
+static void https_get_request(esp_tls_cfg_t cfg)
 {
     char buf[512];
     int ret, len;
 
-    while(1) {
-        esp_tls_cfg_t cfg = {
-            .crt_bundle_attach = esp_crt_bundle_attach,
-        };
+    struct esp_tls *tls = esp_tls_conn_http_new(WEB_URL, &cfg);
 
-        struct esp_tls *tls = esp_tls_conn_http_new(WEB_URL, &cfg);
+    if (tls != NULL) {
+        ESP_LOGI(TAG, "Connection established...");
+    } else {
+        ESP_LOGE(TAG, "Connection failed...");
+        goto exit;
+    }
 
-        if(tls != NULL) {
-            ESP_LOGI(TAG, "Connection established...");
-        } else {
-            ESP_LOGE(TAG, "Connection failed...");
+    size_t written_bytes = 0;
+    do {
+        ret = esp_tls_conn_write(tls,
+                                 REQUEST + written_bytes,
+                                 sizeof(REQUEST) - written_bytes);
+        if (ret >= 0) {
+            ESP_LOGI(TAG, "%d bytes written", ret);
+            written_bytes += ret;
+        } else if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "esp_tls_conn_write  returned: [0x%02X](%s)", ret, esp_err_to_name(ret));
             goto exit;
         }
+    } while (written_bytes < sizeof(REQUEST));
 
-        size_t written_bytes = 0;
-        do {
-            ret = esp_tls_conn_write(tls,
-                                     REQUEST + written_bytes,
-                                     strlen(REQUEST) - written_bytes);
-            if (ret >= 0) {
-                ESP_LOGI(TAG, "%d bytes written", ret);
-                written_bytes += ret;
-            } else if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-                ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
-                goto exit;
-            }
-        } while(written_bytes < strlen(REQUEST));
+    ESP_LOGI(TAG, "Reading HTTP response...");
 
-        ESP_LOGI(TAG, "Reading HTTP response...");
+    do {
+        len = sizeof(buf) - 1;
+        bzero(buf, sizeof(buf));
+        ret = esp_tls_conn_read(tls, (char *)buf, len);
 
-        do
-        {
-            len = sizeof(buf) - 1;
-            bzero(buf, sizeof(buf));
-            ret = esp_tls_conn_read(tls, (char *)buf, len);
-
-            if(ret == ESP_TLS_ERR_SSL_WANT_WRITE  || ret == ESP_TLS_ERR_SSL_WANT_READ)
-                continue;
-
-            if(ret < 0)
-           {
-                ESP_LOGE(TAG, "esp_tls_conn_read  returned -0x%x", -ret);
-                break;
-            }
-
-            if(ret == 0)
-            {
-                ESP_LOGI(TAG, "connection closed");
-                break;
-            }
-
-            len = ret;
-            ESP_LOGD(TAG, "%d bytes read", len);
-            /* Print response directly to stdout as it is read */
-            for(int i = 0; i < len; i++) {
-                putchar(buf[i]);
-            }
-        } while(1);
-
-    exit:
-        esp_tls_conn_delete(tls);
-        putchar('\n'); // JSON output doesn't have a newline at end
-
-        static int request_count;
-        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
-
-        for(int countdown = 10; countdown >= 0; countdown--) {
-            ESP_LOGI(TAG, "%d...", countdown);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        if (ret == ESP_TLS_ERR_SSL_WANT_WRITE  || ret == ESP_TLS_ERR_SSL_WANT_READ) {
+            continue;
         }
-        ESP_LOGI(TAG, "Starting again!");
+
+        if (ret < 0) {
+            ESP_LOGE(TAG, "esp_tls_conn_read  returned [-0x%02X](%s)", -ret, esp_err_to_name(ret));
+            break;
+        }
+
+        if (ret == 0) {
+            ESP_LOGI(TAG, "connection closed");
+            break;
+        }
+
+        len = ret;
+        ESP_LOGD(TAG, "%d bytes read", len);
+        /* Print response directly to stdout as it is read */
+        for (int i = 0; i < len; i++) {
+            putchar(buf[i]);
+        }
+        putchar('\n'); // JSON output doesn't have a newline at end
+    } while (1);
+
+exit:
+    esp_tls_conn_delete(tls);
+    for (int countdown = 10; countdown >= 0; countdown--) {
+        ESP_LOGI(TAG, "%d...", countdown);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+}
+
+static void https_get_request_using_crt_bundle(void)
+{
+    ESP_LOGI(TAG, "https_request using crt bundle");
+    esp_tls_cfg_t cfg = {
+        .crt_bundle_attach = esp_crt_bundle_attach,
+    };
+    https_get_request(cfg);
+}
+
+static void https_get_request_using_cacert_buf(void)
+{
+    ESP_LOGI(TAG, "https_request using cacert_buf");
+    esp_tls_cfg_t cfg = {
+        .cacert_buf = (const unsigned char *) server_root_cert_pem_start,
+        .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+    };
+    https_get_request(cfg);
+}
+
+static void https_get_request_using_global_ca_store(void)
+{
+    esp_err_t esp_ret = ESP_FAIL;
+    ESP_LOGI(TAG, "https_request using global ca_store");
+    esp_ret = esp_tls_set_global_ca_store(server_root_cert_pem_start, server_root_cert_pem_end - server_root_cert_pem_start);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error in setting the global ca store: [%02X] (%s),could not complete the https_request using global_ca_store", esp_ret, esp_err_to_name(esp_ret));
+        return;
+    }
+    esp_tls_cfg_t cfg = {
+        .use_global_ca_store = true,
+    };
+    https_get_request(cfg);
+    esp_tls_free_global_ca_store();
+}
+
+static void https_request_task(void *pvparameters)
+{
+    ESP_LOGI(TAG, "Start https_request example");
+
+    https_get_request_using_crt_bundle();
+    https_get_request_using_cacert_buf();
+    https_get_request_using_global_ca_store();
+
+    ESP_LOGI(TAG, "Finish https_request example");
+    vTaskDelete(NULL);
 }
 
 void app_main(void)
@@ -146,5 +193,5 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
-    xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&https_request_task, "https_get_task", 8192, NULL, 5, NULL);
 }

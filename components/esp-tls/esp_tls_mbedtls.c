@@ -604,6 +604,7 @@ void esp_mbedtls_server_session_delete(esp_tls_t *tls)
 {
     if (tls != NULL) {
         esp_mbedtls_cleanup(tls);
+        esp_tls_internal_event_tracker_destroy(tls->error_handle);
         free(tls);
     }
 };
@@ -639,6 +640,7 @@ esp_err_t esp_mbedtls_set_global_ca_store(const unsigned char *cacert_pem_buf, c
     if (ret < 0) {
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
         mbedtls_x509_crt_free(global_cacert);
+        free(global_cacert);
         global_cacert = NULL;
         return ESP_FAIL;
     } else if (ret > 0) {
@@ -657,6 +659,7 @@ void esp_mbedtls_free_global_ca_store(void)
 {
     if (global_cacert) {
         mbedtls_x509_crt_free(global_cacert);
+        free(global_cacert);
         global_cacert = NULL;
     }
 }
