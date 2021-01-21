@@ -3,4 +3,5 @@ archive: libheap.a
 entries:
     heap_tlsf (noflash)
     multi_heap (noflash)
-    multi_heap_poisoning (noflash)
+    if HEAP_POISONING_DISABLED = n:
+        multi_heap_poisoning (noflash)

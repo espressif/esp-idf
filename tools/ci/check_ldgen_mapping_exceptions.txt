@@ -1,0 +1,3 @@
+libc
+sha256_coredump
+gcc

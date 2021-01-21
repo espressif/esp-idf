@@ -7,7 +7,8 @@ set(srcs
     "rtc_init.c"
     "rtc_pm.c"
     "rtc_sleep.c"
-    "rtc_time.c")
+    "rtc_time.c"
+    "rtc_wdt.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")

@@ -9,7 +9,6 @@ set(srcs
     "pcnt_periph.c"
     "rmt_periph.c"
     "rtc_io_periph.c"
-    "rtc_periph.c"
     "sdio_slave_periph.c"
     "sdmmc_periph.c"
     "sigmadelta_periph.c"

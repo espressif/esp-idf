@@ -36,12 +36,14 @@ entries:
 archive: libesp_timer.a
 entries:
     if PM_SLP_IRAM_OPT = y:
-        esp_timer_impl_lac:esp_timer_impl_lock (noflash)
-        esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
-        esp_timer_impl_lac:esp_timer_impl_advance (noflash)
-        esp_timer_impl_systimer:esp_timer_impl_lock (noflash)
-        esp_timer_impl_systimer:esp_timer_impl_unlock (noflash)
-        esp_timer_impl_systimer:esp_timer_impl_advance (noflash)
+        if ESP_TIMER_IMPL_TG0_LAC = y:
+            esp_timer_impl_lac:esp_timer_impl_lock (noflash)
+            esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
+            esp_timer_impl_lac:esp_timer_impl_advance (noflash)
+        elif ESP_TIMER_IMPL_SYSTIMER = y:
+            esp_timer_impl_systimer:esp_timer_impl_lock (noflash)
+            esp_timer_impl_systimer:esp_timer_impl_unlock (noflash)
+            esp_timer_impl_systimer:esp_timer_impl_advance (noflash)
 
 [mapping:newlib_pm]
 archive: libnewlib.a
