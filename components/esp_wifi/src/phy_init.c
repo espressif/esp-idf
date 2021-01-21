@@ -195,7 +195,7 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
-IRAM_ATTR void esp_phy_enable(void)
+void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
@@ -231,7 +231,7 @@ IRAM_ATTR void esp_phy_enable(void)
     _lock_release(&s_phy_access_lock);
 }
 
-IRAM_ATTR void esp_phy_disable(void)
+void esp_phy_disable(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
