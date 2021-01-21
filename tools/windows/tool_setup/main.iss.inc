@@ -134,14 +134,24 @@ begin
     IDFToolsSetup();
 
 
-  if WizardIsTaskSelected('createlnk') then
+  if WizardIsTaskSelected('CreateLnkStartCmd') then
   begin
     CreateIDFCommandPromptShortcut('{autostartmenu}\Programs\ESP-IDF');
   end;
 
-  if WizardIsTaskSelected('createdsk') then
+  if WizardIsTaskSelected('CreateLnkStartPs') then
+  begin
+    CreateIDFPowershellShortcut('{autostartmenu}\Programs\ESP-IDF' );
+  end;
+
+  if WizardIsTaskSelected('CreateLnkDeskCmd') then
   begin
     CreateIDFCommandPromptShortcut('{autodesktop}');
+  end;
+
+  if WizardIsTaskSelected('CreateLnkDeskPs') then
+  begin
+    CreateIDFPowershellShortcut('{autodesktop}');
   end;
 
   if WizardIsTaskSelected('wdexcl') then
@@ -169,4 +179,15 @@ begin
   begin
     Result := SetupAborted;
   end;
+end;
+
+
+function IsPowerShellInstalled(): Boolean;
+begin
+  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLnkDeskPs') or WizardIsTaskSelected('CreateLnkStartPs')));
+end;
+
+function IsCmdInstalled(): Boolean;
+begin
+  Result := ((not SetupAborted) and (WizardIsTaskSelected('CreateLnkDeskCmd') or WizardIsTaskSelected('CreateLnkStartCmd')));
 end;

@@ -413,7 +413,38 @@ begin
       GetIDFPath(''),
       '', 0, SW_SHOWNORMAL);
   except
-    MsgBox('Failed to create the Start menu shortcut: ' + Destination, mbError, MB_OK);
+    MsgBox('Failed to create the shortcut: ' + Destination, mbError, MB_OK);
+    RaiseException('Failed to create the shortcut');
+  end;
+end;
+
+procedure CreateIDFPowershellShortcut(LnkString: String);
+var
+  Destination: String;
+  Description: String;
+  Command: String;
+  GitPathWithForwardSlashes: String;
+  PythonPathWithForwardSlashes: String;
+begin
+  ForceDirectories(ExpandConstant(LnkString));
+  Destination := ExpandConstant(LnkString + '\{#IDFPsShortcutFile}');
+  Description := '{#IDFPsShortcutDescription}';
+  GitPathWithForwardSlashes := GitPath;
+  PythonPathWithForwardSlashes := PythonPath;
+  StringChangeEx(GitPathWithForwardSlashes, '\', '/', True);
+  StringChangeEx(PythonPathWithForwardSlashes, '\', '/', True);
+  Command := ExpandConstant('-ExecutionPolicy Bypass -NoExit -File ""{app}\idf_cmd_init.ps1"" ') + '"' + GitPathWithForwardSlashes + '" "' + PythonPathWithForwardSlashes + '"'
+  Log('CreateShellLink Destination=' + Destination + ' Description=' + Description + ' Command=' + Command)
+  try
+    CreateShellLink(
+      Destination,
+      Description,
+      'powershell.exe',
+      Command,
+      GetIDFPath(''),
+      '', 0, SW_SHOWNORMAL);
+  except
+    MsgBox('Failed to create the shortcut: ' + Destination, mbError, MB_OK);
     RaiseException('Failed to create the shortcut');
   end;
 end;
