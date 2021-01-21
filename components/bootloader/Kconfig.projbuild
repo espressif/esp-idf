@@ -455,7 +455,7 @@ menu "Security features"
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
             depends on SECURE_BOOT_SUPPORTS_RSA
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE if !IDF_TARGET_ESP32 && !SECURE_INSECURE_ALLOW_DL_MODE
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE if !IDF_TARGET_ESP32 && !SECURE_INSECURE_ALLOW_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE # NOERROR
             select SECURE_DISABLE_ROM_DL_MODE if ESP32_REV_MIN_3 && !SECURE_INSECURE_ALLOW_DL_MODE
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
@@ -625,7 +625,7 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE # NOERROR
 
     endchoice
 
