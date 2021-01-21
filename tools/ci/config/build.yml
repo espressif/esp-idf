@@ -88,6 +88,12 @@ build_ssc_esp32s2:
   variables:
     TARGET_NAME: "ESP32S2"
 
+build_ssc_esp32c3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32C3"
+
 .build_esp_idf_tests_cmake:
   extends:
     - .build_template
