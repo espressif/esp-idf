@@ -827,6 +827,17 @@ menu "mbedTLS"
         help
             Enable the pthread wrapper layer for the threading layer.
 
+    config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
+        bool "Fallback to software implementation for larger MPI values"
+        depends on MBEDTLS_HARDWARE_MPI
+        default y if IDF_TARGET_ESP32C3  # HW max 3072 bits
+        default n
+        help
+            Fallback to software implementation for RSA key lengths
+            larger than SOC_RSA_MAX_BIT_LEN. If this is not active
+            then the ESP will be unable to process keys greater
+            than SOC_RSA_MAX_BIT_LEN.
+
     menuconfig MBEDTLS_SECURITY_RISKS
         bool "Show configurations with potential security risks"
         default n
