@@ -44,6 +44,10 @@
 #include "uart_caps.h"
 #include "rtc_caps.h"
 
+/*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
+
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
 

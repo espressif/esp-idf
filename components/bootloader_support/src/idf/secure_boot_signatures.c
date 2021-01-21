@@ -31,6 +31,8 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include <esp32s2/rom/secure_boot.h>
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include <esp32c3/rom/secure_boot.h>
 #endif
 
 #define DIGEST_LEN 32
@@ -147,7 +149,7 @@ static const char *TAG = "secure_boot_v2";
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 #define RSA_KEY_SIZE 384 /* RSA 3072 Bits */
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
 inline static bool digest_matches(const void *trusted, const void *computed)
 {
     if (trusted == NULL) {
@@ -165,7 +167,7 @@ inline static bool digest_matches(const void *trusted, const void *computed)
     memcpy(computed_local, computed, ETS_DIGEST_LEN);
     return memcmp(trusted_local, computed_local, ETS_DIGEST_LEN) == 0;
 }
-#endif /* CONFIG_IDF_TARGET_ESP32S2 */
+#endif /* SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 */
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
@@ -214,7 +216,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_key_digest[i]);
     }
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0};
     memcpy(efuse_trusted_digest, (uint8_t *) EFUSE_BLK2_RDATA0_REG, sizeof(efuse_trusted_digest));
 
@@ -229,7 +231,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
             return ESP_FAIL;
         }
     }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
     bool match = false;
     ets_secure_boot_key_digests_t efuse_trusted_digest;
     ETS_STATUS r;
@@ -238,7 +240,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         ESP_LOGI(TAG, "Could not read secure boot digests!");
         return ESP_FAIL;
     }
-#endif /* CONFIG_IDF_TARGET_ESP32 */
+#endif /* SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS */
 #endif /* CONFIG_SECURE_BOOT_V2_ENABLED */
 
     ESP_LOGI(TAG, "Verifying with RSA-PSS...");
@@ -261,7 +263,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
     }
 
     for (i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
         for (uint8_t j = 0; j < SECURE_BOOT_NUM_BLOCKS; j++) {
             if (digest_matches(efuse_trusted_digest.key_digests[j], sig_block_key_digest[i])) {
                 ESP_LOGI(TAG, "eFuse key matches(%d) matches the application key(%d).", j, i);
@@ -272,7 +274,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         if (match == false) {
             continue; // Skip the public keys whose digests don't match.
         }
-# endif
+# endif // SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
 
         const mbedtls_mpi N = { .s = 1,
                                 .n = sizeof(sig_block->block[i].key.n)/sizeof(mbedtls_mpi_uint),
@@ -328,9 +330,9 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
 
     free(sig_be);
     free(buf);
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
     return (ret != 0) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
     return (ret != 0 || match == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
 #endif /* CONFIG_IDF_TARGET_ESP32 */
 }

@@ -29,17 +29,6 @@ typedef struct ets_secure_boot_sig_block ets_secure_boot_sig_block_t;
 typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
 typedef struct ets_secure_boot_key_digests ets_secure_boot_key_digests_t;
 
-/* 64KB 'staging buffer' for loading the verified bootloader
-
-   Comes from the "shared buffers" region (see shared_buffers.h)
-
-   The bootloader can't be safely linked into this address range
-   (may be possible with some cleverness.)
-*/
-#define SECURE_BOOT_STAGING_BUFFER_START ((uint32_t)(g_shared_buffers.secure_boot_staging_buf))
-#define SECURE_BOOT_STAGING_BUFFER_SZ    sizeof(g_shared_buffers.secure_boot_staging_buf)
-#define SECURE_BOOT_STAGING_BUFFER_END   (SECURE_BOOT_STAGING_BUFFER_START + SECURE_BOOT_STAGING_BUFFER_SZ)
-
 /* Anti-FI measure: use full words for success/fail, instead of
    0/non-zero
 */
