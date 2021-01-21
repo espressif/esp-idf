@@ -91,6 +91,9 @@ static system_event_id_t esp_event_legacy_wifi_event_id(int32_t event_id)
     case WIFI_EVENT_ROC_DONE:
         return SYSTEM_EVENT_ROC_DONE;
 
+    case WIFI_EVENT_FTM_REPORT:
+        return SYSTEM_EVENT_FTM_REPORT;
+
     default:
         ESP_LOGE(TAG, "invalid wifi event id %d", event_id);
         return SYSTEM_EVENT_MAX;

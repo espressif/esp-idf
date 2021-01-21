@@ -50,6 +50,7 @@ typedef enum {
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /*!< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_ACTION_TX_STATUS,         /*!< Receive status of Action frame transmitted */
     SYSTEM_EVENT_ROC_DONE,                 /*!< Indicates the completion of Remain-on-Channel operation status */
+    SYSTEM_EVENT_FTM_REPORT,               /*!< Receive report of FTM procedure */
     SYSTEM_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
     SYSTEM_EVENT_ETH_START,                /*!< ESP32 ethernet start */
     SYSTEM_EVENT_ETH_STOP,                 /*!< ESP32 ethernet stop */
@@ -95,6 +96,9 @@ typedef wifi_event_ap_stadisconnected_t system_event_ap_stadisconnected_t;
 /** Argument structure of  event */
 typedef wifi_event_ap_probe_req_rx_t system_event_ap_probe_req_rx_t;
 
+/** Argument structure of SYSTEM_EVENT_FTM_REPORT event */
+typedef wifi_event_ftm_report_t system_event_ftm_report_t;
+
 /** Argument structure of  event */
 typedef ip_event_ap_staipassigned_t system_event_ap_staipassigned_t;
 
@@ -117,6 +121,7 @@ typedef union {
     system_event_ap_staconnected_t             sta_connected;      /*!< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /*!< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /*!< ESP32 soft-AP receive probe request packet */
+    system_event_ftm_report_t                  ftm_report;         /*!< Report of FTM procedure */
     system_event_ap_staipassigned_t            ap_staipassigned;   /**< ESP32 soft-AP assign an IP to the station*/
     system_event_got_ip6_t                     got_ip6;            /*!< ESP32 station　or ap or ethernet ipv6 addr state change to preferred */
 } system_event_info_t;

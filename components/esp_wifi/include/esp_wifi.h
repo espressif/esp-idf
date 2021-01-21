@@ -203,6 +203,8 @@ extern uint64_t g_wifi_feature_caps;
 
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
+#define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
+#define CONFIG_FEATURE_FTM_RESPONDER_BIT (1<<3)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send_internal, \
@@ -1152,6 +1154,18 @@ esp_err_t esp_wifi_statis_dump(uint32_t modules);
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
+
+/**
+  * @brief     Start FTM Initiator session
+  *            If successful, event WIFI_EVENT_FTM_REPORT is generated with the result of the FTM procedure
+  *
+  * @param     cfg  FTM Initiator configurations
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_start_initiator(wifi_ftm_initiator_cfg_t *cfg);
 
 #ifdef __cplusplus
 }

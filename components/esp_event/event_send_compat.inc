@@ -70,6 +70,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT_ARG(WIFI, SCAN_DONE, scan_done);
         HANDLE_SYS_EVENT(WIFI, STA_START);
         HANDLE_SYS_EVENT(WIFI, STA_STOP);
+        HANDLE_SYS_EVENT_ARG(WIFI, FTM_REPORT, ftm_report);
 
         /* STA events */
         HANDLE_SYS_EVENT_ARG(WIFI, STA_CONNECTED, connected);
@@ -205,6 +206,10 @@ static void esp_system_event_debug(const system_event_t* event)
         case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
             const system_event_sta_authmode_change_t *auth_change = &event->event_info.auth_change;
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_AUTHMODE_CHNAGE, old_mode:%d, new_mode:%d", auth_change->old_mode, auth_change->new_mode);
+            break;
+        }
+        case SYSTEM_EVENT_FTM_REPORT: {
+            ESP_LOGD(TAG, "SYSTEM_EVENT_FTM_REPORT");
             break;
         }
         case SYSTEM_EVENT_STA_GOT_IP: {

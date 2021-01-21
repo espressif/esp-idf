@@ -1459,6 +1459,26 @@ For establishing a secure connection, AP and Station negotiate and agree on the 
 
 Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wpa2_enterprise`.
 
+.. only:: esp32s2
+
+Wi-Fi Location
+-------------------------------
+
+Wi-Fi Location will improve the accuracy of a device's location data beyond the Access Point, which will enable creation of new, feature-rich applications and services such as geo-fencing, network management, navigation and others. One of the protocols used to determine the device location with respect to the Access Point is Fine Timing Measurement which calculates Time-of-Flight of a WiFi frame.
+
+Fine Timing Measurement (FTM)
++++++++++++++++++++++++++++++
+
+FTM is used to measure Wi-Fi Round Trip Time (Wi-Fi RTT) which is the time a WiFi signal takes to travel from a device to another device and back again. Using WiFi RTT the distance between the devices can be calculated with a simple formula of `RTT * c / 2`, where c is the speed of light.
+FTM uses timestamps given by WiFi interface hardware at the time of arrival or departure of frames exchanged between a pair of devices. One entity called FTM Initiator (mostly a Station device) discovers the FTM Responder (can be a Station or an Access Point) and negotiates to start an FTM procedure. The procedure uses multiple Action frames sent in bursts and its ACK's to gather the timestamps data. FTM Initiator gathers the data in the end to calculate an average Round-Trip-Time.
+{IDF_TARGET_NAME} supports FTM in below configuration:
+
+ - {IDF_TARGET_NAME} as FTM Initiator in Station mode with the associated AP acting as FTM Responder.
+ - {IDF_TARGET_NAME} as FTM Responder in SoftAP mode with an associated Station acting as FTM Initiator.
+
+Distance measurement using RTT is not accurate, factors such as RF interference, multi-path travel, antenna orientation and lack of calibration increase these inaccuracies. For better results it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as Station and SoftAP.
+Refer to IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to setup and perform FTM.
+
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
 
