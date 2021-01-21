@@ -155,7 +155,7 @@ a15            0x0	0
 
 ======================= ALL MEMORY REGIONS ========================
 Name   Address   Size   Attrs
-.text 0x400074 0x134 R XA
+.text 0x400074 0x133 R XA
 .eh_frame 0x4001a8 0x4 R  A
 .ctors 0x4011ac 0x8 RW A
 .dtors 0x4011b4 0x8 RW A

@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.3.0
+    rev: v3.4.0
     hooks:
       - id: trailing-whitespace
         # note: whitespace exclusions use multiline regex, see https://pre-commit.com/#regular-expressions
@@ -26,11 +26,17 @@ repos:
         files: 'tools/ci/executable-list.txt'
       - id: mixed-line-ending
         args: ['-f=lf']
+      - id: double-quote-string-fixer
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
+  - repo: https://github.com/pycqa/isort
+    rev: 5.6.4
+    hooks:
+      - id: isort
+        name: isort (python)
   - repo: local
     hooks:
       - id: check-executables

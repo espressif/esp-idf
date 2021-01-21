@@ -16,7 +16,7 @@ gdbgui==0.13.2.0
 # 0.13.2.1 supports Python 3.6+ only
 # Windows is not supported since 0.14.0.0. See https://github.com/cs01/gdbgui/issues/348
 pygdbmi<=0.9.0.2
-# The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not copatible with latest gdbgui (>=0.13.2.0)
+# The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not compatible with latest gdbgui (>=0.13.2.0)
 python-socketio<5; python_version<="2.7"
 
 kconfiglib==13.7.1
@@ -25,6 +25,10 @@ kconfiglib==13.7.1
 reedsolo>=1.5.3,<=1.5.4
 bitstring>=3.1.6
 ecdsa>=0.16.0
+
+# espcoredump requirements
+# This is the last version supports both 2.7 and 3.4
+construct==2.10.54
 
 # windows-curses are required in Windows command line but cannot be installed in MSYS2. A requirement like
 # "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment
