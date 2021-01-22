@@ -508,7 +508,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_s2_template
-  parallel: 49
+  parallel: 50
   tags:
     - ESP32S2_IDF
     - UT_T1_1
