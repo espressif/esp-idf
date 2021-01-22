@@ -58,8 +58,6 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     {TSENS_DAC_L4,    2,    10,   -40,   20,   3},
 };
 
-static SemaphoreHandle_t s_rtc_tsens_mux = NULL;
-
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
@@ -94,10 +92,6 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
-    if (s_rtc_tsens_mux == NULL) {
-        s_rtc_tsens_mux = xSemaphoreCreateMutex();
-    }
-    TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 1;
@@ -108,20 +102,13 @@ esp_err_t temp_sensor_stop(void)
 {
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
-    if (s_rtc_tsens_mux != NULL) {
-        vSemaphoreDelete(s_rtc_tsens_mux);
-        s_rtc_tsens_mux = NULL;
-    }
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
 {
     TSENS_CHECK(tsens_out != NULL, ESP_ERR_INVALID_ARG);
-    TSENS_CHECK(s_rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE);
-    xSemaphoreTake(s_rtc_tsens_mux, portMAX_DELAY);
     *tsens_out = APB_SARADC.apb_tsens_ctrl.tsens_out;
-    xSemaphoreGive(s_rtc_tsens_mux);
     return ESP_OK;
 }
 
