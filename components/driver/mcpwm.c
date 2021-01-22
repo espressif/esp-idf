@@ -232,7 +232,7 @@ esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
     const int op = timer_num;
     MCPWM_GEN_CHECK(mcpwm_num, timer_num, gen);
     MCPWM_CHECK(duty_type < MCPWM_DUTY_MODE_MAX, MCPWM_DUTY_TYPE_ERROR, ESP_ERR_INVALID_ARG);
-    mcpwm_hal_context_t* hal = &context[mcpwm_num].hal;
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
 
     mcpwm_critical_enter(mcpwm_num);
     hal->op[op].gen[gen] = (mcpwm_hal_generator_config_t) {
@@ -502,15 +502,12 @@ esp_err_t mcpwm_fault_set_cyc_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_n
     const int op = timer_num;
     MCPWM_TIMER_CHECK(mcpwm_num, op);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
-    mcpwm_hal_fault_conf_t fault_conf = {
-        .cbc_enabled_mask = BIT(fault_sig),
-        .ost_enabled_mask = 0,
-        .action_on_fault[0] = action_on_pwmxa,
-        .action_on_fault[1] = action_on_pwmxb,
-    };
 
     mcpwm_critical_enter(mcpwm_num);
-    mcpwm_hal_operator_update_fault(hal, op, &fault_conf);
+    mcpwm_ll_fault_cbc_enable_signal(hal->dev, op, fault_sig, true);
+    mcpwm_ll_fault_oneshot_enable_signal(hal->dev, op, fault_sig, false);
+    mcpwm_ll_fault_set_cyc_action(hal->dev, op, 0, action_on_pwmxa, action_on_pwmxa);
+    mcpwm_ll_fault_set_cyc_action(hal->dev, op, 1, action_on_pwmxb, action_on_pwmxb);
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
 }
@@ -522,16 +519,13 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
     const int op = timer_num;
     MCPWM_TIMER_CHECK(mcpwm_num, op);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
-    mcpwm_hal_fault_conf_t fault_conf = {
-        .cbc_enabled_mask = 0,
-        .ost_enabled_mask = BIT(fault_sig),
-        .action_on_fault[0] = action_on_pwmxa,
-        .action_on_fault[1] = action_on_pwmxb,
-    };
 
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_hal_fault_oneshot_clear(hal, op);
-    mcpwm_hal_operator_update_fault(hal, op, &fault_conf);
+    mcpwm_ll_fault_cbc_enable_signal(hal->dev, op, fault_sig, false);
+    mcpwm_ll_fault_oneshot_enable_signal(hal->dev, op, fault_sig, true);
+    mcpwm_ll_fault_set_oneshot_action(hal->dev, op, 0, action_on_pwmxa, action_on_pwmxa);
+    mcpwm_ll_fault_set_oneshot_action(hal->dev, op, 1, action_on_pwmxb, action_on_pwmxb);
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
 }
@@ -547,7 +541,7 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
         .cap_edge = cap_edge,
         .prescale = num_of_pulse,
     };
-    mcpwm_hal_context_t* hal = &context[mcpwm_num].hal;
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
 
     mcpwm_critical_enter(mcpwm_num);
     //We have to do this here, since there is no standalone init function
@@ -583,7 +577,7 @@ uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_sig
     MCPWM_CHECK(mcpwm_num < SOC_MCPWM_PERIPH_NUM, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
     mcpwm_capture_on_edge_t edge;
     mcpwm_hal_capture_get_result(&context[mcpwm_num].hal, cap_sig, NULL, &edge);
-    return (edge == MCPWM_NEG_EDGE? 2: 1);
+    return (edge == MCPWM_NEG_EDGE ? 2 : 1);
 }
 
 esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_sync_signal_t sync_sig,
