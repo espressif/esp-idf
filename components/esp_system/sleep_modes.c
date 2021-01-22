@@ -1086,8 +1086,12 @@ static uint32_t get_power_down_flags(void)
 #endif // SOC_TOUCH_PAD_WAKE_SUPPORTED
     }
 
-#if !SOC_PM_SUPPORT_CPU_PD
-    if (s_config.pd_options[ESP_PD_DOMAIN_CPU] == ESP_PD_OPTION_AUTO) {
+#if SOC_PM_SUPPORT_CPU_PD
+    if (s_config.cpu_pd_mem == NULL) {
+        s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
+    }
+#else
+    if (s_config.pd_options[ESP_PD_DOMAIN_CPU] != ESP_PD_OPTION_ON) {
         s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
     }
 #endif
