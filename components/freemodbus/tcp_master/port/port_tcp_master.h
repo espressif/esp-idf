@@ -104,10 +104,11 @@ BOOL xMBTCPPortMasterAddSlaveIp(const CHAR* pcIpStr);
  *
  * @param xEventHandle Master event handle
  * @param xEvent event mask to start Modbus stack FSM
+ * @param usTimeout - timeout in ticks to wait for stack to start
  *
  * @return TRUE if stack started, else FALSE
  */
-BOOL xMBTCPPortMasterWaitEvent(EventGroupHandle_t xEventHandle, EventBits_t xEvent);
+BOOL xMBTCPPortMasterWaitEvent(EventGroupHandle_t xEventHandle, EventBits_t xEvent, USHORT usTimeout);
 
 /**
  * Set network options for Master port

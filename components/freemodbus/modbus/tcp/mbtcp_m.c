@@ -91,8 +91,6 @@ eMBMasterTCPStart( void )
 void
 eMBMasterTCPStop( void )
 {
-    /* Make sure that no more clients are connected. */
-    vMBMasterTCPPortDisable( );
 }
 
 eMBErrorCode
