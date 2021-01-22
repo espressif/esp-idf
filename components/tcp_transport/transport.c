@@ -23,6 +23,7 @@
 #include "esp_transport.h"
 #include "esp_transport_internal.h"
 #include "esp_transport_utils.h"
+#include "esp_tls_errors.h"
 
 static const char *TAG = "TRANSPORT";
 
@@ -296,6 +297,28 @@ int esp_transport_get_errno(esp_transport_handle_t t)
         return actual_errno;
     }
     return -1;
+}
+
+void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_errors error)
+{
+    esp_tls_last_error_t *err_handle = esp_transport_get_error_handle(t);
+    switch (error) {
+        case ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT:
+            err_handle->last_error = ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT;
+            break;
+        case ERR_TCP_TRANSPORT_CANNOT_RESOLVE_HOSTNAME:
+            err_handle->last_error = ESP_ERR_ESP_TLS_CANNOT_RESOLVE_HOSTNAME;
+            break;
+        case ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN:
+            err_handle->last_error = ESP_ERR_ESP_TLS_TCP_CLOSED_FIN;
+            break;
+        case ERR_TCP_TRANSPORT_CONNECTION_FAILED:
+            err_handle->last_error = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
+            break;
+        case ERR_TCP_TRANSPORT_SETOPT_FAILED:
+            err_handle->last_error = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            break;
+    }
 }
 
 void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle)

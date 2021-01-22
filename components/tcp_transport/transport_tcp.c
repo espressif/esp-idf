@@ -26,12 +26,14 @@
 #include "esp_transport_utils.h"
 #include "esp_transport.h"
 #include "esp_transport_internal.h"
+#include "esp_tls_errors.h"
 
 static const char *TAG = "TRANS_TCP";
 
 typedef struct {
     int sock;
 } transport_tcp_t;
+
 
 static int resolve_dns(const char *host, struct sockaddr_in *ip)
 {
@@ -91,6 +93,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     //if stream_host is not ip address, resolve it AF_INET,servername,&serveraddr.sin_addr
     if (inet_pton(AF_INET, host, &remote_ip.sin_addr) != 1) {
         if (resolve_dns(host, &remote_ip) < 0) {
+            capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CANNOT_RESOLVE_HOSTNAME);
             return -1;
         }
     }
@@ -120,10 +123,12 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     int flags;
     if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
         ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_SETOPT_FAILED);
         goto error;
     }
     if (fcntl(tcp->sock, F_SETFL, flags |= O_NONBLOCK) < 0) {
         ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", tcp->sock, strerror(errno));
+        capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_SETOPT_FAILED);
         goto error;
     }
 
@@ -146,7 +151,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
             }
             else if (res == 0) {
                 ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
-                esp_transport_capture_errno(t, EINPROGRESS);    // errno=EINPROGRESS indicates connection timeout
+                capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT);
                 goto error;
             } else {
                 int sockerr;
@@ -154,11 +159,13 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 
                 if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
                     ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", tcp->sock, strerror(errno));
+                    capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_SETOPT_FAILED);
                     goto error;
                 }
                 else if (sockerr) {
                     esp_transport_capture_errno(t, sockerr);
                     ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", tcp->sock, strerror(sockerr));
+                    capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_FAILED);
                     goto error;
                 }
             }
@@ -170,10 +177,12 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     // Reset socket to blocking
     if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
         ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", tcp->sock, strerror(errno));
+        capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_SETOPT_FAILED);
         goto error;
     }
     if (fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
         ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
+        capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_SETOPT_FAILED);
         goto error;
     }
     return tcp->sock;
@@ -202,6 +211,10 @@ static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     }
     int read_len = read(tcp->sock, buffer, len);
     if (read_len == 0) {
+        if (poll > 0) {
+            // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
+            capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
+        }
         return -1;
     }
     return read_len;

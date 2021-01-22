@@ -166,6 +166,10 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
         esp_transport_set_errors(t, ssl->tls->error_handle);
     }
     if (ret == 0) {
+        if (poll > 0) {
+            // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
+            capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
+        }
         ret = -1;
     }
     return ret;
