@@ -18,6 +18,12 @@ menu "Partition Table"
             bool "Factory app, two OTA definitions"
         config PARTITION_TABLE_CUSTOM
             bool "Custom partition table CSV"
+        config PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS
+            bool "Single factory app, no OTA, encrypted NVS"
+            depends on !ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION
+        config PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
+            bool "Factory app, two OTA definitions, encrypted NVS"
+            depends on !ESP_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION
     endchoice
 
     config PARTITION_TABLE_CUSTOM_FILENAME
@@ -31,8 +37,10 @@ menu "Partition Table"
         string
         default "partitions_singleapp.csv" if PARTITION_TABLE_SINGLE_APP && !ESP_COREDUMP_ENABLE_TO_FLASH
         default "partitions_singleapp_coredump.csv" if PARTITION_TABLE_SINGLE_APP && ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_encr_nvs.csv" if PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS
         default "partitions_two_ota.csv" if PARTITION_TABLE_TWO_OTA && !ESP_COREDUMP_ENABLE_TO_FLASH
         default "partitions_two_ota_coredump.csv" if PARTITION_TABLE_TWO_OTA && ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_two_ota_encr_nvs.csv" if PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
         default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
 
     config PARTITION_TABLE_OFFSET

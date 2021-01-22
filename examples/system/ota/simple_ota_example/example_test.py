@@ -174,6 +174,9 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(env, extra_d
     binary_file = os.path.join(dut1.app.binary_path, "simple_ota.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("simple_ota_bin_size", "{}KB".format(bin_size // 1024))
+    # erase flash on the device
+    print("Erasing the flash in order to have an empty NVS key partiton")
+    dut1.erase_flash()
     # start test
     host_ip = get_my_ip()
     thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))

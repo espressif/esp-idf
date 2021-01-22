@@ -16,6 +16,7 @@
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_efuse_table.h"
+#include "nvs_flash.h"
 
 static void example_print_chip_info(void);
 static void example_print_flash_encryption_status(void);
@@ -41,6 +42,13 @@ void app_main(void)
     example_print_chip_info();
     example_print_flash_encryption_status();
     example_read_write_flash();
+    /* Initialize the default NVS partition */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
 }
 
 

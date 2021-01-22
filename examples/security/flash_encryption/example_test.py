@@ -52,7 +52,9 @@ def test_examples_security_flash_encryption(env, extra_data):
         'with esp_partition_read',
         plain_hex_str,
         'with spi_flash_read',
-        expected_str
+        expected_str,
+        # The status of NVS encryption for the "nvs" partition
+        'NVS partition "nvs" is encrypted.'
     ]
     for line in lines:
         dut.expect(line, timeout=2)

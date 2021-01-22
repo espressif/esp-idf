@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 #include <functional>
 #include "nvs_handle_simple.hpp"
+#include "esp_err.h"
 
 #ifdef LINUX_TARGET
 #include "crc.h"
@@ -136,7 +137,39 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 
 extern "C" esp_err_t nvs_flash_init(void)
 {
+#ifdef CONFIG_NVS_ENCRYPTION
+    esp_err_t ret = ESP_FAIL;
+    const esp_partition_t *key_part = esp_partition_find_first(
+                                          ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+    if (key_part == NULL) {
+        ESP_LOGE(TAG, "CONFIG_NVS_ENCRYPTION is enabled, but no partition with subtype nvs_keys found in the partition table.");
+        return ret;
+    }
+
+    nvs_sec_cfg_t cfg = {};
+    ret = nvs_flash_read_security_cfg(key_part, &cfg);
+    if (ret == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
+        ESP_LOGI(TAG, "NVS key partition empty, generating keys");
+        ret = nvs_flash_generate_keys(key_part, &cfg);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to generate keys: [0x%02X] (%s)", ret, esp_err_to_name(ret));
+            return ret;
+        }
+    } else if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read NVS security cfg: [0x%02X] (%s)", ret, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = nvs_flash_secure_init_partition(NVS_DEFAULT_PART_NAME, &cfg);
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGE(TAG, "Failed to initialize NVS partition: [0x%02X] (%s)", ret, esp_err_to_name(ret));
+        return ret;
+    }
+    ESP_LOGI(TAG, "NVS partition \"%s\" is encrypted.", NVS_DEFAULT_PART_NAME);
+    return ret;
+#else // CONFIG_NVS_ENCRYPTION
     return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
+#endif
 }
 
 #ifdef CONFIG_NVS_ENCRYPTION

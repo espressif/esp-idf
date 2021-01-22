@@ -334,9 +334,18 @@ class IDFDUT(DUT.SerialDUT):
             f.write(chr(0xFF) * size)
 
     @_uses_esptool
-    def dump_flush(self, esp, output_file, **kwargs):
+    def erase_flash(self, esp):
         """
-        dump flush
+        erase the flash completely
+
+        :return: None
+        """
+        esp.erase_flash()
+
+    @_uses_esptool
+    def dump_flash(self, esp, output_file, **kwargs):
+        """
+        dump flash
 
         :param output_file: output file name, if relative path, will use sdk path as base path.
         :keyword partition: partition name, dump the partition.
@@ -576,10 +585,13 @@ class IDFQEMUDUT(IDFDUT):
         self.qemu.expect_exact(b"(qemu)")
 
     def erase_partition(self, partition):
-        raise NotImplementedError("method not erase_partition not implemented")
+        raise NotImplementedError("method erase_partition not implemented")
 
-    def dump_flush(self, output_file, **kwargs):
-        raise NotImplementedError("method not dump_flush not implemented")
+    def erase_flash(self):
+        raise NotImplementedError("method erase_flash not implemented")
+
+    def dump_flash(self, output_file, **kwargs):
+        raise NotImplementedError("method dump_flash not implemented")
 
     @classmethod
     def list_available_ports(cls):
