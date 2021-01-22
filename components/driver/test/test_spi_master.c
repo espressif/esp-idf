@@ -1204,9 +1204,9 @@ TEST_CASE("spi poll tasks","[spi]")
     ret=spi_bus_add_device(TEST_SPI_HOST, &devcfg, &context3.handle);
     TEST_ASSERT(ret==ESP_OK);
 
-    xTaskCreate( spi_task1, "task1", 2048, &context1, 0, &task1 );
-    xTaskCreate( spi_task2, "task2", 2048, &context2, 0, &task2 );
-    xTaskCreate( spi_task3, "task3", 2048, &context3, 0, &task3 );
+    xTaskCreate( spi_task1, "task1", 3072, &context1, 0, &task1 );
+    xTaskCreate( spi_task2, "task2", 3072, &context2, 0, &task2 );
+    xTaskCreate( spi_task3, "task3", 3072, &context3, 0, &task3 );
 
     for(;;){
         vTaskDelay(10);
