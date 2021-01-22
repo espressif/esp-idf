@@ -95,6 +95,10 @@ typedef struct {
     bool                        disable_pingpong_discon;    /*!< Disable auto-disconnect due to no PONG received within pingpong_timeout_sec */
     bool                        use_global_ca_store;        /*!< Use a global ca_store for all the connections in which this bool is set. */
     bool                        skip_cert_common_name_check;/*!< Skip any validation of server certificate CN field */
+    bool                        keep_alive_enable;          /*!< Enable keep-alive timeout */
+    int                         keep_alive_idle;            /*!< Keep-alive idle time. Default is 5 (second) */
+    int                         keep_alive_interval;        /*!< Keep-alive interval time. Default is 5 (second) */
+    int                         keep_alive_count;           /*!< Keep-alive packet retry send count. Default is 3 counts */
 } esp_websocket_client_config_t;
 
 /**

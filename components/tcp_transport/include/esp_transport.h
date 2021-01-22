@@ -16,11 +16,21 @@
 #define _ESP_TRANSPORT_H_
 
 #include <esp_err.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+*  @brief Keep alive parameters structure
+*/
+typedef struct esp_transport_keepalive {
+    bool            keep_alive_enable;      /*!< Enable keep-alive timeout */
+    int             keep_alive_idle;        /*!< Keep-alive idle time (second) */
+    int             keep_alive_interval;    /*!< Keep-alive interval time (second) */
+    int             keep_alive_count;       /*!< Keep-alive packet retry send count */
+} esp_transport_keep_alive_t;
 
 typedef struct esp_transport_internal* esp_transport_list_handle_t;
 typedef struct esp_transport_item_t* esp_transport_handle_t;

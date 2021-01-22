@@ -121,6 +121,7 @@ struct esp_http_client {
     bool                        first_line_prepared;
     int                         header_index;
     bool                        is_async;
+    esp_transport_keep_alive_t  keep_alive_cfg;
 };
 
 typedef struct esp_http_client esp_http_client_t;
@@ -142,6 +143,9 @@ static const char *DEFAULT_HTTP_PATH = "/";
 static const int DEFAULT_MAX_REDIRECT = 10;
 static const int DEFAULT_MAX_AUTH_RETRIES = 10;
 static const int DEFAULT_TIMEOUT_MS = 5000;
+static const int DEFAULT_KEEP_ALIVE_IDLE = 5;
+static const int DEFAULT_KEEP_ALIVE_INTERVAL= 5;
+static const int DEFAULT_KEEP_ALIVE_COUNT= 3;
 
 static const char *HTTP_METHOD_MAPPING[] = {
     "GET",
@@ -532,7 +536,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 {
 
     esp_http_client_handle_t client;
-    esp_transport_handle_t tcp;
+    esp_transport_handle_t tcp = NULL;
     char *host_name;
     bool _success;
 
@@ -564,8 +568,15 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         ESP_LOGE(TAG, "Error initialize transport");
         goto error;
     }
+    if (config->keep_alive_enable == true) {
+        client->keep_alive_cfg.keep_alive_enable = true;
+        client->keep_alive_cfg.keep_alive_idle = (config->keep_alive_idle == 0) ? DEFAULT_KEEP_ALIVE_IDLE : config->keep_alive_idle;
+        client->keep_alive_cfg.keep_alive_interval = (config->keep_alive_interval == 0) ? DEFAULT_KEEP_ALIVE_INTERVAL : config->keep_alive_interval;
+        client->keep_alive_cfg.keep_alive_count =  (config->keep_alive_count == 0) ? DEFAULT_KEEP_ALIVE_COUNT : config->keep_alive_count;
+        esp_transport_tcp_set_keep_alive(tcp, &client->keep_alive_cfg);
+    }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-    esp_transport_handle_t ssl;
+    esp_transport_handle_t ssl = NULL;
     _success = (
                    (ssl = esp_transport_ssl_init()) &&
                    (esp_transport_set_default_port(ssl, DEFAULT_HTTPS_PORT) == ESP_OK) &&
@@ -593,6 +604,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
+    }
+
+    if (config->keep_alive_enable == true) {
+        esp_transport_ssl_set_keep_alive(ssl, &client->keep_alive_cfg);
     }
 #endif
 
