@@ -1,3 +1,4 @@
+
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +15,10 @@
 #ifndef __ESP_ATTR_H__
 #define __ESP_ATTR_H__
 
-#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "sdkconfig.h"
 
 #define ROMFN_ATTR
@@ -147,4 +151,8 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
 #define IDF_DEPRECATED(REASON)
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __ESP_ATTR_H__ */
+
