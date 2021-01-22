@@ -1,7 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
+
 if(NOT "${target}" STREQUAL "esp32c3")
     return()
 endif()
+
 if(BOOTLOADER_BUILD)
     set(priv_requires soc)
 else()
