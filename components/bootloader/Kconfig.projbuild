@@ -576,6 +576,7 @@ menu "Security features"
     config SECURE_FLASH_ENC_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
         default N
+        select SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
