@@ -4,7 +4,7 @@ FreeRTOS Additions
 Overview
 --------
 
-ESP-IDF FreeRTOS is based on the Xtensa port of FreeRTOS v8.2.0 with significant modifications
+ESP-IDF FreeRTOS is based on the Xtensa port of FreeRTOS v10.2.0 with significant modifications
 for SMP compatibility (see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`).
 However various features specific to ESP-IDF FreeRTOS have been added. The features are as follows:
 

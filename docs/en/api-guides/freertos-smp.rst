@@ -14,7 +14,7 @@ Overview
 
 The ESP-IDF FreeRTOS is a modified version of vanilla FreeRTOS which supports
 symmetric multiprocessing (SMP). ESP-IDF FreeRTOS is based on the Xtensa port
-of FreeRTOS v8.2.0. This guide outlines the major differences between vanilla
+of FreeRTOS v10.2.0. This guide outlines the major differences between vanilla
 FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be
 found via https://www.freertos.org/a00106.html
 
