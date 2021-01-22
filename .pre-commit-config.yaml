@@ -13,12 +13,12 @@ repos:
         # 3 - any directory named 'testdata'
         # 4 - IDF monitor test data
         exclude: &whitespace_excludes |
-            (?x)^(
-                .+\.(md|rst|map|bin)|
-                .+test.*\/.*expected.*|
-                .+\/testdata\/.+|
-                .+test_idf_monitor\/tests\/.+
-            )$
+          (?x)^(
+            .+\.(md|rst|map|bin)|
+            .+test.*\/.*expected.*|
+            .+\/testdata\/.+|
+            .+test_idf_monitor\/tests\/.+
+          )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
       - id: check-executables-have-shebangs
