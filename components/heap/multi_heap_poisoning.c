@@ -196,7 +196,8 @@ void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t ali
     }
 
     multi_heap_internal_lock(heap);
-    poison_head_t *head = multi_heap_aligned_alloc_impl(heap, size + POISON_OVERHEAD, alignment);
+    poison_head_t *head = multi_heap_aligned_alloc_impl_offs(heap, size + POISON_OVERHEAD,
+                                                             alignment, sizeof(poison_head_t));
     uint8_t *data = NULL;
     if (head != NULL) {
         data = poison_allocated_region(head, size);
