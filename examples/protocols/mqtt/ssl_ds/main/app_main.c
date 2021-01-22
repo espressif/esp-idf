@@ -117,40 +117,40 @@ void *esp_read_ds_data_from_nvs(void)
     esp_err_t esp_ret;
     esp_ret = nvs_flash_init_partition(NVS_PARTITION_NAME);
     if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error in esp_ds_nvs partition init, returned %02x", esp_ret);
+        ESP_LOGE(TAG, "Error in esp_ds_nvs partition init,\nreturned %02x (%s)", esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 
     esp_ret = nvs_open_from_partition(NVS_PARTITION_NAME, NVS_NAMESPACE,
                                       NVS_READONLY, &esp_ds_nvs_handle);
     if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error in esp_ds_nvs partition open, returned %02x", esp_ret);
+        ESP_LOGE(TAG, "Error in esp_ds_nvs partition open,\nreturned %02x (%s)", esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 
     esp_ret = nvs_get_u8(esp_ds_nvs_handle, NVS_EFUSE_KEY_ID, &ds_data_ctx->efuse_key_id);
     if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error in efuse_key_id value from nvs, returned  %02x", esp_ret);
+        ESP_LOGE(TAG, "Error in efuse_key_id value from nvs,\nreturned %02x (%s)", esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 
     esp_ret = nvs_get_u16(esp_ds_nvs_handle, NVS_RSA_LEN, &ds_data_ctx->rsa_length_bits);
     if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error in reading rsa key length value from nvs, returned  %02x", esp_ret);
+        ESP_LOGE(TAG, "Error in reading rsa key length value from nvs,\nreturned %02x (%s)", esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 
     size_t blob_length = ESP_DS_C_LEN;
     esp_ret = nvs_get_blob(esp_ds_nvs_handle, NVS_CIPHER_C, (void *)(ds_data_ctx->esp_ds_data->c), &blob_length);
     if ((esp_ret != ESP_OK) || (blob_length != ESP_DS_C_LEN)) {
-        ESP_LOGE(TAG, "Error in reading initialization vector value from nvs,bytes_read = %d, returned %02x", blob_length, esp_ret);
+        ESP_LOGE(TAG, "Error in reading ciphertext_c value from nvs,bytes_read = %d,\nreturned %02x (%s)", blob_length, esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 
     blob_length = ESP_DS_IV_LEN;
     esp_ret = nvs_get_blob(esp_ds_nvs_handle, NVS_IV, (void *)(ds_data_ctx->esp_ds_data->iv), &blob_length);
     if ((esp_ret != ESP_OK) || (blob_length != ESP_DS_IV_LEN)) {
-        ESP_LOGE(TAG, "Error in reading initialization vector value from nvs,bytes_read = %d, returned %02x", blob_length, esp_ret);
+        ESP_LOGE(TAG, "Error in reading initialization vector value from nvs,bytes_read = %d,\nreturned %02x (%s)", blob_length, esp_ret, esp_err_to_name(esp_ret));
         goto exit;
     }
 

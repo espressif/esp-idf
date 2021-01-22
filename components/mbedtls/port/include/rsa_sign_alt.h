@@ -22,9 +22,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-
-#include "esp32s2/esp_rsa_sign_alt.h"
-
+#include "esp_ds/esp_rsa_sign_alt.h"
 #else
 
 #error "DS configuration flags not activated, please enable required menuconfig flags"

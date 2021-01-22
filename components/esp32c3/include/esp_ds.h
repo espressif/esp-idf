@@ -30,6 +30,7 @@ extern "C" {
                                                                                    is produced anyway and can be read*/
 
 #define ESP_DS_IV_BIT_LEN 128
+#define ESP_DS_IV_LEN (ESP_DS_IV_BIT_LEN / 8)
 #define ESP_DS_SIGNATURE_MAX_BIT_LEN 3072
 #define ESP_DS_SIGNATURE_MD_BIT_LEN 256
 #define ESP_DS_SIGNATURE_M_PRIME_BIT_LEN 32
