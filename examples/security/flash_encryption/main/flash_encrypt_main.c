@@ -27,11 +27,8 @@ static const char* TAG = "example";
 #if CONFIG_IDF_TARGET_ESP32
 #define TARGET_CRYPT_CNT_EFUSE  ESP_EFUSE_FLASH_CRYPT_CNT
 #define TARGET_CRYPT_CNT_WIDTH  7
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 #define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_SPI_BOOT_CRYPT_CNT
-#define TARGET_CRYPT_CNT_WIDTH  3
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #define TARGET_CRYPT_CNT_WIDTH  3
 #endif
 
@@ -57,7 +54,8 @@ static void example_print_chip_info(void)
     /* Print chip information */
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-    printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
+    printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",
+            CONFIG_IDF_TARGET,
             chip_info.cores,
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");

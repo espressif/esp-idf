@@ -39,6 +39,7 @@
 #include "sys/param.h"
 #include "esp_system.h"
 #include "esp_efuse.h"
+#include "esp_attr.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/crc.h"
@@ -52,13 +53,14 @@
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
+/* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
 typedef struct ota_ops_entry_ {
     uint32_t handle;
     const esp_partition_t *part;
     bool need_erase;
     uint32_t wrote_size;
     uint8_t partial_bytes;
-    uint8_t partial_data[16];
+    WORD_ALIGNED_ATTR uint8_t partial_data[16];
     LIST_ENTRY(ota_ops_entry_) entries;
 } ota_ops_entry_t;
 

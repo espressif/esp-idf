@@ -23,6 +23,7 @@
 #include "hal/spi_flash_hal.h"
 #include "esp_flash.h"
 #include "esp_log.h"
+#include "esp_attr.h"
 
 static const char *TAG = "spiflash_c3";
 
@@ -37,8 +38,9 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
     assert((dest_addr % 16) == 0);
     assert((size % 16) == 0);
 
-    if (!esp_ptr_internal(src)) {
-        uint8_t block[128]; // Need to buffer in RAM as we write
+    /* src needs to be 32 bit aligned */
+    if (!esp_ptr_internal(src) || (intptr_t)src & 0x3) {
+        WORD_ALIGNED_ATTR uint8_t block[128]; // Need to buffer in RAM as we write
         while (size > 0) {
             size_t next_block = MIN(size, sizeof(block));
             memcpy(block, src, next_block);
