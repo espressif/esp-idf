@@ -244,9 +244,9 @@ typedef struct {
 } x32k_config_t;
 
 #define X32K_CONFIG_DEFAULT() { \
-    .dac = 1, \
+    .dac = 3, \
     .dres = 3, \
-    .dgm = 0, \
+    .dgm = 3, \
     .dbuf = 1, \
 }
 
