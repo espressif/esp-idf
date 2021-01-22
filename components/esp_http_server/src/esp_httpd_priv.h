@@ -69,6 +69,7 @@ struct sock_db {
     httpd_recv_func_t recv_fn;              /*!< Receive function for this socket */
     httpd_pending_func_t pending_fn;        /*!< Pending function for this socket */
     uint64_t lru_counter;                   /*!< LRU Counter indicating when the socket was last used */
+    bool lru_socket;                        /*!< Flag indicating LRU socket */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
 #ifdef CONFIG_HTTPD_WS_SUPPORT
