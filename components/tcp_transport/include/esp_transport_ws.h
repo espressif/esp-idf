@@ -8,6 +8,7 @@
 #define _ESP_TRANSPORT_WS_H_
 
 #include "esp_transport.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +22,23 @@ typedef enum ws_transport_opcodes {
     WS_TRANSPORT_OPCODES_PING = 0x09,
     WS_TRANSPORT_OPCODES_PONG = 0x0a,
     WS_TRANSPORT_OPCODES_FIN = 0x80,
+    WS_TRANSPORT_OPCODES_NONE = 0x100,   /*!< not a valid opcode to indicate no message previously received
+                                          * from the API esp_transport_ws_get_read_opcode() */
 } ws_transport_opcodes_t;
+
+/**
+ * WS transport configuration structure
+ */
+typedef struct {
+    const char *ws_path;                    /*!< HTTP path to update protocol to websocket */
+    const char *sub_protocol;               /*!< WS subprotocol */
+    const char *user_agent;                 /*!< WS user agent */
+    const char *headers;                    /*!< WS additional headers */
+    bool        propagate_control_frames;   /*!< If true, control frames are passed to the reader
+                                             *   If false, only user frames are propagated, control frames are handled
+                                             *   automatically during read operations
+                                             */
+} esp_transport_ws_config_t;
 
 /**
  * @brief      Create web socket transport
@@ -75,6 +92,18 @@ esp_err_t esp_transport_ws_set_user_agent(esp_transport_handle_t t, const char *
  *      - One of the error codes
  */
 esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *headers);
+
+/**
+ * @brief               Set websocket transport parameters
+ *
+ * @param t             websocket transport handle
+ * @param config        pointer to websocket config structure
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes
+ */
+esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transport_ws_config_t *config);
 
 /**
  * @brief               Sends websocket raw message with custom opcode and payload

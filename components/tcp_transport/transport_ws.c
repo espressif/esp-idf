@@ -22,6 +22,7 @@ static const char *TAG = "TRANSPORT_WS";
 #define WS_OPCODE_CLOSE             0x08
 #define WS_OPCODE_PING              0x09
 #define WS_OPCODE_PONG              0x0a
+#define WS_OPCODE_CONTROL_FRAME     0x08
 
 // Second byte
 #define WS_MASK                     0x80
@@ -29,6 +30,7 @@ static const char *TAG = "TRANSPORT_WS";
 #define WS_SIZE64                   127
 #define MAX_WEBSOCKET_HEADER_SIZE   16
 #define WS_RESPONSE_OK              101
+#define WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN 125
 
 
 typedef struct {
@@ -36,6 +38,7 @@ typedef struct {
     char mask_key[4];                   /*!< Mask key for this payload */
     int payload_len;                    /*!< Total length of the payload */
     int bytes_remaining;                /*!< Bytes left to read of the payload  */
+    bool header_received;               /*!< Flag to indicate that a new message header was received */
 } ws_transport_frame_state_t;
 
 typedef struct {
@@ -44,9 +47,32 @@ typedef struct {
     char *sub_protocol;
     char *user_agent;
     char *headers;
+    bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
 } transport_ws_t;
+
+/**
+ * @brief               Handles control frames
+ *
+ * This API is used internally to handle control frames at the transport layer.
+ * The API could be possibly promoted to a public API if needed by some clients
+ *
+ * @param t             Websocket transport handle
+ * @param buffer        Buffer with the actual payload of the control packet to be processed
+ * @param len           Length of the buffer (typically the same as the payload buffer)
+ * @param timeout_ms    The timeout milliseconds
+ * @param client_closed To indicate that the connection has been closed by the client
+*                       (to prevent echoing the CLOSE packet if true, as this is the actual echo from the server)
+ *
+ * @return
+ *      0 - no activity, or successfully responded to PING
+ *      -1 - Failure: Error on read or the actual payload longer then buffer
+ *      1 - Close handshake success
+ *      2 - Got PONG message
+ */
+
+static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char *buffer, int len, int timeout_ms, bool client_closed);
 
 static inline uint8_t ws_get_bin_opcode(ws_transport_opcodes_t opcode)
 {
@@ -333,6 +359,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     char *data_ptr = ws_header, mask;
     int rlen;
     int poll_read;
+    ws->frame_state.header_received = false;
     if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
         return poll_read;
     }
@@ -344,6 +371,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
+    ws->frame_state.header_received = true;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
@@ -390,6 +418,56 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     return payload_len;
 }
 
+static int ws_handle_control_frame_internal(esp_transport_handle_t t, int timeout_ms)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    char *control_frame_buffer = NULL;
+    int control_frame_buffer_len = 0;
+    int payload_len = ws->frame_state.payload_len;
+    int ret = 0;
+
+    // If no new header reception in progress, or not a control frame
+    // just pass 0 -> no need to handle control frames
+    if (ws->frame_state.header_received == false ||
+        !(ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME)) {
+        return 0;
+    }
+
+    if (payload_len > WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN) {
+        ESP_LOGE(TAG, "Not enough room for reading control frames (need=%d, max_allowed=%d)",
+                 ws->frame_state.payload_len, WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN);
+        return -1;
+    }
+
+    // Now we can handle the control frame correctly (either zero payload, or a short one for which we allocate mem)
+    control_frame_buffer_len = payload_len;
+    if (control_frame_buffer_len > 0) {
+        control_frame_buffer = malloc(control_frame_buffer_len);
+        if (control_frame_buffer == NULL) {
+            ESP_LOGE(TAG, "Cannot allocate buffer for control frames, need-%d", control_frame_buffer_len);
+            return -1;
+        }
+    } else {
+        control_frame_buffer_len = 0;
+    }
+
+    // read the payload of the control frame
+    int actual_len = ws_read_payload(t, control_frame_buffer, control_frame_buffer_len, timeout_ms);
+    if (actual_len != payload_len) {
+        ESP_LOGE(TAG, "Control frame (opcode=%d) payload read failed (payload_len=%d, read_len=%d)",
+                 ws->frame_state.opcode, payload_len, actual_len);
+        ret = -1;
+        goto free_payload_buffer;
+    }
+
+    ret = esp_transport_ws_handle_control_frames(t, control_frame_buffer, control_frame_buffer_len, timeout_ms, false);
+
+free_payload_buffer:
+    free(control_frame_buffer);
+    return ret > 0 ? 0 : ret; // We don't propagate control frames, pass 0 to upper layers
+
+}
+
 static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     int rlen = 0;
@@ -397,12 +475,28 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     // If message exceeds buffer len then subsequent reads will skip reading header and read whatever is left of the payload
     if (ws->frame_state.bytes_remaining <= 0) {
-        if ( (rlen = ws_read_header(t, buffer, len, timeout_ms)) <= 0) {
+
+        if ( (rlen = ws_read_header(t, buffer, len, timeout_ms)) < 0) {
             // If something when wrong then we prepare for reading a new header
             ws->frame_state.bytes_remaining = 0;
             return rlen;
         }
+
+        // If the new opcode is a control frame and we don't pass it to the app
+        //  - try to handle it internally using the application buffer
+        if (ws->frame_state.header_received && (ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) &&
+            ws->propagate_control_frames == false) {
+            // automatically handle only 0 payload frames and make the transport read to return 0 on success
+            // which might be interpreted as timeouts
+            return ws_handle_control_frame_internal(t, timeout_ms);
+        }
+
+        if (rlen == 0) {
+            ws->frame_state.bytes_remaining = 0;
+            return 0; // timeout
+        }
     }
+
     if (ws->frame_state.payload_len) {
         if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error reading payload data");
@@ -444,11 +538,32 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
     free(ws);
     return 0;
 }
+static esp_err_t internal_esp_transport_ws_set_path(esp_transport_handle_t t, const char *path)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->path) {
+        free(ws->path);
+    }
+    if (path == NULL) {
+        ws->path = NULL;
+        return ESP_OK;
+    }
+    ws->path = strdup(path);
+    if (ws->path == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
 void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path)
 {
-    transport_ws_t *ws = esp_transport_get_context_data(t);
-    ws->path = realloc(ws->path, strlen(path) + 1);
-    strcpy(ws->path, path);
+    esp_err_t err = internal_esp_transport_ws_set_path(t, path);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_transport_ws_set_path has internally failed with err=%d", err);
+    }
 }
 
 static int ws_get_socket(esp_transport_handle_t t)
@@ -550,16 +665,121 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transport_ws_config_t *config)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t err = ESP_OK;
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (config->ws_path) {
+        err = internal_esp_transport_ws_set_path(t, config->ws_path);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->sub_protocol) {
+        err = esp_transport_ws_set_subprotocol(t, config->sub_protocol);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->user_agent) {
+        err = esp_transport_ws_set_user_agent(t, config->user_agent);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->headers) {
+        err = esp_transport_ws_set_headers(t, config->headers);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    ws->propagate_control_frames = config->propagate_control_frames;
+
+    return err;
+}
+
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
-    return ws->frame_state.opcode;
+    if (ws->frame_state.header_received) {
+        // convert the header byte to enum if correctly received
+        return (ws_transport_opcodes_t)ws->frame_state.opcode;
+    }
+    return WS_TRANSPORT_OPCODES_NONE;
 }
 
 int esp_transport_ws_get_read_payload_len(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     return ws->frame_state.payload_len;
+}
+
+static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char *buffer, int len, int timeout_ms, bool client_closed)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    // If no new header reception in progress, or not a control frame
+    // just pass 0 -> no need to handle control frames
+    if (ws->frame_state.header_received == false ||
+        !(ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME)) {
+        return 0;
+    }
+    int actual_len;
+    int payload_len = ws->frame_state.payload_len;
+
+    ESP_LOGD(TAG, "Handling control frame with %d bytes payload", payload_len);
+    if (payload_len > len) {
+        ESP_LOGE(TAG, "Not enough room for processing the payload (need=%d, available=%d)", payload_len, len);
+        ws->frame_state.bytes_remaining = payload_len - len;
+        return -1;
+    }
+
+    if (ws->frame_state.opcode == WS_OPCODE_PING) {
+        // handle PING frames internally: just send a PONG with the same payload
+        actual_len = _ws_write(t, WS_OPCODE_PONG | WS_FIN, WS_MASK, buffer,
+                               payload_len, timeout_ms);
+        if (actual_len != payload_len) {
+            ESP_LOGE(TAG, "PONG send failed (payload_len=%d, written_len=%d)", payload_len, actual_len);
+            return -1;
+        }
+        ESP_LOGD(TAG, "PONG sent correctly (payload_len=%d)", payload_len);
+
+        // control frame handled correctly, reset the flag indicating new header received
+        ws->frame_state.header_received = false;
+        return 0;
+
+    } else if (ws->frame_state.opcode == WS_OPCODE_CLOSE) {
+        // handle CLOSE by the server: send a zero payload frame
+        if (buffer && payload_len > 0) {     // if some payload, print out the status code
+            uint16_t *code_network_order = (uint16_t *) buffer;
+            ESP_LOGI(TAG, "Got CLOSE frame with status code=%u", ntohs(*code_network_order));
+        }
+
+        if (client_closed == false) {
+            // Only echo the closing frame if not initiated by the client
+            if (_ws_write(t, WS_OPCODE_CLOSE | WS_FIN, WS_MASK, NULL,0, timeout_ms) < 0) {
+                ESP_LOGE(TAG, "Sending CLOSE frame with 0 payload failed");
+                return -1;
+            }
+            ESP_LOGD(TAG, "CLOSE frame with no payload sent correctly");
+        }
+
+        // control frame handled correctly, reset the flag indicating new header received
+        ws->frame_state.header_received = false;
+        int ret = esp_transport_ws_poll_connection_closed(t, timeout_ms);
+        if (ret == 0) {
+            ESP_LOGW(TAG, "Connection cannot be terminated gracefully within timeout=%d", timeout_ms);
+            return -1;
+        }
+        if (ret < 0) {
+            ESP_LOGW(TAG, "Connection terminated while waiting for clean TCP close");
+            return -1;
+        }
+        ESP_LOGI(TAG, "Connection terminated gracefully");
+        return 1;
+    } else if (ws->frame_state.opcode == WS_OPCODE_PONG) {
+        // handle PONG: just indicate return code
+        ESP_LOGD(TAG, "Received PONG frame with payload=%d", payload_len);
+        // control frame handled correctly, reset the flag indicating new header received
+        ws->frame_state.header_received = false;
+        return 2;
+    }
+    return 0;
 }
 
 int esp_transport_ws_poll_connection_closed(esp_transport_handle_t t, int timeout_ms)
