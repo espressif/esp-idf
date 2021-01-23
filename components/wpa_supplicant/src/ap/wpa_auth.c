@@ -1203,7 +1203,7 @@ void wpa_remove_ptk(struct wpa_state_machine *sm)
 {
     sm->PTK_valid = FALSE;
     memset(&sm->PTK, 0, sizeof(sm->PTK));
-    wpa_auth_set_key(sm->wpa_auth, 0, WPA_ALG_NONE, sm->addr, 0, NULL, 0);
+    wpa_auth_set_key(sm->wpa_auth, 0, WIFI_WPA_ALG_NONE, sm->addr, 0, NULL, 0);
     sm->pairwise_set = FALSE;
     eloop_cancel_timeout(wpa_rekey_ptk, sm->wpa_auth, sm);
 }
@@ -2304,7 +2304,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
 
 #ifdef CONFIG_IEEE80211W
     if (wpa_auth->conf.ieee80211w != NO_MGMT_FRAME_PROTECTION &&
-        wpa_auth_set_key(wpa_auth, group->vlan_id, WPA_ALG_IGTK,
+        wpa_auth_set_key(wpa_auth, group->vlan_id, WIFI_WPA_ALG_IGTK,
         		 broadcast_ether_addr, group->GN_igtk,
                  group->IGTK[group->GN_igtk - 4],
                  WPA_IGTK_LEN) < 0)

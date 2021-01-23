@@ -46,10 +46,11 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/li
 
 if(link_binary_libs)
     set(phy phy)
-    set(blobs coexist core espnow mesh net80211 pp smartconfig ${phy})
+    set(blobs coexist core espnow mesh net80211 pp smartconfig wapi ${phy})
     if(${idf_target} STREQUAL "esp32")
         list(APPEND blobs rtc)
     endif()
+
     foreach(blob ${blobs})
         add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                             REQUIRES ${COMPONENT_NAME})

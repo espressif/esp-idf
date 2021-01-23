@@ -13,6 +13,7 @@
  */
 
 #include "os.h"
+#include "esp_supplicant/esp_wifi_driver.h"
 #ifndef WPA_COMMON_H
 #define WPA_COMMON_H
 
@@ -45,6 +46,15 @@
 #define WPA_CIPHER_SUITE_CCMP RSN_SELECTOR(0x00, 0x50, 0xf2, 4)
 #define WPA_CIPHER_SUITE_WEP104 RSN_SELECTOR(0x00, 0x50, 0xf2, 5)
 
+#define WAPI_SELECTOR(a, b, c, d) \
+	((((u32) (a)) << 24) | (((u32) (b)) << 16) | (((u32) (c)) << 8) | \
+	 (u32) (d))
+
+#define WAPI_AUTH_KEY_MGMT_NONE WAPI_SELECTOR(0x00, 0x14, 0x72, 0)
+#define WAPI_AUTH_KEY_MGMT_CERT WAPI_SELECTOR(0x00, 0x14, 0x72, 1)
+#define WAPI_AUTH_KEY_MGMT_PSK WAPI_SELECTOR(0x00, 0x14, 0x72, 2)
+#define WAPI_CIPHER_SUITE_NONE WAPI_SELECTOR(0x00, 0x14, 0x72, 0)
+#define WAPI_CIPHER_SUITE_SMS4 WAPI_SELECTOR(0x00, 0x14, 0x72, 1)
 
 #define RSN_AUTH_KEY_MGMT_UNSPEC_802_1X RSN_SELECTOR(0x00, 0x0f, 0xac, 1)
 #define RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X RSN_SELECTOR(0x00, 0x0f, 0xac, 2)

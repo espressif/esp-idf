@@ -588,16 +588,16 @@ int wpa_cipher_to_alg(int cipher)
 {
 	switch (cipher) {
 	case WPA_CIPHER_CCMP:
-		return WPA_ALG_CCMP;
+		return WIFI_WPA_ALG_CCMP;
 	case WPA_CIPHER_GCMP:
-		return WPA_ALG_GCMP;
+		return WIFI_WPA_ALG_GCMP;
 	case WPA_CIPHER_TKIP:
-		return WPA_ALG_TKIP;
+		return WIFI_WPA_ALG_TKIP;
 	case WPA_CIPHER_WEP104:
 	case WPA_CIPHER_WEP40:
-		return WPA_ALG_WEP;
+		return WIFI_WPA_ALG_WEP;
 	}
-	return WPA_ALG_NONE;
+	return WIFI_WPA_ALG_NONE;
 }
 
 u32 wpa_cipher_to_suite(int proto, int cipher)

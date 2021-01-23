@@ -80,6 +80,8 @@ void  wpa_config_profile(void)
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
     } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
+    } else if (esp_wifi_sta_prof_is_wapi_internal()) {
+        wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
     } else {
         WPA_ASSERT(0);
     }
@@ -224,6 +226,7 @@ static inline void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 
 int esp_supplicant_init(void)
 {
+    int ret = ESP_OK;
     struct wpa_funcs *wpa_cb;
 
     wpa_cb = (struct wpa_funcs *)os_malloc(sizeof(struct wpa_funcs));
@@ -255,7 +258,11 @@ int esp_supplicant_init(void)
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 
-    return ESP_OK;
+#if CONFIG_WPA_WAPI_PSK
+    ret =  esp_wifi_internal_wapi_init();
+#endif
+
+    return ret;
 }
 
 int esp_supplicant_deinit(void)

@@ -6,6 +6,13 @@ menu "Supplicant"
         help
             Select this option to use MbedTLS crypto API's which utilize hardware acceleration.
 
+    config WPA_WAPI_PSK
+        bool "Enable WAPI PSK support"
+        default n
+        help
+            Select this option to enable WAPI-PSK
+            which is a Chinese National Standard Encryption for Wireless LANs (GB 15629.11-2003).
+
     config WPA_DEBUG_PRINT
         bool "Print debug messages from WPA Supplicant"
         default n

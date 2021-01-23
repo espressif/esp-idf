@@ -372,10 +372,13 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	if (wpa_ie == NULL || wpa_ie_len < 1)
 		return WPA_INVALID_IE;
 
-	if (wpa_ie[0] == WLAN_EID_RSN)
+	if (wpa_ie[0] == WLAN_EID_RSN) {
 		version = WPA_PROTO_RSN;
-	else
+	} else if (wpa_ie[0] == WLAN_EID_WAPI) {
+		version = WPA_PROTO_WAPI;
+	} else {
 		version = WPA_PROTO_WPA;
+	}
 
 	if (!(wpa_auth->conf.wpa & version)) {
 		wpa_printf( MSG_DEBUG, "Invalid WPA proto (%d) from " MACSTR,
@@ -421,6 +424,9 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 					       data.group_cipher);
 		if (!selector)
 			selector = RSN_CIPHER_SUITE_CCMP;
+	} else if (version == WPA_PROTO_WAPI) {
+		res = 0;
+		selector = WAPI_CIPHER_SUITE_SMS4;
 	} else {
 		res = wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, &data);
 
