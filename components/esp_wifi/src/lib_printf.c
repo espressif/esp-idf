@@ -138,6 +138,15 @@ int coexist_printf(const char* format, ...)
     return res;
 }
 
+int wapi_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("coexist", format, arg);
+    va_end(arg);
+    return res;
+}
+
 int mesh_printf(const char* format, ...)
 {
     va_list arg;

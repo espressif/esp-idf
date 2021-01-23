@@ -55,6 +55,7 @@ typedef enum {
     WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
     WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
     WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
+    WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
     WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
     WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
@@ -141,6 +142,7 @@ typedef enum {
     WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
     WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
     WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
+    WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 

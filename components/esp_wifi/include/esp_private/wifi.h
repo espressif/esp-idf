@@ -191,6 +191,27 @@ typedef void (*wifi_netstack_buf_free_cb_t)(void *netstack_buf);
 esp_err_t esp_wifi_internal_tx_by_ref(wifi_interface_t ifx, void *buffer, size_t len, void *netstack_buf);
 
 /**
+  * @brief     Initialize WAPI function when wpa_supplicant initialize.
+  *
+  * This API is privately used, be careful not open to external applicantion.
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_WAPI_INTERNAL : Internal error
+  */
+esp_err_t esp_wifi_internal_wapi_init(void);
+
+/**
+  * @brief     De-initialize WAPI function when wpa_supplicant de-initialize.
+  *
+  * This API is privately used, be careful not open to external applicantion.
+  *
+  * @return
+  *          - ESP_OK : succeed
+  */
+esp_err_t esp_wifi_internal_wapi_deinit(void);
+
+/**
   * @brief  register the net stack buffer reference increasing and free callback
   *
   * @param  ref : net stack buffer reference callback

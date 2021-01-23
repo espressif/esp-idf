@@ -11,6 +11,7 @@
 
 #include "defs.h"
 #include "ieee802_11_defs.h"
+#include "esp_supplicant/esp_wifi_driver.h"
 
 struct element {
 	u8 id;
