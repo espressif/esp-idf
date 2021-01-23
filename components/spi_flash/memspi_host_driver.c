@@ -37,7 +37,7 @@ esp_err_t spi_flash_hal_gpspi_configure_host_io_mode(
     esp_flash_io_mode_t io_mode);
 extern esp_err_t spi_flash_hal_gpspi_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans);
 extern esp_err_t spi_flash_hal_gpspi_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
-extern uint32_t spi_flash_hal_gpspi_host_idle(spi_flash_host_inst_t *host);
+extern uint32_t spi_flash_hal_gpspi_check_status(spi_flash_host_inst_t *host);
 extern bool spi_flash_hal_gpspi_supports_direct_write(spi_flash_host_inst_t *host, const void *p);
 extern bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_inst_t *host, const void *p);
 
@@ -57,7 +57,7 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
         .write_data_slicer = memspi_host_write_data_slicer,
         .read = spi_flash_hal_gpspi_read,
         .read_data_slicer = memspi_host_read_data_slicer,
-        .host_status = spi_flash_hal_gpspi_host_idle,
+        .host_status = spi_flash_hal_gpspi_check_status,
         .configure_host_io_mode = spi_flash_hal_gpspi_configure_host_io_mode,
         .poll_cmd_done = spi_flash_hal_gpspi_poll_cmd_done,
         .flush_cache = NULL,

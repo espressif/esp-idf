@@ -166,7 +166,7 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp);
  *
  * @return 0:busy, 1:idle, 2:suspended.
  */
-uint32_t spi_flash_hal_host_idle(spi_flash_host_inst_t *host);
+uint32_t spi_flash_hal_check_status(spi_flash_host_inst_t *host);
 
 /**
  * @brief Configure the SPI host hardware registers for the specified io mode.
@@ -230,14 +230,6 @@ bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void
  * @return True if the buffer can be used to receive data, otherwise false.
  */
 bool spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p);
-
-/**
- * @brief Check the suspend status and resume a suspended operation.
- *
- * @param host The driver context.
- *
- */
-bool spi_flash_hal_check_suspend(spi_flash_host_inst_t *host);
 
 /**
  * @brief Resume flash chip status from suspend.

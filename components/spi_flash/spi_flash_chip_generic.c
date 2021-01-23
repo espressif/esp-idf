@@ -646,7 +646,7 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip)
 {
     spi_flash_sus_cmd_conf sus_conf = {
-        .sus_mask = 0x84,
+        .sus_mask = 0x80,
         .cmd_rdsr = CMD_RDSR2,
         .sus_cmd = CMD_SUSPEND,
         .res_cmd = CMD_RESUME,

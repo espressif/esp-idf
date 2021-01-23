@@ -93,26 +93,28 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
     return ESP_OK;
 }
 
-uint32_t spi_flash_hal_host_idle(spi_flash_host_inst_t *host)
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
+
+uint32_t spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 {
     spi_dev_t *dev = get_spi_dev(host);
     uint32_t status = spi_flash_ll_host_idle(dev);
-    uint32_t sus_status = spi_flash_hal_check_suspend(host) << 1;
+#if SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
+    uint32_t sus_status = spimem_flash_ll_sus_status((spi_mem_dev_t*)dev) << 1;
+#else
+    uint32_t sus_status = 0;
+#endif
     // Not clear if this is necessary, or only necessary if
     // chip->spi == SPI1. But probably doesn't hurt...
     if ((void*) dev == spi_flash_ll_get_hw(SPI_HOST)) {
 #if CONFIG_IDF_TARGET_ESP32
         status &= spi_flash_ll_host_idle(&SPI0);
-#elif CONFIG_IDF_TARGET_ESP32S2
-        status &= spi_flash_ll_host_idle(&SPIMEM0);
 #endif
     }
 
     //status and sus_status should be mutual exclusion
     return (status | sus_status);
 }
-
-#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
 esp_err_t spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
 {
@@ -168,15 +170,6 @@ void spi_flash_hal_disable_auto_resume_mode(spi_flash_host_inst_t *host)
 }
 #endif // SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
-bool spi_flash_hal_check_suspend(spi_flash_host_inst_t *host)
-{
-#if SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
-    if (spimem_flash_ll_sus_status((spi_mem_dev_t*)(((spi_flash_hal_context_t *)host)->spi))) {
-        return true;
-    }
-#endif
-    return false;
-}
 void spi_flash_hal_resume(spi_flash_host_inst_t *host)
 {
 #if SOC_SPI_MEM_SUPPORT_SW_SUSPEND

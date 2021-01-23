@@ -219,6 +219,15 @@ menu "SPI Flash driver"
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
                 chips, however will extend detecting time.
 
+        config SPI_FLASH_SUPPORT_BOYA_CHIP
+            bool "BOYA"
+            depends on !IDF_TARGET_ESP32
+            default y
+            help
+                Enable this to support auto detection of BOYA chips if chip vendor not directly
+                given by ``chip_drv`` member of the chip struct. This adds support for variant
+                chips, however will extend detecting time.
+
     endmenu #auto detect flash chips
 
 endmenu

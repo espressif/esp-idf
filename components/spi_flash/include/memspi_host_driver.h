@@ -31,7 +31,7 @@
         .write_data_slicer = memspi_host_write_data_slicer, \
         .read = spi_flash_hal_read, \
         .read_data_slicer = memspi_host_read_data_slicer, \
-        .host_status = spi_flash_hal_host_idle, \
+        .host_status = spi_flash_hal_check_status, \
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
@@ -179,4 +179,3 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
  * @return Length that can actually be written in one `program_page` call in `spi_flash_host_driver_t`.
  */
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
-
