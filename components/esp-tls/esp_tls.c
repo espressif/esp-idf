@@ -276,7 +276,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
     switch (tls->conn_state) {
     case ESP_TLS_INIT:
         tls->sockfd = -1;
-        if (cfg != NULL) {
+        if (cfg != NULL && cfg->is_plain_tcp == false) {
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
             mbedtls_net_init(&tls->server_fd);
 #endif
@@ -286,7 +286,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }
-        if (!cfg) {
+        if (tls->is_tls == false) {
             tls->read = tcp_read;
             tls->write = tcp_write;
             ESP_LOGD(TAG, "non-tls connection established");

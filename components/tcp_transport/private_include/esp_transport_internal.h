@@ -20,6 +20,8 @@
 
 typedef int (*get_socket_func)(esp_transport_handle_t t);
 
+struct transport_esp_tls;
+
 /**
  * Transport layer structure, which will provide functions, basic properties for transport types
  */
@@ -40,6 +42,7 @@ struct esp_transport_item_t {
     struct esp_transport_error_s*    error_handle;  /*!< Error handle (based on esp-tls error handle)
                                                      * extended with transport's specific errors */
     esp_transport_keep_alive_t *keep_alive_cfg;     /*!< TCP keep-alive config */
+    struct transport_esp_tls *foundation_transport;
 
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
@@ -85,5 +88,7 @@ int esp_transport_get_socket(esp_transport_handle_t t);
  *
  */
 void esp_transport_capture_errno(esp_transport_handle_t t, int sock_errno);
+
+struct transport_esp_tls* esp_transport_init_foundation(void);
 
 #endif //_ESP_TRANSPORT_INTERNAL_H_

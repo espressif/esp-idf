@@ -23,7 +23,6 @@
 #include "esp_transport.h"
 #include "esp_transport_internal.h"
 #include "esp_transport_utils.h"
-#include "esp_tls_errors.h"
 
 static const char *TAG = "TRANSPORT";
 
@@ -43,12 +42,15 @@ struct esp_transport_error_s {
  */
 STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
 
+struct transport_esp_tls;
+
 /**
  * Internal transport structure holding list of transports and other data common to all transports
  */
 typedef struct esp_transport_internal {
     struct esp_transport_list_t list;                      /*!< List of transports */
     struct esp_transport_error_s*  error_handle;           /*!< Pointer to the transport error container */
+    struct transport_esp_tls *foundation_transport;
 } esp_transport_internal_t;
 
 static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
@@ -65,6 +67,7 @@ esp_transport_list_handle_t esp_transport_list_init(void)
     ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
     STAILQ_INIT(&transport->list);
     transport->error_handle = calloc(1, sizeof(struct esp_transport_error_s));
+    transport->foundation_transport = esp_transport_init_foundation();
     return transport;
 }
 
@@ -79,6 +82,7 @@ esp_err_t esp_transport_list_add(esp_transport_list_handle_t h, esp_transport_ha
     STAILQ_INSERT_TAIL(&h->list, t, next);
     // Each transport in a list to share the same error tracker
     t->error_handle = h->error_handle;
+    t->foundation_transport = h->foundation_transport;
     return ESP_OK;
 }
 
@@ -103,6 +107,7 @@ esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t h)
 {
     esp_transport_list_clean(h);
     free(h->error_handle);
+    free(h->foundation_transport);  // TODO: make it destroy foundation
     free(h);
     return ESP_OK;
 }

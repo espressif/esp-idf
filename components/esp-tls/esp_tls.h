@@ -170,6 +170,7 @@ typedef struct esp_tls_cfg {
                                                  bundle for server verification, must be enabled in menuconfig */
 
     void *ds_data;                          /*!< Pointer for digital signature peripheral context */
+    bool is_plain_tcp;
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
