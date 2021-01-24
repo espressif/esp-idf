@@ -11,8 +11,8 @@
 #define spi_dma_ll_tx_enable_burst_data(dev, enable)         gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #define spi_dma_ll_rx_enable_burst_desc(dev, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #define spi_dma_ll_tx_enable_burst_desc(dev, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_enable_out_auto_wrback(dev, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_set_out_eof_generation(dev, enable)          gdma_ll_tx_set_eof_mode(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
+#define spi_dma_ll_enable_out_auto_wrback(dev, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
+#define spi_dma_ll_set_out_eof_generation(dev, enable)          gdma_ll_tx_set_eof_mode(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
 #endif
 
 static void s_spi_slave_hal_dma_init_config(const spi_slave_hal_context_t *hal)

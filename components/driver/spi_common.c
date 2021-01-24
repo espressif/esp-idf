@@ -220,7 +220,7 @@ void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
     spi_dma_connect_tx_channel_to_periph(gdma_chan, periph_id);
     spi_dma_set_rx_channel_priority(gdma_chan, 1);
     spi_dma_set_tx_channel_priority(gdma_chan, 1);
-#endif
+#endif  //#elif SOC_GDMA_SUPPORTED
 }
 
 static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)

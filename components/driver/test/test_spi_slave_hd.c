@@ -21,7 +21,7 @@
 #include "unity.h"
 #include "test/test_common_spi.h"
 
-#define TEST_DMA_MAX_SIZE    14000
+#define TEST_DMA_MAX_SIZE    4092
 #define TEST_BUFFER_SIZE 256     ///< buffer size of each wrdma buffer in fifo mode
 #define TEST_SEG_SIZE   25
 
@@ -92,7 +92,7 @@ void config_single_board_test_pin(void)
 static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* config, int freq)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE;
+    bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE*30;
     bus_cfg.quadhd_io_num = PIN_NUM_HD;
     bus_cfg.quadwp_io_num = PIN_NUM_WP;
 #if defined(TEST_MASTER_GPIO_MATRIX) && CONFIG_IDF_TARGET_ESP32S2
@@ -111,7 +111,7 @@ static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* 
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, spi));
 }
 
-static void init_slave_hd(int mode, const spi_slave_hd_callback_config_t* callback)
+static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callback_config_t* callback)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE*30;
@@ -123,6 +123,9 @@ static void init_slave_hd(int mode, const spi_slave_hd_callback_config_t* callba
     spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     slave_hd_cfg.mode = mode;
     slave_hd_cfg.dma_chan = TEST_SLAVE_HOST;
+    if (append_mode) {
+        slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
+    }
     if (callback) {
         slave_hd_cfg.cb_config = *callback;
     } else {
@@ -211,7 +214,7 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
         .cb_buffer_tx = rdbuf_cb,
         .arg = ctx,
     };
-    init_slave_hd(cfg->mode, &callback);
+    init_slave_hd(cfg->mode, 0, &callback);
 
     //when test with single board via same set of mosi, miso, clk and cs pins.
     config_single_board_test_pin();
@@ -503,7 +506,7 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
     init_master_hd(&spi, cfg, freq);
 
     //no callback needed
-    init_slave_hd(cfg->mode, NULL);
+    init_slave_hd(cfg->mode, 0, NULL);
 
     //Use GPIO matrix to connect signal of master and slave via same set of pins on one board.
     config_single_board_test_pin();
