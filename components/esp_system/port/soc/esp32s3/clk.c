@@ -308,6 +308,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Disable WiFi/BT/SDIO clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
+    SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
