@@ -150,12 +150,12 @@ def instr_fetch_prohibited_inner(env, test_name):
 
 
 def ub_inner(env, test_name):
-    with get_dut(env, test_name, "test_ub") as dut:
-        dut.expect(re.compile(r"Undefined behavior of type out_of_bounds"))
+    with get_dut(env, test_name, 'test_ub') as dut:
+        dut.expect(re.compile(r'Undefined behavior of type out_of_bounds'))
         dut.expect_backtrace()
         dut.expect_elf_sha256()
-        dut.expect_none("Guru Meditation", "Re-entered core dump")
+        dut.expect_none('Guru Meditation', 'Re-entered core dump')
         test_common(dut, test_name, expected_backtrace=[
             # Backtrace interrupted when abort is called, IDF-842
-            "panic_abort", "esp_system_abort"
+            'panic_abort', 'esp_system_abort'
         ])

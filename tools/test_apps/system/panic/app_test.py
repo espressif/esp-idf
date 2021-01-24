@@ -296,32 +296,32 @@ def test_gdbstub_abort(env, _extra_data):
 
 @panic_test()
 def test_panic_ub(env, _extra_data):
-    test.ub_inner(env, "panic")
+    test.ub_inner(env, 'panic')
 
 
 @panic_test()
 def test_coredump_ub_uart_elf_crc(env, _extra_data):
-    test.ub_inner(env, "coredump_uart_elf_crc")
+    test.ub_inner(env, 'coredump_uart_elf_crc')
 
 
 @panic_test()
 def test_coredump_ub_uart_bin_crc(env, _extra_data):
-    test.ub_inner(env, "coredump_uart_bin_crc")
+    test.ub_inner(env, 'coredump_uart_bin_crc')
 
 
 @panic_test()
 def test_coredump_ub_flash_elf_sha(env, _extra_data):
-    test.ub_inner(env, "coredump_flash_elf_sha")
+    test.ub_inner(env, 'coredump_flash_elf_sha')
 
 
 @panic_test()
 def test_coredump_ub_flash_bin_crc(env, _extra_data):
-    test.ub_inner(env, "coredump_flash_bin_crc")
+    test.ub_inner(env, 'coredump_flash_bin_crc')
 
 
 @panic_test()
 def test_gdbstub_ub(env, _extra_data):
-    test.ub_inner(env, "gdbstub")
+    test.ub_inner(env, 'gdbstub')
 
 
 if __name__ == '__main__':
