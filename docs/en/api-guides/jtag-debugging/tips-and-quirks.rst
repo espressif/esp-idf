@@ -4,7 +4,6 @@ Tips and Quirks
 
 This section provides collection of all tips and quirks referred to from various parts of this guide.
 
-
 .. _jtag-debugging-tip-breakpoints:
 
 Breakpoints and watchpoints available
@@ -72,8 +71,6 @@ FreeRTOS support
 
 OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS tasks as threads. Viewing them all can be done using the GDB ``i threads`` command, changing to a certain task is done with ``thread n``, with ``n`` being the number of the thread. FreeRTOS detection can be disabled in target's configuration. For more details see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
-
-
 .. only:: esp32
 
     .. _jtag-debugging-tip-code-flash-voltage:
@@ -86,7 +83,6 @@ OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS task
     To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
 
     Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash. WROVER earlier than ESP32-WROVER-B use 1.8 V flash, while ESP32-WROVER-B and -E modules use 3.3 V flash.
-
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
@@ -197,7 +193,7 @@ The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
 Do not use JTAG pins for something else
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG us using the following pins:
+Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG is using the following pins:
 
 .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
     :start-after: jtag-pins

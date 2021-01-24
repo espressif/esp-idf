@@ -6,12 +6,12 @@ ULP-RISC-V 协处理器编程
    :maxdepth: 1
 
 
-ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类似，ULP-RISC-V 协处理器可以在主处理器处于低功耗模式时执行传感器读数等任务。ULP-RISC-V 与 ULP-FSM 的主要区别在于可以使用标准 GNU 工具、以 C 语言进行编程。ULP-RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
+ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类似，ULP-RISC-V 协处理器可以在主处理器处于低功耗模式时执行传感器读数等任务。与 ULP-FSM 的主要区别在于，ULP-RISC-V 可以使用标准 GNU 工具、以 C 语言进行编程。ULP-RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
 
 安装 ULP-RISC-V 工具链
 -----------------------------------
 
-ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），使用基于GCC的 RISC-V 工具链进行编译。
+ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），使用基于 GCC 的 RISC-V 工具链进行编译。
 
 如果你已依照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP-RISC-V 工具链已经被默认安装到了你的开发环境中。
 
@@ -55,14 +55,14 @@ ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），
 
    5. **将 ELF 文件中的内容转储为二进制文件** (``ulp_app_name.bin``)，以便嵌入到应用程序中。
 
-   6. 使用 ``riscv-none-embed-nm`` 在 ELF 文件中 **生成全局符号列表** (``ulp_app_name.sym``)。
+   6. 使用 ``riscv32-esp-elf-nm`` 在 ELF 文件中 **生成全局符号列表** (``ulp_app_name.sym``)。
 
    7. **创建 LD 导出脚本和头文件** （``ulp_app_name.ld`` 和 ``ulp_app_name.h``），包含来自 ``ulp_app_name.sym`` 的符号。此步骤可借助 ``esp32ulp_mapgen.py`` 工具来完成。
 
    8. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。** 
 
 访问 ULP-RISC-V 程序变量
-------------------------------------------
+----------------------------
 
 在 ULP-RISC-V 程序中定义的全局符号也可以在主程序中使用。 
 
@@ -140,7 +140,7 @@ ULP-RISC-V 协处理器由定时器启动，调用 :cpp:func:`ulp_riscv_run` 即
 
 此应用程序可以调用 :cpp:func:`ulp_set_wakeup_period` 函数来设置 ULP 定时器周期值 (RTC_CNTL_ULP_CP_TIMER_1_REG)。
 
-一旦定时器为所选的 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器的 Tick 事件计数，ULP 协处理器就会启动，并调用 :cpp:func:`ulp_riscv_run` 的入口点开始运行程序。
+一旦定时器数到 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器中设置的 Tick 数，ULP 协处理器就会启动，并调用 :cpp:func:`ulp_riscv_run` 的入口点开始运行程序。
 
 程序保持运行，直至 ``RTC_CNTL_COCPU_CTRL_REG`` 寄存器中的 ``RTC_CNTL_COCPU_DONE`` 字段被置位或因非法处理器状态出现陷阱。一旦程序停止，ULP 协处理器会关闭电源，定时器再次启动。
 

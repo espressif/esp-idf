@@ -17,7 +17,6 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 
 .. note: In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: `riscv-none-embed-gcc`.
 
-
 Compiling the ULP-RISC-V Code
 -----------------------------
 
