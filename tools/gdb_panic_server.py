@@ -112,7 +112,7 @@ def get_stack_addr_and_data(res):  # type: (ParseResults) -> typing.Tuple[int, b
     stack_base_addr = 0  # First reported address in the dump
     base_addr = 0  # keeps track of the address for the given line of the dump
     bytes_in_line = 0  # bytes of stack parsed on the previous line; used to validate the next base address
-    stack_data = b''  # accumulates all the dumped stack data
+    stack_data = bytes(b'')  # accumulates all the dumped stack data
     for line in res.stack_dump.lines:
         # update and validate the base address
         prev_base_addr = base_addr
@@ -124,7 +124,7 @@ def get_stack_addr_and_data(res):  # type: (ParseResults) -> typing.Tuple[int, b
 
         # convert little-endian hex words to byte representation
         words = [int(w, 16) for w in line.data]
-        line_data = b''.join([struct.pack('<I', w) for w in words])
+        line_data = bytes(b''.join([struct.pack('<I', w) for w in words]))
         bytes_in_line = len(line_data)
 
         # accumulate in the whole stack data
