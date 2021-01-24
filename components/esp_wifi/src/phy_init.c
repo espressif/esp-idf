@@ -42,6 +42,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "soc/rtc_cntl_reg.h"
 #include "soc/syscon_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "soc/rtc_cntl_reg.h"
+#include "soc/syscon_reg.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -220,7 +223,7 @@ void esp_phy_enable(void)
         coex_bt_high_prio();
 #endif
 
-#if CONFIG_BT_ENABLED && CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_BT_ENABLED && (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
     extern void coex_pti_v2(void);
     coex_pti_v2();
 #endif

@@ -1,13 +1,5 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-# remove these when wifi support is ready on esp32-s3
-if(${idf_target} STREQUAL "esp32s3")
-    idf_component_register(INCLUDE_DIRS "include"
-                           REQUIRES esp_event
-                           PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif)
-    return()
-endif()
-
 if(CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
     set(link_binary_libs 0)
     set(ldfragments)
