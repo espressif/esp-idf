@@ -859,6 +859,10 @@ menu "LWIP"
             bool "Enable ICMP debug messages"
             default n
 
+        config LWIP_DHCP_STATE_DEBUG
+            bool "Enable DHCP state tracking"
+            default n
+
         config LWIP_DHCP_DEBUG
             bool "Enable DHCP debug messages"
             default n
