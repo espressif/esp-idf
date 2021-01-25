@@ -708,6 +708,31 @@ char *esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
 uint32_t esp_ip4addr_aton(const char *addr);
 
 /**
+ * @brief Converts Ascii internet IPv4 address into esp_ip4_addr_t
+ *
+ * @param[in] src IPv4 address in ascii representation (e.g. "127.0.0.1")
+ * @param[out] dst Address of the target esp_ip4_addr_t structure to receive converted address
+ * @return
+ *         - ESP_OK on success
+ *         - ESP_FAIL if conversion failed
+ *         - ESP_ERR_INVALID_ARG if invalid parameter is passed into
+ */
+esp_err_t esp_netif_str_to_ip4(const char *src, esp_ip4_addr_t *dst);
+
+/**
+ * @brief Converts Ascii internet IPv6 address into esp_ip4_addr_t
+ * Zeros in the IP address can be stripped or completely ommited: "2001:db8:85a3:0:0:0:2:1" or "2001:db8::2:1")
+ *
+ * @param[in] src IPv6 address in ascii representation (e.g. ""2001:0db8:85a3:0000:0000:0000:0002:0001")
+ * @param[out] dst Address of the target esp_ip6_addr_t structure to receive converted address
+ * @return
+ *         - ESP_OK on success
+ *         - ESP_FAIL if conversion failed
+ *         - ESP_ERR_INVALID_ARG if invalid parameter is passed into
+ */
+esp_err_t esp_netif_str_to_ip6(const char *src, esp_ip6_addr_t *dst);
+
+/**
  * @}
  */
 
