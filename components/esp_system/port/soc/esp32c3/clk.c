@@ -75,6 +75,11 @@ static const char *TAG = "clk";
 {
 #if !CONFIG_IDF_ENV_FPGA
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
+    RESET_REASON rst_reas;
+    rst_reas = rtc_get_reset_reason(0);
+    if (rst_reas == POWERON_RESET) {
+        cfg.cali_ocode = 1;
+    }
     rtc_init(cfg);
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);

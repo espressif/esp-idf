@@ -30,11 +30,11 @@ if(NOT BOOTLOADER_BUILD)
                 "sha_hal.c"
                 "aes_hal.c"
                 "twai_hal.c"
-                "twai_hal_iram.c")
+                "twai_hal_iram.c"
+                "adc_hal.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-                    "adc_hal.c"
                     "dac_hal.c"
                     "mcpwm_hal.c"
                     "pcnt_hal.c"
@@ -52,7 +52,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "adc_hal.c"
                     "dac_hal.c"
                     "pcnt_hal.c"
                     "spi_flash_hal_gpspi.c"
@@ -70,7 +69,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "adc_hal.c"
             "dac_hal.c"
             "gdma_hal.c"
             "pcnt_hal.c"

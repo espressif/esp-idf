@@ -10,4 +10,8 @@ elseif(${target} STREQUAL "esp32s2")
                     INCLUDE_DIRS "include"
                     REQUIRES driver efuse)
 
+elseif(${target} STREQUAL "esp32c3")
+    idf_component_register(SRCS "esp_adc_cal_esp32c3.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES driver efuse)
 endif()

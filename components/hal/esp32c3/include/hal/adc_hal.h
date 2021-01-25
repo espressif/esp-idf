@@ -75,70 +75,62 @@ void adc_hal_digi_disable(void);
 /**
  * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
  * Enable clock and select clock source for ADC digital controller.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
+ * Expression: controller_clk = APLL/APB * (div_num  + div_a / div_b + 1).
  *
  * @param clk Refer to `adc_digi_clk_t`.
  */
-void adc_hal_digi_clk_config(const adc_digi_clk_t *clk);
+void adc_hal_digi_clk_config(void);
 
 /**
  * Reset adc digital controller filter.
  *
- * @param adc_n ADC unit.
+ * @param filter_idx ADC filter unit.
  */
-#define adc_hal_digi_filter_reset(adc_n) adc_ll_digi_filter_reset(adc_n)
+#define adc_hal_digi_filter_reset(filter_idx) adc_ll_digi_filter_reset(filter_idx)
 
 /**
  * Set adc digital controller filter factor.
  *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ * @param filter_idx ADC filter unit.
+ * @param filter Filter config. Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
  */
-#define adc_hal_digi_filter_set_factor(adc_n, factor) adc_ll_digi_filter_set_factor(adc_n, factor)
+void adc_hal_digi_filter_set_factor(adc_digi_filter_idx_t filter_idx, adc_digi_filter_t *filter);
 
 /**
  * Get adc digital controller filter factor.
  *
- * @param adc_n ADC unit.
+ * @param filter_idx ADC filter unit.
  * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
  */
-#define adc_hal_digi_filter_get_factor(adc_n, factor) adc_ll_digi_filter_get_factor(adc_n, factor)
+void adc_hal_digi_filter_get_factor(adc_digi_filter_idx_t filter_idx, adc_digi_filter_t *filter);
 
 /**
  * Enable/disable adc digital controller filter.
  * Filtering the ADC data to obtain smooth data at higher sampling rates.
  *
  * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param filter_idx ADC filter unit.
+ * @param enable True to enable the filter, otherwise disable.
  */
-#define adc_hal_digi_filter_enable(adc_n, enable) adc_ll_digi_filter_enable(adc_n, enable)
-
-/**
- * Get the filtered data of adc digital controller filter.
- * The data after each measurement and filtering is updated to the DMA by the digital controller. But it can also be obtained manually through this API.
- *
- * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @return Filtered data.
- */
-#define adc_hal_digi_filter_read_data(adc_n) adc_ll_digi_filter_read_data(adc_n)
+void adc_hal_digi_filter_enable(adc_digi_filter_idx_t filter_idx, bool enable);
 
 /**
  * Config monitor of adc digital controller.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @note If the channel info is not supported, the monitor function will not be enabled.
+ * @param mon_idx ADC monitor index.
  * @param config Refer to `adc_digi_monitor_t`.
  */
-void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config);
+void adc_hal_digi_monitor_config(adc_digi_monitor_idx_t mon_idx, adc_digi_monitor_t *config);
 
 /**
  * Enable/disable monitor of adc digital controller.
  *
  * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param mon_idx ADC monitor index.
+ * @param enable True to enable the monitor, otherwise disable.
  */
-#define adc_hal_digi_monitor_enable(adc_n, enable) adc_ll_digi_monitor_enable(adc_n, enable)
+void adc_hal_digi_monitor_enable(adc_digi_monitor_idx_t mon_idx, bool enable);
 
 /**
  * Enable interrupt of adc digital controller by bitmask.
@@ -198,14 +190,6 @@ void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
 #define adc_hal_digi_reset() adc_ll_digi_reset()
 
 /*---------------------------------------------------------------
-                    RTC controller setting
----------------------------------------------------------------*/
-/**
- * Reset RTC controller FSM.
- */
-#define adc_hal_rtc_reset() adc_ll_rtc_reset()
-
-/*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
 
@@ -226,21 +210,6 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
                     ADC calibration setting
 ---------------------------------------------------------------*/
 
-/**
- * Calibrate the ADC using internal connections.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param channel adc channel number.
- * @param atten The attenuation for the channel
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- *
- * @return
- *      - The calibration result (initial data) to ADC, use `adc_hal_set_calibration_param` to set.
- */
-uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
 
 /**
  * Set the calibration result (initial data) to ADC.

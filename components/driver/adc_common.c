@@ -31,7 +31,6 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C3
 #include "hal/dac_hal.h"
 #include "hal/adc_hal_conf.h"
 
@@ -121,7 +120,7 @@ static esp_pm_lock_handle_t s_adc2_arbiter_lock;
                     ADC Common
 ---------------------------------------------------------------*/
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
 {
     adc_atten_t atten = adc_hal_get_atten(adc_n, chan);
@@ -372,7 +371,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc1_rtc_mode_acquire();
     adc_power_acquire();
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     // Get calibration value before going into critical section
     uint32_t cal_val = get_calibration_offset(ADC_NUM_1, channel);
 #endif
@@ -382,7 +381,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_hall_disable(); //Disable other peripherals.
     adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 #endif
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);    //Set controller
@@ -528,7 +527,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     adc_power_acquire();         //in critical section with whole rtc module
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     // Get calibration value before going into critical section
     uint32_t cal_val = get_calibration_offset(ADC_NUM_2, channel);
 #endif
@@ -544,7 +543,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc2_dac_disable(channel);      //disable other peripherals
 #endif
     adc2_config_width(width_bit);   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 #endif
     adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);// set controller
@@ -629,5 +628,3 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     adc_gpio_init(ADC_UNIT_2, ch);
     return ESP_OK;
 }
-
-#endif // !CONFIG_IDF_TARGET_ESP32C3

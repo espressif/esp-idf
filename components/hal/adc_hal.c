@@ -15,7 +15,9 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
 
+
 #if CONFIG_IDF_TARGET_ESP32C3
+#include "soc/gdma_channel.h"
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
 #endif
@@ -37,6 +39,7 @@ void adc_hal_deinit(void)
     adc_ll_set_power_manage(ADC_POWER_SW_OFF);
 }
 
+#ifndef CONFIG_IDF_TARGET_ESP32C3
 int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
 {
     adc_ll_rtc_enable_channel(adc_n, channel);
@@ -45,6 +48,7 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
     *value = adc_ll_rtc_get_convert_value(adc_n);
     return (int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*value));
 }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C3
 //This feature is currently supported on ESP32C3, will be supported on other chips soon
@@ -108,6 +112,8 @@ void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t
     adc_ll_digi_dma_enable();
     //enable sar adc timer
     adc_ll_digi_trigger_enable();
+    //reset the adc state
+    adc_ll_digi_reset();
 }
 
 void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
@@ -139,7 +145,7 @@ void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
      * This limitation will be removed in hardware future versions.
      *
      */
-    uint32_t digi_clk = APB_CLK_FREQ / (adc_digi_config->dig_clk.div_num + adc_digi_config->dig_clk.div_a / adc_digi_config->dig_clk.div_b + 1);
+    uint32_t digi_clk = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
     uint32_t delay = (1000 * 1000) / digi_clk + 1;
     //3 ADC digital controller clock cycle
@@ -183,14 +189,17 @@ void adc_hal_set_onetime_atten(adc_atten_t atten)
     adc_ll_onetime_set_atten(atten);
 }
 
-uint32_t adc_hal_adc1_read(void)
+esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw)
 {
-    return adc_ll_adc1_read();
-}
-
-uint32_t adc_hal_adc2_read(void)
-{
-    return adc_ll_adc2_read();
+    if (unit == ADC_NUM_1) {
+        *out_raw = adc_ll_adc1_read();
+    } else if (unit == ADC_NUM_2) {
+        *out_raw = adc_ll_adc2_read();
+        if (adc_ll_analysis_raw_data(unit, *out_raw)) {
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+    return ESP_OK;
 }
 
 //--------------------INTR-------------------------------

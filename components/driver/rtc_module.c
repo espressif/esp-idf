@@ -18,7 +18,6 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "soc/syscon_periph.h"
 #include "soc/rtc.h"
 #include "soc/periph_defs.h"

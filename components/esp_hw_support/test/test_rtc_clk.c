@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include "unity.h"
 
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
+#if SOC_ADC_SUPPORT_RTC_CTRL
 #include "soc/sens_periph.h"
+#endif
 #include "soc/gpio_periph.h"
 #include "hal/gpio_ll.h"
 #include "driver/rtc_io.h"

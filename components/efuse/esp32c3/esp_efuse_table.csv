@@ -126,8 +126,21 @@
     SPI_PAD_CONFIG_D6,                    EFUSE_BLK1,  102,    6,     SPI_PAD_configure D6
     SPI_PAD_CONFIG_D7,                    EFUSE_BLK1,  108,    6,     SPI_PAD_configure D7
 
+# SYS_DATA_PART1 #
+#######################
+    BLOCK2_VERSION,                       EFUSE_BLK2,  128,    3,     Version of Block2
+    TEMP_CALIB,                           EFUSE_BLK2,  131,    9,     Temperature calibration data
+    OCODE,                                EFUSE_BLK2,  140,    8,     ADC OCode
+    ADC1_INIT_CODE_ATTEN0,                EFUSE_BLK2,  148,   10,     ADC1 init code at atten0
+    ADC1_INIT_CODE_ATTEN1,                EFUSE_BLK2,  158,   10,     ADC1 init code at atten1
+    ADC1_INIT_CODE_ATTEN2,                EFUSE_BLK2,  168,   10,     ADC1 init code at atten2
+    ADC1_INIT_CODE_ATTEN3,                EFUSE_BLK2,  178,   10,     ADC1 init code at atten3
+    ADC1_CAL_VOL_ATTEN0,                  EFUSE_BLK2,  188,   10,     ADC1 calibration voltage at atten0
+    ADC1_CAL_VOL_ATTEN1,                  EFUSE_BLK2,  198,   10,     ADC1 calibration voltage at atten1
+    ADC1_CAL_VOL_ATTEN2,                  EFUSE_BLK2,  208,   10,     ADC1 calibration voltage at atten2
+    ADC1_CAL_VOL_ATTEN3,                  EFUSE_BLK2,  218,   10,     ADC1 calibration voltage at atten3
+
 ################
-SYS_DATA_PART1,                           EFUSE_BLK2,    0,  256,     System configuration
 USER_DATA,                                EFUSE_BLK3,    0,  256,     User data
 KEY0,                                     EFUSE_BLK4,    0,  256,     Key0 or user data
 KEY1,                                     EFUSE_BLK5,    0,  256,     Key1 or user data

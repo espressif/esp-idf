@@ -134,6 +134,7 @@ void adc_hal_deinit(void);
  */
 #define adc_hal_pwdet_get_cct() adc_ll_pwdet_get_cct()
 
+#ifndef CONFIG_IDF_TARGET_ESP32C3
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
@@ -167,6 +168,7 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+#endif
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
@@ -213,6 +215,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
 #include "hal/dma_types.h"
 #include "hal/adc_ll.h"
 #include "hal/dma_types.h"
+#include "esp_err.h"
 
 typedef struct adc_dma_hal_context_t {
     gdma_dev_t          *dev;           //address of the general DMA
@@ -259,9 +262,7 @@ void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel);
 
 void adc_hal_set_onetime_atten(adc_atten_t atten);
 
-uint32_t adc_hal_adc1_read(void);
-
-uint32_t adc_hal_adc2_read(void);
+esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw);
 
 void adc_hal_intr_enable(adc_event_t event);
 

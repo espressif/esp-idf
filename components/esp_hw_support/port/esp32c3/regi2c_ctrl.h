@@ -43,10 +43,16 @@ extern "C" {
 #define ANA_CONFIG_REG  0x6000E044
 #define ANA_CONFIG_S    (8)
 #define ANA_CONFIG_M    (0x3FF)
-/* Clear to enable APLL */
-#define I2C_APLL_M      (BIT(14))
-/* Clear to enable BBPLL */
-#define I2C_BBPLL_M     (BIT(17))
+
+#define ANA_I2C_SAR_FORCE_PD BIT(18)
+#define ANA_I2C_BBPLL_M      BIT(17) /* Clear to enable BBPLL */
+#define ANA_I2C_APLL_M       BIT(14) /* Clear to enable APLL */
+
+
+#define ANA_CONFIG2_REG  0x6000E048
+#define ANA_CONFIG2_M    BIT(18)
+
+#define ANA_I2C_SAR_FORCE_PU BIT(16)
 
 /* ROM functions which read/write internal control bus */
 uint8_t rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);

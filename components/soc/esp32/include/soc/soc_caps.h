@@ -79,6 +79,7 @@
 #define SOC_ADC_PATT_LEN_MAX            (16)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
+#define SOC_ADC_MAX_BITWIDTH            (12)
 
 /**
  * Check if adc support digital controller (DMA) mode.
@@ -87,6 +88,7 @@
  *      - 0 : not support;
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
+#define SOC_ADC_SUPPORT_RTC_CTRL        1
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 1

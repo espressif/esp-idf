@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_attr.h"
 
 /**
  * @brief ADC unit enumeration.
@@ -88,7 +89,9 @@ typedef enum {
     ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
     ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+#elif SOC_ADC_MAX_BITWIDTH == 12
+    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
+#elif SOC_ADC_MAX_BITWIDTH == 13
     ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
 #endif
     ADC_WIDTH_MAX,
@@ -139,7 +142,7 @@ typedef struct {
             uint8_t reserved:  2;   /*!< reserved0 */
 #endif
         };
-        uint8_t val;                /*!<Raw data value */
+        uint8_t val;
     };
 } adc_digi_pattern_table_t;
 
@@ -189,12 +192,13 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            uint32_t data:     13;  /*!<ADC real output data info. Resolution: 13 bit. */
-            uint32_t channel:   3;  /*!<ADC channel index info.
-                                        If (channel < ADC_CHANNEL_MAX), The data is valid.
-                                        If (channel > ADC_CHANNEL_MAX), The data is invalid. */
-            uint32_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
-            uint32_t reserved: 15;
+            uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
+            uint32_t reserved12:    1;
+            uint32_t channel:       3;  /*!<ADC channel index info.
+                                            If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                            If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+            uint32_t unit:          1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
+            uint32_t reserved17_31: 15;
         } type2;
         uint32_t val;
     };
@@ -271,7 +275,7 @@ typedef struct {
                                                  pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself. */
     adc_digi_pattern_table_t *adc_pattern;   /*!<Pointer to pattern table for digital controller. The table size defined by `adc_pattern_len`. */
 #endif
-#if !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32S2
     uint32_t interval;                       /*!<The number of interval clock cycles for the digital controller to trigger the measurement.
                                                  The unit is the divided clock. Range: 40 ~ 4095.
                                                  Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
@@ -281,6 +285,12 @@ typedef struct {
     uint32_t dma_eof_num;                    /*!<DMA eof num of adc digital controller.
                                                  If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                                  Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
+#elif CONFIG_IDF_TARGET_ESP32C3
+    uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 611Hz ~ 83333Hz
+                                   Fs = Fd / interval / 2
+                                   Fs: sampling frequency;
+                                   Fd: digital controller frequency, no larger than 5M for better performance
+                                   interval: interval between 2 measurement trigger signal, the smallest interval should not be smaller than the ADC measurement period, the largest interval should not be larger than 4095 */
 #endif
 } adc_digi_config_t;
 
@@ -326,10 +336,19 @@ typedef struct {
  * @brief ADC digital controller (DMA mode) interrupt type options.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_INTR_MASK_MONITOR0_HIGH = BIT(0),
+    ADC_DIGI_INTR_MASK_MONITOR0_LOW  = BIT(1),
+    ADC_DIGI_INTR_MASK_MONITOR1_HIGH = BIT(2),
+    ADC_DIGI_INTR_MASK_MONITOR1_LOW  = BIT(3),
+    ADC_DIGI_INTR_MASK_MEAS_DONE     = BIT(4),
+#else
     ADC_DIGI_INTR_MASK_MONITOR = 0x1,
     ADC_DIGI_INTR_MASK_MEAS_DONE = 0x2,
     ADC_DIGI_INTR_MASK_ALL = 0x3,
+#endif
 } adc_digi_intr_t;
+FLAG_ATTR(adc_digi_intr_t)
 
 /**
  * @brief ADC digital controller (DMA mode) filter index options.
@@ -349,6 +368,9 @@ typedef enum {
  *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
+#endif
     ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
     ADC_DIGI_FILTER_IIR_4,     /*!<The filter mode is first-order IIR filter. The coefficient is 4. */
     ADC_DIGI_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8. */
@@ -390,8 +412,14 @@ typedef enum {
  *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
 typedef enum {
+#if CONFIG_IDF_TARGET_ESP32C3
+    ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
+    ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
+                               /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
+#else
     ADC_DIGI_MONITOR_HIGH = 0,  /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
     ADC_DIGI_MONITOR_LOW,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
+#endif
     ADC_DIGI_MONITOR_MAX
 } adc_digi_monitor_mode_t;
 
@@ -407,7 +435,12 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
+#if CONFIG_IDF_TARGET_ESP32C3
+    uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
+    uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
+#else
     uint32_t threshold;             /*!<Set monitor threshold of adc digital controller. */
+#endif
 } adc_digi_monitor_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

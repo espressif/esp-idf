@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 2c7ba2aa68a2748d3de9a5d1fed59b9f
+// md5_digest_table 96cd6235ddc0947b4a296add3f942acb
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -392,8 +392,48 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART1[] = {
-    {EFUSE_BLK2, 0, 256}, 	 // System configuration,
+static const esp_efuse_desc_t BLOCK2_VERSION[] = {
+    {EFUSE_BLK2, 128, 3}, 	 // Version of Block2,
+};
+
+static const esp_efuse_desc_t TEMP_CALIB[] = {
+    {EFUSE_BLK2, 131, 9}, 	 // Temperature calibration data,
+};
+
+static const esp_efuse_desc_t OCODE[] = {
+    {EFUSE_BLK2, 140, 8}, 	 // ADC OCode,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 148, 10}, 	 // ADC1 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN1[] = {
+    {EFUSE_BLK2, 158, 10}, 	 // ADC1 init code at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN2[] = {
+    {EFUSE_BLK2, 168, 10}, 	 // ADC1 init code at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 178, 10}, 	 // ADC1 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 188, 10}, 	 // ADC1 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN1[] = {
+    {EFUSE_BLK2, 198, 10}, 	 // ADC1 calibration voltage at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN2[] = {
+    {EFUSE_BLK2, 208, 10}, 	 // ADC1 calibration voltage at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK2, 218, 10}, 	 // ADC1 calibration voltage at atten3,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -892,8 +932,58 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART1[] = {
-    &SYS_DATA_PART1[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
+    &BLOCK2_VERSION[0],    		// Version of Block2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
+    &TEMP_CALIB[0],    		// Temperature calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
+    &OCODE[0],    		// ADC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[] = {
+    &ADC1_INIT_CODE_ATTEN0[0],    		// ADC1 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[] = {
+    &ADC1_INIT_CODE_ATTEN1[0],    		// ADC1 init code at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[] = {
+    &ADC1_INIT_CODE_ATTEN2[0],    		// ADC1 init code at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[] = {
+    &ADC1_INIT_CODE_ATTEN3[0],    		// ADC1 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[] = {
+    &ADC1_CAL_VOL_ATTEN0[0],    		// ADC1 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[] = {
+    &ADC1_CAL_VOL_ATTEN1[0],    		// ADC1 calibration voltage at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[] = {
+    &ADC1_CAL_VOL_ATTEN2[0],    		// ADC1 calibration voltage at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
+    &ADC1_CAL_VOL_ATTEN3[0],    		// ADC1 calibration voltage at atten3
     NULL
 };
 

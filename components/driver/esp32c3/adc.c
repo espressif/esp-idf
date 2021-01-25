@@ -31,6 +31,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
+#include "esp32c3/esp_efuse_rtc_calib.h"
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \
@@ -89,13 +90,16 @@ typedef struct adc_digi_context_t {
     RingbufHandle_t         ringbuf_hdl;                //RX ringbuffer handler
     bool                    ringbuf_overflow_flag;      //1: ringbuffer overflow
     bool                    driver_start_flag;          //1: driver is started; 0: driver is stoped
+    bool                    use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
     bool                    use_adc2;                   //1: ADC unit2 will be used; 0: ADC unit2 won't be used. This determines whether to acquire sar_adc2_mutex lock or not.
+    adc_atten_t             adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
+    adc_atten_t             adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
     adc_digi_config_t       digi_controller_config;     //Digital Controller Configuration
 } adc_digi_context_t;
 
-static const char* ADC_DMA_TAG = "ADC_DMA:";
 static adc_digi_context_t *s_adc_digi_ctx = NULL;
 
+static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan, adc_atten_t atten);
 
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
@@ -238,6 +242,7 @@ static IRAM_ATTR void adc_dma_intr(void *arg)
         s_adc_digi_ctx->hal_dma_config.desc_cnt = 0;
 
         //start next turns of dma operation
+        adc_hal_digi_dma_multi_descriptor(&s_adc_digi_ctx->hal_dma_config, s_adc_digi_ctx->rx_dma_buf, s_adc_digi_ctx->bytes_between_intr, s_adc_digi_ctx->hal_dma_config.desc_max_num);
         adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
     }
 
@@ -264,6 +269,16 @@ esp_err_t adc_digi_start(void)
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_init();
+
+    if (s_adc_digi_ctx->use_adc1) {
+        uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
+        adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+    }
+    if (s_adc_digi_ctx->use_adc2) {
+        uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
+        adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
+    }
+
     adc_hal_arbiter_config(&config);
     adc_hal_digi_init(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
     adc_hal_digi_controller_config(&s_adc_digi_ctx->digi_controller_config);
@@ -277,10 +292,12 @@ esp_err_t adc_digi_start(void)
 
     //enable in suc eof intr
     adc_hal_digi_ena_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-    //start DMA
-    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+
     //start ADC
     adc_hal_digi_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+
+    //start DMA
+    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
 
     return ESP_OK;
 }
@@ -326,7 +343,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
 
     data = xRingbufferReceiveUpTo(s_adc_digi_ctx->ringbuf_hdl, &size, ticks_to_wait, length_max);
     if (!data) {
-        ESP_LOGW(ADC_DMA_TAG, "No data, increase timeout or reduce conv_num_each_intr");
+        ESP_LOGV(ADC_TAG, "No data, increase timeout or reduce conv_num_each_intr");
         ret = ESP_ERR_TIMEOUT;
         *out_length = 0;
         return ret;
@@ -340,6 +357,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
     if (s_adc_digi_ctx->ringbuf_overflow_flag) {
         ret = ESP_ERR_INVALID_STATE;
     }
+
     return ret;
 }
 
@@ -363,6 +381,7 @@ esp_err_t adc_digi_deinitialize(void)
         s_adc_digi_ctx->ringbuf_hdl = NULL;
     }
 
+    free(s_adc_digi_ctx->rx_dma_buf);
     free(s_adc_digi_ctx->hal_dma_config.rx_desc);
     free(s_adc_digi_ctx->digi_controller_config.adc_pattern);
     free(s_adc_digi_ctx);
@@ -382,8 +401,8 @@ static adc_atten_t s_atten2_single[ADC2_CHANNEL_MAX];    //Array saving attenuat
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-    //On ESP32C3, the data width is always 13-bits.
-    if (width_bit != ADC_WIDTH_BIT_13) {
+    //On ESP32C3, the data width is always 12-bits.
+    if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -404,40 +423,42 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
 int adc1_get_raw(adc1_channel_t channel)
 {
-    int result = 0;
+    int raw_out = 0;
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .interval = 40,
-        .dig_clk.use_apll = 0,
-        .dig_clk.div_num = 1,
-        .dig_clk.div_a = 0,
-        .dig_clk.div_b = 1,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
     };
 
     ADC_DIGI_LOCK_ACQUIRE();
 
+    periph_module_enable(PERIPH_SARADC_MODULE);
+
+    adc_atten_t atten = s_atten1_single[channel];
+    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
-
     adc_hal_onetime_channel(ADC_NUM_1, channel);
-    adc_hal_set_onetime_atten(s_atten1_single[channel]);
+    adc_hal_set_onetime_atten(atten);
 
-    adc_hal_adc1_onetime_sample_enable(true);
     //Trigger single read.
+    adc_hal_adc1_onetime_sample_enable(true);
     adc_hal_onetime_start(&dig_cfg);
 
     while (!adc_hal_intr_get_raw(ADC_EVENT_ADC1_DONE));
     adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
     adc_hal_adc1_onetime_sample_enable(false);
 
-    result = adc_hal_adc1_read();
+    adc_hal_single_read(ADC_NUM_1, &raw_out);
     adc_hal_digi_deinit();
+    periph_module_disable(PERIPH_SARADC_MODULE);
 
     ADC_DIGI_LOCK_RELEASE();
 
-    return result;
+    return raw_out;
 }
 
 esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
@@ -454,41 +475,46 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
-    //On ESP32C3, the data width is always 13-bits.
-    if (width_bit != ADC_WIDTH_BIT_13) {
+    //On ESP32C3, the data width is always 12-bits.
+    if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }
 
+    esp_err_t ret = ESP_OK;
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = 0,
         .conv_limit_num = 250,
-        .interval = 40,
-        .dig_clk.use_apll = 0,
-        .dig_clk.div_num = 1,
-        .dig_clk.div_a = 0,
-        .dig_clk.div_b = 1,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
     };
 
     SAC_ADC2_LOCK_ACQUIRE();
     ADC_DIGI_LOCK_ACQUIRE();
+    periph_module_enable(PERIPH_SARADC_MODULE);
+
+    adc_atten_t atten = s_atten2_single[channel];
+    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
-
     adc_hal_onetime_channel(ADC_NUM_2, channel);
-    adc_hal_set_onetime_atten(s_atten2_single[channel]);
+    adc_hal_set_onetime_atten(atten);
 
-    adc_hal_adc2_onetime_sample_enable(true);
     //Trigger single read.
+    adc_hal_adc2_onetime_sample_enable(true);
     adc_hal_onetime_start(&dig_cfg);
 
     while (!adc_hal_intr_get_raw(ADC_EVENT_ADC2_DONE));
     adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
     adc_hal_adc2_onetime_sample_enable(false);
 
-    *raw_out = adc_hal_adc2_read();
+    ret = adc_hal_single_read(ADC_NUM_2, raw_out);
+    if (ret != ESP_OK) {
+        return ret;
+    }
     adc_hal_digi_deinit();
+    periph_module_disable(PERIPH_SARADC_MODULE);
 
     ADC_DIGI_LOCK_RELEASE();
     SAC_ADC2_LOCK_RELEASE();
@@ -505,20 +531,38 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     if (!s_adc_digi_ctx) {
         return ESP_ERR_INVALID_STATE;
     }
+    ADC_CHECK(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, "ADC sampling frequency out of range", ESP_ERR_INVALID_ARG);
 
     s_adc_digi_ctx->digi_controller_config.conv_limit_en = config->conv_limit_en;
     s_adc_digi_ctx->digi_controller_config.conv_limit_num = config->conv_limit_num;
     s_adc_digi_ctx->digi_controller_config.adc_pattern_len = config->adc_pattern_len;
-    s_adc_digi_ctx->digi_controller_config.interval =  config->interval;
-    s_adc_digi_ctx->digi_controller_config.dig_clk = config-> dig_clk;
-    s_adc_digi_ctx->digi_controller_config.dma_eof_num = config->dma_eof_num;
+    s_adc_digi_ctx->digi_controller_config.sample_freq_hz = config->sample_freq_hz;
     memcpy(s_adc_digi_ctx->digi_controller_config.adc_pattern, config->adc_pattern, config->adc_pattern_len * sizeof(adc_digi_pattern_table_t));
 
-    //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
+    const int atten_uninitialised = 999;
+    s_adc_digi_ctx->adc1_atten = atten_uninitialised;
+    s_adc_digi_ctx->adc2_atten = atten_uninitialised;
+    s_adc_digi_ctx->use_adc1 = 0;
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
-        if (config->adc_pattern->unit == ADC_NUM_2) {
+        const adc_digi_pattern_table_t* pat = &config->adc_pattern[i];
+        if (pat->unit == ADC_NUM_1) {
+            s_adc_digi_ctx->use_adc1 = 1;
+
+            if (s_adc_digi_ctx->adc1_atten == atten_uninitialised) {
+                s_adc_digi_ctx->adc1_atten = pat->atten;
+            } else if (s_adc_digi_ctx->adc1_atten != pat->atten) {
+                return ESP_ERR_INVALID_ARG;
+            }
+        } else if (pat->unit == ADC_NUM_2) {
+            //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
             s_adc_digi_ctx->use_adc2 = 1;
+
+            if (s_adc_digi_ctx->adc2_atten == atten_uninitialised) {
+                s_adc_digi_ctx->adc2_atten = pat->atten;
+            } else if (s_adc_digi_ctx->adc2_atten != pat->atten) {
+                return ESP_ERR_INVALID_ARG;
+            }
         }
     }
 
@@ -547,12 +591,12 @@ esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config)
  * @note  For ADC1, Controller access is mutually exclusive.
  *
  * @param adc_unit ADC unit.
- * @param ctrl ADC controller, Refer to `adc_ll_controller_t`.
+ * @param ctrl ADC controller, Refer to `adc_controller_t`.
  *
  * @return
  *      - ESP_OK Success
  */
-esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_ll_controller_t ctrl)
+esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_controller_t ctrl)
 {
     adc_arbiter_t config = {0};
     adc_arbiter_t cfg = ADC_ARBITER_CONFIG_DEFAULT();
@@ -611,34 +655,34 @@ esp_err_t adc_digi_reset(void)
 
 esp_err_t adc_digi_filter_reset(adc_digi_filter_idx_t idx)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_filter_reset(idx);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
 }
 
 esp_err_t adc_digi_filter_set_config(adc_digi_filter_idx_t idx, adc_digi_filter_t *config)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_filter_set_factor(idx, config);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
 }
 
 esp_err_t adc_digi_filter_get_config(adc_digi_filter_idx_t idx, adc_digi_filter_t *config)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_filter_get_factor(idx, config);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
 }
 
 esp_err_t adc_digi_filter_enable(adc_digi_filter_idx_t idx, bool enable)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
-}
-
-/**
- * @brief Get the filtered data of adc digital controller filter. For debug.
- *        The data after each measurement and filtering is updated to the DMA by the digital controller. But it can also be obtained manually through this API.
- *
- * @param idx Filter index.
- * @return Filtered data. if <0, the read data invalid.
- */
-int adc_digi_filter_read_data(adc_digi_filter_idx_t idx)
-{
-    abort(); // TODO ESP32-C3 IDF-2528
+    ADC_ENTER_CRITICAL();
+    adc_hal_digi_filter_enable(idx, enable);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
 }
 
 /**************************************/
@@ -648,23 +692,16 @@ int adc_digi_filter_read_data(adc_digi_filter_idx_t idx)
 esp_err_t adc_digi_monitor_set_config(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *config)
 {
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        adc_hal_digi_monitor_config(ADC_NUM_1, config);
-    } else if (idx == ADC_DIGI_MONITOR_IDX1) {
-        adc_hal_digi_monitor_config(ADC_NUM_2, config);
-    }
+    adc_hal_digi_monitor_config(idx, config);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
 esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable)
 {
+
     ADC_ENTER_CRITICAL();
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        adc_hal_digi_monitor_enable(ADC_NUM_1, enable);
-    } else if (idx == ADC_DIGI_MONITOR_IDX1) {
-        adc_hal_digi_monitor_enable(ADC_NUM_2, enable);
-    }
+    adc_hal_digi_monitor_enable(idx, enable);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -756,3 +793,40 @@ esp_err_t adc_digi_isr_deregister(void)
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
+
+static uint16_t s_adc_cali_param[ADC_ATTEN_MAX] = {};
+
+//NOTE: according to calibration version, different types of lock may be taken during the process:
+//  1. Semaphore when reading efuse
+//  2. Lock (Spinlock, or Mutex) if we actually do ADC calibration in the future
+//This function shoudn't be called inside critical section or ISR
+static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+{
+    const bool no_cal = false;
+    if (s_adc_cali_param[atten]) {
+        return (uint32_t)s_adc_cali_param[atten];
+    }
+
+    if (no_cal) {
+        return 0;   //indicating failure
+    }
+
+    // check if we can fetch the values from eFuse.
+    int version = esp_efuse_rtc_calib_get_ver();
+    assert(version == 1);
+    uint32_t init_code = esp_efuse_rtc_calib_get_init_code(version, atten);
+
+    ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, init_code);
+    s_adc_cali_param[atten] = init_code;
+    return init_code;
+}
+
+// Internal function to calibrate PWDET for WiFi
+esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+{
+    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
+    ADC_ENTER_CRITICAL();
+    adc_hal_set_calibration_param(adc_n, cal_val);
+    ADC_EXIT_CRITICAL();
+    return ESP_OK;
+}

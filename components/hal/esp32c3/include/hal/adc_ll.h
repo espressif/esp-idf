@@ -15,19 +15,24 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "regi2c_ctrl.h"
+#include "esp_attr.h"
+
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
-#include "esp_attr.h"
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ADC_LL_ADC2_CHANNEL_MAX     1
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
+#define ADC_LL_CLKM_DIV_B_DEFAULT   1
+#define ADC_LL_CLKM_DIV_A_DEFAULT   0
 
 typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
@@ -55,32 +60,6 @@ typedef enum {
 } adc_ll_intr_t;
 FLAG_ATTR(adc_ll_intr_t)
 
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif /* _MSC_VER */
-
-/**
- * @brief Analyze whether the obtained raw data is correct.
- *        ADC2 use arbiter by default. The arbitration result can be judged by the flag bit in the original data.
- *
- */
-typedef struct {
-    union {
-        struct {
-            uint16_t data:     13;  /*!<ADC real output data info. Resolution: 13 bit. */
-            uint16_t reserved:  1;  /*!<reserved */
-            uint16_t flag:      2;  /*!<ADC data flag info.
-                                        If (flag == 0), The data is valid.
-                                        If (flag > 0), The data is invalid. */
-        };
-        uint16_t val;
-    };
-} adc_ll_rtc_output_data_t;
-
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif /* _MSC_VER */
-
 /**
  * @brief ADC controller type selection.
  *
@@ -95,7 +74,7 @@ typedef enum {
     ADC2_CTRL_FORCE_PWDET = 3,  /*!<For ADC2. Arbiter in shield mode. Force select Wi-Fi controller work. */
     ADC2_CTRL_FORCE_RTC = 4,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
-} adc_ll_controller_t;
+} adc_controller_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -127,7 +106,9 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
 /**
@@ -140,16 +121,6 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock devided from digital controller clock clk */
     APB_SARADC.ctrl.sar_clk_div = div;
-}
-
-/**
- * Set adc output data format for digital controller.
- *
- * @param format Output data format.
- */
-static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
 }
 
 /**
@@ -182,52 +153,39 @@ static inline void adc_ll_digi_convert_limit_disable(void)
 }
 
 /**
- * Set adc conversion mode for digital controller.
- *
- * @note ADC digital controller on C3 only has one pattern table list, and do conversions one by one
- *
- * @param mode Conversion mode select.
- */
-static inline void adc_ll_digi_set_convert_mode(adc_digi_convert_mode_t mode)
-{
-    abort(); // TODO ESP32-C3 IDF-2528
-}
-
-/**
  * Set pattern table length for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 8 items, in which channel selection,
+ * and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
  *
  * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 8.
  */
 static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
 {
-    /*
-     *  channel 可以配置为0～6， 其中 0～4 代表 ADC1 ， 5 代表 ADC2 ， 6 代表有 EN_TEST 的测试选项，可以采样内部的一些电压信号
-     */
     APB_SARADC.ctrl.sar_patt_len = patt_len - 1;
 }
 
 /**
  * Set pattern table for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 8 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
  *
  * @param adc_n ADC unit.
- * @param pattern_index Items index. Range: 0 ~ 15.
+ * @param pattern_index Items index. Range: 0 ~ 7.
  * @param pattern Stored conversion rules.
  */
 static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
 {
-    /*
-     *  channel 可以配置为0～6， 其中 0～4 代表 ADC1 ， 5 代表 ADC2 ， 6 代表有 EN_TEST 的测试选项，可以采样内部的一些电压信号
-     */
     uint32_t tab;
     uint8_t index = pattern_index / 4;
     uint8_t offset = (pattern_index % 4) * 6;
 
     tab = APB_SARADC.sar_patt_tab[index].sar_patt_tab1;  // Read old register value
-    tab &= (~(0xFC0000 >> offset));       // clear old data
-    tab |= ((uint32_t)pattern.val << 18) >> offset; // Fill in the new data
+    tab &= (~(0xFC0000 >> offset));                      // Clear old data
+    tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;       // Fill in the new data
     APB_SARADC.sar_patt_tab[index].sar_patt_tab1 = tab;  // Write back
-
 }
 
 /**
@@ -237,9 +195,6 @@ static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pa
  */
 static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
 {
-    /*
-     *  channel 可以配置为0～6， 其中 0～4 代表 ADC1 ， 5 代表 ADC2 ， 6 代表有 EN_TEST 的测试选项，可以采样内部的一些电压信号
-     */
     APB_SARADC.ctrl.sar_patt_p_clear = 1;
     APB_SARADC.ctrl.sar_patt_p_clear = 0;
 }
@@ -271,10 +226,11 @@ static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
 }
 
 /**
- * Sets the number of interval clock cycles for the digital controller to trigger the measurement.
+ * Set the interval clock cycle for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval.
  *
- * @note The trigger interval should not be less than the sampling time of the SAR ADC.
- * @param cycle The number of clock cycles for the trigger interval. The unit is the divided clock. Range: 40 ~ 4095.
+ * @note The trigger interval should not be smaller than the sampling time of the SAR ADC.
+ * @param cycle The clock cycle (trigger interval) of the measurement. Range: 30 ~ 4095.
  */
 static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
 {
@@ -303,7 +259,7 @@ static inline void adc_ll_digi_trigger_disable(void)
  *
  * @param div_num Division factor. Range: 1 ~ 255.
  * @param div_b Division factor. Range: 1 ~ 63.
- * @param div_a Division factor. Range: 1 ~ 63.
+ * @param div_a Division factor. Range: 0 ~ 63.
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
@@ -349,18 +305,18 @@ static inline void adc_ll_digi_filter_reset(adc_ll_num_t adc_n)
 /**
  * Set adc digital controller filter factor.
  *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ * @note If the channel info is not supported, the filter function will not be enabled.
+ * @param idx ADC filter unit.
+ * @param filter Filter config. Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
  */
-static inline void adc_ll_digi_filter_set_factor(adc_ll_num_t adc_n, adc_digi_filter_mode_t factor)
+static inline void adc_ll_digi_filter_set_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
 {
-    adc_channel_t channel = 0;
-    if (!APB_SARADC.filter_ctrl0.filter_channel0) {
-        APB_SARADC.filter_ctrl0.filter_channel0 = (adc_n<<4) | channel;
-        APB_SARADC.filter_ctrl1.filter_factor0 = factor;
-    } else if (!APB_SARADC.filter_ctrl0.filter_channel1) {
-        APB_SARADC.filter_ctrl0.filter_channel1 = (adc_n<<4) | channel;
-        APB_SARADC.filter_ctrl1.filter_factor1 = factor;
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        APB_SARADC.filter_ctrl0.filter_channel0 = (filter->adc_unit << 3) | (filter->channel & 0x7);
+        APB_SARADC.filter_ctrl1.filter_factor0 = filter->mode;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        APB_SARADC.filter_ctrl0.filter_channel1 = (filter->adc_unit << 3) | (filter->channel & 0x7);
+        APB_SARADC.filter_ctrl1.filter_factor1 = filter->mode;
     }
 }
 
@@ -370,70 +326,71 @@ static inline void adc_ll_digi_filter_set_factor(adc_ll_num_t adc_n, adc_digi_fi
  * @param adc_n ADC unit.
  * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
  */
-static inline void adc_ll_digi_filter_get_factor(adc_ll_num_t adc_n, adc_digi_filter_mode_t *factor)
+static inline void adc_ll_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
 {
-    abort(); // TODO ESP32-C3 IDF-2528
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        filter->adc_unit = (APB_SARADC.filter_ctrl0.filter_channel0 >> 3) & 0x1;
+        filter->channel = APB_SARADC.filter_ctrl0.filter_channel0 & 0x7;
+        filter->mode = APB_SARADC.filter_ctrl1.filter_factor0;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        filter->adc_unit = (APB_SARADC.filter_ctrl0.filter_channel1 >> 3) & 0x1;
+        filter->channel = APB_SARADC.filter_ctrl0.filter_channel1 & 0x7;
+        filter->mode = APB_SARADC.filter_ctrl1.filter_factor1;
+    }
 }
 
 /**
- * Enable/disable adc digital controller filter.
+ * Disable adc digital controller filter.
  * Filtering the ADC data to obtain smooth data at higher sampling rates.
  *
- * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
+ * @note If the channel info is not supported, the filter function will not be enabled.
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_filter_enable(adc_ll_num_t adc_n, bool enable)
+static inline void adc_ll_digi_filter_disable(adc_digi_filter_idx_t idx)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Get the filtered data of adc digital controller filter.
- * The data after each measurement and filtering is updated to the DMA by the digital controller. But it can also be obtained manually through this API.
- *
- * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @return Filtered data.
- */
-static inline uint32_t adc_ll_digi_filter_read_data(adc_ll_num_t adc_n)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        APB_SARADC.filter_ctrl0.filter_channel0 = 0xF;
+        APB_SARADC.filter_ctrl1.filter_factor0 = 0;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        APB_SARADC.filter_ctrl0.filter_channel1 = 0xF;
+        APB_SARADC.filter_ctrl1.filter_factor1 = 0;
+    }
 }
 
 /**
  * Set monitor mode of adc digital controller.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
+ * @note If the channel info is not supported, the monitor function will not be enabled.
  * @param adc_n ADC unit.
  * @param is_larger true:  If ADC_OUT >  threshold, Generates monitor interrupt.
  *                  false: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
-static inline void adc_ll_digi_monitor_set_mode(adc_ll_num_t adc_n, bool is_larger)
+static inline void adc_ll_digi_monitor_set_mode(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *cfg)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Set monitor threshold of adc digital controller.
- *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @param threshold Monitor threshold.
- */
-static inline void adc_ll_digi_monitor_set_thres(adc_ll_num_t adc_n, uint32_t threshold)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (idx == ADC_DIGI_MONITOR_IDX0) {
+        APB_SARADC.thres0_ctrl.thres0_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
+        APB_SARADC.thres0_ctrl.thres0_high = cfg->h_threshold;
+        APB_SARADC.thres0_ctrl.thres0_low = cfg->l_threshold;
+    } else { // ADC_DIGI_MONITOR_IDX1
+        APB_SARADC.thres1_ctrl.thres1_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
+        APB_SARADC.thres1_ctrl.thres1_high = cfg->h_threshold;
+        APB_SARADC.thres1_ctrl.thres1_low = cfg->l_threshold;
+    }
 }
 
 /**
  * Enable/disable monitor of adc digital controller.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
+ * @note If the channel info is not supported, the monitor function will not be enabled.
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
+static inline void adc_ll_digi_monitor_disable(adc_digi_monitor_idx_t idx)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (idx == ADC_DIGI_MONITOR_IDX0) {
+        APB_SARADC.thres0_ctrl.thres0_channel = 0xF;
+    } else { // ADC_DIGI_MONITOR_IDX1
+        APB_SARADC.thres1_ctrl.thres1_channel = 0xF;
+    }
 }
 
 /**
@@ -444,7 +401,27 @@ static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
  */
 static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc1_done = 1;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc2_done = 1;
+        }
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_HIGH) {
+        APB_SARADC.int_ena.thres0_high = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_LOW) {
+        APB_SARADC.int_ena.thres0_low = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_HIGH) {
+        APB_SARADC.int_ena.thres1_high = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_LOW) {
+        APB_SARADC.int_ena.thres1_low = 1;
+    }
 }
 
 /**
@@ -455,7 +432,27 @@ static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t i
  */
 static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc1_done = 0;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc2_done = 0;
+        }
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_HIGH) {
+        APB_SARADC.int_ena.thres0_high = 0;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_LOW) {
+        APB_SARADC.int_ena.thres0_low = 0;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_HIGH) {
+        APB_SARADC.int_ena.thres1_high = 0;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_LOW) {
+        APB_SARADC.int_ena.thres1_low = 0;
+    }
 }
 
 /**
@@ -466,7 +463,27 @@ static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t 
  */
 static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t intr)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_clr.adc1_done = 1;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_clr.adc2_done = 1;
+        }
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_HIGH) {
+        APB_SARADC.int_clr.thres0_high = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR0_LOW) {
+        APB_SARADC.int_clr.thres0_low = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_HIGH) {
+        APB_SARADC.int_clr.thres1_high = 1;
+    }
+    if (intr & ADC_DIGI_INTR_MASK_MONITOR1_LOW) {
+        APB_SARADC.int_clr.thres1_low = 1;
+    }
 }
 
 /**
@@ -478,7 +495,32 @@ static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t in
  */
 static inline uint32_t adc_ll_digi_get_intr_status(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    uint32_t int_st = APB_SARADC.int_st.val;
+    uint32_t ret_msk = 0;
+
+    if (adc_n == ADC_NUM_1) {
+        if (int_st & APB_SARADC_ADC1_DONE_INT_ST_M) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (int_st & APB_SARADC_ADC2_DONE_INT_ST_M) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+        }
+    }
+    if (int_st & APB_SARADC_THRES0_HIGH_INT_ST) {
+        ret_msk |= ADC_DIGI_INTR_MASK_MONITOR0_HIGH;
+    }
+    if (int_st & APB_SARADC_THRES0_LOW_INT_ST_M) {
+        ret_msk |= ADC_DIGI_INTR_MASK_MONITOR0_LOW;
+    }
+    if (int_st & APB_SARADC_THRES1_HIGH_INT_ST_M) {
+        ret_msk |= ADC_DIGI_INTR_MASK_MONITOR1_HIGH;
+    }
+    if (int_st & APB_SARADC_THRES1_LOW_INT_ST_M) {
+        ret_msk |= ADC_DIGI_INTR_MASK_MONITOR1_LOW;
+    }
+
+    return ret_msk;
 }
 
 /**
@@ -528,7 +570,8 @@ static inline void adc_ll_digi_reset(void)
  */
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
+    RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct;
 }
 
 /**
@@ -539,153 +582,32 @@ static inline void adc_ll_pwdet_set_cct(uint32_t cct)
  */
 static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/*---------------------------------------------------------------
-                    RTC controller setting
----------------------------------------------------------------*/
-/**
- * Set adc output data format for RTC controller.
- *
- * @note ESP32S2 RTC controller only support 13bit.
- * @prarm adc_n ADC unit.
- * @prarm bits Output data bits width option.
- */
-static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_width_t bits)
-{
-    return;
-}
-
-/**
- * Enable adc channel to start convert.
- *
- * @note Only one channel can be selected for once measurement.
- *
- * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
- */
-static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Disable adc channel to start convert.
- *
- * @note Only one channel can be selected in once measurement.
- *
- * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
- */
-static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Start conversion once by software for RTC controller.
- *
- * @note It may be block to wait conversion idle for ADC1.
- *
- * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
- */
-static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Check the conversion done flag for each ADCn for RTC controller.
- *
- * @param adc_n ADC unit.
- * @return
- *      -true  : The conversion process is finish.
- *      -false : The conversion process is not finish.
- */
-static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Get the converted value for each ADCn for RTC controller.
- *
- * @param adc_n ADC unit.
- * @return
- *      - Converted value.
- */
-static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * ADC module RTC output data invert or not.
- *
- * @param adc_n ADC unit.
- * @param inv_en data invert or not.
- */
-static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Enable ADCn conversion complete interrupt for RTC controller.
- *
- * @param adc_n ADC unit.
- */
-static inline void adc_ll_rtc_intr_enable(adc_ll_num_t adc_n)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Disable ADCn conversion complete interrupt for RTC controller.
- *
- * @param adc_n ADC unit.
- */
-static inline void adc_ll_rtc_intr_disable(adc_ll_num_t adc_n)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Reset RTC controller FSM.
- */
-static inline void adc_ll_rtc_reset(void)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Sets the number of cycles required for the conversion to complete and wait for the arbiter to stabilize.
- *
- * @note Only ADC2 have arbiter function.
- * @param cycle range: [0,4].
- */
-static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
+    return RTCCNTL.sensor_ctrl.sar2_pwdet_cct;
 }
 
 /**
  * Analyze whether the obtained raw data is correct.
- * ADC2 can use arbiter. The arbitration result can be judged by the flag bit in the original data.
+ * ADC2 can use arbiter. The arbitration result is stored in the channel information of the returned data.
  *
  * @param adc_n ADC unit.
  * @param raw_data ADC raw data input (convert value).
  * @return
- *      - 0: The data is correct to use.
- *      - 1: The data is invalid. The current controller is not enabled by the arbiter.
- *      - 2: The data is invalid. The current controller process was interrupted by a higher priority controller.
- *      - -1: The data is error.
+ *        -  0: The data is correct to use.
+ *        - -1: The data is invalid.
  */
-static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, uint16_t raw_data)
+static inline adc_ll_rtc_raw_data_t adc_ll_analysis_raw_data(adc_ll_num_t adc_n, int raw_data)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    if (adc_n == ADC_NUM_1) {
+        return ADC_RTC_DATA_OK;
+    }
+
+    //The raw data API returns value without channel information. Read value directly from the register
+    if (((APB_SARADC.apb_saradc2_data_status.adc2_data >> 13) & 0xF) > 9) {
+        return ADC_RTC_DATA_FAIL;
+    }
+
+    return ADC_RTC_DATA_OK;
 }
 
 /*---------------------------------------------------------------
@@ -702,13 +624,13 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
     //    Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_POWER_SW_ON) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_PU;
+        APB_SARADC.ctrl.xpd_sar_force = 3;
     } else if (manage == ADC_POWER_BY_FSM) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_FSM;
+        APB_SARADC.ctrl.xpd_sar_force = 0;
     } else if (manage == ADC_POWER_SW_OFF) {
-        APB_SARADC.ctrl.xpd_sar_force = SENS_FORCE_XPD_SAR_PD;
-        APB_SARADC.ctrl.sar_clk_gated = 1;
+        APB_SARADC.ctrl.xpd_sar_force = 2;
+        APB_SARADC.ctrl.sar_clk_gated = 0;
     }
 }
 
@@ -720,67 +642,17 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  */
 static inline adc_ll_power_t adc_ll_get_power_manage(void)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
- *
- * @param div Division factor.
- */
-static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Set the attenuation of a particular channel on ADCn.
- *
- * @note For any given channel, this function must be called before the first time conversion.
- *
- * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
- * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
- *
- * When VDD_A is 3.3V:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
- * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
- *
- * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
- * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
- *
- * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
- *
- * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
- * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
- *
- * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
- *
- * @param adc_n ADC unit.
- * @param channel ADCn channel number.
- * @param atten The attenuation option.
- */
-static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Get the attenuation of a particular channel on ADCn.
- *
- * @param adc_n ADC unit.
- * @param channel ADCn channel number.
- * @return atten The attenuation option.
- */
-static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
+    /* Bit1  0:Fsm  1: SW mode
+       Bit0  0:SW mode power down  1: SW mode power on */
+    adc_ll_power_t manage;
+    if (APB_SARADC.ctrl.xpd_sar_force == 3) {
+        manage = ADC_POWER_SW_ON;
+    } else if (APB_SARADC.ctrl.xpd_sar_force == 2) {
+        manage = ADC_POWER_SW_OFF;
+    } else {
+        manage = ADC_POWER_BY_FSM;
+    }
+    return manage;
 }
 
 /**
@@ -793,9 +665,9 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ctrl)
 {
-    abort(); // TODO ESP32-C3 IDF-2094
+    //NOTE: ULP is removed on C3, please remove ULP related (if there still are any) code and this comment
 }
 
 /**
@@ -810,7 +682,6 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t
  */
 static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
-    SENS.sar_meas2_mux.sar2_rtc_force = 0;  // Enable arbiter in wakeup mode
     if (mode == ADC_ARB_MODE_FIX) {
         APB_SARADC.apb_adc_arb_ctrl.adc_arb_grant_force = 0;
         APB_SARADC.apb_adc_arb_ctrl.adc_arb_fix_priority = 1;
@@ -866,37 +737,7 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
     }
 }
 
-/**
- * Force switch ADC2 to RTC controller in sleep mode. Shield arbiter.
- * In sleep mode, the arbiter is in power-down mode.
- * Need to switch the controller to RTC to shield the control of the arbiter.
- * After waking up, it needs to switch to arbiter control.
- *
- * @note The hardware will do this automatically. In normal use, there is no need to call this interface to manually switch the controller.
- * @note Only support ADC2.
- */
-static inline void adc_ll_enable_sleep_controller(void)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
-/**
- * Force switch ADC2 to arbiter in wakeup mode.
- * In sleep mode, the arbiter is in power-down mode.
- * Need to switch the controller to RTC to shield the control of the arbiter.
- * After waking up, it needs to switch to arbiter control.
- *
- * @note The hardware will do this automatically. In normal use, there is no need to call this interface to manually switch the controller.
- * @note Only support ADC2.
- */
-static inline void adc_ll_disable_sleep_controller(void)
-{
-    abort(); // TODO ESP32-C3 IDF-2094
-}
-
 /* ADC calibration code. */
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-#define ADC_HAL_CAL_TIMES        (10)
 
 /**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
@@ -910,7 +751,25 @@ static inline void adc_ll_disable_sleep_controller(void)
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
+
+    /* Enable/disable internal connect GND (for calibration). */
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+        }
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+        }
+    }
 }
 
 /**
@@ -920,7 +779,11 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  */
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+    }
 }
 
 /**
@@ -932,7 +795,70 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    abort(); // TODO ESP32-C3 IDF-2526
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
+}
+/* Temp code end. */
+
+/**
+ *  Output ADCn inter reference voltage to ADC2 channels.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC1's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @param[in]  adc ADC unit select
+ *  @param[in]  channel ADC1 channel number
+ *  @param[in]  en Enable/disable the reference voltage output
+ */
+static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
+{
+    if (en) {
+        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 3);
+        SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
+
+        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 2);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
+        APB_SARADC.sar_patt_tab[0].sar_patt_tab1 = 0xFFFFFF;
+        APB_SARADC.sar_patt_tab[1].sar_patt_tab1 = 0xFFFFFF;
+        APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
+        APB_SARADC.onetime_sample.onetime_channel = channel;
+        SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
+        if (adc == ADC_NUM_1) {
+            /* Config test mux to route v_ref to ADC1 Channels */
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 1);
+        } else {
+            /* Config test mux to route v_ref to ADC2 Channels */
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+        }
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+        APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+        APB_SARADC.onetime_sample.onetime_channel = 0xf;
+        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0);
+        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 0);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
+    }
 }
 
 /*---------------------------------------------------------------
@@ -998,7 +924,8 @@ static inline void adc_ll_adc1_onetime_sample_dis(void)
 
 static inline uint32_t adc_ll_adc1_read(void)
 {
-    return APB_SARADC.apb_saradc1_data_status.adc1_data;
+    //On ESP32C3, valid data width is 12-bit
+    return (APB_SARADC.apb_saradc1_data_status.adc1_data & 0xfff);
 }
 
 //--------------------------------adc2------------------------------//
@@ -1014,8 +941,10 @@ static inline void adc_ll_adc2_onetime_sample_dis(void)
 
 static inline uint32_t adc_ll_adc2_read(void)
 {
-    return APB_SARADC.apb_saradc2_data_status.adc2_data;
+    //On ESP32C3, valid data width is 12-bit
+    return (APB_SARADC.apb_saradc2_data_status.adc2_data & 0xfff);
 }
+
 #ifdef __cplusplus
 }
 #endif

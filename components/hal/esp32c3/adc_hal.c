@@ -14,8 +14,20 @@
 
 // The HAL layer for ADC (ESP32-C3 specific part)
 
+#include <string.h>
+#include "soc/soc_caps.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
+#include "soc/soc.h"
+
+//Currently we don't have context for the ADC HAL. So HAL variables are temporarily put here. But
+//please don't follow this code. Create a context for your own HAL!
+
+static bool s_filter_enabled[SOC_ADC_DIGI_FILTER_NUM] = {};
+static adc_digi_filter_t s_filter[SOC_ADC_DIGI_FILTER_NUM] = {};
+
+static bool s_monitor_enabled[SOC_ADC_DIGI_MONITOR_NUM] = {};
+static adc_digi_monitor_t s_monitor_config[SOC_ADC_DIGI_MONITOR_NUM] = {};
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -33,14 +45,6 @@ void adc_hal_digi_deinit(void)
     adc_hal_deinit();
 }
 
-uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd, bool force_cal);
-
-static inline void adc_set_init_code(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
-{
-    uint32_t cal_val = adc_hal_calibration(adc_n, channel, atten, true, false);
-    adc_hal_set_calibration_param(adc_n, cal_val);
-}
-
 void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 {
     //only one pattern table is supported on C3, but LL still needs one argument.
@@ -51,9 +55,8 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
     if (cfg->adc_pattern_len) {
         adc_ll_digi_clear_pattern_table(pattern_both);
         adc_ll_digi_set_pattern_table_len(pattern_both, cfg->adc_pattern_len);
-        for (int i = 0; i < cfg->adc_pattern_len; i++) {
+        for (uint32_t i = 0; i < cfg->adc_pattern_len; i++) {
             adc_ll_digi_set_pattern_table(pattern_both, i, cfg->adc_pattern[i]);
-            adc_set_init_code(pattern_both, cfg->adc_pattern[i].channel, cfg->adc_pattern[i].atten);
         }
     }
 
@@ -65,24 +68,17 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         adc_ll_digi_convert_limit_disable();
     }
 
-    adc_ll_digi_set_trigger_interval(cfg->interval);
-    adc_hal_digi_clk_config(&cfg->dig_clk);
+    //clock
+    uint32_t interval = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / cfg->sample_freq_hz;
+    adc_ll_digi_set_trigger_interval(interval);
+    adc_hal_digi_clk_config();
 }
 
-/**
- * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
- * Enable clock and select clock source for ADC digital controller.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
- *
- * @note ADC and DAC digital controller share the same frequency divider.
- *       Please set a reasonable frequency division factor to meet the sampling frequency of the ADC and the output frequency of the DAC.
- *
- * @param clk Refer to ``adc_digi_clk_t``.
- */
-void adc_hal_digi_clk_config(const adc_digi_clk_t *clk)
+void adc_hal_digi_clk_config(void)
 {
-    adc_ll_digi_controller_clk_div(clk->div_num, clk->div_b, clk->div_a);
-    adc_ll_digi_controller_clk_enable(clk->use_apll);
+    //Here we set the clock divider factor to make the digital clock to 5M Hz
+    adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
+    adc_ll_digi_controller_clk_enable(0);
 }
 
 /**
@@ -103,17 +99,65 @@ void adc_hal_digi_disable(void)
     adc_ll_digi_dma_disable();
 }
 
-/**
- * Config monitor of adc digital controller.
- *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @param config Refer to `adc_digi_monitor_t`.
- */
-void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
+static void filter_update(adc_digi_filter_idx_t idx)
 {
-    adc_ll_digi_monitor_set_mode(adc_n, config->mode);
-    adc_ll_digi_monitor_set_thres(adc_n, config->threshold);
+    //ESP32-C3 has no enable bit, the filter will be enabled when the filter channel is configured
+    if (s_filter_enabled[idx]) {
+        adc_ll_digi_filter_set_factor(idx, &s_filter[idx]);
+    } else {
+        adc_ll_digi_filter_disable(idx);
+    }
+}
+
+/**
+ * Set adc digital controller filter factor.
+ *
+ * @param idx ADC filter unit.
+ * @param filter Filter config. Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+void adc_hal_digi_filter_set_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
+{
+    s_filter[idx] = *filter;
+    filter_update(idx);
+}
+
+/**
+ * Get adc digital controller filter factor.
+ *
+ * @param adc_n ADC unit.
+ * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+void adc_hal_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
+{
+    *filter = s_filter[idx];
+}
+
+void adc_hal_digi_filter_enable(adc_digi_filter_idx_t filter_idx, bool enable)
+{
+    s_filter_enabled[filter_idx] = enable;
+    filter_update(filter_idx);
+}
+
+static void update_monitor(adc_digi_monitor_idx_t idx)
+{
+    //ESP32-C3 has no enable bit, the monitor will be enabled when the monitor channel is configured
+    if (s_monitor_enabled[idx]) {
+        adc_ll_digi_monitor_set_mode(idx, &s_monitor_config[idx]);
+    } else {
+        adc_ll_digi_monitor_disable(idx);
+    }
+}
+
+void adc_hal_digi_monitor_config(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *config)
+{
+    s_monitor_config[idx] = *config;
+    update_monitor(idx);
+}
+
+void adc_hal_digi_monitor_enable(adc_digi_monitor_idx_t mon_idx, bool enable)
+{
+    s_monitor_enabled[mon_idx] = enable;
+    update_monitor(mon_idx);
 }
 
 /*---------------------------------------------------------------
@@ -135,99 +179,4 @@ void adc_hal_arbiter_config(adc_arbiter_t *config)
 {
     adc_ll_set_arbiter_work_mode(config->mode);
     adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
-}
-
-/*---------------------------------------------------------------
-                    ADC calibration setting
----------------------------------------------------------------*/
-
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-#define ADC_HAL_CAL_TIMES        (10)
-
-static uint16_t s_adc_cali_param[ADC_NUM_MAX][ADC_ATTEN_MAX] = { {0}, {0} };
-
-static uint32_t adc_hal_read_self_cal(adc_ll_num_t adc_n, int channel)
-{
-    adc_ll_rtc_start_convert(adc_n, channel);
-    while (adc_ll_rtc_convert_is_done(adc_n) != true);
-    return (uint32_t)adc_ll_rtc_get_convert_value(adc_n);
-}
-
-uint32_t adc_hal_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd, bool force_cal)
-{
-    if (!force_cal) {
-        if (s_adc_cali_param[adc_n][atten]) {
-            return (uint32_t)s_adc_cali_param[adc_n][atten];
-        }
-    }
-
-    uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
-    uint32_t code_sum = 0;
-    uint32_t code_h = 0;
-    uint32_t code_l = 0;
-    uint32_t chk_code = 0;
-    uint32_t dout = 0;
-
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
-    if (adc_n == ADC_NUM_2) {
-        adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
-        adc_hal_arbiter_config(&config);
-    }
-    adc_hal_set_controller(adc_n, ADC_CTRL_RTC);    //Set controller
-
-    // adc_hal_arbiter_config(adc_arbiter_t *config)
-    adc_ll_calibration_prepare(adc_n, channel, internal_gnd);
-
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        adc_ll_rtc_disable_channel(adc_n, channel);
-        adc_ll_set_atten(adc_n, 0, atten);  // Note: when disable all channel, HW auto select channel0 atten param.
-    } else {
-        adc_ll_rtc_enable_channel(adc_n, channel);
-        adc_ll_set_atten(adc_n, channel, atten);
-    }
-
-    for (uint8_t rpt = 0 ; rpt < ADC_HAL_CAL_TIMES ; rpt ++) {
-        code_h = ADC_HAL_CAL_OFFSET_RANGE;
-        code_l = 0;
-        chk_code = (code_h + code_l) / 2;
-        adc_ll_set_calibration_param(adc_n, chk_code);
-        dout = adc_hal_read_self_cal(adc_n, channel);
-        while (code_h - code_l > 1) {
-            if (dout == 0) {
-                code_h = chk_code;
-            } else {
-                code_l = chk_code;
-            }
-            chk_code = (code_h + code_l) / 2;
-            adc_ll_set_calibration_param(adc_n, chk_code);
-            dout = adc_hal_read_self_cal(adc_n, channel);
-            if ((code_h - code_l == 1)) {
-                chk_code += 1;
-                adc_ll_set_calibration_param(adc_n, chk_code);
-                dout = adc_hal_read_self_cal(adc_n, channel);
-            }
-        }
-        code_list[rpt] = chk_code;
-        code_sum += chk_code;
-    }
-    code_l = code_list[0];
-    code_h = code_list[0];
-    for (uint8_t i = 0 ; i < ADC_HAL_CAL_TIMES ; i++) {
-        if (code_l > code_list[i]) {
-            code_l = code_list[i];
-        }
-        if (code_h < code_list[i]) {
-            code_h = code_list[i];
-        }
-    }
-    chk_code = code_h + code_l;
-    dout = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
-           ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
-           : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
-
-    adc_ll_set_calibration_param(adc_n, dout);
-    adc_ll_calibration_finish(adc_n);
-    s_adc_cali_param[adc_n][atten] = (uint16_t)dout;
-    return dout;
 }

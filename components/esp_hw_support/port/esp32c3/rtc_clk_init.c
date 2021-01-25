@@ -21,7 +21,6 @@
 #include "esp32c3/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
 #include "hal/cpu_hal.h"
@@ -56,7 +55,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     /* Enable the internal bus used to configure PLLs */
     SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_APLL_M | ANA_I2C_BBPLL_M);
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);

@@ -102,7 +102,10 @@ void IRAM_ATTR esp_restart_noos(void)
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
                       SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
+    // Reset dma
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
+
     // Set CPU back to XTAL source, no PLL, same as hard reset
 #if !CONFIG_IDF_ENV_FPGA
     rtc_clk_cpu_freq_set_xtal();
