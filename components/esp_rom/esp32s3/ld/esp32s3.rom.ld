@@ -653,6 +653,7 @@ PROVIDE ( ets_wdt_reset_cpu = 0x400551c0 );
 PROVIDE ( ets_write_char = 0x40045454 );
 PROVIDE ( ets_write_char_uart = 0x40045478 );
 PROVIDE ( event_empty = 0x3fcef5cc );
+PROVIDE ( lld_con_env = 0x3fcef5d8 );
 PROVIDE ( fixed_tx_time = 0x3ff08d3c );
 PROVIDE ( flash2spiram_instruction_offset = 0x40052e14 );
 PROVIDE ( flash2spiram_rodata_offset = 0x40052e24 );

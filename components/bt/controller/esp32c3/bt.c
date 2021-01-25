@@ -944,14 +944,14 @@ static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
 
 static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
 {
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_schm_status_bit_set(type, status);
 #endif
 }
 
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 {
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_schm_status_bit_clear(type, status);
 #endif
 }
@@ -1174,7 +1174,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
             }
         } while (0);
     }
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
 
@@ -1289,7 +1289,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     // esp_phy_enable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif
 
@@ -1331,7 +1331,7 @@ esp_err_t esp_bt_controller_disable(void)
     }
     btdm_controller_disable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
 
