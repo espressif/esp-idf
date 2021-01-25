@@ -1105,7 +1105,7 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned)
 
     /* Get Wi-Fi Station configuration */
     wifi_config_t wifi_cfg;
-    if (esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg) != ESP_OK) {
+    if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -1164,7 +1164,7 @@ esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
     }
     /* Configure Wi-Fi station with host credentials
      * provided during provisioning */
-    if (esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg) != ESP_OK) {
+    if (esp_wifi_set_config(WIFI_IF_STA, wifi_cfg) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set Wi-Fi configuration");
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
@@ -1434,14 +1434,14 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
      * to the AP whose credentials were present earlier */
     wifi_config_t wifi_cfg_empty, wifi_cfg_old;
     memset(&wifi_cfg_empty, 0, sizeof(wifi_config_t));
-    esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg_old);
+    esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg_old);
     err = esp_wifi_set_storage(WIFI_STORAGE_RAM);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
         RELEASE_LOCK(prov_ctx_lock);
         return err;
     }
-    esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_cfg_empty);
+    esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials");
         RELEASE_LOCK(prov_ctx_lock);
@@ -1527,7 +1527,7 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
 err:
     prov_ctx->prov_state = WIFI_PROV_STATE_IDLE;
     esp_wifi_set_storage(WIFI_STORAGE_FLASH);
-    esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_cfg_old);
+    esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_old);
 
 exit:
     RELEASE_LOCK(prov_ctx_lock);

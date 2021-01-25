@@ -38,7 +38,7 @@ static void esp_scan_done_event_handler(void* arg, esp_event_base_t event_base,
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	if (!wpa_s->scanning) {
 		/* update last scan time */
-		wpa_s->scan_start_tsf = esp_wifi_get_tsf_time(ESP_IF_WIFI_STA);
+		wpa_s->scan_start_tsf = esp_wifi_get_tsf_time(WIFI_IF_STA);
 		wpa_printf(MSG_DEBUG, "scan not triggered by supplicant, ignore");
 		return;
 	}
@@ -174,7 +174,7 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 {
 	wifi_scan_config_t *params = NULL;
 	int ret = 0;
-	u64 scan_start_tsf = esp_wifi_get_tsf_time(ESP_IF_WIFI_STA);
+	u64 scan_start_tsf = esp_wifi_get_tsf_time(WIFI_IF_STA);
 
 	/* TODO: Directly try to connect if scan results are recent */
 	if ((scan_start_tsf -  wpa_s->scan_start_tsf) > 100000) {
@@ -183,7 +183,7 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 		wpa_bss_flush(wpa_s);
 	}
 
-	esp_wifi_get_macaddr_internal(ESP_IF_WIFI_STA, wpa_s->tsf_bssid);
+	esp_wifi_get_macaddr_internal(WIFI_IF_STA, wpa_s->tsf_bssid);
 
 	if (scan_params) {
 		params = os_zalloc(sizeof(wifi_scan_config_t));
