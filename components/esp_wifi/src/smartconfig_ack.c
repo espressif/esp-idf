@@ -165,20 +165,15 @@ static void sc_ack_send_task(void *pvParameters)
                 vTaskDelay(100 / portTICK_RATE_MS);
 
                 sendlen = sendto(send_sock, &ack->ctx, ack_len, 0, (struct sockaddr*) &server_addr, sin_size);
-                if (sendlen > 0) {
-                    /* Totally send 30 smartconfig ACKs. Then smartconfig is successful. */
-                    if (packet_count++ >= SC_ACK_MAX_COUNT) {
-                        esp_event_post(SC_EVENT, SC_EVENT_SEND_ACK_DONE, NULL, 0, portMAX_DELAY);
-                        goto _end;
-                    }
-                }
-                else {
+                if (sendlen <= 0) {
                     err = sc_ack_send_get_errno(send_sock);
-                    if (err == ENOMEM || err == EAGAIN) {
-                        ESP_LOGD(TAG, "send failed, errno %d", err);
-                        continue;
-                    }
-                    ESP_LOGE(TAG, "send failed, errno %d", err);
+                    ESP_LOGD(TAG, "send failed, errno %d", err);
+                    vTaskDelay(100 / portTICK_RATE_MS);
+                }
+
+                /*  Send 30 smartconfig ACKs. Then smartconfig is successful. */
+                if (packet_count++ >= SC_ACK_MAX_COUNT) {
+                    esp_event_post(SC_EVENT, SC_EVENT_SEND_ACK_DONE, NULL, 0, portMAX_DELAY);
                     goto _end;
                 }
             }
