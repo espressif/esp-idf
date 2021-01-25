@@ -91,6 +91,10 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .clock_conf = clock_cfg->clock_reg_val,
         .cs_hold = cfg->cs_hold,
     };
+    if (cfg->auto_sus_en) {
+        data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND;
+        data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
+    }
 
     ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;

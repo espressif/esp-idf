@@ -24,6 +24,14 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/cache.h"
+#endif
+
 #define FUNC_SPI    1
 
 static uint8_t sector_buf[4096];
@@ -605,6 +613,51 @@ void test_erase_large_region(const esp_partition_t *part)
 
 FLASH_TEST_CASE("SPI flash erase large region", test_erase_large_region);
 FLASH_TEST_CASE_3("SPI flash erase large region", test_erase_large_region);
+
+#if CONFIG_SPI_FLASH_AUTO_SUSPEND
+void esp_test_for_suspend(void)
+{
+    /*clear content in cache*/
+#if !CONFIG_IDF_TARGET_ESP32C3
+    Cache_Invalidate_DCache_All();
+#endif
+    Cache_Invalidate_ICache_All();
+    ESP_LOGI(TAG, "suspend test begins:");
+    printf("run into test suspend function\n");
+    printf("print something when flash is erasing:\n");
+    printf("aaaaa bbbbb zzzzz fffff qqqqq ccccc\n");
+}
+
+void task_erase_large_region(void *arg)
+{
+    esp_partition_t *part = (esp_partition_t *)arg;
+    test_erase_large_region(part);
+    vTaskDelete(NULL);
+}
+
+void task_request_suspend(void *arg)
+{
+    vTaskDelay(2);
+    ESP_LOGI(TAG, "flash go into suspend");
+    esp_test_for_suspend();
+    vTaskDelete(NULL);
+}
+
+void task_delay(void *arg)
+{
+    esp_rom_delay_us(2000000);
+    vTaskDelete(NULL);
+}
+
+static void test_flash_suspend_resume(const esp_partition_t* part)
+{
+    xTaskCreatePinnedToCore(task_request_suspend, "suspend", 2048, (void *)"test_for_suspend", UNITY_FREERTOS_PRIORITY + 3, NULL, 0);
+    xTaskCreatePinnedToCore(task_erase_large_region, "test", 2048, (void *)part, UNITY_FREERTOS_PRIORITY + 2, NULL, 0);
+    xTaskCreatePinnedToCore(task_delay, "task_delay", 1024, (void *)"task_delay", UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+}
+
+FLASH_TEST_CASE("SPI flash suspend and resume test", test_flash_suspend_resume);
+#endif //CONFIG_SPI_FLASH_AUTO_SUSPEND
 
 static void test_write_protection(const esp_partition_t* part)
 {

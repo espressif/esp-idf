@@ -31,10 +31,13 @@
         .write_data_slicer = memspi_host_write_data_slicer, \
         .read = spi_flash_hal_read, \
         .read_data_slicer = memspi_host_read_data_slicer, \
-        .host_idle = spi_flash_hal_host_idle, \
+        .host_status = spi_flash_hal_check_status, \
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
+        .resume = spi_flash_hal_resume, \
+        .suspend = spi_flash_hal_suspend,\
+        .sus_setup = spi_flash_hal_setup_read_suspend,\
 }
 
 /// configuration for the memspi host

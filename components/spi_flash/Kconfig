@@ -137,11 +137,22 @@ menu "SPI Flash driver"
             then it will yield CPUs after finishing a current command.
 
     config SPI_FLASH_ERASE_YIELD_TICKS
-        int "CPU release time (tick)"
+        int "CPU release time (tick) for an erase operation"
         depends on SPI_FLASH_YIELD_DURING_ERASE
         default 1
         help
             Defines how many ticks will be before returning to continue a erasing.
+
+    config SPI_FLASH_AUTO_SUSPEND
+        bool "Auto suspend long erase/write operations"
+        default n
+        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL
+        help
+            This is made default n, because this needs bootloader support.
+            This feature needs special bootloader support.
+            If you want to OTA to a image with this feature
+            (e.g. turn on this config option for OTA image), please make
+            sure the bootloader has the support for it. (above IDF v4.3)
 
     config SPI_FLASH_WRITE_CHUNK_SIZE
         int "Flash write chunk size"
@@ -205,6 +216,15 @@ menu "SPI Flash driver"
             default y
             help
                 Enable this to support auto detection of Winbond chips if chip vendor not directly
+                given by ``chip_drv`` member of the chip struct. This adds support for variant
+                chips, however will extend detecting time.
+
+        config SPI_FLASH_SUPPORT_BOYA_CHIP
+            bool "BOYA"
+            depends on !IDF_TARGET_ESP32
+            default y
+            help
+                Enable this to support auto detection of BOYA chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
                 chips, however will extend detecting time.
 

@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,24 @@
 
 #include <stdlib.h>
 #include "spi_flash_chip_generic.h"
-#include "spi_flash_chip_issi.h"
+#include "spi_flash_chip_gd.h"
 #include "spi_flash_defs.h"
 
-/* Driver for ISSI flash chip, as used in ESP32 D2WD */
+/* Driver for BOYA flash chip */
+esp_err_t spi_flash_chip_gd_suspend_cmd_conf(esp_flash_t *chip);
 
-esp_err_t spi_flash_chip_issi_probe(esp_flash_t *chip, uint32_t flash_id)
+// Use the same implementation as GD chips
+#define spi_flash_chip_boya_suspend_cmd_conf spi_flash_chip_gd_suspend_cmd_conf
+
+esp_err_t spi_flash_chip_boya_probe(esp_flash_t *chip, uint32_t flash_id)
 {
     /* Check manufacturer and product IDs match our desired masks */
-    const uint8_t MFG_ID = 0x9D;
+    const uint8_t MFG_ID = 0x68;
     if (flash_id >> 16 != MFG_ID) {
         return ESP_ERR_NOT_FOUND;
     }
 
-    const uint16_t FLASH_ID_MASK = 0xCF00;
+    const uint16_t FLASH_ID_MASK = 0xFF00;
     const uint16_t FLASH_ID_VALUE = 0x4000;
     if ((flash_id & FLASH_ID_MASK) != FLASH_ID_VALUE) {
         return ESP_ERR_NOT_FOUND;
@@ -36,48 +40,14 @@ esp_err_t spi_flash_chip_issi_probe(esp_flash_t *chip, uint32_t flash_id)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_chip_issi_set_io_mode(esp_flash_t *chip)
-{
-    /* ISSI uses bit 6 of "basic" SR as Quad Enable */
-    const uint8_t BIT_QE = 1 << 6;
-    return spi_flash_common_set_io_mode(chip,
-                                        spi_flash_common_write_status_8b_wrsr,
-                                        spi_flash_common_read_status_8b_rdsr,
-                                        BIT_QE);
-}
+static const char chip_name[] = "boya";
 
-esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode)
-{
-    /* ISSI uses bit 6 of "basic" SR as Quad Enable */
-    const uint8_t BIT_QE = 1 << 6;
-    uint32_t sr;
-    esp_err_t ret = spi_flash_common_read_status_8b_rdsr(chip, &sr);
-    if (ret == ESP_OK) {
-        *out_io_mode = ((sr & BIT_QE)? SPI_FLASH_QOUT: 0);
-    }
-    return ret;
-}
-
-esp_err_t spi_flash_chip_issi_suspend_cmd_conf(esp_flash_t *chip)
-{
-    spi_flash_sus_cmd_conf sus_conf = {
-        .sus_mask = 0x06,
-        .cmd_rdsr = CMD_RDFR,
-        .sus_cmd = CMD_SUSPEND,
-        .res_cmd = CMD_RESUME,
-    };
-
-    return chip->host->driver->sus_setup(chip->host, &sus_conf);
-}
-
-static const char chip_name[] = "issi";
-
-// The issi chip can use the functions for generic chips except from set read mode and probe,
+// The BOYA chip can use the functions for generic chips except from set read mode and probe,
 // So we only replace these two functions.
-const spi_flash_chip_t esp_flash_chip_issi = {
+const spi_flash_chip_t esp_flash_chip_boya = {
     .name = chip_name,
     .timeout = &spi_flash_chip_generic_timeout,
-    .probe = spi_flash_chip_issi_probe,
+    .probe = spi_flash_chip_boya_probe,
     .reset = spi_flash_chip_generic_reset,
     .detect_size = spi_flash_chip_generic_detect_size,
     .erase_chip = spi_flash_chip_generic_erase_chip,
@@ -101,10 +71,10 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .write_encrypted = spi_flash_chip_generic_write_encrypted,
 
     .wait_idle = spi_flash_chip_generic_wait_idle,
-    .set_io_mode = spi_flash_chip_issi_set_io_mode,
-    .get_io_mode = spi_flash_chip_issi_get_io_mode,
+    .set_io_mode = spi_flash_chip_generic_set_io_mode,
+    .get_io_mode = spi_flash_chip_generic_get_io_mode,
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
-    .sus_setup = spi_flash_chip_issi_suspend_cmd_conf,
+    .sus_setup = spi_flash_chip_boya_suspend_cmd_conf,
 };

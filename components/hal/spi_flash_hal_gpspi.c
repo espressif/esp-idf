@@ -36,7 +36,7 @@ bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_inst_t *host, const
     return true;
 }
 
-bool spi_flash_hal_gpspi_host_idle(spi_flash_host_inst_t *host)
+uint32_t spi_flash_hal_gpspi_check_status(spi_flash_host_inst_t *host)
 {
     spi_dev_t *dev = get_spi_dev(host);
     return spi_flash_ll_host_idle(dev);

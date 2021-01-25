@@ -75,6 +75,17 @@ typedef enum {
     SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
 } esp_flash_io_mode_t;
 
+/// Configuration structure for the flash chip suspend feature.
+typedef struct {
+    uint32_t sus_mask;     ///< SUS/SUS1/SUS2 bit in flash register.
+    struct {
+        uint32_t cmd_rdsr    :8;             ///< Read flash status register(2) command.
+        uint32_t sus_cmd     :8;             ///< Flash suspend command.
+        uint32_t res_cmd     :8;             ///< Flash resume command.
+        uint32_t reserved    :8;             ///< Reserved, set to 0.
+    };
+} spi_flash_sus_cmd_conf;
+
 ///Slowest io mode supported by ESP32, currently SlowRd
 #define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
 
@@ -159,9 +170,9 @@ struct spi_flash_host_driver_s {
      */
     int (*read_data_slicer)(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_addr, uint32_t page_size);
     /**
-     * Check whether the host is idle to perform new operations.
+     * Check the host status, 0:busy, 1:idle, 2:suspended.
      */
-    bool (*host_idle)(spi_flash_host_inst_t *host);
+    uint32_t (*host_status)(spi_flash_host_inst_t *host);
     /**
      * Configure the host to work at different read mode. Responsible to compensate the timing and set IO mode.
      */
@@ -177,6 +188,21 @@ struct spi_flash_host_driver_s {
      * modified, the cache needs to be flushed. Left NULL if not supported.
      */
     esp_err_t (*flush_cache)(spi_flash_host_inst_t* host, uint32_t addr, uint32_t size);
+
+    /**
+     * Resume flash from suspend manually
+     */
+    void (*resume)(spi_flash_host_inst_t *host);
+
+    /**
+     * Set flash in suspend status manually
+     */
+    void (*suspend)(spi_flash_host_inst_t *host);
+
+    /**
+     * Suspend feature setup for setting cmd and status register mask.
+     */
+    esp_err_t (*sus_setup)(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf);
 };
 
 #ifdef __cplusplus

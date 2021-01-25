@@ -38,6 +38,7 @@
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
 #define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
 #define CMD_WRAP       0x77 /* Set burst with wrap command */
+#define CMD_RESUME     0x7A /* Resume command to clear flash suspend bit */
 
 
 /* Provide a Flash API for bootloader_support code,

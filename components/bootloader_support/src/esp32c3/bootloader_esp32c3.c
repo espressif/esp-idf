@@ -193,6 +193,12 @@ static void IRAM_ATTR bootloader_init_flash_configure(void)
     bootloader_flash_cs_timing_config();
 }
 
+static void bootloader_spi_flash_resume(void)
+{
+    bootloader_execute_flash_command(CMD_RESUME, 0, 0, 0);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+}
+
 static esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
@@ -204,6 +210,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
+    bootloader_spi_flash_resume();
     esp_rom_spiflash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT

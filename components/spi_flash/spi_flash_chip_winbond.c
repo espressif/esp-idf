@@ -176,6 +176,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
+    .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
 };
 
 

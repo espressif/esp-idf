@@ -22,6 +22,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp_flash_internal.h"
+#include "spi_flash_defs.h"
 
 static const char TAG[] = "spi_flash";
 
@@ -831,6 +832,12 @@ IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
     return rom_spiflash_api_funcs->end(chip, err);
 }
 #endif //CONFIG_SPI_FLASH_ROM_IMPL
+
+//init suspend mode cmd, uses internal.
+esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
+{
+    return chip->chip_drv->sus_setup(chip);
+}
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 esp_err_t esp_flash_app_disable_protect(bool disable)

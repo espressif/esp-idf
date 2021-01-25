@@ -67,12 +67,16 @@ static inline IRAM_ATTR bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
 
 IRAM_ATTR static void cache_enable(void* arg)
 {
+#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
     g_flash_guard_default_ops.end();
+#endif
 }
 
 IRAM_ATTR static void cache_disable(void* arg)
 {
+#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
     g_flash_guard_default_ops.start();
+#endif
 }
 
 static IRAM_ATTR esp_err_t spi_start(void *arg)

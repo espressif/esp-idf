@@ -123,6 +123,13 @@
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
+/*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
+#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
+#define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
+#define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
+#define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
+#define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
