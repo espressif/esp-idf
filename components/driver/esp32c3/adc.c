@@ -31,7 +31,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
-#include "esp32c3/esp_efuse_rtc_calib.h"
+#include "esp_efuse_rtc_calib.h"
 #include "esp_private/gdma.h"
 
 #define ADC_CHECK_RET(fun_ret) ({                  \

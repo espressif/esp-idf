@@ -39,6 +39,7 @@
 #include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
+#include "esp_secure_boot.h"
 
 /***********************************************/
 // Headers for other components init functions
@@ -48,7 +49,6 @@
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
-#include "esp_flash_encrypt.h"
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
@@ -274,6 +274,10 @@ static void do_core_init(void)
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
+#endif
+
+#ifdef CONFIG_SECURE_BOOT
+    esp_secure_boot_init_checks();
 #endif
 
     esp_err_t err;

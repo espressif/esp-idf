@@ -23,15 +23,7 @@ extern "C" {
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/esp_efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/esp_efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/esp_efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/esp_efuse.h"
-#endif
+#include_next "esp_efuse.h"
 
 #define ESP_ERR_EFUSE                              0x1600                     /*!< Base error code for efuse api. */
 #define ESP_OK_EFUSE_CNT                          (ESP_ERR_EFUSE + 0x01)      /*!< OK the required number of bits is set. */
@@ -496,48 +488,14 @@ esp_err_t esp_efuse_batch_write_cancel(void);
  */
 esp_err_t esp_efuse_batch_write_commit(void);
 
-
-#ifndef CONFIG_IDF_TARGET_ESP32
-
 /**
- * @brief Type of key purpose
+ *  @brief Checks that the given block is empty.
+ *
+ * @return
+ *          - True: The block is empty.
+ *          - False: The block is not empty or was an error.
  */
-typedef enum {
-    ESP_EFUSE_KEY_PURPOSE_USER = 0,
-    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,
-    ESP_EFUSE_KEY_PURPOSE_MAX,
-} esp_efuse_purpose_t;
-
-
-/**
- * @brief Returns a pointer to a key purpose for an efuse key block.
- *
- * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
- *
- * To get the value of this field use esp_efuse_read_field_blob() or esp_efuse_get_key_purpose().
- *
- * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
- */
-const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block);
-
-/**
- * @brief Returns a pointer to a key block.
- *
- * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
- *
- * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
- */
-const esp_efuse_desc_t** esp_efuse_get_key(esp_efuse_block_t block);
+bool esp_efuse_block_is_empty(esp_efuse_block_t block);
 
 /**
  * @brief Returns a read protection for the key block.
@@ -584,6 +542,62 @@ bool esp_efuse_get_key_dis_write(esp_efuse_block_t block);
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
  */
 esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block);
+
+/**
+ * @brief Returns true if the key block is unused, false otherwise.
+ *
+ * An unused key block is all zero content, not read or write protected,
+ * and has purpose 0 (ESP_EFUSE_KEY_PURPOSE_USER)
+ *
+ * @param block key block to check.
+ *
+ * @return
+ *         - True if key block is unused,
+ *         - False if key block is used or the specified block index is not a key block.
+ */
+bool esp_efuse_key_block_unused(esp_efuse_block_t block);
+
+#ifndef CONFIG_IDF_TARGET_ESP32
+
+/**
+ * @brief Type of key purpose
+ */
+typedef enum {
+    ESP_EFUSE_KEY_PURPOSE_USER = 0,
+    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,
+    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,
+    ESP_EFUSE_KEY_PURPOSE_MAX,
+} esp_efuse_purpose_t;
+
+
+/**
+ * @brief Returns a pointer to a key purpose for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * To get the value of this field use esp_efuse_read_field_blob() or esp_efuse_get_key_purpose().
+ *
+ * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
+ */
+const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block);
+
+/**
+ * @brief Returns a pointer to a key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return Pointer: If Successful returns a pointer to the corresponding efuse field otherwise NULL.
+ */
+const esp_efuse_desc_t** esp_efuse_get_key(esp_efuse_block_t block);
 
 /**
  * @brief Returns the current purpose set for an efuse key block.
@@ -659,20 +673,6 @@ esp_efuse_block_t esp_efuse_find_unused_key_block(void);
  * @brief Return the number of unused efuse key blocks in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
  */
 unsigned esp_efuse_count_unused_key_blocks(void);
-
-/**
- * @brief Returns true if the key block is unused, false otherwise.
- *
- * An unused key block is all zero content, not read or write protected,
- * and has purpose 0 (ESP_EFUSE_KEY_PURPOSE_USER)
- *
- * @param block key block to check.
- *
- * @return
- *         - True if key block is unused,
- *         - False if key block is used or the specified block index is not a key block.
- */
-bool esp_efuse_key_block_unused(esp_efuse_block_t block);
 
 /**
  * @brief Returns the status of the Secure Boot public key digest revocation bit.
