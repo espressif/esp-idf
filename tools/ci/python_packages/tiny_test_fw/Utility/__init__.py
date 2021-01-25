@@ -110,3 +110,7 @@ def handle_unexpected_exception(junit_test_case, exception):
     # AssertionError caused by an 'assert' statement has an empty string as its 'str' form
     e_str = str(exception) if str(exception) else repr(exception)
     junit_test_case.add_failure_info('Unexpected exception: {}\n{}'.format(e_str, traceback.format_exc()))
+
+
+def format_case_id(case_name, target='esp32', config='default'):
+    return '{}.{}.{}'.format(target, config, case_name)
