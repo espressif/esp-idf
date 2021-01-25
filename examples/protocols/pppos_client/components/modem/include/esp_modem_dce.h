@@ -77,6 +77,7 @@ struct modem_dce {
     char name[MODEM_MAX_NAME_LENGTH];                                                 /*!< Module name */
     char oper[MODEM_MAX_OPERATOR_LENGTH];                                             /*!< Operator name */
     uint8_t act;                                                                      /*!< Access technology */
+    const char *prompt;                                                               /*!< Modem prompt string */
     modem_state_t state;                                                              /*!< Modem working state */
     modem_mode_t mode;                                                                /*!< Working mode */
     modem_dte_t *dte;                                                                 /*!< DTE which connect to DCE */
