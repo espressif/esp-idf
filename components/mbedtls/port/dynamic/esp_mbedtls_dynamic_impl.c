@@ -14,6 +14,9 @@
 
 #include <string.h>
 #include "esp_mbedtls_dynamic_impl.h"
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
+#include "esp_tls.h"
+#endif
 
 #define COUNTER_SIZE (8)
 #define CACHE_IV_SIZE (16)
@@ -505,6 +508,9 @@ void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
     if (ssl->conf->ca_chain) {
         mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->conf;
 
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
+        if (conf->ca_chain != esp_tls_get_global_ca_store())
+#endif
         mbedtls_x509_crt_free(conf->ca_chain);
         conf->ca_chain = NULL;
     }
