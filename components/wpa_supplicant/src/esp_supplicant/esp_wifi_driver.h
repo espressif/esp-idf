@@ -261,5 +261,9 @@ bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
+esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
+                                 uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
+esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
+                                     uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

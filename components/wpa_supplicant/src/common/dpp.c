@@ -2397,7 +2397,7 @@ struct dpp_authentication *
 dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 		struct dpp_bootstrap_info *peer_bi,
 		struct dpp_bootstrap_info *own_bi,
-		unsigned int freq, const u8 *hdr, const u8 *attr_start,
+		unsigned int curr_chan, const u8 *hdr, const u8 *attr_start,
 		size_t attr_len)
 {
 	struct crypto_key *pi = NULL;
@@ -2406,10 +2406,16 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	size_t len[2];
 	u8 *unwrapped = NULL;
 	size_t unwrapped_len = 0;
-	const u8 *wrapped_data, *i_proto, *i_nonce, *i_capab, *i_bootstrap,
-		*channel;
-	u16 wrapped_data_len, i_proto_len, i_nonce_len, i_capab_len,
-		i_bootstrap_len, channel_len;
+	const u8 *wrapped_data;
+	const u8 *i_proto;
+	const u8 *i_nonce;
+	const u8 *i_capab;
+	const u8 *i_bootstrap;
+	u16 wrapped_data_len;
+	u16 i_proto_len;
+	u16 i_nonce_len;
+	u16 i_capab_len;
+	u16 i_bootstrap_len;
 	struct dpp_authentication *auth = NULL;
 
 #ifdef CONFIG_WPA_TESTING_OPTIONS
@@ -2438,10 +2444,11 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	auth->peer_bi = peer_bi;
 	auth->own_bi = own_bi;
 	auth->curve = own_bi->curve;
-	auth->curr_freq = freq;
+	auth->curr_chan = curr_chan;
 
 	auth->peer_version = 1; /* default to the first version */
 
+#if 0
 	channel = dpp_get_attr(attr_start, attr_len, DPP_ATTR_CHANNEL,
 			       &channel_len);
 	if (channel) {
@@ -2452,7 +2459,6 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 			goto fail;
 		}
 
-#ifndef ESP_SUPPLICANT
 		neg_freq = ieee80211_chan_to_freq(NULL, channel[0], channel[1]);
 		wpa_printf(MSG_DEBUG,
 			   "DPP: Initiator requested different channel for negotiation: op_class=%u channel=%u --> freq=%d",
@@ -2469,10 +2475,10 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 				   freq, neg_freq);
 			auth->curr_freq = neg_freq;
 		}
-#endif
 		/* rename it to chan */
-		auth->curr_freq = *channel;
+		auth->curr_chan = *channel;
 	}
+#endif
 
 	i_proto = dpp_get_attr(attr_start, attr_len, DPP_ATTR_I_PROTOCOL_KEY,
 			       &i_proto_len);
@@ -5386,7 +5392,7 @@ fail:
 
 
 int dpp_conf_resp_rx(struct dpp_authentication *auth,
-		     const struct wpabuf *resp)
+                     const uint8_t *resp, uint32_t resp_len)
 {
 	const u8 *wrapped_data, *e_nonce, *status, *conf_obj;
 	u16 wrapped_data_len, e_nonce_len, status_len, conf_obj_len;
@@ -5398,12 +5404,12 @@ int dpp_conf_resp_rx(struct dpp_authentication *auth,
 
 	auth->conf_resp_status = 255;
 
-	if (dpp_check_attrs(wpabuf_head(resp), wpabuf_len(resp)) < 0) {
+	if (dpp_check_attrs(resp, resp_len) < 0) {
 		dpp_auth_fail(auth, "Invalid attribute in config response");
 		return -1;
 	}
 
-	wrapped_data = dpp_get_attr(wpabuf_head(resp), wpabuf_len(resp),
+	wrapped_data = dpp_get_attr(resp, resp_len,
 				    DPP_ATTR_WRAPPED_DATA,
 				    &wrapped_data_len);
 	if (!wrapped_data || wrapped_data_len < AES_BLOCK_SIZE) {
@@ -5419,8 +5425,8 @@ int dpp_conf_resp_rx(struct dpp_authentication *auth,
 	if (!unwrapped)
 		return -1;
 
-	addr[0] = wpabuf_head(resp);
-	len[0] = wrapped_data - 4 - (const u8 *) wpabuf_head(resp);
+	addr[0] = resp;
+	len[0] = wrapped_data - 4 - resp;
 	wpa_hexdump(MSG_DEBUG, "DDP: AES-SIV AD", addr[0], len[0]);
 
 	if (aes_siv_decrypt(auth->ke, auth->curve->hash_len,
@@ -5451,7 +5457,7 @@ int dpp_conf_resp_rx(struct dpp_authentication *auth,
 		goto fail;
 	}
 
-	status = dpp_get_attr(wpabuf_head(resp), wpabuf_len(resp),
+	status = dpp_get_attr(resp, resp_len,
 			      DPP_ATTR_STATUS, &status_len);
 	if (!status || status_len < 1) {
 		dpp_auth_fail(auth,
@@ -6083,9 +6089,6 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 	int ret = -1;
 	struct dpp_bootstrap_info *bi;
 
-	if (!dpp)
-		return -1;
-
 	bi = os_zalloc(sizeof(*bi));
 	if (!bi)
 		goto fail;
@@ -6143,6 +6146,7 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 		    mac ? "M:" : "", mac ? mac : "", mac ? ";" : "",
 		    info ? "I:" : "", info ? info : "", info ? ";" : "",
 		    pk);
+
 	bi->id = dpp_next_id(dpp);
 	dl_list_add(&dpp->bootstrap, &bi->list);
 	ret = bi->id;
