@@ -170,7 +170,8 @@ typedef struct esp_tls_cfg {
                                                  bundle for server verification, must be enabled in menuconfig */
 
     void *ds_data;                          /*!< Pointer for digital signature peripheral context */
-    bool is_plain_tcp;
+    bool is_plain_tcp;                      /*!< Use non-TLS connection: When set to true, the esp-tls uses
+                                                 plain TCP transport rather then TLS/SSL connection */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

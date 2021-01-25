@@ -146,8 +146,10 @@ static esp_err_t resolve_host_name(const char *host, size_t hostlen, struct addr
     }
 
     ESP_LOGD(TAG, "host:%s: strlen %lu", use_host, (unsigned long)hostlen);
-    if (getaddrinfo(use_host, NULL, &hints, address_info)) {
-        ESP_LOGE(TAG, "couldn't get hostname for :%s:", use_host);
+    int res = getaddrinfo(use_host, NULL, &hints, address_info);
+    if (res != 0 || *address_info == NULL) {
+        ESP_LOGE(TAG, "couldn't get hostname for :%s: "
+                      "getaddrinfo() returns %d, addrinfo=%p", use_host, res, *address_info);
         free(use_host);
         return ESP_ERR_ESP_TLS_CANNOT_RESOLVE_HOSTNAME;
     }
@@ -209,9 +211,11 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
     if (addrinfo->ai_family == AF_INET) {
         struct sockaddr_in *p = (struct sockaddr_in *)addrinfo->ai_addr;
         p->sin_port = htons(port);
+        ESP_LOGD(TAG, "[sock=%d] Resolved IPv4 address: %s", fd, ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
         addr_ptr = p;
     } else if (addrinfo->ai_family == AF_INET6) {
         struct sockaddr_in6 *p = (struct sockaddr_in6 *)addrinfo->ai_addr;
+        ESP_LOGD(TAG, "[sock=%d] Resolved IPv6 address: %s", fd, ip6addr_ntoa((const ip6_addr_t*)&p->sin6_addr));
         p->sin6_port = htons(port);
         p->sin6_family = AF_INET6;
         addr_ptr = p;
@@ -221,36 +225,94 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         goto err_freesocket;
     }
 
-    if (cfg) {
-        if (cfg->timeout_ms >= 0) {
-            struct timeval tv;
-            ms_to_timeval(cfg->timeout_ms, &tv);
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-            setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-            if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
-                if (esp_tls_tcp_enable_keep_alive(fd, cfg->keep_alive_cfg) < 0) {
-                    ESP_LOGE(TAG, "Error setting keep-alive");
-                    goto err_freesocket;
-                }
-            }
-        }
-        if (cfg->non_block) {
-            int flags = fcntl(fd, F_GETFL, 0);
-            ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-            if (ret < 0) {
-                ESP_LOGE(TAG, "Failed to configure the socket as non-blocking (errno %d)", errno);
+    if (cfg && cfg->timeout_ms >= 0) {
+        struct timeval tv;
+        ms_to_timeval(cfg->timeout_ms, &tv);
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+        if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
+            if (esp_tls_tcp_enable_keep_alive(fd, cfg->keep_alive_cfg) < 0) {
+                ESP_LOGE(TAG, "Error setting keep-alive");
                 goto err_freesocket;
             }
         }
     }
 
-    ret = connect(fd, addr_ptr, addrinfo->ai_addrlen);
-    if (ret < 0 && !(errno == EINPROGRESS && cfg && cfg->non_block)) {
-
-        ESP_LOGE(TAG, "Failed to connnect to host (errno %d)", errno);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
-        ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
+    // Set socket to non-blocking
+    int flags;
+    if ((flags = fcntl(fd, F_GETFL, NULL)) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", fd, strerror(errno));
         goto err_freesocket;
+    }
+    if (fcntl(fd, F_SETFL, flags |= O_NONBLOCK) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", fd, strerror(errno));
+        goto err_freesocket;
+    }
+
+    ESP_LOGD(TAG, "[sock=%d] Connecting to server. HOST: %s, Port: %d", fd, host, port);
+
+    if (connect(fd, (struct sockaddr *)(addr_ptr), sizeof(struct sockaddr)) < 0) {
+        if (errno == EINPROGRESS) {
+            fd_set fdset;
+            struct timeval tv = { .tv_usec = 0, .tv_sec = 10 }; // Default connection timeout is 10 s
+
+            if (cfg && cfg->non_block) {
+                // Non-blocking mode -> just return successfully at this stage
+                *sockfd = fd;
+                freeaddrinfo(addrinfo);
+                return ESP_OK;
+            }
+
+            if ( cfg && cfg->timeout_ms > 0 ) {
+                ms_to_timeval(cfg->timeout_ms, &tv);
+            }
+            FD_ZERO(&fdset);
+            FD_SET(fd, &fdset);
+
+            int res = select(fd+1, NULL, &fdset, NULL, &tv);
+            if (res < 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() error: %s", fd, strerror(errno));
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                goto err_freesocket;
+            }
+            else if (res == 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() timeout", fd);
+                ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
+                goto err_freesocket;
+            } else {
+                int sockerr;
+                socklen_t len = (socklen_t)sizeof(int);
+
+                if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
+                    ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", fd, strerror(errno));
+                    ret = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+                    goto err_freesocket;
+                }
+                else if (sockerr) {
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, sockerr);
+                    ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", fd, strerror(sockerr));
+                    ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
+                    goto err_freesocket;
+                }
+            }
+        } else {
+            ESP_LOGE(TAG, "[sock=%d] connect() error: %s", fd, strerror(errno));
+            goto err_freesocket;
+        }
+    }
+
+    if (cfg && cfg->non_block == false) {
+        // Reset socket to blocking (unless non-blocking option set)
+        if ((flags = fcntl(fd, F_GETFL, NULL)) < 0) {
+            ESP_LOGE(TAG, "[sock=%d] get file flags error: %s", fd, strerror(errno));
+            ret = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            goto err_freesocket;
+        }
+        if (fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+            ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", fd, strerror(errno));
+            ret = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            goto err_freesocket;
+        }
     }
 
     *sockfd = fd;
@@ -292,7 +354,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             ESP_LOGD(TAG, "non-tls connection established");
             return 1;
         }
-        if (cfg->non_block) {
+        if (cfg && cfg->non_block) {
             FD_ZERO(&tls->rset);
             FD_SET(tls->sockfd, &tls->rset);
             tls->wset = tls->rset;
@@ -300,7 +362,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
         tls->conn_state = ESP_TLS_CONNECTING;
     /* falls through */
     case ESP_TLS_CONNECTING:
-        if (cfg->non_block) {
+        if (cfg && cfg->non_block) {
             ESP_LOGD(TAG, "connecting...");
             struct timeval tv;
             ms_to_timeval(cfg->timeout_ms, &tv);
