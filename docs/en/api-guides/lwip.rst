@@ -294,6 +294,9 @@ Thread-safe sockets
 
 It is possible to ``close()`` a socket from a different thread to the one that created it. The ``close()`` call will block until any function calls currently using that socket from other tasks have returned.
 
+It is, however, not possible to delete a task while it is actively waiting on ``select()`` or ``poll()`` APIs. It is always necessary that these APIs exit before destroying the task, as this might corrupt internal structures and cause subsequent crashes of the lwIP.
+(These APIs allocate globally referenced callback pointers on stack, so that when the task gets destroyed before unrolling the stack, the lwIP would still hold pointers to the deleted stack)
+
 On demand timers
 ++++++++++++++++
 
