@@ -45,6 +45,22 @@ https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe
 
     mkdir %userprofile%\esp
 
+在安装结束时，如果勾选了 ``Run ESP-IDF Command Prompt (cmd.exe)``，则会弹出一个 Windows 命令提示符窗口，即 ESP-IDF 命令提示符窗口。
+
+.. figure:: ../../_static/esp-idf-installer-screenshot.png
+    :align: center
+    :alt: 安装结束时，勾选运行 Run ESP-IDF Command Prompt (cmd.exe)
+    :figclass: align-center
+
+    安装结束时，勾选运行 Run ESP-IDF Command Prompt (cmd.exe)
+
+.. figure:: ../../_static/esp-idf-installer-command-prompt.png
+    :align: center
+    :alt: ESP-IDF Command Prompt
+    :figclass: align-center
+
+    ESP-IDF 命令提示符窗口
+
 使用命令提示符
 ========================
 

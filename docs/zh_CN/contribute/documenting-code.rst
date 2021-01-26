@@ -492,7 +492,7 @@ Doxygen 的安装取决于操作系统：
 
 运行该命令后，系统将为 ESP-IDF 中所有可支持的语言和目标生成文档。这一过程将需要一些时间，但各文档会并行进行，速度取决于系统中 CPU 内核的个数（可通过 ``--sphinx-parallel-builds`` 选项修改该进程，详情可见 ``./build_docs.py --help``）。
 
-如需生成某一语言的单个文档，运行::
+如需生成某一目标 (esp32) 某一语种 (en) 的全部文档，即 ``en`` 文件夹下所有文档，运行::
 
     ./build_docs.py -l en -t esp32 build
 
@@ -504,7 +504,7 @@ Doxygen 的安装取决于操作系统：
 生成文档子集
 """"""""""""""
 
-生成整个文档可能速度较慢，因此，也可以选择只生成你所需的某个子集。
+编译某一语言的所有文档可能速度较慢，因此，也可以选择只生成所需的某个文档或部分所选文档。
 
 在指令中列出你需要生成的文档名称即可::
 
@@ -514,7 +514,7 @@ Doxygen 的安装取决于操作系统：
 
     ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst api-reference/peripherals/adc.rst build
 
-还可以生成通配文档::
+还可以使用通配符，选择生成所有符合条件的文档::
 
     ./build_docs.py -l en -t esp32 -i api-reference/peripherals/* build
 
