@@ -22,10 +22,11 @@
 #include "esp_log.h"
 #include "esp_system.h"
 
-#include "esp_rom_uart.h"
-
+#include "esp_efuse.h"
 #include "esp_clk_internal.h"
+
 #include "esp_rom_efuse.h"
+#include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "sdkconfig.h"
 
@@ -99,6 +100,19 @@
 #include "esp32c3/rom/spi_flash.h"
 #endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
+
+// Set efuse ROM_LOG_MODE on first boot
+//
+// For CONFIG_BOOT_ROM_LOG_ALWAYS_ON (default) or undefined (ESP32), leave
+// ROM_LOG_MODE undefined (no need to call this function during startup)
+#if CONFIG_BOOT_ROM_LOG_ALWAYS_OFF
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ALWAYS_OFF
+#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_LOW
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_LOW
+#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_HIGH
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
+#endif
+
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
@@ -520,6 +534,10 @@ void IRAM_ATTR call_start_cpu0(void)
         }
         esp_rom_delay_us(100);
     }
+#endif
+
+#ifdef ROM_LOG_MODE
+    esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
 #endif
 
     SYS_STARTUP_FN();
