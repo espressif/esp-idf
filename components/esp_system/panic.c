@@ -21,8 +21,6 @@
 #include "esp_private/usb_console.h"
 #include "esp_ota_ops.h"
 
-#include "esp_core_dump.h"
-
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
@@ -35,7 +33,7 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
 #endif
 

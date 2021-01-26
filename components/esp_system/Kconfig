@@ -1,3 +1,4 @@
+
 menu "ESP System Settings"
 
     choice ESP_SYSTEM_PANIC
@@ -122,6 +123,165 @@ menu "ESP System Settings"
 
     endmenu  # Memory protection
 
+    config ESP_SYSTEM_EVENT_QUEUE_SIZE
+        int "System event queue size"
+        default 32
+        help
+            Config system event queue size in different application.
+
+    config ESP_SYSTEM_EVENT_TASK_STACK_SIZE
+        int "Event loop task stack size"
+        default 2304
+        help
+            Config system event task stack size in different application.
+
+    config ESP_MAIN_TASK_STACK_SIZE
+        int "Main task stack size"
+        default 3584
+        help
+            Configure the "main task" stack size. This is the stack of the task
+            which calls app_main(). If app_main() returns then this task is deleted
+            and its stack memory is freed.
+
+    config ESP_MINIMAL_SHARED_STACK_SIZE
+        int "Minimal allowed size for shared stack"
+        default 2048
+        help
+            Minimal value of size, in bytes, accepted to execute a expression
+            with shared stack.
+
+    choice ESP_CONSOLE_UART
+        prompt "Channel for console output"
+        default ESP_CONSOLE_UART_DEFAULT
+        help
+            Select where to send console output (through stdout and stderr).
+
+            - Default is to use UART0 on pre-defined GPIOs.
+            - If "Custom" is selected, UART0 or UART1 can be chosen,
+              and any pins can be selected.
+            - If "None" is selected, there will be no console output on any UART, except
+              for initial output from ROM bootloader. This ROM output can be suppressed by
+              GPIO strapping or EFUSE, refer to chip datasheet for details.
+            - On chips with USB peripheral, "USB CDC" option redirects output to the
+              CDC port. This option uses the CDC driver in the chip ROM.
+              This option is incompatible with TinyUSB stack.
+        config ESP_CONSOLE_UART_DEFAULT
+            bool "Default: UART0"
+        config ESP_CONSOLE_USB_CDC
+            bool "USB CDC"
+            # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
+            # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
+            depends on IDF_TARGET_ESP32S2 && !USB_ENABLED
+        config ESP_CONSOLE_UART_CUSTOM
+            bool "Custom UART"
+        config ESP_CONSOLE_NONE
+            bool "None"
+    endchoice
+
+    # Internal option, indicates that console UART is used (and not USB, for example)
+    config ESP_CONSOLE_UART
+        bool
+        default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+
+    config ESP_CONSOLE_MULTIPLE_UART
+        bool
+        default y if !IDF_TARGET_ESP32C3
+
+    choice ESP_CONSOLE_UART_NUM
+        prompt "UART peripheral to use for console output (0-1)"
+        depends on ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART
+        default ESP_CONSOLE_UART_CUSTOM_NUM_0
+        help
+            This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
+
+            Due to an ESP32 ROM bug, UART2 is not supported for console output
+            via esp_rom_printf.
+
+        config ESP_CONSOLE_UART_CUSTOM_NUM_0
+            bool "UART0"
+        config ESP_CONSOLE_UART_CUSTOM_NUM_1
+            bool "UART1"
+    endchoice
+
+    config ESP_CONSOLE_UART_NUM
+        int
+        default 0 if ESP_CONSOLE_UART_DEFAULT
+        default 0 if !ESP_CONSOLE_MULTIPLE_UART
+        default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
+        default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        default -1 if !ESP_CONSOLE_UART
+
+    config ESP_CONSOLE_UART_TX_GPIO
+        int "UART TX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
+        range 0 46
+        default 1 if IDF_TARGET_ESP32
+        default 21 if IDF_TARGET_ESP32C3
+        default 43
+        help
+             This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
+             boot log output and default standard output and standard error of the app).
+
+             If the configuration is different in the Bootloader binary compared to the app binary, UART
+             is reconfigured after the bootloader exits and the app starts.
+
+    config ESP_CONSOLE_UART_RX_GPIO
+        int "UART RX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
+        range 0 46
+        default 3 if IDF_TARGET_ESP32
+        default 20 if IDF_TARGET_ESP32C3
+        default 44
+        help
+            This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
+            default default standard input of the app).
+
+            Note: The default ESP-IDF Bootloader configures this pin but doesn't read anything from the UART.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
+
+
+    config ESP_CONSOLE_UART_BAUDRATE
+        int
+        prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
+        depends on ESP_CONSOLE_UART
+        default 115200
+        range 1200 4000000 if !PM_ENABLE
+        range 1200 1000000 if PM_ENABLE
+        help
+            This baud rate is used by both the ESP-IDF Bootloader and the app (including
+            boot log output and default standard input/output/error of the app).
+
+            The app's maximum baud rate depends on the UART clock source. If Power Management is disabled,
+            the UART clock source is the APB clock and all baud rates in the available range will be sufficiently
+            accurate. If Power Management is enabled, REF_TICK clock source is used so the baud rate is divided
+            from 1MHz. Baud rates above 1Mbps are not possible and values between 500Kbps and 1Mbps may not be
+            accurate.
+
+            If the configuration is different in the Bootloader binary compared to the app binary, UART
+            is reconfigured after the bootloader exits and the app starts.
+
+    config ESP_CONSOLE_USB_CDC_RX_BUF_SIZE
+        int "Size of USB CDC RX buffer"
+        depends on ESP_CONSOLE_USB_CDC
+        default 64
+        range 4 16384
+        help
+            Set the size of USB CDC RX buffer. Increase the buffer size if your application
+            is often receiving data over USB CDC.
+
+    config ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+        bool "Enable esp_rom_printf / ESP_EARLY_LOG via USB CDC"
+        depends on ESP_CONSOLE_USB_CDC
+        default n
+        help
+            If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
+            Disabling this option saves about 1kB or RAM.
+
     config ESP_INT_WDT
         bool "Interrupt watchdog"
         default y
@@ -192,6 +352,46 @@ menu "ESP System Settings"
         help
             If this option is enabled, the Task Wtachdog Timer will wach the CPU1
             Idle Task.
+
+    config ESP_IPC_TASK_STACK_SIZE
+        int "Inter-Processor Call (IPC) task stack size"
+        range 512 65536 if !APPTRACE_ENABLE
+        range 2048 65536 if APPTRACE_ENABLE
+        default 2048 if APPTRACE_ENABLE
+        default 1024
+        help
+            Configure the IPC tasks stack size. One IPC task runs on each core
+            (in dual core mode), and allows for cross-core function calls.
+
+            See IPC documentation for more details.
+
+            The default stack size should be enough for most common use cases.
+            It can be shrunk if you are sure that you do not use any custom
+            IPC functionality.
+
+    config ESP_IPC_USES_CALLERS_PRIORITY
+        bool "IPC runs at caller's priority"
+        default y
+        depends on !FREERTOS_UNICORE
+        help
+            If this option is not enabled then the IPC task will keep behavior
+            same as prior to that of ESP-IDF v4.0, and hence IPC task will run
+            at (configMAX_PRIORITIES - 1) priority.
+
+    config ESP_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
+            handler to run without needing to re-enable cache first. This may be necessary to debug some
+            complex issues with crashes while flash cache is disabled (for example, when writing to
+            SPI flash.)
+
     config ESP_DEBUG_STUBS_ENABLE
         bool
         default COMPILER_OPTIMIZATION_LEVEL_DEBUG
