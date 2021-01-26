@@ -175,9 +175,13 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
         ESP_LOGI("TEST_ADC", "Test with atten: %d", atten);
         memset(read_buf, 0xce, buffer_size);
 
+        bool do_calibration = false;
+
         esp_adc_cal_characteristics_t chan1_char = {};
         esp_adc_cal_value_t cal_ret = esp_adc_cal_characterize(ADC_UNIT_1, atten, ADC_WIDTH_12Bit, 0, &chan1_char);
-        TEST_ASSERT(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
+        if (cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP) {
+            do_calibration = true;
+        }
 
         continuous_adc_init(adc1_chan_mask, adc2_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t), atten);
         adc_digi_start();
@@ -201,9 +205,11 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
 
         print_summary(print_figure);
 
-        uint32_t raw = get_average();
-        uint32_t voltage_mv = esp_adc_cal_raw_to_voltage(raw, &chan1_char);
-        printf("Voltage = %d mV\n", voltage_mv);
+        if (do_calibration) {
+            uint32_t raw = get_average();
+            uint32_t voltage_mv = esp_adc_cal_raw_to_voltage(raw, &chan1_char);
+            printf("Voltage = %d mV\n", voltage_mv);
+        }
 
         adc_digi_stop();
         TEST_ESP_OK(adc_digi_deinitialize());
@@ -240,9 +246,13 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
 
         adc1_config_channel_atten(ADC1_CHANNEL_2, atten);
 
+        bool do_calibration = false;
+
         esp_adc_cal_characteristics_t chan1_char = {};
         esp_adc_cal_value_t cal_ret = esp_adc_cal_characterize(ADC_UNIT_1, atten, ADC_WIDTH_12Bit, 0, &chan1_char);
-        TEST_ASSERT(cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP);
+        if (cal_ret == ESP_ADC_CAL_VAL_EFUSE_TP) {
+            do_calibration = true;
+        }
 
 
         const int test_count = TEST_COUNT;
@@ -258,9 +268,13 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
             print_summary(print_figure);
             break;
         }
-        uint32_t raw = get_average();
-        uint32_t voltage_mv = esp_adc_cal_raw_to_voltage(raw, &chan1_char);
-        printf("Voltage = %d mV\n", voltage_mv);
+
+        if (do_calibration) {
+            uint32_t raw = get_average();
+            uint32_t voltage_mv = esp_adc_cal_raw_to_voltage(raw, &chan1_char);
+            printf("Voltage = %d mV\n", voltage_mv);
+        }
+
 
         if (atten == target_atten) {
             break;

@@ -738,6 +738,17 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
 }
 
 /* ADC calibration code. */
+/**
+ * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
+ */
+static inline void adc_ll_calibration_init(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 1);
+    }
+}
 
 /**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
@@ -751,19 +762,14 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    /* Should be called before writing I2C registers. */
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
-
     /* Enable/disable internal connect GND (for calibration). */
     if (adc_n == ADC_NUM_1) {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
         if (internal_gnd) {
             REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
         } else {
             REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
         }
     } else {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
         if (internal_gnd) {
             REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
         } else {
@@ -912,14 +918,9 @@ static inline bool adc_ll_intr_get_status(adc_ll_intr_t mask)
 }
 
 //--------------------------------adc1------------------------------//
-static inline void adc_ll_adc1_onetime_sample_ena(void)
+static inline void adc_ll_adc1_onetime_sample_enable(bool enable)
 {
-    APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
-}
-
-static inline void adc_ll_adc1_onetime_sample_dis(void)
-{
-    APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+    APB_SARADC.onetime_sample.adc1_onetime_sample = enable;
 }
 
 static inline uint32_t adc_ll_adc1_read(void)
@@ -929,14 +930,9 @@ static inline uint32_t adc_ll_adc1_read(void)
 }
 
 //--------------------------------adc2------------------------------//
-static inline void adc_ll_adc2_onetime_sample_ena(void)
+static inline void adc_ll_adc2_onetime_sample_enable(bool enable)
 {
-    APB_SARADC.onetime_sample.adc2_onetime_sample = 1;
-}
-
-static inline void adc_ll_adc2_onetime_sample_dis(void)
-{
-    APB_SARADC.onetime_sample.adc2_onetime_sample = 0;
+    APB_SARADC.onetime_sample.adc2_onetime_sample = enable;
 }
 
 static inline uint32_t adc_ll_adc2_read(void)

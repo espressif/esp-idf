@@ -201,6 +201,9 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     periph_module_enable(PERIPH_SARADC_MODULE);
     periph_module_enable(PERIPH_GDMA_MODULE);
 
+    adc_hal_calibration_init(ADC_NUM_1);
+    adc_hal_calibration_init(ADC_NUM_2);
+
     return ret;
 
 cleanup:
@@ -268,8 +271,6 @@ esp_err_t adc_digi_start(void)
     ADC_DIGI_LOCK_ACQUIRE();
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
-    adc_hal_init();
-
     if (s_adc_digi_ctx->use_adc1) {
         uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
         adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
@@ -278,6 +279,8 @@ esp_err_t adc_digi_start(void)
         uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
         adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
     }
+
+    adc_hal_init();
 
     adc_hal_arbiter_config(&config);
     adc_hal_digi_init(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
@@ -418,6 +421,8 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     s_atten1_single[channel] = atten;
     ret = adc_digi_gpio_init(ADC_NUM_1, BIT(channel));
 
+    adc_hal_calibration_init(ADC_NUM_1);
+
     return ret;
 }
 
@@ -441,18 +446,19 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
+
+    adc_hal_adc1_onetime_sample_enable(true);
     adc_hal_onetime_channel(ADC_NUM_1, channel);
     adc_hal_set_onetime_atten(atten);
 
     //Trigger single read.
-    adc_hal_adc1_onetime_sample_enable(true);
     adc_hal_onetime_start(&dig_cfg);
-
     while (!adc_hal_intr_get_raw(ADC_EVENT_ADC1_DONE));
+    adc_hal_single_read(ADC_NUM_1, &raw_out);
+
     adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
     adc_hal_adc1_onetime_sample_enable(false);
 
-    adc_hal_single_read(ADC_NUM_1, &raw_out);
     adc_hal_digi_deinit();
     periph_module_disable(PERIPH_SARADC_MODULE);
 
@@ -469,6 +475,8 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     esp_err_t ret = ESP_OK;
     s_atten2_single[channel] = atten;
     ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));
+
+    adc_hal_calibration_init(ADC_NUM_2);
 
     return ret;
 }
@@ -498,28 +506,26 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_hal_digi_controller_config(&dig_cfg);
 
     adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
+
+    adc_hal_adc2_onetime_sample_enable(true);
     adc_hal_onetime_channel(ADC_NUM_2, channel);
     adc_hal_set_onetime_atten(atten);
 
     //Trigger single read.
-    adc_hal_adc2_onetime_sample_enable(true);
     adc_hal_onetime_start(&dig_cfg);
-
     while (!adc_hal_intr_get_raw(ADC_EVENT_ADC2_DONE));
+    ret = adc_hal_single_read(ADC_NUM_2, raw_out);
+
     adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
     adc_hal_adc2_onetime_sample_enable(false);
 
-    ret = adc_hal_single_read(ADC_NUM_2, raw_out);
-    if (ret != ESP_OK) {
-        return ret;
-    }
     adc_hal_digi_deinit();
     periph_module_disable(PERIPH_SARADC_MODULE);
 
     ADC_DIGI_LOCK_RELEASE();
     SAC_ADC2_LOCK_RELEASE();
 
-    return ESP_OK;
+    return ret;
 }
 
 
@@ -794,7 +800,7 @@ esp_err_t adc_digi_isr_deregister(void)
                     RTC controller setting
 ---------------------------------------------------------------*/
 
-static uint16_t s_adc_cali_param[ADC_ATTEN_MAX] = {};
+static uint16_t s_adc_cali_param[ADC_UNIT_MAX][ADC_ATTEN_MAX] = {};
 
 //NOTE: according to calibration version, different types of lock may be taken during the process:
 //  1. Semaphore when reading efuse
@@ -803,8 +809,8 @@ static uint16_t s_adc_cali_param[ADC_ATTEN_MAX] = {};
 static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     const bool no_cal = false;
-    if (s_adc_cali_param[atten]) {
-        return (uint32_t)s_adc_cali_param[atten];
+    if (s_adc_cali_param[adc_n][atten]) {
+        return (uint32_t)s_adc_cali_param[adc_n][atten];
     }
 
     if (no_cal) {
@@ -813,17 +819,30 @@ static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t cha
 
     // check if we can fetch the values from eFuse.
     int version = esp_efuse_rtc_calib_get_ver();
-    assert(version == 1);
-    uint32_t init_code = esp_efuse_rtc_calib_get_init_code(version, atten);
 
-    ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, init_code);
-    s_adc_cali_param[atten] = init_code;
+    uint32_t init_code = 0;
+    if (version == 1) {
+        //for calibration v1, both ADC units use the same init code (calibrated by ADC1)
+        init_code = esp_efuse_rtc_calib_get_init_code(version, atten);
+        ESP_LOGD(ADC_TAG, "Calib(V%d) ADC0, 1 atten=%d: %04X", version, atten, init_code);
+        s_adc_cali_param[0][atten] = init_code;
+        s_adc_cali_param[1][atten] = init_code;
+    } else {
+        const bool internal_gnd = true;
+        ADC_ENTER_CRITICAL();
+        init_code = adc_hal_self_calibration(adc_n, channel, atten, internal_gnd);
+        ADC_EXIT_CRITICAL();
+        ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, init_code);
+        s_adc_cali_param[adc_n][atten] = init_code;
+    }
+
     return init_code;
 }
 
 // Internal function to calibrate PWDET for WiFi
 esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
+    adc_hal_calibration_init(adc_n);
     uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
     ADC_ENTER_CRITICAL();
     adc_hal_set_calibration_param(adc_n, cal_val);

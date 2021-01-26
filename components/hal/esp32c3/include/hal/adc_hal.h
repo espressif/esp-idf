@@ -206,20 +206,6 @@ void adc_hal_digi_monitor_enable(adc_digi_monitor_idx_t mon_idx, bool enable);
  */
 void adc_hal_arbiter_config(adc_arbiter_t *config);
 
-/*---------------------------------------------------------------
-                    ADC calibration setting
----------------------------------------------------------------*/
-
-
-/**
- * Set the calibration result (initial data) to ADC.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- */
-#define adc_hal_set_calibration_param(adc_n, param) adc_ll_set_calibration_param(adc_n, param);
-
 #ifdef __cplusplus
 }
 #endif

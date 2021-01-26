@@ -74,6 +74,10 @@ esp_err_t adc_digi_init(void)
     adc_hal_init();
     adc_hal_arbiter_config(&config);
     ADC_EXIT_CRITICAL();
+
+    adc_hal_calibration_init(ADC_NUM_1);
+    adc_hal_calibration_init(ADC_NUM_2);
+
     return ESP_OK;
 }
 
@@ -472,6 +476,7 @@ uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, a
 
 esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
+    adc_hal_calibration_init(adc_n);
     uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten, false);
     ADC_ENTER_CRITICAL();
     adc_hal_set_calibration_param(adc_n, cal_val);

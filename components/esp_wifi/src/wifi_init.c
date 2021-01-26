@@ -247,9 +247,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             return result;
         }
     }
-#if CONFIG_IDF_TARGET_ESP32S2
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
-#endif
     esp_wifi_config_info();
     return result;
 }

@@ -299,9 +299,8 @@ static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
  * @note Only one channel can be selected in once measurement.
  *
  * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
+static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n)
 {
     if (adc_n == ADC_NUM_1) {
         SENS.sar_meas_start1.sar1_en_pad = 0; //only one channel is selected.
