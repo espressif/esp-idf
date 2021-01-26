@@ -6,21 +6,26 @@ endif()
 
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs  "intr_alloc.c"
-          "esp_async_memcpy.c"
-          "panic.c"
-          "system_api.c"
-          "startup.c"
-          "system_time.c"
-          "sleep_modes.c"
-          "task_wdt.c"
-          "int_wdt.c"
-          "stack_check.c"
-          "freertos_hooks.c"
-          "esp_err.c")
+# Remove when sleep is brought up on master for C3 TODO ESP32-C3 IDF-2571
+set(srcs "esp_err.c"
+        "freertos_hooks.c"
+        "intr_alloc.c"
+        "int_wdt.c"
+        "esp_async_memcpy.c"
+        "panic.c"
+        "system_api.c"
+        "startup.c"
+        "system_time.c"
+        "stack_check.c"
+        "sleep_modes.c"
+        "task_wdt.c")
 
 if(NOT (${target} STREQUAL "esp32c3") )
     list(APPEND srcs  "dbg_stubs.c")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA)
+    list(APPEND srcs "fpga_overrides.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
@@ -29,7 +34,8 @@ idf_component_register(SRCS "${srcs}"
                                   # [refactor-todo] requirements due to init code,
                                   # should be removable once using component init functions
                                   # link-time registration is used.
-                                  esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
+                                  esp_pm app_update nvs_flash pthread app_trace esp_gdbstub esp_ipc
+                                  espcoredump
                     LDFRAGMENTS "linker.lf")
 add_subdirectory(port)
 
@@ -53,4 +59,9 @@ set_source_files_properties(
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/sleep_modes.c" PROPERTIES
                                 COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA)
+    # Forces the linker to include fpga stubs from this component
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
 endif()

@@ -10,8 +10,6 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "clk_ctrl_os.c" "mac_addr.c")
 endif()
 
-endif()
-
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
                        REQUIRES ${requires}

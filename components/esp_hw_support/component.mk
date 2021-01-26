@@ -6,5 +6,4 @@ port/$(IDF_TARGET)/rtc_clk.o: CFLAGS += -fno-jump-tables -fno-tree-switch-conver
 
 ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE += clk_ctrl_os.o mac_addr.o
-
 endif
