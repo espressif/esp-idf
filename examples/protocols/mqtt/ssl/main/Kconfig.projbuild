@@ -17,4 +17,10 @@ menu "Example Configuration"
         bool
         default y if BROKER_CERTIFICATE_OVERRIDE != ""
 
+    config BROKER_BIN_SIZE_TO_SEND
+        # This option is not visible and is used only to set parameters for example tests
+        # Here we configure the data size to send and to be expected in the python script
+        int
+        default 20000
+
 endmenu

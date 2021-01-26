@@ -36,21 +36,20 @@ def on_message(client, userdata, msg):
     global message_log
     global event_client_received_correct
     global event_client_received_binary
-    if msg.topic == "/topic/binary":
-        binary = userdata
-        size = os.path.getsize(binary)
-        print("Receiving binary from esp and comparing with {}, size {}...".format(binary, size))
-        with open(binary, "rb") as f:
+    if msg.topic == '/topic/binary':
+        binary, bin_size = userdata
+        print('Receiving binary from esp and comparing with {}, size {}...'.format(binary, bin_size))
+        with open(binary, 'rb') as f:
             bin = f.read()
-            if bin == msg.payload[:size]:
-                print("...matches!")
+            if bin[:bin_size] == msg.payload[:bin_size]:
+                print('...matches!')
                 event_client_received_binary.set()
                 return
-            else:
-                recv_binary = binary + ".received"
-                with open(recv_binary, "w") as fw:
-                    fw.write(msg.payload)
-                raise ValueError('Received binary (saved as: {}) does not match the original file: {}'.format(recv_binary, binary))
+            recv_binary = binary + '.received'
+            with open(recv_binary, 'w') as fw:
+                fw.write(msg.payload)
+            raise ValueError('Received binary (saved as: {}) does not match the original file: {}'.format(recv_binary, binary))
+
     payload = msg.payload.decode()
     if not event_client_received_correct.is_set() and payload == "data":
         client.subscribe("/topic/binary")
@@ -65,7 +64,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
     broker_url = ""
     broker_port = 0
     """
-    steps: |
+    steps:
       1. join AP and connects to ssl broker
       2. Test connects a client to the same broker
       3. Test evaluates python client received correct qos0 message
@@ -84,6 +83,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
         value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()["CONFIG_BROKER_URI"])
         broker_url = value.group(1)
         broker_port = int(value.group(2))
+        bin_size = min(int(dut1.app.get_sdkconfig()['CONFIG_BROKER_BIN_SIZE_TO_SEND']), bin_size)
     except Exception:
         print('ENV_TEST_FAILURE: Cannot find broker url in sdkconfig')
         raise
@@ -93,7 +93,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
         client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
-        client.user_data_set(binary_file)
+        client.user_data_set((binary_file, bin_size))
         client.tls_set(None,
                        None,
                        None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
